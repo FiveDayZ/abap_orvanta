@@ -14,7 +14,7 @@ export function createMcpServer(
 ): McpServer {
   const server = new McpServer({
     name: "abap-mcp-standalone",
-    version: "0.30.0"
+    version: "0.30.1"
   })
   const tools = new ToolService(backend, undefined, invocationReceipts)
 
@@ -645,6 +645,8 @@ export function writeOperationTarget(
     const transaction = String(input.transactionCode).toUpperCase()
     return { key: `TRAN:${transaction}`, summary: `transaction ${transaction}` }
   }
+  const sourceTarget = sourceWriteOperationTarget(name, input, uri)
+  if (sourceTarget) return sourceTarget
   if (input.programName) {
     const program = String(input.programName).toUpperCase()
     return { key: `PROG:${program}`, summary: `program ${program}` }
@@ -697,4 +699,95 @@ export function writeOperationTarget(
   }
   const normalizedUri = uri.trim().toLowerCase()
   return { key: `URI:${normalizedUri}`, summary: `ADT target ${normalizedUri}` }
+}
+
+function sourceWriteOperationTarget(
+  name: string,
+  input: Record<string, unknown>,
+  uri: string
+): { key: string; summary: string } | undefined {
+  if (
+    name === "create_module_pool" ||
+    name === "delete_module_pool" ||
+    name === "upsert_abap_screen" ||
+    name === "patch_abap_screen" ||
+    name === "patch_abap_gui_definition"
+  ) {
+    return sourceIdentity("PROG/P", input.programName)
+  }
+  if (name === "create_function_module_with_interface") {
+    return sourceIdentity("FUGR/FF", input.functionName, input.functionGroup)
+  }
+  if (name === "create_test_include") {
+    return sourceIdentity("CLAS/OC", input.className)
+  }
+  if (name === "create_object_programmatically") {
+    return sourceIdentity(input.objectType, input.name, input.parentName)
+  }
+  if (name === "delete_abap_source_object") {
+    return sourceIdentity(input.objectType, input.objectName, input.parentName)
+  }
+  if (name === "manage_text_elements") {
+    const type = {
+      PROGRAM: "PROG/P",
+      CLASS: "CLAS/OC",
+      FUNCTION_GROUP: "FUGR/F"
+    }[String(input.objectType).toUpperCase()]
+    return type ? sourceIdentity(type, input.objectName) : undefined
+  }
+  if (name === "replace_string_in_abap_object" || name === "abap_activate") {
+    return sourceIdentityFromUri(uri)
+  }
+  return undefined
+}
+
+function sourceIdentity(
+  objectType: unknown,
+  objectName: unknown,
+  parentName?: unknown
+): { key: string; summary: string } {
+  const type = String(objectType).toUpperCase()
+  const name = String(objectName).toUpperCase()
+  const parent = parentName ? String(parentName).toUpperCase() : ""
+  const kind = type.startsWith("CLAS")
+    ? "CLAS"
+    : type.startsWith("INTF")
+      ? "INTF"
+      : type.startsWith("FUGR")
+        ? "FUGR"
+        : type.startsWith("DDLS")
+          ? "DDLS"
+          : type.startsWith("DCLS")
+            ? "DCLS"
+            : "PROG"
+  const owner = kind === "FUGR" && parent ? parent : name
+  const label = {
+    CLAS: "class",
+    INTF: "interface",
+    FUGR: "function group",
+    DDLS: "DDL source",
+    DCLS: "DCL source",
+    PROG: "program"
+  }[kind]
+  return {
+    key: `SOURCE:${kind}:${owner}`,
+    summary: parent ? `${type.toLowerCase()} ${name} in ${parent}` : `${label} ${name}`
+  }
+}
+
+function sourceIdentityFromUri(uri: string): { key: string; summary: string } | undefined {
+  const path = uri.replace(/^adt:\/\/[^/]+/i, "")
+  const patterns: Array<[RegExp, string]> = [
+    [/\/functions\/groups\/([^/]+)/i, "FUGR"],
+    [/\/oo\/classes\/([^/]+)/i, "CLAS"],
+    [/\/oo\/interfaces\/([^/]+)/i, "INTF"],
+    [/\/programs\/(?:programs|includes)\/([^/]+)/i, "PROG"]
+  ]
+  for (const [pattern, kind] of patterns) {
+    const match = pattern.exec(path)
+    if (!match?.[1]) continue
+    const name = decodeURIComponent(match[1]).toUpperCase()
+    return { key: `SOURCE:${kind}:${name}`, summary: `${kind.toLowerCase()} ${name}` }
+  }
+  return undefined
 }

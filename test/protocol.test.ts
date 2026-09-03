@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { createHash } from "node:crypto"
 import { mkdtemp, readFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -507,6 +508,17 @@ test("0.30 lifecycle writes return version 2 operation receipts", async () => {
         operationId: "protocol-delete-source-0300",
         objectType: "CLAS/OC",
         objectName: "ZCL_DEMO",
+        expectedFingerprint: createHash("sha256")
+          .update(
+            [
+              "CLASS zcl_demo IMPLEMENTATION.",
+              "  METHOD run.",
+              "    WRITE 'HEADLESS'.",
+              "  ENDMETHOD.",
+              "ENDCLASS."
+            ].join("\n")
+          )
+          .digest("hex"),
         packageName: "ZVALIDATION",
         transportNumber: "GR2K923421",
         confirmation: "PERMANENT_DELETE",

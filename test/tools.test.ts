@@ -16,6 +16,7 @@ import {
   capabilityFailure,
   createObjectWithClient,
   createTestIncludeWithClient,
+  deleteObjectWithClient,
   detectTypeFromUri,
   loadRevisionObjectStructure,
   lockTextElementsWithClient,
@@ -41,6 +42,15 @@ import { InvocationReceiptStore } from "../src/invocation-receipts.js"
 import { ToolService, extractMethod, validateReadOnlySql } from "../src/tools.js"
 import { findAndReplaceSource } from "../src/source-edit.js"
 import { MockBackend } from "./mock-backend.js"
+
+const zclDemoSource = [
+  "CLASS zcl_demo IMPLEMENTATION.",
+  "  METHOD run.",
+  "    WRITE 'HEADLESS'.",
+  "  ENDMETHOD.",
+  "ENDCLASS."
+].join("\n")
+const zclDemoFingerprint = createHash("sha256").update(zclDemoSource).digest("hex")
 
 test("five headless tool paths preserve representative output behavior", async () => {
   const tools = new ToolService(new MockBackend())
@@ -1328,10 +1338,24 @@ test("message class incremental update preserves untouched messages and enforces
 test("controlled source and DDIC deletion verify package, version, and absence", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)
+  await assert.rejects(
+    tools.deleteSourceObject({
+      objectType: "CLAS/OC",
+      objectName: "ZCL_DEMO",
+      expectedFingerprint: "f".repeat(64),
+      packageName: "ZVALIDATION",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /SOURCE_FINGERPRINT_CONFLICT/
+  )
+  assert.equal((await backend.searchObjects("w200", "ZCL_DEMO", ["CLAS"], 1)).length, 1)
   const deletedSource = JSON.parse(
     await tools.deleteSourceObject({
       objectType: "CLAS/OC",
       objectName: "ZCL_DEMO",
+      expectedFingerprint: zclDemoFingerprint,
       packageName: "ZVALIDATION",
       transportNumber: "GR2K923421",
       confirmation: "PERMANENT_DELETE",
@@ -1377,6 +1401,7 @@ test("controlled source and DDIC deletion verify package, version, and absence",
     tools.deleteSourceObject({
       objectType: "CLAS/OC",
       objectName: "ZREPORT_DEMO",
+      expectedFingerprint: "a".repeat(64),
       packageName: "ZVALIDATION",
       transportNumber: "GR2K923421",
       confirmation: "WRONG" as "PERMANENT_DELETE",
@@ -1406,6 +1431,7 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
     tools.deleteSourceObject({
       objectType: "CLAS/OC",
       objectName: "ZCL_DEMO",
+      expectedFingerprint: zclDemoFingerprint,
       packageName: "ZABAP",
       transportNumber: "GR2K923421",
       confirmation: "PERMANENT_DELETE",
@@ -1444,6 +1470,7 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
       objectType: "FUGR/FF",
       objectName: "ZCMCP_FM_0300",
       parentName: "ZCMCP_FG_WRONG",
+      expectedFingerprint: "a".repeat(64),
       packageName: "ZABAP",
       transportNumber: "GR2K923421",
       confirmation: "PERMANENT_DELETE",
@@ -1462,6 +1489,7 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
       objectType: "FUGR/I",
       objectName: "F01",
       parentName: "ZCMCP_FG_0300",
+      expectedFingerprint: createHash("sha256").update("FORM example.\nENDFORM.").digest("hex"),
       packageName: "ZABAP",
       transportNumber: "GR2K923421",
       confirmation: "PERMANENT_DELETE",
@@ -1528,6 +1556,7 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
     new ToolService(unverifiableBackend).deleteSourceObject({
       objectType: "CLAS/OC",
       objectName: "ZCL_DEMO",
+      expectedFingerprint: zclDemoFingerprint,
       packageName: "ZVALIDATION",
       transportNumber: "GR2K923421",
       confirmation: "PERMANENT_DELETE",
@@ -3023,6 +3052,51 @@ test("ADT write coordination locks, saves, unlocks, and activates the exact cust
   )
   assert.equal(result.activation.success, true)
   assert.deepEqual(calls, ["lock", "read", "save:W200K900001", "unlock", "activate"])
+})
+
+test("ADT source deletion compares the fingerprint while holding the SAP lock", async () => {
+  const calls: string[] = []
+  const object: AbapObjectInfo = {
+    name: "ZCL_DEMO",
+    type: "CLAS/OC",
+    description: "Delete validation",
+    package: "ZVALIDATION",
+    systemType: "CUSTOM",
+    uri: "/sap/bc/adt/oo/classes/zcl_demo"
+  }
+  const client = {
+    async lock() {
+      calls.push("lock")
+      return { LOCK_HANDLE: "secret-lock" }
+    },
+    async getObjectSource(uri: string) {
+      calls.push(`read:${uri}`)
+      return zclDemoSource
+    },
+    async deleteObject(_uri: string, _lockHandle: string, transport: string) {
+      calls.push(`delete:${transport}`)
+    },
+    async unLock() {
+      calls.push("unlock")
+    }
+  }
+
+  await assert.rejects(
+    deleteObjectWithClient(client as never, object, "GR2K923421", "f".repeat(64)),
+    /SOURCE_FINGERPRINT_CONFLICT/
+  )
+  assert.deepEqual(calls, ["lock", "read:/sap/bc/adt/oo/classes/zcl_demo/source/main", "unlock"])
+
+  calls.length = 0
+  assert.equal(
+    await deleteObjectWithClient(client as never, object, "GR2K923421", zclDemoFingerprint),
+    zclDemoFingerprint
+  )
+  assert.deepEqual(calls, [
+    "lock",
+    "read:/sap/bc/adt/oo/classes/zcl_demo/source/main",
+    "delete:GR2K923421"
+  ])
 })
 
 test("controlled edit policy covers customer source families and rejects standard ownership", () => {

@@ -15,6 +15,7 @@ import {
   type TextElement,
   type TransportRequest
 } from "abap-adt-api"
+import { createHash } from "node:crypto"
 import { request as httpRequest } from "node:http"
 import { request as httpsRequest } from "node:https"
 import type { AdtHTTP } from "abap-adt-api/build/AdtHTTP.js"
@@ -791,21 +792,12 @@ export class AdtBackend implements SapBackend {
   async deleteObject(
     connectionId: string,
     object: AbapObjectInfo,
-    transportNumber: string
-  ): Promise<void> {
-    await this.withStatefulClient(connectionId, async (client) => {
-      let lock: AdtLock | undefined
-      let deleted = false
-      try {
-        lock = await client.lock(object.uri, "MODIFY")
-        await client.deleteObject(object.uri, lock.LOCK_HANDLE, transportNumber)
-        deleted = true
-      } finally {
-        if (lock && !deleted) {
-          await client.unLock(object.uri, lock.LOCK_HANDLE).catch(() => undefined)
-        }
-      }
-    })
+    transportNumber: string,
+    expectedFingerprint: string
+  ): Promise<string> {
+    return this.withStatefulClient(connectionId, (client) =>
+      deleteObjectWithClient(client, object, transportNumber, expectedFingerprint)
+    )
   }
 
   async sourceObjectExists(connectionId: string, object: AbapObjectInfo): Promise<boolean> {
@@ -1322,6 +1314,33 @@ export class AdtBackend implements SapBackend {
       throw new Error(`${errorText(error)}${requestDiagnostic ? `; ${requestDiagnostic}` : ""}`)
     } finally {
       await client.logout().catch(async () => client.dropSession().catch(() => undefined))
+    }
+  }
+}
+
+export async function deleteObjectWithClient(
+  client: Pick<ADTClient, "lock" | "getObjectSource" | "deleteObject" | "unLock">,
+  object: AbapObjectInfo,
+  transportNumber: string,
+  expectedFingerprint: string
+): Promise<string> {
+  let lock: AdtLock | undefined
+  let deleted = false
+  try {
+    lock = await client.lock(object.uri, "MODIFY")
+    const source = await client.getObjectSource(optimalSourceUri(object.type, object.uri))
+    const fingerprint = createHash("sha256").update(source).digest("hex")
+    if (fingerprint !== expectedFingerprint.toLowerCase()) {
+      throw new Error(
+        `SOURCE_FINGERPRINT_CONFLICT: expected ${expectedFingerprint.toLowerCase()}, current ${fingerprint}`
+      )
+    }
+    await client.deleteObject(object.uri, lock.LOCK_HANDLE, transportNumber)
+    deleted = true
+    return fingerprint
+  } finally {
+    if (lock && !deleted) {
+      await client.unLock(object.uri, lock.LOCK_HANDLE).catch(() => undefined)
     }
   }
 }

@@ -565,6 +565,7 @@ interface DeleteSourceObjectInput {
   objectType: "CLAS/OC" | "INTF/OI" | "PROG/P" | "PROG/I" | "FUGR/F" | "FUGR/I" | "FUGR/FF"
   objectName: string
   parentName?: string | undefined
+  expectedFingerprint: string
   packageName: string
   transportNumber: string
   confirmation: "PERMANENT_DELETE"
@@ -2961,9 +2962,12 @@ export class ToolService {
     if (object.package.toUpperCase() !== expectedPackage) {
       throw new Error(`PACKAGE_CONFLICT: Object belongs to ${object.package || "<empty>"}`)
     }
-    const source = await this.backend.readSource(connectionId, object)
-    const preDeleteFingerprint = createHash("sha256").update(source.source).digest("hex")
-    await this.backend.deleteObject(connectionId, object, transport)
+    const preDeleteFingerprint = await this.backend.deleteObject(
+      connectionId,
+      object,
+      transport,
+      input.expectedFingerprint
+    )
     if (await this.backend.sourceObjectExists(connectionId, object)) {
       throw new Error("SAP source deletion verification still found the object")
     }

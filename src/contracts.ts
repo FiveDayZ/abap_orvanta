@@ -768,12 +768,13 @@ export const toolContracts = {
   },
   delete_abap_source_object: {
     description:
-      "Permanently delete one existing Z* or Y* class, interface, program, Include, function group, function-group Include, or function module. For FUGR/I, objectName may be the three-character Include suffix or its full technical name; the Z* or Y* parentName and exact ADT ownership must match. Requires the exact object type, package, existing transport, explicit confirmation, SAP locking, and post-delete absence verification; transports are never released.",
+      "Permanently delete one existing Z* or Y* class, interface, program, Include, function group, function-group Include, or function module. For FUGR/I, objectName may be the three-character Include suffix or its full technical name; the Z* or Y* parentName and exact ADT ownership must match. Requires the exact object type, current SHA-256 source fingerprint, package, existing transport, explicit confirmation, SAP locking, and post-delete absence verification; transports are never released.",
     inputSchema: {
       ...writeOperationInput,
       objectType: z.enum(["CLAS/OC", "INTF/OI", "PROG/P", "PROG/I", "FUGR/F", "FUGR/I", "FUGR/FF"]),
       objectName: z.string(),
       parentName: z.string().optional(),
+      expectedFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
       packageName: z.string(),
       transportNumber: z.string(),
       confirmation: z.literal("PERMANENT_DELETE"),

@@ -537,7 +537,12 @@ export interface SapBackend {
   ): Promise<SourceMutationInfo>
   activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo>
   createObject(connectionId: string, request: CreateObjectRequest): Promise<ObjectCreationInfo>
-  deleteObject(connectionId: string, object: AbapObjectInfo, transportNumber: string): Promise<void>
+  deleteObject(
+    connectionId: string,
+    object: AbapObjectInfo,
+    transportNumber: string,
+    expectedFingerprint: string
+  ): Promise<string>
   sourceObjectExists(connectionId: string, object: AbapObjectInfo): Promise<boolean>
   readMessageClass(connectionId: string, messageClass: string): Promise<MessageClassInfo>
   createMessageClass(

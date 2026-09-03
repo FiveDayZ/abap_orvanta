@@ -96,6 +96,49 @@ test("write target keys align transaction operations and distinguish DDIC namesp
     writeOperationTarget("upsert_ddic_domain", { objectName: "ZSAFE_027" }, "").key,
     writeOperationTarget("upsert_ddic_data_element", { objectName: "ZSAFE_027" }, "").key
   )
+
+  const createdClass = writeOperationTarget(
+    "create_object_programmatically",
+    { objectType: "CLAS/OC", name: "ZCL_SAFE_0301" },
+    ""
+  )
+  const deletedClass = writeOperationTarget(
+    "delete_abap_source_object",
+    { objectType: "CLAS/OC", objectName: "ZCL_SAFE_0301" },
+    ""
+  )
+  const editedClass = writeOperationTarget(
+    "replace_string_in_abap_object",
+    {},
+    "adt://w200/sap/bc/adt/oo/classes/zcl_safe_0301/source/main"
+  )
+  assert.equal(createdClass.key, "SOURCE:CLAS:ZCL_SAFE_0301")
+  assert.equal(createdClass.key, deletedClass.key)
+  assert.equal(createdClass.key, editedClass.key)
+
+  const functionGroupKeys = [
+    writeOperationTarget(
+      "create_object_programmatically",
+      { objectType: "FUGR/F", name: "ZCMCP_FG_0301" },
+      ""
+    ).key,
+    writeOperationTarget(
+      "create_function_module_with_interface",
+      { functionName: "ZCMCP_FM_0301", functionGroup: "ZCMCP_FG_0301" },
+      ""
+    ).key,
+    writeOperationTarget(
+      "delete_abap_source_object",
+      { objectType: "FUGR/I", objectName: "F01", parentName: "ZCMCP_FG_0301" },
+      ""
+    ).key,
+    writeOperationTarget(
+      "replace_string_in_abap_object",
+      {},
+      "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0301/includes/lzcmcp_fg_0301f01/source/main"
+    ).key
+  ]
+  assert.deepEqual([...new Set(functionGroupKeys)], ["SOURCE:FUGR:ZCMCP_FG_0301"])
 })
 
 test("a completed action remains completed when local lock cleanup needs recovery", async () => {

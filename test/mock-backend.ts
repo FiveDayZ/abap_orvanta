@@ -1,4 +1,5 @@
 import type { TransportRequest, TransportsOfUser } from "abap-adt-api"
+import { createHash } from "node:crypto"
 import type {
   ActivationInfo,
   AbapObjectInfo,
@@ -1341,10 +1342,19 @@ export class MockBackend implements SapBackend {
   async deleteObject(
     connectionId: string,
     object: AbapObjectInfo,
-    _transportNumber: string
-  ): Promise<void> {
+    _transportNumber: string,
+    expectedFingerprint: string
+  ): Promise<string> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    const source = await this.readSource(connectionId, object)
+    const fingerprint = createHash("sha256").update(source.source).digest("hex")
+    if (fingerprint !== expectedFingerprint.toLowerCase()) {
+      throw new Error(
+        `SOURCE_FINGERPRINT_CONFLICT: expected ${expectedFingerprint.toLowerCase()}, current ${fingerprint}`
+      )
+    }
     this.deletedSourceObjects.add(`${object.type}:${object.name}`)
+    return fingerprint
   }
 
   async sourceObjectExists(connectionId: string, object: AbapObjectInfo): Promise<boolean> {
