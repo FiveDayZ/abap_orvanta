@@ -1,0 +1,292 @@
+{
+  "sourcePackage": "C:\\My\\Workplace\\Coding\\vscode-abap\\vscode_abap_remote_fs\\package.json",
+  "sourceVersion": "2.7.0",
+  "extractedAt": "2026-08-26T09:15:33.436Z",
+  "tools": [
+    {
+      "name": "get_abap_object_info",
+      "description": "Get ABAP object metadata: type, total lines, cache status. Use before retrieving content to understand what kind of object you're dealing with.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to get information about"
+          },
+          "objectType": {
+            "type": "string",
+            "enum": [
+              "FUNC",
+              "CLAS",
+              "TABL",
+              "PROG",
+              "INTF",
+              "DTEL",
+              "DDLS",
+              "DOMA",
+              "TTYP",
+              "ENQU",
+              "MSAG",
+              "FUGR",
+              "DEVC",
+              "TRAN",
+              "VIEW",
+              "SICF",
+              "WDYN",
+              "SPRX",
+              "XSLT",
+              "TRANSFORMATIONS",
+              "SUSH",
+              "SUSC",
+              "PINF",
+              "ENHC",
+              "ENHS",
+              "BADI",
+              "BADII",
+              "SAMC",
+              "SAPC",
+              "SFSW",
+              "SFBF",
+              "SFBS",
+              "JOBD",
+              "NROB",
+              "ENHO",
+              "SUSO",
+              "BDEF",
+              "SRVB"
+            ],
+            "description": "Narrow search by type to resolve ambiguity (e.g., MATNR exists as both DTEL and DOMA). FUNC=Function Module, CLAS=Class, TABL=Table, PROG=Report, INTF=Interface, DTEL=Data Element, DDLS=CDS View, DOMA=Domain, TTYP=Table Type, ENQU=Lock Object, MSAG=Message Class, FUGR=Function Group, DEVC=Package, TRAN=Transaction, VIEW=View, SICF=ICF Service, WDYN=Web Dynpro, SPRX=Proxy, XSLT=XSLT, TRANSFORMATIONS=Simple Transformation, SUSH=Auth Object, SUSC=Auth Object Class, PINF=Package Interface, ENHC=Enhancement Impl, ENHS=Enhancement Spot, BADI=BAdI Def, BADII=BAdI Impl, SAMC=AMC Class, SAPC=APC Class, SFSW=Switch Framework, SFBF=Business Function, SFBS=Business Function Set, JOBD=Job Definition, NROB=Number Range, ENHO=Enhancement Impl, SUSO=Auth Object Set, BDEF=Behavior Def, SRVB=Service Binding"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": [
+          "objectName",
+          "connectionId"
+        ]
+      },
+      "tags": [
+        "abap-fs"
+      ]
+    },
+    {
+      "name": "get_abap_object_lines",
+      "description": "Read active ABAP source. objectType disambiguates same-named objects (MATNR exists as DTEL and DOMA). methodName extracts one method body from a class. MANDATORY before code generation: training data has wrong params — ALWAYS read exact signatures before calling functions/methods, never guess. Unverified params WILL fail at runtime. IMPORTANT: shows committed code only, not unsaved local edits — use VS Code file tools for fresh edits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to retrieve lines from"
+          },
+          "objectType": {
+            "type": "string",
+            "enum": [
+              "FUNC",
+              "CLAS",
+              "TABL",
+              "PROG",
+              "INTF",
+              "DTEL",
+              "DDLS",
+              "DOMA",
+              "TTYP",
+              "ENQU",
+              "MSAG",
+              "FUGR",
+              "DEVC",
+              "TRAN",
+              "VIEW",
+              "SICF",
+              "WDYN",
+              "SPRX",
+              "XSLT",
+              "TRANSFORMATIONS",
+              "SUSH",
+              "SUSC",
+              "PINF",
+              "ENHC",
+              "ENHS",
+              "BADI",
+              "BADII",
+              "SAMC",
+              "SAPC",
+              "SFSW",
+              "SFBF",
+              "SFBS",
+              "JOBD",
+              "NROB",
+              "ENHO",
+              "SUSO",
+              "BDEF",
+              "SRVB"
+            ],
+            "description": "Optional: Specific object type to avoid ambiguity."
+          },
+          "methodName": {
+            "type": "string",
+            "description": "CLASSES ONLY: extract one method body, METHOD xxx. → ENDMETHOD. Examples: 'FACTORY', 'CONSTRUCTOR', 'IF_INTERFACE~METHOD_NAME'. Overrides startLine/lineCount."
+          },
+          "startLine": {
+            "type": "number",
+            "default": 1,
+            "description": "Starting line number (1-based, like VS Code). Use 1 for first line, 2 for second line, etc."
+          },
+          "lineCount": {
+            "type": "number",
+            "default": 50,
+            "description": "Number of lines to retrieve"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": [
+          "objectName",
+          "connectionId"
+        ]
+      },
+      "tags": [
+        "abap-fs"
+      ]
+    },
+    {
+      "name": "get_batch_lines",
+      "description": "Read lines from multiple ABAP objects in one call. IMPORTANT: returns committed code only, not unsaved local edits — use VS Code file tools to see fresh edits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectName": {
+                  "type": "string",
+                  "description": "Name of the ABAP object"
+                },
+                "startLine": {
+                  "type": "number",
+                  "default": 0,
+                  "description": "Starting line number (0-based)"
+                },
+                "lineCount": {
+                  "type": "number",
+                  "default": 10,
+                  "description": "Number of lines to retrieve"
+                }
+              },
+              "required": [
+                "objectName"
+              ]
+            },
+            "description": "Array of requests, each specifying an object and line range"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": [
+          "requests",
+          "connectionId"
+        ]
+      },
+      "tags": [
+        "abap-fs"
+      ]
+    },
+    {
+      "name": "get_connected_systems",
+      "description": "List SAP connection IDs currently connected in VS Code. Call first if connectionId unknown. No params.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": [
+        "abap-fs"
+      ]
+    },
+    {
+      "name": "search_abap_objects",
+      "description": "Search ABAP objects by name pattern. Wildcards: * ?. Custom code: prefix Z* or Y* (Z*ARTICLE*, not *ARTICLE*). Standard SAP: BAPI_*, CL_*, /SAP/*. MANDATORY before code generation: training data outdated — ALWAYS verify objects exist first, read signatures with get_abap_object_lines, then generate. Unverified code WILL fail at runtime.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Search pattern for object names. Supports wildcards (* and ?). START WITH Z* FOR CUSTOM OBJECTS (Z*invoice*, not *invoice*) Examples: 'USER', '*CUSTOMER*', 'BAPI_*',Z*ART*"
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "FUNC",
+                "CLAS",
+                "TABL",
+                "PROG",
+                "INTF",
+                "DTEL",
+                "DDLS",
+                "DOMA",
+                "TTYP",
+                "ENQU",
+                "MSAG",
+                "FUGR",
+                "DEVC",
+                "TRAN",
+                "VIEW",
+                "SICF",
+                "WDYN",
+                "SPRX",
+                "XSLT",
+                "TRANSFORMATIONS",
+                "SUSH",
+                "SUSC",
+                "PINF",
+                "ENHC",
+                "ENHS",
+                "BADI",
+                "BADII",
+                "SAMC",
+                "SAPC",
+                "SFSW",
+                "SFBF",
+                "SFBS",
+                "JOBD",
+                "NROB",
+                "ENHO",
+                "SUSO",
+                "BDEF",
+                "SRVB"
+              ]
+            },
+            "description": "Object types to search for.Must provide type or list of types."
+          },
+          "maxResults": {
+            "type": "number",
+            "default": 20,
+            "description": "Maximum number of results to return"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": [
+          "pattern",
+          "types",
+          "connectionId"
+        ]
+      },
+      "tags": [
+        "abap-fs"
+      ]
+    }
+  ]
+}

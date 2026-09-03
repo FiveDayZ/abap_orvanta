@@ -1,0 +1,2260 @@
+{
+  "sourcePackage": "C:\\My\\Workplace\\Coding\\vscode-abap\\vscode_abap_remote_fs\\package.json",
+  "sourceVersion": "2.7.0",
+  "sourceCommit": "0466e8ceea4e201335d74a7420ac894384f4a0e2",
+  "extractedAt": "2026-08-26T09:15:33.437Z",
+  "toolCount": 54,
+  "tools": [
+    {
+      "name": "abap_activate",
+      "description": "Activate ABAP object at given URL (equivalent to compiling). Returns activated objects + any activation errors.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Url of the object to activate. Usually the current file's URL."
+          }
+        },
+        "required": ["url"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "state-changing",
+        "wave": "write"
+      }
+    },
+    {
+      "name": "abap_debug_breakpoint",
+      "description": "Set or remove ABAP breakpoints. filePath must be full adt:// workspace URI — get it via get_abap_object_workspace_uri first. Supports conditional breakpoints.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "filePath": {
+            "type": "string",
+            "description": "Full workspace URI for the ABAP source file. MUST use format: adt://connectionId/path/to/file.prog.abap. Get this URI using get_abap_object_workspace_uri tool."
+          },
+          "lineNumbers": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Line numbers for breakpoints"
+          },
+          "condition": {
+            "type": "string",
+            "description": "Conditional breakpoint expression (optional)"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["set", "remove"],
+            "default": "set",
+            "description": "Set or remove breakpoints"
+          }
+        },
+        "required": ["connectionId", "filePath", "lineNumbers"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "runtime-execution",
+        "wave": "execution-debug"
+      }
+    },
+    {
+      "name": "abap_debug_session",
+      "description": "Start/stop/check ABAP debug session. action: start | stop | status.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["start", "stop", "status"],
+            "default": "start",
+            "description": "Action to perform"
+          },
+          "debugUser": {
+            "type": "string",
+            "description": "User to debug for (optional)"
+          },
+          "terminalMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use terminal mode debugging"
+          }
+        },
+        "required": ["connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "runtime-execution",
+        "wave": "execution-debug"
+      }
+    },
+    {
+      "name": "abap_debug_stack",
+      "description": "Get current ABAP debug call stack (frame IDs, methods, files, lines). frameId values needed for abap_debug_variable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "threadId": {
+            "type": "number",
+            "default": 1,
+            "description": "Debug thread ID"
+          }
+        },
+        "required": ["connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "runtime-execution",
+        "wave": "execution-debug"
+      }
+    },
+    {
+      "name": "abap_debug_status",
+      "description": "Check ABAP debug session status — active sessions, threads, execution state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          }
+        },
+        "required": ["connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "runtime-execution",
+        "wave": "execution-debug"
+      }
+    },
+    {
+      "name": "abap_debug_step",
+      "description": "Step ABAP debug execution. stepType: continue (F5), stepOver (F6), stepInto (F7), stepReturn (F8), jumpToLine (needs targetLine).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "stepType": {
+            "type": "string",
+            "enum": ["continue", "stepInto", "stepOver", "stepReturn", "jumpToLine"],
+            "description": "Type of debug step to execute"
+          },
+          "threadId": {
+            "type": "number",
+            "default": 1,
+            "description": "Debug thread ID"
+          },
+          "targetLine": {
+            "type": "number",
+            "description": "Target line for jumpToLine operation"
+          }
+        },
+        "required": ["connectionId", "stepType"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "runtime-execution",
+        "wave": "execution-debug"
+      }
+    },
+    {
+      "name": "abap_debug_variable",
+      "description": "Inspect ABAP variables during debug. Call abap_debug_stack first to get frameId (large numbers like 1000000000000, not 0). filter narrows table contents. filterPattern matches variable names (e.g., 'LT_*'). expandStructures / expandTables for inline expansion. maxVariables caps scope listing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "threadId": {
+            "type": "number",
+            "default": 1,
+            "description": "Debug thread ID (usually 1 for single-threaded debugging)"
+          },
+          "frameId": {
+            "type": "number",
+            "description": "Stack frame ID from abap_debug_stack tool. REQUIRED - get this value by calling abap_debug_stack first. Frame IDs are large numbers like 1000000000000."
+          },
+          "variableName": {
+            "type": "string",
+            "description": "Specific variable name to inspect"
+          },
+          "expression": {
+            "type": "string",
+            "description": "ABAP expression to evaluate"
+          },
+          "rowStart": {
+            "type": "number",
+            "default": 0,
+            "description": "Start row for internal table data (0-based)"
+          },
+          "rowCount": {
+            "type": "number",
+            "default": 50,
+            "description": "Number of rows to return from table"
+          },
+          "filter": {
+            "type": "string",
+            "description": "Filter condition for internal table content"
+          },
+          "scopeName": {
+            "type": "string",
+            "description": "Specific scope to inspect (e.g., 'Local Variables', 'SY')"
+          },
+          "maxVariables": {
+            "type": "number",
+            "default": 100,
+            "description": "Maximum variables to show in scope listings"
+          },
+          "filterPattern": {
+            "type": "string",
+            "description": "Pattern to filter variable names (e.g., 'LT_*' for all tables, 'LS_*' for structures)"
+          },
+          "expandStructures": {
+            "type": "boolean",
+            "default": false,
+            "description": "Automatically expand structure components inline"
+          },
+          "expandTables": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show first few table rows inline"
+          }
+        },
+        "required": ["connectionId", "frameId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "runtime-execution",
+        "wave": "execution-debug"
+      }
+    },
+    {
+      "name": "abap_download",
+      "description": "Download an ABAP resource (package, program, class, function group, folder, or single file) to a local folder. Recursive for folders/packages. Preferred source: full adt:// workspace URI (from get_abap_object_workspace_uri). Also accepts ADT paths (/sap/bc/adt/...) or bare object names with connectionId (+ optional objectType for disambiguation). NOTE: downloading a program does NOT automatically download its includes — includes are separate objects; download them explicitly (or download the parent package to get everything).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "adt:// URI (preferred), ADT path (/sap/bc/adt/...), or bare object name"
+          },
+          "target": {
+            "type": "string",
+            "description": "Absolute local folder path (e.g. 'C:/wiki/raw/ZFOO')"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "Required when source is a bare name or an ADT path (e.g. 'ged100')"
+          },
+          "objectType": {
+            "type": "string",
+            "description": "Optional type for disambiguating bare names (e.g. 'CLAS/OC', 'PROG/P', 'DEVC/K')"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "description": "Overwrite existing files at target. Default false (fails if target exists)."
+          }
+        },
+        "required": ["source", "target"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "abap_execute_command",
+      "description": "Trigger an allow-listed ABAP FS VS Code command. Use this tool to: activate/deactivate ADT communication log, start/stop debug replay recording, open the connection manager, launch the ABAP FS walkthrough, or open ADT feeds manager. Fire-and-forget by default (returns 'triggered'); a small set of setup-style commands wait until finished. No return value from the command itself — dedicated LM tools handle commands that need meaningful args or output.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": [
+              "abapfs.activateCommLog",
+              "abapfs.deactivateCommLog",
+              "abapfs.startRecording",
+              "abapfs.stopRecording",
+              "abapfs.connectionManager",
+              "abapfs.showWalkThrough",
+              "abapfs.configureFeeds"
+            ],
+            "description": "The ABAP FS command id to trigger. Only ids in this enum are allowed."
+          }
+        },
+        "required": ["command"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "runtime-execution",
+        "wave": "execution-debug"
+      }
+    },
+    {
+      "name": "abap_fs_documentation",
+      "description": "Read/search ABAP FS extension docs (DOCUMENTATION.md) and settings reference (ABAP-FS-SETTINGS.md). Brand ambassador for this extension — 40+ tools, many users don't know exist. Proactively suggest relevant features from context; educate users on capabilities; help them find the right settings. Be enthusiastic but honest, no exaggeration. Always verify docs first before explaining a feature or setting — wrong info kills trust. Setting scope critical: application=user/global, resource=workspace — wrong scope fails silently. Can change Global/Workspace settings yourself but never without explicit user consent. Only reference official repo https://github.com/marcellourbani/vscode_abap_remote_fs — no invented links.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "get_documentation",
+              "search_documentation",
+              "get_settings",
+              "search_settings"
+            ],
+            "description": "get_documentation (read DOCUMENTATION.md), search_documentation (search DOCUMENTATION.md), get_settings (read ABAP-FS-SETTINGS.md), search_settings (search ABAP-FS-SETTINGS.md)."
+          },
+          "searchQuery": {
+            "type": "string",
+            "description": "Required for search_* actions. Case-insensitive search term to find in the documentation or settings files"
+          },
+          "startLine": {
+            "type": "number",
+            "default": 1,
+            "description": "For get_* actions: Starting line number (1-based). Use 1 for first line"
+          },
+          "lineCount": {
+            "type": "number",
+            "default": 50,
+            "description": "For get_* actions: Number of lines to retrieve. For search_* actions: context lines around each match"
+          }
+        },
+        "required": ["action"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "adt_discovery_export",
+      "description": "Export full ADT discovery tree (workspaces, collections, RES_APP classes from SEOMETAREL) to markdown files. Pair with adt-api-discovery skill to investigate ADT REST endpoints — handler classes, Simple Transformations, request/response schemas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "analyze_abap_dumps",
+      "description": "Analyze ABAP runtime dumps (ST22). Actions: list_dumps (ID, error type, timestamp), analyze_dump (needs dumpId — structured detail for root-cause analysis).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["list_dumps", "analyze_dump"],
+            "description": "Action to perform: list_dumps (show available dumps) or analyze_dump (analyze specific dump)"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "dumpId": {
+            "type": "string",
+            "description": "Dump ID for analyze_dump action (required for analyze_dump)"
+          },
+          "maxResults": {
+            "type": "number",
+            "description": "Maximum number of dumps to return for list_dumps (default: 20, max: 100)"
+          },
+          "includeFullContent": {
+            "type": "boolean",
+            "description": "Include full HTML dump content for AI analysis (for analyze_dump action)"
+          }
+        },
+        "required": ["action", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "analyze_abap_traces",
+      "description": "Analyze ABAP performance traces. Actions: list_runs, list_configurations, analyze_run, get_statements (auto-switches to hitlist for aggregated traces), get_hitlist. Identifies DB bottlenecks and ABAP hotspots. traceId must be full URL-encoded path.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list_runs",
+              "list_configurations",
+              "analyze_run",
+              "get_statements",
+              "get_hitlist"
+            ],
+            "description": "Action to perform: list_runs, list_configurations, analyze_run, get_statements (auto-switches to hitlist if trace is aggregated), or get_hitlist"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "traceId": {
+            "type": "string",
+            "description": "Full trace ID path (required for analyze_run, get_statements, get_hitlist). MUST be complete path with URL encoding preserved (e.g., '/sap/bc/adt/runtime/traces/abaptraces/sapkada01_KAD_52%2cAT520019'). DO NOT use partial paths, unencoded commas, or just the trace name."
+          },
+          "maxResults": {
+            "type": "number",
+            "description": "Maximum number of results for listing actions (default: 20)"
+          },
+          "includeDetails": {
+            "type": "boolean",
+            "description": "Include detailed performance data where applicable"
+          }
+        },
+        "required": ["action", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "analyze_anst_enhancements",
+      "description": "Read an xlsx exported from the ANST Customer Code screen, classify every object as USER_EXIT, DEFINITE, POTENTIAL, or STANDARD, and write <xlsx_basename>_analysis.md beside the workbook. The output path is fixed and no external Python installation is required.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "xlsxPath": {
+            "type": "string",
+            "description": "Absolute path to the .xlsx file exported from ANST"
+          }
+        },
+        "required": ["xlsxPath"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "build_evidence_report",
+      "description": "Build the aggregated .docx evidence report for a program+system from every test-results manifest.json found - title page, fully bordered pass/fail summary table, and one section per test case with embedded screenshots. Run this after a batch of test runs completes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "Program folder name under tests/"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100'). Must match the connectionId used during playwright_test runs."
+          }
+        },
+        "required": ["program", "connectionId"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "build_test_index",
+      "description": "Validate every TC-NNN.md and mechanically rebuild tests/<PROGRAM>/test-cases/_index.md and _index.docx, including title, description, category, runnability, and dataRequired. Requires the analysis sourceSnapshot path, records it, and sets analyzedOn automatically. Rejects malformed files, invalid categories, missing required fields, and dataRequired: no cases that nonetheless have a .data.md. A missing .data.md for a dataRequired: yes case is only a warning (those are authored later). This tool is GATED: it refuses to run unless you pass the mandatory reviewerConfirmation field certifying the sap-test-plan-reviewer agent already returned PASS.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "Program folder name under tests/"
+          },
+          "sourceSnapshot": {
+            "type": "string",
+            "description": "Analysis snapshot folder under tests/<PROGRAM>/sources/, absolute or relative to the configured test folder"
+          },
+          "reviewerConfirmation": {
+            "type": "string",
+            "description": "MANDATORY. Certifies that the sap-test-plan-reviewer agent reviewed this plan and returned PASS. Pass this EXACT text: 'I called the reviewer agent and it passed all test cases'. Only valid after a genuine PASS; the index build is rejected otherwise."
+          }
+        },
+        "required": ["program", "sourceSnapshot", "reviewerConfirmation"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "build_test_index_docx",
+      "description": "Convert the current tests/<PROGRAM>/test-cases/_index.md into a printable _index.docx beside it. Preserves headings, notes, lists, and Markdown tables; every table receives explicit single-line outer and inner borders. Use after editing the preserved Notes section or whenever only the DOCX needs refreshing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "Program folder name under tests/"
+          }
+        },
+        "required": ["program"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "check_test_data",
+      "description": "Pre-flight check: for every TC-*.data.md under a program, resolve its test data against a system using the exact same resolution logic the Playwright specs use at run time. Reports every case with missing cache keys, unresolved seeded requirements, or broken generated fixtures - before spending time on a real test run. Run this before declaring a system 'ready to test'.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "Program folder name under tests/"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100'). Also used as the results-folder name."
+          }
+        },
+        "required": ["program", "connectionId"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "create_mermaid_diagram",
+      "description": "Render Mermaid diagram in interactive webview with zoom controls.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The Mermaid diagram code to render"
+          },
+          "diagramType": {
+            "type": "string",
+            "enum": [
+              "flowchart",
+              "sequence",
+              "class",
+              "state",
+              "er",
+              "journey",
+              "gantt",
+              "pie",
+              "gitgraph",
+              "mindmap",
+              "timeline",
+              "sankey",
+              "xychart",
+              "block",
+              "packet",
+              "auto"
+            ],
+            "description": "The type of diagram to create (auto-detect if not specified)"
+          },
+          "theme": {
+            "type": "string",
+            "enum": ["default", "dark", "forest", "neutral"],
+            "description": "Visual theme for the diagram"
+          }
+        },
+        "required": ["code"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "create_object_programmatically",
+      "description": "Create new ABAP objects (classes, reports, function groups, function modules, interfaces, data elements, tables, CDS views, packages, service bindings, etc.). Function modules: objectType='FUGR/FF' and ALWAYS provide parentName with the parent function group name. Service bindings: MANDATORY serviceDefinition, bindingType, bindingCategory. Packages: MANDATORY softwareComponent, packageType, transportLayer.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectType": {
+            "type": "string",
+            "description": "Object type, format TYPE/SUBTYPE. PROG/P (report), CLAS/OC (class), FUGR/F (function group), FUGR/FF (function module — requires parentName=parent function group), INTF/OI (interface), DTEL/DE (data element), TABL/DT (table), DDLS/DF (CDS view), DOMA/DD (domain), MSAG/N (message class), DEVC/K (package), SRVD/SRV (service definition), SRVB/SVB (service binding), BDEF/BDO (behavior definition), and others. All SAP creatable types supported."
+          },
+          "name": {
+            "type": "string",
+            "description": "Object name (e.g., 'ZTEST_REPORT'). For database tables (TABL/DT), name must be 14 characters or less for logical database compatibility. For other objects, ensure you don't exceed allowed object length limits"
+          },
+          "description": {
+            "type": "string",
+            "description": "Object description (max 60 characters – shorten or truncate if longer; SAP short text limit)"
+          },
+          "packageName": {
+            "type": "string",
+            "default": "$TMP",
+            "description": "Package name (default: '$TMP')"
+          },
+          "parentName": {
+            "type": "string",
+            "description": "Parent object name. Required for function modules ('FUGR/FF'): pass the parent function group name, not the function module name. Optional for other object types such as includes/methods."
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          },
+          "additionalOptions": {
+            "type": "object",
+            "description": "Type-specific options. MANDATORY for service bindings (SRVB/SVB): serviceDefinition, bindingType, bindingCategory. MANDATORY for packages (DEVC/K): softwareComponent, packageType, transportLayer.",
+            "properties": {
+              "serviceDefinition": {
+                "type": "string",
+                "description": "MANDATORY for service bindings (SRVB/SVB): The name of an existing service definition (SRVD/SRV) to bind to (e.g., 'ZSD_MY_SERVICE')"
+              },
+              "bindingType": {
+                "type": "string",
+                "enum": ["ODATA"],
+                "description": "MANDATORY for service bindings (SRVB/SVB): Binding protocol type. Currently only 'ODATA' is supported"
+              },
+              "bindingCategory": {
+                "type": "string",
+                "enum": ["0", "1"],
+                "description": "MANDATORY for service bindings (SRVB/SVB): '0' = OData V2 Web API, '1' = OData V2 UI"
+              },
+              "softwareComponent": {
+                "type": "string",
+                "description": "Software component for packages"
+              },
+              "packageType": {
+                "type": "string",
+                "description": "Package type"
+              },
+              "transportLayer": {
+                "type": "string",
+                "description": "Transport layer"
+              },
+              "transportRequest": {
+                "type": "object",
+                "description": "Transport request configuration",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["new", "existing"],
+                    "description": "Type of transport request: 'new' to create a new one, 'existing' to use an existing one"
+                  },
+                  "number": {
+                    "type": "string",
+                    "description": "Transport request number (required for type 'existing')"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Description for new transport request (required for type 'new')"
+                  }
+                },
+                "required": ["type"],
+                "oneOf": [
+                  {
+                    "properties": {
+                      "type": {
+                        "const": "existing"
+                      },
+                      "number": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["type", "number"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "const": "new"
+                      },
+                      "description": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["type", "description"]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "required": ["objectType", "name", "description", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "state-changing",
+        "wave": "write"
+      }
+    },
+    {
+      "name": "create_test_documentation",
+      "description": "Build Word doc from Playwright test screenshots grouped by scenario.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenarios": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scenarioId": {
+                  "type": "number",
+                  "description": "Unique scenario identifier (1, 2, 3...)"
+                },
+                "scenarioName": {
+                  "type": "string",
+                  "description": "Name of the test scenario (e.g., 'Happy Path Login', 'Error Handling')"
+                },
+                "scenarioDescription": {
+                  "type": "string",
+                  "description": "Detailed description of what this scenario tests"
+                },
+                "screenshots": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "filePath": {
+                        "type": "string",
+                        "description": "Full file path to the screenshot (e.g., 'C:\\Users\\...\\screenshot.png')"
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "Description of what the screenshot shows"
+                      }
+                    },
+                    "required": ["filePath", "description"]
+                  },
+                  "description": "Array of screenshots for this scenario"
+                }
+              },
+              "required": ["scenarioId", "scenarioName", "scenarioDescription", "screenshots"]
+            },
+            "description": "Array of test scenarios with their screenshots"
+          },
+          "reportTitle": {
+            "type": "string",
+            "description": "Title for the test documentation report (optional, defaults to 'Test Documentation Report')"
+          },
+          "testDate": {
+            "type": "string",
+            "description": "Date of testing in DD-MM-YYYY format (optional, defaults to current date)"
+          }
+        },
+        "required": ["scenarios"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "create_test_include",
+      "description": "Create test include (unit test class) for an existing ABAP class. Auto-opens in editor.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "className": {
+            "type": "string",
+            "description": "Name of the ABAP class to create test include for (e.g., 'ZCL_MY_CLASS')"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP system connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["className", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "state-changing",
+        "wave": "write"
+      }
+    },
+    {
+      "name": "detect_mermaid_diagram_type",
+      "description": "Auto-detect Mermaid diagram type from code.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The Mermaid diagram code to analyze"
+          }
+        },
+        "required": ["code"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "execute_data_query",
+      "description": "Run ABAP SQL or display structured data in interactive webview, OR export to xlsx/csv. ALWAYS call get_abap_sql_syntax FIRST — ABAP SQL differs from standard SQL, skipping causes syntax errors. Supports sort, filter, row range. For internal mode, rowRange is MANDATORY (max 1000 rows). For download_to_file mode, filePath and fileType are MANDATORY. Default displayMode=ui. Always set meaningful title. Non-SAP data (JIRA, tasks) via 'data' param instead of 'sql'.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sql": {
+            "type": "string",
+            "description": "The SQL query to execute (e.g., 'SELECT * FROM mara WHERE matnr LIKE 'MAT%''). OPTIONAL if webviewId or data provided. MANDATORY if no webviewId and no data (new SQL query)"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Column name (required)"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "SAP-like data type: 'C' (char), 'I' (int), 'D' (date), 'T' (time), 'F' (float), etc. (required)"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Human-readable column description (optional)"
+                    }
+                  },
+                  "required": ["name", "type"]
+                },
+                "minItems": 1,
+                "description": "Array of column definitions"
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "description": "Row data as key-value pairs matching column names"
+                },
+                "description": "Array of row data objects"
+              }
+            },
+            "required": ["columns", "values"],
+            "description": "Direct data input instead of SQL query (mutually exclusive with sql). Use this to display JIRA issues, task lists, or any structured data"
+          },
+          "displayMode": {
+            "type": "string",
+            "enum": ["internal", "ui", "download_to_file"],
+            "description": "How to handle results: 'internal' returns data to you for analysis (rowRange mandatory), 'ui' displays in interactive webview for user, 'download_to_file' writes results to a local xlsx/csv file (filePath + fileType mandatory)"
+          },
+          "webviewId": {
+            "type": "string",
+            "description": "Optional: ID of existing webview to manipulate. If provided, you can sort/filter existing data without re-querying SAP. If not provided, creates new webview with new SQL query"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "Webview title. Use meaningful descriptions: 'All Articles from MARA', 'Articles Created by John.Doe', 'JIRA Issues - High Priority'. Helps users understand the data. Updates existing webviews when provided."
+          },
+          "maxRows": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50000,
+            "description": "Safety cap on rows AFTER SQL execution (default 1000). NOT added to your SQL — applied post-query to prevent system overload. NOTE: ABAP SQL 'UP TO x ROWS' clauses don't work via ADT — use maxRows instead to limit fetch."
+          },
+          "rowRange": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Starting row index (0-based). Applied AFTER sorting and filtering"
+              },
+              "end": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Ending row index (exclusive). Applied AFTER sorting and filtering. Range size (end-start) cannot exceed 1000 rows for internal mode safety."
+              }
+            },
+            "required": ["start", "end"],
+            "description": "Row range to extract AFTER all processing. MANDATORY for internal mode — prevents accidental large data transfers. Range size max 1000 rows. Example: {start:0, end:10} = first 10 rows after sort/filter."
+          },
+          "sortColumns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column": {
+                  "type": "string",
+                  "description": "Column name to sort by (case-sensitive, use exact SAP field names)"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": ["asc", "desc"],
+                  "description": "Sort direction: 'asc' for ascending, 'desc' for descending"
+                }
+              },
+              "required": ["column", "direction"]
+            },
+            "description": "Multi-column sort in sequence (first = highest priority). Example: [{'column':'MATNR','direction':'asc'},{'column':'WERKS','direction':'desc'}] sorts by MATNR asc, then WERKS desc for ties."
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column": {
+                  "type": "string",
+                  "description": "Column name to filter"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Filter value (supports wildcards * and ?)"
+                }
+              },
+              "required": ["column", "value"]
+            },
+            "description": "Optional: Apply filters to results. Supports wildcards: 'MAT*' matches anything starting with MAT, '*ABC*' contains ABC"
+          },
+          "resetSorting": {
+            "type": "boolean",
+            "description": "Optional: Clear all existing sorting before applying new sorts. Use when you want to start fresh"
+          },
+          "resetFilters": {
+            "type": "boolean",
+            "description": "Optional: Clear all existing filters before applying new filters. Use when you want to start fresh"
+          },
+          "filePath": {
+            "type": "string",
+            "description": "MANDATORY for download_to_file: absolute local path WITHOUT extension (e.g. 'C:/tmp/mara'). The extension is appended from fileType."
+          },
+          "fileType": {
+            "type": "string",
+            "enum": ["xlsx", "csv"],
+            "description": "MANDATORY for download_to_file: output format. 'xlsx' = Excel workbook, 'csv' = comma-separated with UTF-8 BOM."
+          }
+        },
+        "required": ["displayMode", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "find_where_used",
+      "description": "Where-used analysis for ABAP objects, methods, variables, symbols. Large result sets (1000+): use startIndex for pagination, filter.objectNamePattern (e.g., 'Z*') or filter.excludeSystemObjects=true to find custom Z/Y code without dumping thousands. WARNING: includeSnippets slow above 50 results — set only when really needed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to find references for"
+          },
+          "objectType": {
+            "type": "string",
+            "description": "Optional: Object type to avoid ambiguity (e.g., 'CLAS/OC', 'PROG/P')"
+          },
+          "searchTerm": {
+            "type": "string",
+            "description": "Optional: Specific symbol/method/variable to search for within the object"
+          },
+          "line": {
+            "type": "number",
+            "description": "Optional: Specific line number for context-sensitive search (1-based)"
+          },
+          "character": {
+            "type": "number",
+            "description": "Optional: Character position for precise symbol search (0-based)"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          },
+          "maxResults": {
+            "type": "number",
+            "description": "Maximum number of references to return (default: 50)"
+          },
+          "includeSnippets": {
+            "type": "boolean",
+            "description": "Include code snippets showing usage context. WARNING: Requesting snippets for >50 results can be slow. Default: false. Set to true only when really needed,especially for large result sets."
+          },
+          "startIndex": {
+            "type": "number",
+            "description": "Result offset (0-based). Use for pagination to skip earlier results and access later ones — essential for navigating large result sets. Example: startIndex=5000 starts at position 5000."
+          },
+          "filter": {
+            "type": "object",
+            "description": "Filter criteria to narrow down results. Use to find specific objects without retrieving thousands of results. Especially useful for finding custom Z/Y objects in large result sets.",
+            "properties": {
+              "objectNamePattern": {
+                "type": "string",
+                "description": "Filter by object name pattern with wildcards. Examples: 'Z*' (starts with Z), '*CUSTOM*' (contains CUSTOM), 'ZMD_*' (starts with ZMD_). Use to find custom objects efficiently."
+              },
+              "objectTypes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Filter by specific object types. Examples: ['PROG/P'] (only programs), ['CLAS/OC', 'INTF/OI'] (classes and interfaces)"
+              },
+              "excludeSystemObjects": {
+                "type": "boolean",
+                "description": "Exclude SAP standard objects (objects not starting with Z or Y). Very useful for finding only custom code in large result sets. Default: false"
+              }
+            }
+          }
+        },
+        "required": ["objectName", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_abap_diagnostics",
+      "description": "Get syntax errors, warnings, and diagnostics for an ABAP source URI.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fileUri": {
+            "type": "string"
+          }
+        },
+        "required": ["fileUri"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "mcpOnly",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "get_abap_object_info",
+      "description": "Get ABAP object metadata: type, total lines, cache status. Use before retrieving content to understand what kind of object you're dealing with.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to get information about"
+          },
+          "objectType": {
+            "type": "string",
+            "enum": [
+              "FUNC",
+              "CLAS",
+              "TABL",
+              "PROG",
+              "INTF",
+              "DTEL",
+              "DDLS",
+              "DOMA",
+              "TTYP",
+              "ENQU",
+              "MSAG",
+              "FUGR",
+              "DEVC",
+              "TRAN",
+              "VIEW",
+              "SICF",
+              "WDYN",
+              "SPRX",
+              "XSLT",
+              "TRANSFORMATIONS",
+              "SUSH",
+              "SUSC",
+              "PINF",
+              "ENHC",
+              "ENHS",
+              "BADI",
+              "BADII",
+              "SAMC",
+              "SAPC",
+              "SFSW",
+              "SFBF",
+              "SFBS",
+              "JOBD",
+              "NROB",
+              "ENHO",
+              "SUSO",
+              "BDEF",
+              "SRVB"
+            ],
+            "description": "Narrow search by type to resolve ambiguity (e.g., MATNR exists as both DTEL and DOMA). FUNC=Function Module, CLAS=Class, TABL=Table, PROG=Report, INTF=Interface, DTEL=Data Element, DDLS=CDS View, DOMA=Domain, TTYP=Table Type, ENQU=Lock Object, MSAG=Message Class, FUGR=Function Group, DEVC=Package, TRAN=Transaction, VIEW=View, SICF=ICF Service, WDYN=Web Dynpro, SPRX=Proxy, XSLT=XSLT, TRANSFORMATIONS=Simple Transformation, SUSH=Auth Object, SUSC=Auth Object Class, PINF=Package Interface, ENHC=Enhancement Impl, ENHS=Enhancement Spot, BADI=BAdI Def, BADII=BAdI Impl, SAMC=AMC Class, SAPC=APC Class, SFSW=Switch Framework, SFBF=Business Function, SFBS=Business Function Set, JOBD=Job Definition, NROB=Number Range, ENHO=Enhancement Impl, SUSO=Auth Object Set, BDEF=Behavior Def, SRVB=Service Binding"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["objectName", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "description": "Read active ABAP source. objectType disambiguates same-named objects (MATNR exists as DTEL and DOMA). methodName extracts one method body from a class. MANDATORY before code generation: training data has wrong params — ALWAYS read exact signatures before calling functions/methods, never guess. Unverified params WILL fail at runtime. IMPORTANT: shows committed code only, not unsaved local edits — use VS Code file tools for fresh edits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to retrieve lines from"
+          },
+          "objectType": {
+            "type": "string",
+            "enum": [
+              "FUNC",
+              "CLAS",
+              "TABL",
+              "PROG",
+              "INTF",
+              "DTEL",
+              "DDLS",
+              "DOMA",
+              "TTYP",
+              "ENQU",
+              "MSAG",
+              "FUGR",
+              "DEVC",
+              "TRAN",
+              "VIEW",
+              "SICF",
+              "WDYN",
+              "SPRX",
+              "XSLT",
+              "TRANSFORMATIONS",
+              "SUSH",
+              "SUSC",
+              "PINF",
+              "ENHC",
+              "ENHS",
+              "BADI",
+              "BADII",
+              "SAMC",
+              "SAPC",
+              "SFSW",
+              "SFBF",
+              "SFBS",
+              "JOBD",
+              "NROB",
+              "ENHO",
+              "SUSO",
+              "BDEF",
+              "SRVB"
+            ],
+            "description": "Optional: Specific object type to avoid ambiguity."
+          },
+          "methodName": {
+            "type": "string",
+            "description": "CLASSES ONLY: extract one method body, METHOD xxx. → ENDMETHOD. Examples: 'FACTORY', 'CONSTRUCTOR', 'IF_INTERFACE~METHOD_NAME'. Overrides startLine/lineCount."
+          },
+          "startLine": {
+            "type": "number",
+            "default": 1,
+            "description": "Starting line number (1-based, like VS Code). Use 1 for first line, 2 for second line, etc."
+          },
+          "lineCount": {
+            "type": "number",
+            "default": 50,
+            "description": "Number of lines to retrieve"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["objectName", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_abap_object_url",
+      "description": "Return SAP GUI WebGUI URL for an ABAP object (SE38 reports, SE24 classes, SE37 function modules). Use for browser automation — not for opening in editor.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object (e.g., 'ZXX_ARTICLE_REPORT')"
+          },
+          "objectType": {
+            "type": "string",
+            "default": "PROG/P",
+            "description": "Object type: 'PROG/P' (report), 'CLAS/OC' (class), 'FUGR/FF' (function)"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID"
+          }
+        },
+        "required": ["objectName", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_abap_object_workspace_uri",
+      "description": "Get adt:// workspace URI for an ABAP object — usable with standard VS Code file ops (replace_string_in_file etc.) and/or replace_string_in_abap_object if available. Use when modifying/editing objects in editor OR when user asks to open file in editor. All params MANDATORY for exact object identification. Function modules are supported directly: pass the function module name with type 'FUGR/FF'.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Exact name of the ABAP object to open (e.g., 'ZXX_ARTICLE_REPORT', 'ZCL_MY_CLASS'). Must be exact match, no wildcards."
+          },
+          "objectType": {
+            "type": "string",
+            "description": "Exact object type — required to avoid opening wrong object. Examples: 'PROG/P' (report), 'CLAS/OC' (class), 'FUGR/F' (function group), 'FUGR/FF' (function module), 'INTF/OI' (interface). For function modules, pass the function module name directly. Use full subtype (ENHO/XHH correct vs ENHO may fail)."
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["objectName", "objectType", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_abap_sql_syntax",
+      "description": "MANDATORY before execute_data_query: ABAP SQL syntax guide — differences from standard SQL, reserved keywords, field naming, table format. MUST call first to prevent syntax errors. No params.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "get_atc_decorations",
+      "description": "Read current ATC highlights visible in editor (errors/warnings/info). Companion to run_atc_analysis.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fileUri": {
+            "type": "string",
+            "description": "Optional specific file URI to get decorations for. If not provided, returns decorations for all files with ATC highlights"
+          }
+        }
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "editor-only",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "get_batch_lines",
+      "description": "Read lines from multiple ABAP objects in one call. IMPORTANT: returns committed code only, not unsaved local edits — use VS Code file tools to see fresh edits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectName": {
+                  "type": "string",
+                  "description": "Name of the ABAP object"
+                },
+                "startLine": {
+                  "type": "number",
+                  "default": 0,
+                  "description": "Starting line number (0-based)"
+                },
+                "lineCount": {
+                  "type": "number",
+                  "default": 10,
+                  "description": "Number of lines to retrieve"
+                }
+              },
+              "required": ["objectName"]
+            },
+            "description": "Array of requests, each specifying an object and line range"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["requests", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_connected_systems",
+      "description": "List SAP connection IDs currently connected in VS Code. Call first if connectionId unknown. No params.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_mermaid_documentation",
+      "description": "Get Mermaid syntax docs and examples per diagram type.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "diagramType": {
+            "type": "string",
+            "enum": [
+              "all",
+              "flowchart",
+              "sequence",
+              "class",
+              "state",
+              "er",
+              "journey",
+              "gantt",
+              "pie",
+              "gitgraph",
+              "mindmap",
+              "timeline",
+              "sankey",
+              "xychart",
+              "block",
+              "packet"
+            ],
+            "description": "Specific diagram type to get documentation for (all for complete documentation)",
+            "default": "all"
+          },
+          "includeExamples": {
+            "type": "boolean",
+            "description": "Include syntax examples in the documentation",
+            "default": true
+          }
+        }
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "get_object_by_uri",
+      "description": "Read ABAP object by direct ADT URI. Use when URI already known from search results — skips name resolution.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "The ADT URI path of the ABAP object (e.g., '/sap/bc/adt/programs/programs/ztest')"
+          },
+          "startLine": {
+            "type": "number",
+            "default": 0,
+            "description": "Starting line number (0-based)"
+          },
+          "lineCount": {
+            "type": "number",
+            "default": 50,
+            "description": "Number of lines to retrieve"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["uri", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_sap_system_info",
+      "description": "Get SAP system info: client (T000), system type (S/4HANA vs ECC), release (SVERS), timezone (TTZCU/TTZZ with UTC offset + DST). includeComponents=true adds CVERS software list. System type and timezone always returned.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100'). Required parameter to identify which SAP system to query."
+          },
+          "includeComponents": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to include the full list of software components (from CVERS). Default is false to reduce response size. System type (S/4HANA vs ECC) and timezone are always included regardless of this setting."
+          }
+        },
+        "required": ["connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "get_sap_webgui_url",
+      "description": "Given a connectionId, reads the abapfs.remote settings and returns the SAP WebGUI URL for that system. Call this whenever you need to open a SAP WebGUI URL for browser exploration or to pass to playwright_test.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["connectionId"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "get_test_folder",
+      "description": "Get the configured SAP testing folder path. Call this first before reading or writing any test artifact. If the folder is not open in the VS Code workspace, the result will include a warning — tell the user to open it (File > Add Folder to Workspace) before proceeding.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "get_version_history",
+      "description": "ABAP object version history. Actions: list_versions (dates, authors, transports), get_version_source (code at version N), compare_versions (diff between two). Version 1 = most recent.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to get version history for"
+          },
+          "objectType": {
+            "type": "string",
+            "description": "Optional: Object type for disambiguation (e.g., 'CLAS/OC', 'PROG/P')"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["list_versions", "get_version_source", "compare_versions"],
+            "default": "list_versions",
+            "description": "Action to perform: list_versions (show history), get_version_source (get code at version), compare_versions (diff two versions)"
+          },
+          "versionNumber": {
+            "type": "number",
+            "description": "For get_version_source: which version to retrieve (1 = most recent, 2 = second most recent, etc.)"
+          },
+          "version1": {
+            "type": "number",
+            "description": "For compare_versions: first version number (1 = most recent)"
+          },
+          "version2": {
+            "type": "number",
+            "description": "For compare_versions: second version number to compare against"
+          },
+          "maxVersions": {
+            "type": "number",
+            "default": 20,
+            "description": "Maximum versions to show in list_versions (default 20)"
+          }
+        },
+        "required": ["objectName", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "manage_heartbeat",
+      "description": "Background SAP monitor + reminder service. Call action=status first — verifies service running and HB model configured. Actions: status, start, stop, trigger, history, add_task, remove_task, update_task, enable_task, disable_task, list_tasks, get_watchlist. TIMEZONE RULE: for ANY monitoring task, get SAP timezone via get_sap_system_info first — HB model uses it when interpreting dates/times from SAP. Scheduled reminders ('tomorrow at 10am'): set startAt as ISO timestamp converted to UTC per SAP timezone. reminderOnly=true notifies once then auto-removes. Dump monitoring: checkInstructions must reference analyze_abap_dumps tool, not raw SQL. sampleQuery = direct SQL for HB model (e.g., E070 transport monitoring). cooldownMinutes prevents re-notify spam. removeWhenDone auto-cleans on condition met.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "status",
+              "start",
+              "stop",
+              "trigger",
+              "history",
+              "add_task",
+              "remove_task",
+              "update_task",
+              "enable_task",
+              "disable_task",
+              "list_tasks",
+              "get_watchlist"
+            ],
+            "description": "Action to perform"
+          },
+          "reason": {
+            "type": "string",
+            "description": "For 'trigger': reason for manual heartbeat. For 'add_task': why this task was added (context for HB model)"
+          },
+          "count": {
+            "type": "number",
+            "description": "For 'history': number of entries to show"
+          },
+          "description": {
+            "type": "string",
+            "description": "For 'add_task': task description (what to monitor)"
+          },
+          "condition": {
+            "type": "string",
+            "description": "For 'add_task': specific condition to check (optional)"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "For 'add_task': SAP connection ID for this task"
+          },
+          "removeWhenDone": {
+            "type": "boolean",
+            "description": "For 'add_task': auto-remove task when condition is met"
+          },
+          "sampleQuery": {
+            "type": "string",
+            "description": "For 'add_task': Pre-built SQL query for HB model to execute directly (e.g., SELECT FROM E070 WHERE...)"
+          },
+          "checkInstructions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "For 'add_task': Step-by-step instructions for HB model to follow"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": "For 'add_task': Task priority (high=immediate alert, low=can batch)"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["transport", "dump", "job", "idoc", "performance", "reminder", "custom"],
+            "description": "For 'add_task': Task category for grouping"
+          },
+          "alertThreshold": {
+            "type": "number",
+            "description": "For 'add_task': Only alert if count exceeds this threshold"
+          },
+          "cooldownMinutes": {
+            "type": "number",
+            "description": "For 'add_task': Don't re-notify within this many minutes"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "For 'add_task': Auto-remove task after this ISO timestamp"
+          },
+          "maxChecks": {
+            "type": "number",
+            "description": "For 'add_task': Auto-remove after this many checks"
+          },
+          "startAt": {
+            "type": "string",
+            "description": "For 'add_task': Don't check until this ISO timestamp (for scheduled reminders like 'remind me tomorrow at 10am')"
+          },
+          "reminderOnly": {
+            "type": "boolean",
+            "description": "For 'add_task': Simple reminder - just notify once and auto-remove"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "For 'remove_task', 'update_task', 'enable_task', 'disable_task': task ID or description"
+          },
+          "result": {
+            "type": "string",
+            "description": "For 'update_task': result of the check to record in lastResult"
+          },
+          "lastNotifiedAt": {
+            "type": "string",
+            "description": "For 'update_task': ISO timestamp when user was last notified"
+          },
+          "lastNotifiedFindings": {
+            "type": "string",
+            "description": "For 'update_task': Summary of what was included in last notification (IDs, counts)"
+          },
+          "modifiedBy": {
+            "type": "string",
+            "enum": ["user", "heartbeat", "agent"],
+            "description": "For 'add_task', 'update_task': who is making the change"
+          }
+        },
+        "required": ["action"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "manage_subagents",
+      "description": "Configure cost-optimized ABAP subagents. Safe actions: get_status, list_models, list_agents, list_tools, validate. Need user approval: enable, disable, configure, regenerate. Model tier rules — Tier 1 (discoverer, reader, creator, visualizer, documenter): cheapest only (Haiku, Flash, GPT-4o). Tier 2 (usage-analyzer, quality-checker, historian, debugger, troubleshooter, data-analyst): mid (GPT-4o, Sonnet 4, Gemini 2.5 Pro). Tier 3 (orchestrator, code-reviewer): premium allowed with explicit consent. STOP and ask user before Opus / Max / GPT-5.x on any tier — explain cost. Guide new users: explain tier system and cost implications before configuring; use list_agents / list_models / list_tools to show options.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "enable",
+              "disable",
+              "get_status",
+              "list_models",
+              "list_agents",
+              "list_tools",
+              "configure",
+              "validate",
+              "regenerate"
+            ],
+            "description": "Action to perform: enable/disable subagents, get_status, list_models, list_agents, list_tools, configure models, validate configuration, regenerate files"
+          },
+          "configurations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "agentId": {
+                  "type": "string",
+                  "description": "Agent ID (e.g., 'abap-discoverer', 'abap-reader')"
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Model ID to use for this agent"
+                }
+              },
+              "required": ["agentId", "model"]
+            },
+            "description": "For 'configure' action: array of {agentId, model} pairs to set"
+          }
+        },
+        "required": ["action"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "manage_text_elements",
+      "description": "Read, create, or update text elements (translatable strings) in programs, classes, function groups.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to manage text elements for (e.g., 'ZPROGRAM', 'ZCL_CLASS', 'ZFG_GROUP')"
+          },
+          "objectType": {
+            "type": "string",
+            "enum": ["PROGRAM", "CLASS", "FUNCTION_GROUP"],
+            "description": "Type of ABAP object: 'PROGRAM' for reports/programs, 'CLASS' for classes, 'FUNCTION_GROUP' for function groups"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["read", "create", "update"],
+            "description": "Action to perform: 'read' to get existing text elements, 'create' to add new ones, 'update' to modify existing ones"
+          },
+          "textElements": {
+            "type": "array",
+            "description": "Array of text elements (required for create/update actions)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Text element ID (e.g., '001', '002', 'BTN')",
+                  "pattern": "^[A-Z0-9_]{1,8}$"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Text content for the element",
+                  "maxLength": 255
+                },
+                "maxLength": {
+                  "type": "number",
+                  "description": "Optional maximum length constraint for the text",
+                  "minimum": 1,
+                  "maximum": 255
+                }
+              },
+              "required": ["id", "text"]
+            },
+            "minItems": 1
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (uses active if omitted)"
+          }
+        },
+        "required": ["objectName", "objectType", "connectionId", "action"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "state-changing",
+        "wave": "write"
+      }
+    },
+    {
+      "name": "manage_transport_requests",
+      "description": "Manage SAP transport requests. Actions: get_user_transports, get_transport_details, get_transport_objects, compare_transports. IMPORTANT workaround for older SAP systems: on compatibility error, MUST query E070/E071/E071K directly via execute_data_query.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "get_user_transports",
+              "get_transport_details",
+              "get_transport_objects",
+              "compare_transports"
+            ],
+            "description": "get_user_transports, get_transport_details, get_transport_objects, compare_transports."
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP system connection ID (e.g., 'dev100')"
+          },
+          "transportNumber": {
+            "type": "string",
+            "description": "Transport number for get_transport_details and get_transport_objects actions"
+          },
+          "transportNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of transport numbers for compare_transports action (minimum 2 required)"
+          },
+          "user": {
+            "type": "string",
+            "description": "Username for get_user_transports action (optional, defaults to current user)"
+          }
+        },
+        "required": ["action", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "state-changing",
+        "wave": "write"
+      }
+    },
+    {
+      "name": "open_object",
+      "description": "Open ABAP object in VS Code editor by name. Use when user wants to view or edit the object.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to open (e.g., 'ZCL_MY_CLASS', 'BAPI_USER_GET_DETAIL')"
+          },
+          "objectType": {
+            "type": "string",
+            "description": "Optional object type for precision (e.g., 'CLAS/OC', 'PROG/P', 'FUNC/FF')"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP system connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["objectName", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "editor-only",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "playwright_test",
+      "description": "Run one or more Playwright specs from the configured test folder against a given SAP system. Runs the real @playwright/test runner as a subprocess bundled with the extension - no local Node or Playwright install needed. Returns pass/fail per test case plus paths to evidence (screenshots, manifest.json) and any error output. The connectionId is used both to derive the SAP WebGUI URL and as the results-folder name. Use this instead of asking the user to run a terminal command. This tool is GATED: it refuses to run unless you pass the mandatory prerequisiteConfirmation field certifying you completed the run-scripts readiness gate.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "Program folder name under tests/, e.g. Z_MY_REPORT"
+          },
+          "tcId": {
+            "type": "string",
+            "description": "Test case ID to run, e.g. TC-001. Omit to run every spec under the program's test-scripts/ folder."
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100'). Used to derive the SAP WebGUI URL and as the results-folder name."
+          },
+          "headed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Run with a visible browser window (recommended the first time a new spec runs)."
+          },
+          "prerequisiteConfirmation": {
+            "type": "string",
+            "description": "MANDATORY. Certifies you completed the run-scripts readiness gate (case/spec/_screens.md/_index.md artifacts exist AND check_test_data reports the selected cases resolvable on this connection). Pass this EXACT text: 'I verified all upstream phase gates and test data readiness for this program'. Only valid once that gate is genuinely complete; the run is rejected otherwise."
+          }
+        },
+        "required": ["program", "connectionId", "prerequisiteConfirmation"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "replace_string_in_abap_object",
+      "description": "Edit ABAP source by exact unique string replacement, then save, activate, unlock, and synchronize to SAP.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fileUri": {
+            "type": "string"
+          },
+          "oldString": {
+            "type": "string"
+          },
+          "newString": {
+            "type": "string"
+          },
+          "transportNumber": {
+            "type": "string"
+          }
+        },
+        "required": ["fileUri", "oldString", "newString"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "mcpOnly",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "state-changing",
+        "wave": "write"
+      }
+    },
+    {
+      "name": "run_atc_analysis",
+      "description": "Run ABAP Test Cockpit checks or fetch finding documentation. Actions: 'run_analysis' returns findings with check variant + docUri per finding (variant name explains context — e.g., S4HANA_READINESS = upgrade compat, not code quality). 'get_documentation' fetches full doc — often contains critical detail missing from finding title (e.g., table name RSEG). Always fetch docs before suggesting fixes. Each finding has unique docs even when titles repeat.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["run_analysis", "get_documentation"],
+            "description": "'run_analysis' (default): run ATC checks. 'get_documentation': fetch detailed check doc — use docUri from prior run_analysis result to identify the finding."
+          },
+          "objectName": {
+            "type": "string",
+            "description": "Specific ABAP object name to analyze (e.g., 'ZDUMMY1', 'ZCL_MY_CLASS')"
+          },
+          "objectType": {
+            "type": "string",
+            "description": "Object type (e.g., 'PROG/P' for reports, 'CLAS/OC' for classes). Used with objectName for precise targeting"
+          },
+          "objectUri": {
+            "type": "string",
+            "description": "Direct ADT URI path (e.g., 'adt://dev100/sap/bc/adt/programs/programs/zdummy1'). Takes precedence over objectName if provided"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (required with objectName)"
+          },
+          "useActiveFile": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use currently active ABAP file if no object provided. Set true ONLY if file open in editor and explicit object spec not required. Always prefer objectName or URI — active editor is last resort."
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["object", "package", "transport"],
+            "description": "Analysis scope (future enhancement) - currently only 'object' is supported"
+          },
+          "docUri": {
+            "type": "string",
+            "description": "For get_documentation action: the docUri of the finding (exact value from run_analysis results). Each finding includes a docUri field containing the documentation URL."
+          }
+        }
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "run_unit_tests",
+      "description": "Run ABAP unit tests for an object. Results shown in VS Code Testing panel with pass/fail.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to test (e.g., 'ZCL_MY_CLASS')"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP system connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["objectName", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "diagnostic-or-export",
+        "wave": "diagnostics"
+      }
+    },
+    {
+      "name": "search_abap_object_lines",
+      "description": "Search text inside ABAP source. Literal or regex (isRegexp=true). Prefer over VS Code grep — ABAP source lives on remote system, grep_search misses it. objectName wildcards scan multiple objects (max 10). Class structure trick: regex '^\\s*(CLASS-)?METHODS?\\s+\\w+' with contextLines=0 lists all method names. IMPORTANT: searches committed code only, not unsaved local edits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string",
+            "description": "Name of the ABAP object to search within. Supports wildcards (*) to search multiple objects - use maxObjects to control how many"
+          },
+          "searchTerm": {
+            "type": "string",
+            "description": "Text or regex pattern to find in source. Literal for simple search; regex for advanced matching (e.g., \\bICT\\b word boundary, METHOD.*restrict pattern, [A-Z]+ char class)."
+          },
+          "contextLines": {
+            "type": "number",
+            "default": 3,
+            "description": "Number of context lines to include before and after each match"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          },
+          "isRegexp": {
+            "type": "boolean",
+            "default": false,
+            "description": "Regex mode. True: searchTerm treated as regex — word boundaries (\\bword\\b), patterns (METHOD.*restrict), char classes ([A-Z]+). False: fast literal text match."
+          },
+          "maxObjects": {
+            "type": "number",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Max objects to scan when objectName has wildcards (Z*, BAPI_*). 1 = single object, max 10 = multi-object batch. Only applies with wildcards."
+          }
+        },
+        "required": ["objectName", "searchTerm", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "description": "Search ABAP objects by name pattern. Wildcards: * ?. Custom code: prefix Z* or Y* (Z*ARTICLE*, not *ARTICLE*). Standard SAP: BAPI_*, CL_*, /SAP/*. MANDATORY before code generation: training data outdated — ALWAYS verify objects exist first, read signatures with get_abap_object_lines, then generate. Unverified code WILL fail at runtime.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Search pattern for object names. Supports wildcards (* and ?). START WITH Z* FOR CUSTOM OBJECTS (Z*invoice*, not *invoice*) Examples: 'USER', '*CUSTOMER*', 'BAPI_*',Z*ART*"
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "FUNC",
+                "CLAS",
+                "TABL",
+                "PROG",
+                "INTF",
+                "DTEL",
+                "DDLS",
+                "DOMA",
+                "TTYP",
+                "ENQU",
+                "MSAG",
+                "FUGR",
+                "DEVC",
+                "TRAN",
+                "VIEW",
+                "SICF",
+                "WDYN",
+                "SPRX",
+                "XSLT",
+                "TRANSFORMATIONS",
+                "SUSH",
+                "SUSC",
+                "PINF",
+                "ENHC",
+                "ENHS",
+                "BADI",
+                "BADII",
+                "SAMC",
+                "SAPC",
+                "SFSW",
+                "SFBF",
+                "SFBS",
+                "JOBD",
+                "NROB",
+                "ENHO",
+                "SUSO",
+                "BDEF",
+                "SRVB"
+              ]
+            },
+            "description": "Object types to search for.Must provide type or list of types."
+          },
+          "maxResults": {
+            "type": "number",
+            "default": 20,
+            "description": "Maximum number of results to return"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "SAP connection ID (e.g., 'dev100')"
+          }
+        },
+        "required": ["pattern", "types", "connectionId"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "sap-core",
+        "effect": "read-only",
+        "wave": "read"
+      }
+    },
+    {
+      "name": "split_test_cases",
+      "description": "Split a validated _bulk-*.md aggregate under tests/<PROGRAM>/test-cases into one TC-NNN.md file per <sap-test-case> block. Validates exact IDs, required title/description/dataRequired frontmatter, categories, runnable values, headings, duplicates, and overwrite conflicts before writing. Deletes the aggregate only after complete success. Does not run build_test_index.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourcePath": {
+            "type": "string",
+            "description": "Absolute path to an _bulk-*.md aggregate directly inside a program's test-cases folder"
+          }
+        },
+        "required": ["sourcePath"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "validate_mermaid_syntax",
+      "description": "Validate Mermaid syntax without rendering.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The Mermaid diagram code to validate"
+          },
+          "suppressErrors": {
+            "type": "boolean",
+            "description": "Return false instead of throwing errors for invalid syntax",
+            "default": true
+          }
+        },
+        "required": ["code"]
+      },
+      "tags": ["abap-fs"],
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    },
+    {
+      "name": "verify_test_data_usage",
+      "description": "Cross-check a Playwright spec against its .data.md: every data.<key> referenced in the spec must have a matching entry in the .data.md's requires list, and vice versa. Run this right after writing or editing a spec, before telling the user it's ready.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "Program folder name under tests/"
+          },
+          "tcId": {
+            "type": "string",
+            "description": "Test case ID, e.g. TC-001"
+          }
+        },
+        "required": ["program", "tcId"]
+      },
+      "origin": "languageModelTool",
+      "classification": {
+        "scope": "local-tooling",
+        "effect": "local",
+        "wave": "excluded"
+      }
+    }
+  ]
+}

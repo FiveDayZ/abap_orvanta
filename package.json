@@ -1,0 +1,58 @@
+{
+  "name": "abap-mcp-standalone",
+  "version": "0.27.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone headless ABAP MCP service for SAP ADT",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "node scripts/verify-headless.mjs --source-only",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "test:bootstrap": "pwsh -NoLogo -NoProfile -File test/bootstrap-sap-helper-response.test.ps1",
+    "test:installer": "pwsh -NoLogo -NoProfile -File test/install-sap-helper.test.ps1",
+    "test:setup": "pwsh -NoLogo -NoProfile -File test/setup.test.ps1",
+    "test:runtime": "pwsh -NoLogo -NoProfile -File test/runtime-smoke.ps1",
+    "package:windows": "pwsh -NoLogo -NoProfile -File scripts/package-windows.ps1",
+    "test:package": "pwsh -NoLogo -NoProfile -File test/package-smoke.ps1",
+    "test:codex-config": "pwsh -NoLogo -NoProfile -File test/codex-registration-smoke.ps1",
+    "test:codex-client": "pwsh -NoLogo -NoProfile -File test/codex-client-smoke.ps1",
+    "test:w200-read-wave": "node scripts/probe-read-wave.mjs",
+    "test:w200-transport-wave": "node scripts/probe-transport-wave.mjs",
+    "test:w200-export-wave": "node scripts/probe-export-wave.mjs",
+    "test:w200-edit-target-wave": "node scripts/probe-edit-target-wave.mjs",
+    "test:w200-dynpro-wave": "node scripts/probe-dynpro-wave.mjs",
+    "test:w200-gui-wave": "node scripts/probe-gui-wave.mjs",
+    "test:w200-classic-screen-wave": "pwsh -NoLogo -NoProfile -File scripts/run-classic-screen-validation.ps1",
+    "test:w200-ddic-wave": "node scripts/probe-ddic-wave.mjs",
+    "test:w200-report-wave": "node scripts/probe-report-wave.mjs",
+    "test:w200-function-interface-wave": "node scripts/probe-function-interface-wave.mjs",
+    "test:w200-rfc-validation": "pwsh -NoLogo -NoProfile -File scripts/run-rfc-validation.ps1",
+    "test:w200-structured-rfc-validation": "pwsh -NoLogo -NoProfile -File scripts/run-structured-rfc-validation.ps1",
+    "test:w200-controlled-rfc-validation": "pwsh -NoLogo -NoProfile -File scripts/run-controlled-rfc-validation.ps1",
+    "test:w200-rfc-receipt-validation": "npm run build && pwsh -NoLogo -NoProfile -File scripts/run-rfc-receipt-validation.ps1",
+    "test:w200-debug-wave": "pwsh -NoLogo -NoProfile -File scripts/run-debug-validation.ps1",
+    "test:w200-soap-rfc": "pwsh -NoLogo -NoProfile -File scripts/probe-soap-rfc.ps1 -BaseUrl http://192.168.88.26:8000 -Username wys -Client 200 -Language EN",
+    "verify:release": "npm run package:windows && npm run test:package",
+    "verify:headless": "node scripts/verify-headless.mjs",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:bootstrap && npm run test:installer && npm run test:setup && npm run verify:headless",
+    "extract:baseline": "node scripts/extract-baseline.mjs",
+    "start": "node dist/src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "abap-adt-api": "8.4.3",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.2",
+    "prettier": "3.6.2",
+    "typescript": "5.8.3"
+  }
+}
