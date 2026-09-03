@@ -4,6 +4,7 @@ import type { SapBackend } from "./backend.js"
 import { toolContracts } from "./contracts.js"
 import type { InvocationReceiptStore } from "./invocation-receipts.js"
 import { ToolService } from "./tools.js"
+import { observeWritePreChange } from "./write-prechange-evidence.js"
 import { hashWriteInput, type WriteOperationReceiptStore } from "./write-operation-receipts.js"
 
 export function createMcpServer(
@@ -13,7 +14,7 @@ export function createMcpServer(
 ): McpServer {
   const server = new McpServer({
     name: "abap-mcp-standalone",
-    version: "0.27.1"
+    version: "0.28.0"
   })
   const tools = new ToolService(backend, undefined, invocationReceipts)
 
@@ -147,6 +148,41 @@ export function createMcpServer(
           {
             operationId: input.operationId,
             ...(await writeReceipts.status(input.connectionId.toLowerCase(), input.operationId))
+          },
+          null,
+          2
+        )
+      )
+  )
+  server.registerTool(
+    "list_write_recovery_operations",
+    toolContracts.list_write_recovery_operations,
+    async (input) =>
+      invoke("list_write_recovery_operations", async () =>
+        JSON.stringify(
+          await writeReceipts.listRecoveryOperations(
+            input.connectionId.toLowerCase(),
+            input.maxResults ?? 50
+          ),
+          null,
+          2
+        )
+      )
+  )
+  server.registerTool(
+    "release_write_operation_lock",
+    toolContracts.release_write_operation_lock,
+    async (input) =>
+      invoke("release_write_operation_lock", async () =>
+        JSON.stringify(
+          {
+            operationId: input.operationId,
+            ...(await writeReceipts.releaseLocalLock(
+              input.connectionId.toLowerCase(),
+              input.operationId,
+              input.expectedReceiptHash,
+              input.reason
+            ))
           },
           null,
           2
@@ -428,6 +464,42 @@ async function invokeWrite<T extends object>(
   }
 
   const started = Date.now()
+  try {
+    const evidence = await observeWritePreChange(
+      name,
+      values,
+      context.connectionId,
+      context.targetSummary,
+      backend,
+      new ToolService(backend)
+    )
+    await receipts.recordPreChangeEvidence(reservation.reservation, evidence)
+    await receipts.markSapInvocationStarted(reservation.reservation)
+  } catch (error) {
+    let receipt: Record<string, unknown>
+    try {
+      receipt = await receipts.fail(reservation.reservation, error, Date.now() - started)
+    } catch (receiptError) {
+      receipt = {
+        status: "interrupted",
+        sapInvocationStarted: false,
+        automaticRetry: false,
+        automaticRollback: false,
+        manualRecovery: `${recoveryGuide} Receipt finalization also failed: ${String(receiptError)}`
+      }
+    }
+    return {
+      ...textResult(
+        `Error invoking ${name}: SAP pre-change observation failed; the write was not invoked: ${String(error)}\n\nOperation Receipt\n${JSON.stringify(
+          { operationId, ...receipt, sapInvocationStarted: false },
+          null,
+          2
+        )}`
+      ),
+      isError: true
+    }
+  }
+
   let result: string
   try {
     result = await action()

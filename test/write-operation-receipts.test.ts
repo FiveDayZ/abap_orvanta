@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
-import { access, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
+import { createHash } from "node:crypto"
+import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
@@ -23,6 +24,22 @@ test("write receipts serialize one target, retain hashes, and release the lock",
     const first = await store.reserve(identity)
     assert.equal(first.status, "reserved")
     if (first.status !== "reserved") throw new Error("Missing reservation")
+    const evidence = {
+      observedAt: "2026-09-03T03:00:00.000Z",
+      target: "program ZMODULE_POOL",
+      exists: true,
+      active: true,
+      version: "20260903030000",
+      fingerprint: "a".repeat(64),
+      packageName: "ZABAP",
+      requestNumber: "GR2K923421",
+      taskNumber: "GR2K923422",
+      observationStatus: "complete" as const,
+      sources: ["repository_assignment", "active_source"],
+      warnings: []
+    }
+    await store.recordPreChangeEvidence(first.reservation, evidence)
+    await store.markSapInvocationStarted(first.reservation)
 
     const concurrent = await store.reserve({ ...identity, operationId: "write-receipt-2" })
     assert.equal(concurrent.status, "target_busy")
@@ -34,6 +51,8 @@ test("write receipts serialize one target, retain hashes, and release the lock",
     assert.match(String(completed.resultHash), /^[a-f0-9]{64}$/)
     assert.equal(completed.automaticRollback, false)
     assert.equal(completed.localLockReleased, true)
+    assert.equal(completed.sapInvocationStarted, true)
+    assert.deepEqual(completed.sapPreChangeEvidence, evidence)
 
     const next = await store.reserve({ ...identity, operationId: "write-receipt-3" })
     assert.equal(next.status, "reserved")
@@ -97,7 +116,7 @@ test("a completed action remains completed when local lock cleanup needs recover
     assert.equal(completed.outcomeMayBeUnknown, false)
     assert.equal(completed.localLockReleased, false)
     assert.match(String(completed.lockReleaseErrorHash), /^[a-f0-9]{64}$/)
-    assert.match(String(completed.manualRecovery), /Remove it only after a human confirms/)
+    assert.match(String(completed.manualRecovery), /release_write_operation_lock/)
 
     const status = await store.status("w200", "lock-cleanup")
     assert.equal(status.status, "completed")
@@ -134,24 +153,154 @@ test("service restart reports interrupted writes and preserves the target lock",
   const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-interrupted-"))
   try {
     const first = new WriteOperationReceiptStore(root, "first-instance")
-    assert.equal((await first.reserve(identity)).status, "reserved")
+    const firstReservation = await first.reserve(identity)
+    assert.equal(firstReservation.status, "reserved")
+    if (firstReservation.status !== "reserved") throw new Error("Missing reservation")
 
     const restarted = new WriteOperationReceiptStore(root, "second-instance")
     const interrupted = await restarted.status(identity.connectionId, identity.operationId)
     assert.equal(interrupted.status, "interrupted")
     assert.equal(interrupted.outcomeMayBeUnknown, true)
     assert.match(String(interrupted.manualRecovery), /Read back/)
-    const lockPath = /Local operation lock: (.+)\. Remove it/.exec(
-      String(interrupted.manualRecovery)
-    )?.[1]
-    assert.ok(lockPath)
+    const lockPath = firstReservation.reservation.lockPath
     await access(lockPath)
 
+    await assert.rejects(
+      () =>
+        first.releaseLocalLock(
+          identity.connectionId,
+          identity.operationId,
+          String(interrupted.receiptHash),
+          "SAP state checked"
+        ),
+      /still active/
+    )
+
+    const listed = await restarted.listRecoveryOperations(identity.connectionId, 1)
+    assert.equal(listed.count, 1)
+    assert.equal(listed.truncated, false)
+    const listedOperations = listed.operations as Array<Record<string, unknown>>
+    assert.equal(listedOperations[0]?.recoveryState, "interrupted")
+
+    await assert.rejects(
+      () =>
+        restarted.releaseLocalLock(
+          identity.connectionId,
+          identity.operationId,
+          "f".repeat(64),
+          "SAP state checked"
+        ),
+      /Receipt hash changed/
+    )
+
+    const released = await restarted.releaseLocalLock(
+      identity.connectionId,
+      identity.operationId,
+      String(interrupted.receiptHash),
+      "SAP object, lock, package, request, and task were checked by the operator"
+    )
+    assert.equal(released.status, "local_lock_released")
+    assert.equal(released.localLockReleased, true)
+    assert.equal(released.sapLockChanged, false)
+    assert.equal(released.recoveryActionSapInvocationStarted, false)
+    assert.equal(released.automaticRetry, false)
+    assert.equal(released.automaticRollback, false)
+    assert.match(String(released.manualLockReleaseReasonHash), /^[a-f0-9]{64}$/)
+    const rawReceipts = (
+      await Promise.all((await receiptFiles(root)).map((path) => readFile(path, "utf8")))
+    ).join("\n")
+    assert.doesNotMatch(rawReceipts, /object, lock, package, request, and task/)
+    assert.equal((await restarted.listRecoveryOperations(identity.connectionId, 10)).count, 0)
+    await assert.rejects(() => access(lockPath))
+
     const retry = await restarted.reserve({ ...identity, operationId: "after-interruption" })
-    assert.equal(retry.status, "target_busy")
-    if (retry.status !== "target_busy") throw new Error("Expected stale lock conflict")
-    assert.equal(retry.receipt.blockingState, "interrupted")
-    assert.match(String(retry.receipt.manualRecovery), /remove the reported lock file/)
+    assert.equal(retry.status, "reserved")
+    if (retry.status !== "reserved") throw new Error("Expected released target")
+    await restarted.fail(retry.reservation, new Error("test cleanup"), 0)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("recovery listing is bounded and includes stale completed locks", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-recovery-list-"))
+  try {
+    const first = new WriteOperationReceiptStore(root, "first-instance")
+    const interrupted = await first.reserve({ ...identity, operationId: "interrupted-list" })
+    assert.equal(interrupted.status, "reserved")
+    const stale = await first.reserve({
+      ...identity,
+      operationId: "stale-list",
+      targetKey: "PROG:ZSECOND"
+    })
+    assert.equal(stale.status, "reserved")
+    if (stale.status !== "reserved") throw new Error("Missing stale reservation")
+    const lock = JSON.parse(await readFile(stale.reservation.lockPath, "utf8")) as Record<
+      string,
+      unknown
+    >
+    lock.serviceInstanceId = "other-instance"
+    await writeFile(stale.reservation.lockPath, `${JSON.stringify(lock)}\n`, "utf8")
+    const completed = await first.complete(stale.reservation, "done", 1)
+    assert.equal(completed.localLockReleased, false)
+
+    const restarted = new WriteOperationReceiptStore(root, "restarted-instance")
+    const all = await restarted.listRecoveryOperations(identity.connectionId, 10)
+    assert.equal(all.count, 2)
+    assert.equal(all.truncated, false)
+    assert.deepEqual(
+      new Set(
+        (all.operations as Array<Record<string, unknown>>).map(
+          (operation) => operation.recoveryState
+        )
+      ),
+      new Set(["interrupted", "stale_lock"])
+    )
+    const bounded = await restarted.listRecoveryOperations(identity.connectionId, 1)
+    assert.equal(bounded.count, 1)
+    assert.equal(bounded.truncated, true)
+    assert.equal((bounded.operations as unknown[]).length, 1)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("version 1 write receipts remain readable", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-v1-"))
+  try {
+    const operationId = "legacy-receipt"
+    const connectionHash = sha256(identity.connectionId)
+    const operationHash = sha256(operationId)
+    const directory = join(root, "write-receipts", connectionHash)
+    await mkdir(directory, { recursive: true })
+    await writeFile(
+      join(directory, `${operationHash}.json`),
+      `${JSON.stringify({
+        version: 1,
+        state: "completed",
+        connectionId: identity.connectionId,
+        toolName: identity.toolName,
+        operationIdHash: operationHash,
+        targetKeyHash: sha256(identity.targetKey),
+        inputHash: identity.inputHash,
+        preChangeSummary: identity.preChangeSummary,
+        recoveryGuide: identity.recoveryGuide,
+        resultHash: "b".repeat(64),
+        startedAt: "2026-09-03T02:00:00.000Z",
+        finishedAt: "2026-09-03T02:00:01.000Z",
+        durationMs: 1000,
+        lockReleased: true,
+        serviceInstanceId: "legacy-instance"
+      })}\n`,
+      "utf8"
+    )
+
+    const status = await new WriteOperationReceiptStore(root).status(
+      identity.connectionId,
+      operationId
+    )
+    assert.equal(status.status, "completed")
+    assert.equal(status.sapInvocationStarted, null)
   } finally {
     await rm(root, { recursive: true, force: true })
   }
@@ -168,4 +317,8 @@ async function receiptFiles(root: string): Promise<string[]> {
     }
   }
   return result
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex")
 }

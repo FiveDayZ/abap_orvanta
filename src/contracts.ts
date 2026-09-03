@@ -365,6 +365,25 @@ export const toolContracts = {
       connectionId: z.string()
     }
   },
+  list_write_recovery_operations: {
+    description:
+      "List interrupted write operations and completed or failed operations whose local target lock remains, without invoking SAP or changing any lock. Results are newest-first and bounded.",
+    inputSchema: {
+      connectionId: z.string(),
+      maxResults: z.number().int().positive().max(100).default(50).optional()
+    }
+  },
+  release_write_operation_lock: {
+    description:
+      "Release only the local target lock for one interrupted or stale write receipt after a human has inspected SAP. Requires the latest receipt hash, the exact SAP_STATE_VERIFIED confirmation, and a reason. It never clears SAP locks, retries an operation, invokes SAP, or rolls back an RFC.",
+    inputSchema: {
+      operationId: z.string().regex(/^[A-Za-z0-9._:-]{1,64}$/),
+      expectedReceiptHash: z.string().regex(/^[a-f0-9]{64}$/),
+      confirmation: z.literal("SAP_STATE_VERIFIED"),
+      reason: z.string().trim().min(1).max(500),
+      connectionId: z.string()
+    }
+  },
   create_function_module_with_interface: {
     description:
       "Create one new Z* or Y* function module with an explicit interface and ECC 7.31-compatible source in an existing Z* or Y* function group. Requires a transportable package and existing transport. Existing functions are rejected; transports are never created or released.",

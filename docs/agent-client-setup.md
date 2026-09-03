@@ -10,7 +10,7 @@ http://127.0.0.1:4847/mcp
 
 ## 首次一键接入
 
-解压0.27.1便携包后，在PowerShell 7中执行：
+解压0.28.0便携包后，在PowerShell 7中执行：
 
 ```powershell
 .\setup.ps1
@@ -21,7 +21,7 @@ http://127.0.0.1:4847/mcp
 ## 下次启动
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.27.1-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.28.0-win-x64
 .\start.ps1
 ```
 
@@ -130,15 +130,17 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone MCP，批量读取 w200 中 ZWMSTCTD01_FRM 和 ZCL_CA_HZ 的前10行，并分别汇总。
 ```
 
-当前独立版本公开65个工具。0.21.0为经典Dynpro增加屏幕指纹、组件新增/更新/删除、坐标移动和PBO/PAI静态验证；坐标移动通过 `update`修改 `LINE`和 `COLUMN`。0.22.0新增完整Menu Painter读取和原生CUA行级补丁，覆盖GUI Status、功能码、菜单、工具栏、PF键、状态功能映射和Titlebar；写入要求读取结果中的指纹、已有Workbench传输和SAP助手1.5。0.25.0已在真实 `w200`完成独立临时模块池、屏幕按钮、GUI Status、Titlebar、菜单、工具栏、PF键、PBO、PAI、事务码和Back/Exit/Cancel的SAP GUI运行时闭环，并在验收后删除临时事务和模块池。功能静态文本必须显式设置 `TEXT_TYPE = S`，退出功能码使用 `TYPE = E`并由 `MODULE ... AT EXIT-COMMAND`处理。PBO/PAI源码继续由现有精确源码编辑与激活工具维护。验证工具递归读取最多32个Include、深度8，并核对静态PF-STATUS和Titlebar引用；覆盖不完整时会明确警告。Report链路支持程序文本符号、消息类新建和Report事务创建；DDIC工具用于域、基于域的数据元素、平面结构、STANDARD/default-key表类型和透明表；函数模块链路支持完整接口读取、带显式接口的新建、包和开放传输分配检查，以及客户RFC的标量、平面结构、经典TABLES和DDIC表类型调用。0.16.0调试工具已完成无头化实现，但 `w200` 的ADT Debugger listener端点返回404，Agent应停止后续调试调用并报告系统能力不可用。0.20.0的 `invoke_customer_function_module`要求准确白名单、活动接口指纹、一次性请求ID和显式副作用确认，并持久化执行凭证；`get_customer_function_call_status`只读查询凭证。0.27.1要求Agent为每次写入提供并保存唯一 `operationId`，响应中的 `operationReceipt`用于核对目标、前置条件、结果摘要和恢复状态；未知结果先调用 `get_write_operation_status`，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换已有数据库表。所有写入均限制为 `Z*`/`Y*`，正式包必须提供已有传输；服务不会创建或释放传输。真实写入或RFC调用前必须取得准确对象名的当前任务批准。
+当前独立版本公开67个工具。0.21.0为经典Dynpro增加屏幕指纹、组件新增/更新/删除、坐标移动和PBO/PAI静态验证；坐标移动通过 `update`修改 `LINE`和 `COLUMN`。0.22.0新增完整Menu Painter读取和原生CUA行级补丁，覆盖GUI Status、功能码、菜单、工具栏、PF键、状态功能映射和Titlebar；写入要求读取结果中的指纹、已有Workbench传输和SAP助手1.5。0.25.0已在真实 `w200`完成独立临时模块池、屏幕按钮、GUI Status、Titlebar、菜单、工具栏、PF键、PBO、PAI、事务码和Back/Exit/Cancel的SAP GUI运行时闭环，并在验收后删除临时事务和模块池。功能静态文本必须显式设置 `TEXT_TYPE = S`，退出功能码使用 `TYPE = E`并由 `MODULE ... AT EXIT-COMMAND`处理。PBO/PAI源码继续由现有精确源码编辑与激活工具维护。验证工具递归读取最多32个Include、深度8，并核对静态PF-STATUS和Titlebar引用；覆盖不完整时会明确警告。Report链路支持程序文本符号、消息类新建和Report事务创建；DDIC工具用于域、基于域的数据元素、平面结构、STANDARD/default-key表类型和透明表；函数模块链路支持完整接口读取、带显式接口的新建、包和开放传输分配检查，以及客户RFC的标量、平面结构、经典TABLES和DDIC表类型调用。0.16.0调试工具已完成无头化实现，但 `w200` 的ADT Debugger listener端点返回404，Agent应停止后续调试调用并报告系统能力不可用。0.20.0的 `invoke_customer_function_module`要求准确白名单、活动接口指纹、一次性请求ID和显式副作用确认，并持久化执行凭证；`get_customer_function_call_status`只读查询凭证。0.28.0要求Agent为每次写入提供并保存唯一 `operationId`，响应中的 `operationReceipt.sapPreChangeEvidence`用于核对SAP实际观察值；未知结果先调用 `get_write_operation_status`或 `list_write_recovery_operations`，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换已有数据库表。所有写入均限制为 `Z*`/`Y*`，正式包必须提供已有传输；服务不会创建或释放传输。真实写入或RFC调用前必须取得准确对象名的当前任务批准。
 
 ## 写操作中断恢复
 
 1. 在调用写工具前生成并记录唯一 `operationId`，同一次意图只能使用同一个ID。
 2. 工具返回 `completed`时保存 `receiptHash`和 `resultHash`；返回 `failed`、`interrupted`、`target_concurrency_conflict`或响应丢失时，不得自动重试。
 3. 使用 `get_write_operation_status`并传入原 `operationId`与连接ID。根据 `preChangeSummary`回读准确SAP对象，检查活动/非活动版本、SAP锁、包和开放传输分配。
-4. 只有人工确认SAP最终状态后，才按 `manualRecovery`处理报告的本地锁文件。原操作是否已产生业务提交无法由通用MCP层推断。
+4. 使用 `list_write_recovery_operations`只读查看中断和残留本地锁。只有人工确认SAP最终状态后，才可调用 `release_write_operation_lock`，并传入原 `operationId`、最新 `receiptHash`、`confirmation=SAP_STATE_VERIFIED`和人工原因。
 5. 需要重新执行时使用新的 `operationId`，并重新读取当前指纹或版本令牌；不要复用旧前置条件。
+
+0.28.0恢复操作只删除本服务的本地目标锁。它不会连接SAP清锁、重放原操作、重试网络请求或回滚业务RFC；原因正文不持久化，只保存SHA-256摘要。凭证版本1继续可读，但其 `sapInvocationStarted`为未知；新版本2凭证在SAP调用前持久化实际观察证据和调用是否已开始。
 
 示例：`operationId=agent-20260903-zobject-change-001`。操作ID不应包含密码、业务数据或其他敏感信息。
 

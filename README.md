@@ -1,7 +1,7 @@
 # ABAP MCP Standalone - 无头化技术验证
 
 这是独立 ABAP MCP服务的无头化技术验证。它不加载 VS Code、不启动 `Code.exe`，直接通过
-`abap-adt-api 8.4.3` 访问 SAP ADT，并通过 Streamable HTTP公开65个读取、诊断、调试、导出和受控写入工具。
+`abap-adt-api 8.4.3` 访问 SAP ADT，并通过 Streamable HTTP公开67个读取、诊断、调试、导出和受控写入工具。
 
 ## 已实现工具
 
@@ -17,6 +17,8 @@
 - `test_remote_function_module`
 - `invoke_customer_function_module`
 - `get_write_operation_status`
+- `list_write_recovery_operations`
+- `release_write_operation_lock`
 - `create_function_module_with_interface`
 - `inspect_repository_assignment`
 - `read_abap_screen`
@@ -88,7 +90,7 @@ npm run verify
 npm run verify:release
 ```
 
-产物生成在 `release/`。目标电脑不需要安装 Node.js、VS Code或 Code OSS。压缩包已经包含默认 `w200`的 `connections.json`。0.27.1首次使用可直接运行 `setup.ps1`：它使用一次安全密码依次完成SAP助手预检、Codex MCP注册和服务启动。只使用其他Agent客户端时增加 `-SkipCodex`。如果预检报告助手缺失，先运行 `install-sap-helper.ps1 -Mode install`，再重新执行 `setup.ps1`。
+产物生成在 `release/`。目标电脑不需要安装 Node.js、VS Code或 Code OSS。压缩包已经包含默认 `w200`的 `connections.json`。0.28.0首次使用可直接运行 `setup.ps1`：它使用一次安全密码依次完成SAP助手预检、Codex MCP注册和服务启动。只使用其他Agent客户端时增加 `-SkipCodex`。如果预检报告助手缺失，先运行 `install-sap-helper.ps1 -Mode install`，再重新执行 `setup.ps1`。
 
 ```powershell
 .\setup.ps1
@@ -106,12 +108,12 @@ Codex CLI `0.92.0` 已实际调用便携服务的 MCP工具；Codex桌面端仍�
 
 便携目录根部的 `connections.json`是实际生效的连接配置，默认包含当前 `w200`。可以直接修改 `id`、`url`、`client`、`language`、`username`、`passwordEnv`和 `allowUnauthorized`。`remoteFunctionAllowlist`是允许正式调用的客户RFC准确名称数组，默认空数组；只接受 `Z*`或 `Y*`且不支持通配符。密码从 `passwordEnv`指定的环境变量读取，不允许增加 `password`字段。
 
-客户RFC调用凭证和0.27.1统一写操作凭证不写入便携目录，默认保存在当前Windows用户的 `%LOCALAPPDATA%\ABAP MCP Standalone\state`。需要调整位置时，在启动服务前设置 `ABAP_MCP_STATE_DIR`为独立可写目录；不要让多个不受信任用户共享同一个状态目录。
+客户RFC调用凭证和0.28.0统一写操作凭证不写入便携目录，默认保存在当前Windows用户的 `%LOCALAPPDATA%\ABAP MCP Standalone\state`。需要调整位置时，在启动服务前设置 `ABAP_MCP_STATE_DIR`为独立可写目录；不要让多个不受信任用户共享同一个状态目录。
 
 下次启动：
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.27.1-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.28.0-win-x64
 .\start.ps1
 ```
 
@@ -123,7 +125,7 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 使用 abap_fs_standalone MCP，先调用 get_connected_systems，然后在 w200 搜索 ZWMSTCTD01_FRM，并读取第1至20行。只读，不修改SAP对象。
 ```
 
-当前独立版本提供65个工具。数据查询只接受单条只读 `SELECT`，强制 `internal`模式、`rowRange`和1000行上限；ATC不自动修复，ABAP Unit不自动激活，Dump和Trace只读取已有诊断数据。`abap_download`可将对象或包递归导出到显式绝对路径，默认拒绝覆盖现有目标；`adt_discovery_export`将四个Markdown文件写入便携目录的 `exports`。`manage_transport_requests`保留原工具的四个查询动作，用于读取用户传输、明细、对象清单和差异，不会创建、修改、删除或释放传输。
+当前独立版本提供67个工具。数据查询只接受单条只读 `SELECT`，强制 `internal`模式、`rowRange`和1000行上限；ATC不自动修复，ABAP Unit不自动激活，Dump和Trace只读取已有诊断数据。`abap_download`可将对象或包递归导出到显式绝对路径，默认拒绝覆盖现有目标；`adt_discovery_export`将四个Markdown文件写入便携目录的 `exports`。`manage_transport_requests`保留原工具的四个查询动作，用于读取用户传输、明细、对象清单和差异，不会创建、修改、删除或释放传输。
 
 0.16.0新增无头ABAP用户调试工具，支持会话、Z/Y源码断点、调用栈、只读变量、单步和继续。只允许当前连接用户，不支持终端模式、变量写入或跳转行。本地Mock和MCP协议回归已覆盖调试流程；真实 `w200`调用 `/sap/bc/adt/debugger/listeners` 返回HTTP 404，因此该系统当前明确为不兼容，不能声明真实调试通过。
 
@@ -156,6 +158,8 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 0.27.0为22个SAP写入或潜在业务副作用工具增加统一操作凭证。调用方应为每次操作提供唯一 `operationId`；为兼容旧Agent该字段暂时可省略，但自动生成的ID只有在收到工具响应后才能用于恢复。服务在执行前以独占文件创建操作凭证和目标锁，同一连接、同一目标的并发操作失败关闭；相同操作ID不会再次执行，不同输入复用同一ID会报告冲突。响应包含变更前目标/前置条件摘要、输入及结果或错误SHA-256、完成/失败/中断状态和人工恢复指引；原始源码、业务输入输出和密码不写入凭证。`get_write_operation_status`只读查询凭证。服务重启或凭证收尾异常时禁止自动重试，必须先回读SAP目标、检查SAP锁和传输分配，再由人工处理残留本地锁。该安全层不是SAP LUW协调器，不承诺任意业务RFC自动回滚、幂等或Dry Run；变更前摘要是调用时声明的目标和并发前置条件，不是完整SAP对象快照。
 
 0.27.1增加可重复执行的真实SAP安全验收脚本。真实 `w200/200`在准确批准范围内临时创建 `ZCMCP_SAFE_0271`，回读确认对象活动、属于 `ZABAP`和开放请求 `GR2K923421`；同ID重复、同ID变更输入、已存在对象失败、持久化中断状态和同目标并发锁均按预期失败关闭。删除完成后又通过独立ABAP FS搜索、元数据读取和源码读取三种方式确认对象不存在。中断场景使用隔离状态目录播种未完成凭证，不代表真实SAP写入进程被强制终止。未释放传输，也未修改SAP标准对象。
+
+0.28.0在取得本地目标锁后、调用写工具前执行只读SAP观察，并将存在性、活动状态、版本或SHA-256指纹、包、请求、任务和观察时间写入版本2凭证；无法确认目标是否存在时失败关闭且不调用写操作。`list_write_recovery_operations`只读列出中断及残留本地锁，`release_write_operation_lock`要求最新凭证哈希、精确人工确认值 `SAP_STATE_VERIFIED`和非空原因，只解除本地目标锁并记录原因哈希。恢复中心不会清除SAP锁、自动重试、调用SAP恢复动作或自动回滚RFC；SAP最终状态仍必须由人工核对。
 
 `sap_helper_status`是独立版本新增的只读扩展工具，通过 SAP SOAP/RFC 调用已安装的 `Z_CODEX_MCP_EXECUTE`。`ping`返回助手版本和就绪状态；`validate_target`由SAP侧检查 `Z*`/`Y*`命名空间、对象类型白名单和当前登录用户的 `S_DEVELOP`显示权限。该工具不修改SAP数据。真实 `w200/200` 已安装 `$TMP`函数组 `ZCODEX_MCP_CORE`、类 `ZCL_CODEX_MCP_CORE`和远程函数 `Z_CODEX_MCP_EXECUTE`；没有修改SAP标准对象，也没有创建或释放传输。
 

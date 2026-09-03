@@ -1,14 +1,31 @@
 import { createHash, randomUUID } from "node:crypto"
-import { mkdir, open, readFile, rename, unlink } from "node:fs/promises"
+import { mkdir, open, readFile, readdir, rename, unlink } from "node:fs/promises"
 import { basename, dirname, join, resolve } from "node:path"
 import { z } from "zod"
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/
 const SERVICE_INSTANCE_ID = randomUUID()
 
+const sapPreChangeEvidenceSchema = z
+  .object({
+    observedAt: z.string().datetime(),
+    target: z.string().min(1).max(500),
+    exists: z.boolean().nullable(),
+    active: z.boolean().nullable(),
+    version: z.string().nullable(),
+    fingerprint: z.string().regex(HASH_PATTERN).nullable(),
+    packageName: z.string().nullable(),
+    requestNumber: z.string().nullable(),
+    taskNumber: z.string().nullable(),
+    observationStatus: z.enum(["complete", "partial"]),
+    sources: z.array(z.string().min(1).max(100)).max(20),
+    warnings: z.array(z.string().min(1).max(1000)).max(20)
+  })
+  .strict()
+
 const receiptSchema = z
   .object({
-    version: z.literal(1),
+    version: z.union([z.literal(1), z.literal(2)]),
     state: z.enum(["in_progress", "completed", "failed"]),
     connectionId: z.string().min(1),
     toolName: z.string().regex(/^[a-z][a-z0-9_]+$/),
@@ -17,12 +34,16 @@ const receiptSchema = z
     inputHash: z.string().regex(HASH_PATTERN),
     preChangeSummary: z.string().min(1).max(2000),
     recoveryGuide: z.string().min(1).max(2000),
+    sapPreChangeEvidence: sapPreChangeEvidenceSchema.optional(),
+    sapInvocationStarted: z.boolean().optional(),
     resultHash: z.string().regex(HASH_PATTERN).optional(),
     errorHash: z.string().regex(HASH_PATTERN).optional(),
     startedAt: z.string().datetime(),
     finishedAt: z.string().datetime().optional(),
     durationMs: z.number().int().nonnegative().optional(),
     lockReleased: z.boolean().optional(),
+    manualLockReleaseAt: z.string().datetime().optional(),
+    manualLockReleaseReasonHash: z.string().regex(HASH_PATTERN).optional(),
     serviceInstanceId: z.string().min(1)
   })
   .strict()
@@ -38,6 +59,7 @@ const lockSchema = z
   .strict()
 
 export type WriteOperationReceipt = z.infer<typeof receiptSchema>
+export type SapPreChangeEvidence = z.infer<typeof sapPreChangeEvidenceSchema>
 
 export interface WriteOperationIdentity {
   connectionId: string
@@ -82,7 +104,7 @@ export class WriteOperationReceiptStore {
     await mkdir(dirname(receiptPath), { recursive: true, mode: 0o700 })
     await mkdir(dirname(lockPath), { recursive: true, mode: 0o700 })
     const receipt: WriteOperationReceipt = {
-      version: 1,
+      version: 2,
       state: "in_progress",
       connectionId: identity.connectionId,
       toolName: identity.toolName,
@@ -91,6 +113,7 @@ export class WriteOperationReceiptStore {
       inputHash: identity.inputHash,
       preChangeSummary: identity.preChangeSummary,
       recoveryGuide: identity.recoveryGuide,
+      sapInvocationStarted: false,
       startedAt: new Date().toISOString(),
       lockReleased: false,
       serviceInstanceId: this.serviceInstanceId
@@ -147,9 +170,8 @@ export class WriteOperationReceiptStore {
           blockingOperationIdHash: blocking.operationIdHash,
           blockingState:
             blocking.serviceInstanceId === this.serviceInstanceId ? "in_progress" : "interrupted",
-          lockPath,
           manualRecovery:
-            "Do not retry automatically. Query the blocking operation, inspect the SAP target, and remove the reported lock file only after a human confirms the SAP state."
+            "Do not retry automatically. Query the blocking operation and inspect the SAP target. After a human confirms the SAP state, use release_write_operation_lock with the original operationId and latest receiptHash."
         }
       }
     }
@@ -168,6 +190,25 @@ export class WriteOperationReceiptStore {
       resultHash: sha256(result),
       finishedAt: new Date().toISOString(),
       durationMs
+    })
+  }
+
+  async recordPreChangeEvidence(
+    reservation: WriteOperationReservation,
+    evidence: SapPreChangeEvidence
+  ): Promise<void> {
+    const current = await this.readOwnedInProgress(reservation)
+    await this.finishReceipt(reservation.receiptPath, {
+      ...current,
+      sapPreChangeEvidence: sapPreChangeEvidenceSchema.parse(evidence)
+    })
+  }
+
+  async markSapInvocationStarted(reservation: WriteOperationReservation): Promise<void> {
+    const current = await this.readOwnedInProgress(reservation)
+    await this.finishReceipt(reservation.receiptPath, {
+      ...current,
+      sapInvocationStarted: true
     })
   }
 
@@ -199,19 +240,90 @@ export class WriteOperationReceiptStore {
     return this.toPublic(receipt, path)
   }
 
+  async listRecoveryOperations(
+    connectionId: string,
+    maxResults: number
+  ): Promise<Record<string, unknown>> {
+    const directory = join(this.receiptRoot, sha256(connectionId))
+    let names: string[]
+    try {
+      names = (await readdir(directory)).filter((name) => name.endsWith(".json"))
+    } catch (error) {
+      if (isNodeError(error, "ENOENT")) names = []
+      else throw error
+    }
+    const operations: Array<Record<string, unknown> & { startedAt: string }> = []
+    for (const name of names) {
+      const path = join(directory, name)
+      const receipt = await this.readReceiptRequired(path)
+      if (this.activeReceipts.has(path) || receipt.lockReleased === true) continue
+      const status = this.toPublic(receipt, path)
+      operations.push({
+        ...status,
+        recoveryState: status.status === "interrupted" ? "interrupted" : "stale_lock",
+        startedAt: receipt.startedAt
+      })
+    }
+    operations.sort((left, right) => right.startedAt.localeCompare(left.startedAt))
+    return {
+      connectionId,
+      count: Math.min(operations.length, maxResults),
+      truncated: operations.length > maxResults,
+      automaticCleanup: false,
+      operations: operations.slice(0, maxResults)
+    }
+  }
+
+  async releaseLocalLock(
+    connectionId: string,
+    operationId: string,
+    expectedReceiptHash: string,
+    reason: string
+  ): Promise<Record<string, unknown>> {
+    const normalizedReason = reason.trim()
+    if (!normalizedReason) throw new Error("A human recovery reason is required")
+    const path = this.receiptPath(connectionId, sha256(operationId))
+    const receipt = await this.readReceiptRequired(path)
+    if (this.activeReceipts.has(path)) {
+      throw new Error("The write operation is still active in this service instance")
+    }
+    const publicReceipt = this.toPublic(receipt, path)
+    if (publicReceipt.receiptHash !== expectedReceiptHash) {
+      throw new Error("Receipt hash changed; refresh recovery status before releasing the lock")
+    }
+    if (receipt.lockReleased === true) throw new Error("The local write lock is already released")
+    if (publicReceipt.status !== "interrupted" && receipt.state === "in_progress") {
+      throw new Error("The write operation is still in progress")
+    }
+    const lockPath = this.lockPath(connectionId, receipt.targetKeyHash)
+    const lock = await this.readLockRequired(lockPath)
+    if (lock.operationIdHash !== receipt.operationIdHash || resolve(lock.receiptPath) !== path) {
+      throw new Error("The local lock does not belong to the confirmed operation")
+    }
+    await unlink(lockPath)
+    const released = await this.finishReceipt(path, {
+      ...receipt,
+      lockReleased: true,
+      manualLockReleaseAt: new Date().toISOString(),
+      manualLockReleaseReasonHash: sha256(normalizedReason)
+    })
+    return {
+      ...this.toPublic(released, path),
+      status: "local_lock_released",
+      localLockReleased: true,
+      sapLockChanged: false,
+      recoveryActionSapInvocationStarted: false,
+      automaticRetry: false,
+      automaticRollback: false
+    }
+  }
+
   private async finishOwned(
     reservation: WriteOperationReservation,
     update: Pick<WriteOperationReceipt, "state" | "finishedAt" | "durationMs"> &
       Partial<Pick<WriteOperationReceipt, "resultHash" | "errorHash">>
   ): Promise<Record<string, unknown>> {
-    const current = await this.readReceiptRequired(reservation.receiptPath)
-    if (
-      current.state !== "in_progress" ||
-      current.serviceInstanceId !== this.serviceInstanceId ||
-      !this.activeReceipts.has(reservation.receiptPath)
-    ) {
-      throw new Error("Write receipt ownership changed; inspect the SAP target before retrying")
-    }
+    const current = await this.readOwnedInProgress(reservation)
     try {
       const receipt = await this.finishReceipt(reservation.receiptPath, {
         ...current,
@@ -243,6 +355,20 @@ export class WriteOperationReceiptStore {
     } finally {
       this.activeReceipts.delete(reservation.receiptPath)
     }
+  }
+
+  private async readOwnedInProgress(
+    reservation: WriteOperationReservation
+  ): Promise<WriteOperationReceipt> {
+    const current = await this.readReceiptRequired(reservation.receiptPath)
+    if (
+      current.state !== "in_progress" ||
+      current.serviceInstanceId !== this.serviceInstanceId ||
+      !this.activeReceipts.has(reservation.receiptPath)
+    ) {
+      throw new Error("Write receipt ownership changed; inspect the SAP target before retrying")
+    }
+    return current
   }
 
   private async finishReceipt(
@@ -305,10 +431,7 @@ export class WriteOperationReceiptStore {
     const lockReleased = receipt.lockReleased === true
     const recoveryRequired = interrupted || !lockReleased
     const manualRecovery = recoveryRequired
-      ? `${receipt.recoveryGuide} Local operation lock: ${this.lockPath(
-          receipt.connectionId,
-          receipt.targetKeyHash
-        )}. Remove it only after a human confirms the SAP state.`
+      ? `${receipt.recoveryGuide} The local target lock is retained. After a human confirms the SAP state, use release_write_operation_lock with the original operationId and latest receiptHash.`
       : receipt.recoveryGuide
     return {
       status: interrupted ? "interrupted" : receipt.state,
@@ -318,6 +441,10 @@ export class WriteOperationReceiptStore {
       targetKeyHash: receipt.targetKeyHash,
       inputHash: receipt.inputHash,
       preChangeSummary: receipt.preChangeSummary,
+      ...(receipt.sapPreChangeEvidence
+        ? { sapPreChangeEvidence: receipt.sapPreChangeEvidence }
+        : {}),
+      sapInvocationStarted: receipt.sapInvocationStarted ?? null,
       ...(receipt.resultHash ? { resultHash: receipt.resultHash } : {}),
       ...(receipt.errorHash ? { errorHash: receipt.errorHash } : {}),
       startedAt: receipt.startedAt,
@@ -328,6 +455,12 @@ export class WriteOperationReceiptStore {
       automaticRollback: false,
       outcomeMayBeUnknown: interrupted || receipt.state === "failed",
       localLockReleased: lockReleased,
+      ...(receipt.manualLockReleaseAt
+        ? {
+            manualLockReleaseAt: receipt.manualLockReleaseAt,
+            manualLockReleaseReasonHash: receipt.manualLockReleaseReasonHash
+          }
+        : {}),
       manualRecovery
     }
   }

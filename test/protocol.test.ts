@@ -6,6 +6,7 @@ import test from "node:test"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { startHttpServer } from "../src/http.js"
+import { hashWriteInput, WriteOperationReceiptStore } from "../src/write-operation-receipts.js"
 import { MockBackend } from "./mock-backend.js"
 
 test("streamable HTTP exposes the implemented standalone tool waves", async () => {
@@ -55,6 +56,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "get_write_operation_status",
       "inspect_repository_assignment",
       "invoke_customer_function_module",
+      "list_write_recovery_operations",
       "manage_text_elements",
       "manage_transport_requests",
       "patch_abap_gui_definition",
@@ -69,6 +71,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_ddic_transparent_table",
       "read_function_module_interface",
       "read_transaction_code",
+      "release_write_operation_lock",
       "replace_string_in_abap_object",
       "run_atc_analysis",
       "run_unit_tests",
@@ -99,7 +102,10 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     })
     assert.equal(guiRead.isError, undefined)
     const guiContent = guiRead.content as Array<{ type: string; text?: string }>
-    const gui = JSON.parse(guiContent[0]?.text ?? "{}") as { fingerprint: string }
+    const gui = JSON.parse(guiContent[0]?.text ?? "{}") as {
+      fingerprint: string
+      versionToken: string
+    }
     assert.match(gui.fingerprint, /^[a-f0-9]{64}$/)
 
     const guiPatch = await client.callTool({
@@ -123,6 +129,23 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     assert.equal(guiPatch.isError, undefined)
     const guiPatchContent = guiPatch.content as Array<{ type: string; text?: string }>
     assert.match(guiPatchContent[0]?.text ?? "", /"operationId": "protocol-gui-patch"/)
+    const guiPatchResult = JSON.parse(guiPatchContent[0]?.text ?? "{}") as {
+      operationReceipt?: { sapPreChangeEvidence?: Record<string, unknown> }
+    }
+    assert.deepEqual(guiPatchResult.operationReceipt?.sapPreChangeEvidence, {
+      observedAt: guiPatchResult.operationReceipt?.sapPreChangeEvidence?.observedAt,
+      target: "program ZMODULE_POOL",
+      exists: true,
+      active: true,
+      version: gui.versionToken,
+      fingerprint: gui.fingerprint,
+      packageName: "ZABAP",
+      requestNumber: "GR2K923421",
+      taskNumber: "GR2K923422",
+      observationStatus: "complete",
+      sources: ["read_abap_gui_definition", "repository_assignment"],
+      warnings: []
+    })
 
     const duplicateGuiPatch = await client.callTool({
       name: "patch_abap_gui_definition",
@@ -154,6 +177,58 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     const writeStatusContent = writeStatus.content as Array<{ type: string; text?: string }>
     assert.match(writeStatusContent[0]?.text ?? "", /"status": "completed"/)
     assert.match(writeStatusContent[0]?.text ?? "", /"automaticRollback": false/)
+
+    const seededStore = new WriteOperationReceiptStore(stateRoot, "seeded-old-instance")
+    const seeded = await seededStore.reserve({
+      connectionId: "w200",
+      toolName: "patch_abap_screen",
+      operationId: "protocol-interrupted-write",
+      targetKey: "PROG:ZRECOVERY_CENTER",
+      inputHash: hashWriteInput({ target: "ZRECOVERY_CENTER" }),
+      preChangeSummary: '{"target":"program ZRECOVERY_CENTER"}',
+      recoveryGuide: "Inspect program ZRECOVERY_CENTER in SAP before recovery."
+    })
+    assert.equal(seeded.status, "reserved")
+
+    const recoveryList = await client.callTool({
+      name: "list_write_recovery_operations",
+      arguments: { connectionId: "w200", maxResults: 10 }
+    })
+    assert.equal(recoveryList.isError, undefined)
+    const recoveryListContent = recoveryList.content as Array<{ type: string; text?: string }>
+    const recovery = JSON.parse(recoveryListContent[0]?.text ?? "{}") as {
+      operations: Array<{ receiptHash: string; recoveryState: string }>
+    }
+    assert.equal(recovery.operations.length, 1)
+    assert.equal(recovery.operations[0]?.recoveryState, "interrupted")
+
+    const rejectedRelease = await client.callTool({
+      name: "release_write_operation_lock",
+      arguments: {
+        connectionId: "w200",
+        operationId: "protocol-interrupted-write",
+        expectedReceiptHash: recovery.operations[0]!.receiptHash,
+        confirmation: "NOT_VERIFIED",
+        reason: "Operator has not completed SAP verification"
+      }
+    })
+    assert.equal(rejectedRelease.isError, true)
+
+    const lockRelease = await client.callTool({
+      name: "release_write_operation_lock",
+      arguments: {
+        connectionId: "w200",
+        operationId: "protocol-interrupted-write",
+        expectedReceiptHash: recovery.operations[0]!.receiptHash,
+        confirmation: "SAP_STATE_VERIFIED",
+        reason: "Operator verified the current SAP object and lock state"
+      }
+    })
+    assert.equal(lockRelease.isError, undefined)
+    const lockReleaseContent = lockRelease.content as Array<{ type: string; text?: string }>
+    assert.match(lockReleaseContent[0]?.text ?? "", /"status": "local_lock_released"/)
+    assert.match(lockReleaseContent[0]?.text ?? "", /"sapLockChanged": false/)
+    assert.match(lockReleaseContent[0]?.text ?? "", /"recoveryActionSapInvocationStarted": false/)
 
     const screenPatch = await client.callTool({
       name: "patch_abap_screen",
@@ -352,6 +427,54 @@ test("full source baseline freezes and classifies every original tool contract",
   assert.equal(baseline.toolCount, 54)
   assert.equal(new Set(baseline.tools.map((tool) => tool.name)).size, 54)
   assert.ok(baseline.tools.every((tool) => tool.classification))
+})
+
+test("failed SAP pre-change observation prevents the write action", async () => {
+  const stateRoot = await mkdtemp(join(tmpdir(), "abap-mcp-observation-failure-"))
+  const backend = new MockBackend()
+  let writeInvoked = false
+  backend.readSourceByUri = async () => {
+    throw new Error("SAP readback unavailable")
+  }
+  const replaceSource = backend.replaceSource.bind(backend)
+  backend.replaceSource = async (...args: Parameters<MockBackend["replaceSource"]>) => {
+    writeInvoked = true
+    return replaceSource(...args)
+  }
+  const running = await startHttpServer(backend, 0, stateRoot)
+  const client = new Client({ name: "observation-failure-client", version: "0.1.0" })
+  try {
+    const transport = new StreamableHTTPClientTransport(new URL(running.mcpUrl))
+    await client.connect(transport as Parameters<Client["connect"]>[0])
+    const result = await client.callTool({
+      name: "replace_string_in_abap_object",
+      arguments: {
+        fileUri: "adt://w200/sap/bc/adt/programs/programs/zmodule_pool/source/main",
+        oldString: "PROGRAM zmodule_pool.",
+        newString: "PROGRAM zmodule_pool.\n* blocked write",
+        operationId: "observation-failure",
+        transportNumber: "GR2K923421"
+      }
+    })
+    assert.equal(result.isError, true)
+    assert.equal(writeInvoked, false)
+    const content = result.content as Array<{ type: string; text?: string }>
+    assert.match(content[0]?.text ?? "", /SAP pre-change observation failed/)
+    assert.match(content[0]?.text ?? "", /"sapInvocationStarted": false/)
+
+    const status = await client.callTool({
+      name: "get_write_operation_status",
+      arguments: { operationId: "observation-failure", connectionId: "w200" }
+    })
+    assert.equal(status.isError, undefined)
+    const statusContent = status.content as Array<{ type: string; text?: string }>
+    assert.match(statusContent[0]?.text ?? "", /"status": "failed"/)
+    assert.match(statusContent[0]?.text ?? "", /"sapInvocationStarted": false/)
+  } finally {
+    await client.close()
+    await running.close()
+    await rm(stateRoot, { recursive: true, force: true })
+  }
 })
 
 test("health endpoint responds without an MCP session", async () => {

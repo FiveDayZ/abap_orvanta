@@ -18,6 +18,8 @@
 | `invoke_customer_function_module`       | 独立扩展      | 已实现，白名单客户RFC正式调用    | SAP SOAP/RFC             | w200通过          |
 | `get_customer_function_call_status`     | 独立扩展      | 已实现，持久化调用凭证只读查询   | Node本地文件系统         | 本地通过          |
 | `get_write_operation_status`            | 独立扩展      | 已实现，统一写操作凭证只读查询   | Node本地文件系统         | w200通过          |
+| `list_write_recovery_operations`        | 独立扩展      | 已实现，中断/陈旧操作只读列表    | Node本地文件系统         | 本地通过          |
+| `release_write_operation_lock`          | 独立扩展      | 已实现，人工确认后仅解除本地锁   | Node本地文件系统         | 本地通过          |
 | `create_function_module_with_interface` | 独立扩展      | 已实现，客户远程函数受控创建     | SAP仓库助手1.3           | w200通过          |
 | `inspect_repository_assignment`         | 独立扩展      | 已实现，包与开放传输只读检查     | SAP仓库助手1.3           | w200通过          |
 | `read_abap_screen`                      | 独立扩展      | 已实现，原生结构回读             | SAP仓库助手1.1           | w200通过          |
@@ -75,7 +77,7 @@
 ## 已验证边界
 
 - MCP Streamable HTTP初始化、工具枚举和工具调用。
-- 当前65个工具均通过MCP协议枚举；原版工具契约继续按冻结基线回归，独立扩展工具通过协议和Mock回归验证。
+- 当前67个工具均通过MCP协议枚举；原版工具契约继续按冻结基线回归，独立扩展工具通过协议和Mock回归验证。
 - 原版52个语言模型工具和2个MCP专属工具已冻结到 `contracts/full-tool-baseline.json`，并完成SAP核心、编辑器专属、本地工具及影响类型分类。
 - Mock SAP后端下普通类、程序和DDIC表的搜索、信息、分段读取、方法提取、Enhancement元数据和批量读取行为。
 - 源码和构建产物不存在 `vscode`、`Code.exe`、Extension Host或子进程调用。
@@ -109,6 +111,7 @@
 - 0.26.0新增ECC仓库助手1.7后备：消息类读取/新建、CLASS/FUNCTION_GROUP文本符号读取/合并、函数组技术Include新建及传输明细读取。协议、Mock、生成器和安全门控已覆盖；真实 `w200`已验证 `ZCMCP_MSG_0260`、`ZCL_CMCP_0260`、`ZCMCP_FG_0260`、`LZCMCP_FG_0260F01`及请求 `GR2K923421`。写入仍限 `Z*`/`Y*`、正式包和已有传输，传输操作保持只读且没有释放入口。
 - 0.27.0为22个SAP写入或潜在副作用工具增加统一操作ID、持久化SHA-256凭证、目标级跨进程独占锁、重复ID/输入冲突拒绝、前置条件摘要、完成/失败/中断状态和人工恢复指引；新增 `get_write_operation_status`。本地协议与故障回归覆盖完成、失败、重复、同目标并发、服务重启中断和陈旧锁失败关闭。凭证不保存原始源码或业务载荷。该层不自动重试，不自动删除陈旧锁，也不承诺任意业务RFC回滚。
 - 0.27.1完成真实SAP安全验收。真实 `w200/200`在包 `ZABAP`、请求 `GR2K923421`中临时创建并回读活动模块池 `ZCMCP_SAFE_0271`，验证同ID重复返回 `duplicate_blocked`、同ID变更输入返回 `operation_id_conflict`、已存在对象失败凭证为 `failed`、隔离状态目录播种的未完成凭证恢复为 `interrupted`、残留目标锁返回 `target_concurrency_conflict`，并确认 `automaticRetry=false`和 `automaticRollback=false`。删除返回 `completed`后，独立ABAP FS搜索、对象信息和源码读取均确认对象不存在；未释放传输，未修改SAP标准对象。
+- 0.28.0在写动作前持久化只读SAP观察证据，包含目标存在性、活动状态、版本或指纹、包、请求、任务及观察时间；无法确认存在性时不调用写动作。恢复中心可只读列出中断/陈旧操作，并在最新凭证哈希、精确人工确认和原因齐全时仅解除本地目标锁。Mock和MCP协议覆盖证据、旧凭证兼容、列表边界、活动操作拒绝、哈希冲突和人工解除；不清除SAP锁、不自动重试、不自动回滚RFC。
 - 包和传输检查确认模块池与事务均属于 `ZABAP`，请求 `GR2K923421`及用户任务 `GR2K923422`保持可修改；请求中包含 `R3TR PROG ZCODEX_MCP_DYNPRO`和 `R3TR TRAN ZCODEX_MCP_UI`。屏幕 `0100`没有独立的 `LIMU DYNP`记录，由已入请求的主程序对象覆盖。
 - WebGUI已实际打开 `ZCODEX_MCP_UI`，确认初始文本显示、输入字段可编辑、`Clear`清空内容且`Exit`返回Easy Access；SAP页面来源没有控制台错误。浏览器扩展自身的报错与SAP页面无关。
 - 真实 `w200`已在 `$TMP`创建并激活 `ZCODEX_MCP_CLS_0828`、`ZCODEX_MCP_IF_0828`、`ZCODEX_MCP_PRG_0828`和 `ZCODEX_MCP_I_0828`；源码回读和语法诊断通过。`ZCODEX_MCP_CLS_0828`测试Include创建、回读、激活和诊断通过。
