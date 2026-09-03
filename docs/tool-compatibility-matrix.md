@@ -17,7 +17,7 @@
 | `test_remote_function_module`           | 独立扩展      | 已实现，客户RFC标量/结构/表断言  | SAP SOAP/RFC             | w200通过          |
 | `invoke_customer_function_module`       | 独立扩展      | 已实现，白名单客户RFC正式调用    | SAP SOAP/RFC             | w200通过          |
 | `get_customer_function_call_status`     | 独立扩展      | 已实现，持久化调用凭证只读查询   | Node本地文件系统         | 本地通过          |
-| `get_write_operation_status`            | 独立扩展      | 已实现，统一写操作凭证只读查询   | Node本地文件系统         | 本地协议通过      |
+| `get_write_operation_status`            | 独立扩展      | 已实现，统一写操作凭证只读查询   | Node本地文件系统         | w200通过          |
 | `create_function_module_with_interface` | 独立扩展      | 已实现，客户远程函数受控创建     | SAP仓库助手1.3           | w200通过          |
 | `inspect_repository_assignment`         | 独立扩展      | 已实现，包与开放传输只读检查     | SAP仓库助手1.3           | w200通过          |
 | `read_abap_screen`                      | 独立扩展      | 已实现，原生结构回读             | SAP仓库助手1.1           | w200通过          |
@@ -108,6 +108,7 @@
 - 0.25.0完成完整经典屏幕闭环。真实 `w200`临时创建 `ZCMCP_DYN_0250`、屏幕 `0100`、`STATUS_025`、`TITLE_025`和事务 `ZCMCP_0250`，精确回读5个功能码、菜单、4个工具栏按钮、5个PF键、状态映射、10个屏幕组件及PBO/PAI定义。功能文本使用ECC原生 `TEXT_TYPE=S`，`BACK/EXIT/CANC`使用Exit类型和 `AT EXIT-COMMAND`。用户在SAP GUI实际验证屏幕按钮、菜单、工具栏、F键和三种退出路径；随后事务和模块池均由SAP助手删除并验证不存在。对象位于 `ZABAP`和开放请求 `GR2K923421`，未释放传输、未修改标准对象。
 - 0.26.0新增ECC仓库助手1.7后备：消息类读取/新建、CLASS/FUNCTION_GROUP文本符号读取/合并、函数组技术Include新建及传输明细读取。协议、Mock、生成器和安全门控已覆盖；真实 `w200`已验证 `ZCMCP_MSG_0260`、`ZCL_CMCP_0260`、`ZCMCP_FG_0260`、`LZCMCP_FG_0260F01`及请求 `GR2K923421`。写入仍限 `Z*`/`Y*`、正式包和已有传输，传输操作保持只读且没有释放入口。
 - 0.27.0为22个SAP写入或潜在副作用工具增加统一操作ID、持久化SHA-256凭证、目标级跨进程独占锁、重复ID/输入冲突拒绝、前置条件摘要、完成/失败/中断状态和人工恢复指引；新增 `get_write_operation_status`。本地协议与故障回归覆盖完成、失败、重复、同目标并发、服务重启中断和陈旧锁失败关闭。凭证不保存原始源码或业务载荷。该层不自动重试，不自动删除陈旧锁，也不承诺任意业务RFC回滚。
+- 0.27.1完成真实SAP安全验收。真实 `w200/200`在包 `ZABAP`、请求 `GR2K923421`中临时创建并回读活动模块池 `ZCMCP_SAFE_0271`，验证同ID重复返回 `duplicate_blocked`、同ID变更输入返回 `operation_id_conflict`、已存在对象失败凭证为 `failed`、隔离状态目录播种的未完成凭证恢复为 `interrupted`、残留目标锁返回 `target_concurrency_conflict`，并确认 `automaticRetry=false`和 `automaticRollback=false`。删除返回 `completed`后，独立ABAP FS搜索、对象信息和源码读取均确认对象不存在；未释放传输，未修改SAP标准对象。
 - 包和传输检查确认模块池与事务均属于 `ZABAP`，请求 `GR2K923421`及用户任务 `GR2K923422`保持可修改；请求中包含 `R3TR PROG ZCODEX_MCP_DYNPRO`和 `R3TR TRAN ZCODEX_MCP_UI`。屏幕 `0100`没有独立的 `LIMU DYNP`记录，由已入请求的主程序对象覆盖。
 - WebGUI已实际打开 `ZCODEX_MCP_UI`，确认初始文本显示、输入字段可编辑、`Clear`清空内容且`Exit`返回Easy Access；SAP页面来源没有控制台错误。浏览器扩展自身的报错与SAP页面无关。
 - 真实 `w200`已在 `$TMP`创建并激活 `ZCODEX_MCP_CLS_0828`、`ZCODEX_MCP_IF_0828`、`ZCODEX_MCP_PRG_0828`和 `ZCODEX_MCP_I_0828`；源码回读和语法诊断通过。`ZCODEX_MCP_CLS_0828`测试Include创建、回读、激活和诊断通过。
@@ -126,7 +127,7 @@
 - 0.16.0无头调试的真实暂停、栈、变量、单步、继续和SOAP结果尚未验证。`w200` ADT Discovery显示Debugger workspace但没有collection，且 `/sap/bc/adt/debugger/listeners`返回HTTP 404；需SAP管理员先核实该ECC版本是否提供及是否启用 `/sap/bc/adt/debugger` 服务，不能将管理员权限视为端点存在的证明。
 - 0.19.0客户RFC调用支持标量、平面DDIC结构、经典TABLES以及平面行类型的DDIC表类型；仍不支持深层结构、嵌套表、对象引用或任意复杂XML映射。客户命名空间和白名单都不代表只读；每次真实调用仍需针对函数名和输入取得授权。通用MCP层不能为任意业务RFC保证回滚、幂等或Dry Run。
 - 0.20.0的持久化凭证只阻止Agent层重复提交，不会把任意SAP函数改造成业务幂等接口。`outcome_unknown`不证明SAP已提交或未提交；服务不提供凭证删除、自动重试或自动业务核对工具。
-- 0.27.0统一凭证的 `preChangeSummary`记录调用时声明的目标、指纹/版本/精确源码匹配等并发前置条件及传输号，不是完整SAP对象快照。文件锁只协调共享同一 `ABAP_MCP_STATE_DIR`的独立服务实例，不能替代SAP原生锁或消除读取与写入之间的全部竞争窗口。真实 `w200`写入回归未执行，因为本阶段没有取得准确测试对象和清理范围授权。
+- 0.27.1真实 `w200`验收证明了模块池创建/删除路径及操作凭证状态，不等同于22个写工具逐项真实回归。`preChangeSummary`记录调用时声明的目标、指纹/版本/精确源码匹配等并发前置条件及传输号，不是完整SAP对象快照。文件锁只协调共享同一 `ABAP_MCP_STATE_DIR`的独立服务实例，不能替代SAP原生锁或消除读取与写入之间的全部竞争窗口；`interrupted`场景由隔离目录播种未完成凭证，不是实际进程在SAP写入中被强制终止。
 - 0.21.0屏幕指纹检查发生在独立服务读取屏幕后、调用SAP补丁助手前，当前不是SAP端原子比较；并发修改仍存在读取与写入之间的竞争窗口。真实写入前必须确保目标屏幕没有其他编辑者，并在写入后立即回读核对。
 - 0.22.0 GUI补丁增加SAP端14位版本令牌检查和写后精确回读，但旧ECC时间粒度为秒，同一秒内的并发编辑仍不能视为强事务锁。工具公开原生CUA行，不提供高层可视化菜单设计器；调用者必须维护状态、功能、菜单、工具栏和PF键之间的有效关系。0.25.0已验证一套完整组合的SAP GUI运行时行为，但不代表所有SAP标准图标、动态文本、复杂控件和多语言组合均已覆盖。
 - 0.23.0安装器的本地和便携包受控预检已验证；真实 `w200`也已从0.23.0便携包完成 `status`和 `preflight`，三个助手均存在且已生成，函数组生成检查通过，整体 `ready=true`。旧ECC中基础助手和DDIC助手的 `ENLFDIR-ACTIVE`为空，但 `GENERATED=X`且此前已有真实调用证据，因此不作为失败条件。真实 `install`、`upgrade`和 `repair`尚未执行。安装器不能在空白SAP系统中创建前置函数组、基础类或客户引导RFC，正式系统仍应优先使用经过审查的SAP传输。

@@ -10,7 +10,7 @@ http://127.0.0.1:4847/mcp
 
 ## 首次一键接入
 
-解压0.27.0便携包后，在PowerShell 7中执行：
+解压0.27.1便携包后，在PowerShell 7中执行：
 
 ```powershell
 .\setup.ps1
@@ -21,7 +21,7 @@ http://127.0.0.1:4847/mcp
 ## 下次启动
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.27.0-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.27.1-win-x64
 .\start.ps1
 ```
 
@@ -130,7 +130,7 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone MCP，批量读取 w200 中 ZWMSTCTD01_FRM 和 ZCL_CA_HZ 的前10行，并分别汇总。
 ```
 
-当前独立版本公开65个工具。0.21.0为经典Dynpro增加屏幕指纹、组件新增/更新/删除、坐标移动和PBO/PAI静态验证；坐标移动通过 `update`修改 `LINE`和 `COLUMN`。0.22.0新增完整Menu Painter读取和原生CUA行级补丁，覆盖GUI Status、功能码、菜单、工具栏、PF键、状态功能映射和Titlebar；写入要求读取结果中的指纹、已有Workbench传输和SAP助手1.5。0.25.0已在真实 `w200`完成独立临时模块池、屏幕按钮、GUI Status、Titlebar、菜单、工具栏、PF键、PBO、PAI、事务码和Back/Exit/Cancel的SAP GUI运行时闭环，并在验收后删除临时事务和模块池。功能静态文本必须显式设置 `TEXT_TYPE = S`，退出功能码使用 `TYPE = E`并由 `MODULE ... AT EXIT-COMMAND`处理。PBO/PAI源码继续由现有精确源码编辑与激活工具维护。验证工具递归读取最多32个Include、深度8，并核对静态PF-STATUS和Titlebar引用；覆盖不完整时会明确警告。Report链路支持程序文本符号、消息类新建和Report事务创建；DDIC工具用于域、基于域的数据元素、平面结构、STANDARD/default-key表类型和透明表；函数模块链路支持完整接口读取、带显式接口的新建、包和开放传输分配检查，以及客户RFC的标量、平面结构、经典TABLES和DDIC表类型调用。0.16.0调试工具已完成无头化实现，但 `w200` 的ADT Debugger listener端点返回404，Agent应停止后续调试调用并报告系统能力不可用。0.20.0的 `invoke_customer_function_module`要求准确白名单、活动接口指纹、一次性请求ID和显式副作用确认，并持久化执行凭证；`get_customer_function_call_status`只读查询凭证。0.27.0要求Agent为每次写入提供并保存唯一 `operationId`，响应中的 `operationReceipt`用于核对目标、前置条件、结果摘要和恢复状态；未知结果先调用 `get_write_operation_status`，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换已有数据库表。所有写入均限制为 `Z*`/`Y*`，正式包必须提供已有传输；服务不会创建或释放传输。真实写入或RFC调用前必须取得准确对象名的当前任务批准。
+当前独立版本公开65个工具。0.21.0为经典Dynpro增加屏幕指纹、组件新增/更新/删除、坐标移动和PBO/PAI静态验证；坐标移动通过 `update`修改 `LINE`和 `COLUMN`。0.22.0新增完整Menu Painter读取和原生CUA行级补丁，覆盖GUI Status、功能码、菜单、工具栏、PF键、状态功能映射和Titlebar；写入要求读取结果中的指纹、已有Workbench传输和SAP助手1.5。0.25.0已在真实 `w200`完成独立临时模块池、屏幕按钮、GUI Status、Titlebar、菜单、工具栏、PF键、PBO、PAI、事务码和Back/Exit/Cancel的SAP GUI运行时闭环，并在验收后删除临时事务和模块池。功能静态文本必须显式设置 `TEXT_TYPE = S`，退出功能码使用 `TYPE = E`并由 `MODULE ... AT EXIT-COMMAND`处理。PBO/PAI源码继续由现有精确源码编辑与激活工具维护。验证工具递归读取最多32个Include、深度8，并核对静态PF-STATUS和Titlebar引用；覆盖不完整时会明确警告。Report链路支持程序文本符号、消息类新建和Report事务创建；DDIC工具用于域、基于域的数据元素、平面结构、STANDARD/default-key表类型和透明表；函数模块链路支持完整接口读取、带显式接口的新建、包和开放传输分配检查，以及客户RFC的标量、平面结构、经典TABLES和DDIC表类型调用。0.16.0调试工具已完成无头化实现，但 `w200` 的ADT Debugger listener端点返回404，Agent应停止后续调试调用并报告系统能力不可用。0.20.0的 `invoke_customer_function_module`要求准确白名单、活动接口指纹、一次性请求ID和显式副作用确认，并持久化执行凭证；`get_customer_function_call_status`只读查询凭证。0.27.1要求Agent为每次写入提供并保存唯一 `operationId`，响应中的 `operationReceipt`用于核对目标、前置条件、结果摘要和恢复状态；未知结果先调用 `get_write_operation_status`，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换已有数据库表。所有写入均限制为 `Z*`/`Y*`，正式包必须提供已有传输；服务不会创建或释放传输。真实写入或RFC调用前必须取得准确对象名的当前任务批准。
 
 ## 写操作中断恢复
 
@@ -141,6 +141,8 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 5. 需要重新执行时使用新的 `operationId`，并重新读取当前指纹或版本令牌；不要复用旧前置条件。
 
 示例：`operationId=agent-20260903-zobject-change-001`。操作ID不应包含密码、业务数据或其他敏感信息。
+
+0.27.1已在真实 `w200/200`以临时模块池 `ZCMCP_SAFE_0271`验证完成、失败、重复ID、输入冲突、中断凭证和同目标并发冲突；创建时回读确认包 `ZABAP`、请求 `GR2K923421`和活动源码，删除后由独立ABAP FS搜索、对象信息和源码读取确认不存在。中断凭证由隔离状态目录模拟服务重启遗留，不代表真实SAP调用被强制中止。
 
 真实 `w200`已验证 `$TMP`类、接口、程序、Include、函数组、函数模块和类测试Include创建。0.15.0在旧ECC函数组ADT创建端点返回405或501时使用SAP仓库助手后备创建；已在正式包中创建 `ZCMCP_FG_1501`和带完整接口的远程函数 `ZCMCP_FM_1501`，并通过接口回读、诊断、激活、仓库分配和外部SOAP正反例验证。0.26.0已通过SAP仓库助手在客户函数组 `ZCMCP_FG_0260`中创建并回读技术Include `LZCMCP_FG_0260F01`；对象位于 `ZABAP`和请求 `GR2K923421`，未释放传输。
 

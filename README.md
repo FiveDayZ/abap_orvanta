@@ -88,7 +88,7 @@ npm run verify
 npm run verify:release
 ```
 
-产物生成在 `release/`。目标电脑不需要安装 Node.js、VS Code或 Code OSS。压缩包已经包含默认 `w200`的 `connections.json`。0.27.0首次使用可直接运行 `setup.ps1`：它使用一次安全密码依次完成SAP助手预检、Codex MCP注册和服务启动。只使用其他Agent客户端时增加 `-SkipCodex`。如果预检报告助手缺失，先运行 `install-sap-helper.ps1 -Mode install`，再重新执行 `setup.ps1`。
+产物生成在 `release/`。目标电脑不需要安装 Node.js、VS Code或 Code OSS。压缩包已经包含默认 `w200`的 `connections.json`。0.27.1首次使用可直接运行 `setup.ps1`：它使用一次安全密码依次完成SAP助手预检、Codex MCP注册和服务启动。只使用其他Agent客户端时增加 `-SkipCodex`。如果预检报告助手缺失，先运行 `install-sap-helper.ps1 -Mode install`，再重新执行 `setup.ps1`。
 
 ```powershell
 .\setup.ps1
@@ -106,12 +106,12 @@ Codex CLI `0.92.0` 已实际调用便携服务的 MCP工具；Codex桌面端仍�
 
 便携目录根部的 `connections.json`是实际生效的连接配置，默认包含当前 `w200`。可以直接修改 `id`、`url`、`client`、`language`、`username`、`passwordEnv`和 `allowUnauthorized`。`remoteFunctionAllowlist`是允许正式调用的客户RFC准确名称数组，默认空数组；只接受 `Z*`或 `Y*`且不支持通配符。密码从 `passwordEnv`指定的环境变量读取，不允许增加 `password`字段。
 
-客户RFC调用凭证和0.27.0统一写操作凭证不写入便携目录，默认保存在当前Windows用户的 `%LOCALAPPDATA%\ABAP MCP Standalone\state`。需要调整位置时，在启动服务前设置 `ABAP_MCP_STATE_DIR`为独立可写目录；不要让多个不受信任用户共享同一个状态目录。
+客户RFC调用凭证和0.27.1统一写操作凭证不写入便携目录，默认保存在当前Windows用户的 `%LOCALAPPDATA%\ABAP MCP Standalone\state`。需要调整位置时，在启动服务前设置 `ABAP_MCP_STATE_DIR`为独立可写目录；不要让多个不受信任用户共享同一个状态目录。
 
 下次启动：
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.27.0-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.27.1-win-x64
 .\start.ps1
 ```
 
@@ -154,6 +154,8 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 0.26.0为ECC缺失或不兼容的ADT端点增加SAP仓库助手1.7后备路径：消息类读取和新建、CLASS/FUNCTION_GROUP文本符号读取与合并、函数组技术Include新建，以及传输请求、任务和对象明细读取。服务仍优先使用ADT，仅在明确的404、405、501、内容类型不兼容或文本锁句柄缺失时进入后备；任意其他错误保持失败，不会掩盖权限、网络或部分写入问题。所有新增写入继续限制为 `Z*`/`Y*`、正式包和已有传输；传输能力保持只读，不提供创建、修改、删除或释放操作。真实 `w200/200` 已通过仓库助手验证 `ZCMCP_MSG_0260`消息类、`ZCL_CMCP_0260`类文本、`ZCMCP_FG_0260`函数组文本、技术Include `LZCMCP_FG_0260F01`以及请求 `GR2K923421`的任务和对象明细；消息占位符实体正确回读为 `&1`，任务 `GR2K923422`没有空任务行。标准对象写入均被拒绝，请求未释放。
 
 0.27.0为22个SAP写入或潜在业务副作用工具增加统一操作凭证。调用方应为每次操作提供唯一 `operationId`；为兼容旧Agent该字段暂时可省略，但自动生成的ID只有在收到工具响应后才能用于恢复。服务在执行前以独占文件创建操作凭证和目标锁，同一连接、同一目标的并发操作失败关闭；相同操作ID不会再次执行，不同输入复用同一ID会报告冲突。响应包含变更前目标/前置条件摘要、输入及结果或错误SHA-256、完成/失败/中断状态和人工恢复指引；原始源码、业务输入输出和密码不写入凭证。`get_write_operation_status`只读查询凭证。服务重启或凭证收尾异常时禁止自动重试，必须先回读SAP目标、检查SAP锁和传输分配，再由人工处理残留本地锁。该安全层不是SAP LUW协调器，不承诺任意业务RFC自动回滚、幂等或Dry Run；变更前摘要是调用时声明的目标和并发前置条件，不是完整SAP对象快照。
+
+0.27.1增加可重复执行的真实SAP安全验收脚本。真实 `w200/200`在准确批准范围内临时创建 `ZCMCP_SAFE_0271`，回读确认对象活动、属于 `ZABAP`和开放请求 `GR2K923421`；同ID重复、同ID变更输入、已存在对象失败、持久化中断状态和同目标并发锁均按预期失败关闭。删除完成后又通过独立ABAP FS搜索、元数据读取和源码读取三种方式确认对象不存在。中断场景使用隔离状态目录播种未完成凭证，不代表真实SAP写入进程被强制终止。未释放传输，也未修改SAP标准对象。
 
 `sap_helper_status`是独立版本新增的只读扩展工具，通过 SAP SOAP/RFC 调用已安装的 `Z_CODEX_MCP_EXECUTE`。`ping`返回助手版本和就绪状态；`validate_target`由SAP侧检查 `Z*`/`Y*`命名空间、对象类型白名单和当前登录用户的 `S_DEVELOP`显示权限。该工具不修改SAP数据。真实 `w200/200` 已安装 `$TMP`函数组 `ZCODEX_MCP_CORE`、类 `ZCL_CODEX_MCP_CORE`和远程函数 `Z_CODEX_MCP_EXECUTE`；没有修改SAP标准对象，也没有创建或释放传输。
 
