@@ -37,6 +37,8 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "create_report_transaction",
       "create_test_include",
       "create_transaction_code",
+      "delete_abap_source_object",
+      "delete_ddic_object",
       "delete_module_pool",
       "delete_transaction_code",
       "execute_data_query",
@@ -79,6 +81,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "search_abap_object_lines",
       "search_abap_objects",
       "test_remote_function_module",
+      "update_abap_message_class",
       "upsert_abap_screen",
       "upsert_ddic_data_element",
       "upsert_ddic_domain",
@@ -427,6 +430,112 @@ test("full source baseline freezes and classifies every original tool contract",
   assert.equal(baseline.toolCount, 54)
   assert.equal(new Set(baseline.tools.map((tool) => tool.name)).size, 54)
   assert.ok(baseline.tools.every((tool) => tool.classification))
+})
+
+test("0.30 lifecycle writes return version 2 operation receipts", async () => {
+  const stateRoot = await mkdtemp(join(tmpdir(), "abap-mcp-lifecycle-receipts-"))
+  const running = await startHttpServer(new MockBackend(), 0, stateRoot)
+  const client = new Client({ name: "lifecycle-receipt-client", version: "0.1.0" })
+  try {
+    const transport = new StreamableHTTPClientTransport(new URL(running.mcpUrl))
+    await client.connect(transport as Parameters<Client["connect"]>[0])
+
+    const createdMessage = await client.callTool({
+      name: "create_abap_message_class",
+      arguments: {
+        operationId: "protocol-create-message-0300",
+        messageClass: "ZCMCP_MSG_0300",
+        description: "Lifecycle receipt",
+        messages: [{ number: "001", text: "Before" }],
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(createdMessage.isError, undefined)
+
+    const updatedMessage = await client.callTool({
+      name: "update_abap_message_class",
+      arguments: {
+        operationId: "protocol-update-message-0300",
+        messageClass: "ZCMCP_MSG_0300",
+        expectedVersion: "20260831140000",
+        operations: [{ operation: "update", number: "001", text: "After" }],
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(updatedMessage.isError, undefined)
+
+    const createdDomain = await client.callTool({
+      name: "upsert_ddic_domain",
+      arguments: {
+        operationId: "protocol-create-domain-0300",
+        objectName: "ZCMCP_DOM_0300",
+        description: "Lifecycle receipt",
+        dataType: "CHAR",
+        length: 10,
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(createdDomain.isError, undefined)
+    const createdDomainBody = JSON.parse(
+      (createdDomain.content as Array<{ type: string; text?: string }>)[0]?.text ?? "{}"
+    ) as { version: string }
+
+    const deletedDdic = await client.callTool({
+      name: "delete_ddic_object",
+      arguments: {
+        operationId: "protocol-delete-domain-0300",
+        objectType: "DOMA",
+        objectName: "ZCMCP_DOM_0300",
+        expectedVersion: createdDomainBody.version,
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        confirmation: "PERMANENT_DELETE",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(deletedDdic.isError, undefined)
+
+    const deletedSource = await client.callTool({
+      name: "delete_abap_source_object",
+      arguments: {
+        operationId: "protocol-delete-source-0300",
+        objectType: "CLAS/OC",
+        objectName: "ZCL_DEMO",
+        packageName: "ZVALIDATION",
+        transportNumber: "GR2K923421",
+        confirmation: "PERMANENT_DELETE",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(deletedSource.isError, undefined)
+
+    for (const result of [updatedMessage, deletedDdic, deletedSource]) {
+      const body = JSON.parse(
+        (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "{}"
+      ) as {
+        operationReceipt?: {
+          version?: number
+          status?: string
+          sapInvocationStarted?: boolean
+          sapPreChangeEvidence?: { exists?: boolean }
+        }
+      }
+      assert.equal(body.operationReceipt?.version, 2)
+      assert.equal(body.operationReceipt?.status, "completed")
+      assert.equal(body.operationReceipt?.sapInvocationStarted, true)
+      assert.equal(body.operationReceipt?.sapPreChangeEvidence?.exists, true)
+    }
+  } finally {
+    await client.close()
+    await running.close()
+    await rm(stateRoot, { recursive: true, force: true })
+  }
 })
 
 test("failed SAP pre-change observation prevents the write action", async () => {

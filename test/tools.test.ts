@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { createHash } from "node:crypto"
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises"
 import { createServer } from "node:http"
 import type { AddressInfo } from "node:net"
@@ -501,6 +502,20 @@ test("repository helper SOAP separates public write rows from native read rows",
   assert.equal(result.header.PROG, "ZMODULE_POOL")
   assert.equal(result.fields[0]?.FNAM, "GV_NAME")
   assert.deepEqual(result.flowLogic, [{ LINE: "PROCESS BEFORE OUTPUT." }])
+})
+
+test("repository helper SOAP serializes the message-class version guard", () => {
+  const envelope = buildSapRepositoryEnvelope({
+    operation: "UPDATE_MESSAGE_CLASS",
+    objectName: "ZCMCP_MSG_0300",
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    expectedVersion: "20260903120000",
+    source: ["F|1|MSGNR|001", "F|1|TEXT|Updated"]
+  })
+  assert.match(envelope, /<IV_EXPECTED_VERSION>20260903120000<\/IV_EXPECTED_VERSION>/)
+  assert.match(envelope, /<LINE>F\|1\|MSGNR\|001<\/LINE>/)
+  assert.match(envelope, /<LINE>F\|1\|TEXT\|Updated<\/LINE>/)
 })
 
 test("repository helper SOAP serializes explicit Dynpro patch operations", () => {
@@ -1228,6 +1243,298 @@ test("report transaction and message class tools reject unsafe requests", async 
   }
   await tools.createAbapMessageClass(createInput)
   await assert.rejects(tools.createAbapMessageClass(createInput), /MESSAGE_CLASS_EXISTS/)
+})
+
+test("message class incremental update preserves untouched messages and enforces versions", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  await tools.createAbapMessageClass({
+    messageClass: "ZCMCP_MSG_0300",
+    description: "Lifecycle validation",
+    messages: [
+      { number: "001", text: "Keep" },
+      { number: "002", text: "Replace" },
+      { number: "003", text: "Remove" }
+    ],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    connectionId: "w200"
+  })
+  const updated = JSON.parse(
+    await tools.updateAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0300",
+      expectedVersion: "20260831140000",
+      operations: [
+        { operation: "update", number: "002", text: "Updated" },
+        { operation: "remove", number: "003" },
+        { operation: "add", number: "004", text: "Added" }
+      ],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    })
+  ) as { status: string; version: string; definition: { messages: unknown[] } }
+  assert.equal(updated.status, "MESSAGE_CLASS_UPDATED")
+  assert.equal(updated.version, "20260903120000")
+  assert.deepEqual(updated.definition.messages, [
+    { number: "001", text: "Keep" },
+    { number: "002", text: "Updated" },
+    { number: "004", text: "Added" }
+  ])
+  await assert.rejects(
+    tools.updateAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0300",
+      expectedVersion: "20260831140000",
+      operations: [{ operation: "add", number: "005", text: "Stale" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /VERSION_CONFLICT/
+  )
+
+  await assert.rejects(
+    tools.updateAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0300",
+      expectedVersion: "20260903120000",
+      operations: [
+        { operation: "remove", number: "001" },
+        { operation: "remove", number: "002" },
+        { operation: "remove", number: "004" }
+      ],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /MESSAGE_CLASS_EMPTY/
+  )
+
+  await assert.rejects(
+    tools.updateAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0300",
+      expectedVersion: "20260903120000",
+      operations: [
+        { operation: "update", number: "002", text: "First" },
+        { operation: "remove", number: "002" }
+      ],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /Duplicate message operation/
+  )
+})
+
+test("controlled source and DDIC deletion verify package, version, and absence", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const deletedSource = JSON.parse(
+    await tools.deleteSourceObject({
+      objectType: "CLAS/OC",
+      objectName: "ZCL_DEMO",
+      packageName: "ZVALIDATION",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    })
+  ) as { absenceVerified: boolean; preDeleteFingerprint: string }
+  assert.equal(deletedSource.absenceVerified, true)
+  assert.match(deletedSource.preDeleteFingerprint, /^[a-f0-9]{64}$/)
+
+  const created = JSON.parse(
+    await tools.upsertDdicDomain({
+      objectName: "ZCMCP_DOM_0300",
+      description: "Delete validation",
+      dataType: "CHAR",
+      length: 10,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    })
+  ) as { version: string }
+  const deletedDdic = JSON.parse(
+    await tools.deleteDdicObject({
+      objectType: "DOMA",
+      objectName: "ZCMCP_DOM_0300",
+      expectedVersion: created.version,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    })
+  ) as { absenceVerified: boolean; status: string }
+  assert.deepEqual(deletedDdic, {
+    connectionId: "w200",
+    objectType: "DOMA",
+    objectName: "ZCMCP_DOM_0300",
+    packageName: "ZABAP",
+    recordedRequest: "GR2K923421",
+    status: "DDIC_OBJECT_DELETED",
+    absenceVerified: true
+  })
+
+  await assert.rejects(
+    tools.deleteSourceObject({
+      objectType: "CLAS/OC",
+      objectName: "ZREPORT_DEMO",
+      packageName: "ZVALIDATION",
+      transportNumber: "GR2K923421",
+      confirmation: "WRONG" as "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /confirmation must be PERMANENT_DELETE/
+  )
+  await assert.rejects(
+    tools.deleteDdicObject({
+      objectType: "DOMA",
+      objectName: "ZCMCP_DOM_0300",
+      expectedVersion: created.version,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "WRONG" as "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /confirmation must be PERMANENT_DELETE/
+  )
+})
+
+test("controlled deletion rejects wrong package, parent, and DDIC dependencies", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+
+  await assert.rejects(
+    tools.deleteSourceObject({
+      objectType: "CLAS/OC",
+      objectName: "ZCL_DEMO",
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /PACKAGE_CONFLICT/
+  )
+
+  const searchObjects = backend.searchObjects.bind(backend)
+  backend.searchObjects = async (connectionId, pattern, types, maxResults) => {
+    if (pattern === "ZCMCP_FM_0300" || pattern === "LZCMCP_FG_0300F01") {
+      return [
+        pattern === "ZCMCP_FM_0300"
+          ? {
+              name: "ZCMCP_FM_0300",
+              type: "FUGR/FF",
+              description: "Parent validation",
+              package: "ZABAP",
+              systemType: "CUSTOM",
+              uri: "/sap/bc/adt/functions/groups/zcmcp_fg_actual/fmodules/zcmcp_fm_0300"
+            }
+          : {
+              name: "LZCMCP_FG_0300F01",
+              type: "PROG/I",
+              description: "Technical Include",
+              package: "ZABAP",
+              systemType: "STANDARD",
+              uri: "/sap/bc/adt/functions/groups/zcmcp_fg_0300/includes/lzcmcp_fg_0300f01"
+            }
+      ]
+    }
+    return searchObjects(connectionId, pattern, types, maxResults)
+  }
+  await assert.rejects(
+    tools.deleteSourceObject({
+      objectType: "FUGR/FF",
+      objectName: "ZCMCP_FM_0300",
+      parentName: "ZCMCP_FG_WRONG",
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /PARENT_CONFLICT/
+  )
+
+  const readSource = backend.readSource.bind(backend)
+  backend.readSource = async (connectionId, object) =>
+    object.name === "LZCMCP_FG_0300F01"
+      ? { source: "FORM example.\nENDFORM.", uriUsed: `${object.uri}/source/main` }
+      : readSource(connectionId, object)
+  const deletedInclude = JSON.parse(
+    await tools.deleteSourceObject({
+      objectType: "FUGR/I",
+      objectName: "F01",
+      parentName: "ZCMCP_FG_0300",
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    })
+  ) as { objectName: string; parentName: string; absenceVerified: boolean }
+  assert.deepEqual(deletedInclude, {
+    connectionId: "w200",
+    objectType: "FUGR/I",
+    objectName: "LZCMCP_FG_0300F01",
+    parentName: "ZCMCP_FG_0300",
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    preDeleteFingerprint: createHash("sha256").update("FORM example.\nENDFORM.").digest("hex"),
+    absenceVerified: true,
+    status: "SOURCE_OBJECT_DELETED"
+  })
+
+  const created = JSON.parse(
+    await tools.upsertDdicDomain({
+      objectName: "ZCMCP_DEP_0300",
+      description: "Dependency validation",
+      dataType: "CHAR",
+      length: 10,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    })
+  ) as { version: string }
+  const callSapDdic = backend.callSapDdic.bind(backend)
+  backend.callSapDdic = async (connectionId, request) => {
+    if (request.operation === "DELETE_DOMAIN") {
+      return {
+        status: "E",
+        code: "DEPENDENCIES_EXIST",
+        message: "DDIC object is still referenced",
+        version: "1.4",
+        packageName: "ZABAP",
+        objectVersion: created.version,
+        recordedRequest: "",
+        header: {},
+        fixedValues: [],
+        fields: []
+      }
+    }
+    return callSapDdic(connectionId, request)
+  }
+  await assert.rejects(
+    tools.deleteDdicObject({
+      objectType: "DOMA",
+      objectName: "ZCMCP_DEP_0300",
+      expectedVersion: created.version,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /DEPENDENCIES_EXIST/
+  )
+
+  const unverifiableBackend = new MockBackend()
+  unverifiableBackend.sourceObjectExists = async () => true
+  await assert.rejects(
+    new ToolService(unverifiableBackend).deleteSourceObject({
+      objectType: "CLAS/OC",
+      objectName: "ZCL_DEMO",
+      packageName: "ZVALIDATION",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /deletion verification still found/
+  )
 })
 
 test("function module tools create, read, fingerprint, inspect, and reject unsafe inputs", async () => {

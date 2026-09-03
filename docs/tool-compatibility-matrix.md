@@ -35,6 +35,7 @@
 | `create_report_transaction`             | 独立扩展      | 已实现，仅新建客户Report事务     | SAP仓库助手1.2           | w200通过          |
 | `read_abap_message_class`               | 独立扩展      | 已实现，活动消息类完整回读       | ADT或仓库助手1.7         | w200助手通过      |
 | `create_abap_message_class`             | 独立扩展      | 已实现，仅新建客户消息类         | ADT或仓库助手1.7         | w200助手通过      |
+| `update_abap_message_class`             | 独立扩展      | 已实现，版本化消息增量更新       | SAP仓库助手1.8           | Mock/协议通过     |
 | `read_ddic_domain`                      | 独立扩展      | 已实现，活动域和固定值回读       | SAP DDIC助手1.2          | w200通过          |
 | `upsert_ddic_domain`                    | 独立扩展      | 已实现，客户域完整替换           | SAP DDIC助手1.2          | w200通过          |
 | `read_ddic_data_element`                | 独立扩展      | 已实现，活动数据元素回读         | SAP DDIC助手1.2          | w200通过          |
@@ -45,6 +46,7 @@
 | `create_ddic_transparent_table`         | 独立扩展      | 已实现，仅新建客户透明表         | SAP DDIC助手1.3          | w200通过          |
 | `read_ddic_table_type`                  | 独立扩展      | 已实现，活动表类型回读           | SAP DDIC助手1.2          | w200通过          |
 | `upsert_ddic_table_type`                | 独立扩展      | 已实现，STANDARD默认键表类型替换 | SAP DDIC助手1.2          | w200通过          |
+| `delete_ddic_object`                    | 独立扩展      | 已实现，依赖检查后受控删除       | SAP DDIC助手1.4          | Mock/协议通过     |
 | `search_abap_objects`                   | 已冻结        | 已实现                           | `ADTClient.searchObject` | 真实双跑通过      |
 | `get_abap_object_info`                  | 已冻结        | 已实现，含DDIC和Enhancement      | ADT源码与DD表查询        | 真实双跑通过      |
 | `get_abap_object_lines`                 | 已冻结        | 已实现，含方法提取和DDIC回退     | ADT源码与DD表查询        | 真实双跑通过      |
@@ -69,6 +71,7 @@
 | `replace_string_in_abap_object`         | 已冻结        | 已实现，客户源码矩阵和完整锁流程 | ADT lock/source/activate | w200类写通过      |
 | `abap_activate`                         | 已冻结        | 已实现，仅限显式Z/Y对象URI       | ADT activation           | w200链路通过      |
 | `create_object_programmatically`        | 已冻结        | 已实现，客户源码创建和传输保护   | ADT或仓库助手1.7         | Include助手通过   |
+| `delete_abap_source_object`             | 独立扩展      | 已实现，客户源码对象受控删除     | ADT原生锁和删除          | Mock/协议通过     |
 | `create_test_include`                   | 已冻结        | 已实现，客户类测试Include创建    | ADT class include API    | w200通过          |
 | `manage_text_elements`                  | 已冻结        | 三类对象ADT优先、助手后备        | ADT或仓库助手1.7         | w200助手通过      |
 
@@ -77,7 +80,7 @@
 ## 已验证边界
 
 - MCP Streamable HTTP初始化、工具枚举和工具调用。
-- 当前67个工具均通过MCP协议枚举；原版工具契约继续按冻结基线回归，独立扩展工具通过协议和Mock回归验证。
+- 当前70个工具均通过MCP协议枚举；原版工具契约继续按冻结基线回归，独立扩展工具通过协议和Mock回归验证。
 - 原版52个语言模型工具和2个MCP专属工具已冻结到 `contracts/full-tool-baseline.json`，并完成SAP核心、编辑器专属、本地工具及影响类型分类。
 - Mock SAP后端下普通类、程序和DDIC表的搜索、信息、分段读取、方法提取、Enhancement元数据和批量读取行为。
 - 源码和构建产物不存在 `vscode`、`Code.exe`、Extension Host或子进程调用。
@@ -112,6 +115,7 @@
 - 0.27.0为22个SAP写入或潜在副作用工具增加统一操作ID、持久化SHA-256凭证、目标级跨进程独占锁、重复ID/输入冲突拒绝、前置条件摘要、完成/失败/中断状态和人工恢复指引；新增 `get_write_operation_status`。本地协议与故障回归覆盖完成、失败、重复、同目标并发、服务重启中断和陈旧锁失败关闭。凭证不保存原始源码或业务载荷。该层不自动重试，不自动删除陈旧锁，也不承诺任意业务RFC回滚。
 - 0.27.1完成真实SAP安全验收。真实 `w200/200`在包 `ZABAP`、请求 `GR2K923421`中临时创建并回读活动模块池 `ZCMCP_SAFE_0271`，验证同ID重复返回 `duplicate_blocked`、同ID变更输入返回 `operation_id_conflict`、已存在对象失败凭证为 `failed`、隔离状态目录播种的未完成凭证恢复为 `interrupted`、残留目标锁返回 `target_concurrency_conflict`，并确认 `automaticRetry=false`和 `automaticRollback=false`。删除返回 `completed`后，独立ABAP FS搜索、对象信息和源码读取均确认对象不存在；未释放传输，未修改SAP标准对象。
 - 0.28.0在写动作前持久化只读SAP观察证据，包含目标存在性、活动状态、版本或指纹、包、请求、任务及观察时间；无法确认存在性时不调用写动作。恢复中心可只读列出中断/陈旧操作，并在最新凭证哈希、精确人工确认和原因齐全时仅解除本地目标锁。Mock和MCP协议覆盖证据、旧凭证兼容、列表边界、活动操作拒绝、哈希冲突和人工解除；不清除SAP锁、不自动重试、不自动回滚RFC。
+- 0.30.0新增消息类版本化增量更新、七类源码对象ADT受控删除，以及域、数据元素、结构和表类型的依赖检查后删除。Mock、SOAP生成器和MCP协议覆盖版本冲突、增删改保留语义、禁止清空、重复操作、包/父对象/确认门控、依赖拒绝、写后不存在验证和版本2操作凭证；尚未执行真实 `w200`写入。
 - 包和传输检查确认模块池与事务均属于 `ZABAP`，请求 `GR2K923421`及用户任务 `GR2K923422`保持可修改；请求中包含 `R3TR PROG ZCODEX_MCP_DYNPRO`和 `R3TR TRAN ZCODEX_MCP_UI`。屏幕 `0100`没有独立的 `LIMU DYNP`记录，由已入请求的主程序对象覆盖。
 - WebGUI已实际打开 `ZCODEX_MCP_UI`，确认初始文本显示、输入字段可编辑、`Clear`清空内容且`Exit`返回Easy Access；SAP页面来源没有控制台错误。浏览器扩展自身的报错与SAP页面无关。
 - 真实 `w200`已在 `$TMP`创建并激活 `ZCODEX_MCP_CLS_0828`、`ZCODEX_MCP_IF_0828`、`ZCODEX_MCP_PRG_0828`和 `ZCODEX_MCP_I_0828`；源码回读和语法诊断通过。`ZCODEX_MCP_CLS_0828`测试Include创建、回读、激活和诊断通过。
@@ -141,10 +145,10 @@
 - 独立 `abap_activate`工具未单独对带有预先存在非活动版本的对象执行；已验证的是精确替换内部复用的同一激活后端链路。
 - 旧版已授权的函数组技术Include `LZCODEX_MCP_FG_0828F01`没有创建；ADT通用请求返回404，v2媒体类型端点返回501。0.26.0已改用仓库助手后备，并在准确批准对象 `LZCMCP_FG_0260F01`上完成真实创建和源码回读。
 - `w200`不公开 `DDLS/DF`和 `DCLS/DL`创建类型，`ZCODEX_MCP_DDL_0828`与 `ZCODEX_MCP_DCL_0828`在写入前被拒绝并确认不存在；ECC 7.31不具备本阶段所需CDS创建能力。
-- 已创建对象没有自动删除；若不再需要，必须另行取得准确对象删除授权并使用支持删除的受控工具。
+- 0.30.0源码和DDIC删除尚未在真实 `w200`验证。执行前必须批准准确临时对象、父对象、包、请求和清理范围；透明数据库表、DDL、DCL及其他未列类型仍无删除入口。
 - PROGRAM文本符号继续使用已验证的仓库助手路径。0.26.0将CLASS和FUNCTION_GROUP文本符号扩展为ADT优先、仓库助手1.7后备；真实 `w200`已对 `ZCL_CMCP_0260`和 `ZCMCP_FG_0260`的文本符号 `026`完成写入和回读。
 - 基础助手 `1.0`仍不写入；仓库助手 `1.5`在1.4基础上增加原生CUA读取和受控写入，不代表所有结构化仓库对象均可写。1.5已安装到真实 `w200`，活动函数源码无诊断并通过Titlebar真实写入回归。
 - 真实 `w200` 文本元素ADT锁端点返回HTTP 200但不返回锁句柄，文本元素URI激活返回 `No URI-Mapping defined`。0.26.0将该明确能力缺失分类为可进入ECC文本池助手后备；权限、网络和其他保存失败不会触发后备。
-- 0.13.0透明表能力仅支持读取和新建，不支持现有透明表结构替换、技术设置变更、删除或重命名。`w200` 的ADT Discovery未公开消息类端点；0.26.0通过T100A/T100只读及受控新建助手后备完成 `ZCMCP_MSG_0260`真实创建和回读，不支持更新已有消息类。
+- 0.13.0透明表能力仅支持读取和新建，不支持现有透明表结构替换、技术设置变更、删除或重命名。`w200` 的ADT Discovery未公开消息类端点；0.26.0通过T100A/T100只读及受控新建助手后备完成 `ZCMCP_MSG_0260`真实创建和回读。0.30.0消息更新依赖仓库助手1.8，尚未在真实系统验证。
 - `manage_transport_requests`在真实 `w200`查询当前用户 `WYS`成功。0.26.0对旧ECC不完整的ADT明细增加E070/E07T/E071只读助手后备，真实回读确认 `GR2K923421`、任务 `GR2K923422`及20条主请求/任务对象记录；不会释放传输。
 - `adt_discovery_export`在真实 `w200`返回21个workspace和39个collection，但该旧ECC本次未返回template link、core discovery entry或RES_APP class；导出链路和四文件落盘已验证，空项不代表这些发现能力在该系统可用。

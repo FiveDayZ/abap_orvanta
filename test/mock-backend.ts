@@ -13,6 +13,7 @@ import type {
   ExportResourceInfo,
   MessageClassCreationInfo,
   MessageClassInfo,
+  MessageClassMutationInfo,
   ObjectCreationInfo,
   RevisionInfo,
   RemoteFunctionRequest,
@@ -264,7 +265,12 @@ export class MockBackend implements SapBackend {
   ])
   private readonly messageClasses = new Map<
     string,
-    { description: string; packageName: string; messages: Array<{ number: string; text: string }> }
+    {
+      description: string
+      packageName: string
+      version?: string
+      messages: Array<{ number: string; text: string }>
+    }
   >([
     [
       "00",
@@ -356,6 +362,7 @@ export class MockBackend implements SapBackend {
     ]
   ])
   remoteFunctionCalls = 0
+  private readonly deletedSourceObjects = new Set<string>()
   private readonly ddicByKey = new Map<string, SapDdicResult>([
     [
       "READ_DOMAIN:CHAR10",
@@ -841,6 +848,7 @@ export class MockBackend implements SapBackend {
     const readOperation = request.operation
       .replace("UPSERT", "READ")
       .replace("CREATE_TRANSPARENT_TABLE", "READ_TRANSPARENT_TABLE")
+      .replace("DELETE", "READ")
     const key = `${readOperation}:${request.objectName}`
     const existing = this.ddicByKey.get(key)
     if (request.operation.startsWith("READ")) {
@@ -852,6 +860,39 @@ export class MockBackend implements SapBackend {
             code: "DDIC_OBJECT_NOT_FOUND",
             message: "DDIC object does not exist"
           }
+    }
+    if (request.operation.startsWith("DELETE")) {
+      if (!existing) {
+        return {
+          ...mockDdicResult("domain", {}, ""),
+          status: "E",
+          code: "DDIC_OBJECT_NOT_FOUND",
+          message: "DDIC object does not exist"
+        }
+      }
+      if (request.expectedVersion !== existing.objectVersion) {
+        return {
+          ...existing,
+          status: "E",
+          code: "VERSION_CONFLICT",
+          message: "DDIC object changed since it was read"
+        }
+      }
+      if (request.packageName !== existing.packageName) {
+        return {
+          ...existing,
+          status: "E",
+          code: "PACKAGE_CONFLICT",
+          message: "DDIC object belongs to another package"
+        }
+      }
+      this.ddicByKey.delete(key)
+      return {
+        ...mockDdicResult(ddicKind(request.operation), {}, request.packageName ?? ""),
+        code: "DDIC_OBJECT_DELETED",
+        message: "DDIC object deleted after dependency check",
+        recordedRequest: request.transportNumber ?? ""
+      }
     }
     if (request.operation === "CREATE_TRANSPARENT_TABLE" && existing) {
       return {
@@ -999,6 +1040,7 @@ export class MockBackend implements SapBackend {
     )
     return objects
       .filter((object) => regex.test(object.name))
+      .filter((object) => !this.deletedSourceObjects.has(`${object.type}:${object.name}`))
       .filter((object) => !types?.length || types.some((type) => object.type.startsWith(type)))
       .slice(0, maxResults)
   }
@@ -1296,6 +1338,20 @@ export class MockBackend implements SapBackend {
     }
   }
 
+  async deleteObject(
+    connectionId: string,
+    object: AbapObjectInfo,
+    _transportNumber: string
+  ): Promise<void> {
+    if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    this.deletedSourceObjects.add(`${object.type}:${object.name}`)
+  }
+
+  async sourceObjectExists(connectionId: string, object: AbapObjectInfo): Promise<boolean> {
+    if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    return !this.deletedSourceObjects.has(`${object.type}:${object.name}`)
+  }
+
   async readMessageClass(connectionId: string, messageClass: string): Promise<MessageClassInfo> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     const normalized = messageClass.toUpperCase()
@@ -1307,7 +1363,7 @@ export class MockBackend implements SapBackend {
       description: existing.description,
       packageName: existing.packageName,
       masterLanguage: "E",
-      version: "20260831140000",
+      version: existing.version ?? "20260831140000",
       messages: existing.messages
     }
   }
@@ -1330,6 +1386,31 @@ export class MockBackend implements SapBackend {
       transportNumber,
       activation: { success: true, messages: [], inactiveObjects: [] }
     }
+  }
+
+  async updateMessageClass(
+    connectionId: string,
+    messageClass: string,
+    expectedVersion: string,
+    messages: Array<{ number: string; text: string }>,
+    packageName: string,
+    transportNumber: string
+  ): Promise<MessageClassMutationInfo> {
+    const normalized = messageClass.toUpperCase()
+    const existing = this.messageClasses.get(normalized)
+    if (!existing) throw new Error("MESSAGE_CLASS_NOT_FOUND: Message class does not exist")
+    if ((existing.version ?? "20260831140000") !== expectedVersion) {
+      throw new Error("VERSION_CONFLICT: Message class changed since it was read")
+    }
+    if (existing.packageName !== packageName) {
+      throw new Error("PACKAGE_CONFLICT: Message class belongs to another package")
+    }
+    this.messageClasses.set(normalized, {
+      ...existing,
+      version: "20260903120000",
+      messages
+    })
+    return { ...(await this.readMessageClass(connectionId, normalized)), transportNumber }
   }
 
   async createTestInclude(

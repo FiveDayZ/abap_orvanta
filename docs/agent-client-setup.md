@@ -10,7 +10,7 @@ http://127.0.0.1:4847/mcp
 
 ## 首次一键接入
 
-解压0.28.0便携包后，在PowerShell 7中执行：
+解压0.30.0便携包后，在PowerShell 7中执行：
 
 ```powershell
 .\setup.ps1
@@ -21,7 +21,7 @@ http://127.0.0.1:4847/mcp
 ## 下次启动
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.28.0-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.30.0-win-x64
 .\start.ps1
 ```
 
@@ -130,7 +130,7 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone MCP，批量读取 w200 中 ZWMSTCTD01_FRM 和 ZCL_CA_HZ 的前10行，并分别汇总。
 ```
 
-当前独立版本公开67个工具。0.21.0为经典Dynpro增加屏幕指纹、组件新增/更新/删除、坐标移动和PBO/PAI静态验证；坐标移动通过 `update`修改 `LINE`和 `COLUMN`。0.22.0新增完整Menu Painter读取和原生CUA行级补丁，覆盖GUI Status、功能码、菜单、工具栏、PF键、状态功能映射和Titlebar；写入要求读取结果中的指纹、已有Workbench传输和SAP助手1.5。0.25.0已在真实 `w200`完成独立临时模块池、屏幕按钮、GUI Status、Titlebar、菜单、工具栏、PF键、PBO、PAI、事务码和Back/Exit/Cancel的SAP GUI运行时闭环，并在验收后删除临时事务和模块池。功能静态文本必须显式设置 `TEXT_TYPE = S`，退出功能码使用 `TYPE = E`并由 `MODULE ... AT EXIT-COMMAND`处理。PBO/PAI源码继续由现有精确源码编辑与激活工具维护。验证工具递归读取最多32个Include、深度8，并核对静态PF-STATUS和Titlebar引用；覆盖不完整时会明确警告。Report链路支持程序文本符号、消息类新建和Report事务创建；DDIC工具用于域、基于域的数据元素、平面结构、STANDARD/default-key表类型和透明表；函数模块链路支持完整接口读取、带显式接口的新建、包和开放传输分配检查，以及客户RFC的标量、平面结构、经典TABLES和DDIC表类型调用。0.16.0调试工具已完成无头化实现，但 `w200` 的ADT Debugger listener端点返回404，Agent应停止后续调试调用并报告系统能力不可用。0.20.0的 `invoke_customer_function_module`要求准确白名单、活动接口指纹、一次性请求ID和显式副作用确认，并持久化执行凭证；`get_customer_function_call_status`只读查询凭证。0.28.0要求Agent为每次写入提供并保存唯一 `operationId`，响应中的 `operationReceipt.sapPreChangeEvidence`用于核对SAP实际观察值；未知结果先调用 `get_write_operation_status`或 `list_write_recovery_operations`，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换已有数据库表。所有写入均限制为 `Z*`/`Y*`，正式包必须提供已有传输；服务不会创建或释放传输。真实写入或RFC调用前必须取得准确对象名的当前任务批准。
+当前独立版本公开70个工具。0.30.0新增消息类版本化 `add/update/remove`、类/接口/程序/Include/函数组/函数组Include/函数模块受控删除，以及域/数据元素/结构/表类型依赖检查后删除。消息更新要求当前版本；源码删除走ADT原生锁和删除；DDIC删除要求当前版本并由助手检查引用。删除工具都要求 `confirmation=PERMANENT_DELETE`。所有写工具继续要求唯一 `operationId`并返回版本2凭证；未知结果先查询恢复中心，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换或删除。所有写入均限制为 `Z*`/`Y*`、正式包和已有请求，不创建或释放传输。0.30.0当前只有本地Mock、SOAP生成器和MCP协议证据；真实SAP执行前必须取得准确对象和清理范围批准。
 
 ## 写操作中断恢复
 
@@ -162,7 +162,7 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone 的 sap_helper_status，action=ping，connectionId=w200；只返回助手状态，不修改SAP。
 ```
 
-基础SAP助手 `1.0`提供 `PING`和 `VALIDATE_TARGET`；仓库助手 `1.5`在原1.4能力上增加完整原生CUA读取、版本检查和受控写入。真实 `w200`已安装助手1.5，活动源码无诊断；`ZCODEX_MCP_DYNPRO`已完成Titlebar新增、更新、陈旧指纹拒绝、删除和清理回读，屏幕 `0100`的Dynpro应用验证为`valid`。程序保持在包`ZABAP`和开放请求`GR2K923421`，请求未释放。事务 `ZCODEX_MCP_UI`继续指向该模块池和屏幕；此前WebGUI交互结果仍有效，本轮没有重复浏览器交互测试，也没有逐组验证状态、菜单、工具栏和PF键组合。
+基础SAP助手 `1.0`提供 `PING`和 `VALIDATE_TARGET`；0.30.0便携包提供仓库助手 `1.8`和DDIC助手 `1.4`。真实 `w200`已验证的安装基线仍是仓库助手1.7和DDIC助手1.3；在执行0.30.0真实生命周期验收前需先经明确授权升级助手，且不得释放传输。
 
 函数模块调用示例（创建前必须批准准确对象名）：
 
@@ -201,6 +201,8 @@ DDIC调用示例（写入前仍需批准准确对象名）：
 ```text
 使用 abap_fs_standalone MCP，在 w200 先调用 read_ddic_domain 读取当前版本。仅对已批准的 Z* 或 Y* 对象调用 upsert_ddic_domain；packageName=ZABAP，transportNumber=GR2K923421，更新时传入读取结果中的 expectedVersion。完成后再次回读并核对包、版本和定义。不要创建或释放传输。
 ```
+
+生命周期删除调用必须先只读确认准确类型、父对象、包、请求、版本或指纹，再使用新的 `operationId`和 `confirmation=PERMANENT_DELETE`。函数组子对象必须提供 `parentName`；DDIC依赖返回 `DEPENDENCIES_EXIST`时停止并人工处理引用，不能强制删除。删除响应后再次搜索或读取确认对象不存在，并保存 `receiptHash`。任何网络中断或结果未知都先查询原操作凭证，不自动重试、不自动清除SAP锁。
 
 透明表调用示例：
 

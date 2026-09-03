@@ -156,6 +156,12 @@ foreach ($marker in @(
         "DDIF_DTEL_PUT",
         "DDIF_STATE_GET",
         "DDIF_OBJECT_DELETE",
+        "DELETE_DOMAIN",
+        "DELETE_DATA_ELEMENT",
+        "DELETE_STRUCTURE",
+        "DELETE_TABLE_TYPE",
+        "DEPENDENCIES_EXIST",
+        "DDIC_OBJECT_DELETED",
         "lv_state_type = 'TABL'",
         "DDIF_TABL_PUT",
         "READ_TRANSPARENT_TABLE",
@@ -173,8 +179,8 @@ foreach ($marker in @(
         throw "DDIC bootstrap is missing marker: $marker"
     }
 }
-if (-not ($ddicFunction -match "ev_version = '1.3'")) {
-    throw "DDIC helper 1.3 marker is missing"
+if (-not ($ddicFunction -match "ev_version = '1.4'")) {
+    throw "DDIC helper 1.4 marker is missing"
 }
 if (-not ($ddicFunction -match "dd01v_wa = ls_current_dd01v")) {
     throw "DDIC bootstrap must keep the active domain separate from the requested definition"
@@ -241,6 +247,9 @@ foreach ($marker in @(
         "SCREEN_PATCHED",
         "READ_MESSAGE_CLASS",
         "CREATE_MESSAGE_CLASS",
+        "UPDATE_MESSAGE_CLASS",
+        "MESSAGE_CLASS_UPDATED",
+        "iv_expected_version",
         "CREATE_FUNCTION_INCLUDE",
         "READ_TRANSPORT_DETAILS",
         "RPY_FUNCTIONMODULE_READ",
@@ -265,6 +274,7 @@ foreach ($marker in @(
         "ev_version = '1.5'",
         "ev_version = '1.6'",
         "ev_version = '1.7'",
+        "ev_version = '1.8'",
         "FUNCTION_MODULE_CREATED",
         "REPOSITORY_ASSIGNMENT_READ",
         "ev_version = '1.3'",

@@ -100,6 +100,7 @@ export type SapRepositoryOperation =
   | "MERGE_TEXT_ELEMENTS"
   | "READ_MESSAGE_CLASS"
   | "CREATE_MESSAGE_CLASS"
+  | "UPDATE_MESSAGE_CLASS"
   | "READ_TRANSPORT_DETAILS"
 
 export type SapStructureRow = Record<string, string>
@@ -146,6 +147,7 @@ export interface SapRepositoryRequest {
   componentOperations?: SapScreenComponentOperation[] | undefined
   guiDefinition?: SapGuiDefinitionPayload | undefined
   source?: string[] | undefined
+  expectedVersion?: string | undefined
 }
 
 export interface SapRepositoryResult extends SapHelperResult {
@@ -170,6 +172,10 @@ export type SapDdicOperation =
   | "CREATE_TRANSPARENT_TABLE"
   | "READ_TABLE_TYPE"
   | "UPSERT_TABLE_TYPE"
+  | "DELETE_DOMAIN"
+  | "DELETE_DATA_ELEMENT"
+  | "DELETE_STRUCTURE"
+  | "DELETE_TABLE_TYPE"
 
 export interface SapDdicRequest {
   operation: SapDdicOperation
@@ -381,6 +387,10 @@ export interface MessageClassCreationInfo extends MessageClassInfo {
   activation: ActivationInfo
 }
 
+export interface MessageClassMutationInfo extends MessageClassInfo {
+  transportNumber: string
+}
+
 export interface TestIncludeCreationInfo {
   connectionId: string
   className: string
@@ -527,6 +537,8 @@ export interface SapBackend {
   ): Promise<SourceMutationInfo>
   activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo>
   createObject(connectionId: string, request: CreateObjectRequest): Promise<ObjectCreationInfo>
+  deleteObject(connectionId: string, object: AbapObjectInfo, transportNumber: string): Promise<void>
+  sourceObjectExists(connectionId: string, object: AbapObjectInfo): Promise<boolean>
   readMessageClass(connectionId: string, messageClass: string): Promise<MessageClassInfo>
   createMessageClass(
     connectionId: string,
@@ -536,6 +548,14 @@ export interface SapBackend {
     packageName: string,
     transportNumber: string
   ): Promise<MessageClassCreationInfo>
+  updateMessageClass(
+    connectionId: string,
+    messageClass: string,
+    expectedVersion: string,
+    messages: Array<{ number: string; text: string }>,
+    packageName: string,
+    transportNumber: string
+  ): Promise<MessageClassMutationInfo>
   createTestInclude(connectionId: string, className: string): Promise<TestIncludeCreationInfo>
   readTextElements(
     connectionId: string,

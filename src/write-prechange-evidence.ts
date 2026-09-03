@@ -108,7 +108,7 @@ export async function observeWritePreChange(
     if (evidence.exists === false && input.functionGroup) {
       await observeAssignment(evidence, tools, connectionId, "FUGR/F", input.functionGroup, false)
     }
-  } else if (name === "create_abap_message_class") {
+  } else if (name === "create_abap_message_class" || name === "update_abap_message_class") {
     await observeJson(
       evidence,
       "read_abap_message_class",
@@ -125,6 +125,15 @@ export async function observeWritePreChange(
         evidence.packageName = stringValue(value.packageName)
       }
     )
+  } else if (name === "delete_ddic_object") {
+    const operation = {
+      DOMA: "READ_DOMAIN",
+      DTEL: "READ_DATA_ELEMENT",
+      STRU: "READ_STRUCTURE",
+      TTYP: "READ_TABLE_TYPE"
+    }[String(input.objectType).toUpperCase()] as SapDdicOperation | undefined
+    if (!operation) throw new Error(`Unsupported DDIC deletion type: ${String(input.objectType)}`)
+    await observeDdic(evidence, backend, connectionId, String(input.objectName), operation)
   } else if (DDIC_READ_OPERATION[name]) {
     await observeDdic(
       evidence,
@@ -308,6 +317,18 @@ function sourceObject(
   if (name === "create_object_programmatically") {
     return { name: String(input.name).toUpperCase(), type: baseType(input.objectType) }
   }
+  if (name === "delete_abap_source_object") {
+    const objectType = String(input.objectType).toUpperCase()
+    const objectName = String(input.objectName).trim().toUpperCase()
+    if (objectType === "FUGR/I") {
+      const parentName = String(input.parentName).trim().toUpperCase()
+      return {
+        name: /^[A-Z][A-Z0-9_]{2}$/.test(objectName) ? `L${parentName}${objectName}` : objectName,
+        type: "PROG"
+      }
+    }
+    return { name: objectName, type: baseType(objectType) }
+  }
   if (name === "create_test_include") {
     return { name: String(input.className).toUpperCase(), type: "CLAS" }
   }
@@ -330,6 +351,17 @@ function sourceAssignment(
   name: string,
   input: Record<string, unknown>
 ): { objectName: unknown; objectType: "FUGR/F" | "FUGR/FF" | "PROG/P" | "TRAN" } | undefined {
+  if (name === "delete_abap_source_object") {
+    const type = String(input.objectType).toUpperCase()
+    if (type === "FUGR/I") {
+      return { objectName: input.parentName, objectType: "FUGR/F" }
+    }
+    if (type === "FUGR/F" || type === "FUGR/FF") {
+      return { objectName: input.objectName, objectType: type }
+    }
+    if (type === "PROG/P") return { objectName: input.objectName, objectType: "PROG/P" }
+    return undefined
+  }
   if (name !== "manage_text_elements") return undefined
   const type = String(input.objectType).toUpperCase()
   if (type === "PROGRAM") return { objectName: input.objectName, objectType: "PROG/P" }

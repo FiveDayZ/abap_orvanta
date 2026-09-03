@@ -434,6 +434,7 @@ export class WriteOperationReceiptStore {
       ? `${receipt.recoveryGuide} The local target lock is retained. After a human confirms the SAP state, use release_write_operation_lock with the original operationId and latest receiptHash.`
       : receipt.recoveryGuide
     return {
+      version: receipt.version,
       status: interrupted ? "interrupted" : receipt.state,
       connectionId: receipt.connectionId,
       toolName: receipt.toolName,

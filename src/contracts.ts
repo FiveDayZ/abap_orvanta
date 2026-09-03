@@ -441,6 +441,28 @@ export const toolContracts = {
       connectionId: z.string()
     }
   },
+  update_abap_message_class: {
+    description:
+      "Apply versioned add, update, and remove operations to one existing Z* or Y* message class. Unmentioned messages are preserved. Requires the current version, exact transportable package, and an existing transport; verifies the complete active definition and never releases transports.",
+    inputSchema: {
+      ...writeOperationInput,
+      messageClass: z.string(),
+      expectedVersion: z.string().min(1),
+      operations: z
+        .array(
+          z.object({
+            operation: z.enum(["add", "update", "remove"]),
+            number: z.string().regex(/^\d{3}$/),
+            text: z.string().min(1).max(73).optional()
+          })
+        )
+        .min(1)
+        .max(100),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      connectionId: z.string()
+    }
+  },
   read_ddic_domain: {
     description:
       "Read one active SAP Dictionary domain, including fixed values, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",
@@ -547,6 +569,20 @@ export const toolContracts = {
       packageName: z.string(),
       transportNumber: z.string(),
       expectedVersion: z.string().optional(),
+      connectionId: z.string()
+    }
+  },
+  delete_ddic_object: {
+    description:
+      "Permanently delete one existing Z* or Y* domain, data element, structure, or table type after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent database tables are not supported. SAP references block deletion; transports are never released.",
+    inputSchema: {
+      ...writeOperationInput,
+      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP"]),
+      objectName: z.string(),
+      expectedVersion: z.string(),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      confirmation: z.literal("PERMANENT_DELETE"),
       connectionId: z.string()
     }
   },
@@ -728,6 +764,20 @@ export const toolContracts = {
             .optional()
         })
         .optional()
+    }
+  },
+  delete_abap_source_object: {
+    description:
+      "Permanently delete one existing Z* or Y* class, interface, program, Include, function group, function-group Include, or function module. For FUGR/I, objectName may be the three-character Include suffix or its full technical name; the Z* or Y* parentName and exact ADT ownership must match. Requires the exact object type, package, existing transport, explicit confirmation, SAP locking, and post-delete absence verification; transports are never released.",
+    inputSchema: {
+      ...writeOperationInput,
+      objectType: z.enum(["CLAS/OC", "INTF/OI", "PROG/P", "PROG/I", "FUGR/F", "FUGR/I", "FUGR/FF"]),
+      objectName: z.string(),
+      parentName: z.string().optional(),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      confirmation: z.literal("PERMANENT_DELETE"),
+      connectionId: z.string()
     }
   },
   create_test_include: {

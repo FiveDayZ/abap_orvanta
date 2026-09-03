@@ -36,6 +36,7 @@ import {
   type EnhancementInfo,
   type MessageClassCreationInfo,
   type MessageClassInfo,
+  type MessageClassMutationInfo,
   type RevisionInfo,
   type RemoteFunctionRequest,
   type RemoteFunctionResult,
@@ -787,6 +788,37 @@ export class AdtBackend implements SapBackend {
     }
   }
 
+  async deleteObject(
+    connectionId: string,
+    object: AbapObjectInfo,
+    transportNumber: string
+  ): Promise<void> {
+    await this.withStatefulClient(connectionId, async (client) => {
+      let lock: AdtLock | undefined
+      let deleted = false
+      try {
+        lock = await client.lock(object.uri, "MODIFY")
+        await client.deleteObject(object.uri, lock.LOCK_HANDLE, transportNumber)
+        deleted = true
+      } finally {
+        if (lock && !deleted) {
+          await client.unLock(object.uri, lock.LOCK_HANDLE).catch(() => undefined)
+        }
+      }
+    })
+  }
+
+  async sourceObjectExists(connectionId: string, object: AbapObjectInfo): Promise<boolean> {
+    const client = await this.getClient(connectionId)
+    try {
+      await client.getObjectSource(optimalSourceUri(object.type, object.uri))
+      return true
+    } catch (error) {
+      if (isNotFoundError(error)) return false
+      throw new Error(`Could not verify source object deletion: ${errorText(error)}`)
+    }
+  }
+
   async readMessageClass(connectionId: string, messageClass: string): Promise<MessageClassInfo> {
     const client = await this.getClient(connectionId)
     try {
@@ -855,6 +887,33 @@ export class AdtBackend implements SapBackend {
       ...messageClassFromRepository(connectionId, normalized, result.source),
       transportNumber: repositoryPayloadRows(result.source, "M")[0]?.REQUEST || transportNumber,
       activation: { success: true, messages: [], inactiveObjects: [] }
+    }
+  }
+
+  async updateMessageClass(
+    connectionId: string,
+    messageClass: string,
+    expectedVersion: string,
+    messages: Array<{ number: string; text: string }>,
+    packageName: string,
+    transportNumber: string
+  ): Promise<MessageClassMutationInfo> {
+    const normalized = customerObjectName(messageClass, "messageClass", 20)
+    const result = await this.callSapRepository(connectionId, {
+      operation: "UPDATE_MESSAGE_CLASS",
+      objectName: normalized,
+      packageName,
+      transportNumber,
+      expectedVersion,
+      source: serializeRepositoryRows(
+        "F",
+        messages.map((message) => ({ MSGNR: message.number, TEXT: message.text }))
+      )
+    })
+    requireRepositoryResult(result, "message class update")
+    return {
+      ...messageClassFromRepository(connectionId, normalized, result.source),
+      transportNumber: repositoryPayloadRows(result.source, "M")[0]?.REQUEST || transportNumber
     }
   }
 
@@ -1421,6 +1480,7 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
     xmlElement("IV_DESCRIPTION", request.description ?? "") +
     xmlElement("IV_PACKAGE", request.packageName ?? "") +
     xmlElement("IV_REQUEST", request.transportNumber ?? "") +
+    xmlElement("IV_EXPECTED_VERSION", request.expectedVersion ?? "") +
     xmlRecord("IS_HEADER", request.header ?? {}) +
     `<CT_FIELDS></CT_FIELDS>` +
     `<CT_FLOWLOGIC></CT_FLOWLOGIC>` +

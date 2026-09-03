@@ -47,6 +47,7 @@ test("write receipts serialize one target, retain hashes, and release the lock",
     assert.equal(concurrent.receipt.blockingState, "in_progress")
 
     const completed = await store.complete(first.reservation, "saved and verified", 25)
+    assert.equal(completed.version, 2)
     assert.equal(completed.status, "completed")
     assert.match(String(completed.resultHash), /^[a-f0-9]{64}$/)
     assert.equal(completed.automaticRollback, false)
@@ -299,6 +300,7 @@ test("version 1 write receipts remain readable", async () => {
       identity.connectionId,
       operationId
     )
+    assert.equal(status.version, 1)
     assert.equal(status.status, "completed")
     assert.equal(status.sapInvocationStarted, null)
   } finally {

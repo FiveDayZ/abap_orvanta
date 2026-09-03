@@ -1,7 +1,7 @@
 # ABAP MCP Standalone - 无头化技术验证
 
 这是独立 ABAP MCP服务的无头化技术验证。它不加载 VS Code、不启动 `Code.exe`，直接通过
-`abap-adt-api 8.4.3` 访问 SAP ADT，并通过 Streamable HTTP公开67个读取、诊断、调试、导出和受控写入工具。
+`abap-adt-api 8.4.3` 访问 SAP ADT，并通过 Streamable HTTP公开70个读取、诊断、调试、导出和受控写入工具。
 
 ## 已实现工具
 
@@ -33,6 +33,7 @@
 - `create_report_transaction`
 - `read_abap_message_class`
 - `create_abap_message_class`
+- `update_abap_message_class`
 - `read_ddic_domain`
 - `upsert_ddic_domain`
 - `read_ddic_data_element`
@@ -43,6 +44,7 @@
 - `create_ddic_transparent_table`
 - `read_ddic_table_type`
 - `upsert_ddic_table_type`
+- `delete_ddic_object`
 - `search_abap_objects`
 - `get_abap_object_info`
 - `get_abap_object_lines`
@@ -67,6 +69,7 @@
 - `replace_string_in_abap_object`
 - `abap_activate`
 - `create_object_programmatically`
+- `delete_abap_source_object`
 - `create_test_include`
 - `manage_text_elements`
 
@@ -113,7 +116,7 @@ Codex CLI `0.92.0` 已实际调用便携服务的 MCP工具；Codex桌面端仍�
 下次启动：
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.28.0-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.30.0-win-x64
 .\start.ps1
 ```
 
@@ -125,7 +128,7 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 使用 abap_fs_standalone MCP，先调用 get_connected_systems，然后在 w200 搜索 ZWMSTCTD01_FRM，并读取第1至20行。只读，不修改SAP对象。
 ```
 
-当前独立版本提供67个工具。数据查询只接受单条只读 `SELECT`，强制 `internal`模式、`rowRange`和1000行上限；ATC不自动修复，ABAP Unit不自动激活，Dump和Trace只读取已有诊断数据。`abap_download`可将对象或包递归导出到显式绝对路径，默认拒绝覆盖现有目标；`adt_discovery_export`将四个Markdown文件写入便携目录的 `exports`。`manage_transport_requests`保留原工具的四个查询动作，用于读取用户传输、明细、对象清单和差异，不会创建、修改、删除或释放传输。
+当前独立版本提供70个工具。数据查询只接受单条只读 `SELECT`，强制 `internal`模式、`rowRange`和1000行上限；ATC不自动修复，ABAP Unit不自动激活，Dump和Trace只读取已有诊断数据。`abap_download`可将对象或包递归导出到显式绝对路径，默认拒绝覆盖现有目标；`adt_discovery_export`将四个Markdown文件写入便携目录的 `exports`。`manage_transport_requests`保留原工具的四个查询动作，用于读取用户传输、明细、对象清单和差异，不会创建、修改、删除或释放传输。
 
 0.16.0新增无头ABAP用户调试工具，支持会话、Z/Y源码断点、调用栈、只读变量、单步和继续。只允许当前连接用户，不支持终端模式、变量写入或跳转行。本地Mock和MCP协议回归已覆盖调试流程；真实 `w200`调用 `/sap/bc/adt/debugger/listeners` 返回HTTP 404，因此该系统当前明确为不兼容，不能声明真实调试通过。
 
@@ -161,9 +164,11 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 
 0.28.0在取得本地目标锁后、调用写工具前执行只读SAP观察，并将存在性、活动状态、版本或SHA-256指纹、包、请求、任务和观察时间写入版本2凭证；无法确认目标是否存在时失败关闭且不调用写操作。`list_write_recovery_operations`只读列出中断及残留本地锁，`release_write_operation_lock`要求最新凭证哈希、精确人工确认值 `SAP_STATE_VERIFIED`和非空原因，只解除本地目标锁并记录原因哈希。恢复中心不会清除SAP锁、自动重试、调用SAP恢复动作或自动回滚RFC；SAP最终状态仍必须由人工核对。
 
+0.30.0补齐客户对象生命周期：`update_abap_message_class`使用14位版本令牌和显式 `add`、`update`、`remove`操作增量维护消息，保留未涉及消息并禁止清空消息类；`delete_abap_source_object`通过ADT原生锁和删除接口受控删除类、接口、程序、Include、函数组、函数组Include和函数模块；`delete_ddic_object`通过SAP DDIC助手1.4在依赖检查后受控删除域、数据元素、结构和表类型。三个工具都要求准确 `Z*`/`Y*`对象、正式包、已有请求、唯一操作ID、变更前SAP观察、明确永久删除确认（删除工具）和写后回读凭证。透明数据库表删除、自动SAP解锁、自动重试、自动回滚和传输释放仍不提供。本地Mock、SOAP生成器和MCP协议已验证；真实 `w200`对象生命周期验收尚未执行。
+
 `sap_helper_status`是独立版本新增的只读扩展工具，通过 SAP SOAP/RFC 调用已安装的 `Z_CODEX_MCP_EXECUTE`。`ping`返回助手版本和就绪状态；`validate_target`由SAP侧检查 `Z*`/`Y*`命名空间、对象类型白名单和当前登录用户的 `S_DEVELOP`显示权限。该工具不修改SAP数据。真实 `w200/200` 已安装 `$TMP`函数组 `ZCODEX_MCP_CORE`、类 `ZCL_CODEX_MCP_CORE`和远程函数 `Z_CODEX_MCP_EXECUTE`；没有修改SAP标准对象，也没有创建或释放传输。
 
-受控写入仅允许客户对象。源码链路支持类、类Include、接口、程序、Include、函数组、函数模块、函数组Include、DDL和DCL；每个可变对象及其父级归属都必须是 `Z*`或 `Y*`。结构化仓库链路支持创建模块池、创建或替换及增量维护经典Dynpro屏幕、读取和增量维护GUI Status/Menu Painter定义、创建和读取对话事务、创建Report事务，以及通过ADT或ECC助手后备读取或新建消息类。消息类不支持更新已有对象；Report事务只允许新建，可选引用已存在的Variant。DDIC助手 `1.3`支持域、基于域的数据元素、平面结构和STANDARD/default-key表类型的读取与完整替换，并新增透明表活动定义读取和客户透明表创建。透明表只允许新建，现有透明表拒绝替换，避免隐式数据库转换或数据丢失；ECC 7.31表名最多16个字符，新表字段必须引用数据元素，键字段必须连续位于字段列表开头，所有字段强制非空，并要求 `APPL0`、`APPL1`或 `APPL2` Data Class，默认禁止缓冲。写入要求正式包和已有传输，更新已有非数据库DDIC对象还要求14位版本令牌。删除、重命名和高层可视化控件设计器仍不在范围内。标准对象会在SAP写入前拒绝，服务不会创建或释放传输。真实SAP写入仍必须取得对象级批准。原版全部54个工具契约及独立化分类冻结在 `contracts/full-tool-baseline.json`。
+受控写入仅允许客户对象。源码链路支持类、类Include、接口、程序、Include、函数组、函数模块、函数组Include、DDL和DCL；每个可变对象及其父级归属都必须是 `Z*`或 `Y*`。0.30.0可受控删除类、接口、程序、Include、函数组、函数组Include和函数模块，但不删除DDL或DCL。结构化仓库链路支持创建模块池、创建或替换及增量维护经典Dynpro屏幕、读取和增量维护GUI Status/Menu Painter定义、创建和读取对话事务、创建Report事务，以及通过ECC助手读取、新建和版本化增量更新消息类。Report事务只允许新建，可选引用已存在的Variant。DDIC助手 `1.4`支持域、基于域的数据元素、平面结构和STANDARD/default-key表类型的读取、完整替换及依赖检查后删除，并支持透明表活动定义读取和客户透明表创建。透明表只允许新建，不允许替换或删除；ECC 7.31表名最多16个字符，新表字段必须引用数据元素，键字段必须连续位于字段列表开头，所有字段强制非空，并要求 `APPL0`、`APPL1`或 `APPL2` Data Class，默认禁止缓冲。写入要求正式包和已有传输，更新或删除DDIC对象还要求14位版本令牌。重命名和高层可视化控件设计器仍不在范围内。标准对象会在SAP写入前拒绝，服务不会创建或释放传输。真实SAP写入仍必须取得对象级批准。原版全部54个工具契约及独立化分类冻结在 `contracts/full-tool-baseline.json`。
 
 0.15.0新增函数模块接口读取、带显式接口创建和仓库分配检查。`read_function_module_interface`返回导入、导出、更改、表参数、异常、源码及SHA-256指纹；`create_function_module_with_interface`仅在已有客户函数组中创建全新的客户函数模块，并校验参数重名、类型、源码、正式包和已有传输；`inspect_repository_assignment`只读返回包、父对象、开放请求/任务、活动状态和原始系统。旧ECC的ADT函数组创建端点返回405或501时，服务使用SAP仓库助手 `1.3`的 `RS_FUNCTION_POOL_INSERT`后备路径。函数模块创建、传输分配和接口仍由SAP回读验证，服务不创建或释放传输。
 
@@ -182,7 +187,7 @@ MCP地址为 `http://127.0.0.1:4847/mcp`，健康检查为
 
 `manage_text_elements` 对程序文本池使用SAP仓库助手，复用程序已有的开放传输分配并在写入后回读验证；0.26.0把同一后备扩展到类和函数组。真实 `w200` 的ADT文本锁端点返回空响应，文本元素URI也无激活映射，因此服务在该明确能力缺失时转用仓库助手1.7；`ZCL_CMCP_0260`和 `ZCMCP_FG_0260`的文本符号 `026`均已完成写入和回读。权限、网络或其他保存错误不会触发后备。
 
-当前基础SAP助手版本为 `1.0`，开放 `PING`和 `VALIDATE_TARGET`；0.26.0仓库助手版本为 `1.7`，在1.5的完整CUA能力上增加ECC仓库后备；DDIC助手版本为 `1.3`。真实 `w200`已安装仓库助手1.7，函数源码可读、已生成且可调用，并通过Titlebar、Dynpro、消息类、类/函数组文本、函数组Include和传输明细验证；传输保持为开放请求 `GR2K923421`，未执行释放。0.21.0此前已在 `ZCODEX_MCP_DYNPRO`屏幕 `0100`完成临时组件新增、坐标和文本更新、删除、PBO/PAI定义校验及清理回读。真实 `w200` 已完成域、数据元素、平面结构和表类型的创建、更新、激活、回读及拒绝场景验证；透明表 `ZCMCP_TAB_0831`已在 `ZABAP`和 `GR2K923421`中创建、激活并回读；Report `ZCMCP_RPT_0831`、文本符号 `R14`和事务 `ZCMCP_R14`也已完成创建、激活、回读及拒绝场景验证。函数组 `ZCMCP_FG_1501`、标量远程函数 `ZCMCP_FM_1501`、结构化远程函数 `ZCMCP_FM_1801`及表类型远程函数 `ZCMCP_FM_1901`均位于包 `ZABAP`、请求 `GR2K923421`及任务 `GR2K923422`；`ZCMCP_FM_1901`已完成 `BAPIRET2_T`表类型接口解析、正式白名单调用、声明异常、活动源码诊断和调用凭证验证，接口指纹为 `e0648e2f04259f9a0c16b095a84117ae32db8a6f9f82951fa5a11e7e2663556d`。该ECC系统未公开ADT消息类端点，0.26.0已通过T100A/T100只读及受控新建助手后备完成真实消息类验证。面向其他SAP系统的正式安装应使用经过审查的SAP传输，不依赖客户引导RFC。
+当前基础SAP助手版本为 `1.0`，开放 `PING`和 `VALIDATE_TARGET`；0.30.0便携包包含仓库助手 `1.8`和DDIC助手 `1.4`。真实 `w200`当前已验证的安装基线仍是仓库助手1.7和DDIC助手1.3；升级及0.30.0消息更新、源码删除和DDIC依赖删除尚未获准确临时对象授权，因此不能声明真实SAP通过。已验证基线中的Titlebar、Dynpro、消息类新建、类/函数组文本、函数组Include和传输明细保持有效；传输 `GR2K923421`未释放。面向其他SAP系统的正式安装应使用经过审查的SAP传输，不依赖客户引导RFC。
 
 ## 依赖选择
 

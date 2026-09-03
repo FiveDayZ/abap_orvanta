@@ -14,7 +14,7 @@ export function createMcpServer(
 ): McpServer {
   const server = new McpServer({
     name: "abap-mcp-standalone",
-    version: "0.28.0"
+    version: "0.30.0"
   })
   const tools = new ToolService(backend, undefined, invocationReceipts)
 
@@ -216,6 +216,14 @@ export function createMcpServer(
         tools.createAbapMessageClass(input)
       )
   )
+  server.registerTool(
+    "update_abap_message_class",
+    toolContracts.update_abap_message_class,
+    async (input) =>
+      invokeWrite("update_abap_message_class", input, backend, writeReceipts, () =>
+        tools.updateAbapMessageClass(input)
+      )
+  )
   server.registerTool("read_ddic_domain", toolContracts.read_ddic_domain, async (input) =>
     invoke("read_ddic_domain", () => tools.readDdicDomain(input))
   )
@@ -269,6 +277,11 @@ export function createMcpServer(
       invokeWrite("upsert_ddic_table_type", input, backend, writeReceipts, () =>
         tools.upsertDdicTableType(input)
       )
+  )
+  server.registerTool("delete_ddic_object", toolContracts.delete_ddic_object, async (input) =>
+    invokeWrite("delete_ddic_object", input, backend, writeReceipts, () =>
+      tools.deleteDdicObject(input)
+    )
   )
   server.registerTool("search_abap_objects", toolContracts.search_abap_objects, async (input) =>
     invoke("search_abap_objects", () => tools.searchObjects(input))
@@ -324,6 +337,14 @@ export function createMcpServer(
     async (input) =>
       invokeWrite("create_object_programmatically", input, backend, writeReceipts, () =>
         tools.createObject(input)
+      )
+  )
+  server.registerTool(
+    "delete_abap_source_object",
+    toolContracts.delete_abap_source_object,
+    async (input) =>
+      invokeWrite("delete_abap_source_object", input, backend, writeReceipts, () =>
+        tools.deleteSourceObject(input)
       )
   )
   server.registerTool("create_test_include", toolContracts.create_test_include, async (input) =>

@@ -391,6 +391,17 @@ interface CreateMessageClassInput extends ReadMessageClassInput {
   transportNumber: string
 }
 
+interface UpdateMessageClassInput extends ReadMessageClassInput {
+  expectedVersion: string
+  operations: Array<{
+    operation: "add" | "update" | "remove"
+    number: string
+    text?: string | undefined
+  }>
+  packageName: string
+  transportNumber: string
+}
+
 interface ReadDdicInput {
   objectName: string
   connectionId: string
@@ -440,6 +451,14 @@ interface CreateTransparentTableInput extends Omit<UpsertDdicInput, "expectedVer
 
 interface UpsertTableTypeInput extends UpsertDdicInput {
   rowType: string
+}
+
+interface DeleteDdicInput extends ReadDdicInput {
+  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP"
+  expectedVersion: string
+  packageName: string
+  transportNumber: string
+  confirmation: "PERMANENT_DELETE"
 }
 
 interface ObjectInput {
@@ -539,6 +558,16 @@ interface ActivateInput {
 }
 
 interface CreateObjectInput extends CreateObjectRequest {
+  connectionId: string
+}
+
+interface DeleteSourceObjectInput {
+  objectType: "CLAS/OC" | "INTF/OI" | "PROG/P" | "PROG/I" | "FUGR/F" | "FUGR/I" | "FUGR/FF"
+  objectName: string
+  parentName?: string | undefined
+  packageName: string
+  transportNumber: string
+  confirmation: "PERMANENT_DELETE"
   connectionId: string
 }
 
@@ -1930,6 +1959,48 @@ export class ToolService {
     )
   }
 
+  async updateAbapMessageClass(input: UpdateMessageClassInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const messageClass = customerMessageClass(input.messageClass)
+    const expectedPackage = packageName(input.packageName)
+    const current = await this.backend.readMessageClass(connectionId, messageClass)
+    if (current.version !== input.expectedVersion.trim()) {
+      throw new Error("VERSION_CONFLICT: Message class changed since it was read")
+    }
+    if (current.packageName !== expectedPackage) {
+      throw new Error(
+        `PACKAGE_CONFLICT: Message class belongs to ${current.packageName || "<empty>"}`
+      )
+    }
+    const messages = applyMessageClassOperations(current.messages, input.operations)
+    const result = await this.backend.updateMessageClass(
+      connectionId,
+      messageClass,
+      current.version,
+      messages,
+      expectedPackage,
+      transportNumber(input.transportNumber)
+    )
+    const saved = messageClassResult(result)
+    if (
+      saved.packageName !== expectedPackage ||
+      JSON.stringify(saved.definition.messages) !== JSON.stringify(messages)
+    ) {
+      throw new Error(
+        "SAP message class verification did not return the requested active definition"
+      )
+    }
+    return JSON.stringify(
+      {
+        ...saved,
+        status: "MESSAGE_CLASS_UPDATED",
+        recordedRequest: result.transportNumber
+      },
+      null,
+      2
+    )
+  }
+
   async readDdicDomain(input: ReadDdicInput): Promise<string> {
     return this.readDdic(input, "READ_DOMAIN", "domain")
   }
@@ -2141,6 +2212,44 @@ export class ToolService {
       keyDefinition: "D",
       keyKind: "N"
     })
+  }
+
+  async deleteDdicObject(input: DeleteDdicInput): Promise<string> {
+    if (input.confirmation !== "PERMANENT_DELETE") {
+      throw new Error("confirmation must be PERMANENT_DELETE")
+    }
+    const objectName = customerDdicName(input.objectName)
+    const expectedPackage = ddicPackageName(input.packageName)
+    const operation = {
+      DOMA: "DELETE_DOMAIN",
+      DTEL: "DELETE_DATA_ELEMENT",
+      STRU: "DELETE_STRUCTURE",
+      TTYP: "DELETE_TABLE_TYPE"
+    }[input.objectType] as SapDdicOperation
+    const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
+      operation,
+      objectName,
+      packageName: expectedPackage,
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: requiredVersionToken(input.expectedVersion)
+    })
+    requireDdicSuccess(result)
+    if (result.header && Object.keys(result.header).length > 0) {
+      throw new Error("SAP DDIC deletion verification still returned an active definition")
+    }
+    return JSON.stringify(
+      {
+        connectionId: input.connectionId.toLowerCase(),
+        objectType: input.objectType,
+        objectName,
+        packageName: expectedPackage,
+        recordedRequest: result.recordedRequest,
+        status: result.code,
+        absenceVerified: true
+      },
+      null,
+      2
+    )
   }
 
   private async readDdic(
@@ -2803,6 +2912,75 @@ export class ToolService {
       `Transport: ${result.transportNumber || "local object"}\n` +
       `Workspace URI: ${result.workspaceUri}\n` +
       `Status: created and activated`
+    )
+  }
+
+  async deleteSourceObject(input: DeleteSourceObjectInput): Promise<string> {
+    if (input.confirmation !== "PERMANENT_DELETE") {
+      throw new Error("confirmation must be PERMANENT_DELETE")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const expectedPackage = packageName(input.packageName)
+    const transport = transportNumber(input.transportNumber)
+    const parentRequired = input.objectType === "FUGR/I" || input.objectType === "FUGR/FF"
+    const parentName = input.parentName ? customerName(input.parentName, "parentName") : ""
+    if (parentRequired && !parentName) {
+      throw new Error(`${input.objectType} deletion requires parentName`)
+    }
+    if (!parentRequired && parentName) {
+      throw new Error(`${input.objectType} deletion does not accept parentName`)
+    }
+    if (parentName.length > 26) {
+      throw new Error("parentName must not exceed 26 characters")
+    }
+    const objectName = deletedSourceObjectName(input.objectType, input.objectName, parentName)
+    const searchTypes =
+      input.objectType === "FUGR/FF"
+        ? ["FUNC"]
+        : input.objectType === "FUGR/I"
+          ? ["PROG"]
+          : [input.objectType]
+
+    const matches = await this.backend.searchObjects(connectionId, objectName, searchTypes, 20)
+    const object = matches.find(
+      (candidate) =>
+        candidate.name.toUpperCase() === objectName &&
+        deletedSourceTypeMatches(input.objectType, candidate.type)
+    )
+    if (!object) throw new Error(`ABAP object does not exist: ${input.objectType} ${objectName}`)
+    if (parentName && !functionGroupChildOwnedBy(object.uri, parentName)) {
+      throw new Error(`PARENT_CONFLICT: Object is not owned by ${parentName}`)
+    }
+    const customerTechnicalInclude =
+      input.objectType === "FUGR/I" &&
+      object.systemType !== "CUSTOM" &&
+      functionGroupChildOwnedBy(object.uri, parentName)
+    if (object.systemType !== "CUSTOM" && !customerTechnicalInclude) {
+      throw new Error("Only Z* or Y* customer objects are allowed")
+    }
+    if (object.package.toUpperCase() !== expectedPackage) {
+      throw new Error(`PACKAGE_CONFLICT: Object belongs to ${object.package || "<empty>"}`)
+    }
+    const source = await this.backend.readSource(connectionId, object)
+    const preDeleteFingerprint = createHash("sha256").update(source.source).digest("hex")
+    await this.backend.deleteObject(connectionId, object, transport)
+    if (await this.backend.sourceObjectExists(connectionId, object)) {
+      throw new Error("SAP source deletion verification still found the object")
+    }
+    return JSON.stringify(
+      {
+        connectionId,
+        objectType: input.objectType,
+        objectName,
+        parentName,
+        packageName: expectedPackage,
+        transportNumber: transport,
+        preDeleteFingerprint,
+        absenceVerified: true,
+        status: "SOURCE_OBJECT_DELETED"
+      },
+      null,
+      2
     )
   }
 
@@ -4692,6 +4870,12 @@ function versionToken(value?: string): string | undefined {
   return normalized
 }
 
+function requiredVersionToken(value: string): string {
+  const normalized = versionToken(value)
+  if (!normalized) throw new Error("expectedVersion is required")
+  return normalized
+}
+
 function validateDescription(value: string): void {
   validateTextLength(value, 60, "description")
   if (!value.trim()) throw new Error("description is required")
@@ -5294,6 +5478,47 @@ function messageClassMessages(
   })
 }
 
+function applyMessageClassOperations(
+  current: Array<{ number: string; text: string }>,
+  operations: Array<{
+    operation: "add" | "update" | "remove"
+    number: string
+    text?: string | undefined
+  }>
+): Array<{ number: string; text: string }> {
+  const messages = new Map(current.map((message) => [message.number, message.text]))
+  const touched = new Set<string>()
+  for (const operation of operations) {
+    const number = operation.number.trim()
+    if (!/^\d{3}$/.test(number)) throw new Error("Message number must contain 3 digits")
+    if (touched.has(number)) throw new Error(`Duplicate message operation: ${number}`)
+    touched.add(number)
+    const exists = messages.has(number)
+    if (operation.operation === "add" && exists) {
+      throw new Error(`MESSAGE_ALREADY_EXISTS: ${number}`)
+    }
+    if (operation.operation !== "add" && !exists) {
+      throw new Error(`MESSAGE_NOT_FOUND: ${number}`)
+    }
+    if (operation.operation === "remove") {
+      if (operation.text !== undefined)
+        throw new Error(`remove must not provide text for ${number}`)
+      messages.delete(number)
+      continue
+    }
+    if (!operation.text || operation.text.length > 73) {
+      throw new Error(`Message ${number} must contain 1-73 characters`)
+    }
+    messages.set(number, operation.text)
+  }
+  if (messages.size === 0) {
+    throw new Error("MESSAGE_CLASS_EMPTY: At least one message must remain")
+  }
+  return [...messages]
+    .map(([number, text]) => ({ number, text }))
+    .sort((a, b) => a.number.localeCompare(b.number))
+}
+
 function validateProgramTextElements(
   elements: TextElementInfo[]
 ): Array<Required<TextElementInfo>> {
@@ -5343,6 +5568,41 @@ function customerName(value: string, field: string): string {
     throw new Error(`${field} must name a Z* or Y* customer object`)
   }
   return normalized
+}
+
+function deletedSourceObjectName(
+  objectType: DeleteSourceObjectInput["objectType"],
+  value: string,
+  parentName: string
+): string {
+  if (objectType !== "FUGR/I") return customerName(value, "objectName")
+  const normalized = readableObjectName(value)
+  const fullName = /^[A-Z][A-Z0-9_]{2}$/.test(normalized)
+    ? `L${parentName}${normalized}`
+    : normalized
+  if (!fullName.startsWith(`L${parentName}`)) {
+    throw new Error(`PARENT_CONFLICT: Include is not owned by ${parentName}`)
+  }
+  return fullName
+}
+
+function deletedSourceTypeMatches(
+  requested: DeleteSourceObjectInput["objectType"],
+  actual: string
+): boolean {
+  const normalized = actual.toUpperCase()
+  if (requested === "FUGR/FF") {
+    return normalized === "FUGR/FF" || normalized === "FUNC/FM" || normalized === "FUNC"
+  }
+  if (requested === "FUGR/I") {
+    return normalized === "FUGR/I" || normalized === "PROG/I" || normalized === "PROG"
+  }
+  return normalized === requested
+}
+
+function functionGroupChildOwnedBy(uri: string, parentName: string): boolean {
+  const match = /\/functions\/groups\/([^/]+)\/(?:fmodules|includes)\//i.exec(uri)
+  return !!match?.[1] && decodeURIComponent(match[1]).toUpperCase() === parentName
 }
 
 function dynproNumber(value: string): string {
