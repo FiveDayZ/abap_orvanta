@@ -264,6 +264,8 @@ foreach ($marker in @(
         "READ_FUNCTION_INTERFACE",
         "CREATE_FUNCTION_MODULE",
         "INSPECT_REPOSITORY_ASSIGNMENT",
+        "lv_transport_object = 'CLAS'",
+        "lv_transport_object = 'INTF'",
         "READ_GUI_DEFINITION",
         "PATCH_GUI_DEFINITION",
         "RS_CUA_INTERNAL_FETCH",

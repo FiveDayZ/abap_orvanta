@@ -83,6 +83,7 @@ test("five headless tool paths preserve representative output behavior", async (
   assert.match(lines, /Method RUN/)
   assert.match(lines, /METHOD run\./)
   assert.match(lines, /WRITE 'HEADLESS'/)
+  assert.match(lines, new RegExp(`Full Source SHA-256: ${zclDemoFingerprint}`))
 
   const tableInfo = await tools.getObjectInfo({
     objectName: "ZTABLE_DEMO",
@@ -1421,6 +1422,31 @@ test("controlled source and DDIC deletion verify package, version, and absence",
     }),
     /confirmation must be PERMANENT_DELETE/
   )
+})
+
+test("controlled source deletion resolves an empty ECC search package from TADIR", async () => {
+  const backend = new MockBackend()
+  const searchObjects = backend.searchObjects.bind(backend)
+  backend.searchObjects = async (connectionId, pattern, types, maxResults) =>
+    (await searchObjects(connectionId, pattern, types, maxResults)).map((object) =>
+      object.name === "ZCL_DEMO" ? { ...object, package: "" } : object
+    )
+
+  const deleted = JSON.parse(
+    await new ToolService(backend).deleteSourceObject({
+      objectType: "CLAS/OC",
+      objectName: "ZCL_DEMO",
+      expectedFingerprint: zclDemoFingerprint,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    })
+  ) as { absenceVerified: boolean; packageName: string }
+
+  assert.equal(deleted.absenceVerified, true)
+  assert.equal(deleted.packageName, "ZABAP")
+  assert.equal(backend.lastRepositoryRequest?.objectType, "CLAS")
 })
 
 test("controlled deletion rejects wrong package, parent, and DDIC dependencies", async () => {
@@ -3069,8 +3095,9 @@ test("ADT source deletion compares the fingerprint while holding the SAP lock", 
       calls.push("lock")
       return { LOCK_HANDLE: "secret-lock" }
     },
-    async getObjectSource(uri: string) {
+    async getObjectSource(uri: string, options?: { version?: string }) {
       calls.push(`read:${uri}`)
+      assert.equal(options?.version, "active")
       return zclDemoSource
     },
     async deleteObject(_uri: string, _lockHandle: string, transport: string) {
@@ -3097,6 +3124,33 @@ test("ADT source deletion compares the fingerprint while holding the SAP lock", 
     "read:/sap/bc/adt/oo/classes/zcl_demo/source/main",
     "delete:GR2K923421"
   ])
+})
+
+test("source deletion verification accepts legacy not-found responses and falls back to search", async () => {
+  const object = {
+    name: "ZCMCP_PRG_0301",
+    type: "PROG/P",
+    description: "Lifecycle program",
+    package: "ZABAP",
+    systemType: "CUSTOM" as const,
+    uri: "/sap/bc/adt/programs/programs/zcmcp_prg_0301"
+  }
+  const direct = backendWithInjectedClient()
+  injectClient(direct, {
+    getObjectSource: async () => {
+      throw new Error("Object ZCMCP_PRG_0301 not found")
+    }
+  })
+  assert.equal(await direct.sourceObjectExists("w200", object), false)
+
+  const fallback = backendWithInjectedClient()
+  injectClient(fallback, {
+    getObjectSource: async () => {
+      throw new Error("I::000 MODE SVP 200")
+    },
+    searchObject: async () => []
+  })
+  assert.equal(await fallback.sourceObjectExists("w200", object), false)
 })
 
 test("controlled edit policy covers customer source families and rejects standard ownership", () => {

@@ -52,6 +52,7 @@ import {
   type SapBackend,
   type ExportResourceInfo,
   type ObjectCreationInfo,
+  type SourceReadOptions,
   type SourceResult,
   type SourceMutationInfo,
   type TestIncludeCreationInfo,
@@ -276,7 +277,11 @@ export class AdtBackend implements SapBackend {
     return results
   }
 
-  async readSource(connectionId: string, object: AbapObjectInfo): Promise<SourceResult> {
+  async readSource(
+    connectionId: string,
+    object: AbapObjectInfo,
+    options?: SourceReadOptions
+  ): Promise<SourceResult> {
     const client = await this.getClient(connectionId)
     const dictionary = await readDictionaryObject(client, object)
     if (dictionary) return dictionary
@@ -289,7 +294,13 @@ export class AdtBackend implements SapBackend {
     let lastError: unknown
     for (const uri of candidates) {
       try {
-        return { source: await client.getObjectSource(uri), uriUsed: uri }
+        return {
+          source: await client.getObjectSource(
+            uri,
+            options?.version ? { version: options.version } : undefined
+          ),
+          uriUsed: uri
+        }
       } catch (error) {
         lastError = error
       }
@@ -300,7 +311,13 @@ export class AdtBackend implements SapBackend {
       const resolved = path.at(-1)?.["adtcore:uri"]
       if (resolved) {
         const uri = optimalSourceUri(object.type, resolved)
-        return { source: await client.getObjectSource(uri), uriUsed: uri }
+        return {
+          source: await client.getObjectSource(
+            uri,
+            options?.version ? { version: options.version } : undefined
+          ),
+          uriUsed: uri
+        }
       }
     } catch (error) {
       lastError = error
@@ -807,7 +824,21 @@ export class AdtBackend implements SapBackend {
       return true
     } catch (error) {
       if (isNotFoundError(error)) return false
-      throw new Error(`Could not verify source object deletion: ${errorText(error)}`)
+      if (!/\bI::000 MODE SVP 200\b/i.test(errorText(error))) {
+        throw new Error(`Could not verify source object deletion: ${errorText(error)}`)
+      }
+      try {
+        const matches = await client.searchObject(
+          object.name.toUpperCase(),
+          object.type.split("/", 1)[0]
+        )
+        return matches.some((candidate) => {
+          const record = candidate as unknown as Record<string, string | undefined>
+          return record["adtcore:name"]?.toUpperCase() === object.name.toUpperCase()
+        })
+      } catch {
+        throw new Error(`Could not verify source object deletion: ${errorText(error)}`)
+      }
     }
   }
 
@@ -1328,7 +1359,9 @@ export async function deleteObjectWithClient(
   let deleted = false
   try {
     lock = await client.lock(object.uri, "MODIFY")
-    const source = await client.getObjectSource(optimalSourceUri(object.type, object.uri))
+    const source = await client.getObjectSource(optimalSourceUri(object.type, object.uri), {
+      version: "active"
+    })
     const fingerprint = createHash("sha256").update(source).digest("hex")
     if (fingerprint !== expectedFingerprint.toLowerCase()) {
       throw new Error(
@@ -2518,7 +2551,9 @@ function transportDetailsFromRepository(source: string[], requested: string): Tr
 }
 
 function isNotFoundError(error: unknown): boolean {
-  return /(?:status code|HTTP) 404\b/i.test(errorText(error))
+  return /(?:status code|HTTP) 404\b|(?:object|resource|program|class|interface|function(?: module)?)\b.*\b(?:not found|does not exist)\b/i.test(
+    errorText(error)
+  )
 }
 
 export async function createTestIncludeWithClient(

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { createHash } from "node:crypto"
 import test from "node:test"
 import { ToolService } from "../src/tools.js"
 import { observeWritePreChange } from "../src/write-prechange-evidence.js"
@@ -86,8 +87,11 @@ test("pre-change observation covers repository, DDIC, message, and source target
     tools
   )
   assert.equal(sourceDelete.exists, true)
-  assert.equal(sourceDelete.packageName, "ZVALIDATION")
-  assert.match(String(sourceDelete.fingerprint), /^[a-f0-9]{64}$/)
+  assert.equal(sourceDelete.packageName, "ZABAP")
+  const sourceObject = (await backend.searchObjects("w200", "ZCL_DEMO", ["CLAS"], 1))[0]
+  assert.ok(sourceObject)
+  const sourceText = (await backend.readSource("w200", sourceObject)).source
+  assert.equal(sourceDelete.fingerprint, createHash("sha256").update(sourceText).digest("hex"))
 
   const searchObjects = backend.searchObjects.bind(backend)
   backend.searchObjects = async (connectionId, pattern, types, maxResults) =>
@@ -125,4 +129,87 @@ test("pre-change observation covers repository, DDIC, message, and source target
     "active_source",
     "repository_assignment"
   ])
+})
+
+test("pre-change observation treats an explicitly missing function module as absent", async () => {
+  const backend = new MockBackend()
+  const callSapRepository = backend.callSapRepository.bind(backend)
+  backend.callSapRepository = async (connectionId, request) => {
+    if (
+      request.operation === "INSPECT_REPOSITORY_ASSIGNMENT" &&
+      request.objectName === "ZCMCP_FM_MISSING"
+    ) {
+      const result = await callSapRepository(connectionId, request)
+      return {
+        ...result,
+        status: "E",
+        code: "REPOSITORY_OBJECT_NOT_FOUND",
+        message: "Function module does not exist",
+        source: []
+      }
+    }
+    return callSapRepository(connectionId, request)
+  }
+  const evidence = await observeWritePreChange(
+    "create_function_module_with_interface",
+    { functionName: "ZCMCP_FM_MISSING", functionGroup: "ZCMCP_FG_0301" },
+    "w200",
+    "fugr/ff ZCMCP_FM_MISSING in ZCMCP_FG_0301",
+    backend,
+    new ToolService(backend)
+  )
+
+  assert.equal(evidence.exists, false)
+  assert.equal(evidence.observationStatus, "complete")
+  assert.deepEqual(evidence.warnings, [])
+})
+
+test("source deletion observation reads a function module as FUNC source", async () => {
+  const backend = new MockBackend()
+  const searchObjects = backend.searchObjects.bind(backend)
+  backend.searchObjects = async (connectionId, pattern, types, maxResults) => {
+    if (pattern === "ZCMCP_FM_0301") {
+      assert.deepEqual(types, ["FUNC"])
+      return [
+        {
+          name: "ZCMCP_FM_0301",
+          type: "FUGR/FF",
+          description: "Lifecycle function",
+          package: "",
+          systemType: "CUSTOM",
+          uri: "/sap/bc/adt/functions/groups/zcmcp_fg_0301/fmodules/zcmcp_fm_0301"
+        }
+      ]
+    }
+    return searchObjects(connectionId, pattern, types, maxResults)
+  }
+  const readSource = backend.readSource.bind(backend)
+  backend.readSource = async (connectionId, object) =>
+    object.name === "ZCMCP_FM_0301"
+      ? {
+          source: "FUNCTION zcmcp_fm_0301.\nENDFUNCTION.",
+          uriUsed: `${object.uri}/source/main`
+        }
+      : readSource(connectionId, object)
+
+  const evidence = await observeWritePreChange(
+    "delete_abap_source_object",
+    {
+      objectType: "FUGR/FF",
+      objectName: "ZCMCP_FM_0301",
+      parentName: "ZCMCP_FG_0301"
+    },
+    "w200",
+    "fugr/ff ZCMCP_FM_0301 in ZCMCP_FG_0301",
+    backend,
+    new ToolService(backend)
+  )
+
+  assert.equal(evidence.exists, true)
+  assert.equal(evidence.packageName, "ZABAP")
+  assert.equal(
+    evidence.fingerprint,
+    createHash("sha256").update("FUNCTION zcmcp_fm_0301.\nENDFUNCTION.").digest("hex")
+  )
+  assert.deepEqual(evidence.warnings, [])
 })

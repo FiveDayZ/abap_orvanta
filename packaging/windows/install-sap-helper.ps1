@@ -17,6 +17,20 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$buildInfoPath = Join-Path $root "BUILD-INFO.json"
+$packageJsonPath = Join-Path (Split-Path -Parent (Split-Path -Parent $root)) "package.json"
+$versionSource = if (Test-Path -LiteralPath $buildInfoPath -PathType Leaf) {
+    $buildInfoPath
+} else {
+    $packageJsonPath
+}
+if (-not (Test-Path -LiteralPath $versionSource -PathType Leaf)) {
+    throw "Product version metadata not found."
+}
+$productVersion = [string](Get-Content -Raw -LiteralPath $versionSource | ConvertFrom-Json).version
+if ([string]::IsNullOrWhiteSpace($productVersion)) {
+    throw "Product version metadata is invalid: $versionSource"
+}
 if (-not $ConfigPath) {
     $ConfigPath = Join-Path $root "connections.json"
 }
@@ -201,7 +215,7 @@ if ($actions.Count -gt 0 -and -not $status.ready) {
 }
 
 [pscustomobject]@{
-    productVersion = "0.26.0"
+    productVersion = $productVersion
     mode = $Mode
     connectionId = ([string]$selected.Config.id).ToLowerInvariant()
     endpoint = "$($selected.Uri.Scheme)://$($selected.Uri.Authority)"

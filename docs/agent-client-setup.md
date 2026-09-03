@@ -10,7 +10,7 @@ http://127.0.0.1:4847/mcp
 
 ## 首次一键接入
 
-解压0.30.1便携包后，在PowerShell 7中执行：
+解压0.30.2便携包后，在PowerShell 7中执行：
 
 ```powershell
 .\setup.ps1
@@ -21,7 +21,7 @@ http://127.0.0.1:4847/mcp
 ## 下次启动
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.30.1-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.30.2-win-x64
 .\start.ps1
 ```
 
@@ -130,9 +130,11 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone MCP，批量读取 w200 中 ZWMSTCTD01_FRM 和 ZCL_CA_HZ 的前10行，并分别汇总。
 ```
 
-当前独立版本公开70个工具。0.30.0新增消息类版本化 `add/update/remove`、类/接口/程序/Include/函数组/函数组Include/函数模块受控删除，以及域/数据元素/结构/表类型依赖检查后删除。消息更新要求当前版本；源码删除走ADT原生锁和删除；DDIC删除要求当前版本并由助手检查引用。删除工具都要求 `confirmation=PERMANENT_DELETE`。所有写工具继续要求唯一 `operationId`并返回版本2凭证；未知结果先查询恢复中心，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换或删除。所有写入均限制为 `Z*`/`Y*`、正式包和已有请求，不创建或释放传输。0.30.0当前只有本地Mock、SOAP生成器和MCP协议证据；真实SAP执行前必须取得准确对象和清理范围批准。
+当前独立版本公开70个工具。0.30.0新增消息类版本化 `add/update/remove`、类/接口/程序/Include/函数组/函数组Include/函数模块受控删除，以及域/数据元素/结构/表类型依赖检查后删除。消息更新要求当前版本；源码删除走ADT原生锁和删除；DDIC删除要求当前版本并由助手检查引用。删除工具都要求 `confirmation=PERMANENT_DELETE`。所有写工具继续要求唯一 `operationId`并返回版本2凭证；未知结果先查询恢复中心，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换或删除。所有写入均限制为 `Z*`/`Y*`、正式包和已有请求，不创建或释放传输。真实 `w200/200`已通过源码与DDIC生命周期验收并完成临时对象清理；消息类增量更新因没有可靠的公开清理路径，仍只有本地Mock、SOAP生成器和MCP协议证据。
 
 0.30.1要求`delete_abap_source_object`额外提供最近一次活动源码回读的SHA-256 `expectedFingerprint`。服务在SAP锁内再次读取并比较；不一致时返回`SOURCE_FINGERPRINT_CONFLICT`并解锁。源码创建、修改、激活、文本、屏幕和删除使用统一目标身份；函数组、函数模块和函数组Include按父函数组互斥。
+
+0.30.2的`get_abap_object_lines`会返回完整未裁剪活动源码的`Full Source SHA-256`；删除时应直接使用该值。便携安装器从`BUILD-INFO.json`读取并报告实际产品版本。
 
 ## 写操作中断恢复
 
@@ -164,7 +166,7 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone 的 sap_helper_status，action=ping，connectionId=w200；只返回助手状态，不修改SAP。
 ```
 
-基础SAP助手 `1.0`提供 `PING`和 `VALIDATE_TARGET`；0.30.1便携包提供仓库助手 `1.8`和DDIC助手 `1.4`。真实 `w200`已验证的安装基线仍是仓库助手1.7和DDIC助手1.3；在执行0.30.0真实生命周期验收前需先经明确授权升级助手，且不得释放传输。
+基础SAP助手 `1.0`提供 `PING`和 `VALIDATE_TARGET`；0.30.2便携包提供仓库助手 `1.8`和DDIC助手 `1.4`。真实 `w200`已完成两项助手的重新创建及生成/活动预检，源码与DDIC生命周期对象验收也已通过并清理；后续写入仍须按准确批准范围执行，且不得释放传输。
 
 函数模块调用示例（创建前必须批准准确对象名）：
 

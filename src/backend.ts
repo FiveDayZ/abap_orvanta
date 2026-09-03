@@ -26,6 +26,10 @@ export interface SourceResult {
   appendCount?: number
 }
 
+export interface SourceReadOptions {
+  version?: "active"
+}
+
 export interface EnhancementInfo {
   name: string
   startLine: number
@@ -497,7 +501,11 @@ export interface SapBackend {
     types: string[] | undefined,
     maxResults: number
   ): Promise<AbapObjectInfo[]>
-  readSource(connectionId: string, object: AbapObjectInfo): Promise<SourceResult>
+  readSource(
+    connectionId: string,
+    object: AbapObjectInfo,
+    options?: SourceReadOptions
+  ): Promise<SourceResult>
   readSourceByUri(connectionId: string, uri: string): Promise<SourceResult>
   readEnhancements(
     connectionId: string,

@@ -406,10 +406,10 @@ export const toolContracts = {
   },
   inspect_repository_assignment: {
     description:
-      "Inspect package, parent object, open request/task assignment, active/generated state, and original system for a function group, function module, program, or transaction. Read-only.",
+      "Inspect package, parent object, open request/task assignment, active/generated state, and original system for a class, interface, function group, function module, program, include, or transaction. Read-only.",
     inputSchema: {
       objectName: z.string(),
-      objectType: z.enum(["FUGR/F", "FUGR/FF", "PROG/P", "TRAN"]),
+      objectType: z.enum(["CLAS/OC", "INTF/OI", "FUGR/F", "FUGR/FF", "PROG/P", "PROG/I", "TRAN"]),
       connectionId: z.string()
     }
   },
@@ -607,7 +607,7 @@ export const toolContracts = {
   },
   get_abap_object_lines: {
     description:
-      "Read active ABAP source. objectType disambiguates same-named objects. methodName extracts one method body from a class.",
+      "Read active ABAP source and return the SHA-256 fingerprint of the complete untrimmed source. objectType disambiguates same-named objects. methodName extracts one method body from a class while retaining the complete-source fingerprint.",
     inputSchema: {
       objectName: z.string(),
       objectType: objectType.optional(),

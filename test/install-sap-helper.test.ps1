@@ -130,6 +130,10 @@ try {
     if (-not $preflight.status.ready -or $preflight.mode -ne "preflight") {
         throw "Controlled preflight did not report a ready helper state."
     }
+    $expectedVersion = (Get-Content -Raw (Join-Path $projectRoot "package.json") | ConvertFrom-Json).version
+    if ($preflight.productVersion -ne $expectedVersion) {
+        throw "Installer version mismatch: expected $expectedVersion, received $($preflight.productVersion)"
+    }
     if ($preflight.status.helpers[0].activeFlag -or -not $preflight.status.helpers[0].generated) {
         throw "Legacy blank ACTIVE must remain informational when GENERATED is X."
     }

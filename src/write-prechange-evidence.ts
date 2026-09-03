@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import type { SapBackend, SapDdicOperation } from "./backend.js"
 import type { ToolService } from "./tools.js"
 import { hashWriteInput, type SapPreChangeEvidence } from "./write-operation-receipts.js"
@@ -104,7 +105,7 @@ export async function observeWritePreChange(
         evidence.fingerprint = stringValue(value.fingerprint)
       }
     )
-    await observeAssignment(evidence, tools, connectionId, "FUGR/FF", input.functionName, false)
+    await observeAssignment(evidence, tools, connectionId, "FUGR/FF", input.functionName, true)
     if (evidence.exists === false && input.functionGroup) {
       await observeAssignment(evidence, tools, connectionId, "FUGR/F", input.functionGroup, false)
     }
@@ -222,7 +223,7 @@ async function observeAssignment(
   evidence: EvidenceDraft,
   tools: ToolService,
   connectionId: string,
-  objectType: "FUGR/F" | "FUGR/FF" | "PROG/P" | "TRAN",
+  objectType: "CLAS/OC" | "INTF/OI" | "FUGR/F" | "FUGR/FF" | "PROG/P" | "PROG/I" | "TRAN",
   objectName: unknown,
   assignmentDefinesExistence: boolean
 ): Promise<void> {
@@ -282,7 +283,7 @@ async function observeSourceTarget(
       const source = await backend.readSourceByUri(connectionId, uri)
       evidence.exists = true
       evidence.active = true
-      evidence.fingerprint = hashWriteInput(source.source)
+      evidence.fingerprint = sourceFingerprint(source.source)
       evidence.sources.push("active_source")
       return
     }
@@ -297,13 +298,14 @@ async function observeSourceTarget(
     }
     evidence.exists = true
     evidence.packageName = object.package
-    const source = await backend.readSource(connectionId, object)
+    const source = await backend.readSource(connectionId, object, { version: "active" })
     evidence.active = true
-    evidence.fingerprint = hashWriteInput(source.source)
+    evidence.fingerprint = sourceFingerprint(source.source)
     evidence.sources.push("active_source")
   } catch (error) {
     if (isMissing(error)) {
-      evidence.exists = false
+      if (evidence.exists === null) evidence.exists = false
+      else recordObservationError(evidence, "active_source", error)
       return
     }
     recordObservationError(evidence, "active_source", error)
@@ -327,6 +329,7 @@ function sourceObject(
         type: "PROG"
       }
     }
+    if (objectType === "FUGR/FF") return { name: objectName, type: "FUNC" }
     return { name: objectName, type: baseType(objectType) }
   }
   if (name === "create_test_include") {
@@ -350,7 +353,12 @@ function sourceObject(
 function sourceAssignment(
   name: string,
   input: Record<string, unknown>
-): { objectName: unknown; objectType: "FUGR/F" | "FUGR/FF" | "PROG/P" | "TRAN" } | undefined {
+):
+  | {
+      objectName: unknown
+      objectType: "CLAS/OC" | "INTF/OI" | "FUGR/F" | "FUGR/FF" | "PROG/P" | "PROG/I" | "TRAN"
+    }
+  | undefined {
   if (name === "delete_abap_source_object") {
     const type = String(input.objectType).toUpperCase()
     if (type === "FUGR/I") {
@@ -359,7 +367,12 @@ function sourceAssignment(
     if (type === "FUGR/F" || type === "FUGR/FF") {
       return { objectName: input.objectName, objectType: type }
     }
-    if (type === "PROG/P") return { objectName: input.objectName, objectType: "PROG/P" }
+    if (["CLAS/OC", "INTF/OI", "PROG/P", "PROG/I"].includes(type)) {
+      return {
+        objectName: input.objectName,
+        objectType: type as "CLAS/OC" | "INTF/OI" | "PROG/P" | "PROG/I"
+      }
+    }
     return undefined
   }
   if (name !== "manage_text_elements") return undefined
@@ -390,9 +403,13 @@ function booleanValue(value: unknown): boolean | null {
 }
 
 function isMissing(error: unknown): boolean {
-  return /(?:SCREEN|TRANSACTION|FUNCTION|MESSAGE_CLASS|REPOSITORY_OBJECT|DDIC_OBJECT|OBJECT)_NOT_FOUND|(?:screen|transaction|function module|message class|repository object|ABAP object|program) does not exist/i.test(
+  return /(?:SCREEN|TRANSACTION|FUNCTION|MESSAGE_CLASS|REPOSITORY_OBJECT|DDIC_OBJECT|OBJECT)_(?:NOT_FOUND|DOES_NOT_EXIST)|(?:screen|transaction|function(?: module)?|message class|repository object|ABAP object|program) (?:does not exist|was not found)|could not find (?:ABAP )?object/i.test(
     String(error)
   )
+}
+
+function sourceFingerprint(source: string): string {
+  return createHash("sha256").update(source).digest("hex")
 }
 
 function recordObservationError(evidence: EvidenceDraft, source: string, error: unknown): void {

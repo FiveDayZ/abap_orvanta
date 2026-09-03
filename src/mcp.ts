@@ -14,7 +14,7 @@ export function createMcpServer(
 ): McpServer {
   const server = new McpServer({
     name: "abap-mcp-standalone",
-    version: "0.30.1"
+    version: "0.30.2"
   })
   const tools = new ToolService(backend, undefined, invocationReceipts)
 

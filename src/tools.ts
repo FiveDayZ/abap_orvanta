@@ -375,7 +375,7 @@ interface CreateFunctionModuleInput extends ReadFunctionModuleInput {
 
 interface InspectRepositoryAssignmentInput {
   objectName: string
-  objectType: "FUGR/F" | "FUGR/FF" | "PROG/P" | "TRAN"
+  objectType: "CLAS/OC" | "INTF/OI" | "FUGR/F" | "FUGR/FF" | "PROG/P" | "PROG/I" | "TRAN"
   connectionId: string
 }
 
@@ -1884,9 +1884,12 @@ export class ToolService {
   async inspectRepositoryAssignment(input: InspectRepositoryAssignmentInput): Promise<string> {
     const objectName = readableObjectName(input.objectName)
     const repositoryType = {
+      "CLAS/OC": "CLAS",
+      "INTF/OI": "INTF",
       "FUGR/F": "FGRP",
       "FUGR/FF": "FUNC",
       "PROG/P": "PROG",
+      "PROG/I": "PROG",
       TRAN: "TRAN"
     }[input.objectType]
     const result = await this.backend.callSapRepository(input.connectionId.toLowerCase(), {
@@ -2360,7 +2363,10 @@ export class ToolService {
     }
 
     try {
-      const { source, uriUsed, kind } = await this.backend.readSource(connectionId, object)
+      const { source, uriUsed, kind } = await this.backend.readSource(connectionId, object, {
+        version: "active"
+      })
+      const sourceFingerprint = createHash("sha256").update(source).digest("hex")
       const lines = source.split("\n")
       if (input.methodName && object.type.startsWith("CLAS")) {
         const method = extractMethod(lines, input.methodName)
@@ -2373,7 +2379,7 @@ export class ToolService {
         return (
           `Method ${input.methodName.toUpperCase()} from class ${input.objectName} ` +
           `(lines ${method.startLine}-${method.endLine} of ${lines.length}, ${method.code.length} method lines):\n\n` +
-          `\`\`\`abap\n${method.code.join("\n")}\n\`\`\`\n\nURI: ${uriUsed}`
+          `\`\`\`abap\n${method.code.join("\n")}\n\`\`\`\n\nFull Source SHA-256: ${sourceFingerprint}\nURI: ${uriUsed}`
         )
       }
 
@@ -2408,6 +2414,7 @@ export class ToolService {
       return (
         `Source from ${input.objectName} (lines ${startLine}-${endIndex} of ${lines.length}, ${selected.length} lines retrieved):\n\n` +
         `\`\`\`abap\n${selected.join("\n").trim()}\n\`\`\`\n\n` +
+        `Full Source SHA-256: ${sourceFingerprint}\n` +
         `URI: ${uriUsed}` +
         (endIndex < lines.length ? "\n(more lines available, request next range)" : "") +
         enhancementInfo
@@ -2959,8 +2966,11 @@ export class ToolService {
     if (object.systemType !== "CUSTOM" && !customerTechnicalInclude) {
       throw new Error("Only Z* or Y* customer objects are allowed")
     }
-    if (object.package.toUpperCase() !== expectedPackage) {
-      throw new Error(`PACKAGE_CONFLICT: Object belongs to ${object.package || "<empty>"}`)
+    const actualPackage =
+      object.package.trim().toUpperCase() ||
+      (await this.sourceObjectPackage(connectionId, input.objectType, objectName, parentName))
+    if (actualPackage !== expectedPackage) {
+      throw new Error(`PACKAGE_CONFLICT: Object belongs to ${actualPackage || "<empty>"}`)
     }
     const preDeleteFingerprint = await this.backend.deleteObject(
       connectionId,
@@ -2986,6 +2996,26 @@ export class ToolService {
       null,
       2
     )
+  }
+
+  private async sourceObjectPackage(
+    connectionId: string,
+    objectType: DeleteSourceObjectInput["objectType"],
+    objectName: string,
+    parentName: string
+  ): Promise<string> {
+    const assignmentType = objectType === "FUGR/I" ? "FUGR/F" : objectType
+    const assignmentName = objectType === "FUGR/I" ? parentName : objectName
+    const assignment = JSON.parse(
+      await this.inspectRepositoryAssignment({
+        connectionId,
+        objectType: assignmentType,
+        objectName: assignmentName
+      })
+    ) as { packageName?: unknown }
+    return typeof assignment.packageName === "string"
+      ? assignment.packageName.trim().toUpperCase()
+      : ""
   }
 
   async createTestInclude(input: CreateTestIncludeInput): Promise<string> {
