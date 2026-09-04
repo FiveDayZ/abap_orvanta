@@ -13,6 +13,21 @@ const ddicTableField = z.object({
   dataElement: z.string(),
   key: z.boolean().optional()
 })
+const ddicAppendedTableField = z.object({
+  name: z.string(),
+  dataElement: z.string()
+})
+const ddicTableFieldChange = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("remove"), fieldName: z.string() }),
+  z.object({ action: z.literal("rename"), fieldName: z.string(), newName: z.string() }),
+  z.object({
+    action: z.literal("update"),
+    fieldName: z.string(),
+    dataElement: z.string().optional(),
+    key: z.boolean().optional(),
+    notNull: z.boolean().optional()
+  })
+])
 const functionParameter = z.object({
   name: z.string(),
   typeName: z.string(),
@@ -87,6 +102,13 @@ export const toolContracts = {
     description:
       "List SAP connection IDs configured in this standalone service. Call first if connectionId unknown. No params.",
     inputSchema: {}
+  },
+  get_capability_report: {
+    description:
+      "Build a read-only capability report for one configured SAP connection. It separates local implementation, verified native ADT access, SAP helper fallback, unsupported endpoints, and unknown target-specific capabilities. Probes never invoke SAP writes, clear locks, retry writes, or claim RFC rollback.",
+    inputSchema: {
+      connectionId: z.string()
+    }
   },
   abap_debug_session: {
     description:
@@ -280,11 +302,15 @@ export const toolContracts = {
   },
   delete_transaction_code: {
     description:
-      "Permanently delete one Z* or Y* dialog transaction after verifying that it targets the explicitly supplied Z* or Y* module pool and belongs to the exact package. Requires an existing transport and never releases transports.",
+      "Permanently delete one Z* or Y* dialog or report transaction after verifying its current fingerprint, target Z* or Y* program, and exact package. Requires an existing transport and never releases transports.",
     inputSchema: {
       ...writeOperationInput,
       transactionCode: z.string(),
       expectedProgramName: z.string(),
+      expectedFingerprint: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/i)
+        .optional(),
       packageName: z.string(),
       transportNumber: z.string(),
       connectionId: z.string()
@@ -463,6 +489,19 @@ export const toolContracts = {
       connectionId: z.string()
     }
   },
+  delete_abap_message_class: {
+    description:
+      "Permanently delete one Z* or Y* message class after verifying its current version and exact package. Requires an existing transport and explicit permanent-delete confirmation; verifies absence and never releases transports.",
+    inputSchema: {
+      ...writeOperationInput,
+      messageClass: z.string(),
+      expectedVersion: z.string().min(1),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      confirmation: z.literal("PERMANENT_DELETE"),
+      connectionId: z.string()
+    }
+  },
   read_ddic_domain: {
     description:
       "Read one active SAP Dictionary domain, including fixed values, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",
@@ -553,6 +592,36 @@ export const toolContracts = {
       connectionId: z.string()
     }
   },
+  append_ddic_transparent_table_fields: {
+    description:
+      "Append nullable, non-key fields to one existing Z* or Y* transparent table with direct data-element fields while preserving every existing field and all table settings. Tables with Include or Append structures are rejected. Requires the current version and SHA-256 fingerprint from read_ddic_transparent_table, the exact package, an existing transport, and active data elements. Field removal, rename, type/key/nullability changes, technical-setting changes, automatic retries, and transport release are not supported.",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      expectedVersion: z.string(),
+      expectedFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      fields: z.array(ddicAppendedTableField).min(1).max(32),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      connectionId: z.string()
+    }
+  },
+  patch_ddic_transparent_table_fields: {
+    description:
+      "Apply explicit remove, rename, or data-element/key/nullability updates to direct fields of one existing Z* or Y* transparent table. The complete active table definition and technical settings are preserved outside the requested changes. Requires the current version and SHA-256 fingerprint, exact package, existing transport, destructive-schema confirmation, and data-loss acknowledgement. MANDT, Include/Append layouts, technical settings, automatic retry/rollback, SAP lock clearing, and transport release are not supported.",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      expectedVersion: z.string(),
+      expectedFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      changes: z.array(ddicTableFieldChange).min(1).max(32),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      confirmation: z.literal("DESTRUCTIVE_SCHEMA_CHANGE"),
+      acknowledgeDataLoss: z.literal(true),
+      connectionId: z.string()
+    }
+  },
   read_ddic_table_type: {
     description:
       "Read one active SAP Dictionary table type, including line type, table/key settings, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",
@@ -574,15 +643,16 @@ export const toolContracts = {
   },
   delete_ddic_object: {
     description:
-      "Permanently delete one existing Z* or Y* domain, data element, structure, or table type after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent database tables are not supported. SAP references block deletion; transports are never released.",
+      "Permanently delete one existing Z* or Y* domain, data element, structure, table type, or transparent table after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent-table deletion additionally requires data-loss acknowledgement. SAP references block deletion; automatic retry/rollback, SAP lock clearing, and transport release are not supported.",
     inputSchema: {
       ...writeOperationInput,
-      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP"]),
+      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP", "TABL"]),
       objectName: z.string(),
       expectedVersion: z.string(),
       packageName: z.string(),
       transportNumber: z.string(),
       confirmation: z.literal("PERMANENT_DELETE"),
+      acknowledgeDataLoss: z.boolean().optional(),
       connectionId: z.string()
     }
   },

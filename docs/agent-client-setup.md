@@ -10,7 +10,7 @@ http://127.0.0.1:4847/mcp
 
 ## 首次一键接入
 
-解压0.30.2便携包后，在PowerShell 7中执行：
+解压0.34.0便携包后，在PowerShell 7中执行：
 
 ```powershell
 .\setup.ps1
@@ -21,7 +21,7 @@ http://127.0.0.1:4847/mcp
 ## 下次启动
 
 ```powershell
-cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.30.2-win-x64
+cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-standalone-0.34.0-win-x64
 .\start.ps1
 ```
 
@@ -130,11 +130,54 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone MCP，批量读取 w200 中 ZWMSTCTD01_FRM 和 ZCL_CA_HZ 的前10行，并分别汇总。
 ```
 
-当前独立版本公开70个工具。0.30.0新增消息类版本化 `add/update/remove`、类/接口/程序/Include/函数组/函数组Include/函数模块受控删除，以及域/数据元素/结构/表类型依赖检查后删除。消息更新要求当前版本；源码删除走ADT原生锁和删除；DDIC删除要求当前版本并由助手检查引用。删除工具都要求 `confirmation=PERMANENT_DELETE`。所有写工具继续要求唯一 `operationId`并返回版本2凭证；未知结果先查询恢复中心，禁止直接换ID重试。透明表仅允许读取或新建，不允许替换或删除。所有写入均限制为 `Z*`/`Y*`、正式包和已有请求，不创建或释放传输。真实 `w200/200`已通过源码与DDIC生命周期验收并完成临时对象清理；消息类增量更新因没有可靠的公开清理路径，仍只有本地Mock、SOAP生成器和MCP协议证据。
+当前独立版本公开74个工具。0.31.0新增只读 `get_capability_report`，应在连接新系统或升级SAP助手后先调用；它按真实只读探测结果区分本地、原生ADT、助手后备、不支持和未知，不会把工具注册当作系统可用证明。0.33.0支持透明表安全字段追加；0.34.0的 `patch_ddic_transparent_table_fields`支持字段删除、重命名以及数据元素/键/非空属性修改，`delete_ddic_object`的`TABL`类型支持透明表受控删除。破坏性操作必须提供最近读取的版本和指纹、准确包、已有请求、唯一操作ID、明确确认和数据丢失确认。所有写工具返回版本2凭证；未知结果先查询恢复中心，禁止直接换ID重试。所有写入均限制为 `Z*`/`Y*`、正式包和已有请求，不创建或释放传输。
 
 0.30.1要求`delete_abap_source_object`额外提供最近一次活动源码回读的SHA-256 `expectedFingerprint`。服务在SAP锁内再次读取并比较；不一致时返回`SOURCE_FINGERPRINT_CONFLICT`并解锁。源码创建、修改、激活、文本、屏幕和删除使用统一目标身份；函数组、函数模块和函数组Include按父函数组互斥。
 
 0.30.2的`get_abap_object_lines`会返回完整未裁剪活动源码的`Full Source SHA-256`；删除时应直接使用该值。便携安装器从`BUILD-INFO.json`读取并报告实际产品版本。
+
+0.33.0真实SAP验收脚本不会创建或清理透明表，而是在明确批准的现有客户表上保留一个新字段。执行前必须确认该字段属于正式设计并批准准确范围，然后运行：
+
+```powershell
+.\scripts\run-ddic-safe-append-validation.ps1 -ApproveWrite `
+  -TableName <已批准Z或Y透明表> -FieldName <新字段> `
+  -DataElement <活动数据元素> -PackageName ZABAP `
+  -TransportNumber GR2K923421
+```
+
+若已批准专用测试表及后续SE11人工清理，可由同一脚本先证明对象不存在，再创建固定的`MANDT`/`VALUE`基线表并追加验收字段：
+
+```powershell
+.\scripts\run-ddic-safe-append-validation.ps1 -ApproveWrite `
+  -CreateValidationTable -TableName ZCMCP_TAB_0330 `
+  -FieldName APPEND_MSG -DataElement BAPI_MSG `
+  -InitialDataElement BAPI_MSG -PackageName ZABAP `
+  -TransportNumber GR2K923421
+```
+
+0.34.0破坏性透明表生命周期验收会新建临时表，验证字段删除、重命名、数据元素/键/非空属性修改和最终表删除。执行前必须批准准确表名、两个数据元素、包、请求及完整清理范围，并确认可能的数据丢失：
+
+```powershell
+.\scripts\run-ddic-table-lifecycle-validation.ps1 -ApproveDestructiveWrite `
+  -TableName <已批准临时Z或Y透明表> `
+  -InitialDataElement BAPI_MSG -ReplacementDataElement <活动数据元素> `
+  -PackageName <已批准包> -TransportNumber <已有请求>
+```
+
+上述0.33.0模式发现同名表已存在时会拒绝执行，不覆盖或复用既有定义；成功后表和字段仍需在SE11中人工清理。0.34.0生命周期脚本只处理获批的全新临时表，并在成功路径验证受控删除和最终不存在。
+
+若进程在SAP已完成追加后丢失本地成功凭证，可使用失败前记录的版本和指纹执行只读恢复核验。恢复模式不会再次追加字段，只接受与固定验证基线完全一致的表，并继续验证旧版本保护：
+
+```powershell
+.\scripts\run-ddic-safe-append-validation.ps1 -ApproveWrite `
+  -ResumeValidation -TableName ZCMCP_TAB_0330 `
+  -FieldName APPEND_MSG -DataElement BAPI_MSG `
+  -PreviousVersion <追加前14位版本> `
+  -PreviousFingerprint <追加前SHA-256指纹> `
+  -PackageName ZABAP -TransportNumber GR2K923421
+```
+
+0.33.0脚本验证已有字段和表设置保持不变、新字段位于末尾且为可空非键字段、版本2凭证包含写前指纹，以及旧版本/指纹无法再次写入。该历史脚本仍保留字段，不会自动转用0.34.0破坏性删除路径。
 
 ## 写操作中断恢复
 
@@ -166,7 +209,7 @@ Codex桌面端需要在注册后重新加载配置，当前会话不会热更新
 使用 abap_fs_standalone 的 sap_helper_status，action=ping，connectionId=w200；只返回助手状态，不修改SAP。
 ```
 
-基础SAP助手 `1.0`提供 `PING`和 `VALIDATE_TARGET`；0.30.2便携包提供仓库助手 `1.8`和DDIC助手 `1.4`。真实 `w200`已完成两项助手的重新创建及生成/活动预检，源码与DDIC生命周期对象验收也已通过并清理；后续写入仍须按准确批准范围执行，且不得释放传输。
+基础SAP助手 `1.0`提供 `PING`和 `VALIDATE_TARGET`；0.34.0便携包提供仓库助手 `1.9`和DDIC助手 `1.6`。真实 `w200`已验证仓库助手1.9、DDIC助手1.6、透明表安全追加和破坏性透明表生命周期。临时表`ZCMCP_TAB_0340`已完成字段删除、重命名、数据元素/键/非空属性修改、陈旧定义拒绝和最终删除，且不得释放传输。
 
 函数模块调用示例（创建前必须批准准确对象名）：
 

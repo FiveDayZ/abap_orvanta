@@ -36,6 +36,7 @@ import {
   type DumpListInfo,
   type EnhancementInfo,
   type MessageClassCreationInfo,
+  type MessageClassDeletionInfo,
   type MessageClassInfo,
   type MessageClassMutationInfo,
   type RevisionInfo,
@@ -936,6 +937,29 @@ export class AdtBackend implements SapBackend {
     requireRepositoryResult(result, "message class update")
     return {
       ...messageClassFromRepository(connectionId, normalized, result.source),
+      transportNumber: repositoryPayloadRows(result.source, "M")[0]?.REQUEST || transportNumber
+    }
+  }
+
+  async deleteMessageClass(
+    connectionId: string,
+    messageClass: string,
+    expectedVersion: string,
+    packageName: string,
+    transportNumber: string
+  ): Promise<MessageClassDeletionInfo> {
+    const normalized = customerObjectName(messageClass, "messageClass", 20)
+    const result = await this.callSapRepository(connectionId, {
+      operation: "DELETE_MESSAGE_CLASS",
+      objectName: normalized,
+      packageName,
+      transportNumber,
+      expectedVersion
+    })
+    requireRepositoryResult(result, "message class deletion")
+    return {
+      connectionId: connectionId.toLowerCase(),
+      messageClass: normalized,
       transportNumber: repositoryPayloadRows(result.source, "M")[0]?.REQUEST || transportNumber
     }
   }

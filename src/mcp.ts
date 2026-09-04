@@ -6,6 +6,7 @@ import type { InvocationReceiptStore } from "./invocation-receipts.js"
 import { ToolService } from "./tools.js"
 import { observeWritePreChange } from "./write-prechange-evidence.js"
 import { hashWriteInput, type WriteOperationReceiptStore } from "./write-operation-receipts.js"
+import { PRODUCT_VERSION } from "./version.js"
 
 export function createMcpServer(
   backend: SapBackend,
@@ -14,12 +15,15 @@ export function createMcpServer(
 ): McpServer {
   const server = new McpServer({
     name: "abap-mcp-standalone",
-    version: "0.30.2"
+    version: PRODUCT_VERSION
   })
   const tools = new ToolService(backend, undefined, invocationReceipts)
 
   server.registerTool("get_connected_systems", toolContracts.get_connected_systems, async () =>
     textResult(tools.getConnectedSystems())
+  )
+  server.registerTool("get_capability_report", toolContracts.get_capability_report, async (input) =>
+    invoke("get_capability_report", () => tools.getCapabilityReport(input))
   )
   server.registerTool("abap_debug_session", toolContracts.abap_debug_session, async (input) =>
     invoke("abap_debug_session", () => tools.debugSession(input))
@@ -224,6 +228,14 @@ export function createMcpServer(
         tools.updateAbapMessageClass(input)
       )
   )
+  server.registerTool(
+    "delete_abap_message_class",
+    toolContracts.delete_abap_message_class,
+    async (input) =>
+      invokeWrite("delete_abap_message_class", input, backend, writeReceipts, () =>
+        tools.deleteAbapMessageClass(input)
+      )
+  )
   server.registerTool("read_ddic_domain", toolContracts.read_ddic_domain, async (input) =>
     invoke("read_ddic_domain", () => tools.readDdicDomain(input))
   )
@@ -265,6 +277,22 @@ export function createMcpServer(
     async (input) =>
       invokeWrite("create_ddic_transparent_table", input, backend, writeReceipts, () =>
         tools.createDdicTransparentTable(input)
+      )
+  )
+  server.registerTool(
+    "append_ddic_transparent_table_fields",
+    toolContracts.append_ddic_transparent_table_fields,
+    async (input) =>
+      invokeWrite("append_ddic_transparent_table_fields", input, backend, writeReceipts, () =>
+        tools.appendDdicTransparentTableFields(input)
+      )
+  )
+  server.registerTool(
+    "patch_ddic_transparent_table_fields",
+    toolContracts.patch_ddic_transparent_table_fields,
+    async (input) =>
+      invokeWrite("patch_ddic_transparent_table_fields", input, backend, writeReceipts, () =>
+        tools.patchDdicTransparentTableFields(input)
       )
   )
   server.registerTool("read_ddic_table_type", toolContracts.read_ddic_table_type, async (input) =>
@@ -680,6 +708,8 @@ export function writeOperationTarget(
           upsert_ddic_data_element: "DTEL",
           upsert_ddic_structure: "TABL",
           create_ddic_transparent_table: "TABL",
+          append_ddic_transparent_table_fields: "TABL",
+          patch_ddic_transparent_table_fields: "TABL",
           upsert_ddic_table_type: "TTYP"
         }[name] ??
         "OBJECT"

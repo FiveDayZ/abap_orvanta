@@ -28,6 +28,7 @@ import type {
 import type { DebugStepRequest, DebugVariableRequest } from "./debug-manager.js"
 import { writeDiscoveryExport, writeResourceExport } from "./export.js"
 import type { InvocationReceiptStore, InvocationReservation } from "./invocation-receipts.js"
+import { buildCapabilityReport } from "./capabilities.js"
 
 interface SearchInput {
   pattern: string
@@ -279,6 +280,7 @@ interface CreateTransactionInput extends ReadTransactionInput {
 
 interface DeleteTransactionInput extends ReadTransactionInput {
   expectedProgramName: string
+  expectedFingerprint?: string | undefined
   packageName: string
   transportNumber: string
 }
@@ -402,6 +404,13 @@ interface UpdateMessageClassInput extends ReadMessageClassInput {
   transportNumber: string
 }
 
+interface DeleteMessageClassInput extends ReadMessageClassInput {
+  expectedVersion: string
+  packageName: string
+  transportNumber: string
+  confirmation: "PERMANENT_DELETE"
+}
+
 interface ReadDdicInput {
   objectName: string
   connectionId: string
@@ -449,16 +458,46 @@ interface CreateTransparentTableInput extends Omit<UpsertDdicInput, "expectedVer
   }>
 }
 
+interface AppendTransparentTableFieldsInput extends ReadDdicInput {
+  expectedVersion: string
+  expectedFingerprint: string
+  fields: Array<{ name: string; dataElement: string }>
+  packageName: string
+  transportNumber: string
+}
+
+type TransparentTableFieldChange =
+  | { action: "remove"; fieldName: string }
+  | { action: "rename"; fieldName: string; newName: string }
+  | {
+      action: "update"
+      fieldName: string
+      dataElement?: string | undefined
+      key?: boolean | undefined
+      notNull?: boolean | undefined
+    }
+
+interface PatchTransparentTableFieldsInput extends ReadDdicInput {
+  expectedVersion: string
+  expectedFingerprint: string
+  changes: TransparentTableFieldChange[]
+  packageName: string
+  transportNumber: string
+  confirmation: "DESTRUCTIVE_SCHEMA_CHANGE"
+  acknowledgeDataLoss: true
+}
+
 interface UpsertTableTypeInput extends UpsertDdicInput {
   rowType: string
 }
 
 interface DeleteDdicInput extends ReadDdicInput {
-  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP"
+  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP" | "TABL"
   expectedVersion: string
   packageName: string
   transportNumber: string
   confirmation: "PERMANENT_DELETE"
+  acknowledgeDataLoss?: boolean | undefined
 }
 
 interface ObjectInput {
@@ -719,6 +758,10 @@ export class ToolService {
       return "No SAP systems are currently connected. User needs to configure a connection first."
     }
     return `Connected SAP systems: ${ids.join(", ")}`
+  }
+
+  async getCapabilityReport(input: { connectionId: string }): Promise<string> {
+    return buildCapabilityReport(this.backend, input.connectionId)
   }
 
   async sapHelperStatus(input: SapHelperInput): Promise<string> {
@@ -1157,16 +1200,7 @@ export class ToolService {
       transaction: transactionCode
     })
     requireRepositorySuccess(result.status, result.code, result.message)
-    return JSON.stringify(
-      {
-        connectionId: input.connectionId.toLowerCase(),
-        transactionCode,
-        transactions: result.transactions,
-        guiAttributes: result.guiAttributes
-      },
-      null,
-      2
-    )
+    return JSON.stringify(transactionResult(input.connectionId, transactionCode, result), null, 2)
   }
 
   async createTransactionCode(input: CreateTransactionInput): Promise<string> {
@@ -1201,6 +1235,15 @@ export class ToolService {
       transaction: transactionCode
     })
     requireRepositorySuccess(current.status, current.code, current.message)
+    const currentDefinition = transactionResult(connectionId, transactionCode, current)
+    if (
+      input.expectedFingerprint &&
+      currentDefinition.fingerprint !== input.expectedFingerprint.toLowerCase()
+    ) {
+      throw new Error(
+        `TRANSACTION_FINGERPRINT_CONFLICT: expected ${input.expectedFingerprint.toLowerCase()}, current ${currentDefinition.fingerprint}`
+      )
+    }
     const definition = current.transactions.find((row) => row.TCODE === transactionCode)
     if (!definition) throw new Error(`Transaction does not exist: ${transactionCode}`)
     if ((definition.PGMNA ?? "").toUpperCase() !== expectedProgramName) {
@@ -1217,7 +1260,7 @@ export class ToolService {
     })
     requireRepositorySuccess(result.status, result.code, result.message)
     return (
-      `Dialog transaction deleted and absence verified\nTransaction: ${transactionCode}\n` +
+      `Transaction deleted and absence verified\nTransaction: ${transactionCode}\n` +
       `Program: ${expectedProgramName}\nPackage: ${expectedPackage}\n` +
       `Transport: ${input.transportNumber.toUpperCase()}\nStatus: ${result.code}`
     )
@@ -2005,6 +2048,53 @@ export class ToolService {
     )
   }
 
+  async deleteAbapMessageClass(input: DeleteMessageClassInput): Promise<string> {
+    if (input.confirmation !== "PERMANENT_DELETE") {
+      throw new Error("confirmation must be PERMANENT_DELETE")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const messageClass = customerMessageClass(input.messageClass)
+    const expectedPackage = packageName(input.packageName)
+    const current = await this.backend.readMessageClass(connectionId, messageClass)
+    if (current.version !== input.expectedVersion.trim()) {
+      throw new Error("VERSION_CONFLICT: Message class changed since it was read")
+    }
+    if (current.packageName !== expectedPackage) {
+      throw new Error(
+        `PACKAGE_CONFLICT: Message class belongs to ${current.packageName || "<empty>"}`
+      )
+    }
+    const deleted = await this.backend.deleteMessageClass(
+      connectionId,
+      messageClass,
+      current.version,
+      expectedPackage,
+      transportNumber(input.transportNumber)
+    )
+    try {
+      await this.backend.readMessageClass(connectionId, messageClass)
+    } catch (error) {
+      if (isMessageClassNotFound(error)) {
+        return JSON.stringify(
+          {
+            connectionId,
+            objectKind: "messageClass",
+            messageClass,
+            previousVersion: current.version,
+            previousFingerprint: messageClassResult(current).fingerprint,
+            packageName: expectedPackage,
+            recordedRequest: deleted.transportNumber,
+            status: "MESSAGE_CLASS_DELETED"
+          },
+          null,
+          2
+        )
+      }
+      throw error
+    }
+    throw new Error("MESSAGE_CLASS_DELETE_VERIFY_FAILED: Message class still exists after delete")
+  }
+
   async readDdicDomain(input: ReadDdicInput): Promise<string> {
     return this.readDdic(input, "READ_DOMAIN", "domain")
   }
@@ -2191,6 +2281,157 @@ export class ToolService {
     )
   }
 
+  async appendDdicTransparentTableFields(
+    input: AppendTransparentTableFieldsInput
+  ): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = customerDdicTableName(input.objectName)
+    const packageName = ddicPackageName(input.packageName)
+    const expectedVersion = requiredVersionToken(input.expectedVersion)
+    const expectedFingerprint = input.expectedFingerprint.trim().toLowerCase()
+    if (!/^[a-f0-9]{64}$/.test(expectedFingerprint)) {
+      throw new Error("expectedFingerprint must be returned by read_ddic_transparent_table")
+    }
+    const appendedFields = validateAppendedTransparentTableFields(input.fields)
+    const current = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_TRANSPARENT_TABLE",
+      objectName
+    })
+    requireDdicSuccess(current)
+    if (current.packageName !== packageName) {
+      throw new Error(`SAP DDIC verification returned package ${current.packageName || "<empty>"}`)
+    }
+    if (current.objectVersion !== expectedVersion) {
+      throw new Error("VERSION_CONFLICT: DDIC object changed since it was read")
+    }
+    const currentDefinition = ddicDefinition(current, "transparentTable")
+    const currentFingerprint = createHash("sha256")
+      .update(JSON.stringify(currentDefinition))
+      .digest("hex")
+    if (currentFingerprint !== expectedFingerprint) {
+      throw new Error(
+        "FINGERPRINT_CONFLICT: Transparent table definition changed since it was read"
+      )
+    }
+    const existingNames = new Set(
+      current.fields.map((field) => (field.FIELDNAME ?? "").toUpperCase()).filter(Boolean)
+    )
+    for (const field of appendedFields) {
+      if (existingNames.has(field.FIELDNAME)) {
+        throw new Error(`Transparent table field already exists: ${field.FIELDNAME}`)
+      }
+      const dataElement = await this.backend.callSapDdic(connectionId, {
+        operation: "READ_DATA_ELEMENT",
+        objectName: field.ROLLNAME
+      })
+      requireDdicSuccess(dataElement)
+      if (dataElement.header.ROLLNAME !== field.ROLLNAME) {
+        throw new Error(`Active data element verification failed: ${field.ROLLNAME}`)
+      }
+    }
+    const result = await this.backend.callSapDdic(connectionId, {
+      operation: "APPEND_TRANSPARENT_TABLE_FIELDS",
+      objectName,
+      description: current.header.DDTEXT ?? "",
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion,
+      fields: appendedFields
+    })
+    const currentFields = (currentDefinition.fields ?? []) as Array<Record<string, unknown>>
+    return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
+      ...currentDefinition,
+      fields: [
+        ...currentFields,
+        ...appendedFields.map((field, index) => ({
+          name: field.FIELDNAME,
+          position: currentFields.length + index + 1,
+          dataElement: field.ROLLNAME,
+          key: false,
+          notNull: false
+        }))
+      ]
+    })
+  }
+
+  async patchDdicTransparentTableFields(input: PatchTransparentTableFieldsInput): Promise<string> {
+    if (input.confirmation !== "DESTRUCTIVE_SCHEMA_CHANGE" || input.acknowledgeDataLoss !== true) {
+      throw new Error(
+        "confirmation must be DESTRUCTIVE_SCHEMA_CHANGE and acknowledgeDataLoss must be true"
+      )
+    }
+    if (!input.changes.length || input.changes.length > 32) {
+      throw new Error("changes must contain 1-32 field changes")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = customerDdicTableName(input.objectName)
+    const packageName = ddicPackageName(input.packageName)
+    const expectedVersion = requiredVersionToken(input.expectedVersion)
+    const expectedFingerprint = requiredDdicFingerprint(input.expectedFingerprint)
+    const current = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_TRANSPARENT_TABLE",
+      objectName
+    })
+    requireCurrentDdicDefinition(current, packageName, expectedVersion)
+    const currentDefinition = ddicDefinition(current, "transparentTable")
+    const currentFingerprint = createHash("sha256")
+      .update(JSON.stringify(currentDefinition))
+      .digest("hex")
+    if (currentFingerprint !== expectedFingerprint) {
+      throw new Error(
+        "FINGERPRINT_CONFLICT: Transparent table definition changed since it was read"
+      )
+    }
+    const currentFields = transparentTableFields(currentDefinition)
+    if (
+      currentFields.some((field) => !field.name || !field.dataElement || field.name === ".INCLUDE")
+    ) {
+      throw new Error("COMPLEX_TABLE_UNSUPPORTED: Tables with includes or appends are unsupported")
+    }
+    const fields = applyTransparentTableFieldChanges(currentFields, input.changes)
+    const changedDataElements = new Set(
+      input.changes.flatMap((change) =>
+        change.action === "update" && change.dataElement !== undefined
+          ? [ddicName(change.dataElement, "dataElement")]
+          : []
+      )
+    )
+    for (const dataElementName of changedDataElements) {
+      const dataElement = await this.backend.callSapDdic(connectionId, {
+        operation: "READ_DATA_ELEMENT",
+        objectName: dataElementName
+      })
+      requireDdicSuccess(dataElement)
+      if (dataElement.header.ROLLNAME !== dataElementName) {
+        throw new Error(`Active data element verification failed: ${dataElementName}`)
+      }
+    }
+    const result = await this.backend.callSapDdic(connectionId, {
+      operation: "PATCH_TRANSPARENT_TABLE_FIELDS",
+      objectName,
+      description: String(currentDefinition.description ?? ""),
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion,
+      fields: fields.map((field) => ({
+        FIELDNAME: field.name,
+        ROLLNAME: field.dataElement,
+        KEYFLAG: field.key ? "X" : "",
+        NOTNULL: field.notNull ? "X" : ""
+      }))
+    })
+    return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
+      ...currentDefinition,
+      fields: fields.map((field, index) => ({
+        name: field.name,
+        position: index + 1,
+        dataElement: field.dataElement,
+        key: field.key,
+        notNull: field.notNull
+      }))
+    })
+  }
+
   async readDdicTableType(input: ReadDdicInput): Promise<string> {
     return this.readDdic(input, "READ_TABLE_TYPE", "tableType")
   }
@@ -2222,12 +2463,19 @@ export class ToolService {
     if (input.confirmation !== "PERMANENT_DELETE") {
       throw new Error("confirmation must be PERMANENT_DELETE")
     }
-    const objectName = customerDdicName(input.objectName)
+    if (input.objectType === "TABL" && input.acknowledgeDataLoss !== true) {
+      throw new Error("acknowledgeDataLoss must be true when deleting a transparent table")
+    }
+    const objectName =
+      input.objectType === "TABL"
+        ? customerDdicTableName(input.objectName)
+        : customerDdicName(input.objectName)
     const expectedPackage = ddicPackageName(input.packageName)
     const operation = {
       DOMA: "DELETE_DOMAIN",
       DTEL: "DELETE_DATA_ELEMENT",
       STRU: "DELETE_STRUCTURE",
+      TABL: "DELETE_TRANSPARENT_TABLE",
       TTYP: "DELETE_TABLE_TYPE"
     }[input.objectType] as SapDdicOperation
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
@@ -3528,6 +3776,25 @@ function screenDefinition(
     screenNumber,
     ...definition,
     moduleReferences: screenModuleReferences(flowLogic),
+    fingerprint: hashCanonicalJson(definition)
+  }
+}
+
+function transactionResult(
+  connectionId: string,
+  transactionCode: string,
+  result: SapRepositoryResult
+) {
+  const metadata = repositoryPayload(result.source).metadata
+  const definition = {
+    transactions: result.transactions,
+    guiAttributes: result.guiAttributes
+  }
+  return {
+    connectionId: connectionId.toLowerCase(),
+    transactionCode,
+    packageName: metadata.PACKAGE ?? "",
+    ...definition,
     fingerprint: hashCanonicalJson(definition)
   }
 }
@@ -4991,6 +5258,135 @@ function validateTransparentTableFields(
   })
 }
 
+function validateAppendedTransparentTableFields(
+  input: AppendTransparentTableFieldsInput["fields"]
+): Array<{ FIELDNAME: string; ROLLNAME: string; KEYFLAG: string; NOTNULL: string }> {
+  if (!input.length) throw new Error("fields must contain at least one field to append")
+  if (input.length > 32) throw new Error("No more than 32 fields may be appended per operation")
+  const names = new Set<string>()
+  return input.map((field) => {
+    const name = ddicFieldName(field.name)
+    if (name === "MANDT") throw new Error("MANDT cannot be appended to an existing table")
+    if (names.has(name)) throw new Error(`Duplicate appended transparent table field: ${name}`)
+    names.add(name)
+    return {
+      FIELDNAME: name,
+      ROLLNAME: ddicName(field.dataElement, "dataElement"),
+      KEYFLAG: "",
+      NOTNULL: ""
+    }
+  })
+}
+
+interface TransparentTableFieldDefinition {
+  name: string
+  dataElement: string
+  key: boolean
+  notNull: boolean
+}
+
+function requiredDdicFingerprint(value: string): string {
+  const normalized = value.trim().toLowerCase()
+  if (!/^[a-f0-9]{64}$/.test(normalized)) {
+    throw new Error("expectedFingerprint must be returned by read_ddic_transparent_table")
+  }
+  return normalized
+}
+
+function requireCurrentDdicDefinition(
+  result: SapDdicResult,
+  packageName: string,
+  expectedVersion: string
+): void {
+  requireDdicSuccess(result)
+  if (result.packageName !== packageName) {
+    throw new Error(`SAP DDIC verification returned package ${result.packageName || "<empty>"}`)
+  }
+  if (result.objectVersion !== expectedVersion) {
+    throw new Error("VERSION_CONFLICT: DDIC object changed since it was read")
+  }
+}
+
+function transparentTableFields(
+  definition: Record<string, unknown>
+): TransparentTableFieldDefinition[] {
+  if (!Array.isArray(definition.fields)) {
+    throw new Error("SAP DDIC verification did not return transparent table fields")
+  }
+  return definition.fields.map((value) => {
+    const field = value as Record<string, unknown>
+    return {
+      name: String(field.name ?? "").toUpperCase(),
+      dataElement: String(field.dataElement ?? "").toUpperCase(),
+      key: field.key === true,
+      notNull: field.notNull === true
+    }
+  })
+}
+
+function applyTransparentTableFieldChanges(
+  current: TransparentTableFieldDefinition[],
+  changes: TransparentTableFieldChange[]
+): TransparentTableFieldDefinition[] {
+  const fields = current.map((field) => ({ ...field }))
+  for (const change of changes) {
+    const fieldName = ddicFieldName(change.fieldName)
+    if (fieldName === "MANDT") throw new Error("MANDT cannot be changed")
+    const index = fields.findIndex((field) => field.name === fieldName)
+    if (index < 0) throw new Error(`Transparent table field does not exist: ${fieldName}`)
+    if (change.action === "remove") {
+      fields.splice(index, 1)
+      continue
+    }
+    if (change.action === "rename") {
+      const newName = ddicFieldName(change.newName)
+      if (newName === "MANDT") throw new Error("A field cannot be renamed to MANDT")
+      if (newName === fieldName) throw new Error(`Field rename is a no-op: ${fieldName}`)
+      if (fields.some((field, fieldIndex) => fieldIndex !== index && field.name === newName)) {
+        throw new Error(`Transparent table field already exists: ${newName}`)
+      }
+      fields[index]!.name = newName
+      continue
+    }
+    if (
+      change.dataElement === undefined &&
+      change.key === undefined &&
+      change.notNull === undefined
+    ) {
+      throw new Error(`Field update has no attributes: ${fieldName}`)
+    }
+    const field = fields[index]!
+    const updated = {
+      ...field,
+      dataElement:
+        change.dataElement === undefined
+          ? field.dataElement
+          : ddicName(change.dataElement, "dataElement"),
+      key: change.key ?? field.key,
+      notNull: change.notNull ?? field.notNull
+    }
+    if (
+      updated.dataElement === field.dataElement &&
+      updated.key === field.key &&
+      updated.notNull === field.notNull
+    ) {
+      throw new Error(`Field update is a no-op: ${fieldName}`)
+    }
+    fields[index] = updated
+  }
+  if (!fields.length) throw new Error("A transparent table must retain at least one field")
+  let nonKeySeen = false
+  for (const field of fields) {
+    if (!field.key) nonKeySeen = true
+    if (field.key && nonKeySeen) throw new Error("Key fields must be contiguous at the beginning")
+    if (field.key && !field.notNull) throw new Error(`Key field must be not null: ${field.name}`)
+  }
+  if (JSON.stringify(fields) === JSON.stringify(current)) {
+    throw new Error("Transparent table field patch does not change the active definition")
+  }
+  return fields
+}
+
 function numberValue(value: string | undefined): number {
   const parsed = Number.parseInt(value ?? "0", 10)
   return Number.isNaN(parsed) ? 0 : parsed
@@ -5495,6 +5891,13 @@ function customerMessageClass(value: string): string {
   if (!/^[ZY]/.test(normalized))
     throw new Error("messageClass must name a Z* or Y* customer object")
   return normalized
+}
+
+function isMessageClassNotFound(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return /MESSAGE_CLASS_(?:NOT_FOUND|READ_FAILED)|message class (?:does not exist|was not found)/i.test(
+    message
+  )
 }
 
 function messageClassMessages(

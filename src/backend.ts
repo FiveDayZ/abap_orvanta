@@ -105,6 +105,7 @@ export type SapRepositoryOperation =
   | "READ_MESSAGE_CLASS"
   | "CREATE_MESSAGE_CLASS"
   | "UPDATE_MESSAGE_CLASS"
+  | "DELETE_MESSAGE_CLASS"
   | "READ_TRANSPORT_DETAILS"
 
 export type SapStructureRow = Record<string, string>
@@ -174,11 +175,14 @@ export type SapDdicOperation =
   | "UPSERT_STRUCTURE"
   | "READ_TRANSPARENT_TABLE"
   | "CREATE_TRANSPARENT_TABLE"
+  | "APPEND_TRANSPARENT_TABLE_FIELDS"
+  | "PATCH_TRANSPARENT_TABLE_FIELDS"
   | "READ_TABLE_TYPE"
   | "UPSERT_TABLE_TYPE"
   | "DELETE_DOMAIN"
   | "DELETE_DATA_ELEMENT"
   | "DELETE_STRUCTURE"
+  | "DELETE_TRANSPARENT_TABLE"
   | "DELETE_TABLE_TYPE"
 
 export interface SapDdicRequest {
@@ -395,6 +399,12 @@ export interface MessageClassMutationInfo extends MessageClassInfo {
   transportNumber: string
 }
 
+export interface MessageClassDeletionInfo {
+  connectionId: string
+  messageClass: string
+  transportNumber: string
+}
+
 export interface TestIncludeCreationInfo {
   connectionId: string
   className: string
@@ -569,6 +579,13 @@ export interface SapBackend {
     packageName: string,
     transportNumber: string
   ): Promise<MessageClassMutationInfo>
+  deleteMessageClass(
+    connectionId: string,
+    messageClass: string,
+    expectedVersion: string,
+    packageName: string,
+    transportNumber: string
+  ): Promise<MessageClassDeletionInfo>
   createTestInclude(connectionId: string, className: string): Promise<TestIncludeCreationInfo>
   readTextElements(
     connectionId: string,

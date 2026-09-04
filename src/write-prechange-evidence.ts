@@ -109,7 +109,11 @@ export async function observeWritePreChange(
     if (evidence.exists === false && input.functionGroup) {
       await observeAssignment(evidence, tools, connectionId, "FUGR/F", input.functionGroup, false)
     }
-  } else if (name === "create_abap_message_class" || name === "update_abap_message_class") {
+  } else if (
+    name === "create_abap_message_class" ||
+    name === "update_abap_message_class" ||
+    name === "delete_abap_message_class"
+  ) {
     await observeJson(
       evidence,
       "read_abap_message_class",
@@ -126,11 +130,32 @@ export async function observeWritePreChange(
         evidence.packageName = stringValue(value.packageName)
       }
     )
+  } else if (
+    name === "append_ddic_transparent_table_fields" ||
+    name === "patch_ddic_transparent_table_fields"
+  ) {
+    await observeJson(
+      evidence,
+      "read_ddic_transparent_table",
+      () =>
+        tools.readDdicTransparentTable({
+          objectName: String(input.objectName),
+          connectionId
+        }),
+      (value) => {
+        evidence.exists = true
+        evidence.active = true
+        evidence.version = stringValue(value.version)
+        evidence.fingerprint = stringValue(value.fingerprint)
+        evidence.packageName = stringValue(value.packageName)
+      }
+    )
   } else if (name === "delete_ddic_object") {
     const operation = {
       DOMA: "READ_DOMAIN",
       DTEL: "READ_DATA_ELEMENT",
       STRU: "READ_STRUCTURE",
+      TABL: "READ_TRANSPARENT_TABLE",
       TTYP: "READ_TABLE_TYPE"
     }[String(input.objectType).toUpperCase()] as SapDdicOperation | undefined
     if (!operation) throw new Error(`Unsupported DDIC deletion type: ${String(input.objectType)}`)
@@ -242,9 +267,9 @@ async function observeAssignment(
     evidence.requestNumber = stringValue(value.requestNumber)
     evidence.taskNumber = stringValue(value.taskNumber)
   } catch (error) {
-    if (assignmentDefinesExistence && isMissing(error)) {
+    if (isMissing(error) && (assignmentDefinesExistence || evidence.exists !== true)) {
       evidence.sources.push("repository_assignment")
-      evidence.exists = false
+      if (evidence.exists === null) evidence.exists = false
       return
     }
     recordObservationError(evidence, "repository_assignment", error)

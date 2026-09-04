@@ -38,6 +38,7 @@ import {
   writeTextElementsWithClient
 } from "../src/adt-backend.js"
 import type { AbapObjectInfo } from "../src/backend.js"
+import { toolContracts } from "../src/contracts.js"
 import { InvocationReceiptStore } from "../src/invocation-receipts.js"
 import { ToolService, extractMethod, validateReadOnlySql } from "../src/tools.js"
 import { findAndReplaceSource } from "../src/source-edit.js"
@@ -108,6 +109,110 @@ test("five headless tool paths preserve representative output behavior", async (
   })
   assert.match(batch, /Batch Lines Results \(1 objects\)/)
   assert.match(batch, /REPORT zreport_demo\./)
+})
+
+test("dynamic capability report uses only bounded read probes and covers every tool", async () => {
+  const backend = new MockBackend()
+  const connectionDetails = backend.connectionDetails.bind(backend)
+  backend.connectionDetails = (connectionId) => ({
+    ...connectionDetails(connectionId),
+    url: "https://configured-user:configured-password@sap.example.invalid/"
+  })
+  const repositoryOperations: string[] = []
+  const ddicOperations: string[] = []
+  const callRepository = backend.callSapRepository.bind(backend)
+  const callDdic = backend.callSapDdic.bind(backend)
+  backend.callSapRepository = async (connectionId, request) => {
+    repositoryOperations.push(request.operation)
+    return callRepository(connectionId, request)
+  }
+  backend.callSapDdic = async (connectionId, request) => {
+    ddicOperations.push(request.operation)
+    return callDdic(connectionId, request)
+  }
+
+  const report = JSON.parse(
+    await new ToolService(backend).getCapabilityReport({ connectionId: "W200" })
+  ) as {
+    productVersion: string
+    connection: { id: string; baseUrl: string; client: string; language: string; username: string }
+    readOnly: boolean
+    safety: Record<string, boolean>
+    helpers: Array<{ name: string; availability: string; protocolVersion?: string }>
+    capabilities: Array<{
+      id: string
+      route: string
+      toolNames: string[]
+      observation: { availability: string }
+    }>
+  }
+
+  assert.equal(report.productVersion, "0.34.0")
+  assert.deepEqual(report.connection, {
+    id: "w200",
+    baseUrl: "https://sap.example.invalid",
+    client: "200",
+    language: "EN",
+    username: "DEVELOPER"
+  })
+  assert.equal(report.readOnly, true)
+  assert.deepEqual(report.safety, {
+    sapWritesInvoked: false,
+    sapLocksCleared: false,
+    automaticWriteRetry: false,
+    automaticRollbackClaimed: false
+  })
+  assert.deepEqual(repositoryOperations, ["READ_MESSAGE_CLASS"])
+  assert.deepEqual(ddicOperations, ["READ_DOMAIN"])
+  assert.equal(report.helpers.find((helper) => helper.name === "base")?.protocolVersion, "1.0")
+  assert.equal(
+    report.capabilities.find((item) => item.id === "adt-repository-search")?.observation
+      .availability,
+    "available"
+  )
+  assert.equal(
+    report.capabilities.find((item) => item.id === "repository-helper-message-update")?.observation
+      .availability,
+    "unknown"
+  )
+  assert.equal(
+    report.capabilities.find((item) => item.id === "ddic-helper-controlled-delete")?.observation
+      .availability,
+    "available"
+  )
+
+  const reportedTools = report.capabilities.flatMap((item) => item.toolNames)
+  assert.equal(new Set(reportedTools).size, reportedTools.length)
+  assert.deepEqual(reportedTools.sort(), Object.keys(toolContracts).sort())
+})
+
+test("dynamic capability report distinguishes unsupported endpoints from unknown probe failures", async () => {
+  const backend = new MockBackend()
+  backend.listTraceRuns = async () => {
+    throw new Error("abap-traces capability unsupported-endpoint (HTTP 404)")
+  }
+  backend.runQuery = async () => {
+    throw new Error("Request failed with status code 403")
+  }
+
+  const report = JSON.parse(
+    await new ToolService(backend).getCapabilityReport({ connectionId: "w200" })
+  ) as {
+    capabilities: Array<{
+      id: string
+      observation: { availability: string; reason: string }
+    }>
+  }
+  const capability = (id: string) => report.capabilities.find((item) => item.id === id)!
+
+  assert.equal(capability("adt-runtime-traces").observation.availability, "unsupported")
+  assert.match(capability("adt-runtime-traces").observation.reason, /HTTP 404/)
+  assert.equal(capability("adt-data-preview").observation.availability, "unknown")
+  assert.match(
+    capability("adt-data-preview").observation.reason,
+    /without proving endpoint absence/
+  )
+  assert.equal(capability("adt-quality").observation.availability, "unknown")
 })
 
 test("headless debugger tools expose deterministic bounded requests", async () => {
@@ -799,14 +904,23 @@ test("Dynpro application tools validate customer scope and preserve structured r
   })
   assert.match(transaction, /Dialog transaction created and verified/)
 
+  const transactionRead = JSON.parse(
+    await tools.readTransactionCode({
+      transactionCode: "ZMODULE_POOL_UI",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string }
+  assert.match(transactionRead.fingerprint, /^[a-f0-9]{64}$/)
+
   const deletedTransaction = await tools.deleteTransactionCode({
     transactionCode: "ZMODULE_POOL_UI",
     expectedProgramName: "ZMODULE_POOL",
+    expectedFingerprint: transactionRead.fingerprint,
     packageName: "ZVALIDATION",
     transportNumber: "W20K900001",
     connectionId: "w200"
   })
-  assert.match(deletedTransaction, /Dialog transaction deleted and absence verified/)
+  assert.match(deletedTransaction, /Transaction deleted and absence verified/)
   assert.equal(backend.lastRepositoryRequest?.operation, "DELETE_TRANSACTION")
 
   const deletedModulePool = await tools.deleteModulePool({
@@ -827,6 +941,18 @@ test("Dynpro application tools validate customer scope and preserve structured r
       connectionId: "w200"
     }),
     /Transaction program mismatch/
+  )
+
+  await assert.rejects(
+    tools.deleteTransactionCode({
+      transactionCode: "ZMODULE_POOL_UI",
+      expectedProgramName: "ZMODULE_POOL",
+      expectedFingerprint: "f".repeat(64),
+      packageName: "ZVALIDATION",
+      transportNumber: "W20K900001",
+      connectionId: "w200"
+    }),
+    /TRANSACTION_FINGERPRINT_CONFLICT/
   )
 
   await assert.rejects(
@@ -1333,6 +1459,80 @@ test("message class incremental update preserves untouched messages and enforces
       connectionId: "w200"
     }),
     /Duplicate message operation/
+  )
+
+  await assert.rejects(
+    tools.deleteAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0300",
+      expectedVersion: "20260831140000",
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /VERSION_CONFLICT/
+  )
+
+  await assert.rejects(
+    tools.deleteAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0300",
+      expectedVersion: "20260903120000",
+      packageName: "ZOTHER",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /PACKAGE_CONFLICT/
+  )
+
+  const deleted = JSON.parse(
+    await tools.deleteAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0300",
+      expectedVersion: "20260903120000",
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    })
+  ) as { status: string; previousVersion: string; previousFingerprint: string }
+  assert.equal(deleted.status, "MESSAGE_CLASS_DELETED")
+  assert.equal(deleted.previousVersion, "20260903120000")
+  assert.match(deleted.previousFingerprint, /^[a-f0-9]{64}$/)
+  await assert.rejects(
+    tools.readAbapMessageClass({ messageClass: "ZCMCP_MSG_0300", connectionId: "w200" }),
+    /MESSAGE_CLASS_NOT_FOUND/
+  )
+})
+
+test("message class deletion fails when SAP readback still finds the object", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  await tools.createAbapMessageClass({
+    messageClass: "ZCMCP_MSG_0320",
+    description: "Delete verification",
+    messages: [{ number: "001", text: "Still present" }],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    connectionId: "w200"
+  })
+  backend.deleteMessageClass = async (
+    connectionId,
+    messageClass,
+    _expectedVersion,
+    _packageName,
+    transportNumber
+  ) => ({ connectionId, messageClass, transportNumber })
+
+  await assert.rejects(
+    tools.deleteAbapMessageClass({
+      messageClass: "ZCMCP_MSG_0320",
+      expectedVersion: "20260831140000",
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /MESSAGE_CLASS_DELETE_VERIFY_FAILED/
   )
 })
 
@@ -2271,6 +2471,254 @@ test("DDIC tools read standard definitions and validate controlled customer writ
   assert.match(savedTable, /"tableClass": "TRANSP"/)
   assert.match(savedTable, /"recordedRequest": "GR2K923421"/)
   assert.match(savedTable, /"name": "DESCRIPTION"[\s\S]*"notNull": true/)
+  const createdTable = JSON.parse(
+    await tools.readDdicTransparentTable({ objectName: "ZCMCP_TAB_0831", connectionId: "w200" })
+  ) as { version: string; fingerprint: string }
+  const appendedTable = JSON.parse(
+    await tools.appendDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: createdTable.version,
+      expectedFingerprint: createdTable.fingerprint,
+      fields: [{ name: "MESSAGE", dataElement: "BAPI_MSG" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    })
+  ) as {
+    status: string
+    definition: { fields: Array<{ name: string; key: boolean; notNull: boolean }> }
+  }
+  assert.equal(appendedTable.status, "DDIC_OBJECT_SAVED")
+  assert.deepEqual(appendedTable.definition.fields.at(-1), {
+    name: "MESSAGE",
+    position: 4,
+    dataElement: "BAPI_MSG",
+    description: "",
+    key: false,
+    notNull: false
+  })
+  await assert.rejects(
+    tools.appendDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: createdTable.version,
+      expectedFingerprint: createdTable.fingerprint,
+      fields: [{ name: "NEXT_FIELD", dataElement: "BAPI_MSG" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /VERSION_CONFLICT/
+  )
+  const updatedTable = JSON.parse(
+    await tools.readDdicTransparentTable({ objectName: "ZCMCP_TAB_0831", connectionId: "w200" })
+  ) as { version: string; fingerprint: string }
+  await assert.rejects(
+    tools.appendDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: updatedTable.version,
+      expectedFingerprint: "0".repeat(64),
+      fields: [{ name: "NEXT_FIELD", dataElement: "BAPI_MSG" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /FINGERPRINT_CONFLICT/
+  )
+  await assert.rejects(
+    tools.appendDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: updatedTable.version,
+      expectedFingerprint: updatedTable.fingerprint,
+      fields: [{ name: "NEXT_FIELD", dataElement: "ZCMCP_MISSING_DE" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /DDIC_OBJECT_NOT_FOUND/
+  )
+  await assert.rejects(
+    tools.appendDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: updatedTable.version,
+      expectedFingerprint: updatedTable.fingerprint,
+      fields: [{ name: "MESSAGE", dataElement: "BAPI_MSG" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /already exists/
+  )
+  await assert.rejects(
+    tools.appendDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: updatedTable.version,
+      expectedFingerprint: updatedTable.fingerprint,
+      fields: [{ name: "MANDT", dataElement: "MANDT" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /MANDT cannot be appended/
+  )
+  const patchedTable = JSON.parse(
+    await tools.patchDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: updatedTable.version,
+      expectedFingerprint: updatedTable.fingerprint,
+      changes: [
+        { action: "remove", fieldName: "DESCRIPTION" },
+        { action: "rename", fieldName: "MESSAGE", newName: "DETAIL" },
+        {
+          action: "update",
+          fieldName: "DETAIL",
+          dataElement: "ZCODEX_MCP_DE_0831",
+          notNull: true
+        }
+      ],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    })
+  ) as {
+    version: string
+    fingerprint: string
+    definition: {
+      fields: Array<{
+        name: string
+        position: number
+        dataElement: string
+        key: boolean
+        notNull: boolean
+      }>
+    }
+  }
+  assert.deepEqual(patchedTable.definition.fields, [
+    {
+      name: "MANDT",
+      position: 1,
+      dataElement: "MANDT",
+      description: "",
+      key: true,
+      notNull: true
+    },
+    {
+      name: "VALUE",
+      position: 2,
+      dataElement: "ZCODEX_MCP_DE_0831",
+      description: "",
+      key: true,
+      notNull: true
+    },
+    {
+      name: "DETAIL",
+      position: 3,
+      dataElement: "ZCODEX_MCP_DE_0831",
+      description: "",
+      key: false,
+      notNull: true
+    }
+  ])
+  await assert.rejects(
+    tools.patchDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: patchedTable.version,
+      expectedFingerprint: patchedTable.fingerprint,
+      changes: [{ action: "remove", fieldName: "MANDT" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    }),
+    /MANDT cannot be changed/
+  )
+  await assert.rejects(
+    tools.patchDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: patchedTable.version,
+      expectedFingerprint: patchedTable.fingerprint,
+      changes: [{ action: "update", fieldName: "DETAIL" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    }),
+    /has no attributes/
+  )
+  await assert.rejects(
+    tools.patchDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: patchedTable.version,
+      expectedFingerprint: patchedTable.fingerprint,
+      changes: [{ action: "rename", fieldName: "DETAIL", newName: "VALUE" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    }),
+    /already exists/
+  )
+  await assert.rejects(
+    tools.patchDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: patchedTable.version,
+      expectedFingerprint: patchedTable.fingerprint,
+      changes: [
+        { action: "update", fieldName: "VALUE", key: false },
+        { action: "update", fieldName: "DETAIL", key: true }
+      ],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    }),
+    /Key fields must be contiguous/
+  )
+  await assert.rejects(
+    tools.patchDdicTransparentTableFields({
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: patchedTable.version,
+      expectedFingerprint: "0".repeat(64),
+      changes: [{ action: "remove", fieldName: "DETAIL" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    }),
+    /FINGERPRINT_CONFLICT/
+  )
+  await assert.rejects(
+    tools.deleteDdicObject({
+      objectType: "TABL",
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: patchedTable.version,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    /acknowledgeDataLoss must be true/
+  )
+  const deletedTable = JSON.parse(
+    await tools.deleteDdicObject({
+      objectType: "TABL",
+      objectName: "ZCMCP_TAB_0831",
+      expectedVersion: patchedTable.version,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "PERMANENT_DELETE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    })
+  ) as { objectType: string; absenceVerified: boolean }
+  assert.equal(deletedTable.objectType, "TABL")
+  assert.equal(deletedTable.absenceVerified, true)
   await tools.upsertDdicTableType({
     objectName: "ZCODEX_MCP_TT_0831",
     description: "Codex test table type",
@@ -3545,27 +3993,30 @@ test("legacy ECC repository fallbacks cover messages, texts, Includes, and trans
             "T|1|NAME|ZCMCP_DEMO",
             "T|1|OBJ_INFO|"
           ]
-        : request.operation === "READ_MESSAGE_CLASS" || request.operation === "CREATE_MESSAGE_CLASS"
-          ? [
-              "M|1|PACKAGE|ZABAP",
-              "M|1|VERSION|20260902170000",
-              "M|1|DESCRIPTION|MCP messages",
-              "M|1|MASTERLANG|E",
-              "M|1|REQUEST|GR2K923421",
-              "F|1|MSGNR|001",
-              "F|1|TEXT|Validation &#38;1 &#x3E; &#34;quoted&#34;"
-            ]
-          : request.operation === "READ_TEXT_ELEMENTS" ||
-              request.operation === "MERGE_TEXT_ELEMENTS"
+        : request.operation === "DELETE_MESSAGE_CLASS"
+          ? ["M|1|REQUEST|GR2K923421"]
+          : request.operation === "READ_MESSAGE_CLASS" ||
+              request.operation === "CREATE_MESSAGE_CLASS"
             ? [
                 "M|1|PACKAGE|ZABAP",
                 "M|1|VERSION|20260902170000",
-                "M|1|REQUEST|GR2K923422",
-                "T|1|ID|001",
-                "T|1|TEXT|Fallback text",
-                "T|1|MAXLENGTH|20"
+                "M|1|DESCRIPTION|MCP messages",
+                "M|1|MASTERLANG|E",
+                "M|1|REQUEST|GR2K923421",
+                "F|1|MSGNR|001",
+                "F|1|TEXT|Validation &#38;1 &#x3E; &#34;quoted&#34;"
               ]
-            : ["M|1|PACKAGE|ZABAP", "M|1|REQUEST|GR2K923422"]
+            : request.operation === "READ_TEXT_ELEMENTS" ||
+                request.operation === "MERGE_TEXT_ELEMENTS"
+              ? [
+                  "M|1|PACKAGE|ZABAP",
+                  "M|1|VERSION|20260902170000",
+                  "M|1|REQUEST|GR2K923422",
+                  "T|1|ID|001",
+                  "T|1|TEXT|Fallback text",
+                  "T|1|MAXLENGTH|20"
+                ]
+              : ["M|1|PACKAGE|ZABAP", "M|1|REQUEST|GR2K923422"]
     return {
       status: "S",
       code: `${request.operation}_OK`,
@@ -3593,6 +4044,14 @@ test("legacy ECC repository fallbacks cover messages, texts, Includes, and trans
     "GR2K923421"
   )
   assert.equal(createdMessage.activation.success, true)
+  const deletedMessage = await backend.deleteMessageClass(
+    "w200",
+    "ZCMCP_MSG_026",
+    "20260902170000",
+    "ZABAP",
+    "GR2K923421"
+  )
+  assert.equal(deletedMessage.transportNumber, "GR2K923421")
 
   const classTexts = await backend.readTextElements("w200", "ZCL_CMCP_026", "CLASS")
   assert.equal(classTexts.textElements[0]?.id, "001")
@@ -3622,15 +4081,16 @@ test("legacy ECC repository fallbacks cover messages, texts, Includes, and trans
     [
       "READ_MESSAGE_CLASS",
       "CREATE_MESSAGE_CLASS",
+      "DELETE_MESSAGE_CLASS",
       "READ_TEXT_ELEMENTS",
       "MERGE_TEXT_ELEMENTS",
       "CREATE_FUNCTION_INCLUDE",
       "READ_TRANSPORT_DETAILS"
     ]
   )
-  assert.equal(requests[2]?.objectType, "CLAS")
-  assert.equal(requests[3]?.objectType, "FUGR")
-  assert.equal(requests[4]?.program, "ZCMCP_FG_026")
+  assert.equal(requests[3]?.objectType, "CLAS")
+  assert.equal(requests[4]?.objectType, "FUGR")
+  assert.equal(requests[5]?.program, "ZCMCP_FG_026")
 })
 
 test("legacy ECC function group creation does not retry an arbitrary HTTP 400", async () => {

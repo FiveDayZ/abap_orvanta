@@ -151,6 +151,7 @@ if ($longDdicLine) {
 }
 foreach ($marker in @(
         "IV_EXPECTED_VERSION",
+        "ls_import-dbfield = 'BAPIRET2-PARAMETER'",
         "Z_CODEX_MCP_DDIC_API",
         "DDIF_DOMA_PUT",
         "DDIF_DTEL_PUT",
@@ -166,6 +167,20 @@ foreach ($marker in @(
         "DDIF_TABL_PUT",
         "READ_TRANSPARENT_TABLE",
         "CREATE_TRANSPARENT_TABLE",
+        "APPEND_TRANSPARENT_TABLE_FIELDS",
+        "PATCH_TRANSPARENT_TABLE_FIELDS",
+        "DELETE_TRANSPARENT_TABLE",
+        "UNSAFE_TABLE_CHANGE",
+        "MANDT_CHANGE_FORBIDDEN",
+        "KEY_ORDER_INVALID",
+        "DUPLICATE_FIELD",
+        "FIELD_ALREADY_EXISTS",
+        "COMPLEX_TABLE_UNSUPPORTED",
+        "Tables with includes or appends are unsupported",
+        "SELECT COUNT(*) FROM dd02l INTO lv_append_count",
+        "lt_dd03p[] = lt_current_dd03p[]",
+        "ls_dd09v = ls_current_dd09v",
+        "lv_append IS INITIAL",
         "Existing transparent tables cannot be replaced",
         "ls_dd09v-bufallow",
         "ls_dd09v-tabart",
@@ -179,8 +194,12 @@ foreach ($marker in @(
         throw "DDIC bootstrap is missing marker: $marker"
     }
 }
-if (-not ($ddicFunction -match "ev_version = '1.4'")) {
-    throw "DDIC helper 1.4 marker is missing"
+$ddicFunctionText = $ddicFunction -join "`n"
+if ($ddicFunctionText -notmatch "LOOP AT lt_dd03p ASSIGNING <ls_field>\.\r?\n\s+IF lv_append IS INITIAL AND lv_patch IS INITIAL\.\r?\n\s+<ls_field>-tabname = iv_object_name\.[\s\S]*?<ls_field>-comptype = 'E'\.") {
+    throw "DDIC append must not rewrite existing field component metadata"
+}
+if (-not ($ddicFunction -match "ev_version = '1.6'")) {
+    throw "DDIC helper 1.6 marker is missing"
 }
 if (-not ($ddicFunction -match "dd01v_wa = ls_current_dd01v")) {
     throw "DDIC bootstrap must keep the active domain separate from the requested definition"
@@ -198,6 +217,14 @@ foreach ($marker in @("Z_CODEX_MCP_DYNPRO_API", "FUNCTION_CREATE")) {
 }
 if (-not ($repositoryProgram -match "FUNCTION_ACTIVATION_FLAG_ERROR")) {
     throw "Generated repository bootstrap must persist the active function flag"
+}
+if (-not ($scriptText -match "TRANSACTION_NOT_FOUND") -or
+    -not ($scriptText -match "Transaction does not exist")) {
+    throw "Repository helper must distinguish a missing transaction from a read failure"
+}
+if ($scriptText -match "MESSAGE_CLASS_READ_FAILED" -or
+    $scriptText -match "Message class metadata does not exist") {
+    throw "Repository helper must classify missing message-class metadata as not found"
 }
 if (($scriptText -match '"        CHANGING corrnumber') -or
     -not ($scriptText -match '"\s+EXPORTING corrnumber = lv_delete_corrnum"') -or
@@ -249,6 +276,13 @@ foreach ($marker in @(
         "CREATE_MESSAGE_CLASS",
         "UPDATE_MESSAGE_CLASS",
         "MESSAGE_CLASS_UPDATED",
+        "DELETE_MESSAGE_CLASS",
+        "MESSAGE_CLASS_DELETED",
+        "MESSAGE_CLASS_DELETE_VERIFY_FAILED",
+        "DELETE FROM t100 WHERE arbgb = iv_object_name",
+        "DELETE t100a FROM ls_message_info",
+        "DELETE tadir FROM ls_message_tadir",
+        "ASSIGN COMPONENT 'OBJFUNC' OF STRUCTURE ls_message_object",
         "iv_expected_version",
         "CREATE_FUNCTION_INCLUDE",
         "READ_TRANSPORT_DETAILS",
@@ -277,6 +311,7 @@ foreach ($marker in @(
         "ev_version = '1.6'",
         "ev_version = '1.7'",
         "ev_version = '1.8'",
+        "ev_version = '1.9'",
         "FUNCTION_MODULE_CREATED",
         "REPOSITORY_ASSIGNMENT_READ",
         "ev_version = '1.3'",

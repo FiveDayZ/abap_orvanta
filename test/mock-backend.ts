@@ -13,6 +13,7 @@ import type {
   EnhancementInfo,
   ExportResourceInfo,
   MessageClassCreationInfo,
+  MessageClassDeletionInfo,
   MessageClassInfo,
   MessageClassMutationInfo,
   ObjectCreationInfo,
@@ -154,7 +155,7 @@ function mockDdicResult(
     status: "S",
     code: "DDIC_OBJECT_READ",
     message: "DDIC object read successfully",
-    version: "1.3",
+    version: "1.6",
     packageName,
     objectVersion: "20260831120000",
     recordedRequest: "",
@@ -849,6 +850,8 @@ export class MockBackend implements SapBackend {
     const readOperation = request.operation
       .replace("UPSERT", "READ")
       .replace("CREATE_TRANSPARENT_TABLE", "READ_TRANSPARENT_TABLE")
+      .replace("APPEND_TRANSPARENT_TABLE_FIELDS", "READ_TRANSPARENT_TABLE")
+      .replace("PATCH_TRANSPARENT_TABLE_FIELDS", "READ_TRANSPARENT_TABLE")
       .replace("DELETE", "READ")
     const key = `${readOperation}:${request.objectName}`
     const existing = this.ddicByKey.get(key)
@@ -926,6 +929,39 @@ export class MockBackend implements SapBackend {
         code: "VERSION_CONFLICT",
         message: "Expected object version no longer exists"
       }
+    }
+    if (request.operation === "APPEND_TRANSPARENT_TABLE_FIELDS" && existing) {
+      const saved: SapDdicResult = {
+        ...existing,
+        code: "DDIC_OBJECT_SAVED",
+        message: "DDIC object saved activated and verified",
+        objectVersion: "20260831130000",
+        recordedRequest: request.transportNumber ?? "",
+        fields: [
+          ...existing.fields,
+          ...(request.fields ?? []).map((field, index) => ({
+            ...field,
+            POSITION: String(existing.fields.length + index + 1)
+          }))
+        ]
+      }
+      this.ddicByKey.set(key, saved)
+      return structuredClone(saved)
+    }
+    if (request.operation === "PATCH_TRANSPARENT_TABLE_FIELDS" && existing) {
+      const saved: SapDdicResult = {
+        ...existing,
+        code: "DDIC_OBJECT_SAVED",
+        message: "DDIC object saved activated and verified",
+        objectVersion: "20260831140000",
+        recordedRequest: request.transportNumber ?? "",
+        fields: (request.fields ?? []).map((field, index) => ({
+          ...field,
+          POSITION: String(index + 1)
+        }))
+      }
+      this.ddicByKey.set(key, saved)
+      return structuredClone(saved)
     }
     const kind = ddicKind(request.operation)
     const identity = {
@@ -1421,6 +1457,26 @@ export class MockBackend implements SapBackend {
       messages
     })
     return { ...(await this.readMessageClass(connectionId, normalized)), transportNumber }
+  }
+
+  async deleteMessageClass(
+    connectionId: string,
+    messageClass: string,
+    expectedVersion: string,
+    packageName: string,
+    transportNumber: string
+  ): Promise<MessageClassDeletionInfo> {
+    const normalized = messageClass.toUpperCase()
+    const existing = this.messageClasses.get(normalized)
+    if (!existing) throw new Error("MESSAGE_CLASS_NOT_FOUND: Message class does not exist")
+    if ((existing.version ?? "20260831140000") !== expectedVersion) {
+      throw new Error("VERSION_CONFLICT: Message class changed since it was read")
+    }
+    if (existing.packageName !== packageName) {
+      throw new Error("PACKAGE_CONFLICT: Message class belongs to another package")
+    }
+    this.messageClasses.delete(normalized)
+    return { connectionId, messageClass: normalized, transportNumber }
   }
 
   async createTestInclude(

@@ -1,6 +1,6 @@
 {
   "name": "abap-mcp-standalone",
-  "version": "0.30.2",
+  "version": "0.34.0",
   "private": true,
   "type": "module",
   "description": "Standalone headless ABAP MCP service for SAP ADT",
@@ -39,6 +39,10 @@
     "test:w200-rfc-receipt-validation": "npm run build && pwsh -NoLogo -NoProfile -File scripts/run-rfc-receipt-validation.ps1",
     "test:w200-write-safety-validation": "pwsh -NoLogo -NoProfile -File scripts/run-write-safety-validation.ps1 -ApproveWrite",
     "test:w200-lifecycle-validation": "pwsh -NoLogo -NoProfile -File scripts/run-lifecycle-validation.ps1 -ApproveWrite",
+    "test:w200-capability-report": "pwsh -NoLogo -NoProfile -File scripts/run-capability-validation.ps1",
+    "test:w200-repository-lifecycle": "pwsh -NoLogo -NoProfile -File scripts/run-repository-lifecycle-validation.ps1 -ApproveWrite",
+    "test:w200-ddic-safe-append": "pwsh -NoLogo -NoProfile -File scripts/run-ddic-safe-append-validation.ps1 -ApproveWrite",
+    "test:w200-ddic-table-lifecycle": "pwsh -NoLogo -NoProfile -File scripts/run-ddic-table-lifecycle-validation.ps1 -ApproveDestructiveWrite",
     "test:w200-debug-wave": "pwsh -NoLogo -NoProfile -File scripts/run-debug-validation.ps1",
     "test:w200-soap-rfc": "pwsh -NoLogo -NoProfile -File scripts/probe-soap-rfc.ps1 -BaseUrl http://192.168.88.26:8000 -Username wys -Client 200 -Language EN",
     "verify:release": "npm run package:windows && npm run test:package",

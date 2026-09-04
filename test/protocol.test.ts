@@ -30,6 +30,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "adt_discovery_export",
       "analyze_abap_dumps",
       "analyze_abap_traces",
+      "append_ddic_transparent_table_fields",
       "create_abap_message_class",
       "create_ddic_transparent_table",
       "create_function_module_with_interface",
@@ -38,6 +39,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "create_report_transaction",
       "create_test_include",
       "create_transaction_code",
+      "delete_abap_message_class",
       "delete_abap_source_object",
       "delete_ddic_object",
       "delete_module_pool",
@@ -51,6 +53,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "get_abap_object_workspace_uri",
       "get_abap_sql_syntax",
       "get_batch_lines",
+      "get_capability_report",
       "get_connected_systems",
       "get_customer_function_call_status",
       "get_object_by_uri",
@@ -64,6 +67,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "manage_transport_requests",
       "patch_abap_gui_definition",
       "patch_abap_screen",
+      "patch_ddic_transparent_table_fields",
       "read_abap_gui_definition",
       "read_abap_message_class",
       "read_abap_screen",
@@ -341,6 +345,26 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     assert.equal(result.isError, undefined)
     assert.deepEqual(result.content, [{ type: "text", text: "Connected SAP systems: w200" }])
 
+    const capabilityResult = await client.callTool({
+      name: "get_capability_report",
+      arguments: { connectionId: "w200" }
+    })
+    assert.equal(capabilityResult.isError, undefined)
+    const capabilityContent = capabilityResult.content as Array<{ type: string; text?: string }>
+    const capabilityReport = JSON.parse(capabilityContent[0]?.text ?? "{}") as {
+      productVersion: string
+      connection: { id: string }
+      readOnly: boolean
+      capabilities: Array<{ toolNames: string[] }>
+    }
+    assert.equal(capabilityReport.productVersion, "0.34.0")
+    assert.equal(capabilityReport.connection.id, "w200")
+    assert.equal(capabilityReport.readOnly, true)
+    assert.equal(
+      capabilityReport.capabilities.flatMap((capability) => capability.toolNames).length,
+      74
+    )
+
     const helper = await client.callTool({
       name: "sap_helper_status",
       arguments: { action: "ping", connectionId: "w200" }
@@ -469,6 +493,33 @@ test("0.30 lifecycle writes return version 2 operation receipts", async () => {
     })
     assert.equal(updatedMessage.isError, undefined)
 
+    const missingDeleteConfirmation = await client.callTool({
+      name: "delete_abap_message_class",
+      arguments: {
+        operationId: "protocol-delete-message-without-confirmation-0320",
+        messageClass: "ZCMCP_MSG_0300",
+        expectedVersion: "20260903120000",
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(missingDeleteConfirmation.isError, true)
+
+    const deletedMessage = await client.callTool({
+      name: "delete_abap_message_class",
+      arguments: {
+        operationId: "protocol-delete-message-0320",
+        messageClass: "ZCMCP_MSG_0300",
+        expectedVersion: "20260903120000",
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        confirmation: "PERMANENT_DELETE",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(deletedMessage.isError, undefined)
+
     const createdDomain = await client.callTool({
       name: "upsert_ddic_domain",
       arguments: {
@@ -486,6 +537,83 @@ test("0.30 lifecycle writes return version 2 operation receipts", async () => {
     const createdDomainBody = JSON.parse(
       (createdDomain.content as Array<{ type: string; text?: string }>)[0]?.text ?? "{}"
     ) as { version: string }
+
+    const createdTable = await client.callTool({
+      name: "create_ddic_transparent_table",
+      arguments: {
+        operationId: "protocol-create-table-0330",
+        objectName: "ZCMCP_TAB_0330",
+        description: "Safe append receipt",
+        deliveryClass: "A",
+        dataClass: "APPL0",
+        dataBrowserMaintenance: "notAllowed",
+        fields: [
+          { name: "MANDT", dataElement: "MANDT", key: true },
+          { name: "VALUE", dataElement: "BAPI_MSG" }
+        ],
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(createdTable.isError, undefined)
+    const createdTableBody = JSON.parse(
+      (createdTable.content as Array<{ type: string; text?: string }>)[0]?.text ?? "{}"
+    ) as { version: string; fingerprint: string }
+    const appendedTable = await client.callTool({
+      name: "append_ddic_transparent_table_fields",
+      arguments: {
+        operationId: "protocol-append-table-0330",
+        objectName: "ZCMCP_TAB_0330",
+        expectedVersion: createdTableBody.version,
+        expectedFingerprint: createdTableBody.fingerprint,
+        fields: [{ name: "MESSAGE", dataElement: "BAPI_MSG" }],
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        connectionId: "w200"
+      }
+    })
+    assert.equal(appendedTable.isError, undefined)
+    const appendedTableBody = JSON.parse(
+      (appendedTable.content as Array<{ type: string; text?: string }>)[0]?.text ?? "{}"
+    ) as { version: string; fingerprint: string }
+    const patchedTable = await client.callTool({
+      name: "patch_ddic_transparent_table_fields",
+      arguments: {
+        operationId: "protocol-patch-table-0340",
+        objectName: "ZCMCP_TAB_0330",
+        expectedVersion: appendedTableBody.version,
+        expectedFingerprint: appendedTableBody.fingerprint,
+        changes: [
+          { action: "rename", fieldName: "MESSAGE", newName: "DETAIL" },
+          { action: "update", fieldName: "DETAIL", notNull: true }
+        ],
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+        acknowledgeDataLoss: true,
+        connectionId: "w200"
+      }
+    })
+    assert.equal(patchedTable.isError, undefined)
+    const patchedTableBody = JSON.parse(
+      (patchedTable.content as Array<{ type: string; text?: string }>)[0]?.text ?? "{}"
+    ) as { version: string }
+    const deletedTable = await client.callTool({
+      name: "delete_ddic_object",
+      arguments: {
+        operationId: "protocol-delete-table-0340",
+        objectType: "TABL",
+        objectName: "ZCMCP_TAB_0330",
+        expectedVersion: patchedTableBody.version,
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        confirmation: "PERMANENT_DELETE",
+        acknowledgeDataLoss: true,
+        connectionId: "w200"
+      }
+    })
+    assert.equal(deletedTable.isError, undefined)
 
     const deletedDdic = await client.callTool({
       name: "delete_ddic_object",
@@ -527,7 +655,13 @@ test("0.30 lifecycle writes return version 2 operation receipts", async () => {
     })
     assert.equal(deletedSource.isError, undefined)
 
-    for (const result of [updatedMessage, deletedDdic, deletedSource]) {
+    for (const result of [
+      updatedMessage,
+      deletedMessage,
+      appendedTable,
+      deletedDdic,
+      deletedSource
+    ]) {
       const body = JSON.parse(
         (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "{}"
       ) as {
