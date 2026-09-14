@@ -81,7 +81,7 @@ Bundle SHA-256:
 FA06A90EF9DB86D8B1F1399D402509E87F620CB584F2145CD9047688DC85575F
 ```
 
-The bundle is version `0.1.1` and is marked `Partially Verified` in its own documentation. Its static tool-routing baseline remains ORVANTA `0.40.1`; live tool discovery takes precedence when it is used with `0.40.3`. Client discovery, automatic triggering, behavior, and cross-platform installation still require validation in each target Agent environment.
+The bundle is version `0.1.1` and is marked `Partially Verified` in its own documentation. Its static tool-routing baseline remains ORVANTA `0.40.1`; live tool discovery takes precedence when it is used with `0.40.4`. Client discovery, automatic triggering, behavior, and cross-platform installation still require validation in each target Agent environment.
 
 ## Safety Boundaries
 
