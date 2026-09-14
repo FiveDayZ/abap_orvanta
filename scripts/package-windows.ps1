@@ -13,7 +13,7 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $packageJson = Get-Content -Raw (Join-Path $projectRoot "package.json") | ConvertFrom-Json
-$artifactName = "abap-mcp-standalone-$($packageJson.version)-win-x64"
+$artifactName = "orvanta-mcp-$($packageJson.version)-win-x64"
 if ($CandidateSuffix) { $artifactName += "-$CandidateSuffix" }
 $releaseRoot = Join-Path $projectRoot "release"
 $packageRoot = Join-Path $releaseRoot $artifactName

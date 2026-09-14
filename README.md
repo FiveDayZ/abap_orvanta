@@ -52,7 +52,7 @@ PowerShell 7 can build a self-contained Windows x64 package with:
 npm run package:windows
 ```
 
-The generated package is written under `release/`, which is intentionally excluded from source control.
+The generated package is written under `release/` as `orvanta-mcp-<version>-win-x64.zip`, which is intentionally excluded from source control. GitHub Release titles use `orvanta-mcp-<version>`.
 
 Starting with `0.40.4`, the self-contained package includes `update.cmd`. Stop the MCP service and close the local settings UI, then double-click `update.cmd` to install the latest stable Windows x64 release. The updater verifies the release SHA-256, version, platform, ZIP paths, and packaged file manifest before replacing program files. It preserves `connections.json`, `exports`, and the external state directory, and restores the previous program files if replacement fails.
 

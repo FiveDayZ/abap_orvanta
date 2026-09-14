@@ -166,7 +166,7 @@ if ($latestVersion -le $currentVersion) {
     return
 }
 
-$archiveName = "abap-mcp-standalone-$latestVersion-win-x64.zip"
+$archiveName = "orvanta-mcp-$latestVersion-win-x64.zip"
 $checksumName = "$archiveName.sha256"
 $archiveAsset = @($release.assets | Where-Object { $_.name -ceq $archiveName })
 $checksumAsset = @($release.assets | Where-Object { $_.name -ceq $checksumName })

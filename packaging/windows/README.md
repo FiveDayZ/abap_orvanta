@@ -10,7 +10,7 @@ MCP 默认地址为 `http://127.0.0.1:4847/mcp`。密码只保存在当前进程
 
 ## 一键更新
 
-先停止 MCP 服务并关闭 ORVANTA 配置中心，然后双击 `update.cmd`。更新器会从 [ORVANTA GitHub Releases](https://github.com/FiveDayZ/abap_orvanta/releases) 下载最新稳定版 Windows x64 便携包，核对 SHA-256、版本、平台和包内文件清单后完成替换。
+先停止 MCP 服务并关闭 ORVANTA 配置中心，然后双击 `update.cmd`。更新器会从 [ORVANTA GitHub Releases](https://github.com/FiveDayZ/abap_orvanta/releases) 下载按 `orvanta-mcp-<版本号>-win-x64.zip`命名的最新稳定版便携包，核对 SHA-256、版本、平台和包内文件清单后完成替换。
 
 更新会保留当前目录中的 `connections.json`、`exports`，以及默认保存在 `%LOCALAPPDATA%\ABAP MCP Standalone\state` 的操作状态和回执。更新器不会安装或升级 SAP 助手，不修改 SAP 对象、业务数据或传输。
 
