@@ -56,6 +56,23 @@ Some legacy-ECC and structured repository operations require customer-namespace 
 
 Installing or upgrading helpers changes SAP repository objects. Review the target object names, package, transport, permissions, and source before executing any helper action. ORVANTA does not release transports automatically.
 
+## Agent Skills
+
+The companion Skill bundle is available at [`skills/orvanta-skills-0.1.0.zip`](skills/orvanta-skills-0.1.0.zip). It contains two independent Skills:
+
+- `abap-mcp-development` for explicitly authorized ABAP customer-object development
+- `abap-mcp-review` for read-only ABAP review and diagnosis
+
+Extract the archive, then install the required directory from its `skills/` folder using the target Agent client's Skill mechanism. Each installed Skill directory must retain its `SKILL.md` and `references/` content.
+
+Bundle SHA-256:
+
+```text
+B49001C505BAFF3A4FC688EB87027CD3B8F843E9274317EB698CD094CF8ACE6D
+```
+
+The bundle is version `0.1.0` and is marked `Partially Verified` in its own documentation. Its client discovery, automatic triggering, behavior, and cross-platform installation still require validation in each target Agent environment.
+
 ## Safety Boundaries
 
 - Credentials and local connection files are excluded from Git.

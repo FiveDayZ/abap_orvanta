@@ -8,4 +8,5 @@ release/
 .doc/
 coverage/
 *.zip
+!skills/*.zip
 *.sha256
