@@ -309,6 +309,9 @@ export async function startSettingsServer(options: SettingsOptions) {
     "/style.css": ["style.css", "text/css; charset=utf-8"]
   }
   for (const name of [
+    "orvanta-mark",
+    "orvanta-favicon",
+    "github",
     "server",
     "plus",
     "trash-2",

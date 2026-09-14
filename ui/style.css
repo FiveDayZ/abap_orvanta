@@ -105,9 +105,8 @@ button.primary img {
   gap: 14px;
 }
 .brand > img {
-  width: 32px;
-  height: 32px;
-  filter: invert(1);
+  width: 36px;
+  height: 36px;
 }
 .brand strong {
   display: block;
@@ -127,6 +126,25 @@ button.primary img {
 }
 .local-mark {
   color: #fff;
+}
+.repository-link {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.repository-link:hover {
+  background: #003968;
+  border-color: #719cc3;
+}
+.repository-link img {
+  width: 20px;
+  height: 20px;
+  filter: invert(1);
 }
 .header-meta button {
   color: white;
@@ -663,8 +681,8 @@ dialog .form-actions {
     gap: 8px;
   }
   .brand > img {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
   }
   .brand strong {
     font-size: 19px;

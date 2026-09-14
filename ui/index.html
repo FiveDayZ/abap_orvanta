@@ -4,19 +4,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ORVANTA · 配置中心</title>
-    <link rel="icon" href="/icons/server.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icons/orvanta-favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/style.css" />
     <script src="/app.js" defer></script>
   </head>
   <body>
     <header class="app-header">
       <div class="brand">
-        <img src="/icons/server.svg" alt="" />
+        <img src="/icons/orvanta-mark.svg" alt="" />
         <div><strong>ORVANTA</strong><span>SAP CONNECTION WORKSPACE</span></div>
       </div>
       <div class="header-meta">
-        <span class="local-mark">本地配置中心</span><span id="version">载入中</span
-        ><button id="exit" title="关闭配置中心">关闭</button>
+        <span class="local-mark">本地配置中心</span
+        ><a
+          class="repository-link"
+          href="https://github.com/FiveDayZ/abap_orvanta"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="打开 ORVANTA GitHub 仓库"
+          aria-label="打开 ORVANTA GitHub 仓库"
+          ><img src="/icons/github.svg" alt="" /></a
+        ><span id="version">载入中</span><button id="exit" title="关闭配置中心">关闭</button>
       </div>
     </header>
     <div class="workspace">

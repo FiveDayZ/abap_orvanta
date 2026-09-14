@@ -1,8 +1,14 @@
+<p align="center">
+  <img src="ui/icons/orvanta-favicon.svg" alt="ORVANTA logo" width="112" height="112" />
+</p>
+
 # ORVANTA
 
 ORVANTA is a standalone Model Context Protocol (MCP) service for SAP ABAP Development Tools. It runs without VS Code and exposes controlled ABAP discovery, source, repository, DDIC, diagnostics, transport inspection, RFC, and customer-object lifecycle tools to MCP clients.
 
-Current source version: `0.40.1`.
+Current source version: `0.40.3`.
+
+The current ORVANTA mark is used by the local settings workspace and its favicon. The source assets are maintained in `ui/icons/orvanta-mark.svg` and `ui/icons/orvanta-favicon.svg`.
 
 ## Requirements
 
@@ -58,7 +64,7 @@ Installing or upgrading helpers changes SAP repository objects. Review the targe
 
 ## Agent Skills
 
-The companion Skill bundle is available at [`skills/orvanta-skills-0.1.0.zip`](skills/orvanta-skills-0.1.0.zip). It contains two independent Skills:
+The companion Skill bundle is available at [`skills/orvanta-skills-0.1.1.zip`](skills/orvanta-skills-0.1.1.zip). It contains two independent Skills:
 
 - `abap-mcp-development` for explicitly authorized ABAP customer-object development
 - `abap-mcp-review` for read-only ABAP review and diagnosis
@@ -68,10 +74,10 @@ Extract the archive, then install the required directory from its `skills/` fold
 Bundle SHA-256:
 
 ```text
-B49001C505BAFF3A4FC688EB87027CD3B8F843E9274317EB698CD094CF8ACE6D
+FA06A90EF9DB86D8B1F1399D402509E87F620CB584F2145CD9047688DC85575F
 ```
 
-The bundle is version `0.1.0` and is marked `Partially Verified` in its own documentation. Its client discovery, automatic triggering, behavior, and cross-platform installation still require validation in each target Agent environment.
+The bundle is version `0.1.1` and is marked `Partially Verified` in its own documentation. Its static tool-routing baseline remains ORVANTA `0.40.1`; live tool discovery takes precedence when it is used with `0.40.3`. Client discovery, automatic triggering, behavior, and cross-platform installation still require validation in each target Agent environment.
 
 ## Safety Boundaries
 
