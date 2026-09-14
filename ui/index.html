@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ORVANTA · 配置中心</title>
+    <link rel="icon" href="/icons/server.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <img src="/icons/server.svg" alt="" />
+        <div><strong>ORVANTA</strong><span>SAP CONNECTION WORKSPACE</span></div>
+      </div>
+      <div class="header-meta">
+        <span class="local-mark">本地配置中心</span><span id="version">载入中</span
+        ><button id="exit" title="关闭配置中心">关闭</button>
+      </div>
+    </header>
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-heading">
+          <h2>系统连接 <span id="connection-count">0</span></h2>
+          <button id="add" class="icon-button" title="添加连接" aria-label="添加连接">
+            <img src="/icons/plus.svg" alt="" />
+          </button>
+        </div>
+        <div class="connection-columns">
+          <span id="selection-count">本次启用 0 / 0</span><span>管理</span>
+        </div>
+        <nav id="connections" aria-label="SAP 连接列表">
+          <div class="loading">正在读取配置…</div>
+        </nav>
+        <div class="sidebar-bottom">
+          <img src="/icons/shield-check.svg" alt="" /><span>会话凭据 · 不落盘</span>
+        </div>
+      </aside>
+      <main>
+        <div class="page-heading">
+          <div>
+            <p class="breadcrumb" id="heading">连接设置</p>
+            <h1 id="current-system">连接管理</h1>
+          </div>
+          <button id="refresh" class="icon-button" title="刷新配置" aria-label="刷新配置">
+            <img src="/icons/refresh-cw.svg" alt="" />
+          </button>
+        </div>
+        <div class="tabs" role="tablist" aria-label="配置视图">
+          <button
+            id="connection-tab"
+            role="tab"
+            aria-selected="true"
+            aria-controls="connection-view"
+          >
+            连接配置
+          </button>
+          <button id="service-tab" role="tab" aria-selected="false" aria-controls="service-view">
+            服务与接入
+          </button>
+        </div>
+        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <section id="connection-view" role="tabpanel" aria-labelledby="connection-tab">
+          <p id="connection-lock" class="notice" hidden>此连接正在运行，配置与凭据已锁定。</p>
+          <div id="empty" class="empty" hidden>
+            <img src="/icons/server.svg" alt="" />
+            <h2>尚未添加 SAP 连接</h2>
+            <button id="empty-add" class="primary">添加连接</button>
+          </div>
+          <form id="connection-form" hidden>
+            <fieldset id="connection-fields">
+              <div class="section-heading">
+                <h2>连接参数</h2>
+                <span id="saved-state">未保存</span>
+              </div>
+              <div class="form-grid">
+                <label
+                  >连接标识<input
+                    id="connection-id"
+                    name="id"
+                    required
+                    pattern="[A-Za-z0-9_-]{1,40}"
+                    maxlength="40"
+                    autocomplete="off"
+                    placeholder="例如 dev200"
+                /></label>
+                <label
+                  >SAP 用户名<input
+                    id="username"
+                    name="username"
+                    required
+                    maxlength="80"
+                    autocomplete="off"
+                /></label>
+                <label class="full"
+                  >SAP 服务器地址<input
+                    id="url"
+                    name="url"
+                    type="url"
+                    required
+                    placeholder="https://sap.example.com:44300"
+                    autocomplete="off"
+                /></label>
+                <label
+                  >客户端<input
+                    id="client"
+                    name="client"
+                    required
+                    pattern="[0-9]{3}"
+                    maxlength="3"
+                    inputmode="numeric"
+                    placeholder="200"
+                /></label>
+                <label
+                  >登录语言<select id="language" name="language">
+                    <option value="EN">英语 · EN</option>
+                    <option value="ZH">中文 · ZH</option>
+                    <option value="DE">德语 · DE</option>
+                    <option value="JA">日语 · JA</option>
+                  </select></label
+                >
+              </div>
+              <details class="advanced">
+                <summary>高级设置</summary>
+                <div class="form-grid">
+                  <label
+                    >密码环境变量名称<input
+                      id="password-env"
+                      name="passwordEnv"
+                      required
+                      pattern="[A-Za-z_][A-Za-z0-9_]{0,99}"
+                  /></label>
+                  <label
+                    >ATC 检查变式<input id="atc-variant" name="atcVariant" maxlength="100"
+                  /></label>
+                  <label class="full"
+                    >允许调用的客户 RFC<textarea
+                      id="allowlist"
+                      rows="3"
+                      placeholder="每行一个准确函数名；留空则禁止正式调用"
+                    ></textarea>
+                  </label>
+                  <label class="check full"
+                    ><input id="allow-unauthorized" type="checkbox" />允许不受信任的 TLS 证书<span
+                      class="warning-label"
+                      >仅开发系统</span
+                    ></label
+                  >
+                </div>
+              </details>
+              <div class="form-actions">
+                <button class="primary" id="save" type="submit">保存连接</button
+                ><button id="discard" type="button">还原</button
+                ><button
+                  id="delete"
+                  type="button"
+                  class="icon-button danger push-right"
+                  title="删除此连接"
+                  aria-label="删除此连接"
+                >
+                  <img src="/icons/trash-2.svg" alt="" />
+                </button>
+              </div>
+            </fieldset>
+          </form>
+          <section id="credential-section" class="credential-section" hidden>
+            <div class="section-heading">
+              <h2>会话凭据</h2>
+              <span id="credential-state">待输入密码</span>
+            </div>
+            <form id="credential-form">
+              <label
+                >SAP 密码<input
+                  id="password"
+                  type="password"
+                  required
+                  maxlength="1024"
+                  autocomplete="off" /></label
+              ><button id="set-password" type="submit">保存本次凭据</button
+              ><button id="clear-password" type="button">清除</button>
+            </form>
+            <div class="test-row">
+              <button id="test" type="button">测试 SAP 连接</button
+              ><span id="test-result" role="status">尚未测试</span>
+            </div>
+          </section>
+        </section>
+        <section id="service-view" role="tabpanel" aria-labelledby="service-tab" hidden>
+          <div class="section-heading">
+            <h2>Agent 接入</h2>
+            <span id="endpoint-status">服务未启动</span>
+          </div>
+          <label
+            >MCP 服务地址
+            <div class="copy-field">
+              <input id="endpoint" readonly value="" /><button
+                id="copy-url"
+                class="icon-button"
+                title="复制 MCP 地址"
+                aria-label="复制 MCP 地址"
+              >
+                <img src="/icons/copy.svg" alt="" />
+              </button></div
+          ></label>
+          <div class="snippet-heading">
+            <h3>客户端配置</h3>
+            <select id="client-format" aria-label="客户端配置格式">
+              <option value="json">通用 JSON</option>
+              <option value="toml">Codex TOML</option></select
+            ><button
+              id="copy-config"
+              class="icon-button"
+              title="复制客户端配置"
+              aria-label="复制客户端配置"
+            >
+              <img src="/icons/copy.svg" alt="" />
+            </button>
+          </div>
+          <pre id="client-config"></pre>
+          <div class="section-heading paths-heading"><h2>本地文件</h2></div>
+          <dl class="paths">
+            <dt>连接配置</dt>
+            <dd id="config-path"></dd>
+            <dt>操作凭证</dt>
+            <dd id="state-path"></dd>
+          </dl>
+          <div class="section-heading"><h2>本次活动</h2></div>
+          <ol id="events" class="events"></ol>
+        </section>
+        <footer class="service-bar">
+          <div class="service-label">
+            <span id="service-dot" class="dot"></span>
+            <div>
+              <strong id="service-label">服务未启动</strong
+              ><span id="service-detail">独立 MCP 服务</span>
+            </div>
+          </div>
+          <label class="port-label"
+            >MCP 端口<input id="port" type="number" min="1024" max="65535" value="4847"
+          /></label>
+          <button id="start" class="primary"><img src="/icons/play.svg" alt="" />启动服务</button>
+          <button id="stop" hidden><img src="/icons/square.svg" alt="" />停止服务</button>
+        </footer>
+      </main>
+    </div>
+    <dialog id="confirm-dialog">
+      <div>
+        <h2 id="confirm-title"></h2>
+        <p id="confirm-message"></p>
+        <div class="form-actions">
+          <button id="confirm-cancel" type="button">取消</button
+          ><button id="confirm-accept" type="button" class="primary">确认</button>
+        </div>
+      </div>
+    </dialog>
+  </body>
+</html>

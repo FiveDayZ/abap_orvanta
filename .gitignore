@@ -1,0 +1,11 @@
+dist/
+node_modules/
+.env
+connections.json
+*.log
+release/
+.cache/
+.doc/
+coverage/
+*.zip
+*.sha256

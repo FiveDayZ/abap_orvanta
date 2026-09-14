@@ -1,0 +1,14 @@
+{
+  "connections": [
+    {
+      "id": "w200",
+      "url": "https://sap.example.invalid:44300",
+      "client": "200",
+      "language": "EN",
+      "username": "DEVELOPER",
+      "passwordEnv": "ABAP_MCP_W200_PASSWORD",
+      "allowUnauthorized": false,
+      "remoteFunctionAllowlist": []
+    }
+  ]
+}
