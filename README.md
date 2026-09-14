@@ -4,11 +4,9 @@
 
 # ORVANTA
 
-ORVANTA is a standalone Model Context Protocol (MCP) service for SAP ABAP Development Tools. It runs without VS Code and exposes controlled ABAP discovery, source, repository, DDIC, diagnostics, transport inspection, RFC, and customer-object lifecycle tools to MCP clients.
+ORVANTA is a standalone Model Context Protocol (MCP) service for SAP ABAP Development Tools. It exposes controlled ABAP discovery, source, repository, DDIC, diagnostics, transport inspection, RFC, and customer-object lifecycle tools to MCP clients.
 
 Current source version: `0.40.3`.
-
-The current ORVANTA mark is used by the local settings workspace and its favicon. The source assets are maintained in `ui/icons/orvanta-mark.svg` and `ui/icons/orvanta-favicon.svg`.
 
 ## Requirements
 
