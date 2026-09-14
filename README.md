@@ -6,7 +6,7 @@
 
 ORVANTA is a standalone Model Context Protocol (MCP) service for SAP ABAP Development Tools. It exposes controlled ABAP discovery, source, repository, DDIC, diagnostics, transport inspection, RFC, and customer-object lifecycle tools to MCP clients.
 
-Current source version: `0.40.3`.
+Current source version: `0.40.4`.
 
 ## Requirements
 
@@ -53,6 +53,12 @@ npm run package:windows
 ```
 
 The generated package is written under `release/`, which is intentionally excluded from source control.
+
+Starting with `0.40.4`, the self-contained package includes `update.cmd`. Stop the MCP service and close the local settings UI, then double-click `update.cmd` to install the latest stable Windows x64 release. The updater verifies the release SHA-256, version, platform, ZIP paths, and packaged file manifest before replacing program files. It preserves `connections.json`, `exports`, and the external state directory, and restores the previous program files if replacement fails.
+
+The updater does not install or upgrade SAP helpers, change SAP objects or business data, or release transports. GitHub Release checksums verify download integrity; they are not publisher signatures. Packages older than `0.40.4` require one manual upgrade before this entry is available.
+
+Source-checkout users should stop ORVANTA, update the checkout with Git, then run `npm ci` and `npm run build`; `update.cmd` is only for the self-contained Windows package.
 
 ## SAP Helpers
 

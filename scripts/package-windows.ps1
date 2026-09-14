@@ -104,6 +104,17 @@ try {
 } finally {
     Pop-Location
 }
+$runtimePackageJson = [ordered]@{
+    name = $packageJson.name
+    version = $packageJson.version
+    private = $true
+    type = $packageJson.type
+    description = $packageJson.description
+    license = $packageJson.license
+    engines = $packageJson.engines
+    dependencies = $packageJson.dependencies
+}
+$runtimePackageJson | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $appRoot "package.json") -Encoding utf8
 
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\start.ps1") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\start.cmd") -Destination $packageRoot
@@ -112,9 +123,16 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\install-sap-he
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\setup.ps1") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\open-settings.ps1") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\open-settings.cmd") -Destination $packageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\default-connections.json") -Destination (Join-Path $packageRoot "connections.json")
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\update.ps1") -Destination $packageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\update.cmd") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "connections.example.json") -Destination $packageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "README.md") -Destination $packageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\README.md") -Destination (Join-Path $packageRoot "README.md")
+Copy-Item -LiteralPath (Join-Path $projectRoot "LICENSE") -Destination $packageRoot
+
+$portableConfig = Get-Content -Raw -LiteralPath (Join-Path $projectRoot "connections.example.json") | ConvertFrom-Json
+$portableConfig.connections[0].id = "w200"
+$portableConfig.connections[0].passwordEnv = "ABAP_MCP_W200_PASSWORD"
+$portableConfig | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageRoot "connections.json") -Encoding utf8
 
 # Runtime execution is optional only for preparation; the manifest records the missing check.
 if (-not $SkipRuntimeCheck) {
