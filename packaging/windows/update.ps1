@@ -246,31 +246,43 @@ try {
     Write-Host "SAP helpers were not installed or upgraded."
 } catch {
     $failure = $_
-    if ($backedUp.Count -gt 0) {
-        foreach ($relative in $installed) {
-            $targetPath = Join-Path $root $relative
-            if (Test-Path -LiteralPath $targetPath) {
-                $safeTarget = Assert-PathInside $targetPath $root
-                Remove-Item -LiteralPath $safeTarget -Recurse -Force
-            }
-        }
-        foreach ($relative in $backedUp) {
-            $backupPath = Join-Path $backupRoot $relative
-            if (Test-Path -LiteralPath $backupPath) {
+    try {
+        if ($backedUp.Count -gt 0) {
+            foreach ($relative in $installed) {
                 $targetPath = Join-Path $root $relative
-                $targetParent = Split-Path -Parent $targetPath
-                New-Item -ItemType Directory -Force -Path $targetParent | Out-Null
-                Move-Item -LiteralPath $backupPath -Destination $targetPath
+                if (Test-Path -LiteralPath $targetPath) {
+                    $safeTarget = Assert-PathInside $targetPath $root
+                    Remove-Item -LiteralPath $safeTarget -Recurse -Force
+                }
+            }
+            foreach ($relative in $backedUp) {
+                $backupPath = Join-Path $backupRoot $relative
+                if (Test-Path -LiteralPath $backupPath) {
+                    $targetPath = Join-Path $root $relative
+                    $targetParent = Split-Path -Parent $targetPath
+                    New-Item -ItemType Directory -Force -Path $targetParent | Out-Null
+                    Move-Item -LiteralPath $backupPath -Destination $targetPath
+                }
             }
         }
+        $rollbackCompleted = $true
+    } catch {
+        throw "ORVANTA update failed and automatic restore was incomplete. Backup retained at '$backupRoot'. Update error: $($failure.Exception.Message) Restore error: $($_.Exception.Message)"
     }
-    $rollbackCompleted = $true
     throw "ORVANTA update failed; the previous installation was kept or restored. $($failure.Exception.Message)"
 } finally {
     if (Test-Path -LiteralPath $tempRoot) {
-        Remove-SafeTree $tempRoot ([IO.Path]::GetTempPath())
+        try {
+            Remove-SafeTree $tempRoot ([IO.Path]::GetTempPath())
+        } catch {
+            Write-Warning "Could not remove temporary update files: $tempRoot"
+        }
     }
     if (($updateCompleted -or $rollbackCompleted) -and (Test-Path -LiteralPath $backupRoot)) {
-        Remove-SafeTree $backupRoot $parent
+        try {
+            Remove-SafeTree $backupRoot $parent
+        } catch {
+            Write-Warning "Could not remove the completed update backup: $backupRoot"
+        }
     }
 }
