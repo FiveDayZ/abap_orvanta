@@ -6,7 +6,17 @@
 
 ORVANTA is a standalone Model Context Protocol (MCP) service for SAP ABAP Development Tools. It exposes controlled ABAP discovery, source, repository, DDIC, diagnostics, transport inspection, RFC, and customer-object lifecycle tools to MCP clients.
 
-Current source version: `0.40.4`.
+Current source version: `0.41.1`.
+
+## 0.41.1
+
+- Resolves classic Include activation through an unambiguous main-program context returned by SAP.
+- Treats malformed, unavailable, or ambiguous inactive-source observations as blockers instead of absence.
+- Preserves save, unlock, activation, active-source, and inactive-source evidence when activation fails. A saved replacement is not submitted again automatically.
+- Verifies successful source replacement and activate-only recovery by reading back the active source.
+- Includes the DDIC helper 1.7 table-component, technical-setting, and native conversion-recovery additions prepared in 0.41.0.
+
+Local build and static checks do not establish SAP runtime acceptance. Review the release notes before deploying helpers or using state-changing tools.
 
 ## Requirements
 
@@ -68,7 +78,7 @@ Installing or upgrading helpers changes SAP repository objects. Review the targe
 
 ## Agent Skills
 
-The companion Skill bundle is available at [`skills/orvanta-skills-0.1.1.zip`](skills/orvanta-skills-0.1.1.zip). It contains two independent Skills:
+The latest companion Skill bundle is available at [`skills/orvanta-skills-0.1.2.zip`](skills/orvanta-skills-0.1.2.zip). It contains two independent Skills:
 
 - `abap-mcp-development` for explicitly authorized ABAP customer-object development
 - `abap-mcp-review` for read-only ABAP review and diagnosis
@@ -78,10 +88,10 @@ Extract the archive, then install the required directory from its `skills/` fold
 Bundle SHA-256:
 
 ```text
-FA06A90EF9DB86D8B1F1399D402509E87F620CB584F2145CD9047688DC85575F
+8B807B7EED4ABE81119EE67B6619525D0A3373D2577606915007A3EBC35C3B38
 ```
 
-The bundle is version `0.1.1` and is marked `Partially Verified` in its own documentation. Its static tool-routing baseline remains ORVANTA `0.40.1`; live tool discovery takes precedence when it is used with `0.40.4`. Client discovery, automatic triggering, behavior, and cross-platform installation still require validation in each target Agent environment.
+The bundle is version `0.1.2` and is marked `Partially Verified` in its own documentation. It adds guidance for useful, truthful ABAP code comments while retaining the seven-Include classic Program convention from 0.1.1. Its static tool-routing baseline remains ORVANTA `0.40.1`; live tool discovery takes precedence when it is used with `0.41.1`. Client discovery, automatic triggering, behavior, and cross-platform installation still require validation in each target Agent environment.
 
 ## Safety Boundaries
 

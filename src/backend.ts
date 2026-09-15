@@ -180,6 +180,8 @@ export type SapDdicOperation =
   | "CREATE_TRANSPARENT_TABLE"
   | "APPEND_TRANSPARENT_TABLE_FIELDS"
   | "PATCH_TRANSPARENT_TABLE_FIELDS"
+  | "PATCH_TRANSPARENT_TABLE_SETTINGS"
+  | "RECOVER_TABLE_CONVERSION"
   | "READ_TABLE_TYPE"
   | "UPSERT_TABLE_TYPE"
   | "DELETE_DOMAIN"
@@ -201,6 +203,7 @@ export interface SapDdicRequest {
 }
 
 export interface SapDdicResult extends SapHelperResult {
+  metadata: SapStructureRow
   packageName: string
   objectVersion: string
   recordedRequest: string
@@ -346,6 +349,7 @@ export interface ActivationInfo {
   success: boolean
   messages: ActivationMessageInfo[]
   inactiveObjects: string[]
+  attempted?: boolean
 }
 
 export interface SourceMutationInfo {
@@ -358,6 +362,13 @@ export interface SourceMutationInfo {
   activation: ActivationInfo
   sourceFingerprintBefore?: string
   sourceFingerprintAfter?: string
+  saveSucceeded?: boolean
+  unlockSucceeded?: boolean
+  activationAttempted?: boolean
+  activationSucceeded?: boolean
+  activeFingerprint?: string | null
+  inactiveFingerprint?: string | null
+  readbackError?: string
 }
 
 export interface SourceInspectionInfo {

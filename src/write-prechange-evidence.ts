@@ -164,7 +164,8 @@ export async function observeWritePreChange(
     )
   } else if (
     name === "append_ddic_transparent_table_fields" ||
-    name === "patch_ddic_transparent_table_fields"
+    name === "patch_ddic_transparent_table_fields" ||
+    name === "patch_ddic_transparent_table_settings"
   ) {
     await observeJson(
       evidence,
@@ -180,6 +181,23 @@ export async function observeWritePreChange(
         evidence.version = stringValue(value.version)
         evidence.fingerprint = stringValue(value.fingerprint)
         evidence.packageName = stringValue(value.packageName)
+      }
+    )
+  } else if (name === "recover_ddic_table_conversion") {
+    await observeJson(
+      evidence,
+      "read_ddic_table_conversion_status",
+      () =>
+        tools.readDdicTableConversionStatus({
+          objectName: String(input.objectName),
+          connectionId
+        }),
+      (value) => {
+        evidence.exists = booleanValue(value.pending)
+        evidence.active = null
+        evidence.version = null
+        evidence.fingerprint = stringValue(value.worklistFingerprint)
+        evidence.packageName = stringValue(input.packageName)
       }
     )
   } else if (name === "delete_ddic_object") {

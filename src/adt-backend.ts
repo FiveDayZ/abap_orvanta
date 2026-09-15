@@ -824,7 +824,22 @@ export class AdtBackend implements SapBackend {
   async activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo> {
     return this.withStatefulClient(connectionId, async (client) => {
       const target = resolveEditableSourceTarget(fileUri, connectionId)
-      return activateTarget(client, target.objectUri, target.objectName)
+      const before = await inspectSourceWithClient(client, connectionId, fileUri)
+      const expected = before.inactiveSource ?? before.activeSource
+      const activation = await activateTarget(client, target.objectUri, target.objectName)
+      if (activation.success) {
+        const active = await client.getObjectSource(target.sourceUri, { version: "active" })
+        if (active !== expected) {
+          activation.success = false
+          activation.messages.push({
+            type: "E",
+            line: 0,
+            text: "ACTIVE_SOURCE_FINGERPRINT_MISMATCH: activate-only readback differs from the reviewed source.",
+            href: target.sourceUri
+          })
+        }
+      }
+      return activation
     })
   }
 
@@ -1815,6 +1830,7 @@ export function parseSapDdicResponse(body: string): SapDdicResult {
     code: findXmlValue(document, "EV_CODE") ?? "",
     message: findXmlValue(document, "EV_MESSAGE") ?? "",
     version: findXmlValue(document, "EV_VERSION") ?? "",
+    metadata: payload.metadata,
     packageName: payload.metadata.PACKAGE ?? "",
     objectVersion: payload.metadata.VERSION ?? "",
     recordedRequest: payload.metadata.REQUEST ?? "",
@@ -3046,13 +3062,13 @@ export async function replaceSourceWithClient(
   let sourceFingerprintBefore = ""
   let sourceFingerprintAfter = ""
   try {
-    const existingInactive = await inactiveObjectForTarget(client, target.objectUri)
-    if (existingInactive) {
+    const inspection = await inspectSourceWithClient(client, connectionId, fileUri)
+    if (inspection.inactiveSource !== null) {
       throw new Error(
         `${target.objectName} already has inactive SAP source. Refusing to overwrite an existing inactive version; activate or resolve it first.`
       )
     }
-    const currentSource = await client.getObjectSource(target.sourceUri, { version: "active" })
+    const currentSource = inspection.activeSource
     sourceFingerprintBefore = createHash("sha256").update(currentSource).digest("hex")
     if (
       expectedSourceFingerprint &&
@@ -3081,11 +3097,55 @@ export async function replaceSourceWithClient(
         `${errorText(operationError)}; SAP unlock also failed: ${errorText(unlockError)}`
       )
     }
-    throw new Error(`SAP source was saved but unlock failed: ${errorText(unlockError)}`)
+    throw new Error(
+      `SAP source was saved but unlock failed: ${errorText(unlockError)}; ` +
+        JSON.stringify({
+          saveSucceeded: true,
+          unlockSucceeded: false,
+          activationAttempted: false,
+          activationSucceeded: false,
+          sourceFingerprintBefore,
+          sourceFingerprintAfter,
+          automaticRetry: false,
+          automaticRollback: false
+        })
+    )
   }
   if (operationError) throw operationError
 
   const activation = await activateTarget(client, target.objectUri, target.objectName)
+  let activeFingerprint: string | null = null
+  let inactiveFingerprint: string | null = null
+  let readbackError: string | undefined
+  try {
+    const activeSource = await client.getObjectSource(target.sourceUri, { version: "active" })
+    activeFingerprint = createHash("sha256").update(activeSource).digest("hex")
+    if (!activation.success || activeFingerprint !== sourceFingerprintAfter) {
+      const inspection = await inspectSourceWithClient(client, connectionId, fileUri)
+      inactiveFingerprint =
+        inspection.inactiveSource === null
+          ? null
+          : createHash("sha256").update(inspection.inactiveSource).digest("hex")
+    }
+    if (activation.success && activeFingerprint !== sourceFingerprintAfter) {
+      activation.success = false
+      activation.messages.push({
+        type: "E",
+        line: 0,
+        text: "ACTIVE_SOURCE_FINGERPRINT_MISMATCH: active source does not match the saved candidate.",
+        href: target.sourceUri
+      })
+    }
+  } catch (error) {
+    readbackError = errorText(error)
+    activation.success = false
+    activation.messages.push({
+      type: "E",
+      line: 0,
+      text: `SOURCE_READBACK_UNAVAILABLE: ${readbackError}`,
+      href: target.sourceUri
+    })
+  }
   return {
     fileUri,
     sourceUri: target.sourceUri,
@@ -3095,7 +3155,14 @@ export async function replaceSourceWithClient(
     transportNumber: selectedTransport,
     activation,
     sourceFingerprintBefore,
-    sourceFingerprintAfter
+    sourceFingerprintAfter,
+    saveSucceeded: true,
+    unlockSucceeded: true,
+    activationAttempted: activation.attempted ?? false,
+    activationSucceeded: activation.success,
+    activeFingerprint,
+    inactiveFingerprint,
+    ...(readbackError ? { readbackError } : {})
   }
 }
 
@@ -3107,9 +3174,10 @@ export async function inspectSourceWithClient(
   const target = resolveEditableSourceTarget(fileUri, connectionId)
   const activeSource = await client.getObjectSource(target.sourceUri, { version: "active" })
   const inactive = await inactiveObjectForTarget(client, target.objectUri)
-  const inactiveSource = inactive
-    ? await client.getObjectSource(target.sourceUri, { version: "inactive" })
-    : null
+  // A valid inventory can still omit a draft. Probe the target as well; read failures
+  // remain unavailable, never evidence that an inactive version does not exist.
+  const candidate = await client.getObjectSource(target.sourceUri, { version: "inactive" })
+  const inactiveSource = inactive || candidate !== activeSource ? candidate : null
   return {
     sourceUri: target.sourceUri,
     objectUri: target.objectUri,
@@ -3241,8 +3309,17 @@ async function describeDiscovery(client: ADTClient, hrefPrefix: string): Promise
 
 async function inactiveObjects(client: ADTClient) {
   try {
-    const records = await client.inactiveObjects()
-    return records.length ? records : await client.inactiveObjects("application/xml")
+    const inventory = await readInactiveInventory(client.httpClient)
+    return inventory.entries.map((entry) => ({
+      object: {
+        "adtcore:uri": entry.uri,
+        "adtcore:name": entry.name,
+        "adtcore:type": entry.type,
+        "adtcore:parentUri": entry.parentUri ?? "",
+        user: entry.user,
+        deleted: entry.deleted
+      }
+    }))
   } catch (error) {
     throw capabilityFailure("inactive-object-check", error)
   }
@@ -3250,23 +3327,58 @@ async function inactiveObjects(client: ADTClient) {
 
 async function inactiveObjectForTarget(client: ADTClient, objectUri: string) {
   const records = await inactiveObjects(client)
-  return records
+  const matches = records
     .map((record) => record.object)
-    .find((object) => object && sameObjectUri(object["adtcore:uri"], objectUri))
+    .filter((object) => sameObjectUri(object["adtcore:uri"], objectUri))
+  if (matches.length > 1) {
+    throw new Error(
+      "INACTIVE_TARGET_CONTEXT_AMBIGUOUS: multiple inactive references match the target."
+    )
+  }
+  return matches[0]
 }
 
-async function activateTarget(
+export async function activateTarget(
   client: ADTClient,
   objectUri: string,
   objectName: string
 ): Promise<ActivationInfo> {
+  let attempted = false
   try {
     const inactive = await inactiveObjectForTarget(client, objectUri)
-    const result = inactive
-      ? await client.activate(inactive, true)
-      : await client.activate(objectName, objectUri, undefined, true)
+    let context: string | undefined
+    if (/\/(?:programs|functions\/groups\/[^/]+)\/includes\/[^/]+$/i.test(objectUri)) {
+      const programs = await client.mainPrograms(objectUri)
+      const contexts = [...new Set(programs.map((program) => program["adtcore:uri"]))]
+      if (
+        !contexts.length ||
+        contexts.some((uri) => !/^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i.test(uri))
+      ) {
+        throw new Error("INCLUDE_MAIN_PROGRAM_UNAVAILABLE: no valid SAP main-program context.")
+      }
+      const supplied = inactive
+        ? new URL(inactive["adtcore:uri"], "https://sap.invalid").searchParams.get("context")
+        : null
+      context = supplied
+        ? contexts.find((uri) => sameObjectUri(uri, supplied))
+        : contexts.length === 1
+          ? contexts[0]
+          : undefined
+      if (!context) {
+        throw new Error(
+          "INCLUDE_MAIN_PROGRAM_AMBIGUOUS: resolve the SAP main-program context before activation."
+        )
+      }
+    }
+    attempted = true
+    const result = context
+      ? await client.activate(objectName, objectUri, context, true)
+      : inactive
+        ? await client.activate(inactive, true)
+        : await client.activate(objectName, objectUri, undefined, true)
     return {
       success: result.success,
+      attempted,
       messages: result.messages.map((message) => ({
         type: message.type,
         line: message.line,
@@ -3278,12 +3390,28 @@ async function activateTarget(
         .filter((name): name is string => Boolean(name))
     }
   } catch (error) {
-    throw capabilityFailure("activation", error)
+    return {
+      success: false,
+      attempted,
+      messages: [
+        {
+          type: "E",
+          line: 0,
+          text: capabilityFailure("activation", error).message,
+          href: objectUri
+        }
+      ],
+      inactiveObjects: []
+    }
   }
 }
 
 function sameObjectUri(left: string, right: string): boolean {
-  const normalize = (value: string) => value.replace(/\/source\/main$/i, "").replace(/\/$/, "")
+  const normalize = (value: string) =>
+    value
+      .replace(/[?#].*$/, "")
+      .replace(/\/$/, "")
+      .replace(/\/source\/main$/i, "")
   return normalize(left).toLowerCase() === normalize(right).toLowerCase()
 }
 

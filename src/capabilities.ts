@@ -128,7 +128,7 @@ export async function buildCapabilityReport(
     capability(
       "structured-table-query",
       "target-specific",
-      ["read_abap_table", "preview_configuration"],
+      ["read_abap_table", "preview_configuration", "read_ddic_table_conversion_status"],
       unknownTargetObservation(
         "Requires live table metadata and a successful query; the legacy alternative additionally requires the reviewed RFC reader and a supported full-row layout."
       )
@@ -193,11 +193,13 @@ export async function buildCapabilityReport(
     ]),
     helperCapability("ddic-helper-transparent-table", ddicHelper, "1.5", [
       "read_ddic_transparent_table",
-      "create_ddic_transparent_table",
-      "append_ddic_transparent_table_fields"
+      "create_ddic_transparent_table"
     ]),
-    helperCapability("ddic-helper-transparent-table-patch", ddicHelper, "1.6", [
-      "patch_ddic_transparent_table_fields"
+    helperCapability("ddic-helper-transparent-table-complex", ddicHelper, "1.7", [
+      "append_ddic_transparent_table_fields",
+      "patch_ddic_transparent_table_fields",
+      "patch_ddic_transparent_table_settings",
+      "recover_ddic_table_conversion"
     ]),
     helperCapability("ddic-helper-controlled-delete", ddicHelper, "1.6", ["delete_ddic_object"]),
     capability(

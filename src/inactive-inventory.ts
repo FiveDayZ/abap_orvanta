@@ -8,16 +8,28 @@ const text = (max: number) =>
     .string()
     .max(max)
     .regex(/^[^\u0000-\u001f\u007f]*$/)
-const uri = text(2048).refine(
-  (value) =>
+const uri = text(2048).refine((value) => {
+  const parsed = new URL(value, "https://sap.invalid")
+  const context = parsed.searchParams.get("context")
+  return (
     value.startsWith("/sap/bc/adt/") &&
-    !/[%\\\s?#]/.test(value) &&
-    new URL(value, "https://sap.invalid").pathname === value
-)
+    !/[%\\\s#]/.test(parsed.pathname) &&
+    !parsed.hash &&
+    parsed.pathname === value.split("?")[0] &&
+    [...parsed.searchParams.keys()].every((key) => key === "context") &&
+    parsed.searchParams.getAll("context").length <= 1 &&
+    (!parsed.search || (context !== null && /^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i.test(context)))
+  )
+})
 const reference = z.object({
   "@_adtcore:uri": uri,
-  "@_adtcore:name": text(120).min(1),
-  "@_adtcore:type": text(40).min(1)
+  "@_adtcore:name": text(120)
+    .min(1)
+    .regex(/^[^<>&"']+$/),
+  "@_adtcore:type": text(40)
+    .min(1)
+    .regex(/^[^<>&"']+$/),
+  "@_adtcore:parentUri": z.union([z.literal(""), uri]).optional()
 })
 const element = z.object({
   "@_ioc:user": text(12),
@@ -25,7 +37,14 @@ const element = z.object({
   "ioc:ref": reference
 })
 export interface InactiveInventory {
-  entries: Array<{ uri: string; name: string; type: string; user: string; deleted: boolean }>
+  entries: Array<{
+    uri: string
+    name: string
+    type: string
+    user: string
+    deleted: boolean
+    parentUri?: string
+  }>
   transportOnlyRecords: number
 }
 
@@ -86,6 +105,9 @@ export function parseInactiveInventory(response: HttpClientResponse): InactiveIn
       uri: item["ioc:ref"]["@_adtcore:uri"],
       name: item["ioc:ref"]["@_adtcore:name"],
       type: item["ioc:ref"]["@_adtcore:type"],
+      ...(item["ioc:ref"]["@_adtcore:parentUri"] !== undefined
+        ? { parentUri: item["ioc:ref"]["@_adtcore:parentUri"] }
+        : {}),
       user: item["@_ioc:user"],
       deleted: ["true", "1"].includes(item["@_ioc:deleted"])
     })

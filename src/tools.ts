@@ -568,6 +568,36 @@ interface PatchTransparentTableFieldsInput extends ReadDdicInput {
   acknowledgeDataLoss: true
 }
 
+type TransparentTableBuffering =
+  | "notAllowed"
+  | "allowedButOff"
+  | "singleRecord"
+  | "generic"
+  | "full"
+
+interface PatchTransparentTableSettingsInput extends ReadDdicInput {
+  expectedVersion: string
+  expectedFingerprint: string
+  settings: {
+    dataClass?: "APPL0" | "APPL1" | "APPL2" | undefined
+    sizeCategory?: number | undefined
+    buffering?: TransparentTableBuffering | undefined
+    genericKeyFields?: number | undefined
+    logDataChanges?: boolean | undefined
+  }
+  packageName: string
+  transportNumber: string
+  confirmation: "TECHNICAL_SETTINGS_CHANGE"
+}
+
+interface RecoverDdicTableConversionInput extends ReadDdicInput {
+  expectedWorklistFingerprint: string
+  packageName: string
+  transportNumber: string
+  confirmation: "RECOVER_NATIVE_TABLE_CONVERSION"
+  acknowledgePotentialDataLoss: true
+}
+
 interface UpsertTableTypeInput extends UpsertDdicInput {
   rowType: string
 }
@@ -2745,19 +2775,12 @@ export class ToolService {
       expectedVersion,
       fields: appendedFields
     })
-    const currentFields = (currentDefinition.fields ?? []) as Array<Record<string, unknown>>
+    const expectedResult = {
+      ...current,
+      fields: appendTransparentTableRawFields(current.fields, appendedFields)
+    }
     return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
-      ...currentDefinition,
-      fields: [
-        ...currentFields,
-        ...appendedFields.map((field, index) => ({
-          name: field.FIELDNAME,
-          position: currentFields.length + index + 1,
-          dataElement: field.ROLLNAME,
-          key: false,
-          notNull: false
-        }))
-      ]
+      ...ddicDefinition(expectedResult, "transparentTable")
     })
   }
 
@@ -2789,13 +2812,7 @@ export class ToolService {
         "FINGERPRINT_CONFLICT: Transparent table definition changed since it was read"
       )
     }
-    const currentFields = transparentTableFields(currentDefinition)
-    if (
-      currentFields.some((field) => !field.name || !field.dataElement || field.name === ".INCLUDE")
-    ) {
-      throw new Error("COMPLEX_TABLE_UNSUPPORTED: Tables with includes or appends are unsupported")
-    }
-    const fields = applyTransparentTableFieldChanges(currentFields, input.changes)
+    const fields = applyTransparentTableRawFieldChanges(current.fields, input.changes)
     const changedDataElements = new Set(
       input.changes.flatMap((change) =>
         change.action === "update" && change.dataElement !== undefined
@@ -2820,23 +2837,178 @@ export class ToolService {
       packageName,
       transportNumber: transportNumber(input.transportNumber),
       expectedVersion,
-      fields: fields.map((field) => ({
-        FIELDNAME: field.name,
-        ROLLNAME: field.dataElement,
-        KEYFLAG: field.key ? "X" : "",
-        NOTNULL: field.notNull ? "X" : ""
-      }))
+      fields: serializeDdicTableFields(fields)
+    })
+    const expectedResult = { ...current, fields }
+    return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
+      ...ddicDefinition(expectedResult, "transparentTable")
+    })
+  }
+
+  async patchDdicTransparentTableSettings(
+    input: PatchTransparentTableSettingsInput
+  ): Promise<string> {
+    if (input.confirmation !== "TECHNICAL_SETTINGS_CHANGE") {
+      throw new Error("confirmation must be TECHNICAL_SETTINGS_CHANGE")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = customerDdicTableName(input.objectName)
+    const packageName = ddicPackageName(input.packageName)
+    const expectedVersion = requiredVersionToken(input.expectedVersion)
+    const expectedFingerprint = requiredDdicFingerprint(input.expectedFingerprint)
+    const current = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_TRANSPARENT_TABLE",
+      objectName
+    })
+    requireCurrentDdicDefinition(current, packageName, expectedVersion)
+    const currentDefinition = ddicDefinition(current, "transparentTable")
+    if (
+      createHash("sha256").update(JSON.stringify(currentDefinition)).digest("hex") !==
+      expectedFingerprint
+    ) {
+      throw new Error(
+        "FINGERPRINT_CONFLICT: Transparent table definition changed since it was read"
+      )
+    }
+    if (
+      input.settings.buffering === undefined &&
+      !["N", "A", "X"].includes(current.header.BUFALLOW ?? "")
+    ) {
+      throw new Error(
+        "Current buffering allowance is not canonical; supply an explicit buffering setting"
+      )
+    }
+    const finalSettings = mergeTransparentTableSettings(currentDefinition, input.settings)
+    const result = await this.backend.callSapDdic(connectionId, {
+      operation: "PATCH_TRANSPARENT_TABLE_SETTINGS",
+      objectName,
+      description: String(currentDefinition.description ?? ""),
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion,
+      header: technicalSettingsHeader(finalSettings)
     })
     return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
       ...currentDefinition,
-      fields: fields.map((field, index) => ({
-        name: field.name,
-        position: index + 1,
-        dataElement: field.dataElement,
-        key: field.key,
-        notNull: field.notNull
-      }))
+      ...finalSettings
     })
+  }
+
+  async readDdicTableConversionStatus(input: ReadDdicInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = ddicName(input.objectName, "objectName")
+    const result = JSON.parse(
+      await this.readAbapTable({
+        connectionId,
+        tableName: "TBATG",
+        columns: [
+          "OBJECT",
+          "TABNAME",
+          "INDNAME",
+          "TGORDER",
+          "FCT",
+          "EXECMODE",
+          "SEVERITY",
+          "GDATE",
+          "GUSER"
+        ],
+        filters: [
+          { column: "OBJECT", operator: "EQ", value: "TABL" },
+          { column: "TABNAME", operator: "EQ", value: objectName }
+        ],
+        maxRows: 50
+      })
+    ) as {
+      status?: string
+      data?: Array<Record<string, unknown>>
+      truncated?: boolean
+      code?: string
+      stage?: string
+    }
+    if (result.status !== "ok" || !Array.isArray(result.data)) {
+      throw new Error(
+        `Conversion worklist read failed: ${result.code ?? "unknown"}; stage=${result.stage ?? "unknown"}`
+      )
+    }
+    if (result.truncated) throw new Error("Conversion worklist exceeds the 50-entry safety limit")
+    const entries = result.data
+      .map(normalizeConversionEntry)
+      .sort((left, right) => conversionEntryKey(left).localeCompare(conversionEntryKey(right)))
+    return JSON.stringify(
+      {
+        connectionId,
+        objectName,
+        pending: entries.length > 0,
+        entryCount: entries.length,
+        worklistFingerprint: createHash("sha256").update(JSON.stringify(entries)).digest("hex"),
+        entries,
+        readOnly: true,
+        snapshot: false
+      },
+      null,
+      2
+    )
+  }
+
+  async recoverDdicTableConversion(input: RecoverDdicTableConversionInput): Promise<string> {
+    if (
+      input.confirmation !== "RECOVER_NATIVE_TABLE_CONVERSION" ||
+      input.acknowledgePotentialDataLoss !== true
+    ) {
+      throw new Error(
+        "confirmation must be RECOVER_NATIVE_TABLE_CONVERSION and acknowledgePotentialDataLoss must be true"
+      )
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = customerDdicTableName(input.objectName)
+    const packageName = ddicPackageName(input.packageName)
+    const before = JSON.parse(
+      await this.readDdicTableConversionStatus({ connectionId, objectName })
+    ) as {
+      pending: boolean
+      worklistFingerprint: string
+      entries: Array<Record<string, string>>
+    }
+    if (!before.pending)
+      throw new Error("No native TBATG conversion worklist exists for this table")
+    if (before.worklistFingerprint !== input.expectedWorklistFingerprint.trim().toLowerCase()) {
+      throw new Error("WORKLIST_CONFLICT: Native conversion state changed since it was read")
+    }
+    const result = await this.backend.callSapDdic(connectionId, {
+      operation: "RECOVER_TABLE_CONVERSION",
+      objectName,
+      description: "Native table conversion recovery",
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      fields: before.entries
+    })
+    requireDdicSuccess(result)
+    const after = JSON.parse(
+      await this.readDdicTableConversionStatus({ connectionId, objectName })
+    ) as { pending: boolean; worklistFingerprint: string; entries: unknown[] }
+    if (after.pending) {
+      throw new Error("CONVERSION_RECOVERY_INCOMPLETE: Native TBATG entries remain after recovery")
+    }
+    const active = JSON.parse(
+      await this.readDdicTransparentTable({ connectionId, objectName })
+    ) as Record<string, unknown>
+    return JSON.stringify(
+      {
+        connectionId,
+        objectName,
+        status: result.code,
+        recovered: true,
+        previousWorklistFingerprint: before.worklistFingerprint,
+        remainingWorklistFingerprint: after.worklistFingerprint,
+        active,
+        recordedRequest: result.recordedRequest,
+        automaticRetry: false,
+        automaticRollback: false,
+        lostValuesReconstructed: false
+      },
+      null,
+      2
+    )
   }
 
   async readDdicTableType(input: ReadDdicInput): Promise<string> {
@@ -3442,7 +3614,21 @@ export class ToolService {
     )
     if (!result.activation.success) {
       throw new Error(
-        `Source was saved to SAP but activation failed for ${result.objectName}. The inactive source remains in SAP. ${formatActivationFailure(result.activation.messages, result.activation.inactiveObjects)}`
+        `Source was saved to SAP but activation failed or could not be verified for ${result.objectName}. ` +
+          `Do not repeat the replacement. Reconcile active/inactive source, then use abap_activate only for the approved object. ` +
+          `${formatActivationFailure(result.activation.messages, result.activation.inactiveObjects)}\n` +
+          JSON.stringify({
+            saveSucceeded: result.saveSucceeded ?? true,
+            unlockSucceeded: result.unlockSucceeded ?? true,
+            activationAttempted: result.activationAttempted ?? null,
+            activationSucceeded: result.activationSucceeded ?? false,
+            intendedFingerprint: result.sourceFingerprintAfter ?? null,
+            activeFingerprint: result.activeFingerprint ?? null,
+            inactiveFingerprint: result.inactiveFingerprint ?? null,
+            readbackError: result.readbackError ?? null,
+            automaticRetry: false,
+            automaticRollback: false
+          })
       )
     }
     return (
@@ -5373,7 +5559,16 @@ function ddicResult(
     packageName: result.packageName,
     version: result.objectVersion,
     fingerprint: createHash("sha256").update(JSON.stringify(definition)).digest("hex"),
-    definition
+    definition,
+    ...(result.metadata.CONVERSION_ACTION
+      ? {
+          nativeConversion: {
+            action: result.metadata.CONVERSION_ACTION,
+            mode: result.metadata.CONVERSION_MODE ?? "",
+            dataLossReported: result.metadata.CONVERSION_DATA_LOSS === "X"
+          }
+        }
+      : {})
   }
 }
 
@@ -5420,6 +5615,18 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
   }
   if (kind === "transparentTable") {
     const maintenance = result.header.MAINFLAG ?? ""
+    const buffering =
+      result.header.BUFALLOW === "X"
+        ? result.header.PUFFERUNG === "P"
+          ? "singleRecord"
+          : result.header.PUFFERUNG === "G"
+            ? "generic"
+            : result.header.PUFFERUNG === "X"
+              ? "full"
+              : "enabled"
+        : result.header.BUFALLOW === "A"
+          ? "allowedButOff"
+          : "notAllowed"
     return {
       description: result.header.DDTEXT ?? "",
       tableClass: result.header.TABCLASS ?? "",
@@ -5428,26 +5635,30 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
         maintenance === "X" ? "allowed" : maintenance === "R" ? "restricted" : "notAllowed",
       sizeCategory: numberValue(result.header.TABKAT),
       dataClass: result.header.TABART ?? "",
-      buffering:
-        result.header.BUFALLOW === "X"
-          ? result.header.PUFFERUNG === "P"
-            ? "singleRecord"
-            : result.header.PUFFERUNG === "G"
-              ? "generic"
-              : result.header.PUFFERUNG === "X"
-                ? "full"
-                : "enabled"
-          : result.header.BUFALLOW === "A"
-            ? "allowedButOff"
-            : "notAllowed",
-      fields: result.fields.map((field) => ({
-        name: field.FIELDNAME ?? "",
-        position: numberValue(field.POSITION),
-        dataElement: field.ROLLNAME ?? "",
-        description: field.DDTEXT ?? "",
-        key: field.KEYFLAG === "X",
-        notNull: field.NOTNULL === "X"
-      }))
+      buffering,
+      genericKeyFields: buffering === "generic" ? numberValue(result.header.SCHFELDANZ) : 0,
+      logDataChanges: result.header.PROTOKOLL === "X",
+      fields: result.fields.map((field) => {
+        const componentKind = ddicComponentKind(field)
+        return {
+          name: field.FIELDNAME ?? "",
+          position: numberValue(field.POSITION),
+          dataElement: field.ROLLNAME ?? "",
+          description: field.DDTEXT ?? "",
+          key: field.KEYFLAG === "X",
+          notNull: field.NOTNULL === "X",
+          ...(componentKind === "field"
+            ? {}
+            : {
+                componentKind,
+                componentName: field.PRECFIELD ?? "",
+                componentType: field.COMPTYPE ?? "",
+                originDepth: numberValue(field.ADMINFIELD),
+                groupName: field.GROUPNAME ?? "",
+                extensionClass: field.EXCLASS ?? ""
+              })
+        }
+      })
     }
   }
   return {
@@ -5534,7 +5745,16 @@ function containsLineSequence(actual: string[], expected: string[]): boolean {
 
 function requireDdicSuccess(result: SapDdicResult): void {
   if (result.status.toUpperCase() !== "S") {
-    throw new Error(`SAP DDIC helper rejected the operation: ${result.code}: ${result.message}`)
+    const conversion = result.metadata.CONVERSION_ACTION
+      ? `; nativeConversion=${JSON.stringify({
+          action: result.metadata.CONVERSION_ACTION,
+          mode: result.metadata.CONVERSION_MODE ?? "",
+          dataLossReported: result.metadata.CONVERSION_DATA_LOSS === "X"
+        })}`
+      : ""
+    throw new Error(
+      `SAP DDIC helper rejected the operation: ${result.code}: ${result.message}${conversion}`
+    )
   }
 }
 
@@ -5693,11 +5913,12 @@ function validateAppendedTransparentTableFields(
   })
 }
 
-interface TransparentTableFieldDefinition {
-  name: string
-  dataElement: string
-  key: boolean
-  notNull: boolean
+interface TransparentTableTechnicalSettings {
+  dataClass: "APPL0" | "APPL1" | "APPL2"
+  sizeCategory: number
+  buffering: TransparentTableBuffering
+  genericKeyFields: number
+  logDataChanges: boolean
 }
 
 function requiredDdicFingerprint(value: string): string {
@@ -5722,32 +5943,17 @@ function requireCurrentDdicDefinition(
   }
 }
 
-function transparentTableFields(
-  definition: Record<string, unknown>
-): TransparentTableFieldDefinition[] {
-  if (!Array.isArray(definition.fields)) {
-    throw new Error("SAP DDIC verification did not return transparent table fields")
-  }
-  return definition.fields.map((value) => {
-    const field = value as Record<string, unknown>
-    return {
-      name: String(field.name ?? "").toUpperCase(),
-      dataElement: String(field.dataElement ?? "").toUpperCase(),
-      key: field.key === true,
-      notNull: field.notNull === true
-    }
-  })
-}
-
-function applyTransparentTableFieldChanges(
-  current: TransparentTableFieldDefinition[],
+function applyTransparentTableRawFieldChanges(
+  current: SapStructureRow[],
   changes: TransparentTableFieldChange[]
-): TransparentTableFieldDefinition[] {
+): SapStructureRow[] {
   const fields = current.map((field) => ({ ...field }))
   for (const change of changes) {
     const fieldName = ddicFieldName(change.fieldName)
     if (fieldName === "MANDT") throw new Error("MANDT cannot be changed")
-    const index = fields.findIndex((field) => field.name === fieldName)
+    const index = fields.findIndex(
+      (field) => isDirectDdicField(field) && field.FIELDNAME === fieldName
+    )
     if (index < 0) throw new Error(`Transparent table field does not exist: ${fieldName}`)
     if (change.action === "remove") {
       fields.splice(index, 1)
@@ -5757,10 +5963,10 @@ function applyTransparentTableFieldChanges(
       const newName = ddicFieldName(change.newName)
       if (newName === "MANDT") throw new Error("A field cannot be renamed to MANDT")
       if (newName === fieldName) throw new Error(`Field rename is a no-op: ${fieldName}`)
-      if (fields.some((field, fieldIndex) => fieldIndex !== index && field.name === newName)) {
+      if (fields.some((field, fieldIndex) => fieldIndex !== index && field.FIELDNAME === newName)) {
         throw new Error(`Transparent table field already exists: ${newName}`)
       }
-      fields[index]!.name = newName
+      fields[index]!.FIELDNAME = newName
       continue
     }
     if (
@@ -5773,33 +5979,195 @@ function applyTransparentTableFieldChanges(
     const field = fields[index]!
     const updated = {
       ...field,
-      dataElement:
+      ROLLNAME:
         change.dataElement === undefined
-          ? field.dataElement
+          ? (field.ROLLNAME ?? "")
           : ddicName(change.dataElement, "dataElement"),
-      key: change.key ?? field.key,
-      notNull: change.notNull ?? field.notNull
+      KEYFLAG: change.key === undefined ? (field.KEYFLAG ?? "") : change.key ? "X" : "",
+      NOTNULL: change.notNull === undefined ? (field.NOTNULL ?? "") : change.notNull ? "X" : ""
     }
     if (
-      updated.dataElement === field.dataElement &&
-      updated.key === field.key &&
-      updated.notNull === field.notNull
+      updated.ROLLNAME === field.ROLLNAME &&
+      updated.KEYFLAG === field.KEYFLAG &&
+      updated.NOTNULL === field.NOTNULL
     ) {
       throw new Error(`Field update is a no-op: ${fieldName}`)
     }
     fields[index] = updated
   }
-  if (!fields.length) throw new Error("A transparent table must retain at least one field")
+  const physicalFields = fields.filter((field) => !isDdicComponentMarker(field))
+  if (!physicalFields.length) throw new Error("A transparent table must retain at least one field")
   let nonKeySeen = false
-  for (const field of fields) {
-    if (!field.key) nonKeySeen = true
-    if (field.key && nonKeySeen) throw new Error("Key fields must be contiguous at the beginning")
-    if (field.key && !field.notNull) throw new Error(`Key field must be not null: ${field.name}`)
+  for (const field of physicalFields) {
+    const key = field.KEYFLAG === "X"
+    if (!key) nonKeySeen = true
+    if (key && nonKeySeen) throw new Error("Key fields must be contiguous at the beginning")
+    if (key && field.NOTNULL !== "X") {
+      throw new Error(`Key field must be not null: ${field.FIELDNAME ?? "<unknown>"}`)
+    }
   }
+  fields.forEach((field, index) => {
+    field.POSITION = String(index + 1)
+  })
   if (JSON.stringify(fields) === JSON.stringify(current)) {
     throw new Error("Transparent table field patch does not change the active definition")
   }
   return fields
+}
+
+function serializeDdicTableFields(fields: SapStructureRow[]): SapStructureRow[] {
+  const properties = [
+    "FIELDNAME",
+    "ROLLNAME",
+    "KEYFLAG",
+    "NOTNULL",
+    "PRECFIELD",
+    "COMPTYPE",
+    "ADMINFIELD",
+    "GROUPNAME",
+    "EXCLASS"
+  ]
+  return fields.map((field) =>
+    Object.fromEntries(
+      properties
+        .filter((property) => field[property] !== undefined)
+        .map((property) => [property, field[property] ?? ""])
+    )
+  )
+}
+
+function appendTransparentTableRawFields(
+  current: SapStructureRow[],
+  appended: Array<{ FIELDNAME: string; ROLLNAME: string; KEYFLAG: string; NOTNULL: string }>
+): SapStructureRow[] {
+  const fields = current.map((field) => ({ ...field }))
+  const appendIndex = fields.findIndex((field) => field.FIELDNAME?.startsWith(".INCLU--AP"))
+  fields.splice(appendIndex < 0 ? fields.length : appendIndex, 0, ...appended)
+  fields.forEach((field, index) => {
+    field.POSITION = String(index + 1)
+  })
+  return fields
+}
+
+function isDdicComponentMarker(field: SapStructureRow): boolean {
+  return (field.FIELDNAME ?? "").startsWith(".INCLU")
+}
+
+function isDirectDdicField(field: SapStructureRow): boolean {
+  return (
+    !isDdicComponentMarker(field) &&
+    numberValue(field.ADMINFIELD) === 0 &&
+    !!field.ROLLNAME &&
+    (!field.COMPTYPE || field.COMPTYPE === "E")
+  )
+}
+
+function ddicComponentKind(field: SapStructureRow): "field" | "include" | "append" | "inherited" {
+  if ((field.FIELDNAME ?? "").startsWith(".INCLU--AP")) return "append"
+  if (isDdicComponentMarker(field)) return "include"
+  if (numberValue(field.ADMINFIELD) > 0) return "inherited"
+  return "field"
+}
+
+function mergeTransparentTableSettings(
+  current: Record<string, unknown>,
+  patch: PatchTransparentTableSettingsInput["settings"]
+): TransparentTableTechnicalSettings {
+  const dataClass = patch.dataClass ?? current.dataClass
+  if (!["APPL0", "APPL1", "APPL2"].includes(String(dataClass))) {
+    throw new Error("Current data class is outside the supported technical-settings contract")
+  }
+  const sizeCategory = patch.sizeCategory ?? Number(current.sizeCategory)
+  if (!Number.isInteger(sizeCategory) || sizeCategory < 0 || sizeCategory > 4) {
+    throw new Error("sizeCategory must be an integer from 0 to 4")
+  }
+  const buffering = patch.buffering ?? current.buffering
+  if (
+    !["notAllowed", "allowedButOff", "singleRecord", "generic", "full"].includes(String(buffering))
+  ) {
+    throw new Error("Current buffering mode is outside the supported technical-settings contract")
+  }
+  const keyCount = Array.isArray(current.fields)
+    ? current.fields.filter((value) => (value as Record<string, unknown>).key === true).length
+    : 0
+  const genericKeyFields =
+    buffering === "generic" ? (patch.genericKeyFields ?? Number(current.genericKeyFields ?? 0)) : 0
+  if (patch.genericKeyFields !== undefined && buffering !== "generic") {
+    throw new Error("genericKeyFields is allowed only for generic buffering")
+  }
+  if (buffering === "generic" && (genericKeyFields < 1 || genericKeyFields > keyCount)) {
+    throw new Error("genericKeyFields must be between 1 and the number of key fields")
+  }
+  const result: TransparentTableTechnicalSettings = {
+    dataClass: dataClass as "APPL0" | "APPL1" | "APPL2",
+    sizeCategory,
+    buffering: buffering as TransparentTableBuffering,
+    genericKeyFields,
+    logDataChanges: patch.logDataChanges ?? current.logDataChanges === true
+  }
+  const previous = {
+    dataClass: current.dataClass,
+    sizeCategory: current.sizeCategory,
+    buffering: current.buffering,
+    genericKeyFields: Number(current.genericKeyFields ?? 0),
+    logDataChanges: current.logDataChanges === true
+  }
+  if (JSON.stringify(result) === JSON.stringify(previous)) {
+    throw new Error("Transparent table technical-settings patch is a no-op")
+  }
+  return result
+}
+
+function technicalSettingsHeader(settings: TransparentTableTechnicalSettings): SapStructureRow {
+  const buffering = {
+    notAllowed: { BUFALLOW: "N", PUFFERUNG: "" },
+    allowedButOff: { BUFALLOW: "A", PUFFERUNG: "" },
+    singleRecord: { BUFALLOW: "X", PUFFERUNG: "P" },
+    generic: { BUFALLOW: "X", PUFFERUNG: "G" },
+    full: { BUFALLOW: "X", PUFFERUNG: "X" }
+  }[settings.buffering]
+  return {
+    TABART: settings.dataClass,
+    TABKAT: String(settings.sizeCategory),
+    ...buffering,
+    SCHFELDANZ: settings.buffering === "generic" ? String(settings.genericKeyFields) : "",
+    PROTOKOLL: settings.logDataChanges ? "X" : ""
+  }
+}
+
+function normalizeConversionEntry(value: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    [
+      "OBJECT",
+      "TABNAME",
+      "INDNAME",
+      "TGORDER",
+      "FCT",
+      "EXECMODE",
+      "SEVERITY",
+      "GDATE",
+      "GUSER"
+    ].map((key) => [
+      key,
+      String(value[key] ?? "")
+        .trim()
+        .toUpperCase()
+    ])
+  )
+}
+
+function conversionEntryKey(value: Record<string, string>): string {
+  return [
+    value.OBJECT,
+    value.TABNAME,
+    value.INDNAME,
+    value.TGORDER,
+    value.FCT,
+    value.EXECMODE,
+    value.SEVERITY,
+    value.GDATE,
+    value.GUSER
+  ].join("|")
 }
 
 function numberValue(value: string | undefined): number {

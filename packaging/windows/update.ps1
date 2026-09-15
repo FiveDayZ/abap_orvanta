@@ -2,13 +2,20 @@
 
 [CmdletBinding()]
 param(
-    [string]$InstallRoot = (Split-Path -Parent $MyInvocation.MyCommand.Path),
+    [string]$InstallRoot,
     [ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')]
     [string]$Repository = "FiveDayZ/abap_orvanta"
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+if ([string]::IsNullOrWhiteSpace($InstallRoot)) {
+    $InstallRoot = $PSScriptRoot
+}
+if ([string]::IsNullOrWhiteSpace($InstallRoot)) {
+    throw "Could not determine the ORVANTA installation directory."
+}
 
 function Get-SafeFullPath([string]$Path) {
     return [IO.Path]::GetFullPath($Path).TrimEnd([IO.Path]::DirectorySeparatorChar)

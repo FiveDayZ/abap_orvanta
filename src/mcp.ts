@@ -395,6 +395,28 @@ export function createMcpServer(
         tools.patchDdicTransparentTableFields(input)
       )
   )
+  server.registerTool(
+    "patch_ddic_transparent_table_settings",
+    toolContracts.patch_ddic_transparent_table_settings,
+    async (input) =>
+      invokeWrite("patch_ddic_transparent_table_settings", input, backend, writeReceipts, () =>
+        tools.patchDdicTransparentTableSettings(input)
+      )
+  )
+  server.registerTool(
+    "read_ddic_table_conversion_status",
+    toolContracts.read_ddic_table_conversion_status,
+    async (input) =>
+      invoke("read_ddic_table_conversion_status", () => tools.readDdicTableConversionStatus(input))
+  )
+  server.registerTool(
+    "recover_ddic_table_conversion",
+    toolContracts.recover_ddic_table_conversion,
+    async (input) =>
+      invokeWrite("recover_ddic_table_conversion", input, backend, writeReceipts, () =>
+        tools.recoverDdicTableConversion(input)
+      )
+  )
   server.registerTool("read_ddic_table_type", toolContracts.read_ddic_table_type, async (input) =>
     invoke("read_ddic_table_type", () => tools.readDdicTableType(input))
   )
@@ -911,6 +933,8 @@ export function writeOperationTarget(
           create_ddic_transparent_table: "TABL",
           append_ddic_transparent_table_fields: "TABL",
           patch_ddic_transparent_table_fields: "TABL",
+          patch_ddic_transparent_table_settings: "TABL",
+          recover_ddic_table_conversion: "TABL",
           upsert_ddic_table_type: "TTYP"
         }[name] ??
         "OBJECT"

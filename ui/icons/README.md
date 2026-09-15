@@ -5,8 +5,7 @@ Eight unmodified SVG icons from Lucide 0.468.0, downloaded from the official
 contains the upstream ISC license and Feather attribution.
 
 `github.svg` is the unmodified `mark-github-24.svg` from GitHub's official
-`primer/octicons` repository. Its MIT license is included in
-`OCTICONS-LICENSE`.
+`primer/octicons` repository.
 
 These static assets are served locally. No CDN or new runtime package is used.
 

@@ -63,6 +63,19 @@ const ddicTableFieldChange = z.discriminatedUnion("action", [
     notNull: z.boolean().optional()
   })
 ])
+const ddicTechnicalSettingsPatch = z
+  .object({
+    dataClass: z.enum(["APPL0", "APPL1", "APPL2"]).optional(),
+    sizeCategory: z.number().int().min(0).max(4).optional(),
+    buffering: z
+      .enum(["notAllowed", "allowedButOff", "singleRecord", "generic", "full"])
+      .optional(),
+    genericKeyFields: z.number().int().min(1).optional(),
+    logDataChanges: z.boolean().optional()
+  })
+  .refine((value) => Object.values(value).some((item) => item !== undefined), {
+    message: "At least one technical setting must be supplied"
+  })
 const functionParameter = z.object({
   name: z.string(),
   typeName: z.string(),
@@ -708,7 +721,7 @@ export const toolContracts = {
   },
   append_ddic_transparent_table_fields: {
     description:
-      "Append nullable, non-key fields to one existing Z* or Y* transparent table with direct data-element fields while preserving every existing field and all table settings. Tables with Include or Append structures are rejected. Requires the current version and SHA-256 fingerprint from read_ddic_transparent_table, the exact package, an existing transport, and active data elements. Field removal, rename, type/key/nullability changes, technical-setting changes, automatic retries, and transport release are not supported.",
+      "Append nullable, non-key direct fields to one existing Z* or Y* transparent table while preserving its Include/Append components and all table settings. New direct fields are inserted before Append markers so the extension layout remains intact. Requires the current version and SHA-256 fingerprint from read_ddic_transparent_table, the exact package, an existing transport, and active data elements. Field removal, rename, type/key/nullability changes, technical-setting changes, automatic retries, and transport release are not supported.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
@@ -722,7 +735,7 @@ export const toolContracts = {
   },
   patch_ddic_transparent_table_fields: {
     description:
-      "Apply explicit remove, rename, or data-element/key/nullability updates to direct fields of one existing Z* or Y* transparent table. The complete active table definition and technical settings are preserved outside the requested changes. Requires the current version and SHA-256 fingerprint, exact package, existing transport, destructive-schema confirmation, and data-loss acknowledgement. MANDT, Include/Append layouts, technical settings, automatic retry/rollback, SAP lock clearing, and transport release are not supported.",
+      "Apply explicit remove, rename, or data-element/key/nullability updates to direct fields of one existing Z* or Y* transparent table. Existing Include and Append components are preserved byte-for-byte and cannot be edited through this tool. Requires the current version and SHA-256 fingerprint, exact package, existing transport, destructive-schema confirmation, and data-loss acknowledgement. Returns native Dictionary conversion evidence when SAP reports it. Automatic retry/rollback, SAP lock clearing, and transport release are not supported.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
@@ -733,6 +746,40 @@ export const toolContracts = {
       transportNumber: z.string(),
       confirmation: z.literal("DESTRUCTIVE_SCHEMA_CHANGE"),
       acknowledgeDataLoss: z.literal(true),
+      connectionId: z.string()
+    }
+  },
+  patch_ddic_transparent_table_settings: {
+    description:
+      "Patch supported DD09V technical settings of one existing Z* or Y* transparent table while preserving its complete field, Include, and Append layout. Supports data class, manually maintainable size categories 0-4, buffering mode/generic key count, and change logging. Requires a fresh table version/fingerprint, exact package, existing transport, and TECHNICAL_SETTINGS_CHANGE confirmation. Never releases transports or retries automatically.",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      expectedVersion: z.string(),
+      expectedFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      settings: ddicTechnicalSettingsPatch,
+      packageName: z.string(),
+      transportNumber: z.string(),
+      confirmation: z.literal("TECHNICAL_SETTINGS_CHANGE"),
+      connectionId: z.string()
+    }
+  },
+  read_ddic_table_conversion_status: {
+    description:
+      "Read the exact native TBATG conversion worklist for one transparent table and return a deterministic worklist fingerprint. Read-only; an empty result means no current TBATG entry, not proof that historical conversion data never existed.",
+    inputSchema: { objectName: z.string(), connectionId: z.string() }
+  },
+  recover_ddic_table_conversion: {
+    description:
+      "Resume only the exact native TBATG conversion worklist previously read for one Z* or Y* transparent table. Requires the current worklist fingerprint, exact package and existing transport, RECOVER_NATIVE_TABLE_CONVERSION confirmation, and explicit potential-data-loss acknowledgement. SAP standard conversion may commit internally. The service re-reads TBATG and the active table afterward, never retries automatically, and does not claim that already-lost field values can be reconstructed.",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      expectedWorklistFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      confirmation: z.literal("RECOVER_NATIVE_TABLE_CONVERSION"),
+      acknowledgePotentialDataLoss: z.literal(true),
       connectionId: z.string()
     }
   },
@@ -912,7 +959,7 @@ export const toolContracts = {
   },
   replace_string_in_abap_object: {
     description:
-      "Edit a Z* or Y* customer source by exact unique string replacement. Supported targets: classes, interfaces, programs, includes, function groups, function modules, function-group includes, DDL sources, and DCL sources. Standard owners and children are rejected before locking. The service rejects pre-existing inactive source, optionally checks expectedSourceFingerprint under the native SAP lock, saves with an explicit or existing transport, unlocks, and activates. It never creates or releases transports.",
+      "Edit a Z* or Y* customer source by exact unique string replacement. Supported targets: classes, interfaces, programs, includes, function groups, function modules, function-group includes, DDL sources, and DCL sources. Standard owners and children are rejected before locking. The service fails closed when inactive state is unavailable, rejects pre-existing inactive source, optionally checks expectedSourceFingerprint under the native SAP lock, saves with an explicit or existing transport, unlocks, and activates. Include activation uses an unambiguous SAP-provided main-program context. A saved-but-unverified result includes stage and source-fingerprint evidence and must not be retried as another replacement. It never creates or releases transports.",
     inputSchema: {
       ...writeOperationInput,
       fileUri: z.string(),
@@ -927,7 +974,7 @@ export const toolContracts = {
   },
   abap_activate: {
     description:
-      "Activate an explicit Z* or Y* ABAP object URI. Returns activation errors and leaves transport release to the user.",
+      "Activate one explicit Z* or Y* ABAP object URI without resaving source. Include activation requires an unambiguous SAP-provided main-program context. Success requires active-source readback to match the reviewed candidate. Returns activation errors and leaves transport release to the user.",
     inputSchema: {
       ...writeOperationInput,
       url: z.string()
