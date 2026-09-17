@@ -7,7 +7,8 @@ param(
     [switch]$ReplaceExisting,
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$')]
     [string]$CandidateSuffix,
-    [switch]$SkipRuntimeCheck
+    [switch]$SkipRuntimeCheck,
+    [switch]$AllowDirty
 )
 
 $ErrorActionPreference = "Stop"
@@ -150,6 +151,10 @@ $sourceCommit = & git -C $projectRoot rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone source commit." }
 $sourceStatus = @(& git -C $projectRoot status --porcelain --untracked-files=all)
 if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone working tree state." }
+if ($sourceStatus.Count -gt 0 -and -not $AllowDirty) {
+    $preview = ($sourceStatus | Select-Object -First 10) -join "; "
+    throw "Working tree has $($sourceStatus.Count) uncommitted change(s) and the artifact would not be reproducible from a commit: $preview. Commit or stash them first, or pass -AllowDirty to build an explicitly unreproducible artifact."
+}
 $fileHashes = [ordered]@{}
 Get-ChildItem -LiteralPath $packageRoot -File -Recurse |
     Where-Object { $_.FullName -notlike "*\node_modules\*" } |
@@ -179,6 +184,36 @@ $buildInfo | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $pack
 Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zipPath -CompressionLevel Optimal
 $artifactHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash
 "$artifactHash  $([IO.Path]::GetFileName($zipPath))" | Set-Content -LiteralPath $hashPath -Encoding ascii
+
+# 归档索引：release/ 目录不纳入版本控制，产物自身的权威溯源信息是包内 BUILD-INFO.json
+# （含 standaloneSourceCommit / standaloneSourceDirty / fileSha256）与对应的 git 标签。
+$indexPath = Join-Path $releaseRoot "INDEX.md"
+if (-not (Test-Path -LiteralPath $indexPath)) {
+    $header = @(
+        "# ORVANTA 发布归档索引",
+        "",
+        "本文件由 scripts/package-windows.ps1 追加维护，位于 release/ 目录，不纳入版本控制。",
+        "每个产物的权威溯源信息是包内 BUILD-INFO.json 与对应的 git 提交/标签；本索引只便于横向比对。",
+        "",
+        "| 构建时间 | 版本 | 产物 | SHA-256 | 提交 | 工作树 | Node |",
+        "| --- | --- | --- | --- | --- | --- | --- |"
+    )
+    Set-Content -LiteralPath $indexPath -Value $header -Encoding utf8
+}
+$commitShort = "$sourceCommit".Trim()
+if ($commitShort.Length -gt 7) { $commitShort = $commitShort.Substring(0, 7) }
+$dirtyLabel = $(if ($sourceStatus.Count -gt 0) { "dirty($($sourceStatus.Count))" } else { "clean" })
+$versionLabel = "$($packageJson.version)"
+if ($CandidateSuffix) { $versionLabel += "-$CandidateSuffix" }
+$indexRow = "| $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) | $versionLabel | $([IO.Path]::GetFileName($zipPath)) | $artifactHash | $commitShort | $dirtyLabel | v$NodeVersion |"
+Add-Content -LiteralPath $indexPath -Value $indexRow -Encoding utf8
+
+$retained = @(Get-ChildItem -LiteralPath $releaseRoot -Filter "orvanta-mcp-*-win-x64*.zip" |
+    Sort-Object LastWriteTime -Descending)
+if ($retained.Count -gt 5) {
+    $stale = ($retained | Select-Object -Skip 5 | ForEach-Object { $_.Name }) -join ", "
+    Write-Warning "release/ 现有 $($retained.Count) 个产物，超出保留窗口 5 个：$stale。脚本不会自动删除发布物，请人工确认后清理。"
+}
 
 [pscustomobject]@{
     Package = $packageRoot
