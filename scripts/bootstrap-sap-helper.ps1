@@ -114,6 +114,53 @@ $helperCapabilityOperations = @(
 )
 # <<< ORVANTA-CAPABILITY-TABLE
 
+# Capability table of Z_ORVANTA_MCP_DDIC_API. Entry format is the same as the
+# repository table above, but `sinceVersion` carries a different meaning here: the
+# DDIC CASE only sets lv_object_type/lv_write flags and the actual ev_version values
+# are emitted deep inside the shared code paths, so a per-branch scan cannot derive
+# them. Each opcode therefore records the contract minimum of the capability group
+# that owns it (src/capabilities.ts): ddic-helper-core 1.2,
+# ddic-helper-transparent-table 1.5, ddic-helper-controlled-delete 1.6,
+# ddic-helper-transparent-table-complex 1.7.
+# Parsed offline by test/helper-capabilities-payload.test.ts.
+# >>> ORVANTA-DDIC-CAPABILITY-TABLE
+$ddicCapabilityOperations = @(
+    "READ_DOMAIN|1.2|R",
+    "UPSERT_DOMAIN|1.2|W",
+    "READ_DATA_ELEMENT|1.2|R",
+    "UPSERT_DATA_ELEMENT|1.2|W",
+    "READ_STRUCTURE|1.2|R",
+    "UPSERT_STRUCTURE|1.2|W",
+    "READ_TABLE_TYPE|1.2|R",
+    "UPSERT_TABLE_TYPE|1.2|W",
+    "READ_TRANSPARENT_TABLE|1.5|R",
+    "CREATE_TRANSPARENT_TABLE|1.5|W",
+    "DELETE_DOMAIN|1.6|W",
+    "DELETE_DATA_ELEMENT|1.6|W",
+    "DELETE_STRUCTURE|1.6|W",
+    "DELETE_TRANSPARENT_TABLE|1.6|W",
+    "DELETE_TABLE_TYPE|1.6|W",
+    "APPEND_TRANSPARENT_TABLE_FIELDS|1.7|W",
+    "PATCH_TRANSPARENT_TABLE_FIELDS|1.7|W",
+    "PATCH_TRANSPARENT_TABLE_SETTINGS|1.7|W",
+    "RECOVER_TABLE_CONVERSION|1.7|W"
+)
+# <<< ORVANTA-DDIC-CAPABILITY-TABLE
+
+# The DDIC helper publishes no separately approved scopes.
+$ddicCapabilityScopes = @()
+
+$ddicCapabilityVersions = $ddicCapabilityOperations | ForEach-Object {
+    $ddicCapabilityTableParts = $_ -split "\|"
+    [version]$ddicCapabilityTableParts[1]
+}
+$ddicCapabilityMinVersion = (
+    $ddicCapabilityVersions | Sort-Object | Select-Object -First 1
+).ToString()
+$ddicCapabilityMaxVersion = (
+    $ddicCapabilityVersions | Sort-Object -Descending | Select-Object -First 1
+).ToString()
+
 # Separately approved scopes of the repository helper. Empty on purpose: the
 # REPORT_PARAMETERS scope belongs to Z_ORVANTA_OPS_READ
 # (scripts/report-parameters-source.mjs), not to this body. Add
@@ -815,6 +862,78 @@ function New-DdicObjectDiagnosticProgram {
 }
 
 function New-DdicFunctionSource {
+    # Self-description branch, same payload protocol as the repository helper. Only the
+    # helper name and the version table differ. The four placeholders must stay
+    # byte-identical to the repository block: New-InstallProgram detects them with the
+    # same literals and substitutes the SHA-256 of this body into them.
+    # >>> ORVANTA-DDIC-CAPABILITIES-SOURCE
+    $ddicCapabilityHashSlots = @(
+        "ORVANTAHASHSLOT1",
+        "ORVANTAHASHSLOT2",
+        "ORVANTAHASHSLOT3",
+        "ORVANTAHASHSLOT4"
+    )
+    $ddicCapabilityPackageValue = ([string]$PackageName).Replace("%", "%25").Replace("|", "%7C")
+    $ddicCapabilityTransportValue = (
+        @([string]$TransportNumber, [string]$TransportTask) | ForEach-Object {
+            $_.Replace("%", "%25").Replace("|", "%7C")
+        }
+    ) -join "|"
+    $ddicCapabilityBranchLines = @(
+        "    WHEN 'CAPABILITIES'.",
+        "      CLEAR ls_source.",
+        "      ls_source-line = 'HELPER|Z_ORVANTA_MCP_DDIC_API'.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'PROTOCOL|MIN|$ddicCapabilityMinVersion'.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'PROTOCOL|MAX|$ddicCapabilityMaxVersion'.",
+        "      APPEND ls_source TO it_source."
+    )
+    foreach ($ddicCapabilityOperation in $ddicCapabilityOperations) {
+        $ddicCapabilityParts = $ddicCapabilityOperation -split "\|"
+        $ddicCapabilityBranchLines += @(
+            "      CONCATENATE 'OPERATION|$($ddicCapabilityParts[0])' '$($ddicCapabilityParts[1])|$($ddicCapabilityParts[2])'",
+            "        INTO ls_source-line SEPARATED BY '|'.",
+            "      APPEND ls_source TO it_source."
+        )
+    }
+    foreach ($ddicCapabilityScope in $ddicCapabilityScopes) {
+        $ddicCapabilityBranchLines += @(
+            "      ls_source-line = 'SCOPE|$ddicCapabilityScope'.",
+            "      APPEND ls_source TO it_source."
+        )
+    }
+    $ddicCapabilityBranchLines += @(
+        "      CLEAR ls_source.",
+        "      CONCATENATE 'SOURCE|HASH|' '$($ddicCapabilityHashSlots[0])' '$($ddicCapabilityHashSlots[1])'",
+        "        '$($ddicCapabilityHashSlots[2])' '$($ddicCapabilityHashSlots[3])' INTO ls_source-line.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'SOURCE|PACKAGE|$ddicCapabilityPackageValue'.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'SOURCE|TRANSPORT|$ddicCapabilityTransportValue'.",
+        "      APPEND ls_source TO it_source.",
+        "      CONCATENATE sy-sysid sy-mandt INTO lv_payload_value",
+        "        SEPARATED BY '/'.",
+        "      REPLACE ALL OCCURRENCES OF '%' IN lv_payload_value WITH '%25'.",
+        "      REPLACE ALL OCCURRENCES OF '|' IN lv_payload_value WITH '%7C'.",
+        "      CONCATENATE 'RUNTIME|HOST' lv_payload_value INTO ls_source-line",
+        "        SEPARATED BY '|'.",
+        "      APPEND ls_source TO it_source.",
+        "      CONCATENATE sy-datum sy-uzeit INTO lv_payload_value.",
+        "      REPLACE ALL OCCURRENCES OF '%' IN lv_payload_value WITH '%25'.",
+        "      REPLACE ALL OCCURRENCES OF '|' IN lv_payload_value WITH '%7C'.",
+        "      lv_payload_index_text = sy-tzone.",
+        "      CONDENSE lv_payload_index_text NO-GAPS.",
+        "      CONCATENATE 'RUNTIME|TIME' lv_payload_value lv_payload_index_text",
+        "        INTO ls_source-line SEPARATED BY '|'.",
+        "      APPEND ls_source TO it_source.",
+        "      ev_status = 'S'.",
+        "      ev_code = 'CAPABILITIES'.",
+        "      ev_version = '$ddicCapabilityMaxVersion'.",
+        "      ev_message = 'ORVANTA helper capabilities'.",
+        "      RETURN."
+    )
+    # <<< ORVANTA-DDIC-CAPABILITIES-SOURCE
     return @(
         "  DATA ls_dd01v TYPE dd01v.",
         "  DATA lt_dd07v TYPE TABLE OF dd07v.",
@@ -909,6 +1028,8 @@ function New-DdicFunctionSource {
         "  FIELD-SYMBOLS <ls_field> TYPE dd03p.",
         "  FIELD-SYMBOLS <ls_tbatg> TYPE tbatg.",
         "  FIELD-SYMBOLS <lv_component> TYPE any.",
+        "  DATA lv_payload_value TYPE string.",
+        "  DATA lv_payload_index_text TYPE string.",
         "  DEFINE add_payload.",
         "    CLEAR ls_source.",
         "    lv_index_text = &2.",
@@ -921,7 +1042,8 @@ function New-DdicFunctionSource {
         "      SEPARATED BY '|'.",
         "    APPEND ls_source TO it_source.",
         "  END-OF-DEFINITION.",
-        "  CASE iv_operation.",
+        "  CASE iv_operation."
+        ) + $ddicCapabilityBranchLines + @(
         "    WHEN 'READ_DOMAIN'.",
         "      lv_object_type = 'DOMA'.",
         "    WHEN 'UPSERT_DOMAIN'.",

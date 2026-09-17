@@ -360,3 +360,139 @@ test("CAPABILITIES is a read-only self-description without version negotiation",
     previous = index
   }
 })
+
+// --- Z_ORVANTA_MCP_DDIC_API, the second helper that carries the same protocol -------------
+// Its sinceVersion values are contract minimums (the DDIC CASE only sets lv_object_type and
+// lv_write flags, so a per-branch ev_version scan cannot derive them); they are therefore
+// cross-checked against src/capabilities.ts instead of against the CASE.
+
+const ddicTableBlock = sliceBetween(
+  "# >>> ORVANTA-DDIC-CAPABILITY-TABLE",
+  "# <<< ORVANTA-DDIC-CAPABILITY-TABLE"
+)
+const ddicEmissionBlock = sliceBetween(
+  "# >>> ORVANTA-DDIC-CAPABILITIES-SOURCE",
+  "# <<< ORVANTA-DDIC-CAPABILITIES-SOURCE"
+)
+
+const ddicOperations: Operation[] = [
+  ...ddicTableBlock.matchAll(/"([A-Z0-9_]+)\|(\d+\.\d+)\|([RW])"/g)
+].map((match) => ({
+  opcode: String(match[1]),
+  since: String(match[2]),
+  mode: String(match[3]) as "R" | "W"
+}))
+
+const ddicOpcodes = ddicOperations.map((operation) => operation.opcode)
+
+// The DDIC CASE is the first CASE iv_operation in the script (inside New-DdicFunctionSource).
+const ddicCaseStart = source.indexOf('"  CASE iv_operation."')
+assert.ok(ddicCaseStart > 0, "DDIC CASE iv_operation not found")
+const ddicCaseAbapLines: string[] = []
+for (const rawLine of source.slice(ddicCaseStart).split("\n")) {
+  const match = /^\s*"(.*?)",?\s*$/.exec(rawLine)
+  if (!match) continue
+  const abap = String(match[1])
+  if (abap === "  ENDCASE.") break
+  ddicCaseAbapLines.push(abap)
+}
+
+test("the DDIC table is the only opcode list for the DDIC CASE", () => {
+  const caseOpcodes: string[] = []
+  for (const abap of ddicCaseAbapLines) {
+    const when = /^\s{4}WHEN ('([A-Z0-9_]+)'\.)$/.exec(abap)
+    if (!when) continue
+    assert.doesNotMatch(abap, /\bOR\b/, `DDIC WHEN clause must be single-opcode: ${abap}`)
+    caseOpcodes.push(String(when[2]))
+  }
+  assert.ok(caseOpcodes.length > 0, "no DDIC WHEN clauses found")
+  assert.deepEqual(
+    [...ddicOpcodes].sort(),
+    [...caseOpcodes].sort(),
+    "the DDIC table and the DDIC CASE must list the same opcodes"
+  )
+})
+
+test("the DDIC table matches the service-side SapDdicOperation union", async () => {
+  const backend = await readFile("src/backend.ts", "utf8")
+  const unionStart = backend.indexOf("export type SapDdicOperation =")
+  const unionEnd = backend.indexOf("export interface SapDdicRequest")
+  assert.ok(unionStart > 0 && unionEnd > unionStart, "SapDdicOperation union not found")
+  const unionMembers = [
+    ...backend.slice(unionStart, unionEnd).matchAll(/\|\s*"([A-Z0-9_]+)"/g)
+  ].map((match) => String(match[1]))
+  assert.ok(unionMembers.length > 0, "union members not parsed")
+  const serviceOpcodes = unionMembers.filter((member) => member !== "CAPABILITIES")
+  assert.deepEqual(
+    [...ddicOpcodes].sort(),
+    [...serviceOpcodes].sort(),
+    "the DDIC table must describe exactly the operations the service can request"
+  )
+  assert.ok(
+    unionMembers.includes("CAPABILITIES"),
+    "SapDdicOperation must accept the CAPABILITIES probe"
+  )
+})
+
+test("the DDIC since values are the service contract minimums", async () => {
+  const catalog = await readFile("src/capabilities.ts", "utf8")
+  const contractVersions = [
+    ...catalog.matchAll(/helperCapability\("ddic-helper-[a-z-]+",\s*ddicHelper,\s*"(\d+\.\d+)"/g)
+  ].map((match) => String(match[1]))
+  assert.ok(contractVersions.length > 0, "ddic-helper-* catalog entries not parsed")
+  assert.deepEqual(
+    [...new Set(ddicOperations.map((operation) => operation.since))].sort(),
+    [...new Set(contractVersions)].sort(),
+    "every DDIC sinceVersion must be a ddic-helper-* contract minimum"
+  )
+  const groupSizes: Record<string, number> = {}
+  for (const operation of ddicOperations) {
+    groupSizes[operation.since] = (groupSizes[operation.since] ?? 0) + 1
+  }
+  assert.deepEqual(groupSizes, { "1.2": 8, "1.5": 2, "1.6": 5, "1.7": 4 })
+
+  const versions = [...new Set(ddicOperations.map((operation) => operation.since))].sort()
+  assert.equal(versions[0], "1.2", "PROTOCOL|MIN must derive to 1.2")
+  assert.equal(versions[versions.length - 1], "1.7", "PROTOCOL|MAX must derive to 1.7")
+})
+
+test("the DDIC branch reuses the repository hash slots and names its own helper", () => {
+  const slotsOf = (block: string): string[] =>
+    [...block.matchAll(/"(ORVANTAHASHSLOT\d)"/g)].map((match) => String(match[1]))
+  assert.deepEqual(
+    slotsOf(ddicEmissionBlock),
+    slotsOf(emissionBlock),
+    "both bodies must carry byte-identical placeholders so New-InstallProgram substitutes both"
+  )
+  assert.match(ddicEmissionBlock, /'HELPER\|Z_ORVANTA_MCP_DDIC_API'/)
+  assert.match(emissionBlock, /'HELPER\|\$FunctionName'/)
+})
+
+test("the DDIC branch is read-only and declares its own payload work fields", () => {
+  assert.match(ddicEmissionBlock, /ev_status = 'S'\./)
+  assert.match(ddicEmissionBlock, /ev_code = 'CAPABILITIES'\./)
+  assert.match(ddicEmissionBlock, /"      RETURN\."/)
+  assert.doesNotMatch(
+    ddicEmissionBlock,
+    /\b(INSERT|UPDATE|DELETE|MODIFY|COMMIT WORK|CALL FUNCTION)\b/
+  )
+  assert.doesNotMatch(ddicEmissionBlock, /\bWRITE\b/, "WRITE ... TO rejects STRING targets")
+  const abapLines = [...ddicEmissionBlock.matchAll(/^\s*"(.*?)",?\s*$/gm)].map((match) =>
+    String(match[1])
+  )
+  assert.ok(abapLines.length > 0, "no ABAP lines parsed from the DDIC branch")
+  for (const abap of abapLines) {
+    // Lines carrying a PowerShell interpolation ($(...)) are longer in the generator text than
+    // in the generated ABAP, where each slot collapses to a 16-character placeholder. The
+    // evaluated length is enforced by the generator's own 72-character throw and verified
+    // offline against the generated body.
+    if (!abap.includes("$(")) {
+      assert.ok(abap.length <= 72, `generated DDIC line exceeds 72 characters: ${abap}`)
+    }
+    if (/\bCONCATENATE\b/.test(abap)) {
+      assert.doesNotMatch(abap, /\bsy-tzone\b/, "sy-tzone must never be a CONCATENATE operand")
+    }
+  }
+  assert.match(source, /"  DATA lv_payload_value TYPE string\."/)
+  assert.match(source, /"  DATA lv_payload_index_text TYPE string\."/)
+})
