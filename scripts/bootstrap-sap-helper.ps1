@@ -2519,8 +2519,10 @@ function New-InstallProgram {
     # Z_ORVANTA_MCP_DYNPRO_API. Package/transport values are escaped here, at
     # generation time; the runtime values (hash, sy-sysid/sy-mandt, sy-datum/sy-uzeit,
     # the sy-tzone offset) cannot contain the payload separators.
-    # Only character-like fields (C/N/D/T/STRING) may be CONCATENATE operands: sy-tzone is
-    # numeric, so it is written into a character field first (GENERATE_ERROR 943 otherwise).
+    # Only character-like fields (C/N/D/T/STRING) may be CONCATENATE operands and
+    # WRITE ... TO rejects STRING targets, so the numeric sy-tzone offset is assigned
+    # to a STRING work field first (GENERATE_ERROR 943/944 otherwise). The converted
+    # digits cannot contain the payload separators, so no REPLACE is needed there.
     # >>> ORVANTA-CAPABILITIES-SOURCE
     $capabilityHashSlots = @(
         "ORVANTAHASHSLOT1",
@@ -2577,11 +2579,10 @@ function New-InstallProgram {
         "      CONCATENATE sy-datum sy-uzeit INTO lv_payload_value.",
         "      REPLACE ALL OCCURRENCES OF '%' IN lv_payload_value WITH '%25'.",
         "      REPLACE ALL OCCURRENCES OF '|' IN lv_payload_value WITH '%7C'.",
-        "      CONCATENATE 'RUNTIME|TIME' lv_payload_value INTO ls_source-line",
-        "        SEPARATED BY '|'.",
-        "      WRITE sy-tzone TO lv_payload_value.",
-        "      CONCATENATE ls_source-line lv_payload_value INTO ls_source-line",
-        "        SEPARATED BY '|'.",
+        "      lv_payload_index_text = sy-tzone.",
+        "      CONDENSE lv_payload_index_text NO-GAPS.",
+        "      CONCATENATE 'RUNTIME|TIME' lv_payload_value lv_payload_index_text",
+        "        INTO ls_source-line SEPARATED BY '|'.",
         "      APPEND ls_source TO it_source.",
         "      ev_status = 'S'.",
         "      ev_code = 'CAPABILITIES'.",

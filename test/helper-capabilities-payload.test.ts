@@ -201,6 +201,31 @@ test("the payload rows keep their protocol shape", () => {
   assert.match(emissionBlock, /-join "\|"/)
 })
 
+test("the RUNTIME|TIME row converts the numeric sy-tzone to text first", () => {
+  // Regression guard for the deployed GENERATE_ERROR 943/944: CONCATENATE only accepts
+  // character-like operands (so sy-tzone cannot be passed directly) and WRITE ... TO
+  // rejects STRING targets (so the offset must be assigned to a STRING work field).
+  assert.doesNotMatch(emissionBlock, /CONCATENATE[^\n]*sy-tzone/)
+  assert.doesNotMatch(emissionBlock, /WRITE sy-tzone TO/)
+  const conversion = /^\s*"      ([A-Za-z0-9_]+) = sy-tzone\."\s*,?\s*$/m.exec(emissionBlock)
+  assert.ok(conversion, "sy-tzone must be assigned to a character work field")
+  const workField = String(conversion[1])
+  assert.match(emissionBlock, new RegExp(`CONDENSE ${workField} NO-GAPS\\.`))
+  assert.match(
+    emissionBlock,
+    new RegExp(`CONCATENATE 'RUNTIME\\|TIME' lv_payload_value ${workField}`)
+  )
+  const bodyStart = source.indexOf("$repositoryFunctionSource = @(")
+  const bodyEnd = source.indexOf(
+    '$functionSource = if ($FunctionName -eq "Z_ORVANTA_MCP_DDIC_API")'
+  )
+  assert.match(
+    source.slice(bodyStart, bodyEnd),
+    new RegExp(`DATA ${workField} TYPE string\\.`),
+    `${workField} must be declared as STRING`
+  )
+})
+
 test("the SCOPE rows come from the scope table", () => {
   const scopeBlock = sliceBetween(
     "# <<< ORVANTA-CAPABILITY-TABLE",
@@ -254,8 +279,9 @@ test("SOURCE|HASH is a reproducible placeholder substitution", () => {
 test("the CAPABILITIES branch only uses character-like operands", () => {
   // ABAP CONCATENATE and `=` accept only character-like operands (C, N, D, T, STRING).
   // sy-tzone is numeric: using it directly raises GENERATE_ERROR 943 ("must be a
-  // character-type data object") and the helper is left without an active version, as
-  // happened during the first w200 deployment attempt. It must go through WRITE ... TO.
+  // character-type data object") and WRITE ... TO raises GENERATE_ERROR 944 for STRING
+  // targets. Both were observed on w200 and each left a helper without an active version.
+  // The offset is therefore converted by assignment to a character work field.
   const abapLines = emissionBlock
     .split("\n")
     .map((line) => /^\s*"(.*?)",?\s*$/.exec(line)?.[1])
@@ -279,15 +305,19 @@ test("the CAPABILITIES branch only uses character-like operands", () => {
 
   const tzoneLines = abapLines.filter((line) => /\bsy-tzone\b/.test(line))
   assert.equal(tzoneLines.length, 1, "sy-tzone must be used exactly once")
-  assert.match(tzoneLines[0] ?? "", /^\s*WRITE sy-tzone TO [A-Za-z0-9_]+\.$/)
+  const conversion = /^\s*([A-Za-z0-9_]+) = sy-tzone\.$/.exec(tzoneLines[0] ?? "")
+  assert.ok(conversion, `sy-tzone must be converted by assignment, got: ${tzoneLines[0]}`)
+  const workField = String(conversion?.[1])
+  assert.match(emissionBlock, new RegExp(`CONDENSE ${workField} NO-GAPS\\.`))
+  assert.match(
+    emissionBlock,
+    new RegExp(`CONCATENATE 'RUNTIME\\|TIME' lv_payload_value ${workField}`)
+  )
   for (const line of abapLines) {
     if (/\bCONCATENATE\b/.test(line)) {
       assert.doesNotMatch(line, /\bsy-tzone\b/, "sy-tzone must never be a CONCATENATE operand")
     }
   }
-  // The offset is appended to the already-built timestamp row, keeping RUNTIME|TIME at
-  // four fields without introducing a second temporary variable.
-  assert.match(emissionBlock, /CONCATENATE ls_source-line lv_payload_value INTO ls_source-line/)
 })
 
 test("CAPABILITIES is a read-only self-description without version negotiation", () => {
