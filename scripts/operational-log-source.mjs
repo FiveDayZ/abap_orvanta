@@ -1,9 +1,174 @@
 // Authored deployment input, not a downloaded SAP source mirror.
+import { createHash } from "node:crypto"
 import { jobSpoolBranch, jobSpoolDeclarations } from "./job-spool-source.mjs"
 import { reportParameterBranch, reportParameterDeclarations } from "./report-parameters-source.mjs"
 
+// Function module every variant of this body is generated for: Z_ORVANTA_OPS_READ in function
+// group ZORVANTA_LOG (src/operational-logs.ts OPERATIONAL_LOG_HELPER, scripts/deploy-job-spool.mjs
+// and scripts/deploy-report-parameters.mjs). The generator itself never named it before.
+export const operationalLogFunctionName = "Z_ORVANTA_OPS_READ"
+
+// CAPABILITIES self-description (docs/helper-capabilities-protocol.md 3.1/3.2/3.3).
+//
+// `since` is the protocol revision of the reply envelope that the opcode's own branch answers
+// with: every branch reaches the `fail_reply` macro, whose lv_base carries '"version":"1"'.
+// It is written as x.y so PROTOCOL|MIN / PROTOCOL|MAX stay comparable with the other helpers.
+// This table is the ONLY opcode list for Z_ORVANTA_OPS_READ: the OPERATION rows, PROTOCOL|MIN
+// and PROTOCOL|MAX are derived from it and never written a second time. `requires` gates an
+// opcode on the optional generator feature that compiles its branch in; the internal
+// JOB_BODY_CHECK / SYSTEM_BODY_CHECK / JOB_LOG_DIAGNOSTIC alignment aliases are request
+// redirects, not operations, and are deliberately not listed. Parsed offline by
+// test/helper-capabilities-generators.test.ts.
+// >>> ORVANTA-CAPABILITY-TABLE
+export const operationalLogOperations = [
+  { opcode: "JOB_SPOOL", since: "1.0", mode: "R", requires: "spool" },
+  { opcode: "JOB_DETAILS", since: "1.0", mode: "R" },
+  { opcode: "JOB_LOG", since: "1.0", mode: "R" },
+  { opcode: "JOB_SEARCH", since: "1.0", mode: "R" },
+  { opcode: "SYSTEM_READ", since: "1.0", mode: "R" },
+  { opcode: "REPORT_PARAMETERS", since: "1.0", mode: "R", requires: "parameters" }
+]
+// <<< ORVANTA-CAPABILITY-TABLE
+const compareProtocolVersions = (left, right) => {
+  const [leftMajor = 0, leftMinor = 0] = left.split(".").map(Number)
+  const [rightMajor = 0, rightMinor = 0] = right.split(".").map(Number)
+  return leftMajor - rightMajor || leftMinor - rightMinor
+}
+
+// Deployment facts published as SOURCE|PACKAGE and SOURCE|TRANSPORT. Z_ORVANTA_OPS_READ is
+// deployed in package ZABAP with transport request GR2K923421 and task GR2K923422
+// (scripts/deploy-job-spool.mjs, scripts/deploy-report-parameters.mjs, docs/diagnostic-suite.md).
+export const operationalLogDeployment = {
+  packageName: "ZABAP",
+  transportRequest: "GR2K923421",
+  transportTask: "GR2K923422"
+}
+
+// Four 16-character placeholders make SOURCE|HASH self-referential: the generator hashes the
+// finished body while the placeholders are still in it, then writes that SHA-256 into the same
+// slots in order (no length change), so regenerating the same body reproduces the same hash.
+// Same slot names and algorithm as scripts/bootstrap-sap-helper.ps1.
+const operationalCapabilityHashSlots = [
+  "ORVANTAHASHSLOT1",
+  "ORVANTAHASHSLOT2",
+  "ORVANTAHASHSLOT3",
+  "ORVANTAHASHSLOT4"
+]
+// A payload value must not be able to inject a row separator or an escape sequence.
+const escapeCapabilityField = (value) => value.replaceAll("%", "%25").replaceAll("|", "%7C")
+const injectCapabilityHash = (lines) => {
+  const digest = createHash("sha256").update(lines.join("\n"), "utf8").digest("hex")
+  return lines.map((line) =>
+    operationalCapabilityHashSlots.reduce(
+      (text, slot, index) => text.replaceAll(slot, digest.slice(index * 16, index * 16 + 16)),
+      line
+    )
+  )
+}
+
+// The CAPABILITIES branch emitted as the first WHEN of CASE iv_action. One ABAP line per
+// payload row: the rows below are the only place where the opcode list, the protocol range,
+// the deployment facts and the hash slots are written into ABAP. The reply reuses this
+// helper's only response channel (the EV_RESULT JSON string) and carries the rows as the
+// "payload" array, so the existing JSON contract of this helper stays intact. The branch
+// returns immediately and never reaches the read logic that follows the CASE.
+// Only character-like fields (C/N/D/T/STRING) may be CONCATENATE operands and WRITE ... TO
+// rejects STRING targets: the numeric sy-tzone offset is assigned to a STRING work field
+// first (GENERATE_ERROR 943/944 otherwise), and the branch never uses WRITE.
+// >>> ORVANTA-CAPABILITIES-SOURCE
+function buildOperationalCapabilityBranch(operations) {
+  if (operations.length === 0) throw new Error("operationalLogOperations is empty")
+  const versions = operations.map((operation) => operation.since).sort(compareProtocolVersions)
+  const rows = [
+    `HELPER|${operationalLogFunctionName}`,
+    `PROTOCOL|MIN|${versions[0]}`,
+    `PROTOCOL|MAX|${versions.at(-1)}`,
+    ...operations.map(
+      (operation) => `OPERATION|${operation.opcode}|${operation.since}|${operation.mode}`
+    ),
+    `SOURCE|HASH|${operationalCapabilityHashSlots.join("")}`,
+    `SOURCE|PACKAGE|${escapeCapabilityField(operationalLogDeployment.packageName)}`,
+    `SOURCE|TRANSPORT|${escapeCapabilityField(
+      operationalLogDeployment.transportRequest
+    )}|${escapeCapabilityField(operationalLogDeployment.transportTask)}`
+  ]
+  const lines = ["  WHEN 'CAPABILITIES'.", "    CLEAR lt_capability."]
+  for (const row of rows) {
+    if (row.startsWith("SOURCE|HASH|")) {
+      lines.push(
+        `    CONCATENATE 'SOURCE|HASH|' '${operationalCapabilityHashSlots[0]}'`,
+        `      '${operationalCapabilityHashSlots[1]}' '${operationalCapabilityHashSlots[2]}'`,
+        `      '${operationalCapabilityHashSlots[3]}' INTO lv_capability.`,
+        "    APPEND lv_capability TO lt_capability."
+      )
+      continue
+    }
+    lines.push(`    APPEND '${row}' TO lt_capability.`)
+  }
+  lines.push(
+    // sy-sysid, sy-mandt, sy-datum and sy-uzeit are character-like, so they are legal
+    // CONCATENATE operands; sy-tzone is numeric and must be converted by assignment.
+    "    CONCATENATE sy-sysid sy-mandt INTO lv_capability_value",
+    "      SEPARATED BY '/'.",
+    "    REPLACE ALL OCCURRENCES OF '%' IN lv_capability_value WITH '%25'.",
+    "    REPLACE ALL OCCURRENCES OF '|' IN lv_capability_value WITH '%7C'.",
+    "    CONCATENATE 'RUNTIME|HOST|' lv_capability_value",
+    "      INTO lv_capability.",
+    "    APPEND lv_capability TO lt_capability.",
+    "    CONCATENATE sy-datum sy-uzeit INTO lv_capability_value.",
+    "    REPLACE ALL OCCURRENCES OF '%' IN lv_capability_value WITH '%25'.",
+    "    REPLACE ALL OCCURRENCES OF '|' IN lv_capability_value WITH '%7C'.",
+    "    lv_capability = sy-tzone.",
+    "    CONDENSE lv_capability NO-GAPS.",
+    "    CONCATENATE 'RUNTIME|TIME|' lv_capability_value '|' lv_capability",
+    "      INTO lv_capabilities.",
+    "    APPEND lv_capabilities TO lt_capability.",
+    "    CLEAR lv_capabilities.",
+    "    LOOP AT lt_capability INTO lv_capability.",
+    "      IF sy-tabix > 1.",
+    "        CONCATENATE lv_capabilities ',' INTO lv_capabilities.",
+    "      ENDIF.",
+    "      CONCATENATE lv_capabilities '\"' lv_capability '\"'",
+    "        INTO lv_capabilities.",
+    "    ENDLOOP.",
+    '    CONCATENATE \'{"version":"1","status":"S",\'',
+    '      \'"code":"CAPABILITIES",\'',
+    '      \'"message":"ORVANTA helper capabilities",\'',
+    '      \'"readOnly":true,"payload":[\' INTO lv_capability.',
+    "    CONCATENATE lv_capability lv_capabilities ']}' INTO ev_result.",
+    "    RETURN."
+  )
+  return lines
+}
+// <<< ORVANTA-CAPABILITIES-SOURCE
+
+// Generated lines that were already longer than the 72-character ABAP source limit before the
+// CAPABILITIES branch existed: three comments contributed by the job-spool include and the base
+// variant's own comment, which scripts/deploy-job-spool.mjs repairs at deploy time. They are
+// listed explicitly so any new over-length line - especially a generated statement - fails here
+// instead of reaching SAP. Exported for test/helper-capabilities-generators.test.ts.
+export const operationalOverLengthComments = [
+  "* No direct RFC table bypass: exact current-client job and SHOW checked above.",
+  "* Reject configured alternate authorization modes before any customer exit.",
+  "* Use the SAP spool permission path; job display is not spool authorization.",
+  "* Clear saved list memory before rendering, including reused RFC sessions."
+]
+// scripts/bootstrap-sap-helper.ps1 throws on the same condition.
+const assertGeneratedLineWidth = (lines) => {
+  for (const line of lines) {
+    if (line.length <= 72 || operationalOverLengthComments.includes(line)) continue
+    throw new Error(`Generated function source exceeds 72 characters: ${line}`)
+  }
+}
+
 function buildOperationalLogSource(includeSpool, includeParameters = false) {
-  return String.raw`
+  const operations = operationalLogOperations.filter(
+    (operation) =>
+      (operation.requires !== "spool" || includeSpool) &&
+      (operation.requires !== "parameters" || includeParameters)
+  )
+  const lines = injectCapabilityHash(
+    String.raw`
 DATA: lt_jobs TYPE STANDARD TABLE OF tbtco,
       ls_job TYPE tbtco, ls_job_check TYPE tbtco,
       lt_steps TYPE STANDARD TABLE OF tbtcp,
@@ -58,7 +223,10 @@ DATA: lt_jobs TYPE STANDARD TABLE OF tbtco,
       lv_offset TYPE i, lv_data_offset TYPE i,
       lv_length TYPE i, lv_take TYPE i, lv_word_index TYPE i,
       lv_dollars TYPE c,
-      lv_message_id TYPE c LENGTH 3.
+      lv_message_id TYPE c LENGTH 3,
+      lt_capability TYPE STANDARD TABLE OF string,
+      lv_capability TYPE string, lv_capabilities TYPE string,
+      lv_capability_value TYPE string.
 ${includeParameters ? reportParameterDeclarations + "\n" : ""}${includeSpool ? jobSpoolDeclarations + "\n" : ""}RANGES: lr_user FOR ls_job-sdluname,
         lr_status FOR ls_job-status.
 FIELD-SYMBOLS: <job_param> TYPE btcltext,
@@ -134,7 +302,10 @@ IF iv_action = 'JOB_LOG_DIAGNOSTIC'.
   lv_diagnostic = 'X'.
   iv_action = 'JOB_LOG'.
 ENDIF.
-IF iv_action <> 'JOB_SEARCH' AND iv_action <> 'JOB_LOG'
+* CAPABILITIES answers before the read validation: the first WHEN of
+* the CASE below returns the self-description, not business logic.
+IF iv_action <> 'CAPABILITIES'
+   AND iv_action <> 'JOB_SEARCH' AND iv_action <> 'JOB_LOG'
    AND iv_action <> 'JOB_DETAILS'
 ${includeSpool ? "   AND iv_action <> 'JOB_SPOOL'\n" : ""}   AND iv_action <> 'SYSTEM_READ'.
   RETURN.
@@ -150,6 +321,7 @@ CALL 'C_SAPGPARAM' ID 'NAME' FIELD 'rdisp/myname'
 IF sy-subrc <> 0 OR lv_server IS INITIAL. RETURN. ENDIF.
 lv_json = ''.
 CASE iv_action.
+${buildOperationalCapabilityBranch(operations).join("\n")}
 ${
   includeSpool
     ? String.raw`  WHEN 'JOB_SPOOL'.
@@ -788,8 +960,11 @@ CATCH cx_root.
   RETURN.
 ENDTRY.
 `
-    .trim()
-    .split("\n")
+      .trim()
+      .split("\n")
+  )
+  assertGeneratedLineWidth(lines)
+  return lines
 }
 
 export const operationalLogSource = buildOperationalLogSource(false)

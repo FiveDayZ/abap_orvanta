@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+
 // Authored deployment candidate. Importing this module never connects to or writes SAP.
 export const maintenanceHelperDefinition = {
   functionName: "Z_ORVANTA_MAINT_READ",
@@ -17,8 +19,153 @@ export const maintenanceHelperDefinition = {
   exportParameters: [{ name: "EV_RESULT", typeName: "STRING", passByValue: true }]
 }
 
-export const maintenanceDiagnosticSource = String.raw`
-DATA: lt_locks TYPE STANDARD TABLE OF seqg3,
+// CAPABILITIES self-description (docs/helper-capabilities-protocol.md 3.1/3.2/3.3).
+//
+// `since` is the protocol revision of the reply envelope that the opcode's own CASE branch
+// answers with: every branch reaches the `fail_reply` macro, whose lv_base carries
+// '"version":"1"'. It is written as x.y so PROTOCOL|MIN / PROTOCOL|MAX stay comparable with
+// the other helpers. This table is the ONLY opcode list for Z_ORVANTA_MAINT_READ: the
+// OPERATION rows, PROTOCOL|MIN and PROTOCOL|MAX are derived from it and never written a
+// second time. Parsed offline by test/helper-capabilities-generators.test.ts.
+// >>> ORVANTA-CAPABILITY-TABLE
+export const maintenanceDiagnosticOperations = [
+  { opcode: "LOCK_SEARCH", since: "1.0", mode: "R" },
+  { opcode: "UPDATE_SEARCH", since: "1.0", mode: "R" },
+  { opcode: "UPDATE_DETAIL", since: "1.0", mode: "R" }
+]
+// <<< ORVANTA-CAPABILITY-TABLE
+if (maintenanceDiagnosticOperations.length === 0) {
+  throw new Error("maintenanceDiagnosticOperations must not be empty")
+}
+const compareProtocolVersions = (left, right) => {
+  const [leftMajor = 0, leftMinor = 0] = left.split(".").map(Number)
+  const [rightMajor = 0, rightMinor = 0] = right.split(".").map(Number)
+  return leftMajor - rightMajor || leftMinor - rightMinor
+}
+const maintenanceDiagnosticVersions = maintenanceDiagnosticOperations
+  .map((operation) => operation.since)
+  .sort(compareProtocolVersions)
+const maintenanceDiagnosticMinProtocol = maintenanceDiagnosticVersions[0]
+const maintenanceDiagnosticMaxProtocol = maintenanceDiagnosticVersions.at(-1)
+
+// Deployment facts published as SOURCE|PACKAGE and SOURCE|TRANSPORT. Z_ORVANTA_MAINT_READ is
+// still an undeployed local candidate (docs/maintenance-diagnostics.md): neither a package nor
+// a transport request/task is assigned to it, so the rows stay empty instead of claiming a
+// deployment that does not exist. The approving deployment step must supply the real values.
+export const maintenanceDiagnosticDeployment = {
+  packageName: "",
+  transportRequest: "",
+  transportTask: ""
+}
+
+// Four 16-character placeholders make SOURCE|HASH self-referential: the generator hashes the
+// finished body while the placeholders are still in it, then writes that SHA-256 into the same
+// slots in order (no length change), so regenerating the same body reproduces the same hash.
+// Same slot names and algorithm as scripts/bootstrap-sap-helper.ps1.
+const maintenanceCapabilityHashSlots = [
+  "ORVANTAHASHSLOT1",
+  "ORVANTAHASHSLOT2",
+  "ORVANTAHASHSLOT3",
+  "ORVANTAHASHSLOT4"
+]
+// A payload value must not be able to inject a row separator or an escape sequence.
+const escapeCapabilityField = (value) => value.replaceAll("%", "%25").replaceAll("|", "%7C")
+const injectCapabilityHash = (lines) => {
+  const digest = createHash("sha256").update(lines.join("\n"), "utf8").digest("hex")
+  return lines.map((line) =>
+    maintenanceCapabilityHashSlots.reduce(
+      (text, slot, index) => text.replaceAll(slot, digest.slice(index * 16, index * 16 + 16)),
+      line
+    )
+  )
+}
+
+// The CAPABILITIES branch emitted as the first WHEN of CASE iv_action. One ABAP line per
+// payload row: the rows below are the only place where the opcode list, the protocol range,
+// the deployment facts and the hash slots are written into ABAP. The reply reuses this
+// helper's only response channel (the EV_RESULT JSON string) and carries the rows as the
+// "payload" array, so the existing JSON contract of this helper stays intact.
+// Only character-like fields (C/N/D/T/STRING) may be CONCATENATE operands and WRITE ... TO
+// rejects STRING targets: the numeric sy-tzone offset is assigned to a STRING work field
+// first (GENERATE_ERROR 943/944 otherwise), and the branch never uses WRITE.
+// >>> ORVANTA-CAPABILITIES-SOURCE
+function buildMaintenanceCapabilityBranch() {
+  const rows = [
+    `HELPER|${maintenanceHelperDefinition.functionName}`,
+    `PROTOCOL|MIN|${maintenanceDiagnosticMinProtocol}`,
+    `PROTOCOL|MAX|${maintenanceDiagnosticMaxProtocol}`,
+    ...maintenanceDiagnosticOperations.map(
+      (operation) => `OPERATION|${operation.opcode}|${operation.since}|${operation.mode}`
+    ),
+    `SOURCE|HASH|${maintenanceCapabilityHashSlots.join("")}`,
+    `SOURCE|PACKAGE|${escapeCapabilityField(maintenanceDiagnosticDeployment.packageName)}`,
+    `SOURCE|TRANSPORT|${escapeCapabilityField(
+      maintenanceDiagnosticDeployment.transportRequest
+    )}|${escapeCapabilityField(maintenanceDiagnosticDeployment.transportTask)}`
+  ]
+  const lines = ["  WHEN 'CAPABILITIES'.", "    CLEAR lt_capability."]
+  for (const row of rows) {
+    if (row.startsWith("SOURCE|HASH|")) {
+      lines.push(
+        `    CONCATENATE 'SOURCE|HASH|' '${maintenanceCapabilityHashSlots[0]}'`,
+        `      '${maintenanceCapabilityHashSlots[1]}' '${maintenanceCapabilityHashSlots[2]}'`,
+        `      '${maintenanceCapabilityHashSlots[3]}' INTO lv_capability.`,
+        "    APPEND lv_capability TO lt_capability."
+      )
+      continue
+    }
+    lines.push(`    APPEND '${row}' TO lt_capability.`)
+  }
+  lines.push(
+    // sy-sysid, sy-mandt, sy-datum and sy-uzeit are character-like, so they are legal
+    // CONCATENATE operands; sy-tzone is numeric and must be converted by assignment.
+    "    CONCATENATE sy-sysid sy-mandt INTO lv_capability_value",
+    "      SEPARATED BY '/'.",
+    "    REPLACE ALL OCCURRENCES OF '%' IN lv_capability_value WITH '%25'.",
+    "    REPLACE ALL OCCURRENCES OF '|' IN lv_capability_value WITH '%7C'.",
+    "    CONCATENATE 'RUNTIME|HOST|' lv_capability_value",
+    "      INTO lv_capability.",
+    "    APPEND lv_capability TO lt_capability.",
+    "    CONCATENATE sy-datum sy-uzeit INTO lv_capability_value.",
+    "    REPLACE ALL OCCURRENCES OF '%' IN lv_capability_value WITH '%25'.",
+    "    REPLACE ALL OCCURRENCES OF '|' IN lv_capability_value WITH '%7C'.",
+    "    lv_capability = sy-tzone.",
+    "    CONDENSE lv_capability NO-GAPS.",
+    "    CONCATENATE 'RUNTIME|TIME|' lv_capability_value '|' lv_capability",
+    "      INTO lv_capabilities.",
+    "    APPEND lv_capabilities TO lt_capability.",
+    "    CLEAR lv_capabilities.",
+    "    LOOP AT lt_capability INTO lv_capability.",
+    "      IF sy-tabix > 1.",
+    "        CONCATENATE lv_capabilities ',' INTO lv_capabilities.",
+    "      ENDIF.",
+    "      CONCATENATE lv_capabilities '\"' lv_capability '\"'",
+    "        INTO lv_capabilities.",
+    "    ENDLOOP.",
+    '    CONCATENATE \'{"version":"1","status":"S",\'',
+    '      \'"code":"CAPABILITIES",\'',
+    '      \'"message":"ORVANTA helper capabilities",\'',
+    '      \'"readOnly":true,"payload":[\' INTO lv_capability.',
+    "    CONCATENATE lv_capability lv_capabilities ']}' INTO ev_result.",
+    "    RETURN."
+  )
+  return lines
+}
+// <<< ORVANTA-CAPABILITIES-SOURCE
+
+// The ABAP source format allows at most 72 characters per line; a longer line is re-chunked or
+// rejected by the upload. scripts/bootstrap-sap-helper.ps1 throws on the same condition, and this
+// body has no legacy over-length line, so there is no exception list here.
+const assertGeneratedLineWidth = (lines) => {
+  for (const line of lines) {
+    if (line.length > 72) {
+      throw new Error(`Generated function source exceeds 72 characters: ${line}`)
+    }
+  }
+}
+
+export const maintenanceDiagnosticSource = injectCapabilityHash(
+  String.raw`DATA: lt_locks TYPE STANDARD TABLE OF seqg3,
       ls_lock TYPE seqg3,
       lt_headers TYPE STANDARD TABLE OF vbhdr,
       ls_header TYPE vbhdr, ls_after TYPE vbhdr,
@@ -40,7 +187,10 @@ DATA: lt_locks TYPE STANDARD TABLE OF seqg3,
       lv_base TYPE string, lv_tail TYPE string,
       lv_json TYPE string, lv_items TYPE string,
       lv_header_json TYPE string, lv_modules_json TYPE string,
-      lv_errors_json TYPE string, lv_more TYPE string.
+      lv_errors_json TYPE string, lv_more TYPE string,
+      lt_capability TYPE STANDARD TABLE OF string,
+      lv_capability TYPE string, lv_capabilities TYPE string,
+      lv_capability_value TYPE string.
 DEFINE json_field.
   lv_value = &2.
   lv_value = escape( val = lv_value
@@ -90,50 +240,58 @@ DEFINE make_header.
   CONCATENATE lv_json '}' INTO lv_json.
 END-OF-DEFINITION.
 CLEAR ev_result.
-IF iv_action <> 'LOCK_SEARCH' AND iv_action <> 'UPDATE_SEARCH'
-   AND iv_action <> 'UPDATE_DETAIL'. RETURN. ENDIF.
-lv_json = '{"version":"1"'.
-json_field ',"action":"' iv_action.
-json_field ',"client":"' sy-mandt.
-json_field ',"authenticatedUser":"' sy-uname.
-CONCATENATE lv_json ',"readOnly":true,' INTO lv_base.
-IF iv_action = 'UPDATE_DETAIL'.
-  lv_tail = '"header":null,"modules":[],"errors":[]}'.
-ELSE.
-  lv_tail = '"entries":[]}'.
-ENDIF.
-fail_reply 'unsupported' 'INVALID_INPUT'.
-IF iv_user IS INITIAL OR strlen( iv_user ) > 12.
-  RETURN.
-ENDIF.
-FIND REGEX '[^A-Za-z0-9_.-]' IN iv_user.
-IF sy-subrc = 0. RETURN. ENDIF.
-lv_user = iv_user. TRANSLATE lv_user TO UPPER CASE.
-IF iv_action = 'LOCK_SEARCH'.
-  IF lv_user <> sy-uname.
-    AUTHORITY-CHECK OBJECT 'S_ENQUE'
-      ID 'S_ENQ_ACT' FIELD 'DPFU'.
+* CAPABILITIES is this helper's read-only self-description: it needs
+* no caller input, no business permission and none of the request
+* validation below, so the input gate is skipped and the opcode is
+* answered by the first WHEN of the CASE. The business branches still
+* run behind the unchanged gate.
+IF iv_action <> 'CAPABILITIES'.
+  IF iv_action <> 'LOCK_SEARCH' AND iv_action <> 'UPDATE_SEARCH'
+     AND iv_action <> 'UPDATE_DETAIL'. RETURN. ENDIF.
+  lv_json = '{"version":"1"'.
+  json_field ',"action":"' iv_action.
+  json_field ',"client":"' sy-mandt.
+  json_field ',"authenticatedUser":"' sy-uname.
+  CONCATENATE lv_json ',"readOnly":true,' INTO lv_base.
+  IF iv_action = 'UPDATE_DETAIL'.
+    lv_tail = '"header":null,"modules":[],"errors":[]}'.
+  ELSE.
+    lv_tail = '"entries":[]}'.
+  ENDIF.
+  fail_reply 'unsupported' 'INVALID_INPUT'.
+  IF iv_user IS INITIAL OR strlen( iv_user ) > 12.
+    RETURN.
+  ENDIF.
+  FIND REGEX '[^A-Za-z0-9_.-]' IN iv_user.
+  IF sy-subrc = 0. RETURN. ENDIF.
+  lv_user = iv_user. TRANSLATE lv_user TO UPPER CASE.
+  IF iv_action = 'LOCK_SEARCH'.
+    IF lv_user <> sy-uname.
+      AUTHORITY-CHECK OBJECT 'S_ENQUE'
+        ID 'S_ENQ_ACT' FIELD 'DPFU'.
+      IF sy-subrc <> 0.
+        fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
+      ENDIF.
+    ENDIF.
+  ELSE.
+* Deliberately require administration permission even for own updates.
+    AUTHORITY-CHECK OBJECT 'S_ADMI_FCD'
+      ID 'S_ADMI_FCD' FIELD 'UADM'.
     IF sy-subrc <> 0.
       fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
     ENDIF.
   ENDIF.
-ELSE.
-* Deliberately require administration permission even for own updates.
-  AUTHORITY-CHECK OBJECT 'S_ADMI_FCD'
-    ID 'S_ADMI_FCD' FIELD 'UADM'.
-  IF sy-subrc <> 0.
-    fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
+  IF iv_action <> 'UPDATE_DETAIL'.
+    IF iv_limit IS INITIAL OR strlen( iv_limit ) > 3
+       OR iv_limit CN '0123456789'. RETURN. ENDIF.
+    lv_limit = iv_limit.
+    IF lv_limit < 1 OR lv_limit > 100. RETURN. ENDIF.
   ENDIF.
+  lv_more = 'false'.
 ENDIF.
-IF iv_action <> 'UPDATE_DETAIL'.
-  IF iv_limit IS INITIAL OR strlen( iv_limit ) > 3
-     OR iv_limit CN '0123456789'. RETURN. ENDIF.
-  lv_limit = iv_limit.
-  IF lv_limit < 1 OR lv_limit > 100. RETURN. ENDIF.
-ENDIF.
-lv_more = 'false'.
 TRY.
 CASE iv_action.
+${buildMaintenanceCapabilityBranch().join("\n")}
   WHEN 'LOCK_SEARCH'.
     IF strlen( iv_table ) > 30 OR strlen( iv_object ) > 16
        OR strlen( iv_argument ) > 150.
@@ -322,5 +480,7 @@ CATCH cx_sy_open_sql_db.
   fail_reply 'unsupported' 'READ_FAILED'.
 ENDTRY.
 `
-  .trim()
-  .split("\n")
+    .trim()
+    .split("\n")
+)
+assertGeneratedLineWidth(maintenanceDiagnosticSource)
