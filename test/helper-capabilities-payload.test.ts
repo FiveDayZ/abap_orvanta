@@ -105,6 +105,22 @@ test("the table is the only opcode list for the repository CASE", () => {
   assert.match(source, /"  CASE iv_operation\."\s*\n\s*\) \+ \$capabilityBranchLines \+ @\(/)
 })
 
+test("the table matches the service-side SapRepositoryOperation union", async () => {
+  // Independent expectation: the union the service already dispatches on. The table plus the
+  // self-description opcode must cover exactly the same operations.
+  const backendSource = await readFile("src/backend.ts", "utf8")
+  const unionStart = backendSource.indexOf("export type SapRepositoryOperation =")
+  const unionEnd = backendSource.indexOf("export type SapStructureRow", unionStart)
+  assert.ok(unionStart > 0 && unionEnd > unionStart, "SapRepositoryOperation union not found")
+  const serviceOpcodes = [
+    ...backendSource.slice(unionStart, unionEnd).matchAll(/"([A-Z0-9_]+)"/g)
+  ].map((match) => String(match[1]))
+  assert.deepEqual(
+    [...operations.map((operation) => operation.opcode), "CAPABILITIES"].sort(),
+    [...serviceOpcodes].sort()
+  )
+})
+
 test("every table sinceVersion is the highest ev_version of its own branch", () => {
   for (const operation of operations) {
     const versions = branchVersions.get(operation.opcode) ?? []
@@ -233,6 +249,45 @@ test("SOURCE|HASH is a reproducible placeholder substitution", () => {
     source.indexOf("$capabilitySourceHash = (") < source.indexOf("$sourceProgramLines = foreach"),
     "hash injection must happen before the upload chunking"
   )
+})
+
+test("the CAPABILITIES branch only uses character-like operands", () => {
+  // ABAP CONCATENATE and `=` accept only character-like operands (C, N, D, T, STRING).
+  // sy-tzone is numeric: using it directly raises GENERATE_ERROR 943 ("must be a
+  // character-type data object") and the helper is left without an active version, as
+  // happened during the first w200 deployment attempt. It must go through WRITE ... TO.
+  const abapLines = emissionBlock
+    .split("\n")
+    .map((line) => /^\s*"(.*?)",?\s*$/.exec(line)?.[1])
+    .filter((line): line is string => typeof line === "string")
+  assert.ok(abapLines.length > 0, "expected ABAP lines in the emission block")
+
+  const systemFields = [
+    ...new Set(
+      abapLines.flatMap((line) =>
+        [...line.matchAll(/\bsy-[a-z]+\b/g)].map((match) => String(match[0]))
+      )
+    )
+  ].sort()
+  assert.deepEqual(
+    systemFields.filter(
+      (field) => !["sy-datum", "sy-mandt", "sy-sysid", "sy-tzone", "sy-uzeit"].includes(field)
+    ),
+    [],
+    "unexpected system field: only verified character-like fields may be used"
+  )
+
+  const tzoneLines = abapLines.filter((line) => /\bsy-tzone\b/.test(line))
+  assert.equal(tzoneLines.length, 1, "sy-tzone must be used exactly once")
+  assert.match(tzoneLines[0] ?? "", /^\s*WRITE sy-tzone TO [A-Za-z0-9_]+\.$/)
+  for (const line of abapLines) {
+    if (/\bCONCATENATE\b/.test(line)) {
+      assert.doesNotMatch(line, /\bsy-tzone\b/, "sy-tzone must never be a CONCATENATE operand")
+    }
+  }
+  // The offset is appended to the already-built timestamp row, keeping RUNTIME|TIME at
+  // four fields without introducing a second temporary variable.
+  assert.match(emissionBlock, /CONCATENATE ls_source-line lv_payload_value INTO ls_source-line/)
 })
 
 test("CAPABILITIES is a read-only self-description without version negotiation", () => {
