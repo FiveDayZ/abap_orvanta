@@ -25,6 +25,7 @@ import type {
   SapDdicResult,
   SapHelperRequest,
   SapHelperResult,
+  SapHelperCapabilities,
   SapRepositoryRequest,
   SapRepositoryResult,
   SapBackend,
@@ -199,6 +200,23 @@ function ddicKind(
   if (operation.endsWith("STRUCTURE")) return "structure"
   if (operation.endsWith("TRANSPARENT_TABLE")) return "transparentTable"
   return "tableType"
+}
+
+/** The un-upgraded helper: it answers `OPERATION_NOT_SUPPORTED` for `CAPABILITIES`. */
+function emptyMockHelperCapabilities(helper: string): SapHelperCapabilities {
+  return {
+    helper,
+    minProtocol: null,
+    maxProtocol: null,
+    operations: [],
+    scopes: [],
+    sourceHash: null,
+    packageName: null,
+    transport: null,
+    host: null,
+    observedAt: new Date().toISOString(),
+    attestation: "operation-scoped"
+  }
 }
 
 export class MockBackend implements SapBackend {
@@ -794,6 +812,37 @@ export class MockBackend implements SapBackend {
       message: "Customer object target is allowed",
       version: "1.0"
     }
+  }
+
+  /**
+   * Self-descriptions returned by `probeHelperCapabilities`, keyed by helper function module
+   * name. Empty by default: an un-upgraded helper answers `OPERATION_NOT_SUPPORTED`, so the
+   * default mock reports `operation-scoped` and every capability conclusion stays exactly as
+   * it was before the attestation feature existed.
+   */
+  helperCapabilities = new Map<string, SapHelperCapabilities>()
+
+  /** When true, the `CAPABILITIES` probe fails as if the helper were unreachable (`absent`). */
+  helperCapabilitiesUnreachable = false
+
+  async probeHelperCapabilities(
+    connectionId: string,
+    helper: string
+  ): Promise<SapHelperCapabilities> {
+    if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    const probed = helper.trim().toUpperCase()
+    if (this.helperCapabilitiesUnreachable) {
+      return {
+        ...emptyMockHelperCapabilities(probed),
+        attestation: "absent",
+        detail: `Helper ${probed} did not answer the CAPABILITIES probe`
+      }
+    }
+    const declared = this.helperCapabilities.get(probed)
+    if (!declared) return emptyMockHelperCapabilities(probed)
+    // Returned verbatim: a declaration that names another helper stays visible so the
+    // service-side identity guard can be exercised.
+    return { ...declared, observedAt: new Date().toISOString() }
   }
 
   async callSapRepository(

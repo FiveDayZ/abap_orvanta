@@ -2,6 +2,7 @@ import type {
   DiscoverySnapshotInfo,
   SapBackend,
   SapDdicResult,
+  SapHelperCapabilities,
   SapHelperResult,
   SapRepositoryResult
 } from "./backend.js"
@@ -26,6 +27,8 @@ interface VersionedHelperObservation extends CapabilityObservation {
   protocolVersion?: string | undefined
   responseStatus?: string | undefined
   responseCode?: string | undefined
+  /** Present only when this helper was also probed for a `CAPABILITIES` self-description. */
+  attestation?: SapHelperCapabilities | undefined
 }
 
 interface CapabilitySpec {
@@ -44,6 +47,22 @@ const LOCAL_AVAILABLE: CapabilityObservation = {
   evidence: { source: "local-contract", detail: "Standalone runtime implementation" }
 }
 
+/**
+ * Helper function modules behind the three bounded helper read probes.
+ *
+ * Each helper is judged from **its own** attestation: the design deliberately keeps helpers
+ * independent (mixed old/new deployments must not be collapsed into one verdict), so a
+ * `Z_ORVANTA_MCP_EXECUTE` self-description is never projected onto the
+ * `Z_ORVANTA_MCP_DYNPRO_API` operations. The repository helper carries the ten
+ * `repository-helper-*` capabilities.
+ *
+ * Only `Z_ORVANTA_MCP_EXECUTE` and `Z_ORVANTA_MCP_DYNPRO_API` implement the `CAPABILITIES`
+ * opcode in this delivery (they share one generated ABAP body). Probing is limited to those
+ * two, so an un-upgraded helper keeps the previous operation-scoped conclusions and wording.
+ */
+const BASE_HELPER_FUNCTION = "Z_ORVANTA_MCP_EXECUTE"
+const REPOSITORY_HELPER_FUNCTION = "Z_ORVANTA_MCP_DYNPRO_API"
+
 export async function buildCapabilityReport(
   backend: SapBackend,
   requestedConnectionId: string,
@@ -54,9 +73,11 @@ export async function buildCapabilityReport(
   const observedAt = new Date().toISOString()
 
   const [
-    baseHelper,
-    repositoryHelper,
+    baseHelperRead,
+    repositoryHelperRead,
     ddicHelper,
+    baseAttestation,
+    repositoryAttestation,
     discovery,
     search,
     query,
@@ -77,6 +98,12 @@ export async function buildCapabilityReport(
         objectName: "CHAR1"
       })
     ),
+    observeHelperAttestation(BASE_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, BASE_HELPER_FUNCTION)
+    ),
+    observeHelperAttestation(REPOSITORY_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, REPOSITORY_HELPER_FUNCTION)
+    ),
     observeDiscovery(() => backend.discoverySnapshot(connectionId)),
     observeRead("Repository search accepted a bounded no-match query.", () =>
       backend.searchObjects(connectionId, "ZCMCP_CAPABILITY_0310", ["PROG"], 1)
@@ -92,6 +119,22 @@ export async function buildCapabilityReport(
       backend.listTraceRuns(connectionId)
     )
   ])
+
+  const baseSelfDescription = reconcileAttestation(
+    baseAttestation,
+    baseHelperRead,
+    BASE_HELPER_FUNCTION
+  )
+  const repositorySelfDescription = reconcileAttestation(
+    repositoryAttestation,
+    repositoryHelperRead,
+    REPOSITORY_HELPER_FUNCTION
+  )
+  // Only the repository helper carries capability verdicts that depend on a self-description
+  // (the ten `repository-helper-*` capabilities). The base helper's attestation is reported in
+  // `helperAttestation` only, so every existing probe observation keeps its exact shape and
+  // wording when the helpers are not upgraded yet.
+  const repositoryHelper = attachAttestation(repositoryHelperRead, repositorySelfDescription)
 
   const targetSpecific = unknownTargetObservation(
     "Availability requires a real object or execution target; registration and discovery alone are not proof."
@@ -152,7 +195,7 @@ export async function buildCapabilityReport(
       dumps
     ),
     capability("adt-runtime-traces", "native-adt", ["analyze_abap_traces"], traces),
-    capability("sap-base-helper", "sap-helper-fallback", ["sap_helper_status"], baseHelper),
+    capability("sap-base-helper", "sap-helper-fallback", ["sap_helper_status"], baseHelperRead),
     helperCapability("repository-helper-dynpro-core", repositoryHelper, "1.1", [
       "read_abap_screen",
       "upsert_abap_screen",
@@ -466,7 +509,7 @@ export async function buildCapabilityReport(
   ]
 
   // The tool profile disclosure only appears when a profile or deny list actually withholds
-  // tools, so the default `full` configuration keeps the previous report byte for byte.
+  // tools, so the default `full` configuration keeps the previous tool-profile shape.
   const withheld = new Set(disabledToolNames)
   const disclosed = capabilities.map((item) => discloseToolProfile(item, withheld))
 
@@ -496,7 +539,8 @@ export async function buildCapabilityReport(
             }
           }
         : {}),
-      helpers: [baseHelper, repositoryHelper, ddicHelper],
+      helpers: [baseHelperRead, repositoryHelperRead, ddicHelper],
+      helperAttestation: [baseSelfDescription, repositorySelfDescription],
       discovery: discoverySummary(discovery),
       capabilities: disclosed,
       summary: {
@@ -547,6 +591,22 @@ function helperCapability(
   if (helper.availability !== "available" || !helper.protocolVersion) {
     return capability(id, "sap-helper-fallback", toolNames, helper)
   }
+  // A helper self-description is authoritative when it exists: the helper reports the highest
+  // protocol version it implements, not the version of the operation that happened to run.
+  const attestation = helper.attestation
+  if (attestation?.attestation === "self-described" && attestation.maxProtocol) {
+    const satisfied = compareVersions(attestation.maxProtocol, minimumVersion) >= 0
+    return capability(id, "sap-helper-fallback", toolNames, {
+      availability: satisfied ? "available" : "unsupported",
+      reason: satisfied
+        ? `The ${attestation.helper} helper self-described protocol ${attestation.maxProtocol}, which satisfies minimum ${minimumVersion}.`
+        : `The ${attestation.helper} helper self-described protocol ${attestation.maxProtocol}, which is below the required capability version ${minimumVersion}.`,
+      evidence: {
+        source: "version-check",
+        detail: `${attestation.helper} self-described protocol ${attestation.maxProtocol} (lowest compatible ${attestation.minProtocol ?? "unknown"}); capability minimum ${minimumVersion}`
+      }
+    })
+  }
   const available = compareVersions(helper.protocolVersion, minimumVersion) >= 0
   return capability(id, "sap-helper-fallback", toolNames, {
     availability: available ? "available" : "unknown",
@@ -555,9 +615,83 @@ function helperCapability(
       : `The read probe observed ${helper.name} operation protocol ${helper.protocolVersion}; it does not prove whether capability version ${minimumVersion} is installed.`,
     evidence: {
       source: "version-check",
-      detail: `${helper.name} observed operation protocol ${helper.protocolVersion}; capability minimum ${minimumVersion}`
+      detail: `${helper.name} observed operation protocol ${helper.protocolVersion}; capability minimum ${minimumVersion}${attestationMismatchNote(attestation)}`
     }
   })
+}
+
+/**
+ * Only an identity mismatch changes the fallback wording: the helper answered another name, so
+ * its self-description was discarded instead of being used as evidence for this helper.
+ */
+function attestationMismatchNote(attestation: SapHelperCapabilities | undefined): string {
+  if (attestation?.attestation !== "operation-scoped" || !attestation.detail) return ""
+  return `; ${attestation.detail}`
+}
+
+/**
+ * The read probe already proved that the helper answers a structured protocol response, so a
+ * failed `CAPABILITIES` probe on that helper cannot mean "not deployed": it means the opcode is
+ * missing. Reporting `absent` there would describe a deployed helper as missing.
+ *
+ * A self-description that names a different helper is never evidence for this helper, so it is
+ * downgraded here - the report and the capability verdict must agree on the same conclusion.
+ */
+function reconcileAttestation(
+  attestation: SapHelperCapabilities,
+  observation: VersionedHelperObservation,
+  expectedHelperFunction: string
+): SapHelperCapabilities {
+  if (
+    attestation.attestation === "self-described" &&
+    attestation.helper.trim().toUpperCase() !== expectedHelperFunction
+  ) {
+    return {
+      ...attestation,
+      attestation: "operation-scoped",
+      detail: `Self-description declared helper ${attestation.helper} instead of ${expectedHelperFunction}; ignored`
+    }
+  }
+  if (attestation.attestation !== "absent") return attestation
+  if (observation.availability !== "available") return attestation
+  return { ...attestation, attestation: "operation-scoped" }
+}
+
+function attachAttestation(
+  observation: VersionedHelperObservation,
+  attestation: SapHelperCapabilities
+): VersionedHelperObservation {
+  if (attestation.attestation === "absent") return observation
+  return { ...observation, attestation }
+}
+
+/**
+ * Bounded `CAPABILITIES` probe. `SapBackend.probeHelperCapabilities` is documented never to
+ * throw, but a report must not fail because an implementation or a transport did: a thrown
+ * probe degrades to `absent`, exactly like an unreachable helper.
+ */
+async function observeHelperAttestation(
+  helper: string,
+  action: () => Promise<SapHelperCapabilities>
+): Promise<SapHelperCapabilities> {
+  try {
+    return await action()
+  } catch (error) {
+    return {
+      helper,
+      minProtocol: null,
+      maxProtocol: null,
+      operations: [],
+      scopes: [],
+      sourceHash: null,
+      packageName: null,
+      transport: null,
+      host: null,
+      observedAt: new Date().toISOString(),
+      attestation: "absent",
+      detail: scrubSensitiveText(error instanceof Error ? error.message : String(error))
+    }
+  }
 }
 
 async function observeHelper(

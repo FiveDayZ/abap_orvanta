@@ -57,6 +57,7 @@ import {
   type RemoteFunctionParameterShape,
   type SapHelperRequest,
   type SapHelperResult,
+  type SapHelperCapabilities,
   type SapDdicRequest,
   type SapDdicResult,
   type SapRepositoryRequest,
@@ -274,6 +275,84 @@ export class AdtBackend implements SapBackend {
       this.passwordFor(config)
     )
     return parseSapDdicResponse(body)
+  }
+
+  /**
+   * Probe one installed SAP helper for its `CAPABILITIES` self-description.
+   *
+   * Design note: the frozen protocol adds **no** `iv_expected_version` import parameter and
+   * no `CHECK|EXPECTED` payload line (design revision R1). That parameter name already means
+   * the caller's expected *object* version for optimistic concurrency in
+   * `Z_ORVANTA_MCP_DDIC_API` and `Z_ORVANTA_MCP_DYNPRO_API`, so the minimum protocol required
+   * by a capability is compared locally by the service.
+   *
+   * This method never throws: a helper that is unreachable is `absent`, and a helper that
+   * answers without a usable self-description is `operation-scoped`. An un-upgraded helper
+   * rejects the unknown opcode with status `E` / code `OPERATION_NOT_SUPPORTED` (verified in
+   * `scripts/bootstrap-sap-helper.ps1`), which must degrade a capability report instead of
+   * failing it.
+   */
+  async probeHelperCapabilities(
+    connectionId: string,
+    helper: string
+  ): Promise<SapHelperCapabilities> {
+    const probed = helper.trim().toUpperCase()
+    const observedAt = new Date().toISOString()
+    const config = this.configs.get(connectionId.toLowerCase())
+    if (!config) {
+      return emptyHelperCapabilities(probed, observedAt, "absent", "Connection not found")
+    }
+    const channel = HELPER_CAPABILITIES_CHANNELS[probed]
+    if (!channel) {
+      return emptyHelperCapabilities(
+        probed,
+        observedAt,
+        "absent",
+        "No CAPABILITIES channel is defined for this helper"
+      )
+    }
+    try {
+      const body = await postSapSoap(
+        config,
+        channel.soapAction,
+        channel.envelope(),
+        false,
+        this.passwordFor(config)
+      )
+      const response = parseHelperCapabilitiesResponse(body)
+      if (response.status !== "S" || response.code.toUpperCase() !== "CAPABILITIES") {
+        return emptyHelperCapabilities(probed, observedAt, "operation-scoped")
+      }
+      const payload = parseHelperCapabilitiesPayload(response.payload)
+      const declared = payload.helper?.trim().toUpperCase()
+      if (declared !== probed) {
+        // A helper that answers under a different identity - or without any identity - must not
+        // be evidence for this helper's capabilities. Keep the conservative fallback.
+        return emptyHelperCapabilities(
+          probed,
+          observedAt,
+          "operation-scoped",
+          declared
+            ? `Self-description declared helper ${declared} instead of ${probed}; ignored`
+            : "Self-description omitted the HELPER identity line; ignored"
+        )
+      }
+      return {
+        helper: probed,
+        minProtocol: payload.minProtocol,
+        maxProtocol: payload.maxProtocol,
+        operations: payload.operations,
+        scopes: payload.scopes,
+        sourceHash: payload.sourceHash,
+        packageName: payload.packageName,
+        transport: payload.transport,
+        host: payload.host,
+        observedAt,
+        attestation: "self-described"
+      }
+    } catch (error) {
+      return emptyHelperCapabilities(probed, observedAt, "absent", scrubHelperDetail(error))
+    }
   }
 
   async callRemoteFunction(
@@ -1981,6 +2060,150 @@ function parseDdicPayload(lines: string[]): {
 function rowAt(rows: SapStructureRow[], index: number): SapStructureRow {
   while (rows.length < index) rows.push({})
   return rows[index - 1]!
+}
+
+/**
+ * `CAPABILITIES` is served per helper endpoint, so the probe dispatches by the ABAP function
+ * module name. `Z_ORVANTA_MCP_EXECUTE` and `Z_ORVANTA_MCP_DYNPRO_API` share the same generated
+ * ABAP body; `Z_ORVANTA_MCP_DDIC_API` implements the opcode in a later delivery and currently
+ * answers `OPERATION_NOT_SUPPORTED`, which degrades to `operation-scoped`.
+ */
+const HELPER_CAPABILITIES_CHANNELS: Record<string, { soapAction: string; envelope: () => string }> =
+  {
+    Z_ORVANTA_MCP_EXECUTE: {
+      soapAction: "http://www.sap.com/Z_ORVANTA_MCP_EXECUTE",
+      envelope: () => buildSapHelperEnvelope({ operation: "CAPABILITIES" })
+    },
+    Z_ORVANTA_MCP_DYNPRO_API: {
+      soapAction: "http://www.sap.com/Z_ORVANTA_MCP_DYNPRO_API",
+      envelope: () => buildSapRepositoryEnvelope({ operation: "CAPABILITIES" })
+    },
+    Z_ORVANTA_MCP_DDIC_API: {
+      soapAction: "http://www.sap.com/Z_ORVANTA_MCP_DDIC_API",
+      envelope: () => buildSapDdicEnvelope({ operation: "CAPABILITIES", objectName: "" })
+    }
+  }
+
+export interface SapHelperCapabilitiesPayload {
+  helper: string | null
+  minProtocol: string | null
+  maxProtocol: string | null
+  operations: Array<{ opcode: string; since: string; write: boolean }>
+  scopes: Array<{ scope: string; enabled: boolean }>
+  sourceHash: string | null
+  packageName: string | null
+  transport: string | null
+  transportTask: string | null
+  host: string | null
+  runtimeTime: string | null
+  runtimeTimeZone: string | null
+}
+
+export function parseHelperCapabilitiesResponse(body: string): {
+  status: string
+  code: string
+  message: string
+  version: string
+  payload: string[]
+} {
+  const document = parse(body, { parseTagValue: false, trimValues: true })
+  const fault = findXmlValue(document, "faultstring")
+  if (fault) throw new Error(`SAP SOAP fault: ${fault}`)
+  return {
+    status: (findXmlValue(document, "EV_STATUS") ?? "").trim().toUpperCase(),
+    code: (findXmlValue(document, "EV_CODE") ?? "").trim(),
+    message: findXmlValue(document, "EV_MESSAGE") ?? "",
+    version: findXmlValue(document, "EV_VERSION") ?? "",
+    payload: findXmlRows(document, "IT_SOURCE").map((row) => row.LINE ?? "")
+  }
+}
+
+/**
+ * Parse the frozen `CAPABILITIES` payload: one `KIND|...` line per fact, `|` separated with
+ * `%`->`%25` and `|`->`%7C` escaping. Unknown or malformed lines are ignored so a newer
+ * helper can add facts without breaking an older service. A `HELPER|` identity mismatch is
+ * reported by the caller, not here.
+ */
+export function parseHelperCapabilitiesPayload(
+  lines: readonly string[]
+): SapHelperCapabilitiesPayload {
+  const payload: SapHelperCapabilitiesPayload = {
+    helper: null,
+    minProtocol: null,
+    maxProtocol: null,
+    operations: [],
+    scopes: [],
+    sourceHash: null,
+    packageName: null,
+    transport: null,
+    transportTask: null,
+    host: null,
+    runtimeTime: null,
+    runtimeTimeZone: null
+  }
+  for (const rawLine of lines) {
+    const fields = rawLine
+      .trim()
+      .split("|")
+      .map((field) => field.trim().replaceAll("%7C", "|").replaceAll("%25", "%"))
+    const kind = fields[0]?.toUpperCase()
+    if (kind === "HELPER" && fields[1]) payload.helper = fields[1]
+    else if (kind === "PROTOCOL" && fields[1]?.toUpperCase() === "MIN")
+      payload.minProtocol = fields[2] ?? null
+    else if (kind === "PROTOCOL" && fields[1]?.toUpperCase() === "MAX")
+      payload.maxProtocol = fields[2] ?? null
+    else if (kind === "OPERATION" && fields[1])
+      payload.operations.push({
+        opcode: fields[1],
+        since: fields[2] ?? "",
+        write: fields[3]?.toUpperCase() === "W"
+      })
+    else if (kind === "SCOPE" && fields[1])
+      payload.scopes.push({ scope: fields[1], enabled: fields[2]?.toLowerCase() === "enabled" })
+    else if (kind === "SOURCE" && fields[1]?.toUpperCase() === "HASH")
+      payload.sourceHash = fields[2] ?? null
+    else if (kind === "SOURCE" && fields[1]?.toUpperCase() === "PACKAGE")
+      payload.packageName = fields[2] ?? null
+    else if (kind === "SOURCE" && fields[1]?.toUpperCase() === "TRANSPORT") {
+      payload.transport = fields[2] ?? null
+      payload.transportTask = fields[3] ?? null
+    } else if (kind === "RUNTIME" && fields[1]?.toUpperCase() === "HOST")
+      payload.host = fields[2] ?? null
+    else if (kind === "RUNTIME" && fields[1]?.toUpperCase() === "TIME") {
+      payload.runtimeTime = fields[2] ?? null
+      payload.runtimeTimeZone = fields[3] ?? null
+    }
+  }
+  return payload
+}
+
+function emptyHelperCapabilities(
+  helper: string,
+  observedAt: string,
+  attestation: SapHelperCapabilities["attestation"],
+  detail?: string
+): SapHelperCapabilities {
+  return {
+    helper,
+    minProtocol: null,
+    maxProtocol: null,
+    operations: [],
+    scopes: [],
+    sourceHash: null,
+    packageName: null,
+    transport: null,
+    host: null,
+    observedAt,
+    attestation,
+    ...(detail ? { detail } : {})
+  }
+}
+
+function scrubHelperDetail(error: unknown): string {
+  return (error instanceof Error ? error.message : String(error))
+    .replace(/(https?:\/\/)[^/@\s:]+:[^/@\s]+@/gi, "$1[REDACTED]@")
+    .replace(/\b(password|token|cookie|authorization)\s*[:=]\s*[^\s,;]+/gi, "$1=[REDACTED]")
+    .slice(0, 200)
 }
 
 function xmlElement(name: string, value: string): string {

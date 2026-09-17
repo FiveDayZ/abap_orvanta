@@ -43,9 +43,9 @@
 
 ```abap
 iv_operation = 'CAPABILITIES'
-" 可选：调用方期望的最低协议版本，便于助手侧直接给出结论
-iv_expected_version = '2.6'
 ```
+
+**不新增导入参数**（见 3.4 修订 R1）：所需最低协议版本由服务侧本地比较，助手只负责自述事实。
 
 ### 3.2 响应
 
@@ -68,7 +68,6 @@ SOURCE|PACKAGE|<package>
 SOURCE|TRANSPORT|<request>|<task>
 RUNTIME|HOST|<SID>/<CLIENT>
 RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
-CHECK|EXPECTED|<met|below|not_requested>
 ```
 
 要点：
@@ -84,6 +83,23 @@ CHECK|EXPECTED|<met|below|not_requested>
 | `scripts/bootstrap-sap-helper.ps1`                            | 在每个助手的 `CASE iv_operation.` 顶部增加 `WHEN 'CAPABILITIES'.` 分支，输出上述载荷；`SOURCE | HASH` 由脚本在生成时替换占位符 |
 | `scripts/*-source.mjs`（log / ops / maint / sci / smartform） | 同上，各自补 `CAPABILITIES` 分支                                                              |
 | `scripts/deploy-*.mjs`                                        | 部署前后各调用一次 `CAPABILITIES`，把 `SOURCE                                                 | HASH` 写进部署证据文件         |
+
+### 3.4 设计修订（2026-09-17 实施期确定）
+
+| #   | 修订                                                                                                                                       | 依据与影响                                                                                                                                                                                                                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | **取消 `iv_expected_version` 与 `CHECK\|EXPECTED` 行。** 所需最低协议版本由服务侧本地比较（服务本来就知道每项能力所需的 minimumVersion）。 | 该参数名**已被并发控制语义占用**：`bootstrap-sap-helper.ps1` 中 `iv_expected_version` 在 DDIC_API（约 1498、1597–1609 行）与 DYNPRO_API（约 7168、7192、7280、7353 行）里表示“调用方期望的对象版本”，用于乐观并发校验。复用它做协议协商会造成同名字段双重语义。取消后首个助手 `Z_ORVANTA_MCP_EXECUTE` 的函数接口**完全不变**，满足 G4 零破坏。 |
+| R2  | 首个落地范围仅 `Z_ORVANTA_MCP_EXECUTE`。                                                                                                   | 其背后的 10 项 `repository-helper-*` 能力（minimumVersion 1.1–2.6）当前全部为 unknown，价值最高。                                                                                                                                                                                                                                              |
+
+### 3.5 后续补齐清单（同一协议，逐文件落地）
+
+| 目标                                                                                           | 位置                                                                                                                                | 说明                                                                                                             |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Z_ORVANTA_MCP_DDIC_API`                                                                       | `scripts/bootstrap-sap-helper.ps1` 约 846 行起的 `CASE iv_operation.`（`New-DdicFunctionSource`）                                   | 该助手已有 `iv_expected_version`（并发控制），故仍按 R1 不用于协议协商                                           |
+| `Z_ORVANTA_MCP_DYNPRO_API`                                                                     | 同上文件，非 DDIC 分支（`$repositoryFunctionSource` 之外的 GUI/屏幕体）                                                             | 同上                                                                                                             |
+| `Z_ORVANTA_MAINT_READ`                                                                         | `scripts/maintenance-diagnostic-source.mjs`（3 个 WHEN）                                                                            |                                                                                                                  |
+| 运维日志读取助手                                                                               | `scripts/operational-log-source.mjs`（5 个 WHEN）                                                                                   |                                                                                                                  |
+| `Z_ORVANTA_LOG_READ` / `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_SCI_API*` / `Z_ORVANTA_SMARTFORM_API` | `application-log-read-source.mjs`、`job-spool-source.mjs`、`sci-v2-source.mjs`、`sci-e2-source.mjs`、`report-parameters-source.mjs` | 这些生成器**当前没有 `CASE iv_operation` 分派**（`WHEN` 计数为 0），需先确认其操作码分派形态再决定是否适用本协议 |
 
 ---
 

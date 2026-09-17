@@ -78,7 +78,7 @@ export interface ConnectionDetails {
 }
 
 export interface SapHelperRequest {
-  operation: "PING" | "VALIDATE_TARGET"
+  operation: "PING" | "VALIDATE_TARGET" | "CAPABILITIES"
   objectType?: string | undefined
   objectName?: string | undefined
 }
@@ -88,6 +88,38 @@ export interface SapHelperResult {
   code: string
   message: string
   version: string
+}
+
+/**
+ * Helper self-description states.
+ *
+ * - `self-described`: the helper answered `CAPABILITIES` with a well-formed payload whose
+ *   `HELPER|<funcname>` identity matches the probed helper.
+ * - `operation-scoped`: the helper answered, but not with a usable `CAPABILITIES` payload.
+ *   An un-upgraded helper rejects the unknown opcode with status `E` and code
+ *   `OPERATION_NOT_SUPPORTED` (verified in `scripts/bootstrap-sap-helper.ps1`), so only the
+ *   protocol version of the operation that was actually executed is known.
+ * - `absent`: no structured helper response was received at all.
+ */
+export type SapHelperAttestation = "self-described" | "operation-scoped" | "absent"
+
+export interface SapHelperCapabilities {
+  helper: string
+  minProtocol: string | null
+  maxProtocol: string | null
+  operations: Array<{ opcode: string; since: string; write: boolean }>
+  scopes: Array<{ scope: string; enabled: boolean }>
+  sourceHash: string | null
+  packageName: string | null
+  transport: string | null
+  host: string | null
+  observedAt: string
+  attestation: SapHelperAttestation
+  /**
+   * Diagnosis for a non-`self-described` attestation (identity mismatch or probe failure).
+   * Never a capability claim; absent for the plain operation-scoped fallback.
+   */
+  detail?: string | undefined
 }
 
 export type RemoteFunctionValue = string | SapStructureRow | SapStructureRow[]
@@ -116,6 +148,7 @@ export interface RemoteFunctionResult {
 }
 
 export type SapRepositoryOperation =
+  | "CAPABILITIES"
   | "READ_SCREEN"
   | "READ_CUSTOMER_EXIT_DEFINITION"
   | "READ_CUSTOMER_EXIT_PROJECT"
@@ -212,6 +245,7 @@ export interface SapRepositoryResult extends SapHelperResult {
 }
 
 export type SapDdicOperation =
+  | "CAPABILITIES"
   | "READ_DOMAIN"
   | "UPSERT_DOMAIN"
   | "READ_DATA_ELEMENT"
@@ -585,6 +619,19 @@ export interface SapBackend {
     request: SapRepositoryRequest
   ): Promise<SapRepositoryResult>
   callSapDdic(connectionId: string, request: SapDdicRequest): Promise<SapDdicResult>
+  /**
+   * Probe one installed helper for its `CAPABILITIES` self-description.
+   *
+   * Implementations must not throw: an unreachable helper is `absent` and a helper that
+   * answers without a usable self-description (an un-upgraded helper returns
+   * `OPERATION_NOT_SUPPORTED`) is `operation-scoped`, so a capability report can never fail
+   * as a whole because one helper is old.
+   *
+   * The frozen protocol carries no expected version: `iv_expected_version` already means the
+   * caller's expected object version for optimistic concurrency in the DDIC and repository
+   * helpers, so the service compares the required minimum protocol locally.
+   */
+  probeHelperCapabilities(connectionId: string, helper: string): Promise<SapHelperCapabilities>
   searchObjects(
     connectionId: string,
     pattern: string,

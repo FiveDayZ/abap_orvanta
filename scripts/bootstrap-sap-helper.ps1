@@ -44,6 +44,12 @@ param(
     [ValidatePattern('^[A-Z0-9]{10}$')]
     [string]$TransportNumber,
 
+    [ValidatePattern('^[A-Z0-9]{10}$')]
+    [string]$TransportTask,
+
+    [ValidatePattern('^[A-Z/][A-Z0-9_/]{0,39}$')]
+    [string]$PackageName = "ZABAP",
+
     [string]$ResultPath,
 
     [Security.SecureString]$SecurePassword,
@@ -54,6 +60,78 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# Single source of truth for the CAPABILITIES self-description of the repository
+# helper body ($repositoryFunctionSource). That body is shared by
+# Z_ORVANTA_MCP_EXECUTE and Z_ORVANTA_MCP_DYNPRO_API, so both self-describe with
+# the function module name they were generated for.
+#
+# Entry format: "<OPCODE>|<sinceVersion>|<R|W>". `sinceVersion` is the highest
+# ev_version reported by that CASE branch, and PROTOCOL|MIN / PROTOCOL|MAX plus
+# every OPERATION line are derived from this table -- never written a second time.
+# Parsed offline by test/helper-capabilities-payload.test.ts.
+# >>> ORVANTA-CAPABILITY-TABLE
+$helperCapabilityOperations = @(
+    "READ_ENHANCEMENT_IMPLEMENTATION|2.6|R",
+    "MANAGE_ENHANCEMENT_STATE|2.6|W",
+    "DELETE_ENHANCEMENT_IMPLEMENTATION|2.5|W",
+    "MANAGE_CLASSIC_BADI_IMPLEMENTATION|2.5|W",
+    "READ_CLASSIC_BADI_DEFINITION|2.4|R",
+    "READ_BTE_CONFIGURATION|2.3|R",
+    "READ_CUSTOMER_EXIT_DEFINITION|2.2|R",
+    "READ_CUSTOMER_EXIT_PROJECT|2.2|R",
+    "CREATE_FUNCTION_GROUP|1.3|W",
+    "CREATE_FUNCTION_INCLUDE|1.7|W",
+    "READ_FUNCTION_INTERFACE|2.1|R",
+    "CREATE_FUNCTION_MODULE|2.0|W",
+    "PATCH_FUNCTION_INTERFACE|2.0|W",
+    "INSPECT_REPOSITORY_ASSIGNMENT|1.3|R",
+    "READ_GUI_DEFINITION|1.5|R",
+    "PATCH_GUI_DEFINITION|1.5|W",
+    "READ_SCREEN|1.1|R",
+    "PATCH_SCREEN|1.4|W",
+    "UPSERT_SCREEN|1.1|W",
+    "DELETE_TRANSACTION|1.6|W",
+    "DELETE_MODULE_POOL|1.6|W",
+    "CREATE_MODULE_POOL|1.1|W",
+    "READ_TRANSPORT_DETAILS|1.7|R",
+    "DELETE_MESSAGE_CLASS|1.9|W",
+    "UPDATE_MESSAGE_CLASS|1.8|W",
+    "READ_TRANSACTION|1.2|R",
+    "CREATE_REPORT_TRANSACTION|1.2|W",
+    "CREATE_TRANSACTION|1.1|W",
+    # Operations the repository CASE serves through shared clauses: a multi-opcode WHEN
+    # ('X' OR 'Y'.) or a WHEN continued on the next line. A single-opcode scan of the CASE
+    # misses these, so they are listed here explicitly and kept adjacent for review.
+    "UPDATE_HOOK_ENHANCEMENT|2.6|W",
+    "UPDATE_BADI_ENHANCEMENT|2.6|W",
+    "CREATE_HOOK_ENHANCEMENT|2.5|W",
+    "CREATE_BADI_ENHANCEMENT|2.5|W",
+    "READ_TEXT_ELEMENTS|1.7|R",
+    "MERGE_TEXT_ELEMENTS|1.7|W",
+    "READ_MESSAGE_CLASS|1.2|R",
+    "CREATE_MESSAGE_CLASS|1.2|W"
+)
+# <<< ORVANTA-CAPABILITY-TABLE
+
+# Separately approved scopes of the repository helper. Empty on purpose: the
+# REPORT_PARAMETERS scope belongs to Z_ORVANTA_OPS_READ
+# (scripts/report-parameters-source.mjs), not to this body. Add
+# "<SCOPE>|<enabled|disabled>" entries here to publish a scope.
+$helperCapabilityScopes = @()
+
+# PROTOCOL|MIN is the oldest protocol revision this helper still implements
+# (lowest sinceVersion); PROTOCOL|MAX is the highest revision it implements.
+$helperCapabilityVersions = $helperCapabilityOperations | ForEach-Object {
+    $capabilityTableParts = $_ -split "\|"
+    [version]$capabilityTableParts[1]
+}
+$helperCapabilityMinVersion = (
+    $helperCapabilityVersions | Sort-Object | Select-Object -First 1
+).ToString()
+$helperCapabilityMaxVersion = (
+    $helperCapabilityVersions | Sort-Object -Descending | Select-Object -First 1
+).ToString()
 
 function New-InspectionProgram {
     return @(
@@ -2436,6 +2514,78 @@ function New-InstallProgram {
         )
     }
 
+    # CAPABILITIES payload rows (docs/helper-capabilities-protocol.md). $FunctionName
+    # is interpolated because this body is shared by Z_ORVANTA_MCP_EXECUTE and
+    # Z_ORVANTA_MCP_DYNPRO_API. Package/transport values are escaped here, at
+    # generation time; the runtime values (hash, sy-sysid/sy-mandt, sy-datum/
+    # sy-uzeit/sy-tzone) cannot contain the payload separators.
+    # >>> ORVANTA-CAPABILITIES-SOURCE
+    $capabilityHashSlots = @(
+        "ORVANTAHASHSLOT1",
+        "ORVANTAHASHSLOT2",
+        "ORVANTAHASHSLOT3",
+        "ORVANTAHASHSLOT4"
+    )
+    $capabilityPackageValue = ([string]$PackageName).Replace("%", "%25").Replace("|", "%7C")
+    $capabilityTransportValue = (
+        @([string]$TransportNumber, [string]$TransportTask) | ForEach-Object {
+            $_.Replace("%", "%25").Replace("|", "%7C")
+        }
+    ) -join "|"
+    $capabilityBranchLines = @(
+        "    WHEN 'CAPABILITIES'.",
+        "      CLEAR ls_source.",
+        "      ls_source-line = 'HELPER|$FunctionName'.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'PROTOCOL|MIN|$helperCapabilityMinVersion'.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'PROTOCOL|MAX|$helperCapabilityMaxVersion'.",
+        "      APPEND ls_source TO it_source."
+    )
+    foreach ($capabilityOperation in $helperCapabilityOperations) {
+        $capabilityOperationParts = $capabilityOperation -split "\|"
+        $capabilityBranchLines += @(
+            "      CONCATENATE 'OPERATION|$($capabilityOperationParts[0])' '$($capabilityOperationParts[1])|$($capabilityOperationParts[2])'",
+            "        INTO ls_source-line SEPARATED BY '|'.",
+            "      APPEND ls_source TO it_source."
+        )
+    }
+    foreach ($capabilityScope in $helperCapabilityScopes) {
+        $capabilityBranchLines += @(
+            "      ls_source-line = 'SCOPE|$capabilityScope'.",
+            "      APPEND ls_source TO it_source."
+        )
+    }
+    $capabilityBranchLines += @(
+        "      CLEAR ls_source.",
+        "      CONCATENATE 'SOURCE|HASH|' '$($capabilityHashSlots[0])' '$($capabilityHashSlots[1])'",
+        "        '$($capabilityHashSlots[2])' '$($capabilityHashSlots[3])' INTO ls_source-line.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'SOURCE|PACKAGE|$capabilityPackageValue'.",
+        "      APPEND ls_source TO it_source.",
+        "      ls_source-line = 'SOURCE|TRANSPORT|$capabilityTransportValue'.",
+        "      APPEND ls_source TO it_source.",
+        "      CONCATENATE sy-sysid sy-mandt INTO lv_payload_value",
+        "        SEPARATED BY '/'.",
+        "      REPLACE ALL OCCURRENCES OF '%' IN lv_payload_value WITH '%25'.",
+        "      REPLACE ALL OCCURRENCES OF '|' IN lv_payload_value WITH '%7C'.",
+        "      CONCATENATE 'RUNTIME|HOST' lv_payload_value INTO ls_source-line",
+        "        SEPARATED BY '|'.",
+        "      APPEND ls_source TO it_source.",
+        "      CONCATENATE sy-datum sy-uzeit INTO lv_payload_value.",
+        "      REPLACE ALL OCCURRENCES OF '%' IN lv_payload_value WITH '%25'.",
+        "      REPLACE ALL OCCURRENCES OF '|' IN lv_payload_value WITH '%7C'.",
+        "      CONCATENATE 'RUNTIME|TIME' lv_payload_value sy-tzone",
+        "        INTO ls_source-line SEPARATED BY '|'.",
+        "      APPEND ls_source TO it_source.",
+        "      ev_status = 'S'.",
+        "      ev_code = 'CAPABILITIES'.",
+        "      ev_version = '$helperCapabilityMaxVersion'.",
+        "      ev_message = 'ORVANTA helper capabilities'.",
+        "      RETURN."
+    )
+    # <<< ORVANTA-CAPABILITIES-SOURCE
+
     $repositoryFunctionSource = @(
         "  TYPE-POOLS abap.",
         "  DATA lt_fieldtexts TYPE TABLE OF d021t.",
@@ -3214,7 +3364,8 @@ function New-InstallProgram {
         "      RETURN.",
         "    ENDIF.",
         "  ENDIF.",
-        "  CASE iv_operation.",
+        "  CASE iv_operation."
+    ) + $capabilityBranchLines + @(
         "    WHEN 'READ_ENHANCEMENT_IMPLEMENTATION'.",
         "      IF iv_object_name IS INITIAL.",
         "        ev_status = 'E'.",
@@ -7898,6 +8049,38 @@ function New-InstallProgram {
     }
     else {
         $repositoryFunctionSource
+    }
+    # SOURCE|HASH is the SHA-256 (lowercase hex) of the exact ABAP text about to be
+    # uploaded -- ($functionSource -join "`n") -- while its own four 16-character
+    # placeholders are still in place. The hash is then written into those slots in
+    # order (no length change), so re-running the generator on the same source
+    # reproduces the same hash. Recompute it the same way to verify a deployment.
+    if (($functionSource -join "`n").Contains($capabilityHashSlots[0])) {
+        $capabilityHashInput = $functionSource -join "`n"
+        $capabilitySha256 = [Security.Cryptography.SHA256]::Create()
+        try {
+            $capabilityHashBytes = $capabilitySha256.ComputeHash(
+                [Text.Encoding]::UTF8.GetBytes($capabilityHashInput)
+            )
+        }
+        finally {
+            $capabilitySha256.Dispose()
+        }
+        $capabilitySourceHash = (
+            $capabilityHashBytes | ForEach-Object { $_.ToString("x2") }
+        ) -join ""
+        $functionSource = @(
+            foreach ($capabilitySourceLine in $functionSource) {
+                $capabilityHashedLine = $capabilitySourceLine
+                for ($capabilityHashIndex = 0; $capabilityHashIndex -lt 4; $capabilityHashIndex++) {
+                    $capabilityHashedLine = $capabilityHashedLine.Replace(
+                        $capabilityHashSlots[$capabilityHashIndex],
+                        $capabilitySourceHash.Substring($capabilityHashIndex * 16, 16)
+                    )
+                }
+                $capabilityHashedLine
+            }
+        )
     }
     $operationDbField = if ($FunctionName -eq "Z_ORVANTA_MCP_DDIC_API") {
         "BAPIRET2-PARAMETER"
