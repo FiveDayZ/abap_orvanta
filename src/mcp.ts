@@ -16,6 +16,7 @@ import { MaintenanceDiagnosticService } from "./maintenance-diagnostics.js"
 import { collectChangeImpact } from "./change-impact.js"
 import { readReportVariants } from "./report-variants.js"
 import { SmartformService } from "./smartforms.js"
+import { resolveToolProfile, toolProfileSummary } from "./tool-profile.js"
 
 export function createMcpServer(
   backend: SapBackend,
@@ -29,7 +30,20 @@ export function createMcpServer(
     name: "orvanta",
     version: PRODUCT_VERSION
   })
-  const tools = new ToolService(backend, undefined, invocationReceipts)
+  // Tool surface gate (`ABAP_MCP_TOOL_PROFILE` / `ABAP_MCP_TOOL_DENY`). Every tool is still
+  // registered with its own contract and handler; tools outside the selected profile are
+  // disabled, so both `tools/list` and `tools/call` stop exposing them. The default profile
+  // is `full`, which keeps the previous behaviour of exposing all tools.
+  const toolProfile = resolveToolProfile()
+  const enabledToolNames = new Set(toolProfile.enabled)
+  type RegisterTool = typeof server.registerTool
+  const registerUnfiltered = server.registerTool.bind(server) as RegisterTool
+  const registerTool = ((name: string, config: unknown, callback: unknown) => {
+    const registered = registerUnfiltered(name as never, config as never, callback as never)
+    if (!enabledToolNames.has(name)) registered.disable()
+    return registered
+  }) as unknown as RegisterTool
+  const tools = new ToolService(backend, undefined, invocationReceipts, toolProfile.disabled)
   const smartforms = new SmartformService(backend, stateRoot)
   const applicationLogs = new ApplicationLogService(
     backend,
@@ -69,96 +83,96 @@ export function createMcpServer(
   const invokeWrite = <T extends object>(...args: Parameters<typeof invokeWriteTool<T>>) =>
     tracked(() => invokeWriteTool(...args))
 
-  server.registerTool("read_smartform", toolContracts.read_smartform, async (input) =>
+  registerTool("read_smartform", toolContracts.read_smartform, async (input) =>
     invoke("read_smartform", async () => JSON.stringify(await smartforms.read(input)))
   )
-  server.registerTool("create_smartform", toolContracts.create_smartform, async (input) =>
+  registerTool("create_smartform", toolContracts.create_smartform, async (input) =>
     invokeWrite("create_smartform", input, backend, writeReceipts, async (beforeInvoke) =>
       JSON.stringify(await smartforms.write("CREATE", input, beforeInvoke))
     )
   )
-  server.registerTool("save_smartform", toolContracts.save_smartform, async (input) =>
+  registerTool("save_smartform", toolContracts.save_smartform, async (input) =>
     invokeWrite("save_smartform", input, backend, writeReceipts, async (beforeInvoke) =>
       JSON.stringify(await smartforms.write("SAVE", input, beforeInvoke))
     )
   )
-  server.registerTool("activate_smartform", toolContracts.activate_smartform, async (input) =>
+  registerTool("activate_smartform", toolContracts.activate_smartform, async (input) =>
     invokeWrite("activate_smartform", input, backend, writeReceipts, async (beforeInvoke) =>
       JSON.stringify(await smartforms.write("ACTIVATE", input, beforeInvoke))
     )
   )
 
-  server.registerTool("get_connected_systems", toolContracts.get_connected_systems, async () =>
+  registerTool("get_connected_systems", toolContracts.get_connected_systems, async () =>
     textResult(tools.getConnectedSystems())
   )
-  server.registerTool("get_capability_report", toolContracts.get_capability_report, async (input) =>
+  registerTool("get_capability_report", toolContracts.get_capability_report, async (input) =>
     invoke("get_capability_report", () => tools.getCapabilityReport(input))
   )
-  server.registerTool("get_runtime_info", toolContracts.get_runtime_info, async (input) =>
+  registerTool("get_runtime_info", toolContracts.get_runtime_info, async (input) =>
     invoke("get_runtime_info", async () =>
-      JSON.stringify(await runtimeIdentity.report(input), null, 2)
+      JSON.stringify(
+        { ...(await runtimeIdentity.report(input)), toolProfile: toolProfileSummary(toolProfile) },
+        null,
+        2
+      )
     )
   )
-  server.registerTool("search_sap_locks", toolContracts.search_sap_locks, async (input) =>
+  registerTool("search_sap_locks", toolContracts.search_sap_locks, async (input) =>
     invoke("search_sap_locks", () => maintenance.searchLocks(input))
   )
-  server.registerTool("search_failed_updates", toolContracts.search_failed_updates, async (input) =>
+  registerTool("search_failed_updates", toolContracts.search_failed_updates, async (input) =>
     invoke("search_failed_updates", () => maintenance.searchUpdates(input))
   )
-  server.registerTool("read_failed_update", toolContracts.read_failed_update, async (input) =>
+  registerTool("read_failed_update", toolContracts.read_failed_update, async (input) =>
     invoke("read_failed_update", () => maintenance.readUpdate(input))
   )
-  server.registerTool(
-    "preview_source_changes",
-    toolContracts.preview_source_changes,
-    async (input) => invoke("preview_source_changes", () => tools.previewSourceChanges(input))
+  registerTool("preview_source_changes", toolContracts.preview_source_changes, async (input) =>
+    invoke("preview_source_changes", () => tools.previewSourceChanges(input))
   )
-  server.registerTool("abap_debug_session", toolContracts.abap_debug_session, async (input) =>
+  registerTool("abap_debug_session", toolContracts.abap_debug_session, async (input) =>
     invoke("abap_debug_session", () => tools.debugSession(input))
   )
-  server.registerTool("abap_debug_breakpoint", toolContracts.abap_debug_breakpoint, async (input) =>
+  registerTool("abap_debug_breakpoint", toolContracts.abap_debug_breakpoint, async (input) =>
     invoke("abap_debug_breakpoint", () => tools.debugBreakpoint(input))
   )
-  server.registerTool("abap_debug_status", toolContracts.abap_debug_status, async (input) =>
+  registerTool("abap_debug_status", toolContracts.abap_debug_status, async (input) =>
     textResult(tools.debugStatus(input))
   )
-  server.registerTool("abap_debug_stack", toolContracts.abap_debug_stack, async (input) =>
+  registerTool("abap_debug_stack", toolContracts.abap_debug_stack, async (input) =>
     invoke("abap_debug_stack", () => tools.debugStack(input))
   )
-  server.registerTool("abap_debug_variable", toolContracts.abap_debug_variable, async (input) =>
+  registerTool("abap_debug_variable", toolContracts.abap_debug_variable, async (input) =>
     invoke("abap_debug_variable", () => tools.debugVariable(input))
   )
-  server.registerTool("abap_debug_step", toolContracts.abap_debug_step, async (input) =>
+  registerTool("abap_debug_step", toolContracts.abap_debug_step, async (input) =>
     invoke("abap_debug_step", () => tools.debugStep(input))
   )
-  server.registerTool("sap_helper_status", toolContracts.sap_helper_status, async (input) =>
+  registerTool("sap_helper_status", toolContracts.sap_helper_status, async (input) =>
     invoke("sap_helper_status", () => tools.sapHelperStatus(input))
   )
-  server.registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
+  registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
     invoke("read_abap_screen", () => tools.readAbapScreen(input))
   )
-  server.registerTool("upsert_abap_screen", toolContracts.upsert_abap_screen, async (input) =>
+  registerTool("upsert_abap_screen", toolContracts.upsert_abap_screen, async (input) =>
     invokeWrite("upsert_abap_screen", input, backend, writeReceipts, () =>
       tools.upsertAbapScreen(input)
     )
   )
-  server.registerTool("patch_abap_screen", toolContracts.patch_abap_screen, async (input) =>
+  registerTool("patch_abap_screen", toolContracts.patch_abap_screen, async (input) =>
     invokeWrite("patch_abap_screen", input, backend, writeReceipts, () =>
       tools.patchAbapScreen(input)
     )
   )
-  server.registerTool(
+  registerTool(
     "validate_dynpro_application",
     toolContracts.validate_dynpro_application,
     async (input) =>
       invoke("validate_dynpro_application", () => tools.validateDynproApplication(input))
   )
-  server.registerTool(
-    "read_abap_gui_definition",
-    toolContracts.read_abap_gui_definition,
-    async (input) => invoke("read_abap_gui_definition", () => tools.readAbapGuiDefinition(input))
+  registerTool("read_abap_gui_definition", toolContracts.read_abap_gui_definition, async (input) =>
+    invoke("read_abap_gui_definition", () => tools.readAbapGuiDefinition(input))
   )
-  server.registerTool(
+  registerTool(
     "patch_abap_gui_definition",
     toolContracts.patch_abap_gui_definition,
     async (input) =>
@@ -166,36 +180,30 @@ export function createMcpServer(
         tools.patchAbapGuiDefinition(input)
       )
   )
-  server.registerTool("create_module_pool", toolContracts.create_module_pool, async (input) =>
+  registerTool("create_module_pool", toolContracts.create_module_pool, async (input) =>
     invokeWrite("create_module_pool", input, backend, writeReceipts, () =>
       tools.createModulePool(input)
     )
   )
-  server.registerTool("delete_module_pool", toolContracts.delete_module_pool, async (input) =>
+  registerTool("delete_module_pool", toolContracts.delete_module_pool, async (input) =>
     invokeWrite("delete_module_pool", input, backend, writeReceipts, () =>
       tools.deleteModulePool(input)
     )
   )
-  server.registerTool("read_transaction_code", toolContracts.read_transaction_code, async (input) =>
+  registerTool("read_transaction_code", toolContracts.read_transaction_code, async (input) =>
     invoke("read_transaction_code", () => tools.readTransactionCode(input))
   )
-  server.registerTool(
-    "create_transaction_code",
-    toolContracts.create_transaction_code,
-    async (input) =>
-      invokeWrite("create_transaction_code", input, backend, writeReceipts, () =>
-        tools.createTransactionCode(input)
-      )
+  registerTool("create_transaction_code", toolContracts.create_transaction_code, async (input) =>
+    invokeWrite("create_transaction_code", input, backend, writeReceipts, () =>
+      tools.createTransactionCode(input)
+    )
   )
-  server.registerTool(
-    "delete_transaction_code",
-    toolContracts.delete_transaction_code,
-    async (input) =>
-      invokeWrite("delete_transaction_code", input, backend, writeReceipts, () =>
-        tools.deleteTransactionCode(input)
-      )
+  registerTool("delete_transaction_code", toolContracts.delete_transaction_code, async (input) =>
+    invokeWrite("delete_transaction_code", input, backend, writeReceipts, () =>
+      tools.deleteTransactionCode(input)
+    )
   )
-  server.registerTool(
+  registerTool(
     "create_report_transaction",
     toolContracts.create_report_transaction,
     async (input) =>
@@ -203,13 +211,13 @@ export function createMcpServer(
         tools.createReportTransaction(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "read_function_module_interface",
     toolContracts.read_function_module_interface,
     async (input) =>
       invoke("read_function_module_interface", () => tools.readFunctionModuleInterface(input))
   )
-  server.registerTool(
+  registerTool(
     "test_remote_function_module",
     toolContracts.test_remote_function_module,
     async (input) =>
@@ -217,7 +225,7 @@ export function createMcpServer(
         tools.testRemoteFunctionModule(input, beforeInvoke)
       )
   )
-  server.registerTool(
+  registerTool(
     "invoke_customer_function_module",
     toolContracts.invoke_customer_function_module,
     async (input) =>
@@ -229,13 +237,13 @@ export function createMcpServer(
         (beforeInvoke) => tools.invokeCustomerFunctionModule(input, beforeInvoke)
       )
   )
-  server.registerTool(
+  registerTool(
     "get_customer_function_call_status",
     toolContracts.get_customer_function_call_status,
     async (input) =>
       invoke("get_customer_function_call_status", () => tools.getCustomerFunctionCallStatus(input))
   )
-  server.registerTool(
+  registerTool(
     "get_write_operation_status",
     toolContracts.get_write_operation_status,
     async (input) =>
@@ -250,7 +258,7 @@ export function createMcpServer(
         )
       )
   )
-  server.registerTool(
+  registerTool(
     "list_write_recovery_operations",
     toolContracts.list_write_recovery_operations,
     async (input) =>
@@ -265,7 +273,7 @@ export function createMcpServer(
         )
       )
   )
-  server.registerTool(
+  registerTool(
     "release_write_operation_lock",
     toolContracts.release_write_operation_lock,
     async (input) =>
@@ -285,7 +293,7 @@ export function createMcpServer(
         )
       )
   )
-  server.registerTool(
+  registerTool(
     "create_function_module_with_interface",
     toolContracts.create_function_module_with_interface,
     async (input) =>
@@ -293,7 +301,7 @@ export function createMcpServer(
         tools.createFunctionModuleWithInterface(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "patch_function_module_interface",
     toolContracts.patch_function_module_interface,
     async (input) =>
@@ -301,18 +309,16 @@ export function createMcpServer(
         tools.patchFunctionModuleInterface(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "inspect_repository_assignment",
     toolContracts.inspect_repository_assignment,
     async (input) =>
       invoke("inspect_repository_assignment", () => tools.inspectRepositoryAssignment(input))
   )
-  server.registerTool(
-    "read_abap_message_class",
-    toolContracts.read_abap_message_class,
-    async (input) => invoke("read_abap_message_class", () => tools.readAbapMessageClass(input))
+  registerTool("read_abap_message_class", toolContracts.read_abap_message_class, async (input) =>
+    invoke("read_abap_message_class", () => tools.readAbapMessageClass(input))
   )
-  server.registerTool(
+  registerTool(
     "create_abap_message_class",
     toolContracts.create_abap_message_class,
     async (input) =>
@@ -320,7 +326,7 @@ export function createMcpServer(
         tools.createAbapMessageClass(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "update_abap_message_class",
     toolContracts.update_abap_message_class,
     async (input) =>
@@ -328,7 +334,7 @@ export function createMcpServer(
         tools.updateAbapMessageClass(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "delete_abap_message_class",
     toolContracts.delete_abap_message_class,
     async (input) =>
@@ -336,42 +342,37 @@ export function createMcpServer(
         tools.deleteAbapMessageClass(input)
       )
   )
-  server.registerTool("read_ddic_domain", toolContracts.read_ddic_domain, async (input) =>
+  registerTool("read_ddic_domain", toolContracts.read_ddic_domain, async (input) =>
     invoke("read_ddic_domain", () => tools.readDdicDomain(input))
   )
-  server.registerTool("upsert_ddic_domain", toolContracts.upsert_ddic_domain, async (input) =>
+  registerTool("upsert_ddic_domain", toolContracts.upsert_ddic_domain, async (input) =>
     invokeWrite("upsert_ddic_domain", input, backend, writeReceipts, () =>
       tools.upsertDdicDomain(input)
     )
   )
-  server.registerTool(
-    "read_ddic_data_element",
-    toolContracts.read_ddic_data_element,
-    async (input) => invoke("read_ddic_data_element", () => tools.readDdicDataElement(input))
+  registerTool("read_ddic_data_element", toolContracts.read_ddic_data_element, async (input) =>
+    invoke("read_ddic_data_element", () => tools.readDdicDataElement(input))
   )
-  server.registerTool(
-    "upsert_ddic_data_element",
-    toolContracts.upsert_ddic_data_element,
-    async (input) =>
-      invokeWrite("upsert_ddic_data_element", input, backend, writeReceipts, () =>
-        tools.upsertDdicDataElement(input)
-      )
+  registerTool("upsert_ddic_data_element", toolContracts.upsert_ddic_data_element, async (input) =>
+    invokeWrite("upsert_ddic_data_element", input, backend, writeReceipts, () =>
+      tools.upsertDdicDataElement(input)
+    )
   )
-  server.registerTool("read_ddic_structure", toolContracts.read_ddic_structure, async (input) =>
+  registerTool("read_ddic_structure", toolContracts.read_ddic_structure, async (input) =>
     invoke("read_ddic_structure", () => tools.readDdicStructure(input))
   )
-  server.registerTool("upsert_ddic_structure", toolContracts.upsert_ddic_structure, async (input) =>
+  registerTool("upsert_ddic_structure", toolContracts.upsert_ddic_structure, async (input) =>
     invokeWrite("upsert_ddic_structure", input, backend, writeReceipts, () =>
       tools.upsertDdicStructure(input)
     )
   )
-  server.registerTool(
+  registerTool(
     "read_ddic_transparent_table",
     toolContracts.read_ddic_transparent_table,
     async (input) =>
       invoke("read_ddic_transparent_table", () => tools.readDdicTransparentTable(input))
   )
-  server.registerTool(
+  registerTool(
     "create_ddic_transparent_table",
     toolContracts.create_ddic_transparent_table,
     async (input) =>
@@ -379,7 +380,7 @@ export function createMcpServer(
         tools.createDdicTransparentTable(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "append_ddic_transparent_table_fields",
     toolContracts.append_ddic_transparent_table_fields,
     async (input) =>
@@ -387,7 +388,7 @@ export function createMcpServer(
         tools.appendDdicTransparentTableFields(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "patch_ddic_transparent_table_fields",
     toolContracts.patch_ddic_transparent_table_fields,
     async (input) =>
@@ -395,7 +396,7 @@ export function createMcpServer(
         tools.patchDdicTransparentTableFields(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "patch_ddic_transparent_table_settings",
     toolContracts.patch_ddic_transparent_table_settings,
     async (input) =>
@@ -403,13 +404,13 @@ export function createMcpServer(
         tools.patchDdicTransparentTableSettings(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "read_ddic_table_conversion_status",
     toolContracts.read_ddic_table_conversion_status,
     async (input) =>
       invoke("read_ddic_table_conversion_status", () => tools.readDdicTableConversionStatus(input))
   )
-  server.registerTool(
+  registerTool(
     "recover_ddic_table_conversion",
     toolContracts.recover_ddic_table_conversion,
     async (input) =>
@@ -417,79 +418,74 @@ export function createMcpServer(
         tools.recoverDdicTableConversion(input)
       )
   )
-  server.registerTool("read_ddic_table_type", toolContracts.read_ddic_table_type, async (input) =>
+  registerTool("read_ddic_table_type", toolContracts.read_ddic_table_type, async (input) =>
     invoke("read_ddic_table_type", () => tools.readDdicTableType(input))
   )
-  server.registerTool(
-    "upsert_ddic_table_type",
-    toolContracts.upsert_ddic_table_type,
-    async (input) =>
-      invokeWrite("upsert_ddic_table_type", input, backend, writeReceipts, () =>
-        tools.upsertDdicTableType(input)
-      )
+  registerTool("upsert_ddic_table_type", toolContracts.upsert_ddic_table_type, async (input) =>
+    invokeWrite("upsert_ddic_table_type", input, backend, writeReceipts, () =>
+      tools.upsertDdicTableType(input)
+    )
   )
-  server.registerTool("delete_ddic_object", toolContracts.delete_ddic_object, async (input) =>
+  registerTool("delete_ddic_object", toolContracts.delete_ddic_object, async (input) =>
     invokeWrite("delete_ddic_object", input, backend, writeReceipts, () =>
       tools.deleteDdicObject(input)
     )
   )
-  server.registerTool("search_abap_objects", toolContracts.search_abap_objects, async (input) =>
+  registerTool("search_abap_objects", toolContracts.search_abap_objects, async (input) =>
     invoke("search_abap_objects", () => tools.searchObjects(input))
   )
-  server.registerTool("get_abap_object_info", toolContracts.get_abap_object_info, async (input) =>
+  registerTool("get_abap_object_info", toolContracts.get_abap_object_info, async (input) =>
     invoke("get_abap_object_info", () => tools.getObjectInfo(input))
   )
-  server.registerTool("get_abap_object_lines", toolContracts.get_abap_object_lines, async (input) =>
+  registerTool("get_abap_object_lines", toolContracts.get_abap_object_lines, async (input) =>
     invoke("get_abap_object_lines", () => tools.getObjectLines(input))
   )
-  server.registerTool("get_batch_lines", toolContracts.get_batch_lines, async (input) =>
+  registerTool("get_batch_lines", toolContracts.get_batch_lines, async (input) =>
     invoke("get_batch_lines", () => tools.getBatchLines(input))
   )
-  server.registerTool("get_object_by_uri", toolContracts.get_object_by_uri, async (input) =>
+  registerTool("get_object_by_uri", toolContracts.get_object_by_uri, async (input) =>
     invoke("get_object_by_uri", () => tools.getObjectByUri(input))
   )
-  server.registerTool(
-    "search_abap_object_lines",
-    toolContracts.search_abap_object_lines,
-    async (input) => invoke("search_abap_object_lines", () => tools.searchObjectLines(input))
+  registerTool("search_abap_object_lines", toolContracts.search_abap_object_lines, async (input) =>
+    invoke("search_abap_object_lines", () => tools.searchObjectLines(input))
   )
-  server.registerTool(
+  registerTool(
     "inspect_source_enhancements",
     toolContracts.inspect_source_enhancements,
     async (input) =>
       invoke("inspect_source_enhancements", () => tools.inspectSourceEnhancements(input))
   )
-  server.registerTool(
+  registerTool(
     "search_enhancement_objects",
     toolContracts.search_enhancement_objects,
     async (input) =>
       invoke("search_enhancement_objects", () => tools.searchEnhancementObjects(input))
   )
-  server.registerTool(
+  registerTool(
     "search_customer_exit_objects",
     toolContracts.search_customer_exit_objects,
     async (input) =>
       invoke("search_customer_exit_objects", () => tools.searchCustomerExitObjects(input))
   )
-  server.registerTool(
+  registerTool(
     "read_customer_exit_definition",
     toolContracts.read_customer_exit_definition,
     async (input) =>
       invoke("read_customer_exit_definition", () => tools.readCustomerExitDefinition(input))
   )
-  server.registerTool(
+  registerTool(
     "read_customer_exit_project",
     toolContracts.read_customer_exit_project,
     async (input) =>
       invoke("read_customer_exit_project", () => tools.readCustomerExitProject(input))
   )
-  server.registerTool(
+  registerTool(
     "inspect_customer_function_exits",
     toolContracts.inspect_customer_function_exits,
     async (input) =>
       invoke("inspect_customer_function_exits", () => tools.inspectCustomerFunctionExits(input))
   )
-  server.registerTool(
+  registerTool(
     "inspect_customer_screen_menu_exits",
     toolContracts.inspect_customer_screen_menu_exits,
     async (input) =>
@@ -497,17 +493,13 @@ export function createMcpServer(
         tools.inspectCustomerScreenMenuExits(input)
       )
   )
-  server.registerTool(
-    "search_bte_dispatchers",
-    toolContracts.search_bte_dispatchers,
-    async (input) => invoke("search_bte_dispatchers", () => tools.searchBteDispatchers(input))
+  registerTool("search_bte_dispatchers", toolContracts.search_bte_dispatchers, async (input) =>
+    invoke("search_bte_dispatchers", () => tools.searchBteDispatchers(input))
   )
-  server.registerTool(
-    "read_bte_configuration",
-    toolContracts.read_bte_configuration,
-    async (input) => invoke("read_bte_configuration", () => tools.readBteConfiguration(input))
+  registerTool("read_bte_configuration", toolContracts.read_bte_configuration, async (input) =>
+    invoke("read_bte_configuration", () => tools.readBteConfiguration(input))
   )
-  server.registerTool(
+  registerTool(
     "prepare_enhancement_configuration_workflow",
     toolContracts.prepare_enhancement_configuration_workflow,
     async (input) =>
@@ -515,16 +507,16 @@ export function createMcpServer(
         tools.prepareEnhancementConfigurationWorkflow(input)
       )
   )
-  server.registerTool("search_badi_objects", toolContracts.search_badi_objects, async (input) =>
+  registerTool("search_badi_objects", toolContracts.search_badi_objects, async (input) =>
     invoke("search_badi_objects", () => tools.searchBadiObjects(input))
   )
-  server.registerTool(
+  registerTool(
     "read_classic_badi_definition",
     toolContracts.read_classic_badi_definition,
     async (input) =>
       invoke("read_classic_badi_definition", () => tools.readClassicBadiDefinition(input))
   )
-  server.registerTool(
+  registerTool(
     "manage_classic_badi_implementation",
     toolContracts.manage_classic_badi_implementation,
     async (input) =>
@@ -532,13 +524,13 @@ export function createMcpServer(
         tools.manageClassicBadiImplementation(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "read_enhancement_implementation",
     toolContracts.read_enhancement_implementation,
     async (input) =>
       invoke("read_enhancement_implementation", () => tools.readEnhancementImplementation(input))
   )
-  server.registerTool(
+  registerTool(
     "create_enhancement_hook_implementation",
     toolContracts.create_enhancement_hook_implementation,
     async (input) =>
@@ -546,7 +538,7 @@ export function createMcpServer(
         tools.createEnhancementHookImplementation(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "create_new_badi_implementation",
     toolContracts.create_new_badi_implementation,
     async (input) =>
@@ -554,7 +546,7 @@ export function createMcpServer(
         tools.createNewBadiImplementation(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "update_enhancement_hook_implementation",
     toolContracts.update_enhancement_hook_implementation,
     async (input) =>
@@ -562,7 +554,7 @@ export function createMcpServer(
         tools.updateEnhancementHookImplementation(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "update_new_badi_implementation",
     toolContracts.update_new_badi_implementation,
     async (input) =>
@@ -570,7 +562,7 @@ export function createMcpServer(
         tools.updateNewBadiImplementation(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "manage_enhancement_implementation_state",
     toolContracts.manage_enhancement_implementation_state,
     async (input) =>
@@ -578,7 +570,7 @@ export function createMcpServer(
         tools.manageEnhancementImplementationState(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "delete_enhancement_implementation",
     toolContracts.delete_enhancement_implementation,
     async (input) =>
@@ -586,41 +578,41 @@ export function createMcpServer(
         tools.deleteEnhancementImplementation(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "inspect_enhancement_framework",
     toolContracts.inspect_enhancement_framework,
     async (input) =>
       invoke("inspect_enhancement_framework", () => tools.inspectEnhancementFramework(input))
   )
-  server.registerTool(
+  registerTool(
     "inspect_fico_rule_exit_program",
     toolContracts.inspect_fico_rule_exit_program,
     async (input) =>
       invoke("inspect_fico_rule_exit_program", () => tools.inspectFicoRuleExitProgram(input))
   )
-  server.registerTool(
+  registerTool(
     "get_abap_object_workspace_uri",
     toolContracts.get_abap_object_workspace_uri,
     async (input) => invoke("get_abap_object_workspace_uri", () => tools.getWorkspaceUri(input))
   )
-  server.registerTool("get_abap_object_url", toolContracts.get_abap_object_url, async (input) =>
+  registerTool("get_abap_object_url", toolContracts.get_abap_object_url, async (input) =>
     invoke("get_abap_object_url", async () => tools.getObjectUrl(input))
   )
-  server.registerTool("find_where_used", toolContracts.find_where_used, async (input) =>
+  registerTool("find_where_used", toolContracts.find_where_used, async (input) =>
     invoke("find_where_used", () => tools.findWhereUsed(input))
   )
-  server.registerTool("analyze_change_impact", toolContracts.analyze_change_impact, async (input) =>
+  registerTool("analyze_change_impact", toolContracts.analyze_change_impact, async (input) =>
     invoke("analyze_change_impact", async () =>
       JSON.stringify(await collectChangeImpact(backend, input))
     )
   )
-  server.registerTool("get_sap_system_info", toolContracts.get_sap_system_info, async (input) =>
+  registerTool("get_sap_system_info", toolContracts.get_sap_system_info, async (input) =>
     invoke("get_sap_system_info", () => tools.getSapSystemInfo(input))
   )
-  server.registerTool("get_version_history", toolContracts.get_version_history, async (input) =>
+  registerTool("get_version_history", toolContracts.get_version_history, async (input) =>
     invoke("get_version_history", () => tools.getVersionHistory(input))
   )
-  server.registerTool(
+  registerTool(
     "replace_string_in_abap_object",
     toolContracts.replace_string_in_abap_object,
     async (input) =>
@@ -628,10 +620,10 @@ export function createMcpServer(
         tools.replaceStringInObject(input)
       )
   )
-  server.registerTool("abap_activate", toolContracts.abap_activate, async (input) =>
+  registerTool("abap_activate", toolContracts.abap_activate, async (input) =>
     invokeWrite("abap_activate", input, backend, writeReceipts, () => tools.activateObject(input))
   )
-  server.registerTool(
+  registerTool(
     "create_object_programmatically",
     toolContracts.create_object_programmatically,
     async (input) =>
@@ -639,7 +631,7 @@ export function createMcpServer(
         tools.createObject(input)
       )
   )
-  server.registerTool(
+  registerTool(
     "delete_abap_source_object",
     toolContracts.delete_abap_source_object,
     async (input) =>
@@ -647,34 +639,31 @@ export function createMcpServer(
         tools.deleteSourceObject(input)
       )
   )
-  server.registerTool("create_test_include", toolContracts.create_test_include, async (input) =>
+  registerTool("create_test_include", toolContracts.create_test_include, async (input) =>
     invokeWrite("create_test_include", input, backend, writeReceipts, () =>
       tools.createTestInclude(input)
     )
   )
-  server.registerTool("manage_text_elements", toolContracts.manage_text_elements, async (input) =>
+  registerTool("manage_text_elements", toolContracts.manage_text_elements, async (input) =>
     input.action === "read"
       ? invoke("manage_text_elements", () => tools.manageTextElements(input))
       : invokeWrite("manage_text_elements", input, backend, writeReceipts, () =>
           tools.manageTextElements(input)
         )
   )
-  server.registerTool("get_abap_diagnostics", toolContracts.get_abap_diagnostics, async (input) =>
+  registerTool("get_abap_diagnostics", toolContracts.get_abap_diagnostics, async (input) =>
     invoke("get_abap_diagnostics", () => tools.getDiagnostics(input))
   )
-  server.registerTool("get_abap_sql_syntax", toolContracts.get_abap_sql_syntax, async () =>
+  registerTool("get_abap_sql_syntax", toolContracts.get_abap_sql_syntax, async () =>
     textResult(tools.getAbapSqlSyntax())
   )
-  server.registerTool("execute_data_query", toolContracts.execute_data_query, async (input) =>
+  registerTool("execute_data_query", toolContracts.execute_data_query, async (input) =>
     invoke("execute_data_query", () => tools.executeDataQuery(input))
   )
-  server.registerTool(
-    "read_report_parameters",
-    toolContracts.read_report_parameters,
-    async (input) =>
-      invoke("read_report_parameters", () => operationalLogs.readReportParameters(input))
+  registerTool("read_report_parameters", toolContracts.read_report_parameters, async (input) =>
+    invoke("read_report_parameters", () => operationalLogs.readReportParameters(input))
   )
-  server.registerTool("read_report_variants", toolContracts.read_report_variants, async (input) =>
+  registerTool("read_report_variants", toolContracts.read_report_variants, async (input) =>
     invoke("read_report_variants", async () =>
       JSON.stringify(
         await readReportVariants(
@@ -687,62 +676,56 @@ export function createMcpServer(
       )
     )
   )
-  server.registerTool("read_abap_table", toolContracts.read_abap_table, async (input) =>
+  registerTool("read_abap_table", toolContracts.read_abap_table, async (input) =>
     invoke("read_abap_table", () => tools.readAbapTable(input))
   )
-  server.registerTool("run_atc_analysis", toolContracts.run_atc_analysis, async (input) =>
+  registerTool("run_atc_analysis", toolContracts.run_atc_analysis, async (input) =>
     invoke("run_atc_analysis", () => tools.runAtcAnalysis(input))
   )
-  server.registerTool("run_sci_analysis", toolContracts.run_sci_analysis, async (input) =>
+  registerTool("run_sci_analysis", toolContracts.run_sci_analysis, async (input) =>
     invoke("run_sci_analysis", () => tools.runSciAnalysis(input))
   )
-  server.registerTool("run_unit_tests", toolContracts.run_unit_tests, async (input) =>
+  registerTool("run_unit_tests", toolContracts.run_unit_tests, async (input) =>
     invoke("run_unit_tests", () => tools.runUnitTests(input))
   )
-  server.registerTool("preview_configuration", toolContracts.preview_configuration, async (input) =>
+  registerTool("preview_configuration", toolContracts.preview_configuration, async (input) =>
     invoke("preview_configuration", () => tools.previewConfiguration(input))
   )
-  server.registerTool(
-    "search_background_jobs",
-    toolContracts.search_background_jobs,
-    async (input) => invoke("search_background_jobs", () => operationalLogs.searchJobs(input))
+  registerTool("search_background_jobs", toolContracts.search_background_jobs, async (input) =>
+    invoke("search_background_jobs", () => operationalLogs.searchJobs(input))
   )
-  server.registerTool(
+  registerTool(
     "read_background_job_details",
     toolContracts.read_background_job_details,
     async (input) =>
       invoke("read_background_job_details", () => operationalLogs.readJobDetails(input))
   )
-  server.registerTool(
+  registerTool(
     "read_background_job_spool",
     toolContracts.read_background_job_spool,
     async (input) => invoke("read_background_job_spool", () => operationalLogs.readJobSpool(input))
   )
-  server.registerTool(
-    "read_background_job_log",
-    toolContracts.read_background_job_log,
-    async (input) => invoke("read_background_job_log", () => operationalLogs.readJobLog(input))
+  registerTool("read_background_job_log", toolContracts.read_background_job_log, async (input) =>
+    invoke("read_background_job_log", () => operationalLogs.readJobLog(input))
   )
-  server.registerTool("read_system_logs", toolContracts.read_system_logs, async (input) =>
+  registerTool("read_system_logs", toolContracts.read_system_logs, async (input) =>
     invoke("read_system_logs", () => operationalLogs.readSystem(input))
   )
-  server.registerTool("correlate_sap_logs", toolContracts.correlate_sap_logs, async (input) =>
+  registerTool("correlate_sap_logs", toolContracts.correlate_sap_logs, async (input) =>
     invoke("correlate_sap_logs", () => logCorrelation.correlate(input))
   )
-  server.registerTool(
+  registerTool(
     "discover_application_logs",
     toolContracts.discover_application_logs,
     async (input) => invoke("discover_application_logs", () => applicationLogs.discover(input))
   )
-  server.registerTool(
-    "search_application_logs",
-    toolContracts.search_application_logs,
-    async (input) => invoke("search_application_logs", () => applicationLogs.search(input))
+  registerTool("search_application_logs", toolContracts.search_application_logs, async (input) =>
+    invoke("search_application_logs", () => applicationLogs.search(input))
   )
-  server.registerTool("read_application_log", toolContracts.read_application_log, async (input) =>
+  registerTool("read_application_log", toolContracts.read_application_log, async (input) =>
     invoke("read_application_log", () => applicationLogs.read(input))
   )
-  server.registerTool("diagnose_sap_failure", toolContracts.diagnose_sap_failure, async (input) =>
+  registerTool("diagnose_sap_failure", toolContracts.diagnose_sap_failure, async (input) =>
     invoke("diagnose_sap_failure", async () =>
       tools.diagnoseSapFailure(
         input,
@@ -752,18 +735,18 @@ export function createMcpServer(
       )
     )
   )
-  server.registerTool("analyze_abap_dumps", toolContracts.analyze_abap_dumps, async (input) =>
+  registerTool("analyze_abap_dumps", toolContracts.analyze_abap_dumps, async (input) =>
     invoke("analyze_abap_dumps", () => tools.analyzeDumps(input))
   )
-  server.registerTool("analyze_abap_traces", toolContracts.analyze_abap_traces, async (input) =>
+  registerTool("analyze_abap_traces", toolContracts.analyze_abap_traces, async (input) =>
     invoke("analyze_abap_traces", () => tools.analyzeTraces(input))
   )
-  server.registerTool(
+  registerTool(
     "manage_transport_requests",
     toolContracts.manage_transport_requests,
     async (input) => invoke("manage_transport_requests", () => tools.manageTransportRequests(input))
   )
-  server.registerTool(
+  registerTool(
     "cleanup_transport_entries",
     toolContracts.cleanup_transport_entries,
     async (input) =>
@@ -771,10 +754,10 @@ export function createMcpServer(
         tools.cleanupTransportEntries(input)
       )
   )
-  server.registerTool("abap_download", toolContracts.abap_download, async (input) =>
+  registerTool("abap_download", toolContracts.abap_download, async (input) =>
     invoke("abap_download", () => tools.downloadResource(input))
   )
-  server.registerTool("adt_discovery_export", toolContracts.adt_discovery_export, async (input) =>
+  registerTool("adt_discovery_export", toolContracts.adt_discovery_export, async (input) =>
     invoke("adt_discovery_export", () => tools.exportAdtDiscovery(input))
   )
 

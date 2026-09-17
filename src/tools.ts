@@ -1070,7 +1070,8 @@ export class ToolService {
   constructor(
     private readonly backend: SapBackend,
     exportRoot = process.env.ABAP_MCP_EXPORT_ROOT ?? process.cwd(),
-    private readonly invocationReceipts?: InvocationReceiptStore | undefined
+    private readonly invocationReceipts?: InvocationReceiptStore | undefined,
+    private readonly disabledToolNames: readonly string[] = []
   ) {
     this.exportRoot = resolve(exportRoot)
   }
@@ -1084,7 +1085,7 @@ export class ToolService {
   }
 
   async getCapabilityReport(input: { connectionId: string }): Promise<string> {
-    return buildCapabilityReport(this.backend, input.connectionId)
+    return buildCapabilityReport(this.backend, input.connectionId, this.disabledToolNames)
   }
 
   async sapHelperStatus(input: SapHelperInput): Promise<string> {

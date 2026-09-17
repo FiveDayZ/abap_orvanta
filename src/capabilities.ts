@@ -33,6 +33,8 @@ interface CapabilitySpec {
   implementedLocally: true
   route: CapabilityRoute
   toolNames: string[]
+  /** Present only when the active tool profile withholds part of `toolNames`. */
+  disabledToolNames?: string[]
   observation: CapabilityObservation
 }
 
@@ -44,7 +46,8 @@ const LOCAL_AVAILABLE: CapabilityObservation = {
 
 export async function buildCapabilityReport(
   backend: SapBackend,
-  requestedConnectionId: string
+  requestedConnectionId: string,
+  disabledToolNames: readonly string[] = []
 ): Promise<string> {
   const connectionId = requestedConnectionId.toLowerCase()
   const connection = backend.connectionDetails(connectionId)
@@ -462,6 +465,11 @@ export async function buildCapabilityReport(
     )
   ]
 
+  // The tool profile disclosure only appears when a profile or deny list actually withholds
+  // tools, so the default `full` configuration keeps the previous report byte for byte.
+  const withheld = new Set(disabledToolNames)
+  const disclosed = capabilities.map((item) => discloseToolProfile(item, withheld))
+
   return JSON.stringify(
     {
       productVersion: PRODUCT_VERSION,
@@ -480,18 +488,45 @@ export async function buildCapabilityReport(
         automaticWriteRetry: false,
         automaticRollbackClaimed: false
       },
+      ...(withheld.size > 0
+        ? {
+            toolProfile: {
+              disabledToolCount: withheld.size,
+              note: "ABAP_MCP_TOOL_PROFILE / ABAP_MCP_TOOL_DENY withhold these tools from tools/list and reject tools/call; they are removed from toolNames and listed under disabledToolNames."
+            }
+          }
+        : {}),
       helpers: [baseHelper, repositoryHelper, ddicHelper],
       discovery: discoverySummary(discovery),
-      capabilities,
+      capabilities: disclosed,
       summary: {
-        toolCount: capabilities.reduce((count, item) => count + item.toolNames.length, 0),
-        capabilityCount: capabilities.length,
-        ...countAvailability(capabilities)
+        toolCount: disclosed.reduce((count, item) => count + item.toolNames.length, 0),
+        ...(withheld.size > 0
+          ? {
+              disabledToolCount: disclosed.reduce(
+                (count, item) => count + (item.disabledToolNames?.length ?? 0),
+                0
+              )
+            }
+          : {}),
+        capabilityCount: disclosed.length,
+        ...countAvailability(disclosed)
       }
     },
     null,
     2
   )
+}
+
+function discloseToolProfile(spec: CapabilitySpec, withheld: Set<string>): CapabilitySpec {
+  if (withheld.size === 0) return spec
+  const disabled = spec.toolNames.filter((name) => withheld.has(name))
+  if (disabled.length === 0) return spec
+  return {
+    ...spec,
+    toolNames: spec.toolNames.filter((name) => !withheld.has(name)),
+    disabledToolNames: disabled
+  }
 }
 
 function capability(

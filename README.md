@@ -5,6 +5,8 @@ ORVANTA 是独立 ABAP MCP 服务，默认 MCP 注册名为 `orvanta`。它不�
 
 ## 当前实施基线
 
+2026-09-17 版本 `0.45.0` 建立工具面治理基线：新增 `src/tool-registry.ts`作为全部126项工具的唯一事实源（分组、profile、路由、SAP助手依赖、最低助手协议、风险注解与边界说明），`toolContracts`在加载时统一合并注册表注解并与契约双向校验，任一方缺项即启动失败；此前83项没有任何注解的工具补齐只读/破坏性提示，只读工具由33项修正为75项，`docs/tool-index.md`和`contracts/tool-index.json`由 `npm run matrix:generate`生成、`npm run matrix:check`校验。新增启动期工具开关 `ABAP_MCP_TOOL_PROFILE`（`full`/`readonly`/`platform`/`dev`/`config`/`ops`，默认 `full`，与历史行为一致）与 `ABAP_MCP_TOOL_DENY`（在 profile 之上按名称去掉单个工具，名称不存在时启动失败）：被收窄的工具不出现在 `tools/list`，`tools/call`也被服务端以 `disabled`拒绝，`get_runtime_info`返回实际生效的 `toolProfile`，`get_capability_report`在存在被禁用工具时返回 `toolProfile.disabledToolCount`及各能力的 `disabledToolNames`。同时把 `test/settings.test.ts`中写死的121项工具数改为由注册表推导，并新增 `docs/helper-capabilities-protocol.md`说明助手能力自述（CAPABILITIES）协议设计稿——该设计稿尚未实现、未部署到任何SAP系统。本版本仅完成静态检查和候选包构建，自动化测试及SAP运行时回归仍由测试人员执行。
+
 2026-09-17 版本 `0.44.1` 为既有 `read_abap_table(SXCI, ...)` 诊断调用增加显式Classic BAdI仓库兼容投影：固定返回 `EXIT_NAME/IMP_NAME/CLASS_NAME/INTER_NAME`，复用 `read_classic_badi_definition` 的定义、实现及类映射结果，并以 `compatibilityProjection=true`、`tableClassVerified=false` 和 `method=classic_badi_repository_helper` 明确说明它不是物理DDIC表读取；无精确 `EXIT_NAME` 筛选时按 `maxRows + 1` 有界发现并如实标记 `truncated`。其他确认不存在的DDIC名称仍保持 `TABLE_QUERY_TABLE_NOT_FOUND`，不恢复不可靠的RFC伪表降级。本版本仅完成静态检查和候选包构建，自动化及运行时回归仍由测试人员执行。
 
 2026-09-17 版本 `0.43.5` 修正第六批第四轮反馈中的错误归因：`SXCI/XI`是Classic BAdI实现的ADT仓库对象子类型，不是DDIC表名。`read_abap_table`在DDIC明确返回对象不存在时，现在稳定返回`TABLE_QUERY_TABLE_NOT_FOUND`并停止，不再误入`RFC_READ_TABLE`或aligned-reader降级；工具描述和表查询文档同步指向`search_badi_objects`及`read_classic_badi_definition`。本版本仅完成静态检查和候选包构建，自动化及运行时回归仍由测试人员执行。
@@ -265,6 +267,13 @@ Codex CLI `0.92.0` 已实际调用便携服务的 MCP工具；Codex桌面端仍�
 便携目录根部的 `connections.json`是实际生效的连接配置，默认包含当前 `w200`。可以直接修改 `id`、`url`、`client`、`language`、`username`、`passwordEnv`和 `allowUnauthorized`。`remoteFunctionAllowlist`是允许正式调用的客户RFC准确名称数组，默认空数组；只接受 `Z*`或 `Y*`且不支持通配符。密码从 `passwordEnv`指定的环境变量读取，不允许增加 `password`字段。
 
 客户RFC调用凭证和0.28.0统一写操作凭证不写入便携目录，默认保存在当前Windows用户的 `%LOCALAPPDATA%\ABAP MCP Standalone\state`。需要调整位置时，在启动服务前设置 `ABAP_MCP_STATE_DIR`为独立可写目录；不要让多个不受信任用户共享同一个状态目录。
+
+工具范围可以在启动前用环境变量收窄，默认 `full`，即与历史行为一致地暴露全部工具：
+
+- `ABAP_MCP_TOOL_PROFILE`：取 `full`、`readonly`、`platform`、`dev`、`config`、`ops`之一。`readonly`只暴露标注为只读的工具（当前75项）；被收窄的工具既不出现在 `tools/list`，`tools/call`也会被服务端以 `Tool <name> disabled`拒绝，而不是仅从清单隐藏。
+- `ABAP_MCP_TOOL_DENY`：在所选 profile 之上按名称去掉单个工具，用逗号、分号或空白分隔。名称不存在时服务启动直接失败，避免拼写错误让开关静默失效。
+
+实际生效的 profile 与启用/禁用数量见 `get_runtime_info.toolProfile`；存在被禁用工具时，`get_capability_report`额外返回 `toolProfile.disabledToolCount`，并把受影响能力中不可调用的工具列在 `disabledToolNames`。工具清单由 `src/tool-registry.ts`单一维护，`npm run matrix:generate`生成 `docs/tool-index.md`。
 
 下次启动：
 
