@@ -147,7 +147,12 @@ const envelope = z
       "INVALID_INPUT",
       "READ_FAILED"
     ]),
-    hasMore: z.boolean()
+    hasMore: z.boolean(),
+    // Present only on the helper's CAPABILITIES self-description, which reuses this JSON
+    // envelope but carries its payload rows in this array instead of an `it_source` table. The
+    // key stays optional and the object stays `.strict()`: business replies never carry it, and
+    // an unknown key is still rejected.
+    payload: z.array(z.string()).optional()
   })
   .strict()
 const replySchema = z.discriminatedUnion("action", [

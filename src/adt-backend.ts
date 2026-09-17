@@ -291,6 +291,10 @@ export class AdtBackend implements SapBackend {
    * rejects the unknown opcode with status `E` / code `OPERATION_NOT_SUPPORTED` (verified in
    * `scripts/bootstrap-sap-helper.ps1`), which must degrade a capability report instead of
    * failing it.
+   *
+   * Two reply contracts are supported: the XML `EV_STATUS`/`EV_CODE`/`IT_SOURCE` helpers and the
+   * `EV_RESULT` JSON helpers that carry the rows as `payload` (see
+   * `HELPER_CAPABILITIES_CHANNELS`).
    */
   async probeHelperCapabilities(
     connectionId: string,
@@ -312,6 +316,14 @@ export class AdtBackend implements SapBackend {
       )
     }
     try {
+      if (channel.reply === "json-envelope") {
+        const response = await this.callRemoteFunction(connectionId, {
+          functionName: probed,
+          inputParameters: { IV_ACTION: "CAPABILITIES" },
+          outputParameters: [{ name: "EV_RESULT", kind: "scalar" }]
+        })
+        return jsonHelperCapabilitiesAttestation(response, probed, observedAt)
+      }
       const body = await postSapSoap(
         config,
         channel.soapAction,
@@ -2067,22 +2079,34 @@ function rowAt(rows: SapStructureRow[], index: number): SapStructureRow {
  * module name. `Z_ORVANTA_MCP_EXECUTE` and `Z_ORVANTA_MCP_DYNPRO_API` share the same generated
  * ABAP body; `Z_ORVANTA_MCP_DDIC_API` implements the opcode in a later delivery and currently
  * answers `OPERATION_NOT_SUPPORTED`, which degrades to `operation-scoped`.
+ *
+ * `Z_ORVANTA_MAINT_READ` and `Z_ORVANTA_OPS_READ` own no source table and no
+ * `EV_STATUS`/`EV_CODE`/`EV_VERSION` export: their only reply channel is the `EV_RESULT` JSON
+ * string, so the same rows travel as its `payload` array (protocol design revision R3). They are
+ * therefore asked through `callRemoteFunction`, the same client path their business reads use.
  */
-const HELPER_CAPABILITIES_CHANNELS: Record<string, { soapAction: string; envelope: () => string }> =
-  {
-    Z_ORVANTA_MCP_EXECUTE: {
-      soapAction: "http://www.sap.com/Z_ORVANTA_MCP_EXECUTE",
-      envelope: () => buildSapHelperEnvelope({ operation: "CAPABILITIES" })
-    },
-    Z_ORVANTA_MCP_DYNPRO_API: {
-      soapAction: "http://www.sap.com/Z_ORVANTA_MCP_DYNPRO_API",
-      envelope: () => buildSapRepositoryEnvelope({ operation: "CAPABILITIES" })
-    },
-    Z_ORVANTA_MCP_DDIC_API: {
-      soapAction: "http://www.sap.com/Z_ORVANTA_MCP_DDIC_API",
-      envelope: () => buildSapDdicEnvelope({ operation: "CAPABILITIES", objectName: "" })
-    }
-  }
+const HELPER_CAPABILITIES_CHANNELS: Record<
+  string,
+  { reply: "xml-rows"; soapAction: string; envelope: () => string } | { reply: "json-envelope" }
+> = {
+  Z_ORVANTA_MCP_EXECUTE: {
+    reply: "xml-rows",
+    soapAction: "http://www.sap.com/Z_ORVANTA_MCP_EXECUTE",
+    envelope: () => buildSapHelperEnvelope({ operation: "CAPABILITIES" })
+  },
+  Z_ORVANTA_MCP_DYNPRO_API: {
+    reply: "xml-rows",
+    soapAction: "http://www.sap.com/Z_ORVANTA_MCP_DYNPRO_API",
+    envelope: () => buildSapRepositoryEnvelope({ operation: "CAPABILITIES" })
+  },
+  Z_ORVANTA_MCP_DDIC_API: {
+    reply: "xml-rows",
+    soapAction: "http://www.sap.com/Z_ORVANTA_MCP_DDIC_API",
+    envelope: () => buildSapDdicEnvelope({ operation: "CAPABILITIES", objectName: "" })
+  },
+  Z_ORVANTA_MAINT_READ: { reply: "json-envelope" },
+  Z_ORVANTA_OPS_READ: { reply: "json-envelope" }
+}
 
 export interface SapHelperCapabilitiesPayload {
   helper: string | null
@@ -2175,6 +2199,184 @@ export function parseHelperCapabilitiesPayload(
     }
   }
   return payload
+}
+
+/**
+ * A helper whose only reply channel is the `EV_RESULT` JSON string either described itself, does
+ * not implement the opcode, or answered something this service must not read as a capability
+ * claim. `detail` is present only for the third case, so a capability report can explain a
+ * refused self-description without turning it into evidence.
+ */
+export type JsonHelperCapabilitiesReply =
+  | { kind: "self-described"; payload: SapHelperCapabilitiesPayload }
+  | { kind: "unsupported" }
+  | { kind: "unusable"; detail: string }
+
+const CAPABILITY_PROTOCOL_VERSION = /^\d+\.\d+$/
+const CAPABILITY_OPCODE = /^[A-Z0-9_]+$/
+
+function compareCapabilityProtocols(left: string, right: string): number {
+  const [leftMajor = 0, leftMinor = 0] = left.split(".").map(Number)
+  const [rightMajor = 0, rightMinor = 0] = right.split(".").map(Number)
+  return leftMajor - rightMajor || leftMinor - rightMinor
+}
+
+/**
+ * Decode the `EV_RESULT` JSON envelope of a helper that owns no `it_source` table
+ * (`Z_ORVANTA_MAINT_READ`, `Z_ORVANTA_OPS_READ`; protocol design revision R3).
+ *
+ * The rows are read with the shared `parseHelperCapabilitiesPayload`, but unlike the XML path
+ * the payload is then checked as a whole before any of it is trusted: a self-description that
+ * omits its identity, declares an unparseable protocol, declares MIN above MAX, or lists an
+ * operation outside the declared protocol range (or a malformed/duplicated operation row) is
+ * refused instead of being partially believed. Unknown row kinds stay forward compatible and
+ * are ignored, exactly like in the XML path.
+ */
+export function decodeJsonHelperCapabilitiesReply(
+  raw: string,
+  expectedHelper: string
+): JsonHelperCapabilitiesReply {
+  let document: unknown
+  try {
+    document = JSON.parse(raw)
+  } catch {
+    return { kind: "unusable", detail: "CAPABILITIES reply is not a JSON envelope" }
+  }
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    return { kind: "unusable", detail: "CAPABILITIES reply is not a JSON object" }
+  }
+  const envelope = document as Record<string, unknown>
+  const status = typeof envelope.status === "string" ? envelope.status.trim().toUpperCase() : ""
+  const code = typeof envelope.code === "string" ? envelope.code.trim().toUpperCase() : ""
+  if (status === "E" || /NOT_SUPPORTED|UNSUPPORTED|UNKNOWN_OPERATION/.test(code)) {
+    return { kind: "unsupported" }
+  }
+  if (status !== "S" || code !== "CAPABILITIES") {
+    return {
+      kind: "unusable",
+      detail: `CAPABILITIES reply reported status ${status || "EMPTY"} and code ${code || "EMPTY"}`
+    }
+  }
+  const rows = envelope.payload
+  if (!Array.isArray(rows) || rows.length === 0 || rows.some((row) => typeof row !== "string")) {
+    return { kind: "unusable", detail: "CAPABILITIES reply carried no payload row array" }
+  }
+  const lines = rows as string[]
+  const payload = parseHelperCapabilitiesPayload(lines)
+  const declared = payload.helper?.trim().toUpperCase()
+  if (declared !== expectedHelper) {
+    return {
+      kind: "unusable",
+      detail: declared
+        ? `Self-description declared helper ${declared} instead of ${expectedHelper}; ignored`
+        : "Self-description omitted the HELPER identity line; ignored"
+    }
+  }
+  if (
+    !payload.minProtocol ||
+    !payload.maxProtocol ||
+    !CAPABILITY_PROTOCOL_VERSION.test(payload.minProtocol) ||
+    !CAPABILITY_PROTOCOL_VERSION.test(payload.maxProtocol)
+  ) {
+    return {
+      kind: "unusable",
+      detail: `Self-description declared an unparseable protocol range ${payload.minProtocol ?? "EMPTY"}..${payload.maxProtocol ?? "EMPTY"}; ignored`
+    }
+  }
+  if (compareCapabilityProtocols(payload.minProtocol, payload.maxProtocol) > 0) {
+    return {
+      kind: "unusable",
+      detail: `Self-description declared PROTOCOL|MIN ${payload.minProtocol} above PROTOCOL|MAX ${payload.maxProtocol}; ignored`
+    }
+  }
+  const opcodes = new Set<string>()
+  for (const line of lines) {
+    const fields = line.trim().split("|")
+    if (fields[0]?.trim().toUpperCase() !== "OPERATION") continue
+    const opcode = (fields[1] ?? "").trim().toUpperCase()
+    const since = (fields[2] ?? "").trim()
+    const mode = (fields[3] ?? "").trim().toUpperCase()
+    if (
+      fields.length !== 4 ||
+      !CAPABILITY_OPCODE.test(opcode) ||
+      !CAPABILITY_PROTOCOL_VERSION.test(since) ||
+      (mode !== "R" && mode !== "W")
+    ) {
+      return {
+        kind: "unusable",
+        detail: `Self-description carried a malformed OPERATION row ${line.trim()}; ignored`
+      }
+    }
+    if (opcodes.has(opcode)) {
+      return {
+        kind: "unusable",
+        detail: `Self-description listed operation ${opcode} twice; ignored`
+      }
+    }
+    opcodes.add(opcode)
+    if (
+      compareCapabilityProtocols(since, payload.minProtocol) < 0 ||
+      compareCapabilityProtocols(since, payload.maxProtocol) > 0
+    ) {
+      return {
+        kind: "unusable",
+        detail: `Self-description listed operation ${opcode} since ${since} outside its declared protocol range ${payload.minProtocol}..${payload.maxProtocol}; ignored`
+      }
+    }
+  }
+  return { kind: "self-described", payload }
+}
+
+/**
+ * Turn one `EV_RESULT` JSON reply into an attestation. This never throws: an unreachable helper
+ * is `absent`, and a reachable helper that does not implement the opcode (an un-upgraded
+ * maintenance/operational-log body answers an empty `EV_RESULT`) is `operation-scoped`, so a
+ * capability report degrades instead of failing.
+ */
+function jsonHelperCapabilitiesAttestation(
+  response: RemoteFunctionResult,
+  probed: string,
+  observedAt: string
+): SapHelperCapabilities {
+  if (response.fault) {
+    const fault = scrubHelperDetail(
+      `${response.fault.name || response.fault.code}: ${response.fault.message}`
+    )
+    return /NOT_SUPPORTED|UNSUPPORTED|UNKNOWN_OPERATION/i.test(fault)
+      ? emptyHelperCapabilities(probed, observedAt, "operation-scoped")
+      : emptyHelperCapabilities(probed, observedAt, "absent", fault)
+  }
+  const raw = response.outputs.EV_RESULT
+  if (typeof raw !== "string" || raw.trim() === "") {
+    return emptyHelperCapabilities(probed, observedAt, "operation-scoped")
+  }
+  if (Buffer.byteLength(raw, "utf8") > 1024 * 1024) {
+    return emptyHelperCapabilities(
+      probed,
+      observedAt,
+      "operation-scoped",
+      "CAPABILITIES reply exceeded 1 MiB"
+    )
+  }
+  const decoded = decodeJsonHelperCapabilitiesReply(raw, probed)
+  if (decoded.kind === "unsupported")
+    return emptyHelperCapabilities(probed, observedAt, "operation-scoped")
+  if (decoded.kind === "unusable") {
+    return emptyHelperCapabilities(probed, observedAt, "operation-scoped", decoded.detail)
+  }
+  return {
+    helper: probed,
+    minProtocol: decoded.payload.minProtocol,
+    maxProtocol: decoded.payload.maxProtocol,
+    operations: decoded.payload.operations,
+    scopes: decoded.payload.scopes,
+    sourceHash: decoded.payload.sourceHash,
+    packageName: decoded.payload.packageName,
+    transport: decoded.payload.transport,
+    host: decoded.payload.host,
+    observedAt,
+    attestation: "self-described"
+  }
 }
 
 function emptyHelperCapabilities(

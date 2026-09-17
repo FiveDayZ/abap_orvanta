@@ -68,6 +68,26 @@ const detailReply = () => ({
   ]
 })
 
+test("the strict reply envelope accepts the optional CAPABILITIES payload and rejects any other key", async (t) => {
+  const f = await fixture(t)
+  await f.approve()
+  // The helper's CAPABILITIES self-description reuses this envelope and carries its rows in an
+  // optional `payload` array; a business reply that happens to carry the key stays valid, and
+  // every unknown key is still rejected because the object remains `.strict()`.
+  f.state.reply = JSON.stringify({
+    ...lockReply(),
+    payload: [`HELPER|${MAINTENANCE_HELPER}`, "PROTOCOL|MAX|1.0"]
+  })
+  const result = JSON.parse(await f.service.searchLocks(scope))
+  assert.equal(result.status, "ok")
+  assert.equal(result.returnedCount, 1)
+  assert.equal("payload" in result, false)
+  for (const change of [{ payload: "HELPER|Z_ORVANTA_MAINT_READ" }, { payloadRows: [] }]) {
+    f.state.reply = JSON.stringify({ ...lockReply(), ...change })
+    await assert.rejects(f.service.searchLocks(scope), /MAINTENANCE_RESPONSE_INVALID/)
+  }
+})
+
 async function fixture(t: test.TestContext) {
   const root = await mkdtemp(join(tmpdir(), "orvanta-maintenance-"))
   t.after(() => rm(root, { recursive: true, force: true }))

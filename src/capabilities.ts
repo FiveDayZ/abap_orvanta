@@ -48,7 +48,7 @@ const LOCAL_AVAILABLE: CapabilityObservation = {
 }
 
 /**
- * Helper function modules behind the three bounded helper read probes.
+ * Helper function modules behind the bounded helper read probes.
  *
  * Each helper is judged from **its own** attestation: the design deliberately keeps helpers
  * independent (mixed old/new deployments must not be collapsed into one verdict), so a
@@ -56,13 +56,17 @@ const LOCAL_AVAILABLE: CapabilityObservation = {
  * `Z_ORVANTA_MCP_DYNPRO_API` operations. The repository helper carries the ten
  * `repository-helper-*` capabilities.
  *
- * Only `Z_ORVANTA_MCP_EXECUTE` and `Z_ORVANTA_MCP_DYNPRO_API` implement the `CAPABILITIES`
- * opcode in this delivery (they share one generated ABAP body). Probing is limited to those
- * two, so an un-upgraded helper keeps the previous operation-scoped conclusions and wording.
+ * All five helpers are probed for `CAPABILITIES`, but they do not share one conclusion:
+ * `Z_ORVANTA_MCP_EXECUTE` and `Z_ORVANTA_MCP_DYNPRO_API` implement the opcode in the generated
+ * repository body, `Z_ORVANTA_MCP_DDIC_API` in its own body, and `Z_ORVANTA_MAINT_READ` /
+ * `Z_ORVANTA_OPS_READ` answer it through the `EV_RESULT` JSON `payload` array. An un-upgraded
+ * helper keeps the previous operation-scoped conclusion and wording.
  */
 const BASE_HELPER_FUNCTION = "Z_ORVANTA_MCP_EXECUTE"
 const REPOSITORY_HELPER_FUNCTION = "Z_ORVANTA_MCP_DYNPRO_API"
 const DDIC_HELPER_FUNCTION = "Z_ORVANTA_MCP_DDIC_API"
+const MAINTENANCE_HELPER_FUNCTION = "Z_ORVANTA_MAINT_READ"
+const OPERATIONAL_LOG_HELPER_FUNCTION = "Z_ORVANTA_OPS_READ"
 
 export async function buildCapabilityReport(
   backend: SapBackend,
@@ -80,6 +84,8 @@ export async function buildCapabilityReport(
     baseAttestation,
     repositoryAttestation,
     ddicAttestation,
+    maintenanceAttestation,
+    operationalLogAttestation,
     discovery,
     search,
     query,
@@ -108,6 +114,12 @@ export async function buildCapabilityReport(
     ),
     observeHelperAttestation(DDIC_HELPER_FUNCTION, () =>
       backend.probeHelperCapabilities(connectionId, DDIC_HELPER_FUNCTION)
+    ),
+    observeHelperAttestation(MAINTENANCE_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, MAINTENANCE_HELPER_FUNCTION)
+    ),
+    observeHelperAttestation(OPERATIONAL_LOG_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, OPERATIONAL_LOG_HELPER_FUNCTION)
     ),
     observeDiscovery(() => backend.discoverySnapshot(connectionId)),
     observeRead("Repository search accepted a bounded no-match query.", () =>
@@ -150,6 +162,23 @@ export async function buildCapabilityReport(
   // regenerated it answers OPERATION_NOT_SUPPORTED, the probe stays operation-scoped, and the
   // read-probe verdicts below are unchanged.
   const ddicApiHelper = attachAttestation(ddicHelper, ddicSelfDescription)
+  // The maintenance and operational-log helpers are probed as well, but their attestations are
+  // reported only: their read tools are gated behind a local approval file, so the capability
+  // report never performs the business read that a protocol verdict would need. The two
+  // capability specifications below therefore keep their unchanged `unknownTargetObservation`,
+  // and no attestation is attached to an observation that does not exist. Reconciliation still
+  // runs for both, because a helper that answers under another identity must never become
+  // evidence for this one.
+  const maintenanceSelfDescription = reconcileAttestation(
+    maintenanceAttestation,
+    unprobedHelperObservation("maintenance"),
+    MAINTENANCE_HELPER_FUNCTION
+  )
+  const operationalLogSelfDescription = reconcileAttestation(
+    operationalLogAttestation,
+    unprobedHelperObservation("operational-log"),
+    OPERATIONAL_LOG_HELPER_FUNCTION
+  )
 
   const targetSpecific = unknownTargetObservation(
     "Availability requires a real object or execution target; registration and discovery alone are not proof."
@@ -555,7 +584,13 @@ export async function buildCapabilityReport(
           }
         : {}),
       helpers: [baseHelperRead, repositoryHelperRead, ddicHelper],
-      helperAttestation: [baseSelfDescription, repositorySelfDescription, ddicSelfDescription],
+      helperAttestation: [
+        baseSelfDescription,
+        repositorySelfDescription,
+        ddicSelfDescription,
+        maintenanceSelfDescription,
+        operationalLogSelfDescription
+      ],
       discovery: discoverySummary(discovery),
       capabilities: disclosed,
       summary: {
@@ -678,6 +713,27 @@ function attachAttestation(
 ): VersionedHelperObservation {
   if (attestation.attestation === "absent") return observation
   return { ...observation, attestation }
+}
+
+/**
+ * Placeholder observation for a helper the capability report does not read.
+ *
+ * `reconcileAttestation` needs the read-probe conclusion to decide whether an `absent`
+ * attestation actually means "not deployed". The maintenance and operational-log reads are
+ * gated behind a local approval file, so probing them here would either fail the report or
+ * perform an unapproved SAP read; this observation states that no read happened, which keeps
+ * `absent` an `absent` and leaves only the identity guard active.
+ */
+function unprobedHelperObservation(name: string): VersionedHelperObservation {
+  return {
+    name,
+    availability: "unknown",
+    reason: `No bounded read probe is performed for the ${name} helper; its reads are approval-gated.`,
+    evidence: {
+      source: "local-contract",
+      detail: "Approval-gated helper; the capability report only asks for its self-description"
+    }
+  }
 }
 
 /**

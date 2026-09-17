@@ -11,6 +11,8 @@ import { MockBackend } from "./mock-backend.js"
 const BASE_HELPER = "Z_ORVANTA_MCP_EXECUTE"
 const REPOSITORY_HELPER = "Z_ORVANTA_MCP_DYNPRO_API"
 const DDIC_HELPER = "Z_ORVANTA_MCP_DDIC_API"
+const MAINTENANCE_HELPER = "Z_ORVANTA_MAINT_READ"
+const OPERATIONAL_LOG_HELPER = "Z_ORVANTA_OPS_READ"
 
 interface ReportShape {
   helpers: Array<{ name: string; availability: string; attestation?: unknown }>
@@ -30,11 +32,24 @@ async function buildReport(backend: MockBackend): Promise<ReportShape> {
   return JSON.parse(await buildCapabilityReport(backend, "w200")) as ReportShape
 }
 
-function repositoryCapability(report: ReportShape, id: string) {
+function capabilityObservation(report: ReportShape, id: string) {
   const capability = report.capabilities.find((item) => item.id === id)
   assert.ok(capability, `capability ${id} is missing from the report`)
   return capability.observation
 }
+
+const maintenanceCapability = (report: ReportShape) =>
+  capabilityObservation(report, "maintenance-diagnostics")
+
+const operationalLogCapability = (report: ReportShape) =>
+  capabilityObservation(report, "operational-logs")
+
+// The two approval-gated capability verdicts the maintenance and operational-log self-descriptions
+// must not change while their helpers are un-upgraded.
+const MAINTENANCE_REASON =
+  "Requires separately deployed Z_ORVANTA_MAINT_READ in ZORVANTA_MAINT, matching source/interface approval and SAP display permissions. Local-only candidate: no helper deployment or live sample acceptance. No SAP unlock or update reprocessing; local receipts never prove SAP lock ownership."
+const OPERATIONAL_LOG_REASON =
+  "SM37 and SM21 require separately approved Z_ORVANTA_OPS_READ in ZORVANTA_LOG. Job details require SM37_DETAILS; spool text requires SP01 and the extended helper interface. The w200 spool branch has source/activation evidence but no runtime acceptance. No OTF/PDF, printing or variant values. Registration is not deployment or runtime proof."
 
 function selfDescription(overrides: Partial<SapHelperCapabilities>): SapHelperCapabilities {
   return {
@@ -64,20 +79,20 @@ test("an un-upgraded helper stays operation-scoped and keeps the previous capabi
 
   // Byte-for-byte equivalence with the pre-attestation report: the default mock helper does
   // not answer CAPABILITIES, exactly like the helpers installed on the target system today.
-  const messageUpdate = repositoryCapability(report, "repository-helper-message-update")
+  const messageUpdate = capabilityObservation(report, "repository-helper-message-update")
   assert.equal(messageUpdate.availability, "unknown")
   assert.equal(
     messageUpdate.reason,
     "The read probe observed repository operation protocol 1.2; it does not prove whether capability version 1.8 is installed."
   )
-  const dynproCore = repositoryCapability(report, "repository-helper-dynpro-core")
+  const dynproCore = capabilityObservation(report, "repository-helper-dynpro-core")
   assert.equal(dynproCore.availability, "available")
   assert.equal(
     dynproCore.reason,
     "The observed repository read protocol 1.2 satisfies minimum 1.1."
   )
   assert.equal(
-    repositoryCapability(report, "ddic-helper-controlled-delete").availability,
+    capabilityObservation(report, "ddic-helper-controlled-delete").availability,
     "available"
   )
 
@@ -86,11 +101,19 @@ test("an un-upgraded helper stays operation-scoped and keeps the previous capabi
     [
       [BASE_HELPER, "operation-scoped"],
       [REPOSITORY_HELPER, "operation-scoped"],
-      [DDIC_HELPER, "operation-scoped"]
+      [DDIC_HELPER, "operation-scoped"],
+      [MAINTENANCE_HELPER, "operation-scoped"],
+      [OPERATIONAL_LOG_HELPER, "operation-scoped"]
     ]
   )
   assert.equal(report.helperAttestation[1]?.maxProtocol, null)
   assert.equal(report.helperAttestation[1]?.detail, undefined)
+  // The JSON-payload helpers keep their unattested fallback too, and their approval-gated
+  // capability verdicts are untouched by the new probes.
+  assert.equal(report.helperAttestation[3]?.detail, undefined)
+  assert.equal(report.helperAttestation[4]?.detail, undefined)
+  assert.equal(maintenanceCapability(report).reason, MAINTENANCE_REASON)
+  assert.equal(operationalLogCapability(report).reason, OPERATIONAL_LOG_REASON)
   // The bounded read-probe observations keep their previous shape.
   assert.equal("attestation" in (report.helpers[0] ?? {}), false)
   assert.equal("attestation" in (report.helpers[1] ?? {}), false)
@@ -101,7 +124,7 @@ test("a self-described helper at or above the required protocol is available wit
   backend.helperCapabilities.set(REPOSITORY_HELPER, selfDescription({ maxProtocol: "2.6" }))
   const report = await buildReport(backend)
 
-  const lifecycle = repositoryCapability(report, "repository-helper-enhancement-lifecycle")
+  const lifecycle = capabilityObservation(report, "repository-helper-enhancement-lifecycle")
   assert.equal(lifecycle.availability, "available")
   assert.equal(
     lifecycle.reason,
@@ -132,19 +155,19 @@ test("a self-described helper below the required protocol is unsupported instead
   backend.helperCapabilities.set(REPOSITORY_HELPER, selfDescription({ maxProtocol: "1.6" }))
   const report = await buildReport(backend)
 
-  const messageUpdate = repositoryCapability(report, "repository-helper-message-update")
+  const messageUpdate = capabilityObservation(report, "repository-helper-message-update")
   assert.equal(messageUpdate.availability, "unsupported")
   assert.equal(
     messageUpdate.reason,
     `The ${REPOSITORY_HELPER} helper self-described protocol 1.6, which is below the required capability version 1.8.`
   )
   assert.equal(
-    repositoryCapability(report, "repository-helper-gui-definition").availability,
+    capabilityObservation(report, "repository-helper-gui-definition").availability,
     "available"
   )
   // DDIC is not probed in this delivery, so its operation-scoped judgement is unchanged.
   assert.equal(
-    repositoryCapability(report, "ddic-helper-controlled-delete").availability,
+    capabilityObservation(report, "ddic-helper-controlled-delete").availability,
     "available"
   )
 })
@@ -160,7 +183,7 @@ test("an unreachable helper is absent and never fails the whole report", async (
   assert.equal(report.helperAttestation[1]?.attestation, "absent")
   assert.match(String(report.helperAttestation[1]?.detail), /CAPABILITIES/)
 
-  const messageUpdate = repositoryCapability(report, "repository-helper-message-update")
+  const messageUpdate = capabilityObservation(report, "repository-helper-message-update")
   assert.equal(messageUpdate.availability, "unknown")
   assert.match(messageUpdate.reason, /Read-only probe failed without proving endpoint absence/)
 })
@@ -177,7 +200,7 @@ test("a self-description under another helper identity is not used as evidence",
   assert.equal(attestation?.attestation, "operation-scoped")
   assert.match(String(attestation?.detail), /declared helper Z_ORVANTA_MCP_EXECUTE/)
 
-  const lifecycle = repositoryCapability(report, "repository-helper-enhancement-lifecycle")
+  const lifecycle = capabilityObservation(report, "repository-helper-enhancement-lifecycle")
   assert.equal(lifecycle.availability, "unknown")
   assert.match(lifecycle.evidence.detail, /declared helper Z_ORVANTA_MCP_EXECUTE/)
 })
@@ -351,4 +374,280 @@ test("the base helper probe dispatches to the EXECUTE endpoint", async () => {
   } finally {
     await fixture.close()
   }
+})
+
+// --- Z_ORVANTA_MAINT_READ / Z_ORVANTA_OPS_READ: the EV_RESULT JSON payload contract ----------
+//
+// These two helpers own no `it_source` table and return no `ev_status`/`ev_code`/`ev_version`.
+// Their only reply channel is the EV_RESULT JSON string, whose `payload` array carries the same
+// rows as the bootstrap helpers (protocol design revision R3), so the probe goes through
+// `callRemoteFunction` - the same client path their business reads use - and validates the rows
+// as a whole before any of them is trusted.
+
+const operationalLogOperations = [
+  { opcode: "JOB_SPOOL", since: "1.0", write: false },
+  { opcode: "JOB_DETAILS", since: "1.0", write: false },
+  { opcode: "JOB_LOG", since: "1.0", write: false },
+  { opcode: "JOB_SEARCH", since: "1.0", write: false },
+  { opcode: "SYSTEM_READ", since: "1.0", write: false },
+  { opcode: "REPORT_PARAMETERS", since: "1.0", write: false }
+]
+
+/** The rows `scripts/operational-log-source.mjs` emits, in the generator's own order. */
+const operationalLogRows = (
+  operations: Array<{ opcode: string; since: string; write: boolean }> = operationalLogOperations
+) => [
+  `HELPER|${OPERATIONAL_LOG_HELPER}`,
+  "PROTOCOL|MIN|1.0",
+  "PROTOCOL|MAX|1.0",
+  ...operations.map(
+    (operation) => `OPERATION|${operation.opcode}|${operation.since}|${operation.write ? "W" : "R"}`
+  ),
+  `SOURCE|HASH|${"e".repeat(64)}`,
+  "SOURCE|PACKAGE|ZABAP",
+  "SOURCE|TRANSPORT|GR2K923421|GR2K923422",
+  // The generator escapes '%' before '|', the shared row parser unescapes '|' before '%'.
+  "RUNTIME|HOST|GR2%7C200%251",
+  "RUNTIME|TIME|20260917120000|7200"
+]
+
+const jsonCapabilitiesEnvelope = (functionName: string, result: string) =>
+  `<?xml version="1.0"?>` +
+  `<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">` +
+  `<soap-env:Body>` +
+  `<n0:${functionName}.Response xmlns:n0="urn:sap-com:document:sap:rfc:functions">` +
+  `<EV_RESULT>${result}</EV_RESULT>` +
+  `</n0:${functionName}.Response></soap-env:Body></soap-env:Envelope>`
+
+const capabilitiesJson = (payload: string[]) =>
+  JSON.stringify({
+    version: "1",
+    status: "S",
+    code: "CAPABILITIES",
+    message: "ORVANTA helper capabilities",
+    readOnly: true,
+    payload
+  })
+
+function jsonSelfDescription(overrides: Partial<SapHelperCapabilities>): SapHelperCapabilities {
+  return {
+    helper: OPERATIONAL_LOG_HELPER,
+    minProtocol: "1.0",
+    maxProtocol: "1.0",
+    operations: operationalLogOperations,
+    scopes: [],
+    sourceHash: "e".repeat(64),
+    packageName: "ZABAP",
+    transport: "GR2K923421",
+    host: "GR2|200%1",
+    observedAt: "2026-09-17T12:00:00.000Z",
+    attestation: "self-described",
+    ...overrides
+  }
+}
+
+test("a helper that self-describes through the JSON payload is attested with its operations", async () => {
+  const fixture = await soapFixture(() =>
+    jsonCapabilitiesEnvelope(OPERATIONAL_LOG_HELPER, capabilitiesJson(operationalLogRows()))
+  )
+  try {
+    const result = await fixture.backend.probeHelperCapabilities("w200", OPERATIONAL_LOG_HELPER)
+    assert.equal(result.attestation, "self-described")
+    assert.equal(result.helper, OPERATIONAL_LOG_HELPER)
+    assert.equal(result.minProtocol, "1.0")
+    assert.equal(result.maxProtocol, "1.0")
+    assert.deepEqual(result.operations, operationalLogOperations)
+    assert.deepEqual(result.scopes, [])
+    assert.equal(result.sourceHash, "e".repeat(64))
+    assert.equal(result.packageName, "ZABAP")
+    assert.equal(result.transport, "GR2K923421")
+    assert.equal(result.host, "GR2|200%1")
+    // The probe is the same read-only RFC call the business tool makes: the action plus one
+    // scalar EV_RESULT, with no extra parameter and no expected-version negotiation.
+    assert.match(fixture.requests[0] ?? "", /<n1:Z_ORVANTA_OPS_READ /)
+    assert.match(fixture.requests[0] ?? "", /<IV_ACTION>CAPABILITIES<\/IV_ACTION>/)
+    assert.doesNotMatch(fixture.requests[0] ?? "", /IV_EXPECTED_VERSION/)
+  } finally {
+    await fixture.close()
+  }
+})
+
+test("an un-upgraded JSON helper degrades to operation-scoped without failing or changing a verdict", async () => {
+  let answer = ""
+  const fixture = await soapFixture(() => jsonCapabilitiesEnvelope(OPERATIONAL_LOG_HELPER, answer))
+  try {
+    for (const [label, next] of [
+      [
+        "OPERATION_NOT_SUPPORTED reply",
+        JSON.stringify({
+          version: "1",
+          status: "E",
+          code: "OPERATION_NOT_SUPPORTED",
+          message: "ORVANTA helper does not support this operation",
+          readOnly: true
+        })
+      ],
+      ["empty EV_RESULT (an old body returns before its dispatcher)", ""]
+    ] as Array<[string, string]>) {
+      answer = next
+      const result = await fixture.backend.probeHelperCapabilities("w200", OPERATIONAL_LOG_HELPER)
+      assert.equal(result.attestation, "operation-scoped", label)
+      assert.equal(result.detail, undefined, label)
+      assert.equal(result.maxProtocol, null, label)
+      assert.deepEqual(result.operations, [], label)
+    }
+  } finally {
+    await fixture.close()
+  }
+
+  // The report-level conclusion is byte-for-byte the pre-probe one.
+  const report = await buildReport(new MockBackend())
+  assert.equal(report.helperAttestation[4]?.attestation, "operation-scoped")
+  assert.equal(operationalLogCapability(report).availability, "unknown")
+  assert.equal(operationalLogCapability(report).reason, OPERATIONAL_LOG_REASON)
+  assert.equal(maintenanceCapability(report).reason, MAINTENANCE_REASON)
+})
+
+test("a malformed or misidentified JSON self-description is refused as a whole", async () => {
+  let answer = ""
+  const fixture = await soapFixture(() => jsonCapabilitiesEnvelope(OPERATIONAL_LOG_HELPER, answer))
+  const rows = operationalLogRows()
+  const withRow = (index: number, row: string) =>
+    rows.map((value, at) => (at === index ? row : value))
+  const withoutRow = (index: number) => rows.filter((_, at) => at !== index)
+  const cases: Array<[string, string[], RegExp]> = [
+    [
+      "identity mismatch",
+      withRow(0, `HELPER|${BASE_HELPER}`),
+      /declared helper Z_ORVANTA_MCP_EXECUTE/
+    ],
+    ["missing HELPER row", withoutRow(0), /omitted the HELPER identity/],
+    ["unparseable protocol", withRow(1, "PROTOCOL|MIN|one"), /unparseable protocol range/],
+    ["missing PROTOCOL|MAX", withoutRow(2), /unparseable protocol range/],
+    ["MIN above MAX", withRow(1, "PROTOCOL|MIN|2.0"), /above PROTOCOL\|MAX/],
+    [
+      "operation outside the declared protocol range",
+      withRow(3, "OPERATION|JOB_SPOOL|2.0|R"),
+      /outside its declared protocol range/
+    ],
+    [
+      "malformed operation mode",
+      withRow(3, "OPERATION|JOB_SPOOL|1.0|X"),
+      /malformed OPERATION row/
+    ],
+    [
+      "duplicate operation",
+      withRow(4, "OPERATION|JOB_SPOOL|1.0|R"),
+      /listed operation JOB_SPOOL twice/
+    ]
+  ]
+  try {
+    for (const [label, payload, detail] of cases) {
+      answer = capabilitiesJson(payload)
+      const result = await fixture.backend.probeHelperCapabilities("w200", OPERATIONAL_LOG_HELPER)
+      assert.equal(result.attestation, "operation-scoped", label)
+      assert.match(String(result.detail), detail, label)
+      // Nothing from a refused payload may survive into the attestation.
+      assert.equal(result.maxProtocol, null, label)
+      assert.deepEqual(result.operations, [], label)
+      assert.equal(result.sourceHash, null, label)
+    }
+  } finally {
+    await fixture.close()
+  }
+})
+
+test("a JSON reply that is not a CAPABILITIES envelope is refused without throwing", async () => {
+  let answer = ""
+  const fixture = await soapFixture(() => jsonCapabilitiesEnvelope(OPERATIONAL_LOG_HELPER, answer))
+  const cases: Array<[string, string, RegExp]> = [
+    ["plain text", "ORVANTA helper", /not a JSON envelope/],
+    [
+      "business reply",
+      JSON.stringify({ version: "1", status: "ok", code: "OK" }),
+      /status OK and code OK/
+    ],
+    ["empty payload array", capabilitiesJson([]), /no payload row array/],
+    [
+      "payload that is not a row array",
+      JSON.stringify({
+        version: "1",
+        status: "S",
+        code: "CAPABILITIES",
+        readOnly: true,
+        payload: [1, 2]
+      }),
+      /no payload row array/
+    ]
+  ]
+  try {
+    for (const [label, next, detail] of cases) {
+      answer = next
+      const result = await fixture.backend.probeHelperCapabilities("w200", OPERATIONAL_LOG_HELPER)
+      assert.equal(result.attestation, "operation-scoped", label)
+      assert.match(String(result.detail), detail, label)
+    }
+  } finally {
+    await fixture.close()
+  }
+})
+
+test("the two JSON helpers are reported in helperAttestation without touching their verdicts", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(OPERATIONAL_LOG_HELPER, jsonSelfDescription({}))
+  backend.helperCapabilities.set(
+    MAINTENANCE_HELPER,
+    jsonSelfDescription({
+      helper: MAINTENANCE_HELPER,
+      packageName: "",
+      transport: "",
+      operations: [
+        { opcode: "LOCK_SEARCH", since: "1.0", write: false },
+        { opcode: "UPDATE_SEARCH", since: "1.0", write: false },
+        { opcode: "UPDATE_DETAIL", since: "1.0", write: false }
+      ]
+    })
+  )
+  const report = await buildReport(backend)
+
+  assert.deepEqual(
+    report.helperAttestation.map((entry) => [entry.helper, entry.attestation]),
+    [
+      [BASE_HELPER, "operation-scoped"],
+      [REPOSITORY_HELPER, "operation-scoped"],
+      [DDIC_HELPER, "operation-scoped"],
+      [MAINTENANCE_HELPER, "self-described"],
+      [OPERATIONAL_LOG_HELPER, "self-described"]
+    ]
+  )
+  const maintenance = report.helperAttestation[3]
+  assert.deepEqual(
+    maintenance?.operations.map((operation) => operation.opcode),
+    ["LOCK_SEARCH", "UPDATE_SEARCH", "UPDATE_DETAIL"]
+  )
+  assert.equal(maintenance?.packageName, "")
+  const operationalLog = report.helperAttestation[4]
+  assert.deepEqual(operationalLog?.operations, operationalLogOperations)
+  assert.equal(operationalLog?.sourceHash, "e".repeat(64))
+
+  // Neither verdict may follow the self-description: those reads are approval-gated, so the
+  // report keeps its unchanged unknown observation and wording.
+  assert.equal(maintenanceCapability(report).availability, "unknown")
+  assert.equal(maintenanceCapability(report).reason, MAINTENANCE_REASON)
+  assert.equal(operationalLogCapability(report).availability, "unknown")
+  assert.equal(operationalLogCapability(report).reason, OPERATIONAL_LOG_REASON)
+})
+
+test("a JSON helper self-description under another identity is not used as evidence", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(
+    OPERATIONAL_LOG_HELPER,
+    jsonSelfDescription({ helper: BASE_HELPER })
+  )
+  const report = await buildReport(backend)
+
+  const attestation = report.helperAttestation[4]
+  assert.equal(attestation?.attestation, "operation-scoped")
+  assert.match(String(attestation?.detail), /declared helper Z_ORVANTA_MCP_EXECUTE/)
+  assert.equal(operationalLogCapability(report).reason, OPERATIONAL_LOG_REASON)
 })
