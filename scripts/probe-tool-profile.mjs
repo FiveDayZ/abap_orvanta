@@ -211,7 +211,16 @@ try {
   if (stderr.trim())
     console.log(`service stderr:\n${stderr.trim().split("\n").slice(-12).join("\n")}`)
 } finally {
-  child.kill()
+  // Kill the service and let its stdio pipes close before returning; exiting while libuv is
+  // still tearing those handles down trips an assertion on Windows (win/async.c).
+  child.stderr.removeAllListeners("data")
+  child.stdout?.destroy()
+  child.stderr?.destroy()
+  if (child.exitCode === null && child.signalCode === null) {
+    const exited = new Promise((resolveExit) => child.once("exit", resolveExit))
+    child.kill()
+    await Promise.race([exited, new Promise((resolveDelay) => setTimeout(resolveDelay, 5000))])
+  }
   await rm(stateRoot, { recursive: true, force: true })
 }
 
@@ -220,4 +229,4 @@ console.log(
     ? `\ntool profile probe (${profile}): all checks passed`
     : `\ntool profile probe (${profile}): ${failures.length} check(s) failed`
 )
-process.exit(failures.length === 0 ? 0 : 1)
+process.exitCode = failures.length === 0 ? 0 : 1
