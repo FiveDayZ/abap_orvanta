@@ -5749,7 +5749,12 @@ test("unsupported enhancement endpoints remain unavailable instead of becoming e
   state.clients.set("w200", {
     client: {
       async objectEnhancements() {
-        throw new Error("Unsupported on ECC 7.31")
+        // Real ADT failures reach capabilityFailure as AdtErrorException(status 500, err 404)
+        // with an axios-style message, which is why capabilityFailure parses a trailing
+        // "status code NNN" out of the message. A statusless Error is normalized to a plain
+        // HTTP 500 and reported as request-failed, which the real client never produces:
+        // against w200 this endpoint is classified unsupported on ECC 7.31.
+        throw new Error("Request failed with status code 404: Unsupported on ECC 7.31")
       }
     },
     login: Promise.resolve()
