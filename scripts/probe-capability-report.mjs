@@ -1,9 +1,11 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
+import { TOOL_COUNT } from "../dist/src/tool-registry.js"
+import { PRODUCT_VERSION } from "../dist/src/version.js"
 
 const endpoint = new URL(process.env.ABAP_MCP_ENDPOINT || "http://127.0.0.1:4847/mcp")
 const connectionId = (process.env.ABAP_MCP_CONNECTION || "w200").toLowerCase()
-const client = new Client({ name: "w200-capability-report-validation", version: "0.35.0" })
+const client = new Client({ name: "w200-capability-report-validation", version: PRODUCT_VERSION })
 let report
 
 function output(result) {
@@ -27,12 +29,14 @@ try {
   const helper = (name) => report.helpers.find((item) => item.name === name)
   const capability = (id) => report.capabilities.find((item) => item.id === id)
 
-  if (report.productVersion !== "0.35.0") throw new Error("Unexpected product version")
+  if (report.productVersion !== PRODUCT_VERSION) throw new Error("Unexpected product version")
   if (report.connection.id !== connectionId) throw new Error("Unexpected connection ID")
   if (!report.readOnly || report.safety.sapWritesInvoked)
     throw new Error("Read-only guarantee missing")
-  if (listed.tools.length !== 74 || new Set(reportedTools).size !== 74) {
-    throw new Error("Capability report must cover each of the 74 registered tools exactly once")
+  if (listed.tools.length !== TOOL_COUNT || new Set(reportedTools).size !== TOOL_COUNT) {
+    throw new Error(
+      `Capability report must cover each of the ${TOOL_COUNT} registered tools exactly once`
+    )
   }
   for (const [name, minimumObservedVersion] of [
     ["base", "1.0"],

@@ -63,12 +63,15 @@ try {
     $listener.Stop()
     $started = Invoke-Settings start @{ port = $port }
     if (-not $started.state.service.running) { throw "Packaged settings did not start MCP." }
-    $probe = & (Join-Path $packageRoot "runtime\node.exe") (Join-Path $packageRoot "app\scripts\probe.mjs") $started.state.service.url
-    if ($LASTEXITCODE -ne 0 -or ($probe | ConvertFrom-Json).tools.Count -ne 121) { throw "MCP probe through settings failed." }
+    $settingsNode = Join-Path $packageRoot "runtime\node.exe"
+    $registryUrl = "file:///" + (Join-Path $packageRoot "app\dist\src\tool-registry.js").Replace("\", "/")
+    $expectedToolCount = [int](& $settingsNode --input-type=module -e "const m = await import('$registryUrl'); console.log(m.TOOL_COUNT)")
+    $probe = & $settingsNode (Join-Path $packageRoot "app\scripts\probe.mjs") $started.state.service.url
+    if ($LASTEXITCODE -ne 0 -or ($probe | ConvertFrom-Json).tools.Count -ne $expectedToolCount) { throw "MCP probe through settings failed." }
     $null = Invoke-Settings stop @{}
     $null = Invoke-Settings exit @{}
     if (-not $process.WaitForExit(15000) -or $process.ExitCode -ne 0) { throw "Settings launcher did not exit cleanly." }
-    Write-Output "Settings package PASS: Windows PowerShell launcher, browser assets, config save, memory-only password, MCP start/121 tools/stop, settings exit."
+    Write-Output "Settings package PASS: Windows PowerShell launcher, browser assets, config save, memory-only password, MCP start/$expectedToolCount tools/stop, settings exit."
 } finally {
     if ($process -and -not $process.HasExited) {
         foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($process.Id)")) {
