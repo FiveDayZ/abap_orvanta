@@ -62,6 +62,7 @@ const LOCAL_AVAILABLE: CapabilityObservation = {
  */
 const BASE_HELPER_FUNCTION = "Z_ORVANTA_MCP_EXECUTE"
 const REPOSITORY_HELPER_FUNCTION = "Z_ORVANTA_MCP_DYNPRO_API"
+const DDIC_HELPER_FUNCTION = "Z_ORVANTA_MCP_DDIC_API"
 
 export async function buildCapabilityReport(
   backend: SapBackend,
@@ -78,6 +79,7 @@ export async function buildCapabilityReport(
     ddicHelper,
     baseAttestation,
     repositoryAttestation,
+    ddicAttestation,
     discovery,
     search,
     query,
@@ -103,6 +105,9 @@ export async function buildCapabilityReport(
     ),
     observeHelperAttestation(REPOSITORY_HELPER_FUNCTION, () =>
       backend.probeHelperCapabilities(connectionId, REPOSITORY_HELPER_FUNCTION)
+    ),
+    observeHelperAttestation(DDIC_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, DDIC_HELPER_FUNCTION)
     ),
     observeDiscovery(() => backend.discoverySnapshot(connectionId)),
     observeRead("Repository search accepted a bounded no-match query.", () =>
@@ -130,11 +135,21 @@ export async function buildCapabilityReport(
     repositoryHelperRead,
     REPOSITORY_HELPER_FUNCTION
   )
+  const ddicSelfDescription = reconcileAttestation(
+    ddicAttestation,
+    ddicHelper,
+    DDIC_HELPER_FUNCTION
+  )
   // Only the repository helper carries capability verdicts that depend on a self-description
   // (the ten `repository-helper-*` capabilities). The base helper's attestation is reported in
   // `helperAttestation` only, so every existing probe observation keeps its exact shape and
   // wording when the helpers are not upgraded yet.
   const repositoryHelper = attachAttestation(repositoryHelperRead, repositorySelfDescription)
+  // The DDIC helper is probed for the same reason as the repository helper: a capability
+  // verdict must follow the highest protocol the helper implements. Until the DDIC body is
+  // regenerated it answers OPERATION_NOT_SUPPORTED, the probe stays operation-scoped, and the
+  // read-probe verdicts below are unchanged.
+  const ddicApiHelper = attachAttestation(ddicHelper, ddicSelfDescription)
 
   const targetSpecific = unknownTargetObservation(
     "Availability requires a real object or execution target; registration and discovery alone are not proof."
@@ -245,7 +260,7 @@ export async function buildCapabilityReport(
       "delete_enhancement_implementation",
       "manage_classic_badi_implementation"
     ]),
-    helperCapability("ddic-helper-core", ddicHelper, "1.2", [
+    helperCapability("ddic-helper-core", ddicApiHelper, "1.2", [
       "read_ddic_domain",
       "upsert_ddic_domain",
       "read_ddic_data_element",
@@ -255,17 +270,17 @@ export async function buildCapabilityReport(
       "read_ddic_table_type",
       "upsert_ddic_table_type"
     ]),
-    helperCapability("ddic-helper-transparent-table", ddicHelper, "1.5", [
+    helperCapability("ddic-helper-transparent-table", ddicApiHelper, "1.5", [
       "read_ddic_transparent_table",
       "create_ddic_transparent_table"
     ]),
-    helperCapability("ddic-helper-transparent-table-complex", ddicHelper, "1.7", [
+    helperCapability("ddic-helper-transparent-table-complex", ddicApiHelper, "1.7", [
       "append_ddic_transparent_table_fields",
       "patch_ddic_transparent_table_fields",
       "patch_ddic_transparent_table_settings",
       "recover_ddic_table_conversion"
     ]),
-    helperCapability("ddic-helper-controlled-delete", ddicHelper, "1.6", ["delete_ddic_object"]),
+    helperCapability("ddic-helper-controlled-delete", ddicApiHelper, "1.6", ["delete_ddic_object"]),
     capability(
       "adt-object-read",
       "target-specific",
@@ -540,7 +555,7 @@ export async function buildCapabilityReport(
           }
         : {}),
       helpers: [baseHelperRead, repositoryHelperRead, ddicHelper],
-      helperAttestation: [baseSelfDescription, repositorySelfDescription],
+      helperAttestation: [baseSelfDescription, repositorySelfDescription, ddicSelfDescription],
       discovery: discoverySummary(discovery),
       capabilities: disclosed,
       summary: {

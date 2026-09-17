@@ -437,7 +437,9 @@ test("the DDIC table matches the service-side SapDdicOperation union", async () 
 test("the DDIC since values are the service contract minimums", async () => {
   const catalog = await readFile("src/capabilities.ts", "utf8")
   const contractVersions = [
-    ...catalog.matchAll(/helperCapability\("ddic-helper-[a-z-]+",\s*ddicHelper,\s*"(\d+\.\d+)"/g)
+    ...catalog.matchAll(
+      /helperCapability\("ddic-helper-[a-z-]+",\s*ddic(?:Api)?Helper,\s*"(\d+\.\d+)"/g
+    )
   ].map((match) => String(match[1]))
   assert.ok(contractVersions.length > 0, "ddic-helper-* catalog entries not parsed")
   assert.deepEqual(

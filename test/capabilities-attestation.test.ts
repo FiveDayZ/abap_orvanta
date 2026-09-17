@@ -10,6 +10,7 @@ import { MockBackend } from "./mock-backend.js"
 
 const BASE_HELPER = "Z_ORVANTA_MCP_EXECUTE"
 const REPOSITORY_HELPER = "Z_ORVANTA_MCP_DYNPRO_API"
+const DDIC_HELPER = "Z_ORVANTA_MCP_DDIC_API"
 
 interface ReportShape {
   helpers: Array<{ name: string; availability: string; attestation?: unknown }>
@@ -84,7 +85,8 @@ test("an un-upgraded helper stays operation-scoped and keeps the previous capabi
     report.helperAttestation.map((entry) => [entry.helper, entry.attestation]),
     [
       [BASE_HELPER, "operation-scoped"],
-      [REPOSITORY_HELPER, "operation-scoped"]
+      [REPOSITORY_HELPER, "operation-scoped"],
+      [DDIC_HELPER, "operation-scoped"]
     ]
   )
   assert.equal(report.helperAttestation[1]?.maxProtocol, null)
