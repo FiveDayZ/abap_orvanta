@@ -8094,21 +8094,19 @@ function New-InstallProgram {
     else {
         "RS38L-NAME"
     }
-    $ddicImportLines = if (
-        $FunctionName -eq "Z_ORVANTA_MCP_DDIC_API" -or
-        $FunctionName -eq "Z_ORVANTA_MCP_DYNPRO_API"
-    ) {
-        @(
-            "CLEAR ls_import.",
-            "ls_import-parameter = 'IV_EXPECTED_VERSION'.",
-            "ls_import-dbfield = 'SY-MSGV1'.",
-            "ls_import-optional = 'X'.",
-            "APPEND ls_import TO lt_import."
-        )
-    }
-    else {
-        @()
-    }
+    # Every generated body references iv_expected_version: the shared repository body (used by
+    # Z_ORVANTA_MCP_EXECUTE and Z_ORVANTA_MCP_DYNPRO_API) uses it for optimistic concurrency and
+    # the DDIC body uses it for DDIC object patching. Excluding it for Z_ORVANTA_MCP_EXECUTE
+    # failed the install with GENERATE_ERROR 4902 ("The field IV_EXPECTED_VERSION is unknown")
+    # because the parameter list and the body disagreed. It is optional, so declaring it for all
+    # helpers keeps existing callers compatible.
+    $ddicImportLines = @(
+        "CLEAR ls_import.",
+        "ls_import-parameter = 'IV_EXPECTED_VERSION'.",
+        "ls_import-dbfield = 'SY-MSGV1'.",
+        "ls_import-optional = 'X'.",
+        "APPEND ls_import TO lt_import."
+    )
 
     $sourceProgramLines = foreach ($line in $functionSource) {
         if ($line.Length -gt 72) {

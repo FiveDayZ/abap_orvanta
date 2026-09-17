@@ -320,6 +320,19 @@ test("the CAPABILITIES branch only uses character-like operands", () => {
   }
 })
 
+test("the parameter list declares IV_EXPECTED_VERSION for every generated body", () => {
+  // Z_ORVANTA_MCP_EXECUTE receives the shared repository body, which references
+  // iv_expected_version. Declaring the parameter only for DYNPRO_API/DDIC made the parameter
+  // list disagree with the body, so the EXECUTE install failed with GENERATE_ERROR 4902
+  // ("The field IV_EXPECTED_VERSION is unknown").
+  const repositoryBody = sliceBetween("$repositoryFunctionSource = @(", "$functionSource = if (")
+  assert.match(repositoryBody, /\biv_expected_version\b/)
+  const parameterList = sliceBetween("$ddicImportLines = ", "$sourceProgramLines = foreach")
+  assert.match(parameterList, /ls_import-parameter = 'IV_EXPECTED_VERSION'\./)
+  assert.doesNotMatch(parameterList, /FunctionName -eq/, "no function name may be excluded")
+  assert.doesNotMatch(parameterList, /else \{/, "the declaration must not be conditional")
+})
+
 test("CAPABILITIES is a read-only self-description without version negotiation", () => {
   assert.match(emissionBlock, /ev_status = 'S'\./)
   assert.match(emissionBlock, /ev_code = 'CAPABILITIES'\./)
