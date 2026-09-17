@@ -2,7 +2,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("status", "preflight", "install", "upgrade", "repair")]
+    [ValidateSet("status", "preflight", "inspect_repository", "install", "upgrade", "repair")]
     [string]$Mode = "preflight",
 
     [ValidatePattern('^[A-Za-z0-9_-]+$')]
@@ -11,6 +11,9 @@ param(
     [string]$ConfigPath,
 
     [string]$BootstrapScriptPath,
+
+    [ValidatePattern('^[A-Z0-9]{10}$')]
+    [string]$TransportNumber,
 
     [Security.SecureString]$SecurePassword
 )
@@ -127,6 +130,9 @@ function Invoke-Bootstrap {
     if ($Connection.allowUnauthorized -eq $true) {
         $arguments.AllowUnauthorized = $true
     }
+    if ($TransportNumber) {
+        $arguments.TransportNumber = $TransportNumber
+    }
     $result = & $BootstrapScriptPath @arguments
     if (-not $result) {
         throw "$Action returned no result."
@@ -137,10 +143,32 @@ function Invoke-Bootstrap {
         $result.SoapFault -or
         $result.ErrorMessage
     ) {
-        $detail = @($result.Error, $result.SoapFault, $result.ErrorMessage) |
-            Where-Object { $_ } |
-            Select-Object -First 1
+        $detailParts = @($result.Error, $result.SoapFault, $result.ErrorMessage) |
+            Where-Object { $_ }
+        $writeDetails = @($result.Writes | Where-Object { $_ })
+        $detail = @($detailParts + $writeDetails) -join " | "
         throw "$Action failed: $detail"
+    }
+    $writeLines = @($result.Writes | ForEach-Object { ([string]$_ -replace '\s+', ' ').Trim() })
+    $reportedError = $writeLines | Where-Object { $_ -match '^ERROR(?: |$)' } | Select-Object -First 1
+    if ($reportedError) {
+        throw "$Action failed: $reportedError"
+    }
+    if ($Action -eq "InspectAssignment") {
+        if (
+            @($writeLines | Where-Object { $_ -match "^REQUEST $([regex]::Escape($TransportNumber))(?: |$)" }).Count -ne 1 -or
+            @($writeLines | Where-Object { $_ -match '^TASK [A-Z0-9]{10}(?: |$)' }).Count -ne 1
+        ) {
+            throw "$Action did not confirm request $TransportNumber and one modifiable user task."
+        }
+    }
+    if ($Action -eq "AssignPackageTransport") {
+        if (
+            @($writeLines | Where-Object { $_ -eq 'ASSIGNMENT_OK PACKAGE ZABAP' }).Count -ne 1 -or
+            @($writeLines | Where-Object { $_ -eq "REQUEST $TransportNumber" }).Count -ne 1
+        ) {
+            throw "$Action did not verify package and transport assignment for $TransportNumber."
+        }
     }
     return $result
 }
@@ -152,9 +180,9 @@ function Get-HelperStatus {
     $groupResult = Invoke-Bootstrap "DiagnoseFunctionGroup" $Connection $Password
     $writes = @($apiResult.Writes | ForEach-Object { ([string]$_ -replace '\s+', ' ').Trim() })
     $required = @(
-        "Z_CODEX_MCP_EXECUTE",
-        "Z_CODEX_MCP_DYNPRO_API",
-        "Z_CODEX_MCP_DDIC_API"
+        "Z_ORVANTA_MCP_EXECUTE",
+        "Z_ORVANTA_MCP_DYNPRO_API",
+        "Z_ORVANTA_MCP_DDIC_API"
     )
     $helpers = foreach ($name in $required) {
         $exists = @($writes | Where-Object { $_ -match "^HELPER $([regex]::Escape($name)) EXISTS 0$" }).Count -eq 1
@@ -196,8 +224,21 @@ if ($SecurePassword.Length -eq 0) {
 }
 
 $actions = switch ($Mode) {
+    "inspect_repository" { @("InspectRepositoryApis") }
     "install" { @("Install", "InstallRepositoryApi", "InstallDdicApi") }
-    "upgrade" { @("Install", "RepairRepositoryApi", "RepairDdicApi") }
+    "upgrade" {
+        if ($TransportNumber) {
+            @(
+                "InspectAssignment",
+                "AssignPackageTransport",
+                "Install",
+                "RepairRepositoryApi",
+                "RepairDdicApi"
+            )
+        } else {
+            @("Install", "RepairRepositoryApi", "RepairDdicApi")
+        }
+    }
     "repair" { @("RepairInterface", "RepairRepositoryApi", "RepairDdicApi") }
     default { @() }
 }
@@ -210,7 +251,7 @@ if ($Mode -eq "preflight" -and -not $status.ready) {
     $detail = $status | ConvertTo-Json -Depth 5 -Compress
     throw "SAP helper preflight failed because one or more bundled helper APIs are missing or not generated: $detail"
 }
-if ($actions.Count -gt 0 -and -not $status.ready) {
+if ($actions.Count -gt 0 -and $Mode -ne "inspect_repository" -and -not $status.ready) {
     throw "SAP helper $Mode completed without a ready post-install state."
 }
 

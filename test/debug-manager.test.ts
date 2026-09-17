@@ -101,7 +101,7 @@ test("headless debug manager restricts user and unsupported control-flow modes",
   await manager.close()
 })
 
-test("headless debug manager classifies a missing SAP debugger endpoint", async () => {
+test("headless debug manager refuses ambiguous listener 404 without starting a session", async () => {
   const manager = new HeadlessDebugManager({
     async listenerClient() {
       return {
@@ -120,9 +120,40 @@ test("headless debug manager classifies a missing SAP debugger endpoint", async 
 
   await assert.rejects(
     manager.session("w200", { action: "start" }),
-    /debugger capability unsupported-endpoint \(HTTP 404\)/
+    /debugger capability listener-not-found-ambiguous \(HTTP 404\)/
   )
   assert.equal(manager.status("w200").state, "idle")
+})
+
+test("debug manager precheck does not create or stop a session", async () => {
+  let discoveryReads = 0
+  const manager = new HeadlessDebugManager({
+    async listenerClient() {
+      return {
+        async adtDiscovery() {
+          discoveryReads++
+          return [{ title: "Debugger", collection: [] }]
+        }
+      } as unknown as ADTClient
+    },
+    async attachedClient() {
+      throw new Error("Must not attach")
+    },
+    username() {
+      return "DEVELOPER"
+    }
+  })
+  const result = await manager.session("W200", { action: "precheck" })
+  assert.equal(result.precheck?.status, "not_advertised")
+  assert.equal(result.precheck?.listenerStarted, false)
+  assert.equal(manager.status("w200").state, "idle")
+  assert.equal(discoveryReads, 1)
+  await assert.rejects(
+    manager.session("w200", { action: "precheck", debugUser: "OTHER" }),
+    /only allows the configured SAP user/
+  )
+  assert.equal(discoveryReads, 1)
+  await manager.close()
 })
 
 class ListenerClient {

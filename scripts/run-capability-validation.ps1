@@ -7,7 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Host.UI.RawUI.WindowTitle = "MCP 0.34.0 Read-Only Capability Validation"
+$Host.UI.RawUI.WindowTitle = "MCP 0.35.0 Read-Only Capability Validation"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $configPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
 $stdout = Join-Path $env:TEMP "sap-capability-0310-service.stdout.log"
@@ -56,7 +56,7 @@ try {
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
         Start-Sleep -Milliseconds 250
         if ($service.HasExited) {
-            throw "0.34.0 service exited before becoming healthy: $(Get-Content -Raw $stderr -ErrorAction SilentlyContinue)"
+            throw "0.35.0 service exited before becoming healthy: $(Get-Content -Raw $stderr -ErrorAction SilentlyContinue)"
         }
         try {
             $health = Invoke-RestMethod "http://127.0.0.1:$Port/health" -TimeoutSec 2
@@ -65,7 +65,7 @@ try {
         catch {}
     }
     if (-not $health -or $health.status -ne "ok") {
-        throw "0.34.0 service did not become healthy: $(Get-Content -Raw $stderr -ErrorAction SilentlyContinue)"
+        throw "0.35.0 service did not become healthy: $(Get-Content -Raw $stderr -ErrorAction SilentlyContinue)"
     }
 
     $resolvedResultPath = [IO.Path]::GetFullPath($ResultPath)

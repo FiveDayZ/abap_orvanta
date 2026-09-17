@@ -11,7 +11,7 @@ if (!Number.isInteger(port) || port < 1024 || port > 65535) {
 
 const backend = new AdtBackend(await loadConnections(configPath))
 const server = await startHttpServer(backend, port)
-console.log(`ABAP MCP Standalone listening at ${server.mcpUrl}`)
+console.log(`ORVANTA listening at ${server.mcpUrl}`)
 
 let closing = false
 async function shutdown() {

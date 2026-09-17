@@ -44,7 +44,8 @@ const receiptSchema = z
     lockReleased: z.boolean().optional(),
     manualLockReleaseAt: z.string().datetime().optional(),
     manualLockReleaseReasonHash: z.string().regex(HASH_PATTERN).optional(),
-    serviceInstanceId: z.string().min(1)
+    serviceInstanceId: z.string().min(1),
+    ownerPid: z.number().int().positive().optional()
   })
   .strict()
 
@@ -54,7 +55,8 @@ const lockSchema = z
     operationIdHash: z.string().regex(HASH_PATTERN),
     serviceInstanceId: z.string().min(1),
     receiptPath: z.string().min(1),
-    startedAt: z.string().datetime()
+    startedAt: z.string().datetime(),
+    ownerPid: z.number().int().positive().optional()
   })
   .strict()
 
@@ -116,7 +118,8 @@ export class WriteOperationReceiptStore {
       sapInvocationStarted: false,
       startedAt: new Date().toISOString(),
       lockReleased: false,
-      serviceInstanceId: this.serviceInstanceId
+      serviceInstanceId: this.serviceInstanceId,
+      ownerPid: process.pid
     }
 
     try {
@@ -140,7 +143,8 @@ export class WriteOperationReceiptStore {
         operationIdHash,
         serviceInstanceId: this.serviceInstanceId,
         receiptPath,
-        startedAt: receipt.startedAt
+        startedAt: receipt.startedAt,
+        ownerPid: process.pid
       })
     } catch (error) {
       if (!isNodeError(error, "EEXIST")) {
@@ -169,7 +173,10 @@ export class WriteOperationReceiptStore {
           ...this.toPublic(failed, receiptPath),
           blockingOperationIdHash: blocking.operationIdHash,
           blockingState:
-            blocking.serviceInstanceId === this.serviceInstanceId ? "in_progress" : "interrupted",
+            blocking.serviceInstanceId === this.serviceInstanceId ||
+            (blocking.ownerPid !== undefined && processMayBeRunning(blocking.ownerPid))
+              ? "in_progress"
+              : "interrupted",
           manualRecovery:
             "Do not retry automatically. Query the blocking operation and inspect the SAP target. After a human confirms the SAP state, use release_write_operation_lock with the original operationId and latest receiptHash."
         }
@@ -258,6 +265,7 @@ export class WriteOperationReceiptStore {
       const receipt = await this.readReceiptRequired(path)
       if (this.activeReceipts.has(path) || receipt.lockReleased === true) continue
       const status = this.toPublic(receipt, path)
+      if (status.status === "in_progress") continue
       operations.push({
         ...status,
         recoveryState: status.status === "interrupted" ? "interrupted" : "stale_lock",
@@ -280,6 +288,34 @@ export class WriteOperationReceiptStore {
     expectedReceiptHash: string,
     reason: string
   ): Promise<Record<string, unknown>> {
+    const path = this.receiptPath(connectionId, sha256(operationId))
+    // Serialize human recovery so a second releaser cannot unlink a new owner's lock.
+    const recoveryPath = `${path}.recovery`
+    const handle = await open(recoveryPath, "wx", 0o600).catch((error: unknown) => {
+      if (isNodeError(error, "EEXIST")) {
+        throw new Error(`Local recovery is active or interrupted; inspect ${recoveryPath} offline`)
+      }
+      throw error
+    })
+    try {
+      return await this.releaseConfirmedLocalLock(
+        connectionId,
+        operationId,
+        expectedReceiptHash,
+        reason
+      )
+    } finally {
+      await handle.close()
+      await unlink(recoveryPath)
+    }
+  }
+
+  private async releaseConfirmedLocalLock(
+    connectionId: string,
+    operationId: string,
+    expectedReceiptHash: string,
+    reason: string
+  ): Promise<Record<string, unknown>> {
     const normalizedReason = reason.trim()
     if (!normalizedReason) throw new Error("A human recovery reason is required")
     const path = this.receiptPath(connectionId, sha256(operationId))
@@ -292,6 +328,16 @@ export class WriteOperationReceiptStore {
       throw new Error("Receipt hash changed; refresh recovery status before releasing the lock")
     }
     if (receipt.lockReleased === true) throw new Error("The local write lock is already released")
+    if (receipt.ownerPid === undefined) {
+      throw new Error(
+        "Legacy receipt has no owner process identity; stop all services and inspect local state offline"
+      )
+    }
+    if (processMayBeRunning(receipt.ownerPid)) {
+      throw new Error(
+        "The owner process is still running or cannot be verified; stop it before local recovery"
+      )
+    }
     if (publicReceipt.status !== "interrupted" && receipt.state === "in_progress") {
       throw new Error("The write operation is still in progress")
     }
@@ -427,11 +473,15 @@ export class WriteOperationReceiptStore {
   private toPublic(receipt: WriteOperationReceipt, path: string): Record<string, unknown> {
     const interrupted =
       receipt.state === "in_progress" &&
-      (receipt.serviceInstanceId !== this.serviceInstanceId || !this.activeReceipts.has(path))
+      !this.activeReceipts.has(path) &&
+      (receipt.ownerPid === undefined || !processMayBeRunning(receipt.ownerPid))
     const lockReleased = receipt.lockReleased === true
-    const recoveryRequired = interrupted || !lockReleased
-    const manualRecovery = recoveryRequired
-      ? `${receipt.recoveryGuide} The local target lock is retained. After a human confirms the SAP state, use release_write_operation_lock with the original operationId and latest receiptHash.`
+    const manualRecovery = !lockReleased
+      ? `${receipt.recoveryGuide} The local target lock is retained. ${
+          receipt.ownerPid === undefined
+            ? "Legacy owner identity is unavailable; stop all services and inspect local state offline."
+            : "Stop the owner process and confirm the SAP state before using release_write_operation_lock with the original operationId and latest receiptHash."
+        }`
       : receipt.recoveryGuide
     return {
       version: receipt.version,
@@ -454,7 +504,8 @@ export class WriteOperationReceiptStore {
       receiptHash: sha256(JSON.stringify(receipt)),
       automaticRetry: false,
       automaticRollback: false,
-      outcomeMayBeUnknown: interrupted || receipt.state === "failed",
+      outcomeMayBeUnknown:
+        receipt.sapInvocationStarted !== false && (interrupted || receipt.state === "failed"),
       localLockReleased: lockReleased,
       ...(receipt.manualLockReleaseAt
         ? {
@@ -511,4 +562,14 @@ function sha256(value: string): string {
 
 function isNodeError(error: unknown, code: string): error is NodeJS.ErrnoException {
   return error instanceof Error && "code" in error && error.code === code
+}
+
+function processMayBeRunning(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    // Permission errors and PID reuse must never authorize unlocking.
+    return !isNodeError(error, "ESRCH")
+  }
 }

@@ -1,4 +1,17 @@
 import { resolve } from "node:path"
+import {
+  cleanupTransportEntrySchema,
+  prepareTransportDelivery,
+  deliveryObjectSchema,
+  inactiveTargetSchema,
+  transportEntries,
+  transportFingerprint
+} from "./transport-delivery.js"
+import {
+  previewConfiguration,
+  CONFIGURATION_TABLE,
+  CONFIGURATION_MODE_DOMAIN
+} from "./configuration-preview.js"
 import { createHash } from "node:crypto"
 import { isDeepStrictEqual } from "node:util"
 import type { TransportRequest } from "abap-adt-api"
@@ -8,6 +21,7 @@ import type {
   AtcFindingInfo,
   CreateObjectRequest,
   DumpInfo,
+  EnhancementInfo,
   MessageClassInfo,
   RemoteFunctionParameterShape,
   RemoteFunctionResult,
@@ -22,13 +36,34 @@ import type {
   TextElementInfo,
   TextElementObjectType,
   TraceEntryInfo,
-  TraceRunInfo,
-  UsageReferenceInfo
+  TraceRunInfo
 } from "./backend.js"
 import type { DebugStepRequest, DebugVariableRequest } from "./debug-manager.js"
 import { writeDiscoveryExport, writeResourceExport } from "./export.js"
 import type { InvocationReceiptStore, InvocationReservation } from "./invocation-receipts.js"
 import { buildCapabilityReport } from "./capabilities.js"
+import { collectSystemInfo } from "./system-info.js"
+import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
+import type { z } from "zod"
+import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
+import { parseSimpleTableSelect, readAbapTable, tableQuerySchema } from "./table-query.js"
+import { checkFailure, checkQuality } from "./quality-checks.js"
+import { collectWhereUsed, formatWhereUsed, type WhereUsedInput } from "./where-used.js"
+import { formatSciResult, SCI_HELPER, SCI_HELPER_FINGERPRINT, type SciInput } from "./sci.js"
+import {
+  formatSciV2Result,
+  SCI_V2_HELPER,
+  SCI_V2_FINGERPRINT,
+  sciTargetSchema,
+  formatSciE2Result,
+  SCI_E2_HELPER,
+  SCI_E2_FINGERPRINT
+} from "./sci-v2.js"
+import {
+  buildRuntimeDiagnosticReport,
+  validateRuntimeDiagnosticInput,
+  type RuntimeDiagnosticInput
+} from "./runtime-diagnostics.js"
 
 interface SearchInput {
   pattern: string
@@ -294,6 +329,7 @@ interface FunctionParameterInput {
   typeName: string
   optional?: boolean | undefined
   passByValue?: boolean | undefined
+  description?: string | undefined
 }
 
 interface FunctionExceptionInput {
@@ -342,6 +378,17 @@ interface FunctionExecutionParameter extends RemoteFunctionParameterShape {
   optional: boolean
   supported: boolean
   reason?: string | undefined
+  maxCharacters?: number
+  valueContract?: RfcValueContract
+  fieldContracts?: Record<string, RfcValueContract>
+}
+
+interface ResolvedRemoteType {
+  kind: "scalar" | "structure" | "table"
+  fields: string[]
+  maxCharacters?: number
+  valueContract?: RfcValueContract
+  fieldContracts?: Record<string, RfcValueContract>
 }
 
 interface FunctionExecutionContract {
@@ -373,6 +420,44 @@ interface CreateFunctionModuleInput extends ReadFunctionModuleInput {
   source: string[]
   packageName: string
   transportNumber: string
+}
+
+type FunctionParameterDirection = "import" | "export" | "changing" | "table"
+
+type FunctionParameterPatch =
+  | ({ operation: "add"; direction: FunctionParameterDirection } & FunctionParameterInput)
+  | {
+      operation: "rename"
+      direction: FunctionParameterDirection
+      name: string
+      newName: string
+    }
+  | {
+      operation: "update"
+      direction: FunctionParameterDirection
+      name: string
+      typeName?: string | undefined
+      optional?: boolean | undefined
+      passByValue?: boolean | undefined
+      description?: string | undefined
+    }
+  | { operation: "remove"; direction: FunctionParameterDirection; name: string }
+
+type FunctionExceptionPatch =
+  | { operation: "add"; name: string; description?: string | undefined }
+  | { operation: "rename"; name: string; newName: string }
+  | { operation: "update"; name: string; description: string }
+  | { operation: "remove"; name: string }
+
+interface PatchFunctionModuleInterfaceInput extends ReadFunctionModuleInput {
+  functionGroup: string
+  expectedInterfaceFingerprint: string
+  expectedSourceFingerprint: string
+  parameterOperations: FunctionParameterPatch[]
+  exceptionOperations: FunctionExceptionPatch[]
+  packageName: string
+  transportNumber: string
+  confirmation?: "DESTRUCTIVE_INTERFACE_CHANGE" | undefined
 }
 
 interface InspectRepositoryAssignmentInput {
@@ -487,6 +572,36 @@ interface PatchTransparentTableFieldsInput extends ReadDdicInput {
   acknowledgeDataLoss: true
 }
 
+type TransparentTableBuffering =
+  | "notAllowed"
+  | "allowedButOff"
+  | "singleRecord"
+  | "generic"
+  | "full"
+
+interface PatchTransparentTableSettingsInput extends ReadDdicInput {
+  expectedVersion: string
+  expectedFingerprint: string
+  settings: {
+    dataClass?: "APPL0" | "APPL1" | "APPL2" | undefined
+    sizeCategory?: number | undefined
+    buffering?: TransparentTableBuffering | undefined
+    genericKeyFields?: number | undefined
+    logDataChanges?: boolean | undefined
+  }
+  packageName: string
+  transportNumber: string
+  confirmation: "TECHNICAL_SETTINGS_CHANGE"
+}
+
+interface RecoverDdicTableConversionInput extends ReadDdicInput {
+  expectedWorklistFingerprint: string
+  packageName: string
+  transportNumber: string
+  confirmation: "RECOVER_NATIVE_TABLE_CONVERSION"
+  acknowledgePotentialDataLoss: true
+}
+
 interface UpsertTableTypeInput extends UpsertDdicInput {
   rowType: string
 }
@@ -503,6 +618,214 @@ interface DeleteDdicInput extends ReadDdicInput {
 interface ObjectInput {
   objectName: string
   objectType?: string | undefined
+  connectionId: string
+}
+
+interface EnhancementInspectionInput extends ObjectInput {
+  includeImplementationSource?: boolean | undefined
+}
+
+type EnhancementObjectType = "ENHC" | "ENHS" | "ENHO" | "BADI" | "BADII"
+
+interface EnhancementObjectSearchInput {
+  pattern: string
+  types?: EnhancementObjectType[] | undefined
+  maxResultsPerType?: number | undefined
+  connectionId: string
+}
+
+type CustomerExitObjectType = "SMOD" | "CMOD"
+
+interface CustomerExitObjectSearchInput {
+  pattern: string
+  types?: CustomerExitObjectType[] | undefined
+  maxResultsPerType?: number | undefined
+  connectionId: string
+}
+
+interface ReadCustomerExitDefinitionInput {
+  enhancementName: string
+  connectionId: string
+}
+
+interface ReadCustomerExitProjectInput {
+  projectName: string
+  connectionId: string
+}
+
+interface CustomerFunctionExitInspectionInput {
+  programName: string
+  connectionId: string
+}
+
+interface CustomerScreenMenuExitInspectionInput {
+  programName: string
+  screenNumbers?: string[] | undefined
+  includeMenuExits?: boolean | undefined
+  connectionId: string
+}
+
+type BteKind = "event" | "process"
+
+interface BteDispatcherSearchInput {
+  eventPattern?: string | undefined
+  kinds?: BteKind[] | undefined
+  maxResultsPerKind?: number | undefined
+  connectionId: string
+}
+
+interface ReadBteConfigurationInput {
+  kind: BteKind
+  identifier: string
+  connectionId: string
+}
+
+type EnhancementConfigurationWorkflowKind =
+  | "cmod_project"
+  | "fibf_event"
+  | "fibf_process"
+  | "fi_validation"
+  | "fi_substitution"
+
+interface EnhancementConfigurationWorkflowInput {
+  kind: EnhancementConfigurationWorkflowKind
+  targetName: string
+  desiredState: "create_or_update" | "active" | "inactive" | "removed"
+  enhancementNames?: string[] | undefined
+  productName?: string | undefined
+  functionModule?: string | undefined
+  applicationIndicator?: string | undefined
+  country?: string | undefined
+  applicationArea?: string | undefined
+  callupPoint?: string | undefined
+  organizationalUnit?: string | undefined
+  exitProgram?: string | undefined
+  packageName?: string | undefined
+  transportNumber?: string | undefined
+  connectionId: string
+}
+
+type BadiRepositoryType = "SXSD/XD" | "SXCI/XI" | "ENHS/XS" | "ENHO/XHB"
+
+interface BadiObjectSearchInput {
+  pattern: string
+  types?: BadiRepositoryType[] | undefined
+  maxResultsPerType?: number | undefined
+  connectionId: string
+}
+
+interface ReadClassicBadiDefinitionInput {
+  definitionName: string
+  connectionId: string
+}
+
+type TableQueryInput = z.infer<typeof tableQuerySchema>
+
+interface ClassicBadiProjectionRow {
+  EXIT_NAME: string
+  IMP_NAME: string
+  CLASS_NAME: string
+  INTER_NAME: string
+}
+
+const classicBadiProjectionColumns = ["EXIT_NAME", "IMP_NAME", "CLASS_NAME", "INTER_NAME"] as const
+
+interface ClassicBadiMethodInput {
+  methodName: string
+  source: string[]
+}
+
+interface ManageClassicBadiImplementationInput {
+  action: "create" | "activate" | "deactivate" | "delete"
+  implementationName: string
+  definitionName: string
+  interfaceName?: string | undefined
+  implementationClass?: string | undefined
+  methods?: ClassicBadiMethodInput[] | undefined
+  filters?: Array<Record<string, string>> | undefined
+  packageName: string
+  transportNumber: string
+  expectedFingerprint?: string | undefined
+  confirmation: "CLASSIC_BADI_IMPLEMENTATION_CHANGE"
+  connectionId: string
+}
+
+interface ReadEnhancementImplementationInput {
+  enhancementName: string
+  connectionId: string
+}
+
+interface CreateEnhancementHookInput extends ReadEnhancementImplementationInput {
+  description: string
+  originalObjectType: "PROG" | "CLAS" | "FUGR"
+  originalObjectName: string
+  mainObjectType: "PROG" | "CLAS" | "FUGR"
+  mainObjectName: string
+  programName: string
+  fullName: string
+  mode: "D" | "S"
+  replacement?: boolean | undefined
+  source: string[]
+  packageName: string
+  transportNumber: string
+  confirmation: "CREATE_ENHANCEMENT_IMPLEMENTATION"
+}
+
+interface CreateNewBadiImplementationInput extends ReadEnhancementImplementationInput {
+  description: string
+  spotName: string
+  badiName: string
+  implementationName: string
+  implementationClass: string
+  defaultImplementation?: boolean | undefined
+  filters?: Array<Record<string, string>> | undefined
+  packageName: string
+  transportNumber: string
+  confirmation: "CREATE_ENHANCEMENT_IMPLEMENTATION"
+}
+
+interface UpdateEnhancementHookInput extends ReadEnhancementImplementationInput {
+  expectedFingerprint: string
+  extId: string
+  source: string[]
+  description?: string | undefined
+  packageName: string
+  transportNumber: string
+  confirmation: "UPDATE_ENHANCEMENT_IMPLEMENTATION"
+}
+
+interface UpdateNewBadiImplementationInput extends ReadEnhancementImplementationInput {
+  expectedFingerprint: string
+  implementationName: string
+  implementationClass: string
+  active: boolean
+  defaultImplementation: boolean
+  filters: Array<Record<string, string>>
+  description?: string | undefined
+  packageName: string
+  transportNumber: string
+  confirmation: "UPDATE_ENHANCEMENT_IMPLEMENTATION"
+}
+
+interface ManageEnhancementImplementationStateInput extends ReadEnhancementImplementationInput {
+  action: "activate" | "discard_inactive"
+  expectedFingerprint: string
+  packageName: string
+  transportNumber: string
+  confirmation: "CHANGE_ENHANCEMENT_IMPLEMENTATION_STATE"
+}
+
+interface DeleteEnhancementImplementationInput extends ReadEnhancementImplementationInput {
+  expectedFingerprint: string
+  packageName: string
+  transportNumber: string
+  confirmation: "PERMANENT_DELETE"
+}
+
+interface EnhancementFrameworkInspectionInput extends ObjectInput {}
+
+interface FicoRuleExitProgramInput {
+  programName: string
   connectionId: string
 }
 
@@ -549,25 +872,6 @@ interface ObjectUrlInput {
   connectionId: string
 }
 
-interface WhereUsedInput {
-  objectName: string
-  objectType?: string | undefined
-  searchTerm?: string | undefined
-  line?: number | undefined
-  character?: number | undefined
-  connectionId: string
-  maxResults?: number | undefined
-  includeSnippets?: boolean | undefined
-  startIndex?: number | undefined
-  filter?:
-    | {
-        objectNamePattern?: string | undefined
-        objectTypes?: string[] | undefined
-        excludeSystemObjects?: boolean | undefined
-      }
-    | undefined
-}
-
 interface SystemInfoInput {
   connectionId: string
   includeComponents?: boolean | undefined
@@ -590,6 +894,8 @@ interface ReplaceSourceInput {
   oldString: string
   newString: string
   transportNumber?: string | undefined
+  expectedSourceFingerprint?: string | undefined
+  recoverInactiveSource?: true | undefined
 }
 
 interface ActivateInput {
@@ -642,7 +948,11 @@ interface DataQueryInput {
 }
 
 interface AtcInput {
-  action?: "run_analysis" | "get_documentation" | undefined
+  action?: "run_analysis" | "get_documentation" | "check_quality" | "precheck_atc" | undefined
+  fileUris?: string[] | undefined
+  includeAtc?: boolean | undefined
+  maxFindings?: number | undefined
+  acknowledgePotentialSideEffects?: true | undefined
   objectName?: string | undefined
   objectType?: string | undefined
   objectUri?: string | undefined
@@ -655,6 +965,7 @@ interface AtcInput {
 interface UnitTestInput {
   objectName: string
   connectionId: string
+  outputFormat?: "text" | "json" | undefined
 }
 
 interface DumpInput {
@@ -679,10 +990,22 @@ interface TransportInput {
     | "get_transport_details"
     | "get_transport_objects"
     | "compare_transports"
+    | "prepare_delivery"
   connectionId: string
   transportNumber?: string | undefined
   transportNumbers?: string[] | undefined
   user?: string | undefined
+  expectedObjects?: z.input<typeof deliveryObjectSchema>[] | undefined
+  inactiveTargets?: z.input<typeof inactiveTargetSchema>[] | undefined
+}
+
+interface CleanupTransportEntriesInput {
+  connectionId: string
+  parentTransportNumber: string
+  taskNumber: string
+  entries: z.input<typeof cleanupTransportEntrySchema>[]
+  expectedFingerprint: string
+  confirmation: "REMOVE_CTS_ENTRIES"
 }
 
 interface DownloadInput {
@@ -699,7 +1022,7 @@ interface DiscoveryInput {
 
 interface DebugSessionInput {
   connectionId: string
-  action?: "start" | "stop" | "status" | undefined
+  action?: "start" | "stop" | "status" | "precheck" | undefined
   debugUser?: string | undefined
   terminalMode?: boolean | undefined
 }
@@ -1099,7 +1422,7 @@ export class ToolService {
     connectionId: string,
     rootObject: AbapObjectInfo
   ): Promise<ProgramSourceGraph> {
-    const maxIncludes = 32
+    const maxIncludes = 128
     const maxDepth = 8
     const rootSource = await this.backend.readSource(connectionId, rootObject)
     const graph: ProgramSourceGraph = {
@@ -1194,7 +1517,7 @@ export class ToolService {
   }
 
   async readTransactionCode(input: ReadTransactionInput): Promise<string> {
-    const transactionCode = customerName(input.transactionCode, "transactionCode")
+    const transactionCode = transactionCodeName(input.transactionCode)
     const result = await this.backend.callSapRepository(input.connectionId.toLowerCase(), {
       operation: "READ_TRANSACTION",
       transaction: transactionCode
@@ -1295,6 +1618,7 @@ export class ToolService {
     const functionName = readableFunctionName(input.functionName)
     const result = await this.backend.callSapRepository(input.connectionId.toLowerCase(), {
       operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
       objectName: functionName
     })
     requireRepositorySuccess(result.status, result.code, result.message)
@@ -1316,7 +1640,10 @@ export class ToolService {
     )
   }
 
-  async testRemoteFunctionModule(input: TestRemoteFunctionModuleInput): Promise<string> {
+  async testRemoteFunctionModule(
+    input: TestRemoteFunctionModuleInput,
+    beforeInvoke?: () => Promise<void>
+  ): Promise<string> {
     if (input.acknowledgePotentialSideEffects !== true) {
       throw new Error("acknowledgePotentialSideEffects must be true before invoking SAP code")
     }
@@ -1357,6 +1684,7 @@ export class ToolService {
 
     const repository = await this.backend.callSapRepository(input.connectionId.toLowerCase(), {
       operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
       objectName: functionName
     })
     requireRepositorySuccess(repository.status, repository.code, repository.message)
@@ -1451,11 +1779,12 @@ export class ToolService {
         remoteInputs[parameter.name] = []
       }
       const supplied = remoteInputs[parameter.name]
-      if (supplied !== undefined && parameter.kind !== "scalar") {
+      if (supplied !== undefined) {
         validateRemoteFields(parameter, supplied, `input ${parameter.name}`)
       }
     }
     const outputShapes = [...allowedOutputs.values()].map(remoteParameterShape)
+    await beforeInvoke?.()
     const result = await this.backend.callRemoteFunction(input.connectionId.toLowerCase(), {
       functionName,
       inputParameters: remoteInputs,
@@ -1463,7 +1792,7 @@ export class ToolService {
     })
     if (result.fault) {
       const faultText = `${result.fault.name} ${result.fault.code} ${result.fault.message}`
-      if (!expectedException || !faultText.toUpperCase().includes(expectedException)) {
+      if (!expectedException || result.fault.name.trim().toUpperCase() !== expectedException) {
         throw new Error(`SAP SOAP fault: ${faultText.trim()}`)
       }
       return JSON.stringify(
@@ -1489,13 +1818,12 @@ export class ToolService {
     assertExpectedRemoteOutputs(actual.structures, expectedStructureOutputs)
     assertExpectedRemoteOutputs(actual.tables, expectedTableOutputs)
     for (const parameter of allowedOutputs.values()) {
-      if (parameter.kind !== "scalar") {
-        validateRemoteFields(
-          parameter,
-          result.outputs[parameter.name] ?? (parameter.kind === "table" ? [] : {}),
-          `output ${parameter.name}`
-        )
-      }
+      validateRemoteFields(
+        parameter,
+        result.outputs[parameter.name]!,
+        `output ${parameter.name}`,
+        true
+      )
     }
     return JSON.stringify(
       {
@@ -1518,7 +1846,10 @@ export class ToolService {
     )
   }
 
-  async invokeCustomerFunctionModule(input: InvokeCustomerFunctionModuleInput): Promise<string> {
+  async invokeCustomerFunctionModule(
+    input: InvokeCustomerFunctionModuleInput,
+    beforeInvoke?: () => Promise<void>
+  ): Promise<string> {
     const requestId = invocationRequestId(input.requestId)
     const prepared = await this.prepareRemoteFunctionCall(input, true)
     const receipts = this.requiredInvocationReceipts()
@@ -1550,6 +1881,7 @@ export class ToolService {
     const startedAt = Date.now()
     let result: RemoteFunctionResult
     try {
+      await beforeInvoke?.()
       result = await this.backend.callRemoteFunction(prepared.connectionId, {
         functionName: prepared.functionName,
         inputParameters: prepared.remoteInputs,
@@ -1607,13 +1939,12 @@ export class ToolService {
       actual = splitRemoteOutputs(result.outputs, prepared.outputShapes)
       assertRemotePayloadSize(actual, "remote function response")
       for (const parameter of prepared.allowedOutputs.values()) {
-        if (parameter.kind !== "scalar") {
-          validateRemoteFields(
-            parameter,
-            result.outputs[parameter.name] ?? (parameter.kind === "table" ? [] : {}),
-            `output ${parameter.name}`
-          )
-        }
+        validateRemoteFields(
+          parameter,
+          result.outputs[parameter.name]!,
+          `output ${parameter.name}`,
+          true
+        )
       }
     } catch (error) {
       return this.markOutcomeUnknownAndRethrow(receipts, reservation, durationMs, error)
@@ -1720,6 +2051,7 @@ export class ToolService {
 
     const repository = await this.backend.callSapRepository(connectionId, {
       operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
       objectName: functionName
     })
     requireRepositorySuccess(repository.status, repository.code, repository.message)
@@ -1780,7 +2112,7 @@ export class ToolService {
         remoteInputs[parameter.name] = []
       }
       const supplied = remoteInputs[parameter.name]
-      if (supplied !== undefined && parameter.kind !== "scalar") {
+      if (supplied !== undefined) {
         validateRemoteFields(parameter, supplied, `input ${parameter.name}`)
       }
     }
@@ -1806,10 +2138,7 @@ export class ToolService {
       ["changing", definition.changingParameters],
       ["table", definition.tableParameters]
     ] as const
-    const cache = new Map<
-      string,
-      Promise<{ kind: "scalar" | "structure" | "table"; fields: string[] }>
-    >()
+    const cache = new Map<string, Promise<ResolvedRemoteType>>()
     const resolveType = (typeName: string, table: boolean) => {
       const key = `${table ? "T" : "P"}:${typeName}`
       let pending = cache.get(key)
@@ -1831,6 +2160,11 @@ export class ToolService {
             direction,
             kind: direction === "table" ? "table" : resolved.kind,
             ...(resolved.fields.length ? { fields: resolved.fields } : {}),
+            ...(resolved.maxCharacters !== undefined
+              ? { maxCharacters: resolved.maxCharacters }
+              : {}),
+            ...(resolved.valueContract ? { valueContract: resolved.valueContract } : {}),
+            ...(resolved.fieldContracts ? { fieldContracts: resolved.fieldContracts } : {}),
             supported: true
           })
         } catch (error) {
@@ -1856,14 +2190,51 @@ export class ToolService {
     connectionId: string,
     typeName: string,
     tableParameter: boolean
-  ): Promise<{ kind: "scalar" | "structure" | "table"; fields: string[] }> {
-    const structure = await this.backend.callSapDdic(connectionId, {
-      operation: "READ_STRUCTURE",
-      objectName: typeName
-    })
+  ): Promise<ResolvedRemoteType> {
+    if (typeName.includes("-")) {
+      const parts = typeName.split("-")
+      if (parts.length !== 2 || tableParameter) {
+        throw new Error(`DDIC field reference ${typeName} must name one scalar component`)
+      }
+      const parent = ddicName(parts[0]!, "field reference parent")
+      const component = functionComponentName(parts[1]!, "field reference component")
+      const record = await this.readRemoteRecordType(connectionId, parent)
+      requireDdicSuccess(record)
+      if (
+        record.header.TABNAME !== parent ||
+        !["INTTAB", "TRANSP"].includes(record.header.TABCLASS ?? "")
+      ) {
+        throw new Error(`DDIC field reference ${typeName} resolved to a different record type`)
+      }
+      const fields = record.fields.filter((field) => field.FIELDNAME === component)
+      if (fields.length !== 1) {
+        throw new Error(`DDIC field reference ${typeName} must resolve to exactly one field`)
+      }
+      const field = fields[0]!
+      if (field.COMPTYPE?.trim() && field.COMPTYPE.trim() !== "E") {
+        throw new Error(`DDIC field reference ${typeName} is not elementary`)
+      }
+      const element = field.ROLLNAME?.trim()
+      if (element) {
+        return this.resolveRemoteScalarType(
+          connectionId,
+          ddicName(element, "field data element"),
+          true
+        )
+      }
+      if (!supportedDirectField(field)) {
+        throw new Error(`DDIC field reference ${typeName} has an unsupported direct type`)
+      }
+      return remoteScalarShape(field, typeName)
+    }
+    const structure = await this.readRemoteRecordType(connectionId, typeName)
     if (structure.status.toUpperCase() === "S") {
       const fields = flatStructureFields(structure, typeName)
-      return { kind: tableParameter ? "table" : "structure", fields }
+      return {
+        kind: tableParameter ? "table" : "structure",
+        fields,
+        fieldContracts: await this.resolveRemoteFieldContracts(connectionId, structure)
+      }
     }
     requireDdicNotFound(structure, typeName)
     const tableType = await this.backend.callSapDdic(connectionId, {
@@ -1873,16 +2244,112 @@ export class ToolService {
     if (tableType.status.toUpperCase() === "S") {
       const rowType = tableType.header.ROWTYPE ?? ""
       if (!rowType) throw new Error(`Table type ${typeName} has no DDIC row type`)
-      const rowStructure = await this.backend.callSapDdic(connectionId, {
-        operation: "READ_STRUCTURE",
-        objectName: rowType
-      })
+      const rowStructure = await this.readRemoteRecordType(connectionId, rowType)
       requireDdicSuccess(rowStructure)
-      return { kind: "table", fields: flatStructureFields(rowStructure, rowType) }
+      return {
+        kind: "table",
+        fields: flatStructureFields(rowStructure, rowType),
+        fieldContracts: await this.resolveRemoteFieldContracts(connectionId, rowStructure)
+      }
     }
     requireDdicNotFound(tableType, typeName)
     if (tableParameter) throw new Error(`TABLES line type ${typeName} is not a flat DDIC structure`)
-    return { kind: "scalar", fields: [] }
+    return this.resolveRemoteScalarType(connectionId, typeName)
+  }
+
+  private async resolveRemoteFieldContracts(
+    connectionId: string,
+    record: SapDdicResult
+  ): Promise<Record<string, RfcValueContract>> {
+    const result: Record<string, RfcValueContract> = {}
+    const elements = new Map<string, RfcValueContract>()
+    for (const field of record.fields) {
+      const name = field.FIELDNAME!
+      // DD03P metadata is authoritative when complete; otherwise resolve the referenced element.
+      if (field.DATATYPE?.trim() && field.LENG?.trim()) {
+        result[name] = rfcValueContract(field, name)
+      } else {
+        const element = ddicName(field.ROLLNAME ?? "", "field data element")
+        let contract = elements.get(element)
+        if (!contract) {
+          contract = (await this.resolveRemoteScalarType(connectionId, element)).valueContract!
+          elements.set(element, contract)
+        }
+        result[name] = contract
+      }
+      if (["STRG", "SSTRING"].includes(result[name]!.dataType)) {
+        throw new Error(`Structure field ${name} is not a flat fixed-length value`)
+      }
+    }
+    return result
+  }
+
+  private async resolveRemoteScalarType(
+    connectionId: string,
+    typeName: string,
+    fieldReference = false
+  ): Promise<ResolvedRemoteType> {
+    const element = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_DATA_ELEMENT",
+      objectName: typeName
+    })
+    requireDdicSuccess(element)
+    const domainName = element.header.DOMNAME?.trim()
+    const scalar = domainName
+      ? await this.backend.callSapDdic(connectionId, {
+          operation: "READ_DOMAIN",
+          objectName: domainName
+        })
+      : element
+    requireDdicSuccess(scalar)
+    if (
+      element.header.ROLLNAME !== typeName ||
+      (domainName && scalar.header.DOMNAME !== domainName)
+    ) {
+      throw new Error(`DDIC scalar ${typeName} resolved to another identity`)
+    }
+    if (
+      fieldReference &&
+      (![
+        "CHAR",
+        "NUMC",
+        "DATS",
+        "TIMS",
+        "INT1",
+        "INT2",
+        "INT4",
+        "DEC",
+        "CURR",
+        "QUAN",
+        "FLTP"
+      ].includes(scalar.header.DATATYPE?.trim() ?? "") ||
+        element.header.ROLLNAME !== typeName ||
+        (domainName && scalar.header.DOMNAME !== domainName))
+    ) {
+      throw new Error(`DDIC field data element ${typeName} is not a verified elementary type`)
+    }
+    return remoteScalarShape(scalar.header, typeName)
+  }
+
+  private async readRemoteRecordType(
+    connectionId: string,
+    typeName: string
+  ): Promise<SapDdicResult> {
+    const structure = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_STRUCTURE",
+      objectName: typeName
+    })
+    if (structure.status.toUpperCase() === "S" || structure.code !== "OBJECT_TYPE_MISMATCH")
+      return structure
+    const table = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_TRANSPARENT_TABLE",
+      objectName: typeName
+    })
+    requireDdicSuccess(table)
+    if (table.header.TABCLASS !== "TRANSP" || table.header.TABNAME !== typeName) {
+      throw new Error(`DDIC type ${typeName} did not resolve to its active transparent table`)
+    }
+    return table
   }
 
   async createFunctionModuleWithInterface(input: CreateFunctionModuleInput): Promise<string> {
@@ -1918,6 +2385,198 @@ export class ToolService {
         status: result.code,
         packageName: input.packageName.trim().toUpperCase(),
         recordedRequest: input.transportNumber.trim().toUpperCase()
+      },
+      null,
+      2
+    )
+  }
+
+  async patchFunctionModuleInterface(input: PatchFunctionModuleInterfaceInput): Promise<string> {
+    const functionName = customerName(input.functionName, "functionName")
+    const functionGroup = customerName(input.functionGroup, "functionGroup")
+    const connectionId = input.connectionId.toLowerCase()
+    if (!input.parameterOperations.length && !input.exceptionOperations.length) {
+      throw new Error("At least one function interface operation is required")
+    }
+    if (
+      [...input.parameterOperations, ...input.exceptionOperations].some(
+        ({ operation }) => operation !== "add"
+      ) &&
+      input.confirmation !== "DESTRUCTIVE_INTERFACE_CHANGE"
+    ) {
+      throw new Error(
+        "confirmation must be DESTRUCTIVE_INTERFACE_CHANGE for rename, update, or remove"
+      )
+    }
+
+    const currentResult = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
+      objectName: functionName
+    })
+    requireRepositorySuccess(currentResult.status, currentResult.code, currentResult.message)
+    const current = functionModuleResult(currentResult, connectionId, functionName)
+    if (current.source.some((line) => line.length > 72)) {
+      throw new Error(
+        "Function interface patch of source wider than 72 characters is not supported by the current write helper; no write was started"
+      )
+    }
+    if (current.functionGroup !== functionGroup) {
+      throw new Error(
+        `Function group changed: expected ${functionGroup}, current ${current.functionGroup}`
+      )
+    }
+    if (current.interfaceFingerprint !== input.expectedInterfaceFingerprint.toLowerCase()) {
+      throw new Error(
+        `Function interface fingerprint changed: expected ${input.expectedInterfaceFingerprint.toLowerCase()}, current ${current.interfaceFingerprint}`
+      )
+    }
+    if (current.sourceFingerprint !== input.expectedSourceFingerprint.toLowerCase()) {
+      throw new Error(
+        `Function implementation source fingerprint changed: expected ${input.expectedSourceFingerprint.toLowerCase()}, current ${current.sourceFingerprint}`
+      )
+    }
+
+    const desired = patchFunctionModuleDefinition(
+      functionDefinitionFromResult(current),
+      input.parameterOperations,
+      input.exceptionOperations
+    )
+    if (
+      desired.remoteEnabled &&
+      [
+        ...desired.importParameters,
+        ...desired.exportParameters,
+        ...desired.changingParameters
+      ].some((parameter) => !parameter.passByValue)
+    ) {
+      throw new Error("Reference parameters are not allowed with RFC")
+    }
+    const requestedPackage = packageName(input.packageName)
+    const requestedTransport = transportNumber(input.transportNumber)
+    const assignmentResult = await this.backend.callSapRepository(connectionId, {
+      operation: "INSPECT_REPOSITORY_ASSIGNMENT",
+      objectType: "FUNC",
+      objectName: functionName
+    })
+    requireRepositorySuccess(
+      assignmentResult.status,
+      assignmentResult.code,
+      assignmentResult.message
+    )
+    const assignment = parseFunctionPayload(assignmentResult.source).metadata
+    if (assignment.PARENT_OBJECT !== functionGroup) {
+      throw new Error(
+        `Function repository parent changed: expected ${functionGroup}, current ${assignment.PARENT_OBJECT || "none"}`
+      )
+    }
+    if (assignment.PACKAGE !== requestedPackage) {
+      throw new Error(
+        `Function repository package changed: expected ${requestedPackage}, current ${assignment.PACKAGE || "none"}`
+      )
+    }
+    if (![assignment.REQUEST, assignment.TASK].includes(requestedTransport)) {
+      throw new Error(`Function module is not assigned to transport ${requestedTransport}`)
+    }
+
+    const workspaceUri = functionModuleWorkspaceUri(connectionId, functionGroup, functionName)
+    const adtSource = await this.backend.readSourceByUri(connectionId, workspaceUri)
+    const sourcePatch = functionInterfaceSourcePatch(functionName, desired, adtSource.source)
+    const adtBodyFingerprint = createHash("sha256")
+      .update(JSON.stringify(functionImplementationSource(adtSource.source.split(/\r?\n/))))
+      .digest("hex")
+    if (adtBodyFingerprint !== current.sourceFingerprint) {
+      throw new Error(
+        `Active ADT implementation source changed: expected ${current.sourceFingerprint}, current ${adtBodyFingerprint}`
+      )
+    }
+    // Descriptions are repository metadata and do not change the ADT declaration.
+    const sourceMutation =
+      sourcePatch.oldHeader === sourcePatch.newHeader
+        ? null
+        : await this.backend.replaceSource(
+            connectionId,
+            workspaceUri,
+            sourcePatch.oldHeader,
+            sourcePatch.newHeader,
+            requestedTransport,
+            createHash("sha256").update(adtSource.source).digest("hex")
+          )
+    if (sourceMutation && !sourceMutation.activation.success) {
+      throw new Error("Function interface source was saved but activation did not succeed")
+    }
+
+    const activatedSource = await this.backend.readSourceByUri(connectionId, workspaceUri)
+    const activatedBodyFingerprint = createHash("sha256")
+      .update(JSON.stringify(functionImplementationSource(activatedSource.source.split(/\r?\n/))))
+      .digest("hex")
+    if (activatedBodyFingerprint !== current.sourceFingerprint) {
+      throw new Error(
+        `Function implementation source changed during ADT interface patch: expected ${current.sourceFingerprint}, current ${activatedBodyFingerprint}`
+      )
+    }
+
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "PATCH_FUNCTION_INTERFACE",
+      objectName: functionName,
+      program: functionGroup,
+      packageName: requestedPackage,
+      transportNumber: requestedTransport,
+      expectedVersion: current.interfaceFingerprint,
+      source: [
+        ...serializeFunctionSnapshot(current).map((line) => line[0]!.toLowerCase() + line.slice(1)),
+        ...serializeFunctionDefinition(desired)
+      ]
+    })
+    const nativeDifferences = result.source
+      .filter((line) => /^D\|[1-7]\|/.test(line))
+      .slice(0, 49)
+      .map((line) => decodeSoapText(line).slice(0, 255))
+    requireRepositorySuccess(
+      result.status,
+      result.code,
+      result.message +
+        (nativeDifferences.length
+          ? `\nNative readback differences:\n${nativeDifferences.join("\n")}`
+          : "")
+    )
+    const saved = functionModuleResult(result, connectionId, functionName)
+    const { source: _desiredSource, ...desiredInterface } = desired
+    const { source: _savedSource, ...savedInterface } = functionDefinitionFromResult(saved)
+    const verificationMismatches = [
+      ["functionGroup", current.functionGroup, saved.functionGroup],
+      ["shortText", current.shortText, saved.shortText],
+      ["remoteMode", current.remoteMode, saved.remoteMode],
+      ["updateTaskMode", current.updateTaskMode, saved.updateTaskMode],
+      ["globalInterface", current.globalInterface, saved.globalInterface],
+      ["interface", desiredInterface, savedInterface],
+      ["sourceFingerprint", current.sourceFingerprint, saved.sourceFingerprint]
+    ]
+      .filter(([, expected, actual]) => JSON.stringify(expected) !== JSON.stringify(actual))
+      .map(
+        ([field, expected, actual]) =>
+          `${field}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`
+      )
+    if (verificationMismatches.length) {
+      throw new Error(
+        `SAP function interface verification did not return the requested safe patch:\n${verificationMismatches.join("\n")}`
+      )
+    }
+    return JSON.stringify(
+      {
+        ...saved,
+        previousInterfaceFingerprint: current.interfaceFingerprint,
+        previousSourceFingerprint: current.sourceFingerprint,
+        helperVersion: result.version,
+        status: result.code,
+        packageName: input.packageName.trim().toUpperCase(),
+        recordedRequest: input.transportNumber.trim().toUpperCase(),
+        sourceMutation,
+        sourceWritePerformed: sourceMutation !== null,
+        destructiveChangeConfirmed: input.confirmation === "DESTRUCTIVE_INTERFACE_CHANGE",
+        automaticRetry: false,
+        automaticSapUnlock: false,
+        transportReleased: false
       },
       null,
       2
@@ -2338,19 +2997,12 @@ export class ToolService {
       expectedVersion,
       fields: appendedFields
     })
-    const currentFields = (currentDefinition.fields ?? []) as Array<Record<string, unknown>>
+    const expectedResult = {
+      ...current,
+      fields: appendTransparentTableRawFields(current.fields, appendedFields)
+    }
     return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
-      ...currentDefinition,
-      fields: [
-        ...currentFields,
-        ...appendedFields.map((field, index) => ({
-          name: field.FIELDNAME,
-          position: currentFields.length + index + 1,
-          dataElement: field.ROLLNAME,
-          key: false,
-          notNull: false
-        }))
-      ]
+      ...ddicDefinition(expectedResult, "transparentTable")
     })
   }
 
@@ -2382,13 +3034,7 @@ export class ToolService {
         "FINGERPRINT_CONFLICT: Transparent table definition changed since it was read"
       )
     }
-    const currentFields = transparentTableFields(currentDefinition)
-    if (
-      currentFields.some((field) => !field.name || !field.dataElement || field.name === ".INCLUDE")
-    ) {
-      throw new Error("COMPLEX_TABLE_UNSUPPORTED: Tables with includes or appends are unsupported")
-    }
-    const fields = applyTransparentTableFieldChanges(currentFields, input.changes)
+    const fields = applyTransparentTableRawFieldChanges(current.fields, input.changes)
     const changedDataElements = new Set(
       input.changes.flatMap((change) =>
         change.action === "update" && change.dataElement !== undefined
@@ -2413,23 +3059,178 @@ export class ToolService {
       packageName,
       transportNumber: transportNumber(input.transportNumber),
       expectedVersion,
-      fields: fields.map((field) => ({
-        FIELDNAME: field.name,
-        ROLLNAME: field.dataElement,
-        KEYFLAG: field.key ? "X" : "",
-        NOTNULL: field.notNull ? "X" : ""
-      }))
+      fields: serializeDdicTableFields(fields)
+    })
+    const expectedResult = { ...current, fields }
+    return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
+      ...ddicDefinition(expectedResult, "transparentTable")
+    })
+  }
+
+  async patchDdicTransparentTableSettings(
+    input: PatchTransparentTableSettingsInput
+  ): Promise<string> {
+    if (input.confirmation !== "TECHNICAL_SETTINGS_CHANGE") {
+      throw new Error("confirmation must be TECHNICAL_SETTINGS_CHANGE")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = customerDdicTableName(input.objectName)
+    const packageName = ddicPackageName(input.packageName)
+    const expectedVersion = requiredVersionToken(input.expectedVersion)
+    const expectedFingerprint = requiredDdicFingerprint(input.expectedFingerprint)
+    const current = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_TRANSPARENT_TABLE",
+      objectName
+    })
+    requireCurrentDdicDefinition(current, packageName, expectedVersion)
+    const currentDefinition = ddicDefinition(current, "transparentTable")
+    if (
+      createHash("sha256").update(JSON.stringify(currentDefinition)).digest("hex") !==
+      expectedFingerprint
+    ) {
+      throw new Error(
+        "FINGERPRINT_CONFLICT: Transparent table definition changed since it was read"
+      )
+    }
+    if (
+      input.settings.buffering === undefined &&
+      !["N", "A", "X"].includes(current.header.BUFALLOW ?? "")
+    ) {
+      throw new Error(
+        "Current buffering allowance is not canonical; supply an explicit buffering setting"
+      )
+    }
+    const finalSettings = mergeTransparentTableSettings(currentDefinition, input.settings)
+    const result = await this.backend.callSapDdic(connectionId, {
+      operation: "PATCH_TRANSPARENT_TABLE_SETTINGS",
+      objectName,
+      description: String(currentDefinition.description ?? ""),
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion,
+      header: technicalSettingsHeader(finalSettings)
     })
     return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
       ...currentDefinition,
-      fields: fields.map((field, index) => ({
-        name: field.name,
-        position: index + 1,
-        dataElement: field.dataElement,
-        key: field.key,
-        notNull: field.notNull
-      }))
+      ...finalSettings
     })
+  }
+
+  async readDdicTableConversionStatus(input: ReadDdicInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = ddicName(input.objectName, "objectName")
+    const result = JSON.parse(
+      await this.readAbapTable({
+        connectionId,
+        tableName: "TBATG",
+        columns: [
+          "OBJECT",
+          "TABNAME",
+          "INDNAME",
+          "TGORDER",
+          "FCT",
+          "EXECMODE",
+          "SEVERITY",
+          "GDATE",
+          "GUSER"
+        ],
+        filters: [
+          { column: "OBJECT", operator: "EQ", value: "TABL" },
+          { column: "TABNAME", operator: "EQ", value: objectName }
+        ],
+        maxRows: 50
+      })
+    ) as {
+      status?: string
+      data?: Array<Record<string, unknown>>
+      truncated?: boolean
+      code?: string
+      stage?: string
+    }
+    if (result.status !== "ok" || !Array.isArray(result.data)) {
+      throw new Error(
+        `Conversion worklist read failed: ${result.code ?? "unknown"}; stage=${result.stage ?? "unknown"}`
+      )
+    }
+    if (result.truncated) throw new Error("Conversion worklist exceeds the 50-entry safety limit")
+    const entries = result.data
+      .map(normalizeConversionEntry)
+      .sort((left, right) => conversionEntryKey(left).localeCompare(conversionEntryKey(right)))
+    return JSON.stringify(
+      {
+        connectionId,
+        objectName,
+        pending: entries.length > 0,
+        entryCount: entries.length,
+        worklistFingerprint: createHash("sha256").update(JSON.stringify(entries)).digest("hex"),
+        entries,
+        readOnly: true,
+        snapshot: false
+      },
+      null,
+      2
+    )
+  }
+
+  async recoverDdicTableConversion(input: RecoverDdicTableConversionInput): Promise<string> {
+    if (
+      input.confirmation !== "RECOVER_NATIVE_TABLE_CONVERSION" ||
+      input.acknowledgePotentialDataLoss !== true
+    ) {
+      throw new Error(
+        "confirmation must be RECOVER_NATIVE_TABLE_CONVERSION and acknowledgePotentialDataLoss must be true"
+      )
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = customerDdicTableName(input.objectName)
+    const packageName = ddicPackageName(input.packageName)
+    const before = JSON.parse(
+      await this.readDdicTableConversionStatus({ connectionId, objectName })
+    ) as {
+      pending: boolean
+      worklistFingerprint: string
+      entries: Array<Record<string, string>>
+    }
+    if (!before.pending)
+      throw new Error("No native TBATG conversion worklist exists for this table")
+    if (before.worklistFingerprint !== input.expectedWorklistFingerprint.trim().toLowerCase()) {
+      throw new Error("WORKLIST_CONFLICT: Native conversion state changed since it was read")
+    }
+    const result = await this.backend.callSapDdic(connectionId, {
+      operation: "RECOVER_TABLE_CONVERSION",
+      objectName,
+      description: "Native table conversion recovery",
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      fields: before.entries
+    })
+    requireDdicSuccess(result)
+    const after = JSON.parse(
+      await this.readDdicTableConversionStatus({ connectionId, objectName })
+    ) as { pending: boolean; worklistFingerprint: string; entries: unknown[] }
+    if (after.pending) {
+      throw new Error("CONVERSION_RECOVERY_INCOMPLETE: Native TBATG entries remain after recovery")
+    }
+    const active = JSON.parse(
+      await this.readDdicTransparentTable({ connectionId, objectName })
+    ) as Record<string, unknown>
+    return JSON.stringify(
+      {
+        connectionId,
+        objectName,
+        status: result.code,
+        recovered: true,
+        previousWorklistFingerprint: before.worklistFingerprint,
+        remainingWorklistFingerprint: after.worklistFingerprint,
+        active,
+        recordedRequest: result.recordedRequest,
+        automaticRetry: false,
+        automaticRollback: false,
+        lostValuesReconstructed: false
+      },
+      null,
+      2
+    )
   }
 
   async readDdicTableType(input: ReadDdicInput): Promise<string> {
@@ -2582,11 +3383,15 @@ export class ToolService {
       const enhancements = await this.backend.readEnhancements(connectionId, object.uri)
       enhancementInfo = enhancements.length
         ? `\n• Enhancements: ${enhancements.length} enhancement(s) found\n${enhancements
-            .map((enhancement) => `  - ${enhancement.name} (line ${enhancement.startLine})`)
+            .map(
+              (enhancement) =>
+                `  - ${enhancement.name} (line ${enhancement.startLine === undefined ? "unknown" : enhancement.startLine})`
+            )
             .join("\n")}`
         : "\n• Enhancements: No enhancements found"
-    } catch {
-      // Preserve the source service's best-effort enhancement behavior.
+    } catch (error) {
+      const failure = classifyEnhancementFailure(error)
+      enhancementInfo = `\n• Enhancements: Unavailable (${failure.status})`
     }
 
     return (
@@ -2608,6 +3413,14 @@ export class ToolService {
     if (!object) {
       const typeInfo = input.objectType ? ` of type ${input.objectType}` : ""
       return `Could not find ABAP object: ${input.objectName}${typeInfo}. The object may not exist or may not be accessible.`
+    }
+
+    if (/^ENHO\/XH(?:B)?$/i.test(object.type)) {
+      return (
+        `${input.objectName} is an ENHO/XH enhancement implementation container, not a direct ABAP source body.\n` +
+        "Source status: not_applicable\n" +
+        "No source fingerprint is reported. Resolve and inspect the implementing class through the BAdI definition/implementation tools."
+      )
     }
 
     try {
@@ -2651,13 +3464,17 @@ export class ToolService {
         const enhancements = await this.backend.readEnhancements(connectionId, uriUsed)
         if (enhancements.length) {
           enhancementInfo = `\n\nEnhancements found: ${enhancements.length}\n${enhancements
-            .map((enhancement) => `• ${enhancement.name} (line ${enhancement.startLine})`)
+            .map(
+              (enhancement) =>
+                `• ${enhancement.name} (line ${enhancement.startLine === undefined ? "unknown" : enhancement.startLine})`
+            )
             .join(
               "\n"
             )}\nUse search tool to find enhancement code, or re-call this tool with the enhancement line range.`
         }
-      } catch {
-        // Enhancement metadata is optional for source reads.
+      } catch (error) {
+        const failure = classifyEnhancementFailure(error)
+        enhancementInfo = `\n\nEnhancement metadata unavailable (${failure.status}).`
       }
       return (
         `Source from ${input.objectName} (lines ${startLine}-${endIndex} of ${lines.length}, ${selected.length} lines retrieved):\n\n` +
@@ -2700,6 +3517,13 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     try {
       const { source, uriUsed } = await this.backend.readSourceByUri(connectionId, input.uri)
+      if (!source && /\/enhancements\//i.test(input.uri)) {
+        return (
+          `Direct URI Access Successful\nOriginal URI: ${input.uri}\nURI Used: ${uriUsed}\n` +
+          "Source status: not_applicable\n" +
+          "This enhancement repository container has no direct ABAP source body. Resolve and inspect its implementing class instead."
+        )
+      }
       if (!source) throw new Error("Source content is empty")
       const lines = source.split("\n")
       const startLine = Math.max(0, input.startLine ?? 0)
@@ -2717,6 +3541,1538 @@ export class ToolService {
     }
   }
 
+  async inspectSourceEnhancements(input: EnhancementInspectionInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const object = await this.findOne(connectionId, input.objectName, input.objectType)
+    if (!object) {
+      throw new Error(
+        `Could not find ABAP source object: ${input.objectName}${input.objectType ? ` (${input.objectType})` : ""}.`
+      )
+    }
+
+    const sourceResult = await this.backend.readSource(connectionId, object, { version: "active" })
+    if (sourceResult.kind === "dictionary") {
+      throw new Error(
+        `Enhancement source inspection does not support Dictionary object ${object.name}.`
+      )
+    }
+
+    const enhancementContainer = /^ENHO\/XH(?:B)?$/i.test(object.type)
+    let metadata:
+      | {
+          status: "available"
+          implementationCount: number
+          elementCount: number
+          implementations: Array<{
+            name: string
+            type: string
+            version: string
+            elementId: string
+            fullname: string
+            mode: string
+            replacing: boolean
+            startLine?: number | undefined
+            startColumn?: number | undefined
+            uri?: string | undefined
+            positionUri?: string | undefined
+            source?: string | undefined
+            sourceFingerprint?: string | undefined
+            enhancedObject?:
+              | {
+                  uri: string
+                  type: string
+                  name: string
+                }
+              | undefined
+          }>
+        }
+      | {
+          status: "not_applicable" | "unsupported" | "forbidden" | "timeout" | "error"
+          implementationCount: null
+          elementCount: null
+          implementations: []
+          reason: string
+        }
+    if (enhancementContainer) {
+      metadata = {
+        status: "not_applicable",
+        implementationCount: null,
+        elementCount: null,
+        implementations: [],
+        reason:
+          "ENHO/XH is an enhancement implementation container; its executable methods belong to implementing classes, not this URI's source/main."
+      }
+    } else
+      try {
+        const enhancements = await this.backend.readEnhancements(
+          connectionId,
+          sourceResult.uriUsed,
+          input.includeImplementationSource ?? false
+        )
+        metadata = {
+          status: "available",
+          implementationCount: new Set(
+            enhancements.map(
+              (enhancement) =>
+                `${enhancement.name}\u0000${enhancement.type}\u0000${enhancement.version}`
+            )
+          ).size,
+          elementCount: enhancements.length,
+          implementations: enhancements.map((enhancement) => ({
+            name: enhancement.name,
+            type: enhancement.type,
+            version: enhancement.version,
+            elementId: enhancement.elementId,
+            fullname: enhancement.fullname,
+            mode: enhancement.mode,
+            replacing: enhancement.replacing,
+            ...(enhancement.startLine === undefined ? {} : { startLine: enhancement.startLine }),
+            ...(enhancement.startColumn === undefined
+              ? {}
+              : { startColumn: enhancement.startColumn }),
+            ...(enhancement.uri ? { uri: enhancement.uri } : {}),
+            ...(enhancement.positionUri ? { positionUri: enhancement.positionUri } : {}),
+            ...(enhancement.source === undefined
+              ? {}
+              : {
+                  source: enhancement.source,
+                  sourceFingerprint: createHash("sha256").update(enhancement.source).digest("hex")
+                }),
+            ...(enhancement.enhancedObject ? { enhancedObject: enhancement.enhancedObject } : {})
+          }))
+        }
+      } catch (error) {
+        const failure = classifyEnhancementFailure(error)
+        metadata = {
+          status: failure.status,
+          implementationCount: null,
+          elementCount: null,
+          implementations: [],
+          reason: failure.reason
+        }
+      }
+
+    return JSON.stringify(
+      {
+        connectionId,
+        object: {
+          name: object.name,
+          type: object.type,
+          package: object.package,
+          systemType: object.systemType,
+          uri: object.uri,
+          sourceUri: sourceResult.uriUsed,
+          sourceStatus:
+            enhancementContainer && sourceResult.source.length === 0
+              ? "not_applicable"
+              : "available",
+          sourceFingerprint:
+            enhancementContainer && sourceResult.source.length === 0
+              ? null
+              : createHash("sha256").update(sourceResult.source).digest("hex")
+        },
+        metadata,
+        sourceMarkers: enhancementContainer ? [] : enhancementSourceMarkers(sourceResult.source),
+        coverage: {
+          activeSourceOnly: !enhancementContainer,
+          enhancementImplementationContainerRecognized: enhancementContainer,
+          activeEnhancementElementsInspected: metadata.status === "available",
+          implementationAndElementMetadataPreserved: metadata.status === "available",
+          positionCoordinatesZeroBased: true,
+          configurationInspected: false,
+          newBadiDefinitionInspected: false,
+          filterOrSwitchConfigurationInspected: false,
+          runtimeInspected: false,
+          limitations: [
+            ...(enhancementContainer
+              ? [
+                  "ENHO/XH does not carry the implementing class method bodies in its direct source/main response."
+                ]
+              : []),
+            "ADT enhancement metadata proves active source-code plug-in elements attached to this base source object; it does not prove a New BAdI definition, filter, switch, or runtime execution.",
+            "Source markers do not prove that SMOD/CMOD, BTE, validation, or substitution configuration is active.",
+            "Implicit enhancement candidate positions are not enumerated by this tool."
+          ]
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async searchEnhancementObjects(input: EnhancementObjectSearchInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const types = [
+      ...new Set<EnhancementObjectType>(
+        input.types?.length ? input.types : ["ENHC", "ENHS", "ENHO", "BADI", "BADII"]
+      )
+    ]
+    const results = await this.backend.searchObjectTypes(
+      connectionId,
+      input.pattern,
+      types,
+      input.maxResultsPerType ?? 20
+    )
+    return JSON.stringify(
+      {
+        connectionId,
+        pattern: input.pattern,
+        results: results.map((result) => ({
+          requestedType: result.requestedType,
+          repositoryKind: enhancementRepositoryKind(result.requestedType),
+          status: result.status,
+          count: result.status === "available" ? result.objects.length : null,
+          objects: result.objects,
+          ...(result.reason ? { reason: result.reason } : {})
+        })),
+        summary: {
+          requestedTypeCount: results.length,
+          availableTypeCount: results.filter((result) => result.status === "available").length,
+          unavailableTypeCount: results.filter((result) => result.status !== "available").length,
+          objectCount: results.reduce((count, result) => count + result.objects.length, 0)
+        },
+        coverage: {
+          repositorySearchOnly: true,
+          classicVersusNewBadiDetermined: false,
+          activationOrConfigurationInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async searchCustomerExitObjects(input: CustomerExitObjectSearchInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const types = [
+      ...new Set<CustomerExitObjectType>(input.types?.length ? input.types : ["SMOD", "CMOD"])
+    ]
+    const results = await this.backend.searchObjectTypes(
+      connectionId,
+      input.pattern,
+      types,
+      input.maxResultsPerType ?? 20
+    )
+    return JSON.stringify(
+      {
+        connectionId,
+        pattern: input.pattern,
+        results: results.map((result) => ({
+          requestedType: result.requestedType,
+          repositoryKind: customerExitRepositoryKind(result.requestedType),
+          status: result.status,
+          count: result.status === "available" ? result.objects.length : null,
+          objects: result.objects,
+          ...(result.reason ? { reason: result.reason } : {})
+        })),
+        summary: {
+          requestedTypeCount: results.length,
+          availableTypeCount: results.filter((result) => result.status === "available").length,
+          unavailableTypeCount: results.filter((result) => result.status !== "available").length,
+          objectCount: results.reduce((count, result) => count + result.objects.length, 0)
+        },
+        coverage: {
+          repositorySearchOnly: true,
+          componentsInspected: false,
+          projectAssignmentsInspected: false,
+          activationStatusInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async readCustomerExitDefinition(input: ReadCustomerExitDefinitionInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const enhancementName = customerExitConfigurationName(input.enhancementName, "enhancementName")
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_CUSTOMER_EXIT_DEFINITION",
+      objectName: enhancementName
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const payload = customerExitConfigurationPayload(result.source)
+    const components = payload.components.map((row) => ({
+      typeCode: row.TYPE ?? "",
+      kind: customerExitComponentKind(row.TYPE ?? ""),
+      member: row.MEMBER ?? ""
+    }))
+    const definition = {
+      name: payload.metadata.NAME ?? enhancementName,
+      description: payload.metadata.DESCRIPTION ?? "",
+      components
+    }
+
+    return JSON.stringify(
+      {
+        connectionId,
+        repositoryKind: "customer_exit_definition",
+        definition,
+        fingerprint: createHash("sha256").update(JSON.stringify(definition)).digest("hex"),
+        summary: {
+          componentCount: components.length,
+          functionExitCount: components.filter((component) => component.kind === "function_exit")
+            .length,
+          screenExitCount: components.filter((component) => component.kind === "screen_exit")
+            .length,
+          menuExitCount: components.filter((component) => component.kind === "menu_exit").length,
+          unknownComponentCount: components.filter((component) => component.kind === "unknown")
+            .length
+        },
+        coverage: {
+          exactDefinitionRead: true,
+          componentMembershipInspected: true,
+          rawComponentTypePreserved: true,
+          cmodProjectAssignmentsInspected: false,
+          activationStatusInspected: false,
+          customerImplementationsInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async readCustomerExitProject(input: ReadCustomerExitProjectInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const projectName = customerExitConfigurationName(input.projectName, "projectName")
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_CUSTOMER_EXIT_PROJECT",
+      objectName: projectName
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const payload = customerExitConfigurationPayload(result.source)
+    const assignments = payload.assignments.map((row) => ({
+      enhancementName: row.MEMBER ?? "",
+      assignmentType: row.TYPE ?? ""
+    }))
+    const project = {
+      name: payload.metadata.NAME ?? projectName,
+      rawStatus: payload.metadata.STATUS ?? "",
+      changedBy: payload.metadata.CHANGED_BY ?? "",
+      changedOn: payload.metadata.CHANGED_ON ?? "",
+      assignments
+    }
+
+    return JSON.stringify(
+      {
+        connectionId,
+        repositoryKind: "customer_exit_project",
+        packageName: payload.metadata.PACKAGE ?? "",
+        project,
+        fingerprint: createHash("sha256").update(JSON.stringify(project)).digest("hex"),
+        summary: { assignmentCount: assignments.length },
+        coverage: {
+          exactProjectRead: true,
+          enhancementAssignmentsInspected: true,
+          rawProjectStatusInspected: true,
+          activationStateInterpreted: false,
+          componentImplementationsInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async inspectCustomerFunctionExits(input: CustomerFunctionExitInspectionInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const programName = input.programName.trim().toUpperCase()
+    const object = await this.findOne(connectionId, programName, "PROG/P")
+    if (!object || object.name.toUpperCase() !== programName) {
+      throw new Error("Could not find exact ABAP main program: " + programName + ".")
+    }
+
+    const sourceGraph = await this.readProgramSourceGraph(connectionId, object)
+    const callSites = sourceGraph.units.flatMap((unit) => customerFunctionCallSites(unit))
+    const staticCalls = callSites.filter(
+      (call): call is CustomerFunctionCallSite & { exitNumber: string } => call.exitNumber !== null
+    )
+    const dynamicCalls = callSites.filter((call) => call.exitNumber === null)
+    const grouped = new Map<string, typeof staticCalls>()
+    for (const call of staticCalls) {
+      const sites = grouped.get(call.exitNumber) ?? []
+      sites.push(call)
+      grouped.set(call.exitNumber, sites)
+    }
+
+    const functionExits = await Promise.all(
+      [...grouped.entries()].map(async ([exitNumber, sites]) => {
+        const expectedFunctionModule = `EXIT_${programName}_${exitNumber}`
+        if (expectedFunctionModule.length > 30) {
+          return {
+            exitNumber,
+            expectedFunctionModule,
+            callSites: sites,
+            repositorySearch: {
+              status: "error" as const,
+              functionFound: null,
+              object: null,
+              reason:
+                "The derived function-module name exceeds the 30-character ABAP function-module limit; resolution was not attempted."
+            },
+            functionSource: null
+          }
+        }
+
+        const [search] = await this.backend.searchObjectTypes(
+          connectionId,
+          expectedFunctionModule,
+          ["FUNC"],
+          1
+        )
+        if (!search) {
+          return {
+            exitNumber,
+            expectedFunctionModule,
+            callSites: sites,
+            repositorySearch: {
+              status: "error" as const,
+              functionFound: null,
+              object: null,
+              reason: "The repository search returned no status; absence was not established."
+            },
+            functionSource: null
+          }
+        }
+        if (search.status !== "available") {
+          return {
+            exitNumber,
+            expectedFunctionModule,
+            callSites: sites,
+            repositorySearch: {
+              status: search.status,
+              functionFound: null,
+              object: null,
+              ...(search.reason ? { reason: search.reason } : {})
+            },
+            functionSource: null
+          }
+        }
+
+        const functionObject = search.objects.find(
+          (candidate) => candidate.name.toUpperCase() === expectedFunctionModule
+        )
+        if (!functionObject) {
+          return {
+            exitNumber,
+            expectedFunctionModule,
+            callSites: sites,
+            repositorySearch: {
+              status: "available" as const,
+              functionFound: false,
+              object: null
+            },
+            functionSource: null
+          }
+        }
+
+        try {
+          const source = await this.backend.readSource(connectionId, functionObject, {
+            version: "active"
+          })
+          const includes = programIncludeNames(source.source)
+          return {
+            exitNumber,
+            expectedFunctionModule,
+            callSites: sites,
+            repositorySearch: {
+              status: "available" as const,
+              functionFound: true,
+              object: functionObject
+            },
+            functionSource: {
+              status: "available" as const,
+              sourceUri: source.uriUsed,
+              sourceFingerprint: createHash("sha256").update(source.source).digest("hex"),
+              staticIncludes: includes,
+              zxImplementationIncludes: includes.filter((name) => /^ZX[A-Z0-9_/$]*$/i.test(name))
+            }
+          }
+        } catch (error) {
+          const failure = classifyRepositoryEvidenceFailure(error, "function source")
+          return {
+            exitNumber,
+            expectedFunctionModule,
+            callSites: sites,
+            repositorySearch: {
+              status: "available" as const,
+              functionFound: true,
+              object: functionObject
+            },
+            functionSource: {
+              status: failure.status,
+              reason: failure.reason,
+              staticIncludes: [],
+              zxImplementationIncludes: []
+            }
+          }
+        }
+      })
+    )
+
+    return JSON.stringify(
+      {
+        connectionId,
+        program: {
+          name: object.name,
+          type: object.type,
+          package: object.package,
+          systemType: object.systemType,
+          uri: object.uri
+        },
+        sourceGraph: {
+          complete: !sourceGraph.failures.length && !sourceGraph.truncated,
+          includeLimit: 128,
+          maxDepth: 8,
+          unitCount: sourceGraph.units.length,
+          units: sourceGraph.units.map(({ objectName, objectType, sourceUri, depth, source }) => ({
+            objectName,
+            objectType,
+            sourceUri,
+            depth,
+            sourceFingerprint: createHash("sha256").update(source).digest("hex")
+          })),
+          failures: sourceGraph.failures,
+          truncated: sourceGraph.truncated
+        },
+        functionExits,
+        unresolvedCalls: dynamicCalls,
+        summary: {
+          callSiteCount: callSites.length,
+          staticCallSiteCount: staticCalls.length,
+          unresolvedCallSiteCount: dynamicCalls.length,
+          distinctStaticExitCount: functionExits.length,
+          functionFoundCount: functionExits.filter(
+            (entry) => entry.repositorySearch.functionFound === true
+          ).length,
+          zxImplementationIncludeCount: functionExits.reduce(
+            (count, entry) => count + (entry.functionSource?.zxImplementationIncludes.length ?? 0),
+            0
+          )
+        },
+        coverage: {
+          activeSourceOnly: true,
+          boundedStaticIncludeGraph: true,
+          staticFunctionExitCallsInspected: true,
+          exactFunctionModuleNamesResolved: true,
+          zxImplementationIncludesInspectedWhenReadable: true,
+          smodComponentsInspected: false,
+          cmodProjectAssignmentsInspected: false,
+          activationStatusInspected: false,
+          screenExitsInspected: false,
+          menuExitsInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async inspectCustomerScreenMenuExits(
+    input: CustomerScreenMenuExitInspectionInput
+  ): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const programName = input.programName.trim().toUpperCase()
+    if (!/^[A-Z0-9_/$]{1,40}$/.test(programName)) {
+      throw new Error("Invalid ABAP program name: " + input.programName)
+    }
+    const screenNumbers = [...new Set(input.screenNumbers ?? [])]
+    const screenInspectionStatus = screenNumbers.length ? "requested" : "not_requested"
+    const includeMenuExits = input.includeMenuExits ?? true
+    if (!screenNumbers.length && !includeMenuExits) {
+      throw new Error("At least one screenNumber or includeMenuExits=true is required.")
+    }
+
+    const screens = await Promise.all(
+      screenNumbers.map(async (screenNumber) => {
+        try {
+          const result = await this.backend.callSapRepository(connectionId, {
+            operation: "READ_SCREEN",
+            program: programName,
+            screen: screenNumber
+          })
+          requireRepositorySuccess(result.status, result.code, result.message)
+          const screen = screenDefinition(connectionId, programName, screenNumber, result)
+          const hooks = customerSubscreenHooks(screen.flowLogic)
+          return {
+            screenNumber,
+            status: "available" as const,
+            description: screen.description,
+            fingerprint: screen.fingerprint,
+            flowLineCount: screen.flowLogic.length,
+            hookCount: hooks.length,
+            hooks
+          }
+        } catch (error) {
+          const failure = classifyRepositoryEvidenceFailure(error, "screen definition")
+          return {
+            screenNumber,
+            status: failure.status,
+            description: null,
+            fingerprint: null,
+            flowLineCount: null,
+            hookCount: null,
+            hooks: [],
+            reason: failure.reason
+          }
+        }
+      })
+    )
+
+    const menu = includeMenuExits
+      ? await (async () => {
+          try {
+            const result = await this.backend.callSapRepository(connectionId, {
+              operation: "READ_GUI_DEFINITION",
+              program: programName
+            })
+            requireRepositorySuccess(result.status, result.code, result.message)
+            const gui = guiDefinition(connectionId, programName, result)
+            const evidence = customerMenuExitEvidence(gui)
+            return {
+              status: "available" as const,
+              versionToken: gui.versionToken,
+              fingerprint: gui.fingerprint,
+              definitionCount: evidence.definitions.length,
+              definitions: evidence.definitions,
+              references: evidence.references
+            }
+          } catch (error) {
+            const failure = classifyRepositoryEvidenceFailure(error, "GUI definition")
+            return {
+              status: failure.status,
+              versionToken: null,
+              fingerprint: null,
+              definitionCount: null,
+              definitions: [],
+              references: [],
+              reason: failure.reason
+            }
+          }
+        })()
+      : {
+          status: "not_requested" as const,
+          versionToken: null,
+          fingerprint: null,
+          definitionCount: null,
+          definitions: [],
+          references: []
+        }
+
+    return JSON.stringify(
+      {
+        connectionId,
+        programName,
+        screens,
+        menu,
+        summary: {
+          screenInspectionStatus,
+          requestedScreenCount: screens.length,
+          availableScreenCount: screens.filter((screen) => screen.status === "available").length,
+          unavailableScreenCount: screens.filter((screen) => screen.status !== "available").length,
+          customerSubscreenHookCount: screens.reduce(
+            (count, screen) => count + (screen.hookCount ?? 0),
+            0
+          ),
+          menuDefinitionCount: menu.definitionCount
+        },
+        coverage: {
+          activeScreenFlowLogicOnly: true,
+          explicitScreenListOnly: true,
+          screensInspected: screenNumbers.length > 0,
+          screenAbsenceEstablished:
+            screenNumbers.length > 0 && screens.every((screen) => screen.status === "available"),
+          activeGuiDefinitionOnly: includeMenuExits,
+          plusPrefixedMenuFunctionCodesInspected: includeMenuExits,
+          smodComponentsInspected: false,
+          cmodProjectAssignmentsInspected: false,
+          activationStatusInspected: false,
+          customerSubscreenImplementationsInspected: false,
+          menuTextActivationInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async searchBteDispatchers(input: BteDispatcherSearchInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const kinds = [...new Set<BteKind>(input.kinds?.length ? input.kinds : ["event", "process"])]
+    const eventPattern = input.eventPattern ?? "*"
+    const results = await Promise.all(
+      kinds.map(async (kind) => {
+        const suffix = kind === "event" ? "E" : "P"
+        const pattern = "OPEN_FI_PERFORM_" + eventPattern + "_" + suffix
+        const [result] = await this.backend.searchObjectTypes(
+          connectionId,
+          pattern,
+          ["FUNC"],
+          input.maxResultsPerKind ?? 20
+        )
+        if (!result) {
+          return {
+            kind,
+            pattern,
+            status: "error" as const,
+            count: null,
+            objects: [],
+            reason: "The repository search returned no status; absence was not established."
+          }
+        }
+        return {
+          kind,
+          pattern,
+          status: result.status,
+          count: result.status === "available" ? result.objects.length : null,
+          objects: result.objects.map((object) => {
+            const match = /^OPEN_FI_PERFORM_([A-Z0-9_]+)_([EP])$/i.exec(object.name)
+            const eventIdentifier = match?.[1]?.toUpperCase() ?? null
+            return {
+              ...object,
+              eventIdentifier,
+              eventNumber:
+                eventIdentifier && /^\d+$/.test(eventIdentifier) ? eventIdentifier : null,
+              exactDispatcherName: match?.[2]?.toUpperCase() === suffix
+            }
+          }),
+          ...(result.reason ? { reason: result.reason } : {})
+        }
+      })
+    )
+    return JSON.stringify(
+      {
+        connectionId,
+        eventPattern,
+        results,
+        summary: {
+          requestedKindCount: results.length,
+          availableKindCount: results.filter((result) => result.status === "available").length,
+          unavailableKindCount: results.filter((result) => result.status !== "available").length,
+          objectCount: results.reduce((count, result) => count + result.objects.length, 0),
+          exactDispatcherCount: results.reduce(
+            (count, result) =>
+              count + result.objects.filter((object) => object.exactDispatcherName).length,
+            0
+          )
+        },
+        coverage: {
+          dispatcherSearchOnly: true,
+          productsInspected: false,
+          handlerAssignmentsInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async readBteConfiguration(input: ReadBteConfigurationInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const identifier = input.identifier.trim().toUpperCase()
+    if (!/^[A-Z0-9_]{1,8}$/.test(identifier)) {
+      throw new Error("identifier must be an exact BTE Event or Process identifier.")
+    }
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_BTE_CONFIGURATION",
+      objectType: input.kind === "event" ? "E" : "P",
+      objectName: identifier
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const payload = bteConfigurationPayload(result.source)
+    const sapHandlers = payload.sapHandlers
+      .map(bteConfigurationHandler)
+      .sort(compareBteConfigurationHandlers)
+    const customerHandlers = payload.customerHandlers
+      .map(bteConfigurationHandler)
+      .sort(compareBteConfigurationHandlers)
+    const configuration = {
+      kind: input.kind,
+      identifier: payload.metadata.IDENTIFIER ?? identifier,
+      description: payload.metadata.DESCRIPTION ?? "",
+      sapHandlers,
+      customerHandlers
+    }
+
+    return JSON.stringify(
+      {
+        connectionId,
+        repositoryKind:
+          input.kind === "event" ? "bte_event_configuration" : "bte_process_configuration",
+        configuration,
+        fingerprint: createHash("sha256").update(JSON.stringify(configuration)).digest("hex"),
+        summary: {
+          sapHandlerCount: sapHandlers.length,
+          customerHandlerCount: customerHandlers.length,
+          activeSapApplicationHandlerCount: sapHandlers.filter(
+            (handler) => handler.applicationActiveRaw === "X"
+          ).length,
+          activeCustomerProductHandlerCount: customerHandlers.filter(
+            (handler) => handler.productActiveRaw === "X"
+          ).length
+        },
+        coverage: {
+          exactDefinitionRead: true,
+          sapApplicationAssignmentsInspected: true,
+          customerProductAssignmentsInspected: true,
+          rawActivationFlagsInspected: true,
+          handlerFunctionExistenceInspected: false,
+          executionOrderInterpreted: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async prepareEnhancementConfigurationWorkflow(
+    input: EnhancementConfigurationWorkflowInput
+  ): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const targetName = input.targetName.trim().toUpperCase()
+    const commonMissing = input.transportNumber ? [] : ["transportNumber"]
+    let currentState: Record<string, unknown>
+    let requiredInputs: string[]
+    let transaction: string
+    let workflow: Array<Record<string, unknown>>
+
+    if (input.kind === "cmod_project") {
+      const projectName = customerExitConfigurationName(targetName, "targetName")
+      const enhancementNames = [
+        ...new Set(
+          (input.enhancementNames ?? []).map((name) =>
+            customerExitConfigurationName(name, "enhancementNames")
+          )
+        )
+      ]
+      const project = await controlledWorkflowRead(() =>
+        this.readCustomerExitProject({ projectName, connectionId })
+      )
+      const definitions = await Promise.all(
+        enhancementNames.map(async (enhancementName) => ({
+          enhancementName,
+          ...(await controlledWorkflowRead(() =>
+            this.readCustomerExitDefinition({ enhancementName, connectionId })
+          ))
+        }))
+      )
+      currentState = { project, definitions }
+      requiredInputs = [
+        ...commonMissing,
+        ...(input.desiredState === "create_or_update" && !enhancementNames.length
+          ? ["enhancementNames"]
+          : []),
+        ...(project.status === "absent" && !input.packageName ? ["packageName"] : [])
+      ]
+      transaction = "CMOD"
+      workflow = cmodConfigurationWorkflow(
+        projectName,
+        input.desiredState,
+        enhancementNames,
+        input.packageName,
+        input.transportNumber
+      )
+    } else if (input.kind === "fibf_event" || input.kind === "fibf_process") {
+      if (!/^[A-Z0-9_]{1,8}$/.test(targetName)) {
+        throw new Error("targetName must be an exact BTE Event or Process identifier.")
+      }
+      const kind: BteKind = input.kind === "fibf_event" ? "event" : "process"
+      const configuration = await controlledWorkflowRead(() =>
+        this.readBteConfiguration({ kind, identifier: targetName, connectionId })
+      )
+      currentState = { configuration }
+      requiredInputs = [
+        ...commonMissing,
+        ...(!input.productName ? ["productName"] : []),
+        ...(!input.functionModule ? ["functionModule"] : [])
+      ]
+      transaction = "FIBF"
+      workflow = fibfConfigurationWorkflow(
+        kind,
+        targetName,
+        input.desiredState,
+        input.productName?.trim().toUpperCase(),
+        input.functionModule?.trim().toUpperCase(),
+        input.applicationIndicator?.trim().toUpperCase(),
+        input.country?.trim().toUpperCase(),
+        input.transportNumber
+      )
+    } else {
+      if (!/^[A-Z0-9_/$-]{1,40}$/.test(targetName)) {
+        throw new Error("targetName must be an exact FI rule name.")
+      }
+      const exitProgram = input.exitProgram?.trim().toUpperCase()
+      const exitEvidence = exitProgram
+        ? await controlledWorkflowRead(() =>
+            this.inspectFicoRuleExitProgram({ programName: exitProgram, connectionId })
+          )
+        : { status: "not_requested" as const }
+      currentState = {
+        ruleConfiguration: {
+          status: "manual_read_required",
+          reason:
+            "The current GGB0/GGB1 rule and OB28/OBBH activation are not exposed by an approved headless maintenance API."
+        },
+        exitProgram: exitEvidence
+      }
+      requiredInputs = [
+        ...commonMissing,
+        ...(!input.applicationArea ? ["applicationArea"] : []),
+        ...(!input.callupPoint ? ["callupPoint"] : []),
+        ...(!input.organizationalUnit ? ["organizationalUnit"] : [])
+      ]
+      transaction = input.kind === "fi_validation" ? "GGB0 / OB28" : "GGB1 / OBBH"
+      workflow = ficoRuleConfigurationWorkflow(
+        input.kind,
+        targetName,
+        input.desiredState,
+        input.applicationArea,
+        input.callupPoint,
+        input.organizationalUnit,
+        exitProgram,
+        input.transportNumber
+      )
+    }
+
+    return JSON.stringify(
+      {
+        connectionId,
+        kind: input.kind,
+        targetName,
+        desiredState: input.desiredState,
+        executionMode: "controlled_manual_workflow",
+        transaction,
+        readiness: requiredInputs.length ? "requires_input" : "ready_for_human_execution",
+        missingInputs: requiredInputs,
+        standardApiAssessment: {
+          approvedHeadlessWriteApi: false,
+          decision: "manual_workflow_required",
+          reason:
+            "No complete, release-stable, screen-independent standard API has been approved for this configuration lifecycle. Partial or transaction-internal SAP functions are not treated as safe maintenance APIs."
+        },
+        currentState,
+        workflow,
+        controls: {
+          sapWritePerformed: false,
+          guiOpened: false,
+          savePerformed: false,
+          activationPerformed: false,
+          generationPerformed: false,
+          transportReleased: false,
+          humanConfirmationRequiredBeforeSave: true,
+          humanConfirmationRequiredBeforeActivationOrDeletion: true,
+          stopConditions: [
+            "The current SAP state differs from the preflight evidence.",
+            "The requested package, Customizing request, or Workbench request is missing or not modifiable.",
+            "SAP proposes direct standard-object modification, direct table maintenance, or an unexpected object scope.",
+            "Authorization, lock, generation, syntax, or consistency checks report an error.",
+            "The target is shared and the requested deactivation or deletion would affect unrelated assignments."
+          ]
+        },
+        coverage: {
+          preflightReadsAttempted: true,
+          configurationMutationAutomated: false,
+          manualTransactionExecutionRequired: true,
+          postChangeReadbackRequired: true,
+          runtimeAcceptanceRequired: true
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async searchBadiObjects(input: BadiObjectSearchInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const types = [
+      ...new Set<BadiRepositoryType>(
+        input.types?.length ? input.types : ["SXSD/XD", "SXCI/XI", "ENHS/XS", "ENHO/XHB"]
+      )
+    ]
+    const results = await this.backend.searchObjectTypes(
+      connectionId,
+      input.pattern,
+      types,
+      input.maxResultsPerType ?? 20
+    )
+    return JSON.stringify(
+      {
+        connectionId,
+        pattern: input.pattern,
+        results: results.map((result) => ({
+          requestedType: result.requestedType,
+          repositoryKind: badiRepositoryKind(result.requestedType),
+          status: result.status,
+          count: result.status === "available" ? result.objects.length : null,
+          objects: result.objects,
+          ...(result.reason ? { reason: result.reason } : {})
+        })),
+        summary: {
+          requestedTypeCount: results.length,
+          availableTypeCount: results.filter((result) => result.status === "available").length,
+          unavailableTypeCount: results.filter((result) => result.status !== "available").length,
+          objectCount: results.reduce((count, result) => count + result.objects.length, 0)
+        },
+        coverage: {
+          exactRepositorySubtypes: true,
+          classicDefinitionAndImplementationSeparated: true,
+          newBadiDefinitionInspected: false,
+          interfacesInspected: false,
+          filtersOrMultipleUseInspected: false,
+          switchesOrActivationInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async readClassicBadiDefinition(input: ReadClassicBadiDefinitionInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const definitionName = classicBadiDefinitionName(input.definitionName)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_CLASSIC_BADI_DEFINITION",
+      objectName: definitionName
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const payload = classicBadiDefinitionPayload(result.source)
+    const interfaces = payload.interfaces
+      .map((row) => row.INTERFACE_NAME ?? "")
+      .filter(Boolean)
+      .sort()
+    const implementationAssignments = payload.assignments
+      .map((row) => ({
+        implementationName: row.IMPLEMENTATION_NAME ?? "",
+        filterValue: row.FILTER_VALUE ?? "",
+        activeRaw: row.ACTIVE ?? "",
+        active: row.ACTIVE === "X",
+        description: row.DESCRIPTION ?? "",
+        version: row.VERSION ?? "",
+        masterLanguage: row.MASTER_LANGUAGE ?? "",
+        layer: row.LAYER ?? "",
+        packageName: row.PACKAGE ?? "",
+        migrationEnhancement: row.MIGRATION_ENHANCEMENT ?? ""
+      }))
+      .sort(compareByJson)
+    const classMappings = payload.classMappings
+      .map((row) => ({
+        implementationName: row.IMPLEMENTATION_NAME ?? "",
+        interfaceName: row.INTERFACE_NAME ?? "",
+        implementationClass: row.IMPLEMENTATION_CLASS ?? ""
+      }))
+      .sort(compareByJson)
+    const definition = {
+      name: payload.metadata.NAME ?? definitionName,
+      description: payload.metadata.DESCRIPTION ?? "",
+      version: payload.metadata.VERSION ?? "",
+      filterType: payload.metadata.FILTER_TYPE ?? "",
+      filterExtensionRaw: payload.metadata.FILTER_EXTENSION ?? "",
+      filterDependent: Boolean(payload.metadata.FILTER_TYPE),
+      multipleUseRaw: payload.metadata.MULTIPLE_USE ?? "",
+      multipleUse: payload.metadata.MULTIPLE_USE === "X",
+      packageName: payload.metadata.PACKAGE ?? "",
+      masterLanguage: payload.metadata.MASTER_LANGUAGE ?? "",
+      defaultClass: payload.metadata.DEFAULT_CLASS ?? "",
+      exampleClass: payload.metadata.EXAMPLE_CLASS ?? "",
+      checkClass: payload.metadata.CHECK_CLASS ?? "",
+      internalRaw: payload.metadata.INTERNAL ?? "",
+      migrationEnhancementSpot: payload.metadata.MIGRATION_ENHANCEMENT_SPOT ?? "",
+      migrationBadiName: payload.metadata.MIGRATION_BADI_NAME ?? "",
+      interfaces,
+      implementationAssignments,
+      classMappings
+    }
+    const activeImplementations = new Set(
+      implementationAssignments
+        .filter((assignment) => assignment.active)
+        .map((assignment) => assignment.implementationName)
+    )
+
+    return JSON.stringify(
+      {
+        connectionId,
+        repositoryKind: "classic_badi_definition",
+        definition,
+        fingerprint: createHash("sha256").update(JSON.stringify(definition)).digest("hex"),
+        summary: {
+          interfaceCount: interfaces.length,
+          implementationAssignmentCount: implementationAssignments.length,
+          distinctImplementationCount: new Set(
+            implementationAssignments.map((assignment) => assignment.implementationName)
+          ).size,
+          activeImplementationCount: activeImplementations.size,
+          classMappingCount: classMappings.length
+        },
+        coverage: {
+          exactClassicDefinitionRead: true,
+          interfacesInspected: true,
+          filterAndMultipleUseAttributesInspected: true,
+          implementationAssignmentsInspected: true,
+          implementationClassesInspected: true,
+          rawActivationFlagsInspected: true,
+          newBadiInspected: false,
+          switchesInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async manageClassicBadiImplementation(
+    input: ManageClassicBadiImplementationInput
+  ): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const implementationName = customerEnhancementName(
+      input.implementationName,
+      "implementationName",
+      20
+    )
+    const definitionName = classicBadiDefinitionName(input.definitionName)
+    const implementationClass = input.implementationClass
+      ? customerEnhancementName(input.implementationClass, "implementationClass", 30)
+      : undefined
+    const interfaceName = input.interfaceName
+      ? repositoryComponentName(input.interfaceName, "interfaceName", 30)
+      : undefined
+    if (input.action === "create" && (!implementationClass || !interfaceName)) {
+      throw new Error("create requires definitionName, interfaceName, and implementationClass")
+    }
+    if (input.action === "create" && input.expectedFingerprint) {
+      throw new Error("create does not accept expectedFingerprint")
+    }
+    if (
+      input.action !== "create" &&
+      (implementationClass || interfaceName || input.methods?.length || input.filters?.length)
+    ) {
+      throw new Error(`${input.action} does not accept create-only implementation fields`)
+    }
+    let previousFingerprint: string | undefined
+    const definition = JSON.parse(
+      await this.readClassicBadiDefinition({ definitionName, connectionId })
+    ) as Record<string, unknown>
+    const snapshot = classicBadiImplementationSnapshot(definition, implementationName)
+    if (input.action === "create" && snapshot) {
+      throw new Error("CLASSIC_BADI_IMPLEMENTATION_ALREADY_EXISTS")
+    }
+    if (input.action !== "create" && !snapshot) {
+      throw new Error("CLASSIC_BADI_IMPLEMENTATION_NOT_FOUND")
+    }
+    previousFingerprint = snapshot ? stableFingerprint(snapshot) : undefined
+    if (
+      input.action !== "create" &&
+      input.expectedFingerprint?.toLowerCase() !== previousFingerprint
+    ) {
+      throw new Error("CLASSIC_BADI_IMPLEMENTATION_STALE_FINGERPRINT")
+    }
+    const source = enhancementPayload({
+      ACTION: input.action.toUpperCase(),
+      DEFINITION_NAME: definitionName,
+      INTERFACE_NAME: interfaceName ?? "",
+      IMPLEMENTATION_CLASS: implementationClass ?? ""
+    })
+    appendEnhancementRows(source, "F", input.filters ?? [])
+    ;(input.methods ?? []).forEach((method, methodIndex) => {
+      appendEnhancementPayload(source, "N", methodIndex + 1, "METHOD_NAME", method.methodName)
+      method.source.forEach((line, lineIndex) =>
+        appendEnhancementPayload(source, "S", methodIndex + 1, String(lineIndex + 1), line)
+      )
+    })
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "MANAGE_CLASSIC_BADI_IMPLEMENTATION",
+      objectName: implementationName,
+      objectType: input.action.toUpperCase(),
+      packageName: input.packageName.toUpperCase(),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: input.expectedFingerprint,
+      source
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const readbackDefinition = JSON.parse(
+      await this.readClassicBadiDefinition({ definitionName, connectionId })
+    ) as Record<string, unknown>
+    const readback = classicBadiImplementationSnapshot(readbackDefinition, implementationName)
+    if (input.action === "delete" && readback) {
+      throw new Error("SAP reported success but the Classic BAdI implementation still exists")
+    }
+    if (input.action !== "delete" && !readback) {
+      throw new Error("SAP reported success but the Classic BAdI implementation was not read back")
+    }
+    return JSON.stringify(
+      {
+        status: result.code,
+        connectionId,
+        action: input.action,
+        implementationName,
+        definitionName,
+        previousFingerprint: previousFingerprint ?? null,
+        fingerprint: readback ? stableFingerprint(readback) : null,
+        implementation: readback ?? null,
+        transportNumber: input.transportNumber.toUpperCase()
+      },
+      null,
+      2
+    )
+  }
+
+  async readEnhancementImplementation(input: ReadEnhancementImplementationInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_ENHANCEMENT_IMPLEMENTATION",
+      objectName: enhancementName
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    return JSON.stringify(enhancementImplementationResult(connectionId, result.source), null, 2)
+  }
+
+  async createEnhancementHookImplementation(input: CreateEnhancementHookInput): Promise<string> {
+    return this.createEnhancementImplementation(input, "CREATE_HOOK_ENHANCEMENT")
+  }
+
+  async createNewBadiImplementation(input: CreateNewBadiImplementationInput): Promise<string> {
+    return this.createEnhancementImplementation(input, "CREATE_BADI_ENHANCEMENT")
+  }
+
+  async updateEnhancementHookImplementation(input: UpdateEnhancementHookInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
+    const current = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as Record<string, unknown>
+    assertEnhancementWriteSnapshot(current, input.expectedFingerprint, input.packageName)
+    const definition = current.definition as Record<string, unknown>
+    if (definition.tool !== "HOOK_IMPL") throw new Error("ENHANCEMENT_TOOL_TYPE_MISMATCH")
+    if (definition.hasInactiveVersion === true) {
+      throw new Error("ENHANCEMENT_INACTIVE_VERSION_EXISTS")
+    }
+    const hooks = definition.hookImplementations as Array<Record<string, unknown>>
+    if (!hooks.some((hook) => hook.extId === input.extId)) {
+      throw new Error("ENHANCEMENT_HOOK_NOT_FOUND")
+    }
+    const source = hookEnhancementUpdatePayload(input)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "UPDATE_HOOK_ENHANCEMENT",
+      objectName: enhancementName,
+      description: input.description,
+      packageName: input.packageName.toUpperCase(),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: input.expectedFingerprint.toLowerCase(),
+      source
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const saved = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as Record<string, unknown>
+    const savedDefinition = saved.definition as Record<string, unknown>
+    const savedHooks = savedDefinition.hookImplementations as Array<Record<string, unknown>>
+    const savedHook = savedHooks.find((hook) => hook.extId === input.extId)
+    if (!savedHook || !isDeepStrictEqual(savedHook.source, input.source)) {
+      throw new Error("SAP reported success but the hook source was not read back")
+    }
+    if (input.description && savedDefinition.shortText !== input.description) {
+      throw new Error("SAP reported success but the enhancement text was not read back")
+    }
+    return JSON.stringify(
+      {
+        status: result.code,
+        previousFingerprint: current.fingerprint,
+        ...saved,
+        transportNumber: input.transportNumber.toUpperCase()
+      },
+      null,
+      2
+    )
+  }
+
+  async updateNewBadiImplementation(input: UpdateNewBadiImplementationInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
+    const implementationName = customerEnhancementName(
+      input.implementationName,
+      "implementationName"
+    )
+    const implementationClass = customerEnhancementName(
+      input.implementationClass,
+      "implementationClass",
+      30
+    )
+    const current = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as Record<string, unknown>
+    assertEnhancementWriteSnapshot(current, input.expectedFingerprint, input.packageName)
+    const definition = current.definition as Record<string, unknown>
+    if (definition.tool !== "BADI_IMPL") throw new Error("ENHANCEMENT_TOOL_TYPE_MISMATCH")
+    if (definition.hasInactiveVersion === true) {
+      throw new Error("ENHANCEMENT_INACTIVE_VERSION_EXISTS")
+    }
+    const implementations = definition.badiImplementations as Array<Record<string, unknown>>
+    if (!implementations.some((item) => item.implementationName === implementationName)) {
+      throw new Error("NEW_BADI_IMPLEMENTATION_NOT_FOUND")
+    }
+    const source = newBadiEnhancementUpdatePayload(input, implementationName, implementationClass)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "UPDATE_BADI_ENHANCEMENT",
+      objectName: enhancementName,
+      description: input.description,
+      packageName: input.packageName.toUpperCase(),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: input.expectedFingerprint.toLowerCase(),
+      source
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const saved = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as Record<string, unknown>
+    const savedDefinition = saved.definition as Record<string, unknown>
+    const savedImplementations = savedDefinition.badiImplementations as Array<
+      Record<string, unknown>
+    >
+    const savedImplementation = savedImplementations.find(
+      (item) => item.implementationName === implementationName
+    )
+    if (
+      !savedImplementation ||
+      savedImplementation.implementationClass !== implementationClass ||
+      savedImplementation.active !== input.active ||
+      savedImplementation.defaultImplementation !== input.defaultImplementation ||
+      !isDeepStrictEqual(
+        savedImplementation.filters,
+        normalizedEnhancementFilters(input.filters)
+      ) ||
+      (input.description && savedImplementation.shortText !== input.description)
+    ) {
+      throw new Error("SAP reported success but the New BAdI update was not read back")
+    }
+    return JSON.stringify(
+      {
+        status: result.code,
+        previousFingerprint: current.fingerprint,
+        ...saved,
+        transportNumber: input.transportNumber.toUpperCase()
+      },
+      null,
+      2
+    )
+  }
+
+  async manageEnhancementImplementationState(
+    input: ManageEnhancementImplementationStateInput
+  ): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
+    const current = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as Record<string, unknown>
+    assertEnhancementWriteSnapshot(current, input.expectedFingerprint, input.packageName)
+    const currentDefinition = current.definition as Record<string, unknown>
+    if (input.action === "discard_inactive" && currentDefinition.hasInactiveVersion !== true) {
+      throw new Error("ENHANCEMENT_NO_INACTIVE_VERSION")
+    }
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "MANAGE_ENHANCEMENT_STATE",
+      objectName: enhancementName,
+      objectType: input.action === "activate" ? "ACTIVATE" : "DISCARD_INACTIVE",
+      packageName: input.packageName.toUpperCase(),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: input.expectedFingerprint.toLowerCase()
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const saved = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as Record<string, unknown>
+    const savedDefinition = saved.definition as Record<string, unknown>
+    if (savedDefinition.hasInactiveVersion === true) {
+      throw new Error("SAP reported success but the inactive enhancement version remains")
+    }
+    if (input.action === "activate" && savedDefinition.active !== true) {
+      throw new Error("SAP reported success but the enhancement is not active")
+    }
+    return JSON.stringify(
+      {
+        status: result.code,
+        action: input.action,
+        previousFingerprint: current.fingerprint,
+        ...saved,
+        transportNumber: input.transportNumber.toUpperCase()
+      },
+      null,
+      2
+    )
+  }
+
+  async deleteEnhancementImplementation(
+    input: DeleteEnhancementImplementationInput
+  ): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
+    const current = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as { fingerprint: string; packageName: string }
+    if (current.fingerprint !== input.expectedFingerprint.toLowerCase()) {
+      throw new Error("ENHANCEMENT_IMPLEMENTATION_STALE_FINGERPRINT")
+    }
+    if (current.packageName.toUpperCase() !== input.packageName.toUpperCase()) {
+      throw new Error("ENHANCEMENT_IMPLEMENTATION_PACKAGE_MISMATCH")
+    }
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "DELETE_ENHANCEMENT_IMPLEMENTATION",
+      objectName: enhancementName,
+      packageName: input.packageName.toUpperCase(),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: input.expectedFingerprint.toLowerCase()
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    try {
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+      throw new Error("SAP reported success but the enhancement implementation still exists")
+    } catch (error) {
+      if (!/ENHANCEMENT_IMPLEMENTATION_NOT_FOUND/.test(String(error))) throw error
+    }
+    return JSON.stringify(
+      {
+        status: "ENHANCEMENT_IMPLEMENTATION_DELETED",
+        connectionId,
+        enhancementName,
+        previousFingerprint: current.fingerprint,
+        transportNumber: input.transportNumber.toUpperCase()
+      },
+      null,
+      2
+    )
+  }
+
+  private async createEnhancementImplementation(
+    input: CreateEnhancementHookInput | CreateNewBadiImplementationInput,
+    operation: "CREATE_HOOK_ENHANCEMENT" | "CREATE_BADI_ENHANCEMENT"
+  ): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
+    try {
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+      throw new Error("ENHANCEMENT_IMPLEMENTATION_ALREADY_EXISTS")
+    } catch (error) {
+      if (!/ENHANCEMENT_IMPLEMENTATION_NOT_FOUND/.test(String(error))) throw error
+    }
+    const source =
+      operation === "CREATE_HOOK_ENHANCEMENT"
+        ? hookEnhancementPayload(input as CreateEnhancementHookInput)
+        : newBadiEnhancementPayload(input as CreateNewBadiImplementationInput)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation,
+      objectName: enhancementName,
+      description: input.description,
+      packageName: input.packageName.toUpperCase(),
+      transportNumber: transportNumber(input.transportNumber),
+      source
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    const saved = JSON.parse(
+      await this.readEnhancementImplementation({ enhancementName, connectionId })
+    ) as Record<string, unknown>
+    return JSON.stringify(
+      {
+        status: result.code,
+        ...saved,
+        transportNumber: input.transportNumber.toUpperCase()
+      },
+      null,
+      2
+    )
+  }
+
+  async inspectEnhancementFramework(input: EnhancementFrameworkInspectionInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const object = await this.findOne(connectionId, input.objectName, input.objectType)
+    if (!object) {
+      throw new Error(
+        `Could not find ABAP source object: ${input.objectName}${input.objectType ? ` (${input.objectType})` : ""}.`
+      )
+    }
+    const sourceResult = await this.backend.readSource(connectionId, object, { version: "active" })
+    if (sourceResult.kind === "dictionary") {
+      throw new Error(
+        `Enhancement Framework inspection does not support Dictionary object ${object.name}.`
+      )
+    }
+    const inspection = inspectEnhancementFrameworkSource(sourceResult.source)
+    return JSON.stringify(
+      {
+        connectionId,
+        object: {
+          name: object.name,
+          type: object.type,
+          package: object.package,
+          systemType: object.systemType,
+          uri: object.uri,
+          sourceUri: sourceResult.uriUsed,
+          sourceFingerprint: createHash("sha256").update(sourceResult.source).digest("hex")
+        },
+        ...inspection,
+        coverage: {
+          activeSourceOnly: true,
+          implicitCandidatesAreSourceDerived: true,
+          sapEnhancementEditorConfirmationRequired: true,
+          activationOrConfigurationInspected: false,
+          switchStateInspected: false,
+          runtimeInspected: false,
+          standardRefactoringMayInvalidateCandidates: true
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async inspectFicoRuleExitProgram(input: FicoRuleExitProgramInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const object = await this.findOne(connectionId, input.programName, "PROG")
+    if (!object || object.name.toUpperCase() !== input.programName.toUpperCase()) {
+      throw new Error("Could not find exact ABAP program: " + input.programName + ".")
+    }
+    const sourceResult = await this.backend.readSource(connectionId, object, { version: "active" })
+    if (sourceResult.kind === "dictionary") {
+      throw new Error("FI rule exit inspection requires an ABAP program: " + object.name + ".")
+    }
+    return JSON.stringify(
+      {
+        connectionId,
+        program: {
+          name: object.name,
+          type: object.type,
+          package: object.package,
+          systemType: object.systemType,
+          uri: object.uri,
+          sourceUri: sourceResult.uriUsed,
+          sourceFingerprint: createHash("sha256").update(sourceResult.source).digest("hex")
+        },
+        ...inspectFicoRuleExitSource(sourceResult.source),
+        coverage: {
+          activeSourceOnly: true,
+          exitCatalogInspected: true,
+          formImplementationsInspected: true,
+          ggb0ValidationRulesInspected: false,
+          ggb1SubstitutionRulesInspected: false,
+          ob28ActivationInspected: false,
+          obbhActivationInspected: false,
+          callupPointsOrPrerequisitesInspected: false,
+          runtimeInspected: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
   async searchObjectLines(input: SearchLinesInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const contextLines = Math.max(0, input.contextLines ?? 3)
@@ -2732,20 +5088,28 @@ export class ToolService {
     let output = ""
     let baseMatches = 0
     let enhancementMatches = 0
+    let enhancementUnavailable = 0
     for (const object of objects) {
       try {
         const { source, uriUsed, kind } = await this.backend.readSource(connectionId, object)
         const matches = findLineMatches(source.split("\n"), input.searchTerm, !!input.isRegexp)
-        const enhancements = await this.backend.readEnhancements(connectionId, uriUsed, true)
-        const matchingEnhancements = enhancements.flatMap((enhancement) => {
-          if (!enhancement.source) return []
-          return findLineMatches(
-            enhancement.source.split("\n"),
-            input.searchTerm,
-            !!input.isRegexp
-          ).map((match) => ({ enhancement, match }))
-        })
-        if (!matches.length && !matchingEnhancements.length) continue
+        let matchingEnhancements: Array<{ enhancement: EnhancementInfo; match: LineMatch }> = []
+        let enhancementFailure: ReturnType<typeof classifyEnhancementFailure> | undefined
+        try {
+          const enhancements = await this.backend.readEnhancements(connectionId, uriUsed, true)
+          matchingEnhancements = enhancements.flatMap((enhancement) => {
+            if (!enhancement.source) return []
+            return findLineMatches(
+              enhancement.source.split("\n"),
+              input.searchTerm,
+              !!input.isRegexp
+            ).map((match) => ({ enhancement, match }))
+          })
+        } catch (error) {
+          enhancementFailure = classifyEnhancementFailure(error)
+          enhancementUnavailable++
+        }
+        if (!matches.length && !matchingEnhancements.length && !enhancementFailure) continue
 
         output += `\n## ${object.name} (${kind === "dictionary" ? "Complete Table Structure" : object.type})\n\n`
         if (matches.length) {
@@ -2759,6 +5123,9 @@ export class ToolService {
             output += renderMatches(enhancement.source!.split("\n"), [match], contextLines, true)
           }
         }
+        if (enhancementFailure) {
+          output += `Enhancement Metadata: Unavailable (${enhancementFailure.status})\n\n`
+        }
         output += `URI: ${uriUsed} (${source.split("\n").length} lines total)\n\n`
         baseMatches += matches.length
         enhancementMatches += matchingEnhancements.length
@@ -2769,6 +5136,9 @@ export class ToolService {
 
     if (!baseMatches && !enhancementMatches) {
       let message = `No matches for "${input.searchTerm}" in ${objects.length} object(s) matching: ${input.objectName}`
+      if (enhancementUnavailable) {
+        message = `No base-source matches for "${input.searchTerm}". Enhancement metadata was unavailable for ${enhancementUnavailable} object(s).`
+      }
       if (maxObjects > 1) {
         message += `\n\nObjects searched:\n${objects.map((object) => `• ${object.name} (${object.type})`).join("\n")}`
       }
@@ -2866,146 +5236,52 @@ export class ToolService {
   }
 
   async findWhereUsed(input: WhereUsedInput): Promise<string> {
-    const connectionId = input.connectionId.toLowerCase()
-    const object = await this.findOne(connectionId, input.objectName, input.objectType)
-    if (!object) {
-      const typeInfo = input.objectType ? ` of type ${input.objectType}` : ""
-      return `Could not find ABAP object: ${input.objectName}${typeInfo}. The object may not exist or may not be accessible.`
-    }
-
-    let source = ""
-    let uri = object.uri
-    try {
-      const read = await this.backend.readSource(connectionId, object)
-      source = read.source
-      uri = read.uriUsed
-    } catch (error) {
-      if (input.searchTerm) {
-        return `Could not access source for object: ${input.objectName}. Error: ${String(error)}`
-      }
-    }
-
-    const position = locateWhereUsedPosition(source, input)
-    if (input.searchTerm && !position) {
-      return `Search term "${input.searchTerm}" not found in object ${input.objectName}.`
-    }
-    const line = position?.line ?? input.line ?? 1
-    const character = position?.character ?? input.character ?? 0
-    let references: UsageReferenceInfo[]
-    try {
-      references = await this.backend.usageReferences(connectionId, uri, line, character)
-    } catch (error) {
-      return `Where-used search failed for ${input.objectName}: ${String(error)}`
-    }
-    references = references.filter(
-      (reference) => reference.objectIdentifier.split(";")[0] === "ABAPFullName"
-    )
-    if (!references.length) {
-      return `No references found for ${input.objectName}${input.searchTerm ? ` (${input.searchTerm})` : ""}.`
-    }
-
-    const total = references.length
-    const filter = input.filter
-    if (filter?.objectNamePattern) {
-      const pattern = wildcardToRegex(filter.objectNamePattern)
-      references = references.filter((reference) =>
-        pattern.test(reference.objectIdentifier.split(";")[1] ?? "")
-      )
-    }
-    if (filter?.objectTypes?.length) {
-      references = references.filter((reference) =>
-        filter.objectTypes!.includes(reference.type ?? "")
-      )
-    }
-    if (filter?.excludeSystemObjects) {
-      references = references.filter((reference) =>
-        /^[ZY]/i.test(reference.objectIdentifier.split(";")[1] ?? "")
-      )
-    }
-    if (!references.length) {
-      return `No references found after applying filters for ${input.objectName}.\n\nTotal references before filtering: ${total}`
-    }
-
-    const startIndex = Math.max(0, input.startIndex ?? 0)
-    const maxResults = Math.max(1, input.maxResults ?? 50)
-    const page = references.slice(startIndex, startIndex + maxResults)
-    if (!page.length) {
-      return (
-        `No references found at index range ${startIndex}-${startIndex + maxResults}. ` +
-        `Total filtered references available: ${references.length}. Try a lower startIndex.`
-      )
-    }
-    const groups = new Map<string, UsageReferenceInfo[]>()
-    for (const reference of page) {
-      const name = reference.objectIdentifier.split(";")[1] ?? reference.name
-      const group = groups.get(name) ?? []
-      group.push(reference)
-      groups.set(name, group)
-    }
-    let result =
-      `ABAP Where-Used Analysis\n` +
-      `Object: ${input.objectName}${input.objectType ? ` (${input.objectType})` : ""}\n` +
-      `Position: Line ${line}, Character ${character}\n` +
-      `System: ${connectionId}\n\n` +
-      `Results: ${page.length} of ${references.length} references\n\n` +
-      `References by Object:\n`
-    let index = 1
-    for (const [name, items] of groups) {
-      result += `${index}. ${name} (${items.length} reference${items.length > 1 ? "s" : ""})\n`
-      for (const reference of items) {
-        result += `   • Type: ${reference.type || "Unknown"}\n`
-        result += `   • Name: ${reference.name || "Unknown"}\n`
-        if (reference.packageName) result += `   • Package: ${reference.packageName}\n`
-        if (reference.description) result += `   • Description: ${reference.description}\n`
-        result += `   • URI: ${reference.uri || "N/A"}\n\n`
-      }
-      index++
-    }
-    if (input.includeSnippets) {
-      try {
-        const snippets = await this.backend.usageReferenceSnippets(connectionId, page)
-        result += "\nUsage Snippets:\n"
-        for (const snippet of snippets) {
-          result += `${snippet.objectIdentifier}\n`
-          for (const item of snippet.snippets.slice(0, 3)) {
-            result += `   Line ${item.line ?? "Unknown"}: ${item.content}\n`
-          }
-        }
-      } catch (error) {
-        result += `\nCould not retrieve usage snippets: ${String(error)}\n`
-      }
-    }
-    result +=
-      `\nSummary:\n` +
-      `• Total References: ${page.length}\n` +
-      `• Unique Objects: ${groups.size}\n` +
-      `• Avg References/Object: ${Math.round(page.length / groups.size)}\n`
-    if (references.length > page.length) {
-      result += `• Truncated: Showing ${page.length} of ${references.length} filtered references\n`
-    }
-    return result
+    const result = await collectWhereUsed(this.backend, input)
+    return input.responseFormat === "json"
+      ? JSON.stringify(result, null, 2)
+      : formatWhereUsed(result)
   }
 
   async getSapSystemInfo(input: SystemInfoInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const details = this.backend.connectionDetails(connectionId)
-    const info = await collectSystemInfo(this.backend, connectionId, details.client)
+    const info = await collectSystemInfo(this.backend, connectionId, details.client, async () =>
+      JSON.parse(
+        await this.readFunctionModuleInterface({ connectionId, functionName: "RFC_READ_TABLE" })
+      )
+    )
     const components = input.includeComponents ? info.softwareComponents : []
-    const result = { ...info, softwareComponents: components }
+    const result = {
+      ...info,
+      currentClient: info.currentClient
+        ? {
+            ...info.currentClient,
+            categoryCode: info.currentClient.category,
+            changeProtectionCode: info.currentClient.changeProtection,
+            changeProtectionScope: "Repository and cross-client Customizing",
+            category: clientCategory(info.currentClient.category),
+            changeProtection: changeProtection(info.currentClient.changeProtection)
+          }
+        : null,
+      componentsIncluded: input.includeComponents ?? false,
+      softwareComponents: components
+    }
     let summary =
       `SAP System: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${result.status}\n` +
       `- Type: ${result.systemType}\n` +
       `- Release: ${result.sapRelease || "N/A"}\n`
     if (result.currentClient) {
       summary += `- Client: ${result.currentClient.clientNumber} (${result.currentClient.clientName})\n`
     }
     if (result.timezone) {
-      summary += `- Timezone: ${result.timezone.timezone} (${result.timezone.description}), ${result.timezone.utcOffset}`
-      if (result.timezone.dstRule !== "NONE") summary += `, DST: ${result.timezone.dstRule}`
+      summary += `- Timezone: ${result.timezone.timezone} (${result.timezone.description}), ${result.timezone.utcOffset} (standard time)`
+      if (result.timezone.dstRule && result.timezone.dstRule !== "NONE")
+        summary += `, DST rule: ${result.timezone.dstRule}`
       summary += "\n"
     }
     if (input.includeComponents && components.length) {
-      summary += `- Components: ${components.length} installed\n`
+      summary += `- Components: ${components.length} returned${result.componentsComplete ? "" : " (incomplete)"}\n`
     }
     if (result.queryWarnings.length) {
       summary += `- Query warnings: ${result.queryWarnings.length}\n`
@@ -3124,17 +5400,47 @@ export class ToolService {
       input.fileUri,
       input.oldString,
       input.newString,
-      input.transportNumber
+      input.transportNumber,
+      input.expectedSourceFingerprint,
+      input.recoverInactiveSource
     )
     if (!result.activation.success) {
       throw new Error(
-        `Source was saved to SAP but activation failed for ${result.objectName}. The inactive source remains in SAP. ${formatActivationFailure(result.activation.messages, result.activation.inactiveObjects)}`
+        `Source was saved to SAP but activation failed or could not be verified for ${result.objectName}. ` +
+          `Do not repeat the same replacement. If the activation message identifies a source error, repair the reviewed draft with recoverInactiveSource=true and its inactiveFingerprint as expectedSourceFingerprint. ` +
+          `For other activation failures, reconcile active/inactive source before using abap_activate on the approved object. ` +
+          `${formatActivationFailure(result.activation.messages, result.activation.inactiveObjects)}\n` +
+          JSON.stringify({
+            saveSucceeded: result.saveSucceeded ?? true,
+            unlockSucceeded: result.unlockSucceeded ?? true,
+            activationAttempted: result.activationAttempted ?? null,
+            activationSucceeded: result.activationSucceeded ?? false,
+            intendedFingerprint: result.sourceFingerprintAfter ?? null,
+            activeFingerprint: result.activeFingerprint ?? null,
+            inactiveFingerprint: result.inactiveFingerprint ?? null,
+            readbackError: result.readbackError ?? null,
+            automaticRetry: false,
+            automaticRollback: false
+          })
       )
     }
     return (
-      `Successfully replaced ${result.oldLineCount} line(s) with ${result.newLineCount} line(s) in ${result.fileUri}.\n` +
+      `Successfully ${input.recoverInactiveSource ? "repaired inactive source by replacing" : "replaced"} ${result.oldLineCount} line(s) with ${result.newLineCount} line(s) in ${result.fileUri}.\n` +
       `Saved, unlocked, and activated ${result.objectName} in SAP.` +
+      (result.sourceFingerprintBefore
+        ? `\nSource SHA-256 before: ${result.sourceFingerprintBefore}\nIntended saved source SHA-256: ${result.sourceFingerprintAfter}`
+        : "") +
       `${result.transportNumber ? `\nTransport: ${result.transportNumber}` : "\nTransport: local object"}`
+    )
+  }
+
+  async previewSourceChanges(input: z.input<typeof sourcePreflightSchema>): Promise<string> {
+    return JSON.stringify(
+      await previewSourceChanges(this.backend, input, (assignment) =>
+        this.inspectRepositoryAssignment(assignment)
+      ),
+      null,
+      2
     )
   }
 
@@ -3397,6 +5703,203 @@ export class ToolService {
     return ABAP_SQL_GUIDE
   }
 
+  async previewConfiguration(input: unknown): Promise<string> {
+    return JSON.stringify(
+      await previewConfiguration(
+        input,
+        async () =>
+          JSON.parse(
+            await this.readDdicTransparentTable({
+              connectionId: "w200",
+              objectName: CONFIGURATION_TABLE
+            })
+          ),
+        async (query) => JSON.parse(await this.readAbapTable(query)),
+        async (query) => JSON.parse(await this.readAbapTable(query)),
+        async () =>
+          JSON.parse(
+            await this.readDdicDomain({
+              connectionId: "w200",
+              objectName: CONFIGURATION_MODE_DOMAIN
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readAbapTable(input: unknown, nativeFailure?: Error): Promise<string> {
+    const parsed = tableQuerySchema.safeParse(input)
+    if (parsed.success && parsed.data.tableName === "SXCI") {
+      return this.readClassicBadiTableProjection(parsed.data)
+    }
+    return JSON.stringify(
+      await readAbapTable(
+        input,
+        this.backend,
+        async (connectionId, tableName) =>
+          JSON.parse(await this.readDdicTransparentTable({ connectionId, objectName: tableName })),
+        async (connectionId, functionName) =>
+          JSON.parse(await this.readFunctionModuleInterface({ connectionId, functionName })),
+        nativeFailure
+      ),
+      null,
+      2
+    )
+  }
+
+  private async readClassicBadiTableProjection(input: TableQueryInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const allFields = input.columns.length === 1 && input.columns[0] === "*"
+    const columns = allFields ? [...classicBadiProjectionColumns] : input.columns
+    let stage = "repository_projection_validation"
+    const base = {
+      connectionId,
+      tableName: input.tableName,
+      columns,
+      maxRows: input.maxRows,
+      readOnly: true,
+      order: "unspecified",
+      clientHandling: "sap_session_default",
+      snapshot: false,
+      method: "classic_badi_repository_helper",
+      definitionSource: "classic_badi_repository_projection",
+      tableClassVerified: false,
+      compatibilityProjection: true,
+      projectionSourceTool: "read_classic_badi_definition"
+    }
+    const fail = (code: string) =>
+      JSON.stringify(
+        {
+          ...base,
+          status: "unavailable",
+          stage,
+          code,
+          returnedCount: 0,
+          truncated: null,
+          data: null
+        },
+        null,
+        2
+      )
+
+    if (
+      input.columns.includes("*") !== allFields ||
+      new Set(columns).size !== columns.length ||
+      [...columns, ...input.filters.map((filter) => filter.column)].some(
+        (name) =>
+          !classicBadiProjectionColumns.includes(
+            name as (typeof classicBadiProjectionColumns)[number]
+          )
+      )
+    ) {
+      return fail("TABLE_QUERY_FIELD_INVALID")
+    }
+
+    const exactDefinitionFilters = input.filters.filter(
+      (filter) => filter.column === "EXIT_NAME" && filter.operator === "EQ"
+    )
+    if (exactDefinitionFilters.length > 1) return fail("TABLE_QUERY_FILTER_INVALID")
+
+    let definitions: string[]
+    let discoveryMayBeTruncated = false
+    if (exactDefinitionFilters.length === 1) {
+      definitions = [exactDefinitionFilters[0]!.value.toUpperCase()]
+    } else {
+      stage = "repository_definition_search"
+      try {
+        const [result] = await this.backend.searchObjectTypes(connectionId, "*", ["SXSD/XD"], 50)
+        if (!result || result.status !== "available") {
+          return fail("TABLE_QUERY_REPOSITORY_SEARCH_UNAVAILABLE")
+        }
+        definitions = [...new Set(result.objects.map((object) => object.name.toUpperCase()))]
+        discoveryMayBeTruncated = definitions.length === 50
+      } catch {
+        return fail("TABLE_QUERY_REPOSITORY_SEARCH_UNAVAILABLE")
+      }
+    }
+
+    stage = "repository_definition_read"
+    const rows: ClassicBadiProjectionRow[] = []
+    const fingerprints: string[] = []
+    const seenRows = new Set<string>()
+    try {
+      for (const definitionName of definitions) {
+        const result = JSON.parse(
+          await this.readClassicBadiDefinition({ definitionName, connectionId })
+        ) as {
+          fingerprint: string
+          definition: {
+            name: string
+            implementationAssignments: Array<{ implementationName: string }>
+            classMappings: Array<{
+              implementationName: string
+              interfaceName: string
+              implementationClass: string
+            }>
+          }
+        }
+        fingerprints.push(result.fingerprint)
+        for (const assignment of result.definition.implementationAssignments) {
+          const mappings = result.definition.classMappings.filter(
+            (mapping) => mapping.implementationName === assignment.implementationName
+          )
+          const effectiveMappings = mappings.length
+            ? mappings
+            : [
+                {
+                  implementationName: assignment.implementationName,
+                  interfaceName: "",
+                  implementationClass: ""
+                }
+              ]
+          for (const mapping of effectiveMappings) {
+            const row: ClassicBadiProjectionRow = {
+              EXIT_NAME: result.definition.name,
+              IMP_NAME: assignment.implementationName,
+              CLASS_NAME: mapping.implementationClass,
+              INTER_NAME: mapping.interfaceName
+            }
+            const rowKey = JSON.stringify(row)
+            if (seenRows.has(rowKey) || !matchesClassicBadiProjectionFilters(row, input.filters)) {
+              continue
+            }
+            seenRows.add(rowKey)
+            rows.push(row)
+          }
+        }
+        if (rows.length > input.maxRows) break
+      }
+    } catch {
+      return fail("TABLE_QUERY_REPOSITORY_READ_FAILED")
+    }
+
+    const definitionFingerprint = createHash("sha256")
+      .update(JSON.stringify(fingerprints))
+      .digest("hex")
+    return JSON.stringify(
+      {
+        ...base,
+        status: "ok",
+        stage: "response_validation",
+        definitionFingerprint,
+        representation: "sap_repository_text",
+        returnedCount: Math.min(rows.length, input.maxRows),
+        truncated: rows.length > input.maxRows || discoveryMayBeTruncated,
+        data: rows
+          .slice(0, input.maxRows)
+          .map((row) =>
+            Object.fromEntries(
+              columns.map((column) => [column, row[column as keyof ClassicBadiProjectionRow]])
+            )
+          )
+      },
+      null,
+      2
+    )
+  }
+
   async executeDataQuery(input: DataQueryInput): Promise<string> {
     if (input.displayMode !== "internal") {
       throw new Error(
@@ -3432,8 +5935,45 @@ export class ToolService {
     }
     const sql = validateReadOnlySql(input.sql)
     const rowCap = Math.min(Math.floor(input.maxRows ?? 1000), 1000)
-    const rawRows = await this.backend.runQuery(input.connectionId.toLowerCase(), sql, rowCap + 1)
-    const truncated = rawRows.length > rowCap
+    let rawRows: Record<string, unknown>[]
+    let fallback: Record<string, unknown> | undefined
+    try {
+      rawRows = await this.backend.runQuery(input.connectionId.toLowerCase(), sql, rowCap + 1)
+    } catch (error) {
+      const structured = parseSimpleTableSelect(sql)
+      if (
+        !(error instanceof Error) ||
+        error.message !==
+          "SAP_DATA_QUERY_RESPONSE_INVALID: expected XML data preview; HTTP 200; mediaType=text/html; root=unparsed; bytes=0. No empty result was inferred." ||
+        !structured ||
+        rowCap > 500
+      )
+        throw error
+      const result = JSON.parse(
+        await this.readAbapTable(
+          {
+            connectionId: input.connectionId,
+            ...structured,
+            maxRows: rowCap
+          },
+          error
+        )
+      )
+      if (result.status !== "ok") {
+        throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
+      }
+      rawRows = result.data
+      fallback = {
+        method: result.method,
+        nativeCode: result.nativeCode,
+        representation: result.representation,
+        definitionFingerprint: result.definitionFingerprint,
+        fieldMetadata: result.fieldMetadata,
+        snapshot: false,
+        truncated: result.truncated
+      }
+    }
+    const truncated = fallback?.truncated === true || rawRows.length > rowCap
     const fetched = rawRows.slice(0, rowCap)
     const processed = applyDataOperations(fetched, input.filters ?? [], input.sortColumns ?? [])
     const data = processed.slice(input.rowRange.start, input.rowRange.end)
@@ -3448,6 +5988,7 @@ export class ToolService {
         resultCount: data.length,
         truncated,
         rowRange: input.rowRange,
+        ...(fallback ? { querySource: fallback } : {}),
         data
       },
       null,
@@ -3455,10 +5996,92 @@ export class ToolService {
     )
   }
 
+  async runSciAnalysis(input: SciInput): Promise<string> {
+    if (!["precheck", "run"].includes(input.action)) throw new Error("Invalid SCI action")
+    if (input.profile !== undefined && input.profile !== "syntax_critical_sql") {
+      throw new Error("Invalid SCI profile")
+    }
+    const target = input.target === undefined ? undefined : sciTargetSchema.parse(input.target)
+    const extended = input.profile === "syntax_critical_sql"
+    if (extended && !target) throw new Error("SCI profile requires an explicit target")
+    const result = await this.testRemoteFunctionModule({
+      connectionId: input.connectionId,
+      functionName: extended ? SCI_E2_HELPER : target ? SCI_V2_HELPER : SCI_HELPER,
+      inputParameters: {
+        IV_ACTION: input.action === "precheck" ? "PRECHECK" : "RUN",
+        ...(target ? { IV_OBJECT_TYPE: target.objectType, IV_OBJECT_NAME: target.objectName } : {})
+      },
+      expectedOutputs: { EV_ENGINE: "SCI", EV_VERSION: extended ? "3.0" : target ? "2.0" : "1.0" },
+      expectedInterfaceFingerprint: extended
+        ? SCI_E2_FINGERPRINT
+        : target
+          ? SCI_V2_FINGERPRINT
+          : SCI_HELPER_FINGERPRINT,
+      acknowledgePotentialSideEffects: input.acknowledgePotentialSideEffects
+    })
+    return extended
+      ? formatSciE2Result(JSON.parse(result), input)
+      : target
+        ? formatSciV2Result(JSON.parse(result), input)
+        : formatSciResult(JSON.parse(result), input)
+  }
+
   async runAtcAnalysis(input: AtcInput): Promise<string> {
     const action = input.action ?? "run_analysis"
     if (!input.connectionId) throw new Error(`${action} requires connectionId.`)
     const connectionId = input.connectionId.toLowerCase()
+    if (action === "precheck_atc") {
+      if (
+        input.objectName ||
+        input.objectType ||
+        input.objectUri ||
+        input.fileUris ||
+        input.docUri ||
+        input.useActiveFile ||
+        input.scope ||
+        input.includeAtc
+      ) {
+        throw new Error("precheck_atc takes connectionId only; it does not execute object checks.")
+      }
+      try {
+        return JSON.stringify(
+          { connectionId, ...(await this.backend.inspectAtc(connectionId)) },
+          null,
+          2
+        )
+      } catch (error) {
+        return JSON.stringify(
+          {
+            connectionId,
+            engine: "ATC",
+            endpoint: "/sap/bc/adt/atc/customizing",
+            method: "GET",
+            ...checkFailure(error),
+            worklistCreationAttempted: false,
+            runCreationAttempted: false,
+            variantValidated: false,
+            qualityGate: "not_evaluated"
+          },
+          null,
+          2
+        )
+      }
+    }
+    if (action === "check_quality") {
+      if (
+        input.useActiveFile ||
+        (input.scope && input.scope !== "object") ||
+        input.objectName ||
+        input.objectType ||
+        input.objectUri ||
+        input.docUri
+      ) {
+        throw new Error(
+          "check_quality uses fileUris only; no name, editor, package or transport scope."
+        )
+      }
+      return JSON.stringify(await checkQuality(this.backend, input), null, 2)
+    }
     if (action === "get_documentation") {
       if (!input.docUri) throw new Error("get_documentation requires docUri.")
       const html = await this.backend.atcDocumentation(connectionId, input.docUri)
@@ -3490,45 +6113,118 @@ export class ToolService {
   }
 
   async runUnitTests(input: UnitTestInput): Promise<string> {
+    if (input.outputFormat && !["text", "json"].includes(input.outputFormat))
+      throw new Error("Invalid Unit output format")
     const connectionId = input.connectionId.toLowerCase()
     const object = await this.findOne(connectionId, input.objectName)
     if (!object) throw new Error(`Could not find ABAP object: ${input.objectName}.`)
-    const classes = await this.backend.runUnitTests(connectionId, object.uri)
+    const classes = (await this.backend.runUnitTests(connectionId, object.uri)).map((item) => ({
+      ...item,
+      methods: item.methods.map((method) => ({
+        ...method,
+        executionTime:
+          typeof method.executionTime === "number" &&
+          Number.isFinite(method.executionTime) &&
+          method.executionTime >= 0
+            ? method.executionTime
+            : null
+      }))
+    }))
     let total = 0
     let passed = 0
     let failed = 0
     let totalTime = 0
+    let completeTiming = true
     let classFailure = false
+    let notExecuted = 0
+    const classResults = []
     let details = ""
     for (const testClass of classes) {
       const classAlerts = testClass.alerts.filter((alert) => alert.kind !== "warning")
-      let classPassed = classAlerts.length === 0 && testClass.methods.length > 0
-      details += `\n[${classPassed ? "PASS" : "FAIL"}] ${testClass.name}\n`
+      const classPassed =
+        classAlerts.length === 0 &&
+        testClass.methods.length > 0 &&
+        testClass.methods.every((method) =>
+          method.alerts.every((alert) => alert.kind === "warning")
+        )
+      const classStatus =
+        classAlerts.length ||
+        testClass.methods.some((method) => method.alerts.some((alert) => alert.kind !== "warning"))
+          ? "failed"
+          : testClass.methods.length
+            ? "passed"
+            : "not_executed"
+      if (classStatus === "not_executed") notExecuted++
+      classResults.push({ ...testClass, status: classStatus })
+      details += `\n[${classPassed ? "PASS" : classStatus === "not_executed" ? "NOT EXECUTED" : "FAIL"}] ${testClass.name}\n`
       for (const alert of testClass.alerts) details += `  ${formatTestAlert(alert)}\n`
       for (const method of testClass.methods) {
         total++
-        totalTime += method.executionTime
+        if (method.executionTime === null) completeTiming = false
+        else totalTime += method.executionTime
         const methodPassed = !method.alerts.some((alert) => alert.kind !== "warning")
         if (methodPassed) passed++
         else {
           failed++
-          classPassed = false
         }
-        details += `  [${methodPassed ? "PASS" : "FAIL"}] ${method.name} (${method.executionTime.toFixed(3)}s)\n`
+        const duration =
+          method.executionTime === null ? "unknown" : `${method.executionTime.toFixed(3)}s`
+        details += `  [${methodPassed ? "PASS" : "FAIL"}] ${method.name} (${duration})\n`
         for (const alert of method.alerts) details += `    ${formatTestAlert(alert)}\n`
       }
       if (!classPassed) classFailure = true
     }
     if (!classes.length) details = "\nNo test classes found in this object.\n"
     const allPassed = total > 0 && failed === 0 && !classFailure
+    const status = allPassed
+      ? "passed"
+      : failed > 0 || classResults.some((item) => item.status === "failed")
+        ? "failed"
+        : classes.length
+          ? "not_executed"
+          : "no_tests"
+    if (input.outputFormat === "json")
+      return JSON.stringify(
+        {
+          connectionId,
+          objectName: input.objectName,
+          objectUri: object.uri,
+          engine: "ABAP Unit",
+          nativeAtc: false,
+          status,
+          total,
+          passed,
+          failed,
+          notExecutedClasses: notExecuted,
+          executionTime: completeTiming && total > 0 ? totalTime : null,
+          classes: classResults,
+          activationPerformed: false,
+          evidence:
+            "ADT-reported methods and alerts; assertion execution is not independently attested"
+        },
+        null,
+        2
+      )
     return (
       `Unit Test Results for ${input.objectName}\n` +
-      `Status: ${allPassed ? "ALL TESTS PASSED" : total ? "SOME TESTS FAILED" : "NO TESTS FOUND"}\n` +
+      `Status: ${status === "passed" ? "ALL TESTS PASSED" : status === "failed" ? "SOME TESTS FAILED" : status === "not_executed" ? "TESTS NOT EXECUTED" : "NO TESTS FOUND"}\n` +
       `Total: ${total} | Passed: ${passed} | Failed: ${failed}\n` +
-      `Time: ${totalTime.toFixed(3)}s\n` +
+      `Time: ${completeTiming && total > 0 ? `${totalTime.toFixed(3)}s` : "unknown"}\n` +
       `Activation: not performed by standalone service\n` +
       details
     )
+  }
+
+  async diagnoseSapFailure(
+    input: RuntimeDiagnosticInput,
+    receipt?: Record<string, unknown>
+  ): Promise<string> {
+    const options = validateRuntimeDiagnosticInput(input)
+    if (options.operationId && (!receipt || receipt.status === "not_found")) {
+      throw new Error("Write operation receipt not found; diagnostic correlation was not attempted")
+    }
+    const feed = await this.backend.listDumps(options.connectionId.toLowerCase())
+    return JSON.stringify(buildRuntimeDiagnosticReport(options, feed, receipt), null, 2)
   }
 
   async analyzeDumps(input: DumpInput): Promise<string> {
@@ -3609,6 +6305,20 @@ export class ToolService {
 
   async manageTransportRequests(input: TransportInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
+    if (input.action === "prepare_delivery") {
+      if (!input.transportNumber || !input.expectedObjects)
+        throw new Error("prepare_delivery requires transportNumber and expectedObjects")
+      return JSON.stringify(
+        await prepareTransportDelivery(this.backend, {
+          connectionId,
+          transportNumber: input.transportNumber,
+          expectedObjects: input.expectedObjects,
+          inactiveTargets: input.inactiveTargets
+        }),
+        null,
+        2
+      )
+    }
     if (input.action === "get_user_transports") {
       const user = (
         input.user || this.backend.connectionDetails(connectionId).username
@@ -3660,6 +6370,129 @@ export class ToolService {
     return input.action === "get_transport_details"
       ? formatTransportDetails(transport)
       : formatTransportObjects(transport)
+  }
+
+  async cleanupTransportEntries(input: CleanupTransportEntriesInput): Promise<string> {
+    if (input.confirmation !== "REMOVE_CTS_ENTRIES") {
+      throw new Error("confirmation must be REMOVE_CTS_ENTRIES")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const parentTransportNumber = normalizeTransportNumber(input.parentTransportNumber)
+    const taskNumber = normalizeTransportNumber(input.taskNumber)
+    if (parentTransportNumber === taskNumber) {
+      throw new Error("CTS_CLEANUP_TASK_REQUIRED: taskNumber must not be the parent request")
+    }
+    const entries = input.entries.map((entry) => cleanupTransportEntrySchema.parse(entry))
+    const requestedKeys = entries.map(cleanupEntryKey)
+    if (new Set(requestedKeys).size !== requestedKeys.length) {
+      throw new Error("CTS_CLEANUP_DUPLICATE_ENTRY")
+    }
+
+    const before = await this.backend.transportDetails(connectionId, parentTransportNumber)
+    assertTransportNumber(before["tm:number"], parentTransportNumber)
+    if (before["tm:status"] !== "D") {
+      throw new Error("CTS_CLEANUP_PARENT_NOT_MODIFIABLE")
+    }
+    const task = before.tasks.find(
+      (candidate) => candidate["tm:number"].toUpperCase() === taskNumber
+    )
+    if (!task) throw new Error("CTS_CLEANUP_TASK_NOT_IN_PARENT")
+    if (task["tm:status"] !== "D") throw new Error("CTS_CLEANUP_TASK_NOT_MODIFIABLE")
+
+    const beforeFingerprint = transportFingerprint(before)
+    if (beforeFingerprint !== input.expectedFingerprint.toLowerCase()) {
+      throw new Error(
+        `CTS_CLEANUP_STALE_FINGERPRINT: expected ${input.expectedFingerprint.toLowerCase()}, current ${beforeFingerprint}`
+      )
+    }
+    const beforeEntries = transportEntries(before)
+    const beforeHeaders = cleanupHeaderKeys(before)
+    const selected = entries.map((entry) => {
+      const matches = beforeEntries.filter(
+        (candidate) =>
+          candidate.containerNumber === taskNumber &&
+          candidate.pgmid === entry.pgmid &&
+          candidate.type === entry.type &&
+          candidate.name === entry.name
+      )
+      if (matches.length !== 1) {
+        throw new Error(
+          matches.length ? "CTS_CLEANUP_ENTRY_AMBIGUOUS" : "CTS_CLEANUP_ENTRY_NOT_FOUND"
+        )
+      }
+      const match = matches[0]!
+      if (!match.position) throw new Error("CTS_CLEANUP_POSITION_UNAVAILABLE")
+      if (match.position !== entry.position) throw new Error("CTS_CLEANUP_POSITION_MISMATCH")
+      if (entry.wbType && entry.wbType !== match.wbType) {
+        throw new Error("CTS_CLEANUP_WBTYPE_MISMATCH")
+      }
+      return match
+    })
+    const selectedKeys = new Set(selected.map(cleanupSnapshotKey))
+    const expectedRemaining = beforeEntries
+      .filter((entry) => !selectedKeys.has(cleanupSnapshotKey(entry)))
+      .map(cleanupSnapshotKey)
+      .sort()
+
+    await this.backend.cleanupTransportEntries(
+      connectionId,
+      taskNumber,
+      parentTransportNumber,
+      selected.map((entry) => ({
+        pgmid: entry.pgmid,
+        type: entry.type,
+        name: entry.name,
+        position: entry.position,
+        wbType: entry.wbType || undefined
+      }))
+    )
+
+    const after = await this.backend.transportDetails(connectionId, parentTransportNumber)
+    assertTransportNumber(after["tm:number"], parentTransportNumber)
+    const afterTask = after.tasks.find(
+      (candidate) => candidate["tm:number"].toUpperCase() === taskNumber
+    )
+    if (!afterTask) throw new Error("CTS_CLEANUP_POSTCHECK_TASK_MISSING")
+    const afterEntries = transportEntries(after)
+    if (!isDeepStrictEqual(cleanupHeaderKeys(after), beforeHeaders)) {
+      throw new Error("CTS_CLEANUP_POSTCHECK_UNEXPECTED_CHANGE")
+    }
+    for (const entry of entries) {
+      if (
+        afterEntries.some(
+          (candidate) =>
+            candidate.containerNumber === taskNumber &&
+            candidate.pgmid === entry.pgmid &&
+            candidate.type === entry.type &&
+            candidate.name === entry.name
+        )
+      ) {
+        throw new Error("CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS")
+      }
+    }
+    const actualRemaining = afterEntries.map(cleanupSnapshotKey).sort()
+    if (!isDeepStrictEqual(actualRemaining, expectedRemaining)) {
+      throw new Error("CTS_CLEANUP_POSTCHECK_UNEXPECTED_CHANGE")
+    }
+
+    return JSON.stringify(
+      {
+        connectionId,
+        parentTransportNumber,
+        taskNumber,
+        removedEntries: entries,
+        beforeFingerprint,
+        afterFingerprint: transportFingerprint(after),
+        exactRemovalVerified: true,
+        unrelatedEntriesUnchanged: true,
+        repositoryObjectsChanged: false,
+        relatedCtsKeyCleanup: "delegated_to_sap_transport_organizer",
+        transportReleased: false,
+        automaticRetry: false
+      },
+      null,
+      2
+    )
   }
 
   async downloadResource(input: DownloadInput): Promise<string> {
@@ -4194,6 +7027,159 @@ function programIncludeNames(source: string): string[] {
   return [...names]
 }
 
+interface CustomerFunctionCallSite {
+  objectName: string
+  objectType: string
+  sourceUri: string
+  line: number
+  endLine: number
+  statement: string
+  exitNumber: string | null
+  unresolvedOperand: string | null
+}
+
+function customerFunctionCallSites(unit: ProgramSourceUnit): CustomerFunctionCallSite[] {
+  return abapStatements(unit.source).flatMap((statement) => {
+    const match = /\bCALL\s+CUSTOMER-FUNCTION\s+(?:'((?:''|[^'])*)'|([^\s.]+))/i.exec(
+      statement.text
+    )
+    if (!match) return []
+    const literal = match[1]?.replace(/''/g, "'")
+    const exitNumber = literal && /^\d{3}$/.test(literal) ? literal : null
+    return [
+      {
+        objectName: unit.objectName,
+        objectType: unit.objectType,
+        sourceUri: unit.sourceUri,
+        line: statement.line,
+        endLine: statement.endLine,
+        statement: statement.text,
+        exitNumber,
+        unresolvedOperand: exitNumber ? null : (literal ?? match[2] ?? null)
+      }
+    ]
+  })
+}
+
+function abapStatements(source: string): Array<{ line: number; endLine: number; text: string }> {
+  const statements: Array<{ line: number; endLine: number; text: string }> = []
+  let startLine = 0
+  let parts: string[] = []
+  const lines = source.split("\n")
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index] ?? ""
+    if (/^\s*\*/.test(rawLine)) continue
+    const line = stripAbapInlineComment(rawLine).trim()
+    if (!line) continue
+    if (!parts.length) startLine = index + 1
+    parts.push(line)
+    if (!abapStatementEnds(line)) continue
+    statements.push({
+      line: startLine,
+      endLine: index + 1,
+      text: parts.join(" ")
+    })
+    parts = []
+  }
+  if (parts.length) {
+    statements.push({ line: startLine, endLine: lines.length, text: parts.join(" ") })
+  }
+  return statements
+}
+
+function stripAbapInlineComment(line: string): string {
+  let inLiteral = false
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index]
+    if (char === "'") {
+      if (inLiteral && line[index + 1] === "'") {
+        index += 1
+        continue
+      }
+      inLiteral = !inLiteral
+    } else if (char === '"' && !inLiteral) {
+      return line.slice(0, index)
+    }
+  }
+  return line
+}
+
+function abapStatementEnds(line: string): boolean {
+  let inLiteral = false
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index]
+    if (char === "'") {
+      if (inLiteral && line[index + 1] === "'") {
+        index += 1
+        continue
+      }
+      inLiteral = !inLiteral
+    }
+  }
+  return !inLiteral && /\.\s*$/.test(line)
+}
+
+function customerSubscreenHooks(flowLogic: string[]): Array<{
+  area: string
+  line: number
+  endLine: number
+  statement: string
+}> {
+  return abapStatements(flowLogic.join("\n")).flatMap((statement) => {
+    const match = /\bCALL\s+CUSTOMER-SUBSCREEN\s+([A-Z][A-Z0-9_/$-]*)/i.exec(statement.text)
+    if (!match?.[1]) return []
+    return [
+      {
+        area: match[1].toUpperCase(),
+        line: statement.line,
+        endLine: statement.endLine,
+        statement: statement.text
+      }
+    ]
+  })
+}
+
+function customerMenuExitEvidence(gui: GuiDefinition): {
+  definitions: Array<{
+    code: string
+    textNumber: string
+    functionText: string
+    iconText: string
+    infoText: string
+  }>
+  references: Array<{
+    section: GuiSectionName
+    row: number
+    field: string
+    code: string
+  }>
+} {
+  const definitions = gui.sections.functions
+    .filter((row) => (row.CODE ?? "").startsWith("+"))
+    .map((row) => ({
+      code: row.CODE ?? "",
+      textNumber: row.TEXTNO ?? "",
+      functionText: row.FUN_TEXT ?? "",
+      iconText: row.ICON_TEXT ?? "",
+      infoText: row.INFO_TEXT ?? ""
+    }))
+  const referenceFields: Array<[GuiSectionName, string]> = [
+    ["menus", "REF_CODE"],
+    ["activeFunctions", "CODE"],
+    ["buttons", "CODE"],
+    ["pfKeys", "FUNCODE"],
+    ["statusFunctions", "FUNCTION"],
+    ["buttonAssignments", "FCODE"]
+  ]
+  const references = referenceFields.flatMap(([section, field]) =>
+    gui.sections[section].flatMap((row, index) => {
+      const code = row[field] ?? ""
+      return code.startsWith("+") ? [{ section, row: index + 1, field, code }] : []
+    })
+  )
+  return { definitions, references }
+}
+
 function staticGuiReferences(source: string): Array<{
   kind: "PF_STATUS" | "TITLEBAR"
   name: string
@@ -4244,6 +7230,29 @@ function normalizeTransportNumber(value: string): string {
   return normalized
 }
 
+function cleanupEntryKey(entry: z.input<typeof cleanupTransportEntrySchema>): string {
+  return JSON.stringify([entry.pgmid, entry.type, entry.name, entry.position])
+}
+
+function cleanupSnapshotKey(entry: ReturnType<typeof transportEntries>[number]): string {
+  return JSON.stringify([
+    entry.containerNumber,
+    entry.pgmid,
+    entry.type,
+    entry.name,
+    entry.position,
+    entry.wbType
+  ])
+}
+
+function cleanupHeaderKeys(transport: TransportRequest): string[] {
+  return [transport, ...transport.tasks]
+    .map((container) =>
+      JSON.stringify([container["tm:number"], container["tm:owner"], container["tm:status"]])
+    )
+    .sort()
+}
+
 function assertTransportNumber(actual: unknown, expected: string): void {
   if (typeof actual !== "string" || actual.toUpperCase() !== expected) {
     throw new Error(
@@ -4288,10 +7297,19 @@ function formatTransportObjects(transport: TransportRequest): string {
     `Main Owner: ${transport["tm:owner"]}\n` +
     `Description: ${transport["tm:desc"]}\n` +
     `Total Objects: ${entries.length} (main transport + all task objects)\n` +
-    `Tasks: ${transport.tasks.length}\n\n`
+    `Tasks: ${transport.tasks.length}\n` +
+    `Cleanup Fingerprint: ${transportFingerprint(transport)}\n\n`
   if (!entries.length) return `${result}No objects in this transport.\n`
   for (const entry of entries) {
-    result += `- ${entry.object["tm:pgmid"]} ${entry.object["tm:type"]} ${entry.object["tm:name"]} - ${entry.object["tm:obj_info"]} [${entry.source}]\n`
+    const object = entry.object as typeof entry.object & {
+      "tm:position"?: string
+      "tm:wbtype"?: string
+    }
+    const metadata = [
+      object["tm:position"] ? `position=${object["tm:position"]}` : "position=unavailable",
+      object["tm:wbtype"] ? `wbType=${object["tm:wbtype"]}` : "wbType=unavailable"
+    ].join(" | ")
+    result += `- ${object["tm:pgmid"]} ${object["tm:type"]} ${object["tm:name"]} - ${object["tm:obj_info"]} [${entry.source}; ${metadata}]\n`
   }
   return result
 }
@@ -4354,6 +7372,800 @@ export function extractMethod(lines: string[], methodName: string): ExtractedMet
   return undefined
 }
 
+function classifyEnhancementFailure(error: unknown): {
+  status: "unsupported" | "forbidden" | "timeout" | "error"
+  reason: string
+} {
+  const message = error instanceof Error ? error.message : String(error)
+  if (/unsupported-endpoint|HTTP (?:404|405|501)\b/i.test(message)) {
+    return {
+      status: "unsupported",
+      reason: "The SAP system does not expose a usable enhancement metadata endpoint."
+    }
+  }
+  if (/forbidden|not.authorized|HTTP (?:401|403)\b/i.test(message)) {
+    return {
+      status: "forbidden",
+      reason: "The SAP user is not authorized to read enhancement metadata."
+    }
+  }
+  if (/timeout|timed out/i.test(message)) {
+    return {
+      status: "timeout",
+      reason: "The enhancement metadata request timed out; absence was not established."
+    }
+  }
+  return {
+    status: "error",
+    reason: "Enhancement metadata could not be read; absence was not established."
+  }
+}
+
+function classifyRepositoryEvidenceFailure(
+  error: unknown,
+  subject = "repository evidence"
+): {
+  status: "unsupported" | "forbidden" | "timeout" | "error"
+  reason: string
+} {
+  const message = error instanceof Error ? error.message : String(error)
+  if (/unsupported-endpoint|HTTP (?:404|405|501)\b/i.test(message)) {
+    return {
+      status: "unsupported",
+      reason: `The SAP system does not expose a usable ${subject} endpoint.`
+    }
+  }
+  if (/forbidden|not.authorized|HTTP (?:401|403)\b/i.test(message)) {
+    return {
+      status: "forbidden",
+      reason: `The SAP user is not authorized to read the ${subject}.`
+    }
+  }
+  if (/timeout|timed out/i.test(message)) {
+    return {
+      status: "timeout",
+      reason: `The ${subject} request timed out; content was not established.`
+    }
+  }
+  return {
+    status: "error",
+    reason: `The ${subject} could not be read; content was not established.`
+  }
+}
+
+async function controlledWorkflowRead(read: () => Promise<string>): Promise<{
+  status: "available" | "absent" | "unsupported" | "forbidden" | "timeout" | "error"
+  evidence?: unknown
+  reason?: string
+}> {
+  try {
+    return { status: "available", evidence: JSON.parse(await read()) as unknown }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (/_NOT_FOUND\b|does not exist|could not find exact/i.test(message)) {
+      return { status: "absent", reason: message }
+    }
+    const failure = classifyRepositoryEvidenceFailure(error, "configuration preflight evidence")
+    return { status: failure.status, reason: failure.reason }
+  }
+}
+
+function workflowStep(
+  sequence: number,
+  phase: string,
+  instruction: string,
+  evidenceRequired: string,
+  destructive = false
+): Record<string, unknown> {
+  return { sequence, phase, instruction, evidenceRequired, destructive }
+}
+
+function cmodConfigurationWorkflow(
+  projectName: string,
+  desiredState: EnhancementConfigurationWorkflowInput["desiredState"],
+  enhancementNames: string[],
+  packageName: string | undefined,
+  transportNumber: string | undefined
+): Array<Record<string, unknown>> {
+  const targetEnhancements = enhancementNames.length ? enhancementNames.join(", ") : "<required>"
+  return [
+    workflowStep(
+      1,
+      "preflight",
+      `In SMOD, display every requested enhancement (${targetEnhancements}); verify its components and that no conflicting CMOD project owns it.`,
+      "SMOD component list and conflict check"
+    ),
+    workflowStep(
+      2,
+      "edit",
+      `Open CMOD project ${projectName}. Create it only if absent, using package ${packageName ?? "<required>"}; otherwise compare the displayed assignments with the preflight snapshot before editing.`,
+      "Project header, package, current status, and current assignment list"
+    ),
+    workflowStep(
+      3,
+      "assignment",
+      `Apply only the approved assignment delta for ${targetEnhancements}; do not remove unlisted assignments unless the approved target state explicitly requires it.`,
+      "Before/after assignment list"
+    ),
+    workflowStep(
+      4,
+      "implementation",
+      "Open each assigned component and confirm its customer include, subscreen, or menu function implementation is present and syntactically valid. Do not edit SAP standard includes.",
+      "Implemented component list and syntax result"
+    ),
+    workflowStep(
+      5,
+      "save",
+      `Save only to existing modifiable request/task ${transportNumber ?? "<required>"}; stop if SAP proposes another package, request, or standard object.`,
+      "Recorded package and transport/task"
+    ),
+    workflowStep(
+      6,
+      "state",
+      `Set project ${projectName} to desired state ${desiredState}. Activation, deactivation, or deletion requires a separate human confirmation after reviewing impact and generation messages.`,
+      "CMOD status and all activation/generation messages",
+      desiredState === "removed"
+    ),
+    workflowStep(
+      7,
+      "readback",
+      "Run read_customer_exit_project again and compare project status and assignments with the approved target. Re-read every SMOD definition whose component set was used.",
+      "Post-change fingerprints and exact assignment/status readback"
+    ),
+    workflowStep(
+      8,
+      "acceptance",
+      "Run the affected transaction manually for Function, Screen, and Menu Exit paths as applicable, including one negative case and authorization check.",
+      "Manual test inputs, expected/actual results, user, timestamp, and screenshots or logs"
+    )
+  ]
+}
+
+function fibfConfigurationWorkflow(
+  kind: BteKind,
+  identifier: string,
+  desiredState: EnhancementConfigurationWorkflowInput["desiredState"],
+  productName: string | undefined,
+  functionModule: string | undefined,
+  applicationIndicator: string | undefined,
+  country: string | undefined,
+  transportNumber: string | undefined
+): Array<Record<string, unknown>> {
+  const assignment = [
+    `product ${productName ?? "<required>"}`,
+    `function ${functionModule ?? "<required>"}`,
+    `application ${applicationIndicator || "<blank or required by definition>"}`,
+    `country ${country || "<blank or required by definition>"}`
+  ].join(", ")
+  return [
+    workflowStep(
+      1,
+      "preflight",
+      `In FIBF, display ${kind} ${identifier}, its sample interface, SAP application assignments, customer assignments, and product status; compare them with read_bte_configuration.`,
+      "Definition, interface, product, and exact assignment snapshot"
+    ),
+    workflowStep(
+      2,
+      "handler_check",
+      `Display ${functionModule ?? "<required>"} in SE37 and verify the active interface matches the ${kind} sample function. Do not execute the handler as part of configuration.`,
+      "Active function interface comparison and syntax status"
+    ),
+    workflowStep(
+      3,
+      "product",
+      `Maintain only product ${productName ?? "<required>"}. Before changing its active flag, confirm whether other BTE assignments share the product; stop if ${desiredState} would affect unrelated handlers.`,
+      "Product active flag and complete dependent assignment list"
+    ),
+    workflowStep(
+      4,
+      "assignment",
+      `Maintain the exact customer ${kind} assignment: ${identifier}, ${assignment}. Apply only the approved delta for desired state ${desiredState}.`,
+      "Before/after assignment row"
+    ),
+    workflowStep(
+      5,
+      "save",
+      `Save to existing modifiable Customizing request/task ${transportNumber ?? "<required>"}; do not use direct TBE*/TPS* table updates.`,
+      "Recorded Customizing request/task"
+    ),
+    workflowStep(
+      6,
+      "readback",
+      "Run read_bte_configuration again and compare the exact customer handler row plus raw product/application activation flags with the approved target.",
+      "Post-change configuration fingerprint and exact handler row"
+    ),
+    workflowStep(
+      7,
+      "acceptance",
+      `Trigger the real business flow that publishes ${kind} ${identifier}; verify handler call count, data contract, errors, commits, and coexistence with other active handlers.`,
+      "Manual runtime trace or application log and resulting business data"
+    )
+  ]
+}
+
+function ficoRuleConfigurationWorkflow(
+  kind: "fi_validation" | "fi_substitution",
+  ruleName: string,
+  desiredState: EnhancementConfigurationWorkflowInput["desiredState"],
+  applicationArea: string | undefined,
+  callupPoint: string | undefined,
+  organizationalUnit: string | undefined,
+  exitProgram: string | undefined,
+  transportNumber: string | undefined
+): Array<Record<string, unknown>> {
+  const ruleTransaction = kind === "fi_validation" ? "GGB0" : "GGB1"
+  const activationTransaction = kind === "fi_validation" ? "OB28" : "OBBH"
+  return [
+    workflowStep(
+      1,
+      "preflight",
+      `In ${ruleTransaction}, select application area ${applicationArea ?? "<required>"} and display rule ${ruleName}; record every step, prerequisite, check/substitution, message, set, exit reference, and call-up point.`,
+      "Complete rule definition and current generation status"
+    ),
+    workflowStep(
+      2,
+      "exit_check",
+      exitProgram
+        ? `Compare exit program ${exitProgram} with inspect_fico_rule_exit_program; verify every referenced exit is declared in GET_EXIT_TITLES and implemented with the required parameter type.`
+        : "If the rule calls an ABAP exit, identify the configured exit program and verify its GET_EXIT_TITLES declaration, FORM implementation, parameter type, syntax, and authorization before continuing.",
+      "Exit program, catalog entry, FORM implementation, and syntax result"
+    ),
+    workflowStep(
+      3,
+      "edit",
+      `Apply only the approved ${kind === "fi_validation" ? "validation" : "substitution"} delta to ${ruleName}. Preserve unlisted steps and sequence; check rule syntax before save.`,
+      "Before/after rule tree and successful syntax check"
+    ),
+    workflowStep(
+      4,
+      "save",
+      `Save to existing modifiable request/task ${transportNumber ?? "<required>"}. Use the transaction's supported save and generation flow; run RGUGBR00 only when the system procedure explicitly requires regeneration.`,
+      "Recorded request/task and generation log"
+    ),
+    workflowStep(
+      5,
+      "activation",
+      `In ${activationTransaction}, maintain only organizational unit ${organizationalUnit ?? "<required>"}, call-up point ${callupPoint ?? "<required>"}, and rule ${ruleName} to desired state ${desiredState}. Confirm validity dates and activation level shown by SAP.`,
+      "Before/after activation row, validity, and activation level",
+      desiredState === "removed"
+    ),
+    workflowStep(
+      6,
+      "readback",
+      `Reopen ${ruleTransaction} and ${activationTransaction}; independently compare the saved rule, generated state, and exact activation row with the approved target.`,
+      "Post-change rule tree, generation status, and activation row"
+    ),
+    workflowStep(
+      7,
+      "acceptance",
+      `Post or simulate representative FI documents at ${callupPoint ?? "<required>"}: one matching case, one non-matching case, one error path, and one authorization case. Verify messages or substituted values and persistence.`,
+      "Manual test matrix, document keys, expected/actual results, and cleanup status"
+    )
+  ]
+}
+
+function enhancementRepositoryKind(type: string): string {
+  return (
+    {
+      ENHC: "enhancement_composite",
+      ENHS: "enhancement_spot",
+      ENHO: "enhancement_implementation",
+      BADI: "badi_definition",
+      BADII: "badi_implementation"
+    }[type] ?? "unknown"
+  )
+}
+
+function customerExitRepositoryKind(type: string): string {
+  return (
+    {
+      SMOD: "customer_exit_definition",
+      CMOD: "customer_exit_project"
+    }[type] ?? "unknown"
+  )
+}
+
+function customerExitConfigurationName(value: string, fieldName: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!/^[A-Z0-9_/$]{1,30}$/.test(normalized)) {
+    throw new Error(`${fieldName} must be an exact SAP Customer Exit name.`)
+  }
+  return normalized
+}
+
+function customerExitComponentKind(
+  typeCode: string
+): "function_exit" | "screen_exit" | "menu_exit" | "unknown" {
+  switch (typeCode.trim().toUpperCase()) {
+    case "E":
+      return "function_exit"
+    case "S":
+      return "screen_exit"
+    case "C":
+      return "menu_exit"
+    default:
+      return "unknown"
+  }
+}
+
+function customerExitConfigurationPayload(lines: string[]): {
+  metadata: Record<string, string>
+  components: Array<Record<string, string>>
+  assignments: Array<Record<string, string>>
+} {
+  const metadata: Record<string, string> = {}
+  const components: Array<Record<string, string>> = []
+  const assignments: Array<Record<string, string>> = []
+  for (const line of lines) {
+    const match = line.match(/^([MCA])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(
+        `SAP repository helper returned an invalid Customer Exit payload line: ${line}`
+      )
+    }
+    const index = Number.parseInt(match[2], 10)
+    if (index < 1) {
+      throw new Error(`SAP repository helper returned an invalid payload index: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    const target =
+      match[1] === "M"
+        ? metadata
+        : rowAtRepository(match[1] === "C" ? components : assignments, index)
+    target[match[3]] = value
+  }
+  return { metadata, components, assignments }
+}
+
+function bteConfigurationPayload(lines: string[]): {
+  metadata: Record<string, string>
+  sapHandlers: Array<Record<string, string>>
+  customerHandlers: Array<Record<string, string>>
+} {
+  const metadata: Record<string, string> = {}
+  const sapHandlers: Array<Record<string, string>> = []
+  const customerHandlers: Array<Record<string, string>> = []
+  for (const line of lines) {
+    const match = line.match(/^([MSC])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(`SAP repository helper returned an invalid BTE payload line: ${line}`)
+    }
+    const index = Number.parseInt(match[2], 10)
+    if (index < 1) {
+      throw new Error(`SAP repository helper returned an invalid payload index: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    const target =
+      match[1] === "M"
+        ? metadata
+        : rowAtRepository(match[1] === "S" ? sapHandlers : customerHandlers, index)
+    target[match[3]] = value
+  }
+  return { metadata, sapHandlers, customerHandlers }
+}
+
+function bteConfigurationHandler(row: Record<string, string>): {
+  country: string
+  applicationIndicator: string
+  functionModule: string
+  product: string
+  applicationActiveRaw: string
+  applicationText: string
+  productActiveRaw: string
+  productText: string
+  productRfcDestination: string
+} {
+  return {
+    country: row.COUNTRY ?? "",
+    applicationIndicator: row.APPLICATION ?? "",
+    functionModule: row.FUNCTION_MODULE ?? "",
+    product: row.PRODUCT ?? "",
+    applicationActiveRaw: row.APPLICATION_ACTIVE ?? "",
+    applicationText: row.APPLICATION_TEXT ?? "",
+    productActiveRaw: row.PRODUCT_ACTIVE ?? "",
+    productText: row.PRODUCT_TEXT ?? "",
+    productRfcDestination: row.PRODUCT_RFC_DESTINATION ?? ""
+  }
+}
+
+function compareBteConfigurationHandlers(
+  left: ReturnType<typeof bteConfigurationHandler>,
+  right: ReturnType<typeof bteConfigurationHandler>
+): number {
+  return JSON.stringify(left).localeCompare(JSON.stringify(right))
+}
+
+function classicBadiDefinitionName(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!/^[A-Z0-9_/$]{1,20}$/.test(normalized)) {
+    throw new Error("definitionName must be an exact Classic BAdI definition name.")
+  }
+  return normalized
+}
+
+function matchesClassicBadiProjectionFilters(
+  row: ClassicBadiProjectionRow,
+  filters: TableQueryInput["filters"]
+): boolean {
+  return filters.every((filter) => {
+    const value = row[filter.column as keyof ClassicBadiProjectionRow]
+    const comparison = value.localeCompare(filter.value)
+    switch (filter.operator) {
+      case "EQ":
+        return comparison === 0
+      case "NE":
+        return comparison !== 0
+      case "LT":
+        return comparison < 0
+      case "LE":
+        return comparison <= 0
+      case "GT":
+        return comparison > 0
+      case "GE":
+        return comparison >= 0
+    }
+  })
+}
+
+function classicBadiDefinitionPayload(lines: string[]): {
+  metadata: Record<string, string>
+  interfaces: Array<Record<string, string>>
+  assignments: Array<Record<string, string>>
+  classMappings: Array<Record<string, string>>
+} {
+  const metadata: Record<string, string> = {}
+  const interfaces: Array<Record<string, string>> = []
+  const assignments: Array<Record<string, string>> = []
+  const classMappings: Array<Record<string, string>> = []
+  for (const line of lines) {
+    const match = line.match(/^([MIAC])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(
+        `SAP repository helper returned an invalid Classic BAdI payload line: ${line}`
+      )
+    }
+    const index = Number.parseInt(match[2], 10)
+    if (index < 1) {
+      throw new Error(`SAP repository helper returned an invalid payload index: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    const rows = match[1] === "I" ? interfaces : match[1] === "A" ? assignments : classMappings
+    const target = match[1] === "M" ? metadata : rowAtRepository(rows, index)
+    target[match[3]] = value
+  }
+  return { metadata, interfaces, assignments, classMappings }
+}
+
+function compareByJson(left: unknown, right: unknown): number {
+  return JSON.stringify(left).localeCompare(JSON.stringify(right))
+}
+
+function badiRepositoryKind(type: string): string {
+  return (
+    {
+      "SXSD/XD": "classic_badi_definition",
+      "SXCI/XI": "classic_badi_implementation",
+      "ENHS/XS": "enhancement_spot_container",
+      "ENHO/XHB": "new_badi_implementation"
+    }[type] ?? "unknown"
+  )
+}
+
+function inspectEnhancementFrameworkSource(source: string): {
+  explicitAnchors: Array<{
+    kind: "point" | "section"
+    name: string
+    spots: string[]
+    line: number
+    statement: string
+  }>
+  enhancementImplementations: Array<{ id: string; name: string; line: number; statement: string }>
+  implicitCandidates: Array<{
+    kind: "source_start" | "source_end" | "routine_start" | "routine_end"
+    line: number
+    position: "before_line" | "after_line"
+    routineKind?: "form" | "method" | "function" | "module"
+    routineName?: string
+  }>
+  summary: {
+    explicitAnchorCount: number
+    enhancementImplementationCount: number
+    routineCount: number
+    implicitCandidateCount: number
+  }
+} {
+  const lines = source.split("\n")
+  const explicitAnchors: Array<{
+    kind: "point" | "section"
+    name: string
+    spots: string[]
+    line: number
+    statement: string
+  }> = []
+  const enhancementImplementations: Array<{
+    id: string
+    name: string
+    line: number
+    statement: string
+  }> = []
+  const implicitCandidates: Array<{
+    kind: "source_start" | "source_end" | "routine_start" | "routine_end"
+    line: number
+    position: "before_line" | "after_line"
+    routineKind?: "form" | "method" | "function" | "module"
+    routineName?: string
+  }> = []
+  const openRoutines: Array<{
+    routineKind: "form" | "method" | "function" | "module"
+    routineName: string
+  }> = []
+  let routineCount = 0
+  let firstCodeLine = 0
+  let lastCodeLine = 0
+
+  lines.forEach((line, index) => {
+    if (!line.trim() || /^\s*[*"]/.test(line)) return
+    const lineNumber = index + 1
+    if (!firstCodeLine) firstCodeLine = lineNumber
+    lastCodeLine = lineNumber
+    const statement = line.trim()
+    const anchor =
+      /^ENHANCEMENT-(POINT|SECTION)\s+([A-Z0-9_\/]+)\s+SPOTS\s+(.+?)\s*\.\s*(?:".*)?$/i.exec(
+        statement
+      )
+    if (anchor) {
+      explicitAnchors.push({
+        kind: anchor[1]!.toLowerCase() as "point" | "section",
+        name: anchor[2]!.toUpperCase(),
+        spots: anchor[3]!
+          .split(/[\s,]+/)
+          .filter(Boolean)
+          .map((spot) => spot.toUpperCase())
+          .filter((spot) => spot !== "STATIC"),
+        line: lineNumber,
+        statement
+      })
+    }
+    const implementation = /^ENHANCEMENT\s+(\d+)\s+([A-Z0-9_\/]+)\s*\./i.exec(statement)
+    if (implementation) {
+      enhancementImplementations.push({
+        id: implementation[1]!,
+        name: implementation[2]!.toUpperCase(),
+        line: lineNumber,
+        statement
+      })
+    }
+
+    const routineStart = enhancementRoutineStart(statement)
+    if (routineStart) {
+      routineCount++
+      openRoutines.push({
+        routineKind: routineStart.routineKind,
+        routineName: routineStart.routineName.toUpperCase()
+      })
+      implicitCandidates.push({
+        kind: "routine_start",
+        line: lineNumber,
+        position: "after_line",
+        routineKind: routineStart.routineKind,
+        routineName: routineStart.routineName.toUpperCase()
+      })
+    }
+
+    const routineEndKind = /^ENDFORM\s*\./i.test(statement)
+      ? "form"
+      : /^ENDMETHOD\s*\./i.test(statement)
+        ? "method"
+        : /^ENDFUNCTION\s*\./i.test(statement)
+          ? "function"
+          : /^ENDMODULE\s*\./i.test(statement)
+            ? "module"
+            : undefined
+    if (routineEndKind) {
+      let openIndex = -1
+      for (let index = openRoutines.length - 1; index >= 0; index--) {
+        if (openRoutines[index]!.routineKind === routineEndKind) {
+          openIndex = index
+          break
+        }
+      }
+      if (openIndex >= 0) {
+        const [routine] = openRoutines.splice(openIndex, 1)
+        implicitCandidates.push({
+          kind: "routine_end",
+          line: lineNumber,
+          position: "before_line",
+          routineKind: routine!.routineKind,
+          routineName: routine!.routineName
+        })
+      }
+    }
+  })
+
+  if (firstCodeLine) {
+    implicitCandidates.unshift({
+      kind: "source_start",
+      line: firstCodeLine,
+      position: "before_line"
+    })
+    implicitCandidates.push({ kind: "source_end", line: lastCodeLine, position: "after_line" })
+  }
+
+  return {
+    explicitAnchors,
+    enhancementImplementations,
+    implicitCandidates,
+    summary: {
+      explicitAnchorCount: explicitAnchors.length,
+      enhancementImplementationCount: enhancementImplementations.length,
+      routineCount,
+      implicitCandidateCount: implicitCandidates.length
+    }
+  }
+}
+
+function enhancementRoutineStart(statement: string):
+  | {
+      routineKind: "form" | "method" | "function" | "module"
+      routineName: string
+    }
+  | undefined {
+  const patterns = [
+    ["form", /^FORM\s+([A-Z0-9_\/~]+)\b/i],
+    ["method", /^METHOD\s+([A-Z0-9_\/~]+)\s*\./i],
+    ["function", /^FUNCTION\s+([A-Z0-9_\/~]+)\s*\./i],
+    ["module", /^MODULE\s+([A-Z0-9_\/~]+)\s+(?:INPUT|OUTPUT)\s*\./i]
+  ] as const
+  for (const [routineKind, pattern] of patterns) {
+    const match = pattern.exec(statement)
+    if (match?.[1]) return { routineKind, routineName: match[1] }
+  }
+  return undefined
+}
+
+function inspectFicoRuleExitSource(source: string): {
+  catalogRoutine: { found: boolean; startLine: number | null; endLine: number | null }
+  catalogEntries: Array<{
+    name: string | null
+    parameterExpression: string | null
+    titleExpression: string | null
+    appendLine: number
+    implementationFound: boolean
+    implementationLine: number | null
+  }>
+  implementedExitForms: Array<{ name: string; line: number; declaredInCatalog: boolean }>
+  summary: {
+    catalogEntryCount: number
+    implementedExitFormCount: number
+    matchedExitCount: number
+    declarationWithoutImplementationCount: number
+    implementationWithoutDeclarationCount: number
+  }
+} {
+  const lines = source.split("\n")
+  const forms = new Map<string, number>()
+  let catalogStart = -1
+  let catalogEnd = -1
+  let inCatalog = false
+  let currentName: string | null = null
+  let currentParameter: string | null = null
+  let currentTitle: string | null = null
+  const rawEntries: Array<{
+    name: string | null
+    parameterExpression: string | null
+    titleExpression: string | null
+    appendLine: number
+  }> = []
+
+  lines.forEach((line, index) => {
+    if (!line.trim() || /^\s*[*"]/.test(line)) return
+    const lineNumber = index + 1
+    const statement = line.trim()
+    const form = /^FORM\s+([A-Z0-9_\/]+)\b/i.exec(statement)
+    if (form?.[1]) {
+      const name = form[1].toUpperCase()
+      forms.set(name, lineNumber)
+      if (name === "GET_EXIT_TITLES") {
+        inCatalog = true
+        catalogStart = lineNumber
+      }
+    }
+    if (!inCatalog) return
+    if (/^ENDFORM\s*\./i.test(statement)) {
+      catalogEnd = lineNumber
+      inCatalog = false
+      return
+    }
+    const assignment = /^EXITS-(NAME|PARAM|TITLE)\s*=\s*(.+?)\s*\.\s*(?:".*)?$/i.exec(statement)
+    if (assignment) {
+      const field = assignment[1]!.toUpperCase()
+      const expression = assignment[2]!.trim()
+      if (field === "NAME") currentName = abapLiteralOrExpression(expression)
+      if (field === "PARAM") currentParameter = expression.toUpperCase()
+      if (field === "TITLE") currentTitle = expression
+      return
+    }
+    if (/^APPEND\s+EXITS\s*\./i.test(statement)) {
+      rawEntries.push({
+        name: currentName,
+        parameterExpression: currentParameter,
+        titleExpression: currentTitle,
+        appendLine: lineNumber
+      })
+      currentName = null
+      currentParameter = null
+      currentTitle = null
+    }
+  })
+
+  const declaredNames = new Set(
+    rawEntries.flatMap((entry) => (entry.name ? [entry.name.toUpperCase()] : []))
+  )
+  const implementedExitForms = [...forms.entries()]
+    .filter(
+      ([name]) => name !== "GET_EXIT_TITLES" && (/^U\d+$/i.test(name) || declaredNames.has(name))
+    )
+    .map(([name, line]) => ({ name, line, declaredInCatalog: declaredNames.has(name) }))
+  const catalogEntries = rawEntries.map((entry) => {
+    const implementationLine = entry.name ? (forms.get(entry.name.toUpperCase()) ?? null) : null
+    return {
+      ...entry,
+      implementationFound: implementationLine !== null,
+      implementationLine
+    }
+  })
+  const matchedExitCount = catalogEntries.filter((entry) => entry.implementationFound).length
+
+  return {
+    catalogRoutine: {
+      found: catalogStart >= 0,
+      startLine: catalogStart >= 0 ? catalogStart : null,
+      endLine: catalogEnd >= 0 ? catalogEnd : null
+    },
+    catalogEntries,
+    implementedExitForms,
+    summary: {
+      catalogEntryCount: catalogEntries.length,
+      implementedExitFormCount: implementedExitForms.length,
+      matchedExitCount,
+      declarationWithoutImplementationCount: catalogEntries.length - matchedExitCount,
+      implementationWithoutDeclarationCount: implementedExitForms.filter(
+        (form) => !form.declaredInCatalog
+      ).length
+    }
+  }
+}
+
+function abapLiteralOrExpression(expression: string): string {
+  const literal = /^'((?:''|[^'])*)'$/.exec(expression)
+  return (literal ? literal[1]!.replace(/''/g, "'") : expression).toUpperCase()
+}
+
+function enhancementSourceMarkers(source: string): Array<{
+  family: "user_exit" | "customer_exit" | "bte" | "badi" | "enhancement_framework"
+  marker: string
+  line: number
+  statement: string
+}> {
+  const patterns = [
+    ["user_exit", "form_userexit", /^\s*FORM\s+USEREXIT_[A-Z0-9_]+\b/i],
+    ["customer_exit", "call_customer_function", /^\s*CALL\s+CUSTOMER-FUNCTION\b/i],
+    ["bte", "open_fi_perform", /\bOPEN_FI_PERFORM_[A-Z0-9_]+_[EP]\b/i],
+    ["badi", "get_or_call_badi", /^\s*(?:GET|CALL)\s+BADI\b/i],
+    ["badi", "classic_badi_factory", /\bCL_EXITHANDLER\s*=>\s*GET_INSTANCE\b/i],
+    ["enhancement_framework", "enhancement_point", /^\s*ENHANCEMENT-POINT\s+[A-Z0-9_]+\b/i],
+    ["enhancement_framework", "enhancement_section", /^\s*ENHANCEMENT-SECTION\s+[A-Z0-9_]+\b/i],
+    ["enhancement_framework", "enhancement_implementation", /^\s*ENHANCEMENT\s+\d+\s+[A-Z0-9_]+\b/i]
+  ] as const
+
+  return source.split("\n").flatMap((line, index) => {
+    if (/^\s*[*"]/.test(line)) return []
+    return patterns.flatMap(([family, marker, pattern]) =>
+      pattern.test(line) ? [{ family, marker, line: index + 1, statement: line.trim() }] : []
+    )
+  })
+}
+
 interface LineMatch {
   index: number
   line: string
@@ -4411,165 +8223,9 @@ function transactionFor(objectType: string): { name: string; field: string; okco
   return { name: "SE38", field: "RS38M-PROGRAMM", okcode: "STRT" }
 }
 
-function locateWhereUsedPosition(
-  source: string,
-  input: Pick<WhereUsedInput, "objectName" | "searchTerm" | "line" | "character">
-): { line: number; character: number } | undefined {
-  if (!source) return undefined
-  const lines = source.split("\n")
-  if (input.searchTerm) {
-    for (let index = 0; index < lines.length; index++) {
-      const character = (lines[index] ?? "").toUpperCase().indexOf(input.searchTerm.toUpperCase())
-      if (character >= 0) return { line: index + 1, character }
-    }
-    return undefined
-  }
-  if (input.line) return { line: input.line, character: input.character ?? 0 }
-  const patterns = [
-    new RegExp(
-      `\\b(class|interface|program|function|method)\\s+${escapeRegex(input.objectName)}\\b`,
-      "i"
-    ),
-    new RegExp(`^\\s*${escapeRegex(input.objectName)}\\b`, "i")
-  ]
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index] ?? ""
-    if (patterns.some((pattern) => pattern.test(line))) {
-      return {
-        line: index + 1,
-        character: Math.max(0, line.toUpperCase().indexOf(input.objectName.toUpperCase()))
-      }
-    }
-  }
-  return { line: 1, character: 0 }
-}
-
 function wildcardToRegex(pattern: string): RegExp {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&")
   return new RegExp(`^${escaped.replaceAll("*", ".*").replaceAll("?", ".")}$`, "i")
-}
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-}
-
-interface SystemInfo {
-  sapRelease: string
-  systemType: "S/4HANA" | "ECC" | "Unknown"
-  currentClient: null | {
-    clientNumber: string
-    clientName: string
-    category: string
-    logicalSystem: string
-    changeProtection: string
-  }
-  softwareComponents: Array<{
-    component: string
-    release: string
-    extRelease: string
-    componentType: string
-  }>
-  timezone: null | {
-    timezone: string
-    description: string
-    utcOffset: string
-    dstRule: string
-    rawOffset: string
-  }
-  queryTimestamp: string
-  queryWarnings: string[]
-}
-
-async function collectSystemInfo(
-  backend: SapBackend,
-  connectionId: string,
-  client: string
-): Promise<SystemInfo> {
-  const result: SystemInfo = {
-    sapRelease: "",
-    systemType: "Unknown",
-    currentClient: null,
-    softwareComponents: [],
-    timezone: null,
-    queryTimestamp: new Date().toISOString(),
-    queryWarnings: []
-  }
-  try {
-    const rows = await backend.runQuery(
-      connectionId,
-      `SELECT MANDT, MTEXT, CCCATEGORY, LOGSYS, CCNOCLIIND FROM T000 WHERE MANDT = '${client.padStart(3, "0")}'`,
-      1
-    )
-    const row = rows[0]
-    if (row) {
-      result.currentClient = {
-        clientNumber: stringValue(row.MANDT),
-        clientName: stringValue(row.MTEXT),
-        category: clientCategory(stringValue(row.CCCATEGORY)),
-        logicalSystem: stringValue(row.LOGSYS),
-        changeProtection: changeProtection(stringValue(row.CCNOCLIIND))
-      }
-    } else {
-      result.queryWarnings.push("T000: empty result")
-    }
-  } catch (error) {
-    result.queryWarnings.push(`T000: ${String(error)}`)
-  }
-  try {
-    const rows = await backend.runQuery(
-      connectionId,
-      "SELECT COMPONENT, RELEASE, EXTRELEASE, COMP_TYPE FROM CVERS",
-      500
-    )
-    result.softwareComponents = rows.map((row) => ({
-      component: stringValue(row.COMPONENT),
-      release: stringValue(row.RELEASE),
-      extRelease: stringValue(row.EXTRELEASE),
-      componentType: stringValue(row.COMP_TYPE)
-    }))
-    result.systemType = result.softwareComponents.some(
-      (component) => component.component === "S4CORE" || component.component === "S4COREOP"
-    )
-      ? "S/4HANA"
-      : result.softwareComponents.some(
-            (component) => component.component === "SAP_APPL" || component.component === "SAP_BASIS"
-          )
-        ? "ECC"
-        : "Unknown"
-    if (!rows.length) result.queryWarnings.push("CVERS: empty result")
-  } catch (error) {
-    result.queryWarnings.push(`CVERS: ${String(error)}`)
-  }
-  try {
-    const rows = await backend.runQuery(connectionId, "SELECT VERSION FROM SVERS", 10)
-    result.sapRelease = stringValue(rows[0]?.VERSION)
-    if (!rows.length) result.queryWarnings.push("SVERS: empty result")
-  } catch (error) {
-    result.queryWarnings.push(`SVERS: ${String(error)}`)
-  }
-  try {
-    const rows = await backend.runQuery(
-      connectionId,
-      "SELECT cu~TZONESYS, z~ZONERULE, z~DSTRULE, t~DESCRIPT FROM ttzcu AS cu INNER JOIN ttzz AS z ON cu~TZONESYS = z~TZONE INNER JOIN ttzzt AS t ON z~TZONE = t~TZONE WHERE cu~FLAGACTIVE = 'X' AND t~LANGU = 'E'",
-      1
-    )
-    const row = rows[0]
-    if (row) {
-      const rawOffset = stringValue(row.ZONERULE)
-      result.timezone = {
-        timezone: stringValue(row.TZONESYS),
-        description: stringValue(row.DESCRIPT),
-        utcOffset: formatUtcOffset(rawOffset),
-        dstRule: stringValue(row.DSTRULE) || "NONE",
-        rawOffset
-      }
-    } else {
-      result.queryWarnings.push("TTZCU/TTZZ: empty result")
-    }
-  } catch (error) {
-    result.queryWarnings.push(`TTZCU/TTZZ: ${String(error)}`)
-  }
-  return result
 }
 
 function stringValue(value: unknown): string {
@@ -4595,22 +8251,14 @@ function clientCategory(value: string): string {
 function changeProtection(value: string): string {
   return (
     {
-      "0": "Changes allowed (no protection)",
-      "1": "No changes allowed",
-      "2": "No changes allowed, no transports allowed",
-      "": "No protection"
+      "1": "No changes to cross-client Customizing objects",
+      "2": "No changes to Repository objects",
+      "3": "No changes to Repository and cross-client Customizing objects",
+      "": "Changes to Repository and cross-client Customizing allowed"
     }[value] ??
     value ??
     "Unknown"
   )
-}
-
-function formatUtcOffset(raw: string): string {
-  if (!/^[PM]\d{4}$/.test(raw)) return raw
-  const sign = raw.startsWith("P") ? "+" : "-"
-  const hours = Number.parseInt(raw.slice(1, 3), 10)
-  const minutes = Number.parseInt(raw.slice(3, 5), 10)
-  return `UTC${sign}${hours}${minutes ? `:${minutes.toString().padStart(2, "0")}` : ""}`
 }
 
 function formatDate(value: string): string {
@@ -4678,6 +8326,9 @@ Standalone execute_data_query rules:
 - Use =, <>, <, <=, >, >=, LIKE, IN, BETWEEN, IS INITIAL, and IS NOT INITIAL as supported by the target release.
 - ADT data preview applies the maxRows cap. Do not rely on UP TO n ROWS in the SQL text.
 - ECC 7.31 does not support modern Open SQL host-variable @ syntax.
+- read_abap_table accepts up to 1024 columns or ["*"], AND comparisons and at most 500 rows. Character-like filters, complete expanded DDIC metadata and verified RFC readers are required for fallback. Numeric output is preserved as SAP text, not converted to JavaScript numbers. Wide rows use <=512-character chunks joined by full primary keys and compared across two observations, with a 256-data-call budget. This is not a transaction snapshot; unsupported fields, overflow or changed rows fail without partial output.
+- On the known empty-HTML error, execute_data_query can reuse that reader for SELECT * (or comma-separated plain fields) FROM one table WHERE field = 'value' [AND ...], with explicit maxRows <=500. No joins, aliases, expressions, OR, ORDER BY or numeric filters are translated. Original ADT errors for all other queries remain errors.
+- Scoped fallback on w200/client 200: only when ADT returns the known empty HTML response, SELECT <fields or *> FROM ZTPMC_BZWL WHERE WERKS = '809P' can use Z_ORVANTA_MCP_QUERY_API. Allowed fields: MANDT, WERKS, ZPOSNR, ZPKGMATNR, ZPKGTYPE, ZPKGDESC. No joins, expressions, aliases, extra predicates or ORDER BY. SAP plant authorization still applies; all other queries retain the native error.
 
 Example:
 SELECT MANDT, MTEXT FROM T000 WHERE MANDT = '200'`
@@ -4958,7 +8609,16 @@ function ddicResult(
     packageName: result.packageName,
     version: result.objectVersion,
     fingerprint: createHash("sha256").update(JSON.stringify(definition)).digest("hex"),
-    definition
+    definition,
+    ...(result.metadata.CONVERSION_ACTION
+      ? {
+          nativeConversion: {
+            action: result.metadata.CONVERSION_ACTION,
+            mode: result.metadata.CONVERSION_MODE ?? "",
+            dataLossReported: result.metadata.CONVERSION_DATA_LOSS === "X"
+          }
+        }
+      : {})
   }
 }
 
@@ -5005,6 +8665,18 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
   }
   if (kind === "transparentTable") {
     const maintenance = result.header.MAINFLAG ?? ""
+    const buffering =
+      result.header.BUFALLOW === "X"
+        ? result.header.PUFFERUNG === "P"
+          ? "singleRecord"
+          : result.header.PUFFERUNG === "G"
+            ? "generic"
+            : result.header.PUFFERUNG === "X"
+              ? "full"
+              : "enabled"
+        : result.header.BUFALLOW === "A"
+          ? "allowedButOff"
+          : "notAllowed"
     return {
       description: result.header.DDTEXT ?? "",
       tableClass: result.header.TABCLASS ?? "",
@@ -5013,26 +8685,30 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
         maintenance === "X" ? "allowed" : maintenance === "R" ? "restricted" : "notAllowed",
       sizeCategory: numberValue(result.header.TABKAT),
       dataClass: result.header.TABART ?? "",
-      buffering:
-        result.header.BUFALLOW === "X"
-          ? result.header.PUFFERUNG === "P"
-            ? "singleRecord"
-            : result.header.PUFFERUNG === "G"
-              ? "generic"
-              : result.header.PUFFERUNG === "X"
-                ? "full"
-                : "enabled"
-          : result.header.BUFALLOW === "A"
-            ? "allowedButOff"
-            : "notAllowed",
-      fields: result.fields.map((field) => ({
-        name: field.FIELDNAME ?? "",
-        position: numberValue(field.POSITION),
-        dataElement: field.ROLLNAME ?? "",
-        description: field.DDTEXT ?? "",
-        key: field.KEYFLAG === "X",
-        notNull: field.NOTNULL === "X"
-      }))
+      buffering,
+      genericKeyFields: buffering === "generic" ? numberValue(result.header.SCHFELDANZ) : 0,
+      logDataChanges: result.header.PROTOKOLL === "X",
+      fields: result.fields.map((field) => {
+        const componentKind = ddicComponentKind(field)
+        return {
+          name: field.FIELDNAME ?? "",
+          position: numberValue(field.POSITION),
+          dataElement: field.ROLLNAME ?? "",
+          description: field.DDTEXT ?? "",
+          key: field.KEYFLAG === "X",
+          notNull: field.NOTNULL === "X",
+          ...(componentKind === "field"
+            ? {}
+            : {
+                componentKind,
+                componentName: field.PRECFIELD ?? "",
+                componentType: field.COMPTYPE ?? "",
+                originDepth: numberValue(field.ADMINFIELD),
+                groupName: field.GROUPNAME ?? "",
+                extensionClass: field.EXCLASS ?? ""
+              })
+        }
+      })
     }
   }
   return {
@@ -5119,7 +8795,16 @@ function containsLineSequence(actual: string[], expected: string[]): boolean {
 
 function requireDdicSuccess(result: SapDdicResult): void {
   if (result.status.toUpperCase() !== "S") {
-    throw new Error(`SAP DDIC helper rejected the operation: ${result.code}: ${result.message}`)
+    const conversion = result.metadata.CONVERSION_ACTION
+      ? `; nativeConversion=${JSON.stringify({
+          action: result.metadata.CONVERSION_ACTION,
+          mode: result.metadata.CONVERSION_MODE ?? "",
+          dataLossReported: result.metadata.CONVERSION_DATA_LOSS === "X"
+        })}`
+      : ""
+    throw new Error(
+      `SAP DDIC helper rejected the operation: ${result.code}: ${result.message}${conversion}`
+    )
   }
 }
 
@@ -5278,11 +8963,12 @@ function validateAppendedTransparentTableFields(
   })
 }
 
-interface TransparentTableFieldDefinition {
-  name: string
-  dataElement: string
-  key: boolean
-  notNull: boolean
+interface TransparentTableTechnicalSettings {
+  dataClass: "APPL0" | "APPL1" | "APPL2"
+  sizeCategory: number
+  buffering: TransparentTableBuffering
+  genericKeyFields: number
+  logDataChanges: boolean
 }
 
 function requiredDdicFingerprint(value: string): string {
@@ -5307,32 +8993,17 @@ function requireCurrentDdicDefinition(
   }
 }
 
-function transparentTableFields(
-  definition: Record<string, unknown>
-): TransparentTableFieldDefinition[] {
-  if (!Array.isArray(definition.fields)) {
-    throw new Error("SAP DDIC verification did not return transparent table fields")
-  }
-  return definition.fields.map((value) => {
-    const field = value as Record<string, unknown>
-    return {
-      name: String(field.name ?? "").toUpperCase(),
-      dataElement: String(field.dataElement ?? "").toUpperCase(),
-      key: field.key === true,
-      notNull: field.notNull === true
-    }
-  })
-}
-
-function applyTransparentTableFieldChanges(
-  current: TransparentTableFieldDefinition[],
+function applyTransparentTableRawFieldChanges(
+  current: SapStructureRow[],
   changes: TransparentTableFieldChange[]
-): TransparentTableFieldDefinition[] {
+): SapStructureRow[] {
   const fields = current.map((field) => ({ ...field }))
   for (const change of changes) {
     const fieldName = ddicFieldName(change.fieldName)
     if (fieldName === "MANDT") throw new Error("MANDT cannot be changed")
-    const index = fields.findIndex((field) => field.name === fieldName)
+    const index = fields.findIndex(
+      (field) => isDirectDdicField(field) && field.FIELDNAME === fieldName
+    )
     if (index < 0) throw new Error(`Transparent table field does not exist: ${fieldName}`)
     if (change.action === "remove") {
       fields.splice(index, 1)
@@ -5342,10 +9013,10 @@ function applyTransparentTableFieldChanges(
       const newName = ddicFieldName(change.newName)
       if (newName === "MANDT") throw new Error("A field cannot be renamed to MANDT")
       if (newName === fieldName) throw new Error(`Field rename is a no-op: ${fieldName}`)
-      if (fields.some((field, fieldIndex) => fieldIndex !== index && field.name === newName)) {
+      if (fields.some((field, fieldIndex) => fieldIndex !== index && field.FIELDNAME === newName)) {
         throw new Error(`Transparent table field already exists: ${newName}`)
       }
-      fields[index]!.name = newName
+      fields[index]!.FIELDNAME = newName
       continue
     }
     if (
@@ -5358,33 +9029,195 @@ function applyTransparentTableFieldChanges(
     const field = fields[index]!
     const updated = {
       ...field,
-      dataElement:
+      ROLLNAME:
         change.dataElement === undefined
-          ? field.dataElement
+          ? (field.ROLLNAME ?? "")
           : ddicName(change.dataElement, "dataElement"),
-      key: change.key ?? field.key,
-      notNull: change.notNull ?? field.notNull
+      KEYFLAG: change.key === undefined ? (field.KEYFLAG ?? "") : change.key ? "X" : "",
+      NOTNULL: change.notNull === undefined ? (field.NOTNULL ?? "") : change.notNull ? "X" : ""
     }
     if (
-      updated.dataElement === field.dataElement &&
-      updated.key === field.key &&
-      updated.notNull === field.notNull
+      updated.ROLLNAME === field.ROLLNAME &&
+      updated.KEYFLAG === field.KEYFLAG &&
+      updated.NOTNULL === field.NOTNULL
     ) {
       throw new Error(`Field update is a no-op: ${fieldName}`)
     }
     fields[index] = updated
   }
-  if (!fields.length) throw new Error("A transparent table must retain at least one field")
+  const physicalFields = fields.filter((field) => !isDdicComponentMarker(field))
+  if (!physicalFields.length) throw new Error("A transparent table must retain at least one field")
   let nonKeySeen = false
-  for (const field of fields) {
-    if (!field.key) nonKeySeen = true
-    if (field.key && nonKeySeen) throw new Error("Key fields must be contiguous at the beginning")
-    if (field.key && !field.notNull) throw new Error(`Key field must be not null: ${field.name}`)
+  for (const field of physicalFields) {
+    const key = field.KEYFLAG === "X"
+    if (!key) nonKeySeen = true
+    if (key && nonKeySeen) throw new Error("Key fields must be contiguous at the beginning")
+    if (key && field.NOTNULL !== "X") {
+      throw new Error(`Key field must be not null: ${field.FIELDNAME ?? "<unknown>"}`)
+    }
   }
+  fields.forEach((field, index) => {
+    field.POSITION = String(index + 1)
+  })
   if (JSON.stringify(fields) === JSON.stringify(current)) {
     throw new Error("Transparent table field patch does not change the active definition")
   }
   return fields
+}
+
+function serializeDdicTableFields(fields: SapStructureRow[]): SapStructureRow[] {
+  const properties = [
+    "FIELDNAME",
+    "ROLLNAME",
+    "KEYFLAG",
+    "NOTNULL",
+    "PRECFIELD",
+    "COMPTYPE",
+    "ADMINFIELD",
+    "GROUPNAME",
+    "EXCLASS"
+  ]
+  return fields.map((field) =>
+    Object.fromEntries(
+      properties
+        .filter((property) => field[property] !== undefined)
+        .map((property) => [property, field[property] ?? ""])
+    )
+  )
+}
+
+function appendTransparentTableRawFields(
+  current: SapStructureRow[],
+  appended: Array<{ FIELDNAME: string; ROLLNAME: string; KEYFLAG: string; NOTNULL: string }>
+): SapStructureRow[] {
+  const fields = current.map((field) => ({ ...field }))
+  const appendIndex = fields.findIndex((field) => field.FIELDNAME?.startsWith(".INCLU--AP"))
+  fields.splice(appendIndex < 0 ? fields.length : appendIndex, 0, ...appended)
+  fields.forEach((field, index) => {
+    field.POSITION = String(index + 1)
+  })
+  return fields
+}
+
+function isDdicComponentMarker(field: SapStructureRow): boolean {
+  return (field.FIELDNAME ?? "").startsWith(".INCLU")
+}
+
+function isDirectDdicField(field: SapStructureRow): boolean {
+  return (
+    !isDdicComponentMarker(field) &&
+    numberValue(field.ADMINFIELD) === 0 &&
+    !!field.ROLLNAME &&
+    (!field.COMPTYPE || field.COMPTYPE === "E")
+  )
+}
+
+function ddicComponentKind(field: SapStructureRow): "field" | "include" | "append" | "inherited" {
+  if ((field.FIELDNAME ?? "").startsWith(".INCLU--AP")) return "append"
+  if (isDdicComponentMarker(field)) return "include"
+  if (numberValue(field.ADMINFIELD) > 0) return "inherited"
+  return "field"
+}
+
+function mergeTransparentTableSettings(
+  current: Record<string, unknown>,
+  patch: PatchTransparentTableSettingsInput["settings"]
+): TransparentTableTechnicalSettings {
+  const dataClass = patch.dataClass ?? current.dataClass
+  if (!["APPL0", "APPL1", "APPL2"].includes(String(dataClass))) {
+    throw new Error("Current data class is outside the supported technical-settings contract")
+  }
+  const sizeCategory = patch.sizeCategory ?? Number(current.sizeCategory)
+  if (!Number.isInteger(sizeCategory) || sizeCategory < 0 || sizeCategory > 4) {
+    throw new Error("sizeCategory must be an integer from 0 to 4")
+  }
+  const buffering = patch.buffering ?? current.buffering
+  if (
+    !["notAllowed", "allowedButOff", "singleRecord", "generic", "full"].includes(String(buffering))
+  ) {
+    throw new Error("Current buffering mode is outside the supported technical-settings contract")
+  }
+  const keyCount = Array.isArray(current.fields)
+    ? current.fields.filter((value) => (value as Record<string, unknown>).key === true).length
+    : 0
+  const genericKeyFields =
+    buffering === "generic" ? (patch.genericKeyFields ?? Number(current.genericKeyFields ?? 0)) : 0
+  if (patch.genericKeyFields !== undefined && buffering !== "generic") {
+    throw new Error("genericKeyFields is allowed only for generic buffering")
+  }
+  if (buffering === "generic" && (genericKeyFields < 1 || genericKeyFields > keyCount)) {
+    throw new Error("genericKeyFields must be between 1 and the number of key fields")
+  }
+  const result: TransparentTableTechnicalSettings = {
+    dataClass: dataClass as "APPL0" | "APPL1" | "APPL2",
+    sizeCategory,
+    buffering: buffering as TransparentTableBuffering,
+    genericKeyFields,
+    logDataChanges: patch.logDataChanges ?? current.logDataChanges === true
+  }
+  const previous = {
+    dataClass: current.dataClass,
+    sizeCategory: current.sizeCategory,
+    buffering: current.buffering,
+    genericKeyFields: Number(current.genericKeyFields ?? 0),
+    logDataChanges: current.logDataChanges === true
+  }
+  if (JSON.stringify(result) === JSON.stringify(previous)) {
+    throw new Error("Transparent table technical-settings patch is a no-op")
+  }
+  return result
+}
+
+function technicalSettingsHeader(settings: TransparentTableTechnicalSettings): SapStructureRow {
+  const buffering = {
+    notAllowed: { BUFALLOW: "N", PUFFERUNG: "" },
+    allowedButOff: { BUFALLOW: "A", PUFFERUNG: "" },
+    singleRecord: { BUFALLOW: "X", PUFFERUNG: "P" },
+    generic: { BUFALLOW: "X", PUFFERUNG: "G" },
+    full: { BUFALLOW: "X", PUFFERUNG: "X" }
+  }[settings.buffering]
+  return {
+    TABART: settings.dataClass,
+    TABKAT: String(settings.sizeCategory),
+    ...buffering,
+    SCHFELDANZ: settings.buffering === "generic" ? String(settings.genericKeyFields) : "",
+    PROTOKOLL: settings.logDataChanges ? "X" : ""
+  }
+}
+
+function normalizeConversionEntry(value: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    [
+      "OBJECT",
+      "TABNAME",
+      "INDNAME",
+      "TGORDER",
+      "FCT",
+      "EXECMODE",
+      "SEVERITY",
+      "GDATE",
+      "GUSER"
+    ].map((key) => [
+      key,
+      String(value[key] ?? "")
+        .trim()
+        .toUpperCase()
+    ])
+  )
+}
+
+function conversionEntryKey(value: Record<string, string>): string {
+  return [
+    value.OBJECT,
+    value.TABNAME,
+    value.INDNAME,
+    value.TGORDER,
+    value.FCT,
+    value.EXECMODE,
+    value.SEVERITY,
+    value.GDATE,
+    value.GUSER
+  ].join("|")
 }
 
 function numberValue(value: string | undefined): number {
@@ -5429,7 +9262,8 @@ function functionModuleDefinition(input: CreateFunctionModuleInput): FunctionMod
         name,
         typeName: ddicName(value.typeName, `${kind} parameter typeName`),
         optional: value.optional ?? false,
-        passByValue: value.passByValue ?? false
+        passByValue: value.passByValue ?? false,
+        description: functionDescription(value.description, `${kind} parameter ${name}`)
       }
     })
   if (input.tableParameters.some((value) => value.passByValue)) {
@@ -5446,6 +9280,9 @@ function functionModuleDefinition(input: CreateFunctionModuleInput): FunctionMod
   if (!input.source.length) throw new Error("source must contain at least one ABAP line")
   const source = input.source.map((line) => {
     if (/\r|\n/.test(line)) throw new Error("Each source entry must contain exactly one ABAP line")
+    if (/^\s*(?:FUNCTION|ENDFUNCTION)\b/i.test(line)) {
+      throw new Error("source must contain only the function body, without FUNCTION/ENDFUNCTION")
+    }
     if (line.length > 200)
       throw new Error("Function module source lines must not exceed 200 characters")
     return line
@@ -5479,6 +9316,7 @@ function serializeFunctionDefinition(definition: FunctionModuleDefinition): stri
       if (kind !== "T") {
         appendFunctionPayload(payload, kind, index + 1, "PASSVALUE", row.passByValue ? "X" : "")
       }
+      appendFunctionPayload(payload, kind, index + 1, "TEXT", row.description ?? "")
     })
   }
   append("I", definition.importParameters)
@@ -5497,7 +9335,7 @@ function serializeFunctionDefinition(definition: FunctionModuleDefinition): stri
 
 function appendFunctionPayload(
   payload: string[],
-  kind: FunctionParameterKind | "X" | "S",
+  kind: FunctionParameterKind | "M" | "X" | "S",
   index: number,
   property: string,
   value: string
@@ -5532,7 +9370,8 @@ function parseFunctionPayload(lines: string[]): {
     }
     const index = Number.parseInt(match[2], 10)
     if (index < 1) throw new Error(`SAP function helper returned an invalid payload index: ${line}`)
-    const value = decodeSoapText((match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%"))
+    const decoded = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    const value = match[1] === "S" && /^PART\d+$/.test(match[3]) ? decoded : decodeSoapText(decoded)
     const target =
       match[1] === "M"
         ? parsed.metadata
@@ -5547,6 +9386,9 @@ function parseFunctionPayload(lines: string[]): {
             }[match[1]]!,
             index
           )
+    if (Object.hasOwn(target, match[3])) {
+      throw new Error(`SAP function helper returned a duplicate payload property: ${line}`)
+    }
     target[match[3]] = value
   }
   return parsed
@@ -5558,11 +9400,21 @@ function functionModuleResult(
   functionName: string
 ) {
   const payload = parseFunctionPayload(result.source)
+  if (payload.metadata.SOURCE_FORMAT) {
+    if (
+      payload.metadata.SOURCE_FORMAT !== "CHUNKS_V1" ||
+      !/^[1-9]\d*$/.test(payload.metadata.SOURCE_LINES ?? "") ||
+      Number(payload.metadata.SOURCE_LINES) !== payload.source.length
+    ) {
+      throw new Error("Function source format or line count is invalid")
+    }
+  }
   const parameter = (row: Record<string, string>) => ({
     name: row.PARAMETER ?? "",
     typeName: row.TYP || row.DBFIELD || row.DBSTRUCT || "",
     optional: row.OPTIONAL === "X",
-    passByValue: row.PASSVALUE === "X"
+    passByValue: row.PASSVALUE === "X",
+    description: row.TEXT ?? ""
   })
   const definition = {
     remoteEnabled: !!payload.metadata.REMOTE_ENABLED,
@@ -5574,19 +9426,318 @@ function functionModuleResult(
       name: row.EXCEPTION ?? "",
       description: row.TEXT ?? ""
     })),
-    source: payload.source.map((row) => row.LINE ?? "")
+    source: payload.source.map((row) => functionSourceLine(row, payload.metadata.SOURCE_FORMAT))
   }
+  const interfaceDefinition = {
+    remoteMode: payload.metadata.REMOTE_ENABLED ?? "",
+    updateTaskMode: payload.metadata.UPDATE_TASK ?? "",
+    globalInterface: payload.metadata.GLOBAL_INTERFACE === "X",
+    ...definition,
+    source: undefined
+  }
+  const interfaceFingerprint = createHash("sha256")
+    .update(JSON.stringify(interfaceDefinition))
+    .digest("hex")
+  const sourceFingerprint = createHash("sha256")
+    .update(JSON.stringify(functionImplementationSource(definition.source)))
+    .digest("hex")
   const fingerprint = createHash("sha256").update(JSON.stringify(definition)).digest("hex")
-  return {
+  const response = {
     connectionId,
     functionName,
     functionGroup: payload.metadata.FUNCTION_GROUP ?? "",
     shortText: payload.metadata.SHORT_TEXT ?? "",
+    remoteMode: payload.metadata.REMOTE_ENABLED ?? "",
     updateTask: payload.metadata.UPDATE_TASK === "X",
+    updateTaskMode: payload.metadata.UPDATE_TASK ?? "",
     globalInterface: payload.metadata.GLOBAL_INTERFACE === "X",
     ...definition,
-    fingerprint
+    fingerprint,
+    interfaceFingerprint,
+    sourceFingerprint
   }
+  return Object.defineProperty(response, "snapshotPayload", {
+    value: result.source.map((line) => decodeSoapText(line)),
+    enumerable: false
+  }) as typeof response & { snapshotPayload: string[] }
+}
+
+function functionSourceLine(row: Record<string, string>, format: string | undefined): string {
+  if (!format) return row.LINE ?? ""
+  if (format !== "CHUNKS_V1") throw new Error(`Unsupported function source format: ${format}`)
+  if (!/^(0|[1-9]\d*)$/.test(row.LENGTH ?? "")) {
+    throw new Error("Function source chunk length is missing or invalid")
+  }
+  const length = Number(row.LENGTH)
+  if (length > 255) throw new Error("Function source line exceeds 255 characters")
+  const count = Math.ceil(length / 60)
+  if (Object.keys(row).length !== count + 1)
+    throw new Error("Function source chunks are missing or contain unexpected properties")
+  let source = ""
+  for (let index = 1; index <= count; index++) {
+    const part = row[`PART${index}`]
+    const width = Math.min(60, length - source.length)
+    if (part === undefined || part.length > width)
+      throw new Error("Function source chunk is missing or exceeds its declared length")
+    // CHAR payload transport trims trailing spaces; LENGTH restores exact chunk boundaries.
+    source += part.padEnd(width, " ")
+  }
+  return source
+}
+
+function functionDefinitionFromResult(
+  value: ReturnType<typeof functionModuleResult>
+): FunctionModuleDefinition {
+  return {
+    remoteEnabled: value.remoteEnabled,
+    importParameters: value.importParameters,
+    exportParameters: value.exportParameters,
+    changingParameters: value.changingParameters,
+    tableParameters: value.tableParameters,
+    exceptions: value.exceptions,
+    source: value.source
+  }
+}
+
+function serializeFunctionSnapshot(value: ReturnType<typeof functionModuleResult>): string[] {
+  return [...value.snapshotPayload]
+}
+
+function patchFunctionModuleDefinition(
+  current: FunctionModuleDefinition,
+  parameterOperations: FunctionParameterPatch[],
+  exceptionOperations: FunctionExceptionPatch[]
+): FunctionModuleDefinition {
+  const result: FunctionModuleDefinition = structuredClone(current)
+  const rows = {
+    import: result.importParameters,
+    export: result.exportParameters,
+    changing: result.changingParameters,
+    table: result.tableParameters
+  }
+  for (const operation of parameterOperations) {
+    const parameters = rows[operation.direction]
+    const name = functionComponentName(operation.name, `${operation.direction} parameter`)
+    const index = parameters.findIndex((parameter) => parameter.name === name)
+    if (operation.operation === "add") {
+      if (index >= 0) throw new Error(`Function parameter already exists: ${name}`)
+      parameters.push(normalizedFunctionParameter(operation, operation.direction, name))
+      continue
+    }
+    if (index < 0) throw new Error(`Function parameter does not exist: ${name}`)
+    if (operation.operation === "remove") {
+      parameters.splice(index, 1)
+      continue
+    }
+    if (operation.operation === "rename") {
+      parameters[index]!.name = functionComponentName(
+        operation.newName,
+        `${operation.direction} parameter newName`
+      )
+      continue
+    }
+    if (
+      operation.typeName === undefined &&
+      operation.optional === undefined &&
+      operation.passByValue === undefined &&
+      operation.description === undefined
+    ) {
+      throw new Error(`Function parameter update is empty: ${name}`)
+    }
+    const updated = {
+      ...parameters[index]!,
+      ...(operation.typeName === undefined
+        ? {}
+        : { typeName: ddicName(operation.typeName, `${operation.direction} parameter typeName`) }),
+      ...(operation.optional === undefined ? {} : { optional: operation.optional }),
+      ...(operation.passByValue === undefined ? {} : { passByValue: operation.passByValue }),
+      ...(operation.description === undefined
+        ? {}
+        : {
+            description: functionDescription(
+              operation.description,
+              `${operation.direction} parameter ${name}`
+            )
+          })
+    }
+    if (JSON.stringify(updated) === JSON.stringify(parameters[index])) {
+      throw new Error(`Function parameter update is a no-op: ${name}`)
+    }
+    parameters[index] = updated
+  }
+
+  for (const operation of exceptionOperations) {
+    const name = functionComponentName(operation.name, "exception")
+    const index = result.exceptions.findIndex((exception) => exception.name === name)
+    if (operation.operation === "add") {
+      if (index >= 0) throw new Error(`Function exception already exists: ${name}`)
+      result.exceptions.push({
+        name,
+        description: functionDescription(operation.description, `exception ${name}`)
+      })
+      continue
+    }
+    if (index < 0) throw new Error(`Function exception does not exist: ${name}`)
+    if (operation.operation === "remove") {
+      result.exceptions.splice(index, 1)
+    } else if (operation.operation === "rename") {
+      result.exceptions[index]!.name = functionComponentName(operation.newName, "exception newName")
+    } else {
+      const description = functionDescription(operation.description, `exception ${name}`)
+      if (description === result.exceptions[index]!.description) {
+        throw new Error(`Function exception update is a no-op: ${name}`)
+      }
+      result.exceptions[index]!.description = description
+    }
+  }
+
+  validateFunctionDefinitionNames(result)
+  if (result.tableParameters.some((value) => value.passByValue)) {
+    throw new Error("table parameters cannot be passed by value")
+  }
+  if (JSON.stringify(result) === JSON.stringify(current)) {
+    throw new Error("Function interface patch does not change the active definition")
+  }
+  return result
+}
+
+function normalizedFunctionParameter(
+  input: FunctionParameterInput,
+  direction: FunctionParameterDirection,
+  name: string
+): Required<FunctionParameterInput> {
+  if (direction === "table" && input.passByValue) {
+    throw new Error("table parameters cannot be passed by value")
+  }
+  return {
+    name,
+    typeName: ddicName(input.typeName, `${direction} parameter typeName`),
+    optional: input.optional ?? false,
+    passByValue: input.passByValue ?? false,
+    description: functionDescription(input.description, `${direction} parameter ${name}`)
+  }
+}
+
+function validateFunctionDefinitionNames(definition: FunctionModuleDefinition): void {
+  const names = new Set<string>()
+  for (const item of [
+    ...definition.importParameters,
+    ...definition.exportParameters,
+    ...definition.changingParameters,
+    ...definition.tableParameters,
+    ...definition.exceptions
+  ]) {
+    if (names.has(item.name)) throw new Error(`Duplicate function interface name: ${item.name}`)
+    names.add(item.name)
+  }
+}
+
+function functionDescription(value: string | undefined, field: string): string {
+  const description = value ?? ""
+  validateTextLength(description, 60, `${field} description`)
+  return description
+}
+
+function functionModuleWorkspaceUri(
+  connectionId: string,
+  functionGroup: string,
+  functionName: string
+): string {
+  return (
+    `adt://${connectionId}/sap/bc/adt/functions/groups/${functionGroup.toLowerCase()}` +
+    `/fmodules/${functionName.toLowerCase()}`
+  )
+}
+
+function functionInterfaceSourcePatch(
+  functionName: string,
+  definition: FunctionModuleDefinition,
+  source: string
+): { oldHeader: string; newHeader: string } {
+  const lines = source.replaceAll("\r\n", "\n").split("\n")
+  if (!new RegExp(`^FUNCTION\\s+${functionName}\\b`, "i").test(lines[0] ?? "")) {
+    throw new Error(`Active ADT source does not start with FUNCTION ${functionName}`)
+  }
+  const end = lines.findIndex((line) => line.trimEnd().endsWith("."))
+  if (end < 0) throw new Error("Active ADT function interface has no terminating period")
+  return {
+    oldHeader: lines.slice(0, end + 1).join("\n"),
+    newHeader: renderFunctionInterfaceSource(functionName, definition)
+  }
+}
+
+function renderFunctionInterfaceSource(
+  functionName: string,
+  definition: FunctionModuleDefinition
+): string {
+  const lines = [`FUNCTION ${functionName}`]
+  const sections: Array<{ name: string; entries: string[] }> = [
+    {
+      name: "IMPORTING",
+      entries: definition.importParameters.map((parameter) =>
+        renderFunctionParameter(parameter, "TYPE")
+      )
+    },
+    {
+      name: "EXPORTING",
+      entries: definition.exportParameters.map((parameter) =>
+        renderFunctionParameter(parameter, "TYPE")
+      )
+    },
+    {
+      name: "CHANGING",
+      entries: definition.changingParameters.map((parameter) =>
+        renderFunctionParameter(parameter, "TYPE")
+      )
+    },
+    {
+      name: "TABLES",
+      entries: definition.tableParameters.map((parameter) =>
+        renderFunctionParameter(parameter, "LIKE")
+      )
+    },
+    {
+      name: "EXCEPTIONS",
+      entries: definition.exceptions.map((exception) => exception.name)
+    }
+  ].filter((section) => section.entries.length)
+  if (!sections.length) return `${lines[0]}.`
+  sections.forEach((section) => {
+    lines.push(`  ${section.name}`)
+    lines.push(...section.entries.map((entry) => `    ${entry}`))
+  })
+  lines[lines.length - 1] += "."
+  return lines.join("\n")
+}
+
+function renderFunctionParameter(
+  parameter: Required<FunctionParameterInput>,
+  typing: "TYPE" | "LIKE"
+): string {
+  const name = parameter.passByValue ? `VALUE(${parameter.name})` : parameter.name
+  return `${name} ${typing} ${parameter.typeName}${parameter.optional ? " OPTIONAL" : ""}`
+}
+
+function functionImplementationSource(source: string[]): string[] {
+  const separators = source
+    .map((line, index) => (/^\*"-+$/.test(line.trim()) ? index : -1))
+    .filter((index) => index >= 0)
+  let start = separators.length >= 2 ? separators[1]! + 1 : 0
+  if (!separators.length && /^FUNCTION\b/i.test(source[0] ?? "")) {
+    const interfaceEnd = source.findIndex((line) => line.trimEnd().endsWith("."))
+    start = interfaceEnd >= 0 ? interfaceEnd + 1 : 1
+  }
+  let end = source.length
+  for (let index = source.length - 1; index >= start; index -= 1) {
+    if (/^ENDFUNCTION\./i.test(source[index]!.trim())) {
+      end = index
+      break
+    }
+  }
+  const body = source.slice(start, end >= start ? end : source.length)
+  while (body[0]?.trim() === "") body.shift()
+  while (body.at(-1)?.trim() === "") body.pop()
+  return body
 }
 
 function decodeSoapText(value: string): string {
@@ -5686,14 +9837,18 @@ function boundedTableParameters(values: TableParameters, field: string): TablePa
   return result
 }
 
+const MAX_REMOTE_RECORD_FIELDS = 500
+
 function boundedRemoteRecord(value: Record<string, string>, field: string): Record<string, string> {
   const entries = Object.entries(value)
-  if (entries.length > 100) throw new Error(`${field} must not contain more than 100 fields`)
+  if (entries.length > MAX_REMOTE_RECORD_FIELDS) {
+    throw new Error(`${field} must not contain more than ${MAX_REMOTE_RECORD_FIELDS} fields`)
+  }
   return Object.fromEntries(
     entries.map(([name, text]) => {
       const normalized = functionComponentName(name, field)
       if (text.length > 4096) throw new Error(`${field}.${normalized} exceeds 4096 characters`)
-      if (/[ --]/.test(text)) {
+      if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(text)) {
         throw new Error(`${field}.${normalized} contains characters unsupported by XML 1.0`)
       }
       return [normalized, text]
@@ -5736,8 +9891,15 @@ function remoteParameterShape(parameter: FunctionExecutionParameter): RemoteFunc
 function validateRemoteFields(
   parameter: FunctionExecutionParameter,
   value: RemoteFunctionValue,
-  field: string
+  field: string,
+  output = false
 ): void {
+  if (parameter.kind === "scalar") {
+    if (typeof value !== "string") throw new Error(`${field} is not scalar`)
+    if (parameter.valueContract)
+      validateRfcValue(parameter.valueContract, value, parameter.name, output)
+    return
+  }
   const rows = Array.isArray(value) ? value : typeof value === "string" ? undefined : [value]
   if (!rows || (parameter.kind === "structure" && Array.isArray(value))) {
     throw new Error(`${field} does not match ${parameter.kind} parameter ${parameter.name}`)
@@ -5746,6 +9908,8 @@ function validateRemoteFields(
   for (const row of rows) {
     for (const name of Object.keys(row)) {
       if (!allowed.has(name)) throw new Error(`Unknown field ${parameter.name}.${name}`)
+      const contract = parameter.fieldContracts?.[name]
+      if (contract) validateRfcValue(contract, row[name]!, `${parameter.name}.${name}`, output)
     }
   }
 }
@@ -5798,17 +9962,57 @@ function assertExpectedRemoteOutputs<T extends Record<string, unknown>>(
 
 function flatStructureFields(result: SapDdicResult, typeName: string): string[] {
   if (!result.fields.length) throw new Error(`Structure ${typeName} has no fields`)
-  if (result.fields.length > 100) throw new Error(`Structure ${typeName} exceeds 100 fields`)
+  if (result.fields.length > MAX_REMOTE_RECORD_FIELDS) {
+    throw new Error(`Structure ${typeName} exceeds ${MAX_REMOTE_RECORD_FIELDS} fields`)
+  }
   const names = new Set<string>()
   return result.fields.map((field) => {
     const name = functionComponentName(field.FIELDNAME ?? "", `structure ${typeName} field`)
     if (names.has(name)) throw new Error(`Structure ${typeName} contains duplicate field ${name}`)
     names.add(name)
-    if (!field.ROLLNAME) {
+    const componentType = field.COMPTYPE?.trim()
+    if (componentType && componentType !== "E") {
+      throw new Error(`Structure ${typeName} field ${name} is not elementary`)
+    }
+    if (!field.ROLLNAME && !supportedDirectField(field)) {
       throw new Error(`Structure ${typeName} field ${name} is deep or has no data element`)
     }
     return name
   })
+}
+
+function remoteScalarShape(header: Record<string, string>, typeName: string): ResolvedRemoteType {
+  const valueContract = rfcValueContract(header, typeName)
+  if (["CHAR", "NUMC"].includes(header.DATATYPE?.trim().toUpperCase() ?? "")) {
+    const length = Number(header.LENG)
+    if (!Number.isSafeInteger(length) || length <= 0) {
+      throw new Error(`DDIC character length is invalid for ${typeName}`)
+    }
+    return { kind: "scalar", fields: [], maxCharacters: length, valueContract }
+  }
+  return { kind: "scalar", fields: [], valueContract }
+}
+
+function supportedDirectField(field: Record<string, string>): boolean {
+  const length = Number(field.LENG)
+  if (!Number.isSafeInteger(length) || length <= 0) return false
+  switch (field.DATATYPE?.trim()) {
+    case "DATS":
+      return length === 8
+    case "TIMS":
+      return length === 6
+    case "CHAR":
+    case "NUMC":
+      return length <= 1333
+    case "INT1":
+      return length === 3
+    case "INT2":
+      return length === 5
+    case "INT4":
+      return length === 10
+    default:
+      return false
+  }
 }
 
 function requireDdicNotFound(result: SapDdicResult, objectName: string): void {
@@ -5847,6 +10051,284 @@ function repositoryPayload(lines: string[]): {
     target[match[3]] = value
   }
   return { metadata, fields, textRows }
+}
+
+function enhancementPayload(metadata: Record<string, string>): string[] {
+  const payload: string[] = []
+  Object.entries(metadata).forEach(([name, value]) =>
+    appendEnhancementPayload(payload, "M", 1, name, value)
+  )
+  return payload
+}
+
+function appendEnhancementRows(
+  payload: string[],
+  kind: string,
+  rows: Array<Record<string, string>>
+): void {
+  rows.forEach((row, index) =>
+    Object.entries(row).forEach(([name, value]) =>
+      appendEnhancementPayload(payload, kind, index + 1, name, value)
+    )
+  )
+}
+
+function appendEnhancementPayload(
+  payload: string[],
+  kind: string,
+  index: number,
+  property: string,
+  value: string
+): void {
+  const normalizedProperty = property.trim().toUpperCase()
+  if (!/^[A-Z0-9_]+$/.test(normalizedProperty)) {
+    throw new Error(`Invalid enhancement payload property: ${property}`)
+  }
+  const escaped = value.replaceAll("%", "%25").replaceAll("|", "%7C")
+  const line = `${kind}|${index}|${normalizedProperty}|${escaped}`
+  if (line.length > 255) throw new Error("Enhancement payload line exceeds ABAPTXT255")
+  payload.push(line)
+}
+
+function hookEnhancementPayload(input: CreateEnhancementHookInput): string[] {
+  if (input.source.some((line) => /^\s*(?:END)?ENHANCEMENT\b/i.test(line))) {
+    throw new Error("source must contain only the enhancement body")
+  }
+  const payload = enhancementPayload({
+    ORIGINAL_OBJECT_TYPE: input.originalObjectType,
+    ORIGINAL_OBJECT_NAME: input.originalObjectName.toUpperCase(),
+    MAIN_OBJECT_TYPE: input.mainObjectType,
+    MAIN_OBJECT_NAME: input.mainObjectName.toUpperCase(),
+    PROGRAM_NAME: input.programName.toUpperCase(),
+    FULL_NAME: input.fullName,
+    MODE: input.mode,
+    REPLACEMENT: input.replacement ? "X" : ""
+  })
+  input.source.forEach((line, index) =>
+    appendEnhancementPayload(payload, "S", index + 1, "LINE", line)
+  )
+  return payload
+}
+
+function newBadiEnhancementPayload(input: CreateNewBadiImplementationInput): string[] {
+  const payload = enhancementPayload({
+    SPOT_NAME: input.spotName.toUpperCase(),
+    BADI_NAME: input.badiName.toUpperCase(),
+    IMPLEMENTATION_NAME: customerEnhancementName(input.implementationName, "implementationName"),
+    IMPLEMENTATION_CLASS: customerEnhancementName(
+      input.implementationClass,
+      "implementationClass",
+      30
+    ),
+    DEFAULT_IMPLEMENTATION: input.defaultImplementation ? "X" : ""
+  })
+  appendEnhancementRows(payload, "F", input.filters ?? [])
+  return payload
+}
+
+function hookEnhancementUpdatePayload(input: UpdateEnhancementHookInput): string[] {
+  if (input.source.some((line) => /^\s*(?:END)?ENHANCEMENT\b/i.test(line))) {
+    throw new Error("source must contain only the enhancement body")
+  }
+  const payload = enhancementPayload({ EXTID: input.extId })
+  input.source.forEach((line, index) =>
+    appendEnhancementPayload(payload, "S", index + 1, "LINE", line)
+  )
+  return payload
+}
+
+function newBadiEnhancementUpdatePayload(
+  input: UpdateNewBadiImplementationInput,
+  implementationName: string,
+  implementationClass: string
+): string[] {
+  const payload = enhancementPayload({
+    IMPLEMENTATION_NAME: implementationName,
+    IMPLEMENTATION_CLASS: implementationClass,
+    ACTIVE: input.active ? "X" : "",
+    DEFAULT_IMPLEMENTATION: input.defaultImplementation ? "X" : ""
+  })
+  appendEnhancementRows(payload, "F", input.filters)
+  return payload
+}
+
+function enhancementImplementationResult(connectionId: string, lines: string[]) {
+  const metadata: Record<string, string> = {}
+  const hookImplementations: Array<Record<string, string>> = []
+  const badiImplementations: Array<Record<string, string>> = []
+  const filters: Array<Record<string, string>> = []
+  const sourceRows: Array<Record<string, string>> = []
+  for (const line of lines) {
+    const match = line.match(/^([MHBFNS])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(`SAP repository helper returned an invalid enhancement payload line: ${line}`)
+    }
+    const index = Number.parseInt(match[2], 10)
+    if (index < 1)
+      throw new Error(`SAP repository helper returned an invalid payload index: ${line}`)
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    const target =
+      match[1] === "M"
+        ? metadata
+        : rowAtRepository(
+            match[1] === "H"
+              ? hookImplementations
+              : match[1] === "B"
+                ? badiImplementations
+                : match[1] === "F"
+                  ? filters
+                  : sourceRows,
+            index
+          )
+    target[match[3]] = value
+  }
+  const hookSources: string[][] = hookImplementations.map(() => [])
+  for (const row of sourceRows) {
+    const hookIndex = Number.parseInt(row.HOOK_INDEX ?? "", 10)
+    const lineNumber = Number.parseInt(row.LINE_NUMBER ?? "", 10)
+    if (
+      !Number.isSafeInteger(hookIndex) ||
+      hookIndex < 1 ||
+      hookIndex > hookImplementations.length
+    ) {
+      throw new Error("SAP repository helper returned an invalid hook source owner")
+    }
+    if (!Number.isSafeInteger(lineNumber) || lineNumber < 1) {
+      throw new Error("SAP repository helper returned an invalid hook source line number")
+    }
+    hookSources[hookIndex - 1]![lineNumber - 1] = row.LINE ?? ""
+  }
+  const normalizedHooks = hookImplementations.map((row, index) => ({
+    spotName: row.SPOT_NAME ?? "",
+    programName: row.PROGRAM_NAME ?? "",
+    extId: row.EXTID ?? "",
+    id: row.ID ?? "",
+    overwriteRaw: row.OVERWRITE ?? "",
+    replacement: row.OVERWRITE === "X",
+    methodRaw: row.METHOD ?? "",
+    method: row.METHOD === "X",
+    mode: row.MODE ?? "",
+    fullName: row.FULL_NAME ?? "",
+    parentFullName: row.PARENT_FULL_NAME ?? "",
+    sourceCount: Number.parseInt(row.SOURCE_COUNT ?? "0", 10) || 0,
+    source: hookSources[index] ?? []
+  }))
+  const normalizedBadis = badiImplementations.map((row) => {
+    const implementationName = row.IMPL_NAME ?? ""
+    return {
+      spotName: row.SPOT_NAME ?? "",
+      badiName: row.BADI_NAME ?? "",
+      implementationName,
+      implementationClass: row.IMPL_CLASS ?? "",
+      activeRaw: row.ACTIVE ?? "",
+      active: row.ACTIVE === "X",
+      defaultRaw: row.IS_DEFAULT ?? "",
+      defaultImplementation: row.IS_DEFAULT === "X",
+      shortText: row.SHORT_TEXT ?? "",
+      filters: normalizedEnhancementFilters(
+        filters.filter(
+          (filter) =>
+            !filter.IMPLEMENTATION_NAME || filter.IMPLEMENTATION_NAME === implementationName
+        )
+      )
+    }
+  })
+  const definition = {
+    name: metadata.NAME ?? "",
+    tool: metadata.TOOL ?? "",
+    shortText: metadata.SHORT_TEXT ?? "",
+    activeRaw: metadata.ACTIVE ?? "",
+    active: metadata.ACTIVE === "X",
+    inactiveRaw: metadata.INACTIVE ?? "",
+    hasInactiveVersion: metadata.INACTIVE === "X",
+    savedInactiveRaw: metadata.SAVED_INACTIVE ?? "",
+    hasSavedInactiveVersion: metadata.SAVED_INACTIVE === "X",
+    unsavedInactiveRaw: metadata.UNSAVED_INACTIVE ?? "",
+    hasUnsavedInactiveVersion: metadata.UNSAVED_INACTIVE === "X",
+    originalObjectType: metadata.ORIGINAL_OBJECT_TYPE ?? "",
+    originalObjectName: metadata.ORIGINAL_OBJECT_NAME ?? "",
+    mainObjectType: metadata.MAIN_OBJECT_TYPE ?? "",
+    mainObjectName: metadata.MAIN_OBJECT_NAME ?? "",
+    programName: metadata.PROGRAM_NAME ?? "",
+    hookImplementations: normalizedHooks,
+    badiImplementations: normalizedBadis,
+    filters
+  }
+  return {
+    connectionId,
+    repositoryKind: "enhancement_implementation",
+    enhancementName: definition.name,
+    packageName: metadata.PACKAGE ?? "",
+    definition,
+    fingerprint: stableFingerprint(definition)
+  }
+}
+
+function assertEnhancementWriteSnapshot(
+  current: Record<string, unknown>,
+  expectedFingerprint: string,
+  packageName: string
+): void {
+  if (current.fingerprint !== expectedFingerprint.toLowerCase()) {
+    throw new Error("ENHANCEMENT_IMPLEMENTATION_STALE_FINGERPRINT")
+  }
+  if (String(current.packageName).toUpperCase() !== packageName.toUpperCase()) {
+    throw new Error("ENHANCEMENT_IMPLEMENTATION_PACKAGE_MISMATCH")
+  }
+}
+
+function normalizedEnhancementFilters(
+  filters: Array<Record<string, string>>
+): Array<Record<string, string>> {
+  return filters
+    .map((filter) =>
+      Object.fromEntries(
+        Object.entries(filter)
+          .filter(([name, value]) => name.toUpperCase() !== "IMPLEMENTATION_NAME" && value !== "")
+          .map(([name, value]): [string, string] => [name.toUpperCase(), value])
+          .sort(([left], [right]) => left.localeCompare(right))
+      )
+    )
+    .sort(compareByJson)
+}
+
+function classicBadiImplementationSnapshot(
+  result: Record<string, unknown>,
+  implementationName: string
+): Record<string, unknown> | undefined {
+  const definition = result.definition as Record<string, unknown> | undefined
+  const assignments = Array.isArray(definition?.implementationAssignments)
+    ? (definition.implementationAssignments as Array<Record<string, unknown>>).filter(
+        (row) => String(row.implementationName).toUpperCase() === implementationName
+      )
+    : []
+  if (!assignments.length) return undefined
+  const classMappings = Array.isArray(definition?.classMappings)
+    ? (definition.classMappings as Array<Record<string, unknown>>).filter(
+        (row) => String(row.implementationName).toUpperCase() === implementationName
+      )
+    : []
+  return { assignments, classMappings }
+}
+
+function customerEnhancementName(value: string, fieldName: string, maxLength = 30): string {
+  const normalized = value.trim().toUpperCase()
+  if (!new RegExp(`^[ZY][A-Z0-9_/$]{0,${maxLength - 1}}$`).test(normalized)) {
+    throw new Error(`${fieldName} must name a Z* or Y* customer object`)
+  }
+  return normalized
+}
+
+function repositoryComponentName(value: string, fieldName: string, maxLength: number): string {
+  const normalized = value.trim().toUpperCase()
+  if (!new RegExp(`^[A-Z0-9_/$]{1,${maxLength}}$`).test(normalized)) {
+    throw new Error(`${fieldName} is not a valid SAP repository name`)
+  }
+  return normalized
+}
+
+function stableFingerprint(value: unknown): string {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex")
 }
 
 function rowAtRepository(
@@ -5995,6 +10477,14 @@ function readableObjectName(value: string): string {
     !/^(?:\/[A-Z0-9_]+\/)?[A-Z0-9_]+$/.test(normalized)
   ) {
     throw new Error("objectName is not a valid ABAP object name")
+  }
+  return normalized
+}
+
+function transactionCodeName(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!/^[A-Z0-9_/$]{1,20}$/.test(normalized)) {
+    throw new Error("transactionCode must be an exact SAP transaction name")
   }
   return normalized
 }

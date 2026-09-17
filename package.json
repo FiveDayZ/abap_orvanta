@@ -1,9 +1,9 @@
 {
   "name": "abap-mcp-standalone",
-  "version": "0.34.0",
+  "version": "0.44.1",
   "private": true,
   "type": "module",
-  "description": "Standalone headless ABAP MCP service for SAP ADT",
+  "description": "ORVANTA - independent ABAP MCP service for SAP ADT",
   "license": "MIT",
   "engines": {
     "node": ">=24"
@@ -15,12 +15,16 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "test": "npm run build && node --test dist/test/*.test.js",
+    "test:mvp-batch1": "node scripts/run-mvp-batch1-acceptance.mjs",
+    "test:mvp-batch2": "node scripts/run-mvp-batch1-acceptance.mjs --batch2",
+    "test:mvp-batch3": "node scripts/run-mvp-batch1-acceptance.mjs --batch3",
     "test:bootstrap": "pwsh -NoLogo -NoProfile -File test/bootstrap-sap-helper-response.test.ps1",
     "test:installer": "pwsh -NoLogo -NoProfile -File test/install-sap-helper.test.ps1",
     "test:setup": "pwsh -NoLogo -NoProfile -File test/setup.test.ps1",
     "test:runtime": "pwsh -NoLogo -NoProfile -File test/runtime-smoke.ps1",
     "package:windows": "pwsh -NoLogo -NoProfile -File scripts/package-windows.ps1",
     "test:package": "pwsh -NoLogo -NoProfile -File test/package-smoke.ps1",
+    "test:settings-package": "pwsh -NoLogo -NoProfile -File test/settings-package-smoke.ps1",
     "test:codex-config": "pwsh -NoLogo -NoProfile -File test/codex-registration-smoke.ps1",
     "test:codex-client": "pwsh -NoLogo -NoProfile -File test/codex-client-smoke.ps1",
     "test:w200-read-wave": "node scripts/probe-read-wave.mjs",
@@ -41,19 +45,26 @@
     "test:w200-lifecycle-validation": "pwsh -NoLogo -NoProfile -File scripts/run-lifecycle-validation.ps1 -ApproveWrite",
     "test:w200-capability-report": "pwsh -NoLogo -NoProfile -File scripts/run-capability-validation.ps1",
     "test:w200-repository-lifecycle": "pwsh -NoLogo -NoProfile -File scripts/run-repository-lifecycle-validation.ps1 -ApproveWrite",
+    "test:w200-function-interface-patch": "pwsh -NoLogo -NoProfile -File scripts/run-function-interface-patch-validation.ps1 -ApproveWrite",
     "test:w200-ddic-safe-append": "pwsh -NoLogo -NoProfile -File scripts/run-ddic-safe-append-validation.ps1 -ApproveWrite",
     "test:w200-ddic-table-lifecycle": "pwsh -NoLogo -NoProfile -File scripts/run-ddic-table-lifecycle-validation.ps1 -ApproveDestructiveWrite",
     "test:w200-debug-wave": "pwsh -NoLogo -NoProfile -File scripts/run-debug-validation.ps1",
+    "test:w200-debug-acceptance": "node scripts/probe-debug-acceptance.mjs",
     "test:w200-soap-rfc": "pwsh -NoLogo -NoProfile -File scripts/probe-soap-rfc.ps1 -BaseUrl http://192.168.88.26:8000 -Username wys -Client 200 -Language EN",
-    "verify:release": "npm run package:windows && npm run test:package",
+    "verify:release": "npm run package:windows && npm run test:package && npm run test:settings-package",
     "verify:headless": "node scripts/verify-headless.mjs",
+    "matrix:generate": "npm run build && node scripts/generate-tool-index.mjs",
+    "matrix:check": "npm run build && node scripts/generate-tool-index.mjs --check",
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run test:bootstrap && npm run test:installer && npm run test:setup && npm run verify:headless",
     "extract:baseline": "node scripts/extract-baseline.mjs",
-    "start": "node dist/src/index.js"
+    "start": "node dist/src/index.js",
+    "settings": "node dist/src/settings-index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
     "abap-adt-api": "8.4.3",
+    "fast-xml-parser": "5.11.0",
+    "parse5": "8.0.0",
     "zod": "3.25.76"
   },
   "devDependencies": {

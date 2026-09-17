@@ -9,6 +9,7 @@ import type {
   DebugVariable
 } from "abap-adt-api"
 import { fromError, isDebuggee, isDebuggerBreakpoint, isDebugListenerError } from "abap-adt-api"
+import { debugRequestFailure, inspectDebugger, type DebugPrecheck } from "./debug-precheck.js"
 
 export type HeadlessDebugState =
   | "idle"
@@ -20,7 +21,7 @@ export type HeadlessDebugState =
   | "error"
 
 export interface DebugSessionRequest {
-  action: "start" | "stop" | "status"
+  action: "start" | "stop" | "status" | "precheck"
   debugUser?: string | undefined
   terminalMode?: boolean | undefined
 }
@@ -33,6 +34,7 @@ export interface DebugSessionInfo {
   startedAt?: string | undefined
   lastActivity?: string | undefined
   breakpointCount: number
+  precheck?: DebugPrecheck | undefined
   debuggee?:
     | {
         program: string
@@ -192,6 +194,9 @@ export class HeadlessDebugManager {
     }
 
     const listener = await this.factory.listenerClient(id)
+    if (request.action === "precheck") {
+      return { ...this.status(id), precheck: await inspectDebugger(listener, debugUser) }
+    }
     const terminalId = randomId()
     const ideId = randomId()
     let conflict
@@ -741,6 +746,12 @@ function errorText(error: unknown): string {
 }
 
 function debuggerCapabilityFailure(error: unknown): Error {
+  const failure = debugRequestFailure(error)
+  if (failure.httpStatus === 404) {
+    return new Error(
+      "debugger capability listener-not-found-ambiguous (HTTP 404): the listener GET may mean no active listener or an unavailable route; no listener was started"
+    )
+  }
   const adtError = fromError(error)
   const reportedStatus =
     "status" in adtError ? adtError.status : "err" in adtError ? adtError.err : 0

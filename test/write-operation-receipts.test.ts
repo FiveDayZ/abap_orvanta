@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
+import { spawnSync } from "node:child_process"
 import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -58,6 +59,7 @@ test("write receipts serialize one target, retain hashes, and release the lock",
     const next = await store.reserve({ ...identity, operationId: "write-receipt-3" })
     assert.equal(next.status, "reserved")
     if (next.status !== "reserved") throw new Error("Missing next reservation")
+    await store.markSapInvocationStarted(next.reservation)
     await store.fail(next.reservation, new Error("SAP rejected the write"), 5)
     const failed = await store.status("w200", "write-receipt-3")
     assert.equal(failed.status, "failed")
@@ -124,6 +126,11 @@ test("write target keys align transaction operations and distinguish DDIC namesp
     ).key,
     writeOperationTarget(
       "create_function_module_with_interface",
+      { functionName: "ZCMCP_FM_0301", functionGroup: "ZCMCP_FG_0301" },
+      ""
+    ).key,
+    writeOperationTarget(
+      "patch_function_module_interface",
       { functionName: "ZCMCP_FM_0301", functionGroup: "ZCMCP_FG_0301" },
       ""
     ).key,
@@ -200,6 +207,8 @@ test("service restart reports interrupted writes and preserves the target lock",
     const firstReservation = await first.reserve(identity)
     assert.equal(firstReservation.status, "reserved")
     if (firstReservation.status !== "reserved") throw new Error("Missing reservation")
+    await first.markSapInvocationStarted(firstReservation.reservation)
+    await useExitedOwner(firstReservation.reservation)
 
     const restarted = new WriteOperationReceiptStore(root, "second-instance")
     const interrupted = await restarted.status(identity.connectionId, identity.operationId)
@@ -272,6 +281,8 @@ test("recovery listing is bounded and includes stale completed locks", async () 
     const first = new WriteOperationReceiptStore(root, "first-instance")
     const interrupted = await first.reserve({ ...identity, operationId: "interrupted-list" })
     assert.equal(interrupted.status, "reserved")
+    if (interrupted.status !== "reserved") throw new Error("Missing interrupted reservation")
+    await useExitedOwner(interrupted.reservation)
     const stale = await first.reserve({
       ...identity,
       operationId: "stale-list",
@@ -351,6 +362,45 @@ test("version 1 write receipts remain readable", async () => {
   }
 })
 
+test("legacy owner identity and interrupted recovery remain fail closed", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-legacy-owner-"))
+  try {
+    const first = new WriteOperationReceiptStore(root, "legacy-owner")
+    const reservation = await first.reserve(identity)
+    if (reservation.status !== "reserved") throw new Error("Missing reservation")
+    const path = reservation.reservation.receiptPath
+    const receipt = JSON.parse(await readFile(path, "utf8"))
+    delete receipt.ownerPid
+    await writeFile(path, JSON.stringify(receipt))
+    const restarted = new WriteOperationReceiptStore(root, "new-owner")
+    const status = await restarted.status(identity.connectionId, identity.operationId)
+    await assert.rejects(
+      restarted.releaseLocalLock(
+        identity.connectionId,
+        identity.operationId,
+        String(status.receiptHash),
+        "checked"
+      ),
+      /Legacy receipt has no owner process identity/
+    )
+    await access(reservation.reservation.lockPath)
+    await writeFile(`${path}.recovery`, "")
+    await assert.rejects(
+      restarted.releaseLocalLock(
+        identity.connectionId,
+        identity.operationId,
+        String(status.receiptHash),
+        "checked"
+      ),
+      /Local recovery is active or interrupted/
+    )
+    await access(reservation.reservation.lockPath)
+    await access(`${path}.recovery`)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 async function receiptFiles(root: string): Promise<string[]> {
   const receiptRoot = join(root, "write-receipts")
   const connectionDirectories = await readdir(receiptRoot)
@@ -366,4 +416,17 @@ async function receiptFiles(root: string): Promise<string[]> {
 
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex")
+}
+
+async function useExitedOwner(reservation: {
+  receiptPath: string
+  lockPath: string
+}): Promise<void> {
+  // Unit fixture only; failure-process.test exercises real service termination.
+  const exited = spawnSync(process.execPath, ["-e", ""], { windowsHide: true })
+  assert.equal(exited.status, 0)
+  for (const path of [reservation.receiptPath, reservation.lockPath]) {
+    const value = JSON.parse(await readFile(path, "utf8"))
+    await writeFile(path, JSON.stringify({ ...value, ownerPid: exited.pid }))
+  }
 }

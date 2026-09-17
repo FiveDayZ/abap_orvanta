@@ -1,0 +1,39 @@
+{
+  "system": "w200",
+  "client": "200",
+  "deploymentStatus": "deployed_syntax_verified_runtime_pending",
+  "className": "ZCL_ORVANTA_SMARTFORM",
+  "functionGroup": "ZORVANTA_SF",
+  "functionName": "Z_ORVANTA_SMARTFORM_API",
+  "packageName": "ZABAP",
+  "transportRequest": "GR2K923421",
+  "transportTask": "GR2K923422",
+  "remoteEnabled": true,
+  "parameterType": "STRING",
+  "passByValue": true,
+  "importParameters": [
+    "IV_ACTION",
+    "IV_FORMNAME",
+    "IV_LANGUAGE",
+    "IV_VERSION",
+    "IV_XML",
+    "IV_EXPECTED",
+    "IV_PACKAGE",
+    "IV_TRANSPORT"
+  ],
+  "exportParameters": [
+    "EV_PROTOCOL",
+    "EV_STATUS",
+    "EV_CODE",
+    "EV_MESSAGE",
+    "EV_FORMNAME",
+    "EV_LANGUAGE",
+    "EV_VERSION",
+    "EV_XML",
+    "EV_FINGERPRINT",
+    "EV_PACKAGE",
+    "EV_ACTIVE",
+    "EV_INACTIVE",
+    "EV_REQUEST"
+  ]
+}

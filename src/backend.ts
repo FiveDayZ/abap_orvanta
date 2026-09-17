@@ -1,4 +1,6 @@
 import type { TransportRequest, TransportsOfUser } from "abap-adt-api"
+import type { SmartformRequest, SmartformResponse } from "./smartforms.js"
+import type { WhereUsedRequestTrace } from "./where-used-request.js"
 import type {
   DebugBreakpointInfo,
   DebugSessionInfo,
@@ -10,6 +12,14 @@ import type {
   DebugVariableRequest
 } from "./debug-manager.js"
 
+export interface TransportCleanupEntry {
+  pgmid: string
+  type: string
+  name: string
+  position: string
+  wbType?: string | undefined
+}
+
 export interface AbapObjectInfo {
   name: string
   type: string
@@ -17,6 +27,13 @@ export interface AbapObjectInfo {
   package: string
   systemType: "STANDARD" | "CUSTOM"
   uri: string
+}
+
+export interface ObjectTypeSearchResult {
+  requestedType: string
+  status: "available" | "unsupported" | "forbidden" | "timeout" | "error"
+  objects: AbapObjectInfo[]
+  reason?: string | undefined
 }
 
 export interface SourceResult {
@@ -32,9 +49,24 @@ export interface SourceReadOptions {
 
 export interface EnhancementInfo {
   name: string
-  startLine: number
+  type: string
+  version: string
+  elementId: string
+  fullname: string
+  mode: string
+  replacing: boolean
+  startLine?: number | undefined
+  startColumn?: number | undefined
   uri?: string | undefined
+  positionUri?: string | undefined
   source?: string | undefined
+  enhancedObject?:
+    | {
+        uri: string
+        type: string
+        name: string
+      }
+    | undefined
 }
 
 export interface ConnectionDetails {
@@ -85,6 +117,18 @@ export interface RemoteFunctionResult {
 
 export type SapRepositoryOperation =
   | "READ_SCREEN"
+  | "READ_CUSTOMER_EXIT_DEFINITION"
+  | "READ_CUSTOMER_EXIT_PROJECT"
+  | "READ_BTE_CONFIGURATION"
+  | "READ_CLASSIC_BADI_DEFINITION"
+  | "READ_ENHANCEMENT_IMPLEMENTATION"
+  | "CREATE_HOOK_ENHANCEMENT"
+  | "CREATE_BADI_ENHANCEMENT"
+  | "UPDATE_HOOK_ENHANCEMENT"
+  | "UPDATE_BADI_ENHANCEMENT"
+  | "MANAGE_ENHANCEMENT_STATE"
+  | "DELETE_ENHANCEMENT_IMPLEMENTATION"
+  | "MANAGE_CLASSIC_BADI_IMPLEMENTATION"
   | "UPSERT_SCREEN"
   | "PATCH_SCREEN"
   | "READ_GUI_DEFINITION"
@@ -99,6 +143,7 @@ export type SapRepositoryOperation =
   | "CREATE_REPORT_TRANSACTION"
   | "READ_FUNCTION_INTERFACE"
   | "CREATE_FUNCTION_MODULE"
+  | "PATCH_FUNCTION_INTERFACE"
   | "INSPECT_REPOSITORY_ASSIGNMENT"
   | "READ_TEXT_ELEMENTS"
   | "MERGE_TEXT_ELEMENTS"
@@ -177,6 +222,8 @@ export type SapDdicOperation =
   | "CREATE_TRANSPARENT_TABLE"
   | "APPEND_TRANSPARENT_TABLE_FIELDS"
   | "PATCH_TRANSPARENT_TABLE_FIELDS"
+  | "PATCH_TRANSPARENT_TABLE_SETTINGS"
+  | "RECOVER_TABLE_CONVERSION"
   | "READ_TABLE_TYPE"
   | "UPSERT_TABLE_TYPE"
   | "DELETE_DOMAIN"
@@ -198,6 +245,7 @@ export interface SapDdicRequest {
 }
 
 export interface SapDdicResult extends SapHelperResult {
+  metadata: SapStructureRow
   packageName: string
   objectVersion: string
   recordedRequest: string
@@ -254,10 +302,19 @@ export interface DiscoverySnapshotInfo {
 export interface UsageReferenceInfo {
   uri: string
   objectIdentifier: string
+  identifierKind?: "ADT_RIS_URI"
+  enclosingObjectName?: string
   name: string
   type?: string | undefined
   description?: string | undefined
   packageName?: string | undefined
+}
+
+export interface LegacyUsageReferences {
+  engine: "ADT_RIS_WHEREUSED"
+  references: UsageReferenceInfo[]
+  relationshipTypes: Array<{ trobjtype: string; subtype: string; legacy_type: string }>
+  requestTrace?: WhereUsedRequestTrace[]
 }
 
 export interface UsageSnippetInfo {
@@ -301,6 +358,10 @@ export interface AtcFindingInfo {
 export interface AtcResultInfo {
   variant: string
   findings: AtcFindingInfo[]
+  execution?: {
+    objectSetIsComplete: boolean
+    requestedMaximumVerdicts: number
+  }
 }
 
 export interface UnitTestAlertInfo {
@@ -314,7 +375,7 @@ export interface UnitTestClassInfo {
   alerts: UnitTestAlertInfo[]
   methods: Array<{
     name: string
-    executionTime: number
+    executionTime?: number | null
     alerts: UnitTestAlertInfo[]
   }>
 }
@@ -330,6 +391,7 @@ export interface ActivationInfo {
   success: boolean
   messages: ActivationMessageInfo[]
   inactiveObjects: string[]
+  attempted?: boolean
 }
 
 export interface SourceMutationInfo {
@@ -340,6 +402,23 @@ export interface SourceMutationInfo {
   newLineCount: number
   transportNumber: string
   activation: ActivationInfo
+  sourceFingerprintBefore?: string
+  sourceFingerprintAfter?: string
+  saveSucceeded?: boolean
+  unlockSucceeded?: boolean
+  activationAttempted?: boolean
+  activationSucceeded?: boolean
+  activeFingerprint?: string | null
+  inactiveFingerprint?: string | null
+  readbackError?: string
+}
+
+export interface SourceInspectionInfo {
+  sourceUri: string
+  objectUri: string
+  objectName: string
+  activeSource: string
+  inactiveSource: string | null
 }
 
 export interface CreateObjectRequest {
@@ -497,6 +576,7 @@ export interface DebugBreakpointCommand {
 }
 
 export interface SapBackend {
+  callSmartform(connectionId: string, request: SmartformRequest): Promise<SmartformResponse>
   connectionIds(): string[]
   connectionDetails(connectionId: string): ConnectionDetails
   callSapHelper(connectionId: string, request: SapHelperRequest): Promise<SapHelperResult>
@@ -511,12 +591,19 @@ export interface SapBackend {
     types: string[] | undefined,
     maxResults: number
   ): Promise<AbapObjectInfo[]>
+  searchObjectTypes(
+    connectionId: string,
+    pattern: string,
+    types: string[],
+    maxResultsPerType: number
+  ): Promise<ObjectTypeSearchResult[]>
   readSource(
     connectionId: string,
     object: AbapObjectInfo,
     options?: SourceReadOptions
   ): Promise<SourceResult>
   readSourceByUri(connectionId: string, uri: string): Promise<SourceResult>
+  inspectSource(connectionId: string, fileUri: string): Promise<SourceInspectionInfo>
   readEnhancements(
     connectionId: string,
     objectUri: string,
@@ -526,16 +613,31 @@ export interface SapBackend {
     connectionId: string,
     uri: string,
     line: number,
-    character: number
-  ): Promise<UsageReferenceInfo[]>
+    character: number,
+    source?: string
+  ): Promise<UsageReferenceInfo[] | LegacyUsageReferences>
   usageReferenceSnippets(
     connectionId: string,
     references: UsageReferenceInfo[]
   ): Promise<UsageSnippetInfo[]>
   revisions(connectionId: string, objectUri: string): Promise<RevisionInfo[]>
-  runQuery(connectionId: string, sql: string, maxRows: number): Promise<Record<string, unknown>[]>
+  runQuery(
+    connectionId: string,
+    sql: string,
+    maxRows: number,
+    options?: { allowScopedFallback: boolean }
+  ): Promise<Record<string, unknown>[]>
   listUserTransports(connectionId: string, user: string): Promise<TransportsOfUser>
   transportDetails(connectionId: string, transportNumber: string): Promise<TransportRequest>
+  cleanupTransportEntries(
+    connectionId: string,
+    taskNumber: string,
+    parentTransportNumber: string,
+    entries: TransportCleanupEntry[]
+  ): Promise<void>
+  inactiveObjectInventory?(
+    connectionId: string
+  ): Promise<import("./inactive-inventory.js").InactiveInventory>
   exportResource(
     connectionId: string,
     source: string,
@@ -544,6 +646,7 @@ export interface SapBackend {
   discoverySnapshot(connectionId: string): Promise<DiscoverySnapshotInfo>
   diagnostics(connectionId: string, fileUri: string): Promise<DiagnosticInfo[]>
   runAtc(connectionId: string, objectUri: string): Promise<AtcResultInfo>
+  inspectAtc(connectionId: string): Promise<import("./native-atc.js").AtcPrecheckInfo>
   atcDocumentation(connectionId: string, docUri: string): Promise<string>
   runUnitTests(connectionId: string, objectUri: string): Promise<UnitTestClassInfo[]>
   replaceSource(
@@ -551,7 +654,9 @@ export interface SapBackend {
     fileUri: string,
     oldString: string,
     newString: string,
-    transportNumber?: string
+    transportNumber?: string,
+    expectedSourceFingerprint?: string,
+    recoverInactiveSource?: boolean
   ): Promise<SourceMutationInfo>
   activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo>
   createObject(connectionId: string, request: CreateObjectRequest): Promise<ObjectCreationInfo>

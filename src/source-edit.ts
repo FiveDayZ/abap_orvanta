@@ -14,7 +14,7 @@ export function findAndReplaceSource(
   }
 
   const count = countOccurrences(content, oldString)
-  if (count === 1) return content.replace(oldString, newString)
+  if (count === 1) return content.replace(oldString, () => newString)
   if (count > 1) {
     throw new Error(
       `Found ${count} occurrences of oldString. Include 3-5 stable surrounding lines so it matches exactly once.`
@@ -30,7 +30,9 @@ export function findAndReplaceSource(
     )
   }
   if (normalizedCount === 1) {
-    const updated = normalizedContent.replace(normalizedOld, newString.replaceAll("\r\n", "\n"))
+    const updated = normalizedContent.replace(normalizedOld, () =>
+      newString.replaceAll("\r\n", "\n")
+    )
     return content.includes("\r\n") ? updated.replace(/(?<!\r)\n/g, "\r\n") : updated
   }
 

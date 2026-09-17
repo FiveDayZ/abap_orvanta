@@ -30,16 +30,16 @@ function Invoke-HelperCase {
 <?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
   <soapenv:Body>
-    <n1:Z_CODEX_MCP_EXECUTE xmlns:n1="urn:sap-com:document:sap:rfc:functions">
+    <n1:Z_ORVANTA_MCP_EXECUTE xmlns:n1="urn:sap-com:document:sap:rfc:functions">
       <IV_OPERATION>$escapedOperation</IV_OPERATION>
       <IV_OBJECT_TYPE>$escapedObjectType</IV_OBJECT_TYPE>
       <IV_OBJECT_NAME>$escapedObjectName</IV_OBJECT_NAME>
-    </n1:Z_CODEX_MCP_EXECUTE>
+    </n1:Z_ORVANTA_MCP_EXECUTE>
   </soapenv:Body>
 </soapenv:Envelope>
 "@
     $content = [Net.Http.StringContent]::new($envelope, [Text.Encoding]::UTF8, "text/xml")
-    $content.Headers.Add("SOAPAction", "http://www.sap.com/Z_CODEX_MCP_EXECUTE")
+    $content.Headers.Add("SOAPAction", "http://www.sap.com/Z_ORVANTA_MCP_EXECUTE")
     $response = $HttpClient.PostAsync($Uri, $content).GetAwaiter().GetResult()
     $body = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
     try {
@@ -103,7 +103,7 @@ try {
         @{ Operation = "PING"; ObjectType = ""; ObjectName = "" },
         @{ Operation = "DELETE_STANDARD"; ObjectType = "CLAS"; ObjectName = "CL_GUI_FRONTEND_SERVICES" },
         @{ Operation = "VALIDATE_TARGET"; ObjectType = "CLAS"; ObjectName = "CL_GUI_FRONTEND_SERVICES" },
-        @{ Operation = "VALIDATE_TARGET"; ObjectType = "CLAS"; ObjectName = "ZCL_CODEX_MCP_CORE" }
+        @{ Operation = "VALIDATE_TARGET"; ObjectType = "CLAS"; ObjectName = "ZCL_ORVANTA_MCP_CORE" }
     )
     $results = @(
         $cases | ForEach-Object {

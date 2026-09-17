@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
-import { mkdtemp, readFile, rm } from "node:fs/promises"
+import { spawnSync } from "node:child_process"
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
@@ -9,6 +10,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { startHttpServer } from "../src/http.js"
 import { hashWriteInput, WriteOperationReceiptStore } from "../src/write-operation-receipts.js"
 import { MockBackend } from "./mock-backend.js"
+import { PRODUCT_VERSION } from "../src/version.js"
 
 test("streamable HTTP exposes the implemented standalone tool waves", async () => {
   const stateRoot = await mkdtemp(join(tmpdir(), "abap-mcp-protocol-state-"))
@@ -17,6 +19,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
   try {
     const transport = new StreamableHTTPClientTransport(new URL(running.mcpUrl))
     await client.connect(transport as Parameters<Client["connect"]>[0])
+    assert.equal(client.getServerVersion()?.name, "orvanta")
     const list = await client.listTools()
     assert.deepEqual(list.tools.map((tool) => tool.name).sort(), [
       "abap_activate",
@@ -27,23 +30,33 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "abap_debug_step",
       "abap_debug_variable",
       "abap_download",
+      "activate_smartform",
       "adt_discovery_export",
       "analyze_abap_dumps",
       "analyze_abap_traces",
+      "analyze_change_impact",
       "append_ddic_transparent_table_fields",
+      "cleanup_transport_entries",
+      "correlate_sap_logs",
       "create_abap_message_class",
       "create_ddic_transparent_table",
+      "create_enhancement_hook_implementation",
       "create_function_module_with_interface",
       "create_module_pool",
+      "create_new_badi_implementation",
       "create_object_programmatically",
       "create_report_transaction",
+      "create_smartform",
       "create_test_include",
       "create_transaction_code",
       "delete_abap_message_class",
       "delete_abap_source_object",
       "delete_ddic_object",
+      "delete_enhancement_implementation",
       "delete_module_pool",
       "delete_transaction_code",
+      "diagnose_sap_failure",
+      "discover_application_logs",
       "execute_data_query",
       "find_where_used",
       "get_abap_diagnostics",
@@ -57,36 +70,78 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "get_connected_systems",
       "get_customer_function_call_status",
       "get_object_by_uri",
+      "get_runtime_info",
       "get_sap_system_info",
       "get_version_history",
       "get_write_operation_status",
+      "inspect_customer_function_exits",
+      "inspect_customer_screen_menu_exits",
+      "inspect_enhancement_framework",
+      "inspect_fico_rule_exit_program",
       "inspect_repository_assignment",
+      "inspect_source_enhancements",
       "invoke_customer_function_module",
       "list_write_recovery_operations",
+      "manage_classic_badi_implementation",
+      "manage_enhancement_implementation_state",
       "manage_text_elements",
       "manage_transport_requests",
       "patch_abap_gui_definition",
       "patch_abap_screen",
       "patch_ddic_transparent_table_fields",
+      "patch_ddic_transparent_table_settings",
+      "patch_function_module_interface",
+      "prepare_enhancement_configuration_workflow",
+      "preview_configuration",
+      "preview_source_changes",
       "read_abap_gui_definition",
       "read_abap_message_class",
       "read_abap_screen",
+      "read_abap_table",
+      "read_application_log",
+      "read_background_job_details",
+      "read_background_job_log",
+      "read_background_job_spool",
+      "read_bte_configuration",
+      "read_classic_badi_definition",
+      "read_customer_exit_definition",
+      "read_customer_exit_project",
       "read_ddic_data_element",
       "read_ddic_domain",
       "read_ddic_structure",
+      "read_ddic_table_conversion_status",
       "read_ddic_table_type",
       "read_ddic_transparent_table",
+      "read_enhancement_implementation",
+      "read_failed_update",
       "read_function_module_interface",
+      "read_report_parameters",
+      "read_report_variants",
+      "read_smartform",
+      "read_system_logs",
       "read_transaction_code",
+      "recover_ddic_table_conversion",
       "release_write_operation_lock",
       "replace_string_in_abap_object",
       "run_atc_analysis",
+      "run_sci_analysis",
       "run_unit_tests",
       "sap_helper_status",
+      "save_smartform",
       "search_abap_object_lines",
       "search_abap_objects",
+      "search_application_logs",
+      "search_background_jobs",
+      "search_badi_objects",
+      "search_bte_dispatchers",
+      "search_customer_exit_objects",
+      "search_enhancement_objects",
+      "search_failed_updates",
+      "search_sap_locks",
       "test_remote_function_module",
       "update_abap_message_class",
+      "update_enhancement_hook_implementation",
+      "update_new_badi_implementation",
       "upsert_abap_screen",
       "upsert_ddic_data_element",
       "upsert_ddic_domain",
@@ -197,6 +252,14 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       recoveryGuide: "Inspect program ZRECOVERY_CENTER in SAP before recovery."
     })
     assert.equal(seeded.status, "reserved")
+    if (seeded.status !== "reserved") throw new Error("Missing seeded reservation")
+    // Model a stopped owner, not a second live service in the test process.
+    const exited = spawnSync(process.execPath, ["-e", ""], { windowsHide: true })
+    assert.equal(exited.status, 0)
+    for (const path of [seeded.reservation.receiptPath, seeded.reservation.lockPath]) {
+      const value = JSON.parse(await readFile(path, "utf8"))
+      await writeFile(path, JSON.stringify({ ...value, ownerPid: exited.pid }))
+    }
 
     const recoveryList = await client.callTool({
       name: "list_write_recovery_operations",
@@ -271,6 +334,20 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
         inputSchema: { properties?: Record<string, unknown>; required?: string[] }
       }>
     }
+    const qualityOptionalFields = [
+      "fileUris",
+      "includeAtc",
+      "maxFindings",
+      "acknowledgePotentialSideEffects"
+    ]
+    const unitTool = list.tools.find((tool) => tool.name === "run_unit_tests")
+    assert.ok(unitTool)
+    const outputFormat = unitTool.inputSchema.properties?.outputFormat as
+      | { type?: string; enum?: string[] }
+      | undefined
+    assert.equal(outputFormat?.type, "string")
+    assert.deepEqual(outputFormat?.enum, ["text", "json"])
+    assert.ok(!(unitTool.inputSchema.required ?? []).includes("outputFormat"))
     for (const expected of baseline.tools) {
       const actual = list.tools.find((tool) => tool.name === expected.name)
       assert.ok(actual, `missing tool ${expected.name}`)
@@ -279,7 +356,18 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       )
       assert.deepEqual(
         actualProperties.sort(),
-        Object.keys(expected.inputSchema.properties ?? {}).sort(),
+        [
+          ...Object.keys(expected.inputSchema.properties ?? {}),
+          ...(expected.name === "run_atc_analysis" ? qualityOptionalFields : []),
+          ...(expected.name === "run_unit_tests" ? ["outputFormat"] : []),
+          ...(expected.name === "replace_string_in_abap_object"
+            ? ["expectedSourceFingerprint", "recoverInactiveSource"]
+            : []),
+          ...(expected.name === "find_where_used" ? ["objectUri", "responseFormat"] : []),
+          ...(expected.name === "manage_transport_requests"
+            ? ["expectedObjects", "inactiveTargets"]
+            : [])
+        ].sort(),
         `${expected.name} property names changed`
       )
       assert.deepEqual(
@@ -328,7 +416,18 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       )
       assert.deepEqual(
         actualProperties.sort(),
-        Object.keys(expected.inputSchema.properties ?? {}).sort(),
+        [
+          ...Object.keys(expected.inputSchema.properties ?? {}),
+          ...(expected.name === "run_atc_analysis" ? qualityOptionalFields : []),
+          ...(expected.name === "run_unit_tests" ? ["outputFormat"] : []),
+          ...(expected.name === "replace_string_in_abap_object"
+            ? ["expectedSourceFingerprint", "recoverInactiveSource"]
+            : []),
+          ...(expected.name === "find_where_used" ? ["objectUri", "responseFormat"] : []),
+          ...(expected.name === "manage_transport_requests"
+            ? ["expectedObjects", "inactiveTargets"]
+            : [])
+        ].sort(),
         `${expected.name} property names changed`
       )
       assert.deepEqual(
@@ -345,6 +444,33 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     assert.equal(result.isError, undefined)
     assert.deepEqual(result.content, [{ type: "text", text: "Connected SAP systems: w200" }])
 
+    const sciWithoutApproval = await client.callTool({
+      name: "run_sci_analysis",
+      arguments: { connectionId: "w200", action: "run" }
+    })
+    assert.equal(sciWithoutApproval.isError, true)
+    const sciWrongHelper = await client.callTool({
+      name: "run_sci_analysis",
+      arguments: {
+        connectionId: "w200",
+        action: "run",
+        acknowledgePotentialSideEffects: true
+      }
+    })
+    assert.equal(sciWrongHelper.isError, true)
+
+    const debugPrecheck = await client.callTool({
+      name: "abap_debug_session",
+      arguments: { connectionId: "w200", action: "precheck" }
+    })
+    assert.equal(debugPrecheck.isError, undefined)
+    const debugPrecheckText = debugPrecheck.content as Array<{ type: string; text?: string }>
+    const debugMetadata = JSON.parse(debugPrecheckText[0]?.text ?? "{}")
+    assert.equal(debugMetadata.state, "idle")
+    assert.equal(debugMetadata.precheck.readOnly, true)
+    assert.equal(debugMetadata.precheck.listenerStarted, false)
+    assert.equal(debugMetadata.precheck.status, "not_advertised")
+
     const capabilityResult = await client.callTool({
       name: "get_capability_report",
       arguments: { connectionId: "w200" }
@@ -357,12 +483,12 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       readOnly: boolean
       capabilities: Array<{ toolNames: string[] }>
     }
-    assert.equal(capabilityReport.productVersion, "0.34.0")
+    assert.equal(capabilityReport.productVersion, PRODUCT_VERSION)
     assert.equal(capabilityReport.connection.id, "w200")
     assert.equal(capabilityReport.readOnly, true)
     assert.equal(
       capabilityReport.capabilities.flatMap((capability) => capability.toolNames).length,
-      74
+      116
     )
 
     const helper = await client.callTool({
@@ -737,9 +863,14 @@ test("health endpoint responds without an MCP session", async () => {
   try {
     const response = await fetch(`http://127.0.0.1:${running.port}/health`)
     assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), {
+    const health = await response.json()
+    assert.equal(typeof health.startedAt, "string")
+    assert.equal(new Date(health.startedAt).toISOString(), health.startedAt)
+    assert.deepEqual(health, {
       status: "ok",
-      server: "abap-mcp-standalone"
+      server: "abap-mcp-standalone",
+      version: PRODUCT_VERSION,
+      startedAt: health.startedAt
     })
   } finally {
     await running.close()

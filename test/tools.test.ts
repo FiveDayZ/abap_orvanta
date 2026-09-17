@@ -6,6 +6,7 @@ import type { AddressInfo } from "node:net"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
+import { usageReferences as sdkUsageReferences } from "abap-adt-api/build/api/syntax.js"
 import {
   AdtBackend,
   addMessageClassEntries,
@@ -43,6 +44,8 @@ import { InvocationReceiptStore } from "../src/invocation-receipts.js"
 import { ToolService, extractMethod, validateReadOnlySql } from "../src/tools.js"
 import { findAndReplaceSource } from "../src/source-edit.js"
 import { MockBackend } from "./mock-backend.js"
+import { PRODUCT_VERSION } from "../src/version.js"
+import { inactiveHttp } from "./inactive-http.js"
 
 const zclDemoSource = [
   "CLASS zcl_demo IMPLEMENTATION.",
@@ -52,6 +55,17 @@ const zclDemoSource = [
   "ENDCLASS."
 ].join("\n")
 const zclDemoFingerprint = createHash("sha256").update(zclDemoSource).digest("hex")
+
+test("BAdI subtype validation lists every accepted repository subtype", () => {
+  const result = toolContracts.search_badi_objects.inputSchema.types.safeParse(["BADI"])
+  assert.equal(result.success, false)
+  if (!result.success) {
+    assert.equal(
+      result.error.issues[0]?.message,
+      "Expected one of SXSD/XD, SXCI/XI, ENHS/XS, or ENHO/XHB"
+    )
+  }
+})
 
 test("five headless tool paths preserve representative output behavior", async () => {
   const tools = new ToolService(new MockBackend())
@@ -147,7 +161,7 @@ test("dynamic capability report uses only bounded read probes and covers every t
     }>
   }
 
-  assert.equal(report.productVersion, "0.34.0")
+  assert.equal(report.productVersion, PRODUCT_VERSION)
   assert.deepEqual(report.connection, {
     id: "w200",
     baseUrl: "https://sap.example.invalid",
@@ -367,12 +381,12 @@ test("SAP helper SOAP envelope escapes inputs and parses stable results", () => 
   const result = parseSapHelperResponse(`<?xml version="1.0"?>
     <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
       <soap-env:Body>
-        <n0:Z_CODEX_MCP_EXECUTE.Response xmlns:n0="urn:sap-com:document:sap:rfc:functions">
+        <n0:Z_ORVANTA_MCP_EXECUTE.Response xmlns:n0="urn:sap-com:document:sap:rfc:functions">
           <EV_STATUS>S</EV_STATUS>
           <EV_CODE>READY</EV_CODE>
           <EV_MESSAGE>Codex MCP SAP helper is ready</EV_MESSAGE>
           <EV_VERSION>1.0</EV_VERSION>
-        </n0:Z_CODEX_MCP_EXECUTE.Response>
+        </n0:Z_ORVANTA_MCP_EXECUTE.Response>
       </soap-env:Body>
     </soap-env:Envelope>`)
   assert.deepEqual(result, {
@@ -514,9 +528,9 @@ test("SAP SOAP helper uses a plain Basic-auth HTTP request outside the ADT sessi
       })
       assert.equal(request.url, "/sap/bc/soap/rfc?sap-client=200&sap-language=EN")
       response.writeHead(200, { "Content-Type": "text/xml; charset=utf-8" })
-      const body = action.endsWith("Z_CODEX_MCP_EXECUTE")
+      const body = action.endsWith("Z_ORVANTA_MCP_EXECUTE")
         ? `<Envelope><Body><EV_STATUS>S</EV_STATUS><EV_CODE>READY</EV_CODE><EV_MESSAGE>OK</EV_MESSAGE><EV_VERSION>1.0</EV_VERSION></Body></Envelope>`
-        : action.endsWith("Z_CODEX_MCP_DDIC_API")
+        : action.endsWith("Z_ORVANTA_MCP_DDIC_API")
           ? `<Envelope><Body><EV_STATUS>S</EV_STATUS><EV_CODE>DDIC_OBJECT_READ</EV_CODE><EV_MESSAGE>OK</EV_MESSAGE><EV_VERSION>1.2</EV_VERSION><IT_SOURCE><item><LINE>M|1|PACKAGE|SAP_BASIS</LINE></item><item><LINE>M|1|VERSION|20260831120000</LINE></item><item><LINE>H|1|DOMNAME|CHAR10</LINE></item></IT_SOURCE></Body></Envelope>`
           : `<Envelope><Body><EV_STATUS>S</EV_STATUS><EV_CODE>SCREEN_READ</EV_CODE><EV_MESSAGE>OK</EV_MESSAGE><EV_VERSION>1.1</EV_VERSION><ES_HEADER><PROG>ZDEMO</PROG></ES_HEADER><EV_DYNPROTEXT>Demo</EV_DYNPROTEXT><CT_FIELDS></CT_FIELDS><CT_FLOWLOGIC></CT_FLOWLOGIC><CT_PARAMS></CT_PARAMS><ET_TCODES></ET_TCODES><ET_GUI_ATTRIBUTES></ET_GUI_ATTRIBUTES></Body></Envelope>`
       response.end(body)
@@ -558,15 +572,15 @@ test("SAP SOAP helper uses a plain Basic-auth HTTP request outside the ADT sessi
       requests.map(({ action, authorization }) => ({ action, authorization })),
       [
         {
-          action: "http://www.sap.com/Z_CODEX_MCP_EXECUTE",
+          action: "http://www.sap.com/Z_ORVANTA_MCP_EXECUTE",
           authorization: "Basic dGVzdDpzZWNyZXQ="
         },
         {
-          action: "http://www.sap.com/Z_CODEX_MCP_DYNPRO_API",
+          action: "http://www.sap.com/Z_ORVANTA_MCP_DYNPRO_API",
           authorization: "Basic dGVzdDpzZWNyZXQ="
         },
         {
-          action: "http://www.sap.com/Z_CODEX_MCP_DDIC_API",
+          action: "http://www.sap.com/Z_ORVANTA_MCP_DDIC_API",
           authorization: "Basic dGVzdDpzZWNyZXQ="
         }
       ]
@@ -604,7 +618,7 @@ test("repository helper SOAP separates public write rows from native read rows",
 
   const result = parseSapRepositoryResponse(`
     <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
-      <soap-env:Body><Z_CODEX_MCP_EXECUTE.Response>
+      <soap-env:Body><Z_ORVANTA_MCP_EXECUTE.Response>
         <EV_STATUS>S</EV_STATUS><EV_CODE>SCREEN_READ</EV_CODE>
         <EV_MESSAGE>OK</EV_MESSAGE><EV_VERSION>1.1</EV_VERSION>
         <ES_HEADER><PROG>ZMODULE_POOL</PROG><DNUM>0100</DNUM></ES_HEADER>
@@ -613,7 +627,7 @@ test("repository helper SOAP separates public write rows from native read rows",
         <CT_FLOWLOGIC><item><LINE>PROCESS BEFORE OUTPUT.</LINE></item></CT_FLOWLOGIC>
         <CT_PARAMS></CT_PARAMS><ET_TCODES></ET_TCODES>
         <ET_GUI_ATTRIBUTES></ET_GUI_ATTRIBUTES>
-      </Z_CODEX_MCP_EXECUTE.Response></soap-env:Body>
+      </Z_ORVANTA_MCP_EXECUTE.Response></soap-env:Body>
     </soap-env:Envelope>`)
   assert.equal(result.header.PROG, "ZMODULE_POOL")
   assert.equal(result.fields[0]?.FNAM, "GV_NAME")
@@ -911,6 +925,11 @@ test("Dynpro application tools validate customer scope and preserve structured r
     })
   ) as { fingerprint: string }
   assert.match(transactionRead.fingerprint, /^[a-f0-9]{64}$/)
+
+  const standardTransactionRead = JSON.parse(
+    await tools.readTransactionCode({ transactionCode: "VL02N", connectionId: "w200" })
+  ) as { definition: { transactions: Array<{ TCODE: string }> } }
+  assert.equal(standardTransactionRead.definition.transactions[0]?.TCODE, "VL02N")
 
   const deletedTransaction = await tools.deleteTransactionCode({
     transactionCode: "ZMODULE_POOL_UI",
@@ -1756,6 +1775,7 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
         packageName: "ZABAP",
         objectVersion: created.version,
         recordedRequest: "",
+        metadata: {},
         header: {},
         fixedValues: [],
         fields: []
@@ -1819,6 +1839,14 @@ test("function module tools create, read, fingerprint, inspect, and reject unsaf
     packageName: "ZABAP",
     transportNumber: "GR2K923421",
     connectionId: "w200"
+  }
+  for (const source of [["FUNCTION zcmcp_fm_1502."], ["  endfunction."]]) {
+    const previousRequest = backend.lastRepositoryRequest
+    await assert.rejects(
+      tools.createFunctionModuleWithInterface({ ...input, source }),
+      /only the function body/
+    )
+    assert.equal(backend.lastRepositoryRequest, previousRequest)
   }
   const created = JSON.parse(await tools.createFunctionModuleWithInterface(input)) as {
     status: string
@@ -1888,6 +1916,331 @@ test("function module tools create, read, fingerprint, inspect, and reject unsaf
     }),
     /existing 10-character SAP request or task/
   )
+})
+
+test("function interface patch applies controlled operations and preserves implementation source", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      connectionId: "w200"
+    })
+  ) as {
+    interfaceFingerprint: string
+    sourceFingerprint: string
+    source: string[]
+  }
+  const input = {
+    functionName: "ZCMCP_FM_1501",
+    functionGroup: "ZCMCP_FG_1501",
+    expectedInterfaceFingerprint: current.interfaceFingerprint,
+    expectedSourceFingerprint: current.sourceFingerprint,
+    parameterOperations: [
+      {
+        operation: "add" as const,
+        direction: "import" as const,
+        name: "IV_TEMP",
+        typeName: "CHAR10",
+        description: "Temporary"
+      },
+      {
+        operation: "rename" as const,
+        direction: "import" as const,
+        name: "IV_INPUT",
+        newName: "IV_VALUE"
+      },
+      {
+        operation: "update" as const,
+        direction: "import" as const,
+        name: "IV_VALUE",
+        typeName: "CHAR40",
+        optional: true,
+        description: "Value"
+      },
+      {
+        operation: "remove" as const,
+        direction: "import" as const,
+        name: "IV_TEMP"
+      }
+    ],
+    exceptionOperations: [
+      { operation: "add" as const, name: "TEMP_ERROR", description: "Temporary" },
+      {
+        operation: "rename" as const,
+        name: "INVALID_INPUT",
+        newName: "INPUT_INVALID"
+      },
+      { operation: "update" as const, name: "INPUT_INVALID", description: "Invalid value" },
+      { operation: "remove" as const, name: "TEMP_ERROR" }
+    ],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    confirmation: "DESTRUCTIVE_INTERFACE_CHANGE" as const,
+    connectionId: "w200"
+  }
+
+  await assert.rejects(
+    tools.patchFunctionModuleInterface({ ...input, confirmation: undefined }),
+    /DESTRUCTIVE_INTERFACE_CHANGE/
+  )
+  await assert.rejects(
+    tools.patchFunctionModuleInterface({
+      ...input,
+      expectedSourceFingerprint: "0".repeat(64)
+    }),
+    /implementation source fingerprint changed/
+  )
+
+  const patched = JSON.parse(await tools.patchFunctionModuleInterface(input)) as {
+    status: string
+    helperVersion: string
+    previousInterfaceFingerprint: string
+    previousSourceFingerprint: string
+    interfaceFingerprint: string
+    sourceFingerprint: string
+    importParameters: Array<{
+      name: string
+      typeName: string
+      optional: boolean
+      description: string
+    }>
+    exceptions: Array<{ name: string; description: string }>
+    source: string[]
+  }
+  assert.equal(patched.status, "FUNCTION_INTERFACE_PATCHED")
+  assert.equal(patched.helperVersion, "2.0")
+  assert.equal(patched.previousInterfaceFingerprint, current.interfaceFingerprint)
+  assert.notEqual(patched.interfaceFingerprint, current.interfaceFingerprint)
+  assert.equal(patched.previousSourceFingerprint, current.sourceFingerprint)
+  assert.equal(patched.sourceFingerprint, current.sourceFingerprint)
+  assert.deepEqual(patched.importParameters[0], {
+    name: "IV_VALUE",
+    typeName: "CHAR40",
+    optional: true,
+    passByValue: true,
+    description: "Value"
+  })
+  assert.deepEqual(patched.exceptions, [{ name: "INPUT_INVALID", description: "Invalid value" }])
+  assert.deepEqual(patched.source, current.source)
+  assert.equal(backend.lastRepositoryRequest?.operation, "PATCH_FUNCTION_INTERFACE")
+  assert.equal(backend.lastRepositoryRequest?.expectedVersion, current.interfaceFingerprint)
+  assert.ok(backend.lastRepositoryRequest?.source?.some((line) => line.startsWith("m|")))
+  assert.ok(backend.lastRepositoryRequest?.source?.some((line) => line.startsWith("s|")))
+  assert.ok(
+    backend.lastRepositoryRequest?.source?.includes(
+      's|1|LINE|*"--------------------------------------------------------------------'
+    )
+  )
+  assert.ok(!backend.lastRepositoryRequest?.source?.some((line) => line.includes("&#34;")))
+  assert.ok(backend.lastRepositoryRequest?.source?.includes("i|1|DBFIELD|"))
+  assert.ok(backend.lastRepositoryRequest?.source?.includes("e|1|OPTIONAL|"))
+})
+
+test("RFC interface patch rejects reference parameters before any source write", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      connectionId: "w200"
+    })
+  ) as { interfaceFingerprint: string; sourceFingerprint: string }
+  let writes = 0
+  backend.replaceSource = async () => {
+    writes++
+    throw new Error("Unexpected SAP source write")
+  }
+  for (const direction of ["import", "export", "changing"] as const) {
+    await assert.rejects(
+      tools.patchFunctionModuleInterface({
+        functionName: "ZCMCP_FM_1501",
+        functionGroup: "ZCMCP_FG_1501",
+        expectedInterfaceFingerprint: current.interfaceFingerprint,
+        expectedSourceFingerprint: current.sourceFingerprint,
+        parameterOperations: [
+          { operation: "add", direction, name: "P_REF", typeName: "CHAR20", passByValue: false }
+        ],
+        exceptionOperations: [],
+        packageName: "ZABAP",
+        transportNumber: "GR2K923421",
+        connectionId: "w200"
+      }),
+      /Reference parameters are not allowed with RFC/
+    )
+  }
+  assert.equal(writes, 0)
+  assert.equal(backend.lastRepositoryRequest?.operation, "READ_FUNCTION_INTERFACE")
+})
+
+test("function interface patch reports exact active readback differences", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      connectionId: "w200"
+    })
+  ) as { interfaceFingerprint: string; sourceFingerprint: string }
+  backend.functionPatchReadbackMismatch = true
+
+  await assert.rejects(
+    tools.patchFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      functionGroup: "ZCMCP_FG_1501",
+      expectedInterfaceFingerprint: current.interfaceFingerprint,
+      expectedSourceFingerprint: current.sourceFingerprint,
+      parameterOperations: [
+        {
+          operation: "add",
+          direction: "import",
+          name: "IV_TEMP",
+          typeName: "CHAR10",
+          passByValue: true,
+          description: "Temporary"
+        }
+      ],
+      exceptionOperations: [],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /interface: expected .*IV_TEMP.* received /
+  )
+})
+
+test("function interface patch rejects an ADT mutation that changes implementation source", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      connectionId: "w200"
+    })
+  ) as { interfaceFingerprint: string; sourceFingerprint: string }
+  backend.functionPatchAdtBodyMutation = true
+
+  await assert.rejects(
+    tools.patchFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      functionGroup: "ZCMCP_FG_1501",
+      expectedInterfaceFingerprint: current.interfaceFingerprint,
+      expectedSourceFingerprint: current.sourceFingerprint,
+      parameterOperations: [
+        {
+          operation: "add",
+          direction: "import",
+          name: "IV_TEMP",
+          typeName: "CHAR10",
+          passByValue: true,
+          description: "Temporary"
+        }
+      ],
+      exceptionOperations: [],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /implementation source changed during ADT interface patch/
+  )
+})
+
+test("function interface patch preserves bounded native helper failure evidence", async () => {
+  const backend = new MockBackend()
+  const callRepository = backend.callSapRepository.bind(backend)
+  backend.callSapRepository = async (connection, request) => {
+    const result = await callRepository(connection, request)
+    if (request.operation !== "PATCH_FUNCTION_INTERFACE") return result
+    return {
+      ...result,
+      status: "E",
+      code: "FUNCTION_PATCH_SAVE_NOT_OBSERVED",
+      message: "Active function does not match the save",
+      source: [
+        "D|1|SECTION|DOCUMENTATION",
+        "D|1|ROW|2",
+        "D|1|FIELD|INDEX",
+        "D|1|EXPECTED|1",
+        "D|1|ACTUAL|2",
+        "S|1|LINE|unrelated source must not be copied",
+        `D|2|EXPECTED|${"x".repeat(300)}`,
+        ...Array.from({ length: 60 }, () => "D|2|FIELD|BOUNDED")
+      ]
+    }
+  }
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      connectionId: "w200"
+    })
+  ) as { interfaceFingerprint: string; sourceFingerprint: string }
+  await assert.rejects(
+    tools.patchFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      functionGroup: "ZCMCP_FG_1501",
+      expectedInterfaceFingerprint: current.interfaceFingerprint,
+      expectedSourceFingerprint: current.sourceFingerprint,
+      parameterOperations: [
+        {
+          operation: "add",
+          direction: "import",
+          name: "IV_TEMP",
+          typeName: "CHAR10",
+          passByValue: true
+        }
+      ],
+      exceptionOperations: [],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    (error: Error) => {
+      assert.match(error.message, /FUNCTION_PATCH_SAVE_NOT_OBSERVED/)
+      assert.match(error.message, /D\|1\|SECTION\|DOCUMENTATION/)
+      assert.match(error.message, /D\|1\|ROW\|2\nD\|1\|FIELD\|INDEX/)
+      assert.match(error.message, /D\|1\|EXPECTED\|1\nD\|1\|ACTUAL\|2/)
+      assert.doesNotMatch(error.message, /unrelated source/)
+      const rows = error.message.split("\n").filter((line) => line.startsWith("D|"))
+      assert.equal(rows.length, 49)
+      assert.ok(rows.every((line) => line.length <= 255))
+      return true
+    }
+  )
+})
+
+test("scalar RFC inputs reject DDIC character overflow before test or invocation", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const metadata = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      connectionId: "w200",
+      functionName: "ZCMCP_FM_1501",
+      includeExecutionSupport: true
+    })
+  ) as { fingerprint: string }
+  const common = {
+    connectionId: "w200",
+    functionName: "ZCMCP_FM_1501",
+    inputParameters: { IV_INPUT: "x".repeat(21) },
+    acknowledgePotentialSideEffects: true as const,
+    expectedInterfaceFingerprint: metadata.fingerprint
+  }
+  await assert.rejects(
+    tools.testRemoteFunctionModule({
+      ...common,
+      expectedOutputs: { EV_OUTPUT: `MCP:${"x".repeat(21)}` }
+    }),
+    /IV_INPUT exceeds 20 characters/
+  )
+  await assert.rejects(
+    tools.invokeCustomerFunctionModule({
+      ...common,
+      requestId: "overflow"
+    }),
+    /IV_INPUT exceeds 20 characters/
+  )
+  assert.equal(backend.remoteFunctionCalls, 0)
 })
 
 test("remote function test validates the active interface and exact outcomes", async () => {
@@ -2827,6 +3180,1944 @@ test("DDIC tools read standard definitions and validate controlled customer writ
   )
 })
 
+test("DDIC complex-table fields, technical settings, and native conversion recovery stay gated", async () => {
+  const tools = new ToolService(new MockBackend())
+  const initial = JSON.parse(
+    await tools.readDdicTransparentTable({ objectName: "ZCMCP_COMPLEX", connectionId: "w200" })
+  ) as {
+    version: string
+    fingerprint: string
+    definition: {
+      fields: Array<{ name: string; componentKind?: string; componentName?: string }>
+    }
+  }
+  assert.deepEqual(
+    initial.definition.fields.map((field) => [
+      field.name,
+      field.componentKind ?? "field",
+      field.componentName ?? ""
+    ]),
+    [
+      ["ID", "field", ""],
+      [".INCLUDE", "include", "ZCMCP_INC"],
+      ["INC_VALUE", "inherited", ""],
+      ["DIRECT_VALUE", "field", ""],
+      [".INCLU--AP", "append", "ZCMCP_APPEND"],
+      ["APP_VALUE", "inherited", ""]
+    ]
+  )
+  await assert.rejects(
+    tools.patchDdicTransparentTableFields({
+      objectName: "ZCMCP_COMPLEX",
+      expectedVersion: initial.version,
+      expectedFingerprint: initial.fingerprint,
+      changes: [{ action: "rename", fieldName: "INC_VALUE", newName: "FORBIDDEN" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+      acknowledgeDataLoss: true,
+      connectionId: "w200"
+    }),
+    /does not exist/
+  )
+  await tools.patchDdicTransparentTableFields({
+    objectName: "ZCMCP_COMPLEX",
+    expectedVersion: initial.version,
+    expectedFingerprint: initial.fingerprint,
+    changes: [{ action: "rename", fieldName: "DIRECT_VALUE", newName: "DIRECT_TEXT" }],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+    acknowledgeDataLoss: true,
+    connectionId: "w200"
+  })
+  const patched = JSON.parse(
+    await tools.readDdicTransparentTable({ objectName: "ZCMCP_COMPLEX", connectionId: "w200" })
+  ) as { version: string; fingerprint: string }
+  const appended = JSON.parse(
+    await tools.appendDdicTransparentTableFields({
+      objectName: "ZCMCP_COMPLEX",
+      expectedVersion: patched.version,
+      expectedFingerprint: patched.fingerprint,
+      fields: [{ name: "LOCAL_NOTE", dataElement: "CHAR40" }],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    })
+  ) as {
+    version: string
+    fingerprint: string
+    definition: { fields: Array<{ name: string; componentKind?: string }> }
+  }
+  assert.deepEqual(
+    appended.definition.fields.map((field) => field.name),
+    ["ID", ".INCLUDE", "INC_VALUE", "DIRECT_TEXT", "LOCAL_NOTE", ".INCLU--AP", "APP_VALUE"]
+  )
+  const settings = JSON.parse(
+    await tools.patchDdicTransparentTableSettings({
+      objectName: "ZCMCP_COMPLEX",
+      expectedVersion: appended.version,
+      expectedFingerprint: appended.fingerprint,
+      settings: { buffering: "generic", genericKeyFields: 1, logDataChanges: true },
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "TECHNICAL_SETTINGS_CHANGE",
+      connectionId: "w200"
+    })
+  ) as { definition: { buffering: string; genericKeyFields: number; logDataChanges: boolean } }
+  assert.equal(settings.definition.buffering, "generic")
+  assert.equal(settings.definition.genericKeyFields, 1)
+  assert.equal(settings.definition.logDataChanges, true)
+
+  const conversion = JSON.parse(
+    await tools.readDdicTableConversionStatus({ objectName: "ZCMCP_CONV", connectionId: "w200" })
+  ) as { pending: boolean; worklistFingerprint: string; entryCount: number }
+  assert.equal(conversion.pending, true)
+  assert.equal(conversion.entryCount, 1)
+  assert.match(conversion.worklistFingerprint, /^[a-f0-9]{64}$/)
+  const recovered = JSON.parse(
+    await tools.recoverDdicTableConversion({
+      objectName: "ZCMCP_CONV",
+      expectedWorklistFingerprint: conversion.worklistFingerprint,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      confirmation: "RECOVER_NATIVE_TABLE_CONVERSION",
+      acknowledgePotentialDataLoss: true,
+      connectionId: "w200"
+    })
+  ) as {
+    recovered: boolean
+    automaticRetry: boolean
+    automaticRollback: boolean
+    lostValuesReconstructed: boolean
+  }
+  assert.equal(recovered.recovered, true)
+  assert.equal(recovered.automaticRetry, false)
+  assert.equal(recovered.automaticRollback, false)
+  assert.equal(recovered.lostValuesReconstructed, false)
+})
+
+test("enhancement source inspection separates native metadata from factual source markers", async () => {
+  const backend = new MockBackend()
+  backend.readSource = async () => ({
+    source: [
+      "FORM userexit_save_document.",
+      "CALL CUSTOMER-FUNCTION '001'.",
+      "GET BADI lo_badi.",
+      "CALL FUNCTION 'OPEN_FI_PERFORM_CS000010_E'.",
+      "ENHANCEMENT-POINT z_demo SPOTS zes_demo.",
+      "* CALL BADI ignored_comment."
+    ].join("\n"),
+    uriUsed: "/sap/bc/adt/programs/programs/zcl_demo/source/main"
+  })
+  const result = JSON.parse(
+    await new ToolService(backend).inspectSourceEnhancements({
+      objectName: "ZCL_DEMO",
+      objectType: "CLAS",
+      includeImplementationSource: true,
+      connectionId: "w200"
+    })
+  ) as {
+    metadata: {
+      status: string
+      implementationCount: number
+      elementCount: number
+      implementations: Array<{
+        name: string
+        type: string
+        version: string
+        elementId: string
+        fullname: string
+        mode: string
+        replacing: boolean
+        startLine: number
+        startColumn: number
+        positionUri: string
+        sourceFingerprint: string
+        enhancedObject: { uri: string; type: string; name: string }
+      }>
+    }
+    sourceMarkers: Array<{ family: string; marker: string; line: number }>
+    coverage: {
+      activeEnhancementElementsInspected: boolean
+      implementationAndElementMetadataPreserved: boolean
+      positionCoordinatesZeroBased: boolean
+      configurationInspected: boolean
+      newBadiDefinitionInspected: boolean
+      filterOrSwitchConfigurationInspected: boolean
+      runtimeInspected: boolean
+    }
+  }
+
+  assert.equal(result.metadata.status, "available")
+  assert.equal(result.metadata.implementationCount, 1)
+  assert.equal(result.metadata.elementCount, 1)
+  assert.equal(result.metadata.implementations.length, 1)
+  assert.deepEqual(result.metadata.implementations[0], {
+    name: "ZENH_DEMO",
+    type: "ENHO/XH",
+    version: "active",
+    elementId: "1",
+    fullname: "\\PR:ZCL_DEMO\\SE:Z_DEMO\\EI",
+    mode: "any",
+    replacing: false,
+    startLine: 3,
+    startColumn: 0,
+    uri: "/sap/bc/adt/enhancements/z_enh_demo",
+    positionUri: "/sap/bc/adt/programs/programs/zcl_demo/source/main#start=4,0",
+    source: "WRITE 'ENHANCEMENT'.",
+    sourceFingerprint: createHash("sha256").update("WRITE 'ENHANCEMENT'.").digest("hex"),
+    enhancedObject: {
+      uri: "/sap/bc/adt/programs/programs/zcl_demo",
+      type: "PROG/P",
+      name: "ZCL_DEMO"
+    }
+  })
+  assert.deepEqual(
+    result.sourceMarkers.map(({ family, marker, line }) => ({ family, marker, line })),
+    [
+      { family: "user_exit", marker: "form_userexit", line: 1 },
+      { family: "customer_exit", marker: "call_customer_function", line: 2 },
+      { family: "badi", marker: "get_or_call_badi", line: 3 },
+      { family: "bte", marker: "open_fi_perform", line: 4 },
+      { family: "enhancement_framework", marker: "enhancement_point", line: 5 }
+    ]
+  )
+  assert.equal(result.coverage.activeEnhancementElementsInspected, true)
+  assert.equal(result.coverage.implementationAndElementMetadataPreserved, true)
+  assert.equal(result.coverage.positionCoordinatesZeroBased, true)
+  assert.equal(result.coverage.configurationInspected, false)
+  assert.equal(result.coverage.newBadiDefinitionInspected, false)
+  assert.equal(result.coverage.filterOrSwitchConfigurationInspected, false)
+  assert.equal(result.coverage.runtimeInspected, false)
+})
+
+test("enhancement source inspection reports unavailable metadata without claiming zero implementations", async () => {
+  const backend = new MockBackend()
+  backend.readEnhancements = async () => {
+    throw new Error("enhancement metadata read capability unsupported-endpoint (HTTP 404)")
+  }
+  const result = JSON.parse(
+    await new ToolService(backend).inspectSourceEnhancements({
+      objectName: "ZCL_DEMO",
+      objectType: "CLAS",
+      connectionId: "w200"
+    })
+  ) as {
+    metadata: {
+      status: string
+      implementationCount: number | null
+      elementCount: number | null
+      implementations: unknown[]
+    }
+  }
+
+  assert.equal(result.metadata.status, "unsupported")
+  assert.equal(result.metadata.implementationCount, null)
+  assert.equal(result.metadata.elementCount, null)
+  assert.deepEqual(result.metadata.implementations, [])
+})
+
+test("enhancement implementation containers do not masquerade as empty source", async () => {
+  const backend = new MockBackend()
+  backend.searchObjects = async () => [
+    {
+      name: "ZLE_SHP_DELIVERY_PROC",
+      type: "ENHO/XH",
+      description: "Delivery implementation",
+      package: "ZLE",
+      systemType: "CUSTOM",
+      uri: "/sap/bc/adt/enhancements/zle_shp_delivery_proc"
+    }
+  ]
+  backend.readSource = async () => ({
+    source: "",
+    uriUsed: "/sap/bc/adt/enhancements/zle_shp_delivery_proc/source/main"
+  })
+  backend.readEnhancements = async () =>
+    assert.fail("container metadata must not be read as source")
+
+  const result = JSON.parse(
+    await new ToolService(backend).inspectSourceEnhancements({
+      objectName: "ZLE_SHP_DELIVERY_PROC",
+      objectType: "ENHO",
+      connectionId: "w200"
+    })
+  ) as {
+    object: { sourceStatus: string; sourceFingerprint: string | null }
+    metadata: { status: string; implementationCount: number | null }
+    sourceMarkers: unknown[]
+  }
+
+  assert.equal(result.object.sourceStatus, "not_applicable")
+  assert.equal(result.object.sourceFingerprint, null)
+  assert.equal(result.metadata.status, "not_applicable")
+  assert.equal(result.metadata.implementationCount, null)
+  assert.deepEqual(result.sourceMarkers, [])
+})
+
+test("enhancement repository search preserves per-type availability", async () => {
+  const backend = new MockBackend()
+  backend.searchObjectTypes = async () => [
+    {
+      requestedType: "BADI",
+      status: "available",
+      objects: [
+        {
+          name: "ZBADI_DEMO",
+          type: "BADI/OI",
+          description: "Demo BAdI",
+          package: "ZVALIDATION",
+          systemType: "CUSTOM",
+          uri: "/sap/bc/adt/enhancements/badi/zbadi_demo"
+        }
+      ]
+    },
+    {
+      requestedType: "ENHS",
+      status: "unsupported",
+      objects: [],
+      reason: "The SAP system does not expose repository search for this object type."
+    }
+  ]
+  const result = JSON.parse(
+    await new ToolService(backend).searchEnhancementObjects({
+      pattern: "Z*",
+      types: ["BADI", "ENHS"],
+      connectionId: "w200"
+    })
+  ) as {
+    results: Array<{
+      requestedType: string
+      repositoryKind: string
+      status: string
+      count: number | null
+    }>
+    summary: { availableTypeCount: number; unavailableTypeCount: number; objectCount: number }
+    coverage: { classicVersusNewBadiDetermined: boolean }
+  }
+
+  assert.deepEqual(
+    result.results.map(({ requestedType, repositoryKind, status, count }) => ({
+      requestedType,
+      repositoryKind,
+      status,
+      count
+    })),
+    [
+      {
+        requestedType: "BADI",
+        repositoryKind: "badi_definition",
+        status: "available",
+        count: 1
+      },
+      {
+        requestedType: "ENHS",
+        repositoryKind: "enhancement_spot",
+        status: "unsupported",
+        count: null
+      }
+    ]
+  )
+  assert.deepEqual(result.summary, {
+    requestedTypeCount: 2,
+    availableTypeCount: 1,
+    unavailableTypeCount: 1,
+    objectCount: 1
+  })
+  assert.equal(result.coverage.classicVersusNewBadiDetermined, false)
+})
+
+test("customer exit repository search keeps SMOD and CMOD evidence separate", async () => {
+  const backend = new MockBackend()
+  backend.searchObjectTypes = async () => [
+    {
+      requestedType: "SMOD",
+      status: "available",
+      objects: [
+        {
+          name: "V45A0002",
+          type: "SMOD",
+          description: "Sample customer enhancement",
+          package: "VA",
+          systemType: "STANDARD",
+          uri: "/sap/bc/adt/repository/informationsystem/object_type/smod/object_name/v45a0002"
+        }
+      ]
+    },
+    { requestedType: "CMOD", status: "available", objects: [] }
+  ]
+  const result = JSON.parse(
+    await new ToolService(backend).searchCustomerExitObjects({
+      pattern: "V45A*",
+      connectionId: "w200"
+    })
+  ) as {
+    results: Array<{
+      requestedType: string
+      repositoryKind: string
+      status: string
+      count: number | null
+    }>
+    summary: { availableTypeCount: number; unavailableTypeCount: number; objectCount: number }
+    coverage: { componentsInspected: boolean; activationStatusInspected: boolean }
+  }
+
+  assert.deepEqual(
+    result.results.map(({ requestedType, repositoryKind, status, count }) => ({
+      requestedType,
+      repositoryKind,
+      status,
+      count
+    })),
+    [
+      {
+        requestedType: "SMOD",
+        repositoryKind: "customer_exit_definition",
+        status: "available",
+        count: 1
+      },
+      {
+        requestedType: "CMOD",
+        repositoryKind: "customer_exit_project",
+        status: "available",
+        count: 0
+      }
+    ]
+  )
+  assert.deepEqual(result.summary, {
+    requestedTypeCount: 2,
+    availableTypeCount: 2,
+    unavailableTypeCount: 0,
+    objectCount: 1
+  })
+  assert.equal(result.coverage.componentsInspected, false)
+  assert.equal(result.coverage.activationStatusInspected, false)
+})
+
+test("customer exit definition read returns exact components and raw type codes", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).readCustomerExitDefinition({
+      enhancementName: "v45a0002",
+      connectionId: "w200"
+    })
+  ) as {
+    definition: {
+      name: string
+      description: string
+      components: Array<{ typeCode: string; kind: string; member: string }>
+    }
+    summary: {
+      componentCount: number
+      functionExitCount: number
+      screenExitCount: number
+      menuExitCount: number
+      unknownComponentCount: number
+    }
+    coverage: {
+      componentMembershipInspected: boolean
+      cmodProjectAssignmentsInspected: boolean
+    }
+  }
+
+  assert.deepEqual(result.definition, {
+    name: "V45A0002",
+    description: "Predefine sold-to party",
+    components: [
+      { typeCode: "E", kind: "function_exit", member: "EXIT_SAPMV45A_002" },
+      { typeCode: "S", kind: "screen_exit", member: "SAPMV45A_8309_SUB_B" },
+      { typeCode: "C", kind: "menu_exit", member: "SAPMV45A+ZZ1" }
+    ]
+  })
+  assert.deepEqual(result.summary, {
+    componentCount: 3,
+    functionExitCount: 1,
+    screenExitCount: 1,
+    menuExitCount: 1,
+    unknownComponentCount: 0
+  })
+  assert.equal(result.coverage.componentMembershipInspected, true)
+  assert.equal(result.coverage.cmodProjectAssignmentsInspected, false)
+  assert.equal(backend.lastRepositoryRequest?.operation, "READ_CUSTOMER_EXIT_DEFINITION")
+  assert.equal(backend.lastRepositoryRequest?.objectName, "V45A0002")
+})
+
+test("customer exit project read preserves raw status and exact assignments", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).readCustomerExitProject({
+      projectName: "zsd_exit",
+      connectionId: "w200"
+    })
+  ) as {
+    project: {
+      name: string
+      rawStatus: string
+      changedBy: string
+      changedOn: string
+      assignments: Array<{ enhancementName: string; assignmentType: string }>
+    }
+    summary: { assignmentCount: number }
+    coverage: {
+      enhancementAssignmentsInspected: boolean
+      rawProjectStatusInspected: boolean
+      activationStateInterpreted: boolean
+    }
+  }
+
+  assert.deepEqual(result.project, {
+    name: "ZSD_EXIT",
+    rawStatus: "A",
+    changedBy: "DEVELOPER",
+    changedOn: "20260916",
+    assignments: [
+      { enhancementName: "V45A0002", assignmentType: "" },
+      { enhancementName: "V45A0003", assignmentType: "" }
+    ]
+  })
+  assert.deepEqual(result.summary, { assignmentCount: 2 })
+  assert.equal(result.coverage.enhancementAssignmentsInspected, true)
+  assert.equal(result.coverage.rawProjectStatusInspected, true)
+  assert.equal(result.coverage.activationStateInterpreted, false)
+  assert.equal(backend.lastRepositoryRequest?.operation, "READ_CUSTOMER_EXIT_PROJECT")
+  assert.equal(backend.lastRepositoryRequest?.objectName, "ZSD_EXIT")
+})
+
+test("customer function exit inspection resolves static calls and ZX includes", async () => {
+  const backend = new MockBackend()
+  const program = {
+    name: "SAPMV45A",
+    type: "PROG/P",
+    description: "Sales document processing",
+    package: "VA",
+    systemType: "STANDARD" as const,
+    uri: "/sap/bc/adt/programs/programs/sapmv45a"
+  }
+  const include = {
+    name: "SAPMV45A_F01",
+    type: "PROG/I",
+    description: "Customer function calls",
+    package: "VA",
+    systemType: "STANDARD" as const,
+    uri: "/sap/bc/adt/programs/includes/sapmv45a_f01"
+  }
+  const exitFunction = {
+    name: "EXIT_SAPMV45A_001",
+    type: "FUNC",
+    description: "Customer function exit",
+    package: "VA",
+    systemType: "STANDARD" as const,
+    uri: "/sap/bc/adt/functions/groups/v45a/fmodules/exit_sapmv45a_001"
+  }
+  backend.searchObjects = async (_connectionId, pattern) => {
+    if (pattern.toUpperCase() === program.name) return [program]
+    if (pattern.toUpperCase() === include.name) return [include]
+    return []
+  }
+  backend.searchObjectTypes = async (_connectionId, pattern) => {
+    if (pattern === exitFunction.name) {
+      return [{ requestedType: "FUNC", status: "available", objects: [exitFunction] }]
+    }
+    return [
+      {
+        requestedType: "FUNC",
+        status: "forbidden",
+        objects: [],
+        reason: "Function repository search is forbidden."
+      }
+    ]
+  }
+  backend.readSource = async (_connectionId, object) => {
+    if (object.name === program.name) {
+      return {
+        source: "PROGRAM sapmv45a.\nINCLUDE SAPMV45A_F01.",
+        uriUsed: program.uri + "/source/main"
+      }
+    }
+    if (object.name === include.name) {
+      return {
+        source: [
+          "FORM dispatch.",
+          "  CALL CUSTOMER-FUNCTION",
+          "    '001'",
+          "    EXPORTING value = value.",
+          "  CALL CUSTOMER-FUNCTION '002'.",
+          "  CALL CUSTOMER-FUNCTION lv_exit.",
+          "* CALL CUSTOMER-FUNCTION '999'.",
+          "ENDFORM."
+        ].join("\n"),
+        uriUsed: include.uri + "/source/main"
+      }
+    }
+    return {
+      source: ["FUNCTION exit_sapmv45a_001.", "  INCLUDE ZXVVFU01.", "ENDFUNCTION."].join("\n"),
+      uriUsed: exitFunction.uri + "/source/main"
+    }
+  }
+
+  const result = JSON.parse(
+    await new ToolService(backend).inspectCustomerFunctionExits({
+      programName: "sapmv45a",
+      connectionId: "w200"
+    })
+  ) as {
+    sourceGraph: { complete: boolean; includeLimit: number; unitCount: number }
+    functionExits: Array<{
+      exitNumber: string
+      expectedFunctionModule: string
+      repositorySearch: { status: string; functionFound: boolean | null }
+      functionSource: {
+        status: string
+        zxImplementationIncludes: string[]
+      } | null
+    }>
+    unresolvedCalls: Array<{ unresolvedOperand: string | null }>
+    summary: {
+      callSiteCount: number
+      staticCallSiteCount: number
+      unresolvedCallSiteCount: number
+      distinctStaticExitCount: number
+      functionFoundCount: number
+      zxImplementationIncludeCount: number
+    }
+    coverage: {
+      cmodProjectAssignmentsInspected: boolean
+      screenExitsInspected: boolean
+      menuExitsInspected: boolean
+    }
+  }
+
+  assert.equal(result.sourceGraph.complete, true)
+  assert.equal(result.sourceGraph.includeLimit, 128)
+  assert.equal(result.sourceGraph.unitCount, 2)
+  assert.deepEqual(
+    result.functionExits.map((entry) => ({
+      exitNumber: entry.exitNumber,
+      expectedFunctionModule: entry.expectedFunctionModule,
+      status: entry.repositorySearch.status,
+      functionFound: entry.repositorySearch.functionFound,
+      zxIncludes: entry.functionSource?.zxImplementationIncludes ?? []
+    })),
+    [
+      {
+        exitNumber: "001",
+        expectedFunctionModule: "EXIT_SAPMV45A_001",
+        status: "available",
+        functionFound: true,
+        zxIncludes: ["ZXVVFU01"]
+      },
+      {
+        exitNumber: "002",
+        expectedFunctionModule: "EXIT_SAPMV45A_002",
+        status: "forbidden",
+        functionFound: null,
+        zxIncludes: []
+      }
+    ]
+  )
+  assert.deepEqual(result.unresolvedCalls, [
+    {
+      objectName: "SAPMV45A_F01",
+      objectType: "PROG/I",
+      sourceUri: include.uri + "/source/main",
+      line: 6,
+      endLine: 6,
+      statement: "CALL CUSTOMER-FUNCTION lv_exit.",
+      exitNumber: null,
+      unresolvedOperand: "lv_exit"
+    }
+  ])
+  assert.deepEqual(result.summary, {
+    callSiteCount: 3,
+    staticCallSiteCount: 2,
+    unresolvedCallSiteCount: 1,
+    distinctStaticExitCount: 2,
+    functionFoundCount: 1,
+    zxImplementationIncludeCount: 1
+  })
+  assert.equal(result.coverage.cmodProjectAssignmentsInspected, false)
+  assert.equal(result.coverage.screenExitsInspected, false)
+  assert.equal(result.coverage.menuExitsInspected, false)
+})
+
+test("customer function exit inspection reads beyond the former 32-include boundary", async () => {
+  const backend = new MockBackend()
+  const program = {
+    name: "SAPMV50A",
+    type: "PROG/P",
+    description: "Delivery processing",
+    package: "VL",
+    systemType: "STANDARD" as const,
+    uri: "/sap/bc/adt/programs/programs/sapmv50a"
+  }
+  const includes = Array.from({ length: 40 }, (_, index) => {
+    const name = `ZV50_TEST_${String(index + 1).padStart(2, "0")}`
+    return {
+      name,
+      type: "PROG/I",
+      description: "Test include",
+      package: "ZTEST",
+      systemType: "CUSTOM" as const,
+      uri: `/sap/bc/adt/programs/includes/${name.toLowerCase()}`
+    }
+  })
+  backend.searchObjects = async (_connectionId, pattern) => {
+    const name = pattern.toUpperCase()
+    if (name === program.name) return [program]
+    const include = includes.find((candidate) => candidate.name === name)
+    return include ? [include] : []
+  }
+  backend.searchObjectTypes = async () => [
+    { requestedType: "FUNC", status: "available", objects: [] }
+  ]
+  backend.readSource = async (_connectionId, object) => ({
+    source:
+      object.name === program.name
+        ? includes.map((include) => `INCLUDE ${include.name}.`).join("\n")
+        : object.name === includes[39]!.name
+          ? "CALL CUSTOMER-FUNCTION '001'."
+          : "",
+    uriUsed: object.uri + "/source/main"
+  })
+
+  const result = JSON.parse(
+    await new ToolService(backend).inspectCustomerFunctionExits({
+      programName: program.name,
+      connectionId: "w200"
+    })
+  ) as {
+    sourceGraph: { complete: boolean; includeLimit: number; unitCount: number; truncated: boolean }
+    summary: { staticCallSiteCount: number }
+  }
+
+  assert.equal(result.sourceGraph.includeLimit, 128)
+  assert.equal(result.sourceGraph.unitCount, 41)
+  assert.equal(result.sourceGraph.truncated, false)
+  assert.equal(result.sourceGraph.complete, true)
+  assert.equal(result.summary.staticCallSiteCount, 1)
+})
+
+test("customer screen and menu exit inspection preserves independent evidence", async () => {
+  const backend = new MockBackend()
+  const callSapRepository = backend.callSapRepository.bind(backend)
+  backend.callSapRepository = async (connectionId, request) => {
+    if (request.operation === "READ_SCREEN" && request.screen === "0200") {
+      throw new Error("HTTP 403 Forbidden")
+    }
+    const result = await callSapRepository(connectionId, request)
+    if (request.operation === "READ_SCREEN") {
+      result.flowLogic = [
+        { LINE: "PROCESS BEFORE OUTPUT." },
+        { LINE: "  CALL CUSTOMER-SUBSCREEN CUSTSCR1." },
+        { LINE: "* CALL CUSTOMER-SUBSCREEN IGNORED." },
+        { LINE: "PROCESS AFTER INPUT." },
+        { LINE: "  CALL CUSTOMER-SUBSCREEN CUSTSCR1." }
+      ]
+    }
+    if (request.operation === "READ_GUI_DEFINITION") {
+      result.source.push(
+        "FUN|2|CODE|+CUS",
+        "FUN|2|TEXTNO|002",
+        "FUN|2|FUN_TEXT|Customer action",
+        "SET|2|STATUS|STATUS_0100",
+        "SET|2|FUNCTION|+CUS"
+      )
+    }
+    return result
+  }
+
+  const result = JSON.parse(
+    await new ToolService(backend).inspectCustomerScreenMenuExits({
+      programName: "sapmv45a",
+      screenNumbers: ["0100", "0200", "0100"],
+      connectionId: "w200"
+    })
+  ) as {
+    screens: Array<{
+      screenNumber: string
+      status: string
+      hookCount: number | null
+      hooks: Array<{ area: string; line: number }>
+    }>
+    menu: {
+      status: string
+      definitionCount: number | null
+      definitions: Array<{ code: string; functionText: string }>
+      references: Array<{ section: string; field: string; code: string }>
+    }
+    summary: {
+      screenInspectionStatus: string
+      requestedScreenCount: number
+      availableScreenCount: number
+      unavailableScreenCount: number
+      customerSubscreenHookCount: number
+      menuDefinitionCount: number | null
+    }
+    coverage: {
+      smodComponentsInspected: boolean
+      cmodProjectAssignmentsInspected: boolean
+      activationStatusInspected: boolean
+      runtimeInspected: boolean
+      screensInspected: boolean
+      screenAbsenceEstablished: boolean
+    }
+  }
+
+  assert.deepEqual(
+    result.screens.map((screen) => ({
+      screenNumber: screen.screenNumber,
+      status: screen.status,
+      hookCount: screen.hookCount,
+      hooks: screen.hooks.map(({ area, line }) => ({ area, line }))
+    })),
+    [
+      {
+        screenNumber: "0100",
+        status: "available",
+        hookCount: 2,
+        hooks: [
+          { area: "CUSTSCR1", line: 2 },
+          { area: "CUSTSCR1", line: 5 }
+        ]
+      },
+      {
+        screenNumber: "0200",
+        status: "forbidden",
+        hookCount: null,
+        hooks: []
+      }
+    ]
+  )
+  assert.equal(result.menu.status, "available")
+  assert.equal(result.menu.definitionCount, 1)
+  assert.deepEqual(result.menu.definitions, [
+    {
+      code: "+CUS",
+      textNumber: "002",
+      functionText: "Customer action",
+      iconText: "",
+      infoText: ""
+    }
+  ])
+  assert.deepEqual(result.menu.references, [
+    { section: "statusFunctions", row: 1, field: "FUNCTION", code: "+CUS" }
+  ])
+  assert.deepEqual(result.summary, {
+    screenInspectionStatus: "requested",
+    requestedScreenCount: 2,
+    availableScreenCount: 1,
+    unavailableScreenCount: 1,
+    customerSubscreenHookCount: 2,
+    menuDefinitionCount: 1
+  })
+  assert.equal(result.coverage.smodComponentsInspected, false)
+  assert.equal(result.coverage.cmodProjectAssignmentsInspected, false)
+  assert.equal(result.coverage.activationStatusInspected, false)
+  assert.equal(result.coverage.runtimeInspected, false)
+  assert.equal(result.coverage.screensInspected, true)
+  assert.equal(result.coverage.screenAbsenceEstablished, false)
+
+  const noScreens = JSON.parse(
+    await new ToolService(backend).inspectCustomerScreenMenuExits({
+      programName: "sapmv45a",
+      connectionId: "w200"
+    })
+  ) as {
+    screens: unknown[]
+    summary: { screenInspectionStatus: string; requestedScreenCount: number }
+    coverage: { screensInspected: boolean; screenAbsenceEstablished: boolean }
+  }
+  assert.deepEqual(noScreens.screens, [])
+  assert.equal(noScreens.summary.screenInspectionStatus, "not_requested")
+  assert.equal(noScreens.summary.requestedScreenCount, 0)
+  assert.equal(noScreens.coverage.screensInspected, false)
+  assert.equal(noScreens.coverage.screenAbsenceEstablished, false)
+})
+
+test("BTE dispatcher search separates event and process evidence", async () => {
+  const backend = new MockBackend()
+  const patterns: string[] = []
+  backend.searchObjectTypes = async (_connectionId, pattern) => {
+    patterns.push(pattern)
+    if (pattern.endsWith("_P")) {
+      return [
+        {
+          requestedType: "FUNC",
+          status: "unsupported",
+          objects: [],
+          reason: "Function repository search is unavailable."
+        }
+      ]
+    }
+    return [
+      {
+        requestedType: "FUNC",
+        status: "available",
+        objects: [
+          {
+            name: "OPEN_FI_PERFORM_00001030_E",
+            type: "FUNC",
+            description: "BTE event dispatcher",
+            package: "BFIBL_PAYM",
+            systemType: "STANDARD",
+            uri: "/sap/bc/adt/functions/groups/open_fi_perform_00001030_e"
+          },
+          {
+            name: "OPEN_FI_PERFORM_DEMO_E",
+            type: "FUNC",
+            description: "Alphanumeric BTE event dispatcher",
+            package: "ZDEMO",
+            systemType: "CUSTOM",
+            uri: "/sap/bc/adt/functions/groups/open_fi_perform_demo_e"
+          }
+        ]
+      }
+    ]
+  }
+  const result = JSON.parse(
+    await new ToolService(backend).searchBteDispatchers({
+      eventPattern: "00001*",
+      connectionId: "w200"
+    })
+  ) as {
+    results: Array<{
+      kind: string
+      pattern: string
+      status: string
+      count: number | null
+      objects: Array<{
+        eventIdentifier: string | null
+        eventNumber: string | null
+        exactDispatcherName: boolean
+      }>
+    }>
+    summary: {
+      availableKindCount: number
+      unavailableKindCount: number
+      exactDispatcherCount: number
+    }
+    coverage: {
+      dispatcherSearchOnly: boolean
+      productsInspected: boolean
+      handlerAssignmentsInspected: boolean
+      runtimeInspected: boolean
+    }
+  }
+
+  assert.deepEqual(patterns, ["OPEN_FI_PERFORM_00001*_E", "OPEN_FI_PERFORM_00001*_P"])
+  assert.deepEqual(
+    result.results.map(({ kind, status, count }) => ({ kind, status, count })),
+    [
+      { kind: "event", status: "available", count: 2 },
+      { kind: "process", status: "unsupported", count: null }
+    ]
+  )
+  assert.deepEqual(
+    result.results[0]?.objects.map(({ eventIdentifier, eventNumber, exactDispatcherName }) => ({
+      eventIdentifier,
+      eventNumber,
+      exactDispatcherName
+    })),
+    [
+      {
+        eventIdentifier: "00001030",
+        eventNumber: "00001030",
+        exactDispatcherName: true
+      },
+      { eventIdentifier: "DEMO", eventNumber: null, exactDispatcherName: true }
+    ]
+  )
+  assert.deepEqual(result.summary, {
+    requestedKindCount: 2,
+    availableKindCount: 1,
+    unavailableKindCount: 1,
+    objectCount: 2,
+    exactDispatcherCount: 2
+  })
+  assert.deepEqual(result.coverage, {
+    dispatcherSearchOnly: true,
+    productsInspected: false,
+    handlerAssignmentsInspected: false,
+    runtimeInspected: false
+  })
+})
+
+test("BTE configuration read separates Event handlers and preserves raw activation", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).readBteConfiguration({
+      kind: "event",
+      identifier: "cs000010",
+      connectionId: "w200"
+    })
+  ) as {
+    repositoryKind: string
+    configuration: {
+      kind: string
+      identifier: string
+      description: string
+      sapHandlers: Array<Record<string, string>>
+      customerHandlers: Array<Record<string, string>>
+    }
+    summary: {
+      sapHandlerCount: number
+      customerHandlerCount: number
+      activeSapApplicationHandlerCount: number
+      activeCustomerProductHandlerCount: number
+    }
+    coverage: {
+      exactDefinitionRead: boolean
+      sapApplicationAssignmentsInspected: boolean
+      customerProductAssignmentsInspected: boolean
+      rawActivationFlagsInspected: boolean
+      executionOrderInterpreted: boolean
+      runtimeInspected: boolean
+    }
+  }
+
+  assert.equal(result.repositoryKind, "bte_event_configuration")
+  assert.equal(result.configuration.kind, "event")
+  assert.equal(result.configuration.identifier, "CS000010")
+  assert.equal(result.configuration.description, "Credit status event")
+  assert.deepEqual(result.configuration.sapHandlers, [
+    {
+      country: "",
+      applicationIndicator: "CS",
+      functionModule: "SAMPLE_INTERFACE_CS000010",
+      product: "",
+      applicationActiveRaw: "X",
+      applicationText: "Credit Management",
+      productActiveRaw: "",
+      productText: "",
+      productRfcDestination: ""
+    }
+  ])
+  assert.deepEqual(result.configuration.customerHandlers, [
+    {
+      country: "",
+      applicationIndicator: "CS",
+      functionModule: "Z_BTE_CS000010",
+      product: "ZBTE",
+      applicationActiveRaw: "X",
+      applicationText: "Credit Management",
+      productActiveRaw: "X",
+      productText: "Customer BTE handlers",
+      productRfcDestination: ""
+    }
+  ])
+  assert.deepEqual(result.summary, {
+    sapHandlerCount: 1,
+    customerHandlerCount: 1,
+    activeSapApplicationHandlerCount: 1,
+    activeCustomerProductHandlerCount: 1
+  })
+  assert.equal(result.coverage.exactDefinitionRead, true)
+  assert.equal(result.coverage.sapApplicationAssignmentsInspected, true)
+  assert.equal(result.coverage.customerProductAssignmentsInspected, true)
+  assert.equal(result.coverage.rawActivationFlagsInspected, true)
+  assert.equal(result.coverage.executionOrderInterpreted, false)
+  assert.equal(result.coverage.runtimeInspected, false)
+  assert.equal(backend.lastRepositoryRequest?.operation, "READ_BTE_CONFIGURATION")
+  assert.equal(backend.lastRepositoryRequest?.objectType, "E")
+  assert.equal(backend.lastRepositoryRequest?.objectName, "CS000010")
+})
+
+test("BTE configuration read keeps Process configuration independent", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).readBteConfiguration({
+      kind: "process",
+      identifier: "crm0_200",
+      connectionId: "w200"
+    })
+  ) as {
+    repositoryKind: string
+    configuration: {
+      kind: string
+      identifier: string
+      sapHandlers: Array<Record<string, string>>
+      customerHandlers: Array<Record<string, string>>
+    }
+    summary: { sapHandlerCount: number; customerHandlerCount: number }
+  }
+
+  assert.equal(result.repositoryKind, "bte_process_configuration")
+  assert.equal(result.configuration.kind, "process")
+  assert.equal(result.configuration.identifier, "CRM0_200")
+  assert.deepEqual(result.configuration.sapHandlers, [])
+  assert.equal(result.configuration.customerHandlers[0]?.functionModule, "Z_BTE_CRM0_200")
+  assert.equal(result.configuration.customerHandlers[0]?.productActiveRaw, "")
+  assert.equal(result.summary.sapHandlerCount, 0)
+  assert.equal(result.summary.customerHandlerCount, 1)
+  assert.equal(backend.lastRepositoryRequest?.objectType, "P")
+  assert.equal(backend.lastRepositoryRequest?.objectName, "CRM0_200")
+})
+
+test("controlled CMOD workflow includes exact read evidence and human gates", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).prepareEnhancementConfigurationWorkflow({
+      kind: "cmod_project",
+      targetName: "zsd_exit",
+      desiredState: "active",
+      enhancementNames: ["v45a0002"],
+      packageName: "ZSD",
+      transportNumber: "W20K900001",
+      connectionId: "w200"
+    })
+  ) as {
+    executionMode: string
+    transaction: string
+    readiness: string
+    missingInputs: string[]
+    currentState: {
+      project: { status: string }
+      definitions: Array<{ enhancementName: string; status: string; evidence: unknown }>
+    }
+    workflow: Array<{ phase: string; destructive: boolean }>
+    controls: Record<string, boolean>
+  }
+
+  assert.equal(result.executionMode, "controlled_manual_workflow")
+  assert.equal(result.transaction, "CMOD")
+  assert.equal(result.readiness, "ready_for_human_execution")
+  assert.deepEqual(result.missingInputs, [])
+  assert.equal(result.currentState.project.status, "available")
+  assert.equal(result.currentState.definitions[0]?.enhancementName, "V45A0002")
+  assert.equal(result.currentState.definitions[0]?.status, "available")
+  assert.ok(result.currentState.definitions[0]?.evidence)
+  assert.equal(result.workflow.at(-1)?.phase, "acceptance")
+  assert.equal(result.controls.sapWritePerformed, false)
+  assert.equal(result.controls.humanConfirmationRequiredBeforeSave, true)
+})
+
+test("controlled FIBF workflow never treats product activation as an automatic write", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).prepareEnhancementConfigurationWorkflow({
+      kind: "fibf_event",
+      targetName: "cs000010",
+      desiredState: "active",
+      productName: "zbte",
+      functionModule: "z_bte_cs000010",
+      applicationIndicator: "cs",
+      transportNumber: "W20K900001",
+      connectionId: "w200"
+    })
+  ) as {
+    transaction: string
+    readiness: string
+    standardApiAssessment: { approvedHeadlessWriteApi: boolean; decision: string }
+    currentState: { configuration: { status: string } }
+    workflow: Array<{ phase: string; instruction: string }>
+    controls: { activationPerformed: boolean; transportReleased: boolean }
+  }
+
+  assert.equal(result.transaction, "FIBF")
+  assert.equal(result.readiness, "ready_for_human_execution")
+  assert.equal(result.standardApiAssessment.approvedHeadlessWriteApi, false)
+  assert.equal(result.standardApiAssessment.decision, "manual_workflow_required")
+  assert.equal(result.currentState.configuration.status, "available")
+  assert.match(
+    result.workflow.find((step) => step.phase === "product")?.instruction ?? "",
+    /other BTE assignments share the product/
+  )
+  assert.equal(result.controls.activationPerformed, false)
+  assert.equal(result.controls.transportReleased, false)
+})
+
+test("controlled FI rule workflow reports mandatory manual-read inputs", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).prepareEnhancementConfigurationWorkflow({
+      kind: "fi_substitution",
+      targetName: "zfi_sub_01",
+      desiredState: "create_or_update",
+      connectionId: "w200"
+    })
+  ) as {
+    transaction: string
+    readiness: string
+    missingInputs: string[]
+    currentState: { ruleConfiguration: { status: string } }
+    workflow: Array<{ phase: string; instruction: string }>
+    coverage: { configurationMutationAutomated: boolean; runtimeAcceptanceRequired: boolean }
+  }
+
+  assert.equal(result.transaction, "GGB1 / OBBH")
+  assert.equal(result.readiness, "requires_input")
+  assert.deepEqual(result.missingInputs, [
+    "transportNumber",
+    "applicationArea",
+    "callupPoint",
+    "organizationalUnit"
+  ])
+  assert.equal(result.currentState.ruleConfiguration.status, "manual_read_required")
+  assert.match(
+    result.workflow.find((step) => step.phase === "activation")?.instruction ?? "",
+    /OBBH/
+  )
+  assert.equal(result.coverage.configurationMutationAutomated, false)
+  assert.equal(result.coverage.runtimeAcceptanceRequired, true)
+})
+
+test("BAdI search distinguishes exact Classic and New repository subtypes", async () => {
+  const backend = new MockBackend()
+  backend.searchObjectTypes = async (_connectionId, _pattern, types) =>
+    types.map((type) => {
+      if (type === "SXCI/XI") {
+        return {
+          requestedType: type,
+          status: "unsupported" as const,
+          objects: [],
+          reason: "Classic implementation search is unavailable."
+        }
+      }
+      return {
+        requestedType: type,
+        status: "available" as const,
+        objects: [
+          {
+            name: "ZBADI_" + type.replace("/", "_"),
+            type,
+            description: "BAdI repository object",
+            package: "ZBADI",
+            systemType: "CUSTOM" as const,
+            uri: "/sap/bc/adt/repository/" + type.toLowerCase()
+          }
+        ]
+      }
+    })
+  const result = JSON.parse(
+    await new ToolService(backend).searchBadiObjects({
+      pattern: "Z*",
+      connectionId: "w200"
+    })
+  ) as {
+    results: Array<{
+      requestedType: string
+      repositoryKind: string
+      status: string
+      count: number | null
+    }>
+    summary: {
+      requestedTypeCount: number
+      availableTypeCount: number
+      unavailableTypeCount: number
+      objectCount: number
+    }
+    coverage: {
+      exactRepositorySubtypes: boolean
+      classicDefinitionAndImplementationSeparated: boolean
+      newBadiDefinitionInspected: boolean
+      filtersOrMultipleUseInspected: boolean
+      switchesOrActivationInspected: boolean
+      runtimeInspected: boolean
+    }
+  }
+
+  assert.deepEqual(
+    result.results.map(({ requestedType, repositoryKind, status, count }) => ({
+      requestedType,
+      repositoryKind,
+      status,
+      count
+    })),
+    [
+      {
+        requestedType: "SXSD/XD",
+        repositoryKind: "classic_badi_definition",
+        status: "available",
+        count: 1
+      },
+      {
+        requestedType: "SXCI/XI",
+        repositoryKind: "classic_badi_implementation",
+        status: "unsupported",
+        count: null
+      },
+      {
+        requestedType: "ENHS/XS",
+        repositoryKind: "enhancement_spot_container",
+        status: "available",
+        count: 1
+      },
+      {
+        requestedType: "ENHO/XHB",
+        repositoryKind: "new_badi_implementation",
+        status: "available",
+        count: 1
+      }
+    ]
+  )
+  assert.deepEqual(result.summary, {
+    requestedTypeCount: 4,
+    availableTypeCount: 3,
+    unavailableTypeCount: 1,
+    objectCount: 3
+  })
+  assert.equal(result.coverage.exactRepositorySubtypes, true)
+  assert.equal(result.coverage.classicDefinitionAndImplementationSeparated, true)
+  assert.equal(result.coverage.newBadiDefinitionInspected, false)
+  assert.equal(result.coverage.filtersOrMultipleUseInspected, false)
+  assert.equal(result.coverage.switchesOrActivationInspected, false)
+  assert.equal(result.coverage.runtimeInspected, false)
+})
+
+test("Classic BAdI definition read returns interfaces, filters, classes, and raw activation", async () => {
+  const backend = new MockBackend()
+  const result = JSON.parse(
+    await new ToolService(backend).readClassicBadiDefinition({
+      definitionName: "me_process_po_cust",
+      connectionId: "w200"
+    })
+  ) as {
+    repositoryKind: string
+    definition: {
+      name: string
+      description: string
+      filterType: string
+      filterDependent: boolean
+      multipleUseRaw: string
+      multipleUse: boolean
+      interfaces: string[]
+      implementationAssignments: Array<{
+        implementationName: string
+        filterValue: string
+        activeRaw: string
+        active: boolean
+      }>
+      classMappings: Array<{
+        implementationName: string
+        interfaceName: string
+        implementationClass: string
+      }>
+    }
+    summary: {
+      interfaceCount: number
+      implementationAssignmentCount: number
+      distinctImplementationCount: number
+      activeImplementationCount: number
+      classMappingCount: number
+    }
+    coverage: {
+      exactClassicDefinitionRead: boolean
+      interfacesInspected: boolean
+      filterAndMultipleUseAttributesInspected: boolean
+      implementationAssignmentsInspected: boolean
+      implementationClassesInspected: boolean
+      rawActivationFlagsInspected: boolean
+      newBadiInspected: boolean
+      switchesInspected: boolean
+      runtimeInspected: boolean
+    }
+  }
+
+  assert.equal(result.repositoryKind, "classic_badi_definition")
+  assert.equal(result.definition.name, "ME_PROCESS_PO_CUST")
+  assert.equal(result.definition.description, "Purchase order processing")
+  assert.equal(result.definition.filterType, "BUKRS")
+  assert.equal(result.definition.filterDependent, true)
+  assert.equal(result.definition.multipleUseRaw, "X")
+  assert.equal(result.definition.multipleUse, true)
+  assert.deepEqual(result.definition.interfaces, ["IF_EX_ME_PROCESS_PO_CUST"])
+  assert.deepEqual(
+    result.definition.implementationAssignments.map(
+      ({ implementationName, filterValue, activeRaw, active }) => ({
+        implementationName,
+        filterValue,
+        activeRaw,
+        active
+      })
+    ),
+    [
+      {
+        implementationName: "ZME_PO_IMPL",
+        filterValue: "1000",
+        activeRaw: "X",
+        active: true
+      },
+      {
+        implementationName: "ZME_PO_IMPL",
+        filterValue: "2000",
+        activeRaw: "X",
+        active: true
+      },
+      {
+        implementationName: "ZME_PO_OLD",
+        filterValue: "",
+        activeRaw: "",
+        active: false
+      }
+    ]
+  )
+  assert.deepEqual(result.definition.classMappings, [
+    {
+      implementationName: "ZME_PO_IMPL",
+      interfaceName: "IF_EX_ME_PROCESS_PO_CUST",
+      implementationClass: "ZCL_IM_ME_PO"
+    },
+    {
+      implementationName: "ZME_PO_OLD",
+      interfaceName: "IF_EX_ME_PROCESS_PO_CUST",
+      implementationClass: "ZCL_IM_ME_PO_OLD"
+    }
+  ])
+  assert.deepEqual(result.summary, {
+    interfaceCount: 1,
+    implementationAssignmentCount: 3,
+    distinctImplementationCount: 2,
+    activeImplementationCount: 1,
+    classMappingCount: 2
+  })
+  assert.equal(result.coverage.exactClassicDefinitionRead, true)
+  assert.equal(result.coverage.interfacesInspected, true)
+  assert.equal(result.coverage.filterAndMultipleUseAttributesInspected, true)
+  assert.equal(result.coverage.implementationAssignmentsInspected, true)
+  assert.equal(result.coverage.implementationClassesInspected, true)
+  assert.equal(result.coverage.rawActivationFlagsInspected, true)
+  assert.equal(result.coverage.newBadiInspected, false)
+  assert.equal(result.coverage.switchesInspected, false)
+  assert.equal(result.coverage.runtimeInspected, false)
+  assert.equal(backend.lastRepositoryRequest?.operation, "READ_CLASSIC_BADI_DEFINITION")
+  assert.equal(backend.lastRepositoryRequest?.objectName, "ME_PROCESS_PO_CUST")
+})
+
+test("SXCI table compatibility projection reads one exact Classic BAdI definition", async () => {
+  const result = JSON.parse(
+    await new ToolService(new MockBackend()).readAbapTable({
+      connectionId: "w200",
+      tableName: "SXCI",
+      columns: ["EXIT_NAME", "IMP_NAME", "CLASS_NAME", "INTER_NAME"],
+      filters: [{ column: "EXIT_NAME", operator: "EQ", value: "ME_PROCESS_PO_CUST" }],
+      maxRows: 10
+    })
+  )
+
+  assert.equal(result.status, "ok")
+  assert.equal(result.method, "classic_badi_repository_helper")
+  assert.equal(result.definitionSource, "classic_badi_repository_projection")
+  assert.equal(result.compatibilityProjection, true)
+  assert.equal(result.tableClassVerified, false)
+  assert.equal(result.returnedCount, 2)
+  assert.equal(result.truncated, false)
+  assert.deepEqual(result.data, [
+    {
+      EXIT_NAME: "ME_PROCESS_PO_CUST",
+      IMP_NAME: "ZME_PO_IMPL",
+      CLASS_NAME: "ZCL_IM_ME_PO",
+      INTER_NAME: "IF_EX_ME_PROCESS_PO_CUST"
+    },
+    {
+      EXIT_NAME: "ME_PROCESS_PO_CUST",
+      IMP_NAME: "ZME_PO_OLD",
+      CLASS_NAME: "ZCL_IM_ME_PO_OLD",
+      INTER_NAME: "IF_EX_ME_PROCESS_PO_CUST"
+    }
+  ])
+})
+
+test("SXCI table compatibility projection supports a bounded wildcard read", async () => {
+  const backend = new MockBackend()
+  backend.searchObjectTypes = async () => [
+    {
+      requestedType: "SXSD/XD",
+      status: "available",
+      objects: [
+        {
+          name: "ME_PROCESS_PO_CUST",
+          type: "SXSD/XD",
+          description: "Purchase order processing",
+          package: "ME",
+          systemType: "STANDARD",
+          uri: "/sap/bc/adt/vit/wb/object_type/sxsdxd/object_name/ME_PROCESS_PO_CUST"
+        }
+      ]
+    }
+  ]
+  const result = JSON.parse(
+    await new ToolService(backend).readAbapTable({
+      connectionId: "w200",
+      tableName: "SXCI",
+      columns: ["*"],
+      maxRows: 1
+    })
+  )
+
+  assert.equal(result.status, "ok")
+  assert.deepEqual(result.columns, ["EXIT_NAME", "IMP_NAME", "CLASS_NAME", "INTER_NAME"])
+  assert.equal(result.returnedCount, 1)
+  assert.equal(result.truncated, true)
+  assert.equal(result.data[0].IMP_NAME, "ZME_PO_IMPL")
+})
+
+test("Enhancement implementation read keeps every hook source with its owning hook", async () => {
+  const result = JSON.parse(
+    await new ToolService(new MockBackend()).readEnhancementImplementation({
+      enhancementName: "zenh_demo",
+      connectionId: "w200"
+    })
+  ) as {
+    enhancementName: string
+    packageName: string
+    fingerprint: string
+    definition: {
+      active: boolean
+      hasInactiveVersion: boolean
+      hasSavedInactiveVersion: boolean
+      hasUnsavedInactiveVersion: boolean
+      hookImplementations: Array<{ fullName: string; source: string[] }>
+    }
+  }
+
+  assert.equal(result.enhancementName, "ZENH_DEMO")
+  assert.equal(result.packageName, "ZABAP")
+  assert.equal(result.definition.active, true)
+  assert.equal(result.definition.hasInactiveVersion, false)
+  assert.equal(result.definition.hasSavedInactiveVersion, false)
+  assert.equal(result.definition.hasUnsavedInactiveVersion, false)
+  assert.match(result.fingerprint, /^[a-f0-9]{64}$/)
+  assert.deepEqual(result.definition.hookImplementations[0]?.source, [
+    "IF vbak-vbeln IS INITIAL.",
+    "ENDIF."
+  ])
+})
+
+test("Enhancement hook lifecycle sends guarded payload and verifies create and delete readback", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const created = JSON.parse(
+    await tools.createEnhancementHookImplementation({
+      enhancementName: "ZENH_NEW",
+      description: "Order save validation",
+      originalObjectType: "PROG",
+      originalObjectName: "SAPMV45A",
+      mainObjectType: "PROG",
+      mainObjectName: "SAPMV45A",
+      programName: "SAPMV45A",
+      fullName: "\\PROGRAM=SAPMV45A\\FORM=USEREXIT_SAVE_DOCUMENT_PREPARE\\ENHANCEMENT-POINT=END",
+      mode: "S",
+      source: ["CHECK vbak-vbeln IS NOT INITIAL."],
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "CREATE_ENHANCEMENT_IMPLEMENTATION",
+      connectionId: "w200"
+    })
+  ) as {
+    enhancementName: string
+    fingerprint: string
+    definition: { hookImplementations: Array<{ source: string[] }> }
+  }
+
+  assert.equal(created.enhancementName, "ZENH_NEW")
+  assert.deepEqual(created.definition.hookImplementations[0]?.source, [
+    "CHECK vbak-vbeln IS NOT INITIAL."
+  ])
+  assert.equal(backend.lastRepositoryRequest?.operation, "READ_ENHANCEMENT_IMPLEMENTATION")
+
+  const deleted = JSON.parse(
+    await tools.deleteEnhancementImplementation({
+      enhancementName: "ZENH_NEW",
+      expectedFingerprint: created.fingerprint,
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    })
+  ) as { status: string; previousFingerprint: string }
+  assert.equal(deleted.status, "ENHANCEMENT_IMPLEMENTATION_DELETED")
+  assert.equal(deleted.previousFingerprint, created.fingerprint)
+})
+
+test("New BAdI and Classic BAdI create operations preserve implementation metadata", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const newBadi = JSON.parse(
+    await tools.createNewBadiImplementation({
+      enhancementName: "ZENH_BADI_NEW",
+      description: "PO validation",
+      spotName: "ES_ME_PROCESS_PO",
+      badiName: "ME_PROCESS_PO_CUST",
+      implementationName: "ZENH_BADI_IMPL",
+      implementationClass: "ZCL_IM_ME_PO_NEW",
+      defaultImplementation: false,
+      filters: [{ FILTER_NAME: "BUKRS", FILTER_CHAR_VALUE1: "1000" }],
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "CREATE_ENHANCEMENT_IMPLEMENTATION",
+      connectionId: "w200"
+    })
+  ) as {
+    definition: {
+      badiImplementations: Array<{
+        implementationName: string
+        implementationClass: string
+      }>
+      filters: Array<Record<string, string>>
+    }
+  }
+  assert.equal(newBadi.definition.badiImplementations[0]?.implementationName, "ZENH_BADI_IMPL")
+  assert.equal(newBadi.definition.badiImplementations[0]?.implementationClass, "ZCL_IM_ME_PO_NEW")
+  assert.equal(newBadi.definition.filters[0]?.FILTER_CHAR_VALUE1, "1000")
+
+  const classic = JSON.parse(
+    await tools.manageClassicBadiImplementation({
+      action: "create",
+      implementationName: "ZME_PO_NEW",
+      definitionName: "ME_PROCESS_PO_CUST",
+      interfaceName: "IF_EX_ME_PROCESS_PO_CUST",
+      implementationClass: "ZCL_IM_ME_PO_NEW",
+      methods: [
+        {
+          methodName: "IF_EX_ME_PROCESS_PO_CUST~PROCESS_HEADER",
+          source: ["METHOD if_ex_me_process_po_cust~process_header.", "ENDMETHOD."]
+        }
+      ],
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "CLASSIC_BADI_IMPLEMENTATION_CHANGE",
+      connectionId: "w200"
+    })
+  ) as { implementationName: string; fingerprint: string }
+  assert.equal(classic.implementationName, "ZME_PO_NEW")
+  assert.match(classic.fingerprint, /^[a-f0-9]{64}$/)
+})
+
+test("Enhancement hook update replaces one exact hook and verifies activated readback", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readEnhancementImplementation({
+      enhancementName: "ZENH_DEMO",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string }
+  const updated = JSON.parse(
+    await tools.updateEnhancementHookImplementation({
+      enhancementName: "ZENH_DEMO",
+      expectedFingerprint: current.fingerprint,
+      extId: "1",
+      source: ["CHECK vbak-vbeln IS NOT INITIAL."],
+      description: "Updated order validation",
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "UPDATE_ENHANCEMENT_IMPLEMENTATION",
+      connectionId: "w200"
+    })
+  ) as {
+    previousFingerprint: string
+    definition: {
+      shortText: string
+      active: boolean
+      hasInactiveVersion: boolean
+      hookImplementations: Array<{ extId: string; source: string[] }>
+    }
+  }
+
+  assert.equal(updated.previousFingerprint, current.fingerprint)
+  assert.equal(updated.definition.shortText, "Updated order validation")
+  assert.equal(updated.definition.active, true)
+  assert.equal(updated.definition.hasInactiveVersion, false)
+  assert.deepEqual(updated.definition.hookImplementations[0]?.source, [
+    "CHECK vbak-vbeln IS NOT INITIAL."
+  ])
+})
+
+test("New BAdI update replaces class, filters, flags, and text", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const created = JSON.parse(
+    await tools.createNewBadiImplementation({
+      enhancementName: "ZENH_BADI_UPDATE",
+      description: "Initial PO validation",
+      spotName: "ES_ME_PROCESS_PO",
+      badiName: "ME_PROCESS_PO_CUST",
+      implementationName: "ZENH_BADI_IMPL",
+      implementationClass: "ZCL_IM_ME_PO_OLD",
+      defaultImplementation: false,
+      filters: [],
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "CREATE_ENHANCEMENT_IMPLEMENTATION",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string }
+  const updated = JSON.parse(
+    await tools.updateNewBadiImplementation({
+      enhancementName: "ZENH_BADI_UPDATE",
+      expectedFingerprint: created.fingerprint,
+      implementationName: "ZENH_BADI_IMPL",
+      implementationClass: "ZCL_IM_ME_PO_NEW",
+      active: false,
+      defaultImplementation: true,
+      filters: [{ FILTER_NAME: "BUKRS", FILTER_CHAR_VALUE1: "2000" }],
+      description: "Updated PO validation",
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "UPDATE_ENHANCEMENT_IMPLEMENTATION",
+      connectionId: "w200"
+    })
+  ) as {
+    definition: {
+      badiImplementations: Array<{
+        implementationClass: string
+        active: boolean
+        defaultImplementation: boolean
+        shortText: string
+        filters: Array<Record<string, string>>
+      }>
+    }
+  }
+  const implementation = updated.definition.badiImplementations[0]
+
+  assert.equal(implementation?.implementationClass, "ZCL_IM_ME_PO_NEW")
+  assert.equal(implementation?.active, false)
+  assert.equal(implementation?.defaultImplementation, true)
+  assert.equal(implementation?.shortText, "Updated PO validation")
+  assert.deepEqual(implementation?.filters, [{ FILTER_CHAR_VALUE1: "2000", FILTER_NAME: "BUKRS" }])
+})
+
+test("Enhancement state management activates or discards an inactive version", async () => {
+  const backend = new MockBackend()
+  backend.seedInactiveEnhancementVersion("ZENH_DEMO")
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readEnhancementImplementation({
+      enhancementName: "ZENH_DEMO",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string; definition: { hasInactiveVersion: boolean } }
+  assert.equal(current.definition.hasInactiveVersion, true)
+
+  const changed = JSON.parse(
+    await tools.manageEnhancementImplementationState({
+      action: "discard_inactive",
+      enhancementName: "ZENH_DEMO",
+      expectedFingerprint: current.fingerprint,
+      packageName: "ZABAP",
+      transportNumber: "W20K900001",
+      confirmation: "CHANGE_ENHANCEMENT_IMPLEMENTATION_STATE",
+      connectionId: "w200"
+    })
+  ) as { status: string; definition: { active: boolean; hasInactiveVersion: boolean } }
+
+  assert.equal(changed.status, "ENHANCEMENT_INACTIVE_VERSION_DISCARDED")
+  assert.equal(changed.definition.active, true)
+  assert.equal(changed.definition.hasInactiveVersion, false)
+})
+
+test("Enhancement Framework inspection separates explicit anchors from implicit candidates", async () => {
+  const backend = new MockBackend()
+  backend.readSource = async () => ({
+    source: [
+      "REPORT zdemo.",
+      "ENHANCEMENT-POINT ep_one SPOTS es_demo STATIC.",
+      "FORM calculate.",
+      "  WRITE 'FORM'.",
+      "ENDFORM.",
+      "METHOD run.",
+      "  ENHANCEMENT-SECTION sec_one SPOTS es_demo.",
+      "    WRITE 'METHOD'.",
+      "  END-ENHANCEMENT-SECTION.",
+      "ENDMETHOD.",
+      "ENHANCEMENT 1 zimpl.",
+      "ENDENHANCEMENT.",
+      "* ENHANCEMENT-POINT ignored SPOTS ignored."
+    ].join("\n"),
+    uriUsed: "/sap/bc/adt/programs/programs/zdemo/source/main"
+  })
+  const result = JSON.parse(
+    await new ToolService(backend).inspectEnhancementFramework({
+      objectName: "ZCL_DEMO",
+      objectType: "CLAS",
+      connectionId: "w200"
+    })
+  ) as {
+    explicitAnchors: Array<{ kind: string; name: string; spots: string[]; line: number }>
+    enhancementImplementations: Array<{ id: string; name: string; line: number }>
+    implicitCandidates: Array<{
+      kind: string
+      line: number
+      position: string
+      routineKind?: string
+      routineName?: string
+    }>
+    summary: {
+      explicitAnchorCount: number
+      enhancementImplementationCount: number
+      routineCount: number
+      implicitCandidateCount: number
+    }
+    coverage: {
+      implicitCandidatesAreSourceDerived: boolean
+      sapEnhancementEditorConfirmationRequired: boolean
+      activationOrConfigurationInspected: boolean
+      runtimeInspected: boolean
+      standardRefactoringMayInvalidateCandidates: boolean
+    }
+  }
+
+  assert.deepEqual(
+    result.explicitAnchors.map(({ kind, name, spots, line }) => ({ kind, name, spots, line })),
+    [
+      { kind: "point", name: "EP_ONE", spots: ["ES_DEMO"], line: 2 },
+      { kind: "section", name: "SEC_ONE", spots: ["ES_DEMO"], line: 7 }
+    ]
+  )
+  assert.deepEqual(
+    result.enhancementImplementations.map(({ id, name, line }) => ({ id, name, line })),
+    [{ id: "1", name: "ZIMPL", line: 11 }]
+  )
+  assert.deepEqual(
+    result.implicitCandidates.map(({ kind, line, position, routineKind, routineName }) => ({
+      kind,
+      line,
+      position,
+      ...(routineKind ? { routineKind, routineName } : {})
+    })),
+    [
+      { kind: "source_start", line: 1, position: "before_line" },
+      {
+        kind: "routine_start",
+        line: 3,
+        position: "after_line",
+        routineKind: "form",
+        routineName: "CALCULATE"
+      },
+      {
+        kind: "routine_end",
+        line: 5,
+        position: "before_line",
+        routineKind: "form",
+        routineName: "CALCULATE"
+      },
+      {
+        kind: "routine_start",
+        line: 6,
+        position: "after_line",
+        routineKind: "method",
+        routineName: "RUN"
+      },
+      {
+        kind: "routine_end",
+        line: 10,
+        position: "before_line",
+        routineKind: "method",
+        routineName: "RUN"
+      },
+      { kind: "source_end", line: 12, position: "after_line" }
+    ]
+  )
+  assert.deepEqual(result.summary, {
+    explicitAnchorCount: 2,
+    enhancementImplementationCount: 1,
+    routineCount: 2,
+    implicitCandidateCount: 6
+  })
+  assert.equal(result.coverage.implicitCandidatesAreSourceDerived, true)
+  assert.equal(result.coverage.sapEnhancementEditorConfirmationRequired, true)
+  assert.equal(result.coverage.activationOrConfigurationInspected, false)
+  assert.equal(result.coverage.runtimeInspected, false)
+  assert.equal(result.coverage.standardRefactoringMayInvalidateCandidates, true)
+})
+
+test("FI rule exit inspection correlates catalog declarations with FORM implementations", async () => {
+  const backend = new MockBackend()
+  backend.readSource = async () => ({
+    source: [
+      "REPORT zreport_demo.",
+      "FORM get_exit_titles TABLES exits STRUCTURE gb002.",
+      "  EXITS-NAME = 'U100'.",
+      "  EXITS-PARAM = C_EXIT_PARAM_NONE.",
+      "  EXITS-TITLE = TEXT-100.",
+      "  APPEND EXITS.",
+      "  EXITS-NAME = 'U200'.",
+      "  EXITS-PARAM = C_EXIT_PARAM_FIELD.",
+      "  EXITS-TITLE = 'Field replacement'.",
+      "  APPEND EXITS.",
+      "ENDFORM.",
+      "FORM u100.",
+      "ENDFORM.",
+      "FORM u300.",
+      "ENDFORM.",
+      "* EXITS-NAME = 'U999'."
+    ].join("\n"),
+    uriUsed: "/sap/bc/adt/programs/programs/zreport_demo/source/main"
+  })
+  const result = JSON.parse(
+    await new ToolService(backend).inspectFicoRuleExitProgram({
+      programName: "ZREPORT_DEMO",
+      connectionId: "w200"
+    })
+  ) as {
+    catalogRoutine: { found: boolean; startLine: number | null; endLine: number | null }
+    catalogEntries: Array<{
+      name: string | null
+      parameterExpression: string | null
+      titleExpression: string | null
+      appendLine: number
+      implementationFound: boolean
+      implementationLine: number | null
+    }>
+    implementedExitForms: Array<{
+      name: string
+      line: number
+      declaredInCatalog: boolean
+    }>
+    summary: {
+      catalogEntryCount: number
+      implementedExitFormCount: number
+      matchedExitCount: number
+      declarationWithoutImplementationCount: number
+      implementationWithoutDeclarationCount: number
+    }
+    coverage: {
+      ggb0ValidationRulesInspected: boolean
+      ggb1SubstitutionRulesInspected: boolean
+      ob28ActivationInspected: boolean
+      obbhActivationInspected: boolean
+      runtimeInspected: boolean
+    }
+  }
+
+  assert.deepEqual(result.catalogRoutine, { found: true, startLine: 2, endLine: 11 })
+  assert.deepEqual(result.catalogEntries, [
+    {
+      name: "U100",
+      parameterExpression: "C_EXIT_PARAM_NONE",
+      titleExpression: "TEXT-100",
+      appendLine: 6,
+      implementationFound: true,
+      implementationLine: 12
+    },
+    {
+      name: "U200",
+      parameterExpression: "C_EXIT_PARAM_FIELD",
+      titleExpression: "'Field replacement'",
+      appendLine: 10,
+      implementationFound: false,
+      implementationLine: null
+    }
+  ])
+  assert.deepEqual(result.implementedExitForms, [
+    { name: "U100", line: 12, declaredInCatalog: true },
+    { name: "U300", line: 14, declaredInCatalog: false }
+  ])
+  assert.deepEqual(result.summary, {
+    catalogEntryCount: 2,
+    implementedExitFormCount: 2,
+    matchedExitCount: 1,
+    declarationWithoutImplementationCount: 1,
+    implementationWithoutDeclarationCount: 1
+  })
+  assert.equal(result.coverage.ggb0ValidationRulesInspected, false)
+  assert.equal(result.coverage.ggb1SubstitutionRulesInspected, false)
+  assert.equal(result.coverage.ob28ActivationInspected, false)
+  assert.equal(result.coverage.obbhActivationInspected, false)
+  assert.equal(result.coverage.runtimeInspected, false)
+})
+
 test("read-only migration wave exposes URI, search, metadata and history behavior", async () => {
   const tools = new ToolService(new MockBackend())
 
@@ -2866,6 +5157,9 @@ test("read-only migration wave exposes URI, search, metadata and history behavio
   const whereUsed = await tools.findWhereUsed({
     objectName: "ZCL_DEMO",
     connectionId: "w200",
+    line: 1,
+    character: 6,
+    searchTerm: "zcl_demo",
     includeSnippets: true
   })
   assert.match(whereUsed, /ZREPORT_DEMO/)
@@ -3108,6 +5402,10 @@ test("ADT text element write locks, merges, saves, unlocks, activates, and verif
     {
       httpClient: {
         async request(uri: string, options: { qs?: Record<string, string> }) {
+          if (uri.endsWith("/activation/inactiveobjects")) {
+            calls.push("inactive")
+            return inactiveHttp().request()
+          }
           calls.push(`lock:${uri}`)
           assert.equal(options.qs?._action, "LOCK")
           return {
@@ -3135,10 +5433,6 @@ test("ADT text element write locks, merges, saves, unlocks, activates, and verif
       async unLock() {
         calls.push("unlock")
       },
-      async inactiveObjects() {
-        calls.push("inactive")
-        return []
-      },
       async activate() {
         calls.push("activate")
         return { success: true, messages: [], inactive: [] }
@@ -3159,7 +5453,6 @@ test("ADT text element write locks, merges, saves, unlocks, activates, and verif
     "read",
     "save:LOCK:",
     "unlock",
-    "inactive",
     "inactive",
     "activate",
     "read"
@@ -3432,7 +5725,7 @@ test("empty DDIC source remains a dictionary result", async () => {
   assert.doesNotMatch(result?.source ?? "", /MAIN TABLE STRUCTURE/)
 })
 
-test("unsupported enhancement endpoints preserve no-result behavior", async () => {
+test("unsupported enhancement endpoints remain unavailable instead of becoming empty results", async () => {
   const backend = new AdtBackend([
     {
       id: "w200",
@@ -3462,31 +5755,172 @@ test("unsupported enhancement endpoints preserve no-result behavior", async () =
     login: Promise.resolve()
   })
 
-  assert.deepEqual(await backend.readEnhancements("w200", "/sap/bc/adt/programs/ztest"), [])
+  await assert.rejects(
+    backend.readEnhancements("w200", "/sap/bc/adt/programs/ztest"),
+    /enhancement metadata read capability unsupported-endpoint/
+  )
+})
+
+test("ADT enhancement reads preserve implementation, element, position, and enhanced-object metadata", async () => {
+  const backend = backendWithInjectedClient()
+  injectClient(backend, {
+    async objectEnhancements(sourceUri: string, contextUri: undefined, includeSource: boolean) {
+      assert.equal(sourceUri, "/sap/bc/adt/programs/ztest/source/main")
+      assert.equal(contextUri, undefined)
+      assert.equal(includeSource, true)
+      return {
+        implementations: [
+          {
+            name: "ZENH_TEST",
+            type: "ENHO/XH",
+            version: "active",
+            elements: [
+              {
+                uri: "/sap/bc/adt/enhancements/zenh_test/elements/1",
+                id: "1",
+                fullname: "\\PR:ZTEST\\SE:Z_SECTION\\EI",
+                mode: "any",
+                replacing: true,
+                source: "WRITE 'ACTIVE'.",
+                position: {
+                  uri: "/sap/bc/adt/programs/ztest/source/main#start=7,2",
+                  startLine: 6,
+                  startColumn: 2
+                }
+              }
+            ],
+            enhancedObject: {
+              uri: "/sap/bc/adt/programs/programs/ztest",
+              type: "PROG/P",
+              name: "ZTEST"
+            }
+          }
+        ]
+      }
+    }
+  })
+
+  assert.deepEqual(await backend.readEnhancements("w200", "/sap/bc/adt/programs/ztest", true), [
+    {
+      name: "ZENH_TEST",
+      type: "ENHO/XH",
+      version: "active",
+      elementId: "1",
+      fullname: "\\PR:ZTEST\\SE:Z_SECTION\\EI",
+      mode: "any",
+      replacing: true,
+      startLine: 6,
+      startColumn: 2,
+      positionUri: "/sap/bc/adt/programs/ztest/source/main#start=7,2",
+      uri: "/sap/bc/adt/enhancements/zenh_test/elements/1",
+      source: "WRITE 'ACTIVE'.",
+      enhancedObject: {
+        uri: "/sap/bc/adt/programs/programs/ztest",
+        type: "PROG/P",
+        name: "ZTEST"
+      }
+    }
+  ])
+})
+
+test("ADT enhancement object search reports each repository type independently", async () => {
+  const backend = backendWithInjectedClient()
+  injectClient(backend, {
+    async searchObject(_pattern: string, type: string) {
+      if (type === "ENHS") throw new Error("Request failed with status code 404")
+      if (type === "BADII") throw new Error("Request failed with status code 403")
+      return type === "BADI"
+        ? [
+            {
+              "adtcore:name": "ZBADI_DEMO",
+              "adtcore:type": "BADI/OI",
+              "adtcore:description": "Demo BAdI",
+              "adtcore:packageName": "ZVALIDATION",
+              "adtcore:uri": "/sap/bc/adt/enhancements/badi/zbadi_demo"
+            }
+          ]
+        : []
+    }
+  })
+
+  const results = await backend.searchObjectTypes(
+    "w200",
+    "Z*",
+    ["BADI", "ENHS", "BADII", "ENHO"],
+    20
+  )
+  assert.deepEqual(
+    results.map(({ requestedType, status, objects }) => ({
+      requestedType,
+      status,
+      names: objects.map((object) => object.name)
+    })),
+    [
+      { requestedType: "BADI", status: "available", names: ["ZBADI_DEMO"] },
+      { requestedType: "ENHS", status: "unsupported", names: [] },
+      { requestedType: "BADII", status: "forbidden", names: [] },
+      { requestedType: "ENHO", status: "available", names: [] }
+    ]
+  )
+})
+
+test("source timeouts abort the ADT request and do not retry fallback URIs", async () => {
+  const backend = backendWithInjectedClient()
+  const requests: Array<{ url: string; timeout: number | undefined }> = []
+  injectClient(backend, {
+    httpClient: {
+      async request(url: string, options: { timeout?: number }) {
+        requests.push({ url, timeout: options.timeout })
+        throw Object.assign(new Error("timeout of 30000ms exceeded"), { code: "ECONNABORTED" })
+      }
+    }
+  })
+
+  await assert.rejects(
+    backend.readSourceByUri("w200", "adt://w200/sap/bc/adt/oo/classes/zcl_slow"),
+    /SOURCE_READ_TIMEOUT: active source read timed out.*automatic retry was started/
+  )
+  assert.deepEqual(requests, [
+    { url: "/sap/bc/adt/oo/classes/zcl_slow/source/main", timeout: 30_000 }
+  ])
+})
+
+test("class diagnostics bound source and syntax requests independently", async () => {
+  const backend = backendWithInjectedClient()
+  const requests: Array<{ url: string; timeout: number | undefined }> = []
+  injectClient(backend, {
+    httpClient: {
+      async request(url: string, options: { timeout?: number }) {
+        requests.push({ url, timeout: options.timeout })
+        if (url.endsWith("/source/main")) {
+          return {
+            body: "CLASS zcl_slow DEFINITION. ENDCLASS.",
+            status: 200,
+            statusText: "OK",
+            headers: {}
+          }
+        }
+        throw Object.assign(new Error("timeout of 10000ms exceeded"), { code: "ECONNABORTED" })
+      }
+    }
+  })
+
+  await assert.rejects(
+    backend.diagnostics("w200", "adt://w200/sap/bc/adt/oo/classes/zcl_slow"),
+    /SYNTAX_CHECK_TIMEOUT: syntax check timed out.*SAP-side cancellation is unconfirmed/
+  )
+  assert.deepEqual(requests, [
+    { url: "/sap/bc/adt/oo/classes/zcl_slow/source/main", timeout: 30_000 },
+    { url: "/sap/bc/adt/checkruns?reporters=abapCheckRun", timeout: 10_000 }
+  ])
 })
 
 test("ADT write coordination locks, saves, unlocks, and activates the exact customer object", async () => {
   const calls: string[] = []
-  let inactiveChecks = 0
+  let savedSource = "CLASS zcl_demo IMPLEMENTATION.\nENDCLASS."
   const client = {
     stateful: "stateful",
-    async inactiveObjects() {
-      inactiveChecks++
-      return inactiveChecks <= 2
-        ? []
-        : [
-            {
-              object: {
-                "adtcore:uri": "/sap/bc/adt/oo/classes/zcl_demo",
-                "adtcore:type": "CLAS/OC",
-                "adtcore:name": "ZCL_DEMO",
-                "adtcore:parentUri": "",
-                user: "DEVELOPER",
-                deleted: false
-              }
-            }
-          ]
-    },
+    httpClient: inactiveHttp(),
     async lock() {
       calls.push("lock")
       return {
@@ -3501,11 +5935,12 @@ test("ADT write coordination locks, saves, unlocks, and activates the exact cust
     },
     async getObjectSource() {
       calls.push("read")
-      return "CLASS zcl_demo IMPLEMENTATION.\nENDCLASS."
+      return savedSource
     },
     async setObjectSource(_uri: string, source: string, _lockHandle: string, transport: string) {
       calls.push(`save:${transport}`)
       assert.match(source, /WRITE 'OK'/)
+      savedSource = source
     },
     async unLock() {
       calls.push("unlock")
@@ -3525,7 +5960,15 @@ test("ADT write coordination locks, saves, unlocks, and activates the exact cust
     "CLASS zcl_demo IMPLEMENTATION.\n  WRITE 'OK'."
   )
   assert.equal(result.activation.success, true)
-  assert.deepEqual(calls, ["lock", "read", "save:W200K900001", "unlock", "activate"])
+  assert.deepEqual(calls, [
+    "lock",
+    "read",
+    "read",
+    "save:W200K900001",
+    "unlock",
+    "activate",
+    "read"
+  ])
 })
 
 test("ADT source deletion compares the fingerprint while holding the SAP lock", async () => {
@@ -3758,10 +6201,10 @@ test("ADT object creation validates capability, creates, verifies, and activates
         calls.push("verify")
         return [{ "adtcore:uri": "/sap/bc/adt/oo/classes/zcl_create" }]
       },
-      async inactiveObjects() {
+      httpClient: inactiveHttp(() => {
         calls.push("inactive")
         return []
-      },
+      }),
       async activate() {
         calls.push("activate")
         return { success: true, messages: [], inactive: [] }
@@ -3778,7 +6221,6 @@ test("ADT object creation validates capability, creates, verifies, and activates
     "validate",
     "create:ZCL_CREATE",
     "verify",
-    "inactive",
     "inactive",
     "activate"
   ])
@@ -3805,14 +6247,12 @@ test("ADT object creation retries a concrete media type and tolerates legacy ind
       },
       httpClient: {
         async request(url: string, options: { headers?: Record<string, string> }) {
+          if (url.endsWith("/activation/inactiveobjects")) return inactiveHttp().request()
           calls.push({ url, contentType: options.headers?.["Content-Type"] ?? "" })
           return { body: "", status: 201, statusText: "Created", headers: {} }
         }
       },
       async findObjectPath() {
-        return []
-      },
-      async inactiveObjects() {
         return []
       },
       async activate() {
@@ -3853,6 +6293,7 @@ test("legacy ECC function group creation retries v3 conversion failure with v2",
       },
       httpClient: {
         async request(_url: string, options: { headers?: Record<string, string> }) {
+          if (_url.endsWith("/activation/inactiveobjects")) return inactiveHttp().request()
           const contentType = options.headers?.["Content-Type"] ?? ""
           contentTypes.push(contentType)
           if (contentType.includes("groups.v3+xml")) {
@@ -3864,9 +6305,6 @@ test("legacy ECC function group creation retries v3 conversion failure with v2",
         }
       },
       async findObjectPath() {
-        return []
-      },
-      async inactiveObjects() {
         return []
       },
       async activate() {
@@ -4156,12 +6594,13 @@ test("legacy ECC function include creation tries the v2 media type first", async
       },
       httpClient: {
         async request(_url: string, options: { headers?: Record<string, string> }) {
+          if (_url.endsWith("/activation/inactiveobjects")) return inactiveHttp().request()
           contentTypes.push(options.headers?.["Content-Type"] ?? "")
           return { body: "", status: 201, statusText: "Created", headers: {} }
         }
       },
-      async inactiveObjects() {
-        return []
+      async mainPrograms() {
+        return [{ "adtcore:uri": "/sap/bc/adt/functions/groups/zfg_legacy_create" }]
       },
       async activate() {
         return { success: true, messages: [], inactive: [] }
@@ -4200,9 +6639,7 @@ test("ADT object creation continues when legacy validation is empty or unavailab
         async findObjectPath() {
           return []
         },
-        async inactiveObjects() {
-          return []
-        },
+        httpClient: inactiveHttp(),
         async activate() {
           return { success: true, messages: [], inactive: [] }
         }
@@ -4255,10 +6692,10 @@ test("test include creation locks, creates, unlocks, verifies, and activates", a
         calls.push("unlock")
         return ""
       },
-      async inactiveObjects() {
+      httpClient: inactiveHttp(() => {
         calls.push("inactive")
         return []
-      },
+      }),
       async activate() {
         calls.push("activate")
         return { success: true, messages: [], inactive: [] }
@@ -4277,7 +6714,6 @@ test("test include creation locks, creates, unlocks, verifies, and activates", a
     "create",
     "unlock",
     "structure:3",
-    "inactive",
     "inactive",
     "activate"
   ])
@@ -4311,8 +6747,9 @@ test("customer function-group technical include uses its Z owner policy", async 
   const result = await replaceSourceWithClient(
     {
       stateful: "stateful",
-      async inactiveObjects() {
-        return []
+      httpClient: inactiveHttp(),
+      async mainPrograms() {
+        return [{ "adtcore:uri": "/sap/bc/adt/functions/groups/zfg_demo" }]
       },
       async lock() {
         return {
@@ -4326,7 +6763,7 @@ test("customer function-group technical include uses its Z owner policy", async 
         }
       },
       async getObjectSource() {
-        return "FUNCTION-POOL zfg_demo."
+        return savedSource || "FUNCTION-POOL zfg_demo."
       },
       async setObjectSource(_uri: string, source: string) {
         savedSource = source
@@ -4353,9 +6790,7 @@ test("ADT write coordination unlocks after save failure", async () => {
   let unlocked = false
   const client = {
     stateful: "stateful",
-    async inactiveObjects() {
-      return []
-    },
+    httpClient: inactiveHttp(),
     async lock() {
       return {
         LOCK_HANDLE: "secret-lock",
@@ -4499,6 +6934,41 @@ test("wrapped legacy endpoint errors retain their real capability category", () 
     capabilityFailure("atc", new Error("Request failed with status code 404")).message,
     /unsupported-endpoint \(HTTP 404\)/
   )
+})
+
+test("native where-used sends a relative source URI and preserves column zero through the real SDK", async () => {
+  const backend = backendWithInjectedClient()
+  const requests: { path: string; uri: unknown; method: unknown }[] = []
+  const http = {
+    async request(path: string, options: { qs?: { uri?: string }; method?: string }) {
+      requests.push({ path, uri: options.qs?.uri, method: options.method })
+      return {
+        body:
+          path === "/sap/bc/adt/discovery"
+            ? '<app:service><app:workspace><app:collection href="/sap/bc/adt/repository/informationsystem/usageReferences"/></app:workspace></app:service>'
+            : '<usageReferences:usageReferenceResult xmlns:usageReferences="http://www.sap.com/adt/ris/usageReferences"><usageReferences:referencedObjects/></usageReferences:usageReferenceResult>',
+        status: 200,
+        headers: {}
+      }
+    }
+  } as unknown as Parameters<typeof sdkUsageReferences>[0]
+  injectClient(backend, {
+    statelessClone: {
+      httpClient: http
+    }
+  })
+  const path = "/sap/bc/adt/programs/programs/zdemo/source/main"
+  for (const [uri, line, column] of [
+    [`adt://w200${path}`, 1, 0],
+    [path, 3, 9]
+  ] as const) {
+    assert.deepEqual(await backend.usageReferences("w200", uri, line, column), [])
+    assert.deepEqual(requests.at(-1), {
+      path: "/sap/bc/adt/repository/informationsystem/usageReferences",
+      uri: `${path}#start=${line},${column}`,
+      method: "POST"
+    })
+  }
 })
 
 function backendWithInjectedClient(): AdtBackend {

@@ -1,0 +1,487 @@
+/**
+ * ORVANTA tool registry - single source of truth for the MCP tool surface.
+ *
+ * Purpose
+ * - Keep tool name, taxonomy, profile membership, risk annotations and SAP helper
+ *   dependency in exactly one place, so the generated index (`docs/tool-index.md`,
+ *   `contracts/tool-index.json`) and the runtime registration cannot drift apart.
+ *
+ * Rules enforced by `npm run matrix:check`
+ * - Every registry name must exist in `toolContracts` and vice versa (no gaps, no extras).
+ * - Registry annotations must not contradict annotations already declared in contracts.ts.
+ *   The runtime merge keeps the contract value when both are present, so existing
+ *   explicit annotations are never changed by this file.
+ * - `annotations.readOnlyHint === true` is required for every entry reachable from the
+ *   `readonly` profile.
+ *
+ * Profile semantics
+ * - `platform`  always enabled, independent of the selected profile
+ * - `dev`       ABAP development (source, DDIC, UI, enhancement, forms, quality, debug)
+ * - `config`    configuration / customizing work
+ * - `ops`       operations, monitoring and diagnostics
+ * - `readonly`  derived filter: every tool whose registry annotation is read-only
+ * - `full`      every registered tool (default)
+ *
+ * `sapHelper` records the deployment target the service uses for that tool family
+ * (`Z_ORVANTA_MCP_EXECUTE` base helper, `Z_ORVANTA_MCP_DYNPRO_API` repository helper,
+ * `Z_ORVANTA_MCP_DDIC_API`, `Z_ORVANTA_QUERY_API`, `Z_ORVANTA_MCP_SCI_*`,
+ * `Z_ORVANTA_LOG_READ`, `Z_ORVANTA_OPS_READ`, `Z_ORVANTA_MAINT_READ`,
+ * `Z_ORVANTA_SMARTFORM_API`). `minHelperProtocol` is the minimum protocol version the
+ * capability report requires; `null` means the tool does not depend on a customer helper.
+ */
+
+export type ToolGroup =
+  | "platform"
+  | "source"
+  | "ddic"
+  | "function"
+  | "ui"
+  | "message"
+  | "enhancement"
+  | "form"
+  | "quality"
+  | "debug"
+  | "data"
+  | "ops"
+
+export type ToolProfile = "platform" | "dev" | "config" | "ops"
+
+export type ToolRoute = "local" | "native-adt" | "sap-helper-fallback" | "target-specific"
+
+export interface ToolAnnotations {
+  readOnlyHint?: boolean
+  destructiveHint?: boolean
+  idempotentHint?: boolean
+}
+
+export interface ToolRegistryEntry {
+  name: string
+  group: ToolGroup
+  profiles: readonly ToolProfile[]
+  route: ToolRoute
+  sapHelper: string | null
+  minHelperProtocol: string | null
+  annotations: ToolAnnotations
+  note?: string
+}
+
+/** Annotation codes used in the compact table below. */
+type AnnotationCode = "R" | "RI" | "W" | "D"
+
+const ANNOTATIONS: Record<AnnotationCode, ToolAnnotations> = {
+  R: { readOnlyHint: true, destructiveHint: false, idempotentHint: false },
+  RI: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+  W: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+  D: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }
+}
+
+const EXECUTE = "Z_ORVANTA_MCP_EXECUTE"
+const REPOSITORY = "Z_ORVANTA_MCP_DYNPRO_API"
+const DDIC = "Z_ORVANTA_MCP_DDIC_API"
+const SCI = "Z_ORVANTA_MCP_SCI_API"
+const LOG = "Z_ORVANTA_LOG_READ"
+const OPS = "Z_ORVANTA_OPS_READ"
+const MAINT = "Z_ORVANTA_MAINT_READ"
+const SMARTFORM = "Z_ORVANTA_SMARTFORM_API"
+
+const PL: readonly ToolProfile[] = ["platform"]
+const DEV: readonly ToolProfile[] = ["dev"]
+const CFG: readonly ToolProfile[] = ["config"]
+const OPSP: readonly ToolProfile[] = ["ops"]
+const DEV_CFG: readonly ToolProfile[] = ["dev", "config"]
+const DEV_OPS: readonly ToolProfile[] = ["dev", "ops"]
+const CFG_OPS: readonly ToolProfile[] = ["config", "ops"]
+const DEV_CFG_OPS: readonly ToolProfile[] = ["dev", "config", "ops"]
+
+/** name, group, profiles, annotation, route, sapHelper, minimum helper protocol */
+type ToolRow = readonly [
+  string,
+  ToolGroup,
+  readonly ToolProfile[],
+  AnnotationCode,
+  ToolRoute,
+  string | null,
+  string | null
+]
+
+const ROWS: readonly ToolRow[] = [
+  ["read_smartform", "form", DEV, "R", "sap-helper-fallback", SMARTFORM, null],
+  ["create_smartform", "form", DEV, "D", "sap-helper-fallback", SMARTFORM, null],
+  ["save_smartform", "form", DEV, "D", "sap-helper-fallback", SMARTFORM, null],
+  ["activate_smartform", "form", DEV, "D", "sap-helper-fallback", SMARTFORM, null],
+  ["get_connected_systems", "platform", PL, "R", "local", null, null],
+  ["get_capability_report", "platform", PL, "R", "target-specific", null, null],
+  ["abap_debug_session", "debug", DEV, "W", "native-adt", null, null],
+  ["abap_debug_breakpoint", "debug", DEV, "W", "native-adt", null, null],
+  ["abap_debug_status", "debug", DEV, "R", "native-adt", null, null],
+  ["abap_debug_stack", "debug", DEV, "R", "native-adt", null, null],
+  ["abap_debug_variable", "debug", DEV, "R", "native-adt", null, null],
+  ["abap_debug_step", "debug", DEV, "W", "native-adt", null, null],
+  ["sap_helper_status", "platform", PL, "R", "sap-helper-fallback", EXECUTE, "1.0"],
+  ["read_abap_screen", "ui", DEV, "R", "sap-helper-fallback", REPOSITORY, "1.1"],
+  ["upsert_abap_screen", "ui", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.1"],
+  ["patch_abap_screen", "ui", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.4"],
+  ["validate_dynpro_application", "ui", DEV, "R", "sap-helper-fallback", REPOSITORY, "1.4"],
+  ["read_abap_gui_definition", "ui", DEV, "R", "sap-helper-fallback", REPOSITORY, "1.5"],
+  ["patch_abap_gui_definition", "ui", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.5"],
+  ["create_module_pool", "ui", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.1"],
+  ["delete_module_pool", "ui", DEV, "D", "sap-helper-fallback", REPOSITORY, "1.1"],
+  ["read_transaction_code", "ui", DEV, "R", "sap-helper-fallback", REPOSITORY, "1.1"],
+  ["create_transaction_code", "ui", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.1"],
+  ["delete_transaction_code", "ui", DEV, "D", "sap-helper-fallback", REPOSITORY, "1.1"],
+  ["create_report_transaction", "ui", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.2"],
+  [
+    "read_function_module_interface",
+    "function",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "1.3"
+  ],
+  ["test_remote_function_module", "function", DEV, "W", "target-specific", null, null],
+  ["invoke_customer_function_module", "function", DEV, "W", "target-specific", null, null],
+  ["get_customer_function_call_status", "platform", PL, "R", "local", null, null],
+  ["get_write_operation_status", "platform", PL, "R", "local", null, null],
+  ["list_write_recovery_operations", "platform", PL, "R", "local", null, null],
+  ["release_write_operation_lock", "platform", PL, "W", "local", null, null],
+  [
+    "create_function_module_with_interface",
+    "function",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "1.3"
+  ],
+  [
+    "patch_function_module_interface",
+    "function",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.0"
+  ],
+  [
+    "inspect_repository_assignment",
+    "function",
+    DEV_CFG,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "1.3"
+  ],
+  ["read_abap_message_class", "message", DEV, "R", "sap-helper-fallback", REPOSITORY, "1.7"],
+  ["create_abap_message_class", "message", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.7"],
+  ["update_abap_message_class", "message", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.8"],
+  ["delete_abap_message_class", "message", DEV, "D", "sap-helper-fallback", REPOSITORY, "1.9"],
+  ["read_ddic_domain", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
+  ["upsert_ddic_domain", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
+  ["read_ddic_data_element", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
+  ["upsert_ddic_data_element", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
+  ["read_ddic_structure", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
+  ["upsert_ddic_structure", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
+  ["read_ddic_transparent_table", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.5"],
+  ["create_ddic_transparent_table", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.5"],
+  ["append_ddic_transparent_table_fields", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.7"],
+  ["patch_ddic_transparent_table_fields", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.7"],
+  ["patch_ddic_transparent_table_settings", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.7"],
+  ["read_ddic_table_conversion_status", "ddic", DEV_OPS, "R", "target-specific", null, null],
+  ["recover_ddic_table_conversion", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.7"],
+  ["read_ddic_table_type", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
+  ["upsert_ddic_table_type", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
+  ["delete_ddic_object", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.6"],
+  ["search_abap_objects", "source", DEV, "R", "native-adt", null, null],
+  ["get_abap_object_info", "source", DEV, "R", "target-specific", null, null],
+  ["get_abap_object_lines", "source", DEV, "R", "target-specific", null, null],
+  ["get_batch_lines", "source", DEV, "R", "target-specific", null, null],
+  ["get_object_by_uri", "source", DEV, "R", "target-specific", null, null],
+  ["search_abap_object_lines", "source", DEV, "R", "native-adt", null, null],
+  ["inspect_source_enhancements", "enhancement", DEV, "R", "target-specific", null, null],
+  ["search_enhancement_objects", "enhancement", DEV, "R", "native-adt", null, null],
+  ["search_customer_exit_objects", "enhancement", DEV_CFG, "R", "native-adt", null, null],
+  [
+    "read_customer_exit_definition",
+    "enhancement",
+    DEV_CFG,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.2"
+  ],
+  [
+    "read_customer_exit_project",
+    "enhancement",
+    DEV_CFG,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.2"
+  ],
+  ["inspect_customer_function_exits", "enhancement", DEV, "R", "target-specific", null, null],
+  ["inspect_customer_screen_menu_exits", "enhancement", DEV, "R", "target-specific", null, null],
+  ["search_bte_dispatchers", "enhancement", DEV_CFG, "R", "native-adt", null, null],
+  ["read_bte_configuration", "enhancement", DEV_CFG, "R", "sap-helper-fallback", REPOSITORY, "2.3"],
+  [
+    "prepare_enhancement_configuration_workflow",
+    "enhancement",
+    CFG,
+    "R",
+    "target-specific",
+    null,
+    null
+  ],
+  ["search_badi_objects", "enhancement", DEV, "R", "native-adt", null, null],
+  [
+    "read_classic_badi_definition",
+    "enhancement",
+    DEV_CFG,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.4"
+  ],
+  [
+    "manage_classic_badi_implementation",
+    "enhancement",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  [
+    "read_enhancement_implementation",
+    "enhancement",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  [
+    "create_enhancement_hook_implementation",
+    "enhancement",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  [
+    "create_new_badi_implementation",
+    "enhancement",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  [
+    "update_enhancement_hook_implementation",
+    "enhancement",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  [
+    "update_new_badi_implementation",
+    "enhancement",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  [
+    "manage_enhancement_implementation_state",
+    "enhancement",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  [
+    "delete_enhancement_implementation",
+    "enhancement",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.6"
+  ],
+  ["inspect_enhancement_framework", "enhancement", DEV, "R", "target-specific", null, null],
+  ["inspect_fico_rule_exit_program", "enhancement", DEV_CFG, "R", "target-specific", null, null],
+  ["get_abap_object_workspace_uri", "platform", PL, "R", "local", null, null],
+  ["get_abap_object_url", "platform", PL, "R", "local", null, null],
+  ["find_where_used", "source", DEV, "R", "target-specific", null, null],
+  ["analyze_change_impact", "source", DEV, "R", "target-specific", null, null],
+  ["get_sap_system_info", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["get_version_history", "source", DEV, "R", "target-specific", null, null],
+  ["preview_source_changes", "source", DEV, "R", "target-specific", null, null],
+  ["get_runtime_info", "platform", PL, "R", "local", null, null],
+  ["replace_string_in_abap_object", "source", DEV, "W", "native-adt", null, null],
+  ["abap_activate", "source", DEV, "W", "native-adt", null, null],
+  ["create_object_programmatically", "source", DEV, "W", "target-specific", null, null],
+  ["delete_abap_source_object", "source", DEV, "D", "native-adt", null, null],
+  ["create_test_include", "source", DEV, "W", "native-adt", null, null],
+  ["manage_text_elements", "source", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.7"],
+  ["get_abap_diagnostics", "quality", DEV, "R", "native-adt", null, null],
+  ["get_abap_sql_syntax", "platform", PL, "R", "local", null, null],
+  ["execute_data_query", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["read_abap_table", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["run_atc_analysis", "quality", DEV, "W", "target-specific", null, null],
+  ["run_sci_analysis", "quality", DEV, "W", "sap-helper-fallback", SCI, null],
+  ["preview_configuration", "data", CFG, "R", "target-specific", null, null],
+  ["run_unit_tests", "quality", DEV, "W", "native-adt", null, null],
+  ["search_background_jobs", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
+  ["search_sap_locks", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
+  ["search_failed_updates", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
+  ["read_failed_update", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
+  ["read_report_parameters", "data", DEV_CFG_OPS, "R", "sap-helper-fallback", REPOSITORY, null],
+  ["read_report_variants", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["read_background_job_details", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
+  ["read_background_job_spool", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
+  ["read_background_job_log", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
+  ["read_system_logs", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
+  ["correlate_sap_logs", "ops", OPSP, "R", "target-specific", null, null],
+  ["discover_application_logs", "ops", OPSP, "R", "sap-helper-fallback", LOG, null],
+  ["search_application_logs", "ops", OPSP, "R", "sap-helper-fallback", LOG, null],
+  ["read_application_log", "ops", OPSP, "R", "sap-helper-fallback", LOG, null],
+  ["diagnose_sap_failure", "ops", DEV_OPS, "RI", "native-adt", null, null],
+  ["analyze_abap_dumps", "ops", DEV_OPS, "R", "native-adt", null, null],
+  ["analyze_abap_traces", "ops", OPSP, "R", "native-adt", null, null],
+  ["manage_transport_requests", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["cleanup_transport_entries", "ops", OPSP, "D", "native-adt", null, null],
+  ["abap_download", "source", DEV, "W", "target-specific", null, null],
+  ["adt_discovery_export", "platform", PL, "W", "native-adt", null, null]
+]
+
+/** Non-obvious boundaries that callers must know before trusting a tool result. */
+const NOTES: Record<string, string> = {
+  analyze_abap_traces:
+    "w200 上 ADT trace 端点返回 HTTP 404（能力报告判定 unsupported）；注册不等于可用。",
+  preview_configuration:
+    "仅服务 w200/200 的 ZTPMC_TPCFG 工厂行预览，属客户项目对象固化在通用服务中的待整改项。",
+  read_report_parameters:
+    "依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。",
+  read_report_variants:
+    "通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。",
+  read_background_job_details:
+    "需要单独批准的 SM37_DETAILS scope；返回步骤元数据，不含变式值与 Spool 正文。",
+  read_background_job_spool:
+    "需要单独批准的 SP01 scope；仅文本，无 OTF/PDF 与打印，分页非原子快照。",
+  discover_application_logs: "需要管理员批准的只读助手；返回有界样本，不是完整日志清单。",
+  search_application_logs: "需要管理员批准的只读助手；未批准时返回不可用，不代表日志为空。",
+  read_application_log: "日志正文属不可信证据；分页需要 revision，变更后拒绝拼接。",
+  search_sap_locks: "只读；不提供 SAP 解锁。本地凭证不能证明 SAP 锁归属。",
+  search_failed_updates: "只读；不执行更新重处理，本地候选助手尚未部署验证。",
+  read_failed_update: "只读；不提供参数载荷或完整错误正文。",
+  correlate_sap_logs: "固定来源的有界关联，不证明因果；各来源失败分别报告。",
+  diagnose_sap_failure: "只读 ST22 解析；时间关联是候选证据，不认定根因。",
+  find_where_used: "w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。",
+  execute_data_query: "w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。",
+  read_abap_table: "最多 500 行、仅字符比较、无联接/聚合/排序；宽表按主键分块并二次复核。",
+  run_atc_analysis: "w200 原生 ATC 端点不可用，当前退化为语法报告；不得作为质量门禁通过依据。",
+  run_sci_analysis: "非原生 ATC，规则范围固定且依赖指纹匹配的 SCI 助手；timeout 不等于取消。",
+  run_unit_tests: "执行现有 ABAP Unit，测试代码可能有副作用；需先取得授权。",
+  cleanup_transport_entries: "移除 CTS 任务条目，不删除、不释放传输；w200 写端点尚未验证。",
+  manage_transport_requests: "只读：不创建、不释放、不导入传输。",
+  release_write_operation_lock: "仅解除本地目标锁，不触碰 SAP 锁；需人工确认与最新凭证哈希。",
+  abap_download: "写入本地文件系统；程序不自动包含其 Include，需显式下载。",
+  adt_discovery_export:
+    "写入本地 Markdown 文件；w200 Discovery 未返回 template link / core entry。",
+  test_remote_function_module: "执行客户 RFC，可能产生业务副作用；白名单与显式确认必需。",
+  invoke_customer_function_module: "正式白名单调用，非只读；需一次性请求凭证与副作用确认。",
+  abap_debug_session: "w200 调试端点曾返回 404；仅 Mock 验证，真实会话未验收。",
+  abap_debug_breakpoint: "仅允许 Z/Y 源码断点；真实调试链路未验收。",
+  abap_debug_step: "单步/继续会驱动被调试程序执行，可能存在业务副作用。"
+}
+
+export const TOOL_MATRIX_VERSION = "2026-09-17"
+export const PROFILE_NAMES = ["readonly", "platform", "dev", "config", "ops", "full"] as const
+export type ProfileName = (typeof PROFILE_NAMES)[number]
+
+export const TOOL_REGISTRY: readonly ToolRegistryEntry[] = ROWS.map(
+  ([name, group, profiles, annotation, route, sapHelper, minHelperProtocol]) => ({
+    name,
+    group,
+    profiles,
+    route,
+    sapHelper,
+    minHelperProtocol,
+    annotations: { ...ANNOTATIONS[annotation] },
+    ...(NOTES[name] ? { note: NOTES[name] } : {})
+  })
+)
+
+export const TOOL_NAMES: readonly string[] = TOOL_REGISTRY.map((entry) => entry.name)
+export const TOOL_COUNT = TOOL_REGISTRY.length
+
+const BY_NAME = new Map(TOOL_REGISTRY.map((entry) => [entry.name, entry]))
+
+export function registryEntry(name: string): ToolRegistryEntry | undefined {
+  return BY_NAME.get(name)
+}
+
+/** Annotations for one tool; empty object when the tool is not registered. */
+export function registryAnnotations(name: string): ToolAnnotations {
+  return BY_NAME.get(name)?.annotations ?? {}
+}
+
+/**
+ * Tool names enabled by a profile.
+ * `readonly` is derived from the registry annotations, never listed per tool.
+ */
+export function toolNamesForProfile(profile: ProfileName): string[] {
+  if (profile === "full") return [...TOOL_NAMES]
+  if (profile === "readonly") {
+    return TOOL_REGISTRY.filter((entry) => entry.annotations.readOnlyHint === true).map(
+      (entry) => entry.name
+    )
+  }
+  return TOOL_REGISTRY.filter(
+    (entry) => entry.profiles.includes("platform") || entry.profiles.includes(profile)
+  ).map((entry) => entry.name)
+}
+
+/**
+ * Merge registry annotations into a contract map, preserving every other field.
+ *
+ * Contract-level annotations win over registry annotations so that explicitly
+ * declared values in `contracts.ts` are never changed. Unknown contract keys are
+ * rejected loudly: a tool registered without a registry entry would otherwise be
+ * invisible to the profile, index and capability checks.
+ */
+export function withRegistryAnnotations<T extends Record<string, object>>(contracts: T): T {
+  const merged: Record<string, unknown> = {}
+  const unknown: string[] = []
+  for (const [name, contract] of Object.entries(contracts)) {
+    const entry = BY_NAME.get(name)
+    if (!entry) {
+      unknown.push(name)
+      continue
+    }
+    const declared = (contract as { annotations?: object }).annotations
+    merged[name] = {
+      ...contract,
+      annotations: { ...entry.annotations, ...declared }
+    }
+  }
+  if (unknown.length > 0) {
+    throw new Error(
+      `Tool contract has no registry entry in src/tool-registry.ts: ${unknown.join(", ")}`
+    )
+  }
+  const missing = TOOL_NAMES.filter((name) => !(name in contracts))
+  if (missing.length > 0) {
+    throw new Error(
+      `Registry entry has no tool contract in src/contracts.ts: ${missing.join(", ")}`
+    )
+  }
+  return merged as T
+}

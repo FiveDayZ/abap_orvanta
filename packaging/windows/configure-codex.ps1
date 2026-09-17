@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^[A-Za-z0-9_-]+$')]
-    [string]$ServerName = "abap_fs_standalone",
+    [string]$ServerName = "orvanta",
 
     [ValidateRange(1024, 65535)]
     [int]$Port = 4847,

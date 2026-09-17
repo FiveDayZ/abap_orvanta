@@ -9,7 +9,7 @@ param(
     [int]$Port = 4847,
 
     [ValidatePattern('^[A-Za-z0-9_-]+$')]
-    [string]$ServerName = "abap_fs_standalone",
+    [string]$ServerName = "orvanta",
 
     [switch]$ForceCodex,
 
@@ -87,10 +87,10 @@ try {
     $plainPassword = $null
     $credential = $null
 
-    Write-Host "[3/3] ABAP MCP service"
+    Write-Host "[3/3] ORVANTA service"
     $serviceExitCode = & $startPath -Port $Port -PassThru
     if ($serviceExitCode -ne 0) {
-        throw "ABAP MCP service exited with code $serviceExitCode."
+        throw "ORVANTA service exited with code $serviceExitCode."
     }
 } finally {
     [Environment]::SetEnvironmentVariable($passwordEnv, $previousPassword, "Process")

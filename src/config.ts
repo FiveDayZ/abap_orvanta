@@ -30,7 +30,11 @@ export type ConnectionConfig = z.infer<typeof connectionSchema>
 
 export async function loadConnections(path: string): Promise<ConnectionConfig[]> {
   const raw = await readFile(path, "utf8")
-  const parsed = configSchema.parse(JSON.parse(raw))
+  return parseConnections(JSON.parse(raw.replace(/^\uFEFF/, "")))
+}
+
+export function parseConnections(input: unknown): ConnectionConfig[] {
+  const parsed = configSchema.parse(input)
   const ids = new Set<string>()
 
   return parsed.connections.map((connection) => {

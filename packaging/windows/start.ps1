@@ -51,7 +51,7 @@ $env:ABAP_MCP_PORT = $Port.ToString()
 $env:ABAP_MCP_EXPORT_ROOT = Join-Path $root "exports"
 
 try {
-    Write-Host "ABAP MCP Standalone: http://127.0.0.1:$Port/mcp"
+    Write-Host "ORVANTA: http://127.0.0.1:$Port/mcp"
     & (Join-Path $root "runtime\node.exe") (Join-Path $root "app\dist\src\index.js")
     $serviceExitCode = $LASTEXITCODE
 } finally {

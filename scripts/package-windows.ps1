@@ -3,13 +3,18 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string]$NodeVersion = "24.8.0"
+    [string]$NodeVersion = "24.8.0",
+    [switch]$ReplaceExisting,
+    [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$')]
+    [string]$CandidateSuffix,
+    [switch]$SkipRuntimeCheck
 )
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $packageJson = Get-Content -Raw (Join-Path $projectRoot "package.json") | ConvertFrom-Json
-$artifactName = "abap-mcp-standalone-$($packageJson.version)-win-x64"
+$artifactName = "orvanta-mcp-$($packageJson.version)-win-x64"
+if ($CandidateSuffix) { $artifactName += "-$CandidateSuffix" }
 $releaseRoot = Join-Path $projectRoot "release"
 $packageRoot = Join-Path $releaseRoot $artifactName
 $zipPath = Join-Path $releaseRoot "$artifactName.zip"
@@ -31,6 +36,9 @@ function Remove-ScopedPath([string]$Path, [string]$AllowedRoot) {
 }
 
 New-Item -ItemType Directory -Force -Path $releaseRoot, $cacheRoot | Out-Null
+if (-not $ReplaceExisting -and (@($packageRoot, $zipPath, $hashPath) | Where-Object { Test-Path -LiteralPath $_ })) {
+    throw "Release already exists. Preserve it or explicitly use -ReplaceExisting after review."
+}
 Remove-ScopedPath $packageRoot $releaseRoot
 Remove-Item -LiteralPath $zipPath, $hashPath -Force -ErrorAction SilentlyContinue
 
@@ -80,7 +88,9 @@ Copy-Item -LiteralPath (Join-Path $nodeRoot "LICENSE") -Destination (Join-Path $
 
 Copy-Item -LiteralPath (Join-Path $projectRoot "package.json") -Destination $appRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "package-lock.json") -Destination $appRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "dist") -Destination (Join-Path $appRoot "dist") -Recurse
+New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "dist") | Out-Null
+Copy-Item -LiteralPath (Join-Path $projectRoot "dist\src") -Destination (Join-Path $appRoot "dist\src") -Recurse
+Copy-Item -LiteralPath (Join-Path $projectRoot "ui") -Destination (Join-Path $appRoot "ui") -Recurse
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "scripts") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\probe.mjs") -Destination (Join-Path $appRoot "scripts")
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\bootstrap-sap-helper.ps1") -Destination (Join-Path $appRoot "scripts")
@@ -94,28 +104,77 @@ try {
 } finally {
     Pop-Location
 }
+$runtimePackageJson = [ordered]@{
+    name = $packageJson.name
+    version = $packageJson.version
+    private = $true
+    type = $packageJson.type
+    description = $packageJson.description
+    license = $packageJson.license
+    engines = $packageJson.engines
+    dependencies = $packageJson.dependencies
+}
+$runtimePackageJson | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $appRoot "package.json") -Encoding utf8
 
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\start.ps1") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\start.cmd") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\configure-codex.ps1") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\install-sap-helper.ps1") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\setup.ps1") -Destination $packageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\default-connections.json") -Destination (Join-Path $packageRoot "connections.json")
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\open-settings.ps1") -Destination $packageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\open-settings.cmd") -Destination $packageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\update.ps1") -Destination $packageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\update.cmd") -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "connections.example.json") -Destination $packageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "README.md") -Destination $packageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "docs") -Destination (Join-Path $packageRoot "docs") -Recurse
+Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\README.md") -Destination (Join-Path $packageRoot "README.md")
+Copy-Item -LiteralPath (Join-Path $projectRoot "LICENSE") -Destination $packageRoot
 
+$portableConfig = Get-Content -Raw -LiteralPath (Join-Path $projectRoot "connections.example.json") | ConvertFrom-Json
+$portableConfig.connections[0].id = "w200"
+$portableConfig.connections[0].passwordEnv = "ABAP_MCP_W200_PASSWORD"
+$portableConfig | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageRoot "connections.json") -Encoding utf8
+
+# Runtime execution is optional only for preparation; the manifest records the missing check.
+if (-not $SkipRuntimeCheck) {
+    Push-Location $packageRoot
+    try {
+        $runtimeVersion = & (Join-Path $runtimeRoot "node.exe") --input-type=module -e "import { PRODUCT_VERSION } from './app/dist/src/version.js'; console.log(PRODUCT_VERSION)"
+        if ($LASTEXITCODE -ne 0 -or $runtimeVersion -ne $packageJson.version) {
+            throw "Packaged runtime version does not match package.json."
+        }
+    } finally {
+        Pop-Location
+    }
+}
+$sourceCommit = & git -C $projectRoot rev-parse HEAD
+if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone source commit." }
+$sourceStatus = @(& git -C $projectRoot status --porcelain --untracked-files=all)
+if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone working tree state." }
+$fileHashes = [ordered]@{}
+Get-ChildItem -LiteralPath $packageRoot -File -Recurse |
+    Where-Object { $_.FullName -notlike "*\node_modules\*" } |
+    Sort-Object FullName |
+    ForEach-Object {
+        $relativePath = [IO.Path]::GetRelativePath($packageRoot, $_.FullName).Replace("\", "/")
+        $fileHashes[$relativePath] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+    }
 $buildInfo = [ordered]@{
     product = $packageJson.name
     version = $packageJson.version
+    candidateSuffix = $CandidateSuffix
+    runtimeVersionCheck = $(if ($SkipRuntimeCheck) { "Skipped" } else { "Passed" })
     platform = "win-x64"
     nodeVersion = $NodeVersion
     nodeArchiveSha256 = $actualNodeHash
     sourceBaselineVersion = "2.7.0"
     sourceBaselineCommit = "0466e8ceea4e201335d74a7420ac894384f4a0e2"
+    standaloneSourceCommit = "$sourceCommit".Trim()
+    standaloneSourceDirty = $sourceStatus.Count -gt 0
+    fileHashScope = "All packaged files except node_modules and BUILD-INFO.json; dependencies are pinned by app/package-lock.json."
+    fileSha256 = $fileHashes
     builtAt = (Get-Date).ToString("yyyy-MM-ddTHH:mm:sszzz")
 }
-$buildInfo | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $packageRoot "BUILD-INFO.json") -Encoding utf8
+$buildInfo | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageRoot "BUILD-INFO.json") -Encoding utf8
 
 Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zipPath -CompressionLevel Optimal
 $artifactHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash

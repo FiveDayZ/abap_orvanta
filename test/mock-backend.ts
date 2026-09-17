@@ -17,6 +17,7 @@ import type {
   MessageClassInfo,
   MessageClassMutationInfo,
   ObjectCreationInfo,
+  ObjectTypeSearchResult,
   RevisionInfo,
   RemoteFunctionRequest,
   RemoteFunctionResult,
@@ -29,11 +30,13 @@ import type {
   SapBackend,
   SourceResult,
   SourceMutationInfo,
+  SourceInspectionInfo,
   TestIncludeCreationInfo,
   TextElementInfo,
   TextElementMutationInfo,
   TextElementObjectType,
   TextElementsInfo,
+  TransportCleanupEntry,
   TraceConfigurationInfo,
   TraceEntryInfo,
   TraceRunInfo,
@@ -51,6 +54,7 @@ import type {
   DebugVariableRequest
 } from "../src/debug-manager.js"
 import { findAndReplaceSource } from "../src/source-edit.js"
+import { resolveEditableSourceTarget } from "../src/adt-backend.js"
 
 const objects: AbapObjectInfo[] = [
   {
@@ -112,7 +116,10 @@ const sources = new Map([
   ]
 ])
 
-function payloadRows(kind: "M" | "F" | "T", rows: Array<Record<string, string>>): string[] {
+function payloadRows(
+  kind: "M" | "F" | "T" | "C" | "A" | "S" | "I" | "H" | "B",
+  rows: Array<Record<string, string>>
+): string[] {
   const lines: string[] = []
   rows.forEach((row, rowIndex) => {
     Object.entries(row).forEach(([name, value]) => {
@@ -146,6 +153,21 @@ function parsePayloadRows(lines: string[], kind: "F" | "T"): Array<Record<string
   return rows
 }
 
+function parseEnhancementPayload(
+  lines: string[],
+  kind: "M" | "H" | "B" | "F" | "S"
+): Array<Record<string, string>> {
+  const rows: Array<Record<string, string>> = []
+  for (const line of lines) {
+    const match = line.match(/^([MS])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match || match[1] !== kind) continue
+    const index = Number.parseInt(match[2]!, 10)
+    while (rows.length < index) rows.push({})
+    rows[index - 1]![match[3]!] = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+  }
+  return rows
+}
+
 function mockDdicResult(
   _kind: "domain" | "dataElement" | "structure" | "transparentTable" | "tableType",
   header: Record<string, string>,
@@ -155,7 +177,8 @@ function mockDdicResult(
     status: "S",
     code: "DDIC_OBJECT_READ",
     message: "DDIC object read successfully",
-    version: "1.6",
+    version: "1.7",
+    metadata: {},
     packageName,
     objectVersion: "20260831120000",
     recordedRequest: "",
@@ -176,7 +199,65 @@ function ddicKind(
 }
 
 export class MockBackend implements SapBackend {
+  async callSmartform(
+    _connectionId: string,
+    _request: import("../src/smartforms.js").SmartformRequest
+  ): Promise<import("../src/smartforms.js").SmartformResponse> {
+    throw new Error("Smartform backend must be explicitly supplied by the test")
+  }
   lastRepositoryRequest: SapRepositoryRequest | undefined
+  functionPatchReadbackMismatch = false
+  functionPatchAdtBodyMutation = false
+  private readonly enhancementImplementations = new Map<string, string[]>([
+    [
+      "ZENH_DEMO",
+      [
+        ...payloadRows("M", [
+          {
+            NAME: "ZENH_DEMO",
+            TOOL: "HOOK_IMPL",
+            SHORT_TEXT: "Demo hook implementation",
+            ACTIVE: "X",
+            INACTIVE: "",
+            SAVED_INACTIVE: "",
+            UNSAVED_INACTIVE: "",
+            PACKAGE: "ZABAP",
+            ORIGINAL_OBJECT_TYPE: "PROG",
+            ORIGINAL_OBJECT_NAME: "SAPMV45A",
+            MAIN_OBJECT_TYPE: "PROG",
+            MAIN_OBJECT_NAME: "SAPMV45A",
+            PROGRAM_NAME: "SAPMV45A"
+          }
+        ]),
+        ...payloadRows("H", [
+          {
+            EXTID: "1",
+            FULL_NAME:
+              "\\PROGRAM=SAPMV45A\\FORM=USEREXIT_SAVE_DOCUMENT_PREPARE\\ENHANCEMENT-POINT=END",
+            MODE: "S",
+            SOURCE_COUNT: "2"
+          }
+        ]),
+        ...payloadRows("S", [
+          { HOOK_INDEX: "1", LINE_NUMBER: "1", LINE: "IF vbak-vbeln IS INITIAL." },
+          { HOOK_INDEX: "1", LINE_NUMBER: "2", LINE: "ENDIF." }
+        ])
+      ]
+    ]
+  ])
+  private readonly classicBadiImplementations = new Set(["ZME_PO_IMPL", "ZME_PO_OLD"])
+
+  seedInactiveEnhancementVersion(name: string): void {
+    const source = this.enhancementImplementations.get(name.toUpperCase())
+    if (!source) throw new Error(`No enhancement implementation ${name}`)
+    const metadata = parseEnhancementPayload(source, "M")[0] ?? {}
+    metadata.INACTIVE = "X"
+    metadata.SAVED_INACTIVE = "X"
+    this.enhancementImplementations.set(name.toUpperCase(), [
+      ...payloadRows("M", [metadata]),
+      ...source.filter((line) => !line.startsWith("M|"))
+    ])
+  }
   private debugState: DebugSessionInfo = {
     connectionId: "w200",
     state: "idle",
@@ -185,6 +266,24 @@ export class MockBackend implements SapBackend {
     breakpointCount: 0
   }
   private readonly sourceByName = new Map(sources)
+  private readonly functionAdtSources = new Map([
+    [
+      "ZCMCP_FM_1501",
+      [
+        "FUNCTION ZCMCP_FM_1501",
+        "  IMPORTING",
+        "    VALUE(IV_INPUT) TYPE CHAR20",
+        "  EXPORTING",
+        "    VALUE(EV_OUTPUT) TYPE CHAR40",
+        "  EXCEPTIONS",
+        "    INVALID_INPUT.",
+        "",
+        "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+        "",
+        "ENDFUNCTION."
+      ].join("\n")
+    ]
+  ])
   private screen: {
     description: string
     header: Record<string, string>
@@ -309,14 +408,20 @@ export class MockBackend implements SapBackend {
         "M|1|GLOBAL_INTERFACE|",
         "I|1|PARAMETER|IV_INPUT",
         "I|1|TYP|CHAR20",
+        "I|1|DBFIELD|",
         "I|1|OPTIONAL|",
         "I|1|PASSVALUE|X",
         "E|1|PARAMETER|EV_OUTPUT",
         "E|1|TYP|CHAR40",
+        "E|1|DBFIELD|",
+        "E|1|OPTIONAL|",
         "E|1|PASSVALUE|X",
         "X|1|EXCEPTION|INVALID_INPUT",
         "X|1|TEXT|Input is invalid",
-        "S|1|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output."
+        "S|1|LINE|*&#34;--------------------------------------------------------------------",
+        "S|2|LINE|*&#34;*Local Interface:",
+        "S|3|LINE|*&#34;--------------------------------------------------------------------",
+        "S|4|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output."
       ]
     ],
     [
@@ -365,7 +470,40 @@ export class MockBackend implements SapBackend {
   ])
   remoteFunctionCalls = 0
   private readonly deletedSourceObjects = new Set<string>()
+  private conversionEntries: Array<Record<string, unknown>> = [
+    {
+      OBJECT: "TABL",
+      TABNAME: "ZCMCP_CONV",
+      INDNAME: "",
+      TGORDER: "",
+      FCT: "CNV",
+      EXECMODE: "B",
+      SEVERITY: "",
+      GDATE: "20260915",
+      GUSER: "DEVELOPER"
+    }
+  ]
   private readonly ddicByKey = new Map<string, SapDdicResult>([
+    ...[1, 20, 40].flatMap(
+      (length): Array<[string, SapDdicResult]> => [
+        [
+          `READ_DATA_ELEMENT:CHAR${length}`,
+          mockDdicResult(
+            "dataElement",
+            { ROLLNAME: `CHAR${length}`, DOMNAME: `CHAR${length}` },
+            "SZS"
+          )
+        ],
+        [
+          `READ_DOMAIN:CHAR${length}`,
+          mockDdicResult(
+            "domain",
+            { DOMNAME: `CHAR${length}`, DATATYPE: "CHAR", LENG: String(length) },
+            "SZS"
+          )
+        ]
+      ]
+    ),
     [
       "READ_DOMAIN:CHAR10",
       mockDdicResult(
@@ -389,6 +527,14 @@ export class MockBackend implements SapBackend {
         },
         "SAP_BASIS"
       )
+    ],
+    [
+      "READ_DOMAIN:TEXT220",
+      mockDdicResult("domain", { DOMNAME: "TEXT220", DATATYPE: "CHAR", LENG: "220" }, "SAP_BASIS")
+    ],
+    [
+      "READ_DATA_ELEMENT:BAPI_MTYPE",
+      mockDdicResult("dataElement", { ROLLNAME: "BAPI_MTYPE", DOMNAME: "CHAR1" }, "SAP_BASIS")
     ],
     [
       "READ_STRUCTURE:BAPIRET2",
@@ -436,6 +582,151 @@ export class MockBackend implements SapBackend {
             POSITION: "2",
             ROLLNAME: "MTEXT_D",
             DDTEXT: "Client name",
+            KEYFLAG: "",
+            NOTNULL: ""
+          }
+        ]
+      }
+    ],
+    [
+      "READ_TRANSPARENT_TABLE:TBATG",
+      {
+        ...mockDdicResult(
+          "transparentTable",
+          {
+            TABNAME: "TBATG",
+            DDTEXT: "Dictionary conversion worklist",
+            TABCLASS: "TRANSP",
+            CONTFLAG: "S",
+            MAINFLAG: "",
+            TABKAT: "0",
+            TABART: "APPL0",
+            BUFALLOW: "N",
+            PUFFERUNG: ""
+          },
+          "SDTB"
+        ),
+        fields: [
+          "OBJECT",
+          "TABNAME",
+          "INDNAME",
+          "TGORDER",
+          "FCT",
+          "EXECMODE",
+          "SEVERITY",
+          "GDATE",
+          "GUSER"
+        ].map((FIELDNAME, index) => ({
+          FIELDNAME,
+          POSITION: String(index + 1),
+          ROLLNAME: "CHAR20",
+          KEYFLAG: index < 2 ? "X" : "",
+          NOTNULL: index < 2 ? "X" : ""
+        }))
+      }
+    ],
+    [
+      "READ_TRANSPARENT_TABLE:ZCMCP_CONV",
+      {
+        ...mockDdicResult(
+          "transparentTable",
+          {
+            TABNAME: "ZCMCP_CONV",
+            DDTEXT: "Conversion fixture",
+            TABCLASS: "TRANSP",
+            CONTFLAG: "A",
+            MAINFLAG: "",
+            TABKAT: "0",
+            TABART: "APPL0",
+            BUFALLOW: "N",
+            PUFFERUNG: ""
+          },
+          "ZABAP"
+        ),
+        fields: [
+          {
+            FIELDNAME: "ID",
+            POSITION: "1",
+            ROLLNAME: "CHAR20",
+            COMPTYPE: "E",
+            KEYFLAG: "X",
+            NOTNULL: "X"
+          }
+        ]
+      }
+    ],
+    [
+      "READ_TRANSPARENT_TABLE:ZCMCP_COMPLEX",
+      {
+        ...mockDdicResult(
+          "transparentTable",
+          {
+            TABNAME: "ZCMCP_COMPLEX",
+            DDTEXT: "Complex layout fixture",
+            TABCLASS: "TRANSP",
+            CONTFLAG: "A",
+            MAINFLAG: "",
+            TABKAT: "1",
+            TABART: "APPL0",
+            BUFALLOW: "N",
+            PUFFERUNG: "",
+            SCHFELDANZ: "",
+            PROTOKOLL: ""
+          },
+          "ZABAP"
+        ),
+        fields: [
+          {
+            FIELDNAME: "ID",
+            POSITION: "1",
+            ROLLNAME: "CHAR20",
+            COMPTYPE: "E",
+            ADMINFIELD: "0",
+            KEYFLAG: "X",
+            NOTNULL: "X"
+          },
+          {
+            FIELDNAME: ".INCLUDE",
+            POSITION: "2",
+            PRECFIELD: "ZCMCP_INC",
+            COMPTYPE: "S",
+            ADMINFIELD: "0",
+            KEYFLAG: "",
+            NOTNULL: ""
+          },
+          {
+            FIELDNAME: "INC_VALUE",
+            POSITION: "3",
+            ROLLNAME: "CHAR20",
+            COMPTYPE: "E",
+            ADMINFIELD: "1",
+            KEYFLAG: "",
+            NOTNULL: ""
+          },
+          {
+            FIELDNAME: "DIRECT_VALUE",
+            POSITION: "4",
+            ROLLNAME: "CHAR20",
+            COMPTYPE: "E",
+            ADMINFIELD: "0",
+            KEYFLAG: "",
+            NOTNULL: ""
+          },
+          {
+            FIELDNAME: ".INCLU--AP",
+            POSITION: "5",
+            PRECFIELD: "ZCMCP_APPEND",
+            COMPTYPE: "S",
+            ADMINFIELD: "0",
+            KEYFLAG: "",
+            NOTNULL: ""
+          },
+          {
+            FIELDNAME: "APP_VALUE",
+            POSITION: "6",
+            ROLLNAME: "CHAR20",
+            COMPTYPE: "E",
+            ADMINFIELD: "1",
             KEYFLAG: "",
             NOTNULL: ""
           }
@@ -520,9 +811,379 @@ export class MockBackend implements SapBackend {
         "M|1|ORIGINAL_SYSTEM|GR2"
       ])
     }
+    if (request.operation === "READ_CUSTOMER_EXIT_DEFINITION") {
+      if (request.objectName !== "V45A0002") {
+        return this.repositoryError(
+          "CUSTOMER_EXIT_DEFINITION_NOT_FOUND",
+          "SMOD enhancement definition does not exist"
+        )
+      }
+      return this.repositoryResult("CUSTOMER_EXIT_DEFINITION_READ", request, [
+        ...payloadRows("M", [{ NAME: "V45A0002", DESCRIPTION: "Predefine sold-to party" }]),
+        ...payloadRows("C", [
+          { TYPE: "E", MEMBER: "EXIT_SAPMV45A_002" },
+          { TYPE: "S", MEMBER: "SAPMV45A_8309_SUB_B" },
+          { TYPE: "C", MEMBER: "SAPMV45A+ZZ1" }
+        ])
+      ])
+    }
+    if (request.operation === "READ_CUSTOMER_EXIT_PROJECT") {
+      if (request.objectName !== "ZSD_EXIT") {
+        return this.repositoryError(
+          "CUSTOMER_EXIT_PROJECT_NOT_FOUND",
+          "CMOD enhancement project does not exist"
+        )
+      }
+      return this.repositoryResult("CUSTOMER_EXIT_PROJECT_READ", request, [
+        ...payloadRows("M", [
+          { NAME: "ZSD_EXIT", STATUS: "A", CHANGED_BY: "DEVELOPER", CHANGED_ON: "20260916" }
+        ]),
+        ...payloadRows("A", [
+          { TYPE: "", MEMBER: "V45A0002" },
+          { TYPE: "", MEMBER: "V45A0003" }
+        ])
+      ])
+    }
+    if (request.operation === "READ_CLASSIC_BADI_DEFINITION") {
+      if (request.objectName !== "ME_PROCESS_PO_CUST") {
+        return this.repositoryError(
+          "CLASSIC_BADI_DEFINITION_NOT_FOUND",
+          "Classic BAdI definition does not exist"
+        )
+      }
+      return this.repositoryResult("CLASSIC_BADI_DEFINITION_READ", request, [
+        ...payloadRows("M", [
+          {
+            NAME: "ME_PROCESS_PO_CUST",
+            DESCRIPTION: "Purchase order processing",
+            VERSION: "000001",
+            FILTER_TYPE: "BUKRS",
+            FILTER_EXTENSION: "",
+            MULTIPLE_USE: "X",
+            PACKAGE: "ME",
+            MASTER_LANGUAGE: "E",
+            DEFAULT_CLASS: "CL_EX_ME_PROCESS_PO_CUST",
+            EXAMPLE_CLASS: "CL_EXM_IM_ME_PROCESS_PO_CUST",
+            CHECK_CLASS: "",
+            INTERNAL: "",
+            MIGRATION_ENHANCEMENT_SPOT: "",
+            MIGRATION_BADI_NAME: ""
+          }
+        ]),
+        ...payloadRows("I", [{ INTERFACE_NAME: "IF_EX_ME_PROCESS_PO_CUST" }]),
+        ...payloadRows(
+          "A",
+          [
+            {
+              IMPLEMENTATION_NAME: "ZME_PO_IMPL",
+              FILTER_VALUE: "1000",
+              ACTIVE: "X",
+              DESCRIPTION: "PO checks",
+              VERSION: "000001",
+              MASTER_LANGUAGE: "E",
+              LAYER: "",
+              MIGRATION_ENHANCEMENT: ""
+            },
+            {
+              IMPLEMENTATION_NAME: "ZME_PO_IMPL",
+              FILTER_VALUE: "2000",
+              ACTIVE: "X",
+              DESCRIPTION: "PO checks",
+              VERSION: "000001",
+              MASTER_LANGUAGE: "E",
+              LAYER: "",
+              MIGRATION_ENHANCEMENT: ""
+            },
+            {
+              IMPLEMENTATION_NAME: "ZME_PO_OLD",
+              FILTER_VALUE: "",
+              ACTIVE: "",
+              DESCRIPTION: "Inactive checks",
+              VERSION: "000001",
+              MASTER_LANGUAGE: "E",
+              LAYER: "",
+              MIGRATION_ENHANCEMENT: ""
+            }
+          ].filter((row) => this.classicBadiImplementations.has(row.IMPLEMENTATION_NAME))
+        ),
+        ...payloadRows(
+          "C",
+          [
+            {
+              IMPLEMENTATION_NAME: "ZME_PO_IMPL",
+              INTERFACE_NAME: "IF_EX_ME_PROCESS_PO_CUST",
+              IMPLEMENTATION_CLASS: "ZCL_IM_ME_PO"
+            },
+            {
+              IMPLEMENTATION_NAME: "ZME_PO_OLD",
+              INTERFACE_NAME: "IF_EX_ME_PROCESS_PO_CUST",
+              IMPLEMENTATION_CLASS: "ZCL_IM_ME_PO_OLD"
+            }
+          ].filter((row) => this.classicBadiImplementations.has(row.IMPLEMENTATION_NAME))
+        ),
+        ...(this.classicBadiImplementations.has("ZME_PO_NEW")
+          ? [
+              ...payloadRows("A", [
+                {
+                  IMPLEMENTATION_NAME: "ZME_PO_NEW",
+                  FILTER_VALUE: "",
+                  ACTIVE: "X",
+                  DESCRIPTION: "",
+                  VERSION: "000001",
+                  MASTER_LANGUAGE: "E",
+                  LAYER: "",
+                  MIGRATION_ENHANCEMENT: ""
+                }
+              ]),
+              ...payloadRows("C", [
+                {
+                  IMPLEMENTATION_NAME: "ZME_PO_NEW",
+                  INTERFACE_NAME: "IF_EX_ME_PROCESS_PO_CUST",
+                  IMPLEMENTATION_CLASS: "ZCL_IM_ME_PO_NEW"
+                }
+              ])
+            ]
+          : [])
+      ])
+    }
+    if (request.operation === "MANAGE_CLASSIC_BADI_IMPLEMENTATION") {
+      const objectName = request.objectName ?? ""
+      if (request.objectType === "CREATE") {
+        this.classicBadiImplementations.add(objectName)
+      } else if (request.objectType === "DELETE") {
+        this.classicBadiImplementations.delete(objectName)
+      }
+      return this.repositoryResult("CLASSIC_BADI_IMPLEMENTATION_CHANGED", request, [])
+    }
+    if (request.operation === "READ_ENHANCEMENT_IMPLEMENTATION") {
+      const source = this.enhancementImplementations.get(request.objectName ?? "")
+      return source
+        ? this.repositoryResult("ENHANCEMENT_IMPLEMENTATION_READ", request, source)
+        : this.repositoryError(
+            "ENHANCEMENT_IMPLEMENTATION_NOT_FOUND",
+            "Enhancement implementation not found"
+          )
+    }
+    if (
+      request.operation === "CREATE_HOOK_ENHANCEMENT" ||
+      request.operation === "CREATE_BADI_ENHANCEMENT"
+    ) {
+      const objectName = request.objectName ?? ""
+      const requestSource = request.source ?? []
+      const metadata = parseEnhancementPayload(requestSource, "M")
+      const packageName = request.packageName ?? ""
+      const source =
+        request.operation === "CREATE_HOOK_ENHANCEMENT"
+          ? [
+              ...payloadRows("M", [
+                {
+                  NAME: objectName,
+                  TOOL: "HOOK_IMPL",
+                  SHORT_TEXT: request.description ?? "",
+                  ACTIVE: "X",
+                  INACTIVE: "",
+                  SAVED_INACTIVE: "",
+                  UNSAVED_INACTIVE: "",
+                  PACKAGE: packageName,
+                  ORIGINAL_OBJECT_TYPE: metadata[0]?.ORIGINAL_OBJECT_TYPE ?? "",
+                  ORIGINAL_OBJECT_NAME: metadata[0]?.ORIGINAL_OBJECT_NAME ?? "",
+                  MAIN_OBJECT_TYPE: metadata[0]?.MAIN_OBJECT_TYPE ?? "",
+                  MAIN_OBJECT_NAME: metadata[0]?.MAIN_OBJECT_NAME ?? "",
+                  PROGRAM_NAME: metadata[0]?.PROGRAM_NAME ?? ""
+                }
+              ]),
+              ...payloadRows("H", [
+                {
+                  EXTID: "1",
+                  FULL_NAME: metadata[0]?.FULL_NAME ?? "",
+                  MODE: metadata[0]?.MODE ?? "",
+                  SOURCE_COUNT: String(parseEnhancementPayload(requestSource, "S").length)
+                }
+              ]),
+              ...parseEnhancementPayload(requestSource, "S").flatMap((row, index) =>
+                payloadRows("S", [
+                  { HOOK_INDEX: "1", LINE_NUMBER: String(index + 1), LINE: row.LINE ?? "" }
+                ]).map((line) => line.replace(/^S\|1\|/, `S|${index + 1}|`))
+              )
+            ]
+          : [
+              ...payloadRows("M", [
+                {
+                  NAME: objectName,
+                  TOOL: "BADI_IMPL",
+                  SHORT_TEXT: request.description ?? "",
+                  ACTIVE: "X",
+                  INACTIVE: "",
+                  SAVED_INACTIVE: "",
+                  UNSAVED_INACTIVE: "",
+                  PACKAGE: packageName,
+                  SPOT_NAME: metadata[0]?.SPOT_NAME ?? ""
+                }
+              ]),
+              ...payloadRows("B", [
+                {
+                  SPOT_NAME: metadata[0]?.SPOT_NAME ?? "",
+                  BADI_NAME: metadata[0]?.BADI_NAME ?? "",
+                  IMPL_NAME: metadata[0]?.IMPLEMENTATION_NAME ?? "",
+                  IMPL_CLASS: metadata[0]?.IMPLEMENTATION_CLASS ?? "",
+                  ACTIVE: "X",
+                  IS_DEFAULT: metadata[0]?.DEFAULT_IMPLEMENTATION ?? "",
+                  SHORT_TEXT: request.description ?? ""
+                }
+              ]),
+              ...requestSource.filter((line) => line.startsWith("F|"))
+            ]
+      this.enhancementImplementations.set(objectName, source)
+      return this.repositoryResult(
+        request.operation === "CREATE_HOOK_ENHANCEMENT"
+          ? "HOOK_ENHANCEMENT_CREATED"
+          : "BADI_ENHANCEMENT_CREATED",
+        request,
+        []
+      )
+    }
+    if (request.operation === "UPDATE_HOOK_ENHANCEMENT") {
+      const objectName = request.objectName ?? ""
+      const current = this.enhancementImplementations.get(objectName) ?? []
+      const metadata = parseEnhancementPayload(current, "M")[0] ?? {}
+      const hookRows = parseEnhancementPayload(current, "H")
+      const updateMetadata = parseEnhancementPayload(request.source ?? [], "M")[0] ?? {}
+      const extId = updateMetadata.EXTID ?? ""
+      const hookIndex = hookRows.findIndex((row) => row.EXTID === extId)
+      if (hookIndex < 0) return this.repositoryError("ENHANCEMENT_HOOK_NOT_FOUND", "Hook not found")
+      const updateSource = parseEnhancementPayload(request.source ?? [], "S")
+      hookRows[hookIndex]!.SOURCE_COUNT = String(updateSource.length)
+      if (request.description) metadata.SHORT_TEXT = request.description
+      metadata.ACTIVE = "X"
+      metadata.INACTIVE = ""
+      metadata.SAVED_INACTIVE = ""
+      metadata.UNSAVED_INACTIVE = ""
+      const otherSourceRows = parseEnhancementPayload(current, "S").filter(
+        (row) => row.HOOK_INDEX !== String(hookIndex + 1)
+      )
+      const newSourceRows = updateSource.map((row, index) => ({
+        HOOK_INDEX: String(hookIndex + 1),
+        LINE_NUMBER: String(index + 1),
+        LINE: row.LINE ?? ""
+      }))
+      this.enhancementImplementations.set(objectName, [
+        ...payloadRows("M", [metadata]),
+        ...payloadRows("H", hookRows),
+        ...payloadRows("S", [...otherSourceRows, ...newSourceRows])
+      ])
+      return this.repositoryResult("HOOK_ENHANCEMENT_UPDATED", request, [])
+    }
+    if (request.operation === "UPDATE_BADI_ENHANCEMENT") {
+      const objectName = request.objectName ?? ""
+      const current = this.enhancementImplementations.get(objectName) ?? []
+      const metadata = parseEnhancementPayload(current, "M")[0] ?? {}
+      const implementations = parseEnhancementPayload(current, "B")
+      const updateMetadata = parseEnhancementPayload(request.source ?? [], "M")[0] ?? {}
+      const implementationName = updateMetadata.IMPLEMENTATION_NAME ?? ""
+      const implementation = implementations.find((row) => row.IMPL_NAME === implementationName)
+      if (!implementation) {
+        return this.repositoryError("NEW_BADI_IMPLEMENTATION_NOT_FOUND", "BAdI not found")
+      }
+      implementation.IMPL_CLASS = updateMetadata.IMPLEMENTATION_CLASS ?? ""
+      implementation.ACTIVE = updateMetadata.ACTIVE ?? ""
+      implementation.IS_DEFAULT = updateMetadata.DEFAULT_IMPLEMENTATION ?? ""
+      if (request.description) {
+        metadata.SHORT_TEXT = request.description
+        implementation.SHORT_TEXT = request.description
+      }
+      metadata.ACTIVE = "X"
+      metadata.INACTIVE = ""
+      metadata.SAVED_INACTIVE = ""
+      metadata.UNSAVED_INACTIVE = ""
+      const filters = parseEnhancementPayload(request.source ?? [], "F").map((row) => ({
+        ...row,
+        IMPLEMENTATION_NAME: implementationName
+      }))
+      this.enhancementImplementations.set(objectName, [
+        ...payloadRows("M", [metadata]),
+        ...payloadRows("B", implementations),
+        ...payloadRows("F", filters)
+      ])
+      return this.repositoryResult("BADI_ENHANCEMENT_UPDATED", request, [])
+    }
+    if (request.operation === "MANAGE_ENHANCEMENT_STATE") {
+      const objectName = request.objectName ?? ""
+      const current = this.enhancementImplementations.get(objectName) ?? []
+      const metadata = parseEnhancementPayload(current, "M")[0] ?? {}
+      metadata.ACTIVE = "X"
+      metadata.INACTIVE = ""
+      metadata.SAVED_INACTIVE = ""
+      metadata.UNSAVED_INACTIVE = ""
+      this.enhancementImplementations.set(objectName, [
+        ...payloadRows("M", [metadata]),
+        ...current.filter((line) => !line.startsWith("M|"))
+      ])
+      return this.repositoryResult(
+        request.objectType === "ACTIVATE"
+          ? "ENHANCEMENT_IMPLEMENTATION_ACTIVATED"
+          : "ENHANCEMENT_INACTIVE_VERSION_DISCARDED",
+        request,
+        []
+      )
+    }
+    if (request.operation === "DELETE_ENHANCEMENT_IMPLEMENTATION") {
+      this.enhancementImplementations.delete(request.objectName ?? "")
+      return this.repositoryResult("ENHANCEMENT_IMPLEMENTATION_DELETED", request, [])
+    }
+    if (request.operation === "READ_BTE_CONFIGURATION") {
+      if (request.objectType === "E" && request.objectName === "CS000010") {
+        return this.repositoryResult("BTE_CONFIGURATION_READ", request, [
+          ...payloadRows("M", [
+            { IDENTIFIER: "CS000010", KIND: "E", DESCRIPTION: "Credit status event" }
+          ]),
+          ...payloadRows("S", [
+            {
+              COUNTRY: "",
+              APPLICATION: "CS",
+              FUNCTION_MODULE: "SAMPLE_INTERFACE_CS000010",
+              APPLICATION_ACTIVE: "X",
+              APPLICATION_TEXT: "Credit Management"
+            }
+          ]),
+          ...payloadRows("C", [
+            {
+              COUNTRY: "",
+              APPLICATION: "CS",
+              FUNCTION_MODULE: "Z_BTE_CS000010",
+              PRODUCT: "ZBTE",
+              APPLICATION_ACTIVE: "X",
+              APPLICATION_TEXT: "Credit Management",
+              PRODUCT_ACTIVE: "X",
+              PRODUCT_TEXT: "Customer BTE handlers",
+              PRODUCT_RFC_DESTINATION: ""
+            }
+          ])
+        ])
+      }
+      if (request.objectType === "P" && request.objectName === "CRM0_200") {
+        return this.repositoryResult("BTE_CONFIGURATION_READ", request, [
+          ...payloadRows("M", [{ IDENTIFIER: "CRM0_200", KIND: "P", DESCRIPTION: "CRM process" }]),
+          ...payloadRows("C", [
+            {
+              COUNTRY: "",
+              APPLICATION: "CRM",
+              FUNCTION_MODULE: "Z_BTE_CRM0_200",
+              PRODUCT: "ZCRM",
+              APPLICATION_ACTIVE: "X",
+              APPLICATION_TEXT: "CRM",
+              PRODUCT_ACTIVE: "",
+              PRODUCT_TEXT: "CRM integration",
+              PRODUCT_RFC_DESTINATION: ""
+            }
+          ])
+        ])
+      }
+      return this.repositoryError("BTE_DEFINITION_NOT_FOUND", "BTE definition does not exist")
+    }
     if (
       request.operation === "READ_FUNCTION_INTERFACE" ||
-      request.operation === "CREATE_FUNCTION_MODULE"
+      request.operation === "CREATE_FUNCTION_MODULE" ||
+      request.operation === "PATCH_FUNCTION_INTERFACE"
     ) {
       const name = (request.objectName ?? "").toUpperCase()
       const existing = this.functionModules.get(name)
@@ -548,13 +1209,28 @@ export class MockBackend implements SapBackend {
           `S|${(request.source ?? []).filter((line) => line.startsWith("S|")).length + 2}|LINE|ENDFUNCTION.`
         ])
       }
-      return this.repositoryResult(
+      if (request.operation === "PATCH_FUNCTION_INTERFACE") {
+        if (!existing) {
+          return this.repositoryError("FUNCTION_NOT_FOUND", "Function module does not exist")
+        }
+        if (!this.functionPatchReadbackMismatch) {
+          const metadata = existing.filter((line) => line.startsWith("M|"))
+          const desired = (request.source ?? []).filter((line) => /^[IECTXS]\|/.test(line))
+          this.functionModules.set(name, [...metadata, ...desired])
+        }
+      }
+      const result = this.repositoryResult(
         request.operation === "READ_FUNCTION_INTERFACE"
           ? "FUNCTION_INTERFACE_READ"
-          : "FUNCTION_MODULE_CREATED",
+          : request.operation === "CREATE_FUNCTION_MODULE"
+            ? "FUNCTION_MODULE_CREATED"
+            : "FUNCTION_INTERFACE_PATCHED",
         request,
         this.functionModules.get(name)!
       )
+      return request.operation === "PATCH_FUNCTION_INTERFACE"
+        ? { ...result, version: "2.0" }
+        : result
     }
     if (request.operation === "READ_TEXT_ELEMENTS" || request.operation === "MERGE_TEXT_ELEMENTS") {
       const name = (request.program ?? "").toUpperCase()
@@ -847,11 +1523,30 @@ export class MockBackend implements SapBackend {
 
   async callSapDdic(connectionId: string, request: SapDdicRequest): Promise<SapDdicResult> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    if (request.operation === "RECOVER_TABLE_CONVERSION") {
+      const existing = this.ddicByKey.get(`READ_TRANSPARENT_TABLE:${request.objectName}`)
+      if (!existing) {
+        return {
+          ...mockDdicResult("transparentTable", {}, ""),
+          status: "E",
+          code: "DDIC_OBJECT_NOT_FOUND",
+          message: "DDIC object does not exist"
+        }
+      }
+      this.conversionEntries = []
+      return {
+        ...structuredClone(existing),
+        code: "DDIC_CONVERSION_RECOVERED",
+        message: "Native table conversion completed and verified",
+        recordedRequest: request.transportNumber ?? ""
+      }
+    }
     const readOperation = request.operation
       .replace("UPSERT", "READ")
       .replace("CREATE_TRANSPARENT_TABLE", "READ_TRANSPARENT_TABLE")
       .replace("APPEND_TRANSPARENT_TABLE_FIELDS", "READ_TRANSPARENT_TABLE")
       .replace("PATCH_TRANSPARENT_TABLE_FIELDS", "READ_TRANSPARENT_TABLE")
+      .replace("PATCH_TRANSPARENT_TABLE_SETTINGS", "READ_TRANSPARENT_TABLE")
       .replace("DELETE", "READ")
     const key = `${readOperation}:${request.objectName}`
     const existing = this.ddicByKey.get(key)
@@ -931,19 +1626,16 @@ export class MockBackend implements SapBackend {
       }
     }
     if (request.operation === "APPEND_TRANSPARENT_TABLE_FIELDS" && existing) {
+      const fields = existing.fields.map((field) => ({ ...field }))
+      const appendIndex = fields.findIndex((field) => field.FIELDNAME?.startsWith(".INCLU--AP"))
+      fields.splice(appendIndex < 0 ? fields.length : appendIndex, 0, ...(request.fields ?? []))
       const saved: SapDdicResult = {
         ...existing,
         code: "DDIC_OBJECT_SAVED",
         message: "DDIC object saved activated and verified",
         objectVersion: "20260831130000",
         recordedRequest: request.transportNumber ?? "",
-        fields: [
-          ...existing.fields,
-          ...(request.fields ?? []).map((field, index) => ({
-            ...field,
-            POSITION: String(existing.fields.length + index + 1)
-          }))
-        ]
+        fields: fields.map((field, index) => ({ ...field, POSITION: String(index + 1) }))
       }
       this.ddicByKey.set(key, saved)
       return structuredClone(saved)
@@ -959,6 +1651,18 @@ export class MockBackend implements SapBackend {
           ...field,
           POSITION: String(index + 1)
         }))
+      }
+      this.ddicByKey.set(key, saved)
+      return structuredClone(saved)
+    }
+    if (request.operation === "PATCH_TRANSPARENT_TABLE_SETTINGS" && existing) {
+      const saved: SapDdicResult = {
+        ...existing,
+        code: "DDIC_OBJECT_SAVED",
+        message: "DDIC object saved activated and verified",
+        objectVersion: "20260831150000",
+        recordedRequest: request.transportNumber ?? "",
+        header: { ...existing.header, ...request.header }
       }
       this.ddicByKey.set(key, saved)
       return structuredClone(saved)
@@ -1082,6 +1786,21 @@ export class MockBackend implements SapBackend {
       .slice(0, maxResults)
   }
 
+  async searchObjectTypes(
+    connectionId: string,
+    pattern: string,
+    types: string[],
+    maxResultsPerType: number
+  ): Promise<ObjectTypeSearchResult[]> {
+    return Promise.all(
+      types.map(async (type) => ({
+        requestedType: type,
+        status: "available" as const,
+        objects: await this.searchObjects(connectionId, pattern, [type], maxResultsPerType)
+      }))
+    )
+  }
+
   async readSource(_connectionId: string, object: AbapObjectInfo): Promise<SourceResult> {
     if (object.name === "ZTABLE_DEMO") {
       return {
@@ -1104,6 +1823,9 @@ export class MockBackend implements SapBackend {
         uriUsed: uri
       }
     }
+    const functionName = /\/fmodules\/([^/?]+)/i.exec(uri)?.[1]?.toUpperCase()
+    const functionSource = functionName ? this.functionAdtSources.get(functionName) : undefined
+    if (functionSource) return { source: functionSource, uriUsed: `${uri}/source/main` }
     const object = objects.find((candidate) => uri.includes(candidate.uri))
     if (!object) throw new Error(`No source for ${uri}`)
     return this.readSource("w200", object)
@@ -1118,8 +1840,21 @@ export class MockBackend implements SapBackend {
       ? [
           {
             name: "ZENH_DEMO",
+            type: "ENHO/XH",
+            version: "active",
+            elementId: "1",
+            fullname: "\\PR:ZCL_DEMO\\SE:Z_DEMO\\EI",
+            mode: "any",
+            replacing: false,
             startLine: 3,
+            startColumn: 0,
             uri: "/sap/bc/adt/enhancements/z_enh_demo",
+            positionUri: "/sap/bc/adt/programs/programs/zcl_demo/source/main#start=4,0",
+            enhancedObject: {
+              uri: "/sap/bc/adt/programs/programs/zcl_demo",
+              type: "PROG/P",
+              name: "ZCL_DEMO"
+            },
             ...(includeSource ? { source: "WRITE 'ENHANCEMENT'." } : {})
           }
         ]
@@ -1168,7 +1903,7 @@ export class MockBackend implements SapBackend {
           MTEXT: "Development",
           CCCATEGORY: "T",
           LOGSYS: "W200CLNT200",
-          CCNOCLIIND: "0"
+          CCNOCLIIND: ""
         }
       ]
     }
@@ -1179,9 +1914,14 @@ export class MockBackend implements SapBackend {
       ]
     }
     if (sql.includes("FROM SVERS")) return [{ VERSION: "731" }]
-    if (sql.toLowerCase().includes("from ttzcu")) {
-      return [{ TZONESYS: "UTC+8", ZONERULE: "P0800", DSTRULE: "NONE", DESCRIPT: "China" }]
-    }
+    if (sql.includes("FROM TTZCU")) return [{ CLIENT: "200", TZONESYS: "UTC+8", FLAGACTIVE: "X" }]
+    if (sql.includes("FROM TTZZT"))
+      return [{ CLIENT: "200", LANGU: "E", TZONE: "UTC+8", DESCRIPT: "China" }]
+    if (sql.includes("FROM TTZZ"))
+      return [{ CLIENT: "200", TZONE: "UTC+8", ZONERULE: "P0800", DSTRULE: "NONE" }]
+    if (sql.includes("FROM TTZR"))
+      return [{ CLIENT: "200", ZONERULE: "P0800", UTCDIFF: "080000", UTCSIGN: "+" }]
+    if (sql.includes("FROM TBATG")) return structuredClone(this.conversionEntries)
     if (sql.includes("FROM ZDATA")) {
       return [
         { ID: "2", NAME: "BETA" },
@@ -1213,6 +1953,15 @@ export class MockBackend implements SapBackend {
     if (transportNumber === "W20K900001") return mockTransport(transportNumber, "ZCL_DEMO")
     if (transportNumber === "W20K900002") return mockTransport(transportNumber, "ZREPORT_DEMO")
     throw new Error(`Transport not found: ${transportNumber}`)
+  }
+
+  async cleanupTransportEntries(
+    _connectionId: string,
+    _taskNumber: string,
+    _parentTransportNumber: string,
+    _entries: TransportCleanupEntry[]
+  ): Promise<void> {
+    throw new Error("Transport cleanup is not configured in this mock")
   }
 
   async exportResource(
@@ -1300,6 +2049,23 @@ export class MockBackend implements SapBackend {
     }
   }
 
+  async inspectAtc(): Promise<import("../src/native-atc.js").AtcPrecheckInfo> {
+    return {
+      status: "metadata_available",
+      stage: "customizing",
+      engine: "ATC",
+      endpoint: "/sap/bc/adt/atc/customizing",
+      method: "GET",
+      systemVariant: "DEFAULT",
+      selectedVariant: "DEFAULT",
+      variantSource: "system",
+      variantValidated: false,
+      worklistCreationAttempted: false,
+      runCreationAttempted: false,
+      qualityGate: "not_evaluated"
+    }
+  }
+
   async atcDocumentation(): Promise<string> {
     return "<h2>Mock documentation</h2><p>Use the exact finding context.</p>"
   }
@@ -1314,14 +2080,61 @@ export class MockBackend implements SapBackend {
     ]
   }
 
+  async inspectSource(connectionId: string, fileUri: string): Promise<SourceInspectionInfo> {
+    const target = resolveEditableSourceTarget(fileUri, connectionId)
+    const result = await this.readSourceByUri(connectionId, fileUri)
+    return {
+      sourceUri: target.sourceUri,
+      objectUri: target.objectUri,
+      objectName: target.objectName,
+      activeSource: result.source,
+      inactiveSource: null
+    }
+  }
+
   async replaceSource(
     connectionId: string,
     fileUri: string,
     oldString: string,
     newString: string,
-    transportNumber?: string
+    transportNumber?: string,
+    expectedSourceFingerprint?: string,
+    _recoverInactiveSource?: boolean
   ): Promise<SourceMutationInfo> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    if (expectedSourceFingerprint) {
+      const source = await this.readSourceByUri(connectionId, fileUri)
+      if (
+        createHash("sha256").update(source.source).digest("hex") !==
+        expectedSourceFingerprint.toLowerCase()
+      ) {
+        throw new Error("SOURCE_FINGERPRINT_CONFLICT")
+      }
+    }
+    const functionName = /\/fmodules\/([^/?]+)/i.exec(fileUri)?.[1]?.toUpperCase()
+    if (functionName) {
+      const current = this.functionAdtSources.get(functionName)
+      if (!current) throw new Error(`No source for ${fileUri}`)
+      const replaced = findAndReplaceSource(current, oldString, newString)
+      this.functionAdtSources.set(
+        functionName,
+        this.functionPatchAdtBodyMutation
+          ? replaced.replace(
+              "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+              "  CONCATENATE 'CHANGED:' iv_input INTO ev_output."
+            )
+          : replaced
+      )
+      return {
+        fileUri,
+        sourceUri: `${fileUri}/source/main`,
+        objectName: functionName,
+        oldLineCount: oldString ? oldString.split(/\r?\n/).length : 0,
+        newLineCount: newString ? newString.split(/\r?\n/).length : 0,
+        transportNumber: transportNumber ?? "",
+        activation: { success: true, messages: [], inactiveObjects: [] }
+      }
+    }
     const object = objects.find((candidate) => fileUri.toLowerCase().includes(candidate.uri))
     if (!object) throw new Error(`No source for ${fileUri}`)
     if (!/^[ZY]/.test(object.name)) throw new Error("Only Z* or Y* customer objects are allowed")
@@ -1626,6 +2439,22 @@ export class MockBackend implements SapBackend {
   ): Promise<DebugSessionInfo> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     if (request.terminalMode) throw new Error("terminalMode is not supported")
+    if (request.action === "precheck")
+      return {
+        ...this.debugState,
+        precheck: {
+          status: "not_advertised",
+          readOnly: true,
+          listenerStarted: false,
+          executionValidated: false,
+          discovery: {
+            status: "returned",
+            advertisedEndpoints: [],
+            missingEndpoints: ["/sap/bc/adt/debugger/listeners"]
+          },
+          listenerCheck: { status: "not_attempted" }
+        }
+      }
     this.debugState = {
       connectionId,
       state:
@@ -1727,7 +2556,12 @@ function mockTransport(number: string, objectName: string): TransportRequest {
         "tm:type": "CLAS",
         "tm:name": objectName,
         "tm:dummy_uri": "",
-        "tm:obj_info": "Mock object"
+        "tm:obj_info": "Mock object",
+        "tm:position": "000001",
+        "tm:wbtype": "CLAS/OC"
+      } as TransportRequest["objects"][number] & {
+        "tm:position": string
+        "tm:wbtype": string
       }
     ],
     tasks: []

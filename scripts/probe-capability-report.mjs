@@ -3,7 +3,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 
 const endpoint = new URL(process.env.ABAP_MCP_ENDPOINT || "http://127.0.0.1:4847/mcp")
 const connectionId = (process.env.ABAP_MCP_CONNECTION || "w200").toLowerCase()
-const client = new Client({ name: "w200-capability-report-validation", version: "0.34.0" })
+const client = new Client({ name: "w200-capability-report-validation", version: "0.35.0" })
 let report
 
 function output(result) {
@@ -27,7 +27,7 @@ try {
   const helper = (name) => report.helpers.find((item) => item.name === name)
   const capability = (id) => report.capabilities.find((item) => item.id === id)
 
-  if (report.productVersion !== "0.34.0") throw new Error("Unexpected product version")
+  if (report.productVersion !== "0.35.0") throw new Error("Unexpected product version")
   if (report.connection.id !== connectionId) throw new Error("Unexpected connection ID")
   if (!report.readOnly || report.safety.sapWritesInvoked)
     throw new Error("Read-only guarantee missing")

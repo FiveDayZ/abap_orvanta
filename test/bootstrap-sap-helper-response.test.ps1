@@ -83,7 +83,7 @@ $longHelperDiagnosticLine = $helperDiagnosticProgram | Where-Object { $_.Length 
 if ($longHelperDiagnosticLine) {
     throw "Helper diagnostic line exceeds 72 characters: $longHelperDiagnosticLine"
 }
-foreach ($marker in @("Z_CODEX_MCP_EXECUTE", "Z_CODEX_MCP_DYNPRO_API", "Z_CODEX_MCP_DDIC_API", "enlfdir-active")) {
+foreach ($marker in @("Z_ORVANTA_MCP_EXECUTE", "Z_ORVANTA_MCP_DYNPRO_API", "Z_ORVANTA_MCP_DDIC_API", "zorvanta_mcp_bootstrap", "enlfdir-active")) {
     if (-not ($helperDiagnosticProgram -match [regex]::Escape($marker))) {
         throw "Helper diagnostic is missing marker: $marker"
     }
@@ -144,7 +144,15 @@ foreach ($marker in @("DDIF_DD_CHECK", "DDIF_TABL_GET", "ls_dd09v-bufallow", "ls
     }
 }
 $ddicFunction = New-DdicFunctionSource
-$ddicProgram = New-InstallProgram -FunctionName "Z_CODEX_MCP_DDIC_API"
+foreach ($property in @("DATATYPE", "LENG", "COMPTYPE")) {
+    $fieldLines = @($ddicFunction | Where-Object {
+        $_ -match [regex]::Escape("add_payload 'F' lv_index '$property'")
+    })
+    if ($fieldLines.Count -ne 2) {
+        throw "Structure and table readers must emit direct field metadata: $property"
+    }
+}
+$ddicProgram = New-InstallProgram -FunctionName "Z_ORVANTA_MCP_DDIC_API"
 $longDdicLine = $ddicProgram | Where-Object { $_.Length -gt 72 } | Select-Object -First 1
 if ($longDdicLine) {
     throw "DDIC bootstrap line exceeds 72 characters: $longDdicLine"
@@ -152,7 +160,9 @@ if ($longDdicLine) {
 foreach ($marker in @(
         "IV_EXPECTED_VERSION",
         "ls_import-dbfield = 'BAPIRET2-PARAMETER'",
-        "Z_CODEX_MCP_DDIC_API",
+        "Z_ORVANTA_MCP_DDIC_API",
+        "ZORVANTA_MCP_CORE",
+        "ORVANTA MCP controlled entry point",
         "DDIF_DOMA_PUT",
         "DDIF_DTEL_PUT",
         "DDIF_STATE_GET",
@@ -169,15 +179,27 @@ foreach ($marker in @(
         "CREATE_TRANSPARENT_TABLE",
         "APPEND_TRANSPARENT_TABLE_FIELDS",
         "PATCH_TRANSPARENT_TABLE_FIELDS",
+        "PATCH_TRANSPARENT_TABLE_SETTINGS",
+        "RECOVER_TABLE_CONVERSION",
         "DELETE_TRANSPARENT_TABLE",
         "UNSAFE_TABLE_CHANGE",
         "MANDT_CHANGE_FORBIDDEN",
         "KEY_ORDER_INVALID",
         "DUPLICATE_FIELD",
         "FIELD_ALREADY_EXISTS",
-        "COMPLEX_TABLE_UNSUPPORTED",
-        "Tables with includes or appends are unsupported",
-        "SELECT COUNT(*) FROM dd02l INTO lv_append_count",
+        "COMPLEX_COMPONENT_CHANGE_FORBIDDEN",
+        "Include and Append components are immutable",
+        "DD_TABL_ACT",
+        "ACT_RES_TAB",
+        "CONVERSION_ACTION",
+        "DDIC_CONVERSION_PENDING",
+        "DD_DB_CONVERTER",
+        "WORKLIST_CONFLICT",
+        "DDIC_CONVERSION_RECOVERED",
+        "SCHFELDANZ",
+        "PROTOKOLL",
+        "PRECFIELD",
+        "ADMINFIELD",
         "lt_dd03p[] = lt_current_dd03p[]",
         "ls_dd09v = ls_current_dd09v",
         "lv_append IS INITIAL",
@@ -195,22 +217,49 @@ foreach ($marker in @(
     }
 }
 $ddicFunctionText = $ddicFunction -join "`n"
-if ($ddicFunctionText -notmatch "LOOP AT lt_dd03p ASSIGNING <ls_field>\.\r?\n\s+IF lv_append IS INITIAL AND lv_patch IS INITIAL\.\r?\n\s+<ls_field>-tabname = iv_object_name\.[\s\S]*?<ls_field>-comptype = 'E'\.") {
+if ($ddicFunctionText -notmatch "LOOP AT lt_dd03p ASSIGNING <ls_field>\.\r?\n\s+IF lv_append IS INITIAL AND lv_patch IS INITIAL\r?\n\s+AND lv_settings IS INITIAL\.\r?\n\s+<ls_field>-tabname = iv_object_name\.[\s\S]*?<ls_field>-comptype = 'E'\.") {
     throw "DDIC append must not rewrite existing field component metadata"
 }
-if (-not ($ddicFunction -match "ev_version = '1.6'")) {
-    throw "DDIC helper 1.6 marker is missing"
+if (-not ($ddicFunction -match "ev_version = '1.7'")) {
+    throw "DDIC helper 1.7 marker is missing"
 }
 if (-not ($ddicFunction -match "dd01v_wa = ls_current_dd01v")) {
     throw "DDIC bootstrap must keep the active domain separate from the requested definition"
 }
-$repositoryProgram = New-InstallProgram -FunctionName "Z_CODEX_MCP_DYNPRO_API"
+$repositoryProgram = New-InstallProgram -FunctionName "Z_ORVANTA_MCP_DYNPRO_API"
 $longRepositoryLine = $repositoryProgram | Where-Object { $_.Length -gt 72 } | Select-Object -First 1
 if ($longRepositoryLine) {
     throw "Repository bootstrap line exceeds 72 characters: $longRepositoryLine"
 }
 $scriptText = Get-Content -Raw $scriptPath
-foreach ($marker in @("Z_CODEX_MCP_DYNPRO_API", "FUNCTION_CREATE")) {
+$longReadStart = $scriptText.IndexOf("WHEN 'READ_FUNCTION_INTERFACE'.")
+$longReadEnd = $scriptText.IndexOf("WHEN 'CREATE_FUNCTION_MODULE'.", $longReadStart)
+$longReadBody = $scriptText.Substring($longReadStart, $longReadEnd - $longReadStart)
+foreach ($marker in @(
+    "DATA lt_fm_long_source TYPE rsfb_source.",
+    "CALL FUNCTION 'RPY_FUNCTIONMODULE_READ_NEW'",
+    "CHANGING new_source = lt_fm_long_source",
+    "SOURCE_CLIENT_UPGRADE_REQUIRED",
+    "SOURCE_LINE_TOO_LONG",
+    "iv_object_type <> 'SRC1'",
+    "'SOURCE_FORMAT' 'CHUNKS_V1'",
+    "lv_fm_chunk_length = 60.",
+    "lv_fm_long_line+lv_fm_source_offset(lv_fm_chunk_length)"
+)) {
+    if (-not $scriptText.Contains($marker)) {
+        throw "Long function source read is missing: $marker"
+    }
+}
+if ($longReadBody.Contains("CALL FUNCTION 'RPY_FUNCTIONMODULE_READ'") -or
+    $longReadBody.Contains("ls_fm_source-line = lv_fm_long_line")) {
+    throw "Long source must not pass through the 72-character source buffer"
+}
+$sourceClear = $longReadBody.IndexOf("REFRESH lt_fm_source.")
+$sourceEmit = $longReadBody.IndexOf("emit_fm_payload.")
+if ($sourceClear -lt 0 -or $sourceClear -gt $sourceEmit) {
+    throw "Partial legacy source must be discarded before emitting long source"
+}
+foreach ($marker in @("Z_ORVANTA_MCP_DYNPRO_API", "FUNCTION_CREATE")) {
     if (-not ($repositoryProgram -match [regex]::Escape($marker))) {
         throw "Generated repository bootstrap is missing marker: $marker"
     }
@@ -286,6 +335,7 @@ foreach ($marker in @(
         "iv_expected_version",
         "CREATE_FUNCTION_INCLUDE",
         "READ_TRANSPORT_DETAILS",
+        "ls_transport_object-as4pos.",
         "RPY_FUNCTIONMODULE_READ",
         "RPY_FUNCTIONMODULE_INSERT",
         "EXPORTING funcname = lv_function_name",
@@ -297,11 +347,83 @@ foreach ($marker in @(
         "CREATE_FUNCTION_GROUP",
         "READ_FUNCTION_INTERFACE",
         "CREATE_FUNCTION_MODULE",
+        "PATCH_FUNCTION_INTERFACE",
+        "FUNCTION_INTERFACE_PATCHED",
+        "FUNCTION_ADT_PATCH_NOT_OBSERVED",
+        "ENQUEUE_ESFUNCTION",
+        "lv_fm_lock_mode TYPE enqmode VALUE 'X'",
+        "EXPORTING funcname = lv_function_name",
+        "fu_modification_globals_init(SAPMS38L)",
+        "do_read_docu_r3_new(SAPMS38L)",
+        "do_update_docu_r3_new(SAPMS38L)",
+        "FUNCTION_PATCH_SAVE_NOT_OBSERVED",
         "INSPECT_REPOSITORY_ASSIGNMENT",
         "lv_transport_object = 'CLAS'",
         "lv_transport_object = 'INTF'",
         "READ_GUI_DEFINITION",
         "PATCH_GUI_DEFINITION",
+        "READ_CUSTOMER_EXIT_DEFINITION",
+        "READ_CUSTOMER_EXIT_PROJECT",
+        "READ_BTE_CONFIGURATION",
+        "READ_CLASSIC_BADI_DEFINITION",
+        "READ_ENHANCEMENT_IMPLEMENTATION",
+        "CREATE_HOOK_ENHANCEMENT",
+        "CREATE_BADI_ENHANCEMENT",
+        "UPDATE_HOOK_ENHANCEMENT",
+        "UPDATE_BADI_ENHANCEMENT",
+        "MANAGE_ENHANCEMENT_STATE",
+        "DELETE_ENHANCEMENT_IMPLEMENTATION",
+        "MANAGE_CLASSIC_BADI_IMPLEMENTATION",
+        "CUSTOMER_EXIT_DEFINITION_READ",
+        "CUSTOMER_EXIT_PROJECT_READ",
+        "BTE_CONFIGURATION_READ",
+        "CLASSIC_BADI_DEFINITION_READ",
+        "ENHANCEMENT_IMPLEMENTATION_READ",
+        "HOOK_ENHANCEMENT_CREATED",
+        "BADI_ENHANCEMENT_CREATED",
+        "HOOK_ENHANCEMENT_UPDATED",
+        "BADI_ENHANCEMENT_UPDATED",
+        "ENHANCEMENT_IMPLEMENTATION_ACTIVATED",
+        "ENHANCEMENT_INACTIVE_VERSION_DISCARDED",
+        "ENHANCEMENT_IMPLEMENTATION_DELETED",
+        "CLASSIC_BADI_IMPLEMENTATION_CHANGED",
+        "SELECT * FROM modsap INTO TABLE lt_modsap",
+        "SELECT * FROM modact INTO TABLE lt_modact",
+        "SELECT SINGLE * FROM modattr INTO ls_modattr",
+        "SELECT SINGLE * FROM tbe01 INTO ls_tbe01",
+        "SELECT SINGLE * FROM tps01 INTO ls_tps01",
+        "SELECT * FROM tbe31 INTO TABLE lt_tbe31",
+        "SELECT * FROM tbe34 INTO TABLE lt_tbe34",
+        "SELECT * FROM tps31 INTO TABLE lt_tps31",
+        "SELECT * FROM tps34 INTO TABLE lt_tps34",
+        "SELECT SINGLE * FROM tbe11 INTO ls_tbe11",
+        "SELECT SINGLE * FROM tbe24 INTO ls_tbe24",
+        "SELECT SINGLE * FROM sxs_attr INTO ls_sxs_attr",
+        "SELECT * FROM sxs_inter INTO TABLE lt_sxs_inter",
+        "SELECT * FROM sxc_exit INTO TABLE lt_sxc_exit",
+        "SELECT SINGLE * FROM sxc_attr INTO ls_sxc_attr",
+        "SELECT * FROM sxc_class INTO TABLE lt_sxc_class",
+        "cl_enh_factory=>create_enhancement(",
+        "cl_enh_tool_hook_impl=>tooltype",
+        "cl_enh_tool_badi_impl=>tooltype",
+        "lo_enh_hook->add_hook_impl(",
+        "lo_enh_hook->modify_hook_impl(",
+        "lo_enh_badi->add_implementation( ls_enh_badi )",
+        "lo_enh_badi->delete_implementation( lv_enh_impl_name )",
+        "has_inactive_version( )",
+        "has_saved_inactive_version( )",
+        "has_not_saved_inactive_version( )",
+        "reset_to_active_version(",
+        "CALL FUNCTION 'SXO_IMPL_CREATE'",
+        "CALL FUNCTION 'SXO_IMPL_ACTIVE'",
+        "CALL FUNCTION 'SXO_IMPL_DACTVE'",
+        "CALL FUNCTION 'SXO_IMPL_DELETE'",
+        "'HOOK_INDEX' lv_payload_index",
+        "CHANGING devclass = lv_enh_devclass",
+        "add_bte_application 'S' lv_payload_index ls_tbe31",
+        "add_bte_product 'C' lv_payload_index ls_tps34",
+        "add_repo_payload 'C' lv_payload_index 'TYPE'",
+        "add_repo_payload 'A' lv_payload_index 'MEMBER'",
         "RS_CUA_INTERNAL_FETCH",
         "RS_CUA_INTERNAL_WRITE",
         "object_class = 'SCUA'",
@@ -312,6 +434,11 @@ foreach ($marker in @(
         "ev_version = '1.7'",
         "ev_version = '1.8'",
         "ev_version = '1.9'",
+        "ev_version = '2.0'",
+        "ev_version = '2.2'",
+        "ev_version = '2.3'",
+        "ev_version = '2.4'",
+        "ev_version = '2.6'",
         "FUNCTION_MODULE_CREATED",
         "REPOSITORY_ASSIGNMENT_READ",
         "ev_version = '1.3'",
@@ -320,6 +447,157 @@ foreach ($marker in @(
     )) {
     if ($scriptText -notmatch [regex]::Escape($marker)) {
         throw "Repository function source is missing marker: $marker"
+    }
+}
+$customerProgramGuard = $scriptText.IndexOf("IF iv_operation = 'UPSERT_SCREEN'")
+$customerProgramGuardEnd = $scriptText.IndexOf("  ENDIF.", $customerProgramGuard)
+if ($customerProgramGuard -lt 0 -or $customerProgramGuardEnd -lt 0) {
+    throw "Customer program write guard is missing"
+}
+$customerProgramGuardBody = $scriptText.Substring(
+    $customerProgramGuard,
+    $customerProgramGuardEnd - $customerProgramGuard
+)
+if ($customerProgramGuardBody.Contains("READ_SCREEN") -or
+    $customerProgramGuardBody.Contains("READ_GUI_DEFINITION")) {
+    throw "Standard screen and GUI reads must not be restricted to Z or Y programs"
+}
+foreach ($marker in @(
+        "OR iv_operation = 'PATCH_SCREEN'",
+        "OR iv_operation = 'PATCH_GUI_DEFINITION'",
+        "OR iv_operation = 'CREATE_MODULE_POOL'",
+        "OR iv_operation = 'DELETE_MODULE_POOL'"
+    )) {
+    if (-not $customerProgramGuardBody.Contains($marker)) {
+        throw "Customer program write guard is missing: $marker"
+    }
+}
+$standardReadGuard = $scriptText.IndexOf("IF iv_operation = 'READ_SCREEN'")
+$standardReadGuardEnd = $scriptText.IndexOf("  ENDIF.", $standardReadGuard)
+if ($standardReadGuard -lt 0 -or $standardReadGuardEnd -lt 0) {
+    throw "Standard screen and GUI read input guard is missing"
+}
+$standardReadGuardBody = $scriptText.Substring(
+    $standardReadGuard,
+    $standardReadGuardEnd - $standardReadGuard
+)
+foreach ($marker in @(
+        "OR iv_operation = 'READ_GUI_DEFINITION'",
+        "IF iv_program IS INITIAL.",
+        "ev_code = 'PROGRAM_REQUIRED'."
+    )) {
+    if (-not $standardReadGuardBody.Contains($marker)) {
+        throw "Standard screen and GUI read input guard is missing: $marker"
+    }
+}
+$customerTransactionGuard = $scriptText.IndexOf("IF iv_operation = 'CREATE_TRANSACTION'")
+$customerTransactionGuardEnd = $scriptText.IndexOf("  ENDIF.", $customerTransactionGuard)
+if ($customerTransactionGuard -lt 0 -or $customerTransactionGuardEnd -lt 0) {
+    throw "Customer transaction write guard is missing"
+}
+$customerTransactionGuardBody = $scriptText.Substring(
+    $customerTransactionGuard,
+    $customerTransactionGuardEnd - $customerTransactionGuard
+)
+if ($customerTransactionGuardBody.Contains("READ_TRANSACTION")) {
+    throw "Standard transaction reads must not be restricted to Z or Y transactions"
+}
+foreach ($marker in @(
+        "OR iv_operation = 'DELETE_TRANSACTION'",
+        "OR iv_operation = 'CREATE_REPORT_TRANSACTION'",
+        "ev_code = 'CUSTOMER_TRANSACTION_REQUIRED'."
+    )) {
+    if (-not $customerTransactionGuardBody.Contains($marker)) {
+        throw "Customer transaction write guard is missing: $marker"
+    }
+}
+$standardTransactionGuard = $scriptText.IndexOf("IF iv_operation = 'READ_TRANSACTION'.")
+$standardTransactionGuardEnd = $scriptText.IndexOf("  ENDIF.", $standardTransactionGuard)
+if ($standardTransactionGuard -lt 0 -or $standardTransactionGuardEnd -lt 0) {
+    throw "Standard transaction read input guard is missing"
+}
+$standardTransactionGuardBody = $scriptText.Substring(
+    $standardTransactionGuard,
+    $standardTransactionGuardEnd - $standardTransactionGuard
+)
+foreach ($marker in @(
+        "IF iv_transaction IS INITIAL.",
+        "ev_code = 'TRANSACTION_REQUIRED'.",
+        "ev_version = '1.2'."
+    )) {
+    if (-not $standardTransactionGuardBody.Contains($marker)) {
+        throw "Standard transaction read input guard is missing: $marker"
+    }
+}
+if ($scriptText -match "EXPORTING funcname = iv_object_name") {
+    throw "Repository function source passes the generic object-name type to a function lock"
+}
+if ($scriptText -match "RS_FUNCTION_ACTIVATE") {
+    throw "Repository function interface patch must not invoke the dialog-coupled activation API"
+}
+if ($scriptText -match "RS_WORKING_OBJECT_ACTIVATE") {
+    throw "Repository function interface patch must use the direct FUNC activation API"
+}
+$patchCase = $scriptText.IndexOf("WHEN 'PATCH_FUNCTION_INTERFACE'")
+$patchObserved = $scriptText.IndexOf("FUNCTION_ADT_PATCH_NOT_OBSERVED", $patchCase)
+$patchDocRead = $scriptText.IndexOf("do_read_docu_r3_new(SAPMS38L)", $patchObserved)
+$patchDocUpdate = $scriptText.IndexOf("do_update_docu_r3_new(SAPMS38L)", $patchDocRead)
+$patchCommit = $scriptText.IndexOf("COMMIT WORK AND WAIT", $patchDocUpdate)
+$patchReadback = $scriptText.IndexOf("CALL FUNCTION 'RPY_FUNCTIONMODULE_READ'", $patchCommit)
+if ($patchCase -lt 0 -or $patchObserved -lt 0 -or $patchDocRead -lt 0 -or
+    $patchDocUpdate -lt 0 -or $patchCommit -lt 0 -or $patchReadback -lt 0 -or
+    $patchObserved -gt $patchDocRead -or $patchDocRead -gt $patchDocUpdate -or
+    $patchDocUpdate -gt $patchCommit -or $patchCommit -gt $patchReadback) {
+    throw "Function patch must verify ADT structure, update documentation, commit, then re-read"
+}
+$patchBody = $scriptText.Substring($patchCase, $patchReadback - $patchCase)
+$nativeDocMerge = $patchBody.IndexOf("lt_fm_requested_documentation[] = lt_fm_documentation[].")
+if ($nativeDocMerge -lt 0) {
+    throw "Function patch must merge requested texts into the native post-ADT documentation rows"
+}
+$nativeDocBody = $patchBody.Substring($nativeDocMerge)
+foreach ($marker in @(
+    "lt_fm_documentation[] = lt_fm_current_documentation[].",
+    "LOOP AT lt_fm_documentation ASSIGNING <ls_fm_documentation>.",
+    "WITH KEY parameter = <ls_fm_documentation>-parameter",
+    "kind = <ls_fm_documentation>-kind.",
+    "DELETE lt_fm_requested_documentation INDEX sy-tabix.",
+    "<ls_fm_documentation>-stext = ls_fm_documentation-stext.",
+    "IF lt_fm_requested_documentation IS NOT INITIAL.",
+    "FUNCTION_PATCH_DOCUMENTATION_MISMATCH"
+)) {
+    if (-not $nativeDocBody.Contains($marker)) {
+        throw "Function patch native documentation merge is missing: $marker"
+    }
+}
+if ($nativeDocBody -match '<ls_fm_documentation>-(index|kind|parameter)\s*=' -or
+    $nativeDocBody -match 'SORT lt_fm_documentation') {
+    throw "Function patch must preserve native documentation ordering, indices, and identity"
+}
+if ($patchBody -notmatch [regex]::Escape("lt_fm_source[] = lt_fm_current_source[].")) {
+    throw "Function patch must preserve the active post-ADT source during documentation maintenance"
+}
+if ($patchBody -match [regex]::Escape("APPEND ls_fm_source TO lt_fm_source.")) {
+    throw "Function patch must not rebuild active source from the pre-ADT snapshot payload"
+}
+if ($scriptText -match "CALL FUNCTION 'FUNCTION_SAVE'") {
+    throw "Function patch must not invoke the dialog-coupled FUNCTION_SAVE API"
+}
+foreach ($section in @('IMPORT', 'EXPORT', 'CHANGING', 'TABLES', 'EXCEPTIONS', 'DOCUMENTATION', 'SOURCE')) {
+    if (-not $scriptText.Contains("emit_fm_difference '$section'")) {
+        throw "Function patch readback diagnostics missing section: $section"
+    }
+}
+foreach ($marker in @(
+    "DEFINE emit_fm_difference.",
+    "DATA lv_fm_diff_text TYPE c LENGTH 60.",
+    "'EXPECTED_ROWS'", "'ACTUAL_ROWS'", "'ROW'", "'FIELD'", "'EXPECTED'", "'ACTUAL'",
+    "IF lt_fm_current_import[] <> lt_fm_import[]",
+    "OR lt_fm_current_documentation[]",
+    "OR lt_fm_current_source[] <> lt_fm_source[]"
+)) {
+    if (-not $scriptText.Contains($marker)) {
+        throw "Function patch must retain strict readback checks and bounded evidence: $marker"
     }
 }
 foreach ($marker in @(

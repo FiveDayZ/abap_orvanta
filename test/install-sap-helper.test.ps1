@@ -39,6 +39,7 @@ param(
     [string]$Client,
     [string]$Language,
     [string]$Action,
+    [string]$TransportNumber,
     [Security.SecureString]$SecurePassword,
     [switch]$AllowUnauthorized,
     [switch]$PassThru
@@ -46,29 +47,42 @@ param(
 if (-not $SecurePassword -or $SecurePassword.Length -eq 0 -or -not $PassThru) {
     throw "Secure pass-through contract was not used."
 }
-Add-Content -LiteralPath $env:ABAP_MCP_INSTALLER_ACTION_LOG -Value $Action
+Add-Content -LiteralPath $env:ABAP_MCP_INSTALLER_ACTION_LOG -Value "$Action|$TransportNumber"
 $ready = $env:ABAP_MCP_INSTALLER_HELPERS_READY -ne "0"
 $writes = switch ($Action) {
     "DiagnoseHelperApis" {
         if ($ready) {
             @(
-                "HELPER Z_CODEX_MCP_EXECUTE EXISTS 0",
-                "STATE Z_CODEX_MCP_EXECUTE X",
-                "HELPER Z_CODEX_MCP_DYNPRO_API EXISTS 0",
-                "STATE Z_CODEX_MCP_DYNPRO_API X X",
-                "HELPER Z_CODEX_MCP_DDIC_API EXISTS 0",
-                "STATE Z_CODEX_MCP_DDIC_API X"
+                "HELPER Z_ORVANTA_MCP_EXECUTE EXISTS 0",
+                "STATE Z_ORVANTA_MCP_EXECUTE X",
+                "HELPER Z_ORVANTA_MCP_DYNPRO_API EXISTS 0",
+                "STATE Z_ORVANTA_MCP_DYNPRO_API X X",
+                "HELPER Z_ORVANTA_MCP_DDIC_API EXISTS 0",
+                "STATE Z_ORVANTA_MCP_DDIC_API X"
             )
         } else {
             @(
-                "HELPER Z_CODEX_MCP_EXECUTE EXISTS 0",
-                "STATE Z_CODEX_MCP_EXECUTE X X",
-                "HELPER Z_CODEX_MCP_DYNPRO_API EXISTS 1",
-                "HELPER Z_CODEX_MCP_DDIC_API EXISTS 1"
+                "HELPER Z_ORVANTA_MCP_EXECUTE EXISTS 0",
+                "STATE Z_ORVANTA_MCP_EXECUTE X X",
+                "HELPER Z_ORVANTA_MCP_DYNPRO_API EXISTS 1",
+                "HELPER Z_ORVANTA_MCP_DDIC_API EXISTS 1"
             )
         }
     }
     "DiagnoseFunctionGroup" { @("SUBRC     0") }
+    "InspectAssignment" {
+        @(
+            "REQUEST $TransportNumber VALIDATION D K",
+            "TASK GR2K923473 VALIDATION D S"
+        )
+    }
+    "AssignPackageTransport" {
+        @(
+            "ASSIGNMENT_OK PACKAGE ZABAP",
+            "REQUEST $TransportNumber",
+            "TASK GR2K923473"
+        )
+    }
     default { @("COMPLETED $Action") }
 }
 [pscustomobject]@{
@@ -137,7 +151,7 @@ try {
     if ($preflight.status.helpers[0].activeFlag -or -not $preflight.status.helpers[0].generated) {
         throw "Legacy blank ACTIVE must remain informational when GENERATED is X."
     }
-    if ((Get-Actions) -join "," -ne "DiagnoseHelperApis,DiagnoseFunctionGroup") {
+    if ((Get-Actions) -join "," -ne "DiagnoseHelperApis|,DiagnoseFunctionGroup|") {
         throw "Preflight invoked an unexpected action sequence."
     }
 
@@ -152,9 +166,27 @@ try {
 
     $env:ABAP_MCP_INSTALLER_HELPERS_READY = "1"
     $expectedModes = @{
-        install = "Install,InstallRepositoryApi,InstallDdicApi,DiagnoseHelperApis,DiagnoseFunctionGroup"
-        upgrade = "Install,RepairRepositoryApi,RepairDdicApi,DiagnoseHelperApis,DiagnoseFunctionGroup"
-        repair = "RepairInterface,RepairRepositoryApi,RepairDdicApi,DiagnoseHelperApis,DiagnoseFunctionGroup"
+        install = "Install|,InstallRepositoryApi|,InstallDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
+        upgrade = "Install|,RepairRepositoryApi|,RepairDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
+        repair = "RepairInterface|,RepairRepositoryApi|,RepairDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
+    }
+
+    Remove-Item -LiteralPath $actionLog -Force -ErrorAction SilentlyContinue
+    $transportUpgrade = & $installer -Mode upgrade -ConnectionId w200 -TransportNumber GR2K923472 -ConfigPath $configPath -BootstrapScriptPath $fakeBootstrap -SecurePassword $password | ConvertFrom-Json
+    if (-not $transportUpgrade.status.ready) {
+        throw "Transport-aware upgrade did not finish with a ready helper state."
+    }
+    $expectedTransportActions = @(
+        "InspectAssignment|GR2K923472",
+        "AssignPackageTransport|GR2K923472",
+        "Install|GR2K923472",
+        "RepairRepositoryApi|GR2K923472",
+        "RepairDdicApi|GR2K923472",
+        "DiagnoseHelperApis|GR2K923472",
+        "DiagnoseFunctionGroup|GR2K923472"
+    ) -join ","
+    if ((Get-Actions) -join "," -ne $expectedTransportActions) {
+        throw "Transport-aware upgrade invoked an unexpected action sequence."
     }
     foreach ($mode in $expectedModes.Keys) {
         Remove-Item -LiteralPath $actionLog -Force -ErrorAction SilentlyContinue

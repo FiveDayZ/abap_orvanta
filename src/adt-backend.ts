@@ -16,13 +16,24 @@ import {
   type TransportRequest
 } from "abap-adt-api"
 import { createHash } from "node:crypto"
+import { InactiveInventoryError, readInactiveInventory } from "./inactive-inventory.js"
 import { request as httpRequest } from "node:http"
 import { request as httpsRequest } from "node:https"
 import type { AdtHTTP } from "abap-adt-api/build/AdtHTTP.js"
 import type { RequestOptions } from "abap-adt-api/build/AdtHTTP.js"
 import { createObject as createObjectRequest } from "abap-adt-api/build/api/objectcreator.js"
 import { objectStructure as loadObjectStructure } from "abap-adt-api/build/api/objectstructure.js"
+import { adtDiscovery } from "abap-adt-api/build/api/discovery.js"
+import { objectEnhancements as requestObjectEnhancements } from "abap-adt-api/build/api/enhancements.js"
+import { getObjectSource as requestObjectSource } from "abap-adt-api/build/api/objectcontents.js"
+import {
+  syntaxCheck as requestSyntaxCheck,
+  usageReferences as requestUsageReferences
+} from "abap-adt-api/build/api/syntax.js"
 import { parse } from "abap-adt-api/build/utilities.js"
+import { legacyWhereUsed, legacyWhereUsedPaths } from "./legacy-where-used.js"
+import { whereUsedHttp, WhereUsedRequestError } from "./where-used-request.js"
+import type { LegacyUsageReferences } from "./backend.js"
 import {
   DEFAULT_OBJECT_TYPES,
   type ActivationInfo,
@@ -39,6 +50,7 @@ import {
   type MessageClassDeletionInfo,
   type MessageClassInfo,
   type MessageClassMutationInfo,
+  type ObjectTypeSearchResult,
   type RevisionInfo,
   type RemoteFunctionRequest,
   type RemoteFunctionResult,
@@ -51,11 +63,13 @@ import {
   type SapRepositoryResult,
   type SapStructureRow,
   type SapBackend,
+  type TransportCleanupEntry,
   type ExportResourceInfo,
   type ObjectCreationInfo,
   type SourceReadOptions,
   type SourceResult,
   type SourceMutationInfo,
+  type SourceInspectionInfo,
   type TestIncludeCreationInfo,
   type TextElementInfo,
   type TextElementMutationInfo,
@@ -70,6 +84,7 @@ import {
   type UsageSnippetInfo
 } from "./backend.js"
 import type { ConnectionConfig } from "./config.js"
+import { AtcStageError, executeNativeAtc, inspectNativeAtc } from "./native-atc.js"
 import {
   HeadlessDebugManager,
   type DebugBreakpointInfo,
@@ -82,6 +97,17 @@ import {
   type DebugVariableRequest
 } from "./debug-manager.js"
 import { findAndReplaceSource } from "./source-edit.js"
+import {
+  buildSmartformEnvelope,
+  parseSmartformResponse,
+  type SmartformRequest
+} from "./smartforms.js"
+import { runSapDataQuery } from "./data-query.js"
+import { runScopedQueryFallback } from "./scoped-query.js"
+
+const SOURCE_READ_TIMEOUT_MS = 30_000
+const SYNTAX_CHECK_TIMEOUT_MS = 10_000
+const ENHANCEMENT_READ_TIMEOUT_MS = 3_000
 
 const XML_METADATA_TYPES = new Set([
   "MSAG/N",
@@ -161,7 +187,11 @@ export class AdtBackend implements SapBackend {
   private readonly clients = new Map<string, ClientState>()
   private readonly debugger: HeadlessDebugManager
 
-  constructor(connections: AdtConnectionInput[]) {
+  constructor(
+    connections: AdtConnectionInput[],
+    private readonly passwordFor: (config: ConnectionConfig) => string | undefined = (config) =>
+      process.env[config.passwordEnv]
+  ) {
     for (const connection of connections) {
       this.configs.set(connection.id.toLowerCase(), {
         ...connection,
@@ -196,10 +226,25 @@ export class AdtBackend implements SapBackend {
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
     const body = await postSapSoap(
       config,
-      "http://www.sap.com/Z_CODEX_MCP_EXECUTE",
-      buildSapHelperEnvelope(request)
+      "http://www.sap.com/Z_ORVANTA_MCP_EXECUTE",
+      buildSapHelperEnvelope(request),
+      false,
+      this.passwordFor(config)
     )
     return parseSapHelperResponse(body)
+  }
+
+  async callSmartform(connectionId: string, request: SmartformRequest) {
+    const config = this.configs.get(connectionId.toLowerCase())
+    if (!config) throw new Error(`Connection not found: ${connectionId}`)
+    const body = await postSapSoap(
+      config,
+      "http://www.sap.com/Z_ORVANTA_SMARTFORM_API",
+      buildSmartformEnvelope(request),
+      false,
+      this.passwordFor(config)
+    )
+    return parseSmartformResponse(body)
   }
 
   async callSapRepository(
@@ -210,8 +255,10 @@ export class AdtBackend implements SapBackend {
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
     const body = await postSapSoap(
       config,
-      "http://www.sap.com/Z_CODEX_MCP_DYNPRO_API",
-      buildSapRepositoryEnvelope(request)
+      "http://www.sap.com/Z_ORVANTA_MCP_DYNPRO_API",
+      buildSapRepositoryEnvelope(request),
+      false,
+      this.passwordFor(config)
     )
     return parseSapRepositoryResponse(body)
   }
@@ -221,8 +268,10 @@ export class AdtBackend implements SapBackend {
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
     const body = await postSapSoap(
       config,
-      "http://www.sap.com/Z_CODEX_MCP_DDIC_API",
-      buildSapDdicEnvelope(request)
+      "http://www.sap.com/Z_ORVANTA_MCP_DDIC_API",
+      buildSapDdicEnvelope(request),
+      false,
+      this.passwordFor(config)
     )
     return parseSapDdicResponse(body)
   }
@@ -237,9 +286,14 @@ export class AdtBackend implements SapBackend {
       config,
       `http://www.sap.com/${request.functionName}`,
       buildRemoteFunctionEnvelope(request),
-      true
+      true,
+      this.passwordFor(config)
     )
-    return parseRemoteFunctionResponse(body, request.outputParameters)
+    return parseRemoteFunctionResponse(
+      body,
+      request.outputParameters,
+      ["RFC_READ_TABLE", "BBP_RFC_READ_TABLE"].includes(request.functionName)
+    )
   }
 
   async searchObjects(
@@ -254,25 +308,35 @@ export class AdtBackend implements SapBackend {
 
     for (const type of searchTypes) {
       try {
-        const matches = await client.searchObject(pattern.toUpperCase(), type)
-        for (const raw of matches) {
-          const record = raw as unknown as Record<string, string | undefined>
-          const name = record["adtcore:name"]
-          const objectType = record["adtcore:type"]
-          if (!name || !objectType) continue
-
-          results.push({
-            name,
-            type: objectType,
-            description: record["adtcore:description"] ?? "",
-            package: record["adtcore:packageName"] ?? "",
-            systemType: name.startsWith("Z") || name.startsWith("Y") ? "CUSTOM" : "STANDARD",
-            uri: record["adtcore:uri"] ?? ""
-          })
+        const matches = await searchObjectsForType(client, pattern, type)
+        for (const object of matches) {
+          results.push(object)
           if (results.length >= maxResults) return results
         }
       } catch {
         // Current ABAP FS behavior skips object types unsupported by the target system.
+      }
+    }
+    return results
+  }
+
+  async searchObjectTypes(
+    connectionId: string,
+    pattern: string,
+    types: string[],
+    maxResultsPerType: number
+  ): Promise<ObjectTypeSearchResult[]> {
+    const client = await this.getClient(connectionId)
+    const results: ObjectTypeSearchResult[] = []
+    for (const type of types) {
+      try {
+        const objects = (await searchObjectsForType(client, pattern, type)).slice(
+          0,
+          maxResultsPerType
+        )
+        results.push({ requestedType: type, status: "available", objects })
+      } catch (error) {
+        results.push({ requestedType: type, ...classifyObjectSearchFailure(error), objects: [] })
       }
     }
     return results
@@ -296,13 +360,11 @@ export class AdtBackend implements SapBackend {
     for (const uri of candidates) {
       try {
         return {
-          source: await client.getObjectSource(
-            uri,
-            options?.version ? { version: options.version } : undefined
-          ),
+          source: await readObjectSource(client, uri, options),
           uriUsed: uri
         }
       } catch (error) {
+        if (error instanceof AdtRequestTimeoutError) throw error
         lastError = error
       }
     }
@@ -313,14 +375,12 @@ export class AdtBackend implements SapBackend {
       if (resolved) {
         const uri = optimalSourceUri(object.type, resolved)
         return {
-          source: await client.getObjectSource(
-            uri,
-            options?.version ? { version: options.version } : undefined
-          ),
+          source: await readObjectSource(client, uri, options),
           uriUsed: uri
         }
       }
     } catch (error) {
+      if (error instanceof AdtRequestTimeoutError) throw error
       lastError = error
     }
 
@@ -341,8 +401,9 @@ export class AdtBackend implements SapBackend {
 
     for (const candidate of candidates) {
       try {
-        return { source: await client.getObjectSource(candidate), uriUsed: candidate }
+        return { source: await readObjectSource(client, candidate), uriUsed: candidate }
       } catch (error) {
+        if (error instanceof AdtRequestTimeoutError) throw error
         lastError = error
       }
     }
@@ -352,9 +413,10 @@ export class AdtBackend implements SapBackend {
       const resolved = path.at(-1)?.["adtcore:uri"]
       if (resolved) {
         const candidate = optimalSourceUri(detectedType, resolved)
-        return { source: await client.getObjectSource(candidate), uriUsed: candidate }
+        return { source: await readObjectSource(client, candidate), uriUsed: candidate }
       }
     } catch (error) {
+      if (error instanceof AdtRequestTimeoutError) throw error
       lastError = error
     }
 
@@ -371,18 +433,46 @@ export class AdtBackend implements SapBackend {
       ? objectUri
       : `${objectUri.replace(/\/$/, "")}/source/main`
     try {
-      const result = await client.objectEnhancements(sourceUri, undefined, includeSource)
+      const result = client.httpClient
+        ? await withAdtStageTimeout(
+            "ENHANCEMENT_READ_TIMEOUT",
+            "enhancement metadata read",
+            sourceUri,
+            ENHANCEMENT_READ_TIMEOUT_MS,
+            () =>
+              requestObjectEnhancements(
+                boundedAdtHttp(client.httpClient, ENHANCEMENT_READ_TIMEOUT_MS),
+                sourceUri,
+                undefined,
+                includeSource
+              )
+          )
+        : await client.objectEnhancements(sourceUri, undefined, includeSource)
       return result.implementations.flatMap((implementation) =>
         implementation.elements.map((element) => ({
           name: implementation.name,
-          startLine: element.position?.startLine ?? 0,
+          type: implementation.type,
+          version: implementation.version,
+          elementId: element.id,
+          fullname: element.fullname,
+          mode: element.mode,
+          replacing: element.replacing,
+          ...(element.position
+            ? {
+                startLine: element.position.startLine,
+                startColumn: element.position.startColumn,
+                positionUri: element.position.uri
+              }
+            : {}),
           ...(element.uri ? { uri: element.uri } : {}),
-          ...(element.source === undefined ? {} : { source: element.source })
+          ...(element.source === undefined ? {} : { source: element.source }),
+          ...(implementation.enhancedObject
+            ? { enhancedObject: implementation.enhancedObject }
+            : {})
         }))
       )
-    } catch {
-      // The source service treats unsupported enhancement endpoints as no results.
-      return []
+    } catch (error) {
+      throw capabilityFailure("enhancement metadata read", error)
     }
   }
 
@@ -390,14 +480,38 @@ export class AdtBackend implements SapBackend {
     connectionId: string,
     uri: string,
     line: number,
-    character: number
-  ): Promise<UsageReferenceInfo[]> {
+    character: number,
+    source?: string
+  ): Promise<UsageReferenceInfo[] | LegacyUsageReferences> {
     const client = await this.getClient(connectionId)
+    const traced = whereUsedHttp(client.statelessClone.httpClient)
+    let engine: "ADT_WHERE_USED" | "ADT_RIS_WHEREUSED" = "ADT_WHERE_USED"
     let references
     try {
-      references = await client.statelessClone.usageReferences(uri, line, character)
+      const target = normalizeAdtUri(uri, connectionId)
+      const paths = new Set(
+        (await adtDiscovery(traced.http)).flatMap((workspace) =>
+          workspace.collection.map((collection) => collection.href)
+        )
+      )
+      if (
+        !paths.has("/sap/bc/adt/repository/informationsystem/usageReferences") &&
+        legacyWhereUsedPaths.every((path) => paths.has(path))
+      ) {
+        engine = "ADT_RIS_WHEREUSED"
+        const currentSource = source ?? (await this.readSourceByUri(connectionId, uri)).source
+        const result = await legacyWhereUsed(traced.http, target, line, character, currentSource)
+        return { ...result, requestTrace: traced.requests }
+      }
+      // SDK 8.4.3 omits the cursor when column is zero; supply the complete URI.
+      references = await requestUsageReferences(traced.http, `${target}#start=${line},${character}`)
     } catch (error) {
-      throw capabilityFailure("where-used", error)
+      const last = traced.requests.at(-1)
+      const message =
+        last?.outcome === "timeout" || last?.outcome === "budget-exhausted"
+          ? `where-used capability request-failed: ${last.stage} ${last.outcome} after ${last.elapsedMs}ms (request budget ${last.timeoutMs}ms); SAP cancellation is unconfirmed`
+          : capabilityFailure("where-used", error).message
+      throw new WhereUsedRequestError(message, traced.requests, engine, error)
     }
     return references.map((reference) => ({
       uri: reference.uri,
@@ -413,6 +527,8 @@ export class AdtBackend implements SapBackend {
     connectionId: string,
     references: UsageReferenceInfo[]
   ): Promise<UsageSnippetInfo[]> {
+    if (references.some((reference) => reference.identifierKind === "ADT_RIS_URI"))
+      throw new Error("Legacy RIS references do not support modern usage snippets.")
     const client = await this.getClient(connectionId)
     const snippets = await client.statelessClone.usageReferenceSnippets(
       references.map((reference) => ({ objectIdentifier: reference.objectIdentifier })) as never
@@ -439,11 +555,20 @@ export class AdtBackend implements SapBackend {
   async runQuery(
     connectionId: string,
     sql: string,
-    maxRows: number
+    maxRows: number,
+    options?: { allowScopedFallback: boolean }
   ): Promise<Record<string, unknown>[]> {
     const client = await this.getClient(connectionId)
-    const result = await client.runQuery(sql, maxRows, true)
-    return result.values as Record<string, unknown>[]
+    try {
+      return await runSapDataQuery(client.httpClient, sql, maxRows)
+    } catch (error) {
+      if (options?.allowScopedFallback === false) throw error
+      const config = this.configs.get(connectionId.toLowerCase())
+      if (!config || config.id.toLowerCase() !== "w200" || config.client !== "200") throw error
+      return runScopedQueryFallback(sql, maxRows, config.client, error, (request) =>
+        this.callRemoteFunction(connectionId, request)
+      )
+    }
   }
 
   async listUserTransports(connectionId: string, user: string) {
@@ -476,6 +601,33 @@ export class AdtBackend implements SapBackend {
     })
     requireRepositoryResult(result, "transport detail read")
     return transportDetailsFromRepository(result.source, transportNumber)
+  }
+
+  async cleanupTransportEntries(
+    connectionId: string,
+    taskNumber: string,
+    parentTransportNumber: string,
+    entries: TransportCleanupEntry[]
+  ): Promise<void> {
+    await this.withStatefulClient(connectionId, async (client) => {
+      const body = buildTransportCleanupRequest(taskNumber, parentTransportNumber, entries)
+      await client.httpClient.request(
+        `/sap/bc/adt/cts/transportrequests/${encodeURIComponent(taskNumber)}`,
+        {
+          method: "PUT",
+          body,
+          headers: {
+            Accept: "application/vnd.sap.adt.transportorganizer.v1+xml",
+            "Content-Type": "application/vnd.sap.adt.transportorganizer.v1+xml"
+          }
+        }
+      )
+    })
+  }
+
+  async inactiveObjectInventory(connectionId: string) {
+    const client = await this.getClient(connectionId)
+    return readInactiveInventory(client.statelessClone.httpClient)
   }
 
   async exportResource(
@@ -645,8 +797,21 @@ export class AdtBackend implements SapBackend {
     const client = await this.getClient(connectionId)
     try {
       const source = await this.readSourceByUri(connectionId, fileUri)
-      return await client.syntaxCheck(source.uriUsed, source.uriUsed, source.source)
+      return await withAdtStageTimeout(
+        "SYNTAX_CHECK_TIMEOUT",
+        "syntax check",
+        source.uriUsed,
+        SYNTAX_CHECK_TIMEOUT_MS,
+        () =>
+          requestSyntaxCheck(
+            boundedAdtHttp(client.httpClient, SYNTAX_CHECK_TIMEOUT_MS),
+            source.uriUsed,
+            source.uriUsed,
+            source.source
+          )
+      )
     } catch (error) {
+      if (error instanceof AdtRequestTimeoutError) throw error
       throw capabilityFailure("syntax-diagnostics", error)
     }
   }
@@ -656,53 +821,29 @@ export class AdtBackend implements SapBackend {
     const config = this.configs.get(connectionId.toLowerCase())
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
     try {
-      let variant = config.atcVariant
-      if (variant) {
-        if (!(await client.atcCheckVariant(variant))) {
-          throw new Error(`Configured ATC variant is not available: ${variant}`)
-        }
-      } else {
-        const customizing = await client.atcCustomizing()
-        const configured = customizing.properties.find(
-          (property) => property.name === "systemCheckVariant"
-        )?.value
-        if (!configured || typeof configured !== "string") {
-          throw new Error("SAP did not provide a system ATC check variant")
-        }
-        variant = configured
-        if (!(await client.atcCheckVariant(variant))) {
-          throw new Error(`System ATC variant is not available: ${variant}`)
-        }
-      }
-
       const normalized = normalizeAdtUri(objectUri, connectionId)
       const targetUri = optimalSourceUri(detectTypeFromUri(normalized), normalized)
-      const run = await client.createAtcRun(variant, targetUri)
-      const worklist = await client.atcWorklists(
-        run.id,
-        run.timestamp,
-        "99999999999999999999999999999999"
-      )
-      return {
-        variant,
-        findings: worklist.objects.flatMap((object) =>
-          object.findings.map((finding) => ({
-            objectName: object.name,
-            objectType: object.type,
-            messageTitle: finding.messageTitle,
-            checkTitle: finding.checkTitle,
-            checkId: finding.checkId,
-            priority: finding.priority,
-            uri: finding.location.uri,
-            line: finding.location.range.start.line,
-            character: finding.location.range.start.column,
-            exemptionApproval: finding.exemptionApproval,
-            docUri: finding.link?.href ?? ""
-          }))
-        )
-      }
+      return await executeNativeAtc(client, targetUri, config.atcVariant)
     } catch (error) {
+      if (error instanceof AtcStageError) {
+        throw new AtcStageError(error.stage, capabilityFailure("atc", error.cause))
+      }
       throw capabilityFailure("atc", error)
+    }
+  }
+
+  async inspectAtc(connectionId: string) {
+    const client = await this.getClient(connectionId)
+    try {
+      return await inspectNativeAtc(
+        client,
+        this.configs.get(connectionId.toLowerCase())?.atcVariant
+      )
+    } catch (error) {
+      throw new AtcStageError(
+        "customizing",
+        capabilityFailure("atc", error instanceof AtcStageError ? error.cause : error)
+      )
     }
   }
 
@@ -742,17 +883,47 @@ export class AdtBackend implements SapBackend {
     fileUri: string,
     oldString: string,
     newString: string,
-    transportNumber?: string
+    transportNumber?: string,
+    expectedSourceFingerprint?: string,
+    recoverInactiveSource?: boolean
   ): Promise<SourceMutationInfo> {
     return this.withStatefulClient(connectionId, (client) =>
-      replaceSourceWithClient(client, connectionId, fileUri, oldString, newString, transportNumber)
+      replaceSourceWithClient(
+        client,
+        connectionId,
+        fileUri,
+        oldString,
+        newString,
+        transportNumber,
+        expectedSourceFingerprint,
+        recoverInactiveSource
+      )
     )
+  }
+
+  async inspectSource(connectionId: string, fileUri: string): Promise<SourceInspectionInfo> {
+    return inspectSourceWithClient(await this.getClient(connectionId), connectionId, fileUri)
   }
 
   async activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo> {
     return this.withStatefulClient(connectionId, async (client) => {
       const target = resolveEditableSourceTarget(fileUri, connectionId)
-      return activateTarget(client, target.objectUri, target.objectName)
+      const before = await inspectSourceWithClient(client, connectionId, fileUri)
+      const expected = before.inactiveSource ?? before.activeSource
+      const activation = await activateTarget(client, target.objectUri, target.objectName)
+      if (activation.success) {
+        const active = await client.getObjectSource(target.sourceUri, { version: "active" })
+        if (active !== expected) {
+          activation.success = false
+          activation.messages.push({
+            type: "E",
+            line: 0,
+            text: "ACTIVE_SOURCE_FINGERPRINT_MISMATCH: activate-only readback differs from the reviewed source.",
+            href: target.sourceUri
+          })
+        }
+      }
+      return activation
     })
   }
 
@@ -1287,7 +1458,7 @@ export class AdtBackend implements SapBackend {
 
     const config = this.configs.get(id)
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
-    const password = process.env[config.passwordEnv]
+    const password = this.passwordFor(config)
     if (!password) {
       throw new Error(`Password environment variable is not set: ${config.passwordEnv}`)
     }
@@ -1318,7 +1489,7 @@ export class AdtBackend implements SapBackend {
   private async createDebugClient(connectionId: string): Promise<ADTClient> {
     const config = this.configs.get(connectionId.toLowerCase())
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
-    const password = process.env[config.passwordEnv]
+    const password = this.passwordFor(config)
     if (!password) {
       throw new Error(`Password environment variable is not set: ${config.passwordEnv}`)
     }
@@ -1343,7 +1514,7 @@ export class AdtBackend implements SapBackend {
   ): Promise<T> {
     const config = this.configs.get(connectionId.toLowerCase())
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
-    const password = process.env[config.passwordEnv]
+    const password = this.passwordFor(config)
     if (!password) {
       throw new Error(`Password environment variable is not set: ${config.passwordEnv}`)
     }
@@ -1419,13 +1590,34 @@ export function buildSapHelperEnvelope(request: SapHelperRequest): string {
     `<?xml version="1.0" encoding="utf-8"?>` +
     `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">` +
     `<soapenv:Body>` +
-    `<n1:Z_CODEX_MCP_EXECUTE xmlns:n1="urn:sap-com:document:sap:rfc:functions">` +
+    `<n1:Z_ORVANTA_MCP_EXECUTE xmlns:n1="urn:sap-com:document:sap:rfc:functions">` +
     `<IV_OPERATION>${encodeXml(request.operation)}</IV_OPERATION>` +
     `<IV_OBJECT_TYPE>${encodeXml(request.objectType ?? "")}</IV_OBJECT_TYPE>` +
     `<IV_OBJECT_NAME>${encodeXml(request.objectName ?? "")}</IV_OBJECT_NAME>` +
-    `</n1:Z_CODEX_MCP_EXECUTE>` +
+    `</n1:Z_ORVANTA_MCP_EXECUTE>` +
     `</soapenv:Body>` +
     `</soapenv:Envelope>`
+  )
+}
+
+export function buildTransportCleanupRequest(
+  taskNumber: string,
+  parentTransportNumber: string,
+  entries: TransportCleanupEntry[]
+): string {
+  const objects = entries
+    .map(
+      (entry) =>
+        `<tm:abap_object tm:pgmid="${encodeXml(entry.pgmid)}" tm:type="${encodeXml(entry.type)}" tm:name="${encodeXml(entry.name)}"` +
+        `${entry.wbType ? ` tm:wbtype="${encodeXml(entry.wbType)}"` : ""}` +
+        ` tm:position="${encodeXml(entry.position)}"/>`
+    )
+    .join("")
+  return (
+    `<?xml version="1.0" encoding="utf-8"?>` +
+    `<tm:root xmlns:tm="http://www.sap.com/cts/adt/tm" tm:useraction="removeobject" tm:number="${encodeXml(taskNumber)}">` +
+    `<tm:request tm:number="${encodeXml(parentTransportNumber)}">${objects}</tm:request>` +
+    `</tm:root>`
   )
 }
 
@@ -1477,9 +1669,13 @@ export function buildRemoteFunctionEnvelope(request: RemoteFunctionRequest): str
 
 export function parseRemoteFunctionResponse(
   body: string,
-  outputParameters: RemoteFunctionParameterShape[]
+  outputParameters: RemoteFunctionParameterShape[],
+  preserveTableReaderPadding = false
 ): RemoteFunctionResult {
-  const document = parse(body, { parseTagValue: false, trimValues: true })
+  const document = parse(body, { parseTagValue: false, trimValues: true, htmlEntities: true })
+  const rawDocument = preserveTableReaderPadding
+    ? parse(body, { parseTagValue: false, trimValues: false, htmlEntities: true })
+    : document
   const faultMessage = findXmlValue(document, "faultstring")
   if (faultMessage !== undefined) {
     return {
@@ -1505,9 +1701,10 @@ export function parseRemoteFunctionResponse(
         }
         return [
           parameter.name,
-          findXmlRows(document, parameter.name).map((row) =>
-            filterRemoteRecord(row, parameter.fields ?? [])
-          )
+          findXmlRows(
+            preserveTableReaderPadding && parameter.name === "DATA" ? rawDocument : document,
+            parameter.name
+          ).map((row) => filterRemoteRecord(row, parameter.fields ?? []))
         ]
       })
     )
@@ -1546,7 +1743,7 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
     `<?xml version="1.0" encoding="utf-8"?>` +
     `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">` +
     `<soapenv:Body>` +
-    `<n1:Z_CODEX_MCP_DYNPRO_API xmlns:n1="urn:sap-com:document:sap:rfc:functions">` +
+    `<n1:Z_ORVANTA_MCP_DYNPRO_API xmlns:n1="urn:sap-com:document:sap:rfc:functions">` +
     xmlElement("IV_OPERATION", request.operation) +
     xmlElement("IV_OBJECT_TYPE", request.objectType ?? "") +
     xmlElement("IV_OBJECT_NAME", request.objectName ?? "") +
@@ -1567,7 +1764,7 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
     ) +
     `<ET_TCODES></ET_TCODES>` +
     `<ET_GUI_ATTRIBUTES></ET_GUI_ATTRIBUTES>` +
-    `</n1:Z_CODEX_MCP_DYNPRO_API>` +
+    `</n1:Z_ORVANTA_MCP_DYNPRO_API>` +
     `</soapenv:Body>` +
     `</soapenv:Envelope>`
   )
@@ -1653,7 +1850,7 @@ function serializeScreenPatchPayload(request: SapRepositoryRequest): string[] {
 }
 
 export function parseSapRepositoryResponse(body: string): SapRepositoryResult {
-  const document = parse(body, { parseTagValue: false, trimValues: true })
+  const document = parse(body, { parseTagValue: false, trimValues: true, htmlEntities: true })
   const fault = findXmlValue(document, "faultstring")
   if (fault) throw new Error(`SAP SOAP fault: ${fault}`)
   const result: SapRepositoryResult = {
@@ -1682,7 +1879,7 @@ export function buildSapDdicEnvelope(request: SapDdicRequest): string {
     `<?xml version="1.0" encoding="utf-8"?>` +
     `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">` +
     `<soapenv:Body>` +
-    `<n1:Z_CODEX_MCP_DDIC_API xmlns:n1="urn:sap-com:document:sap:rfc:functions">` +
+    `<n1:Z_ORVANTA_MCP_DDIC_API xmlns:n1="urn:sap-com:document:sap:rfc:functions">` +
     xmlElement("IV_OPERATION", request.operation) +
     xmlElement("IV_OBJECT_TYPE", "") +
     xmlElement("IV_OBJECT_NAME", request.objectName) +
@@ -1703,7 +1900,7 @@ export function buildSapDdicEnvelope(request: SapDdicRequest): string {
     ) +
     `<ET_TCODES></ET_TCODES>` +
     `<ET_GUI_ATTRIBUTES></ET_GUI_ATTRIBUTES>` +
-    `</n1:Z_CODEX_MCP_DDIC_API>` +
+    `</n1:Z_ORVANTA_MCP_DDIC_API>` +
     `</soapenv:Body>` +
     `</soapenv:Envelope>`
   )
@@ -1738,6 +1935,7 @@ export function parseSapDdicResponse(body: string): SapDdicResult {
     code: findXmlValue(document, "EV_CODE") ?? "",
     message: findXmlValue(document, "EV_MESSAGE") ?? "",
     version: findXmlValue(document, "EV_VERSION") ?? "",
+    metadata: payload.metadata,
     packageName: payload.metadata.PACKAGE ?? "",
     objectVersion: payload.metadata.VERSION ?? "",
     recordedRequest: payload.metadata.REQUEST ?? "",
@@ -1880,9 +2078,9 @@ async function postSapSoap(
   config: ConnectionConfig,
   soapAction: string,
   body: string,
-  allowSoapFault = false
+  allowSoapFault = false,
+  password?: string
 ): Promise<string> {
-  const password = process.env[config.passwordEnv]
   if (!password) {
     throw new Error(`Password environment variable is not set: ${config.passwordEnv}`)
   }
@@ -2546,7 +2744,9 @@ function transportDetailsFromRepository(source: string[], requested: string): Tr
     "tm:type": row.TYPE ?? "",
     "tm:name": row.NAME ?? "",
     "tm:dummy_uri": "",
-    "tm:obj_info": row.OBJ_INFO ?? ""
+    "tm:obj_info": row.OBJ_INFO ?? "",
+    "tm:wbtype": row.WBTYPE ?? "",
+    "tm:position": row.POSITION ?? ""
   })
   const tasks = repositoryPayloadRows(source, "F").map((row) => {
     const taskNumber = row.NUMBER ?? ""
@@ -2947,9 +3147,19 @@ export async function replaceSourceWithClient(
   fileUri: string,
   oldString: string,
   newString: string,
-  transportNumber?: string
+  transportNumber?: string,
+  expectedSourceFingerprint?: string,
+  recoverInactiveSource = false
 ): Promise<SourceMutationInfo> {
   const target = resolveEditableSourceTarget(fileUri, connectionId)
+  if (expectedSourceFingerprint && !/^[a-f0-9]{64}$/i.test(expectedSourceFingerprint)) {
+    throw new Error("expectedSourceFingerprint must be a SHA-256 fingerprint")
+  }
+  if (recoverInactiveSource && !expectedSourceFingerprint) {
+    throw new Error(
+      "INACTIVE_SOURCE_RECOVERY_FINGERPRINT_REQUIRED: expectedSourceFingerprint must identify the reviewed inactive source."
+    )
+  }
   if (client.stateful !== session_types.stateful) {
     throw new Error("SAP source replacement requires a dedicated stateful ADT session.")
   }
@@ -2962,15 +3172,35 @@ export async function replaceSourceWithClient(
   }
   let operationError: unknown
   let selectedTransport = ""
+  let sourceFingerprintBefore = ""
+  let sourceFingerprintAfter = ""
   try {
-    const existingInactive = await inactiveObjectForTarget(client, target.objectUri)
-    if (existingInactive) {
+    const inspection = await inspectSourceWithClient(client, connectionId, fileUri)
+    const inactiveSource = inspection.inactiveSource
+    if (inactiveSource !== null && !recoverInactiveSource) {
       throw new Error(
-        `${target.objectName} already has inactive SAP source. Refusing to overwrite an existing inactive version; activate or resolve it first.`
+        `${target.objectName} already has inactive SAP source. Refusing to overwrite an existing inactive version by default. ` +
+          "To repair the reviewed draft, set recoverInactiveSource=true and expectedSourceFingerprint to its exact SHA-256; otherwise activate or resolve it first."
       )
     }
-    const currentSource = await client.getObjectSource(target.sourceUri, { version: "active" })
+    if (recoverInactiveSource && inactiveSource === null) {
+      throw new Error(
+        `INACTIVE_SOURCE_RECOVERY_NOT_AVAILABLE: ${target.objectName} has no inactive SAP source to repair.`
+      )
+    }
+    let currentSource = inspection.activeSource
+    if (recoverInactiveSource && inactiveSource !== null) currentSource = inactiveSource
+    sourceFingerprintBefore = createHash("sha256").update(currentSource).digest("hex")
+    if (
+      expectedSourceFingerprint &&
+      expectedSourceFingerprint.toLowerCase() !== sourceFingerprintBefore
+    ) {
+      throw new Error(
+        `SOURCE_FINGERPRINT_CONFLICT: ${recoverInactiveSource ? "inactive" : "active"} source changed since review`
+      )
+    }
     const updatedSource = findAndReplaceSource(currentSource, oldString, newString)
+    sourceFingerprintAfter = createHash("sha256").update(updatedSource).digest("hex")
     selectedTransport = selectTransport(lock, transportNumber)
     await client.setObjectSource(
       target.sourceUri,
@@ -2990,11 +3220,55 @@ export async function replaceSourceWithClient(
         `${errorText(operationError)}; SAP unlock also failed: ${errorText(unlockError)}`
       )
     }
-    throw new Error(`SAP source was saved but unlock failed: ${errorText(unlockError)}`)
+    throw new Error(
+      `SAP source was saved but unlock failed: ${errorText(unlockError)}; ` +
+        JSON.stringify({
+          saveSucceeded: true,
+          unlockSucceeded: false,
+          activationAttempted: false,
+          activationSucceeded: false,
+          sourceFingerprintBefore,
+          sourceFingerprintAfter,
+          automaticRetry: false,
+          automaticRollback: false
+        })
+    )
   }
   if (operationError) throw operationError
 
   const activation = await activateTarget(client, target.objectUri, target.objectName)
+  let activeFingerprint: string | null = null
+  let inactiveFingerprint: string | null = null
+  let readbackError: string | undefined
+  try {
+    const activeSource = await client.getObjectSource(target.sourceUri, { version: "active" })
+    activeFingerprint = createHash("sha256").update(activeSource).digest("hex")
+    if (!activation.success || activeFingerprint !== sourceFingerprintAfter) {
+      const inspection = await inspectSourceWithClient(client, connectionId, fileUri)
+      inactiveFingerprint =
+        inspection.inactiveSource === null
+          ? null
+          : createHash("sha256").update(inspection.inactiveSource).digest("hex")
+    }
+    if (activation.success && activeFingerprint !== sourceFingerprintAfter) {
+      activation.success = false
+      activation.messages.push({
+        type: "E",
+        line: 0,
+        text: "ACTIVE_SOURCE_FINGERPRINT_MISMATCH: active source does not match the saved candidate.",
+        href: target.sourceUri
+      })
+    }
+  } catch (error) {
+    readbackError = errorText(error)
+    activation.success = false
+    activation.messages.push({
+      type: "E",
+      line: 0,
+      text: `SOURCE_READBACK_UNAVAILABLE: ${readbackError}`,
+      href: target.sourceUri
+    })
+  }
   return {
     fileUri,
     sourceUri: target.sourceUri,
@@ -3002,7 +3276,49 @@ export async function replaceSourceWithClient(
     oldLineCount: lineCount(oldString),
     newLineCount: lineCount(newString),
     transportNumber: selectedTransport,
-    activation
+    activation,
+    sourceFingerprintBefore,
+    sourceFingerprintAfter,
+    saveSucceeded: true,
+    unlockSucceeded: true,
+    activationAttempted: activation.attempted ?? false,
+    activationSucceeded: activation.success,
+    activeFingerprint,
+    inactiveFingerprint,
+    ...(readbackError ? { readbackError } : {})
+  }
+}
+
+export async function inspectSourceWithClient(
+  client: ADTClient,
+  connectionId: string,
+  fileUri: string
+): Promise<SourceInspectionInfo> {
+  const target = resolveEditableSourceTarget(fileUri, connectionId)
+  const activeSource = await client.getObjectSource(target.sourceUri, { version: "active" })
+  const contexts = await includeMainProgramUris(client, target.objectUri)
+  let inactive
+  try {
+    inactive = await inactiveObjectForTarget(client, target.objectUri)
+  } catch (error) {
+    if (error instanceof InactiveInventoryError) {
+      throw error.withContext({
+        targetUri: target.objectUri,
+        ...(contexts.length === 1 ? { mainProgramUri: contexts[0] } : {})
+      })
+    }
+    throw error
+  }
+  // A valid inventory can still omit a draft. Probe the target as well; read failures
+  // remain unavailable, never evidence that an inactive version does not exist.
+  const candidate = await client.getObjectSource(target.sourceUri, { version: "inactive" })
+  const inactiveSource = inactive || candidate !== activeSource ? candidate : null
+  return {
+    sourceUri: target.sourceUri,
+    objectUri: target.objectUri,
+    objectName: target.objectName,
+    activeSource,
+    inactiveSource
   }
 }
 
@@ -3128,32 +3444,80 @@ async function describeDiscovery(client: ADTClient, hrefPrefix: string): Promise
 
 async function inactiveObjects(client: ADTClient) {
   try {
-    const records = await client.inactiveObjects()
-    return records.length ? records : await client.inactiveObjects("application/xml")
+    const inventory = await readInactiveInventory(client.httpClient)
+    return inventory.entries.map((entry) => ({
+      object: {
+        "adtcore:uri": entry.uri,
+        "adtcore:name": entry.name,
+        "adtcore:type": entry.type,
+        "adtcore:parentUri": entry.parentUri ?? "",
+        user: entry.user,
+        deleted: entry.deleted
+      }
+    }))
   } catch (error) {
+    if (error instanceof InactiveInventoryError) throw error
     throw capabilityFailure("inactive-object-check", error)
   }
 }
 
 async function inactiveObjectForTarget(client: ADTClient, objectUri: string) {
   const records = await inactiveObjects(client)
-  return records
+  const matches = records
     .map((record) => record.object)
-    .find((object) => object && sameObjectUri(object["adtcore:uri"], objectUri))
+    .filter((object) => sameObjectUri(object["adtcore:uri"], objectUri))
+  if (matches.length > 1) {
+    throw new Error(
+      "INACTIVE_TARGET_CONTEXT_AMBIGUOUS: multiple inactive references match the target."
+    )
+  }
+  return matches[0]
 }
 
-async function activateTarget(
+export async function activateTarget(
   client: ADTClient,
   objectUri: string,
   objectName: string
 ): Promise<ActivationInfo> {
+  let attempted = false
   try {
-    const inactive = await inactiveObjectForTarget(client, objectUri)
-    const result = inactive
-      ? await client.activate(inactive, true)
-      : await client.activate(objectName, objectUri, undefined, true)
+    const contexts = await includeMainProgramUris(client, objectUri)
+    let inactive
+    try {
+      inactive = await inactiveObjectForTarget(client, objectUri)
+    } catch (error) {
+      if (error instanceof InactiveInventoryError) {
+        throw error.withContext({
+          targetUri: objectUri,
+          ...(contexts.length === 1 ? { mainProgramUri: contexts[0] } : {})
+        })
+      }
+      throw error
+    }
+    let context: string | undefined
+    if (contexts.length) {
+      const supplied = inactive
+        ? new URL(inactive["adtcore:uri"], "https://sap.invalid").searchParams.get("context")
+        : null
+      context = supplied
+        ? contexts.find((uri) => sameObjectUri(uri, supplied))
+        : contexts.length === 1
+          ? contexts[0]
+          : undefined
+      if (!context) {
+        throw new Error(
+          "INCLUDE_MAIN_PROGRAM_AMBIGUOUS: resolve the SAP main-program context before activation."
+        )
+      }
+    }
+    attempted = true
+    // The inactive inventory identifies the draft and, for includes, its parent context.
+    // Keep that metadata out of the activation payload: older ECC releases can reject
+    // the object-reference overload when it adds type or an empty parent URI.
+    const result = await client.activate(objectName, objectUri, context, true)
     return {
       success: result.success,
+      attempted,
       messages: result.messages.map((message) => ({
         type: message.type,
         line: message.line,
@@ -3165,12 +3529,38 @@ async function activateTarget(
         .filter((name): name is string => Boolean(name))
     }
   } catch (error) {
-    throw capabilityFailure("activation", error)
+    return {
+      success: false,
+      attempted,
+      messages: [
+        {
+          type: "E",
+          line: 0,
+          text: capabilityFailure("activation", error).message,
+          href: objectUri
+        }
+      ],
+      inactiveObjects: []
+    }
   }
 }
 
+async function includeMainProgramUris(client: ADTClient, objectUri: string): Promise<string[]> {
+  if (!/\/(?:programs|functions\/groups\/[^/]+)\/includes\/[^/]+$/i.test(objectUri)) return []
+  const programs = await client.mainPrograms(objectUri)
+  const contexts = [...new Set(programs.map((program) => program["adtcore:uri"]))]
+  if (!contexts.length || contexts.some((uri) => !/^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i.test(uri))) {
+    throw new Error("INCLUDE_MAIN_PROGRAM_UNAVAILABLE: no valid SAP main-program context.")
+  }
+  return contexts
+}
+
 function sameObjectUri(left: string, right: string): boolean {
-  const normalize = (value: string) => value.replace(/\/source\/main$/i, "").replace(/\/$/, "")
+  const normalize = (value: string) =>
+    value
+      .replace(/[?#].*$/, "")
+      .replace(/\/$/, "")
+      .replace(/\/source\/main$/i, "")
   return normalize(left).toLowerCase() === normalize(right).toLowerCase()
 }
 
@@ -3196,6 +3586,100 @@ function lineCount(value: string): number {
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+export class AdtRequestTimeoutError extends Error {
+  constructor(
+    readonly code: string,
+    stage: string,
+    uri: string,
+    timeoutMs: number,
+    elapsedMs: number
+  ) {
+    super(
+      `${code}: ${stage} timed out (budget ${timeoutMs}ms, elapsed ${elapsedMs}ms) for ${uri}; ` +
+        "response body and line count are unavailable; the local HTTP request was aborted, " +
+        "SAP-side cancellation is unconfirmed, and no automatic retry was started"
+    )
+    this.name = "AdtRequestTimeoutError"
+  }
+}
+
+function boundedAdtHttp(http: AdtHTTP, timeoutMs: number): AdtHTTP {
+  return {
+    request(url: string, options: RequestOptions = {}) {
+      const requestedTimeout = options.timeout
+      return http.request(url, {
+        ...options,
+        timeout:
+          requestedTimeout && requestedTimeout > 0
+            ? Math.min(requestedTimeout, timeoutMs)
+            : timeoutMs
+      })
+    }
+  } as AdtHTTP
+}
+
+async function withAdtStageTimeout<T>(
+  code: string,
+  stage: string,
+  uri: string,
+  timeoutMs: number,
+  action: () => Promise<T>
+): Promise<T> {
+  const startedAt = Date.now()
+  try {
+    return await action()
+  } catch (error) {
+    if (!isTimeoutError(error)) throw error
+    throw new AdtRequestTimeoutError(code, stage, uri, timeoutMs, Date.now() - startedAt)
+  }
+}
+
+async function readObjectSource(
+  client: ADTClient,
+  uri: string,
+  options?: SourceReadOptions
+): Promise<string> {
+  if (!client.httpClient) {
+    return client.getObjectSource(uri, options?.version ? { version: options.version } : undefined)
+  }
+  return withAdtStageTimeout(
+    "SOURCE_READ_TIMEOUT",
+    "active source read",
+    uri,
+    SOURCE_READ_TIMEOUT_MS,
+    () =>
+      requestObjectSource(
+        boundedAdtHttp(client.httpClient, SOURCE_READ_TIMEOUT_MS),
+        uri,
+        options?.version ? { version: options.version } : undefined
+      )
+  )
+}
+
+function isTimeoutError(error: unknown): boolean {
+  const pending: unknown[] = [error]
+  const seen = new Set<unknown>()
+  while (pending.length) {
+    const current = pending.shift()
+    if (!current || seen.has(current)) continue
+    seen.add(current)
+    if (typeof current === "string") {
+      if (/timeout|timed out|ECONNABORTED|ETIMEDOUT/i.test(current)) return true
+      continue
+    }
+    if (typeof current !== "object") continue
+    const record = current as Record<string, unknown>
+    if (
+      /ECONNABORTED|ETIMEDOUT/i.test(String(record.code ?? "")) ||
+      /timeout|timed out/i.test(String(record.message ?? ""))
+    ) {
+      return true
+    }
+    pending.push(record.cause, record.parent)
+  }
+  return false
 }
 
 function writeClientOptions(
@@ -3232,7 +3716,62 @@ function mapUnitTestAlert(alert: {
   return { kind: alert.kind, title: alert.title, details: alert.details }
 }
 
+async function searchObjectsForType(
+  client: ADTClient,
+  pattern: string,
+  type: string
+): Promise<AbapObjectInfo[]> {
+  const matches = await client.searchObject(pattern.toUpperCase(), type)
+  return matches.flatMap((raw) => {
+    const record = raw as unknown as Record<string, string | undefined>
+    const name = record["adtcore:name"]
+    const objectType = record["adtcore:type"]
+    if (!name || !objectType) return []
+    return [
+      {
+        name,
+        type: objectType,
+        description: record["adtcore:description"] ?? "",
+        package: record["adtcore:packageName"] ?? "",
+        systemType: /^[ZY]/.test(name) ? ("CUSTOM" as const) : ("STANDARD" as const),
+        uri: record["adtcore:uri"] ?? ""
+      }
+    ]
+  })
+}
+
+function classifyObjectSearchFailure(
+  error: unknown
+): Pick<ObjectTypeSearchResult, "status" | "reason"> {
+  const failure = capabilityFailure("repository object search", error)
+  if (/unsupported-endpoint/i.test(failure.message)) {
+    return {
+      status: "unsupported",
+      reason: "The SAP system does not expose repository search for this object type."
+    }
+  }
+  if (/forbidden-or-not-authorized/i.test(failure.message)) {
+    return {
+      status: "forbidden",
+      reason: "The SAP user is not authorized to search this repository object type."
+    }
+  }
+  if (/timeout|timed out/i.test(failure.message)) {
+    return {
+      status: "timeout",
+      reason: "The repository object search timed out; absence was not established."
+    }
+  }
+  return {
+    status: "error",
+    reason: "The repository object search failed; absence was not established."
+  }
+}
+
 export function capabilityFailure(capability: string, error: unknown): Error {
+  if (error instanceof InactiveInventoryError) {
+    return new Error(`${capability} capability parser-or-content-type: ${error.message}`)
+  }
   const adtError = fromError(error)
   const reportedStatus =
     "status" in adtError ? adtError.status : "err" in adtError ? adtError.err : 0

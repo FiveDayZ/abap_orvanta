@@ -2,6 +2,8 @@ import { createHash } from "node:crypto"
 import type { SapBackend, SapDdicOperation } from "./backend.js"
 import type { ToolService } from "./tools.js"
 import { hashWriteInput, type SapPreChangeEvidence } from "./write-operation-receipts.js"
+import { SmartformService } from "./smartforms.js"
+import { transportFingerprint } from "./transport-delivery.js"
 
 type EvidenceDraft = Omit<SapPreChangeEvidence, "observedAt" | "observationStatus">
 
@@ -26,7 +28,126 @@ export async function observeWritePreChange(
     warnings: []
   }
 
-  if (name === "upsert_abap_screen" || name === "patch_abap_screen") {
+  if (name === "cleanup_transport_entries") {
+    const parentTransportNumber = String(input.parentTransportNumber).toUpperCase()
+    const taskNumber = String(input.taskNumber).toUpperCase()
+    const request = await backend.transportDetails(connectionId, parentTransportNumber)
+    if (request["tm:number"].toUpperCase() !== parentTransportNumber) {
+      throw new Error("CTS_CLEANUP_PARENT_MISMATCH")
+    }
+    const task = request.tasks.find(
+      (candidate) => candidate["tm:number"].toUpperCase() === taskNumber
+    )
+    evidence.sources.push("transport_details")
+    evidence.exists = Boolean(task)
+    evidence.active = null
+    evidence.version = task?.["tm:status"] ?? request["tm:status"]
+    evidence.fingerprint = transportFingerprint(request)
+    evidence.requestNumber = parentTransportNumber
+    evidence.taskNumber = taskNumber
+    if (evidence.fingerprint !== String(input.expectedFingerprint).toLowerCase()) {
+      throw new Error("CTS_CLEANUP_STALE_FINGERPRINT")
+    }
+  } else if (["create_smartform", "save_smartform", "activate_smartform"].includes(name)) {
+    try {
+      const result = await new SmartformService(backend).read({
+        connectionId,
+        formName: String(input.formName),
+        language: String(input.language),
+        version: "saved"
+      })
+      evidence.exists = true
+      evidence.active = result.active
+      evidence.fingerprint = result.fingerprint
+      evidence.packageName = result.packageName
+      evidence.requestNumber = result.requestNumber
+      evidence.sources.push("smartform_repository_snapshot")
+      if (name === "create_smartform") throw new Error("SMARTFORM_ALREADY_EXISTS")
+      if (result.fingerprint !== input.expectedFingerprint)
+        throw new Error("SMARTFORM_STALE_FINGERPRINT")
+      if (result.packageName !== input.packageName) throw new Error("SMARTFORM_PACKAGE_MISMATCH")
+    } catch (error) {
+      if (
+        name === "create_smartform" &&
+        error instanceof Error &&
+        error.message === "SMARTFORM_NOT_FOUND: Smart Form does not exist"
+      ) {
+        evidence.exists = false
+        evidence.sources.push("smartform_explicit_not_found")
+      } else {
+        throw error
+      }
+    }
+  } else if (
+    name === "create_enhancement_hook_implementation" ||
+    name === "create_new_badi_implementation" ||
+    name === "update_enhancement_hook_implementation" ||
+    name === "update_new_badi_implementation" ||
+    name === "manage_enhancement_implementation_state" ||
+    name === "delete_enhancement_implementation"
+  ) {
+    const enhancementName = String(input.enhancementName)
+    try {
+      const value = parseJson(
+        await tools.readEnhancementImplementation({ enhancementName, connectionId })
+      )
+      evidence.sources.push("read_enhancement_implementation")
+      evidence.exists = true
+      evidence.active = booleanValue(
+        (value.definition as Record<string, unknown> | undefined)?.active
+      )
+      evidence.fingerprint = stringValue(value.fingerprint)
+      evidence.packageName = stringValue(value.packageName)
+      if (
+        name === "create_enhancement_hook_implementation" ||
+        name === "create_new_badi_implementation"
+      ) {
+        throw new Error("ENHANCEMENT_IMPLEMENTATION_ALREADY_EXISTS")
+      }
+      if (evidence.fingerprint !== String(input.expectedFingerprint).toLowerCase()) {
+        throw new Error("ENHANCEMENT_IMPLEMENTATION_STALE_FINGERPRINT")
+      }
+      if (evidence.packageName?.toUpperCase() !== String(input.packageName).toUpperCase()) {
+        throw new Error("ENHANCEMENT_IMPLEMENTATION_PACKAGE_MISMATCH")
+      }
+    } catch (error) {
+      if (
+        (name === "create_enhancement_hook_implementation" ||
+          name === "create_new_badi_implementation") &&
+        /ENHANCEMENT_IMPLEMENTATION_NOT_FOUND/.test(String(error))
+      ) {
+        evidence.sources.push("enhancement_implementation_explicit_not_found")
+        evidence.exists = false
+      } else {
+        throw error
+      }
+    }
+  } else if (name === "manage_classic_badi_implementation") {
+    const definitionName = String(input.definitionName ?? "")
+    if (!definitionName) throw new Error("Classic BAdI definitionName is required")
+    const value = parseJson(await tools.readClassicBadiDefinition({ definitionName, connectionId }))
+    const snapshot = classicBadiSnapshot(value, String(input.implementationName).toUpperCase())
+    evidence.sources.push("read_classic_badi_definition")
+    evidence.exists = snapshot !== undefined
+    if (snapshot) {
+      evidence.active = snapshot.active
+      evidence.fingerprint = createHash("sha256")
+        .update(JSON.stringify(snapshot.value))
+        .digest("hex")
+      evidence.packageName = snapshot.packageName
+    }
+    if (String(input.action) === "create") {
+      if (snapshot) throw new Error("CLASSIC_BADI_IMPLEMENTATION_ALREADY_EXISTS")
+    } else {
+      if (!snapshot) throw new Error("CLASSIC_BADI_IMPLEMENTATION_NOT_FOUND")
+      if (evidence.fingerprint !== String(input.expectedFingerprint).toLowerCase()) {
+        throw new Error("CLASSIC_BADI_IMPLEMENTATION_STALE_FINGERPRINT")
+      }
+      if (evidence.packageName?.toUpperCase() !== String(input.packageName).toUpperCase()) {
+        throw new Error("CLASSIC_BADI_IMPLEMENTATION_PACKAGE_MISMATCH")
+      }
+    }
+  } else if (name === "upsert_abap_screen" || name === "patch_abap_screen") {
     await observeJson(
       evidence,
       "read_abap_screen",
@@ -88,6 +209,7 @@ export async function observeWritePreChange(
     await observeAssignment(evidence, tools, connectionId, "TRAN", input.transactionCode, false)
   } else if (
     name === "create_function_module_with_interface" ||
+    name === "patch_function_module_interface" ||
     name === "test_remote_function_module" ||
     name === "invoke_customer_function_module"
   ) {
@@ -102,7 +224,7 @@ export async function observeWritePreChange(
       (value) => {
         evidence.exists = true
         evidence.active = true
-        evidence.fingerprint = stringValue(value.fingerprint)
+        evidence.fingerprint = stringValue(value.interfaceFingerprint ?? value.fingerprint)
       }
     )
     await observeAssignment(evidence, tools, connectionId, "FUGR/FF", input.functionName, true)
@@ -132,7 +254,8 @@ export async function observeWritePreChange(
     )
   } else if (
     name === "append_ddic_transparent_table_fields" ||
-    name === "patch_ddic_transparent_table_fields"
+    name === "patch_ddic_transparent_table_fields" ||
+    name === "patch_ddic_transparent_table_settings"
   ) {
     await observeJson(
       evidence,
@@ -148,6 +271,23 @@ export async function observeWritePreChange(
         evidence.version = stringValue(value.version)
         evidence.fingerprint = stringValue(value.fingerprint)
         evidence.packageName = stringValue(value.packageName)
+      }
+    )
+  } else if (name === "recover_ddic_table_conversion") {
+    await observeJson(
+      evidence,
+      "read_ddic_table_conversion_status",
+      () =>
+        tools.readDdicTableConversionStatus({
+          objectName: String(input.objectName),
+          connectionId
+        }),
+      (value) => {
+        evidence.exists = booleanValue(value.pending)
+        evidence.active = null
+        evidence.version = null
+        evidence.fingerprint = stringValue(value.worklistFingerprint)
+        evidence.packageName = stringValue(input.packageName)
       }
     )
   } else if (name === "delete_ddic_object") {
@@ -303,13 +443,17 @@ async function observeSourceTarget(
   backend: SapBackend
 ): Promise<void> {
   const uri = String(input.fileUri ?? input.url ?? "")
+  let sourceEvidence = "source"
   try {
     if (uri) {
-      const source = await backend.readSourceByUri(connectionId, uri)
+      const inspection = await backend.inspectSource(connectionId, uri)
+      const inactive = inspection.inactiveSource !== null
+      const source = inspection.inactiveSource ?? inspection.activeSource
+      sourceEvidence = inactive ? "inactive_source" : "active_source"
       evidence.exists = true
-      evidence.active = true
-      evidence.fingerprint = sourceFingerprint(source.source)
-      evidence.sources.push("active_source")
+      evidence.active = !inactive
+      evidence.fingerprint = sourceFingerprint(source)
+      evidence.sources.push(sourceEvidence)
       return
     }
     const target = sourceObject(name, input)
@@ -330,10 +474,10 @@ async function observeSourceTarget(
   } catch (error) {
     if (isMissing(error)) {
       if (evidence.exists === null) evidence.exists = false
-      else recordObservationError(evidence, "active_source", error)
+      else recordObservationError(evidence, sourceEvidence, error)
       return
     }
-    recordObservationError(evidence, "active_source", error)
+    recordObservationError(evidence, sourceEvidence, error)
   }
 }
 
@@ -427,8 +571,31 @@ function booleanValue(value: unknown): boolean | null {
   return typeof value === "boolean" ? value : null
 }
 
+function classicBadiSnapshot(
+  value: Record<string, unknown>,
+  implementationName: string
+): { value: Record<string, unknown>; active: boolean; packageName: string | null } | undefined {
+  const definition = value.definition as Record<string, unknown> | undefined
+  const assignments = Array.isArray(definition?.implementationAssignments)
+    ? (definition.implementationAssignments as Array<Record<string, unknown>>).filter(
+        (row) => String(row.implementationName).toUpperCase() === implementationName
+      )
+    : []
+  if (!assignments.length) return undefined
+  const classMappings = Array.isArray(definition?.classMappings)
+    ? (definition.classMappings as Array<Record<string, unknown>>).filter(
+        (row) => String(row.implementationName).toUpperCase() === implementationName
+      )
+    : []
+  return {
+    value: { assignments, classMappings },
+    active: assignments.some((row) => row.active === true),
+    packageName: stringValue(assignments[0]?.packageName)
+  }
+}
+
 function isMissing(error: unknown): boolean {
-  return /(?:SCREEN|TRANSACTION|FUNCTION|MESSAGE_CLASS|REPOSITORY_OBJECT|DDIC_OBJECT|OBJECT)_(?:NOT_FOUND|DOES_NOT_EXIST)|(?:screen|transaction|function(?: module)?|message class|repository object|ABAP object|program) (?:does not exist|was not found)|could not find (?:ABAP )?object/i.test(
+  return /(?:SCREEN|TRANSACTION|FUNCTION|MESSAGE_CLASS|REPOSITORY_OBJECT|DDIC_OBJECT|ENHANCEMENT_IMPLEMENTATION|OBJECT)_(?:NOT_FOUND|DOES_NOT_EXIST)|(?:screen|transaction|function(?: module)?|message class|repository object|ABAP object|program) (?:does not exist|was not found)|could not find (?:ABAP )?object/i.test(
     String(error)
   )
 }

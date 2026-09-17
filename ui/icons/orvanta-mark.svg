@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title">
+  <title id="title">ORVANTA</title>
+  <path
+    fill="#ffffff"
+    d="M15 4h18l11 11v18L33 44H15L4 33V15L15 4Zm4 9-6 6v10l6 6h10l6-6V19l-6-6H19Z"
+  />
+  <path fill="#74b9ff" d="M16.5 18.5h6.2l3.3 8 3.3-8h6.2L26 36 16.5 18.5Z" />
+</svg>

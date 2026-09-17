@@ -213,6 +213,36 @@ test("pre-change observation treats an explicitly missing function module as abs
   assert.deepEqual(evidence.warnings, [])
 })
 
+test("pre-change observation labels an inactive source as inactive", async () => {
+  const backend = new MockBackend()
+  backend.inspectSource = async () => ({
+    sourceUri: "/sap/bc/adt/oo/classes/zcl_demo/source/main",
+    objectUri: "/sap/bc/adt/oo/classes/zcl_demo",
+    objectName: "ZCL_DEMO",
+    activeSource: "CLASS zcl_demo DEFINITION. ENDCLASS.",
+    inactiveSource: "CLASS zcl_demo DEFINITION. DATA changed TYPE c. ENDCLASS."
+  })
+
+  const evidence = await observeWritePreChange(
+    "abap_activate",
+    { fileUri: "adt://w200/sap/bc/adt/oo/classes/zcl_demo/source/main" },
+    "w200",
+    "class ZCL_DEMO",
+    backend,
+    new ToolService(backend)
+  )
+
+  assert.equal(evidence.exists, true)
+  assert.equal(evidence.active, false)
+  assert.equal(
+    evidence.fingerprint,
+    createHash("sha256")
+      .update("CLASS zcl_demo DEFINITION. DATA changed TYPE c. ENDCLASS.")
+      .digest("hex")
+  )
+  assert.deepEqual(evidence.sources, ["inactive_source"])
+})
+
 test("pre-change observation treats a missing transaction and assignment as absent", async () => {
   const backend = new MockBackend()
   const callSapRepository = backend.callSapRepository.bind(backend)

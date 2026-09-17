@@ -5,3 +5,5 @@ connections.json
 *.log
 release/
 .cache/
+# 交付/传输归档不入库，保留在磁盘
+/*.zip

@@ -105,9 +105,12 @@ try {
   await client.connect(new StreamableHTTPClientTransport(endpoint))
   const capability = JSON.parse(await call("get_capability_report", {}))
   const ddicHelper = capability.helpers?.find((helper) => helper.name === "ddic")
-  if (ddicHelper?.availability !== "available" || ddicHelper.protocolVersion !== "1.6") {
+  if (
+    ddicHelper?.availability !== "available" ||
+    Number.parseFloat(ddicHelper.protocolVersion || "0") < 1.6
+  ) {
     throw new Error(
-      `DDIC helper 1.6 is required; observed ${ddicHelper?.protocolVersion || "none"}`
+      `DDIC helper 1.6 or newer is required; observed ${ddicHelper?.protocolVersion || "none"}`
     )
   }
   await readTable(true)
