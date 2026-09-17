@@ -13,7 +13,7 @@ import {
   TOOL_DENY_ENV,
   TOOL_PROFILE_ENV
 } from "../src/tool-profile.js"
-import { TOOL_COUNT, toolNamesForProfile } from "../src/tool-registry.js"
+import { PROFILE_NAMES, TOOL_COUNT, toolNamesForProfile } from "../src/tool-registry.js"
 import { MockBackend } from "./mock-backend.js"
 
 test("tool profile defaults to the full surface", () => {
@@ -44,11 +44,11 @@ test("readonly profile exposes exactly the read-only tools", () => {
 test("deny list subtracts tools from the selected profile", () => {
   const state = resolveToolProfile({
     [TOOL_DENY_ENV]:
-      "search_abap_objects, read_abap_source \n get_abap_object_info;search_abap_objects"
+      "search_abap_objects, read_abap_table \n get_abap_object_lines;search_abap_objects"
   })
   assert.deepEqual(
     [...state.denied],
-    ["get_abap_object_info", "read_abap_source", "search_abap_objects"]
+    ["get_abap_object_lines", "read_abap_table", "search_abap_objects"]
   )
   assert.equal(state.enabled.length, TOOL_COUNT - 3)
   for (const name of state.denied) assert.ok(state.disabled.includes(name))
@@ -57,7 +57,9 @@ test("deny list subtracts tools from the selected profile", () => {
 test("invalid profile and unknown deny entries fail loudly", () => {
   assert.throws(
     () => resolveToolProfile({ [TOOL_PROFILE_ENV]: "read-only" }),
-    /ABAP_MCP_TOOL_PROFILE must be one of full, readonly, platform, dev, config, ops/
+    (error: Error) =>
+      error.message.includes(`ABAP_MCP_TOOL_PROFILE must be one of`) &&
+      PROFILE_NAMES.every((name) => error.message.includes(name))
   )
   assert.throws(
     () => resolveToolProfile({ [TOOL_DENY_ENV]: "search_abap_objects, search_abap_object" }),

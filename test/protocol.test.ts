@@ -11,6 +11,7 @@ import { startHttpServer } from "../src/http.js"
 import { hashWriteInput, WriteOperationReceiptStore } from "../src/write-operation-receipts.js"
 import { MockBackend } from "./mock-backend.js"
 import { PRODUCT_VERSION } from "../src/version.js"
+import { TOOL_NAMES } from "../src/tool-registry.js"
 
 test("streamable HTTP exposes the implemented standalone tool waves", async () => {
   const stateRoot = await mkdtemp(join(tmpdir(), "abap-mcp-protocol-state-"))
@@ -486,9 +487,13 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     assert.equal(capabilityReport.productVersion, PRODUCT_VERSION)
     assert.equal(capabilityReport.connection.id, "w200")
     assert.equal(capabilityReport.readOnly, true)
-    assert.equal(
-      capabilityReport.capabilities.flatMap((capability) => capability.toolNames).length,
-      116
+    // Derived from the registry instead of a frozen count: every registered tool must be
+    // bound to exactly one capability, so a stale total cannot hide a missing capability.
+    assert.deepEqual(
+      capabilityReport.capabilities
+        .flatMap((capability) => capability.toolNames)
+        .sort((left, right) => left.localeCompare(right)),
+      [...TOOL_NAMES].sort((left, right) => left.localeCompare(right))
     )
 
     const helper = await client.callTool({

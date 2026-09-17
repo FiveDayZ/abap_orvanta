@@ -928,8 +928,8 @@ test("Dynpro application tools validate customer scope and preserve structured r
 
   const standardTransactionRead = JSON.parse(
     await tools.readTransactionCode({ transactionCode: "VL02N", connectionId: "w200" })
-  ) as { definition: { transactions: Array<{ TCODE: string }> } }
-  assert.equal(standardTransactionRead.definition.transactions[0]?.TCODE, "VL02N")
+  ) as { transactions: Array<{ TCODE: string }> }
+  assert.equal(standardTransactionRead.transactions[0]?.TCODE, "VL02N")
 
   const deletedTransaction = await tools.deleteTransactionCode({
     transactionCode: "ZMODULE_POOL_UI",

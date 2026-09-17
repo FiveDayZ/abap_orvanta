@@ -159,7 +159,10 @@ function parseEnhancementPayload(
 ): Array<Record<string, string>> {
   const rows: Array<Record<string, string>> = []
   for (const line of lines) {
-    const match = line.match(/^([MS])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    // The enhancement payload format is KIND|INDEX|PROPERTY|VALUE for every kind, and the
+    // seed below writes H/B/F rows with the same encoder. Parsing only M/S made every hook
+    // and BAdI row invisible, so updates failed with *_NOT_FOUND against their own fixture.
+    const match = line.match(/^([MHSBF])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
     if (!match || match[1] !== kind) continue
     const index = Number.parseInt(match[2]!, 10)
     while (rows.length < index) rows.push({})

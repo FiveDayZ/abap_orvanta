@@ -25,6 +25,16 @@ $nodeArchive = Join-Path $cacheRoot "node-v$NodeVersion-win-x64.zip"
 $nodeUrl = "https://nodejs.org/dist/v$NodeVersion/node-v$NodeVersion-win-x64.zip"
 $sumsUrl = "https://nodejs.org/dist/v$NodeVersion/SHASUMS256.txt"
 
+# 复现性前置检查：必须在创建任何产物目录之前完成，否则被拒绝时已经重写了 release/ 下的目录。
+$sourceCommit = & git -C $projectRoot rev-parse HEAD
+if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone source commit." }
+$sourceStatus = @(& git -C $projectRoot status --porcelain --untracked-files=all)
+if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone working tree state." }
+if ($sourceStatus.Count -gt 0 -and -not $AllowDirty) {
+    $preview = ($sourceStatus | Select-Object -First 10) -join "; "
+    throw "Working tree has $($sourceStatus.Count) uncommitted change(s) and the artifact would not be reproducible from a commit: $preview. Commit or stash them first, or pass -AllowDirty to build an explicitly unreproducible artifact."
+}
+
 function Remove-ScopedPath([string]$Path, [string]$AllowedRoot) {
     $fullPath = [IO.Path]::GetFullPath($Path)
     $fullRoot = [IO.Path]::GetFullPath($AllowedRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
@@ -146,14 +156,6 @@ if (-not $SkipRuntimeCheck) {
     } finally {
         Pop-Location
     }
-}
-$sourceCommit = & git -C $projectRoot rev-parse HEAD
-if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone source commit." }
-$sourceStatus = @(& git -C $projectRoot status --porcelain --untracked-files=all)
-if ($LASTEXITCODE -ne 0) { throw "Cannot determine standalone working tree state." }
-if ($sourceStatus.Count -gt 0 -and -not $AllowDirty) {
-    $preview = ($sourceStatus | Select-Object -First 10) -join "; "
-    throw "Working tree has $($sourceStatus.Count) uncommitted change(s) and the artifact would not be reproducible from a commit: $preview. Commit or stash them first, or pass -AllowDirty to build an explicitly unreproducible artifact."
 }
 $fileHashes = [ordered]@{}
 Get-ChildItem -LiteralPath $packageRoot -File -Recurse |

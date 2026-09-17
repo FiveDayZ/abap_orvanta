@@ -167,7 +167,7 @@ if (check) {
   if (current[0] !== markdown) fail(`${markdownPath} is out of date; run npm run matrix:generate`)
   if (current[1] !== json) fail(`${jsonPath} is out of date; run npm run matrix:generate`)
   console.log(
-    `tool index consistent: ${TOOL_COUNT} tools, ${readOnlyNames.length} read-only, ${Object.keys(groupCounts).length} groups`
+    `tool index consistent: ${TOOL_COUNT} tools, ${readOnlyNames.length} read-only, ${groupCounts.size} groups`
   )
 } else {
   await mkdir(dirname(markdownPath), { recursive: true })
