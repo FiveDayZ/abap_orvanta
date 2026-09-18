@@ -3591,7 +3591,7 @@ export async function replaceSourceWithClient(
 
   let lock
   try {
-    lock = await client.lock(target.objectUri, "MODIFY")
+    lock = await client.lock(lockTargetUri(target.objectUri), "MODIFY")
   } catch (error) {
     throw capabilityFailure("lock", error)
   }
@@ -3638,7 +3638,7 @@ export async function replaceSourceWithClient(
   }
 
   try {
-    await client.unLock(target.objectUri, lock.LOCK_HANDLE)
+    await client.unLock(lockTargetUri(target.objectUri), lock.LOCK_HANDLE)
   } catch (unlockError) {
     if (operationError) {
       throw new Error(
@@ -4114,6 +4114,7 @@ function writeClientOptions(
   return {
     ...standaloneClientOptions(allowUnauthorized),
     debugCallback(data) {
+      if (process.env.ABAP_MCP_ADT_TRACE) traceAdtRequest(data, report)
       if (data.response.statusCode < 400) return
       const body = sanitizeDiagnosticBody(data.response.body ?? "")
       report(
@@ -4121,6 +4122,64 @@ function writeClientOptions(
       )
     }
   }
+}
+
+function shortHash(value: string): string {
+  return createHash("sha256").update(value).digest("hex").slice(0, 12)
+}
+
+function sessionFingerprint(headers: Record<string, unknown> | undefined): string {
+  if (!headers) return "none"
+  for (const [key, value] of Object.entries(headers)) {
+    const name = key.toLowerCase()
+    if (name !== "cookie" && name !== "set-cookie") continue
+    const text = Array.isArray(value) ? value.join("|") : String(value ?? "")
+    return text ? `sha256:${shortHash(text)}` : "none"
+  }
+  return "none"
+}
+
+/**
+ * ADT write diagnosis that carries no secrets, enabled only by ABAP_MCP_ADT_TRACE. One line per ADT
+ * request: method, URI, query (any lockHandle becomes a short SHA-256, never the handle itself), status,
+ * session flag, short hashes of the request Cookie and of any response set-cookie - so two requests can be
+ * shown to share one SAP session or not - and short hashes of the lock handle SAP issued and of the one
+ * actually sent. Normal runs never reach this.
+ */
+function traceAdtRequest(data: LogData, report: (line: string) => void): void {
+  const params = Object.entries(data.request.params ?? {})
+  const query = params
+    .map(([key, value]) =>
+      /^lockhandle$/i.test(key)
+        ? `${key}=sha256:${shortHash(String(value))}`
+        : `${key}=${String(value)}`
+    )
+    .join("&")
+  const sent = params.find(([key]) => /^lockhandle$/i.test(key))?.[1]
+  const issued = String(data.response.body ?? "").match(/<LOCK_HANDLE>([^<]+)<\/LOCK_HANDLE>/)?.[1]
+  const marks = [
+    issued ? `lockIssued=sha256:${shortHash(issued)}` : "",
+    sent ? `lockSent=sha256:${shortHash(String(sent))}` : ""
+  ].filter(Boolean)
+  report(
+    `ADT-TRACE #${data.id} ${String(data.request.method).toUpperCase()} ${data.request.uri}` +
+      `${query ? `?${query}` : ""} -> ${data.response.statusCode} stateful=${data.stateful}` +
+      ` requestSession=${sessionFingerprint(data.request.headers)}` +
+      ` responseSession=${sessionFingerprint(data.response.headers)}` +
+      `${marks.length ? ` ${marks.join(" ")}` : ""} ${data.duration}ms`
+  )
+}
+
+/**
+ * The URI an ADT edit locks. A function module's source belongs to its function group, and on some releases
+ * SAP only accepts the following write against a lock held on the group, so ABAP_MCP_LOCK_TARGET=fugr
+ * switches the lock (and the matching unlock) to the group URI. The default keeps the object lock every
+ * recorded deployment used.
+ */
+function lockTargetUri(objectUri: string): string {
+  if (process.env.ABAP_MCP_LOCK_TARGET !== "fugr") return objectUri
+  const group = objectUri.split(/\/fmodules\//i)[0]
+  return group && group !== objectUri ? group : objectUri
 }
 
 function sanitizeDiagnosticBody(body: string): string {
