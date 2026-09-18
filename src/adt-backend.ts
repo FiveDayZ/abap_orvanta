@@ -4130,14 +4130,25 @@ function shortHash(value: string): string {
 }
 
 function sessionFingerprint(headers: Record<string, unknown> | undefined): string {
-  if (!headers) return "none"
-  for (const [key, value] of Object.entries(headers)) {
+  const parts: string[] = []
+  for (const [key, value] of Object.entries(headers ?? {})) {
     const name = key.toLowerCase()
     if (name !== "cookie" && name !== "set-cookie") continue
-    const text = Array.isArray(value) ? value.join("|") : String(value ?? "")
-    return text ? `sha256:${shortHash(text)}` : "none"
+    const list = Array.isArray(value) ? value.map((entry) => String(entry)) : [String(value ?? "")]
+    for (const entry of list) {
+      for (const pair of entry.split(/;\s*/)) {
+        const separator = pair.indexOf("=")
+        if (separator <= 0) continue
+        const cookie = pair.slice(0, separator).trim()
+        if (!/^SAP_SESSIONID/i.test(cookie)) continue
+        parts.push(`${cookie}=${pair.slice(separator + 1).trim()}`)
+      }
+    }
   }
-  return "none"
+  // Hash only the session cookie (name plus value), never the whole Cookie header: a stateful handshake
+  // alone adds cookies, so a changed header hash would prove nothing. The value is a credential, so only a
+  // short SHA-256 is ever emitted.
+  return parts.length ? `sha256:${shortHash(parts.join("|"))}` : "none"
 }
 
 /**
