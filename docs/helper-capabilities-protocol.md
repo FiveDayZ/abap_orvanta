@@ -105,6 +105,15 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 | `Z_ORVANTA_LOG_READ` / `Z_ORVANTA_SCI_API*` / `Z_ORVANTA_SMARTFORM_API` | `application-log-read-source.mjs`、`job-spool-source.mjs`、`sci-v2-source.mjs`、`sci-e2-source.mjs`、`report-parameters-source.mjs` | 这些生成器**当前没有 `CASE iv_operation` 分派**（`WHEN` 计数为 0），需先确认其操作码分派形态再决定是否适用本协议                                                                                                                                                                                                                                                  |
 | `scripts/deploy-*.mjs`                                                  | 各部署脚本                                                                                                                          | 部署前后各调用一次 `CAPABILITIES`，把 `SOURCE\|HASH` 写进部署证据文件（尚未实现）                                                                                                                                                                                                                                                                                 |
 
+**已部署版本核对（2026-09-18，只读）**：把 w200 上两个助手的当前源码取出，与生成器在 `c882b9f`（引入 `CAPABILITIES` 之前）的渲染结果逐行比对，两者**逐字一致**：
+
+| 助手         | 部署总行数 | 构成                                                  | 比对结果           |
+| ------------ | ---------- | ----------------------------------------------------- | ------------------ |
+| `MAINT_READ` | 321        | 17 行接口 + 303 行 `maintenanceDiagnosticSource` 体   | 303/303 完全一致   |
+| `OPS_READ`   | 1070       | 23 行接口 + 1047 行 `operationalLogReportSource` 变体 | 1047/1047 完全一致 |
+
+结论：仓库生成器仍是这两个助手的唯一事实来源，没有手工漂移，因此本轮升级是**干净重生成**（MAINT 体 303 → 356 行，OPS report 变体 1047 → 1099 行），升级后 `SOURCE|HASH` 可直接作为部署证据使用。
+
 ---
 
 ## 4. 服务侧设计
