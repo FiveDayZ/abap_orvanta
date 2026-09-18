@@ -41,7 +41,7 @@ const {
   renderedCapabilityRows,
   writeCapabilitiesEvidence
 } = evidenceModule
-const { verifyDeployedBody } = verifierModule
+const { verifyDeployedBody } = evidenceModule
 
 /**
  * A LIVE-shaped function module source: the interface heading, the generator body, a trailing
@@ -266,18 +266,18 @@ test("compareHelperAttestation names every mismatched field without throwing", (
     ],
     [
       "transport mismatch (the combined rendered row)",
-      { ...selfDescribed(target), transport: "GR2K923421|GR2K923422" },
-      /transport: expected "GR2K923421", reported "GR2K923421\|GR2K923422"/
+      { ...selfDescribed(target), transport: "GR2K923472|GR2K923473" },
+      /transport: expected "GR2K923472", reported "GR2K923472\|GR2K923473"/
     ],
     [
       "transport mismatch (a foreign request)",
       { ...selfDescribed(target), transport: "GR2K999999" },
-      /transport: expected "GR2K923421", reported "GR2K999999"/
+      /transport: expected "GR2K923472", reported "GR2K999999"/
     ],
     [
       "transport absent",
       { ...selfDescribed(target), transport: null },
-      /transport: expected "GR2K923421", reported null/
+      /transport: expected "GR2K923472", reported null/
     ],
     [
       "foreign identity",
@@ -323,8 +323,8 @@ test("the recomputed digest equals the digest both generators embedded", () => {
       `${target.helper}: the restored digest cannot equal the rendered body hash`
     )
   }
-  assert.equal(digests.maint, "e43cbbabc56ea52c25f0371825bf18a6b7ee438dcd6f34020cc15b3a875b0c41")
-  assert.equal(digests.ops, "ea34acdfc0aafc8de91d4353521be79e9acf60e1989fb7891ec2cfd724497f36")
+  assert.equal(digests.maint, "69f20bb0907f0a508b14efc3609695d959d8c6c4f9f89026f22586733fc2a066")
+  assert.equal(digests.ops, "0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1")
 })
 
 test("both generators are pinned to their verified pre- and post-deployment bodies", () => {
@@ -359,7 +359,7 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
   )
   assert.equal(
     maint.intendedBodyHash,
-    "fc576f586b8924590502b31cc31b22313f2ddad1fe8f2ab203bdb0affa44afce"
+    "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a"
   )
   assert.equal(
     ops.deployedNowBodyHash,
@@ -367,7 +367,7 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
   )
   assert.equal(
     ops.intendedBodyHash,
-    "52d5769180591b4db408357f3391f6b605c7156333bbfa9f7e03cd60e2e05f7a"
+    "dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c"
   )
   // The verifier's expectation must equal the table the generator exports, including the
   // feature-gated REPORT_PARAMETERS row that only the report variant compiles in.
@@ -458,10 +458,11 @@ test("the verifier compares the generator's rendered rows, not the live TADIR as
       rows.filter((row: string) => row.startsWith("SOURCE|TRANSPORT|")),
       [`SOURCE|TRANSPORT|${target.transportRequest}|${target.transportTask}`]
     )
-    // The rendered provenance and the request the upgrade itself travels under are different
-    // facts; the verifier records both and asserts neither against the other.
-    assert.equal(target.transportUpgradeRequest, "GR2K923472")
-    assert.notEqual(target.transportUpgradeRequest, target.transportRequest)
+    // The published provenance IS the request the upgrade travels under: the old request was
+    // released, so keeping its number in the row would name a request that does not carry this
+    // version. The verifier asserts the same pair against the live TADIR read-back.
+    assert.equal(target.transportRequest, "GR2K923472")
+    assert.equal(target.transportTask, "GR2K923473")
   }
 })
 

@@ -47,6 +47,7 @@ import {
   helperCapabilityTargets,
   readHelperAttestation,
   renderedCapabilityRows,
+  verifyDeployedBody,
   writeCapabilitiesEvidence
 } from "./helper-capabilities-evidence.mjs"
 
@@ -116,10 +117,10 @@ const evidence = {
     expectedOperations: target.expectedOperations,
     renderedRows
   },
-  // The generator renders its own provenance into SOURCE|TRANSPORT. That row is historical: the
-  // CAPABILITIES upgrade itself runs under its own request, so the live TADIR assignment may
-  // legitimately differ. Both facts are recorded and only the rendered row is compared with the
-  // helper's self-description.
+  // The generator renders its own provenance into SOURCE|TRANSPORT, and for these two targets that
+  // row names the request and task the upgrade itself travels under, so the live TADIR read-back
+  // must agree with it. Both facts are recorded; the agreement is asserted in the post-deployment
+  // mode.
   deploymentProvenance: {
     renderedByGenerator: {
       packageName: target.packageName,
@@ -127,9 +128,8 @@ const evidence = {
       transportTask: target.transportTask
     },
     liveTadirAssignment: null,
-    upgradeRequest: target.transportUpgradeRequest,
     // The capability report exposes a single transport value (the rendered row's request field)
-    // and no task field, so only the rendered request is compared.
+    // and no task field, so only the rendered request is compared with the self-description.
     compared: "renderedByGenerator.transportRequest"
   },
   steps: []
@@ -205,9 +205,10 @@ async function verifyDefinition() {
     target.packageName,
     `${target.helper} must be assigned to package ${target.packageName}`
   )
-  // The live TADIR assignment is recorded but never asserted against the generator's rendered
-  // provenance: the CAPABILITIES upgrade travels under its own request, so a divergence here is
-  // expected rather than a defect.
+  // The live TADIR assignment is recorded here; the post-deployment mode asserts it against the
+  // generator's rendered provenance, because for these two targets the published request and task
+  // ARE the pair the upgrade travels under. The pre-deployment baseline asserts nothing about it:
+  // those objects currently carry no open request at all.
   evidence.deploymentProvenance.liveTadirAssignment = {
     requestNumber: assignment.requestNumber,
     taskNumber: assignment.taskNumber,
@@ -229,52 +230,6 @@ async function verifyDefinition() {
   }
   evidence.assignment = assignment
   return { definition, bodyHash }
-}
-
-/**
- * The post-deployment body half: the live body must be the generator body line for line and must
- * reproduce the generator-injected `SOURCE|HASH` digest. Exported so the offline suite can drive
- * it with a fake live source instead of only exercising the digest helpers.
- *
- * @param {string[]} liveSource the live function module source: interface heading, body, `ENDFUNCTION.`
- * @param {{helper: string, generatorBody: string[], sourceHashDigest: string}} expected
- */
-export function verifyDeployedBody(liveSource, expected) {
-  const liveBody = functionModuleBody(liveSource.join("\n"))
-  const generatorBody = expected.generatorBody
-  assert.equal(
-    liveBody.length,
-    generatorBody.length,
-    `${expected.helper} live body line count differs from the generator`
-  )
-  assert.equal(
-    bodyLinesHash(liveBody),
-    bodyLinesHash(generatorBody),
-    `${expected.helper} live body lines are not the generator body`
-  )
-  assert.equal(
-    liveBody.join("\n"),
-    generatorBody.join("\n"),
-    `${expected.helper} live body differs from the generator`
-  )
-  const liveBodyDigest = capabilityBodyDigest(liveBody)
-  assert.equal(
-    liveBodyDigest,
-    expected.sourceHashDigest,
-    `${expected.helper} live body no longer reproduces the generator-injected SOURCE|HASH digest ${expected.sourceHashDigest}`
-  )
-  // The two digests are necessarily different: the injected digest is part of the rendered body,
-  // so SOURCE|HASH must never be presented as the live body hash.
-  assert.notEqual(
-    expected.sourceHashDigest,
-    bodyLinesHash(generatorBody),
-    `${expected.helper} SOURCE|HASH cannot equal the rendered body hash`
-  )
-  return {
-    liveBodyDigest,
-    liveBodyHash: bodyLinesHash(liveBody),
-    injectedDigestIsNotTheBodyHash: true
-  }
 }
 
 function assertProtocolAndOperations(attestation) {
@@ -390,6 +345,18 @@ if (isEntryPoint) {
         `${target.helper} attestation does not match the generator: ${comparison.mismatches.join("; ")}`
       )
       assertProtocolAndOperations(attestation)
+      // The published provenance must be the live assignment: this is the only place the rendered
+      // request/task pair is checked against TADIR instead of against itself.
+      assert.equal(
+        evidence.deploymentProvenance.liveTadirAssignment.divergesFromRenderedRow,
+        false,
+        `${target.helper} live TADIR assignment ${evidence.assignment.requestNumber}|${evidence.assignment.taskNumber} is not the published ${target.transportRequest}|${target.transportTask}`
+      )
+      assert.equal(
+        evidence.assignment.transportStatus,
+        "D",
+        `${target.helper} must stay in a modifiable request, not ${evidence.assignment.transportStatus}`
+      )
       // The body half: line-for-line identity with the generator and the generator-injected digest
       // recomputed from the delivered body.
       evidence.sourceHashCheck = verifyDeployedBody(live.definition.source, {

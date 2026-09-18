@@ -49,16 +49,16 @@ const maintenanceDiagnosticMinProtocol = maintenanceDiagnosticVersions[0]
 const maintenanceDiagnosticMaxProtocol = maintenanceDiagnosticVersions.at(-1)
 
 // Deployment facts published as SOURCE|PACKAGE and SOURCE|TRANSPORT. Z_ORVANTA_MAINT_READ is
-// deployed in w200 as FUGR/FF in ZORVANTA_MAINT, assigned to package ZABAP with request
-// GR2K923421 and task GR2K923422 (the assignment read-back is recorded in
-// .doc/code-update-20260910-172621.md, and the object's presence in w200 was re-confirmed on
-// 2026-09-18 through get_abap_object_info). This module was authored before that deployment and
-// published empty rows; the values below are the recorded evidence, and an approving deployment
-// step may override them.
+// deployed in w200 as FUGR/FF in ZORVANTA_MAINT, package ZABAP. The original request GR2K923421
+// (task GR2K923422) was released, which left the object with no open assignment, so the
+// CAPABILITIES version is recorded in request GR2K923472 / task GR2K923473. That task list was read
+// from w200 on 2026-09-18 before these values were published: GR2K923472 is status D, owner WYS,
+// and holds exactly one task, GR2K923473 (status D, 0 objects). The read-back after deployment
+// asserts the same pair.
 export const maintenanceDiagnosticDeployment = {
   packageName: "ZABAP",
-  transportRequest: "GR2K923421",
-  transportTask: "GR2K923422"
+  transportRequest: "GR2K923472",
+  transportTask: "GR2K923473"
 }
 
 // Four 16-character placeholders make SOURCE|HASH self-referential: the generator hashes the

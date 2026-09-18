@@ -156,10 +156,11 @@ export function renderedCapabilityRows(body) {
  * recorded deployment provenance and the verified live/intended body hashes are pinned here.
  *
  * `transportRequest`/`transportTask` are the provenance the GENERATOR renders into
- * `SOURCE|TRANSPORT` (`GR2K923421`/`GR2K923422`), which is what the post-deployment comparison
- * uses. That is historical provenance: the CAPABILITIES upgrade itself runs under a new request
- * (`transportUpgradeRequest`), so the live TADIR assignment may legitimately differ from the
- * rendered row. The verifier records both facts and never treats them as the same fact.
+ * `SOURCE|TRANSPORT`, and they are also the request and task the upgrade itself travels under. The
+ * original request GR2K923421 was released, which left both objects with no open assignment, so the
+ * CAPABILITIES version is recorded in GR2K923472 / GR2K923473 - a pair read live from w200 before
+ * these values were published. The report's `transport` field carries this request, and the verifier
+ * asserts the same pair against the live TADIR read-back.
  */
 const range = (operations) => {
   const versions = operations.map((operation) => operation.since).sort(compareProtocolVersions)
@@ -174,15 +175,14 @@ export const helperCapabilityTargets = {
     helper: "Z_ORVANTA_MAINT_READ",
     functionGroup: "ZORVANTA_MAINT",
     packageName: "ZABAP",
-    transportRequest: "GR2K923421",
-    transportTask: "GR2K923422",
-    transportUpgradeRequest: "GR2K923472",
+    transportRequest: "GR2K923472",
+    transportTask: "GR2K923473",
     expectedProtocol: range(maintenanceDiagnosticOperations),
     expectedOperations: maintenanceDiagnosticOperations.map((operation) =>
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
     deployedNowBodyHash: "f2a1580c9ab7560d882af51d6c9152933248c0d51026ac56024417d540b763be",
-    intendedBodyHash: "fc576f586b8924590502b31cc31b22313f2ddad1fe8f2ab203bdb0affa44afce",
+    intendedBodyHash: "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a",
     generatorBody: maintenanceDiagnosticSource
   },
   ops: {
@@ -190,15 +190,14 @@ export const helperCapabilityTargets = {
     helper: "Z_ORVANTA_OPS_READ",
     functionGroup: "ZORVANTA_LOG",
     packageName: "ZABAP",
-    transportRequest: "GR2K923421",
-    transportTask: "GR2K923422",
-    transportUpgradeRequest: "GR2K923472",
+    transportRequest: "GR2K923472",
+    transportTask: "GR2K923473",
     expectedProtocol: range(operationalLogOperations),
     expectedOperations: operationalLogOperations.map((operation) =>
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
     deployedNowBodyHash: "6cd998bf1e80e61e5d3c20ea416997a3310cc20611919134fe779149b95210ea",
-    intendedBodyHash: "52d5769180591b4db408357f3391f6b605c7156333bbfa9f7e03cd60e2e05f7a",
+    intendedBodyHash: "dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c",
     generatorBody: operationalLogReportSource
   }
 }
@@ -215,6 +214,52 @@ export function evidenceTarget(target) {
     helper: target.helper,
     generatorBody: target.generatorBody,
     sourceHashDigest: helperCapabilityDigests[target.target]
+  }
+}
+
+/**
+ * The body half of a deployment check: the live body must be the generator body line for line and
+ * must reproduce the generator-injected `SOURCE|HASH` digest. Pure, so both the verifier and the
+ * deployment step can call it, and the offline suite can drive it with a fake live source.
+ *
+ * @param {string[]} liveSource the live function module source: interface heading, body, `ENDFUNCTION.`
+ * @param {{helper: string, generatorBody: string[], sourceHashDigest: string}} expected
+ */
+export function verifyDeployedBody(liveSource, expected) {
+  const liveBody = functionModuleBody(liveSource.join("\n"))
+  const generatorBody = expected.generatorBody
+  assert.equal(
+    liveBody.length,
+    generatorBody.length,
+    `${expected.helper} live body line count differs from the generator`
+  )
+  assert.equal(
+    bodyLinesHash(liveBody),
+    bodyLinesHash(generatorBody),
+    `${expected.helper} live body lines are not the generator body`
+  )
+  assert.equal(
+    liveBody.join("\n"),
+    generatorBody.join("\n"),
+    `${expected.helper} live body differs from the generator`
+  )
+  const liveBodyDigest = capabilityBodyDigest(liveBody)
+  assert.equal(
+    liveBodyDigest,
+    expected.sourceHashDigest,
+    `${expected.helper} live body no longer reproduces the generator-injected SOURCE|HASH digest ${expected.sourceHashDigest}`
+  )
+  // The two digests are necessarily different: the injected digest is part of the rendered body,
+  // so SOURCE|HASH must never be presented as the live body hash.
+  assert.notEqual(
+    expected.sourceHashDigest,
+    bodyLinesHash(generatorBody),
+    `${expected.helper} SOURCE|HASH cannot equal the rendered body hash`
+  )
+  return {
+    liveBodyDigest,
+    liveBodyHash: bodyLinesHash(liveBody),
+    injectedDigestIsNotTheBodyHash: true
   }
 }
 
@@ -308,9 +353,9 @@ export function compareHelperAttestation(attestation, target) {
     mismatch(mismatches, "sourceTransport", transport, attestation.sourceTransport)
   // The report carries a SINGLE transport value: the rendered SOURCE|TRANSPORT row's request
   // field (src/adt-backend.ts `payload.transport = fields[2]`), and it exposes no task field at
-  // all, so the task is deliberately not compared. For these two targets the compared value is
-  // the rendered provenance `GR2K923421`, which may legitimately differ from the live TADIR
-  // assignment `GR2K923472`.
+  // all, so the task is deliberately not compared here. For these two targets that request is
+  // GR2K923472, which is also the request the live TADIR assignment must show; the verifier asserts
+  // that read-back separately rather than inferring it from this field.
   if (attestation.transport !== target.transportRequest)
     mismatch(mismatches, "transport", target.transportRequest, attestation.transport ?? null)
   return { ok: mismatches.length === 0, mismatches }

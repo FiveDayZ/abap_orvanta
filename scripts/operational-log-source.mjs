@@ -36,12 +36,16 @@ const compareProtocolVersions = (left, right) => {
 }
 
 // Deployment facts published as SOURCE|PACKAGE and SOURCE|TRANSPORT. Z_ORVANTA_OPS_READ is
-// deployed in package ZABAP with transport request GR2K923421 and task GR2K923422
-// (scripts/deploy-job-spool.mjs, scripts/deploy-report-parameters.mjs, docs/diagnostic-suite.md).
+// deployed in package ZABAP. Its original request GR2K923421 (task GR2K923422) carried the
+// historical progression described in scripts/deploy-job-spool.mjs,
+// scripts/deploy-report-parameters.mjs and docs/diagnostic-suite.md, and has since been released,
+// leaving the object with no open assignment. The CAPABILITIES version is therefore recorded in
+// request GR2K923472 / task GR2K923473, whose live task list was read from w200 on 2026-09-18
+// before these values were published (one task, GR2K923473, status D, 0 objects).
 export const operationalLogDeployment = {
   packageName: "ZABAP",
-  transportRequest: "GR2K923421",
-  transportTask: "GR2K923422"
+  transportRequest: "GR2K923472",
+  transportTask: "GR2K923473"
 }
 
 // Four 16-character placeholders make SOURCE|HASH self-referential: the generator hashes the
