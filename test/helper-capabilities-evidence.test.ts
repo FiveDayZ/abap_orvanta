@@ -37,6 +37,7 @@ const {
   compareHelperAttestation,
   compareProtocolVersions,
   functionModuleBodyHash,
+  planReplacement,
   readHelperAttestation,
   renderedCapabilityRows,
   writeCapabilitiesEvidence
@@ -566,4 +567,88 @@ test("the verifier reads the self-description from the read-only capability repo
   assert.match(source, /--endpoint/)
   assert.match(source, /ABAP_MCP_ENDPOINT/)
   assert.match(source, /http:\/\/127\.0\.0\.1:4847\/mcp/)
+})
+
+test("planReplacement sends the smallest text that turns the live body into the generated body", () => {
+  const body = targets.maint.generatorBody as string[]
+  // A synthetic live body: the generated body with exactly one line replaced, so the bounded window
+  // and the four lines of context either side are both exercised.
+  const live = [...body]
+  live[10] = '  "a statement that only the previous deployment has"'
+  const source = ["FUNCTION Z_X.", ...live, "", "ENDFUNCTION."].join("\n")
+  const plan = planReplacement(live.join("\n"), body.join("\n"))
+
+  assert.equal(
+    source.split(plan.oldString).length - 1,
+    1,
+    "the replacement must occur exactly once in the source it is applied to"
+  )
+  assert.equal(
+    source.replace(plan.oldString, plan.newString),
+    ["FUNCTION Z_X.", ...body, "", "ENDFUNCTION."].join("\n"),
+    "applying the plan must reproduce the generated body exactly"
+  )
+  // One changed line. The window is that line plus context, never the whole body.
+  assert.equal(plan.replacedLines, 9)
+  assert.equal(plan.contextLines.begin, 6)
+  assert.ok(
+    plan.oldString.split("\n").length < body.length,
+    "a one-line change must not degrade into a whole-body replacement"
+  )
+})
+
+test("an unchanged body plans a no-op, so the baseline check must be the gate that stops a write", () => {
+  const body = targets.ops.generatorBody.join("\n")
+  const plan = planReplacement(body, body)
+  assert.equal(plan.oldString, plan.newString)
+  assert.equal(plan.replacedLines, 4)
+})
+
+test("importing the live scripts never runs them against someone else's command line", async () => {
+  // The regression this guards: the deployment step imported the verifier, whose argument
+  // validation ran at import time and rejected the deploying process's own flags. Both modules must
+  // therefore import cleanly while the importing process carries a foreign command line, and the
+  // cache-busting query forces a fresh instantiation rather than a cached one.
+  const savedArgv = process.argv
+  const savedExitCode = process.exitCode
+  process.argv = [...savedArgv, "--apply-approved", "--target", "ops", "stray-positional"]
+  try {
+    const deployFile = "scripts/deploy-helper-capabilities.mjs"
+    const stamp = String(Date.now())
+    const deploy = await import(`${pathToFileURL(resolve(deployFile)).href}?probe=${stamp}`)
+    const verifier = await import(`${pathToFileURL(resolve(verifierFile)).href}?probe=${stamp}`)
+    assert.equal(typeof deploy, "object")
+    assert.equal(typeof verifier, "object")
+    assert.equal(
+      process.exitCode,
+      savedExitCode,
+      "importing a live script must not set an exit code"
+    )
+  } finally {
+    process.argv = savedArgv
+  }
+})
+
+test("the deployment step performs no write of its own before the single approved replacement", async () => {
+  const source = await readFile(resolve("scripts/deploy-helper-capabilities.mjs"), "utf8")
+  // Exactly one mutating call, and it is the narrow source replacement.
+  const writes =
+    source.match(
+      /replace_string_in_abap_object|patch_[a-z_]*|abap_activate|create_object[a-z_]*/g
+    ) ?? []
+  assert.deepEqual([...new Set(writes)], ["replace_string_in_abap_object"])
+  // No release, delete or transport mutation may appear at all.
+  assert.doesNotMatch(source, /release_transport|delete_object|release_task/i)
+  // The reads that establish the target before the write must be present.
+  for (const tool of [
+    "read_function_module_interface",
+    "inspect_repository_assignment",
+    "get_abap_object_lines"
+  ]) {
+    assert.match(
+      source,
+      new RegExp(`"${tool}"`),
+      `${tool} must be part of the read-before-write path`
+    )
+  }
 })

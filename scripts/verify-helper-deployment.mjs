@@ -51,6 +51,12 @@ import {
   writeCapabilitiesEvidence
 } from "./helper-capabilities-evidence.mjs"
 
+// The live run happens only when this file is the process entry point (see the guard at the bottom).
+// The argument checks belong to this process's command line, not to an importing one, so they are
+// guarded too - the deployment step used to import this module and died on its own flags.
+const isEntryPoint =
+  typeof process.argv[1] === "string" && import.meta.url === pathToFileURL(process.argv[1]).href
+
 const argv = process.argv.slice(2)
 const expectDeployedCapabilities = argv.includes("--expect-deployed-capabilities")
 const argumentValue = (flag) => {
@@ -64,28 +70,37 @@ const endpoint =
   argumentValue("--endpoint") ?? process.env.ABAP_MCP_ENDPOINT ?? "http://127.0.0.1:4847/mcp"
 const valuedFlags = new Set(["--target", "--endpoint"])
 const flagFlags = new Set(["--expect-deployed-capabilities"])
-assert.ok(
-  argv.every(
-    (arg, index) =>
-      flagFlags.has(arg) || valuedFlags.has(arg) || (index > 0 && valuedFlags.has(argv[index - 1]))
-  ),
-  `Unsupported argument: ${argv.filter((arg) => arg.startsWith("--") && !flagFlags.has(arg) && !valuedFlags.has(arg)).join(", ")}`
-)
-assert.ok(
-  endpoint.startsWith("http://") || endpoint.startsWith("https://"),
-  `--endpoint must be an absolute HTTP(S) URL, received ${endpoint || "EMPTY"}`
-)
-const target = helperCapabilityTargets[targetName]
-assert.ok(target, `--target must be maint or ops, received ${targetName || "EMPTY"}`)
-const generatorDigest = helperCapabilityDigests[targetName]
-assert.ok(generatorDigest, `${targetName}: generator digest is unavailable`)
-// The generator exports are body-only (they carry no `ENDFUNCTION.` wrapper), so they are hashed
-// directly; only a live function module source may go through `functionModuleBodyHash`.
-assert.equal(
-  bodyLinesHash(target.generatorBody),
-  target.intendedBodyHash,
-  `${target.helper}: the local generator no longer renders the intended body; recalibrate before verifying SAP`
-)
+// Import-safe fallbacks: a guarded live run never reaches them with a bogus target, but an import
+// must still complete instead of throwing on someone else's command line.
+const target = helperCapabilityTargets[targetName] ?? helperCapabilityTargets.maint
+const generatorDigest = helperCapabilityDigests[targetName] ?? helperCapabilityDigests.maint
+
+if (isEntryPoint) {
+  assert.ok(
+    argv.every(
+      (arg, index) =>
+        flagFlags.has(arg) ||
+        valuedFlags.has(arg) ||
+        (index > 0 && valuedFlags.has(argv[index - 1]))
+    ),
+    `Unsupported argument: ${argv.filter((arg) => arg.startsWith("--") && !flagFlags.has(arg) && !valuedFlags.has(arg)).join(", ")}`
+  )
+  assert.ok(
+    endpoint.startsWith("http://") || endpoint.startsWith("https://"),
+    `--endpoint must be an absolute HTTP(S) URL, received ${endpoint || "EMPTY"}`
+  )
+  assert.ok(
+    helperCapabilityTargets[targetName],
+    `--target must be maint or ops, received ${targetName || "EMPTY"}`
+  )
+  // The generator exports are body-only (they carry no `ENDFUNCTION.` wrapper), so they are hashed
+  // directly; only a live function module source may go through `functionModuleBodyHash`.
+  assert.equal(
+    bodyLinesHash(target.generatorBody),
+    target.intendedBodyHash,
+    `${target.helper}: the local generator no longer renders the intended body; recalibrate before verifying SAP`
+  )
+}
 // The authority for the post-deployment comparison: the rows the generator itself renders.
 const renderedRows = renderedCapabilityRows(target.generatorBody)
 const comparisonTarget = {
@@ -298,12 +313,7 @@ function assertProtocolAndOperations(attestation) {
   }
 }
 
-// The offline suite imports this module for its exported helpers, so the live run must happen only
-// when this file is the process entry point. Without the guard an import connects to SAP, writes an
-// evidence file and sets a failing exit code for the importing process.
-const isEntryPoint =
-  typeof process.argv[1] === "string" && import.meta.url === pathToFileURL(process.argv[1]).href
-
+// The guard at the bottom keeps the live run off the import path; see the definition at the top.
 if (isEntryPoint) {
   try {
     await client.connect(new StreamableHTTPClientTransport(new URL(endpoint), { timeout: 10000 }))

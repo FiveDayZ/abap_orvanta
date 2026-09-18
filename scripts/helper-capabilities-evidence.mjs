@@ -218,6 +218,32 @@ export function evidenceTarget(target) {
 }
 
 /**
+ * The minimal replacement, with four lines of context, that turns `oldBody` into `newBody`. Pure, so
+ * the deployment step and the offline suite share one implementation: this is the exact text that a
+ * `replace_string_in_abap_object` call sends, and the caller must additionally prove that `oldString`
+ * occurs exactly once in the source it is applied to.
+ *
+ * @param {string} oldBody
+ * @param {string} newBody
+ */
+export function planReplacement(oldBody, newBody) {
+  const a = oldBody.split("\n")
+  const b = newBody.split("\n")
+  let prefix = 0
+  let suffix = 0
+  while (prefix < a.length && a[prefix] === b[prefix]) prefix++
+  while (suffix < a.length - prefix && a.at(-suffix - 1) === b.at(-suffix - 1)) suffix++
+  const begin = Math.max(0, prefix - 4)
+  const tail = Math.max(0, suffix - 4)
+  return {
+    oldString: a.slice(begin, a.length - tail).join("\n"),
+    newString: b.slice(begin, b.length - tail).join("\n"),
+    replacedLines: a.length - tail - begin,
+    contextLines: { begin, tail }
+  }
+}
+
+/**
  * The body half of a deployment check: the live body must be the generator body line for line and
  * must reproduce the generator-injected `SOURCE|HASH` digest. Pure, so both the verifier and the
  * deployment step can call it, and the offline suite can drive it with a fake live source.
