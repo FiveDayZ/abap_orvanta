@@ -5,7 +5,8 @@ import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:f
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
-import { writeOperationTarget } from "../src/mcp.js"
+import { writeOperationContext, writeOperationTarget } from "../src/mcp.js"
+import type { SapBackend } from "../src/backend.js"
 import { hashWriteInput, WriteOperationReceiptStore } from "../src/write-operation-receipts.js"
 
 const identity = {
@@ -146,6 +147,53 @@ test("write target keys align transaction operations and distinguish DDIC namesp
     ).key
   ]
   assert.deepEqual([...new Set(functionGroupKeys)], ["SOURCE:FUGR:ZCMCP_FG_0301"])
+})
+
+test("a complete function module source replacement builds a context without oldString", () => {
+  const source = ["DATA lv_line TYPE string.", "lv_line = 'replacement'.", "WRITE lv_line."]
+  const backend = { connectionIds: () => ["w200"] } as unknown as SapBackend
+  const context = writeOperationContext(
+    "write_function_module_source",
+    {
+      operationId: "write-fms-1",
+      functionName: "ZCMCP_FM_0301",
+      functionGroup: "ZCMCP_FG_0301",
+      expectedSourceFingerprint: "a".repeat(64),
+      source,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923472",
+      connectionId: "w200"
+    },
+    backend
+  )
+  assert.equal(context.connectionId, "w200")
+  assert.equal(context.targetKey, "SOURCE:FUGR:ZCMCP_FG_0301")
+  assert.equal(context.targetSummary, "fugr/ff ZCMCP_FM_0301 in ZCMCP_FG_0301")
+  const summary = JSON.parse(context.preChangeSummary) as Record<string, unknown>
+  assert.equal(
+    summary.concurrencyGuard,
+    `source fingerprint ${"a".repeat(64)} and complete replacement of 3 lines hashed ${hashWriteInput(source.join("\n"))}`
+  )
+  assert.equal(summary.transportNumber, "GR2K923472")
+})
+
+test("exact source replacement receipts keep hashing the supplied oldString", () => {
+  const backend = { connectionIds: () => ["w200"] } as unknown as SapBackend
+  const context = writeOperationContext(
+    "replace_string_in_abap_object",
+    {
+      fileUri: "adt://w200/sap/bc/adt/oo/classes/zcl_safe_0301/source/main",
+      oldString: "  DATA lv_old TYPE string.",
+      newString: "  DATA lv_new TYPE string.",
+      expectedSourceFingerprint: "b".repeat(64)
+    },
+    backend
+  )
+  const summary = JSON.parse(context.preChangeSummary) as Record<string, unknown>
+  assert.equal(
+    summary.concurrencyGuard,
+    `active source fingerprint ${"b".repeat(64)} and exact source match ${hashWriteInput("  DATA lv_old TYPE string.")}`
+  )
 })
 
 test("a completed action remains completed when local lock cleanup needs recovery", async () => {
