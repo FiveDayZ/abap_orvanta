@@ -4177,10 +4177,18 @@ export function traceAdtRequest(data: LogData, report: (line: string) => void): 
     )
     .join("&")
   const sent = params.find(([key]) => /^lockhandle$/i.test(key))?.[1]
-  const issued = String(data.response.body ?? "").match(/<LOCK_HANDLE>([^<]+)<\/LOCK_HANDLE>/)?.[1]
+  const responseBody = String(data.response.body ?? "")
+  const issued = responseBody.match(/<LOCK_HANDLE>([^<]+)<\/LOCK_HANDLE>/)?.[1]
+  // SAP assigns the transport when it grants the lock. If that differs from the corrNr the write sends, the
+  // save can be refused while the handle itself is perfectly valid, and the record count shows which objects
+  // SAP believes it locked. Both are ordinary transport metadata, not credentials.
+  const lockRequest = responseBody.match(/<CORRNR>([^<]*)<\/CORRNR>/)?.[1]
+  const lockRecords = (responseBody.match(/<DATA>/g) ?? []).length
   const marks = [
     issued ? `lockIssued=sha256:${shortHash(issued)}` : "",
-    sent ? `lockSent=sha256:${shortHash(String(sent))}` : ""
+    sent ? `lockSent=sha256:${shortHash(String(sent))}` : "",
+    lockRequest ? `lockCorrNr=${lockRequest}` : "",
+    lockRecords ? `lockRecords=${lockRecords}` : ""
   ].filter(Boolean)
   const line =
     `ADT-TRACE #${data.id} ${String(data.request.method).toUpperCase()} ${data.request.uri}` +
