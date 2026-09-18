@@ -3590,6 +3590,15 @@ export async function replaceSourceWithClient(
     throw new Error("SAP source replacement requires a dedicated stateful ADT session.")
   }
 
+  // A stateful session can be established only on the first stateful request, which would leave an edit
+  // lock taken before it orphaned in the earlier session: SAP then answers the PUT with "Resource ... is
+  // not locked" even though the handle came from the lock it just issued. ABAP_MCP_STATEFUL_WARMUP=1 issues
+  // one harmless read first, so the lock and the write share the session SAP has settled on. Default off,
+  // and the call is the same inspection the write path performs again below.
+  if (process.env.ABAP_MCP_STATEFUL_WARMUP) {
+    await inspectSourceWithClient(client, connectionId, fileUri).catch(() => undefined)
+  }
+
   let lock
   try {
     lock = await client.lock(lockTargetUri(target.objectUri), "MODIFY")
