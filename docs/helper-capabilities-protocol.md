@@ -138,6 +138,19 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - **可用**：只读的 `get_capability_report`（`src/contracts.ts:268`；其说明明确探询不触发写、不清锁、不重试、不声称回滚）已返回按助手解析好的 `helperAttestation` 条目：`helper`、`minProtocol`/`maxProtocol`、`operations[]`（`opcode`/`since`/`write`）、`scopes`、`sourceHash`、`packageName`、`transport`、`host`、`observedAt`、`attestation`、`detail`。实测 `Z_ORVANTA_MCP_DYNPRO_API` 已完整自述（1.1–2.6、36 个操作），而 `MAINT_READ`/`OPS_READ` 当前为 `attestation: "operation-scoped"`、`sourceHash`/`packageName`/`transport` 等均为 `null`——这正是升级前的期望状态，也是升级后必须改变的证据。
 - 因此部署取证以**服务侧唯一解析器**为准：部署脚本只读该报告，再把协议区间、操作码表、`sourceHash`、包与请求逐项与生成器表比对，并另行校验线上体哈希；脚本不再自带第二份行解析器，以避免与服务侧实现漂移。
 
+**服务侧实况复核（A4-4，2026-09-18 只读）**：用含本协议的构建探询 w200，`helperAttestation` 返回**五条**记录且报告未报错：
+
+| 助手                       | 判定               | 说明                                                              |
+| -------------------------- | ------------------ | ----------------------------------------------------------------- |
+| `Z_ORVANTA_MCP_EXECUTE`    | `operation-scoped` | 自述省略 HELPER 标识行，按设计降级；不影响既有能力判定            |
+| `Z_ORVANTA_MCP_DYNPRO_API` | `self-described`   | 协议 1.1–2.6、36 个 `OPERATION` 行，并带 `SOURCE\|HASH`、包与请求 |
+| `Z_ORVANTA_MCP_DDIC_API`   | `operation-scoped` | 按操作码作用域应答（本地已实现 19 个操作码，尚未部署）            |
+| `Z_ORVANTA_MAINT_READ`     | `operation-scoped` | 线上仍是无 `CAPABILITIES` 的版本；升级后应为 `self-described`     |
+| `Z_ORVANTA_OPS_READ`       | `operation-scoped` | 同上                                                              |
+
+- 能力直方图保持不变（`available 21` / `unsupported 1` / `unknown 32`），且 `safety.sapWritesInvoked=false`：新增的两个探询没有放大任何能力判定。
+- 因此「五条自述」是**部署后**才可能出现的状态：DDIC 与 MAINT/OPS 需各自部署带 `CAPABILITIES` 的版本，而 `EXECUTE` 缺少 HELPER 行是它自身的既有行为。当前构建可验收的事实是「五条记录、报告不报错、不写 SAP」。
+
 ---
 
 ## 4. 服务侧设计
