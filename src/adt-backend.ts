@@ -1621,10 +1621,14 @@ export class AdtBackend implements SapBackend {
         requestDiagnostic = diagnostic
       })
     )
+    // ABAP FS establishes the ordinary ADT login first and only then opens the stateful session, and that is
+    // what every recorded deployment used, so it stays the default. If SAP keeps answering the lock request
+    // while refusing the write as "not locked", the switch may simply be arriving too late for the session SAP
+    // created on the stateless login: ABAP_MCP_STATEFUL_FROM_LOGIN=1 asks for a stateful session from the login
+    // request onwards as well. Read per call, so it can be flipped without a rebuild.
+    if (process.env.ABAP_MCP_STATEFUL_FROM_LOGIN) client.stateful = session_types.stateful
     await client.login()
     preserveCookieSessionWithoutCsrf(client)
-    // Match ABAP FS: establish the normal ADT login first, then open the
-    // stateful session immediately before lock/save/unlock operations.
     client.stateful = session_types.stateful
     try {
       return await action(client)
@@ -4184,11 +4188,15 @@ export function traceAdtRequest(data: LogData, report: (line: string) => void): 
   // SAP believes it locked. Both are ordinary transport metadata, not credentials.
   const lockRequest = responseBody.match(/<CORRNR>([^<]*)<\/CORRNR>/)?.[1]
   const lockRecords = (responseBody.match(/<DATA>/g) ?? []).length
+  // The lock result's own fields decide whether SAP considers the object really locked and modifiable, and they
+  // had never been observed, so summarise them next to the handle.
+  const lockFields = lockResponseFields(responseBody)
   const marks = [
     issued ? `lockIssued=sha256:${shortHash(issued)}` : "",
     sent ? `lockSent=sha256:${shortHash(String(sent))}` : "",
     lockRequest ? `lockCorrNr=${lockRequest}` : "",
-    lockRecords ? `lockRecords=${lockRecords}` : ""
+    lockRecords ? `lockRecords=${lockRecords}` : "",
+    lockFields ? `lockFields=${lockFields}` : ""
   ].filter(Boolean)
   const line =
     `ADT-TRACE #${data.id} ${String(data.request.method).toUpperCase()} ${data.request.uri}` +
@@ -4199,6 +4207,27 @@ export function traceAdtRequest(data: LogData, report: (line: string) => void): 
     `${marks.length ? ` ${marks.join(" ")}` : ""} ${data.duration}ms`
   report(line)
   appendTraceLine(line)
+}
+
+/**
+ * Summarise an ADT lock result: element names with short values kept as-is, anything long enough to be a handle
+ * or a token reduced to "(long)", and empty elements skipped. The field names and flags are the point; no long
+ * value is ever written out, so no handle or token can reach the log.
+ */
+function lockResponseFields(body: string): string {
+  if (!/<LOCK_HANDLE>/.test(body)) return ""
+  const fields: string[] = []
+  const pattern = /<([A-Za-z_]+)>([^<]*)<\/\1>/g
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(body)) !== null) {
+    const name = match[1] ?? ""
+    const value = match[2] ?? ""
+    if (/^LOCK_HANDLE$/i.test(name)) continue
+    const text = value.trim()
+    if (!text) continue
+    fields.push(text.length > 12 ? `${name}=(long)` : `${name}=${text}`)
+  }
+  return fields.slice(0, 14).join(",")
 }
 
 /**
