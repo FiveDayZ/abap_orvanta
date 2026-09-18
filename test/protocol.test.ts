@@ -148,7 +148,8 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "upsert_ddic_domain",
       "upsert_ddic_structure",
       "upsert_ddic_table_type",
-      "validate_dynpro_application"
+      "validate_dynpro_application",
+      "write_function_module_source"
     ])
 
     const screenRead = await client.callTool({

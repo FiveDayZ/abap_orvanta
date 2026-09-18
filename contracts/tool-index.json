@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 126,
+  "toolCount": 127,
   "readOnlyToolCount": 75,
   "profiles": {
     "readonly": 75,
     "platform": 12,
-    "dev": 110,
+    "dev": 111,
     "config": 28,
     "ops": 35,
-    "full": 126
+    "full": 127
   },
   "groups": {
     "data": 5,
@@ -16,7 +16,7 @@
     "debug": 6,
     "enhancement": 22,
     "form": 4,
-    "function": 6,
+    "function": 7,
     "message": 4,
     "ops": 18,
     "platform": 12,
@@ -1967,6 +1967,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
       "minHelperProtocol": "1.4"
+    },
+    {
+      "name": "write_function_module_source",
+      "group": "function",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_EXECUTE",
+      "minHelperProtocol": "2.7"
     }
   ]
 }

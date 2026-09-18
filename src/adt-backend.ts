@@ -323,6 +323,7 @@ export class AdtBackend implements SapBackend {
           inputParameters: { IV_ACTION: "CAPABILITIES" },
           outputParameters: [{ name: "EV_RESULT", kind: "scalar" }]
         })
+        traceHelperProbe(probed, "json-envelope", "", JSON.stringify(response))
         return jsonHelperCapabilitiesAttestation(response, probed, observedAt)
       }
       const body = await postSapSoap(
@@ -332,6 +333,10 @@ export class AdtBackend implements SapBackend {
         false,
         this.passwordFor(config)
       )
+      // Capture the reply before any verdict is derived from it. The identity check below reports "omitted
+      // the HELPER identity line" both for a helper that stayed silent and for a reply this client could not
+      // read, so only the raw body separates those cases. Enabled only by ABAP_MCP_HELPER_TRACE.
+      traceHelperProbe(probed, "xml-rows", channel.soapAction, body)
       const response = parseHelperCapabilitiesResponse(body)
       if (response.status !== "S" || response.code.toUpperCase() !== "CAPABILITIES") {
         return emptyHelperCapabilities(probed, observedAt, "operation-scoped")
@@ -1690,6 +1695,24 @@ export function buildSapHelperEnvelope(request: SapHelperRequest): string {
     `<IV_OPERATION>${encodeXml(request.operation)}</IV_OPERATION>` +
     `<IV_OBJECT_TYPE>${encodeXml(request.objectType ?? "")}</IV_OBJECT_TYPE>` +
     `<IV_OBJECT_NAME>${encodeXml(request.objectName ?? "")}</IV_OBJECT_NAME>` +
+    // WRITE_FUNCTION_SOURCE is the only helper operation that carries a payload. The elements
+    // mirror the repository envelope one for one, so the shared repository body sees the same
+    // package, request, expected version and IT_SOURCE rows it already reads for its own writes.
+    (request.operation === "WRITE_FUNCTION_SOURCE"
+      ? xmlElement("IV_PROGRAM", request.program ?? "") +
+        xmlElement("IV_PACKAGE", request.packageName ?? "") +
+        xmlElement("IV_REQUEST", request.transportNumber ?? "") +
+        xmlElement("IV_EXPECTED_VERSION", request.expectedVersion ?? "") +
+        xmlTable(
+          "IT_SOURCE",
+          (request.source ?? []).map((LINE) => ({ LINE }))
+        )
+      : "") +
+    // RFC returns a TABLES parameter only when the caller sent it. Without this element the CAPABILITIES
+    // reply of Z_ORVANTA_MCP_EXECUTE carries EV_STATUS/EV_CODE/EV_VERSION and no IT_SOURCE at all, so the
+    // HELPER identity line never reaches the client and the helper looks un-upgraded. The working
+    // repository and DDIC envelopes send an empty IT_SOURCE the same way.
+    (request.operation === "CAPABILITIES" ? `<IT_SOURCE></IT_SOURCE>` : "") +
     `</n1:Z_ORVANTA_MCP_EXECUTE>` +
     `</soapenv:Body>` +
     `</soapenv:Envelope>`
@@ -2085,10 +2108,12 @@ function rowAt(rows: SapStructureRow[], index: number): SapStructureRow {
  * ABAP body; `Z_ORVANTA_MCP_DDIC_API` implements the opcode in a later delivery and currently
  * answers `OPERATION_NOT_SUPPORTED`, which degrades to `operation-scoped`.
  *
- * `Z_ORVANTA_MAINT_READ` and `Z_ORVANTA_OPS_READ` own no source table and no
+ * `Z_ORVANTA_MAINT_READ`, `Z_ORVANTA_OPS_READ` and `Z_ORVANTA_LOG_READ` own no source table and no
  * `EV_STATUS`/`EV_CODE`/`EV_VERSION` export: their only reply channel is the `EV_RESULT` JSON
  * string, so the same rows travel as its `payload` array (protocol design revision R3). They are
  * therefore asked through `callRemoteFunction`, the same client path their business reads use.
+ * `Z_ORVANTA_LOG_READ` answers before its `CLEAR ev_result.` and is dispatched by the same
+ * `IV_ACTION` input, so the probe shape is identical to the other two JSON helpers.
  */
 const HELPER_CAPABILITIES_CHANNELS: Record<
   string,
@@ -2110,7 +2135,8 @@ const HELPER_CAPABILITIES_CHANNELS: Record<
     envelope: () => buildSapDdicEnvelope({ operation: "CAPABILITIES", objectName: "" })
   },
   Z_ORVANTA_MAINT_READ: { reply: "json-envelope" },
-  Z_ORVANTA_OPS_READ: { reply: "json-envelope" }
+  Z_ORVANTA_OPS_READ: { reply: "json-envelope" },
+  Z_ORVANTA_LOG_READ: { reply: "json-envelope" }
 }
 
 export interface SapHelperCapabilitiesPayload {
@@ -4251,16 +4277,46 @@ function tokenFingerprint(headers: Record<string, unknown> | undefined): string 
  * ABAP_MCP_EXPORT_ROOT, or the working directory when that is unset, so the whole lock/save/unlock
  * sequence can be read back afterwards. Tracing must never break a write, so file errors are ignored.
  */
-function appendTraceLine(line: string): void {
+function appendTraceLine(line: string, file = "adt-trace.log"): void {
   const entry = `${new Date().toISOString()} ${line}\n`
   for (const root of [process.env.ABAP_MCP_EXPORT_ROOT, process.cwd()]) {
     if (!root) continue
     try {
-      appendFileSync(`${root}/adt-trace.log`, entry)
+      appendFileSync(`${root}/${file}`, entry)
       return
     } catch {
       // the configured export root may not exist yet; the working directory always does
     }
+  }
+}
+
+/**
+ * Raw CAPABILITIES reply capture, enabled only by ABAP_MCP_HELPER_TRACE and written to helper-trace.log.
+ *
+ * The probe compares the identity a helper declares with the identity that was probed, so a helper that
+ * answers without the line and a reply this client cannot read produce the same verdict. Only the reply
+ * itself tells them apart, and the standard ADT trace only covers ADT requests, not these SOAP calls. The
+ * session cookies are redacted and tracing never breaks a probe.
+ */
+export function traceHelperProbe(
+  helper: string,
+  reply: string,
+  soapAction: string,
+  body: string
+): void {
+  if (!process.env.ABAP_MCP_HELPER_TRACE) return
+  const text = String(body ?? "").replace(
+    /(SAP_SESSIONID|MYSAPSSO2|sap-usercontext|Authorization)[^<>\s]*(=[^<>\s;]*)?/gi,
+    "$1=<redacted>"
+  )
+  const compact = text.replace(/\s+/g, " ").slice(0, 300)
+  appendTraceLine(
+    `HELPER-PROBE helper=${helper} reply=${reply} action=${soapAction || "n/a"} bytes=${text.length} sha256:${shortHash(text)} head=${compact}`,
+    "helper-trace.log"
+  )
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (trimmed) appendTraceLine(`HELPER-PROBE-BODY ${trimmed}`, "helper-trace.log")
   }
 }
 

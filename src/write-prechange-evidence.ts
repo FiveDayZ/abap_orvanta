@@ -210,6 +210,7 @@ export async function observeWritePreChange(
   } else if (
     name === "create_function_module_with_interface" ||
     name === "patch_function_module_interface" ||
+    name === "write_function_module_source" ||
     name === "test_remote_function_module" ||
     name === "invoke_customer_function_module"
   ) {

@@ -164,6 +164,17 @@ const ROWS: readonly ToolRow[] = [
     "2.0"
   ],
   [
+    "write_function_module_source",
+    "function",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    // The opcode is part of the shared repository body, which both helper function modules
+    // receive; the service sends it to the base helper Z_ORVANTA_MCP_EXECUTE.
+    EXECUTE,
+    "2.7"
+  ],
+  [
     "inspect_repository_assignment",
     "function",
     DEV_CFG,

@@ -609,6 +609,20 @@ const toolContractsBase = {
       connectionId: z.string()
     }
   },
+  write_function_module_source: {
+    description:
+      "Replace the complete implementation body of one existing Z* or Y* function module in place. The helper reads the generated function include, replaces only the body between the interface separator and ENDFUNCTION., regenerates the function group, commits, and compares the read-back line by line. The function module is never deleted and its interface is never changed. Supply only body statements, never FUNCTION/ENDFUNCTION boundaries. Requires the exact parent function group, the reviewed implementation-source fingerprint, the exact package, and an existing open transport assigned to the function group. The helper refuses to rewrite its own function group. SAP locks are never cleared automatically and transports are never created or released.",
+    inputSchema: {
+      ...writeOperationInput,
+      functionName: z.string(),
+      functionGroup: z.string(),
+      expectedSourceFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      source: z.array(z.string()).min(1),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      connectionId: z.string()
+    }
+  },
   inspect_repository_assignment: {
     description:
       "Inspect package, parent object, open request/task assignment, active/generated state, and original system for a class, interface, function group, function module, program, include, or transaction. Read-only.",

@@ -78,9 +78,19 @@ export interface ConnectionDetails {
 }
 
 export interface SapHelperRequest {
-  operation: "PING" | "VALIDATE_TARGET" | "CAPABILITIES"
+  /** PING, VALIDATE_TARGET and CAPABILITIES are probes; WRITE_FUNCTION_SOURCE is the one write
+   *  operation the base helper Z_ORVANTA_MCP_EXECUTE serves directly. */
+  operation: "PING" | "VALIDATE_TARGET" | "CAPABILITIES" | "WRITE_FUNCTION_SOURCE"
   objectType?: string | undefined
   objectName?: string | undefined
+  /** Function group that must own the target object of a write operation. */
+  program?: string | undefined
+  packageName?: string | undefined
+  transportNumber?: string | undefined
+  /** Reviewed body digest (lowercase sha256) the helper re-checks while it holds the lock. */
+  expectedVersion?: string | undefined
+  /** Complete replacement function body, without the FUNCTION/ENDFUNCTION boundaries. */
+  source?: string[] | undefined
 }
 
 export interface SapHelperResult {
@@ -177,6 +187,10 @@ export type SapRepositoryOperation =
   | "READ_FUNCTION_INTERFACE"
   | "CREATE_FUNCTION_MODULE"
   | "PATCH_FUNCTION_INTERFACE"
+  // Served by the shared repository body. The service sends it to Z_ORVANTA_MCP_EXECUTE through
+  // callSapHelper so that one helper deployment enables the operation; Z_ORVANTA_MCP_DYNPRO_API
+  // dispatches the same opcode when the repository channel is used instead.
+  | "WRITE_FUNCTION_SOURCE"
   | "INSPECT_REPOSITORY_ASSIGNMENT"
   | "READ_TEXT_ELEMENTS"
   | "MERGE_TEXT_ELEMENTS"

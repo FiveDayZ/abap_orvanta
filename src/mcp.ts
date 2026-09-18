@@ -310,6 +310,14 @@ export function createMcpServer(
       )
   )
   registerTool(
+    "write_function_module_source",
+    toolContracts.write_function_module_source,
+    async (input) =>
+      invokeWrite("write_function_module_source", input, backend, writeReceipts, () =>
+        tools.writeFunctionModuleSource(input)
+      )
+  )
+  registerTool(
     "inspect_repository_assignment",
     toolContracts.inspect_repository_assignment,
     async (input) =>
@@ -970,7 +978,7 @@ function withOperationReceipt(
   return `${result}\n\nOperation Receipt\n${JSON.stringify(operationReceipt, null, 2)}`
 }
 
-function writeOperationContext(
+export function writeOperationContext(
   name: string,
   input: Record<string, unknown>,
   backend: SapBackend
@@ -986,10 +994,13 @@ function writeOperationContext(
     input.connectionId ?? uriConnection ?? backend.connectionIds()[0] ?? "unknown"
   ).toLowerCase()
   const target = writeOperationTarget(name, input, uri)
+  const replacementSource = Array.isArray(input.source) ? input.source.join("\n") : ""
   const guard = input.expectedInterfaceFingerprint
     ? `interface fingerprint ${String(input.expectedInterfaceFingerprint)} and source fingerprint ${String(input.expectedSourceFingerprint)}`
     : input.expectedSourceFingerprint
-      ? `${input.recoverInactiveSource === true ? "inactive" : "active"} source fingerprint ${String(input.expectedSourceFingerprint)} and exact source match ${hashWriteInput(input.oldString)}`
+      ? input.oldString !== undefined
+        ? `${input.recoverInactiveSource === true ? "inactive" : "active"} source fingerprint ${String(input.expectedSourceFingerprint)} and exact source match ${hashWriteInput(input.oldString)}`
+        : `source fingerprint ${String(input.expectedSourceFingerprint)} and complete replacement of ${Array.isArray(input.source) ? input.source.length : 0} lines hashed ${hashWriteInput(replacementSource)}`
       : input.expectedFingerprint
         ? `fingerprint ${String(input.expectedFingerprint)}`
         : input.expectedVersion
@@ -1135,6 +1146,9 @@ function sourceWriteOperationTarget(
     return sourceIdentity("FUGR/FF", input.functionName, input.functionGroup)
   }
   if (name === "patch_function_module_interface") {
+    return sourceIdentity("FUGR/FF", input.functionName, input.functionGroup)
+  }
+  if (name === "write_function_module_source") {
     return sourceIdentity("FUGR/FF", input.functionName, input.functionGroup)
   }
   if (name === "create_test_include") {

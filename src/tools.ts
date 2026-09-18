@@ -460,6 +460,14 @@ interface PatchFunctionModuleInterfaceInput extends ReadFunctionModuleInput {
   confirmation?: "DESTRUCTIVE_INTERFACE_CHANGE" | undefined
 }
 
+interface WriteFunctionModuleSourceInput extends ReadFunctionModuleInput {
+  functionGroup: string
+  expectedSourceFingerprint: string
+  source: string[]
+  packageName: string
+  transportNumber: string
+}
+
 interface InspectRepositoryAssignmentInput {
   objectName: string
   objectType: "CLAS/OC" | "INTF/OI" | "FUGR/F" | "FUGR/FF" | "PROG/P" | "PROG/I" | "TRAN"
@@ -2578,6 +2586,148 @@ export class ToolService {
         automaticRetry: false,
         automaticSapUnlock: false,
         transportReleased: false
+      },
+      null,
+      2
+    )
+  }
+
+  /**
+   * Replace the implementation body of an existing function module in place.
+   *
+   * The native ADT write path cannot do this on this platform: `replace_string_in_abap_object`
+   * fails with HTTP 423 "Resource MAIN <function> is not locked (invalid lock handle)" for a
+   * function module include. The shared helper body therefore performs the write inside SAP:
+   * it reads the generated include, replaces only the region between the interface separator and
+   * ENDFUNCTION., regenerates the function group, commits, and compares the read-back line by
+   * line. The function module is never deleted and its interface is never touched.
+   */
+  async writeFunctionModuleSource(input: WriteFunctionModuleSourceInput): Promise<string> {
+    const functionName = customerName(input.functionName, "functionName")
+    const functionGroup = customerName(input.functionGroup, "functionGroup")
+    const connectionId = input.connectionId.toLowerCase()
+    if (!input.source.length) {
+      throw new Error("A complete replacement function body is required")
+    }
+    // The body travels in the helper's IT_SOURCE table, whose rows are ABAPTXT255, so 255 is the
+    // real transport limit; ABAP source lines above the classic 72 columns are legal.
+    if (input.source.some((line) => line.length > 255)) {
+      throw new Error(
+        "Function body source lines must not exceed 255 characters; no write was started"
+      )
+    }
+    const requestedBody = normalizeFunctionBody(input.source)
+    if (!requestedBody.length) {
+      throw new Error("A complete replacement function body is required")
+    }
+    const requestedBodyText = requestedBody.join("\n")
+    const requestedBodyHash = functionBodyHash(requestedBody)
+
+    const currentResult = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
+      objectName: functionName
+    })
+    requireRepositorySuccess(currentResult.status, currentResult.code, currentResult.message)
+    const current = functionModuleResult(currentResult, connectionId, functionName)
+    if (current.functionGroup !== functionGroup) {
+      throw new Error(
+        `Function group changed: expected ${functionGroup}, current ${current.functionGroup}`
+      )
+    }
+    if (current.sourceFingerprint !== input.expectedSourceFingerprint.toLowerCase()) {
+      throw new Error(
+        `Function implementation source fingerprint changed: expected ${input.expectedSourceFingerprint.toLowerCase()}, current ${current.sourceFingerprint}`
+      )
+    }
+    const currentBody = functionImplementationSource(current.source)
+    const currentBodyHash = functionBodyHash(currentBody)
+
+    const requestedPackage = packageName(input.packageName)
+    const requestedTransport = transportNumber(input.transportNumber)
+    const assignmentResult = await this.backend.callSapRepository(connectionId, {
+      operation: "INSPECT_REPOSITORY_ASSIGNMENT",
+      objectType: "FUNC",
+      objectName: functionName
+    })
+    requireRepositorySuccess(
+      assignmentResult.status,
+      assignmentResult.code,
+      assignmentResult.message
+    )
+    const assignment = parseFunctionPayload(assignmentResult.source).metadata
+    if (assignment.PARENT_OBJECT !== functionGroup) {
+      throw new Error(
+        `Function repository parent changed: expected ${functionGroup}, current ${assignment.PARENT_OBJECT || "none"}`
+      )
+    }
+    if (assignment.PACKAGE !== requestedPackage) {
+      throw new Error(
+        `Function repository package changed: expected ${requestedPackage}, current ${assignment.PACKAGE || "none"}`
+      )
+    }
+    if (![assignment.REQUEST, assignment.TASK].includes(requestedTransport)) {
+      throw new Error(`Function module is not assigned to transport ${requestedTransport}`)
+    }
+
+    const helperResult = await this.backend.callSapHelper(connectionId, {
+      operation: "WRITE_FUNCTION_SOURCE",
+      objectName: functionName,
+      program: functionGroup,
+      packageName: requestedPackage,
+      transportNumber: requestedTransport,
+      expectedVersion: currentBodyHash,
+      source: requestedBody
+    })
+    requireRepositorySuccess(helperResult.status, helperResult.code, helperResult.message)
+
+    const activatedResult = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
+      objectName: functionName
+    })
+    requireRepositorySuccess(activatedResult.status, activatedResult.code, activatedResult.message)
+    const activated = functionModuleResult(activatedResult, connectionId, functionName)
+    const activatedBody = functionImplementationSource(activated.source)
+    const activatedBodyText = activatedBody.join("\n")
+    const verificationMismatches = [
+      ["functionGroup", functionGroup, activated.functionGroup],
+      ["interfaceFingerprint", current.interfaceFingerprint, activated.interfaceFingerprint],
+      ["body", requestedBodyText, activatedBodyText]
+    ]
+      .filter(([, expected, actual]) => JSON.stringify(expected) !== JSON.stringify(actual))
+      .map(
+        ([field, expected, actual]) =>
+          `${field}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`
+      )
+    if (verificationMismatches.length) {
+      throw new Error(
+        `SAP function source verification did not return the requested replacement:\n${verificationMismatches.join("\n")}`
+      )
+    }
+
+    return JSON.stringify(
+      {
+        ...activated,
+        previousFingerprint: current.fingerprint,
+        previousInterfaceFingerprint: current.interfaceFingerprint,
+        previousSourceFingerprint: current.sourceFingerprint,
+        previousBodyHash: currentBodyHash,
+        bodyHash: requestedBodyHash,
+        bodyLines: requestedBody.length,
+        previousBodyLines: currentBody.length,
+        requestedBodyAlreadyActive: requestedBodyText === currentBody.join("\n"),
+        helperCode: helperResult.code,
+        helperMessage: helperResult.message,
+        helperVersion: helperResult.version,
+        helperVerification: "the helper compared the read-back line by line",
+        interfaceUnchanged: true,
+        packageName: requestedPackage,
+        recordedRequest: requestedTransport,
+        automaticRetry: false,
+        automaticSapUnlock: false,
+        transportReleased: false,
+        functionDeleted: false
       },
       null,
       2
@@ -9717,6 +9867,43 @@ function renderFunctionParameter(
 ): string {
   const name = parameter.passByValue ? `VALUE(${parameter.name})` : parameter.name
   return `${name} ${typing} ${parameter.typeName}${parameter.optional ? " OPTIONAL" : ""}`
+}
+
+/**
+ * Normalize a caller-supplied replacement body exactly like the helper does before inserting it.
+ *
+ * Accepted input is either the body on its own or a complete function include: when the text
+ * starts with `FUNCTION`, everything from the interface separator onwards is used; a trailing
+ * `ENDFUNCTION.` line is always dropped, because the helper re-inserts the existing end of the
+ * generated skeleton itself. Lines are right-trimmed and leading/trailing blank lines removed,
+ * so the body hash is byte-identical on both sides.
+ */
+function normalizeFunctionBody(source: string[]): string[] {
+  const lines = source.map((line) => line.trimEnd())
+  let start = 0
+  const firstNonBlank = lines.find((line) => line.trim() !== "") ?? ""
+  if (/^FUNCTION\b/i.test(firstNonBlank.trim())) {
+    const separators = lines
+      .map((line, index) => (/^\*"-+$/.test(line.trim()) ? index : -1))
+      .filter((index) => index >= 0)
+    start = separators.length >= 2 ? separators[1]! + 1 : 0
+  }
+  let end = lines.length
+  for (let index = lines.length - 1; index >= start; index -= 1) {
+    if (/^ENDFUNCTION\./i.test(lines[index]!.trim())) {
+      end = index
+      break
+    }
+  }
+  const body = lines.slice(start, end)
+  while (body.length && body[0]!.trim() === "") body.shift()
+  while (body.length && body.at(-1)!.trim() === "") body.pop()
+  return body
+}
+
+/** Body digest convention shared with the helper: sha256 over the LF-joined body lines. */
+function functionBodyHash(body: string[]): string {
+  return createHash("sha256").update(body.join("\n")).digest("hex")
 }
 
 function functionImplementationSource(source: string[]): string[] {
