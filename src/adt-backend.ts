@@ -4179,11 +4179,15 @@ export function traceAdtRequest(data: LogData, report: (line: string) => void): 
  * sequence can be read back afterwards. Tracing must never break a write, so file errors are ignored.
  */
 function appendTraceLine(line: string): void {
-  try {
-    const root = process.env.ABAP_MCP_EXPORT_ROOT || process.cwd()
-    appendFileSync(`${root}/adt-trace.log`, `${new Date().toISOString()} ${line}\n`)
-  } catch {
-    // diagnostic only
+  const entry = `${new Date().toISOString()} ${line}\n`
+  for (const root of [process.env.ABAP_MCP_EXPORT_ROOT, process.cwd()]) {
+    if (!root) continue
+    try {
+      appendFileSync(`${root}/adt-trace.log`, entry)
+      return
+    } catch {
+      // the configured export root may not exist yet; the working directory always does
+    }
   }
 }
 
