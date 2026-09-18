@@ -132,6 +132,12 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - `SOURCE|HASH` 是**自指哈希**：生成器在四个 `ORVANTAHASHSLOT1..4` 占位符仍在体中时取 SHA-256，再把该摘要填回占位符。因此不能用渲染后的文本直接重算，必须先还原占位符（`capabilityBodyDigest`）。
 - 上表末列随生成器演进会变化，部署验证器在运行时重算（`helperCapabilityDigests`）；此处记录的是当前 HEAD（`84f4ef4`）的取值。
 
+**部署取证路径（2026-09-18 实测结论）**：
+
+- **不可用**：用 `test_remote_function_module` 探询 `CAPABILITIES`。该工具要求至少一项输出期望（`src/tools.ts:1670-1676`，报错 `Provide output expectations or expectedException, but not both`），且期望值按**精确**比较（`assertExpectedRemoteOutputs` → `isDeepStrictEqual`，`src/tools.ts:9951`，无通配或正则）；而 `CAPABILITIES` 回复含主机、时间与自指 `SOURCE|HASH`，写不出精确期望。实测该调用还会预留一条失败的写操作回执，因此它并非无副作用的只读探针。
+- **可用**：只读的 `get_capability_report`（`src/contracts.ts:268`；其说明明确探询不触发写、不清锁、不重试、不声称回滚）已返回按助手解析好的 `helperAttestation` 条目：`helper`、`minProtocol`/`maxProtocol`、`operations[]`（`opcode`/`since`/`write`）、`scopes`、`sourceHash`、`packageName`、`transport`、`host`、`observedAt`、`attestation`、`detail`。实测 `Z_ORVANTA_MCP_DYNPRO_API` 已完整自述（1.1–2.6、36 个操作），而 `MAINT_READ`/`OPS_READ` 当前为 `attestation: "operation-scoped"`、`sourceHash`/`packageName`/`transport` 等均为 `null`——这正是升级前的期望状态，也是升级后必须改变的证据。
+- 因此部署取证以**服务侧唯一解析器**为准：部署脚本只读该报告，再把协议区间、操作码表、`sourceHash`、包与请求逐项与生成器表比对，并另行校验线上体哈希；脚本不再自带第二份行解析器，以避免与服务侧实现漂移。
+
 ---
 
 ## 4. 服务侧设计
