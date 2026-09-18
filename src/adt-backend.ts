@@ -3601,7 +3601,7 @@ export async function replaceSourceWithClient(
 
   let lock
   try {
-    lock = await client.lock(lockTargetUri(target.objectUri), "MODIFY")
+    lock = await client.lock(lockTargetUri(target.objectUri, target.sourceUri), "MODIFY")
   } catch (error) {
     throw capabilityFailure("lock", error)
   }
@@ -3648,7 +3648,7 @@ export async function replaceSourceWithClient(
   }
 
   try {
-    await client.unLock(lockTargetUri(target.objectUri), lock.LOCK_HANDLE)
+    await client.unLock(lockTargetUri(target.objectUri, target.sourceUri), lock.LOCK_HANDLE)
   } catch (unlockError) {
     if (operationError) {
       throw new Error(
@@ -4212,15 +4212,20 @@ function appendTraceLine(line: string): void {
 }
 
 /**
- * The URI an ADT edit locks. A function module's source belongs to its function group, and on some releases
- * SAP only accepts the following write against a lock held on the group, so ABAP_MCP_LOCK_TARGET=fugr
- * switches the lock (and the matching unlock) to the group URI. The default keeps the object lock every
- * recorded deployment used.
+ * The URI an ADT edit locks. The default - the function module's own URI - is the flow every recorded
+ * deployment used. ABAP_MCP_LOCK_TARGET=fugr locks the function group instead (tried on 2026-09-18 10:55:
+ * SAP still refused the write), and ABAP_MCP_LOCK_TARGET=source locks the exact resource being written
+ * (.../source/main), which is the resource SAP itself names when it answers 423 "Resource MAIN ... is not
+ * locked". Unset keeps the historical behaviour.
  */
-function lockTargetUri(objectUri: string): string {
-  if (process.env.ABAP_MCP_LOCK_TARGET !== "fugr") return objectUri
-  const group = objectUri.split(/\/fmodules\//i)[0]
-  return group && group !== objectUri ? group : objectUri
+function lockTargetUri(objectUri: string, sourceUri: string): string {
+  const mode = process.env.ABAP_MCP_LOCK_TARGET
+  if (mode === "fugr") {
+    const group = objectUri.split(/\/fmodules\//i)[0]
+    return group && group !== objectUri ? group : objectUri
+  }
+  if (mode === "source") return sourceUri || objectUri
+  return objectUri
 }
 
 function sanitizeDiagnosticBody(body: string): string {
