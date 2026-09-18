@@ -141,6 +141,8 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - 只读诊断尝试：`search_sap_locks`（用户 `WYS`）返回 `status=unavailable, code=HELPER_NOT_APPROVED`——读取 SM12 需要一个另行部署并通过指纹批准的锁助手，当前 w200 不具备，故**SAP 侧锁状态无法观测**。
 - 未执行：任何重试、锁清理、传输操作或对象删除。
 - 两条待用户处置的候选（见任务报告）：把两个对象分配到 `GR2K923472`（bootstrap 的 `AssignPackageTransport` 模式或 SE80 手工分配）；以及在 SM12 中确认／清理可能残留的会话锁（这两个对象此前无开放分配，历史会话中断可能留下锁项）。
+- 追加诊断（2026-09-18 09:20）：`get_write_operation_status` 复核该操作（`capabilities-maint-1789693304068`）为 `status=failed`、`localLockReleased=true`、`outcomeMayBeUnknown=true`；`list_write_recovery_operations` 返回 `count=0`、`automaticCleanup=false`。即**服务侧没有挂起或待恢复的写操作**，`release_write_operation_lock` 无对象可释放，失败点只落在 SAP 对 PUT 的拒绝上。
+- 该次调用与历史上成功的 `scripts/deploy-report-parameters.mjs` **逐参数同形**：同一工具、同样的 `fileUri` 推导（`get_abap_object_workspace_uri` 的 `Workspace URI:`）、同样传 `transportNumber`／`operationId`／`expectedSourceFingerprint`。因此失败不是脚本参数或调用形状问题，而是运行期 SAP 侧状态；排查 SM12 时应同时看**其他用户**是否持有这两个对象——若某个加锁步骤被静默放弃而调用继续执行，随后的 PUT 就会以本条 423 被拒。
 
 **部署取证路径（2026-09-18 实测结论）**：
 
