@@ -4187,9 +4187,25 @@ export function traceAdtRequest(data: LogData, report: (line: string) => void): 
     `${query ? `?${query}` : ""} -> ${data.response.statusCode} stateful=${data.stateful}` +
     ` requestSession=${sessionFingerprint(data.request.headers)}` +
     ` responseSession=${sessionFingerprint(data.response.headers)}` +
+    ` csrf=${tokenFingerprint(data.request.headers)}/${tokenFingerprint(data.response.headers)}` +
     `${marks.length ? ` ${marks.join(" ")}` : ""} ${data.duration}ms`
   report(line)
   appendTraceLine(line)
+}
+
+/**
+ * Whether a CSRF token was carried, and whether SAP issued one, as a short SHA-256 or "none". This matters
+ * because the service deliberately continues without a CSRF token when ECC 7.31 authenticates by cookie but
+ * omits the token, and that is the one property of the request that a working Eclipse ADT session has and
+ * this session may not. The token itself is a credential and is never written out.
+ */
+function tokenFingerprint(headers: Record<string, unknown> | undefined): string {
+  for (const [key, value] of Object.entries(headers ?? {})) {
+    if (key.toLowerCase() !== "x-csrf-token") continue
+    const text = Array.isArray(value) ? value.join("|") : String(value ?? "")
+    return text ? `sha256:${shortHash(text)}` : "none"
+  }
+  return "none"
 }
 
 /**
