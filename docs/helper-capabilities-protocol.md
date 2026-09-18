@@ -149,6 +149,10 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - 追加诊断（2026-09-18 09:32，4848 仓库构建／全新 ADT 会话）：**同样失败，且证明是系统性的**。MAINT 经 4848 重试仍得同一 423（新句柄 `fMbdAxTCicWXCrnzJ4XTGCJCDjY=`）；再换**另一个对象** OPS（函数组 `ZORVANTA_LOG`）同样被拒（新句柄 `p+UCUCFRgqnu7PAk/fPVCKifaVY=`）。至此共 **4 次写入尝试、2 个服务进程（4847／4848）、2 个对象／函数组**，全部呈现"加锁成功、PUT 被拒"，两个对象读回均等于部署前基线（`f2a1580c…`／303、`6cd998bf…`／1047，分配均为空）。**因此与本地服务进程无关，属 SAP 侧系统性拒绝。**
 - 传输复核（只读）：`GR2K923472` 状态 `D`、owner `WYS`、恰好 1 个任务 `GR2K923473`（`D`、0 对象），主传输含 `ZORVANTA_MCP_CORE`(FUGR) 与 `ZCL_ORVANTA_MCP_CORE`(CLAS)，清理指纹 `e472cc4cdfaa3ec18252f682b885a263f94f96cfb7f6c1bb8aad3c1f6c7167a8` ⇒ **传输侧健康，不是成因**。
 - 下一步指向 SM12：需检查**任意用户**（不只 `WYS`）是否在这两个对象／函数组上持有锁，并确认没有 SAP GUI／SE80／SE37 编辑器正打开它们——会话被中断或对象被打开都会留下锁项，使加锁调用仍返回句柄而 PUT 被拒。若 SM12 干净，剩余嫌疑是该系统（7.31 SP04）上的 ADT 加锁／会话行为本身，届时需另行授权排查服务端，或改用其他构建做对照实验。
+- 排查结论（2026-09-18 09:38，用户确认 SM12 无锁、无打开后授权排查）：**最可能的成因是这两个对象当前没有任何开放传输分配**。历史记录证明该工具在本系统上确实成功写过函数模块，且当时对象是有分配的：`code-update-20260910-172621.md` 记录 `ZORVANTA_MAINT` 创建时"用户明确批准：函数组 `ZORVANTA_MAINT`、RFC `Z_ORVANTA_MAINT_READ`、包 `ZABAP`、请求 `GR2K923421`。实际归属任务 `GR2K923422`"；`code-update-20260907-110620.md` 记录分配回读为"请求为 `GR2K923421`"；`code-update-20260910-095944.md` 以显式 `GR2K923421` 更新源码成功。释放 `GR2K923421` 会清掉这些开放分配，于是两个对象现在 `requestNumber`／`taskNumber` 均为空。
+- 同一族的历史拒绝也有记录：`code-update-20260908-123029.md` 的"对象锁定请求 `GR2K923421`，不能使用任务号 `GR2K923422`；保存前被拒绝"——说明 SAP 把**加锁与对象的传输绑定**一起校验，绑定不一致即在保存前拒绝，本轮的 423 属同一族。
+- 处置：把 `R3TR FUGR ZORVANTA_MAINT` 与 `R3TR FUGR ZORVANTA_LOG` 加入任务 `GR2K923473`（请求 `GR2K923472`，函数模块随函数组传输）后再写入。服务的 `manage_transport_requests` 明确只读（"Never creates, assigns, activates, deletes, or releases"），`cleanup_transport_entries` 只做移除，故该分配只能由用户在 SE01／SE09 完成。
+- 顺带排除库层编码问题：`abap-adt-api` 8.4.3 的 `setObjectSource` 经 axios `params` 传 `lockHandle`（`AxiosHttpClient.js` 行 45），axios 会做百分号编码；`unLock` 里额外的 `encodeURIComponent` 反而可能导致双重编码，但不影响写入判定。
 
 **部署取证路径（2026-09-18 实测结论）**：
 
