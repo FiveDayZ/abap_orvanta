@@ -4147,7 +4147,7 @@ function sessionFingerprint(headers: Record<string, unknown> | undefined): strin
  * shown to share one SAP session or not - and short hashes of the lock handle SAP issued and of the one
  * actually sent. Normal runs never reach this.
  */
-function traceAdtRequest(data: LogData, report: (line: string) => void): void {
+export function traceAdtRequest(data: LogData, report: (line: string) => void): void {
   const params = Object.entries(data.request.params ?? {})
   const query = params
     .map(([key, value]) =>
