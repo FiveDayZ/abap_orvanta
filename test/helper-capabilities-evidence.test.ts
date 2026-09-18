@@ -652,3 +652,67 @@ test("the deployment step performs no write of its own before the single approve
     )
   }
 })
+
+test("an object with no open transport assignment is refused before any write", () => {
+  const target = evidenceModule.helperCapabilityTargets.maint
+  const refusal = (assignment: unknown) => {
+    try {
+      evidenceModule.assertOpenAssignment(assignment, target)
+      return null
+    } catch (error) {
+      return (error as Error).message
+    }
+  }
+
+  // SAP validates the edit lock against the object's own open assignment, so an unassigned object is
+  // refused as "not locked" only after the lock call has already returned a handle. The message has to
+  // name the object, the request/task and where to do it, and link back to that failure.
+  const unassigned = refusal({
+    objectName: target.helper,
+    parentObject: "ZORVANTA_MAINT",
+    requestNumber: "",
+    taskNumber: ""
+  })
+  assert.ok(unassigned, "an unassigned object must be refused")
+  assert.match(unassigned, /Z_ORVANTA_MAINT_READ/)
+  assert.match(unassigned, /FUGR ZORVANTA_MAINT/, "must name the object to assign")
+  assert.match(unassigned, /GR2K923472/, "must name the request")
+  assert.match(unassigned, /GR2K923473/, "must name the task")
+  assert.match(unassigned, /SE01\/SE09/, "must name where to make the assignment")
+  assert.match(unassigned, /423/, "must link to the failure it prevents")
+  assert.doesNotMatch(unassigned, /undefined/, "no field may be interpolated as undefined")
+
+  assert.deepEqual(
+    evidenceModule.assertOpenAssignment({ requestNumber: "GR2K923472", taskNumber: "" }, target),
+    { request: "GR2K923472", task: "" },
+    "an assignment naming only the request is enough"
+  )
+  assert.deepEqual(
+    evidenceModule.assertOpenAssignment({ requestNumber: "", taskNumber: "GR2K923473" }, target),
+    { request: "", task: "GR2K923473" },
+    "an assignment naming only the task is enough"
+  )
+
+  const missing = refusal(undefined)
+  assert.equal(typeof missing, "string", "a failed read-back must be refused")
+  assert.match(String(missing), /no repository assignment was read back/)
+  assert.doesNotMatch(
+    String(missing),
+    /FUGR/,
+    "a failed read-back is not the same as an unassigned object"
+  )
+})
+
+test("the deploy script consults the assignment before it writes or captures a pre-image", async () => {
+  const source = await readFile(resolve("scripts/deploy-helper-capabilities.mjs"), "utf8")
+  const guard = source.indexOf("assertOpenAssignment(beforeAssignment, target)")
+  const preImage = source.indexOf("rollback-${new Date()")
+  // The invocation, not the availability probe near the top of the file.
+  const write = source.indexOf('call("replace_string_in_abap_object"')
+  assert.match(source, /assertOpenAssignment,/, "the guard must be imported")
+  assert.ok(guard > 0, "the deploy script must consult the assignment")
+  assert.ok(preImage > 0, "the pre-image capture must still be present")
+  assert.ok(write > 0, "the write call must still be present")
+  assert.ok(guard < preImage, "the assignment must be checked before a pre-image is captured")
+  assert.ok(guard < write, "the assignment must be checked before the write")
+})

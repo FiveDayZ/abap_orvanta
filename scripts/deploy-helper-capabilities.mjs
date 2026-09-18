@@ -21,6 +21,7 @@ import { writeFile } from "node:fs/promises"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import {
+  assertOpenAssignment,
   bodyLinesHash,
   functionModuleBody,
   helperCapabilityDigests,
@@ -232,6 +233,26 @@ if (isEntryPoint) {
       newStringLines: plan.newString.split("\n").length
     })
     evidence.plan = { fileUri, editFingerprint, replacedLines: plan.replacedLines }
+
+    // SAP validates the ADT edit lock against the object's own open transport assignment, so an object
+    // that carries none is refused as "not locked" only after the lock call has already returned a
+    // handle. Checking here keeps a doomed run from capturing a rollback pre-image, reaching SAP, or
+    // reporting a dry run as ready; the message names the request/task the object must be assigned to.
+    let binding = null
+    let bindingProblem = null
+    try {
+      binding = assertOpenAssignment(beforeAssignment, target)
+    } catch (error) {
+      bindingProblem = error.message
+    }
+    evidence.transportBinding = bindingProblem
+      ? { ok: false, problem: bindingProblem }
+      : { ok: true, request: binding.request, task: binding.task }
+    step("transport-binding", evidence.transportBinding)
+    if (bindingProblem) {
+      evidence.status = apply ? "stopped" : "dry_run_blocked"
+      throw new Error(bindingProblem)
+    }
 
     // The pre-CAPABILITIES body exists nowhere else: the generator module was edited in place, so this
     // read-back is the only copy of the text that is about to be replaced. Capture it before writing

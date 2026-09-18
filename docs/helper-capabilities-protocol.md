@@ -153,6 +153,7 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - 同一族的历史拒绝也有记录：`code-update-20260908-123029.md` 的"对象锁定请求 `GR2K923421`，不能使用任务号 `GR2K923422`；保存前被拒绝"——说明 SAP 把**加锁与对象的传输绑定**一起校验，绑定不一致即在保存前拒绝，本轮的 423 属同一族。
 - 处置：把 `R3TR FUGR ZORVANTA_MAINT` 与 `R3TR FUGR ZORVANTA_LOG` 加入任务 `GR2K923473`（请求 `GR2K923472`，函数模块随函数组传输）后再写入。服务的 `manage_transport_requests` 明确只读（"Never creates, assigns, activates, deletes, or releases"），`cleanup_transport_entries` 只做移除，故该分配只能由用户在 SE01／SE09 完成。
 - 顺带排除库层编码问题：`abap-adt-api` 8.4.3 的 `setObjectSource` 经 axios `params` 传 `lockHandle`（`AxiosHttpClient.js` 行 45），axios 会做百分号编码；`unLock` 里额外的 `encodeURIComponent` 反而可能导致双重编码，但不影响写入判定。
+- 新增前置校验（本轮代码变更）：`deploy-helper-capabilities.mjs` 在读到分配之后、生成回滚前置镜像与调用唯一一次写入之前，调用 `helper-capabilities-evidence.mjs` 中的纯函数 `assertOpenAssignment`。对象没有开放传输分配时立即停止，并给出可执行信息（对象名、要分配的 `FUGR`、请求 `GR2K923472`、任务 `GR2K923473`、SE01/SE09），证据里记 `dry_run_blocked`（应用模式记 `stopped`）并以非零退出；这样不会再以 423 收场，也不会为注定失败的运行留下前置镜像。该守卫不新增任何变更类工具调用，仍只有一个 `replace_string_in_abap_object`。
 
 **部署取证路径（2026-09-18 实测结论）**：
 

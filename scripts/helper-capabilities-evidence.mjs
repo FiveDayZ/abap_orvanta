@@ -218,6 +218,35 @@ export function evidenceTarget(target) {
 }
 
 /**
+ * SAP validates an ADT edit lock together with the object's own open transport assignment. When the
+ * object carries none, the lock SAP issues cannot be bound to the request the edit names, and the
+ * write is refused with HTTP 423 "is not locked (invalid lock handle)" - which reads like a lock
+ * problem even though the lock call itself succeeded. Refusing here converts that opaque rejection
+ * into an actionable one, before any write reaches SAP. Pure, so the offline suite can drive it with
+ * a fake assignment.
+ *
+ * @param {Record<string, unknown>|null|undefined} assignment result of `inspect_repository_assignment`
+ * @param {{helper: string, transportRequest: string, transportTask: string}} target
+ */
+export function assertOpenAssignment(assignment, target) {
+  if (!assignment || typeof assignment !== "object") {
+    throw new Error(
+      `${target.helper}: no repository assignment was read back, so the transport binding of this edit is unknown.`
+    )
+  }
+  const request = String(assignment.requestNumber ?? "").trim()
+  const task = String(assignment.taskNumber ?? "").trim()
+  if (request || task) return { request, task }
+  const object = assignment.parentObject ? `FUGR ${assignment.parentObject}` : target.helper
+  throw new Error(
+    `${target.helper} has no open transport assignment, so SAP cannot bind this edit to ` +
+      `${target.transportRequest}/${target.transportTask} and the write would be refused with ` +
+      `HTTP 423 "is not locked (invalid lock handle)". Assign ${object} to task ` +
+      `${target.transportTask} (request ${target.transportRequest}) in SE01/SE09 first.`
+  )
+}
+
+/**
  * The minimal replacement, with four lines of context, that turns `oldBody` into `newBody`. Pure, so
  * the deployment step and the offline suite share one implementation: this is the exact text that a
  * `replace_string_in_abap_object` call sends, and the caller must additionally prove that `oldString`
