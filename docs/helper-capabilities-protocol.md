@@ -146,6 +146,9 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - 追加诊断（2026-09-18 09:24，一次受控重试后）：以新 `operationId` 重试一次，仍以同一 423 被拒，但**锁句柄是新的**（`JPJS3SdWevuvqRcEKrfJKFsnixE=`），且读回显示对象体仍为 `f2a1580c…`／303 行、TADIR 分配仍为空 ⇒ 该失败**可复现**，不是瞬时冲突；随后按回执要求停止，不再重试。
 - 服务端源码核对（只读）：`src/adt-backend.ts` 的替换路径先 `client.lock(target.objectUri, "MODIFY")`（行 3594）、再 `client.setObjectSource(target.sourceUri, …)`（行 3630），而 `objectUri = sourceUri.replace(/\/source\/main$/i, "")`（行 3765）——即"锁对象、写其源码"的规范配对，与错误中的 PUT URL 一致。**加锁调用本身是成功的**（失败会走 `capabilityFailure("lock")` 分支），被拒的是随后携带该句柄的 PUT。因此这不是服务的 URI 映射缺陷，也与同族对象的历史成功写入不矛盾：失败点在 SAP 侧的会话／锁状态。
 - 仍未执行：锁清理、传输分配、传输释放、对象删除；`release_write_operation_lock` 未调用（服务侧无待恢复操作，无对象可释放）。
+- 追加诊断（2026-09-18 09:32，4848 仓库构建／全新 ADT 会话）：**同样失败，且证明是系统性的**。MAINT 经 4848 重试仍得同一 423（新句柄 `fMbdAxTCicWXCrnzJ4XTGCJCDjY=`）；再换**另一个对象** OPS（函数组 `ZORVANTA_LOG`）同样被拒（新句柄 `p+UCUCFRgqnu7PAk/fPVCKifaVY=`）。至此共 **4 次写入尝试、2 个服务进程（4847／4848）、2 个对象／函数组**，全部呈现"加锁成功、PUT 被拒"，两个对象读回均等于部署前基线（`f2a1580c…`／303、`6cd998bf…`／1047，分配均为空）。**因此与本地服务进程无关，属 SAP 侧系统性拒绝。**
+- 传输复核（只读）：`GR2K923472` 状态 `D`、owner `WYS`、恰好 1 个任务 `GR2K923473`（`D`、0 对象），主传输含 `ZORVANTA_MCP_CORE`(FUGR) 与 `ZCL_ORVANTA_MCP_CORE`(CLAS)，清理指纹 `e472cc4cdfaa3ec18252f682b885a263f94f96cfb7f6c1bb8aad3c1f6c7167a8` ⇒ **传输侧健康，不是成因**。
+- 下一步指向 SM12：需检查**任意用户**（不只 `WYS`）是否在这两个对象／函数组上持有锁，并确认没有 SAP GUI／SE80／SE37 编辑器正打开它们——会话被中断或对象被打开都会留下锁项，使加锁调用仍返回句柄而 PUT 被拒。若 SM12 干净，剩余嫌疑是该系统（7.31 SP04）上的 ADT 加锁／会话行为本身，届时需另行授权排查服务端，或改用其他构建做对照实验。
 
 **部署取证路径（2026-09-18 实测结论）**：
 
