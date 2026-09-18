@@ -16,6 +16,7 @@ import {
   type TransportRequest
 } from "abap-adt-api"
 import { createHash } from "node:crypto"
+import { appendFileSync } from "node:fs"
 import { InactiveInventoryError, readInactiveInventory } from "./inactive-inventory.js"
 import { request as httpRequest } from "node:http"
 import { request as httpsRequest } from "node:https"
@@ -4161,13 +4162,29 @@ function traceAdtRequest(data: LogData, report: (line: string) => void): void {
     issued ? `lockIssued=sha256:${shortHash(issued)}` : "",
     sent ? `lockSent=sha256:${shortHash(String(sent))}` : ""
   ].filter(Boolean)
-  report(
+  const line =
     `ADT-TRACE #${data.id} ${String(data.request.method).toUpperCase()} ${data.request.uri}` +
-      `${query ? `?${query}` : ""} -> ${data.response.statusCode} stateful=${data.stateful}` +
-      ` requestSession=${sessionFingerprint(data.request.headers)}` +
-      ` responseSession=${sessionFingerprint(data.response.headers)}` +
-      `${marks.length ? ` ${marks.join(" ")}` : ""} ${data.duration}ms`
-  )
+    `${query ? `?${query}` : ""} -> ${data.response.statusCode} stateful=${data.stateful}` +
+    ` requestSession=${sessionFingerprint(data.request.headers)}` +
+    ` responseSession=${sessionFingerprint(data.response.headers)}` +
+    `${marks.length ? ` ${marks.join(" ")}` : ""} ${data.duration}ms`
+  report(line)
+  appendTraceLine(line)
+}
+
+/**
+ * The write client hands diagnostics to a single mutable string (the last line wins) and only surfaces it
+ * when the operation fails, so a trace line would be lost. Append every line to adt-trace.log under
+ * ABAP_MCP_EXPORT_ROOT, or the working directory when that is unset, so the whole lock/save/unlock
+ * sequence can be read back afterwards. Tracing must never break a write, so file errors are ignored.
+ */
+function appendTraceLine(line: string): void {
+  try {
+    const root = process.env.ABAP_MCP_EXPORT_ROOT || process.cwd()
+    appendFileSync(`${root}/adt-trace.log`, `${new Date().toISOString()} ${line}\n`)
+  } catch {
+    // diagnostic only
+  }
 }
 
 /**
