@@ -13,6 +13,7 @@ const REPOSITORY_HELPER = "Z_ORVANTA_MCP_DYNPRO_API"
 const DDIC_HELPER = "Z_ORVANTA_MCP_DDIC_API"
 const MAINTENANCE_HELPER = "Z_ORVANTA_MAINT_READ"
 const OPERATIONAL_LOG_HELPER = "Z_ORVANTA_OPS_READ"
+const APPLICATION_LOG_HELPER = "Z_ORVANTA_LOG_READ"
 
 interface ReportShape {
   helpers: Array<{ name: string; availability: string; attestation?: unknown }>
@@ -103,7 +104,8 @@ test("an un-upgraded helper stays operation-scoped and keeps the previous capabi
       [REPOSITORY_HELPER, "operation-scoped"],
       [DDIC_HELPER, "operation-scoped"],
       [MAINTENANCE_HELPER, "operation-scoped"],
-      [OPERATIONAL_LOG_HELPER, "operation-scoped"]
+      [OPERATIONAL_LOG_HELPER, "operation-scoped"],
+      [APPLICATION_LOG_HELPER, "operation-scoped"]
     ]
   )
   assert.equal(report.helperAttestation[1]?.maxProtocol, null)
@@ -617,7 +619,8 @@ test("the two JSON helpers are reported in helperAttestation without touching th
       [REPOSITORY_HELPER, "operation-scoped"],
       [DDIC_HELPER, "operation-scoped"],
       [MAINTENANCE_HELPER, "self-described"],
-      [OPERATIONAL_LOG_HELPER, "self-described"]
+      [OPERATIONAL_LOG_HELPER, "self-described"],
+      [APPLICATION_LOG_HELPER, "operation-scoped"]
     ]
   )
   const maintenance = report.helperAttestation[3]
@@ -650,4 +653,110 @@ test("a JSON helper self-description under another identity is not used as evide
   assert.equal(attestation?.attestation, "operation-scoped")
   assert.match(String(attestation?.detail), /declared helper Z_ORVANTA_MCP_EXECUTE/)
   assert.equal(operationalLogCapability(report).reason, OPERATIONAL_LOG_REASON)
+})
+
+// --- Z_ORVANTA_LOG_READ: the application-log capability verdict ---------------------------------
+//
+// The application-log helper answers `CAPABILITIES` through the same `EV_RESULT` JSON envelope as
+// the two helpers above, and its read tools are approval-gated, so this report performs no read on
+// it: a matching self-description is the only fact that may move the `application-logs` verdict off
+// `unknown`. Every other outcome keeps the pre-probe sentence byte for byte.
+
+const APPLICATION_LOG_REASON =
+  "Requires separately deployed, source/interface-pinned Z_ORVANTA_LOG_READ and local administrator approval; message reads need separate approval. Registration does not prove SLG1 access or read-only SAP behavior."
+
+const applicationLogCapability = (report: ReportShape) =>
+  capabilityObservation(report, "application-logs")
+
+test("a matching Z_ORVANTA_LOG_READ self-description is available and keeps both approval caveats", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(
+    APPLICATION_LOG_HELPER,
+    jsonSelfDescription({
+      helper: APPLICATION_LOG_HELPER,
+      minProtocol: "1.0",
+      maxProtocol: "2.6"
+    })
+  )
+  const report = await buildReport(backend)
+
+  const attestation = report.helperAttestation[5]
+  assert.equal(attestation?.attestation, "self-described")
+  assert.equal(attestation?.helper, APPLICATION_LOG_HELPER)
+
+  const applicationLogs = applicationLogCapability(report)
+  assert.equal(applicationLogs.availability, "available")
+  // The verdict names the self-described protocol, and the two approvals stay in the same
+  // sentence: a self-description is not an approval.
+  assert.match(applicationLogs.reason, /Z_ORVANTA_LOG_READ helper self-described protocol 2\.6/)
+  assert.match(applicationLogs.reason, /local administrator approval/)
+  assert.match(applicationLogs.reason, /message reads need separate approval/)
+  assert.equal(applicationLogs.evidence.source, "version-check")
+  assert.match(applicationLogs.evidence.detail, /self-described protocol 2\.6/)
+  assert.match(applicationLogs.evidence.detail, /lowest compatible 1\.0/)
+  assert.match(applicationLogs.evidence.detail, /no approval-gated read probe was performed/)
+})
+
+test("a Z_ORVANTA_LOG_READ self-description under another helper identity is not used as evidence", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(
+    APPLICATION_LOG_HELPER,
+    jsonSelfDescription({ helper: OPERATIONAL_LOG_HELPER, maxProtocol: "2.6" })
+  )
+  const report = await buildReport(backend)
+
+  const attestation = report.helperAttestation[5]
+  assert.equal(attestation?.attestation, "operation-scoped")
+  assert.match(String(attestation?.detail), /declared helper Z_ORVANTA_OPS_READ/)
+
+  const applicationLogs = applicationLogCapability(report)
+  assert.equal(applicationLogs.availability, "unknown")
+  assert.equal(applicationLogs.reason, APPLICATION_LOG_REASON)
+})
+
+test("a self-described Z_ORVANTA_LOG_READ without a protocol is not used as evidence", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(
+    APPLICATION_LOG_HELPER,
+    jsonSelfDescription({ helper: APPLICATION_LOG_HELPER, maxProtocol: null })
+  )
+  const report = await buildReport(backend)
+
+  // The identity matched, so the attestation itself is reported as self-described, but without a
+  // protocol it states no capability and cannot move the verdict.
+  assert.equal(report.helperAttestation[5]?.attestation, "self-described")
+  assert.equal(report.helperAttestation[5]?.maxProtocol, null)
+
+  const applicationLogs = applicationLogCapability(report)
+  assert.equal(applicationLogs.availability, "unknown")
+  assert.equal(applicationLogs.reason, APPLICATION_LOG_REASON)
+})
+
+test("a failed CAPABILITIES probe never reports the application-log capability as missing", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilitiesUnreachable = true
+  const report = await buildReport(backend)
+
+  // No read probe is performed for this helper, so a failed `CAPABILITIES` probe stays an honest
+  // `absent` attestation - but the capability verdict is never turned into a missing endpoint.
+  assert.equal(report.helperAttestation[5]?.attestation, "absent")
+  assert.match(String(report.helperAttestation[5]?.detail), /CAPABILITIES/)
+
+  const applicationLogs = applicationLogCapability(report)
+  assert.equal(applicationLogs.availability, "unknown")
+  assert.equal(applicationLogs.reason, APPLICATION_LOG_REASON)
+  assert.equal(applicationLogs.evidence.source, "local-contract")
+  assert.equal(applicationLogs.evidence.detail, "No target-specific operation was invoked")
+})
+
+test("an un-upgraded application-log helper keeps the previous application-log wording", async () => {
+  const report = await buildReport(new MockBackend())
+
+  assert.equal(report.helperAttestation[5]?.attestation, "operation-scoped")
+  assert.equal(report.helperAttestation[5]?.maxProtocol, null)
+
+  const applicationLogs = applicationLogCapability(report)
+  assert.equal(applicationLogs.availability, "unknown")
+  assert.equal(applicationLogs.reason, APPLICATION_LOG_REASON)
+  assert.equal(applicationLogs.evidence.source, "local-contract")
 })

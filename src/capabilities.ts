@@ -6,6 +6,7 @@ import type {
   SapHelperResult,
   SapRepositoryResult
 } from "./backend.js"
+import { APPLICATION_LOG_HELPER } from "./application-logs.js"
 import { PRODUCT_VERSION } from "./version.js"
 
 type Availability = "available" | "unsupported" | "unknown"
@@ -56,17 +57,20 @@ const LOCAL_AVAILABLE: CapabilityObservation = {
  * `Z_ORVANTA_MCP_DYNPRO_API` operations. The repository helper carries the ten
  * `repository-helper-*` capabilities.
  *
- * All five helpers are probed for `CAPABILITIES`, but they do not share one conclusion:
+ * All six helpers are probed for `CAPABILITIES`, but they do not share one conclusion:
  * `Z_ORVANTA_MCP_EXECUTE` and `Z_ORVANTA_MCP_DYNPRO_API` implement the opcode in the generated
  * repository body, `Z_ORVANTA_MCP_DDIC_API` in its own body, and `Z_ORVANTA_MAINT_READ` /
- * `Z_ORVANTA_OPS_READ` answer it through the `EV_RESULT` JSON `payload` array. An un-upgraded
- * helper keeps the previous operation-scoped conclusion and wording.
+ * `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_LOG_READ` answer it through the `EV_RESULT` JSON `payload`
+ * array. An un-upgraded helper keeps the previous operation-scoped conclusion and wording.
  */
 const BASE_HELPER_FUNCTION = "Z_ORVANTA_MCP_EXECUTE"
 const REPOSITORY_HELPER_FUNCTION = "Z_ORVANTA_MCP_DYNPRO_API"
 const DDIC_HELPER_FUNCTION = "Z_ORVANTA_MCP_DDIC_API"
 const MAINTENANCE_HELPER_FUNCTION = "Z_ORVANTA_MAINT_READ"
 const OPERATIONAL_LOG_HELPER_FUNCTION = "Z_ORVANTA_OPS_READ"
+// Imported rather than re-declared: `application-logs.ts` owns the helper identity that the read
+// tools call, so the probe, the service and the generator drift test read one constant.
+const APPLICATION_LOG_HELPER_FUNCTION = APPLICATION_LOG_HELPER
 
 export async function buildCapabilityReport(
   backend: SapBackend,
@@ -86,6 +90,7 @@ export async function buildCapabilityReport(
     ddicAttestation,
     maintenanceAttestation,
     operationalLogAttestation,
+    applicationLogAttestation,
     discovery,
     search,
     query,
@@ -120,6 +125,9 @@ export async function buildCapabilityReport(
     ),
     observeHelperAttestation(OPERATIONAL_LOG_HELPER_FUNCTION, () =>
       backend.probeHelperCapabilities(connectionId, OPERATIONAL_LOG_HELPER_FUNCTION)
+    ),
+    observeHelperAttestation(APPLICATION_LOG_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, APPLICATION_LOG_HELPER_FUNCTION)
     ),
     observeDiscovery(() => backend.discoverySnapshot(connectionId)),
     observeRead("Repository search accepted a bounded no-match query.", () =>
@@ -178,6 +186,13 @@ export async function buildCapabilityReport(
     operationalLogAttestation,
     unprobedHelperObservation("operational-log"),
     OPERATIONAL_LOG_HELPER_FUNCTION
+  )
+  // The application-log helper answers through the same JSON envelope and its reads are
+  // approval-gated as well, so its self-description alone carries the capability verdict below.
+  const applicationLogSelfDescription = reconcileAttestation(
+    applicationLogAttestation,
+    unprobedHelperObservation("application-log"),
+    APPLICATION_LOG_HELPER_FUNCTION
   )
 
   const targetSpecific = unknownTargetObservation(
@@ -288,6 +303,9 @@ export async function buildCapabilityReport(
       "manage_enhancement_implementation_state",
       "delete_enhancement_implementation",
       "manage_classic_badi_implementation"
+    ]),
+    helperCapability("repository-helper-function-source-write", repositoryHelper, "2.7", [
+      "write_function_module_source"
     ]),
     helperCapability("ddic-helper-core", ddicApiHelper, "1.2", [
       "read_ddic_domain",
@@ -474,9 +492,7 @@ export async function buildCapabilityReport(
       "application-logs",
       "target-specific",
       ["discover_application_logs", "search_application_logs", "read_application_log"],
-      unknownTargetObservation(
-        "Requires separately deployed, source/interface-pinned Z_ORVANTA_LOG_READ and local administrator approval; message reads need separate approval. Registration does not prove SLG1 access or read-only SAP behavior."
-      )
+      applicationLogObservation(applicationLogSelfDescription)
     ),
     capability(
       "operational-logs",
@@ -589,7 +605,8 @@ export async function buildCapabilityReport(
         repositorySelfDescription,
         ddicSelfDescription,
         maintenanceSelfDescription,
-        operationalLogSelfDescription
+        operationalLogSelfDescription,
+        applicationLogSelfDescription
       ],
       discovery: discoverySummary(discovery),
       capabilities: disclosed,
@@ -880,6 +897,34 @@ function unknownTargetObservation(reason: string): CapabilityObservation {
     reason,
     evidence: { source: "local-contract", detail: "No target-specific operation was invoked" }
   }
+}
+
+// Unchanged wording for every application-log outcome that is not a matching self-description.
+const APPLICATION_LOG_UNKNOWN_REASON =
+  "Requires separately deployed, source/interface-pinned Z_ORVANTA_LOG_READ and local administrator approval; message reads need separate approval. Registration does not prove SLG1 access or read-only SAP behavior."
+
+/**
+ * The application-log helper answers `CAPABILITIES` through the `EV_RESULT` JSON envelope and its
+ * read tools are approval-gated, so no read observation exists on this connection. A matching
+ * self-description is therefore the only fact that can move the verdict off `unknown`; a helper
+ * that answered any envelope is deployed, so a failed `CAPABILITIES` probe never reads as missing.
+ */
+function applicationLogObservation(attestation: SapHelperCapabilities): CapabilityObservation {
+  if (
+    attestation.attestation === "self-described" &&
+    attestation.maxProtocol &&
+    attestation.helper.trim().toUpperCase() === APPLICATION_LOG_HELPER_FUNCTION
+  ) {
+    return {
+      availability: "available",
+      reason: `The ${attestation.helper} helper self-described protocol ${attestation.maxProtocol}; the tools additionally still require local administrator approval, and message reads need separate approval.`,
+      evidence: {
+        source: "version-check",
+        detail: `${attestation.helper} self-described protocol ${attestation.maxProtocol} (lowest compatible ${attestation.minProtocol ?? "unknown"}); no approval-gated read probe was performed`
+      }
+    }
+  }
+  return unknownTargetObservation(APPLICATION_LOG_UNKNOWN_REASON)
 }
 
 function errorObservation(error: unknown): CapabilityObservation {
