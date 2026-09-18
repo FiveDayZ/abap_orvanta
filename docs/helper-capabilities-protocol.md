@@ -143,6 +143,9 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - 两条待用户处置的候选（见任务报告）：把两个对象分配到 `GR2K923472`（bootstrap 的 `AssignPackageTransport` 模式或 SE80 手工分配）；以及在 SM12 中确认／清理可能残留的会话锁（这两个对象此前无开放分配，历史会话中断可能留下锁项）。
 - 追加诊断（2026-09-18 09:20）：`get_write_operation_status` 复核该操作（`capabilities-maint-1789693304068`）为 `status=failed`、`localLockReleased=true`、`outcomeMayBeUnknown=true`；`list_write_recovery_operations` 返回 `count=0`、`automaticCleanup=false`。即**服务侧没有挂起或待恢复的写操作**，`release_write_operation_lock` 无对象可释放，失败点只落在 SAP 对 PUT 的拒绝上。
 - 该次调用与历史上成功的 `scripts/deploy-report-parameters.mjs` **逐参数同形**：同一工具、同样的 `fileUri` 推导（`get_abap_object_workspace_uri` 的 `Workspace URI:`）、同样传 `transportNumber`／`operationId`／`expectedSourceFingerprint`。因此失败不是脚本参数或调用形状问题，而是运行期 SAP 侧状态；排查 SM12 时应同时看**其他用户**是否持有这两个对象——若某个加锁步骤被静默放弃而调用继续执行，随后的 PUT 就会以本条 423 被拒。
+- 追加诊断（2026-09-18 09:24，一次受控重试后）：以新 `operationId` 重试一次，仍以同一 423 被拒，但**锁句柄是新的**（`JPJS3SdWevuvqRcEKrfJKFsnixE=`），且读回显示对象体仍为 `f2a1580c…`／303 行、TADIR 分配仍为空 ⇒ 该失败**可复现**，不是瞬时冲突；随后按回执要求停止，不再重试。
+- 服务端源码核对（只读）：`src/adt-backend.ts` 的替换路径先 `client.lock(target.objectUri, "MODIFY")`（行 3594）、再 `client.setObjectSource(target.sourceUri, …)`（行 3630），而 `objectUri = sourceUri.replace(/\/source\/main$/i, "")`（行 3765）——即"锁对象、写其源码"的规范配对，与错误中的 PUT URL 一致。**加锁调用本身是成功的**（失败会走 `capabilityFailure("lock")` 分支），被拒的是随后携带该句柄的 PUT。因此这不是服务的 URI 映射缺陷，也与同族对象的历史成功写入不矛盾：失败点在 SAP 侧的会话／锁状态。
+- 仍未执行：锁清理、传输分配、传输释放、对象删除；`release_write_operation_lock` 未调用（服务侧无待恢复操作，无对象可释放）。
 
 **部署取证路径（2026-09-18 实测结论）**：
 
