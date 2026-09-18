@@ -14,6 +14,13 @@ const transportNumber = "GR2K923421"
 const oldBody = operationalLogSpoolSource.join("\n")
 const newBody = operationalLogReportSource.join("\n")
 const hash = (text) => createHash("sha256").update(text).digest("hex")
+// Historical single-use step. These two pins describe the spool and report bodies as they were
+// before the CAPABILITIES branch existed, and that progression has already been applied, so they
+// no longer match the current generators by design: hash(newBody) is the body now deployed, while
+// operationalLogReportSource has since grown the CAPABILITIES branch. A CAPABILITIES upgrade is
+// evidenced by scripts/verify-helper-deployment.mjs instead (see
+// docs/helper-capabilities-protocol.md 3.3 and 3.5) and must re-pin these values if it reuses this
+// step.
 assert.equal(hash(oldBody), "adbeaa50a15254939b285f1349527b8fa692227b74588b89f2b4c78f8bd02ae3")
 assert.equal(hash(newBody), "6cd998bf1e80e61e5d3c20ea416997a3310cc20611919134fe779149b95210ea")
 const evidence = { startedAt: new Date().toISOString(), apply, calls: [] }

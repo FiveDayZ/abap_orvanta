@@ -17,6 +17,12 @@ const parameters = ["IV_STEP", "IV_SPOOLID", "IV_PAGE"]
 const oldBody = operationalLogSource.join("\n")
 const newBody = operationalLogSpoolSource.join("\n")
 const hash = (text) => createHash("sha256").update(text).digest("hex")
+// Historical single-use step. These two pins describe the base and spool bodies as they were
+// before the CAPABILITIES branch existed, and that progression has already been applied (the
+// report variant is what is deployed now), so they no longer match the current generators by
+// design. A CAPABILITIES upgrade is evidenced by scripts/verify-helper-deployment.mjs instead
+// (see docs/helper-capabilities-protocol.md 3.3 and 3.5) and must re-pin these values if it
+// reuses this step.
 assert.equal(hash(oldBody), "ae149347a38cf9083c57c8cce22363e714d13a6ffeb434c5e599bbee4e575624")
 assert.equal(hash(newBody), "adbeaa50a15254939b285f1349527b8fa692227b74588b89f2b4c78f8bd02ae3")
 const evidence = { startedAt: new Date().toISOString(), apply, steps: [] }
