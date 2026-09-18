@@ -154,6 +154,8 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - 处置：把 `R3TR FUGR ZORVANTA_MAINT` 与 `R3TR FUGR ZORVANTA_LOG` 加入任务 `GR2K923473`（请求 `GR2K923472`，函数模块随函数组传输）后再写入。服务的 `manage_transport_requests` 明确只读（"Never creates, assigns, activates, deletes, or releases"），`cleanup_transport_entries` 只做移除，故该分配只能由用户在 SE01／SE09 完成。
 - 顺带排除库层编码问题：`abap-adt-api` 8.4.3 的 `setObjectSource` 经 axios `params` 传 `lockHandle`（`AxiosHttpClient.js` 行 45），axios 会做百分号编码；`unLock` 里额外的 `encodeURIComponent` 反而可能导致双重编码，但不影响写入判定。
 - 新增前置校验（本轮代码变更）：`deploy-helper-capabilities.mjs` 在读到分配之后、生成回滚前置镜像与调用唯一一次写入之前，调用 `helper-capabilities-evidence.mjs` 中的纯函数 `assertOpenAssignment`。对象没有开放传输分配时立即停止，并给出可执行信息（对象名、要分配的 `FUGR`、请求 `GR2K923472`、任务 `GR2K923473`、SE01/SE09），证据里记 `dry_run_blocked`（应用模式记 `stopped`）并以非零退出；这样不会再以 423 收场，也不会为注定失败的运行留下前置镜像。该守卫不新增任何变更类工具调用，仍只有一个 `replace_string_in_abap_object`。
+- 分配补齐后复测（用户执行 SE01/SE09 指派，`GR2K923472` 现含 4 个对象，两助手读回 `requestNumber=GR2K923472`）：前置守卫通过，SAP 仍以**新句柄**返回同一 423。随后用"只加锁不保存"探针（`oldString` 保证不存在）验证**加锁/读取/解锁成功**且未保存源码 ⇒ 失败点在 **PUT**。对照 `ZORVANTA_MCP_CORE`／`ZCL_ORVANTA_MCP_CORE`／`Z_ORVANTA_MCP_EXECUTE`／`Z_ORVANTA_MCP_DYNPRO_API` 的分配回读（同为 `request=GR2K923472`、`task=""`）可知"任务号为空"是正常形态 ⇒ **"缺分配导致 423"被推翻**。
+- 服务端代码事实（只读）：`replaceSourceWithClient`（L3569 起）用同一个 client 完成 `lock`(L3594)→读取(L3603)→`selectTransport`(L3629)→`setObjectSource`(L3630)→`unLock`(L3641)；`withStatefulClient`(L1602-1635) 每次新建 `ADTClient`、先无状态 `login()` 再置 `stateful`(L1627)；`preserveCookieSessionWithoutCsrf`(L1667-1675) 因"ECC 7.31 可能只给 cookie 不给 CSRF 令牌"改写 `loggedin`；写入 client 的 `debugCallback` 只上报失败响应（423 诊断行来自此）。SAP 的 423 **回显了它收到的句柄**，且库须解析出非空 `LOCK_HANDLE` 才会放入请求 ⇒ 发出的句柄即加锁返回的句柄，而 SAP 仍判"未加锁" ⇒ 剩余嫌疑集中在**写入步骤的会话/令牌绑定**。
 
 **部署取证路径（2026-09-18 实测结论）**：
 
