@@ -49,13 +49,16 @@ const maintenanceDiagnosticMinProtocol = maintenanceDiagnosticVersions[0]
 const maintenanceDiagnosticMaxProtocol = maintenanceDiagnosticVersions.at(-1)
 
 // Deployment facts published as SOURCE|PACKAGE and SOURCE|TRANSPORT. Z_ORVANTA_MAINT_READ is
-// still an undeployed local candidate (docs/maintenance-diagnostics.md): neither a package nor
-// a transport request/task is assigned to it, so the rows stay empty instead of claiming a
-// deployment that does not exist. The approving deployment step must supply the real values.
+// deployed in w200 as FUGR/FF in ZORVANTA_MAINT, assigned to package ZABAP with request
+// GR2K923421 and task GR2K923422 (the assignment read-back is recorded in
+// .doc/code-update-20260910-172621.md, and the object's presence in w200 was re-confirmed on
+// 2026-09-18 through get_abap_object_info). This module was authored before that deployment and
+// published empty rows; the values below are the recorded evidence, and an approving deployment
+// step may override them.
 export const maintenanceDiagnosticDeployment = {
-  packageName: "",
-  transportRequest: "",
-  transportTask: ""
+  packageName: "ZABAP",
+  transportRequest: "GR2K923421",
+  transportTask: "GR2K923422"
 }
 
 // Four 16-character placeholders make SOURCE|HASH self-referential: the generator hashes the

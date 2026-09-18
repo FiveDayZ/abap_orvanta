@@ -56,8 +56,8 @@ const variants: GeneratedVariant[] = [
     lines: maintModule.maintenanceDiagnosticSource as string[],
     features: { spool: false, parameters: false },
     preCaseOpcodes: [],
-    packageName: "",
-    transport: ""
+    packageName: "ZABAP",
+    transport: "GR2K923421|GR2K923422"
   },
   {
     label: `${OPERATIONAL_LOG_HELPER} (base)`,
@@ -420,7 +420,10 @@ test("the payload rows keep their protocol shape and order", () => {
     }
     assert.equal(rowFor("SOURCE|PACKAGE|"), `SOURCE|PACKAGE|${variant.packageName}`)
     if (variant.transport === "") {
-      // An empty deployment request and task must still yield the four protocol fields.
+      // Forward guard: a variant whose deployment is not recorded yet (the maintenance helper's
+      // old state) must still emit the four protocol fields. No variant is in that state today -
+      // Z_ORVANTA_MAINT_READ and Z_ORVANTA_OPS_READ are both deployed under
+      // GR2K923421|GR2K923422 - so this keeps the contract covered for the next helper.
       assert.equal(rowFor("SOURCE|TRANSPORT|"), "SOURCE|TRANSPORT||")
       assert.equal(rowFor("SOURCE|TRANSPORT|")?.split("|").length, 4)
     } else {
