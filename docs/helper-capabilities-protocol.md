@@ -32,7 +32,16 @@
 - 维护／运维／应用日志助手的自述仅作**记录**：它们的读工具受本地审批文件门控，能力报告不执行那次业务读取，因此其能力判定现状不变。
 - SCI V2／E2 的载体（新增导出标量 `EV_RESULT`、类型 `STRINGVAL`、值为 R3 JSON 信封）生成器已实现（`scripts/sci-carrier-source.mjs`），**尚未部署**；部署后必须重钉 `src/sci-v2.ts` 的指纹。
 
-**仍未完成**：SCI V2／E2 载体部署与指纹重钉（D2-3）；DDIC 助手 `DTEL` 分支补 `DATATYPE`/`LENG`（D2-2，用于修掉无域数据元素的服务侧回退依赖）。R6 的四项未决问题已于 2026-09-20 全部结案，见 §3.4 后的处置表。
+**仍未完成**：SCI V2／E2 载体**体部**部署与指纹重钉（D2-3；接口前置条件已完成，见 §3.5）；DDIC 助手 `DTEL` 分支补 `DATATYPE`/`LENG`（D2-2，用于修掉无域数据元素的服务侧回退依赖）。R6 的四项未决问题已于 2026-09-20 全部结案，见 §3.5 后的处置表。
+
+**2026-09-20 只读复测（D1 验收，服务 0.46.0 / 启动指纹 `12fa3435…`）**
+
+证据：`.doc/orvanta-capability-report-d1-acceptance-2026-09-20T01-33-45.917Z.json`、`.doc/orvanta-interface-execution-support-d2-acceptance-2026-09-20T01-33-45.917Z.json`。全部为只读调用（`get_capability_report`、`read_function_module_interface`），未执行任何 SAP 写入。
+
+- 报告共 55 项能力：`available 23 / unsupported 1 / unknown 31`（2026-09-18 为 `22 / 2 / 31`）。**唯一从 `unsupported` 变为 `available` 的是 `repository-helper-function-source-write`**，其 reason 已改为「The **Z_ORVANTA_MCP_EXECUTE** helper self-described protocol 2.7, which satisfies minimum 2.7.」——即 D1-1 的注册表派生判定在真实系统上生效，E-1 漂移已消除。`repository-helper-function-interface-patch` 同样改为按 `Z_ORVANTA_MCP_EXECUTE` 2.7 ≥ 2.0 判 `available`。
+- 唯一仍 `unsupported` 的是 `adt-runtime-traces`（`abap-traces` 端点 HTTP 404，平台不暴露），与本次改动无关。
+- `helperAttestation` 现为 **8 条**：6 个助手 `self-described`，SCI V2／E2 均为 `operation-scoped`（接口已含 `EV_RESULT`、体部未部署，正是预期状态）。
+- **`Z_ORVANTA_MCP_DYNPRO_API` 已在 SAP 侧升到协议 2.7**（2026-09-18 为 2.6），源指纹由 `06812bcc…` 变为 `f09e382b…`。上表该行是 09-18 的快照，此处为准。
 
 ---
 
@@ -214,10 +223,24 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 上表 `sci-v2-source.mjs`／`sci-e2-source.mjs` 一行的结论（「R3 载体不存在，需先定义载体，属接口变更」）已由 R6 处置：载体＝**单个导出标量 `EV_RESULT`（`STRINGVAL`）＋ R3 JSON 信封**，生成器 `scripts/sci-carrier-source.mjs` 冻结两个基线（哈希同时钉在文件注释与 `test/sci-carrier-source.test.ts`）并各自注入 23 行 `CAPABILITIES` 分支（`_V2` 体 257 行／摘要 `fa352053…`，`_E2` 体 307 行／摘要 `fc7c6418…`，均为占位符仍在时的 `SOURCE|HASH` 值）。`_E2` 仍由 `_V2` 文本替换派生，但两个基线各自冻结并各自注入分支（HELPER 标识行必须写各自的函数名），派生关系改由测试重新断言。
 
-部署前置条件（两项，均**未执行**）：
+部署前置条件（2026-09-20 只读复核后的真实状态）：
 
-1. 在两个助手的 `EXPORTING` 中新增 `EV_RESULT TYPE STRINGVAL`——否则分支引用的字段不存在，激活会失败；本平台原生 ADT 函模块接口写入不可用，须人工完成。
-2. 部署后重钉 `src/sci-v2.ts` 的 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT`（接口参数变化与体变化都会改变该值）。
+1. ~~在两个助手的 `EXPORTING` 中新增 `EV_RESULT TYPE STRINGVAL`~~ **已完成（w200 实测，非本轮所为）**。2026-09-20 只读 `read_function_module_interface` 实测：`Z_ORVANTA_MCP_SCI_V2` 与 `Z_ORVANTA_MCP_SCI_E2` 的 `EXPORTING` **都已含 `EV_RESULT`，类型 `STRINGVAL`，`valueContract.dataType = STRG`**，两助手均 `remoteEnabled=true`、`executionSupport.supported=true`（`reasons` 为空）。此前本文件记的"须人工完成"已不再成立。旁证：两助手的 CAPABILITIES 探询（JSON 信封通道）能正常返回空 `EV_RESULT`，报告因此稳定显示 `operation-scoped` 而不是 `absent`。
+2. **部署后重钉** `src/sci-v2.ts` 的 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT`——**未完成，且已构成现行缺陷**，见下。
+
+**现行缺陷：SCI V2／E2 的接口指纹钉已失效（2026-09-20 只读实测确认）**
+
+`src/tools.ts:6213-6217` 把 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT` 作为 `expectedInterfaceFingerprint` 传给 `testRemoteFunctionModule`，后者在**任何 SAP 调用之前**（`src/tools.ts:1719-1727`）与 `definition.fingerprint` 比较，不一致即抛错。实测值：
+
+| 助手                          | 钉住的值        | w200 线上 `fingerprint` | 结论             |
+| ----------------------------- | --------------- | ----------------------- | ---------------- |
+| `Z_ORVANTA_MCP_SCI_API`（E1） | `83f8f0a6a588…` | `83f8f0a6a588…`         | 一致，旧路线正常 |
+| `Z_ORVANTA_MCP_SCI_V2`        | `4d38c0988ac0…` | `0f534e3fcca3…`         | **失效**         |
+| `Z_ORVANTA_MCP_SCI_E2`        | `9f0c1e64d4fb…` | `48bf0016d50e…`         | **失效**         |
+
+因此**带显式目标（V2）或 `syntax_critical_sql` profile（E2）的 `run_sci_analysis` 目前会在本地被守卫拦下**（`Function interface fingerprint changed`），E1 路线不受影响。证据链：`read_function_module_interface` 返回体即 `functionModuleResult(...)` 的展开（`src/tools.ts:1626-1640`），与守卫比较的 `definition.fingerprint` 是同一函数产物，故上表的线上值就是守卫实际比较的值。属**代码路径级证明**；未端到端调用 `run_sci_analysis`，因为需要 `acknowledgePotentialSideEffects: true`，本轮未获该授权。
+
+处置（二选一，**未执行**）：① 按本文件原顺序，等载体体部部署后再一次性重钉（届时指纹会再次变化）；② 先重钉到当前线上值以恢复 V2／E2 可用，体部部署后再重钉一次。②能立即修复现行故障，代价是同一常量被重钉两次。
 
 **R6 未决问题的处置（2026-09-20 收口）**
 
