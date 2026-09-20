@@ -240,7 +240,7 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 因此**带显式目标（V2）或 `syntax_critical_sql` profile（E2）的 `run_sci_analysis` 目前会在本地被守卫拦下**（`Function interface fingerprint changed`），E1 路线不受影响。证据链：`read_function_module_interface` 返回体即 `functionModuleResult(...)` 的展开（`src/tools.ts:1626-1640`），与守卫比较的 `definition.fingerprint` 是同一函数产物，故上表的线上值就是守卫实际比较的值。属**代码路径级证明**；未端到端调用 `run_sci_analysis`，因为需要 `acknowledgePotentialSideEffects: true`，本轮未获该授权。
 
-处置（二选一，**未执行**）：① 按本文件原顺序，等载体体部部署后再一次性重钉（届时指纹会再次变化）；② 先重钉到当前线上值以恢复 V2／E2 可用，体部部署后再重钉一次。②能立即修复现行故障，代价是同一常量被重钉两次。
+处置：**已于 2026-09-20 按用户裁定执行方案②**——两个常量先重钉到当前线上值，立即恢复 V2／E2 可用；载体**体部**部署后必须再重钉一次（届时指纹随体部变化），该要求已写入 `src/sci-v2.ts` 的注释。重钉后三个钉（含 E1）与线上值全部一致。**注意：运行中的服务需重启才会载入新钉**，否则守卫仍用旧值。
 
 **R6 未决问题的处置（2026-09-20 收口）**
 
