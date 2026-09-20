@@ -1,9 +1,36 @@
-# SAP 助手能力自述协议（CAPABILITIES）设计稿
+# SAP 助手能力自述协议（CAPABILITIES）
 
-- 状态：**设计稿，未实现、未部署**（Track A / WP-A4）
-- 日期：2026-09-17
+- 状态：**服务侧已实现并发布（0.46.0）；SAP 侧 8 个助手中 6 个已部署并自述，SCI V2／E2 的载体生成器已就绪但未部署**（Track A / WP-A4）
+- 日期：2026-09-17 设计；2026-09-20 状态校准
 - 涉及对象：`Z_ORVANTA_MCP_EXECUTE`、`Z_ORVANTA_MCP_DYNPRO_API`、`Z_ORVANTA_MCP_DDIC_API`、`Z_ORVANTA_MCP_QUERY_API`、`Z_ORVANTA_MCP_SCI_API`/`_V2`/`_E2`、`Z_ORVANTA_LOG_READ`、`Z_ORVANTA_OPS_READ`、`Z_ORVANTA_MAINT_READ`、`Z_ORVANTA_SMARTFORM_API`
 - 涉及源码：`scripts/bootstrap-sap-helper.ps1`、`scripts/*-source.mjs`、`src/backend.ts`、`src/adt-backend.ts`、`src/capabilities.ts`
+
+> **历史版本说明**：本文件 2026-09-17 初次成稿时标注为"设计稿，未实现、未部署"。该标注在 2026-09-18 起即已失真（服务侧与多个助手相继落地），2026-09-20 予以校准。下文 §1 记录的仍是**设计前的**问题与证据，保持不变以便追溯根因。
+
+## 0. 当前实施状态（2026-09-18 真实只读能力报告实测，2026-09-20 校准）
+
+证据文件：`.doc/helper-capabilities-evidence/capability-report-attestation-20260918T072557Z.json`（对 `w200` 的真实只读 `get_capability_report`，包版本 0.45.0）。该报告共 55 项能力：`available 22 / unsupported 2 / unknown 31`（设计前基线为 54 项、`13 / 1 / 40`）。
+
+| 助手                                   | 自述状态             | 协议范围      | 操作码数 | `SOURCE\|HASH`（源指纹）                                           | 包 / 传输              |
+| -------------------------------------- | -------------------- | ------------- | -------- | ------------------------------------------------------------------ | ---------------------- |
+| `Z_ORVANTA_MCP_EXECUTE`（基础助手）    | `self-described`     | 1.1 – **2.7** | 37       | `fbf26be00f96c60e0bdf583248e0a00ae02bbb6c0482ab09698c940dc00c0433` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MCP_DYNPRO_API`（仓库助手） | `self-described`     | 1.1 – 2.6     | 36       | `06812bcc8d3e7ccab9b51764b61a079f7c2d44e5132e27ec748ac3a00152e014` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MCP_DDIC_API`               | `self-described`     | 1.2 – 1.7     | 19       | `780aa87df7c5da59ed42aca8325ad0d4592a5dbae39bca062bede39f12a67d91` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MAINT_READ`                 | `self-described`     | 1.0 – 1.0     | 3        | `69f20bb0907f0a508b14efc3609695d959d8c6c4f9f89026f22586733fc2a066` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_OPS_READ`                   | `self-described`     | 1.0 – 1.0     | 6        | `0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_LOG_READ`                   | `self-described`     | 1.0 – 1.0     | 5        | `07383ef8df98408752203244607bf2b30b225b0f3b506e958d93ae25cde573ab` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MCP_SCI_V2`                 | 未自述（载体未部署） | —             | —        | —                                                                  | —                      |
+| `Z_ORVANTA_MCP_SCI_E2`                 | 未自述（载体未部署） | —             | —        | —                                                                  | —                      |
+
+**服务侧实现要点**（0.46.0）：
+
+- 能力报告新增 `helperAttestation` 段，对 8 个助手**各自**探询 `CAPABILITIES`；助手的自述是**该助手自己的**判据，绝不跨助手投影（旧/新混部不会被合并成一个结论）。
+- 自述的最高协议是**权威**：`src/capabilities.ts` 的 `helperCapability` 只要拿到 `self-described`，就按 `maxProtocol` 与最低协议比较，而不是按"恰好执行过的那个操作码"的 `ev_version`。
+- **助手与最低协议不再在能力规格里手写**：它们由 `src/tool-registry.ts` 派生（`resolveHelperCapabilityRoute` / `helperCapabilityRoutes`），`npm run matrix:check` 会对全部 15 项助手能力做一致性校验。这条改动修掉了 `write_function_module_source` 被误判为 `unsupported` 的缺陷（该工具已路由到基础助手 2.7，能力规格却仍按仓库助手 2.6 判定）。
+- 维护／运维／应用日志助手的自述仅作**记录**：它们的读工具受本地审批文件门控，能力报告不执行那次业务读取，因此其能力判定现状不变。
+- SCI V2／E2 的载体（新增导出标量 `EV_RESULT`、类型 `STRINGVAL`、值为 R3 JSON 信封）生成器已实现（`scripts/sci-carrier-source.mjs`），**尚未部署**；部署后必须重钉 `src/sci-v2.ts` 的指纹。
+
+**仍未完成**：SCI V2／E2 载体部署与指纹重钉（D2-3）；DDIC 助手 `DTEL` 分支补 `DATATYPE`/`LENG`（D2-2，用于修掉无域数据元素的服务侧回退依赖）；R6 余下未决项的最终收口。
 
 ---
 
@@ -100,7 +127,7 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 | 目标                                                                  | 位置                                                                                                                               | 说明                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~`Z_ORVANTA_MCP_DDIC_API`~~ **已实现（未部署）**                     | `scripts/bootstrap-sap-helper.ps1` 的 `New-DdicFunctionSource`；提交 `d737997`                                                     | 19 个操作码；`since` 按 R4 取契约最低版本；占位符与仓库助手逐字节相同，复用既有哈希替换；另有 5 项漂移测试。部署需先删除再生成（`-ReplaceExisting`），用户 2026-09-17 决定暂不部署                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ~~`Z_ORVANTA_MCP_DDIC_API`~~ **已实现、已部署并自述（1.2–1.7）**      | `scripts/bootstrap-sap-helper.ps1` 的 `New-DdicFunctionSource`；提交 `d737997`                                                     | 19 个操作码；`since` 按 R4 取契约最低版本；占位符与仓库助手逐字节相同，复用既有哈希替换；另有 5 项漂移测试。2026-09-18 实测已 `self-described`、协议 1.2–1.7、19 个 `OPERATION` 行、源指纹 `780aa87d…`（见 §0）。**注意**：其 `DTEL` 分支仍不返回 `DATATYPE`/`LENG`，无域数据元素（如 `STRINGVAL`）因此解析失败——服务侧已用读 `DD04L` 回退兜住，见 D2-2                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `Z_ORVANTA_MCP_DYNPRO_API`（GUI/屏幕体）                              | 同上文件，非 DDIC 分支（`$repositoryFunctionSource` 之外的 GUI/屏幕体）                                                            | **经复核，原判断有误：不存在独立的 GUI/屏幕体会。** `bootstrap-sap-helper.ps1` 只创建三个函数模块（`New-InstallProgram` 的 `-FunctionName` 取值仅 `Z_ORVANTA_MCP_EXECUTE`（默认）、`Z_ORVANTA_MCP_DYNPRO_API`（行 9030）、`Z_ORVANTA_MCP_DDIC_API`（行 9036）），且 EXECUTE 与 DYNPRO_API 共用同一份 `$repositoryFunctionSource` 体（仅助手指纹行按 `$FunctionName` 插值）。因此该助手的 GUI/屏幕相关操作早已随共享体一起自述：2026-09-18 实测其 `self-described`、协议 1.1–2.6、36 个 `OPERATION` 行。`New-GuiApiInspectionProgram`／`New-GuiObjectInspectionProgram` 只由 `InspectGuiApis`／`InspectGuiObject` 模式调用，生成的是临时 SE80 式巡检程序，不是助手，不适用本协议                                                                                                                                                  |
 | ~~`Z_ORVANTA_MAINT_READ`~~ **已实现；含 `CAPABILITIES` 的版本未部署** | `scripts/maintenance-diagnostic-source.mjs`；提交 `c988648`                                                                        | 3 个操作码；按 R3 走 JSON `payload`；按 R5 豁免 `CAPABILITIES` 的前置校验。助手**本身已部署**在 w200（FUGR/FF、函数组 `ZORVANTA_MAINT`、包 `ZABAP`；原请求/任务 `GR2K923421`/`GR2K923422` 实测均已释放（`R`），当前**无开放分配**，CAPABILITIES 版本改挂 `GR2K923472`/`GR2K923473`）。生成器原先发布空的 `SOURCE\|PACKAGE`/`SOURCE\|TRANSPORT` 行，已按该证据修正                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ~~`Z_ORVANTA_OPS_READ`~~ **已实现；含 `CAPABILITIES` 的版本未部署**   | `scripts/operational-log-source.mjs`；提交 `c988648`                                                                               | 6 个操作码（按生成特性门控）；同样适用 R3／R5。助手本身已部署（包 `ZABAP`；原请求/任务已释放、当前无开放分配，CAPABILITIES 版本改挂 `GR2K923472`/`GR2K923473`）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -118,7 +145,10 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 **交叉结论（2026-09-18，只读分析）**：
 
-- 这些助手的自描述**当前不改变任何能力判定**：`src/tool-registry.ts` 给 LOG/OPS/SCI/SMARTFORM 的 `minHelperProtocol` 均为 `null`，且 `src/capabilities.ts` 只探询五个助手，MAINT/OPS 的自述也只作为记录、不参与判定。因此即便它们自述成功，也只会多一条 `helperAttestation`（价值在包/请求/源哈希等溯源信息），不会改变可用性判定；要产生判定价值需同时扩展 tool-registry 与探询接线。
+- 这些助手的自描述**是否参与能力判定，取决于该助手是否有"按协议版本判定"的能力规格**（2026-09-20 校准；原表述"当前不改变任何能力判定"已过期）：
+  - **参与判定**：基础助手 `Z_ORVANTA_MCP_EXECUTE`、仓库助手 `Z_ORVANTA_MCP_DYNPRO_API`、DDIC 助手 `Z_ORVANTA_MCP_DDIC_API`。`src/tool-registry.ts` 为它们的工具给出了 `sapHelper` + `minHelperProtocol`，能力报告按自述的最高协议给出 `available` / `unsupported`。基础助手的自述尤其关键：它承载 `write_function_module_source`（2.7）与 `patch_function_module_interface`（2.0）。
+  - **仅作记录**：MAINT／OPS／应用日志助手——其读工具受本地审批文件门控，能力报告不执行那次业务读取；SCI 助手——其 `run_sci_analysis` 目前只钉 `Z_ORVANTA_MCP_SCI_API`（1.0），V2／E2 无自述载体。对这些助手，自述只增加溯源信息（包、请求、源哈希），不改变可用性判定。
+  - 因此"要让某个助手的自述产生判定价值"，需要它在注册表里有带 `minHelperProtocol` 的工具，并在 `src/capabilities.ts` 里有对应的助手能力规格（现在由 `HELPER_CAPABILITY_TOOLS` 声明、由注册表派生路由）。
 - `docs/sci-compatibility.md` 记 SCI 助手传输为 `GR2K923421`（未释放），但 2026-09-18 实测该请求为 `R`（已释放），该陈述已过期；SCI 助手的活动函数组（文档 `ZORVANTA_MCP_CORE` vs 创建时 `ZCODEX_MCP_CORE`）与接口参数表未在仓库中固化，属未验证项。
 
 结论：仓库生成器仍是这两个助手的唯一事实来源，没有手工漂移，因此本轮升级是**干净重生成**（MAINT 体 303 → 356 行，OPS report 变体 1047 → 1099 行），升级后 `SOURCE|HASH` 可直接作为部署证据使用。
