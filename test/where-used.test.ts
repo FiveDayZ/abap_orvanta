@@ -313,11 +313,19 @@ test("acceptance probe marks a real MCP failure response as Failed, not partial 
     throw new Error("Synthetic declaration rejection for acceptance status regression")
   }
   const state = await mkdtemp(join(tmpdir(), "where-used-probe-test-"))
+  // This case drives the real acceptance probe against a mock service. Its
+  // evidence must not join the `.doc` acceptance archive, so it is redirected
+  // to a scratch directory that this case owns.
+  const evidenceDir = await mkdtemp(join(tmpdir(), "where-used-probe-evidence-"))
   const running = await startHttpServer(backend, 0, state)
   try {
     const output = await new Promise<{ code: number | null; stdout: string }>((resolve, reject) => {
       const child = spawn(process.execPath, ["scripts/probe-where-used.mjs"], {
-        env: { ...process.env, ABAP_MCP_URL: running.mcpUrl },
+        env: {
+          ...process.env,
+          ABAP_MCP_URL: running.mcpUrl,
+          ABAP_MCP_EVIDENCE_DIR: evidenceDir
+        },
         windowsHide: true,
         timeout: 20000
       })
@@ -332,6 +340,10 @@ test("acceptance probe marks a real MCP failure response as Failed, not partial 
     const summary = JSON.parse(output.stdout.trim())
     assert.equal(summary.status, "Failed")
     assert.equal(summary.stage, "explicit-uri")
+    assert.ok(
+      summary.path.startsWith(evidenceDir),
+      `synthetic evidence must stay out of the .doc archive: ${summary.path}`
+    )
     const evidence = JSON.parse(await readFile(summary.path, "utf8"))
     assert.equal(evidence.behaviorVerified, false)
     assert.equal(evidence.checks[0].report.status, "failed")
@@ -339,5 +351,6 @@ test("acceptance probe marks a real MCP failure response as Failed, not partial 
   } finally {
     await running.close()
     await rm(state, { recursive: true, force: true })
+    await rm(evidenceDir, { recursive: true, force: true })
   }
 })

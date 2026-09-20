@@ -1,9 +1,20 @@
 import assert from "node:assert/strict"
 import { mkdir, writeFile } from "node:fs/promises"
+import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { PRODUCT_VERSION } from "../dist/src/version.js"
+
+/**
+ * A real acceptance run archives its evidence into the workspace `.doc`
+ * directory next to this script. The regression test that drives this probe
+ * against a mock service must not add synthetic records to that archive, so it
+ * redirects the destination through `ABAP_MCP_EVIDENCE_DIR`.
+ */
+const evidenceDirectory = () =>
+  process.env.ABAP_MCP_EVIDENCE_DIR?.trim() ||
+  fileURLToPath(new URL("../../.doc/", import.meta.url))
 
 const endpoint = new URL(process.env.ABAP_MCP_URL ?? "http://127.0.0.1:4847/mcp")
 assert.ok(
@@ -118,10 +129,11 @@ try {
   process.exitCode = 1
 } finally {
   await client.close()
-  const directory = new URL("../../.doc/", import.meta.url)
+  const directory = evidenceDirectory()
   await mkdir(directory, { recursive: true })
-  const path = fileURLToPath(
-    new URL(`where-used-acceptance-${evidence.startedAt.replaceAll(":", "-")}.json`, directory)
+  const path = join(
+    directory,
+    `where-used-acceptance-${evidence.startedAt.replaceAll(":", "-")}.json`
   )
   await writeFile(path, JSON.stringify(evidence, null, 2), { flag: "wx" })
   console.log(JSON.stringify({ status: evidence.status, stage: evidence.stage, path }))
