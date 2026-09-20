@@ -81,7 +81,16 @@ for (const target of targets) {
       `${target.name}: expected the carrier to add 23 lines, got ${after.length - before.length}`
     )
   }
-  const appended = target.carrier.map(literal)
+  // Insert the complete function module source, not the body: the include carries its own
+  // `FUNCTION` statement, the interface section and `ENDFUNCTION.`, and replacing the include with a
+  // bare body destroys the interface (GENERATE then fails with "field IV_ACTION is unknown").
+  if (!/^FUNCTION\b/i.test(after[0] ?? "")) {
+    throw new Error(`${target.name}: generated source does not start with FUNCTION`)
+  }
+  if (!/^ENDFUNCTION\./i.test(String(after.at(-1)).trim())) {
+    throw new Error(`${target.name}: generated source does not end with ENDFUNCTION.`)
+  }
+  const appended = after.map(literal)
   const overlong = appended.filter((line) => `  APPEND ${line} TO lt_new.`.length > 255)
   if (overlong.length)
     throw new Error(`${target.name}: embedded literal exceeds the ABAP line limit`)
@@ -126,6 +135,7 @@ CONSTANTS: c_group  TYPE c LENGTH 30 VALUE '${functionGroup}',
 DATA: lt_new    TYPE STANDARD TABLE OF abaptxt255,
       lt_now    TYPE STANDARD TABLE OF abaptxt255,
       ls_line   TYPE abaptxt255,
+      lv_head   TYPE c LENGTH 20,
       lv_name   TYPE c LENGTH 60,
       lv_suffix TYPE c LENGTH 40,
       lv_lines  TYPE i,
@@ -198,6 +208,29 @@ FORM deploy USING iv_func TYPE c iv_expect TYPE i iv_which TYPE c.
   ENDIF.
   DESCRIBE TABLE lt_new LINES lv_lines.
   WRITE: / 'Replacing', iv_expect, 'lines with', lv_lines, 'lines.'.
+
+*  Validate the payload before touching the include: it must be a complete function module, not a
+*  bare body. A body-only insert would silently destroy the interface section.
+  READ TABLE lt_new INTO ls_line INDEX 1.
+  CLEAR lv_head.
+  lv_head = ls_line(20).
+  TRANSLATE lv_head TO UPPER CASE.
+  IF sy-subrc <> 0 OR lv_head(8) <> 'FUNCTION'.
+    WRITE: / 'ERROR: replacement source does not start with FUNCTION.'.
+    lv_abort = 'X'. RETURN.
+  ENDIF.
+  READ TABLE lt_new INTO ls_line INDEX lv_lines.
+  CLEAR lv_head.
+  lv_head = ls_line(20).
+  TRANSLATE lv_head TO UPPER CASE.
+  IF sy-subrc <> 0 OR lv_head(11) <> 'ENDFUNCTION'.
+    WRITE: / 'ERROR: replacement source does not end with ENDFUNCTION.'.
+    lv_abort = 'X'. RETURN.
+  ENDIF.
+  IF lv_lines <= iv_expect.
+    WRITE: / 'ERROR: replacement is not larger than the current include.'.
+    lv_abort = 'X'. RETURN.
+  ENDIF.
 
   INSERT REPORT lv_name FROM lt_new.
   IF sy-subrc <> 0.
