@@ -41,6 +41,7 @@
 - 报告共 55 项能力：`available 23 / unsupported 1 / unknown 31`（2026-09-18 为 `22 / 2 / 31`）。**唯一从 `unsupported` 变为 `available` 的是 `repository-helper-function-source-write`**，其 reason 已改为「The **Z_ORVANTA_MCP_EXECUTE** helper self-described protocol 2.7, which satisfies minimum 2.7.」——即 D1-1 的注册表派生判定在真实系统上生效，E-1 漂移已消除。`repository-helper-function-interface-patch` 同样改为按 `Z_ORVANTA_MCP_EXECUTE` 2.7 ≥ 2.0 判 `available`。
 - 唯一仍 `unsupported` 的是 `adt-runtime-traces`（`abap-traces` 端点 HTTP 404，平台不暴露），与本次改动无关。
 - `helperAttestation` 现为 **8 条**：6 个助手 `self-described`，SCI V2／E2 均为 `operation-scoped`（接口已含 `EV_RESULT`、体部未部署，正是预期状态）。
+- **2026-09-20 D3 起将变为 56 项能力**：`adt-quality` 原将 `run_atc_analysis` 与 `run_unit_tests` 绑在同一 `unknown` 上，已拆出 `adt-abap-unit`（按本平台**已**广告 `/sap/bc/adt/abapunit/testruns`，定性 `unknown`）；`adt-quality` 保留原 ID 与 ATC 语义，改为 `platform_unsupported`，`adt-debugger` 亦然。新分布预期为 `available 23 / unsupported 1 / platform_unsupported 2 / unknown 30`。**本节上面的 55 项数字是拆分前那份实测报告的原始值，按不可回改的记录保留**；56 项须以重启后的新真实报告为准，届时替换本行。
 - **`Z_ORVANTA_MCP_DYNPRO_API` 已在 SAP 侧升到协议 2.7**（2026-09-18 为 2.6），源指纹由 `06812bcc…` 变为 `f09e382b…`。上表该行是 09-18 的快照，此处为准。
 
 ---
