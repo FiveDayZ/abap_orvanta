@@ -591,14 +591,22 @@ export class AdtBackend implements SapBackend {
           workspace.collection.map((collection) => collection.href)
         )
       )
-      if (
-        !paths.has("/sap/bc/adt/repository/informationsystem/usageReferences") &&
-        legacyWhereUsedPaths.every((path) => paths.has(path))
-      ) {
+      const modernReferences = "/sap/bc/adt/repository/informationsystem/usageReferences"
+      if (!paths.has(modernReferences) && legacyWhereUsedPaths.every((path) => paths.has(path))) {
         engine = "ADT_RIS_WHEREUSED"
         const currentSource = source ?? (await this.readSourceByUri(connectionId, uri)).source
         const result = await legacyWhereUsed(traced.http, target, line, character, currentSource)
         return { ...result, requestTrace: traced.requests }
+      }
+      if (!paths.has(modernReferences)) {
+        // The legacy route is advertised only in part, so neither engine is usable here. Calling
+        // the modern endpoint blind would return a 404 that reads as "this platform has no
+        // where-used at all", which hides both the route that was actually intended and the
+        // endpoints that are missing. Name what is absent instead of probing what is not there.
+        const missing = legacyWhereUsedPaths.filter((path) => !paths.has(path))
+        throw new Error(
+          `where-used capability unsupported-endpoint: neither the modern usageReferences endpoint nor the complete legacy RIS route is advertised on this connection; missing legacy endpoint(s): ${missing.join(", ")}`
+        )
       }
       // SDK 8.4.3 omits the cursor when column is zero; supply the complete URI.
       references = await requestUsageReferences(traced.http, `${target}#start=${line},${character}`)

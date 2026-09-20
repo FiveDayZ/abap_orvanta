@@ -315,7 +315,7 @@ export async function collectWhereUsed(
       else if (result.code === "REFERENCES_RETURNED") result.code = "LEGACY_REFERENCES_RETURNED"
       if (input.includeSnippets)
         result.warnings.push(
-          "Legacy snippet retrieval is not implemented; no modern snippet request was sent."
+          "Legacy snippet retrieval is not implemented: the RIS route has no snippet contract (its exchange covers whereused, fullnamemapping and metadata only), so no snippet request was sent and no snippet text is claimed. Snippets require the modern endpoint."
         )
     }
     if (!legacy && input.includeSnippets && result.references.length) {

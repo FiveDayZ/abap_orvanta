@@ -236,11 +236,19 @@ test("ADT backend uses discovery for legacy selection and never retries authoriz
     /forbidden-or-not-authorized/
   )
   assert.equal(calls.length, 4)
+  // A partially advertised legacy route means neither engine is usable. Falling through to the
+  // modern endpoint here would report a 404 for an endpoint the platform never claimed to have,
+  // which reads as "no where-used on this system" and conceals the missing RIS endpoints.
   paths = legacyWhereUsedPaths.slice(0, 2)
-  await assert.rejects(
-    backend.usageReferences("w200", uri, 1, 9, source),
-    /forbidden-or-not-authorized/
-  )
-  assert.equal(modern, 2)
+  await assert.rejects(backend.usageReferences("w200", uri, 1, 9, source), (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error)
+    assert.match(message, /where-used capability unsupported-endpoint/)
+    assert.match(
+      message,
+      /missing legacy endpoint\(s\): \/sap\/bc\/adt\/repository\/informationsystem\/metadata/
+    )
+    return true
+  })
+  assert.equal(modern, 1)
   assert.equal(calls.length, 4)
 })
