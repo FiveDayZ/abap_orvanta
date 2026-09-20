@@ -1,18 +1,18 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 127,
-  "readOnlyToolCount": 75,
+  "toolCount": 129,
+  "readOnlyToolCount": 76,
   "profiles": {
-    "readonly": 75,
+    "readonly": 76,
     "platform": 12,
-    "dev": 111,
+    "dev": 113,
     "config": 28,
     "ops": 35,
-    "full": 127
+    "full": 129
   },
   "groups": {
     "data": 5,
-    "ddic": 16,
+    "ddic": 18,
     "debug": 6,
     "enhancement": 22,
     "form": 4,
@@ -1494,6 +1494,21 @@
       "note": "通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。"
     },
     {
+      "name": "read_search_help",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.8"
+    },
+    {
       "name": "read_smartform",
       "group": "form",
       "profiles": [
@@ -1952,6 +1967,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
       "minHelperProtocol": "1.2"
+    },
+    {
+      "name": "upsert_search_help",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.8"
     },
     {
       "name": "validate_dynpro_application",

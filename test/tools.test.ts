@@ -1583,6 +1583,39 @@ test("message class deletion fails when SAP readback still finds the object", as
   )
 })
 
+test("source-object deletion accepts a local $TMP object and no transport", async () => {
+  // Regression guard for the refusal that stranded every deployment carrier in $TMP. The shared
+  // packageName() helper rejects $TMP because its eleven other callers create module pools,
+  // transactions, screens and message classes -- objects SAP does require to be transportable, which
+  // is why its wording mentions Dynpro application objects. deleteSourceObject used to route through
+  // it, so no local program, include, class or interface could ever be deleted and the refusal named
+  // a cause unrelated to the request. This asserts on the MESSAGE rather than the outcome, so it
+  // still fails if the local-object rule is re-broken even when unrelated mock behaviour changes.
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  await assert.rejects(
+    tools.deleteSourceObject({
+      objectType: "PROG/P",
+      objectName: "ZORVANTA_SEED_PROBE",
+      expectedFingerprint: "a".repeat(64),
+      packageName: "$TMP",
+      transportNumber: "",
+      confirmation: "PERMANENT_DELETE",
+      connectionId: "w200"
+    }),
+    (error: Error) => {
+      assert.doesNotMatch(
+        error.message,
+        /Dynpro|transportable package/,
+        "a $TMP source object must not be refused the way a Dynpro object is"
+      )
+      // The mock holds no such program, so the request must fail for that honest reason instead.
+      assert.match(error.message, /does not exist|Could not find/i)
+      return true
+    }
+  )
+})
+
 test("controlled source and DDIC deletion verify package, version, and absence", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)
@@ -1806,7 +1839,10 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
         metadata: {},
         header: {},
         fixedValues: [],
-        fields: []
+        fields: [],
+        selectionMethods: [],
+        parameters: [],
+        fieldAssignments: []
       }
     }
     return callSapDdic(connectionId, request)
@@ -2031,6 +2067,9 @@ test("function interface patch applies controlled operations and preserves imple
     sourceFingerprint: string
     sourceWritePerformed: boolean
     interfaceWritePerformed: boolean
+    interfaceWriteSupported: boolean
+    interfaceWriteLimit: string
+    parameterChangesApplied: boolean
     importParameters: Array<{
       name: string
       typeName: string
@@ -2058,10 +2097,14 @@ test("function interface patch applies controlled operations and preserves imple
   assert.equal(patched.helperCode, "FUNCTION_INTERFACE_PATCHED")
   assert.equal(
     patched.helperVerification,
-    "the helper compared its own interface read-back line by line"
+    "the helper compared its own read-back of the documentation tables; it cannot verify interface parameters on this platform"
   )
   assert.equal(patched.sourceWritePerformed, false)
-  assert.equal(patched.interfaceWritePerformed, true)
+  // The helper branch writes parameter documentation only on SAP_BASIS 7.31, so the response must
+  // report the platform limit rather than a parameter write that never happened.
+  assert.equal(patched.interfaceWritePerformed, false)
+  assert.equal(patched.interfaceWriteSupported, false)
+  assert.equal(patched.parameterChangesApplied, false)
   assert.equal(backend.lastHelperRequest?.operation, "PATCH_FUNCTION_INTERFACE")
   assert.equal(backend.lastHelperRequest?.objectName, "ZCMCP_FM_1501")
   assert.equal(backend.lastHelperRequest?.program, "ZCMCP_FG_1501")
@@ -6373,6 +6416,79 @@ test("controlled creation policy covers source families and rejects unsafe reque
     assert.throws(
       () => prepareCreateObjectRequest("w200", request),
       /Z\* or Y\*|Unsupported object type|requires.*existing|Creating transport requests/
+    )
+  }
+})
+
+test("creation accepts an optional seed source and rejects unusable source", () => {
+  // Seeding the initial source in the create call is what makes creating a runnable report possible
+  // at all: a separate replace_string_in_abap_object call can lose its edit lock on a cold stateful
+  // ADT session and answer "Resource ... is not locked" even though it just took the lock.
+  const seeded = prepareCreateObjectRequest("w200", {
+    objectType: "PROG/P",
+    name: "ZORVANTA_SEED_PROBE",
+    description: "Seed source probe",
+    packageName: "$TMP",
+    source: ["REPORT zorvanta_seed_probe.", "", "START-OF-SELECTION.", "  WRITE: / 'ok'."]
+  })
+  assert.deepEqual(seeded.source, [
+    "REPORT zorvanta_seed_probe.",
+    "",
+    "START-OF-SELECTION.",
+    "  WRITE: / 'ok'."
+  ])
+
+  // Omitting source keeps the historical behaviour: create an empty object.
+  assert.deepEqual(
+    prepareCreateObjectRequest("w200", {
+      objectType: "PROG/P",
+      name: "ZORVANTA_SEED_PROBE",
+      description: "No seed",
+      packageName: "$TMP"
+    }).source,
+    []
+  )
+
+  const rejected: Array<[string, unknown, RegExp]> = [
+    ["a non-array", "REPORT z.", /must be an array of source lines/],
+    ["a non-string element", [1, 2], /must be an array of source lines/],
+    ["an empty array", [], /at least one ABAP line/],
+    [
+      "an embedded newline",
+      ["REPORT z.", "WRITE: / 'a'.\nWRITE: / 'b'."],
+      /single line without embedded line breaks/
+    ],
+    ["a comment-only body", ["* nothing here"], /no executable statement/],
+    ["blank lines only", ["", "   "], /no executable statement/]
+  ]
+  for (const [label, source, expected] of rejected) {
+    assert.throws(
+      () =>
+        prepareCreateObjectRequest("w200", {
+          objectType: "PROG/P",
+          name: "ZORVANTA_SEED_PROBE",
+          description: "Seed rejection",
+          packageName: "$TMP",
+          source: source as string[]
+        }),
+      expected,
+      `expected source rejection for ${label}`
+    )
+  }
+
+  // Types that own no plain ABAP source must refuse a seed rather than silently ignore it.
+  for (const objectType of ["DDLS/DF", "DCLS/DL", "FUGR/F"]) {
+    const request: Record<string, unknown> = {
+      objectType,
+      name: objectType === "FUGR/F" ? "ZFG_SEED" : "ZSEED_SOURCE",
+      description: "Unseedable",
+      packageName: "$TMP",
+      source: ["REPORT zseed_source."]
+    }
+    assert.throws(
+      () => prepareCreateObjectRequest("w200", request as never),
+      /source is not supported for/,
+      `expected ${objectType} to reject a seed source`
     )
   }
 })

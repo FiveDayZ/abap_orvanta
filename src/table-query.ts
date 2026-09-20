@@ -2,6 +2,7 @@ import { z } from "zod"
 import { createHash } from "node:crypto"
 import type { RemoteFunctionRequest, SapBackend } from "./backend.js"
 import { reviewedTableReaderDefinition } from "./system-info.js"
+import { assertTableAllowed } from "./table-allowlist.js"
 
 const identifier = z
   .string()
@@ -99,6 +100,10 @@ export async function readAbapTable(
   if (input.columns.includes("*") && !allFields) throw new Error("TABLE_QUERY_INPUT_INVALID")
   if (new Set(input.columns).size !== input.columns.length)
     throw new Error("TABLE_QUERY_DUPLICATE_COLUMN")
+  // D5-2 ruling W3: the allowlist is authoritative for this read path *including* the RFC
+  // fallback. It runs before any SAP access, so a rejected table never reaches the backend and
+  // never depends on the backend's own table-class check to be safe.
+  assertTableAllowed(input.tableName)
   const connectionId = input.connectionId.toLowerCase()
   // Conditions are compiled from structured operands, never parsed from caller SQL.
   const conditions = input.filters.map(({ column, operator, value }, index) => {

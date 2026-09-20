@@ -55,11 +55,15 @@ for (const direction of ["import", "export", "changing", "table"] as const) {
         })
       )
       assert.equal(current.sourceFingerprint, initial.sourceFingerprint)
-      // The helper-backed patch never writes ADT source: the whole interface is rebuilt inside SAP
-      // from the payload rows and the implementation source is part of the verified snapshot.
+      // The helper-backed patch never writes ADT source, and on SAP_BASIS 7.31 it cannot write
+      // interface parameters either: the branch reaches only the parameter documentation tables
+      // (RPY_FUNCTIONMODULE_UPDATE does not exist on this release). The response must therefore
+      // report the limit instead of claiming a parameter write that did not happen.
       assert.equal(sourceWrites - writesBefore, 0)
       assert.equal(current.sourceWritePerformed, false)
-      assert.equal(current.interfaceWritePerformed, true)
+      assert.equal(current.interfaceWritePerformed, false)
+      assert.equal(current.interfaceWriteSupported, false)
+      assert.equal(current.parameterChangesApplied, false)
       assert.equal(current.sourceMutation, null)
       assert.deepEqual(current.source, initial.source)
       for (const key of Object.values(keys).filter((key) => key !== keys[direction])) {
@@ -112,7 +116,9 @@ test("classic exception lifecycle preserves all parameters and implementation", 
     )
     assert.equal(sourceWrites - writesBefore, 0)
     assert.equal(current.sourceWritePerformed, false)
-    assert.equal(current.interfaceWritePerformed, true)
+    // See the direction loop above: no interface-parameter write path exists on SAP_BASIS 7.31.
+    assert.equal(current.interfaceWritePerformed, false)
+    assert.equal(current.parameterChangesApplied, false)
     assert.equal(current.sourceMutation, null)
     for (const key of [
       "importParameters",

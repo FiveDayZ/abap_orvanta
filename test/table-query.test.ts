@@ -13,10 +13,10 @@ import { startHttpServer } from "../src/http.js"
 import { MockBackend } from "./mock-backend.js"
 import { AdtBackend } from "../src/adt-backend.js"
 
-const input = { connectionId: "w200", tableName: "ZREAD", columns: ["ID", "TEXT"], maxRows: 1 }
+const input = { connectionId: "w200", tableName: "TFDIR", columns: ["ID", "TEXT"], maxRows: 1 }
 const definition = {
   objectKind: "transparentTable",
-  objectName: "ZREAD",
+  objectName: "TFDIR",
   fingerprint: "a".repeat(64),
   definition: { tableClass: "TRANSP", fields: [{ name: "ID", key: true }, { name: "TEXT" }] }
 }
@@ -102,7 +102,7 @@ test("table query compiles structured filters, preserves native values and detec
       runQuery: async (connection, sql, limit, options) => {
         assert.deepEqual(options, { allowScopedFallback: false })
         assert.equal(connection, "w200")
-        assert.equal(sql, "SELECT ID, TEXT FROM ZREAD WHERE TEXT = 'O''Brien' AND ID >= '0001'")
+        assert.equal(sql, "SELECT ID, TEXT FROM TFDIR WHERE TEXT = 'O''Brien' AND ID >= '0001'")
         assert.equal(limit, 2)
         return [
           { ID: "0001", TEXT: "O'Brien" },
@@ -712,7 +712,7 @@ test("table query legacy path uses actual HTTP and SOAP parsing for metadata and
       let body = ""
       for await (const chunk of request) body += chunk.toString()
       assert.match(body, /RFC_READ_TABLE/)
-      assert.match(body, /<QUERY_TABLE>ZREAD<\/QUERY_TABLE>/)
+      assert.match(body, /<QUERY_TABLE>TFDIR<\/QUERY_TABLE>/)
       const noData = /<NO_DATA>X<\/NO_DATA>/.test(body)
       assert.equal(noData, reads === 1)
       assert.match(body, noData ? /<ROWCOUNT>1<\/ROWCOUNT>/ : /<ROWCOUNT>2<\/ROWCOUNT>/)

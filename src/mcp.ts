@@ -358,6 +358,14 @@ export function createMcpServer(
       tools.upsertDdicDomain(input)
     )
   )
+  registerTool("read_search_help", toolContracts.read_search_help, async (input) =>
+    invoke("read_search_help", () => tools.readSearchHelp(input))
+  )
+  registerTool("upsert_search_help", toolContracts.upsert_search_help, async (input) =>
+    invokeWrite("upsert_search_help", input, backend, writeReceipts, () =>
+      tools.upsertSearchHelp(input)
+    )
+  )
   registerTool("read_ddic_data_element", toolContracts.read_ddic_data_element, async (input) =>
     invoke("read_ddic_data_element", () => tools.readDdicDataElement(input))
   )
@@ -1107,7 +1115,8 @@ export function writeOperationTarget(
           patch_ddic_transparent_table_fields: "TABL",
           patch_ddic_transparent_table_settings: "TABL",
           recover_ddic_table_conversion: "TABL",
-          upsert_ddic_table_type: "TTYP"
+          upsert_ddic_table_type: "TTYP",
+          upsert_search_help: "SHLP"
         }[name] ??
         "OBJECT"
     ).toUpperCase()

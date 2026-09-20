@@ -22,7 +22,7 @@ const aligned = {
 }
 const input = {
   connectionId: "w200",
-  tableName: "ZREAD",
+  tableName: "TFDIR",
   columns: ["ID"],
   filters: [{ column: "ID", operator: "EQ", value: "0001" }],
   maxRows: 1
@@ -31,7 +31,7 @@ const input = {
 function fixture(type = "P") {
   const definition = {
     objectKind: "transparentTable",
-    objectName: "ZREAD",
+    objectName: "TFDIR",
     fingerprint: "a".repeat(64),
     definition: {
       tableClass: "TRANSP",
@@ -270,7 +270,7 @@ test("small-integer mixed fallback completes actual HTTP/SOAP parsing without le
       const noData = body.includes("<NO_DATA>X</NO_DATA>")
       calls.push(`${name}:${noData ? "metadata" : "data"}`)
       assert.ok(noData || name === aligned.functionName)
-      assert.match(body, /<QUERY_TABLE>ZREAD<\/QUERY_TABLE>/)
+      assert.match(body, /<QUERY_TABLE>TFDIR<\/QUERY_TABLE>/)
       assert.match(body, /<ROWSKIPS>0<\/ROWSKIPS>/)
       const fields = noData ? f.fields : [f.fields[0]!]
       const metadata = fields

@@ -118,6 +118,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_function_module_interface",
       "read_report_parameters",
       "read_report_variants",
+      "read_search_help",
       "read_smartform",
       "read_system_logs",
       "read_transaction_code",
@@ -148,6 +149,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "upsert_ddic_domain",
       "upsert_ddic_structure",
       "upsert_ddic_table_type",
+      "upsert_search_help",
       "validate_dynpro_application",
       "write_function_module_source"
     ])
@@ -366,6 +368,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
             ? ["expectedSourceFingerprint", "recoverInactiveSource"]
             : []),
           ...(expected.name === "find_where_used" ? ["objectUri", "responseFormat"] : []),
+          ...(expected.name === "create_object_programmatically" ? ["source"] : []),
           ...(expected.name === "manage_transport_requests"
             ? ["expectedObjects", "inactiveTargets"]
             : [])
@@ -426,6 +429,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
             ? ["expectedSourceFingerprint", "recoverInactiveSource"]
             : []),
           ...(expected.name === "find_where_used" ? ["objectUri", "responseFormat"] : []),
+          ...(expected.name === "create_object_programmatically" ? ["source"] : []),
           ...(expected.name === "manage_transport_requests"
             ? ["expectedObjects", "inactiveTargets"]
             : [])

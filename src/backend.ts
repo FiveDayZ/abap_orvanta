@@ -81,7 +81,9 @@ export interface SapHelperRequest {
   /** PING, VALIDATE_TARGET and CAPABILITIES are probes. WRITE_FUNCTION_SOURCE and
    *  PATCH_FUNCTION_INTERFACE are the two write operations the base helper
    *  Z_ORVANTA_MCP_EXECUTE serves directly, because the native ADT lock/save path fails on this
-   *  platform with HTTP 423 "invalid lock handle". */
+   *  platform with HTTP 423 "invalid lock handle". On SAP_BASIS 7.31 PATCH_FUNCTION_INTERFACE
+   *  reaches only the parameter documentation tables; it has no interface-parameter write path
+   *  because RPY_FUNCTIONMODULE_UPDATE does not exist on that release. */
   operation:
     | "PING"
     | "VALIDATE_TARGET"
@@ -297,6 +299,9 @@ export type SapDdicOperation =
   | "DELETE_STRUCTURE"
   | "DELETE_TRANSPARENT_TABLE"
   | "DELETE_TABLE_TYPE"
+  | "READ_SEARCH_HELP"
+  | "UPSERT_SEARCH_HELP"
+  | "DELETE_SEARCH_HELP"
 
 export interface SapDdicRequest {
   operation: SapDdicOperation
@@ -308,6 +313,9 @@ export interface SapDdicRequest {
   header?: SapStructureRow | undefined
   fixedValues?: SapStructureRow[] | undefined
   fields?: SapStructureRow[] | undefined
+  selectionMethods?: SapStructureRow[] | undefined
+  parameters?: SapStructureRow[] | undefined
+  fieldAssignments?: SapStructureRow[] | undefined
 }
 
 export interface SapDdicResult extends SapHelperResult {
@@ -318,6 +326,9 @@ export interface SapDdicResult extends SapHelperResult {
   header: SapStructureRow
   fixedValues: SapStructureRow[]
   fields: SapStructureRow[]
+  selectionMethods: SapStructureRow[]
+  parameters: SapStructureRow[]
+  fieldAssignments: SapStructureRow[]
 }
 
 export interface ExportFileInfo {
@@ -493,6 +504,16 @@ export interface CreateObjectRequest {
   description: string
   packageName?: string | undefined
   parentName?: string | undefined
+  /**
+   * Optional initial source, written as part of the same create operation.
+   *
+   * Supplying it here rather than through a second `replace_string_in_abap_object` call is what makes
+   * the create usable at all on ECC: the first stateful ADT request on a fresh session can leave its
+   * edit lock orphaned, after which SAP answers the PUT with "Resource ... is not locked" even though
+   * the handle came from the lock it just issued (see the note in `replaceSourceWithClient`). By the
+   * time the object exists the session is already settled, so the initial source is written reliably.
+   */
+  source?: string[] | undefined
   additionalOptions?:
     | {
         serviceDefinition?: string | undefined
@@ -814,6 +835,9 @@ export const DEFAULT_OBJECT_TYPES = [
   "DDLS",
   "DOMA",
   "TTYP",
+  // ADT media type for search helps is SHLP/DH; repository search uses the short code, matching
+  // the DDIC delete tool's objectType enum and the DDIC helper's searchHelp objectKind.
+  "SHLP",
   "ENQU",
   "MSAG",
   "FUGR",

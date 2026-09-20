@@ -40,7 +40,7 @@ function fixture(count = 110, rowCount = 6) {
   }))
   const definition = {
     objectKind: "transparentTable",
-    objectName: "ZREAD",
+    objectName: "TFDIR",
     fingerprint: "a".repeat(64),
     definition: { tableClass: "TRANSP", fields: names.map((name, i) => ({ name, key: i < 3 })) }
   }
@@ -115,7 +115,7 @@ function fixture(count = 110, rowCount = 6) {
     name === legacy.functionName ? legacy : aligned
   const input = {
     connectionId: "w200",
-    tableName: "ZREAD",
+    tableName: "TFDIR",
     columns: ["*"],
     filters: [{ column: "KUNNR", operator: "EQ", value: "0001100059" }],
     maxRows: 5
@@ -344,9 +344,9 @@ test("table-reader SOAP preserves WA leading padding while ordinary RFC response
 
 test("finite SELECT fallback accepts escaped literals and rejects unsupported SQL", () => {
   assert.deepEqual(
-    parseSimpleTableSelect("SELECT * FROM ZREAD WHERE KUNNR = 'O''Brien' AND WERKS = '809P'"),
+    parseSimpleTableSelect("SELECT * FROM TFDIR WHERE KUNNR = 'O''Brien' AND WERKS = '809P'"),
     {
-      tableName: "ZREAD",
+      tableName: "TFDIR",
       columns: ["*"],
       filters: [
         { column: "KUNNR", operator: "EQ", value: "O'Brien" },
@@ -355,12 +355,12 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
     }
   )
   for (const sql of [
-    "SELECT * FROM ZREAD",
-    "SELECT * FROM ZREAD WHERE ID = '1' OR ID = '2'",
-    "SELECT * FROM ZREAD WHERE ID = '1' AND ",
-    "SELECT * FROM ZREAD WHERE ID = '1' ORDER BY ID",
-    "SELECT COUNT(*) FROM ZREAD WHERE ID = '1'",
-    "SELECT * FROM ZREAD WHERE ID = '1';DELETE FROM ZREAD"
+    "SELECT * FROM TFDIR",
+    "SELECT * FROM TFDIR WHERE ID = '1' OR ID = '2'",
+    "SELECT * FROM TFDIR WHERE ID = '1' AND ",
+    "SELECT * FROM TFDIR WHERE ID = '1' ORDER BY ID",
+    "SELECT COUNT(*) FROM TFDIR WHERE ID = '1'",
+    "SELECT * FROM TFDIR WHERE ID = '1';DELETE FROM TFDIR"
   ]) {
     assert.equal(parseSimpleTableSelect(sql), undefined, sql)
   }
@@ -382,7 +382,7 @@ test("execute_data_query routes full rows through the shared reader without repe
     await tools.executeDataQuery({
       connectionId: "w200",
       displayMode: "internal",
-      sql: "SELECT * FROM ZREAD WHERE KUNNR = '0001100059'",
+      sql: "SELECT * FROM TFDIR WHERE KUNNR = '0001100059'",
       maxRows: 5,
       rowRange: { start: 0, end: 5 }
     })

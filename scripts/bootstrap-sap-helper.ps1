@@ -146,7 +146,10 @@ $ddicCapabilityOperations = @(
     "APPEND_TRANSPARENT_TABLE_FIELDS|1.7|W",
     "PATCH_TRANSPARENT_TABLE_FIELDS|1.7|W",
     "PATCH_TRANSPARENT_TABLE_SETTINGS|1.7|W",
-    "RECOVER_TABLE_CONVERSION|1.7|W"
+    "RECOVER_TABLE_CONVERSION|1.7|W",
+    "READ_SEARCH_HELP|1.8|R",
+    "UPSERT_SEARCH_HELP|1.8|W",
+    "DELETE_SEARCH_HELP|1.8|W"
 )
 # <<< ORVANTA-DDIC-CAPABILITY-TABLE
 
@@ -1099,6 +1102,14 @@ function New-DdicFunctionSource {
         "    WHEN 'DELETE_TABLE_TYPE'.",
         "      lv_object_type = 'TTYP'.",
         "      lv_write = 'X'. lv_delete = 'X'.",
+        "    WHEN 'READ_SEARCH_HELP'.",
+        "      lv_object_type = 'SHLP'.",
+        "    WHEN 'DELETE_SEARCH_HELP'.",
+        "      lv_object_type = 'SHLP'.",
+        "      lv_write = 'X'. lv_delete = 'X'.",
+        "    WHEN 'UPSERT_SEARCH_HELP'.",
+        "      lv_object_type = 'SHLP'.",
+        "      lv_write = 'X'.",
         "    WHEN OTHERS.",
         "      ev_status = 'E'. ev_code = 'OPERATION_NOT_SUPPORTED'.",
         "      ev_message = 'Unsupported DDIC operation'.",

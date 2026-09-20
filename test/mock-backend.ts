@@ -173,7 +173,7 @@ function parseEnhancementPayload(
 }
 
 function mockDdicResult(
-  _kind: "domain" | "dataElement" | "structure" | "transparentTable" | "tableType",
+  _kind: "domain" | "dataElement" | "structure" | "transparentTable" | "tableType" | "searchHelp",
   header: Record<string, string>,
   packageName: string
 ): SapDdicResult {
@@ -188,7 +188,10 @@ function mockDdicResult(
     recordedRequest: "",
     header,
     fixedValues: [],
-    fields: []
+    fields: [],
+    selectionMethods: [],
+    parameters: [],
+    fieldAssignments: []
   }
 }
 

@@ -297,7 +297,8 @@ export async function observeWritePreChange(
       DTEL: "READ_DATA_ELEMENT",
       STRU: "READ_STRUCTURE",
       TABL: "READ_TRANSPARENT_TABLE",
-      TTYP: "READ_TABLE_TYPE"
+      TTYP: "READ_TABLE_TYPE",
+      SHLP: "READ_SEARCH_HELP"
     }[String(input.objectType).toUpperCase()] as SapDdicOperation | undefined
     if (!operation) throw new Error(`Unsupported DDIC deletion type: ${String(input.objectType)}`)
     await observeDdic(evidence, backend, connectionId, String(input.objectName), operation)

@@ -2040,7 +2040,7 @@ export function buildSapDdicEnvelope(request: SapDdicRequest): string {
 
 export function serializeDdicPayload(request: SapDdicRequest): string[] {
   const payload: string[] = []
-  const appendRows = (kind: "H" | "V" | "F", rows: SapStructureRow[]) => {
+  const appendRows = (kind: "H" | "V" | "F" | "S1" | "S2" | "S3", rows: SapStructureRow[]) => {
     rows.forEach((row, rowIndex) => {
       Object.entries(row).forEach(([name, value]) => {
         if (/\r|\n/.test(value)) throw new Error("DDIC payload values must not contain line breaks")
@@ -2054,6 +2054,12 @@ export function serializeDdicPayload(request: SapDdicRequest): string[] {
   if (request.header) appendRows("H", [request.header])
   appendRows("V", request.fixedValues ?? [])
   appendRows("F", request.fields ?? [])
+  // Search help child rows. DD31V (S1) and DD33V (S3) exist only for a collective search help, so an
+  // elementary one leaves those two arrays empty. DD32P (S2) also applies to an elementary search
+  // help, so a non-empty parameters array is normal for either kind.
+  appendRows("S1", request.selectionMethods ?? [])
+  appendRows("S2", request.parameters ?? [])
+  appendRows("S3", request.fieldAssignments ?? [])
   return payload
 }
 
@@ -2073,7 +2079,10 @@ export function parseSapDdicResponse(body: string): SapDdicResult {
     recordedRequest: payload.metadata.REQUEST ?? "",
     header: payload.header,
     fixedValues: payload.fixedValues,
-    fields: payload.fields
+    fields: payload.fields,
+    selectionMethods: payload.selectionMethods,
+    parameters: payload.parameters,
+    fieldAssignments: payload.fieldAssignments
   }
   if (!result.status || !result.code || !result.version) {
     throw new Error("SAP DDIC helper returned an incomplete SOAP response")
@@ -2086,28 +2095,38 @@ function parseDdicPayload(lines: string[]): {
   header: SapStructureRow
   fixedValues: SapStructureRow[]
   fields: SapStructureRow[]
+  selectionMethods: SapStructureRow[]
+  parameters: SapStructureRow[]
+  fieldAssignments: SapStructureRow[]
 } {
   const metadata: SapStructureRow = {}
   const header: SapStructureRow = {}
   const fixedValues: SapStructureRow[] = []
   const fields: SapStructureRow[] = []
+  const selectionMethods: SapStructureRow[] = []
+  const parameters: SapStructureRow[] = []
+  const fieldAssignments: SapStructureRow[] = []
   for (const line of lines) {
-    const match = line.match(/^([MHFV])\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    // S1/S2/S3 are two-character kinds, so the kind alternation must be explicit.
+    const match = line.match(/^(M|H|V|F|S1|S2|S3)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
     if (!match?.[1] || !match[2] || !match[3]) {
       throw new Error(`SAP DDIC helper returned an invalid payload line: ${line}`)
     }
     const index = Number.parseInt(match[2], 10)
     if (index < 1) throw new Error(`SAP DDIC helper returned an invalid payload index: ${line}`)
     const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
-    const target =
-      match[1] === "M"
-        ? metadata
-        : match[1] === "H"
-          ? header
-          : rowAt(match[1] === "V" ? fixedValues : fields, index)
+    const kind = match[1]
+    let target: SapStructureRow
+    if (kind === "M") target = metadata
+    else if (kind === "H") target = header
+    else if (kind === "V") target = rowAt(fixedValues, index)
+    else if (kind === "F") target = rowAt(fields, index)
+    else if (kind === "S1") target = rowAt(selectionMethods, index)
+    else if (kind === "S2") target = rowAt(parameters, index)
+    else target = rowAt(fieldAssignments, index)
     target[match[3]] = value
   }
-  return { metadata, header, fixedValues, fields }
+  return { metadata, header, fixedValues, fields, selectionMethods, parameters, fieldAssignments }
 }
 
 function rowAt(rows: SapStructureRow[], index: number): SapStructureRow {
@@ -2701,8 +2720,61 @@ export interface PreparedCreateObjectRequest {
   packageName: string
   parentName: string
   transportNumber: string
+  /** Initial source lines, already validated. Empty when the caller supplied none. */
+  source: string[]
   objectUri: string
   workspaceUri: string
+}
+
+/**
+ * Object types whose source can be seeded through the generic ADT source writer.
+ *
+ * `DDLS/DF` and `DCLS/DL` are excluded: their source is a DDL/DCL document with its own
+ * serialisation, and `FUGR/F` has no source of its own (only its includes do). The remaining types
+ * are all classic ABAP source containers whose initial text is exactly what the caller passes.
+ */
+const SOURCE_SEEDABLE_CREATE_OBJECT_TYPES: ReadonlySet<string> = new Set([
+  "CLAS/OC",
+  "INTF/OI",
+  "PROG/P",
+  "PROG/I",
+  "FUGR/I",
+  "FUGR/FF"
+])
+
+/** A single ABAP source line, as the ADT writer expects it. */
+function initialSourceLines(objectName: string, source: unknown): string[] {
+  if (source === undefined) return []
+  if (!Array.isArray(source) || !source.every((line) => typeof line === "string")) {
+    throw new Error("source must be an array of source lines")
+  }
+  if (!source.length) {
+    throw new Error("source must contain at least one ABAP line when it is provided")
+  }
+  for (const line of source) {
+    if (/[\r\n]/.test(line)) {
+      throw new Error(
+        "each source element must be a single line without embedded line breaks; pass one array element per line"
+      )
+    }
+  }
+  if (source.length > 100000) {
+    throw new Error(`source has ${source.length} lines; the supported maximum is 100000`)
+  }
+  const totalLength = source.reduce((sum, line) => sum + line.length, 0)
+  if (totalLength > 10_000_000) {
+    throw new Error(`source is ${totalLength} characters; the supported maximum is 10000000`)
+  }
+  // A classic source container must carry its own identity statement, otherwise the read back after
+  // activation cannot match the object SAP created and the create would report a false failure.
+  const firstContentLine =
+    source.find((line) => line.trim() && !line.trimStart().startsWith("*")) ?? ""
+  if (!firstContentLine.trim()) {
+    throw new Error(
+      `source for ${objectName} contains no executable statement; refusing to seed a comment-only object`
+    )
+  }
+  return [...source]
 }
 
 export function prepareCreateObjectRequest(
@@ -2775,6 +2847,14 @@ export function prepareCreateObjectRequest(
     (isFunctionChild ? parentName : "").toLowerCase()
   )
   if (!objectUri) throw new Error(`Could not determine the ADT URI for ${supportedType} ${name}`)
+
+  const source = initialSourceLines(name, request.source)
+  if (source.length && !SOURCE_SEEDABLE_CREATE_OBJECT_TYPES.has(supportedType)) {
+    throw new Error(
+      `source is not supported for ${supportedType}. Supported types: ` +
+        `${[...SOURCE_SEEDABLE_CREATE_OBJECT_TYPES].join(", ")}.`
+    )
+  }
   return {
     connectionId: normalizedConnectionId,
     objectType: supportedType,
@@ -2784,6 +2864,7 @@ export function prepareCreateObjectRequest(
     packageName,
     parentName,
     transportNumber,
+    source,
     objectUri,
     workspaceUri: `adt://${normalizedConnectionId}${objectUri}`
   }
@@ -2850,6 +2931,38 @@ export async function createObjectWithClient(
   try {
     // Older ECC systems may index a successful create after this immediate lookup.
     await client.findObjectPath(request.objectUri)
+
+    // Seed the initial source while this stateful session is already established. Writing it here
+    // rather than through a separate replace_string_in_abap_object call avoids the cold-session lock
+    // loss documented in replaceSourceWithClient: the create has already settled the session, so the
+    // edit lock and the PUT share it.
+    //
+    // A freshly created object is NOT blank: SAP gives it an inactive template (a new program carries
+    // one line). replaceSourceWithClient refuses to overwrite pre-existing inactive source, because
+    // that guard exists to protect a REVIEWED draft -- and a draft produced microseconds ago by this
+    // very operation has no reviewer. It is therefore released with the draft's exact fingerprint,
+    // which is the evidence an operator would otherwise supply by hand, so the guard keeps its full
+    // meaning for every other caller.
+    if (request.source.length) {
+      const inspection = await inspectSourceWithClient(
+        client,
+        request.connectionId,
+        request.workspaceUri
+      )
+      const draft = inspection.inactiveSource
+      const currentSource = draft ?? inspection.activeSource
+      await replaceSourceWithClient(
+        client,
+        request.connectionId,
+        request.workspaceUri,
+        currentSource,
+        request.source.join("\n"),
+        request.transportNumber,
+        draft === null ? undefined : createHash("sha256").update(draft).digest("hex"),
+        draft !== null
+      )
+    }
+
     const activation = await activateTarget(client, request.objectUri, request.objectName)
     return {
       connectionId: request.connectionId,
@@ -3265,7 +3378,7 @@ function transportDetailsFromRepository(source: string[], requested: string): Tr
 }
 
 function isNotFoundError(error: unknown): boolean {
-  return /(?:status code|HTTP) 404\b|(?:object|resource|program|class|interface|function(?: module)?)\b.*\b(?:not found|does not exist)\b/i.test(
+  return /(?:status code|HTTP) 404\b|(?:object|resource|program|class|interface|function(?: module)?)\b.*\b(?:not found|does not exist)\b|未找到对象/i.test(
     errorText(error)
   )
 }

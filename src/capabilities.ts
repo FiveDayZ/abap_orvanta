@@ -157,7 +157,13 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
       "recover_ddic_table_conversion"
     ]
   ],
-  ["ddic-helper-controlled-delete", ["delete_ddic_object"]]
+  ["ddic-helper-controlled-delete", ["delete_ddic_object"]],
+  // Search help is its own DDIC object kind with its own helper operations (READ_SEARCH_HELP /
+  // UPSERT_SEARCH_HELP / DELETE_SEARCH_HELP), so it gets its own capability rather than being folded
+  // into ddic-helper-core. Without this entry the coverage assertion in tools.test.ts fails: those
+  // two tools are routable but belonged to no capability, which is exactly the drift the assertion
+  // exists to catch.
+  ["ddic-helper-search-help", ["read_search_help", "upsert_search_help"]]
 ]
 
 export async function buildCapabilityReport(

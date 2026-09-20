@@ -540,6 +540,13 @@ interface UpsertStructureInput extends UpsertDdicInput {
   fields: Array<{ name: string; dataElement: string }>
 }
 
+interface UpsertSearchHelpInput extends UpsertDdicInput {
+  header?: Record<string, string> | undefined
+  selectionMethods?: Array<Record<string, string>> | undefined
+  parameters?: Array<Record<string, string>> | undefined
+  fieldAssignments?: Array<Record<string, string>> | undefined
+}
+
 interface CreateTransparentTableInput extends Omit<UpsertDdicInput, "expectedVersion"> {
   deliveryClass: "A" | "C" | "L" | "G" | "E" | "S" | "W"
   dataClass: "APPL0" | "APPL1" | "APPL2"
@@ -616,7 +623,7 @@ interface UpsertTableTypeInput extends UpsertDdicInput {
 }
 
 interface DeleteDdicInput extends ReadDdicInput {
-  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP" | "TABL"
+  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP" | "TABL" | "SHLP"
   expectedVersion: string
   packageName: string
   transportNumber: string
@@ -2541,13 +2548,18 @@ export class ToolService {
       throw new Error(`Function module is not assigned to transport ${requestedTransport}`)
     }
 
-    // The patch runs inside SAP through the helper opcode PATCH_FUNCTION_INTERFACE. The native ADT
-    // path cannot do it on this platform: it locks the function include successfully and then the
-    // save is rejected with HTTP 423 "is not locked (invalid lock handle)". The helper locks
-    // TFDIR, re-reads the active interface while locked, merges the payload rows, writes the
-    // interface back through RPY_FUNCTIONMODULE_UPDATE with the source and documentation arrays it
-    // just read, and compares its own read-back line by line. This service therefore changes no
-    // ADT source at all and the implementation body cannot be touched by this operation.
+    // PLATFORM LIMIT -- this call does NOT write interface parameters on SAP_BASIS 7.31.
+    // The helper opcode PATCH_FUNCTION_INTERFACE has no parameter write path on this release:
+    // RPY_FUNCTIONMODULE_UPDATE, the write-back API this method was originally built around, does
+    // not exist here (verified: FUNCTION_READ_FAILED), and its wide-line alternatives
+    // (RPY_FUNCTIONMODULE_READ_NEW / RPY_FUNCTIONMODULE_INSERT) expose NEW_SOURCE: RSFB_SOURCE,
+    // which is a function-group-local type of SIFP that no external caller can declare. The
+    // branch's only CALL FUNCTIONs are ENQUEUE_ESFUNCTION / RPY_FUNCTIONMODULE_READ /
+    // DEQUEUE_ESFUNCTION and its only PERFORMs are SAPMS38L's fu_modification_globals_init /
+    // do_read_docu_r3_new / do_update_docu_r3_new -- that is, it writes parameter DOCUMENTATION
+    // only. The fingerprint checks and the read-back comparison below therefore prove that the
+    // implementation source was left alone; they do NOT prove the parameters were applied. Apply
+    // interface changes manually in SE37. See .logs/20260920-160422-...-missing-rpy-update.md.
     const result = await this.backend.callSapHelper(connectionId, {
       operation: "PATCH_FUNCTION_INTERFACE",
       objectName: functionName,
@@ -2617,11 +2629,18 @@ export class ToolService {
         helperCode: result.code,
         helperMessage: result.message,
         helperVersion: result.version,
-        helperVerification: "the helper compared its own interface read-back line by line",
+        helperVerification:
+          "the helper compared its own read-back of the documentation tables; it cannot verify interface parameters on this platform",
         status: result.code,
         packageName: input.packageName.trim().toUpperCase(),
         recordedRequest: input.transportNumber.trim().toUpperCase(),
-        interfaceWritePerformed: true,
+        // False: the helper opcode writes parameter documentation only on SAP_BASIS 7.31. Reporting
+        // true here would be a false success for the parameter changes the caller asked for.
+        interfaceWritePerformed: false,
+        interfaceWriteSupported: false,
+        interfaceWriteLimit:
+          "SAP_BASIS 7.31 has no headless interface-parameter write API: RPY_FUNCTIONMODULE_UPDATE does not exist and RSFB_SOURCE is a function-group-local type. Parameter additions, renames, and removals must be applied manually in SE37.",
+        parameterChangesApplied: false,
         sourceMutation: null,
         sourceWritePerformed: false,
         destructiveChangeConfirmed: input.confirmation === "DESTRUCTIVE_INTERFACE_CHANGE",
@@ -2996,6 +3015,51 @@ export class ToolService {
         description: value.description
       }))
     })
+  }
+
+  async readSearchHelp(input: ReadDdicInput): Promise<string> {
+    return this.readDdic(input, "READ_SEARCH_HELP", "searchHelp")
+  }
+
+  async upsertSearchHelp(input: UpsertSearchHelpInput): Promise<string> {
+    const objectName = customerDdicName(input.objectName)
+    validateDescription(input.description)
+    const header = searchHelpHeader(input.header)
+    const selectionMethods = searchHelpRows(input.selectionMethods, "selectionMethods")
+    const parameters = searchHelpRows(input.parameters, "parameters")
+    const fieldAssignments = searchHelpRows(input.fieldAssignments, "fieldAssignments")
+    const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
+      operation: "UPSERT_SEARCH_HELP",
+      objectName,
+      description: input.description,
+      packageName: ddicPackageName(input.packageName),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: versionToken(input.expectedVersion),
+      header,
+      selectionMethods,
+      parameters,
+      fieldAssignments
+    })
+    return savedDdicResult(
+      result,
+      "searchHelp",
+      objectName,
+      input.packageName,
+      input.connectionId,
+      {
+        description: input.description,
+        issimple: header.ISSIMPLE === "X",
+        selectionMethod: header.SELMETHOD ?? "",
+        selectionMethodType: header.SELMTYPE ?? "",
+        textTable: header.TEXTTAB ?? "",
+        selectionExit: header.SELMEXIT ?? "",
+        hotkey: header.HOTKEY ?? "",
+        dialogType: header.DIALOGTYPE ?? "",
+        selectionMethods,
+        parameters,
+        fieldAssignments
+      }
+    )
   }
 
   async readDdicDataElement(input: ReadDdicInput): Promise<string> {
@@ -3471,7 +3535,8 @@ export class ToolService {
       DTEL: "DELETE_DATA_ELEMENT",
       STRU: "DELETE_STRUCTURE",
       TABL: "DELETE_TRANSPARENT_TABLE",
-      TTYP: "DELETE_TABLE_TYPE"
+      TTYP: "DELETE_TABLE_TYPE",
+      SHLP: "DELETE_SEARCH_HELP"
     }[input.objectType] as SapDdicOperation
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation,
@@ -5681,8 +5746,11 @@ export class ToolService {
       throw new Error("confirmation must be PERMANENT_DELETE")
     }
     const connectionId = input.connectionId.toLowerCase()
-    const expectedPackage = packageName(input.packageName)
-    const transport = transportNumber(input.transportNumber)
+    // A source object may live in $TMP. Reusing the Dynpro package rule here refused every local
+    // program, include, class and interface outright, so the local case is allowed and needs no
+    // transport entry; every other package keeps the previous transport requirement.
+    const expectedPackage = deletableSourcePackage(input.packageName)
+    const transport = expectedPackage === "$TMP" ? "" : transportNumber(input.transportNumber)
     const parentRequired = input.objectType === "FUGR/I" || input.objectType === "FUGR/FF"
     const parentName = input.parentName ? customerName(input.parentName, "parentName") : ""
     if (parentRequired && !parentName) {
@@ -8793,7 +8861,13 @@ function formatTextElement(element: TextElementInfo): string {
   }`
 }
 
-type DdicKind = "domain" | "dataElement" | "structure" | "transparentTable" | "tableType"
+type DdicKind =
+  | "domain"
+  | "dataElement"
+  | "structure"
+  | "transparentTable"
+  | "tableType"
+  | "searchHelp"
 
 function ddicResult(
   result: SapDdicResult,
@@ -8839,6 +8913,24 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
         high: value.DOMVALUE_H ?? "",
         description: value.DDTEXT ?? ""
       }))
+    }
+  }
+  if (kind === "searchHelp") {
+    // DD31V/DD32P/DD33V rows are exposed as their raw DDIC property bags so the caller sees
+    // SAP's own column names. The key columns (SHLPNAME, SHPOSITION, FLPOSITION) are never
+    // returned as caller input; they are reconstructed from the object name and the row order.
+    return {
+      description: result.header.DDTEXT ?? "",
+      issimple: result.header.ISSIMPLE === "X",
+      selectionMethod: result.header.SELMETHOD ?? "",
+      selectionMethodType: result.header.SELMTYPE ?? "",
+      textTable: result.header.TEXTTAB ?? "",
+      selectionExit: result.header.SELMEXIT ?? "",
+      hotkey: result.header.HOTKEY ?? "",
+      dialogType: result.header.DIALOGTYPE ?? "",
+      selectionMethods: result.selectionMethods,
+      parameters: result.parameters,
+      fieldAssignments: result.fieldAssignments
     }
   }
   if (kind === "dataElement") {
@@ -8936,7 +9028,8 @@ function savedDdicResult(
     dataElement: "ROLLNAME",
     structure: "TABNAME",
     transparentTable: "TABNAME",
-    tableType: "TYPENAME"
+    tableType: "TYPENAME",
+    searchHelp: "SHLPNAME"
   }[kind]
   if (result.header[identityField] !== objectName) {
     throw new Error(
@@ -9069,6 +9162,72 @@ function validateDescription(value: string): void {
 
 function validateTextLength(value: string, maximum: number, field: string): void {
   if (value.length > maximum) throw new Error(`${field} must not exceed ${maximum} characters`)
+}
+
+/**
+ * Header properties of a search help that SAP derives or controls. The helper rejects them too,
+ * but refusing them here keeps the failure local and gives the caller a usable message.
+ * Mirrors the 'H' whitelist the D6-1b carrier installed in Z_ORVANTA_MCP_DDIC_API.
+ */
+const SEARCH_HELP_DERIVED_HEADER_PROPERTIES = new Set([
+  "SHLPNAME",
+  "ACTFLAG",
+  "AS4USER",
+  "AS4DATE",
+  "AS4TIME",
+  "ATTACHEXI",
+  "ELEMEXI",
+  "NOFIELDS",
+  "DDLANGUAGE"
+])
+
+/** Key columns of DD31V/DD32P/DD33V are reconstructed by the service from the row order. */
+const SEARCH_HELP_KEY_PROPERTIES = new Set(["SHLPNAME", "SHPOSITION", "FLPOSITION"])
+
+const SEARCH_HELP_MAX_CHILD_ROWS = 200
+
+function searchHelpHeader(input: Record<string, string> | undefined): SapStructureRow {
+  const header: SapStructureRow = {}
+  for (const [property, value] of Object.entries(input ?? {})) {
+    const name = property.trim().toUpperCase()
+    if (!name) throw new Error("search help header property names must not be empty")
+    if (SEARCH_HELP_DERIVED_HEADER_PROPERTIES.has(name)) {
+      throw new Error(`search help header property ${name} is derived or server-controlled`)
+    }
+    if (/\r|\n/.test(value)) {
+      throw new Error(`search help header property ${name} must not contain line breaks`)
+    }
+    header[name] = value
+  }
+  if ("ISSIMPLE" in header) {
+    header.ISSIMPLE = header.ISSIMPLE?.trim().toUpperCase() === "X" ? "X" : ""
+  }
+  return header
+}
+
+function searchHelpRows(
+  rows: Array<Record<string, string>> | undefined,
+  label: string
+): SapStructureRow[] {
+  const source = rows ?? []
+  if (source.length > SEARCH_HELP_MAX_CHILD_ROWS) {
+    throw new Error(`${label} must not exceed ${SEARCH_HELP_MAX_CHILD_ROWS} rows`)
+  }
+  return source.map((row, index) => {
+    const entry: SapStructureRow = {}
+    for (const [property, value] of Object.entries(row)) {
+      const name = property.trim().toUpperCase()
+      if (!name) throw new Error(`${label}[${index}] property names must not be empty`)
+      if (SEARCH_HELP_KEY_PROPERTIES.has(name)) {
+        throw new Error(`${label}[${index}] property ${name} is reconstructed by the service`)
+      }
+      if (/\r|\n/.test(value)) {
+        throw new Error(`${label}[${index}] property ${name} must not contain line breaks`)
+      }
+      entry[name] = value
+    }
+    return entry
+  })
 }
 
 function validateDomainDefinition(input: UpsertDomainInput): void {
@@ -9735,9 +9894,12 @@ function functionDefinitionFromResult(
 /**
  * Canonical `kind|index|property|value` rows of the expected interface snapshot.
  *
- * The helper's `PATCH_FUNCTION_INTERFACE` pre-write guard rebuilds the whole interface from the
- * payload rows and compares it against its own `RPY_FUNCTIONMODULE_READ` read of the active
- * function module. Its own emitter writes a fixed property set per direction, and the comparison
+ * Describes the payload shape the helper's `PATCH_FUNCTION_INTERFACE` guard parses: it rebuilds the
+ * whole interface from the payload rows and compares it against its own `RPY_FUNCTIONMODULE_READ`
+ * read of the active function module. NOTE: that guard validates and documents the interface; on
+ * SAP_BASIS 7.31 the branch has no interface-parameter write path (see patchFunctionModuleInterface),
+ * so these rows describe the *expected* snapshot, not a write that this platform performs.
+ * Its own emitter writes a fixed property set per direction, and the comparison
  * runs over the complete `RSIMP`/`RSEXP`/`RSCHA`/`RSTBL` row, so a property the payload never
  * mentions keeps whatever value the surrounding row carries. Passing the repository read back
  * verbatim therefore only works while that read happens to carry exactly the same properties.
@@ -10864,6 +11026,23 @@ function packageName(value: string): string {
     throw new Error("A transportable package is required for Dynpro application objects")
   }
   return normalized
+}
+
+/**
+ * Package validator for source-object DELETION, which must accept `$TMP`.
+ *
+ * Deliberately separate from `packageName()`. That helper rejects `$TMP` because its eleven other
+ * callers create modules pools, transactions, screens and message classes -- objects SAP does require
+ * to be transportable, so its wording about Dynpro application objects is accurate for them. A
+ * program, include, class or interface may legitimately live in `$TMP`, and deleting one needs no
+ * transport at all. Routing the local case through the shared helper made every `$TMP` source object
+ * undeletable and explained the refusal with a cause unrelated to the request, which is what left the
+ * deployment carriers stranded in `$TMP`. Non-local packages keep the original rule unchanged.
+ */
+function deletableSourcePackage(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!normalized) throw new Error("packageName is required")
+  return normalized === "$TMP" ? normalized : packageName(normalized)
 }
 
 function transportNumber(value: string): string {

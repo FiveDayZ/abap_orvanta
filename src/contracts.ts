@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { TABLE_NEVER_ALLOWED, listAllowedTables } from "./table-allowlist.js"
 import {
   readSmartformSchema,
   createSmartformSchema,
@@ -94,6 +95,11 @@ const ddicFixedValue = z.object({
   high: z.string().optional(),
   description: z.string()
 })
+// Search help child rows. Each entry is a property bag for one DD31V / DD32P / DD33V row; the
+// service keeps the order of the array as the row order and never sends the key columns
+// (SHLPNAME, SHPOSITION, FLPOSITION), which SAP derives.
+const ddicSearchHelpRow = z.record(z.string())
+const ddicSearchHelpHeader = z.record(z.string())
 const ddicStructureField = z.object({ name: z.string(), dataElement: z.string() })
 const ddicTableField = z.object({
   name: z.string(),
@@ -594,7 +600,7 @@ const toolContractsBase = {
   },
   patch_function_module_interface: {
     description:
-      "Patch the interface of one existing Z* or Y* function module while preserving its implementation source and function attributes. The patch runs inside SAP through the helper opcode PATCH_FUNCTION_INTERFACE: the helper locks TFDIR, re-reads the active interface, merges the requested rows and writes them back with the source and documentation it just read, so the implementation body cannot be modified and no ADT source is written. Supports add, rename, update, and remove for IMPORTING, EXPORTING, CHANGING, TABLES, and classic exceptions. Requires the exact parent function group, current interface and implementation-source fingerprints, exact package, existing transport, and DESTRUCTIVE_INTERFACE_CHANGE confirmation for rename, update, or remove. The interface is read back from SAP after the helper write and compared with the request. SAP locks are never cleared automatically and transports are never created or released.",
+      "Patch the interface of one existing Z* or Y* function module while preserving its implementation source and function attributes. PLATFORM LIMIT: on SAP_BASIS 7.31 the helper opcode PATCH_FUNCTION_INTERFACE has no interface-parameter write path. RPY_FUNCTIONMODULE_UPDATE, the write-back API the implementation was designed around, does not exist on this release, and the wide-line alternatives (RPY_FUNCTIONMODULE_READ_NEW / _INSERT) expose RSFB_SOURCE, a function-group-local type no external caller can declare. The helper therefore only writes parameter DOCUMENTATION: it locks TFDIR, re-reads the active interface, and updates the documentation tables through SAPMS38L. Interface parameters reported as changed must be applied manually in SE37. The tool still requires the exact parent function group, current interface and implementation-source fingerprints, exact package, existing transport, and DESTRUCTIVE_INTERFACE_CHANGE confirmation for rename, update, or remove, and it verifies that the implementation source is byte-identical afterwards. SAP locks are never cleared automatically and transports are never created or released.",
     inputSchema: {
       ...writeOperationInput,
       functionName: z.string(),
@@ -718,6 +724,28 @@ const toolContractsBase = {
       valueTable: z.string().optional(),
       conversionExit: z.string().optional(),
       fixedValues: z.array(ddicFixedValue).optional(),
+      connectionId: z.string()
+    }
+  },
+  read_search_help: {
+    description:
+      "Read one active SAP Dictionary search help: header attributes plus its DD31V member helps (selectionMethods), DD32P parameter allocation (parameters) and DD33V field assignment (fieldAssignments). DD31V and DD33V exist only for a collective search help, so an elementary search help (ISSIMPLE = 'X') legitimately returns selectionMethods and fieldAssignments empty. DD32P also applies to an elementary search help, which therefore commonly returns a non-empty parameters array. Requires a DDIC helper that publishes READ_SEARCH_HELP (protocol 1.8 or later).",
+    inputSchema: { objectName: z.string(), connectionId: z.string() }
+  },
+  upsert_search_help: {
+    description:
+      "Create or fully replace one Z* or Y* search help through the installed DDIC helper. description is limited to 60 characters, the same as every other DDIC object. Existing objects require the version returned by read_search_help. selectionMethods, parameters and fieldAssignments are replaced as complete sets: rows omitted from the request are deleted, so send every row that must survive, including DD32P parameter rows on an elementary search help. Passing empty arrays therefore strips an existing definition down to its header. SAP-derived or server-controlled header properties (SHLPNAME, ACTFLAG, AS4USER, AS4DATE, AS4TIME, ATTACHEXI, ELEMEXI, NOFIELDS, DDLANGUAGE) are rejected. Requires a helper that publishes UPSERT_SEARCH_HELP (protocol 1.8 or later) AND a helper whose request parser accepts the two-character S1/S2/S3 row kinds; a helper declaring 1.8 whose parser still uses a one-character row kind rejects any request carrying child rows with PAYLOAD_INVALID.",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      description: z.string(),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      expectedVersion: z.string().optional(),
+      header: ddicSearchHelpHeader.optional(),
+      selectionMethods: z.array(ddicSearchHelpRow).optional(),
+      parameters: z.array(ddicSearchHelpRow).optional(),
+      fieldAssignments: z.array(ddicSearchHelpRow).optional(),
       connectionId: z.string()
     }
   },
@@ -870,10 +898,10 @@ const toolContractsBase = {
   },
   delete_ddic_object: {
     description:
-      "Permanently delete one existing Z* or Y* domain, data element, structure, table type, or transparent table after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent-table deletion additionally requires data-loss acknowledgement. SAP references block deletion; automatic retry/rollback, SAP lock clearing, and transport release are not supported.",
+      "Permanently delete one existing Z* or Y* domain, data element, structure, table type, transparent table, or search help after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent-table deletion additionally requires data-loss acknowledgement. SAP references block deletion; automatic retry/rollback, SAP lock clearing, and transport release are not supported. Deleting a search help requires a helper that publishes DELETE_SEARCH_HELP (protocol 1.8 or later); older helpers reject it with OPERATION_NOT_SUPPORTED.",
     inputSchema: {
       ...writeOperationInput,
-      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP", "TABL"]),
+      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP", "TABL", "SHLP"]),
       objectName: z.string(),
       expectedVersion: z.string(),
       packageName: z.string(),
@@ -885,7 +913,8 @@ const toolContractsBase = {
   },
   search_abap_objects: {
     description:
-      "Search ABAP objects by name pattern. Wildcards: * ?. Custom code: prefix Z* or Y* (Z*ARTICLE*, not *ARTICLE*). Standard SAP: BAPI_*, CL_*, /SAP/*. MANDATORY before code generation: training data outdated - ALWAYS verify objects exist first, read signatures with get_abap_object_lines, then generate. Unverified code WILL fail at runtime.",
+      "Search ABAP objects by name pattern. Wildcards: * ?. Custom code: prefix Z* or Y* (Z*ARTICLE*, not *ARTICLE*). Standard SAP: BAPI_*, CL_*, /SAP/*. MANDATORY before code generation: training data outdated - ALWAYS verify objects exist first, read signatures with get_abap_object_lines, then generate. Unverified code WILL fail at runtime. DISCOVERY ONLY - NEVER an existence check: the repository index retains stale entries for deleted objects and this tool keeps listing them (verified: deletes returned absenceVerified=true while three separate objects were still listed, one still listed 40 minutes later). It cannot distinguish a live object from a deleted one, so a hit here does not prove the object exists and a miss does not prove it is gone. To establish existence, read the object itself: get_abap_object_lines or get_abap_object_workspace_uri for source objects, and the matching read_* tool for DDIC objects (for example read_search_help).",
+
     inputSchema: {
       pattern: z.string(),
       types: z.array(objectType),
@@ -895,7 +924,8 @@ const toolContractsBase = {
   },
   get_abap_object_info: {
     description:
-      "Get ABAP object metadata: type, total lines, cache status. Use before retrieving content to understand what kind of object you're dealing with.",
+      "Get ABAP object metadata: type, total lines, cache status. Use before retrieving content to understand what kind of object you're dealing with. NOT an existence check: for a deleted object whose stale repository entry survives, this may still return the full metadata block (verified on a deleted search help) or answer with plain 'Could not find ABAP object: <name>. The object may not exist or may not be accessible.' text that carries no metadata fields. The field values do not discriminate either - a live object and a deleted one both report Package: Unknown and Total Lines: 1, so 'Package: Unknown' is NOT a signal that the object is stale. Use get_abap_object_lines or get_abap_object_workspace_uri when you need to know whether an object actually exists.",
+
     inputSchema: {
       objectName: z.string(),
       objectType: objectType.optional(),
@@ -1449,7 +1479,7 @@ const toolContractsBase = {
   },
   create_object_programmatically: {
     description:
-      "Create and activate a new Z* or Y* customer source object without VS Code. Supported types: classes, interfaces, programs, includes, function groups, function modules, function-group includes, DDL sources, and DCL sources. Function children require a Z* or Y* parentName. $TMP is local; non-local packages require an existing transport. The service never creates or releases transports.",
+      "Create and activate a new Z* or Y* customer source object without VS Code. Supported types: classes, interfaces, programs, includes, function groups, function modules, function-group includes, DDL sources, and DCL sources. Function children require a Z* or Y* parentName. $TMP is local; non-local packages require an existing transport. Pass source to seed the initial implementation in the SAME operation, one array element per line with no embedded line breaks; it is written after the object exists and before activation, so a single call yields a complete active object. source is accepted for CLAS/OC, INTF/OI, PROG/P, PROG/I, FUGR/I and FUGR/FF, and rejected for FUGR/F (which has no source of its own) and for DDLS/DF and DCLS/DL (which carry their own document serialisation). Without source the object is created empty. The service never creates or releases transports.",
     inputSchema: {
       ...writeOperationInput,
       objectType: z.string(),
@@ -1457,6 +1487,7 @@ const toolContractsBase = {
       description: z.string(),
       packageName: z.string().default("$TMP").optional(),
       parentName: z.string().optional(),
+      source: z.array(z.string()).optional(),
       connectionId: z.string(),
       additionalOptions: z
         .object({
@@ -1479,7 +1510,7 @@ const toolContractsBase = {
   },
   delete_abap_source_object: {
     description:
-      "Permanently delete one existing Z* or Y* class, interface, program, Include, function group, function-group Include, or function module. For FUGR/I, objectName may be the three-character Include suffix or its full technical name; the Z* or Y* parentName and exact ADT ownership must match. Requires the exact object type, current SHA-256 source fingerprint, package, existing transport, explicit confirmation, SAP locking, and post-delete absence verification; transports are never released.",
+      "Permanently delete one existing Z* or Y* class, interface, program, Include, function group, function-group Include, or function module. For FUGR/I, objectName may be the three-character Include suffix or its full technical name; the Z* or Y* parentName and exact ADT ownership must match. packageName may be $TMP for a local object, in which case transportNumber must be empty because a local object has no transport assignment; any other package requires its existing transport. Requires the exact object type, current SHA-256 source fingerprint, explicit confirmation, SAP locking, and post-delete absence verification; transports are never released.",
     inputSchema: {
       ...writeOperationInput,
       objectType: z.enum(["CLAS/OC", "INTF/OI", "PROG/P", "PROG/I", "FUGR/F", "FUGR/I", "FUGR/FF"]),
@@ -1588,7 +1619,11 @@ const toolContractsBase = {
   },
   read_abap_table: {
     description:
-      'Read a bounded single active transparent DDIC table with up to 1024 explicit columns or columns=["*"] for all fields, and structured AND filters. For compatibility with existing Classic BAdI diagnostics, tableName=SXCI is an explicit repository projection rather than a physical DDIC table: it exposes EXIT_NAME, IMP_NAME, CLASS_NAME, and INTER_NAME through read_classic_badi_definition, and an EXIT_NAME EQ filter uses an exact definition read. A confirmed DDIC_OBJECT_NOT_FOUND result for every other name fails as TABLE_QUERY_TABLE_NOT_FOUND and never falls through to an RFC reader. No joins, aggregates, paging, sorting, client override or writes. ADT first; only known empty HTML permits fingerprint-verified RFC readers. If the ADT dictionary endpoint itself is unavailable, a fingerprint-verified RFC metadata path is limited to explicit <=512-character projections and character/date/time fields; when the legacy reader cannot supply whole-layout metadata or reports DATA_BUFFER_EXCEEDED, the separately fingerprint-verified aligned reader is tried once. Authorization failures never retry, and an aligned-reader failure closes the path. columns=["*"], numeric, byte, deep and wide projections fail closed, and tableClassVerified=false makes the missing independent table-class proof explicit. Mixed flat layouts with ADT metadata support character, date, time and numeric text output; numeric values remain SAP strings without JavaScript precision loss. Filters and keys must be character-like; byte/deep projections are rejected, never omitted. Wide rows use <=512-character chunks joined by the entire DDIC primary key and two equal observations; changed/missing/duplicate rows or numeric overflow fail without partial data. Whole-row bounds and a 256-data-call budget apply; reduce maxRows if exceeded. Maximum 500 rows, ordering unspecified and snapshot=false. Authorization and SAP session client handling apply.',
+      'Read a bounded single active transparent DDIC table with up to 1024 explicit columns or columns=["*"] for all fields, and structured AND filters. For compatibility with existing Classic BAdI diagnostics, tableName=SXCI is an explicit repository projection rather than a physical DDIC table: it exposes EXIT_NAME, IMP_NAME, CLASS_NAME, and INTER_NAME through read_classic_badi_definition, and an EXIT_NAME EQ filter uses an exact definition read. A confirmed DDIC_OBJECT_NOT_FOUND result for every other name fails as TABLE_QUERY_TABLE_NOT_FOUND and never falls through to an RFC reader. No joins, aggregates, paging, sorting, client override or writes. ADT first; only known empty HTML permits fingerprint-verified RFC readers. If the ADT dictionary endpoint itself is unavailable, a fingerprint-verified RFC metadata path is limited to explicit <=512-character projections and character/date/time fields; when the legacy reader cannot supply whole-layout metadata or reports DATA_BUFFER_EXCEEDED, the separately fingerprint-verified aligned reader is tried once. Authorization failures never retry, and an aligned-reader failure closes the path. columns=["*"], numeric, byte, deep and wide projections fail closed, and tableClassVerified=false makes the missing independent table-class proof explicit. Mixed flat layouts with ADT metadata support character, date, time and numeric text output; numeric values remain SAP strings without JavaScript precision loss. Filters and keys must be character-like; byte/deep projections are rejected, never omitted. Wide rows use <=512-character chunks joined by the entire DDIC primary key and two equal observations; changed/missing/duplicate rows or numeric overflow fail without partial data. Whole-row bounds and a 256-data-call budget apply; reduce maxRows if exceeded. Maximum 500 rows, ordering unspecified and snapshot=false. Authorization and SAP session client handling apply.' +
+      // D5-3: name the allowed scope so a caller can judge availability without probing.
+      ` tableName must be in the D5-2 allowlist (default deny); the allowed tables are ${listAllowedTables().join(", ")}.` +
+      ` Any other tableName fails as TABLE_NOT_ALLOWED before any SAP access, and the sensitive tables ${TABLE_NEVER_ALLOWED.join(", ")} are never allowed.` +
+      " This bounded reader does not mean unrestricted native free-form querying is available.",
     inputSchema: tableQuerySchema.shape
   },
   run_atc_analysis: {
