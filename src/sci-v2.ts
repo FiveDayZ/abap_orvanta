@@ -8,15 +8,15 @@ import { rowSchema, type SciInput } from "./sci.js"
 
 export const SCI_V2_HELPER = "Z_ORVANTA_MCP_SCI_V2"
 // Use read_function_module_interface.fingerprint, not its interface-only hash.
-// Re-pinned 2026-09-20 from a live read-only read_function_module_interface(w200): the previous
-// values (4d38c098… / 9f0c1e64…) had gone stale, so testRemoteFunctionModule refused every
-// run_sci_analysis call with an explicit target or the syntax_critical_sql profile before it ever
-// reached SAP. The drift came from adding EV_RESULT to both SCI interfaces for the CAPABILITIES
-// carrier. Deploying that carrier's *body* changes the fingerprint again, so this must be re-pinned
-// once more after that deployment.
-export const SCI_V2_FINGERPRINT = "0f534e3fcca3355a1c9d38483dc3991210d4f8c573cdf07dbd9375facefb7270"
+// Re-pinned 2026-09-20 (second time) after the CAPABILITIES carrier body was deployed. Each time the
+// interface or the body changes the pin goes stale, and testRemoteFunctionModule then refuses every
+// run_sci_analysis call that carries an explicit target or the syntax_critical_sql profile before it
+// ever reaches SAP. The previous values were 4d38c098… / 9f0c1e64…, then 0f534e3f… / 48bf0016….
+// These values were read back from w200 after the deployment verified: both bodies hashed to the
+// reviewed payloads and both interface fingerprints were unchanged.
+export const SCI_V2_FINGERPRINT = "95c1eaba729c901417578b2b05aa70fa19cbc0be2a47330acdcadbea678658d8"
 export const SCI_E2_HELPER = "Z_ORVANTA_MCP_SCI_E2"
-export const SCI_E2_FINGERPRINT = "48bf0016d50e36b2d2f500b0cb2abe0abcb2f6a46f99be16661625605b60b626"
+export const SCI_E2_FINGERPRINT = "bb1d5de91b92b873776d34226c830d58319e20dc67e507ed07dc134531defd5a"
 
 export const sciTargetSchema = z
   .object({
