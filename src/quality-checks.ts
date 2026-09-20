@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NO_GATE_VERDICT } from "./quality-gate.js"
 import type { SapBackend } from "./backend.js"
 import { redactDiagnosticText } from "./runtime-diagnostics.js"
 import { AtcStageError } from "./native-atc.js"
@@ -137,7 +138,8 @@ export async function checkQuality(
     )
       ? "completed"
       : "partial",
-    qualityGate: "not_evaluated",
+    qualityGate: QUALITY_GATE_NOT_EVALUATED,
+    gateReason: QUALITY_GATE_REASON_NO_GATE_VERDICT,
     results,
     limits: { targets: 10, returnedFindingsPerEnginePerTarget: limit },
     sci: {

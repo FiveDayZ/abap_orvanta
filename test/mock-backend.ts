@@ -963,6 +963,13 @@ export class MockBackend implements SapBackend {
   /** When true, the `CAPABILITIES` probe fails as if the helper were unreachable (`absent`). */
   helperCapabilitiesUnreachable = false
 
+  /**
+   * Overrides the ADT discovery snapshot. The platform-boundary verdicts are derived from what the
+   * target advertised, so a test that wants to prove they are measured rather than constant sets
+   * this to a snapshot that does or does not expose the endpoint under test.
+   */
+  discoverySnapshotInfo: DiscoverySnapshotInfo | undefined
+
   async probeHelperCapabilities(
     connectionId: string,
     helper: string
@@ -2191,6 +2198,7 @@ export class MockBackend implements SapBackend {
 
   async discoverySnapshot(connectionId: string): Promise<DiscoverySnapshotInfo> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    if (this.discoverySnapshotInfo) return this.discoverySnapshotInfo
     return {
       workspaces: [
         {
@@ -2267,7 +2275,8 @@ export class MockBackend implements SapBackend {
       variantValidated: false,
       worklistCreationAttempted: false,
       runCreationAttempted: false,
-      qualityGate: "not_evaluated"
+      qualityGate: "not_evaluated",
+      gateReason: "not_run"
     }
   }
 

@@ -32,6 +32,7 @@ interface ReportShape {
       evidence: { source: string; detail: string }
     }
   }>
+  quality: Record<string, { value: string; reason: string } | string | string[] | number>
   summary: Record<string, number>
 }
 
@@ -303,6 +304,78 @@ test("every refusal code an un-upgraded helper uses degrades to operation-scoped
     ),
     { kind: "unusable", detail: "CAPABILITIES reply carried no payload row array" }
   )
+})
+
+test("platform-boundary verdicts are measured from ADT discovery, not asserted as constants", async () => {
+  // An ECC 7.31 target publishes the workspace titles for the Test Cockpit, the Profiler and the
+  // Debugger but no collections under them, and nothing at all for CDS/DCL. Those tools are
+  // registered but can never work here, so the report has to say so rather than leave `unknown`.
+  const backend = new MockBackend()
+  backend.discoverySnapshotInfo = {
+    workspaces: [
+      {
+        title: "Repository",
+        collections: [
+          { href: "/sap/bc/adt/repository/informationsystem/search", templateLinks: [] },
+          { href: "/sap/bc/adt/abapunit/testruns", templateLinks: [] }
+        ]
+      },
+      { title: "ABAP Test Cockpit", collections: [] },
+      { title: "ABAP Profiler", collections: [] },
+      { title: "Debugger", collections: [] }
+    ],
+    coreEntries: [],
+    resAppClasses: []
+  }
+  const report = await buildReport(backend)
+  const value = (key: string) => {
+    const entry = report.quality[key]
+    assert.ok(entry && typeof entry === "object" && !Array.isArray(entry), `${key} is missing`)
+    return entry as { value: string; reason: string }
+  }
+
+  // ABAP Unit is advertised, so it is not part of this boundary; ATC is not.
+  assert.equal(value("atcCapability").value, "sci_only")
+  assert.match(value("atcCapability").reason, /did not advertise any ABAP Test Cockpit collection/)
+  assert.equal(value("traceCapability").value, "unsupported")
+  assert.equal(value("debuggerCapability").value, "platform_unsupported")
+  assert.equal(value("cdsDclCapability").value, "platform_unsupported")
+  // The empty workspace titles are reported, because "the platform knows this service and shows
+  // nothing under it" is a different fact from "the platform never mentioned it".
+  assert.deepEqual(report.quality.emptyWorkspaceTitles, [
+    "ABAP Test Cockpit",
+    "ABAP Profiler",
+    "Debugger"
+  ])
+
+  // The debugger tools themselves carry the same verdict, so the explanation is reachable from the
+  // capability the caller would actually be denied.
+  const debuggerEntry = capabilityObservation(report, "adt-debugger")
+  assert.equal(debuggerEntry.availability, "platform_unsupported")
+  assert.match(debuggerEntry.reason, /did not advertise \/sap\/bc\/adt\/debugger/)
+  assert.equal(debuggerEntry.evidence.source, "discovery")
+
+  // Negative control: advertise the debugger and ATC and the verdicts must move, which is what
+  // makes them measurements instead of constants.
+  backend.discoverySnapshotInfo = {
+    workspaces: [
+      {
+        title: "Debugger",
+        collections: [{ href: "/sap/bc/adt/debugger", templateLinks: [] }]
+      },
+      { title: "ABAP Test Cockpit", collections: [{ href: "/sap/bc/adt/atc", templateLinks: [] }] }
+    ],
+    coreEntries: [],
+    resAppClasses: []
+  }
+  const advertised = await buildReport(backend)
+  const advertisedValue = (key: string) => (advertised.quality[key] as { value: string }).value
+  assert.equal(advertisedValue("atcCapability"), "native")
+  assert.equal(advertisedValue("debuggerCapability"), "supported")
+  // A registered tool on a platform that does expose the endpoint is back to `unknown`: nobody has
+  // exercised it, which is an honest unprobed state rather than a boundary.
+  assert.equal(capabilityObservation(advertised, "adt-debugger").availability, "unknown")
+  assert.equal(advertised.summary.platform_unsupported, 0)
 })
 
 test("the CAPABILITIES payload is parsed with pipe and percent unescaping", () => {

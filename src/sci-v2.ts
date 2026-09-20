@@ -1,4 +1,9 @@
 import { z } from "zod"
+import {
+  qualityGateNotEvaluated,
+  QUALITY_GATE_REASON_NOT_RUN,
+  QUALITY_GATE_REASON_NOT_NATIVE_ATC
+} from "./quality-gate.js"
 import { rowSchema, type SciInput } from "./sci.js"
 
 export const SCI_V2_HELPER = "Z_ORVANTA_MCP_SCI_V2"
@@ -143,7 +148,9 @@ function formatScopedSciResult(raw: unknown, input: SciInput, extended: boolean)
       helper: extended ? SCI_E2_HELPER : SCI_V2_HELPER,
       helperFingerprint: extended ? SCI_E2_FINGERPRINT : SCI_V2_FINGERPRINT,
       execution: precheck ? "not_run" : "returned",
-      qualityGate: "not_evaluated",
+      ...qualityGateNotEvaluated(
+        precheck ? QUALITY_GATE_REASON_NOT_RUN : QUALITY_GATE_REASON_NOT_NATIVE_ATC
+      ),
       requestedTarget: target,
       scope: {
         objectType: out.EV_OBJTYPE,

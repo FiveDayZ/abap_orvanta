@@ -1,4 +1,8 @@
 import { createHash } from "node:crypto"
+import {
+  QUALITY_GATE_NOT_EVALUATED,
+  QUALITY_GATE_REASON_NOT_A_QUALITY_GATE
+} from "./quality-gate.js"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { z } from "zod"
@@ -275,7 +279,8 @@ export class OperationalLogService {
       connectionId: id,
       client: connection.client,
       readOnly: true,
-      qualityGate: "not_evaluated"
+      qualityGate: QUALITY_GATE_NOT_EVALUATED,
+      gateReason: QUALITY_GATE_REASON_NOT_A_QUALITY_GATE
     }
     let document: unknown
     try {

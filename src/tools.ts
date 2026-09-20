@@ -1,4 +1,5 @@
 import { resolve } from "node:path"
+import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
 import {
   cleanupTransportEntrySchema,
   prepareTransportDelivery,
@@ -6258,7 +6259,8 @@ export class ToolService {
             worklistCreationAttempted: false,
             runCreationAttempted: false,
             variantValidated: false,
-            qualityGate: "not_evaluated"
+            qualityGate: QUALITY_GATE_NOT_EVALUATED,
+            gateReason: QUALITY_GATE_REASON_NOT_RUN
           },
           null,
           2

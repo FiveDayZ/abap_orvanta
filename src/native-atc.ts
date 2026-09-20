@@ -1,4 +1,5 @@
 import type { ADTClient } from "abap-adt-api"
+import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
 import type { AtcResultInfo } from "./backend.js"
 
 export type AtcStage = "customizing" | "create_worklist" | "create_run" | "read_worklist"
@@ -43,7 +44,8 @@ export async function inspectNativeAtc(client: MetadataClient, configuredVariant
       variantValidated: false,
       worklistCreationAttempted: false,
       runCreationAttempted: false,
-      qualityGate: "not_evaluated"
+      qualityGate: QUALITY_GATE_NOT_EVALUATED,
+      gateReason: QUALITY_GATE_REASON_NOT_RUN
     }
   } catch (error) {
     throw new AtcStageError("customizing", error)

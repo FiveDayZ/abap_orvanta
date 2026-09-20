@@ -11,7 +11,7 @@ import { SCI_E2_HELPER, SCI_V2_HELPER } from "./sci-v2.js"
 import { registryEntry } from "./tool-registry.js"
 import { PRODUCT_VERSION } from "./version.js"
 
-type Availability = "available" | "unsupported" | "unknown"
+type Availability = "available" | "unsupported" | "platform_unsupported" | "unknown"
 type CapabilityRoute = "local" | "native-adt" | "sap-helper-fallback" | "target-specific"
 
 interface CapabilityEvidence {
@@ -318,6 +318,9 @@ export async function buildCapabilityReport(
     [REPOSITORY_HELPER_FUNCTION]: repositoryHelper,
     [DDIC_HELPER_FUNCTION]: ddicApiHelper
   }
+  // Measured platform boundary, shared by the debugger entry and the `quality` block so the two
+  // can never disagree about what the target advertised.
+  const platformFacts = advertisedEndpoints(discovery)
   const capabilities: CapabilitySpec[] = [
     capability(
       "local-service",
@@ -612,7 +615,12 @@ export async function buildCapabilityReport(
         "abap_debug_variable",
         "abap_debug_step"
       ],
-      targetSpecific
+      platformBoundaryObservation(
+        platformFacts.advertised.debugger,
+        "debugger",
+        PLATFORM_ENDPOINTS.debugger,
+        "Availability depends on the debugger endpoint and on an explicitly authorized debug session; registration alone is not proof."
+      )
     ),
     capability(
       "customer-rfc-execution",
@@ -670,6 +678,7 @@ export async function buildCapabilityReport(
         sciE2SelfDescription
       ],
       discovery: discoverySummary(discovery),
+      quality: qualityBlock(discovery, traces),
       capabilities: disclosed,
       summary: {
         toolCount: disclosed.reduce((count, item) => count + item.toolNames.length, 0),
@@ -1051,11 +1060,134 @@ function discoverySummary(
   }
 }
 
+/**
+ * ADT collection prefixes that decide the platform-boundary verdicts.
+ *
+ * A 7.31 system advertises far fewer services than a modern one, and the difference has to be
+ * *measured* rather than assumed: this map is matched against the collections the target actually
+ * advertised, so `quality` below reports what the platform exposes instead of restating a
+ * constant. The distinction that matters is "the platform publishes no collections for this
+ * service" versus "this round did not probe it" - the two used to look identical, which is how
+ * tools stayed registered while being permanently unusable with no explanation.
+ */
+const PLATFORM_ENDPOINTS = {
+  abapUnit: "/sap/bc/adt/abapunit",
+  atc: "/sap/bc/adt/atc",
+  debugger: "/sap/bc/adt/debugger",
+  runtimeTraces: "/sap/bc/adt/runtime/traces",
+  cds: "/sap/bc/adt/ddic/ddl",
+  dcl: "/sap/bc/adt/acm/dcl"
+} as const
+
+interface AdvertisedEndpoints {
+  /** True when the target advertised at least one collection under this prefix. */
+  advertised: Record<keyof typeof PLATFORM_ENDPOINTS, boolean>
+  /** Workspace titles that carried no collections, e.g. a service the platform knows but hides. */
+  emptyWorkspaces: string[]
+  collectionCount: number
+}
+
+function advertisedEndpoints(
+  observation: CapabilityObservation & { snapshot?: DiscoverySnapshotInfo | undefined }
+): AdvertisedEndpoints {
+  const workspaces = observation.snapshot?.workspaces ?? []
+  const collectionCount = workspaces.reduce(
+    (count, workspace) => count + workspace.collections.length,
+    0
+  )
+  const hrefs = workspaces.flatMap((workspace) =>
+    workspace.collections.map((collection) => collection.href)
+  )
+  const advertised = {} as Record<keyof typeof PLATFORM_ENDPOINTS, boolean>
+  for (const [name, prefix] of Object.entries(PLATFORM_ENDPOINTS)) {
+    advertised[name as keyof typeof PLATFORM_ENDPOINTS] = hrefs.some((href) =>
+      href.startsWith(prefix)
+    )
+  }
+  return {
+    advertised,
+    emptyWorkspaces: workspaces
+      .filter((workspace) => workspace.collections.length === 0)
+      .map((workspace) => workspace.title),
+    collectionCount
+  }
+}
+
+/**
+ * The measured quality verdicts.
+ *
+ * Every value is derived from the discovery advertising observed on this connection, so a caller
+ * can tell "this platform does not expose native ATC" from "nobody has checked yet". `sci_only`
+ * means native ATC is not advertised while the service still implements the SCI route locally; the
+ * SCI helper's own runtime state is deliberately *not* claimed here - it is reported separately by
+ * `scoped-sci-quality`, because discovery does not execute or attest helpers.
+ */
+function qualityBlock(
+  discovery: CapabilityObservation & { snapshot?: DiscoverySnapshotInfo | undefined },
+  traces: CapabilityObservation
+): Record<string, unknown> {
+  const facts = advertisedEndpoints(discovery)
+  const unreachable = (endpoint: keyof typeof PLATFORM_ENDPOINTS, label: string) =>
+    facts.advertised[endpoint]
+      ? `${label} is advertised by ADT discovery on this connection.`
+      : `The platform did not advertise any ${label} collection in ADT discovery (${facts.collectionCount} collections over ${facts.emptyWorkspaces.length} empty workspace title(s)${facts.emptyWorkspaces.length > 0 ? `: ${facts.emptyWorkspaces.join(", ")}` : ""}). Native ${label} is therefore unavailable here; this is a platform boundary on the target, not an unprobed state.`
+  const entry = (value: string, reason: string) => ({ value, reason })
+
+  return {
+    basis: "ADT discovery advertising observed on this connection",
+    advertisedCollectionCount: facts.collectionCount,
+    emptyWorkspaceTitles: facts.emptyWorkspaces,
+    atcCapability: facts.advertised.atc
+      ? entry("native", unreachable("atc", "ABAP Test Cockpit"))
+      : entry(
+          "sci_only",
+          `${unreachable("atc", "ABAP Test Cockpit")} The service implements the SCI route locally, but run_sci_analysis must not be read as native ATC; the SCI helper's own state is reported by scoped-sci-quality.`
+        ),
+    traceCapability: entry(
+      facts.advertised.runtimeTraces ? "supported" : "unsupported",
+      `${unreachable("runtimeTraces", "runtime trace")} Trace probe evidence: ${traces.reason}`
+    ),
+    debuggerCapability: entry(
+      facts.advertised.debugger ? "supported" : "platform_unsupported",
+      unreachable("debugger", "debugger")
+    ),
+    cdsDclCapability: entry(
+      facts.advertised.cds || facts.advertised.dcl ? "supported" : "platform_unsupported",
+      `${unreachable("cds", "CDS/DDLS")} ${unreachable("dcl", "DCL")} The service still understands DDLS/DF and DCLS/DL source URIs locally, so such an object is addressable but cannot be read from this target.`
+    )
+  }
+}
+
 function unknownTargetObservation(reason: string): CapabilityObservation {
   return {
     availability: "unknown",
     reason,
     evidence: { source: "local-contract", detail: "No target-specific operation was invoked" }
+  }
+}
+
+/**
+ * A verdict for tools the platform cannot serve, as opposed to tools nobody has exercised yet.
+ *
+ * `unknown` is the honest answer when availability depends on an object or target that was not
+ * supplied. It is the wrong answer when the measured discovery advertising already proves the
+ * endpoint does not exist here: a tool that is registered but permanently unusable must say so,
+ * otherwise the caller cannot tell a platform boundary from missing verification work.
+ */
+function platformBoundaryObservation(
+  advertised: boolean,
+  label: string,
+  endpoint: string,
+  detail: string
+): CapabilityObservation {
+  if (advertised) return unknownTargetObservation(detail)
+  return {
+    availability: "platform_unsupported",
+    reason: `The target did not advertise ${endpoint} in ADT discovery, so this service is not exposed here. ${detail}`,
+    evidence: {
+      source: "discovery",
+      detail: `${label} absent from the ADT discovery response`
+    }
   }
 }
 
@@ -1138,6 +1270,6 @@ function countAvailability(capabilities: CapabilitySpec[]): Record<Availability,
       summary[capabilityEntry.observation.availability]++
       return summary
     },
-    { available: 0, unsupported: 0, unknown: 0 }
+    { available: 0, unsupported: 0, platform_unsupported: 0, unknown: 0 }
   )
 }

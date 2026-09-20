@@ -1,4 +1,9 @@
 import { z } from "zod"
+import {
+  qualityGateNotEvaluated,
+  QUALITY_GATE_REASON_NOT_RUN,
+  QUALITY_GATE_REASON_NOT_NATIVE_ATC
+} from "./quality-gate.js"
 import type { SciTarget } from "./sci-v2.js"
 
 export const SCI_HELPER = "Z_ORVANTA_MCP_SCI_API"
@@ -90,7 +95,9 @@ export function formatSciResult(raw: unknown, input: SciInput): string {
       helper: SCI_HELPER,
       helperFingerprint: SCI_HELPER_FINGERPRINT,
       execution: precheck ? "not_run" : "returned",
-      qualityGate: "not_evaluated",
+      ...qualityGateNotEvaluated(
+        precheck ? QUALITY_GATE_REASON_NOT_RUN : QUALITY_GATE_REASON_NOT_NATIVE_ATC
+      ),
       scope: { objectType: "FUGR", objectName: outputs.EV_SCOPE },
       profile: outputs.EV_VARIANT,
       coverage: "limited",

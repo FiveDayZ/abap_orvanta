@@ -1,4 +1,8 @@
 import { readFile } from "node:fs/promises"
+import {
+  QUALITY_GATE_NOT_EVALUATED,
+  QUALITY_GATE_REASON_NOT_A_QUALITY_GATE
+} from "./quality-gate.js"
 import { join } from "node:path"
 import { z } from "zod"
 import type { SapBackend } from "./backend.js"
@@ -204,7 +208,13 @@ export class ApplicationLogService {
   ): Promise<string> {
     const id = options.connectionId.toLowerCase()
     const connection = this.backend.connectionDetails(id)
-    const base = { source: "SLG1", connectionId: id, readOnly: true, qualityGate: "not_evaluated" }
+    const base = {
+      source: "SLG1",
+      connectionId: id,
+      readOnly: true,
+      qualityGate: QUALITY_GATE_NOT_EVALUATED,
+      gateReason: QUALITY_GATE_REASON_NOT_A_QUALITY_GATE
+    }
     const unavailable = (
       code: string,
       reason?: "APPROVAL_FILE_MISSING" | "CONNECTION_NOT_APPROVED"

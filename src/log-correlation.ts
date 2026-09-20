@@ -1,4 +1,8 @@
 import { createHash } from "node:crypto"
+import {
+  QUALITY_GATE_NOT_EVALUATED,
+  QUALITY_GATE_REASON_NOT_A_QUALITY_GATE
+} from "./quality-gate.js"
 import { z } from "zod"
 import type { ApplicationLogService } from "./application-logs.js"
 import { searchApplicationLogsSchema } from "./application-logs.js"
@@ -580,7 +584,8 @@ export class LogCorrelationService {
       connectionId,
       client,
       readOnly: true,
-      qualityGate: "not_evaluated",
+      qualityGate: QUALITY_GATE_NOT_EVALUATED,
+      gateReason: QUALITY_GATE_REASON_NOT_A_QUALITY_GATE,
       fromSystemTime: options.fromSystemTime,
       toSystemTime: options.toSystemTime,
       observedAt: new Date().toISOString(),

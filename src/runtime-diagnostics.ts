@@ -1,4 +1,8 @@
 import { createHash } from "node:crypto"
+import {
+  QUALITY_GATE_NOT_EVALUATED,
+  QUALITY_GATE_REASON_NOT_A_QUALITY_GATE
+} from "./quality-gate.js"
 import { parseFragment, type DefaultTreeAdapterTypes } from "parse5"
 import { z } from "zod"
 import type { DumpInfo, DumpListInfo } from "./backend.js"
@@ -354,7 +358,8 @@ export function buildRuntimeDiagnosticReport(
     connectionId,
     observedAt: new Date().toISOString(),
     readOnly: true,
-    qualityGate: "not_evaluated",
+    qualityGate: QUALITY_GATE_NOT_EVALUATED,
+    gateReason: QUALITY_GATE_REASON_NOT_A_QUALITY_GATE,
     feedCount: feed.dumps.length,
     inspectedCount: inspected,
     parsedCount: parsed.length,
