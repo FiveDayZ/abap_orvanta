@@ -5,5 +5,7 @@ connections.json
 *.log
 release/
 .cache/
+# MCP 事件日志：按技能要求写入服务根，属本地诊断证据，不入库
+.logs/
 # 交付/传输归档不入库，保留在磁盘
 /*.zip
