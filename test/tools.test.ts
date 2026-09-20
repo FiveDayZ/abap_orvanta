@@ -226,7 +226,14 @@ test("dynamic capability report distinguishes unsupported endpoints from unknown
     capability("adt-data-preview").observation.reason,
     /without proving endpoint absence/
   )
-  assert.equal(capability("adt-quality").observation.availability, "unknown")
+  // Native ATC is a platform boundary, not an unprobed state: this mock's discovery snapshot
+  // advertises only the repository, so the Test Cockpit service is provably absent. Reporting
+  // `unknown` here is what used to hide a permanent limitation, and unreadable `unknown` is the
+  // thing this verdict replaced.
+  assert.equal(capability("adt-quality").observation.availability, "platform_unsupported")
+  // ABAP Unit is split out from native ATC, so it is judged on its own endpoint rather than
+  // inheriting the ATC boundary.
+  assert.equal(capability("adt-abap-unit").observation.availability, "platform_unsupported")
 })
 
 test("headless debugger tools expose deterministic bounded requests", async () => {

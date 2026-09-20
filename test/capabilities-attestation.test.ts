@@ -26,6 +26,7 @@ interface ReportShape {
   helperAttestation: SapHelperCapabilities[]
   capabilities: Array<{
     id: string
+    toolNames: string[]
     observation: {
       availability: string
       reason: string
@@ -355,6 +356,31 @@ test("platform-boundary verdicts are measured from ADT discovery, not asserted a
   assert.match(debuggerEntry.reason, /did not advertise \/sap\/bc\/adt\/debugger/)
   assert.equal(debuggerEntry.evidence.source, "discovery")
 
+  // Native ATC and ABAP Unit get their own determinate verdicts instead of sharing `unknown`, and
+  // the ATC verdict must not be readable as an ATC pass or as an SCI substitute.
+  const atc = capabilityObservation(report, "adt-quality")
+  assert.equal(atc.availability, "platform_unsupported")
+  assert.match(atc.reason, /did not advertise \/sap\/bc\/adt\/atc/)
+  assert.match(atc.reason, /never ATC/)
+  // ABAP Unit IS advertised here, so it stays unprobed rather than becoming a boundary.
+  assert.equal(capabilityObservation(report, "adt-abap-unit").availability, "unknown")
+  // Every tool is still covered exactly once, so splitting the capability neither dropped nor
+  // double counted run_unit_tests.
+  const unitCapabilities = report.capabilities.filter((item) =>
+    item.toolNames.includes("run_unit_tests")
+  )
+  assert.deepEqual(
+    unitCapabilities.map((item) => item.id),
+    ["adt-abap-unit"]
+  )
+  const atcCapabilities = report.capabilities.filter((item) =>
+    item.toolNames.includes("run_atc_analysis")
+  )
+  assert.deepEqual(
+    atcCapabilities.map((item) => item.id),
+    ["adt-quality"]
+  )
+
   // Negative control: advertise the debugger and ATC and the verdicts must move, which is what
   // makes them measurements instead of constants.
   backend.discoverySnapshotInfo = {
@@ -363,7 +389,11 @@ test("platform-boundary verdicts are measured from ADT discovery, not asserted a
         title: "Debugger",
         collections: [{ href: "/sap/bc/adt/debugger", templateLinks: [] }]
       },
-      { title: "ABAP Test Cockpit", collections: [{ href: "/sap/bc/adt/atc", templateLinks: [] }] }
+      { title: "ABAP Test Cockpit", collections: [{ href: "/sap/bc/adt/atc", templateLinks: [] }] },
+      {
+        title: "ABAP Unit",
+        collections: [{ href: "/sap/bc/adt/abapunit/testruns", templateLinks: [] }]
+      }
     ],
     coreEntries: [],
     resAppClasses: []

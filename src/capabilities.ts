@@ -541,11 +541,32 @@ export async function buildCapabilityReport(
         "Bounded current-client VARID directory metadata through existing table-read permissions. w200 DDIC inspected; no live directory acceptance. No client-000 merge, parameter values, historical execution snapshot or report execution authorization."
       )
     ),
+    // Native ATC and ABAP Unit have different platform realities on this target - the Test Cockpit
+    // publishes no collections while the ABAP Unit service is advertised - so they must not share
+    // one verdict. Bundling them is exactly how `run_atc_analysis` stayed `unknown`, which is
+    // unreadable as "platform boundary" and therefore hid a permanent limitation. `adt-quality`
+    // keeps its id and its ATC meaning; the ABAP Unit tool moves out from under it.
     capability(
       "adt-quality",
       "target-specific",
-      ["run_atc_analysis", "run_unit_tests"],
-      targetSpecific
+      ["run_atc_analysis"],
+      platformBoundaryObservation(
+        platformFacts.advertised.atc,
+        "ABAP Test Cockpit",
+        PLATFORM_ENDPOINTS.atc,
+        "This verdict covers native ATC only. An SCI result is reported under scoped-sci-quality and is never ATC; see quality.atcCapability."
+      )
+    ),
+    capability(
+      "adt-abap-unit",
+      "target-specific",
+      ["run_unit_tests"],
+      platformBoundaryObservation(
+        platformFacts.advertised.abapUnit,
+        "ABAP Unit",
+        PLATFORM_ENDPOINTS.abapUnit,
+        "Availability additionally depends on a testable object and an authorized run; registration alone is not proof."
+      )
     ),
     capability(
       "application-logs",
