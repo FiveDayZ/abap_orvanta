@@ -408,6 +408,61 @@ test("platform-boundary verdicts are measured from ADT discovery, not asserted a
   assert.equal(advertised.summary.platform_unsupported, 0)
 })
 
+test("an unadvertised data-preview service is a platform boundary, not an unproven gap", async () => {
+  // The real w200 response is an empty HTML page with HTTP 200 rather than a 404, so the error on
+  // its own can only ever say `unknown`. The discovery measurement is what settles it.
+  const backend = new MockBackend()
+  backend.runQuery = async () => {
+    throw new Error(
+      "SAP_DATA_QUERY_RESPONSE_INVALID: expected XML data preview; HTTP 200; mediaType=text/html; root=unparsed; bytes=0. No empty result was inferred."
+    )
+  }
+  const report = await buildReport(backend)
+  const preview = capabilityObservation(report, "adt-data-preview")
+  assert.equal(preview.availability, "platform_unsupported")
+  assert.match(preview.reason, /did not advertise \/sap\/bc\/adt\/datapreview/)
+  assert.equal(preview.evidence.source, "discovery")
+
+  // The system-info tool falls back to the scoped query helper, so it must not inherit the native
+  // preview verdict; each tool is still covered by exactly one capability.
+  assert.equal(capabilityObservation(report, "system-info").availability, "unknown")
+  const idsOwning = (toolName: string) =>
+    report.capabilities.filter((item) => item.toolNames.includes(toolName)).map((item) => item.id)
+  assert.deepEqual(idsOwning("get_sap_system_info"), ["system-info"])
+  assert.deepEqual(idsOwning("execute_data_query"), ["adt-data-preview"])
+
+  // Advertise the service and the same failing probe must fall back to an unproven gap, which is
+  // what makes the boundary a measurement rather than a constant.
+  backend.discoverySnapshotInfo = {
+    workspaces: [
+      {
+        title: "Data Preview",
+        collections: [{ href: "/sap/bc/adt/datapreview/freestyle", templateLinks: [] }]
+      }
+    ],
+    coreEntries: [],
+    resAppClasses: []
+  }
+  const advertised = await buildReport(backend)
+  const stillFailing = capabilityObservation(advertised, "adt-data-preview")
+  assert.equal(stillFailing.availability, "unknown")
+  assert.match(stillFailing.reason, /without proving endpoint absence/)
+})
+
+test("an authorization rejection is never turned into a platform boundary", async () => {
+  // A 403 proves the endpoint was reached and answered. Letting discovery silence overrule that
+  // into "not exposed" would report a permissions problem as a platform limitation, which is the
+  // opposite conclusion for whoever has to fix it.
+  const backend = new MockBackend()
+  backend.runQuery = async () => {
+    throw new Error("Request failed with status code 403")
+  }
+  const report = await buildReport(backend)
+  const preview = capabilityObservation(report, "adt-data-preview")
+  assert.equal(preview.availability, "unknown")
+  assert.match(preview.reason, /without proving endpoint absence/)
+})
+
 test("the CAPABILITIES payload is parsed with pipe and percent unescaping", () => {
   const payload = parseHelperCapabilitiesPayload([
     "HELPER|Z_ORVANTA_MCP_DYNPRO_API",

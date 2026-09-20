@@ -347,11 +347,28 @@ export async function buildCapabilityReport(
     ),
     capability("adt-discovery", "native-adt", ["adt_discovery_export"], discovery),
     capability("adt-repository-search", "native-adt", ["search_abap_objects"], search),
+    // The native free-query service and the system-info tool do not share a verdict. The probe
+    // fails with an empty HTML page rather than a 404, which `errorObservation` alone can only call
+    // `unknown`; combined with the discovery measurement it is a platform boundary. `system-info`
+    // is not judged by that probe because it falls back to the scoped query helper.
     capability(
       "adt-data-preview",
       "native-adt",
-      ["get_sap_system_info", "execute_data_query"],
-      query
+      ["execute_data_query"],
+      probeFailureObservation(
+        query,
+        platformFacts.advertised.dataPreview,
+        "the ADT data preview service",
+        PLATFORM_ENDPOINTS.dataPreview
+      )
+    ),
+    capability(
+      "system-info",
+      "native-adt",
+      ["get_sap_system_info"],
+      unknownTargetObservation(
+        "get_sap_system_info falls back to the scoped query helper when the native data preview service is absent, so its availability is decided by that helper and the caller's authorization rather than by the native endpoint probe. See adt-data-preview for the native verdict."
+      )
     ),
     capability(
       "structured-table-query",
@@ -1091,13 +1108,21 @@ function discoverySummary(
  * service" versus "this round did not probe it" - the two used to look identical, which is how
  * tools stayed registered while being permanently unusable with no explanation.
  */
+/**
+ * A rejection that proves the endpoint exists: it was reached and answered with an authorization
+ * verdict. Discovery silence must not be allowed to overrule that into "not exposed".
+ */
+const AUTHORIZATION_REJECTION = /(?:status code|HTTP)\s*40[13]\b|forbidden|not authorized/i
+
 const PLATFORM_ENDPOINTS = {
   abapUnit: "/sap/bc/adt/abapunit",
   atc: "/sap/bc/adt/atc",
   debugger: "/sap/bc/adt/debugger",
   runtimeTraces: "/sap/bc/adt/runtime/traces",
   cds: "/sap/bc/adt/ddic/ddl",
-  dcl: "/sap/bc/adt/acm/dcl"
+  dcl: "/sap/bc/adt/acm/dcl",
+  // Both the freestyle and the ddic data-preview requests live under this prefix.
+  dataPreview: "/sap/bc/adt/datapreview"
 } as const
 
 interface AdvertisedEndpoints {
@@ -1176,6 +1201,37 @@ function qualityBlock(
       facts.advertised.cds || facts.advertised.dcl ? "supported" : "platform_unsupported",
       `${unreachable("cds", "CDS/DDLS")} ${unreachable("dcl", "DCL")} The service still understands DDLS/DF and DCLS/DL source URIs locally, so such an object is addressable but cannot be read from this target.`
     )
+  }
+}
+
+/**
+ * A read probe that failed without the endpoint ever being advertised.
+ *
+ * `errorObservation` sees only the error, so an endpoint that answers with an empty HTML page
+ * instead of a 404 looks like an unproven gap and stays `unknown` indefinitely. When discovery
+ * shows the endpoint is not advertised either, the two measurements together do establish absence,
+ * and `unknown` would understate what is actually known.
+ *
+ * A 401/403 is deliberately excluded: it proves the endpoint was reached and answered, so absence
+ * is not the better explanation and the observation keeps its `unknown` verdict. Likewise an
+ * available probe, an explicit rejection carrying a status, and an advertised endpoint all stand
+ * as measured.
+ */
+function probeFailureObservation(
+  observation: CapabilityObservation,
+  advertised: boolean,
+  label: string,
+  endpoint: string
+): CapabilityObservation {
+  if (advertised || observation.availability !== "unknown") return observation
+  if (AUTHORIZATION_REJECTION.test(observation.evidence.detail)) return observation
+  return {
+    availability: "platform_unsupported",
+    reason: `The target did not advertise ${endpoint} in ADT discovery, and the read-only probe failed without a usable result, so this service is not exposed here. ${observation.reason}`,
+    evidence: {
+      source: "discovery",
+      detail: `${label} absent from the ADT discovery response; ${observation.evidence.detail}`
+    }
   }
 }
 
