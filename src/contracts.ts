@@ -594,7 +594,7 @@ const toolContractsBase = {
   },
   patch_function_module_interface: {
     description:
-      "Patch the interface of one existing Z* or Y* function module while preserving its implementation source and function attributes. Supports add, rename, update, and remove for IMPORTING, EXPORTING, CHANGING, TABLES, and classic exceptions. Requires the exact parent function group, current interface and implementation-source fingerprints, exact package, existing transport, and DESTRUCTIVE_INTERFACE_CHANGE confirmation for rename, update, or remove. SAP locks are never cleared automatically and transports are never created or released.",
+      "Patch the interface of one existing Z* or Y* function module while preserving its implementation source and function attributes. The patch runs inside SAP through the helper opcode PATCH_FUNCTION_INTERFACE: the helper locks TFDIR, re-reads the active interface, merges the requested rows and writes them back with the source and documentation it just read, so the implementation body cannot be modified and no ADT source is written. Supports add, rename, update, and remove for IMPORTING, EXPORTING, CHANGING, TABLES, and classic exceptions. Requires the exact parent function group, current interface and implementation-source fingerprints, exact package, existing transport, and DESTRUCTIVE_INTERFACE_CHANGE confirmation for rename, update, or remove. The interface is read back from SAP after the helper write and compared with the request. SAP locks are never cleared automatically and transports are never created or released.",
     inputSchema: {
       ...writeOperationInput,
       functionName: z.string(),

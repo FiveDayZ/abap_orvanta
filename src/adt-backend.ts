@@ -1695,10 +1695,12 @@ export function buildSapHelperEnvelope(request: SapHelperRequest): string {
     `<IV_OPERATION>${encodeXml(request.operation)}</IV_OPERATION>` +
     `<IV_OBJECT_TYPE>${encodeXml(request.objectType ?? "")}</IV_OBJECT_TYPE>` +
     `<IV_OBJECT_NAME>${encodeXml(request.objectName ?? "")}</IV_OBJECT_NAME>` +
-    // WRITE_FUNCTION_SOURCE is the only helper operation that carries a payload. The elements
-    // mirror the repository envelope one for one, so the shared repository body sees the same
-    // package, request, expected version and IT_SOURCE rows it already reads for its own writes.
-    (request.operation === "WRITE_FUNCTION_SOURCE"
+    // WRITE_FUNCTION_SOURCE and PATCH_FUNCTION_INTERFACE are the only helper operations that carry
+    // a payload. The elements mirror the repository envelope one for one, so the shared repository
+    // body sees the same package, request, expected version and IT_SOURCE rows it already reads for
+    // its own writes.
+    (request.operation === "WRITE_FUNCTION_SOURCE" ||
+    request.operation === "PATCH_FUNCTION_INTERFACE"
       ? xmlElement("IV_PROGRAM", request.program ?? "") +
         xmlElement("IV_PACKAGE", request.packageName ?? "") +
         xmlElement("IV_REQUEST", request.transportNumber ?? "") +
@@ -1749,7 +1751,10 @@ export function parseSapHelperResponse(body: string): SapHelperResult {
     status: findXmlValue(document, "EV_STATUS") ?? "",
     code: findXmlValue(document, "EV_CODE") ?? "",
     message: findXmlValue(document, "EV_MESSAGE") ?? "",
-    version: findXmlValue(document, "EV_VERSION") ?? ""
+    version: findXmlValue(document, "EV_VERSION") ?? "",
+    // The helper returns IT_SOURCE only when it sent the table. PATCH_FUNCTION_INTERFACE uses it
+    // for bounded difference rows on a rejected patch; every other operation ignores it.
+    source: findXmlRows(document, "IT_SOURCE").map((row) => row.LINE ?? "")
   }
   if (!result.status || !result.code || !result.version) {
     throw new Error("SAP helper returned an incomplete SOAP response")
@@ -2114,6 +2119,12 @@ function rowAt(rows: SapStructureRow[], index: number): SapStructureRow {
  * therefore asked through `callRemoteFunction`, the same client path their business reads use.
  * `Z_ORVANTA_LOG_READ` answers before its `CLEAR ev_result.` and is dispatched by the same
  * `IV_ACTION` input, so the probe shape is identical to the other two JSON helpers.
+ *
+ * `Z_ORVANTA_MCP_SCI_V2`/`_E2` are the same shape (design revision R6): they own no source table,
+ * so their rows also travel as the `payload` array of one `EV_RESULT` JSON envelope and they are
+ * asked through `callRemoteFunction`. A SCI helper that does not carry the R6 body yet exports no
+ * `EV_RESULT`, answers `ev_status = 'E'`/`ev_code = 'INVALID_ACTION'` and is read back as an empty
+ * string, which degrades to `operation-scoped` exactly like the other JSON helpers.
  */
 const HELPER_CAPABILITIES_CHANNELS: Record<
   string,
@@ -2136,7 +2147,9 @@ const HELPER_CAPABILITIES_CHANNELS: Record<
   },
   Z_ORVANTA_MAINT_READ: { reply: "json-envelope" },
   Z_ORVANTA_OPS_READ: { reply: "json-envelope" },
-  Z_ORVANTA_LOG_READ: { reply: "json-envelope" }
+  Z_ORVANTA_LOG_READ: { reply: "json-envelope" },
+  Z_ORVANTA_MCP_SCI_V2: { reply: "json-envelope" },
+  Z_ORVANTA_MCP_SCI_E2: { reply: "json-envelope" }
 }
 
 export interface SapHelperCapabilitiesPayload {

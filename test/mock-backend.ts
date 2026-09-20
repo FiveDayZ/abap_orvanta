@@ -227,8 +227,12 @@ export class MockBackend implements SapBackend {
     throw new Error("Smartform backend must be explicitly supplied by the test")
   }
   lastRepositoryRequest: SapRepositoryRequest | undefined
+  lastHelperRequest: SapHelperRequest | undefined
   functionPatchReadbackMismatch = false
-  functionPatchAdtBodyMutation = false
+  /** When true the helper answers FUNCTION_PATCH_SAVE_NOT_OBSERVED and changes nothing. */
+  functionPatchHelperMismatch = false
+  /** When true the applied interface patch also changes the stored implementation source rows. */
+  functionPatchSourceMutation = false
   private readonly enhancementImplementations = new Map<string, string[]>([
     [
       "ZENH_DEMO",
@@ -435,7 +439,6 @@ export class MockBackend implements SapBackend {
         "E|1|PARAMETER|EV_OUTPUT",
         "E|1|TYP|CHAR40",
         "E|1|DBFIELD|",
-        "E|1|OPTIONAL|",
         "E|1|PASSVALUE|X",
         "X|1|EXCEPTION|INVALID_INPUT",
         "X|1|TEXT|Input is invalid",
@@ -486,6 +489,42 @@ export class MockBackend implements SapBackend {
         "X|1|EXCEPTION|INVALID_INPUT",
         "X|1|TEXT|Input is invalid",
         "S|1|LINE|  ET_ITEMS[] = IT_ITEMS[]."
+      ]
+    ],
+    [
+      "ZCMCP_FM_STRINGVAL",
+      [
+        "M|1|FUNCTION_GROUP|ZCMCP_FG_1501",
+        "M|1|SHORT_TEXT|MCP domain-less element validation",
+        "M|1|REMOTE_ENABLED|X",
+        "M|1|UPDATE_TASK|",
+        "M|1|GLOBAL_INTERFACE|",
+        "I|1|PARAMETER|IV_INPUT",
+        "I|1|TYP|STRINGVAL",
+        "I|1|DBFIELD|",
+        "I|1|OPTIONAL|",
+        "I|1|PASSVALUE|X",
+        "E|1|PARAMETER|EV_RESULT",
+        "E|1|TYP|STRINGVAL",
+        "E|1|DBFIELD|",
+        "E|1|PASSVALUE|X",
+        "S|1|LINE|  EV_RESULT = IV_INPUT."
+      ]
+    ],
+    [
+      "ZCMCP_FM_UNTYPED",
+      [
+        "M|1|FUNCTION_GROUP|ZCMCP_FG_1501",
+        "M|1|SHORT_TEXT|MCP unresolved element validation",
+        "M|1|REMOTE_ENABLED|X",
+        "M|1|UPDATE_TASK|",
+        "M|1|GLOBAL_INTERFACE|",
+        "I|1|PARAMETER|IV_INPUT",
+        "I|1|TYP|ZCMCP_UNTYPED",
+        "I|1|DBFIELD|",
+        "I|1|OPTIONAL|",
+        "I|1|PASSVALUE|X",
+        "S|1|LINE|  WRITE iv_input."
       ]
     ]
   ])
@@ -770,6 +809,45 @@ export class MockBackend implements SapBackend {
         },
         "SAP_BASIS"
       )
+    ],
+    // Domain-less data elements: the helper's data-element branch returns no DATATYPE/LENG,
+    // so their scalar type must come from the DD04L row fixture below.
+    [
+      "READ_DATA_ELEMENT:STRINGVAL",
+      mockDdicResult("dataElement", { ROLLNAME: "STRINGVAL", DOMNAME: "" }, "SLDAPSYNC")
+    ],
+    [
+      "READ_DATA_ELEMENT:ZCMCP_UNTYPED",
+      mockDdicResult("dataElement", { ROLLNAME: "ZCMCP_UNTYPED", DOMNAME: "" }, "ZABAP")
+    ],
+    [
+      "READ_TRANSPARENT_TABLE:DD04L",
+      {
+        ...mockDdicResult(
+          "transparentTable",
+          {
+            TABNAME: "DD04L",
+            DDTEXT: "Data elements",
+            TABCLASS: "TRANSP",
+            CONTFLAG: "S",
+            MAINFLAG: "",
+            TABKAT: "0",
+            TABART: "APPL0",
+            BUFALLOW: "N",
+            PUFFERUNG: ""
+          },
+          "SAP_BASIS"
+        ),
+        fields: ["ROLLNAME", "AS4LOCAL", "DOMNAME", "DATATYPE", "LENG", "DECIMALS"].map(
+          (FIELDNAME, index) => ({
+            FIELDNAME,
+            POSITION: String(index + 1),
+            ROLLNAME: "CHAR30",
+            KEYFLAG: index < 2 ? "X" : "",
+            NOTNULL: index < 2 ? "X" : ""
+          })
+        )
+      }
     ]
   ])
 
@@ -790,6 +868,7 @@ export class MockBackend implements SapBackend {
 
   async callSapHelper(connectionId: string, request: SapHelperRequest): Promise<SapHelperResult> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    this.lastHelperRequest = request
     if (request.operation === "PING") {
       return {
         status: "S",
@@ -806,12 +885,71 @@ export class MockBackend implements SapBackend {
         version: "1.0"
       }
     }
+    if (request.operation === "PATCH_FUNCTION_INTERFACE") {
+      const name = (request.objectName ?? "").toUpperCase()
+      const existing = this.functionModules.get(name)
+      if (!existing) {
+        return {
+          status: "E",
+          code: "FUNCTION_NOT_FOUND",
+          message: "Function module does not exist",
+          version: "2.0"
+        }
+      }
+      // Mirrors the SAP helper: the desired rows arrive as the uppercase half of the payload and
+      // replace the current parameter/documentation/source rows, while the metadata rows stay.
+      // `functionPatchSourceMutation` injects a body change, so the service's own read-back sees
+      // an implementation that no longer matches the reviewed source fingerprint.
+      const applied = [
+        ...existing.filter((line) => line.startsWith("M|")),
+        ...(request.source ?? []).filter((line) => /^[IECTXS]\|/.test(line))
+      ]
+      const saved = this.functionPatchSourceMutation
+        ? applied.map((line) =>
+            line.includes("CONCATENATE 'MCP:' iv_input INTO ev_output.")
+              ? "S|4|LINE|  CONCATENATE 'CHANGED:' iv_input INTO ev_output."
+              : line
+          )
+        : applied
+      if (!this.functionPatchHelperMismatch) this.functionModules.set(name, saved)
+      return {
+        status: this.functionPatchHelperMismatch ? "E" : "S",
+        code: this.functionPatchHelperMismatch
+          ? "FUNCTION_PATCH_SAVE_NOT_OBSERVED"
+          : "FUNCTION_INTERFACE_PATCHED",
+        message: this.functionPatchHelperMismatch
+          ? "Active function does not match the save"
+          : "Function interface patched and verified",
+        version: "2.0",
+        ...(this.functionPatchHelperMismatch
+          ? { source: this.functionPatchHelperDifferences() }
+          : {})
+      }
+    }
     return {
       status: "S",
       code: "TARGET_ALLOWED",
       message: "Customer object target is allowed",
       version: "1.0"
     }
+  }
+
+  /**
+   * Bounded difference rows a rejected interface patch answers with. The row set is wider than the
+   * 49 rows the service forwards, so a test can prove the service truncates and strips unrelated
+   * payload rows such as source lines.
+   */
+  private functionPatchHelperDifferences(): string[] {
+    return [
+      "D|1|SECTION|DOCUMENTATION",
+      "D|1|ROW|2",
+      "D|1|FIELD|INDEX",
+      "D|1|EXPECTED|1",
+      "D|1|ACTUAL|2",
+      "S|1|LINE|unrelated source must not be copied",
+      `D|2|EXPECTED|${"x".repeat(300)}`,
+      ...Array.from({ length: 60 }, () => "D|2|FIELD|BOUNDED")
+    ]
   }
 
   /**
@@ -1974,6 +2112,21 @@ export class MockBackend implements SapBackend {
     if (sql.includes("FROM TTZR"))
       return [{ CLIENT: "200", ZONERULE: "P0800", UTCDIFF: "080000", UTCSIGN: "+" }]
     if (sql.includes("FROM TBATG")) return structuredClone(this.conversionEntries)
+    // Active DD04L rows: only the domain-less STRINGVAL fixture is typed there, so the
+    // domain-bearing fixtures prove the resolver still prefers the domain header.
+    if (sql.includes("FROM DD04L")) {
+      return sql.includes("'STRINGVAL'")
+        ? [
+            {
+              ROLLNAME: "STRINGVAL",
+              DOMNAME: "",
+              DATATYPE: "STRG",
+              LENG: "000000",
+              DECIMALS: "000000"
+            }
+          ]
+        : []
+    }
     if (sql.includes("FROM ZDATA")) {
       return [
         { ID: "2", NAME: "BETA" },
@@ -2170,7 +2323,7 @@ export class MockBackend implements SapBackend {
       const replaced = findAndReplaceSource(current, oldString, newString)
       this.functionAdtSources.set(
         functionName,
-        this.functionPatchAdtBodyMutation
+        this.functionPatchSourceMutation
           ? replaced.replace(
               "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
               "  CONCATENATE 'CHANGED:' iv_input INTO ev_output."

@@ -7,6 +7,7 @@ import type {
   SapRepositoryResult
 } from "./backend.js"
 import { APPLICATION_LOG_HELPER } from "./application-logs.js"
+import { SCI_E2_HELPER, SCI_V2_HELPER } from "./sci-v2.js"
 import { PRODUCT_VERSION } from "./version.js"
 
 type Availability = "available" | "unsupported" | "unknown"
@@ -57,11 +58,12 @@ const LOCAL_AVAILABLE: CapabilityObservation = {
  * `Z_ORVANTA_MCP_DYNPRO_API` operations. The repository helper carries the ten
  * `repository-helper-*` capabilities.
  *
- * All six helpers are probed for `CAPABILITIES`, but they do not share one conclusion:
+ * All eight helpers are probed for `CAPABILITIES`, but they do not share one conclusion:
  * `Z_ORVANTA_MCP_EXECUTE` and `Z_ORVANTA_MCP_DYNPRO_API` implement the opcode in the generated
  * repository body, `Z_ORVANTA_MCP_DDIC_API` in its own body, and `Z_ORVANTA_MAINT_READ` /
- * `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_LOG_READ` answer it through the `EV_RESULT` JSON `payload`
- * array. An un-upgraded helper keeps the previous operation-scoped conclusion and wording.
+ * `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_LOG_READ` / `Z_ORVANTA_MCP_SCI_V2` / `Z_ORVANTA_MCP_SCI_E2`
+ * answer it through the `EV_RESULT` JSON `payload` array. An un-upgraded helper keeps the previous
+ * operation-scoped conclusion and wording.
  */
 const BASE_HELPER_FUNCTION = "Z_ORVANTA_MCP_EXECUTE"
 const REPOSITORY_HELPER_FUNCTION = "Z_ORVANTA_MCP_DYNPRO_API"
@@ -71,6 +73,10 @@ const OPERATIONAL_LOG_HELPER_FUNCTION = "Z_ORVANTA_OPS_READ"
 // Imported rather than re-declared: `application-logs.ts` owns the helper identity that the read
 // tools call, so the probe, the service and the generator drift test read one constant.
 const APPLICATION_LOG_HELPER_FUNCTION = APPLICATION_LOG_HELPER
+// Same rule for the two SCI helpers: `sci-v2.ts` owns the identities that `run_sci_analysis`
+// pins as `helperFingerprint`, so the probe and the tool cannot drift apart.
+const SCI_V2_HELPER_FUNCTION = SCI_V2_HELPER
+const SCI_E2_HELPER_FUNCTION = SCI_E2_HELPER
 
 export async function buildCapabilityReport(
   backend: SapBackend,
@@ -91,6 +97,8 @@ export async function buildCapabilityReport(
     maintenanceAttestation,
     operationalLogAttestation,
     applicationLogAttestation,
+    sciV2Attestation,
+    sciE2Attestation,
     discovery,
     search,
     query,
@@ -128,6 +136,12 @@ export async function buildCapabilityReport(
     ),
     observeHelperAttestation(APPLICATION_LOG_HELPER_FUNCTION, () =>
       backend.probeHelperCapabilities(connectionId, APPLICATION_LOG_HELPER_FUNCTION)
+    ),
+    observeHelperAttestation(SCI_V2_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, SCI_V2_HELPER_FUNCTION)
+    ),
+    observeHelperAttestation(SCI_E2_HELPER_FUNCTION, () =>
+      backend.probeHelperCapabilities(connectionId, SCI_E2_HELPER_FUNCTION)
     ),
     observeDiscovery(() => backend.discoverySnapshot(connectionId)),
     observeRead("Repository search accepted a bounded no-match query.", () =>
@@ -193,6 +207,21 @@ export async function buildCapabilityReport(
     applicationLogAttestation,
     unprobedHelperObservation("application-log"),
     APPLICATION_LOG_HELPER_FUNCTION
+  )
+  // The two SCI helpers are probed for the same reason and reported the same way: their operations
+  // are target-specific SCI inspections that need an explicit customer target and rule profile, so
+  // the capability report performs no inspection of its own. Neither helper has a capability
+  // specification that follows its self-description yet, so the attestation stays report-only and
+  // `scoped-sci-quality` keeps its unchanged `unknownTargetObservation`.
+  const sciV2SelfDescription = reconcileAttestation(
+    sciV2Attestation,
+    unprobedSciHelperObservation("sci-v2"),
+    SCI_V2_HELPER_FUNCTION
+  )
+  const sciE2SelfDescription = reconcileAttestation(
+    sciE2Attestation,
+    unprobedSciHelperObservation("sci-e2"),
+    SCI_E2_HELPER_FUNCTION
   )
 
   const targetSpecific = unknownTargetObservation(
@@ -600,13 +629,18 @@ export async function buildCapabilityReport(
           }
         : {}),
       helpers: [baseHelperRead, repositoryHelperRead, ddicHelper],
+      // Stable order, and the only place a helper order is defined: base, repository, DDIC,
+      // maintenance, operational-log, application-log, SCI V2, SCI E2. Appending the two SCI
+      // helpers keeps every earlier index stable for callers that address the array positionally.
       helperAttestation: [
         baseSelfDescription,
         repositorySelfDescription,
         ddicSelfDescription,
         maintenanceSelfDescription,
         operationalLogSelfDescription,
-        applicationLogSelfDescription
+        applicationLogSelfDescription,
+        sciV2SelfDescription,
+        sciE2SelfDescription
       ],
       discovery: discoverySummary(discovery),
       capabilities: disclosed,
@@ -749,6 +783,27 @@ function unprobedHelperObservation(name: string): VersionedHelperObservation {
     evidence: {
       source: "local-contract",
       detail: "Approval-gated helper; the capability report only asks for its self-description"
+    }
+  }
+}
+
+/**
+ * Placeholder observation for an SCI helper the capability report never runs.
+ *
+ * Same purpose as `unprobedHelperObservation`, but the reason differs: the SCI helpers are not
+ * approval-gated. Their operations are target-specific SCI inspections that need an explicit
+ * customer PROG/CLAS/FUGR target and a rule profile, so no self-description-dependent capability
+ * verdict may be derived from a probe that ran nothing. Only the identity guard and the
+ * `absent`-stays-`absent` rule need this observation.
+ */
+function unprobedSciHelperObservation(name: string): VersionedHelperObservation {
+  return {
+    name,
+    availability: "unknown",
+    reason: `No SCI inspection is run for the ${name} helper; its operations need an explicit customer target and rule profile.`,
+    evidence: {
+      source: "local-contract",
+      detail: "Target-specific SCI helper; the capability report only asks for its self-description"
     }
   }
 }

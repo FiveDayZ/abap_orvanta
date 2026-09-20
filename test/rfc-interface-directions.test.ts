@@ -55,10 +55,12 @@ for (const direction of ["import", "export", "changing", "table"] as const) {
         })
       )
       assert.equal(current.sourceFingerprint, initial.sourceFingerprint)
-      const declarationChanged = operation.operation !== "update"
-      assert.equal(sourceWrites - writesBefore, declarationChanged ? 1 : 0)
-      assert.equal(current.sourceWritePerformed, declarationChanged)
-      if (!declarationChanged) assert.equal(current.sourceMutation, null)
+      // The helper-backed patch never writes ADT source: the whole interface is rebuilt inside SAP
+      // from the payload rows and the implementation source is part of the verified snapshot.
+      assert.equal(sourceWrites - writesBefore, 0)
+      assert.equal(current.sourceWritePerformed, false)
+      assert.equal(current.interfaceWritePerformed, true)
+      assert.equal(current.sourceMutation, null)
       assert.deepEqual(current.source, initial.source)
       for (const key of Object.values(keys).filter((key) => key !== keys[direction])) {
         assert.deepEqual(current[key], initial[key])
@@ -108,10 +110,10 @@ test("classic exception lifecycle preserves all parameters and implementation", 
         confirmation: "DESTRUCTIVE_INTERFACE_CHANGE"
       })
     )
-    const declarationChanged = operation.operation !== "update"
-    assert.equal(sourceWrites - writesBefore, declarationChanged ? 1 : 0)
-    assert.equal(current.sourceWritePerformed, declarationChanged)
-    if (!declarationChanged) assert.equal(current.sourceMutation, null)
+    assert.equal(sourceWrites - writesBefore, 0)
+    assert.equal(current.sourceWritePerformed, false)
+    assert.equal(current.interfaceWritePerformed, true)
+    assert.equal(current.sourceMutation, null)
     for (const key of [
       "importParameters",
       "exportParameters",

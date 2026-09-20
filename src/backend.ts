@@ -78,18 +78,30 @@ export interface ConnectionDetails {
 }
 
 export interface SapHelperRequest {
-  /** PING, VALIDATE_TARGET and CAPABILITIES are probes; WRITE_FUNCTION_SOURCE is the one write
-   *  operation the base helper Z_ORVANTA_MCP_EXECUTE serves directly. */
-  operation: "PING" | "VALIDATE_TARGET" | "CAPABILITIES" | "WRITE_FUNCTION_SOURCE"
+  /** PING, VALIDATE_TARGET and CAPABILITIES are probes. WRITE_FUNCTION_SOURCE and
+   *  PATCH_FUNCTION_INTERFACE are the two write operations the base helper
+   *  Z_ORVANTA_MCP_EXECUTE serves directly, because the native ADT lock/save path fails on this
+   *  platform with HTTP 423 "invalid lock handle". */
+  operation:
+    | "PING"
+    | "VALIDATE_TARGET"
+    | "CAPABILITIES"
+    | "WRITE_FUNCTION_SOURCE"
+    | "PATCH_FUNCTION_INTERFACE"
   objectType?: string | undefined
   objectName?: string | undefined
   /** Function group that must own the target object of a write operation. */
   program?: string | undefined
   packageName?: string | undefined
   transportNumber?: string | undefined
-  /** Reviewed body digest (lowercase sha256) the helper re-checks while it holds the lock. */
+  /** Reviewed digest (lowercase sha256) the helper compares against the state it reads while
+   *  holding the lock: the body digest for WRITE_FUNCTION_SOURCE, the interface fingerprint for
+   *  PATCH_FUNCTION_INTERFACE. */
   expectedVersion?: string | undefined
-  /** Complete replacement function body, without the FUNCTION/ENDFUNCTION boundaries. */
+  /** WRITE_FUNCTION_SOURCE: the complete replacement function body, without the
+   *  FUNCTION/ENDFUNCTION boundaries. PATCH_FUNCTION_INTERFACE: the `kind|index|property|value`
+   *  payload rows, lowercase kinds for the expected snapshot and uppercase kinds for the desired
+   *  interface definition. */
   source?: string[] | undefined
 }
 
@@ -98,6 +110,12 @@ export interface SapHelperResult {
   code: string
   message: string
   version: string
+  /**
+   * IT_SOURCE rows returned with the reply. Only PATCH_FUNCTION_INTERFACE uses them: a rejected
+   * patch answers with bounded `D|<section>|EXPECTED/ACTUAL` difference rows instead of a
+   * truncated message, so the caller can name the exact mismatching field.
+   */
+  source?: string[] | undefined
 }
 
 /**

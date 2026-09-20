@@ -2303,23 +2303,18 @@ export class ToolService {
       objectName: typeName
     })
     requireDdicSuccess(element)
+    // A domain-bearing element is typed by its domain header; a domain-less element carries
+    // the scalar type on DD04L itself, which the helper's data-element reply does not return.
     const domainName = element.header.DOMNAME?.trim()
-    const scalar = domainName
-      ? await this.backend.callSapDdic(connectionId, {
-          operation: "READ_DOMAIN",
-          objectName: domainName
-        })
-      : element
-    requireDdicSuccess(scalar)
-    if (
-      element.header.ROLLNAME !== typeName ||
-      (domainName && scalar.header.DOMNAME !== domainName)
-    ) {
+    const scalarHeader = domainName
+      ? await this.readRemoteDomainHeader(connectionId, domainName, typeName)
+      : await this.readRemoteDataElementHeader(connectionId, typeName)
+    if (element.header.ROLLNAME !== typeName) {
       throw new Error(`DDIC scalar ${typeName} resolved to another identity`)
     }
     if (
       fieldReference &&
-      (![
+      ![
         "CHAR",
         "NUMC",
         "DATS",
@@ -2331,13 +2326,75 @@ export class ToolService {
         "CURR",
         "QUAN",
         "FLTP"
-      ].includes(scalar.header.DATATYPE?.trim() ?? "") ||
-        element.header.ROLLNAME !== typeName ||
-        (domainName && scalar.header.DOMNAME !== domainName))
+      ].includes(scalarHeader.DATATYPE?.trim() ?? "")
     ) {
       throw new Error(`DDIC field data element ${typeName} is not a verified elementary type`)
     }
-    return remoteScalarShape(scalar.header, typeName)
+    return remoteScalarShape(scalarHeader, typeName)
+  }
+
+  /** Read one domain header and prove the reply still describes the requested domain. */
+  private async readRemoteDomainHeader(
+    connectionId: string,
+    domainName: string,
+    typeName: string
+  ): Promise<Record<string, string>> {
+    const domain = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_DOMAIN",
+      objectName: domainName
+    })
+    requireDdicSuccess(domain)
+    if (domain.header.DOMNAME !== domainName) {
+      throw new Error(`DDIC scalar ${typeName} resolved to another identity`)
+    }
+    return domain.header
+  }
+
+  /**
+   * Read the scalar type of a DDIC data element that has no domain from its own active DD04L
+   * row. The DDIC helper's `READ_DATA_ELEMENT` reply carries names and texts only, so without
+   * this read an empty DATATYPE would fail the value contract for every domain-less element
+   * (for example STRINGVAL, DATATYPE STRG). A row that is missing, belongs to another element,
+   * or names a domain keeps the element unresolved so the caller still reports an unverified
+   * scalar type instead of accepting an unproven type.
+   */
+  private async readRemoteDataElementHeader(
+    connectionId: string,
+    typeName: string
+  ): Promise<Record<string, string>> {
+    const read = JSON.parse(
+      await this.readAbapTable({
+        connectionId,
+        tableName: "DD04L",
+        columns: ["ROLLNAME", "DOMNAME", "DATATYPE", "LENG", "DECIMALS"],
+        filters: [
+          { column: "ROLLNAME", operator: "EQ", value: typeName },
+          { column: "AS4LOCAL", operator: "EQ", value: "A" }
+        ],
+        maxRows: 2
+      })
+    ) as { status?: string; returnedCount?: number; data?: Array<Record<string, unknown>> }
+    const row = read.status === "ok" && read.returnedCount === 1 ? read.data?.[0] : undefined
+    const datatype = String(row?.DATATYPE ?? "").trim()
+    const length = String(row?.LENG ?? "").trim()
+    const decimals = String(row?.DECIMALS ?? "").trim()
+    if (
+      !row ||
+      String(row.ROLLNAME ?? "") !== typeName ||
+      row.DOMNAME ||
+      !datatype ||
+      !length ||
+      !decimals
+    ) {
+      throw new Error(`Unverified RFC scalar type for ${typeName}`)
+    }
+    return {
+      ROLLNAME: typeName,
+      DOMNAME: "",
+      DATATYPE: datatype,
+      LENG: length,
+      DECIMALS: decimals
+    }
   }
 
   private async readRemoteRecordType(
@@ -2425,11 +2482,6 @@ export class ToolService {
     })
     requireRepositorySuccess(currentResult.status, currentResult.code, currentResult.message)
     const current = functionModuleResult(currentResult, connectionId, functionName)
-    if (current.source.some((line) => line.length > 72)) {
-      throw new Error(
-        "Function interface patch of source wider than 72 characters is not supported by the current write helper; no write was started"
-      )
-    }
     if (current.functionGroup !== functionGroup) {
       throw new Error(
         `Function group changed: expected ${functionGroup}, current ${current.functionGroup}`
@@ -2488,68 +2540,51 @@ export class ToolService {
       throw new Error(`Function module is not assigned to transport ${requestedTransport}`)
     }
 
-    const workspaceUri = functionModuleWorkspaceUri(connectionId, functionGroup, functionName)
-    const adtSource = await this.backend.readSourceByUri(connectionId, workspaceUri)
-    const sourcePatch = functionInterfaceSourcePatch(functionName, desired, adtSource.source)
-    const adtBodyFingerprint = createHash("sha256")
-      .update(JSON.stringify(functionImplementationSource(adtSource.source.split(/\r?\n/))))
-      .digest("hex")
-    if (adtBodyFingerprint !== current.sourceFingerprint) {
-      throw new Error(
-        `Active ADT implementation source changed: expected ${current.sourceFingerprint}, current ${adtBodyFingerprint}`
-      )
-    }
-    // Descriptions are repository metadata and do not change the ADT declaration.
-    const sourceMutation =
-      sourcePatch.oldHeader === sourcePatch.newHeader
-        ? null
-        : await this.backend.replaceSource(
-            connectionId,
-            workspaceUri,
-            sourcePatch.oldHeader,
-            sourcePatch.newHeader,
-            requestedTransport,
-            createHash("sha256").update(adtSource.source).digest("hex")
-          )
-    if (sourceMutation && !sourceMutation.activation.success) {
-      throw new Error("Function interface source was saved but activation did not succeed")
-    }
-
-    const activatedSource = await this.backend.readSourceByUri(connectionId, workspaceUri)
-    const activatedBodyFingerprint = createHash("sha256")
-      .update(JSON.stringify(functionImplementationSource(activatedSource.source.split(/\r?\n/))))
-      .digest("hex")
-    if (activatedBodyFingerprint !== current.sourceFingerprint) {
-      throw new Error(
-        `Function implementation source changed during ADT interface patch: expected ${current.sourceFingerprint}, current ${activatedBodyFingerprint}`
-      )
-    }
-
-    const result = await this.backend.callSapRepository(connectionId, {
+    // The patch runs inside SAP through the helper opcode PATCH_FUNCTION_INTERFACE. The native ADT
+    // path cannot do it on this platform: it locks the function include successfully and then the
+    // save is rejected with HTTP 423 "is not locked (invalid lock handle)". The helper locks
+    // TFDIR, re-reads the active interface while locked, merges the payload rows, writes the
+    // interface back through RPY_FUNCTIONMODULE_UPDATE with the source and documentation arrays it
+    // just read, and compares its own read-back line by line. This service therefore changes no
+    // ADT source at all and the implementation body cannot be touched by this operation.
+    const result = await this.backend.callSapHelper(connectionId, {
       operation: "PATCH_FUNCTION_INTERFACE",
       objectName: functionName,
       program: functionGroup,
       packageName: requestedPackage,
       transportNumber: requestedTransport,
       expectedVersion: current.interfaceFingerprint,
+      // Lowercase kinds are the expected snapshot the helper verifies under its own lock;
+      // uppercase kinds are the desired definition written back. `serializeFunctionSnapshot`
+      // returns the raw repository payload, i.e. the complete current state including every
+      // documentation line and source row the helper re-reads, so unchanged parameters are
+      // preserved byte for byte and an interface-only patch cannot alter the implementation.
       source: [
         ...serializeFunctionSnapshot(current).map((line) => line[0]!.toLowerCase() + line.slice(1)),
         ...serializeFunctionDefinition(desired)
       ]
     })
-    const nativeDifferences = result.source
+    const helperDifferences = (result.source ?? [])
       .filter((line) => /^D\|[1-7]\|/.test(line))
       .slice(0, 49)
       .map((line) => decodeSoapText(line).slice(0, 255))
-    requireRepositorySuccess(
+    requireHelperSuccess(
       result.status,
       result.code,
       result.message +
-        (nativeDifferences.length
-          ? `\nNative readback differences:\n${nativeDifferences.join("\n")}`
+        (helperDifferences.length
+          ? `\nHelper readback differences:\n${helperDifferences.join("\n")}`
           : "")
     )
-    const saved = functionModuleResult(result, connectionId, functionName)
+    // The helper channel returns only the four scalar EV_* values, so the write is verified the
+    // same way write_function_module_source verifies one: read the object back from SAP.
+    const activatedResult = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
+      objectName: functionName
+    })
+    requireRepositorySuccess(activatedResult.status, activatedResult.code, activatedResult.message)
+    const saved = functionModuleResult(activatedResult, connectionId, functionName)
     const { source: _desiredSource, ...desiredInterface } = desired
     const { source: _savedSource, ...savedInterface } = functionDefinitionFromResult(saved)
     const verificationMismatches = [
@@ -2559,7 +2594,9 @@ export class ToolService {
       ["updateTaskMode", current.updateTaskMode, saved.updateTaskMode],
       ["globalInterface", current.globalInterface, saved.globalInterface],
       ["interface", desiredInterface, savedInterface],
-      ["sourceFingerprint", current.sourceFingerprint, saved.sourceFingerprint]
+      // Named explicitly: an interface-only patch must leave the implementation byte-identical, so
+      // a changed implementation fingerprint is the one mismatch an operator must see first.
+      ["implementationSourceFingerprint", current.sourceFingerprint, saved.sourceFingerprint]
     ]
       .filter(([, expected, actual]) => JSON.stringify(expected) !== JSON.stringify(actual))
       .map(
@@ -2576,16 +2613,21 @@ export class ToolService {
         ...saved,
         previousInterfaceFingerprint: current.interfaceFingerprint,
         previousSourceFingerprint: current.sourceFingerprint,
+        helperCode: result.code,
+        helperMessage: result.message,
         helperVersion: result.version,
+        helperVerification: "the helper compared its own interface read-back line by line",
         status: result.code,
         packageName: input.packageName.trim().toUpperCase(),
         recordedRequest: input.transportNumber.trim().toUpperCase(),
-        sourceMutation,
-        sourceWritePerformed: sourceMutation !== null,
+        interfaceWritePerformed: true,
+        sourceMutation: null,
+        sourceWritePerformed: false,
         destructiveChangeConfirmed: input.confirmation === "DESTRUCTIVE_INTERFACE_CHANGE",
         automaticRetry: false,
         automaticSapUnlock: false,
-        transportReleased: false
+        transportReleased: false,
+        functionDeleted: false
       },
       null,
       2
@@ -5323,17 +5365,22 @@ export class ToolService {
       [searchType],
       50
     )
-    const exactMatches = results.filter(
-      (object) =>
+    const exactMatches = results.filter((object) => {
+      const actualType = object.type.toUpperCase()
+      const requestedTypeMatches =
+        actualType === requestedType ||
+        (!requestedType.includes("/") && actualType.startsWith(`${requestedType}/`))
+      return (
         object.name.toUpperCase() === input.objectName.toUpperCase() &&
         (functionModule
-          ? new Set(["FUGR/FF", "FUNC/FM", "FUNC"]).has(object.type.toUpperCase())
+          ? new Set(["FUGR/FF", "FUNC/FM", "FUNC"]).has(actualType)
           : functionGroupInclude
-            ? object.type.toUpperCase() === requestedType ||
-              object.type.toUpperCase() === "PROG" ||
+            ? actualType === requestedType ||
+              actualType === "PROG" ||
               /^\/sap\/bc\/adt\/functions\/groups\/[^/]+\/fmodules\//i.test(object.uri)
-            : object.type.toUpperCase() === requestedType)
-    )
+            : requestedTypeMatches)
+      )
+    })
     if (!exactMatches.length) {
       throw new Error(
         `Failed to get workspace URI for ABAP object: Object ${input.objectName} (${input.objectType}) not found in connection ${connectionId}`
@@ -9392,6 +9439,35 @@ function serializeRepositoryRows(kind: "F" | "T", rows: Array<Record<string, str
 
 type FunctionParameterKind = "I" | "E" | "C" | "T"
 
+/**
+ * One parsed interface parameter as the payload serializers see it. `refField` is the raw
+ * LIKEFIELD reference (`DBFIELD` for IMPORTING/EXPORTING/CHANGING, `DBSTRUCT` for TABLES) restored
+ * from the raw read payload by `functionSnapshotFields`, because the comparable interface folds it
+ * into `typeName` and the helper's own emitter writes it as its own row.
+ */
+interface SerializableFunctionParameter {
+  name: string
+  typeName: string
+  optional?: boolean
+  passByValue?: boolean
+  description?: string
+  refField?: string
+}
+
+/** Raw LIKEFIELD reference per `kind` and 1-based parameter index, taken from the read payload. */
+function functionSnapshotFields(
+  value: ReturnType<typeof functionModuleResult>
+): Map<string, string> {
+  const fields = new Map<string, string>()
+  for (const line of value.snapshotPayload) {
+    const parts = line.split("|")
+    const kind = parts[0] ?? ""
+    if (!/^[IECT]$/.test(kind) || parts[2] !== "DBFIELD") continue
+    fields.set(`${kind}|${parts[1] ?? ""}`, parts.slice(3).join("|"))
+  }
+  return fields
+}
+
 interface FunctionModuleDefinition {
   remoteEnabled: boolean
   importParameters: Required<FunctionParameterInput>[]
@@ -9562,6 +9638,10 @@ function functionModuleResult(
   }
   const parameter = (row: Record<string, string>) => ({
     name: row.PARAMETER ?? "",
+    // The LIKEFIELD reference is folded into `typeName` for the comparable interface, so it is
+    // deliberately not exposed as a separate key: `interfaceFingerprint` and the read-back
+    // comparison stay exactly as they were. The expected snapshot restores the raw `DBFIELD` /
+    // `DBSTRUCT` row from the read payload instead (see `functionSnapshotFields`).
     typeName: row.TYP || row.DBFIELD || row.DBSTRUCT || "",
     optional: row.OPTIONAL === "X",
     passByValue: row.PASSVALUE === "X",
@@ -9650,8 +9730,128 @@ function functionDefinitionFromResult(
   }
 }
 
+/**
+ * Canonical `kind|index|property|value` rows of the expected interface snapshot.
+ *
+ * The helper's `PATCH_FUNCTION_INTERFACE` pre-write guard rebuilds the whole interface from the
+ * payload rows and compares it against its own `RPY_FUNCTIONMODULE_READ` read of the active
+ * function module. Its own emitter writes a fixed property set per direction, and the comparison
+ * runs over the complete `RSIMP`/`RSEXP`/`RSCHA`/`RSTBL` row, so a property the payload never
+ * mentions keeps whatever value the surrounding row carries. Passing the repository read back
+ * verbatim therefore only works while that read happens to carry exactly the same properties.
+ *
+ * Deriving the snapshot from the parsed interface instead makes the payload complete and
+ * deterministic: every direction emits exactly the properties the helper's own emitter writes,
+ * in the same order, so a property cannot silently disappear with the shape of one read.
+ *
+ * `OPTIONAL` is skipped for `E` because `RSEXP` has no such component and `LIKEFIELD`(DBFIELD),
+ * `TYPES`, `CLASS`, `REF_CLASS`, `LINE_OF` and `TABLE_OF` carry no value through this interface,
+ * so both sides leave them initial. `TEXT` is emitted only where the helper's own emitter writes
+ * it: from the parameter documentation, i.e. never for an empty description.
+ */
+const functionSnapshotProperties: Record<
+  FunctionParameterKind,
+  ReadonlyArray<{ property: string; key: keyof SerializableFunctionParameter }>
+> = {
+  I: [
+    { property: "PARAMETER", key: "name" },
+    { property: "TYP", key: "typeName" },
+    { property: "DBFIELD", key: "refField" },
+    { property: "OPTIONAL", key: "optional" },
+    { property: "PASSVALUE", key: "passByValue" },
+    { property: "TEXT", key: "description" }
+  ],
+  E: [
+    { property: "PARAMETER", key: "name" },
+    { property: "TYP", key: "typeName" },
+    { property: "DBFIELD", key: "refField" },
+    { property: "PASSVALUE", key: "passByValue" },
+    { property: "TEXT", key: "description" }
+  ],
+  C: [
+    { property: "PARAMETER", key: "name" },
+    { property: "TYP", key: "typeName" },
+    { property: "DBFIELD", key: "refField" },
+    { property: "OPTIONAL", key: "optional" },
+    { property: "PASSVALUE", key: "passByValue" },
+    { property: "TEXT", key: "description" }
+  ],
+  T: [
+    { property: "PARAMETER", key: "name" },
+    { property: "TYP", key: "typeName" },
+    { property: "DBSTRUCT", key: "typeName" },
+    { property: "OPTIONAL", key: "optional" },
+    { property: "TEXT", key: "description" }
+  ]
+}
+
+/**
+ * Expected-snapshot rows for one parameter direction, built from the parsed interface with the
+ * helper's canonical property set. Every defined property is emitted even when its value is
+ * initial, so the helper's comparison sees the row the service intends instead of whatever shape
+ * one repository read happened to return. `TEXT` (documentation) is emitted only for a non-empty
+ * description, exactly as the helper's own emitter does; `DBFIELD`/`DBSTRUCT` falls back to the
+ * read's raw LIKEFIELD row, and to an initial value when the read carried no value for it.
+ */
+function appendFunctionSnapshotParameters(
+  payload: string[],
+  kind: FunctionParameterKind,
+  parameters: ReadonlyArray<SerializableFunctionParameter>,
+  fields: Map<string, string>
+): void {
+  parameters.forEach((parameter, index) => {
+    const indexText = String(index + 1)
+    functionSnapshotProperties[kind].forEach(({ property, key }) => {
+      const value =
+        key === "refField" ? (fields.get(`${kind}|${indexText}`) ?? "") : (parameter[key] ?? "")
+      if (typeof value === "boolean") {
+        appendFunctionPayload(payload, kind, index + 1, property, value ? "X" : "")
+        return
+      }
+      if (property === "TEXT" && value === "") return
+      appendFunctionPayload(payload, kind, index + 1, property, value)
+    })
+  })
+}
+
+/**
+ * Complete expected snapshot the helper compares under its own lock, as lowercase payload rows.
+ *
+ * Parameter rows are rebuilt from the parsed interface so that all four directions always carry
+ * the helper's canonical properties; source rows are rebuilt from the parsed implementation so
+ * the helper's own source comparison still matches. The `M|` rows come first, exactly as in a
+ * repository read payload; the helper's pre-write guard ignores them, so they carry no interface
+ * meaning and only keep the payload self-describing.
+ */
 function serializeFunctionSnapshot(value: ReturnType<typeof functionModuleResult>): string[] {
-  return [...value.snapshotPayload]
+  const payload: string[] = []
+  const metadata: ReadonlyArray<[string, string]> = [
+    ["FUNCTION_GROUP", value.functionGroup],
+    ["SHORT_TEXT", value.shortText],
+    ["REMOTE_ENABLED", value.remoteMode],
+    ["UPDATE_TASK", value.updateTaskMode],
+    ["GLOBAL_INTERFACE", value.globalInterface ? "X" : ""],
+    ["SOURCE_FORMAT", "PLAIN"],
+    ["SOURCE_LINES", String(value.source.length)]
+  ]
+  metadata.forEach(([property, propertyValue]) =>
+    appendFunctionPayload(payload, "M", 1, property, propertyValue)
+  )
+  const fields = functionSnapshotFields(value)
+  appendFunctionSnapshotParameters(payload, "I", value.importParameters, fields)
+  appendFunctionSnapshotParameters(payload, "E", value.exportParameters, fields)
+  appendFunctionSnapshotParameters(payload, "C", value.changingParameters, fields)
+  appendFunctionSnapshotParameters(payload, "T", value.tableParameters, fields)
+  value.exceptions.forEach((exception, index) => {
+    appendFunctionPayload(payload, "X", index + 1, "EXCEPTION", exception.name)
+    if (exception.description !== "") {
+      appendFunctionPayload(payload, "X", index + 1, "TEXT", exception.description)
+    }
+  })
+  value.source.forEach((line, index) =>
+    appendFunctionPayload(payload, "S", index + 1, "LINE", line)
+  )
+  return payload
 }
 
 function patchFunctionModuleDefinition(
@@ -9798,75 +9998,6 @@ function functionModuleWorkspaceUri(
     `adt://${connectionId}/sap/bc/adt/functions/groups/${functionGroup.toLowerCase()}` +
     `/fmodules/${functionName.toLowerCase()}`
   )
-}
-
-function functionInterfaceSourcePatch(
-  functionName: string,
-  definition: FunctionModuleDefinition,
-  source: string
-): { oldHeader: string; newHeader: string } {
-  const lines = source.replaceAll("\r\n", "\n").split("\n")
-  if (!new RegExp(`^FUNCTION\\s+${functionName}\\b`, "i").test(lines[0] ?? "")) {
-    throw new Error(`Active ADT source does not start with FUNCTION ${functionName}`)
-  }
-  const end = lines.findIndex((line) => line.trimEnd().endsWith("."))
-  if (end < 0) throw new Error("Active ADT function interface has no terminating period")
-  return {
-    oldHeader: lines.slice(0, end + 1).join("\n"),
-    newHeader: renderFunctionInterfaceSource(functionName, definition)
-  }
-}
-
-function renderFunctionInterfaceSource(
-  functionName: string,
-  definition: FunctionModuleDefinition
-): string {
-  const lines = [`FUNCTION ${functionName}`]
-  const sections: Array<{ name: string; entries: string[] }> = [
-    {
-      name: "IMPORTING",
-      entries: definition.importParameters.map((parameter) =>
-        renderFunctionParameter(parameter, "TYPE")
-      )
-    },
-    {
-      name: "EXPORTING",
-      entries: definition.exportParameters.map((parameter) =>
-        renderFunctionParameter(parameter, "TYPE")
-      )
-    },
-    {
-      name: "CHANGING",
-      entries: definition.changingParameters.map((parameter) =>
-        renderFunctionParameter(parameter, "TYPE")
-      )
-    },
-    {
-      name: "TABLES",
-      entries: definition.tableParameters.map((parameter) =>
-        renderFunctionParameter(parameter, "LIKE")
-      )
-    },
-    {
-      name: "EXCEPTIONS",
-      entries: definition.exceptions.map((exception) => exception.name)
-    }
-  ].filter((section) => section.entries.length)
-  if (!sections.length) return `${lines[0]}.`
-  sections.forEach((section) => {
-    lines.push(`  ${section.name}`)
-    lines.push(...section.entries.map((entry) => `    ${entry}`))
-  })
-  lines[lines.length - 1] += "."
-  return lines.join("\n")
-}
-
-function renderFunctionParameter(
-  parameter: Required<FunctionParameterInput>,
-  typing: "TYPE" | "LIKE"
-): string {
-  const name = parameter.passByValue ? `VALUE(${parameter.name})` : parameter.name
-  return `${name} ${typing} ${parameter.typeName}${parameter.optional ? " OPTIONAL" : ""}`
 }
 
 /**
@@ -10750,5 +10881,15 @@ function uppercaseRecord(record: Record<string, string>): Record<string, string>
 function requireRepositorySuccess(status: string, code: string, message: string): void {
   if (status.toUpperCase() !== "S") {
     throw new Error(`SAP repository helper rejected the operation: ${code}: ${message}`)
+  }
+}
+
+/**
+ * Same contract as `requireRepositorySuccess` for the base helper `Z_ORVANTA_MCP_EXECUTE`, whose
+ * failures must not be reported as a repository-helper rejection.
+ */
+function requireHelperSuccess(status: string, code: string, message: string): void {
+  if (status.toUpperCase() !== "S") {
+    throw new Error(`SAP helper rejected the operation: ${code}: ${message}`)
   }
 }

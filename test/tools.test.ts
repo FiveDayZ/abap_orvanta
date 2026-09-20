@@ -393,7 +393,8 @@ test("SAP helper SOAP envelope escapes inputs and parses stable results", () => 
     status: "S",
     code: "READY",
     message: "Codex MCP SAP helper is ready",
-    version: "1.0"
+    version: "1.0",
+    source: []
   })
   assert.throws(
     () =>
@@ -403,6 +404,26 @@ test("SAP helper SOAP envelope escapes inputs and parses stable results", () => 
         </soap:Envelope>`),
     /SAP SOAP fault: Denied/
   )
+})
+
+test("SAP helper response keeps the interface patch difference rows", () => {
+  const result = parseSapHelperResponse(`<?xml version="1.0"?>
+    <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
+      <soap-env:Body>
+        <n0:Z_ORVANTA_MCP_EXECUTE.Response xmlns:n0="urn:sap-com:document:sap:rfc:functions">
+          <EV_STATUS>E</EV_STATUS>
+          <EV_CODE>FUNCTION_PATCH_SAVE_NOT_OBSERVED</EV_CODE>
+          <EV_MESSAGE>Active function does not match the save</EV_MESSAGE>
+          <EV_VERSION>2.0</EV_VERSION>
+          <IT_SOURCE>
+            <item><LINE>D|1|SECTION|EXPORT</LINE></item>
+            <item><LINE>D|1|FIELD|PARAMETER</LINE></item>
+          </IT_SOURCE>
+        </n0:Z_ORVANTA_MCP_EXECUTE.Response>
+      </soap-env:Body>
+    </soap-env:Envelope>`)
+  assert.equal(result.code, "FUNCTION_PATCH_SAVE_NOT_OBSERVED")
+  assert.deepEqual(result.source, ["D|1|SECTION|EXPORT", "D|1|FIELD|PARAMETER"])
 })
 
 test("remote function SOAP envelope and response keep scalar values bounded to declared outputs", () => {
@@ -1994,11 +2015,15 @@ test("function interface patch applies controlled operations and preserves imple
 
   const patched = JSON.parse(await tools.patchFunctionModuleInterface(input)) as {
     status: string
+    helperCode: string
     helperVersion: string
+    helperVerification: string
     previousInterfaceFingerprint: string
     previousSourceFingerprint: string
     interfaceFingerprint: string
     sourceFingerprint: string
+    sourceWritePerformed: boolean
+    interfaceWritePerformed: boolean
     importParameters: Array<{
       name: string
       typeName: string
@@ -2023,18 +2048,194 @@ test("function interface patch applies controlled operations and preserves imple
   })
   assert.deepEqual(patched.exceptions, [{ name: "INPUT_INVALID", description: "Invalid value" }])
   assert.deepEqual(patched.source, current.source)
-  assert.equal(backend.lastRepositoryRequest?.operation, "PATCH_FUNCTION_INTERFACE")
-  assert.equal(backend.lastRepositoryRequest?.expectedVersion, current.interfaceFingerprint)
-  assert.ok(backend.lastRepositoryRequest?.source?.some((line) => line.startsWith("m|")))
-  assert.ok(backend.lastRepositoryRequest?.source?.some((line) => line.startsWith("s|")))
+  assert.equal(patched.helperCode, "FUNCTION_INTERFACE_PATCHED")
+  assert.equal(
+    patched.helperVerification,
+    "the helper compared its own interface read-back line by line"
+  )
+  assert.equal(patched.sourceWritePerformed, false)
+  assert.equal(patched.interfaceWritePerformed, true)
+  assert.equal(backend.lastHelperRequest?.operation, "PATCH_FUNCTION_INTERFACE")
+  assert.equal(backend.lastHelperRequest?.objectName, "ZCMCP_FM_1501")
+  assert.equal(backend.lastHelperRequest?.program, "ZCMCP_FG_1501")
+  assert.equal(backend.lastHelperRequest?.packageName, "ZABAP")
+  assert.equal(backend.lastHelperRequest?.transportNumber, "GR2K923421")
+  assert.equal(backend.lastHelperRequest?.expectedVersion, current.interfaceFingerprint)
+  assert.ok(backend.lastHelperRequest?.source?.some((line) => line.startsWith("m|")))
+  assert.ok(backend.lastHelperRequest?.source?.some((line) => line.startsWith("s|")))
   assert.ok(
-    backend.lastRepositoryRequest?.source?.includes(
+    backend.lastHelperRequest?.source?.includes(
       's|1|LINE|*"--------------------------------------------------------------------'
     )
   )
-  assert.ok(!backend.lastRepositoryRequest?.source?.some((line) => line.includes("&#34;")))
-  assert.ok(backend.lastRepositoryRequest?.source?.includes("i|1|DBFIELD|"))
-  assert.ok(backend.lastRepositoryRequest?.source?.includes("e|1|OPTIONAL|"))
+  assert.ok(!backend.lastHelperRequest?.source?.some((line) => line.includes("&#34;")))
+  assert.ok(backend.lastHelperRequest?.source?.includes("i|1|DBFIELD|"))
+  // RSEXP has no OPTIONAL component, so an exporting payload row must never name it.
+  assert.ok(!backend.lastHelperRequest?.source?.includes("e|1|OPTIONAL|"))
+})
+
+// The helper's PATCH_FUNCTION_INTERFACE pre-write guard rebuilds the interface from the payload
+// rows and compares it field by field with its own RPY_FUNCTIONMODULE_READ of the active module,
+// so the expected snapshot must carry the helper's canonical property set for every direction
+// instead of whatever subset one repository read happened to return. `RSEXP` has no `OPTIONAL`
+// component (verified against SAP_BASIS 7.31), so the exporting direction never emits it.
+test("function interface patch snapshots the canonical helper row set for every direction", async () => {
+  const backend = new MockBackend()
+  const modules = (backend as unknown as { functionModules: Map<string, string[]> }).functionModules
+  modules.set("ZCMCP_FM_1501", [
+    "M|1|FUNCTION_GROUP|ZCMCP_FG_1501",
+    "M|1|SHORT_TEXT|MCP RFC validation",
+    "M|1|REMOTE_ENABLED|X",
+    "M|1|UPDATE_TASK|",
+    "M|1|GLOBAL_INTERFACE|",
+    // The read payload is deliberately partial: the table row carries no DBSTRUCT row and no
+    // OPTIONAL row exists for the exporting direction (`RSEXP` has no such component). Only a
+    // snapshot rebuilt from the parsed interface can carry the helper's full canonical row set.
+    "I|1|PARAMETER|IV_INPUT",
+    "I|1|TYP|CHAR20",
+    "I|1|DBFIELD|",
+    "I|1|OPTIONAL|",
+    "I|1|PASSVALUE|X",
+    "E|1|PARAMETER|EV_OUTPUT",
+    "E|1|TYP|CHAR40",
+    "E|1|DBFIELD|",
+    "E|1|PASSVALUE|X",
+    "T|1|PARAMETER|ET_ITEMS",
+    "T|1|TYP|BAPIRET2",
+    "T|1|DBSTRUCT|BAPIRET2",
+    "T|1|OPTIONAL|X",
+    "C|1|PARAMETER|CV_STATE",
+    "C|1|TYP|CHAR1",
+    "C|1|OPTIONAL|X",
+    "C|1|PASSVALUE|X",
+    "X|1|EXCEPTION|INVALID_INPUT",
+    "X|1|TEXT|Input is invalid",
+    'S|1|LINE|*"--------------------------------------------------------------------',
+    'S|2|LINE|*"*Local Interface:',
+    'S|3|LINE|*"--------------------------------------------------------------------',
+    "S|4|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output."
+  ])
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      connectionId: "w200"
+    })
+  ) as { interfaceFingerprint: string; sourceFingerprint: string }
+
+  await tools.patchFunctionModuleInterface({
+    functionName: "ZCMCP_FM_1501",
+    functionGroup: "ZCMCP_FG_1501",
+    expectedInterfaceFingerprint: current.interfaceFingerprint,
+    expectedSourceFingerprint: current.sourceFingerprint,
+    parameterOperations: [
+      {
+        operation: "add",
+        direction: "import",
+        name: "IV_TEMP",
+        typeName: "CHAR10",
+        passByValue: true
+      }
+    ],
+    exceptionOperations: [],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    connectionId: "w200"
+  })
+
+  const payload = backend.lastHelperRequest?.source ?? []
+  const expected = payload.filter((line) => /^[a-z]\|/.test(line))
+  const desired = payload.filter((line) => /^[A-Z]\|/.test(line))
+  // Every parameter direction is present with the helper's canonical properties and order
+  // (IMPORTING, EXPORTING, CHANGING, TABLES), exactly as the helper's own emitter writes them.
+  assert.deepEqual(expected, [
+    "m|1|FUNCTION_GROUP|ZCMCP_FG_1501",
+    "m|1|SHORT_TEXT|MCP RFC validation",
+    "m|1|REMOTE_ENABLED|X",
+    "m|1|UPDATE_TASK|",
+    "m|1|GLOBAL_INTERFACE|",
+    "m|1|SOURCE_FORMAT|PLAIN",
+    "m|1|SOURCE_LINES|4",
+    "i|1|PARAMETER|IV_INPUT",
+    "i|1|TYP|CHAR20",
+    "i|1|DBFIELD|",
+    "i|1|OPTIONAL|",
+    "i|1|PASSVALUE|X",
+    "e|1|PARAMETER|EV_OUTPUT",
+    "e|1|TYP|CHAR40",
+    "e|1|DBFIELD|",
+    "e|1|PASSVALUE|X",
+    "c|1|PARAMETER|CV_STATE",
+    "c|1|TYP|CHAR1",
+    "c|1|DBFIELD|",
+    "c|1|OPTIONAL|X",
+    "c|1|PASSVALUE|X",
+    "t|1|PARAMETER|ET_ITEMS",
+    "t|1|TYP|BAPIRET2",
+    "t|1|DBSTRUCT|BAPIRET2",
+    "t|1|OPTIONAL|X",
+    "x|1|EXCEPTION|INVALID_INPUT",
+    "x|1|TEXT|Input is invalid",
+    's|1|LINE|*"--------------------------------------------------------------------',
+    's|2|LINE|*"*Local Interface:',
+    's|3|LINE|*"--------------------------------------------------------------------',
+    "s|4|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output."
+  ])
+  // An exporting row must never carry OPTIONAL: RSEXP has no such field, and the helper rejects
+  // the payload outright when a snapshot row names an unknown component.
+  assert.ok(
+    !expected.some((line) => /^e\|\d+\|OPTIONAL\|/.test(line)),
+    "exporting snapshot rows must not name OPTIONAL"
+  )
+  // The snapshot is rebuilt from the parsed interface, so no metadata row may carry an interface
+  // property and no row may name a property outside the helper's recognizer set.
+  assert.deepEqual(
+    payload.filter((line) => line.startsWith("m|")).map((line) => line.split("|")[2] ?? ""),
+    [
+      "FUNCTION_GROUP",
+      "SHORT_TEXT",
+      "REMOTE_ENABLED",
+      "UPDATE_TASK",
+      "GLOBAL_INTERFACE",
+      "SOURCE_FORMAT",
+      "SOURCE_LINES"
+    ]
+  )
+  const known = new Set([
+    "PARAMETER",
+    "TYP",
+    "DBFIELD",
+    "DBSTRUCT",
+    "OPTIONAL",
+    "PASSVALUE",
+    "TEXT",
+    "EXCEPTION",
+    "LINE",
+    "LENGTH",
+    "PART1",
+    "PART2",
+    "PART3",
+    "PART4",
+    "PART5"
+  ])
+  assert.deepEqual(
+    payload
+      .filter((line) => !line.startsWith("m|"))
+      .map((line) => line.split("|")[2] ?? "")
+      .filter((property) => !known.has(property)),
+    []
+  )
+  // The desired definition is unchanged: EXPORTING keeps its four-row shape and TABLES keeps
+  // DBSTRUCT, so the write-back still matches what the helper reads for an unchanged module.
+  assert.ok(desired.includes("E|1|PARAMETER|EV_OUTPUT"))
+  assert.ok(desired.includes("E|1|TYP|CHAR40"))
+  assert.ok(desired.includes("E|1|PASSVALUE|X"))
+  assert.ok(!desired.some((line) => /^E\|\d+\|OPTIONAL\|/.test(line)))
+  assert.ok(desired.includes("T|1|DBSTRUCT|BAPIRET2"))
+  // The implementation source rows are still carried on both halves, so the helper's own
+  // "interface patch cannot change source" guard sees an unchanged body.
+  assert.ok(expected.includes("s|4|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output."))
+  assert.ok(desired.includes("S|4|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output."))
 })
 
 test("RFC interface patch rejects reference parameters before any source write", async () => {
@@ -2073,7 +2274,7 @@ test("RFC interface patch rejects reference parameters before any source write",
   assert.equal(backend.lastRepositoryRequest?.operation, "READ_FUNCTION_INTERFACE")
 })
 
-test("function interface patch reports exact active readback differences", async () => {
+test("function interface patch reports exact helper readback differences", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)
   const current = JSON.parse(
@@ -2082,7 +2283,7 @@ test("function interface patch reports exact active readback differences", async
       connectionId: "w200"
     })
   ) as { interfaceFingerprint: string; sourceFingerprint: string }
-  backend.functionPatchReadbackMismatch = true
+  backend.functionPatchHelperMismatch = true
 
   await assert.rejects(
     tools.patchFunctionModuleInterface({
@@ -2105,69 +2306,13 @@ test("function interface patch reports exact active readback differences", async
       transportNumber: "GR2K923421",
       connectionId: "w200"
     }),
-    /interface: expected .*IV_TEMP.* received /
+    /FUNCTION_PATCH_SAVE_NOT_OBSERVED/
   )
 })
 
-test("function interface patch rejects an ADT mutation that changes implementation source", async () => {
+test("a rejected helper patch preserves bounded difference evidence", async () => {
   const backend = new MockBackend()
-  const tools = new ToolService(backend)
-  const current = JSON.parse(
-    await tools.readFunctionModuleInterface({
-      functionName: "ZCMCP_FM_1501",
-      connectionId: "w200"
-    })
-  ) as { interfaceFingerprint: string; sourceFingerprint: string }
-  backend.functionPatchAdtBodyMutation = true
-
-  await assert.rejects(
-    tools.patchFunctionModuleInterface({
-      functionName: "ZCMCP_FM_1501",
-      functionGroup: "ZCMCP_FG_1501",
-      expectedInterfaceFingerprint: current.interfaceFingerprint,
-      expectedSourceFingerprint: current.sourceFingerprint,
-      parameterOperations: [
-        {
-          operation: "add",
-          direction: "import",
-          name: "IV_TEMP",
-          typeName: "CHAR10",
-          passByValue: true,
-          description: "Temporary"
-        }
-      ],
-      exceptionOperations: [],
-      packageName: "ZABAP",
-      transportNumber: "GR2K923421",
-      connectionId: "w200"
-    }),
-    /implementation source changed during ADT interface patch/
-  )
-})
-
-test("function interface patch preserves bounded native helper failure evidence", async () => {
-  const backend = new MockBackend()
-  const callRepository = backend.callSapRepository.bind(backend)
-  backend.callSapRepository = async (connection, request) => {
-    const result = await callRepository(connection, request)
-    if (request.operation !== "PATCH_FUNCTION_INTERFACE") return result
-    return {
-      ...result,
-      status: "E",
-      code: "FUNCTION_PATCH_SAVE_NOT_OBSERVED",
-      message: "Active function does not match the save",
-      source: [
-        "D|1|SECTION|DOCUMENTATION",
-        "D|1|ROW|2",
-        "D|1|FIELD|INDEX",
-        "D|1|EXPECTED|1",
-        "D|1|ACTUAL|2",
-        "S|1|LINE|unrelated source must not be copied",
-        `D|2|EXPECTED|${"x".repeat(300)}`,
-        ...Array.from({ length: 60 }, () => "D|2|FIELD|BOUNDED")
-      ]
-    }
-  }
+  backend.functionPatchHelperMismatch = true
   const tools = new ToolService(backend)
   const current = JSON.parse(
     await tools.readFunctionModuleInterface({
@@ -2206,6 +2351,42 @@ test("function interface patch preserves bounded native helper failure evidence"
       assert.ok(rows.every((line) => line.length <= 255))
       return true
     }
+  )
+})
+
+test("function interface patch rejects an implementation source that changed under the helper", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const current = JSON.parse(
+    await tools.readFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      connectionId: "w200"
+    })
+  ) as { interfaceFingerprint: string; sourceFingerprint: string }
+  backend.functionPatchSourceMutation = true
+
+  await assert.rejects(
+    tools.patchFunctionModuleInterface({
+      functionName: "ZCMCP_FM_1501",
+      functionGroup: "ZCMCP_FG_1501",
+      expectedInterfaceFingerprint: current.interfaceFingerprint,
+      expectedSourceFingerprint: current.sourceFingerprint,
+      parameterOperations: [
+        {
+          operation: "add",
+          direction: "import",
+          name: "IV_TEMP",
+          typeName: "CHAR10",
+          passByValue: true,
+          description: "Temporary"
+        }
+      ],
+      exceptionOperations: [],
+      packageName: "ZABAP",
+      transportNumber: "GR2K923421",
+      connectionId: "w200"
+    }),
+    /implementationSourceFingerprint/
   )
 })
 
@@ -5145,6 +5326,14 @@ test("read-only migration wave exposes URI, search, metadata and history behavio
     connectionId: "w200"
   })
   assert.match(workspace, /adt:\/\/w200\/sap\/bc\/adt\/oo\/classes\/zcl_demo/)
+
+  const programWorkspace = await tools.getWorkspaceUri({
+    objectName: "ZREPORT_DEMO",
+    objectType: "PROG",
+    connectionId: "w200"
+  })
+  assert.match(programWorkspace, /Type: PROG\/P/)
+  assert.match(programWorkspace, /adt:\/\/w200\/sap\/bc\/adt\/programs\/programs\/zreport_demo/)
 
   const url = tools.getObjectUrl({
     objectName: "ZCL_DEMO",

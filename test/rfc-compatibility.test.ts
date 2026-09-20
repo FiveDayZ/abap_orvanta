@@ -184,7 +184,10 @@ for (const [label, change] of [
   })
 }
 
-test("long source is rejected before interface mutation by the legacy write helper", async () => {
+test("the helper-backed interface patch accepts source lines wider than 72 columns", async () => {
+  // The retired native ADT patch had to rewrite the ADT declaration and therefore rejected any
+  // implementation line above 72 columns. The helper rebuilds the interface from RPY tables
+  // inside SAP and never rewrites a source line, so a wide line is no longer a precondition.
   const backend = longSourceBackend(["*".repeat(100)])
   const tools = new ToolService(backend)
   const current = JSON.parse(
@@ -193,8 +196,8 @@ test("long source is rejected before interface mutation by the legacy write help
       connectionId: "w200"
     })
   )
-  await assert.rejects(
-    tools.patchFunctionModuleInterface({
+  const patched = JSON.parse(
+    await tools.patchFunctionModuleInterface({
       connectionId: "w200",
       functionName: "ZCMCP_FM_1501",
       functionGroup: current.functionGroup,
@@ -213,9 +216,18 @@ test("long source is rejected before interface mutation by the legacy write help
         }
       ],
       exceptionOperations: []
-    }),
-    /no write was started/
+    })
+  ) as {
+    status: string
+    importParameters: Array<{ name: string }>
+    source: string[]
+  }
+  assert.equal(patched.status, "FUNCTION_INTERFACE_PATCHED")
+  assert.equal(
+    patched.importParameters.some((parameter) => parameter.name === "IV_NEW"),
+    true
   )
+  assert.deepEqual(patched.source, current.source)
 })
 
 function tableBackend(

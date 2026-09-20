@@ -28,6 +28,12 @@
  * `Z_ORVANTA_LOG_READ`, `Z_ORVANTA_OPS_READ`, `Z_ORVANTA_MAINT_READ`,
  * `Z_ORVANTA_SMARTFORM_API`). `minHelperProtocol` is the minimum protocol version the
  * capability report requires; `null` means the tool does not depend on a customer helper.
+ *
+ * `run_sci_analysis` requires `1.0`: the SCI helper family (`Z_ORVANTA_MCP_SCI_API`, `_V2`, `_E2`)
+ * carries its self-description as the `payload` array of one `EV_RESULT` JSON envelope, whose own
+ * revision is `1` — design revision R6. That `1.0` is the protocol version of the envelope and is
+ * deliberately **not** the helper's `ev_version` (2.0/3.0), which versions the SCI rule profile
+ * rather than the CAPABILITIES protocol.
  */
 
 export type ToolGroup =
@@ -160,7 +166,11 @@ const ROWS: readonly ToolRow[] = [
     DEV,
     "W",
     "sap-helper-fallback",
-    REPOSITORY,
+    // The patch runs inside SAP through the shared repository opcode PATCH_FUNCTION_INTERFACE
+    // (since protocol 2.0). The native ADT lock/save path is what fails on w200 with HTTP 423
+    // "invalid lock handle", so the service sends this opcode to the base helper
+    // Z_ORVANTA_MCP_EXECUTE, exactly like write_function_module_source below.
+    EXECUTE,
     "2.0"
   ],
   [
@@ -346,7 +356,7 @@ const ROWS: readonly ToolRow[] = [
   ["execute_data_query", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_abap_table", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["run_atc_analysis", "quality", DEV, "W", "target-specific", null, null],
-  ["run_sci_analysis", "quality", DEV, "W", "sap-helper-fallback", SCI, null],
+  ["run_sci_analysis", "quality", DEV, "W", "sap-helper-fallback", SCI, "1.0"],
   ["preview_configuration", "data", CFG, "R", "target-specific", null, null],
   ["run_unit_tests", "quality", DEV, "W", "native-adt", null, null],
   ["search_background_jobs", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],

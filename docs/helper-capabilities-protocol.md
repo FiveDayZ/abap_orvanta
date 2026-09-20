@@ -94,6 +94,8 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 | R4  | **`since` 的含义随助手契约而定，且必须在助手中写明**：既有 `x.y` 协议版本的助手取该操作自身分支的 `ev_version`；DDIC 助手取 `src/capabilities.ts` 中 `ddic-helper-*` 分组的最低版本（8×1.2、2×1.5、5×1.6、4×1.7，MIN 1.2／MAX 1.7）；无 `ev_version` 的 JSON 助手取应答信封自身的修订号（`"version":"1"` → `1.0`）。     | DDIC 的 `CASE` 只设置 `lv_object_type`/`lv_write` 标志，真正的 `ev_version` 字面量散落在共享代码路径深处，逐分支扫描无法推导，故记录**契约最低版本**而非历史实现版本（用户 2026-09-17 选定）。JSON 助手的 `1.0` 同理是其信封修订号，为与 `x.y` 可比而编码为 `1.0`。三种含义都写入生成器注释，避免把契约读成历史。                              |
 | R5  | **`CAPABILITIES` 豁免助手的调用前输入/权限校验**，但只豁免该一个操作码，其余业务分支校验逐字不变。                                                                                                                                                                                                                       | 该操作不需要调用方输入、不读业务数据、只回自述，与 `Z_ORVANTA_MCP_EXECUTE` 在业务逻辑之前就应答的行为一致。用户 2026-09-17 接受（备选是让自描述也走各助手的业务校验，未采用）。生成器改动已用「新旧渲染逐行多重集对比」验证：除该豁免与新增工作字段外无任何业务行变化。                                                                        |
 
+| R6 | **SCI 助手（`Z_ORVANTA_MCP_SCI_V2`／`_E2`）的能力回复载体＝新增一个导出标量 `EV_RESULT`（类型 `STRINGVAL`），其值为 R3 JSON 信封**：行放进同一信封的 `payload` 数组，**不新增导出表**。`since` 取信封自身的修订号（`"version":"1"` → `1.0`），**不得**取助手的 `ev_version`（2.0／3.0 是 SCI 规则档案版本，与协议版本无关）。`CAPABILITIES` 分支插在体的**第一条可执行语句之前**（业务 `CLEAR:` 预置块之前），因此不需要 R5 式豁免。未知动作的降级扩展见 §4.1：SCI 老体在任何业务校验之前就返回 `INVALID_ACTION`（不是 `OPERATION_NOT_SUPPORTED`），服务侧必须同等降级为 `operation-scoped`。 | 依据（2026-09-18，只读）：两个助手的接口都没有 `EV_RESULT`——导出 12／13 个 `EV_*` 标量＋`ET_RESULTS` 表，既无 `it_source` 也无 `EV_RESULT`，故 R3 的「行放 `payload`」是唯一可复用且不新增表的载体；两体与 `scripts/sci-v2-source.mjs`／`scripts/sci-e2-source.mjs` **逐字节一致**（234／284 行，体哈希 `dbf10817…`／`2f2b1380…`），且都不含 `CAPABILITIES` ⇒ 本次是干净新增，不是合并未知改动。`EV_RESULT` 属**接口变更**（新增一个 `EXPORTING` 标量），会使 `src/sci-v2.ts` 钉住的 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT` 失效（该常量保存的是整体 `fingerprint`，比较见 `src/tools.ts:1720`），**部署后必须重钉**；`src/sci.ts` 的 E1 助手 `Z_ORVANTA_MCP_SCI_API` 不受影响。用户 2026-09-18 选定「单个导出标量 `EV_RESULT`（`STRINGVAL`）＋ JSON 信封」，备选「新增导出表」未采用；载体生成器 `scripts/sci-carrier-source.mjs` 已按此实现（分支 23 行、体 257／307 行、全部行 ≤71 字符），**尚未部署** |
+
 ### 3.5 后续补齐清单（同一协议，逐文件落地）
 
 | 目标                                                                  | 位置                                                                                                                               | 说明                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -176,6 +178,22 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 - 能力直方图保持不变（`available 21` / `unsupported 1` / `unknown 32`），且 `safety.sapWritesInvoked=false`：新增的两个探询没有放大任何能力判定。
 - 因此「五条自述」是**部署后**才可能出现的状态：DDIC 与 MAINT/OPS 需各自部署带 `CAPABILITIES` 的版本，而 `EXECUTE` 缺少 HELPER 行是它自身的既有行为。当前构建可验收的事实是「五条记录、报告不报错、不写 SAP」。
 
+**R6 状态补充（2026-09-18：只读核对＋生成器落地；未部署、未运行测试）**
+
+上表 `sci-v2-source.mjs`／`sci-e2-source.mjs` 一行的结论（「R3 载体不存在，需先定义载体，属接口变更」）已由 R6 处置：载体＝**单个导出标量 `EV_RESULT`（`STRINGVAL`）＋ R3 JSON 信封**，生成器 `scripts/sci-carrier-source.mjs` 冻结两个基线（哈希同时钉在文件注释与 `test/sci-carrier-source.test.ts`）并各自注入 23 行 `CAPABILITIES` 分支（`_V2` 体 257 行／摘要 `fa352053…`，`_E2` 体 307 行／摘要 `fc7c6418…`，均为占位符仍在时的 `SOURCE|HASH` 值）。`_E2` 仍由 `_V2` 文本替换派生，但两个基线各自冻结并各自注入分支（HELPER 标识行必须写各自的函数名），派生关系改由测试重新断言。
+
+部署前置条件（两项，均**未执行**）：
+
+1. 在两个助手的 `EXPORTING` 中新增 `EV_RESULT TYPE STRINGVAL`——否则分支引用的字段不存在，激活会失败；本平台原生 ADT 函模块接口写入不可用，须人工完成。
+2. 部署后重钉 `src/sci-v2.ts` 的 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT`（接口参数变化与体变化都会改变该值）。
+
+**R6 未决问题（不得当作已定值使用）**
+
+1. **`since` 取值**：R6 取 `1.0`，理由是「该载体由本轮引入，此前不存在可证明的历史协议版本；R4 已把 JSON 信封助手的 `since` 定义为信封自身修订号」。若改为与 SCI 规则档案版本对齐（`_V2` 2.0／`_E2` 3.0），则 MIN／MAX 变成 2.0–3.0 且两个助手区间不同，并与 §1 的根因（助手版本 ≠ 协议版本）冲突。**未决，需用户裁定。**
+2. **`readOnly:true`**：R3 信封固定带该字段。SCI 的 `RUN` 只在内存中执行匿名检查（不保存变体、对象集或结果），按只读发布是否正确，或应另加 `SCOPE|SCI_RUN|…` 表示需单独批准，**未决**。
+3. **`RUNTIME|TIME` 行**：本轮按批准清单只发布 `RUNTIME|HOST`（与 `Z_ORVANTA_LOG_READ` 一致）；`maint`／`ops`／repository 体另含 `RUNTIME|TIME`。是否补齐**未决**（不影响解析）。
+4. **覆盖面**：本轮两个 SCI 助手都新增载体；若只部署 `_V2`，`_E2` 会继续停在 `operation-scoped`。**未决**。
+
 ---
 
 ## 4. 服务侧设计
@@ -205,6 +223,10 @@ export interface SapBackend {
 
 - `adt-backend.ts`：按助手所属端点分发（`EXECUTE` / `DYNPRO` / `DDIC` / `SMARTFORM` 走 SOAP；`LOG` / `OPS` / `MAINT` / `SCI` 走各自现有通道）。
 - 旧助手返回 `OPERATION_NOT_SUPPORTED` → 返回 `attestation: "operation-scoped"` 并保留现有单次操作协议结果，**不报错**。
+- **R6 扩展（2026-09-18）**：并非所有老助手都用 `OPERATION_NOT_SUPPORTED` 拒绝未知操作码。`Z_ORVANTA_MCP_SCI_V2`／`_E2` 在任何业务校验之前就设置 `ev_code = 'INVALID_ACTION'` 并 `RETURN`，`Z_ORVANTA_LOG_READ` 的老版本同理返回 `READ_ONLY_UNSUPPORTED`。因此「老助手拒绝未知操作码」的降级规则必须覆盖 `OPERATION_NOT_SUPPORTED`、`INVALID_ACTION`、`READ_ONLY_UNSUPPORTED` 三类码：
+  - JSON 信封路径已自然覆盖——老助手不写 `EV_RESULT`，空值即 `operation-scoped`；
+  - XML／`EV_*` 路径与 `src/sci-v2.ts` 的 `formatScopedSciResult` 必须把 `INVALID_ACTION` 归入「未实现该操作码」，而不是当作执行失败抛出；
+  - `src/adt-backend.ts` 的 `decodeJsonHelperCapabilitiesReply` 目前只识别 `NOT_SUPPORTED`／`UNSUPPORTED`／`UNKNOWN_OPERATION`，属**待接线项**（本轮未改）。
 
 ### 4.2 能力判定
 

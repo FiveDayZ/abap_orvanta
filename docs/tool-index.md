@@ -101,7 +101,7 @@
 | `patch_abap_screen` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.4) |
 | `patch_ddic_transparent_table_fields` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.7) |
 | `patch_ddic_transparent_table_settings` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.7) |
-| `patch_function_module_interface` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.0) |
+| `patch_function_module_interface` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥2.0) |
 | `prepare_enhancement_configuration_workflow` | enhancement | config | 只读 | target-specific | — |
 | `preview_configuration` | data | config | 只读 | target-specific | — |
 | `preview_source_changes` | source | dev | 只读 | target-specific | — |
@@ -135,7 +135,7 @@
 | `release_write_operation_lock` | platform | platform | 写 | local | — |
 | `replace_string_in_abap_object` | source | dev | 写 | native-adt | — |
 | `run_atc_analysis` | quality | dev | 写 | target-specific | — |
-| `run_sci_analysis` | quality | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_SCI_API |
+| `run_sci_analysis` | quality | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_SCI_API (≥1.0) |
 | `run_unit_tests` | quality | dev | 写 | native-adt | — |
 | `sap_helper_status` | platform | platform | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥1.0) |
 | `save_smartform` | form | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_SMARTFORM_API |

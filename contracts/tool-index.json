@@ -1081,7 +1081,7 @@
         "idempotentHint": false
       },
       "route": "sap-helper-fallback",
-      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "sapHelper": "Z_ORVANTA_MCP_EXECUTE",
       "minHelperProtocol": "2.0"
     },
     {
@@ -1613,7 +1613,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_SCI_API",
-      "minHelperProtocol": null,
+      "minHelperProtocol": "1.0",
       "note": "非原生 ATC，规则范围固定且依赖指纹匹配的 SCI 助手；timeout 不等于取消。"
     },
     {

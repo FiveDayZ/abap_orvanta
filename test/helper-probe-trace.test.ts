@@ -108,3 +108,22 @@ test("the CAPABILITIES envelope sends the IT_SOURCE table its rows come back in"
     /IT_SOURCE/
   )
 })
+
+test("the interface patch envelope carries the same payload elements as the body write", () => {
+  const envelope = buildSapHelperEnvelope({
+    operation: "PATCH_FUNCTION_INTERFACE",
+    objectName: "ZCMCP_FM_1501",
+    program: "ZCMCP_FG_1501",
+    packageName: "ZABAP",
+    transportNumber: "GR2K923472",
+    expectedVersion: "a".repeat(64),
+    source: ["i|1|PARAMETER|IV_INPUT", "E|1|PARAMETER|EV_RESULT"]
+  })
+  assert.match(envelope, /<IV_OPERATION>PATCH_FUNCTION_INTERFACE<\/IV_OPERATION>/)
+  assert.match(envelope, /<IV_PROGRAM>ZCMCP_FG_1501<\/IV_PROGRAM>/)
+  assert.match(envelope, /<IV_PACKAGE>ZABAP<\/IV_PACKAGE>/)
+  assert.match(envelope, /<IV_REQUEST>GR2K923472<\/IV_REQUEST>/)
+  assert.match(envelope, new RegExp(`<IV_EXPECTED_VERSION>${"a".repeat(64)}</IV_EXPECTED_VERSION>`))
+  assert.match(envelope, /<IT_SOURCE><item><LINE>i\|1\|PARAMETER\|IV_INPUT<\/LINE><\/item>/)
+  assert.match(envelope, /<item><LINE>E\|1\|PARAMETER\|EV_RESULT<\/LINE><\/item>/)
+})

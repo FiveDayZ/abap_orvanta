@@ -14,6 +14,8 @@ const DDIC_HELPER = "Z_ORVANTA_MCP_DDIC_API"
 const MAINTENANCE_HELPER = "Z_ORVANTA_MAINT_READ"
 const OPERATIONAL_LOG_HELPER = "Z_ORVANTA_OPS_READ"
 const APPLICATION_LOG_HELPER = "Z_ORVANTA_LOG_READ"
+const SCI_V2_HELPER = "Z_ORVANTA_MCP_SCI_V2"
+const SCI_E2_HELPER = "Z_ORVANTA_MCP_SCI_E2"
 
 interface ReportShape {
   helpers: Array<{ name: string; availability: string; attestation?: unknown }>
@@ -105,9 +107,12 @@ test("an un-upgraded helper stays operation-scoped and keeps the previous capabi
       [DDIC_HELPER, "operation-scoped"],
       [MAINTENANCE_HELPER, "operation-scoped"],
       [OPERATIONAL_LOG_HELPER, "operation-scoped"],
-      [APPLICATION_LOG_HELPER, "operation-scoped"]
+      [APPLICATION_LOG_HELPER, "operation-scoped"],
+      [SCI_V2_HELPER, "operation-scoped"],
+      [SCI_E2_HELPER, "operation-scoped"]
     ]
   )
+  assert.equal(report.helperAttestation.length, 8)
   assert.equal(report.helperAttestation[1]?.maxProtocol, null)
   assert.equal(report.helperAttestation[1]?.detail, undefined)
   // The JSON-payload helpers keep their unattested fallback too, and their approval-gated
@@ -620,7 +625,9 @@ test("the two JSON helpers are reported in helperAttestation without touching th
       [DDIC_HELPER, "operation-scoped"],
       [MAINTENANCE_HELPER, "self-described"],
       [OPERATIONAL_LOG_HELPER, "self-described"],
-      [APPLICATION_LOG_HELPER, "operation-scoped"]
+      [APPLICATION_LOG_HELPER, "operation-scoped"],
+      [SCI_V2_HELPER, "operation-scoped"],
+      [SCI_E2_HELPER, "operation-scoped"]
     ]
   )
   const maintenance = report.helperAttestation[3]
@@ -759,4 +766,95 @@ test("an un-upgraded application-log helper keeps the previous application-log w
   assert.equal(applicationLogs.availability, "unknown")
   assert.equal(applicationLogs.reason, APPLICATION_LOG_REASON)
   assert.equal(applicationLogs.evidence.source, "local-contract")
+})
+
+// --- Z_ORVANTA_MCP_SCI_V2 / Z_ORVANTA_MCP_SCI_E2: report-only SCI attestation -------------------
+//
+// The two SCI helpers answer `CAPABILITIES` through the same EV_RESULT JSON envelope, but the
+// capability report runs no SCI inspection: `scoped-sci-quality` needs an explicit customer target
+// and rule profile. A matching self-description is therefore reported and nothing else - it must
+// not move the SCI verdict off its unchanged unknown wording.
+
+const SCI_REASON =
+  "Requires a pinned SCI helper. Legacy uses Z_ORVANTA_MCP_SCI_API; explicit customer PROG/CLAS/FUGR targets use Z_ORVANTA_MCP_SCI_V2 (two rules). Explicit syntax_critical_sql profile uses Z_ORVANTA_MCP_SCI_E2 (adds nested SELECT only, not FAE). Not native ATC; discovery does not execute or attest helpers."
+
+const sciCapability = (report: ReportShape) => capabilityObservation(report, "scoped-sci-quality")
+
+test("the two SCI helpers are reported in helperAttestation without moving the SCI verdict", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(
+    SCI_V2_HELPER,
+    jsonSelfDescription({
+      helper: SCI_V2_HELPER,
+      minProtocol: "1.0",
+      maxProtocol: "1.0",
+      operations: [
+        { opcode: "PRECHECK", since: "1.0", write: false },
+        { opcode: "RUN", since: "1.0", write: false }
+      ],
+      sourceHash: "f".repeat(64)
+    })
+  )
+  backend.helperCapabilities.set(
+    SCI_E2_HELPER,
+    jsonSelfDescription({
+      helper: SCI_E2_HELPER,
+      minProtocol: "1.0",
+      maxProtocol: "1.0",
+      operations: [
+        { opcode: "PRECHECK", since: "1.0", write: false },
+        { opcode: "RUN", since: "1.0", write: false }
+      ],
+      sourceHash: "0".repeat(64)
+    })
+  )
+  const report = await buildReport(backend)
+
+  const sciV2 = report.helperAttestation[6]
+  assert.equal(sciV2?.helper, SCI_V2_HELPER)
+  assert.equal(sciV2?.attestation, "self-described")
+  assert.deepEqual(
+    sciV2?.operations.map((operation) => [operation.opcode, operation.since, operation.write]),
+    [
+      ["PRECHECK", "1.0", false],
+      ["RUN", "1.0", false]
+    ]
+  )
+  const sciE2 = report.helperAttestation[7]
+  assert.equal(sciE2?.helper, SCI_E2_HELPER)
+  assert.equal(sciE2?.attestation, "self-described")
+  assert.equal(sciE2?.sourceHash, "0".repeat(64))
+
+  // Report-only: the SCI verdict keeps the pre-probe sentence and its local-contract evidence.
+  assert.equal(sciCapability(report).availability, "unknown")
+  assert.equal(sciCapability(report).reason, SCI_REASON)
+  assert.equal(sciCapability(report).evidence.source, "local-contract")
+})
+
+test("an SCI self-description under another helper identity is not used as evidence", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(
+    SCI_V2_HELPER,
+    jsonSelfDescription({ helper: SCI_E2_HELPER, maxProtocol: "1.0" })
+  )
+  const report = await buildReport(backend)
+
+  const attestation = report.helperAttestation[6]
+  assert.equal(attestation?.attestation, "operation-scoped")
+  assert.match(String(attestation?.detail), /declared helper Z_ORVANTA_MCP_SCI_E2/)
+  // The identity guard never turns a refusal into a missing endpoint.
+  assert.equal(sciCapability(report).availability, "unknown")
+  assert.equal(sciCapability(report).reason, SCI_REASON)
+})
+
+test("an unreachable SCI helper keeps an honest absent attestation", async () => {
+  const backend = new MockBackend()
+  backend.helperCapabilitiesUnreachable = true
+  const report = await buildReport(backend)
+
+  assert.equal(report.helperAttestation[6]?.attestation, "absent")
+  assert.match(String(report.helperAttestation[6]?.detail), /CAPABILITIES/)
+  assert.equal(report.helperAttestation[7]?.attestation, "absent")
+  assert.equal(sciCapability(report).availability, "unknown")
+  assert.equal(sciCapability(report).reason, SCI_REASON)
 })
