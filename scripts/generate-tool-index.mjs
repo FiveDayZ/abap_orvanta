@@ -20,6 +20,7 @@ import {
   toolNamesForProfile
 } from "../dist/src/tool-registry.js"
 import { toolContracts } from "../dist/src/contracts.js"
+import { helperCapabilityRoutes } from "../dist/src/capabilities.js"
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(scriptDir, "..")
@@ -75,6 +76,21 @@ const notReadOnly = readOnlyNames.filter(
   (name) => TOOL_REGISTRY.find((entry) => entry.name === name)?.annotations.readOnlyHint !== true
 )
 if (notReadOnly.length > 0) fail(`readonly profile contains write tools: ${notReadOnly.join(", ")}`)
+
+// The capability report derives its helper and minimum protocol from this same registry. Resolving
+// every helper capability here means a capability that disagrees with the routing fails the check
+// instead of shipping as a wrong verdict. This is the gate that would have caught
+// `repository-helper-function-source-write` being judged against the repository helper at 2.6
+// while the registry already routed `write_function_module_source` to the base helper at 2.7.
+try {
+  const routes = helperCapabilityRoutes()
+  const covered = new Set(routes.flatMap((route) => route.toolNames))
+  console.log(
+    `helper capabilities consistent: ${routes.length} capabilities over ${covered.size} tools`
+  )
+} catch (error) {
+  fail(`helper capability / registry drift: ${error instanceof Error ? error.message : error}`)
+}
 
 // ---- generated content ----------------------------------------------------------------
 

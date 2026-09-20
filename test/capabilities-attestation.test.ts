@@ -212,6 +212,62 @@ test("a self-description under another helper identity is not used as evidence",
   assert.match(lifecycle.evidence.detail, /declared helper Z_ORVANTA_MCP_EXECUTE/)
 })
 
+test("a capability follows the helper the registry routes its tool to, not a stale literal", async () => {
+  // Regression for the drift that reported `write_function_module_source` as `unsupported`: the
+  // tool is routed to the base helper at 2.7, while the repository helper must stay at 2.6. A
+  // capability spec that still named the repository helper judged the tool against 2.6 and
+  // reported a deployed capability as unsupported.
+  const backend = new MockBackend()
+  backend.helperCapabilities.set(
+    BASE_HELPER,
+    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.7" })
+  )
+  backend.helperCapabilities.set(REPOSITORY_HELPER, selfDescription({ maxProtocol: "2.6" }))
+  const report = await buildReport(backend)
+
+  const sourceWrite = capabilityObservation(report, "repository-helper-function-source-write")
+  assert.equal(sourceWrite.availability, "available")
+  assert.match(
+    sourceWrite.reason,
+    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.7`)
+  )
+
+  // The interface patch moved to the same base helper for the same reason (the native ADT lock
+  // path fails on w200), so it must resolve against the base helper's self-description too.
+  const interfacePatch = capabilityObservation(report, "repository-helper-function-interface-patch")
+  assert.equal(interfacePatch.availability, "available")
+  assert.match(
+    interfacePatch.reason,
+    new RegExp(`The ${BASE_HELPER} helper self-described protocol`)
+  )
+
+  // The capabilities that really do run on the repository helper keep following that helper.
+  const lifecycle = capabilityObservation(report, "repository-helper-enhancement-lifecycle")
+  assert.match(
+    lifecycle.reason,
+    new RegExp(`The ${REPOSITORY_HELPER} helper self-described protocol 2\\.6`)
+  )
+
+  // Raising the repository helper must not change the base-helper verdicts.
+  backend.helperCapabilities.set(REPOSITORY_HELPER, selfDescription({ maxProtocol: "2.9" }))
+  const after = await buildReport(backend)
+  assert.match(
+    capabilityObservation(after, "repository-helper-function-source-write").reason,
+    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.7`)
+  )
+
+  // And a base helper below the minimum still reports unsupported, not a silent pass.
+  backend.helperCapabilities.set(
+    BASE_HELPER,
+    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.6" })
+  )
+  const below = await buildReport(backend)
+  assert.equal(
+    capabilityObservation(below, "repository-helper-function-source-write").availability,
+    "unsupported"
+  )
+})
+
 test("the CAPABILITIES payload is parsed with pipe and percent unescaping", () => {
   const payload = parseHelperCapabilitiesPayload([
     "HELPER|Z_ORVANTA_MCP_DYNPRO_API",

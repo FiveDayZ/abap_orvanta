@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import test from "node:test"
+import { helperCapabilityRoutes } from "../src/capabilities.js"
 
 // Offline drift test for the CAPABILITIES self-description of the repository helper
 // body in scripts/bootstrap-sap-helper.ps1. It only parses the generator text: no
@@ -435,12 +436,12 @@ test("the DDIC table matches the service-side SapDdicOperation union", async () 
 })
 
 test("the DDIC since values are the service contract minimums", async () => {
-  const catalog = await readFile("src/capabilities.ts", "utf8")
-  const contractVersions = [
-    ...catalog.matchAll(
-      /helperCapability\("ddic-helper-[a-z-]+",\s*ddic(?:Api)?Helper,\s*"(\d+\.\d+)"/g
-    )
-  ].map((match) => String(match[1]))
+  // Read the routing the service actually uses instead of scraping helperCapability(...) literals
+  // out of the source text: those literals no longer carry a version at all, because the helper
+  // and the minimum protocol are now derived from the tool registry.
+  const contractVersions = helperCapabilityRoutes()
+    .filter((route) => route.id.startsWith("ddic-helper-"))
+    .map((route) => route.minimumVersion)
   assert.ok(contractVersions.length > 0, "ddic-helper-* catalog entries not parsed")
   assert.deepEqual(
     [...new Set(ddicOperations.map((operation) => operation.since))].sort(),

@@ -8,6 +8,7 @@ import type {
 } from "./backend.js"
 import { APPLICATION_LOG_HELPER } from "./application-logs.js"
 import { SCI_E2_HELPER, SCI_V2_HELPER } from "./sci-v2.js"
+import { registryEntry } from "./tool-registry.js"
 import { PRODUCT_VERSION } from "./version.js"
 
 type Availability = "available" | "unsupported" | "unknown"
@@ -77,6 +78,87 @@ const APPLICATION_LOG_HELPER_FUNCTION = APPLICATION_LOG_HELPER
 // pins as `helperFingerprint`, so the probe and the tool cannot drift apart.
 const SCI_V2_HELPER_FUNCTION = SCI_V2_HELPER
 const SCI_E2_HELPER_FUNCTION = SCI_E2_HELPER
+
+/**
+ * The helper-backed capability specifications, as `id -> covered tools`.
+ *
+ * Deliberately **without** a helper name or a minimum protocol: both are read from the tool
+ * registry, so this table cannot disagree with the routing it describes. Capability ids stay
+ * spelled out because they are a user-visible contract, not a derived label.
+ */
+export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly string[]]> = [
+  [
+    "repository-helper-dynpro-core",
+    [
+      "read_abap_screen",
+      "upsert_abap_screen",
+      "create_module_pool",
+      "delete_module_pool",
+      "read_transaction_code",
+      "create_transaction_code",
+      "delete_transaction_code"
+    ]
+  ],
+  ["repository-helper-report-transaction", ["create_report_transaction"]],
+  [
+    "repository-helper-function-interface",
+    [
+      "read_function_module_interface",
+      "create_function_module_with_interface",
+      "inspect_repository_assignment"
+    ]
+  ],
+  ["repository-helper-screen-patch", ["patch_abap_screen", "validate_dynpro_application"]],
+  ["repository-helper-gui-definition", ["read_abap_gui_definition", "patch_abap_gui_definition"]],
+  [
+    "repository-helper-ecc-fallbacks",
+    ["read_abap_message_class", "create_abap_message_class", "manage_text_elements"]
+  ],
+  ["repository-helper-message-update", ["update_abap_message_class"]],
+  ["repository-helper-message-delete", ["delete_abap_message_class"]],
+  ["repository-helper-function-interface-patch", ["patch_function_module_interface"]],
+  [
+    "repository-helper-enhancement-lifecycle",
+    [
+      "read_enhancement_implementation",
+      "create_enhancement_hook_implementation",
+      "create_new_badi_implementation",
+      "update_enhancement_hook_implementation",
+      "update_new_badi_implementation",
+      "manage_enhancement_implementation_state",
+      "delete_enhancement_implementation",
+      "manage_classic_badi_implementation"
+    ]
+  ],
+  ["repository-helper-function-source-write", ["write_function_module_source"]],
+  [
+    "ddic-helper-core",
+    [
+      "read_ddic_domain",
+      "upsert_ddic_domain",
+      "read_ddic_data_element",
+      "upsert_ddic_data_element",
+      "read_ddic_structure",
+      "upsert_ddic_structure",
+      "read_ddic_table_type",
+      "upsert_ddic_table_type"
+    ]
+  ],
+  [
+    "ddic-helper-transparent-table",
+    ["read_ddic_transparent_table", "create_ddic_transparent_table"]
+  ],
+  [
+    "ddic-helper-transparent-table-complex",
+    [
+      "append_ddic_transparent_table_fields",
+      "patch_ddic_transparent_table_fields",
+      "patch_ddic_transparent_table_settings",
+      "recover_ddic_table_conversion"
+    ]
+  ],
+  ["ddic-helper-controlled-delete", ["delete_ddic_object"]]
+]
 
 export async function buildCapabilityReport(
   backend: SapBackend,
@@ -174,10 +256,12 @@ export async function buildCapabilityReport(
     ddicHelper,
     DDIC_HELPER_FUNCTION
   )
-  // Only the repository helper carries capability verdicts that depend on a self-description
-  // (the ten `repository-helper-*` capabilities). The base helper's attestation is reported in
-  // `helperAttestation` only, so every existing probe observation keeps its exact shape and
-  // wording when the helpers are not upgraded yet.
+  // The base helper carries versioned capability verdicts too: the registry routes
+  // `write_function_module_source` (2.7) and `patch_function_module_interface` (2.0) through
+  // `Z_ORVANTA_MCP_EXECUTE`, because the shared repository body implements those opcodes and the
+  // native ADT lock/save path is what fails on w200. Its observation therefore needs the same
+  // self-description treatment as the repository and DDIC helpers.
+  const baseHelper = attachAttestation(baseHelperRead, baseSelfDescription)
   const repositoryHelper = attachAttestation(repositoryHelperRead, repositorySelfDescription)
   // The DDIC helper is probed for the same reason as the repository helper: a capability
   // verdict must follow the highest protocol the helper implements. Until the DDIC body is
@@ -227,6 +311,13 @@ export async function buildCapabilityReport(
   const targetSpecific = unknownTargetObservation(
     "Availability requires a real object or execution target; registration and discovery alone are not proof."
   )
+  // Helper and minimum protocol come from the registry, so the capability specifications below
+  // cannot drift away from the tool routing. Only the observation is supplied here.
+  const helperObservations: HelperObservations = {
+    [BASE_HELPER_FUNCTION]: baseHelper,
+    [REPOSITORY_HELPER_FUNCTION]: repositoryHelper,
+    [DDIC_HELPER_FUNCTION]: ddicApiHelper
+  }
   const capabilities: CapabilitySpec[] = [
     capability(
       "local-service",
@@ -284,79 +375,15 @@ export async function buildCapabilityReport(
     ),
     capability("adt-runtime-traces", "native-adt", ["analyze_abap_traces"], traces),
     capability("sap-base-helper", "sap-helper-fallback", ["sap_helper_status"], baseHelperRead),
-    helperCapability("repository-helper-dynpro-core", repositoryHelper, "1.1", [
-      "read_abap_screen",
-      "upsert_abap_screen",
-      "create_module_pool",
-      "delete_module_pool",
-      "read_transaction_code",
-      "create_transaction_code",
-      "delete_transaction_code"
-    ]),
-    helperCapability("repository-helper-report-transaction", repositoryHelper, "1.2", [
-      "create_report_transaction"
-    ]),
-    helperCapability("repository-helper-function-interface", repositoryHelper, "1.3", [
-      "read_function_module_interface",
-      "create_function_module_with_interface",
-      "inspect_repository_assignment"
-    ]),
-    helperCapability("repository-helper-screen-patch", repositoryHelper, "1.4", [
-      "patch_abap_screen",
-      "validate_dynpro_application"
-    ]),
-    helperCapability("repository-helper-gui-definition", repositoryHelper, "1.5", [
-      "read_abap_gui_definition",
-      "patch_abap_gui_definition"
-    ]),
-    helperCapability("repository-helper-ecc-fallbacks", repositoryHelper, "1.7", [
-      "read_abap_message_class",
-      "create_abap_message_class",
-      "manage_text_elements"
-    ]),
-    helperCapability("repository-helper-message-update", repositoryHelper, "1.8", [
-      "update_abap_message_class"
-    ]),
-    helperCapability("repository-helper-message-delete", repositoryHelper, "1.9", [
-      "delete_abap_message_class"
-    ]),
-    helperCapability("repository-helper-function-interface-patch", repositoryHelper, "2.0", [
-      "patch_function_module_interface"
-    ]),
-    helperCapability("repository-helper-enhancement-lifecycle", repositoryHelper, "2.6", [
-      "read_enhancement_implementation",
-      "create_enhancement_hook_implementation",
-      "create_new_badi_implementation",
-      "update_enhancement_hook_implementation",
-      "update_new_badi_implementation",
-      "manage_enhancement_implementation_state",
-      "delete_enhancement_implementation",
-      "manage_classic_badi_implementation"
-    ]),
-    helperCapability("repository-helper-function-source-write", repositoryHelper, "2.7", [
-      "write_function_module_source"
-    ]),
-    helperCapability("ddic-helper-core", ddicApiHelper, "1.2", [
-      "read_ddic_domain",
-      "upsert_ddic_domain",
-      "read_ddic_data_element",
-      "upsert_ddic_data_element",
-      "read_ddic_structure",
-      "upsert_ddic_structure",
-      "read_ddic_table_type",
-      "upsert_ddic_table_type"
-    ]),
-    helperCapability("ddic-helper-transparent-table", ddicApiHelper, "1.5", [
-      "read_ddic_transparent_table",
-      "create_ddic_transparent_table"
-    ]),
-    helperCapability("ddic-helper-transparent-table-complex", ddicApiHelper, "1.7", [
-      "append_ddic_transparent_table_fields",
-      "patch_ddic_transparent_table_fields",
-      "patch_ddic_transparent_table_settings",
-      "recover_ddic_table_conversion"
-    ]),
-    helperCapability("ddic-helper-controlled-delete", ddicApiHelper, "1.6", ["delete_ddic_object"]),
+    ...helperCapabilityRoutes().map((route) => {
+      const helper = helperObservations[route.helper]
+      if (!helper) {
+        throw new Error(
+          `Capability ${route.id} routes through ${route.helper}, which has no capability observation`
+        )
+      }
+      return helperCapability(route.id, helper, route.minimumVersion, route.toolNames)
+    }),
     capability(
       "adt-object-read",
       "target-specific",
@@ -681,6 +708,84 @@ function capability(
   observation: CapabilityObservation
 ): CapabilitySpec {
   return { id, implementedLocally: true, route, toolNames, observation }
+}
+
+/**
+ * Helper observations keyed by the SAP function module the tool registry routes to.
+ *
+ * The registry - not this file - decides which helper a tool calls and which minimum protocol
+ * that tool needs. This map only says how each helper was observed. Keeping the two apart is
+ * what makes drift impossible to ship: a capability can no longer name a helper or a minimum
+ * version that contradicts the registry, which is exactly how
+ * `repository-helper-function-source-write` once reported a deployed capability as
+ * `unsupported` (judged against the repository helper at 2.6 while the registry had already
+ * moved the tool to the base helper at 2.7).
+ *
+ * Only the three helpers with versioned capability specifications appear here. The maintenance,
+ * operational-log, application-log and SCI helpers are reported through `helperAttestation` but
+ * have no capability spec that follows a protocol version, so they have nothing to key.
+ */
+type HelperObservations = Record<string, VersionedHelperObservation | undefined>
+
+/** One resolved capability route: which helper the registry sends these tools to, at which minimum. */
+export interface HelperCapabilityRoute {
+  id: string
+  helper: string
+  minimumVersion: string
+  toolNames: string[]
+}
+
+/**
+ * Resolve a helper capability against the tool registry.
+ *
+ * Throws instead of guessing: an unregistered tool, a tool the registry does not route through a
+ * versioned helper, or a capability whose tools disagree about helper or minimum protocol are all
+ * programming errors, and a capability report that silently papers over them is precisely the
+ * failure this replaced.
+ */
+export function resolveHelperCapabilityRoute(
+  id: string,
+  toolNames: readonly string[]
+): HelperCapabilityRoute {
+  const routed = toolNames.map((name) => {
+    const entry = registryEntry(name)
+    if (!entry) throw new Error(`Capability ${id} names unregistered tool ${name}`)
+    if (!entry.sapHelper || !entry.minHelperProtocol) {
+      throw new Error(
+        `Capability ${id} names tool ${name}, which the registry does not route through a versioned SAP helper`
+      )
+    }
+    return { name, helper: entry.sapHelper, minimum: entry.minHelperProtocol }
+  })
+  const [first] = routed
+  if (!first) throw new Error(`Capability ${id} names no tools`)
+  for (const item of routed) {
+    if (item.helper !== first.helper || item.minimum !== first.minimum) {
+      throw new Error(
+        `Capability ${id} mixes helper routes: ${item.name} needs ${item.helper} ${item.minimum} ` +
+          `while ${first.name} needs ${first.helper} ${first.minimum}`
+      )
+    }
+  }
+  return {
+    id,
+    helper: first.helper,
+    minimumVersion: first.minimum,
+    toolNames: [...toolNames]
+  }
+}
+
+/**
+ * Every helper capability resolved against the registry.
+ *
+ * This is the whole drift gate, and it is pure: no backend, no observation, no SAP access. `npm
+ * run matrix:check` calls it, so a capability that disagrees with the registry fails the build
+ * check instead of surfacing as a wrong verdict in a live report.
+ */
+export function helperCapabilityRoutes(): HelperCapabilityRoute[] {
+  return HELPER_CAPABILITY_TOOLS.map(([id, toolNames]) =>
+    resolveHelperCapabilityRoute(id, toolNames)
+  )
 }
 
 function helperCapability(
