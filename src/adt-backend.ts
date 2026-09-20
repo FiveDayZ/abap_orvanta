@@ -2126,6 +2126,19 @@ function rowAt(rows: SapStructureRow[], index: number): SapStructureRow {
  * `EV_RESULT`, answers `ev_status = 'E'`/`ev_code = 'INVALID_ACTION'` and is read back as an empty
  * string, which degrades to `operation-scoped` exactly like the other JSON helpers.
  */
+/**
+ * Operation codes an un-upgraded helper uses to refuse the `CAPABILITIES` opcode.
+ *
+ * `OPERATION_NOT_SUPPORTED` is the documented contract, but it is not the only one. The SCI
+ * helpers reject an unknown action with `INVALID_ACTION` before any business validation, and an
+ * older `Z_ORVANTA_LOG_READ` answers `READ_ONLY_UNSUPPORTED`. Every one of them means "this
+ * deployed helper does not implement the opcode", never "the helper is missing", so they share
+ * one degradation to `operation-scoped`. Classifying `INVALID_ACTION` as an unreadable reply
+ * instead would attach a misleading "reported status E" note to a perfectly normal old helper,
+ * and a fault carrying it would be reported as `absent`, i.e. as a helper that is not deployed.
+ */
+const UNIMPLEMENTED_OPCODE_CODE = /NOT_SUPPORTED|UNSUPPORTED|UNKNOWN_OPERATION|INVALID_ACTION/i
+
 const HELPER_CAPABILITIES_CHANNELS: Record<
   string,
   { reply: "xml-rows"; soapAction: string; envelope: () => string } | { reply: "json-envelope" }
@@ -2292,7 +2305,7 @@ export function decodeJsonHelperCapabilitiesReply(
   const envelope = document as Record<string, unknown>
   const status = typeof envelope.status === "string" ? envelope.status.trim().toUpperCase() : ""
   const code = typeof envelope.code === "string" ? envelope.code.trim().toUpperCase() : ""
-  if (status === "E" || /NOT_SUPPORTED|UNSUPPORTED|UNKNOWN_OPERATION/.test(code)) {
+  if (status === "E" || UNIMPLEMENTED_OPCODE_CODE.test(code)) {
     return { kind: "unsupported" }
   }
   if (status !== "S" || code !== "CAPABILITIES") {
@@ -2386,7 +2399,7 @@ function jsonHelperCapabilitiesAttestation(
     const fault = scrubHelperDetail(
       `${response.fault.name || response.fault.code}: ${response.fault.message}`
     )
-    return /NOT_SUPPORTED|UNSUPPORTED|UNKNOWN_OPERATION/i.test(fault)
+    return UNIMPLEMENTED_OPCODE_CODE.test(fault)
       ? emptyHelperCapabilities(probed, observedAt, "operation-scoped")
       : emptyHelperCapabilities(probed, observedAt, "absent", fault)
   }

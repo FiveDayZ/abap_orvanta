@@ -11,6 +11,8 @@
 
 证据文件：`.doc/helper-capabilities-evidence/capability-report-attestation-20260918T072557Z.json`（对 `w200` 的真实只读 `get_capability_report`，包版本 0.45.0）。该报告共 55 项能力：`available 22 / unsupported 2 / unknown 31`（设计前基线为 54 项、`13 / 1 / 40`）。
 
+> 该证据文件的 `helperAttestation` 只有 **6 条**（当时只探询 6 个助手）。SCI V2／E2 的探询接线是随后加入的，因此下表中 SCI 两行**不是**该文件的实测值，而是由"载体未部署"这一事实推出的当前应有状态；待 SCI 载体部署后须以新的真实报告替换。
+
 | 助手                                   | 自述状态             | 协议范围      | 操作码数 | `SOURCE\|HASH`（源指纹）                                           | 包 / 传输              |
 | -------------------------------------- | -------------------- | ------------- | -------- | ------------------------------------------------------------------ | ---------------------- |
 | `Z_ORVANTA_MCP_EXECUTE`（基础助手）    | `self-described`     | 1.1 – **2.7** | 37       | `fbf26be00f96c60e0bdf583248e0a00ae02bbb6c0482ab09698c940dc00c0433` | `ZABAP` / `GR2K923472` |
@@ -30,7 +32,7 @@
 - 维护／运维／应用日志助手的自述仅作**记录**：它们的读工具受本地审批文件门控，能力报告不执行那次业务读取，因此其能力判定现状不变。
 - SCI V2／E2 的载体（新增导出标量 `EV_RESULT`、类型 `STRINGVAL`、值为 R3 JSON 信封）生成器已实现（`scripts/sci-carrier-source.mjs`），**尚未部署**；部署后必须重钉 `src/sci-v2.ts` 的指纹。
 
-**仍未完成**：SCI V2／E2 载体部署与指纹重钉（D2-3）；DDIC 助手 `DTEL` 分支补 `DATATYPE`/`LENG`（D2-2，用于修掉无域数据元素的服务侧回退依赖）；R6 余下未决项的最终收口。
+**仍未完成**：SCI V2／E2 载体部署与指纹重钉（D2-3）；DDIC 助手 `DTEL` 分支补 `DATATYPE`/`LENG`（D2-2，用于修掉无域数据元素的服务侧回退依赖）。R6 的四项未决问题已于 2026-09-20 全部结案，见 §3.4 后的处置表。
 
 ---
 
@@ -217,12 +219,16 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 1. 在两个助手的 `EXPORTING` 中新增 `EV_RESULT TYPE STRINGVAL`——否则分支引用的字段不存在，激活会失败；本平台原生 ADT 函模块接口写入不可用，须人工完成。
 2. 部署后重钉 `src/sci-v2.ts` 的 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT`（接口参数变化与体变化都会改变该值）。
 
-**R6 未决问题（不得当作已定值使用）**
+**R6 未决问题的处置（2026-09-20 收口）**
 
-1. **`since` 取值**：R6 取 `1.0`，理由是「该载体由本轮引入，此前不存在可证明的历史协议版本；R4 已把 JSON 信封助手的 `since` 定义为信封自身修订号」。若改为与 SCI 规则档案版本对齐（`_V2` 2.0／`_E2` 3.0），则 MIN／MAX 变成 2.0–3.0 且两个助手区间不同，并与 §1 的根因（助手版本 ≠ 协议版本）冲突。**未决，需用户裁定。**
-2. **`readOnly:true`**：R3 信封固定带该字段。SCI 的 `RUN` 只在内存中执行匿名检查（不保存变体、对象集或结果），按只读发布是否正确，或应另加 `SCOPE|SCI_RUN|…` 表示需单独批准，**未决**。
-3. **`RUNTIME|TIME` 行**：本轮按批准清单只发布 `RUNTIME|HOST`（与 `Z_ORVANTA_LOG_READ` 一致）；`maint`／`ops`／repository 体另含 `RUNTIME|TIME`。是否补齐**未决**（不影响解析）。
-4. **覆盖面**：本轮两个 SCI 助手都新增载体；若只部署 `_V2`，`_E2` 会继续停在 `operation-scoped`。**未决**。
+原四项"未决"中有两项其实**已由生成器实现并写明理由**，只是本文件未同步；另两项按工程判断结案。逐项结论如下（部署前用户仍可否决，部署后即为对外契约）：
+
+| #   | 原问题                                                             | 结论                                | 依据                                                                                                                                                                                                                                                                         |
+| --- | ------------------------------------------------------------------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `since` 取 `1.0` 还是对齐 SCI 规则档案版本（`_V2` 2.0／`_E2` 3.0） | **已定：取 `1.0`**                  | `scripts/sci-carrier-source.mjs:105-111` 已写明：`ev_version` 是该助手的 SCI **规则档案**版本，取它正是本协议要消除的"助手版本 ≠ 协议版本"混淆；两个操作码都从引入本载体的修订 `1.0` 起算。已由 `test/sci-carrier-source.test.ts` 冻结                                       |
+| 2   | SCI `RUN` 按只读发布是否正确，是否需加 `SCOPE\|SCI_RUN`            | **已定：按只读发布，不加 SCOPE 行** | `scripts/sci-carrier-source.mjs:113-115` 已写明：`PRECHECK` 在规则适用性判定后即停止；`RUN` 执行的是匿名 SCI 检查，**不保存变体、对象集或结果**。信封内的 `readOnly:true` 描述的是 CAPABILITIES 应答本身（无副作用的自述），业务操作的读写语义由 `OPERATION\|…\|R\|W` 行表达 |
+| 3   | 是否补齐 `RUNTIME\|TIME` 行                                        | **已定：不补齐**                    | 该行不影响解析（`parseHelperCapabilitiesPayload` 对未知行前向兼容）；批准清单只要求 `RUNTIME\|HOST`；补齐会使两个已冻结的载体摘要失效，收益仅为时间戳可追溯性，不值得在部署前重置基线                                                                                        |
+| 4   | 只部署 `_V2` 时 `_E2` 停在 `operation-scoped` 怎么办               | **已定：两者一并部署**              | 报告对**每个助手独立**判定（§6「新旧助手混布」缓解措施），部分部署不会产生错误结论，只会让 `_E2` 停在 `operation-scoped`。D2-3 按两者一并部署执行；若因故只部署一个，报告中 `_E2` 显示 `operation-scoped` 即为正确、非缺陷，禁止据此改判定逻辑                               |
 
 ---
 
@@ -256,7 +262,8 @@ export interface SapBackend {
 - **R6 扩展（2026-09-18）**：并非所有老助手都用 `OPERATION_NOT_SUPPORTED` 拒绝未知操作码。`Z_ORVANTA_MCP_SCI_V2`／`_E2` 在任何业务校验之前就设置 `ev_code = 'INVALID_ACTION'` 并 `RETURN`，`Z_ORVANTA_LOG_READ` 的老版本同理返回 `READ_ONLY_UNSUPPORTED`。因此「老助手拒绝未知操作码」的降级规则必须覆盖 `OPERATION_NOT_SUPPORTED`、`INVALID_ACTION`、`READ_ONLY_UNSUPPORTED` 三类码：
   - JSON 信封路径已自然覆盖——老助手不写 `EV_RESULT`，空值即 `operation-scoped`；
   - XML／`EV_*` 路径与 `src/sci-v2.ts` 的 `formatScopedSciResult` 必须把 `INVALID_ACTION` 归入「未实现该操作码」，而不是当作执行失败抛出；
-  - `src/adt-backend.ts` 的 `decodeJsonHelperCapabilitiesReply` 目前只识别 `NOT_SUPPORTED`／`UNSUPPORTED`／`UNKNOWN_OPERATION`，属**待接线项**（本轮未改）。
+  - `src/adt-backend.ts` 的 `decodeJsonHelperCapabilitiesReply` 与 JSON 助手的 SOAP 故障分支**已接线**（2026-09-20）：两者共用 `UNIMPLEMENTED_OPCODE_CODE`，同时识别 `OPERATION_NOT_SUPPORTED`／`NOT_SUPPORTED`／`UNSUPPORTED`／`UNKNOWN_OPERATION`／`INVALID_ACTION`，统一降级为 `operation-scoped`。此前 `INVALID_ACTION` 在故障分支会被判成 `absent`（把"已部署但未实现该操作码"误报为"未部署"）；
+  - **仍未接线**：`src/sci-v2.ts` 的 `formatScopedSciResult` 目前对 `EV_STATUS === 'E'` 一律 `throw`（`SCI V2 helper failed: <code>`）。这是 `run_sci_analysis` 的**业务执行**路径而非能力探询路径，回执文案尚不能区分"操作码未实现"与"执行失败"，属已知待办（不阻塞 D1）。
 
 ### 4.2 能力判定
 

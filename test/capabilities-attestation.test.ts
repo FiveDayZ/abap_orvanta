@@ -2,7 +2,11 @@ import assert from "node:assert/strict"
 import { createServer } from "node:http"
 import type { AddressInfo } from "node:net"
 import test from "node:test"
-import { AdtBackend, parseHelperCapabilitiesPayload } from "../src/adt-backend.js"
+import {
+  AdtBackend,
+  decodeJsonHelperCapabilitiesReply,
+  parseHelperCapabilitiesPayload
+} from "../src/adt-backend.js"
 import type { SapHelperCapabilities } from "../src/backend.js"
 import { buildCapabilityReport } from "../src/capabilities.js"
 import { parseConnections } from "../src/config.js"
@@ -265,6 +269,39 @@ test("a capability follows the helper the registry routes its tool to, not a sta
   assert.equal(
     capabilityObservation(below, "repository-helper-function-source-write").availability,
     "unsupported"
+  )
+})
+
+test("every refusal code an un-upgraded helper uses degrades to operation-scoped", () => {
+  // The documented refusal is OPERATION_NOT_SUPPORTED, but the SCI helpers reject an unknown
+  // action with INVALID_ACTION before any business validation and an older Z_ORVANTA_LOG_READ
+  // answers READ_ONLY_UNSUPPORTED. All of them mean "this deployed helper does not implement the
+  // opcode"; reading any of them as an unreadable reply would attach a misleading detail to a
+  // perfectly normal old helper.
+  for (const code of [
+    "OPERATION_NOT_SUPPORTED",
+    "NOT_SUPPORTED",
+    "UNSUPPORTED",
+    "UNKNOWN_OPERATION",
+    "INVALID_ACTION",
+    "READ_ONLY_UNSUPPORTED"
+  ]) {
+    assert.deepEqual(
+      decodeJsonHelperCapabilitiesReply(
+        JSON.stringify({ status: "S", code, message: "refused" }),
+        OPERATIONAL_LOG_HELPER
+      ),
+      { kind: "unsupported" },
+      `${code} must degrade to operation-scoped`
+    )
+  }
+  // Negative control: the rule must stay a refusal-code list, not "any envelope is acceptable".
+  assert.deepEqual(
+    decodeJsonHelperCapabilitiesReply(
+      JSON.stringify({ status: "S", code: "CAPABILITIES" }),
+      OPERATIONAL_LOG_HELPER
+    ),
+    { kind: "unusable", detail: "CAPABILITIES reply carried no payload row array" }
   )
 })
 
