@@ -292,7 +292,7 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 使用 orvanta MCP，先调用 get_connected_systems，然后在 w200 搜索 ZWMSTCTD01_FRM，并读取第1至20行。只读，不修改SAP对象。
 ```
 
-当前源码静态注册117个工具，具体已验范围见上方当前基线。`get_capability_report`对指定连接执行有界只读探测，分别报告本地实现、已验证的原生ADT、SAP助手后备、不支持端点和无法在无目标条件下确认的能力；工具已注册或Discovery已公布不会被直接当作可用证明。`execute_data_query`只接受单条只读 `SELECT`，强制 `internal`模式、`rowRange`和1000行上限，不表示W200原生自由查询已恢复；`read_abap_table`是独立的结构化单表入口，最多500行。ATC不自动修复，ABAP Unit不自动激活，Dump和Trace只读取已有诊断数据。`abap_download`可将对象或包递归导出到显式绝对路径，默认拒绝覆盖现有目标；`adt_discovery_export`将四个Markdown文件写入便携目录的 `exports`。`manage_transport_requests`保留原工具的四个查询动作，用于读取用户传输、明细、对象清单和差异，不会创建、修改、删除或释放传输。`cleanup_transport_entries`是独立写工具，只允许从一个可修改任务中移除调用方明确列出的1至20条CTS对象记录；要求完整清单指纹、位置、操作ID和确认值，写后回读证明目标消失且其他条目未变化，不删除仓库对象，也不删除或释放请求。
+当前源码静态注册127个工具，具体已验范围见上方当前基线。`get_capability_report`对指定连接执行有界只读探测，分别报告本地实现、已验证的原生ADT、SAP助手后备、不支持端点和无法在无目标条件下确认的能力；工具已注册或Discovery已公布不会被直接当作可用证明。`execute_data_query`只接受单条只读 `SELECT`，强制 `internal`模式、`rowRange`和1000行上限，不表示W200原生自由查询已恢复；`read_abap_table`是独立的结构化单表入口，最多500行。ATC不自动修复，ABAP Unit不自动激活，Dump和Trace只读取已有诊断数据。`abap_download`可将对象或包递归导出到显式绝对路径，默认拒绝覆盖现有目标；`adt_discovery_export`将四个Markdown文件写入便携目录的 `exports`。`manage_transport_requests`保留原工具的四个查询动作，用于读取用户传输、明细、对象清单和差异，不会创建、修改、删除或释放传输。`cleanup_transport_entries`是独立写工具，只允许从一个可修改任务中移除调用方明确列出的1至20条CTS对象记录；要求完整清单指纹、位置、操作ID和确认值，写后回读证明目标消失且其他条目未变化，不删除仓库对象，也不删除或释放请求。
 
 ### 功能演进记录
 
