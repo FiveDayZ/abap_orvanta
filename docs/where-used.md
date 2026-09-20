@@ -187,3 +187,75 @@ Local regression includes a real SDK request to a stalled loopback HTTP server
 and checks that the transport closes its local connection after timeout.
 This does not prove that SAP work has been cancelled. Candidate 0.36.24 still
 requires deployment and a known-caller query to identify the live stalled stage.
+
+## w200 Live Findings (2026-09-20)
+
+Read-only forensics on `w200` (SAP ECC, SAP_BASIS 7.31 SP04, client 200) against
+service build 0.46.0. Evidence: `.doc/orvanta-where-used-endpoint-2026-09-20T02-13-01.989Z.json`
+and the probe's own record under `.cache/d4-1-evidence/`.
+
+### Endpoint status
+
+| Collection                                   | Advertised |
+| -------------------------------------------- | ---------- |
+| `informationsystem/whereused`                | yes        |
+| `informationsystem/fullnamemapping`          | yes        |
+| `informationsystem/metadata`                 | yes        |
+| `informationsystem/search`                   | yes        |
+| `informationsystem/usageReferences` (modern) | **no**     |
+
+The platform does expose a where-used route. Because the modern endpoint is absent
+while all three RIS endpoints are present, the service selects the legacy RIS engine,
+and the live report confirms `engine: ADT_RIS_WHEREUSED`.
+
+This supersedes the 2026-09-09 record
+(`.doc/where-used-acceptance-2026-09-09T02-43-56.078Z.json`), which exercised the
+**modern** endpoint and reported `unsupported-endpoint (HTTP 404)`. That evidence
+describes a route the service no longer takes and must not be used to describe the
+current state.
+
+### Observed failure
+
+The RIS sequence completes discovery, mapping and metadata with HTTP 200, then the
+final `WHERE_USED` request returns **HTTP 200 with 0 bytes** and a non-XML content
+type:
+
+| Stage        | HTTP    | Bytes |
+| ------------ | ------- | ----- |
+| `discovery`  | 200     | 9418  |
+| `mapping`    | 200     | 411   |
+| `metadata`   | 200     | 3481  |
+| `references` | **200** | **0** |
+
+`xmlRoot()` in `src/legacy-where-used.ts` rejects the response at the content-type
+check, which it only reaches after the status check has passed, so this is an
+unparseable 2xx content-handler response rather than a 404, an authorization failure
+or a timeout. The conclusion is "needs configuration", not "not advertised".
+
+The body is 0 bytes, so its content cannot be inspected. Whether the cause is ADT
+RIS/ICF configuration, an unsupported relationship type for the probed object, or a
+7.31 SP04 content-handler limitation requires Basis-side inspection.
+
+### Correction: the fabricated HTTP 500 is not limited to timeouts
+
+The 0.36.24 note above states that timeouts do not receive a fabricated HTTP 500.
+That remains true, but it is narrower than it reads. A parser failure on a 2xx
+response does receive one: the live failure was reported as
+`where-used capability parser-or-content-type (HTTP 500)`, while the request trace
+measured HTTP 200 with 0 bytes. `fromError()` in `abap-adt-api`
+(`build/AdtException.js`) hardcodes `AdtErrorException(500, ...)` when normalizing a
+message-only `Error`, and `capabilityFailure()` in `src/adt-backend.ts` recovers a
+real status only when the message contains `status code <n>` or `error <n>`.
+`expected XML` contains neither, so the synthetic 500 survives. Diagnosing this
+failure from the message alone would pursue a server error that never occurred; the
+request trace is the authoritative record.
+
+### Positive case
+
+**None established.** No `w200` query has produced a real semantic reference. The
+probe aborts on the first failing query, so the typed-name path and the five
+invalid-input guards were not exercised in this run either.
+
+Further work is blocked on a platform answer. Re-run the probe after any Basis
+change, keeping evidence in `.cache` until a conclusion is confirmed by a successful
+request rather than by a failing one.
