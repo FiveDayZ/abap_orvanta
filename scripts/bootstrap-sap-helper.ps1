@@ -901,9 +901,14 @@ function New-DdicFunctionSource {
     )
     foreach ($ddicCapabilityOperation in $ddicCapabilityOperations) {
         $ddicCapabilityParts = $ddicCapabilityOperation -split "\|"
+        # 行宽（R-16 遗留）：真实运行时 $ddicCapabilityMaxVersion = "1.10"，最长操作码
+        # RESUME_TRANSPARENT_TABLE_ACTIVATION（36 字符）会把单行推到 74 列，触发 New-InstallProgram
+        # 的 72 列守卫，使 DDIC 安装程序无法生成。拆成两行、把分隔符并入字面量后，生成的行内容与
+        # 原 "SEPARATED BY '|'" 版本逐字节相同（OPERATION|<op>|<ver>|<access>），最长行仅 66 列。
         $ddicCapabilityBranchLines += @(
-            "      CONCATENATE 'OPERATION|$($ddicCapabilityParts[0])' '$($ddicCapabilityParts[1])|$($ddicCapabilityParts[2])'",
-            "        INTO ls_source-line SEPARATED BY '|'.",
+            "      CONCATENATE 'OPERATION|$($ddicCapabilityParts[0])'",
+            "        '|$($ddicCapabilityParts[1])|$($ddicCapabilityParts[2])'",
+            "        INTO ls_source-line.",
             "      APPEND ls_source TO it_source."
         )
     }
