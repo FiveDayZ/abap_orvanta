@@ -100,6 +100,12 @@ const ddicFixedValue = z.object({
 // (SHLPNAME, SHPOSITION, FLPOSITION), which SAP derives.
 const ddicSearchHelpRow = z.record(z.string())
 const ddicSearchHelpHeader = z.record(z.string())
+// Lock object child rows. Each entry is a property bag for one DD26V row (a table the lock object
+// locks, plus the lock mode) or one DD27P row (a field and its lock mode). The service keeps the
+// array order as the row order and never sends the key columns (VIEWNAME, TABPOS, OBJPOS,
+// FLPOSITION), which SAP derives.
+const ddicLockObjectRow = z.record(z.string())
+const ddicLockObjectHeader = z.record(z.string())
 const ddicStructureField = z.object({ name: z.string(), dataElement: z.string() })
 const ddicTableField = z.object({
   name: z.string(),
@@ -749,6 +755,27 @@ const toolContractsBase = {
       connectionId: z.string()
     }
   },
+  read_lock_object: {
+    description:
+      "Read one active SAP Dictionary lock object (ENQU): header attributes (DD25V) plus locked tables (lockTables, DD26V) and locked fields (lockFields, DD27P). This is the lock object DEFINITION in the ABAP Dictionary, not an SM12 runtime lock entry - use search_sap_locks for the locks currently held in the system. The generated ENQUEUE_*/DEQUEUE_* function modules are not read here; read them with read_function_module_interface. Requires a DDIC helper that publishes READ_LOCK_OBJECT (protocol 1.9 or later).",
+    inputSchema: { objectName: z.string(), connectionId: z.string() }
+  },
+  upsert_lock_object: {
+    description:
+      "Create or fully replace one Z* or Y* lock object through the installed DDIC helper. This defines a lock object in the ABAP Dictionary; it does not lock anything at runtime. description is limited to 60 characters, the same as every other DDIC object. Existing objects require the version returned by read_lock_object. lockTables and lockFields are replaced as complete sets: rows omitted from the request are deleted, so send every row that must survive. Passing empty arrays therefore strips an existing definition down to its header. SAP-derived or server-controlled header properties (LOCKOBJECT, ACTFLAG, AS4USER, AS4DATE, AS4TIME, DDLANGUAGE) are rejected. Generating the ENQUEUE_*/DEQUEUE_* function modules is a separate, higher-risk step and is not performed by this tool. Requires a helper that publishes UPSERT_LOCK_OBJECT (protocol 1.9 or later).",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      description: z.string(),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      expectedVersion: z.string().optional(),
+      header: ddicLockObjectHeader.optional(),
+      lockTables: z.array(ddicLockObjectRow).optional(),
+      lockFields: z.array(ddicLockObjectRow).optional(),
+      connectionId: z.string()
+    }
+  },
   read_ddic_data_element: {
     description:
       "Read one active SAP Dictionary data element, including labels, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",
@@ -898,10 +925,10 @@ const toolContractsBase = {
   },
   delete_ddic_object: {
     description:
-      "Permanently delete one existing Z* or Y* domain, data element, structure, table type, transparent table, or search help after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent-table deletion additionally requires data-loss acknowledgement. SAP references block deletion; automatic retry/rollback, SAP lock clearing, and transport release are not supported. Deleting a search help requires a helper that publishes DELETE_SEARCH_HELP (protocol 1.8 or later); older helpers reject it with OPERATION_NOT_SUPPORTED.",
+      "Permanently delete one existing Z* or Y* domain, data element, structure, table type, transparent table, search help, or lock object after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent-table deletion additionally requires data-loss acknowledgement. SAP references block deletion; automatic retry/rollback, SAP lock clearing, and transport release are not supported. Deleting a search help requires a helper that publishes DELETE_SEARCH_HELP (protocol 1.8 or later); deleting a lock object requires DELETE_LOCK_OBJECT (protocol 1.9 or later). Older helpers reject the operation with OPERATION_NOT_SUPPORTED.",
     inputSchema: {
       ...writeOperationInput,
-      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP", "TABL", "SHLP"]),
+      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP", "TABL", "SHLP", "ENQU"]),
       objectName: z.string(),
       expectedVersion: z.string(),
       packageName: z.string(),

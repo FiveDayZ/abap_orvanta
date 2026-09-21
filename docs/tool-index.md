@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：129
-- 只读工具：76
+- 工具总数：131
+- 只读工具：77
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,14 +10,14 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 76 |
+| profile: readonly | 77 |
 | profile: platform | 12 |
-| profile: dev | 113 |
+| profile: dev | 115 |
 | profile: config | 28 |
 | profile: ops | 35 |
-| profile: full | 129 |
+| profile: full | 131 |
 | 分组: data | 5 |
-| 分组: ddic | 18 |
+| 分组: ddic | 20 |
 | 分组: debug | 6 |
 | 分组: enhancement | 22 |
 | 分组: form | 4 |
@@ -126,6 +126,7 @@
 | `read_enhancement_implementation` | enhancement | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `read_failed_update` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_MAINT_READ |
 | `read_function_module_interface` | function | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.3) |
+| `read_lock_object` | ddic | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.9) |
 | `read_report_parameters` | data | dev, config, ops | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API |
 | `read_report_variants` | data | dev, config, ops | 只读 | target-specific | — |
 | `read_search_help` | ddic | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.8) |
@@ -159,6 +160,7 @@
 | `upsert_ddic_domain` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.2) |
 | `upsert_ddic_structure` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.2) |
 | `upsert_ddic_table_type` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.2) |
+| `upsert_lock_object` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.9) |
 | `upsert_search_help` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.8) |
 | `validate_dynpro_application` | ui | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.4) |
 | `write_function_module_source` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥2.7) |

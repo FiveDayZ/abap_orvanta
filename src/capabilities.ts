@@ -163,7 +163,12 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // into ddic-helper-core. Without this entry the coverage assertion in tools.test.ts fails: those
   // two tools are routable but belonged to no capability, which is exactly the drift the assertion
   // exists to catch.
-  ["ddic-helper-search-help", ["read_search_help", "upsert_search_help"]]
+  ["ddic-helper-search-help", ["read_search_help", "upsert_search_help"]],
+  // Lock objects are a third DDIC object kind with their own helper operations (READ_LOCK_OBJECT /
+  // UPSERT_LOCK_OBJECT / DELETE_LOCK_OBJECT), so they get their own capability rather than being
+  // folded into ddic-helper-core. Deletion goes through delete_ddic_object, so only the read and
+  // upsert tools are listed here.
+  ["ddic-helper-lock-object", ["read_lock_object", "upsert_lock_object"]]
 ]
 
 export async function buildCapabilityReport(

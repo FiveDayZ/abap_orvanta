@@ -302,6 +302,9 @@ export type SapDdicOperation =
   | "READ_SEARCH_HELP"
   | "UPSERT_SEARCH_HELP"
   | "DELETE_SEARCH_HELP"
+  | "READ_LOCK_OBJECT"
+  | "UPSERT_LOCK_OBJECT"
+  | "DELETE_LOCK_OBJECT"
 
 export interface SapDdicRequest {
   operation: SapDdicOperation
@@ -316,6 +319,8 @@ export interface SapDdicRequest {
   selectionMethods?: SapStructureRow[] | undefined
   parameters?: SapStructureRow[] | undefined
   fieldAssignments?: SapStructureRow[] | undefined
+  lockTables?: SapStructureRow[] | undefined
+  lockFields?: SapStructureRow[] | undefined
 }
 
 export interface SapDdicResult extends SapHelperResult {
@@ -329,6 +334,8 @@ export interface SapDdicResult extends SapHelperResult {
   selectionMethods: SapStructureRow[]
   parameters: SapStructureRow[]
   fieldAssignments: SapStructureRow[]
+  lockTables: SapStructureRow[]
+  lockFields: SapStructureRow[]
 }
 
 export interface ExportFileInfo {

@@ -452,11 +452,11 @@ test("the DDIC since values are the service contract minimums", async () => {
   for (const operation of ddicOperations) {
     groupSizes[operation.since] = (groupSizes[operation.since] ?? 0) + 1
   }
-  assert.deepEqual(groupSizes, { "1.2": 8, "1.5": 2, "1.6": 5, "1.7": 4, "1.8": 3 })
+  assert.deepEqual(groupSizes, { "1.2": 8, "1.5": 2, "1.6": 5, "1.7": 4, "1.8": 3, "1.9": 3 })
 
   const versions = [...new Set(ddicOperations.map((operation) => operation.since))].sort()
   assert.equal(versions[0], "1.2", "PROTOCOL|MIN must derive to 1.2")
-  assert.equal(versions[versions.length - 1], "1.8", "PROTOCOL|MAX must derive to 1.8")
+  assert.equal(versions[versions.length - 1], "1.9", "PROTOCOL|MAX must derive to 1.9")
 })
 
 test("the DDIC branch reuses the repository hash slots and names its own helper", () => {

@@ -191,7 +191,9 @@ function mockDdicResult(
     fields: [],
     selectionMethods: [],
     parameters: [],
-    fieldAssignments: []
+    fieldAssignments: [],
+    lockTables: [],
+    lockFields: []
   }
 }
 

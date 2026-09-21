@@ -215,6 +215,8 @@ const ROWS: readonly ToolRow[] = [
   ["delete_ddic_object", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.6"],
   ["read_search_help", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.8"],
   ["upsert_search_help", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.8"],
+  ["read_lock_object", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.9"],
+  ["upsert_lock_object", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.9"],
   ["search_abap_objects", "source", DEV, "R", "native-adt", null, null],
   ["get_abap_object_info", "source", DEV, "R", "target-specific", null, null],
   ["get_abap_object_lines", "source", DEV, "R", "target-specific", null, null],

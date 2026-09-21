@@ -547,6 +547,12 @@ interface UpsertSearchHelpInput extends UpsertDdicInput {
   fieldAssignments?: Array<Record<string, string>> | undefined
 }
 
+interface UpsertLockObjectInput extends UpsertDdicInput {
+  header?: Record<string, string> | undefined
+  lockTables?: Array<Record<string, string>> | undefined
+  lockFields?: Array<Record<string, string>> | undefined
+}
+
 interface CreateTransparentTableInput extends Omit<UpsertDdicInput, "expectedVersion"> {
   deliveryClass: "A" | "C" | "L" | "G" | "E" | "S" | "W"
   dataClass: "APPL0" | "APPL1" | "APPL2"
@@ -623,7 +629,7 @@ interface UpsertTableTypeInput extends UpsertDdicInput {
 }
 
 interface DeleteDdicInput extends ReadDdicInput {
-  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP" | "TABL" | "SHLP"
+  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP" | "TABL" | "SHLP" | "ENQU"
   expectedVersion: string
   packageName: string
   transportNumber: string
@@ -3062,10 +3068,46 @@ export class ToolService {
     )
   }
 
+  async readLockObject(input: ReadDdicInput): Promise<string> {
+    return this.readDdic(input, "READ_LOCK_OBJECT", "lockObject")
+  }
+
+  async upsertLockObject(input: UpsertLockObjectInput): Promise<string> {
+    const objectName = customerDdicName(input.objectName)
+    validateDescription(input.description)
+    const header = lockObjectHeader(input.header)
+    const lockTables = lockObjectRows(input.lockTables, "lockTables")
+    const lockFields = lockObjectRows(input.lockFields, "lockFields")
+    const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
+      operation: "UPSERT_LOCK_OBJECT",
+      objectName,
+      description: input.description,
+      packageName: ddicPackageName(input.packageName),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: versionToken(input.expectedVersion),
+      header,
+      lockTables,
+      lockFields
+    })
+    return savedDdicResult(
+      result,
+      "lockObject",
+      objectName,
+      input.packageName,
+      input.connectionId,
+      {
+        description: input.description,
+        aggregationType: header.AGGTYPE ?? "",
+        rootTable: header.ROOTTAB ?? "",
+        lockTables,
+        lockFields
+      }
+    )
+  }
+
   async readDdicDataElement(input: ReadDdicInput): Promise<string> {
     return this.readDdic(input, "READ_DATA_ELEMENT", "dataElement")
   }
-
   async upsertDdicDataElement(input: UpsertDataElementInput): Promise<string> {
     const objectName = customerDdicName(input.objectName)
     validateDescription(input.description)
@@ -3536,7 +3578,8 @@ export class ToolService {
       STRU: "DELETE_STRUCTURE",
       TABL: "DELETE_TRANSPARENT_TABLE",
       TTYP: "DELETE_TABLE_TYPE",
-      SHLP: "DELETE_SEARCH_HELP"
+      SHLP: "DELETE_SEARCH_HELP",
+      ENQU: "DELETE_LOCK_OBJECT"
     }[input.objectType] as SapDdicOperation
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation,
@@ -8868,6 +8911,7 @@ type DdicKind =
   | "transparentTable"
   | "tableType"
   | "searchHelp"
+  | "lockObject"
 
 function ddicResult(
   result: SapDdicResult,
@@ -8931,6 +8975,18 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
       selectionMethods: result.selectionMethods,
       parameters: result.parameters,
       fieldAssignments: result.fieldAssignments
+    }
+  }
+  if (kind === "lockObject") {
+    // DD26V/DD27P rows are exposed as their raw DDIC property bags so the caller sees SAP's own
+    // column names. The key columns (VIEWNAME, TABPOS, OBJPOS) are never returned as caller input;
+    // they are reconstructed from the object name and the row order.
+    return {
+      description: result.header.DDTEXT ?? "",
+      aggregationType: result.header.AGGTYPE ?? "",
+      rootTable: result.header.ROOTTAB ?? "",
+      lockTables: result.lockTables,
+      lockFields: result.lockFields
     }
   }
   if (kind === "dataElement") {
@@ -9029,7 +9085,8 @@ function savedDdicResult(
     structure: "TABNAME",
     transparentTable: "TABNAME",
     tableType: "TYPENAME",
-    searchHelp: "SHLPNAME"
+    searchHelp: "SHLPNAME",
+    lockObject: "VIEWNAME"
   }[kind]
   if (result.header[identityField] !== objectName) {
     throw new Error(
@@ -9185,6 +9242,66 @@ const SEARCH_HELP_DERIVED_HEADER_PROPERTIES = new Set([
 const SEARCH_HELP_KEY_PROPERTIES = new Set(["SHLPNAME", "SHPOSITION", "FLPOSITION"])
 
 const SEARCH_HELP_MAX_CHILD_ROWS = 200
+
+/**
+ * Header properties DD25V derives from the object itself or from the caller's SAP session.
+ * Mirrors the guard the D6-2 DDIC branch applies before assigning into ls_dd30v.
+ */
+const LOCK_OBJECT_DERIVED_HEADER_PROPERTIES = new Set([
+  "LOCKOBJECT",
+  "VIEWNAME",
+  "ACTFLAG",
+  "AS4USER",
+  "AS4DATE",
+  "AS4TIME",
+  "DDLANGUAGE"
+])
+
+/** Key columns of DD26V/DD27P are reconstructed by the service from the row order. */
+const LOCK_OBJECT_KEY_PROPERTIES = new Set(["VIEWNAME", "TABPOS", "OBJPOS", "FLPOSITION"])
+
+const LOCK_OBJECT_MAX_CHILD_ROWS = 200
+
+function lockObjectHeader(input: Record<string, string> | undefined): SapStructureRow {
+  const header: SapStructureRow = {}
+  for (const [property, value] of Object.entries(input ?? {})) {
+    const name = property.trim().toUpperCase()
+    if (!name) throw new Error("lock object header property names must not be empty")
+    if (LOCK_OBJECT_DERIVED_HEADER_PROPERTIES.has(name)) {
+      throw new Error(`lock object header property ${name} is derived or server-controlled`)
+    }
+    if (/\r|\n/.test(value)) {
+      throw new Error(`lock object header property ${name} must not contain line breaks`)
+    }
+    header[name] = value
+  }
+  return header
+}
+
+function lockObjectRows(
+  rows: Array<Record<string, string>> | undefined,
+  label: string
+): SapStructureRow[] {
+  const source = rows ?? []
+  if (source.length > LOCK_OBJECT_MAX_CHILD_ROWS) {
+    throw new Error(`${label} must not exceed ${LOCK_OBJECT_MAX_CHILD_ROWS} rows`)
+  }
+  return source.map((row, index) => {
+    const entry: SapStructureRow = {}
+    for (const [property, value] of Object.entries(row)) {
+      const name = property.trim().toUpperCase()
+      if (!name) throw new Error(`${label}[${index}] property names must not be empty`)
+      if (LOCK_OBJECT_KEY_PROPERTIES.has(name)) {
+        throw new Error(`${label}[${index}] property ${name} is reconstructed by the service`)
+      }
+      if (/\r|\n/.test(value)) {
+        throw new Error(`${label}[${index}] property ${name} must not contain line breaks`)
+      }
+      entry[name] = value
+    }
+    return entry
+  })
+}
 
 function searchHelpHeader(input: Record<string, string> | undefined): SapStructureRow {
   const header: SapStructureRow = {}

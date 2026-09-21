@@ -2040,7 +2040,10 @@ export function buildSapDdicEnvelope(request: SapDdicRequest): string {
 
 export function serializeDdicPayload(request: SapDdicRequest): string[] {
   const payload: string[] = []
-  const appendRows = (kind: "H" | "V" | "F" | "S1" | "S2" | "S3", rows: SapStructureRow[]) => {
+  const appendRows = (
+    kind: "H" | "V" | "F" | "S1" | "S2" | "S3" | "L1" | "L2",
+    rows: SapStructureRow[]
+  ) => {
     rows.forEach((row, rowIndex) => {
       Object.entries(row).forEach(([name, value]) => {
         if (/\r|\n/.test(value)) throw new Error("DDIC payload values must not contain line breaks")
@@ -2060,6 +2063,10 @@ export function serializeDdicPayload(request: SapDdicRequest): string[] {
   appendRows("S1", request.selectionMethods ?? [])
   appendRows("S2", request.parameters ?? [])
   appendRows("S3", request.fieldAssignments ?? [])
+  // Lock object child rows. DD26V carries the locked tables (L1) and DD27P the locked fields (L2).
+  // Both are two-character kinds, for the same reason as S1/S2/S3.
+  appendRows("L1", request.lockTables ?? [])
+  appendRows("L2", request.lockFields ?? [])
   return payload
 }
 
@@ -2082,7 +2089,9 @@ export function parseSapDdicResponse(body: string): SapDdicResult {
     fields: payload.fields,
     selectionMethods: payload.selectionMethods,
     parameters: payload.parameters,
-    fieldAssignments: payload.fieldAssignments
+    fieldAssignments: payload.fieldAssignments,
+    lockTables: payload.lockTables,
+    lockFields: payload.lockFields
   }
   if (!result.status || !result.code || !result.version) {
     throw new Error("SAP DDIC helper returned an incomplete SOAP response")
@@ -2098,6 +2107,8 @@ function parseDdicPayload(lines: string[]): {
   selectionMethods: SapStructureRow[]
   parameters: SapStructureRow[]
   fieldAssignments: SapStructureRow[]
+  lockTables: SapStructureRow[]
+  lockFields: SapStructureRow[]
 } {
   const metadata: SapStructureRow = {}
   const header: SapStructureRow = {}
@@ -2106,9 +2117,12 @@ function parseDdicPayload(lines: string[]): {
   const selectionMethods: SapStructureRow[] = []
   const parameters: SapStructureRow[] = []
   const fieldAssignments: SapStructureRow[] = []
+  const lockTables: SapStructureRow[] = []
+  const lockFields: SapStructureRow[] = []
   for (const line of lines) {
-    // S1/S2/S3 are two-character kinds, so the kind alternation must be explicit.
-    const match = line.match(/^(M|H|V|F|S1|S2|S3)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    // S1/S2/S3 (search help) and L1/L2 (lock object) are two-character kinds, so the kind
+    // alternation must be explicit.
+    const match = line.match(/^(M|H|V|F|S1|S2|S3|L1|L2)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
     if (!match?.[1] || !match[2] || !match[3]) {
       throw new Error(`SAP DDIC helper returned an invalid payload line: ${line}`)
     }
@@ -2123,10 +2137,22 @@ function parseDdicPayload(lines: string[]): {
     else if (kind === "F") target = rowAt(fields, index)
     else if (kind === "S1") target = rowAt(selectionMethods, index)
     else if (kind === "S2") target = rowAt(parameters, index)
-    else target = rowAt(fieldAssignments, index)
+    else if (kind === "S3") target = rowAt(fieldAssignments, index)
+    else if (kind === "L1") target = rowAt(lockTables, index)
+    else target = rowAt(lockFields, index)
     target[match[3]] = value
   }
-  return { metadata, header, fixedValues, fields, selectionMethods, parameters, fieldAssignments }
+  return {
+    metadata,
+    header,
+    fixedValues,
+    fields,
+    selectionMethods,
+    parameters,
+    fieldAssignments,
+    lockTables,
+    lockFields
+  }
 }
 
 function rowAt(rows: SapStructureRow[], index: number): SapStructureRow {

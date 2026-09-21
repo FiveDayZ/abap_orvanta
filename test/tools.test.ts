@@ -1842,7 +1842,9 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
         fields: [],
         selectionMethods: [],
         parameters: [],
-        fieldAssignments: []
+        fieldAssignments: [],
+        lockTables: [],
+        lockFields: []
       }
     }
     return callSapDdic(connectionId, request)

@@ -366,6 +366,14 @@ export function createMcpServer(
       tools.upsertSearchHelp(input)
     )
   )
+  registerTool("read_lock_object", toolContracts.read_lock_object, async (input) =>
+    invoke("read_lock_object", () => tools.readLockObject(input))
+  )
+  registerTool("upsert_lock_object", toolContracts.upsert_lock_object, async (input) =>
+    invokeWrite("upsert_lock_object", input, backend, writeReceipts, () =>
+      tools.upsertLockObject(input)
+    )
+  )
   registerTool("read_ddic_data_element", toolContracts.read_ddic_data_element, async (input) =>
     invoke("read_ddic_data_element", () => tools.readDdicDataElement(input))
   )
