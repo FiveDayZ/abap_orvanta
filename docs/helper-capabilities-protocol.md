@@ -13,16 +13,18 @@
 
 > 该证据文件的 `helperAttestation` 只有 **6 条**（当时只探询 6 个助手）。SCI V2／E2 的探询接线是随后加入的，因此下表中 SCI 两行**不是**该文件的实测值，而是由"载体未部署"这一事实推出的当前应有状态；待 SCI 载体部署后须以新的真实报告替换。
 
-| 助手                                   | 自述状态             | 协议范围      | 操作码数 | `SOURCE\|HASH`（源指纹）                                           | 包 / 传输              |
-| -------------------------------------- | -------------------- | ------------- | -------- | ------------------------------------------------------------------ | ---------------------- |
-| `Z_ORVANTA_MCP_EXECUTE`（基础助手）    | `self-described`     | 1.1 – **2.7** | 37       | `fbf26be00f96c60e0bdf583248e0a00ae02bbb6c0482ab09698c940dc00c0433` | `ZABAP` / `GR2K923472` |
-| `Z_ORVANTA_MCP_DYNPRO_API`（仓库助手） | `self-described`     | 1.1 – 2.6     | 36       | `06812bcc8d3e7ccab9b51764b61a079f7c2d44e5132e27ec748ac3a00152e014` | `ZABAP` / `GR2K923472` |
-| `Z_ORVANTA_MCP_DDIC_API`               | `self-described`     | 1.2 – 1.7     | 19       | `780aa87df7c5da59ed42aca8325ad0d4592a5dbae39bca062bede39f12a67d91` | `ZABAP` / `GR2K923472` |
-| `Z_ORVANTA_MAINT_READ`                 | `self-described`     | 1.0 – 1.0     | 3        | `69f20bb0907f0a508b14efc3609695d959d8c6c4f9f89026f22586733fc2a066` | `ZABAP` / `GR2K923472` |
-| `Z_ORVANTA_OPS_READ`                   | `self-described`     | 1.0 – 1.0     | 6        | `0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1` | `ZABAP` / `GR2K923472` |
-| `Z_ORVANTA_LOG_READ`                   | `self-described`     | 1.0 – 1.0     | 5        | `07383ef8df98408752203244607bf2b30b225b0f3b506e958d93ae25cde573ab` | `ZABAP` / `GR2K923472` |
-| `Z_ORVANTA_MCP_SCI_V2`                 | 未自述（载体未部署） | —             | —        | —                                                                  | —                      |
-| `Z_ORVANTA_MCP_SCI_E2`                 | 未自述（载体未部署） | —             | —        | —                                                                  | —                      |
+| 助手                                   | 自述状态             | 协议范围       | 操作码数 | `SOURCE\|HASH`（源指纹）                                           | 包 / 传输              |
+| -------------------------------------- | -------------------- | -------------- | -------- | ------------------------------------------------------------------ | ---------------------- |
+| `Z_ORVANTA_MCP_EXECUTE`（基础助手）    | `self-described`     | 1.1 – **2.7**  | 37       | `fbf26be00f96c60e0bdf583248e0a00ae02bbb6c0482ab09698c940dc00c0433` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MCP_DYNPRO_API`（仓库助手） | `self-described`     | 1.1 – 2.6      | 36       | `06812bcc8d3e7ccab9b51764b61a079f7c2d44e5132e27ec748ac3a00152e014` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MCP_DDIC_API`               | `self-described`     | 1.2 – **1.10** | **24**   | `780aa87df7c5da59ed42aca8325ad0d4592a5dbae39bca062bede39f12a67d91` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MAINT_READ`                 | `self-described`     | 1.0 – 1.0      | 3        | `69f20bb0907f0a508b14efc3609695d959d8c6c4f9f89026f22586733fc2a066` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_OPS_READ`                   | `self-described`     | 1.0 – 1.0      | 6        | `0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_LOG_READ`                   | `self-described`     | 1.0 – 1.0      | 5        | `07383ef8df98408752203244607bf2b30b225b0f3b506e958d93ae25cde573ab` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MCP_SCI_V2`                 | 未自述（载体未部署） | —              | —        | —                                                                  | —                      |
+| `Z_ORVANTA_MCP_SCI_E2`                 | 未自述（载体未部署） | —              | —        | —                                                                  | —                      |
+
+> **2026-09-21 更新**：`Z_ORVANTA_MCP_DDIC_API` 行改为当日只读 `get_capability_report(w200)` 的实测值（1.10 / 24 个操作码，`sourceHash` 未变）。该实测清单含 `READ_LOCK_OBJECT` 与 `RESUME_TRANSPARENT_TABLE_ACTIVATION`，**不含** `UPSERT_LOCK_OBJECT` 与 `DELETE_LOCK_OBJECT` —— 这正是 R-1 缺陷的证据：协议版本满足 1.9／1.10，但两个写操作码从未部署。其余行仍是 2026-09-18 证据文件的值。
 
 **服务侧实现要点**（0.46.0）：
 
@@ -291,21 +293,39 @@ export interface SapBackend {
 
 ### 4.2 能力判定
 
-`src/capabilities.ts` 的 `capabilityWithHelper(id, helper, minimumVersion, toolNames)` 改为优先使用 `maxProtocol`：
+`src/capabilities.ts` 的 `helperCapability(route, helper)` 优先使用 `maxProtocol`；当助手**同时**自述了操作码清单时，还要用清单核对工具真正会派发的操作码：
 
-| 情况                                 | availability                   | 报告文案要点                                                 |
-| ------------------------------------ | ------------------------------ | ------------------------------------------------------------ |
-| 助手调用失败/不存在                  | `unsupported` 或 `unavailable` | 明确「未部署或不可达」，附原始错误码                         |
-| 可调用但无自述能力                   | `unknown`                      | 「已部署但无法自述版本；按操作码 1.2 判定，不足以证明 ≥1.3」 |
-| 自述 `maxProtocol >= minimumVersion` | `available`                    | 附 `sourceHash`、`package`、`transport`                      |
-| 自述 `maxProtocol < minimumVersion`  | `unsupported`                  | 「已部署版本 X.Y，低于所需 Z」                               |
+| 情况                                                        | availability                   | 报告文案要点                                                                              |
+| ----------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
+| 助手调用失败/不存在                                         | `unsupported` 或 `unavailable` | 明确「未部署或不可达」，附原始错误码                                                      |
+| 可调用但无自述能力                                          | `unknown`                      | 「已部署但无法自述版本；按操作码 1.2 判定，不足以证明 ≥1.3」                              |
+| 自述 `maxProtocol >= minimumVersion` 且清单含全部所需操作码 | `available`                    | `evidence.source = version-and-operation-check`，附 `sourceHash`、清单条数                |
+| 自述 `maxProtocol >= minimumVersion`，清单缺部分所需操作码  | `partial`                      | 逐工具给出 `toolObservations`，指明缺哪几个操作码、受影响工具会 `OPERATION_NOT_SUPPORTED` |
+| 自述 `maxProtocol >= minimumVersion`，清单缺全部所需操作码  | `unsupported`                  | 「自述版本满足，但清单不含该能力所需的任何操作码」                                        |
+| 自述 `maxProtocol < minimumVersion`                         | `unsupported`                  | 「已部署版本 X.Y，低于所需 Z」（`evidence.source = version-check`）                       |
 
-`get_capability_report` 新增顶层字段：
+- 需要核对的操作码来自工具注册表：`src/tool-registry.ts` 的每行第 8 个元素（如 `read_lock_object` → `READ_LOCK_OBJECT`、`delete_ddic_object` → 7 个 `DELETE_*`）。协议版本只声明"实现了哪个版本"，不声明"实现过哪些操作码"，因此**仅比版本会把只可能失败的工具报成 available**（0.46.6 实测：助手自述 1.10 却无 `UPSERT_LOCK_OBJECT`）。
+- 两条**保持仅按版本判定**的路径，且都会在 `evidence.detail` 里如实说明，不假装做过核对：助手未发布操作码清单（空清单/老接口）；注册表尚未登记所需操作码（此时 `detail` 写明 verdict 仅基于协议版本）。
+- `npm run matrix:check` 强制 `Z_ORVANTA_MCP_DDIC_API` 的每个工具都登记所需操作码（`helperOperationRequirementGaps`），新增工具不能悄悄跳过核对。
+
+`get_capability_report` 新增/扩展的顶层字段：
 
 ```json
 "helperAttestation": [
   { "helper": "Z_ORVANTA_MCP_DYNPRO_API", "maxProtocol": "2.6", "sourceHash": "…",
     "packageName": "ZABAP", "transport": "GR2K923472", "attestation": "self-described" }
+],
+"summary": { "available": 24, "partial": 2, "unsupported": 1, "platform_unsupported": 3, "unknown": 30 },
+"capabilities": [
+  { "id": "ddic-helper-lock-object",
+    "observation": {
+      "availability": "partial",
+      "evidence": { "source": "version-and-operation-check", "detail": "…; missing: upsert_lock_object needs UPSERT_LOCK_OBJECT" },
+      "toolObservations": {
+        "read_lock_object": { "availability": "available", "requiredOperations": ["READ_LOCK_OBJECT"], "missingOperations": [] },
+        "upsert_lock_object": { "availability": "unsupported", "requiredOperations": ["UPSERT_LOCK_OBJECT"], "missingOperations": ["UPSERT_LOCK_OBJECT"] }
+      }
+    } }
 ]
 ```
 

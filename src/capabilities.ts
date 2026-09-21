@@ -11,18 +11,32 @@ import { SCI_E2_HELPER, SCI_V2_HELPER } from "./sci-v2.js"
 import { registryEntry } from "./tool-registry.js"
 import { PRODUCT_VERSION } from "./version.js"
 
-type Availability = "available" | "unsupported" | "platform_unsupported" | "unknown"
+type Availability = "available" | "partial" | "unsupported" | "platform_unsupported" | "unknown"
 type CapabilityRoute = "local" | "native-adt" | "sap-helper-fallback" | "target-specific"
 
 interface CapabilityEvidence {
-  source: "local-contract" | "read-probe" | "discovery" | "probe-error" | "version-check"
+  source:
+    | "local-contract"
+    | "read-probe"
+    | "discovery"
+    | "probe-error"
+    | "version-check"
+    | "version-and-operation-check"
   detail: string
+}
+
+/** Per-tool verdict inside a capability, present only when the helper published an operation list. */
+interface ToolCapabilityObservation {
+  availability: Availability
+  requiredOperations: readonly string[]
+  missingOperations: readonly string[]
 }
 
 interface CapabilityObservation {
   availability: Availability
   reason: string
   evidence: CapabilityEvidence
+  toolObservations?: Record<string, ToolCapabilityObservation>
 }
 
 interface VersionedHelperObservation extends CapabilityObservation {
@@ -416,7 +430,7 @@ export async function buildCapabilityReport(
           `Capability ${route.id} routes through ${route.helper}, which has no capability observation`
         )
       }
-      return helperCapability(route.id, helper, route.minimumVersion, route.toolNames)
+      return helperCapability(route, helper)
     }),
     capability(
       "adt-object-read",
@@ -794,6 +808,8 @@ export interface HelperCapabilityRoute {
   helper: string
   minimumVersion: string
   toolNames: string[]
+  /** The helper operation codes these tools dispatch to, per tool. Empty means "not pinned yet". */
+  requiredOperations: Array<{ tool: string; operations: readonly string[] }>
 }
 
 /**
@@ -816,7 +832,12 @@ export function resolveHelperCapabilityRoute(
         `Capability ${id} names tool ${name}, which the registry does not route through a versioned SAP helper`
       )
     }
-    return { name, helper: entry.sapHelper, minimum: entry.minHelperProtocol }
+    return {
+      name,
+      helper: entry.sapHelper,
+      minimum: entry.minHelperProtocol,
+      operations: entry.requiredHelperOperations
+    }
   })
   const [first] = routed
   if (!first) throw new Error(`Capability ${id} names no tools`)
@@ -832,7 +853,8 @@ export function resolveHelperCapabilityRoute(
     id,
     helper: first.helper,
     minimumVersion: first.minimum,
-    toolNames: [...toolNames]
+    toolNames: [...toolNames],
+    requiredOperations: routed.map((item) => ({ tool: item.name, operations: item.operations }))
   }
 }
 
@@ -850,11 +872,10 @@ export function helperCapabilityRoutes(): HelperCapabilityRoute[] {
 }
 
 function helperCapability(
-  id: string,
-  helper: VersionedHelperObservation,
-  minimumVersion: string,
-  toolNames: string[]
+  route: HelperCapabilityRoute,
+  helper: VersionedHelperObservation
 ): CapabilitySpec {
+  const { id, minimumVersion, toolNames } = route
   if (helper.availability !== "available" || !helper.protocolVersion) {
     return capability(id, "sap-helper-fallback", toolNames, helper)
   }
@@ -863,16 +884,22 @@ function helperCapability(
   const attestation = helper.attestation
   if (attestation?.attestation === "self-described" && attestation.maxProtocol) {
     const satisfied = compareVersions(attestation.maxProtocol, minimumVersion) >= 0
-    return capability(id, "sap-helper-fallback", toolNames, {
-      availability: satisfied ? "available" : "unsupported",
-      reason: satisfied
-        ? `The ${attestation.helper} helper self-described protocol ${attestation.maxProtocol}, which satisfies minimum ${minimumVersion}.`
-        : `The ${attestation.helper} helper self-described protocol ${attestation.maxProtocol}, which is below the required capability version ${minimumVersion}.`,
-      evidence: {
-        source: "version-check",
-        detail: `${attestation.helper} self-described protocol ${attestation.maxProtocol} (lowest compatible ${attestation.minProtocol ?? "unknown"}); capability minimum ${minimumVersion}`
-      }
-    })
+    if (!satisfied) {
+      return capability(id, "sap-helper-fallback", toolNames, {
+        availability: "unsupported",
+        reason: `The ${attestation.helper} helper self-described protocol ${attestation.maxProtocol}, which is below the required capability version ${minimumVersion}.`,
+        evidence: {
+          source: "version-check",
+          detail: `${attestation.helper} self-described protocol ${attestation.maxProtocol} (lowest compatible ${attestation.minProtocol ?? "unknown"}); capability minimum ${minimumVersion}`
+        }
+      })
+    }
+    return capability(
+      id,
+      "sap-helper-fallback",
+      toolNames,
+      operationCheckedObservation(route, attestation)
+    )
   }
   const available = compareVersions(helper.protocolVersion, minimumVersion) >= 0
   return capability(id, "sap-helper-fallback", toolNames, {
@@ -885,6 +912,98 @@ function helperCapability(
       detail: `${helper.name} observed operation protocol ${helper.protocolVersion}; capability minimum ${minimumVersion}${attestationMismatchNote(attestation)}`
     }
   })
+}
+
+/**
+ * The verdict for a helper that satisfies the protocol minimum and self-described its operations.
+ *
+ * A protocol version is a claim about the highest version implemented; it says nothing about which
+ * opcodes exist. A helper can report 1.10 while the tool's own opcode is missing - that is how
+ * `ddic-helper-lock-object` was advertised as available while `UPSERT_LOCK_OBJECT` was never
+ * deployed - and the caller then sees a working capability name followed by a runtime failure. The
+ * helper's own operation list is the checkable evidence, so it decides here.
+ *
+ * Two cases keep the version-only verdict, and both say so in the evidence instead of implying a
+ * check that did not happen: the helper published no operation inventory, and the registry pins no
+ * operation requirement for these tools yet.
+ */
+function operationCheckedObservation(
+  route: HelperCapabilityRoute,
+  attestation: SapHelperCapabilities
+): CapabilityObservation {
+  const { id, toolNames, minimumVersion, requiredOperations } = route
+  const protocol = String(attestation.maxProtocol)
+  const versionReason = `The ${attestation.helper} helper self-described protocol ${protocol}, which satisfies minimum ${minimumVersion}.`
+  const versionDetail = `${attestation.helper} self-described protocol ${protocol} (lowest compatible ${attestation.minProtocol ?? "unknown"}); capability minimum ${minimumVersion}`
+  const declared = attestation.operations ?? []
+  const pinned = requiredOperations.filter((entry) => entry.operations.length > 0)
+  if (declared.length === 0 || pinned.length === 0) {
+    const gap =
+      declared.length === 0
+        ? "the helper published no operation inventory"
+        : "the registry pins no operation requirement for these tools"
+    return {
+      availability: "available",
+      reason: versionReason,
+      evidence: {
+        source: "version-check",
+        detail: `${versionDetail}; ${gap}, so this verdict rests on the protocol version alone`
+      }
+    }
+  }
+  const attested = new Set(declared.map((operation) => operation.opcode.trim().toUpperCase()))
+  const toolObservations: Record<string, ToolCapabilityObservation> = {}
+  for (const entry of requiredOperations) {
+    const required = entry.operations.map((operation) => operation.trim().toUpperCase())
+    const missing = required.filter((operation) => !attested.has(operation))
+    toolObservations[entry.tool] = {
+      availability:
+        missing.length === 0
+          ? "available"
+          : missing.length === required.length
+            ? "unsupported"
+            : "partial",
+      requiredOperations: required,
+      missingOperations: missing
+    }
+  }
+  const verdicts = Object.values(toolObservations).map((entry) => entry.availability)
+  // A tool that attests only some of its opcodes is its own partial verdict, so "available" cannot
+  // be the deciding member: the capability is available only when every tool is, and unsupported
+  // only when no tool is.
+  const availability: Availability = verdicts.every((verdict) => verdict === "available")
+    ? "available"
+    : verdicts.every((verdict) => verdict === "unsupported")
+      ? "unsupported"
+      : "partial"
+  const missingSummary = Object.entries(toolObservations)
+    .filter(([, entry]) => entry.missingOperations.length > 0)
+    .map(([tool, entry]) => `${tool} needs ${entry.missingOperations.join(", ")}`)
+    .join("; ")
+  const operationDetail = `${versionDetail}; the helper attested ${attested.size} operation code(s), and the required codes are checked against that list`
+  if (availability === "available") {
+    return {
+      availability,
+      reason: `${versionReason} Its operation inventory attests every required operation code.`,
+      evidence: { source: "version-and-operation-check", detail: operationDetail },
+      toolObservations
+    }
+  }
+  const shortfall =
+    availability === "unsupported"
+      ? "attests none of the required operation codes"
+      : "does not attest every required operation code"
+  return {
+    availability,
+    reason:
+      `The ${attestation.helper} helper self-described protocol ${protocol}, which satisfies minimum ${minimumVersion}, but its operation inventory ${shortfall}: ${missingSummary}. ` +
+      `The affected tools fail with OPERATION_NOT_SUPPORTED until a helper that attests those codes is deployed; the tools whose codes are attested keep working.`,
+    evidence: {
+      source: "version-and-operation-check",
+      detail: `${operationDetail}; missing: ${missingSummary}`
+    },
+    toolObservations
+  }
 }
 
 /**
@@ -1361,6 +1480,6 @@ function countAvailability(capabilities: CapabilitySpec[]): Record<Availability,
       summary[capabilityEntry.observation.availability]++
       return summary
     },
-    { available: 0, unsupported: 0, platform_unsupported: 0, unknown: 0 }
+    { available: 0, partial: 0, unsupported: 0, platform_unsupported: 0, unknown: 0 }
   )
 }

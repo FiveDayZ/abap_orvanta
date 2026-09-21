@@ -67,6 +67,11 @@ export interface ToolRegistryEntry {
   route: ToolRoute
   sapHelper: string | null
   minHelperProtocol: string | null
+  /**
+   * Helper operation codes this tool dispatches to. Empty means the requirement is not pinned yet,
+   * and the capability report must then state that its verdict rests on the protocol version alone.
+   */
+  requiredHelperOperations: readonly string[]
   annotations: ToolAnnotations
   note?: string
 }
@@ -99,7 +104,17 @@ const DEV_OPS: readonly ToolProfile[] = ["dev", "ops"]
 const CFG_OPS: readonly ToolProfile[] = ["config", "ops"]
 const DEV_CFG_OPS: readonly ToolProfile[] = ["dev", "config", "ops"]
 
-/** name, group, profiles, annotation, route, sapHelper, minimum helper protocol */
+/**
+ * name, group, profiles, annotation, route, sapHelper, minimum helper protocol,
+ * required helper operation codes.
+ *
+ * The eighth element is the helper's own operation inventory for that tool. It is what makes an
+ * "available" verdict checkable: a helper can self-describe a protocol version while its
+ * operation list is missing the very opcode the tool dispatches to, and comparing versions alone
+ * then advertises a tool that can only fail. The list is empty for tools whose requirement is not
+ * yet pinned; the capability report must then say that its verdict rests on the protocol version
+ * alone rather than inventing an operation check.
+ */
 type ToolRow = readonly [
   string,
   ToolGroup,
@@ -107,7 +122,8 @@ type ToolRow = readonly [
   AnnotationCode,
   ToolRoute,
   string | null,
-  string | null
+  string | null,
+  (readonly string[])?
 ]
 
 const ROWS: readonly ToolRow[] = [
@@ -197,27 +213,173 @@ const ROWS: readonly ToolRow[] = [
   ["create_abap_message_class", "message", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.7"],
   ["update_abap_message_class", "message", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.8"],
   ["delete_abap_message_class", "message", DEV, "D", "sap-helper-fallback", REPOSITORY, "1.9"],
-  ["read_ddic_domain", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
-  ["upsert_ddic_domain", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
-  ["read_ddic_data_element", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
-  ["upsert_ddic_data_element", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
-  ["read_ddic_structure", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
-  ["upsert_ddic_structure", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
-  ["read_ddic_transparent_table", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.5"],
-  ["create_ddic_transparent_table", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.5"],
-  ["append_ddic_transparent_table_fields", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.7"],
-  ["patch_ddic_transparent_table_fields", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.7"],
-  ["patch_ddic_transparent_table_settings", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.7"],
+  // DDIC rows carry the helper operation inventory they dispatch to, so the capability report
+  // checks the helper's own operation list and not only its protocol version. delete_ddic_object
+  // selects its opcode from objectType, so it declares every opcode it can send.
+  ["read_ddic_domain", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2", ["READ_DOMAIN"]],
+  ["upsert_ddic_domain", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2", ["UPSERT_DOMAIN"]],
+  [
+    "read_ddic_data_element",
+    "ddic",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    DDIC,
+    "1.2",
+    ["READ_DATA_ELEMENT"]
+  ],
+  [
+    "upsert_ddic_data_element",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.2",
+    ["UPSERT_DATA_ELEMENT"]
+  ],
+  ["read_ddic_structure", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2", ["READ_STRUCTURE"]],
+  [
+    "upsert_ddic_structure",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.2",
+    ["UPSERT_STRUCTURE"]
+  ],
+  [
+    "read_ddic_transparent_table",
+    "ddic",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    DDIC,
+    "1.5",
+    ["READ_TRANSPARENT_TABLE"]
+  ],
+  [
+    "create_ddic_transparent_table",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.5",
+    ["CREATE_TRANSPARENT_TABLE"]
+  ],
+  [
+    "append_ddic_transparent_table_fields",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.7",
+    ["APPEND_TRANSPARENT_TABLE_FIELDS"]
+  ],
+  [
+    "patch_ddic_transparent_table_fields",
+    "ddic",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    DDIC,
+    "1.7",
+    ["PATCH_TRANSPARENT_TABLE_FIELDS"]
+  ],
+  [
+    "patch_ddic_transparent_table_settings",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.7",
+    ["PATCH_TRANSPARENT_TABLE_SETTINGS"]
+  ],
   ["read_ddic_table_conversion_status", "ddic", DEV_OPS, "R", "target-specific", null, null],
-  ["recover_ddic_table_conversion", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.7"],
-  ["resume_ddic_table_activation", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.10"],
-  ["read_ddic_table_type", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
-  ["upsert_ddic_table_type", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
-  ["delete_ddic_object", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.6"],
-  ["read_search_help", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.8"],
-  ["upsert_search_help", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.8"],
-  ["read_lock_object", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.9"],
-  ["upsert_lock_object", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.9"],
+  [
+    "recover_ddic_table_conversion",
+    "ddic",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    DDIC,
+    "1.7",
+    ["RECOVER_TABLE_CONVERSION"]
+  ],
+  [
+    "resume_ddic_table_activation",
+    "ddic",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    DDIC,
+    "1.10",
+    ["RESUME_TRANSPARENT_TABLE_ACTIVATION"]
+  ],
+  [
+    "read_ddic_table_type",
+    "ddic",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    DDIC,
+    "1.2",
+    ["READ_TABLE_TYPE"]
+  ],
+  [
+    "upsert_ddic_table_type",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.2",
+    ["UPSERT_TABLE_TYPE"]
+  ],
+  [
+    "delete_ddic_object",
+    "ddic",
+    DEV,
+    "D",
+    "sap-helper-fallback",
+    DDIC,
+    "1.6",
+    [
+      "DELETE_DOMAIN",
+      "DELETE_DATA_ELEMENT",
+      "DELETE_STRUCTURE",
+      "DELETE_TRANSPARENT_TABLE",
+      "DELETE_TABLE_TYPE",
+      "DELETE_SEARCH_HELP",
+      "DELETE_LOCK_OBJECT"
+    ]
+  ],
+  ["read_search_help", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.8", ["READ_SEARCH_HELP"]],
+  [
+    "upsert_search_help",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.8",
+    ["UPSERT_SEARCH_HELP"]
+  ],
+  ["read_lock_object", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.9", ["READ_LOCK_OBJECT"]],
+  [
+    "upsert_lock_object",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.9",
+    ["UPSERT_LOCK_OBJECT"]
+  ],
   ["search_abap_objects", "source", DEV, "R", "native-adt", null, null],
   ["get_abap_object_info", "source", DEV, "R", "target-specific", null, null],
   ["get_abap_object_lines", "source", DEV, "R", "target-specific", null, null],
@@ -433,17 +595,39 @@ export const PROFILE_NAMES = ["readonly", "platform", "dev", "config", "ops", "f
 export type ProfileName = (typeof PROFILE_NAMES)[number]
 
 export const TOOL_REGISTRY: readonly ToolRegistryEntry[] = ROWS.map(
-  ([name, group, profiles, annotation, route, sapHelper, minHelperProtocol]) => ({
+  ([
+    name,
+    group,
+    profiles,
+    annotation,
+    route,
+    sapHelper,
+    minHelperProtocol,
+    requiredOperations
+  ]) => ({
     name,
     group,
     profiles,
     route,
     sapHelper,
     minHelperProtocol,
+    requiredHelperOperations: requiredOperations ?? [],
     annotations: { ...ANNOTATIONS[annotation] },
     ...(NOTES[name] ? { note: NOTES[name] } : {})
   })
 )
+
+/**
+ * Tools routed to `helper` whose required operation inventory is still empty.
+ *
+ * An empty inventory is not a failure by itself, but it is the difference between a verdict that
+ * was checked against the helper's own operation list and one that only compared protocol
+ * versions. The matrix gate calls this for the helpers that already declare their operations, so a
+ * new tool routed there cannot quietly skip the check.
+ */
+export function helperOperationRequirementGaps(helper: string): readonly string[] {
+  return ROWS.filter((row) => row[5] === helper && !row[7]?.length).map((row) => row[0])
+}
 
 export const TOOL_NAMES: readonly string[] = TOOL_REGISTRY.map((entry) => entry.name)
 export const TOOL_COUNT = TOOL_REGISTRY.length

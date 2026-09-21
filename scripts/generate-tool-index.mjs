@@ -17,6 +17,7 @@ import {
   TOOL_MATRIX_VERSION,
   TOOL_NAMES,
   TOOL_REGISTRY,
+  helperOperationRequirementGaps,
   toolNamesForProfile
 } from "../dist/src/tool-registry.js"
 import { toolContracts } from "../dist/src/contracts.js"
@@ -91,6 +92,19 @@ try {
 } catch (error) {
   fail(`helper capability / registry drift: ${error instanceof Error ? error.message : error}`)
 }
+
+// A verdict that compares protocol versions alone cannot catch a helper that self-describes 1.10
+// while its operation list lacks the opcode the tool dispatches to; that is how a tool which can
+// only fail was advertised as available. The DDIC helper already declares its operation inventory,
+// so every tool routed there must declare the codes it sends.
+const OPERATION_CHECKED_HELPER = "Z_ORVANTA_MCP_DDIC_API"
+const operationGaps = helperOperationRequirementGaps(OPERATION_CHECKED_HELPER)
+if (operationGaps.length > 0) {
+  fail(
+    `tools routed to ${OPERATION_CHECKED_HELPER} without a helper operation requirement: ${operationGaps.join(", ")}`
+  )
+}
+console.log(`helper operation requirements pinned for every ${OPERATION_CHECKED_HELPER} tool`)
 
 // ---- generated content ----------------------------------------------------------------
 
