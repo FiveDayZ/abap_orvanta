@@ -144,12 +144,26 @@ foreach ($marker in @("DDIF_DD_CHECK", "DDIF_TABL_GET", "ls_dd09v-bufallow", "ls
     }
 }
 $ddicFunction = New-DdicFunctionSource
-foreach ($property in @("DATATYPE", "LENG", "COMPTYPE")) {
+# 按“发布者”分别断言，而不是按总数：结构读取器走 DDIF_FIELDINFO_GET 的 <ls_field>（只发布
+# DATATYPE/LENG），表读取器走 DD03P，且 0.46.3/0.46.4 起表读取器有活动与非活动两条路径，各自
+# 发布 DATATYPE/LENG/COMPTYPE。原断言把总数硬编码为 2，新增非活动路径后必然失败（R-16）。
+$fieldMetadataPublishers = @(
+    @{ Property = "DATATYPE"; Publisher = "<ls_field>"; Expected = 1 },
+    @{ Property = "DATATYPE"; Publisher = "ls_dd03p"; Expected = 2 },
+    @{ Property = "LENG"; Publisher = "<ls_field>"; Expected = 1 },
+    @{ Property = "LENG"; Publisher = "ls_dd03p"; Expected = 2 },
+    @{ Property = "COMPTYPE"; Publisher = "ls_dd03p"; Expected = 2 }
+)
+foreach ($expected in $fieldMetadataPublishers) {
+    $property = $expected.Property
+    $component = $property.ToLower()
+    $publisherField = $expected.Publisher
     $fieldLines = @($ddicFunction | Where-Object {
-        $_ -match [regex]::Escape("add_payload 'F' lv_index '$property'")
-    })
-    if ($fieldLines.Count -ne 2) {
-        throw "Structure and table readers must emit direct field metadata: $property"
+            $_ -match [regex]::Escape("add_payload 'F' lv_index '$property'") -and
+            $_ -match [regex]::Escape("$publisherField-$component")
+        })
+    if ($fieldLines.Count -ne $expected.Expected) {
+        throw "Field metadata publisher $publisherField must emit $property $($expected.Expected) time(s), found $($fieldLines.Count)"
     }
 }
 $ddicProgram = New-InstallProgram -FunctionName "Z_ORVANTA_MCP_DDIC_API"
