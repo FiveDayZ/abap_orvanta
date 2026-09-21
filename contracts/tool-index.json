@@ -1,18 +1,18 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 131,
+  "toolCount": 132,
   "readOnlyToolCount": 77,
   "profiles": {
     "readonly": 77,
     "platform": 12,
-    "dev": 115,
+    "dev": 116,
     "config": 28,
     "ops": 35,
-    "full": 131
+    "full": 132
   },
   "groups": {
     "data": 5,
-    "ddic": 20,
+    "ddic": 21,
     "debug": 6,
     "enhancement": 22,
     "form": 4,
@@ -1613,6 +1613,21 @@
       "route": "native-adt",
       "sapHelper": null,
       "minHelperProtocol": null
+    },
+    {
+      "name": "resume_ddic_table_activation",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.10"
     },
     {
       "name": "run_atc_analysis",

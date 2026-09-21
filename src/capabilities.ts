@@ -157,6 +157,9 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
       "recover_ddic_table_conversion"
     ]
   ],
+  // Resuming an activation is a distinct recovery route: it needs the newer
+  // RESUME_TRANSPARENT_TABLE_ACTIVATION opcode, so it cannot share the 1.7 table-complex group.
+  ["ddic-helper-table-activation-resume", ["resume_ddic_table_activation"]],
   ["ddic-helper-controlled-delete", ["delete_ddic_object"]],
   // Search help is its own DDIC object kind with its own helper operations (READ_SEARCH_HELP /
   // UPSERT_SEARCH_HELP / DELETE_SEARCH_HELP), so it gets its own capability rather than being folded

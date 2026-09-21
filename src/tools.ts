@@ -624,6 +624,13 @@ interface RecoverDdicTableConversionInput extends ReadDdicInput {
   acknowledgePotentialDataLoss: true
 }
 
+interface ResumeDdicTableActivationInput extends ReadDdicInput {
+  expectedInactiveFingerprint: string
+  packageName: string
+  transportNumber: string
+  confirmation: "RESUME_INACTIVE_ACTIVATION"
+}
+
 interface UpsertTableTypeInput extends UpsertDdicInput {
   rowType: string
 }
@@ -3527,6 +3534,54 @@ export class ToolService {
         automaticRetry: false,
         automaticRollback: false,
         lostValuesReconstructed: false
+      },
+      null,
+      2
+    )
+  }
+
+  /**
+   * Activates a transparent table whose definition is already stored but inactive, without sending a
+   * new definition. This is the recovery path for a create or write that failed after DDIF_TABL_PUT
+   * had already saved a non-active version (reported as DDIC_SAVE_FAILED with PHASE=inactive_saved).
+   *
+   * The normal read path deliberately refuses to describe an inactive version
+   * (INACTIVE_VERSION_EXISTS), so the inactive fingerprint cannot be derived from a read. The helper
+   * publishes the fingerprint it observed in the failure metadata instead, and the resume call must
+   * echo it back; the helper compares it against the state it re-reads before activating.
+   */
+  async resumeDdicTableActivation(input: ResumeDdicTableActivationInput): Promise<string> {
+    if (input.confirmation !== "RESUME_INACTIVE_ACTIVATION") {
+      throw new Error("confirmation must be RESUME_INACTIVE_ACTIVATION")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = customerDdicTableName(input.objectName)
+    const packageName = ddicPackageName(input.packageName)
+    const result = await this.backend.callSapDdic(connectionId, {
+      operation: "RESUME_TRANSPARENT_TABLE_ACTIVATION",
+      objectName,
+      description: "Resume inactive transparent table activation",
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: input.expectedInactiveFingerprint.trim().toLowerCase()
+    })
+    requireDdicSuccess(result)
+    const active = JSON.parse(
+      await this.readDdicTransparentTable({ connectionId, objectName })
+    ) as Record<string, unknown>
+    return JSON.stringify(
+      {
+        connectionId,
+        objectName,
+        status: result.code,
+        resumed: true,
+        expectedInactiveFingerprint: input.expectedInactiveFingerprint.trim().toLowerCase(),
+        activeVersion: result.objectVersion,
+        active,
+        recordedRequest: result.recordedRequest,
+        definitionResent: false,
+        automaticRetry: false,
+        automaticRollback: false
       },
       null,
       2

@@ -1,7 +1,7 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：131
+- 工具总数：132
 - 只读工具：77
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
@@ -12,12 +12,12 @@
 | --- | --- |
 | profile: readonly | 77 |
 | profile: platform | 12 |
-| profile: dev | 115 |
+| profile: dev | 116 |
 | profile: config | 28 |
 | profile: ops | 35 |
-| profile: full | 131 |
+| profile: full | 132 |
 | 分组: data | 5 |
-| 分组: ddic | 20 |
+| 分组: ddic | 21 |
 | 分组: debug | 6 |
 | 分组: enhancement | 22 |
 | 分组: form | 4 |
@@ -136,6 +136,7 @@
 | `recover_ddic_table_conversion` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.7) |
 | `release_write_operation_lock` | platform | platform | 写 | local | — |
 | `replace_string_in_abap_object` | source | dev | 写 | native-adt | — |
+| `resume_ddic_table_activation` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.10) |
 | `run_atc_analysis` | quality | dev | 写 | target-specific | — |
 | `run_sci_analysis` | quality | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_SCI_API (≥1.0) |
 | `run_unit_tests` | quality | dev | 写 | native-adt | — |

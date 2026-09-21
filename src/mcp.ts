@@ -442,6 +442,14 @@ export function createMcpServer(
         tools.recoverDdicTableConversion(input)
       )
   )
+  registerTool(
+    "resume_ddic_table_activation",
+    toolContracts.resume_ddic_table_activation,
+    async (input) =>
+      invokeWrite("resume_ddic_table_activation", input, backend, writeReceipts, () =>
+        tools.resumeDdicTableActivation(input)
+      )
+  )
   registerTool("read_ddic_table_type", toolContracts.read_ddic_table_type, async (input) =>
     invoke("read_ddic_table_type", () => tools.readDdicTableType(input))
   )
@@ -1123,6 +1131,7 @@ export function writeOperationTarget(
           patch_ddic_transparent_table_fields: "TABL",
           patch_ddic_transparent_table_settings: "TABL",
           recover_ddic_table_conversion: "TABL",
+          resume_ddic_table_activation: "TABL",
           upsert_ddic_table_type: "TTYP",
           upsert_search_help: "SHLP"
         }[name] ??

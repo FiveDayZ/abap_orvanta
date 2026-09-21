@@ -126,6 +126,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "recover_ddic_table_conversion",
       "release_write_operation_lock",
       "replace_string_in_abap_object",
+      "resume_ddic_table_activation",
       "run_atc_analysis",
       "run_sci_analysis",
       "run_unit_tests",

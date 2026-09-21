@@ -210,6 +210,7 @@ const ROWS: readonly ToolRow[] = [
   ["patch_ddic_transparent_table_settings", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.7"],
   ["read_ddic_table_conversion_status", "ddic", DEV_OPS, "R", "target-specific", null, null],
   ["recover_ddic_table_conversion", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.7"],
+  ["resume_ddic_table_activation", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.10"],
   ["read_ddic_table_type", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2"],
   ["upsert_ddic_table_type", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2"],
   ["delete_ddic_object", "ddic", DEV, "D", "sap-helper-fallback", DDIC, "1.6"],
