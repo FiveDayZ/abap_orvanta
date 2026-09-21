@@ -2146,6 +2146,15 @@ export class MockBackend implements SapBackend {
         { ID: "3", NAME: "ALPINE" }
       ]
     }
+    // The D5-2 allowlist guards execute_data_query, so the filtering/sorting fixture has to read an
+    // allowlisted table: T001W is in the allowlist, ZDATA above is not.
+    if (sql.includes("FROM T001W")) {
+      return [
+        { WERKS: "2000", NAME1: "BETA PLANT" },
+        { WERKS: "1000", NAME1: "ALPHA PLANT" },
+        { WERKS: "3000", NAME1: "ALPINE PLANT" }
+      ]
+    }
     return []
   }
 

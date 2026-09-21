@@ -809,3 +809,42 @@ export function parseSimpleTableSelect(sql: string) {
     filters
   }
 }
+
+/**
+ * Every table a SELECT reads from, taken from a **string-masked** statement, or `undefined` when
+ * the tables cannot be enumerated statically.
+ *
+ * The caller must treat `undefined` as a rejection. A statement whose tables cannot be named cannot
+ * be allowlisted, and guessing one — or falling back to "the first FROM" — is exactly how a read
+ * path bypasses an allowlist. The statement is rejected without reaching SAP instead.
+ *
+ * `undefined` therefore covers: no `FROM` at all, a target that is not an identifier (a host
+ * variable or dynamic table name), and a comma-separated table list, whose members this grammar
+ * cannot enumerate with confidence. Explicit `JOIN` targets and subqueries are enumerated.
+ */
+export function selectedTableNames(maskedSql: string): string[] | undefined {
+  const names = new Set<string>()
+  const keywords = /\b(?:FROM|JOIN)\b/gi
+  let match: RegExpExecArray | null
+  while ((match = keywords.exec(maskedSql)) !== null) {
+    let at = match.index + match[0].length
+    while (at < maskedSql.length && /\s/.test(maskedSql[at]!)) at++
+    const rest = maskedSql.slice(at)
+    // `FROM ( SELECT ... )`: the derived table carries no name of its own, and the inner FROM is
+    // matched by a later iteration of this same scan.
+    if (rest.startsWith("(")) continue
+    const identifier = rest.match(/^([A-Za-z_][A-Za-z0-9_]*)/)
+    if (!identifier) return undefined
+    names.add(identifier[1]!.toUpperCase())
+    const tail = rest.slice(identifier[0].length)
+    const clause = tail.search(/\b(?:WHERE|GROUP\s+BY|ORDER\s+BY|HAVING|INTO|UP\s+TO|ENDSELECT)\b/i)
+    const scope = clause >= 0 ? tail.slice(0, clause) : tail
+    let depth = 0
+    for (const character of scope) {
+      if (character === "(") depth++
+      else if (character === ")") depth--
+      else if (character === "," && depth === 0) return undefined
+    }
+  }
+  return names.size > 0 ? [...names].sort() : undefined
+}

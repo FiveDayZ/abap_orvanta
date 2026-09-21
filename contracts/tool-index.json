@@ -578,7 +578,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。"
+      "note": "w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。原生与后备两条路径都过 D5-2 白名单（默认拒绝），表名无法静态枚举即拒绝。"
     },
     {
       "name": "find_where_used",

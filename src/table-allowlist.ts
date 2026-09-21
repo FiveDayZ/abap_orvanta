@@ -142,6 +142,14 @@ export function describeAllowlistRejection(
 export const TABLE_NOT_ALLOWED = "TABLE_NOT_ALLOWED"
 
 /**
+ * 语句里的表名无法静态枚举时的稳定错误码（动态表名、`FROM` 后不是标识符、逗号连接的多表清单）。
+ *
+ * 与 `TABLE_NOT_ALLOWED` 分开：前者是"表被拒"，这里是"根本说不清读的是哪张表"，后者必须同样
+ * 拒绝并要求调用方改写成可枚举的形式，否则白名单可以被一句动态 SQL 绕过。
+ */
+export const TABLE_ALLOWLIST_UNVERIFIABLE = "TABLE_ALLOWLIST_UNVERIFIABLE"
+
+/**
  * 断言表在允许集内，否则抛出带稳定码的错误。
  *
  * 抛错而非返回布尔值，是为了让调用点无法"忘记检查"——漏掉返回值会被类型系统或运行时挡住。

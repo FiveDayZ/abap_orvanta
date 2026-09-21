@@ -572,7 +572,8 @@ const NOTES: Record<string, string> = {
   correlate_sap_logs: "固定来源的有界关联，不证明因果；各来源失败分别报告。",
   diagnose_sap_failure: "只读 ST22 解析；时间关联是候选证据，不认定根因。",
   find_where_used: "w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。",
-  execute_data_query: "w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。",
+  execute_data_query:
+    "w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。原生与后备两条路径都过 D5-2 白名单（默认拒绝），表名无法静态枚举即拒绝。",
   read_abap_table: "最多 500 行、仅字符比较、无联接/聚合/排序；宽表按主键分块并二次复核。",
   run_atc_analysis: "w200 原生 ATC 端点不可用，当前退化为语法报告；不得作为质量门禁通过依据。",
   run_sci_analysis: "非原生 ATC，规则范围固定且依赖指纹匹配的 SCI 助手；timeout 不等于取消。",

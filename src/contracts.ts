@@ -1607,7 +1607,7 @@ const toolContractsBase = {
   },
   execute_data_query: {
     description:
-      "Run a read-only ABAP SQL SELECT through SAP ADT and return bounded JSON text. Standalone mode supports displayMode=internal only; rowRange is mandatory and at most 1000 rows. UI, files, webviews, direct data, and mutations are rejected.",
+      "Run a read-only ABAP SQL SELECT through SAP ADT and return bounded JSON text. Standalone mode supports displayMode=internal only; rowRange is mandatory and at most 1000 rows. UI, files, webviews, direct data, and mutations are rejected. Every table in the statement must be in the D5-2 allowlist (default deny) on both the native and the fallback path; a statement whose tables cannot be enumerated (dynamic table name, no FROM, comma-joined table list) is rejected before any SAP access with TABLE_ALLOWLIST_UNVERIFIABLE.",
     inputSchema: {
       sql: z.string().optional(),
       data: z

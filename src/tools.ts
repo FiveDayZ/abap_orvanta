@@ -47,7 +47,13 @@ import { collectSystemInfo } from "./system-info.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
-import { parseSimpleTableSelect, readAbapTable, tableQuerySchema } from "./table-query.js"
+import {
+  parseSimpleTableSelect,
+  readAbapTable,
+  selectedTableNames,
+  tableQuerySchema
+} from "./table-query.js"
+import { assertTableAllowed, TABLE_ALLOWLIST_UNVERIFIABLE } from "./table-allowlist.js"
 import { checkFailure, checkQuality } from "./quality-checks.js"
 import { collectWhereUsed, formatWhereUsed, type WhereUsedInput } from "./where-used.js"
 import { formatSciResult, SCI_HELPER, SCI_HELPER_FINGERPRINT, type SciInput } from "./sci.js"
@@ -6377,6 +6383,7 @@ export class ToolService {
       throw new Error("rowRange cannot exceed 1000 rows.")
     }
     const sql = validateReadOnlySql(input.sql)
+    assertQueryTablesAllowed(sql)
     const rowCap = Math.min(Math.floor(input.maxRows ?? 1000), 1000)
     let rawRows: Record<string, unknown>[]
     let fallback: Record<string, unknown> | undefined
@@ -8803,6 +8810,26 @@ export function validateReadOnlySql(sql: string | undefined): string {
   )
   if (mutation) throw new Error(`Read-only query rejected keyword: ${mutation[0].toUpperCase()}.`)
   return query
+}
+
+/**
+ * D5-2/S1：`execute_data_query` 的**主路径**（原生 ADT 数据预览）也必须过白名单。
+ *
+ * 在此之前只有 RFC 后备路径（`table-query.ts` 的 `read_abap_table`）检查白名单，主路径把调用方
+ * SQL 直接交给 `runQuery`，于是同一张被拒的表换个工具名就能读到。这里在**任何 SAP 访问之前**
+ * 判定，并且表名枚举不出来时同样拒绝：说不清读哪张表就不能判白名单，猜一张等于取消白名单。
+ */
+export function assertQueryTablesAllowed(sql: string): string[] {
+  const tables = selectedTableNames(maskSqlStrings(sql))
+  if (!tables) {
+    throw new Error(
+      `${TABLE_ALLOWLIST_UNVERIFIABLE}: the query's tables cannot be enumerated statically ` +
+        "(dynamic table name, missing FROM, or a comma-joined table list). Rewrite it as " +
+        "SELECT ... FROM <table> [JOIN <table>]; nothing was sent to SAP."
+    )
+  }
+  for (const table of tables) assertTableAllowed(table)
+  return tables
 }
 
 function maskSqlStrings(sql: string): string {

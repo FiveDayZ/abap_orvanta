@@ -5431,21 +5431,21 @@ test("diagnostic wave is headless, bounded and read-only", async () => {
 
   assert.match(tools.getAbapSqlSyntax(), /Only one read-only SELECT/)
   const query = await tools.executeDataQuery({
-    sql: "SELECT ID, NAME FROM ZDATA",
+    sql: "SELECT WERKS, NAME1 FROM T001W",
     displayMode: "internal",
     connectionId: "w200",
     rowRange: { start: 0, end: 2 },
-    filters: [{ column: "NAME", value: "AL*" }],
-    sortColumns: [{ column: "ID", direction: "asc" }]
+    filters: [{ column: "NAME1", value: "AL*" }],
+    sortColumns: [{ column: "WERKS", direction: "asc" }]
   })
   const queryResult = JSON.parse(query) as {
     resultCount: number
-    data: Array<{ ID: string }>
+    data: Array<{ WERKS: string }>
   }
   assert.equal(queryResult.resultCount, 2)
   assert.deepEqual(
-    queryResult.data.map((row) => row.ID),
-    ["1", "3"]
+    queryResult.data.map((row) => row.WERKS),
+    ["1000", "3000"]
   )
   await assert.rejects(
     tools.executeDataQuery({
