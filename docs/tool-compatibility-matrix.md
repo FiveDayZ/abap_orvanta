@@ -1,8 +1,10 @@
 # 工具兼容矩阵
 
-> 当前口径（2026-09-21，`0.46.8`）：工具注册表静态注册 **132 个工具（只读 77 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数。
+> 当前口径（2026-09-21，`0.46.9`）：工具注册表静态注册 **132 个工具（只读 77 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数。
 
-2026-09-21 增量（`0.46.8`，工具面不变，仅工具链与闸门）：`test:bootstrap` 与生成器自守卫恢复通过（R-16，详见 `README.md`），`npm run verify` 自 0.46.2 以来首次 exit 0；`matrix:check` 新增第二条闸门——脚本中标记块 `ORVANTA-DDIC-CAPABILITY-TABLE` 声明的操作码必须覆盖注册表为 `Z_ORVANTA_MCP_DDIC_API` 工具钉住的全部 `requiredHelperOperations`（实测 26 over 26；删除 `UPSERT_LOCK_OBJECT` 可复现失败）。线上助手仍自述 24 个操作码，补齐需载体 #2 + 人工 F8，本版本未部署。
+2026-09-21 增量（`0.46.9`，工具面不变）：**R-16 遗留半程收口**——能力行拆分使真实状态正文最宽 71 列（原 74 列致 `New-InstallProgram` 抛错），`test:bootstrap` 改为先物化脚本顶层 `$ddic*` 版本变量，消除"测试通过但真实路径不可用"的盲区。**R-17**——维护诊断族"未批准"回执新增 `reason`（`APPROVAL_FILE_MISSING`／`CONNECTION_NOT_APPROVED`／`SOURCE_NOT_ENABLED`）、`expectedApprovalFile`，来源未启用时另带 `requestedSource`／`approvedSources`；既有 `code` 取值不变。**门禁解封脚本**——新增 `scripts/prepare-maintenance-approval.mjs`（只读取指纹 + 默认 dry-run 写批准文件 + `--verify` 复测），`docs/maintenance-diagnostics.md` 记录两种回执形态与流程；成功口径为 `status=ok` + `entries` 数组。**DDIC 正文回移**——非活动表头改读 `ls_current_dd02v-*`、锁对象补 `ENQMODE`，生成器新增 token 级回归守卫（线上代码会被吞掉即拒绝生成）。**载体 #2 产物已生成但未部署**（载荷 2261 行、摘要 `e80a1fba7a061d09`、基线锁定 2119 行），线上助手仍自述 24 个操作码。
+
+2026-09-21 增量（`0.46.8`，工具面不变，仅工具链与闸门）：`test:bootstrap` 与生成器自守卫恢复通过（R-16，详见 `README.md`），`npm run verify` 自 0.46.2 以来首次 exit 0；`matrix:check` 新增第二条闸门——脚本中标记块 `ORVANTA-DDIC-CAPABILITY-TABLE` 声明的操作码必须覆盖注册表为 `Z_ORVANTA_MCP_DDIC_API` 工具钉住的全部 `requiredHelperOperations`（实测 26 over 26；删除 `UPSERT_LOCK_OBJECT` 可复现失败）。该轮的 R-16 结论已被 0.46.9 更正：其"exit 0"源于测试未物化脚本顶层版本变量。线上助手仍自述 24 个操作码，补齐需载体 #2 + 人工 F8，本版本未部署。
 
 2026-09-21 增量（`0.46.7`）：能力判定由"仅核对助手自述协议版本"改为"协议版本 + 助手自述操作码"（`evidence.source = version-and-operation-check`），新增 `partial` 判定与逐工具 `toolObservations`——写侧操作码缺失不再把同组的可用读侧判为不可用；`matrix:check` 对路由到 `Z_ORVANTA_MCP_DDIC_API` 的工具强制要求登记所需操作码。`execute_data_query` 的原生 ADT 路径接入 D5-2 表白名单（默认拒绝，新增稳定码 `TABLE_ALLOWLIST_UNVERIFIABLE`），不再只守 RFC 后备路径。发布溯源：`v0.46.1`–`v0.46.7` 标签齐备，打包闸门要求正式产物的版本标签存在且指向 HEAD。
 
