@@ -35,6 +35,20 @@ if ($sourceStatus.Count -gt 0 -and -not $AllowDirty) {
     throw "Working tree has $($sourceStatus.Count) uncommitted change(s) and the artifact would not be reproducible from a commit: $preview. Commit or stash them first, or pass -AllowDirty to build an explicitly unreproducible artifact."
 }
 
+# 溯源前置检查：0.46.0 及其前的产物没有标签，事后只能靠 release/INDEX.md 猜版本（R-7）。
+# 正式产物要求同名标签指向当前 HEAD：包内 BUILD-INFO.json 记录的提交因此可以用标签名复述，
+# 而不是一个裸哈希。候选产物（-CandidateSuffix）不要求标签，它是明确的一次性构建。
+$expectedTag = "v$($packageJson.version)"
+if (-not $CandidateSuffix) {
+    $tagCommit = & git -C $projectRoot rev-parse -q --verify "refs/tags/$expectedTag^{commit}"
+    if ($LASTEXITCODE -ne 0 -or -not "$tagCommit".Trim()) {
+        throw "Release $($packageJson.version) has no git tag $expectedTag. Tag the release commit first (git tag -a $expectedTag -m '<version>: <summary>') so the artifact can be traced back to a tag, or build a candidate with -CandidateSuffix."
+    }
+    if ("$tagCommit".Trim() -ne "$sourceCommit".Trim()) {
+        throw "Git tag $expectedTag points at $("$tagCommit".Trim()) but HEAD is $("$sourceCommit".Trim()); the artifact would not be reproducible from the tag. Tag the current commit or package a candidate."
+    }
+}
+
 function Remove-ScopedPath([string]$Path, [string]$AllowedRoot) {
     $fullPath = [IO.Path]::GetFullPath($Path)
     $fullRoot = [IO.Path]::GetFullPath($AllowedRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
@@ -200,6 +214,9 @@ $buildInfo = [ordered]@{
     sourceBaselineVersion = "2.7.0"
     sourceBaselineCommit = "0466e8ceea4e201335d74a7420ac894384f4a0e2"
     standaloneSourceCommit = "$sourceCommit".Trim()
+    # 正式产物的标签（候选产物为空）。它由上面的闸门保证指向 standaloneSourceCommit，
+    # 因此产物自身就能说明"这是哪个发布版本"，不必再靠 release/INDEX.md 反查。
+    sourceTag = $(if ($CandidateSuffix) { $null } else { $expectedTag })
     standaloneSourceDirty = $sourceStatus.Count -gt 0
     fileHashScope = "All packaged files except node_modules and BUILD-INFO.json; dependencies are pinned by app/package-lock.json."
     fileSha256 = $fileHashes
