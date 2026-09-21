@@ -906,13 +906,16 @@ const toolContractsBase = {
   },
   resume_ddic_table_activation: {
     description:
-      "Activate a Z* or Y* transparent table whose definition was saved but left inactive by an earlier failed create or write. Use this only after a write tool reported DDIC_SAVE_FAILED with PHASE=inactive_saved, or after a read reported INACTIVE_VERSION_EXISTS; read the current non-active state first and pass its exact fingerprint. This operation does not send a new table definition: it only runs the activation step against what is already stored, then re-reads the active table and returns it. Requires the current non-active fingerprint, the exact package and an existing transport, and RESUME_INACTIVE_ACTIVATION confirmation. SAP activation may commit internally; no automatic retry and no rollback of an already-saved definition. Requires a helper that publishes RESUME_TRANSPARENT_TABLE_ACTIVATION (protocol 1.10 or later).",
+      "Activate a Z* or Y* transparent table whose definition was saved but left inactive by an earlier failed create or write. Use this only after a write tool reported DDIC_SAVE_FAILED with PHASE=inactive_saved, or after a read reported INACTIVE_VERSION_EXISTS; read the current non-active state first and pass its exact fingerprint. This operation does not send a new table definition: it only runs the activation step against what is already stored, then re-reads the active table and returns it. Requires the current non-active fingerprint, the exact package and an existing transport, and RESUME_INACTIVE_ACTIVATION confirmation. SAP activation may commit internally; no automatic retry and no rollback of an already-saved definition. Requires a helper that publishes RESUME_TRANSPARENT_TABLE_ACTIVATION (protocol 1.10 or later). Because the helper does not report DD09V technical settings for an inactive definition, activation is refused (INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED, or INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE when the values are reported but unusable) unless usable values are visible; supply settingsRepair to write the approved dataClass/sizeCategory through PATCH_TRANSPARENT_TABLE_SETTINGS under the same fingerprint before activating. The reply reports the applied repair, the activated fingerprint, the active technical settings, and technicalSettingsVerified, which is false when the activated table does not match the expected values.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
       expectedInactiveFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
       packageName: z.string(),
       transportNumber: z.string(),
+      settingsRepair: ddicTechnicalSettingsPatch
+        .and(z.object({ acknowledgeTechnicalSettingsChange: z.literal(true) }))
+        .optional(),
       confirmation: z.literal("RESUME_INACTIVE_ACTIVATION"),
       connectionId: z.string()
     }

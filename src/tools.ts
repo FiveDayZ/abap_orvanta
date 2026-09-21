@@ -635,6 +635,11 @@ interface ResumeDdicTableActivationInput extends ReadDdicInput {
   packageName: string
   transportNumber: string
   confirmation: "RESUME_INACTIVE_ACTIVATION"
+  settingsRepair?:
+    | (PatchTransparentTableSettingsInput["settings"] & {
+        acknowledgeTechnicalSettingsChange: true
+      })
+    | undefined
 }
 
 interface UpsertTableTypeInput extends UpsertDdicInput {
@@ -3389,17 +3394,48 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const objectName = customerDdicTableName(input.objectName)
     const packageName = ddicPackageName(input.packageName)
-    const expectedVersion = requiredVersionToken(input.expectedVersion)
-    const expectedFingerprint = requiredDdicFingerprint(input.expectedFingerprint)
-    const current = await this.backend.callSapDdic(connectionId, {
-      operation: "READ_TRANSPARENT_TABLE",
-      objectName
+    const { result, definition } = await this.applyTransparentTableSettingsPatch({
+      connectionId,
+      objectName,
+      packageName,
+      transportNumber: transportNumber(input.transportNumber),
+      settings: input.settings,
+      expectedVersion: requiredVersionToken(input.expectedVersion),
+      expectedFingerprint: requiredDdicFingerprint(input.expectedFingerprint)
     })
-    requireCurrentDdicDefinition(current, packageName, expectedVersion)
+    return savedDdicResult(
+      result,
+      "transparentTable",
+      objectName,
+      packageName,
+      connectionId,
+      definition
+    )
+  }
+
+  /**
+   * Write DD09V technical settings for one table, guarded by package, version and definition
+   * fingerprint. Shared by `patch_ddic_transparent_table_settings` and the settings repair step of
+   * `resume_ddic_table_activation`, so both paths re-read and re-verify the same way.
+   */
+  private async applyTransparentTableSettingsPatch(input: {
+    connectionId: string
+    objectName: string
+    packageName: string
+    transportNumber: string
+    settings: PatchTransparentTableSettingsInput["settings"]
+    expectedVersion: string
+    expectedFingerprint: string
+  }): Promise<{ result: SapDdicResult; definition: Record<string, unknown> }> {
+    const current = await this.backend.callSapDdic(input.connectionId, {
+      operation: "READ_TRANSPARENT_TABLE",
+      objectName: input.objectName
+    })
+    requireCurrentDdicDefinition(current, input.packageName, input.expectedVersion)
     const currentDefinition = ddicDefinition(current, "transparentTable")
     if (
       createHash("sha256").update(JSON.stringify(currentDefinition)).digest("hex") !==
-      expectedFingerprint
+      input.expectedFingerprint
     ) {
       throw new Error(
         "FINGERPRINT_CONFLICT: Transparent table definition changed since it was read"
@@ -3414,19 +3450,16 @@ export class ToolService {
       )
     }
     const finalSettings = mergeTransparentTableSettings(currentDefinition, input.settings)
-    const result = await this.backend.callSapDdic(connectionId, {
+    const result = await this.backend.callSapDdic(input.connectionId, {
       operation: "PATCH_TRANSPARENT_TABLE_SETTINGS",
-      objectName,
+      objectName: input.objectName,
       description: String(currentDefinition.description ?? ""),
-      packageName,
-      transportNumber: transportNumber(input.transportNumber),
-      expectedVersion,
+      packageName: input.packageName,
+      transportNumber: input.transportNumber,
+      expectedVersion: input.expectedVersion,
       header: technicalSettingsHeader(finalSettings)
     })
-    return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
-      ...currentDefinition,
-      ...finalSettings
-    })
+    return { result, definition: { ...currentDefinition, ...finalSettings } }
   }
 
   async readDdicTableConversionStatus(input: ReadDdicInput): Promise<string> {
@@ -3562,10 +3595,9 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const objectName = customerDdicTableName(input.objectName)
     const packageName = ddicPackageName(input.packageName)
-    const stored = await this.backend.callSapDdic(connectionId, {
-      operation: "READ_TRANSPARENT_TABLE",
-      objectName
-    })
+    const readStored = () =>
+      this.backend.callSapDdic(connectionId, { operation: "READ_TRANSPARENT_TABLE", objectName })
+    const stored = await readStored()
     if (stored.metadata.INACTIVE !== "X") {
       throw new Error(
         stored.status.toUpperCase() === "S"
@@ -3573,43 +3605,164 @@ export class ToolService {
           : `SAP DDIC helper rejected the operation: ${stored.code}: ${stored.message}`
       )
     }
-    const storedDefinition = ddicDefinition(stored, "transparentTable")
-    const storedFingerprint = createHash("sha256")
-      .update(JSON.stringify(storedDefinition))
-      .digest("hex")
+    const definitionOf = (result: SapDdicResult) => ddicDefinition(result, "transparentTable")
+    const fingerprintOf = (definition: Record<string, unknown>) =>
+      createHash("sha256").update(JSON.stringify(definition)).digest("hex")
+    const storedDefinition = definitionOf(stored)
+    const storedFingerprint = fingerprintOf(storedDefinition)
     const expected = input.expectedInactiveFingerprint.trim().toLowerCase()
     if (storedFingerprint !== expected) {
       throw new Error(
         `INACTIVE_STATE_CONFLICT: The stored inactive definition changed since it was read (expected ${expected}, found ${storedFingerprint})`
       )
     }
+
+    // The inactive path of the deployed helper publishes DD02V attributes but no DD09V technical
+    // settings, and the 17:37 incident showed what that costs: the caller read dataClass "" and
+    // sizeCategory 0 and could not tell "SAP stored nothing" from "this read cannot see it", then
+    // faced activating the stored version unchanged. Activation is therefore gated on a technical
+    // setting set this service can actually see and, when the caller supplies one, on re-writing it
+    // first - never on a value that only looks empty.
+    const settingsOf = (definition: Record<string, unknown>) => ({
+      dataClass: String(definition.dataClass ?? ""),
+      sizeCategory: Number(definition.sizeCategory ?? 0),
+      buffering: String(definition.buffering ?? ""),
+      logDataChanges: definition.logDataChanges === true
+    })
+
+    const reported = technicalSettingsReported(stored)
+    const before = settingsOf(storedDefinition)
+    const usable = /^APPL[012]$/.test(before.dataClass) && before.sizeCategory >= 1
+
+    if (input.settingsRepair === undefined && !usable) {
+      throw new Error(
+        `${
+          reported
+            ? "INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE"
+            : "INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED"
+        }: the stored inactive version of ${objectName} has dataClass "${before.dataClass || "<empty>"}" and sizeCategory ${before.sizeCategory}, so activating it could persist incomplete technical settings.${
+          reported
+            ? ""
+            : " The deployed helper does not report DD09V technical settings for an inactive definition (its inactive payload carries DD02V attributes only), so this read cannot distinguish an empty DD09L row from an unreported one."
+        } Pass settingsRepair with the approved dataClass/sizeCategory (plus acknowledgeTechnicalSettingsChange) to write them under this fingerprint before activating, or recreate the table. No activation was attempted.`
+      )
+    }
+
+    let activeExpectedFingerprint = expected
+    let after = before
+    let repair: Record<string, unknown> | undefined
+    if (input.settingsRepair !== undefined) {
+      const { acknowledgeTechnicalSettingsChange, ...settings } = input.settingsRepair
+      if (acknowledgeTechnicalSettingsChange !== true) {
+        throw new Error("settingsRepair.acknowledgeTechnicalSettingsChange must be true")
+      }
+      if (!reported && settings.dataClass === undefined && settings.sizeCategory === undefined) {
+        throw new Error(
+          "settingsRepair must set dataClass and sizeCategory: this helper does not report the stored technical settings, so only an explicit value can be verified"
+        )
+      }
+      if (!reported) {
+        // Nothing about DD09L is visible, so a partial patch would silently write defaults for the
+        // settings the caller did not mention (buffering off, change logging off) instead of
+        // preserving them. Require the complete set so the repair states the approved definition.
+        const missing = (
+          ["dataClass", "sizeCategory", "buffering", "logDataChanges"] as const
+        ).filter((key) => settings[key] === undefined)
+        if (missing.length > 0) {
+          throw new Error(
+            `settingsRepair must supply the complete technical settings (${missing.join(", ")}): this helper does not report DD09V values for an inactive definition, so omitted settings would be written as defaults rather than preserved`
+          )
+        }
+      }
+      const patched = await this.applyTransparentTableSettingsPatch({
+        connectionId,
+        objectName,
+        packageName,
+        transportNumber: transportNumber(input.transportNumber),
+        settings,
+        expectedVersion: requiredVersionToken(stored.objectVersion),
+        expectedFingerprint: storedFingerprint
+      })
+      // The patch rewrites DD09L, so the stored definition and fingerprint change: re-read instead
+      // of assuming, and gate activation on the state that now exists.
+      const reread = await readStored()
+      const rereadDefinition = definitionOf(reread)
+      activeExpectedFingerprint = fingerprintOf(rereadDefinition)
+      after = settingsOf(rereadDefinition)
+      repair = {
+        requested: settings,
+        applyStatus: patched.result.code,
+        fingerprintBefore: storedFingerprint,
+        fingerprintAfter: activeExpectedFingerprint,
+        technicalSettingsBefore: before,
+        technicalSettingsAfter: after
+      }
+      const stillUnusable = !/^APPL[012]$/.test(after.dataClass) || after.sizeCategory < 1
+      if (stillUnusable) {
+        throw new Error(
+          `INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE: the technical-settings repair did not produce a usable dataClass/sizeCategory (found "${after.dataClass || "<empty>"}" / ${after.sizeCategory}); activation was not attempted`
+        )
+      }
+    }
+
     const result = await this.backend.callSapDdic(connectionId, {
       operation: "RESUME_TRANSPARENT_TABLE_ACTIVATION",
       objectName,
       description: "Resume inactive transparent table activation",
       packageName,
       transportNumber: transportNumber(input.transportNumber),
-      expectedVersion: expected
+      expectedVersion: activeExpectedFingerprint
     })
     requireDdicSuccess(result)
     const active = JSON.parse(
       await this.readDdicTransparentTable({ connectionId, objectName })
     ) as Record<string, unknown>
+    // Verify what was activated instead of trusting the activation call: the resume operation sends
+    // no definition, so the only proof that APPL1/1 survived is the active read.
+    const activeDefinition = (active.definition ?? {}) as Record<string, unknown>
+    const expectedSettings = input.settingsRepair === undefined ? before : after
+    const activeSettings = {
+      dataClass: String(activeDefinition.dataClass ?? ""),
+      sizeCategory: Number(activeDefinition.sizeCategory ?? 0),
+      buffering: String(activeDefinition.buffering ?? "")
+    }
+    const technicalSettingsVerified =
+      active.status !== "inactive" &&
+      activeSettings.dataClass === expectedSettings.dataClass &&
+      activeSettings.sizeCategory === expectedSettings.sizeCategory
+    const warnings = [
+      ...(reported
+        ? []
+        : [
+            "The deployed helper does not report DD09V technical settings for an inactive definition; the pre-activation values could not be read from SAP."
+          ]),
+      ...(technicalSettingsVerified
+        ? []
+        : [
+            `The active version reports dataClass "${activeSettings.dataClass || "<empty>"}" and sizeCategory ${activeSettings.sizeCategory}, which does not match the expected "${expectedSettings.dataClass}" / ${expectedSettings.sizeCategory}.`
+          ])
+    ]
     return JSON.stringify(
       {
         connectionId,
         objectName,
-        status: result.code,
+        status: technicalSettingsVerified ? result.code : "ACTIVATED_TECHNICAL_SETTINGS_MISMATCH",
         resumed: true,
         expectedInactiveFingerprint: expected,
         inactiveFingerprint: storedFingerprint,
+        activatedFingerprint: activeExpectedFingerprint,
         inactiveDefinition: storedDefinition,
+        technicalSettingsReported: reported,
+        technicalSettingsRepair: repair ?? null,
+        technicalSettingsVerified,
+        activeTechnicalSettings: activeSettings,
         activeVersion: result.objectVersion,
         active,
         recordedRequest: result.recordedRequest,
         definitionResent: false,
         automaticRetry: false,
-        automaticRollback: false
+        automaticRollback: false,
+        ...(warnings.length > 0 ? { warnings } : {})
       },
       null,
       2
@@ -3740,9 +3893,24 @@ export class ToolService {
           definitionFingerprint: createHash("sha256")
             .update(JSON.stringify(definition))
             .digest("hex"),
+          // False means the deployed helper published no DD09V technical settings for this inactive
+          // definition, so definition.dataClass/sizeCategory are client defaults, not SAP facts. The
+          // 17:37 incident read them as "the stored table has no data class" and was one step from
+          // activating that state; activation now refuses unless the caller supplies the values.
+          technicalSettingsReported: technicalSettingsReported(result),
           resumeTool: "resume_ddic_table_activation",
           notice:
-            "This definition is stored but not active. Inspect it, then use resume_ddic_table_activation with expectedInactiveFingerprint set to definitionFingerprint to activate it. Do not call a create tool for this object."
+            "This definition is stored but not active. Inspect it, then use resume_ddic_table_activation with expectedInactiveFingerprint set to definitionFingerprint to activate it. Do not call a create tool for this object." +
+            (technicalSettingsReported(result)
+              ? ""
+              : " This helper does not report DD09V technical settings for an inactive definition, so dataClass/sizeCategory here are not SAP values: pass settingsRepair (dataClass, sizeCategory, acknowledgeTechnicalSettingsChange) to resume_ddic_table_activation if the approved definition requires values it cannot show."),
+          ...(technicalSettingsReported(result)
+            ? {}
+            : {
+                warnings: [
+                  "dataClass/sizeCategory are not reported by the deployed helper for an inactive definition and must not be treated as stored values."
+                ]
+              })
         },
         null,
         2
@@ -9622,6 +9790,20 @@ function requiredDdicFingerprint(value: string): string {
     throw new Error("expectedFingerprint must be returned by read_ddic_transparent_table")
   }
   return normalized
+}
+
+/**
+ * Which DD09V technical settings the helper actually published.
+ *
+ * The active path emits them as `H` rows (TABART/TABKAT/BUFALLOW/PUFFERUNG); the inactive path does
+ * not emit them at all, so an empty `dataClass` there means "not reported by this helper", not
+ * "empty in SAP". The distinction decides whether activation may proceed, so it is computed from
+ * the raw payload keys rather than from the mapped, defaulted values.
+ */
+function technicalSettingsReported(result: SapDdicResult): boolean {
+  return ["TABART", "TABKAT", "BUFALLOW", "PUFFERUNG"].some(
+    (key) => key in result.header || key in result.metadata
+  )
 }
 
 function requireCurrentDdicDefinition(

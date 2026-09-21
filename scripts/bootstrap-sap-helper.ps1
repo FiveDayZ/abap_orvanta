@@ -1904,6 +1904,14 @@ function New-DdicFunctionSource {
         "            add_payload 'M' '1' 'TABCLASS' ls_current_dd02v-tabclass.",
         "            add_payload 'M' '1' 'MAINFLAG' ls_current_dd02v-mainflag.",
         "            add_payload 'M' '1' 'CONTFLAG' ls_current_dd02v-contflag.",
+        # 17:37 事件：非活动读取不报 DD09V 技术设置，调用方只能看到客户端默认的 dataClass = 空 /
+        # sizeCategory = 0，无法区分"DD09L 里就是空"与"这条读路径看不到"，而按批准定义它应为
+        # APPL1/1。技术设置与表头同出自这次 DDIF_TABL_GET state = 'M'，因此一并上报；客户端按
+        # 载荷里这些键是否存在判断可信性，1.10 及更早不含这些键，仍按"未上报"处理。
+        "            add_payload 'M' '1' 'TABART' ls_current_dd09v-tabart.",
+        "            add_payload 'M' '1' 'TABKAT' ls_current_dd09v-tabkat.",
+        "            add_payload 'M' '1' 'BUFALLOW' ls_current_dd09v-bufallow.",
+        "            add_payload 'M' '1' 'PUFFERUNG' ls_current_dd09v-pufferung.",
         "            LOOP AT lt_dd03p ASSIGNING <ls_field>.",
         "              lv_index = sy-tabix.",
         "              add_payload 'F' lv_index 'FIELDNAME'",

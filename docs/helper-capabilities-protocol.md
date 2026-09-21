@@ -98,6 +98,10 @@ iv_operation = 'CAPABILITIES'
 
 活动路径把对象属性发在 `H`；**非活动版本描述路径（`INACTIVE_VERSION_DESCRIBED`，协议 1.10）把同一批属性发在 `M`**——在该路径下它们描述的是被读取的那个版本，而不是活动版本。服务侧因此把 `M` 作为 `H` 的回退来源（两处都有同名键时以 `H` 为准）。缺失这条回退时，非活动读取会返回空 `description`/`tableClass` 等，而 SAP 自己的 `DD02L` 行其实带着 `TRANSP`：这是**客户端丢行**，不是对象为空。非活动回执同时给出 `inactiveVersionAttributes`（助手原样上报的属性，去掉 `INACTIVE`/`GOTSTATE`），便于区分" SAP 没给"与"客户端没映射"。
 
+**技术设置（DD09V）在 1.10 及更早只在活动路径上报**：`TABKAT`/`TABART`/`BUFALLOW`/`PUFFERUNG` 由活动分支的 `H` 行发出（取自 `ls_dd09v`），非活动分支一条都不发。因此非活动回执里的 `dataClass`/`sizeCategory` 是**客户端默认值**，不是 SAP 存储值——2026-09-21 17:37 事件正是把它当成事实（`dataClass=""`、`sizeCategory=0`），而批准定义要求 `APPL1/1`。服务侧据此：非活动回执给出 `technicalSettingsReported`（**按载荷里是否出现这些键判定**，故助手升级后自动变为 `true`，不需要版本开关）与 `warnings`；`resume_ddic_table_activation` 在无法确认可用设置时拒绝激活（`INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED`／`INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE`），并提供指纹保护的 `settingsRepair` 先写 DD09L 再激活、最后按活动读取逐项验证。
+
+**规范正文（下一次载体起）在非活动分支补报这四项**，与表头同出自那次 `DDIF_TABL_GET state = 'M'`（`dd09l_wa = ls_current_dd09v`）。这是**加法变更**：1.10 助手不含这些行，服务侧按"未上报"处理，因此不需要协议版本升级即可安全共存。
+
 ```text
 ev_status  = 'S'
 ev_code    = 'CAPABILITIES'

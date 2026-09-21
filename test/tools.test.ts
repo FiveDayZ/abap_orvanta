@@ -38,7 +38,7 @@ import {
   standaloneClientOptions,
   writeTextElementsWithClient
 } from "../src/adt-backend.js"
-import type { AbapObjectInfo } from "../src/backend.js"
+import type { AbapObjectInfo, SapDdicResult } from "../src/backend.js"
 import { toolContracts } from "../src/contracts.js"
 import { InvocationReceiptStore } from "../src/invocation-receipts.js"
 import { ToolService, extractMethod, validateReadOnlySql } from "../src/tools.js"
@@ -794,6 +794,183 @@ test("an inactive definition keeps the attributes the helper publishes under M",
       </IT_SOURCE></Body></Envelope>`)
   assert.equal(active.header.TABCLASS, "TRANSP")
   assert.equal(active.metadata.TABCLASS, "INTTAB")
+})
+
+/**
+ * The 17:37 incident resumed from a read that could not report DD09V technical settings: the inactive
+ * reply showed `dataClass ""` and `sizeCategory 0`, the approved definition required APPL1/1, and
+ * activating the stored version unchanged would have persisted the incomplete state. The helper
+ * publishes DD09V values only on the active path, so the resume tool must not read absence as fact.
+ */
+function inactiveTableResult(options: {
+  fields?: Array<Record<string, unknown>>
+  header?: Record<string, string>
+  metadata?: Record<string, string>
+  code?: string
+}): SapDdicResult {
+  return {
+    status: "S",
+    code: options.code ?? "INACTIVE_VERSION_DESCRIBED",
+    message: "Inactive DDIC version described for inspection",
+    version: "1.10",
+    metadata: {
+      GOTSTATE: "N",
+      INACTIVE: "X",
+      PACKAGE: "ZABAP",
+      VERSION: "20260831120000",
+      ...(options.metadata ?? {})
+    },
+    packageName: "ZABAP",
+    objectVersion: "20260831120000",
+    recordedRequest: "GR2K923427",
+    header: {
+      TABNAME: "ZTPMC_TPRPI",
+      DDTEXT: "Transfer post-processing",
+      TABCLASS: "TRANSP",
+      CONTFLAG: "A",
+      MAINFLAG: "",
+      ...(options.header ?? {})
+    },
+    fixedValues: [],
+    fields: (options.fields ?? [
+      { FIELDNAME: "MANDT", POSITION: "0001", KEYFLAG: "X", ROLLNAME: "MANDT" },
+      { FIELDNAME: "ID", POSITION: "0002", KEYFLAG: "", ROLLNAME: "CHAR10" }
+    ]) as SapDdicResult["fields"],
+    selectionMethods: [],
+    parameters: [],
+    fieldAssignments: [],
+    lockTables: [],
+    lockFields: []
+  }
+}
+
+test("an inactive resume refuses while the helper cannot report technical settings", async () => {
+  const backend = new MockBackend()
+  const operations: string[] = []
+  backend.callSapDdic = async (_connectionId, request) => {
+    operations.push(request.operation)
+    return inactiveTableResult({})
+  }
+  const tools = new ToolService(backend)
+  const read = JSON.parse(
+    await tools.readDdicTransparentTable({ connectionId: "w200", objectName: "ZTPMC_TPRPI" })
+  ) as {
+    status: string
+    technicalSettingsReported: boolean
+    definitionFingerprint: string
+    definition: Record<string, unknown>
+    warnings?: string[]
+  }
+  // The read must say the values are unreported rather than presenting client defaults as SAP facts.
+  assert.equal(read.status, "inactive")
+  assert.equal(read.technicalSettingsReported, false)
+  assert.equal(read.definition.dataClass, "")
+  assert.equal(read.definition.sizeCategory, 0)
+  assert.match(String(read.warnings?.[0] ?? ""), /not reported by the deployed helper/i)
+
+  operations.length = 0
+  await assert.rejects(
+    () =>
+      tools.resumeDdicTableActivation({
+        connectionId: "w200",
+        objectName: "ZTPMC_TPRPI",
+        expectedInactiveFingerprint: read.definitionFingerprint,
+        packageName: "ZABAP",
+        transportNumber: "GR2K923427",
+        confirmation: "RESUME_INACTIVE_ACTIVATION"
+      }),
+    (error: Error) => {
+      assert.match(error.message, /INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED/)
+      assert.match(error.message, /could persist incomplete technical settings/)
+      return true
+    }
+  )
+  // Activation was not attempted: the guard runs before any resume call reaches SAP.
+  assert.deepEqual(operations, ["READ_TRANSPARENT_TABLE"])
+})
+
+test("an inactive resume with settingsRepair writes the settings, activates, and verifies them", async () => {
+  const backend = new MockBackend()
+  const operations: string[] = []
+  const repaired = inactiveTableResult({
+    header: { TABART: "APPL1", TABKAT: "1", BUFALLOW: "N", PUFFERUNG: "" }
+  })
+  const active = {
+    ...inactiveTableResult({
+      header: { TABART: "APPL1", TABKAT: "1", BUFALLOW: "N", PUFFERUNG: "" },
+      code: "DDIC_OBJECT_READ"
+    }),
+    metadata: { GOTSTATE: "A", PACKAGE: "ZABAP", VERSION: "20260831120000" }
+  } as SapDdicResult
+  const queue: SapDdicResult[] = []
+  backend.callSapDdic = async (_connectionId, request) => {
+    operations.push(request.operation)
+    // An unexpected extra call is reported by the operation-list assertion rather than by a throw,
+    // so the diff shows which call was made and in what order.
+    return queue.shift() ?? inactiveTableResult({})
+  }
+  const tools = new ToolService(backend)
+  const read = JSON.parse(
+    await tools.readDdicTransparentTable({ connectionId: "w200", objectName: "ZTPMC_TPRPI" })
+  ) as { definitionFingerprint: string }
+  operations.length = 0
+  queue.push(
+    inactiveTableResult({}),
+    inactiveTableResult({}),
+    { ...inactiveTableResult({}), code: "DDIC_OBJECT_SAVED" },
+    repaired,
+    { ...inactiveTableResult({}), code: "DDIC_OBJECT_ACTIVATED" },
+    active
+  )
+  const result = JSON.parse(
+    await tools.resumeDdicTableActivation({
+      connectionId: "w200",
+      objectName: "ZTPMC_TPRPI",
+      expectedInactiveFingerprint: read.definitionFingerprint,
+      packageName: "ZABAP",
+      transportNumber: "GR2K923427",
+      confirmation: "RESUME_INACTIVE_ACTIVATION",
+      settingsRepair: {
+        dataClass: "APPL1",
+        sizeCategory: 1,
+        buffering: "notAllowed",
+        logDataChanges: false,
+        acknowledgeTechnicalSettingsChange: true
+      }
+    })
+  ) as {
+    status: string
+    resumed: boolean
+    technicalSettingsVerified: boolean
+    technicalSettingsReported: boolean
+    activatedFingerprint: string
+    inactiveFingerprint: string
+    technicalSettingsRepair: {
+      technicalSettingsBefore: { dataClass: string; sizeCategory: number }
+      technicalSettingsAfter: { dataClass: string; sizeCategory: number }
+    }
+    activeTechnicalSettings: { dataClass: string; sizeCategory: number }
+    definitionResent: boolean
+  }
+  // The repair is written under the fingerprint that was read, then activation runs on the re-read
+  // state, and the active read proves APPL1/1 survived instead of trusting the activation call.
+  assert.deepEqual(operations, [
+    "READ_TRANSPARENT_TABLE",
+    "READ_TRANSPARENT_TABLE",
+    "PATCH_TRANSPARENT_TABLE_SETTINGS",
+    "READ_TRANSPARENT_TABLE",
+    "RESUME_TRANSPARENT_TABLE_ACTIVATION",
+    "READ_TRANSPARENT_TABLE"
+  ])
+  assert.equal(result.resumed, true)
+  assert.equal(result.technicalSettingsVerified, true)
+  assert.equal(result.technicalSettingsReported, false)
+  assert.equal(result.technicalSettingsRepair.technicalSettingsBefore.dataClass, "")
+  assert.equal(result.technicalSettingsRepair.technicalSettingsAfter.dataClass, "APPL1")
+  assert.equal(result.activeTechnicalSettings.dataClass, "APPL1")
+  assert.equal(result.activeTechnicalSettings.sizeCategory, 1)
+  assert.notEqual(result.activatedFingerprint, result.inactiveFingerprint)
+  assert.equal(result.definitionResent, false)
 })
 
 test("Dynpro application tools validate customer scope and preserve structured rows", async () => {

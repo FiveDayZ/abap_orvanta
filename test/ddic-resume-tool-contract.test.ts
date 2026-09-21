@@ -33,6 +33,7 @@ const REQUIRED_SCHEMA_KEYS = [
   "objectName",
   "operationId",
   "packageName",
+  "settingsRepair",
   "transportNumber"
 ]
 const REQUIRED_INPUTS = [
@@ -101,6 +102,32 @@ test("the resume contract publishes every recovery input", () => {
   // The contract must keep saying that it does not re-send the definition.
   assert.match(contract.description, /does not send a new table definition/i)
   assert.match(contract.description, /RESUME_INACTIVE_ACTIVATION/)
+
+  // The 17:37 incident needed a way to write the approved technical settings before activating.
+  // `settingsRepair` is optional - omitting it must still be a valid call - but when it is used the
+  // technical-settings change has to be acknowledged explicitly, and the contract must stay explicit
+  // that verification happens against the active read.
+  const optional = schema.parse(validInput())
+  assert.equal("settingsRepair" in optional, false)
+  assert.throws(() =>
+    schema.parse({
+      ...validInput(),
+      settingsRepair: { dataClass: "APPL1", sizeCategory: 1 }
+    })
+  )
+  const repaired = schema.parse({
+    ...validInput(),
+    settingsRepair: {
+      dataClass: "APPL1",
+      sizeCategory: 1,
+      buffering: "notAllowed",
+      logDataChanges: false,
+      acknowledgeTechnicalSettingsChange: true
+    }
+  }) as { settingsRepair: Record<string, unknown> }
+  assert.equal(repaired.settingsRepair.dataClass, "APPL1")
+  assert.match(contract.description, /settingsRepair/)
+  assert.match(contract.description, /technicalSettingsVerified/)
 })
 
 test("the HTTP tool list publishes the resume tool with its complete JSON schema", async () => {

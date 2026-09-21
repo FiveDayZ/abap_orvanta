@@ -5,6 +5,23 @@ ORVANTA 是独立 ABAP MCP 服务，默认 MCP 注册名为 `orvanta`。它不�
 
 ## 当前实施基线
 
+2026-09-21 版本 `0.46.11` 修复 **17:37 事件**：非活动表的技术设置读不到，恢复激活可能固化不完整定义。**工具面与既有错误码取值不变**（132 项 / 只读 77 项 / 能力组 18 组）；`resume_ddic_table_activation` 新增可选入参与两个新拒绝码。
+
+**事件**：`read_ddic_transparent_table('ZTPMC_TPRPI')` 在 0.46.10 上已能给出描述、`tableClass=TRANSP`、`deliveryClass=A` 与 29 个字段，但 `dataClass` 为空、`sizeCategory=0`，而批准定义要求 **`APPL1/1`**。`resume_ddic_table_activation` 只重读已存定义、校验指纹后调用恢复激活，**不重发定义**，因此继续可能把不完整技术设置固化；调用方正确地停下了。
+
+**根因（本轮取证）**：助手只在**活动路径**把 DD09V 技术设置发成 `H` 行（`TABKAT/TABART/BUFALLOW/PUFFERUNG`，取自 `ls_dd09v`）；**非活动描述路径一条都不发**，于是服务侧映射到 `dataClass=""`/`sizeCategory=0`——这是**客户端默认值，不是 SAP 事实**。恢复路径在助手侧也确实只有 `DD_TABL_ACT`（`scripts\bootstrap-sap-helper.ps1` 的 `lv_resume = 'X'` 分支），不发任何定义。
+
+**修复（两层，安全侧立即生效、源头侧随下一次 F8）**：
+
+1. **读取诚实化**：非活动回执新增 `technicalSettingsReported`；为 `false` 时同时给出 `warnings`，并明确说明 `dataClass`/`sizeCategory` 不是 SAP 存储值。判定依据是**载荷里是否出现 DD09V 键**，所以助手升级后自动由"未上报"变为"已上报"，无需版本开关。
+2. **拒绝不安全的激活**：`resume_ddic_table_activation` 在无法确认可用技术设置时**不再调用**激活操作，而是以 `INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED`（助手未上报）或 `INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE`（上报但不可用）失败，错误正文给出当前值、两条可恢复路线（补 `settingsRepair` 或重建）并声明"未尝试激活"。
+3. **指纹保护的修复路径**（可选 `settingsRepair`，需 `acknowledgeTechnicalSettingsChange: true`）：先用**读到的同一指纹**通过**已部署的** `PATCH_TRANSPARENT_TABLE_SETTINGS` 写入批准设置（`dataClass`/`sizeCategory`/`buffering`/`logDataChanges`），再重读、以新指纹执行激活，最后读回**活动**定义并逐项比对，回执给出 `technicalSettingsRepair`、`activatedFingerprint`、`activeTechnicalSettings`、`technicalSettingsVerified`；不一致时状态为 `ACTIVATED_TECHNICAL_SETTINGS_MISMATCH` 并附 `warnings`。未上报技术设置时要求提供**完整**设置集——否则被省略的项会被当默认值写入，而不是保持原状。
+4. **源头修复（未部署）**：规范正文的非活动分支现在一并上报 `TABART/TABKAT/BUFALLOW/PUFFERUNG`（与表头同出自那次 `DDIF_TABL_GET state = 'M'`）。载体 #2 已重生成：载荷 **2265 行**、摘要 `3c61cea7e59992f2`、源码摘要 `7e967b7f…`、基线仍锁定线上 **2119 行**、回归守卫无"线上有而规范无"的行、26 条操作码。**仍未部署，需人工 F8**；部署后本条读取即为准确值。
+
+**本次边界**：仅服务侧代码、助手脚本与文档；**未修改任何 SAP 对象、未部署或升级助手、未执行 F8、未操作传输**，也未运行 `settingsRepair` 对任何真实对象。
+
+## 实施基线（历史，倒序）
+
 2026-09-21 版本 `0.46.10` 修复 **17:10 事件**暴露的两段链路缺口，**工具面与既有错误码取值不变**（132 项 / 只读 77 项 / 能力组 18 组）。
 
 **缺口①：非活动 DDIC 读取的属性被客户端丢掉（High，能力回退）**。0.46.9 已恢复 SM12 查询后，`read_ddic_transparent_table('ZTPMC_TPRPI')` 返回 `status=inactive`、29 个字段，但 `description`/`tableClass`/`deliveryClass`/`dataClass` 全空、`sizeCategory=0`，调用方因此怀疑"非活动表头本身为空"而不敢激活。**决定性证据（只读）**：直接读 `DD02L`（过滤器 `TABNAME=ZTPMC_TPRPI`）得到行 `AS4LOCAL=N`、`AS4VERS=0001`、`TABCLASS=TRANSP`、`CONTFLAG=A`、`AS4USER=WYS`、`AS4DATE/TIME=20260921/094830` ——**SAP 里表头并不空**。根因在服务侧解析：助手载荷按分组字母入袋（`M`→`metadata`、`H`→`header`），活动路径把对象属性发在 `H`，而**非活动描述路径把同一批属性发在 `M`**（该路径下它们描述被读版本），解析器只把 `H` 当 `header`，于是 `M|1|TABCLASS|TRANSP` 这类行被丢弃，`ddicDefinition` 读到空值。**修订**：`M` 作为 `H` 的回退来源（两处同名键时 `H` 优先），非活动回执另给 `inactiveVersionAttributes`（助手原样上报、去掉 `INACTIVE`/`GOTSTATE`），使" SAP 没给"与"客户端没映射"可区分；`docs/helper-capabilities-protocol.md` §3.2.1 记录分组语义。该修复在**服务侧**，不需部署助手、不需要载体。
