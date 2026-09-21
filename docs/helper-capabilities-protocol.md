@@ -184,7 +184,7 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 - **读回核对结果**：`Z_ORVANTA_MAINT_READ` 线上体仍为 `f2a1580c…`（303 行）、分配仍为空，即**对象未被修改**，写操作未生效。
 - 已确认写入路径要求 stateful ADT 会话（服务已满足，错误中 `stateful=true`）；打包版 0.45.0（`e568fe1`）与仓库 HEAD 之间**没有**与锁相关的服务端改动，因此"换用更新的构建"不构成修复假设。
-- 只读诊断尝试：`search_sap_locks`（用户 `WYS`）返回 `status=unavailable, code=HELPER_NOT_APPROVED`——读取 SM12 需要一个另行部署并通过指纹批准的锁助手，当前 w200 不具备，故**SAP 侧锁状态无法观测**。
+- 只读诊断尝试：`search_sap_locks`（用户 `WYS`）返回 `status=unavailable, code=HELPER_NOT_APPROVED`——当时记为"需要另行部署并通过指纹批准的锁助手，当前 w200 不具备"。**2026-09-21 复核更正**：该回执由**服务侧本地批准门禁**在访问 SAP **之前**产生（状态目录下无 `maintenance-diagnostic-approvals.json`），**不能**据此推断助手未部署——`Z_ORVANTA_MAINT_READ` 当时已部署在 `w200`（函数组 `ZORVANTA_MAINT`、包 `ZABAP`），缺的是含 `CAPABILITIES` 的版本，故其能力为 `operation-scoped`；正确结论是**SAP 侧锁状态未被观测**（`readOnly` 门禁拦下），而不是"助手不存在"。携带 R-17 的版本起，该回执附带 `reason` 与 `expectedApprovalFile` 以区分两类缺口（见 `docs/maintenance-diagnostics.md` §启用门禁）。
 - 未执行：任何重试、锁清理、传输操作或对象删除。
 - 两条待用户处置的候选（见任务报告）：把两个对象分配到 `GR2K923472`（bootstrap 的 `AssignPackageTransport` 模式或 SE80 手工分配）；以及在 SM12 中确认／清理可能残留的会话锁（这两个对象此前无开放分配，历史会话中断可能留下锁项）。
 - 追加诊断（2026-09-18 09:20）：`get_write_operation_status` 复核该操作（`capabilities-maint-1789693304068`）为 `status=failed`、`localLockReleased=true`、`outcomeMayBeUnknown=true`；`list_write_recovery_operations` 返回 `count=0`、`automaticCleanup=false`。即**服务侧没有挂起或待恢复的写操作**，`release_write_operation_lock` 无对象可释放，失败点只落在 SAP 对 PUT 的拒绝上。

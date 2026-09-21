@@ -142,7 +142,29 @@ test("maintenance routes are unavailable without approval, never an empty succes
   const f = await fixture(t)
   const result = JSON.parse(await f.service.searchLocks(scope))
   assert.equal(result.status, "unavailable")
+  assert.equal(result.code, "HELPER_NOT_APPROVED")
+  assert.equal(result.reason, "APPROVAL_FILE_MISSING")
+  // The caller must be able to tell a local approval gate from a deployment gap without reading
+  // this service's source: report the file the service actually looked for.
+  assert.equal(result.expectedApprovalFile, join(f.root, MAINTENANCE_APPROVAL_FILE))
   assert.equal(result.entries, null)
+  assert.equal(f.state.calls, 0)
+  assert.equal(f.state.reads, 0)
+})
+
+test("an approval file without this connection discloses CONNECTION_NOT_APPROVED and the file", async (t) => {
+  const f = await fixture(t)
+  await f.approve([{ ...f.approval, connectionId: "w201" }])
+  for (const result of [
+    JSON.parse(await f.service.searchLocks(scope)),
+    JSON.parse(await f.service.searchUpdates({ ...scope, ...period })),
+    JSON.parse(await f.service.readUpdate({ ...scope, updateKey: "A" }))
+  ]) {
+    assert.equal(result.status, "unavailable")
+    assert.equal(result.code, "HELPER_NOT_APPROVED")
+    assert.equal(result.reason, "CONNECTION_NOT_APPROVED")
+    assert.equal(result.expectedApprovalFile, join(f.root, MAINTENANCE_APPROVAL_FILE))
+  }
   assert.equal(f.state.calls, 0)
   assert.equal(f.state.reads, 0)
 })
@@ -176,7 +198,12 @@ test("maintenance approvals bind connection, source and both helper fingerprints
   await f.approve([f.approval, f.approval])
   await assert.rejects(f.service.searchLocks(scope), /DUPLICATE/)
   await f.approve([{ ...f.approval, enabledSources: ["SM13"] }])
-  assert.equal(JSON.parse(await f.service.searchLocks(scope)).code, "SOURCE_NOT_APPROVED")
+  const unapproved = JSON.parse(await f.service.searchLocks(scope))
+  assert.equal(unapproved.code, "SOURCE_NOT_APPROVED")
+  assert.equal(unapproved.reason, "SOURCE_NOT_ENABLED")
+  assert.equal(unapproved.requestedSource, "SM12")
+  assert.deepEqual(unapproved.approvedSources, ["SM13"])
+  assert.equal(unapproved.expectedApprovalFile, join(f.root, MAINTENANCE_APPROVAL_FILE))
   await f.approve()
   f.state.drift = true
   await assert.rejects(f.service.searchLocks(scope), /FINGERPRINT_MISMATCH/)
@@ -387,6 +414,8 @@ test("batch2 MCP tools are read-only and do not invoke unapproved helpers", asyn
       assert.notEqual(result.isError, true)
       const body = JSON.parse((result.content as Array<{ text: string }>)[0]!.text)
       assert.equal(body.code, "HELPER_NOT_APPROVED")
+      assert.equal(body.reason, "APPROVAL_FILE_MISSING")
+      assert.equal(body.expectedApprovalFile, join(f.root, MAINTENANCE_APPROVAL_FILE))
     }
     assert.equal(f.state.calls, 0)
   } finally {

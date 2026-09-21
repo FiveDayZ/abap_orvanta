@@ -639,7 +639,7 @@ export async function buildCapabilityReport(
       "target-specific",
       ["search_sap_locks", "search_failed_updates", "read_failed_update"],
       unknownTargetObservation(
-        "Requires separately deployed Z_ORVANTA_MAINT_READ in ZORVANTA_MAINT, matching source/interface approval and SAP display permissions. Local-only candidate: no helper deployment or live sample acceptance. No SAP unlock or update reprocessing; local receipts never prove SAP lock ownership."
+        "Requires separately deployed Z_ORVANTA_MAINT_READ in ZORVANTA_MAINT, matching source/interface approval and SAP display permissions. No SAP unlock or update reprocessing; local receipts never prove SAP lock ownership. Deployment, fingerprint approval and a local approval file are three separate gates: this report does not probe the family (its reads are approval-gated), so an absent attestation here does not distinguish 'helper not deployed' from 'helper deployed but not locally approved'. Trust the tool reply instead - an unavailable result carries code, reason (APPROVAL_FILE_MISSING, CONNECTION_NOT_APPROVED or SOURCE_NOT_ENABLED) and the approval file path the service actually read, and it is returned before any SAP access."
       )
     ),
     capability(

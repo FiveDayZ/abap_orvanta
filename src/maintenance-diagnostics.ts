@@ -169,6 +169,23 @@ type Reply = z.infer<typeof replySchema>
 type MetadataReader = (connectionId: string, functionName: string) => Promise<unknown>
 type ReceiptReader = (connectionId: string, operationId: string) => Promise<unknown>
 
+/**
+ * Why a maintenance read stopped before touching SAP, and what an administrator has to change.
+ *
+ * The stable `code` alone cannot distinguish "no approval file at all" from "this connection is not
+ * in it", and neither says which file the service actually read - the 2026-09-21 15:34 incident
+ * read `HELPER_NOT_APPROVED` as "SAP-side approval missing" when the helper was in fact deployed
+ * and only the local file was absent. `reason` and `expectedApprovalFile` exist so a caller can
+ * tell a local gate from a deployment gap without reading this service's source.
+ */
+export type MaintenanceApprovalFailure = {
+  code: "HELPER_NOT_APPROVED" | "SOURCE_NOT_APPROVED"
+  reason: "APPROVAL_FILE_MISSING" | "CONNECTION_NOT_APPROVED" | "SOURCE_NOT_ENABLED"
+  expectedApprovalFile: string
+  requestedSource?: "SM12" | "SM13"
+  approvedSources?: readonly ("SM12" | "SM13")[]
+}
+
 export function isFailedUpdate(state: number, returnCode: number) {
   // W200 TSKHINCL: aborted=253; error RCs 2..201, not scheduling RCs 241..255.
   return state === 253 || (returnCode >= 2 && returnCode <= 201)
@@ -186,15 +203,23 @@ export class MaintenanceDiagnosticService {
     connectionId: string,
     action: Reply["action"],
     parameters: Record<string, string>
-  ): Promise<{ reply?: Reply; code?: string }> {
+  ): Promise<{ reply: Reply } | { failure: MaintenanceApprovalFailure }> {
     const connection = this.backend.connectionDetails(connectionId)
+    const expectedApprovalFile = join(this.stateRoot, MAINTENANCE_APPROVAL_FILE)
     let document: unknown
     try {
-      const bytes = await readFile(join(this.stateRoot, MAINTENANCE_APPROVAL_FILE))
+      const bytes = await readFile(expectedApprovalFile)
       if (bytes.length > 65536) throw new Error("Approval too large")
       document = JSON.parse(bytes.toString("utf8"))
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return { code: "HELPER_NOT_APPROVED" }
+      if ((error as NodeJS.ErrnoException).code === "ENOENT")
+        return {
+          failure: {
+            code: "HELPER_NOT_APPROVED",
+            reason: "APPROVAL_FILE_MISSING",
+            expectedApprovalFile
+          }
+        }
       throw new Error("MAINTENANCE_APPROVAL_INVALID")
     }
     const parsed = maintenanceApprovalsSchema.safeParse(document)
@@ -204,7 +229,14 @@ export class MaintenanceDiagnosticService {
     )
     if (entries.length > 1) throw new Error("MAINTENANCE_APPROVAL_DUPLICATE")
     const approval = entries[0]
-    if (!approval) return { code: "HELPER_NOT_APPROVED" }
+    if (!approval)
+      return {
+        failure: {
+          code: "HELPER_NOT_APPROVED",
+          reason: "CONNECTION_NOT_APPROVED",
+          expectedApprovalFile
+        }
+      }
     if (
       approval.url.replace(/\/$/, "") !== connection.url.replace(/\/$/, "") ||
       approval.client !== connection.client ||
@@ -212,7 +244,16 @@ export class MaintenanceDiagnosticService {
     )
       throw new Error("MAINTENANCE_APPROVAL_CONNECTION_MISMATCH")
     const source = action === "LOCK_SEARCH" ? "SM12" : "SM13"
-    if (!approval.enabledSources.includes(source)) return { code: "SOURCE_NOT_APPROVED" }
+    if (!approval.enabledSources.includes(source))
+      return {
+        failure: {
+          code: "SOURCE_NOT_APPROVED",
+          reason: "SOURCE_NOT_ENABLED",
+          expectedApprovalFile,
+          requestedSource: source,
+          approvedSources: approval.enabledSources
+        }
+      }
     const metadata = z
       .object({
         functionName: z.literal(MAINTENANCE_HELPER),
@@ -324,8 +365,8 @@ export class MaintenanceDiagnosticService {
       IV_ARGUMENT: o.argument ?? "",
       IV_LIMIT: String(o.maxResults)
     })
-    if (!result.reply)
-      return JSON.stringify({ ...base, status: "unavailable", code: result.code, entries: null })
+    if ("failure" in result)
+      return JSON.stringify({ ...base, status: "unavailable", ...result.failure, entries: null })
     const r = result.reply
     if (r.action !== "LOCK_SEARCH") throw new Error("MAINTENANCE_RESPONSE_SCOPE_MISMATCH")
     if (r.entries.length > o.maxResults || (r.hasMore && r.entries.length !== o.maxResults))
@@ -371,8 +412,8 @@ export class MaintenanceDiagnosticService {
       IV_TO: o.toSystemTime,
       IV_LIMIT: String(o.maxResults)
     })
-    if (!result.reply)
-      return JSON.stringify({ ...base, status: "unavailable", code: result.code, entries: null })
+    if ("failure" in result)
+      return JSON.stringify({ ...base, status: "unavailable", ...result.failure, entries: null })
     const r = result.reply
     if (r.action !== "UPDATE_SEARCH") throw new Error("MAINTENANCE_RESPONSE_SCOPE_MISMATCH")
     if (r.entries.length > o.maxResults || (r.hasMore && r.entries.length !== o.maxResults))
@@ -416,8 +457,8 @@ export class MaintenanceDiagnosticService {
       IV_USER: o.username.toUpperCase(),
       IV_KEY: o.updateKey
     })
-    if (!result.reply)
-      return JSON.stringify({ ...base, status: "unavailable", code: result.code, data: null })
+    if ("failure" in result)
+      return JSON.stringify({ ...base, status: "unavailable", ...result.failure, data: null })
     const r = result.reply
     if (r.action !== "UPDATE_DETAIL") throw new Error("MAINTENANCE_RESPONSE_SCOPE_MISMATCH")
     if (r.status !== "ok")

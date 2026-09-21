@@ -19,6 +19,20 @@
 - 精确键未在已授权客户端/用户范围找到：`not_found`；不泄漏其他范围是否存在该键。
 - 不提供解锁、更新重处理、删除、取消、重试或 SAP 恢复命令。
 
+### 未批准回执的判别字段（R-17；自携带该改动的版本 `0.46.9` 起）
+
+门禁失败发生在**访问 SAP 之前**，因此回执**不能**用来推断"助手未部署"。为免调用方把本地门禁读成 SAP 侧能力缺失（2026-09-21 15:34 事件即此误判），每个 `unavailable` 回执在稳定 `code` 之外附带判别字段：
+
+| 字段                                  | 取值 / 含义                                                                                                                                                                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reason`                              | `APPROVAL_FILE_MISSING`（状态目录下没有批准文件）；`CONNECTION_NOT_APPROVED`（有文件但没有本 `connectionId` 条目）；`SOURCE_NOT_ENABLED`（条目存在但 `enabledSources` 未启用本次读取所需的来源）                                            |
+| `expectedApprovalFile`                | 服务**实际读取**的批准文件绝对路径（`<状态目录>/maintenance-diagnostic-approvals.json`；状态目录由 `ABAP_MCP_STATE_DIR` 决定，否则为 `%LOCALAPPDATA%\ABAP MCP Standalone\state`）。三种 `reason` 均返回，便于管理员定位要创建或修改哪个文件 |
+| `requestedSource` / `approvedSources` | 仅 `SOURCE_NOT_APPROVED` 返回：本次读取所需的来源（`SM12`/`SM13`）与该条目**已批准**的来源清单                                                                                                                                              |
+
+对应关系：`code=HELPER_NOT_APPROVED` + `reason=APPROVAL_FILE_MISSING|CONNECTION_NOT_APPROVED`；`code=SOURCE_NOT_APPROVED` + `reason=SOURCE_NOT_ENABLED`。指纹不匹配、重复条目、批准文件非法仍为**抛出的稳定错误**（`MAINTENANCE_HELPER_FINGERPRINT_MISMATCH`、`MAINTENANCE_APPROVAL_DUPLICATE`、`MAINTENANCE_APPROVAL_INVALID`），不降级为 `unavailable`；连接绑定不一致为 `MAINTENANCE_APPROVAL_CONNECTION_MISMATCH`。
+
+**边界**：这些字段只解释**本地**门禁状态，不构成助手已部署、指纹正确或 SAP 侧存在该能力的证据；要确认助手部署与协议版本，请读能力报告（维护族为 `operation-scoped`，报告不探测其读取）。
+
 ## SAP 实现候选
 
 候选函数组 `ZORVANTA_MAINT`，远程函数 `Z_ORVANTA_MAINT_READ`。它们仅是本地部署提案，不代表对象创建或修改授权。

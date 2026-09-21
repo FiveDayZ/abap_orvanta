@@ -54,9 +54,12 @@ const operationalLogCapability = (report: ReportShape) =>
   capabilityObservation(report, "operational-logs")
 
 // The two approval-gated capability verdicts the maintenance and operational-log self-descriptions
-// must not change while their helpers are un-upgraded.
+// must not change while their helpers are un-upgraded. The maintenance wording was corrected with
+// R-17: the helper IS deployed on w200, and the previous "local-only candidate: no helper
+// deployment" sentence contradicted the 15:34 incident, where the reply came from the local
+// approval gate rather than from a missing deployment.
 const MAINTENANCE_REASON =
-  "Requires separately deployed Z_ORVANTA_MAINT_READ in ZORVANTA_MAINT, matching source/interface approval and SAP display permissions. Local-only candidate: no helper deployment or live sample acceptance. No SAP unlock or update reprocessing; local receipts never prove SAP lock ownership."
+  "Requires separately deployed Z_ORVANTA_MAINT_READ in ZORVANTA_MAINT, matching source/interface approval and SAP display permissions. No SAP unlock or update reprocessing; local receipts never prove SAP lock ownership. Deployment, fingerprint approval and a local approval file are three separate gates: this report does not probe the family (its reads are approval-gated), so an absent attestation here does not distinguish 'helper not deployed' from 'helper deployed but not locally approved'. Trust the tool reply instead - an unavailable result carries code, reason (APPROVAL_FILE_MISSING, CONNECTION_NOT_APPROVED or SOURCE_NOT_ENABLED) and the approval file path the service actually read, and it is returned before any SAP access."
 const OPERATIONAL_LOG_REASON =
   "SM37 and SM21 require separately approved Z_ORVANTA_OPS_READ in ZORVANTA_LOG. Job details require SM37_DETAILS; spool text requires SP01 and the extended helper interface. The w200 spool branch has source/activation evidence but no runtime acceptance. No OTF/PDF, printing or variant values. Registration is not deployment or runtime proof."
 
