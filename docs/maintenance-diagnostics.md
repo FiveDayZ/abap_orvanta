@@ -83,4 +83,30 @@ ENQUEUE_READ 的实际接口没有最大行数参数。仅允许准确用户查�
 
 此示意文档不是可直接启用的批准文件，本轮未生成真实批准配置。每次调用均检查连接绑定、重复条目、启用来源、实际助手身份及双指纹；任何读失败都不能解释为对象缺失或零记录。修改助手后需重新审查和更新批准指纹。
 
+### 生成批准文件（2026-09-21 16:25 事件后的固定流程）
+
+`code=HELPER_NOT_APPROVED` 只说明本机批准门禁未放行，**不是** SAP 侧能力缺失；2026-09-21 的两次事件（15:34 与 16:25）都因此误判。判据：
+
+| 返回                                                             | 含义                                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `status=unavailable`、`code=HELPER_NOT_APPROVED`、`entries=null` | 本地批准文件缺失或未含该连接（R-17 起另带 `reason` 与 `expectedApprovalFile`） |
+| `status=unavailable`、`code=SOURCE_NOT_APPROVED`                 | 连接已批准，但该来源未启用（R-17 起带 `requestedSource`/`approvedSources`）    |
+| `status=ok`、`code=OK`、`entries` 为**数组**                     | 门禁已放行；空数组表示"无匹配锁"，不是"状态未知"                               |
+
+收集与写入批准文件（**只读**读取现状，`--write` 才落盘）：
+
+```powershell
+# 1) 先看会写什么：连接身份取自服务实际使用的 connections 文件，指纹取自现网助手
+node scripts/prepare-maintenance-approval.mjs
+# 2) 写入状态目录（默认 %LOCALAPPDATA%\ABAP MCP Standalone\state），并立即用同一入参验证
+node scripts/prepare-maintenance-approval.mjs --write --verify --username <SAP用户>
+```
+
+要点：
+
+- `sourceFingerprint`/`interfaceFingerprint` 由 `read_function_module_interface` 读取 `Z_ORVANTA_MAINT_READ` 得到，与门禁内部比对的是同一 reader、同一算法；脚本在助手不在 `ZORVANTA_MAINT`、未启用远程、是 update-task 模块或指纹非 sha256 时直接拒绝。
+- 文件**每次调用都会重新读取**，写入后无需重启服务；已存在文件时会保留其它连接的条目。
+- 撤销方式：删除该文件，或从 `connections[]` 移除该连接。`enabledSources` 只写实际批准的子集（如仅 `["SM12"]`）。
+- 本脚本不绕过任何检查，也不在 SAP 侧写入；它只提供门禁要求的既有事实。
+
 版本、包部署、助手部署、客户端接入、真实非空/空/权限样本和业务流程验收是不同门禁。本地 mock 通过也不证明 ABAP 语法、授权对象行为、SAP 原生读取或样本等价。
