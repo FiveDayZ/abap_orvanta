@@ -1897,10 +1897,13 @@ function New-DdicFunctionSource {
         "          add_payload 'M' '1' 'INACTIVE' 'X'.",
         "          IF lv_object_type = 'TABL'.",
         "            add_payload 'M' '1' 'TABNAME' iv_object_name.",
-        "            add_payload 'M' '1' 'DDTEXT' ls_dd02v-ddtext.",
-        "            add_payload 'M' '1' 'TABCLASS' ls_dd02v-tabclass.",
-        "            add_payload 'M' '1' 'MAINFLAG' ls_dd02v-mainflag.",
-        "            add_payload 'M' '1' 'CONTFLAG' ls_dd02v-contflag.",
+        # 非活动定义的表头属性必须取自 state = 'M' 读到的 ls_current_dd02v；ls_dd02v 装的是
+        # 活动版本表头（见上方 DDIF_TABL_GET state = 'A' 的 IMPORTING），用它会让 INACTIVE 行
+        # 配上活动版本的描述/类别。线上帮手已含此修复（1.10 载体），此处为回移。
+        "            add_payload 'M' '1' 'DDTEXT' ls_current_dd02v-ddtext.",
+        "            add_payload 'M' '1' 'TABCLASS' ls_current_dd02v-tabclass.",
+        "            add_payload 'M' '1' 'MAINFLAG' ls_current_dd02v-mainflag.",
+        "            add_payload 'M' '1' 'CONTFLAG' ls_current_dd02v-contflag.",
         "            LOOP AT lt_dd03p ASSIGNING <ls_field>.",
         "              lv_index = sy-tabix.",
         "              add_payload 'F' lv_index 'FIELDNAME'",
@@ -2980,6 +2983,9 @@ function New-DdicFunctionSource {
         "        add_payload 'L1' lv_index 'FORTABNAME' ls_dd26v-fortabname.",
         "        add_payload 'L1' lv_index 'FORFIELD' ls_dd26v-forfield.",
         "        add_payload 'L1' lv_index 'FORDIR' ls_dd26v-fordir.",
+        # 锁定模式（ENQMODE）是 dd26e 的关键属性之一：少了它，read_lock_object 的行虽然有表/
+        # 字段/FORDIR，却无法说明是 E/S/X 哪种锁模式。线上帮手已含此行（1.10 载体），此处为回移。
+        "        add_payload 'L1' lv_index 'ENQMODE' ls_dd26v-enqmode.",
         "      ENDLOOP.",
         "      LOOP AT lt_dd27p INTO ls_dd27p.",
         "        lv_index = sy-tabix.",

@@ -245,7 +245,14 @@ foreach ($marker in @(
         "DDIF_TTYP_PUT",
         "ls_dd04v-headlen",
         "ls_dd04v-scrlen1",
-        "use_korrnum_immediatedly"
+        "use_korrnum_immediatedly",
+        # 2026-09-21 回移：线上帮手（1.10 载体）已修、脚本未跟的两处能力。缺了它们，
+        # 非活动定义会发布活动版本表头，锁对象行缺 ENQMODE。
+        "add_payload 'M' '1' 'DDTEXT' ls_current_dd02v-ddtext",
+        "add_payload 'L1' lv_index 'ENQMODE' ls_dd26v-enqmode",
+        # 对照组：活动路径仍必须读活动表头 ls_dd02v。
+        "add_payload 'H' '1' 'DDTEXT' ls_dd02v-ddtext",
+        "add_payload 'L2' lv_index 'ENQMODE' ls_dd27p-enqmode"
     )) {
     if (-not (($ddicProgram + $ddicFunction) -match [regex]::Escape($marker))) {
         throw "DDIC bootstrap is missing marker: $marker"

@@ -200,6 +200,84 @@ if (!offline) {
       .slice(0, 16)}`
   )
   console.log(`payload    : ${hashedBody.length} body lines + wrapper`)
+
+  // A full-body rebuild must never silently drop SAP-side code. Compare at token level: a live-only
+  // line whose distinctive tokens all exist in the canonical body differs only in statement shape or
+  // wrapping, while absent tokens mean content the script does not have - i.e. a fix that was applied
+  // in SAP through a carrier and never back-ported. Refuse to generate in that case.
+  const isCommentOrBlank = (line) => {
+    const text = line.trim()
+    return text === "" || text.startsWith("*") || text.startsWith('"')
+  }
+  const codeOf = (lines) => lines.filter((l) => !isCommentOrBlank(l)).map((l) => l.trim())
+  const normalize = (line) => line.replace(/\s+/g, " ").trim()
+  const canonicalCode = codeOf(hashedBody)
+  const canonicalNormalized = new Set(canonicalCode.map(normalize))
+  const canonicalText = canonicalCode.join("\n")
+  const keylessTokens = new Set([
+    "CONCATENATE",
+    "INTO",
+    "EXPORTING",
+    "IMPORTING",
+    "TABLES",
+    "ASSIGNING",
+    "LOOP",
+    "ENDLOOP",
+    "WITH",
+    "KEY",
+    "SEPARATED",
+    "IS",
+    "INITIAL",
+    "AND",
+    "OR",
+    "IF",
+    "ENDIF",
+    "ADD_PAYLOAD",
+    "TABNAME",
+    "FIELDNAME",
+    "ENDFUNCTION",
+    "CLEAR",
+    "APPEND",
+    "READ",
+    "TABLE",
+    "INDEX",
+    "MODIFY",
+    "SELECT"
+  ])
+  const tokens = (line) => [
+    ...new Set(
+      (line.match(/[A-Za-z_<>\-][A-Za-z0-9_<>\-]{3,}/g) ?? []).filter(
+        (t) => !keylessTokens.has(t.toUpperCase())
+      )
+    )
+  ]
+  const benign = (line) =>
+    line.startsWith("FUNCTION ") ||
+    line.includes("'SOURCE|HASH|'") ||
+    /^'[0-9a-f]{16}'/.test(line) ||
+    line.includes("'OPERATION|")
+  const regressions = []
+  for (const line of new Set(codeOf(live).map(normalize))) {
+    if (canonicalNormalized.has(line) || benign(line)) continue
+    const missing = tokens(line).filter((t) => !canonicalText.includes(t))
+    if (missing.length > 0) regressions.push(`${line}  [absent: ${missing.join(", ")}]`)
+  }
+  if (regressions.length > 0) {
+    console.error("")
+    console.error(
+      `REFUSING TO GENERATE: the canonical body would drop ${regressions.length} live line(s).`
+    )
+    for (const line of regressions.slice(0, 20)) console.error(`  ${line}`)
+    if (regressions.length > 20) console.error(`  ... ${regressions.length - 20} more`)
+    console.error("")
+    console.error("These are fixes that exist in SAP but not in scripts/bootstrap-sap-helper.ps1.")
+    console.error("Back-port them, then regenerate. --accept-live-differences overrides this only")
+    console.error("after a human review.")
+    if (!argv.includes("--accept-live-differences")) process.exit(5)
+    console.error("--accept-live-differences given: continuing with the differences above.")
+  } else {
+    console.log("regression guard: no live code line is absent from the canonical body")
+  }
 }
 
 // ------------------------------------------------------------------------------------------------
