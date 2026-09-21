@@ -92,6 +92,12 @@ iv_operation = 'CAPABILITIES'
 
 复用现有 `ev_status / ev_code / ev_version / ev_message` + `it_source` 行载荷（`add_payload` 宏，`|` 分隔，`%`→`%25`，`|`→`%7C`）。
 
+#### 3.2.1 载荷分组与"非活动版本描述"的含义（2026-09-21 17:10 事件后明确）
+
+分组字母决定载荷落到响应的哪个袋子：`M`→`metadata`（读操作自身的元信息）、`H`→`header`（对象属性）、`V`→固定值、`F`→字段、`S1/S2/S3`→搜索帮助三段、`L1/L2`→锁对象两段。
+
+活动路径把对象属性发在 `H`；**非活动版本描述路径（`INACTIVE_VERSION_DESCRIBED`，协议 1.10）把同一批属性发在 `M`**——在该路径下它们描述的是被读取的那个版本，而不是活动版本。服务侧因此把 `M` 作为 `H` 的回退来源（两处都有同名键时以 `H` 为准）。缺失这条回退时，非活动读取会返回空 `description`/`tableClass` 等，而 SAP 自己的 `DD02L` 行其实带着 `TRANSP`：这是**客户端丢行**，不是对象为空。非活动回执同时给出 `inactiveVersionAttributes`（助手原样上报的属性，去掉 `INACTIVE`/`GOTSTATE`），便于区分" SAP 没给"与"客户端没映射"。
+
 ```text
 ev_status  = 'S'
 ev_code    = 'CAPABILITIES'

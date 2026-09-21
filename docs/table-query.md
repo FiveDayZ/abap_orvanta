@@ -49,6 +49,8 @@
 - `order=unspecified`、`snapshot=false`。不得把连续调用当作稳定分页或一致性导出，也不得把返回首行当作某个业务排序的第一条。
 - `clientHandling=sap_session_default`：两条路径都使用当前 SAP 会话的隐式客户端规则，不开放 CLIENT SPECIFIED。跨客户端表仍为跨客户端表，不能声称所有返回行都归属于当前客户端。
 - 固定错误码和阶段可用于诊断；`TABLE_QUERY_TABLE_NOT_FOUND`表示名称未解析为活动DDIC透明表，不代表同名仓库对象类型不存在。`SXCI`兼容投影返回`compatibilityProjection=true`、`tableClassVerified=false`及`method=classic_badi_repository_helper`，避免把仓库结果伪装为物理表读取。不返回底层异常正文、过滤值或生成的 SQL。
+- 投影被拒时回执照实给出证据（2026-09-21 17:10 事件后新增）：`TABLE_QUERY_FIELD_INVALID` 附带 `invalidColumns`（请求或过滤中不存在的字段）、`validColumns`（该表真实字段，最多 64 个样本）与 `validColumnCount`（真实字段总数），使调用方一次即可改正；`TABLE_QUERY_DEFINITION_INCOMPLETE` 专表字段字典本身不可用（无可用字段／超过 1024／存在重名），属字典侧缺陷而**不是**调用方入参问题，并附 `definitionFieldCount`。两处都在任何 SAP 数据访问之前判定，`data=null` 不表示对象不存在。
+  - 实例：`DD02L` 共 31 个字段且**不含** `DDLANGUAGE`（该字段在 `DD02V`）；请求 `["TABNAME","AS4LOCAL","AS4VERS","TABCLASS","SQLTAB","CONTFLAG","MAINFLAG","DDLANGUAGE"]` 现在返回 `invalidColumns:["DDLANGUAGE"]` 与 31 个有效字段名。读取非活动表头属性请直接用 `DD02L` 的有效列（`TABCLASS`/`CONTFLAG`/`MAINFLAG`/`AS4USER`/`AS4DATE`/`AS4TIME` 等）。
 - 完整布局元数据已取得但后续拒绝时，`layoutSummary`仅返回字段数、总外部长度及类型集合，不含业务行或筛选值；用于区分运行时类型、长度和投影边界。
 
 能力报告将此工具列为目标相关能力；仅注册工具或 ADT 探针通过不等于具体表或后备路线已经可用。

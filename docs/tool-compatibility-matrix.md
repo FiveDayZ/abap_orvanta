@@ -1,6 +1,8 @@
 # 工具兼容矩阵
 
-> 当前口径（2026-09-21，`0.46.9`）：工具注册表静态注册 **132 个工具（只读 77 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数。
+> 当前口径（2026-09-21，`0.46.10`）：工具注册表静态注册 **132 个工具（只读 77 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数。
+
+2026-09-21 增量（`0.46.10`，工具面不变，服务侧解析与回执）：**非活动 DDIC 读取属性丢失**——助手在非活动描述路径把对象属性发在 `M` 组、活动路径发在 `H` 组，解析器只把 `H` 当 `header`，导致 `read_ddic_transparent_table` 的非活动回执 `description`/`tableClass` 等为空（实测 `DD02L` 同对象行 `TABCLASS=TRANSP`）；现在 `M` 作为 `H` 的回退来源（同名键 `H` 优先），非活动回执另附 `inactiveVersionAttributes`。**投影被拒回执可诊断**——`TABLE_QUERY_FIELD_INVALID` 附 `invalidColumns`/`validColumns`/`validColumnCount`；字典侧不可用（无字段／>1024／重名）改用新码 `TABLE_QUERY_DEFINITION_INCOMPLETE` 附 `definitionFieldCount`。实例：`DD02L` 无 `DDLANGUAGE`（在 `DD02V`）。
 
 2026-09-21 增量（`0.46.9`，工具面不变）：**R-16 遗留半程收口**——能力行拆分使真实状态正文最宽 71 列（原 74 列致 `New-InstallProgram` 抛错），`test:bootstrap` 改为先物化脚本顶层 `$ddic*` 版本变量，消除"测试通过但真实路径不可用"的盲区。**R-17**——维护诊断族"未批准"回执新增 `reason`（`APPROVAL_FILE_MISSING`／`CONNECTION_NOT_APPROVED`／`SOURCE_NOT_ENABLED`）、`expectedApprovalFile`，来源未启用时另带 `requestedSource`／`approvedSources`；既有 `code` 取值不变。**门禁解封脚本**——新增 `scripts/prepare-maintenance-approval.mjs`（只读取指纹 + 默认 dry-run 写批准文件 + `--verify` 复测），`docs/maintenance-diagnostics.md` 记录两种回执形态与流程；成功口径为 `status=ok` + `entries` 数组。**DDIC 正文回移**——非活动表头改读 `ls_current_dd02v-*`、锁对象补 `ENQMODE`，生成器新增 token 级回归守卫（线上代码会被吞掉即拒绝生成）。**载体 #2 产物已生成但未部署**（载荷 2261 行、摘要 `e80a1fba7a061d09`、基线锁定 2119 行），线上助手仍自述 24 个操作码。
 

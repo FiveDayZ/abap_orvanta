@@ -5,6 +5,16 @@ ORVANTA 是独立 ABAP MCP 服务，默认 MCP 注册名为 `orvanta`。它不�
 
 ## 当前实施基线
 
+2026-09-21 版本 `0.46.10` 修复 **17:10 事件**暴露的两段链路缺口，**工具面与既有错误码取值不变**（132 项 / 只读 77 项 / 能力组 18 组）。
+
+**缺口①：非活动 DDIC 读取的属性被客户端丢掉（High，能力回退）**。0.46.9 已恢复 SM12 查询后，`read_ddic_transparent_table('ZTPMC_TPRPI')` 返回 `status=inactive`、29 个字段，但 `description`/`tableClass`/`deliveryClass`/`dataClass` 全空、`sizeCategory=0`，调用方因此怀疑"非活动表头本身为空"而不敢激活。**决定性证据（只读）**：直接读 `DD02L`（过滤器 `TABNAME=ZTPMC_TPRPI`）得到行 `AS4LOCAL=N`、`AS4VERS=0001`、`TABCLASS=TRANSP`、`CONTFLAG=A`、`AS4USER=WYS`、`AS4DATE/TIME=20260921/094830` ——**SAP 里表头并不空**。根因在服务侧解析：助手载荷按分组字母入袋（`M`→`metadata`、`H`→`header`），活动路径把对象属性发在 `H`，而**非活动描述路径把同一批属性发在 `M`**（该路径下它们描述被读版本），解析器只把 `H` 当 `header`，于是 `M|1|TABCLASS|TRANSP` 这类行被丢弃，`ddicDefinition` 读到空值。**修订**：`M` 作为 `H` 的回退来源（两处同名键时 `H` 优先），非活动回执另给 `inactiveVersionAttributes`（助手原样上报、去掉 `INACTIVE`/`GOTSTATE`），使" SAP 没给"与"客户端没映射"可区分；`docs/helper-capabilities-protocol.md` §3.2.1 记录分组语义。该修复在**服务侧**，不需部署助手、不需要载体。
+
+**缺口②：投影被拒时回执不可诊断（Medium）**。`read_abap_table` 的字段校验把**五种情况**合并为一个裸 `TABLE_QUERY_FIELD_INVALID`：字段集合为空、超过 1024、定义内重名、请求列不存在、过滤列不存在。事件里的入参含 `DDLANGUAGE`，而 **`DD02L` 的 31 个字段中没有 `DDLANGUAGE`**（它在 `DD02V`），回执却不说哪个字段错、也不给有效字段集合，调用方"按用户要求不做试探性缩列重试"而被迫停下。**修订**：投影被拒时附 `invalidColumns`、`validColumns`（真实字段，最多 64 个样本）与 `validColumnCount`；字典本身不可用（无可用字段／>1024／定义重名）改用独立码 **`TABLE_QUERY_DEFINITION_INCOMPLETE`** 并附 `definitionFieldCount`——它**不是**调用方入参问题，不应该让人去猜自己的请求；两类判定仍在**任何 SAP 数据访问之前**完成，`data=null` 依旧不等于对象不存在。`docs/table-query.md` 记入该契约与 `DD02L`/`DD02V` 的字段边界。
+
+**未变的边界**：本次仅服务侧代码与文档；**未修改任何 SAP 对象、未部署或升级助手、未执行 F8、未操作传输**。线上助手仍自述 24 个操作码，补齐 26 仍需人工 F8 执行载体 #2。
+
+## 实施基线（历史，倒序）
+
 2026-09-21 版本 `0.46.9` 修好 **R-16 的遗留半程**、实施 **R-17**、补齐 **DDIC 助手正文回移**，并把 16:25 事件的门禁解封固化为流程与脚本。**服务对外行为与工具面不变**（132 项 / 只读 77 项 / 能力组 18 组）；唯一影响调用方的行为变化是**维护诊断族"未批准"回执新增判别字段**（下详）。
 
 **R-16 真正收口（High，工具链）**：0.46.8 宣布 R-16 修复、`npm run verify` 首次 exit 0，但**该绿是测试盲区**：`test:bootstrap` 只 `Invoke-Expression` 抽取到的函数定义，而真实运行会先执行脚本顶层 `$ddicCapabilityMinVersion`/`$ddicCapabilityMaxVersion` 赋值。版本变量为空时最长能力行只有 71 列（`'|W'`）故测试通过；真实状态下 `RESUME_TRANSPARENT_TABLE_ACTIVATION`（36 字符）把该行推到 **74 列**，触发脚本自身守卫 `Generated function source exceeds 72 characters`，**DDIC 安装程序根本无法生成**（`.cache/diag-install-guard.ps1` 纯本地复现：2232 行/1 行 74 列/`New-InstallProgram` 抛错）。**修订**：能力行改为两行 `CONCATENATE` 并把分隔符并入第二个字面量，**生成行逐字节不变**（`OPERATION|<op>|<version>|<access>`，与线上已发布行一致），最长行降至 66 列；`test:bootstrap` 改为**先物化脚本顶层 `$ddic*` 赋值**并直接断言正文无 >72 列行——修复前该测试失败（输出即 74 列那行），修复后 PASS。真实状态实测：正文 **2258 行、最宽 71 列、0 行超 72**，`New-InstallProgram` **PASS**（13433 行、最宽 69 列）。这条路径正是"重建助手"的唯一自动化入口，也是载体 #2 的前提。

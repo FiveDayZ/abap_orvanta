@@ -3727,6 +3727,15 @@ export class ToolService {
           active: false,
           inactiveVersionDescribed: true,
           gotState: result.metadata.GOTSTATE ?? "",
+          // The attributes the helper reported for the inactive version, exactly as sent, minus the
+          // protocol keys. The 17:10 incident could not tell whether an empty tableClass came from
+          // SAP or from the client dropping the rows the helper published; this makes that
+          // distinguishable without a code change.
+          inactiveVersionAttributes: Object.fromEntries(
+            Object.entries(result.metadata).filter(
+              ([key]) => key !== "INACTIVE" && key !== "GOTSTATE"
+            )
+          ),
           definition,
           definitionFingerprint: createHash("sha256")
             .update(JSON.stringify(definition))

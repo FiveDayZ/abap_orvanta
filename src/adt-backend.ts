@@ -2142,6 +2142,14 @@ function parseDdicPayload(lines: string[]): {
     else target = rowAt(lockFields, index)
     target[match[3]] = value
   }
+  // The inactive-definition path of the helper publishes the same object attributes under M that the
+  // active path publishes under H (there they describe the version being read rather than the active
+  // one), so M is a fallback source for H. H wins when both carry a key: an active read is
+  // authoritative about the active version. Without this, an inactive read returned an empty
+  // description/tableClass while SAP's own DD02L row carried TRANSP.
+  for (const [key, value] of Object.entries(metadata)) {
+    if (header[key] === undefined) header[key] = value
+  }
   return {
     metadata,
     header,

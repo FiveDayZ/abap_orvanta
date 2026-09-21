@@ -80,6 +80,17 @@ const metadataSchema = z
   .max(1024)
 type Metadata = z.infer<typeof metadataSchema>
 const operators = { EQ: "=", NE: "<>", LT: "<", LE: "<=", GT: ">", GE: ">=" } as const
+/** A stable failure code plus the evidence the caller needs to correct the request in one step. */
+class TableQueryFailure extends Error {
+  constructor(
+    readonly code: string,
+    readonly detail: Record<string, unknown> = {}
+  ) {
+    super(code)
+  }
+}
+/** Upper bound on the projection sample returned with a failure; DDIC tables can exceed 1000 columns. */
+const validColumnSampleLimit = 64
 const nativeEmptyHtml =
   "SAP_DATA_QUERY_RESPONSE_INVALID: expected XML data preview; HTTP 200; mediaType=text/html; root=unparsed; bytes=0. No empty result was inferred."
 
@@ -143,15 +154,32 @@ export async function readAbapTable(
     const allColumns = declaredColumns.filter((name) => !name.startsWith("."))
     if (allFields) input.columns = [...allColumns]
     base.columns = input.columns
+    // A caller cannot act on a bare "field invalid": the 17:10 incident spent a round trip on
+    // read_abap_table(DD02L, [... DDLANGUAGE]) because DD02L has 31 columns and DDLANGUAGE is not one
+    // of them (it lives in DD02V), and nothing in the reply said which column was wrong. Name the
+    // offending columns and hand back the real projection set instead.
+    //
+    // The definition is judged first: when it is itself unusable, every requested column looks
+    // invalid and blaming the request would hide the real defect.
     if (
       allColumns.length === 0 ||
       allColumns.length > 1024 ||
-      new Set(allColumns).size !== allColumns.length ||
-      [...input.columns, ...input.filters.map((filter) => filter.column)].some(
-        (name) => !allColumns.includes(name)
-      )
+      new Set(allColumns).size !== allColumns.length
     )
-      throw new Error("TABLE_QUERY_FIELD_INVALID")
+      throw new TableQueryFailure("TABLE_QUERY_DEFINITION_INCOMPLETE", {
+        definitionFieldCount: allColumns.length,
+        ...(allColumns.length > 0
+          ? { validColumns: allColumns.slice(0, validColumnSampleLimit) }
+          : {})
+      })
+    const requested = [...input.columns, ...input.filters.map((filter) => filter.column)]
+    const invalidColumns = [...new Set(requested.filter((name) => !allColumns.includes(name)))]
+    if (invalidColumns.length > 0)
+      throw new TableQueryFailure("TABLE_QUERY_FIELD_INVALID", {
+        invalidColumns,
+        validColumns: allColumns.slice(0, validColumnSampleLimit),
+        validColumnCount: allColumns.length
+      })
     let data: Record<string, unknown>[]
     let fieldMetadata: Metadata | undefined
     let verifyDefinition = false
@@ -395,6 +423,7 @@ export async function readAbapTable(
       error instanceof Error &&
       [
         "TABLE_QUERY_DICTIONARY_INVALID",
+        "TABLE_QUERY_DEFINITION_INCOMPLETE",
         "TABLE_QUERY_TABLE_NOT_FOUND",
         "TABLE_QUERY_FIELD_INVALID",
         "TABLE_QUERY_READER_UNVERIFIED",
@@ -420,6 +449,9 @@ export async function readAbapTable(
       definitionFingerprint,
       nativeCode,
       ...(layoutSummary ? { layoutSummary } : {}),
+      // Evidence attached by TableQueryFailure: which columns were rejected and what the table
+      // actually declares. Absent for every other failure, so existing consumers see the same shape.
+      ...(error instanceof TableQueryFailure ? error.detail : {}),
       returnedCount: 0,
       truncated: null,
       data: null

@@ -760,6 +760,42 @@ test("DDIC helper SOAP serializes definitions and parses metadata rows", () => {
   assert.equal(result.fixedValues[0]?.DOMVALUE_L, "A%B")
 })
 
+test("an inactive definition keeps the attributes the helper publishes under M", () => {
+  // The helper describes an inactive version by publishing the object attributes under M (in that
+  // path they describe the version being read, not the active one) while the active path uses H. The
+  // 17:10 incident saw an empty tableClass for ZTPMC_TPRPI even though SAP's own DD02L row carries
+  // TRANSP, because only H reached the header bag. M must now act as a fallback for H.
+  const inactive = parseSapDdicResponse(`
+    <Envelope><Body><EV_STATUS>S</EV_STATUS><EV_CODE>INACTIVE_VERSION_DESCRIBED</EV_CODE>
+      <EV_MESSAGE>Inactive DDIC version described for inspection</EV_MESSAGE><EV_VERSION>1.10</EV_VERSION>
+      <IT_SOURCE>
+        <item><LINE>M|1|GOTSTATE|N</LINE></item>
+        <item><LINE>M|1|INACTIVE|X</LINE></item>
+        <item><LINE>M|1|TABNAME|ZTPMC_TPRPI</LINE></item>
+        <item><LINE>M|1|DDTEXT|Transfer post-processing</LINE></item>
+        <item><LINE>M|1|TABCLASS|TRANSP</LINE></item>
+        <item><LINE>M|1|MAINFLAG|</LINE></item>
+        <item><LINE>M|1|CONTFLAG|A</LINE></item>
+        <item><LINE>F|1|FIELDNAME|MANDT</LINE></item>
+      </IT_SOURCE></Body></Envelope>`)
+  assert.equal(inactive.metadata.INACTIVE, "X")
+  assert.equal(inactive.metadata.GOTSTATE, "N")
+  assert.equal(inactive.header.TABCLASS, "TRANSP")
+  assert.equal(inactive.header.CONTFLAG, "A")
+  assert.equal(inactive.header.DDTEXT, "Transfer post-processing")
+  assert.equal(inactive.header.TABNAME, "ZTPMC_TPRPI")
+  // A value the active path publishes under H still wins when both groups carry the key.
+  const active = parseSapDdicResponse(`
+    <Envelope><Body><EV_STATUS>S</EV_STATUS><EV_CODE>DDIC_OBJECT_FOUND</EV_CODE>
+      <EV_MESSAGE>OK</EV_MESSAGE><EV_VERSION>1.10</EV_VERSION>
+      <IT_SOURCE>
+        <item><LINE>M|1|TABCLASS|INTTAB</LINE></item>
+        <item><LINE>H|1|TABCLASS|TRANSP</LINE></item>
+      </IT_SOURCE></Body></Envelope>`)
+  assert.equal(active.header.TABCLASS, "TRANSP")
+  assert.equal(active.metadata.TABCLASS, "INTTAB")
+})
+
 test("Dynpro application tools validate customer scope and preserve structured rows", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)

@@ -184,6 +184,66 @@ test("table query checks actual transparent table and field definitions before d
   }
 })
 
+test("a rejected projection names the offending columns and the real one (17:10 incident)", async () => {
+  // DD02L really has no DDLANGUAGE (it is in DD02V). The caller could not tell that from the bare
+  // TABLE_QUERY_FIELD_INVALID it received, so the reply must carry the evidence itself.
+  const backend = fixture()
+  backend.runQuery = async () => assert.fail("unexpected native query")
+  const result = (await collect(
+    backend,
+    { ...input, columns: ["ID", "DDLANGUAGE"], filters: [] },
+    definition
+  )) as {
+    status: string
+    code: string
+    invalidColumns?: string[]
+    validColumns?: string[]
+    validColumnCount?: number
+    data: null
+    definitionFingerprint?: string
+  }
+  assert.equal(result.status, "unavailable")
+  assert.equal(result.code, "TABLE_QUERY_FIELD_INVALID")
+  assert.deepEqual(result.invalidColumns, ["DDLANGUAGE"])
+  assert.deepEqual(result.validColumns, ["ID", "TEXT"])
+  assert.equal(result.validColumnCount, 2)
+  assert.equal(result.data, null)
+  assert.match(result.definitionFingerprint ?? "", /^[a-f0-9]{64}$/)
+  assert.equal(backend.requests.length, 0)
+
+  // A filter column is part of the projection contract too, and is reported the same way.
+  const filtered = (await collect(
+    backend,
+    { ...input, columns: ["ID"], filters: [{ column: "MANDT", operator: "EQ", value: "200" }] },
+    definition
+  )) as { code: string; invalidColumns?: string[] }
+  assert.equal(filtered.code, "TABLE_QUERY_FIELD_INVALID")
+  assert.deepEqual(filtered.invalidColumns, ["MANDT"])
+})
+
+test("a dictionary read without a usable projection is not blamed on the caller", async () => {
+  const backend = fixture()
+  backend.runQuery = async () => assert.fail("unexpected native query")
+  // Only include markers: the field list parses, but no addressable column remains.
+  const result = (await collect(backend, input, {
+    ...definition,
+    definition: { ...definition.definition, fields: [{ name: ".INCLUDE" }] }
+  })) as { status: string; code: string; definitionFieldCount?: number; invalidColumns?: string[] }
+  assert.equal(result.status, "unavailable")
+  assert.equal(result.code, "TABLE_QUERY_DEFINITION_INCOMPLETE")
+  assert.equal(result.definitionFieldCount, 0)
+  assert.equal(result.invalidColumns, undefined)
+  assert.equal(backend.requests.length, 0)
+
+  // Duplicate names in the definition are also a dictionary problem, not a bad request.
+  const duplicated = (await collect(backend, input, {
+    ...definition,
+    definition: { ...definition.definition, fields: [{ name: "ID" }, { name: "ID" }] }
+  })) as { code: string; definitionFieldCount?: number }
+  assert.equal(duplicated.code, "TABLE_QUERY_DEFINITION_INCOMPLETE")
+  assert.equal(duplicated.definitionFieldCount, 2)
+})
+
 test("table query preserves genuine empty results and never falls back on arbitrary native failure", async () => {
   for (const error of [
     null,
