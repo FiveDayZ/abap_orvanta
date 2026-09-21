@@ -16,6 +16,24 @@ MCP 默认地址为 `http://127.0.0.1:4847/mcp`。密码只保存在当前进程
 
 检测到 ORVANTA 仍在运行、下载或校验失败、包结构不符合要求时，更新会停止；若文件替换阶段失败，会恢复原版本。GitHub Release 提供的 SHA-256 用于下载完整性校验，不等同于发布者数字签名。
 
+## 维护诊断批准（SM12/SM13 只读）
+
+`search_sap_locks`、`search_update_records`、`get_update_record_detail` 属受门禁工具：服务在访问 SAP **之前**先读本机批准文件
+
+`%LOCALAPPDATA%\ABAP MCP Standalone\state\maintenance-diagnostic-approvals.json`
+
+该文件不存在时它们返回 `status=unavailable`。**这不代表 SAP 侧未部署或未授权**：助手部署、指纹批准、本机批准文件是三道独立闸门。成功口径是 `status=ok` 且 `entries` 为数组（空数组＝无匹配锁，不是"状态未知"）；`status=available` 属不可用词汇。
+
+包内脚本可完成取指纹与写文件（**只读读取现状，`--write` 才落盘**）。请先按"首次使用"第 2 步把 `connections.json` 配成真实连接：出厂文件是 `sap.example.invalid` 占位，脚本会拒绝占位并提示改用 `--connections <已配置的文件>`。
+
+```powershell
+cd <解压目录>
+.\runtime\node.exe .\app\scripts\prepare-maintenance-approval.mjs --connections .\connections.json
+.\runtime\node.exe .\app\scripts\prepare-maintenance-approval.mjs --connections .\connections.json --write --verify --username <SAP用户>
+```
+
+指纹由脚本经 MCP 读取现网 `Z_ORVANTA_MAINT_READ` 得到，与门禁内部比对的是同一 reader、同一算法；助手不在 `ZORVANTA_MAINT`、未启用远程、是 update-task 模块或指纹非 sha256 时脚本直接拒绝。文件**每次调用都会重新读取**，写入后无需重启服务；删除该文件或从 `connections[]` 移除该连接即撤销。使用 R-17 起的版本时，未批准回执还会直接给出 `reason` 与 `expectedApprovalFile`（服务实际读取的路径）。
+
 ## 其他入口
 
 - `open-settings.cmd`：打开本地配置中心。

@@ -119,6 +119,9 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "ui") -Destination (Join-Path $ap
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "scripts") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\probe.mjs") -Destination (Join-Path $appRoot "scripts")
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\bootstrap-sap-helper.ps1") -Destination (Join-Path $appRoot "scripts")
+# 维护诊断批准文件工具：随包发布，操作者可自行取指纹并写批准文件（默认 dry-run），
+# 放在 app\scripts 下以便按包内 node_modules 解析 MCP SDK。
+Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\prepare-maintenance-approval.mjs") -Destination (Join-Path $appRoot "scripts")
 
 Push-Location $appRoot
 try {
