@@ -1,5 +1,9 @@
 # 工具兼容矩阵
 
+> 当前口径（2026-09-21，`0.46.7`）：工具注册表静态注册 **132 个工具（只读 77 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数。
+
+2026-09-21 增量（`0.46.7`）：能力判定由"仅核对助手自述协议版本"改为"协议版本 + 助手自述操作码"（`evidence.source = version-and-operation-check`），新增 `partial` 判定与逐工具 `toolObservations`——写侧操作码缺失不再把同组的可用读侧判为不可用；`matrix:check` 对路由到 `Z_ORVANTA_MCP_DDIC_API` 的工具强制要求登记所需操作码。`execute_data_query` 的原生 ADT 路径接入 D5-2 表白名单（默认拒绝，新增稳定码 `TABLE_ALLOWLIST_UNVERIFIABLE`），不再只守 RFC 后备路径。发布溯源：`v0.46.1`–`v0.46.7` 标签齐备，打包闸门要求正式产物的版本标签存在且指向 HEAD。
+
 2026-09-16 CMOD/FIBF/FI配置工作流增量：新增只读`prepare_enhancement_configuration_workflow`，覆盖CMOD项目、FIBF Event/Process处理函数分配、FI Validation/Substitution规则及OB28/OBBH激活。工具复用现有精确CMOD/BTE读回和可选FI出口程序检查，输出缺失输入、当前证据、事务步骤、包/传输控制、保存及激活确认点、停止条件、写后读回和人工运行验收清单；不打开GUI、不保存、不激活、不生成规则、不执行业务事务、不释放传输。`w200`只读核对显示`MOD_KUN_ACTIVATE`仅覆盖CMOD内部状态处理，`BF_FUNCTIONS_READ/FIND`仅覆盖BTE读取，已发现的`G_BOOL_*`/`G_VSR_*`入口不构成GGB0/GGB1与OB28/OBBH完整无屏幕维护API，因此未包装局部内部函数，也不直接更新配置表。当前仅完成源码和Mock用例准备，未执行自动测试、助手部署或真实配置验收。
 
 2026-09-16 增强开发生命周期增量：仓库助手协议提升到2.6，在2.5的ENHO创建/读取/删除及Classic BAdI生命周期之上，新增Hook源码更新、New BAdI实现类/过滤器/默认与活动标志更新、ENHO激活和丢弃非活动版本，并补充活动、非活动、已保存非活动、未保存非活动四类状态。更新要求当前指纹、包和现有传输，遇到已有非活动版本时拒绝覆盖；所有写操作仅限Z/Y对象并使用SAP标准Enhancement Framework或SXO API，不直接更新增强配置表。ECC 7.31没有已确认的公开无界面ENHO停用API；`SXO_IMPL_UPDA`会打开SE19屏幕，因此Classic BAdI过滤器更新仍保留为人工操作。当前为本地候选，助手未部署，自动测试和真实SAP写入验收均未执行。
