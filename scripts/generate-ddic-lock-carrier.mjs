@@ -1,0 +1,392 @@
+#!/usr/bin/env node
+/**
+ * Generates the in-SAP report that puts the CANONICAL DDIC helper body into SAP: carrier #2 / D6-2B.
+ *
+ *   node scripts/export-ddic-helper-source.ps1              # canonical body -> .cache JSON (no SAP)
+ *   node scripts/generate-ddic-lock-carrier.mjs             # + live pre-flight, then write the report
+ *   node scripts/generate-ddic-lock-carrier.mjs --check     # validate only, write nothing
+ *   node scripts/generate-ddic-lock-carrier.mjs --offline   # skip the live read (report without baseline)
+ *
+ * Why this carrier exists: the deployed helper self-describes 24 operation codes, because the 1.10
+ * carrier (generate-ddic-enqu-resume-deploy-report.mjs) was assembled from an older body and
+ * deliberately left UPSERT_LOCK_OBJECT / DELETE_LOCK_OBJECT out - its own header says so. The
+ * bootstrap script has implemented both paths for a while, so the fix is to deploy the body the
+ * script installs, not to hand-splice a third delta. `npm run matrix:check` already asserts that
+ * this body declares every operation the registry dispatches.
+ *
+ * Read-only against SAP: the live read only derives the baseline and the pre-flight assertions.
+ * This script never writes, activates or transports anything in SAP. The generated report is run by
+ * a human with F8 inside SAP, which is the only path that works for OBJECTS in ZORVANTA_MCP_CORE
+ * (native ADT write returns HTTP 423; the helper write path is blocked by
+ * SELF_FUNCTION_GROUP_FORBIDDEN).
+ */
+import assert from "node:assert/strict"
+import { createHash } from "node:crypto"
+import { readFile, writeFile } from "node:fs/promises"
+import { resolve } from "node:path"
+import { Client } from "@modelcontextprotocol/sdk/client/index.js"
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
+
+const argv = process.argv.slice(2)
+const value = (flag, fallback) => {
+  const i = argv.indexOf(flag)
+  return i < 0 ? fallback : argv[i + 1]
+}
+const check = argv.includes("--check")
+const offline = argv.includes("--offline")
+const endpoint = value("--endpoint", process.env.ABAP_MCP_ENDPOINT ?? "http://127.0.0.1:4848/mcp")
+const sourceFile = resolve(value("--source", ".cache/ddic-helper-canonical.json"))
+const outFile = value(
+  "--out",
+  "C:/My/Workplace/Coding/vscode-abap/.doc/deploy-ddic-lock-object.abap"
+)
+
+const HELPER = "Z_ORVANTA_MCP_DDIC_API"
+const FUNCTION_GROUP = "ZORVANTA_MCP_CORE"
+const PROGRAM = "ZORVANTA_MCP_DDIC_LOCK_DEPLOY"
+const MARKER = "ORVANTA D6-2B LOCK OBJECT CARRIER"
+const WRITE_OPERATIONS = ["UPSERT_LOCK_OBJECT", "DELETE_LOCK_OBJECT"]
+const REQUIRED_OPERATIONS = ["READ_LOCK_OBJECT", "RESUME_TRANSPARENT_TABLE_ACTIVATION"]
+
+// ------------------------------------------------------------------------------------------------
+// Canonical body: the exact source the bootstrap script would install, exported by the PowerShell
+// extractor (which is the only thing that knows how the script's own state shapes the body).
+// ------------------------------------------------------------------------------------------------
+let canonical
+try {
+  canonical = JSON.parse(await readFile(sourceFile, "utf8"))
+} catch (error) {
+  console.error(`cannot read the canonical body at ${sourceFile}`)
+  console.error("run: pwsh -NoLogo -NoProfile -File scripts/export-ddic-helper-source.ps1")
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exit(2)
+}
+
+assert.equal(canonical.helper, HELPER, "canonical body is for a different helper")
+assert.equal(canonical.functionGroup, FUNCTION_GROUP, "canonical body targets a different group")
+const body = canonical.lines
+assert.ok(Array.isArray(body) && body.length > 100, "canonical body is empty or truncated")
+const declaredOperations = canonical.declaredOperations ?? []
+const missingWrite = WRITE_OPERATIONS.filter((op) => !declaredOperations.includes(op))
+assert.deepEqual(missingWrite, [], `canonical body does not declare: ${missingWrite.join(", ")}`)
+for (const op of WRITE_OPERATIONS) {
+  assert.ok(
+    body.some((l) => l.includes(`WHEN '${op}'`)),
+    `${op} is declared but not dispatched`
+  )
+  assert.ok(
+    body.some((l) => l.includes(`OPERATION|${op}`)),
+    `${op} has no capability row`
+  )
+}
+for (const op of REQUIRED_OPERATIONS) {
+  assert.ok(
+    body.some((l) => l.includes(`OPERATION|${op}`)),
+    `${op} disappeared from the capability table: this carrier would regress the deployed helper`
+  )
+}
+assert.ok(
+  body.some((l) => l.includes(`PROTOCOL|MAX|${canonical.declaredMaxProtocol}`)),
+  `the body does not publish PROTOCOL|MAX|${canonical.declaredMaxProtocol}`
+)
+// The write paths must be implemented, not just advertised.
+for (const call of ["DDIF_ENQU_PUT", "DDIF_ENQU_ACTIVATE", "DDIF_OBJECT_DELETE"]) {
+  assert.ok(
+    body.some((l) => l.includes(`'${call}'`)),
+    `${call} is missing from the body`
+  )
+}
+// Width and the installer's chunker rule. The carrier path itself only needs <= 255 columns, but the
+// same body is what `New-InstallProgram` chunks, so a body that violates the installer's rules is a
+// body the bootstrap path cannot deploy either.
+const overlong = body.filter((l) => l.length > 72)
+assert.deepEqual(overlong, [], `body has lines wider than 72 columns: ${overlong[0]}`)
+assert.ok(
+  !body.some((l) => /^\s{20,}/.test(l) || /\s{20,}/.test(l)),
+  "body contains a 20-column whitespace run that the installer's chunker cannot carry"
+)
+const forbidden = body.filter((l) =>
+  /\b(?:VALUE|NEW|COND|SWITCH|REDUCE|FILTER)\s*\(|\bDATA\(/.test(l)
+)
+assert.deepEqual(forbidden, [], `body uses ABAP 7.40+ constructor syntax: ${forbidden[0]}`)
+
+// ------------------------------------------------------------------------------------------------
+// SOURCE|HASH: the installer hashes the body while its four 16-character placeholders are still in
+// place and then writes the digest into them (no length change), so reproduce that exactly or the
+// deployed helper would publish the literal placeholders.
+// ------------------------------------------------------------------------------------------------
+const HASH_SLOTS = ["ORVANTAHASHSLOT1", "ORVANTAHASHSLOT2", "ORVANTAHASHSLOT3", "ORVANTAHASHSLOT4"]
+const withPlaceholders = body.join("\n")
+assert.ok(
+  withPlaceholders.includes(HASH_SLOTS[0]),
+  "the canonical body has no SOURCE|HASH placeholders; the hash would be missing from the payload"
+)
+const sourceHash = createHash("sha256").update(withPlaceholders, "utf8").digest("hex")
+const hashedBody = body.map((line) =>
+  HASH_SLOTS.reduce(
+    (acc, slot, index) => acc.replace(slot, sourceHash.slice(index * 16, index * 16 + 16)),
+    line
+  )
+)
+assert.ok(
+  !hashedBody.join("\n").includes("ORVANTAHASHSLOT"),
+  "a hash placeholder survived substitution"
+)
+assert.equal(
+  hashedBody.join("\n").length,
+  withPlaceholders.length,
+  "hash substitution changed the body length"
+)
+
+// ------------------------------------------------------------------------------------------------
+// Live pre-flight: the report must be generated against the helper that is actually deployed.
+// ------------------------------------------------------------------------------------------------
+let live = null
+if (!offline) {
+  const client = new Client({ name: "ddic-lock-carrier-generator", version: "1.0.0" })
+  await client.connect(new StreamableHTTPClientTransport(new URL(endpoint)))
+  const read = await client.callTool(
+    {
+      name: "read_function_module_interface",
+      arguments: { connectionId: "w200", functionName: HELPER }
+    },
+    undefined,
+    { timeout: 300000 }
+  )
+  assert.equal(read.isError ?? false, false, "reading the live helper failed")
+  const payload = JSON.parse((read.content ?? []).map((c) => c.text ?? "").join(""))
+  live = payload.source ?? []
+  await client.close()
+
+  assert.equal(live[0].trim(), `FUNCTION ${HELPER}.`, `unexpected live first line: ${live[0]}`)
+  assert.match(String(live.at(-1)).trim(), /^ENDFUNCTION\./i, "unexpected live last line")
+  const liveText = live.join("\n")
+  // Carrier ordering invariant (.doc/d6-carrier-ordering-invariant.md): the previous carrier must
+  // already be applied, or this payload would silently undo it.
+  assert.ok(
+    liveText.includes("PROTOCOL|MAX|1.10") || liveText.includes("PROTOCOL|MAX|1.11"),
+    "the deployed helper is not at protocol 1.10 yet: apply the previous carrier first"
+  )
+  for (const op of REQUIRED_OPERATIONS) {
+    assert.ok(
+      live.some((l) => l.includes(`OPERATION|${op}`)),
+      `the deployed helper lost ${op}`
+    )
+  }
+  for (const op of WRITE_OPERATIONS) {
+    assert.ok(
+      !live.some((l) => l.includes(`OPERATION|${op}`)),
+      `the deployed helper already declares ${op}: nothing to do, do not re-apply this carrier`
+    )
+  }
+  const selfDescription = (lines) =>
+    lines.filter((l) => /'(?:HELPER|PROTOCOL|SOURCE)\|/.test(l)).map((l) => l.trim())
+  const liveRows = selfDescription(live)
+  const canonicalRows = selfDescription(hashedBody)
+  const identityKeys = ["HELPER|", "PROTOCOL|MIN|", "PROTOCOL|MAX|", "PACKAGE|", "TRANSPORT|"]
+  console.log("self-description rows (canonical vs live) - review before F8:")
+  for (const key of identityKeys) {
+    const canonicalRow = canonicalRows
+      .find((row) => row.includes(key))
+      ?.replace(/^ls_source-line = /, "")
+    const liveRow = liveRows.find((row) => row.includes(key))?.replace(/^ls_source-line = /, "")
+    const state = canonicalRow === liveRow ? "same" : "CHANGED"
+    console.log(`  ${state.padEnd(7)} ${key.padEnd(15)} canonical=${canonicalRow} live=${liveRow}`)
+  }
+  console.log(
+    `live helper: ${live.length} lines, baseline digest ${createHash("sha256")
+      .update(live.join("\n"), "utf8")
+      .digest("hex")
+      .slice(0, 16)}`
+  )
+  console.log(`payload    : ${hashedBody.length} body lines + wrapper`)
+}
+
+// ------------------------------------------------------------------------------------------------
+// Render the report. Skeleton matches the 1.10 carrier so the apply path is the one that is proven
+// to work on this system: read the include, refuse a second apply, refuse a regression, INSERT
+// REPORT + GENERATE, commit.
+// ------------------------------------------------------------------------------------------------
+const payload = [`FUNCTION ${HELPER}.`, ...hashedBody, "ENDFUNCTION."]
+const payloadDigest = createHash("sha256")
+  .update(payload.join("\n"), "utf8")
+  .digest("hex")
+  .slice(0, 16)
+const literal = (s) => `'${String(s).replace(/'/g, "''")}'`
+
+const report = []
+report.push(`REPORT ${PROGRAM.toLowerCase()}.`)
+report.push("")
+report.push("* GENERATED by scripts/generate-ddic-lock-carrier.mjs -- do not edit by hand.")
+report.push(`* ${MARKER}`)
+report.push(`* Target   : ${HELPER} (${FUNCTION_GROUP})`)
+report.push(
+  `* Transport: ${canonical.transport || "(none recorded)"} (recorded; never released by this report)`
+)
+report.push(
+  live
+    ? `* Baseline : ${live.length} live lines -> ${payload.length} payload lines`
+    : "* Baseline : NOT READ (generated with --offline); the report does not pin the current line count"
+)
+report.push(
+  "* Adds     : UPSERT_LOCK_OBJECT (1.9) and DELETE_LOCK_OBJECT (1.9), i.e. the write paths"
+)
+report.push("*            the 1.10 carrier deliberately left out, by deploying the CANONICAL body")
+report.push(
+  `*            ${body.length} lines from scripts/bootstrap-sap-helper.ps1 (${canonical.sourceSha256.slice(0, 16)})`
+)
+report.push(`* Hash     : SOURCE|HASH recomputed as the installer does -> ${sourceHash}`)
+report.push(`* Digest   : payload sha256 -> ${payloadDigest}`)
+report.push(
+  "* Review   : this replaces the whole include, so review the self-description rows printed"
+)
+report.push("*            by the generator (PACKAGE/TRANSPORT) against the live helper first.")
+report.push("")
+report.push(`CONSTANTS: c_group  TYPE c LENGTH 30 VALUE ${literal(FUNCTION_GROUP)},`)
+report.push(`           c_marker TYPE c LENGTH 40 VALUE ${literal(MARKER)},`)
+report.push(`           c_digest TYPE c LENGTH 16 VALUE '${payloadDigest}'${live ? "," : "."}`)
+if (live) report.push(`           c_lines  TYPE i VALUE ${live.length}.`)
+report.push("")
+report.push("DATA: lt_new TYPE TABLE OF abaptxt255,")
+report.push("      lt_cur TYPE TABLE OF abaptxt255,")
+report.push("      ls_new TYPE abaptxt255,")
+report.push("      ls_cur TYPE abaptxt255,")
+report.push("      lv_name TYPE c LENGTH 30,")
+report.push("      lv_head TYPE c LENGTH 20,")
+report.push("      lv_found TYPE c LENGTH 1,")
+report.push("      lv_count TYPE i,")
+report.push("      lv_suffix TYPE tfdir-include,")
+report.push("      lv_msg TYPE string.")
+report.push("")
+report.push("START-OF-SELECTION.")
+report.push(`  WRITE: / '${MARKER}'.`)
+report.push("  WRITE: / 'Target      :', c_group.")
+report.push(`  WRITE: / 'Payload     :', ${payload.length}, 'lines; digest', c_digest.`)
+report.push("  SKIP 1.")
+report.push("")
+report.push("  REFRESH lt_new.")
+for (const line of payload)
+  report.push(`  CLEAR ls_new. ls_new-line = ${literal(line)}. APPEND ls_new TO lt_new.`)
+report.push("")
+report.push("  DESCRIBE TABLE lt_new LINES lv_count.")
+report.push(`  IF lv_count <> ${payload.length}.`)
+report.push("    WRITE: / 'ERROR: payload line count mismatch:', lv_count.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("")
+report.push(`  SELECT SINGLE include FROM tfdir INTO lv_suffix WHERE funcname = '${HELPER}'.`)
+report.push("  IF sy-subrc <> 0 OR lv_suffix IS INITIAL.")
+report.push(`    WRITE: / 'ERROR: function module ${HELPER} not found in TFDIR'.`)
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  CONCATENATE 'L' c_group 'U' lv_suffix INTO lv_name.")
+report.push("  REFRESH lt_cur.")
+report.push("  READ REPORT lv_name INTO lt_cur.")
+report.push("  IF sy-subrc <> 0 OR lt_cur IS INITIAL.")
+report.push("    WRITE: / 'ERROR: cannot read function group include', lv_name.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  DESCRIBE TABLE lt_cur LINES lv_count.")
+report.push("")
+report.push("* Idempotency: refuse to apply this carrier twice.")
+report.push("  CLEAR lv_found.")
+report.push("  LOOP AT lt_cur INTO ls_cur.")
+report.push("    IF ls_cur-line CS c_marker.")
+report.push("      lv_found = 'X'. EXIT.")
+report.push("    ENDIF.")
+report.push("  ENDLOOP.")
+report.push("  IF lv_found = 'X'.")
+report.push("    WRITE: / 'NOTHING TO DO: this carrier is already applied.'.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("")
+report.push("* Refuse to regress a helper that already carries the write operations.")
+report.push("  CLEAR lv_found.")
+report.push("  LOOP AT lt_cur INTO ls_cur.")
+report.push("    IF ls_cur-line CS 'OPERATION|UPSERT_LOCK_OBJECT'.")
+report.push("      lv_found = 'X'. EXIT.")
+report.push("    ENDIF.")
+report.push("  ENDLOOP.")
+report.push("  IF lv_found = 'X'.")
+report.push(
+  "    WRITE: / 'NOTHING TO DO: the deployed helper already declares UPSERT_LOCK_OBJECT.'."
+)
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("")
+if (live) {
+  report.push("* Baseline guard: the payload was generated against this exact line count.")
+  report.push(`  IF lv_count <> c_lines.`)
+  report.push(
+    "    WRITE: / 'ERROR: deployed include is not the reviewed baseline:', lv_count, c_lines."
+  )
+  report.push("    WRITE: / 'Regenerate the carrier against the live source before applying.'.")
+  report.push("    RETURN.")
+  report.push("  ENDIF.")
+  report.push("")
+}
+report.push("  READ TABLE lt_cur INTO ls_cur INDEX 1.")
+report.push("  lv_head = ls_cur-line.")
+report.push("  TRANSLATE lv_head TO UPPER CASE.")
+report.push("  IF lv_head(8) <> 'FUNCTION'.")
+report.push("    WRITE: / 'ERROR: existing include does not start with FUNCTION'.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("")
+report.push("  INSERT REPORT lv_name FROM lt_new.")
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'ERROR: INSERT REPORT failed', sy-subrc.")
+report.push("    ROLLBACK WORK.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("")
+report.push(`  GENERATE REPORT 'SAPL${FUNCTION_GROUP}' MESSAGE lv_msg.`)
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'ERROR: GENERATE failed:', lv_msg.")
+report.push("    ROLLBACK WORK.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  COMMIT WORK AND WAIT.")
+report.push("")
+report.push("* Post-condition: the include must now publish all 26 operation codes.")
+report.push("  REFRESH lt_cur.")
+report.push("  READ REPORT lv_name INTO lt_cur.")
+report.push("  CLEAR lv_count.")
+report.push("  LOOP AT lt_cur INTO ls_cur.")
+report.push("    IF ls_cur-line CS 'OPERATION|'.")
+report.push("      lv_count = lv_count + 1.")
+report.push("    ENDIF.")
+report.push("  ENDLOOP.")
+report.push("  WRITE: / 'DONE: helper regenerated;', lv_count, 'capability rows written.'.")
+report.push("  IF lv_count < 26.")
+report.push("    WRITE: / 'WARNING: expected 26 capability rows; check the payload before use.'.")
+report.push("  ENDIF.")
+report.push("  WRITE: / 'Next: sap_helper_status ping, then get_capability_report and confirm'.")
+report.push(
+  "  WRITE: / 'maxProtocol 1.10 with UPSERT_LOCK_OBJECT and DELETE_LOCK_OBJECT present.'."
+)
+report.push("")
+
+const rendered = report.join("\n") + "\n"
+// The report program's own lines may be wide (the 1.10 carrier was applied that way, and SE38 on this
+// system accepted it); the widths that matter are the embedded payload lines, asserted on `body`
+// above. Keep this as an observation so a future tightening of the SAP line limit is visible.
+const widestReportLine = report.reduce((n, l) => Math.max(n, l.length), 0)
+console.log(`report widest line: ${widestReportLine} columns (payload body is capped at 72)`)
+
+if (check) {
+  console.log("")
+  console.log("check only: no report written")
+  console.log(`  payload ${payload.length} lines, digest ${payloadDigest}`)
+  console.log(`  source hash ${sourceHash}`)
+  console.log(`  report would be ${report.length} lines`)
+} else {
+  await writeFile(outFile, rendered, "utf8")
+  console.log("")
+  console.log(`wrote ${outFile}`)
+  console.log(`  payload ${payload.length} lines, digest ${payloadDigest}`)
+  console.log(`  source hash ${sourceHash}`)
+  if (!live)
+    console.log("  generated WITHOUT the live baseline: re-run without --offline before applying")
+  console.log("  NOT deployed: run the report in SAP yourself (SE38, F8).")
+}
