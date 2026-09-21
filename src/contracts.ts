@@ -820,7 +820,7 @@ const toolContractsBase = {
   },
   read_ddic_transparent_table: {
     description:
-      "Read one active SAP Dictionary transparent table, including keys, delivery class, technical settings, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",
+      "Read one SAP Dictionary transparent table, including keys, delivery class, technical settings, package, concurrency version, and SHA-256 definition fingerprint. If the object has only a non-active version (for example left behind by an interrupted create), that stored version is returned instead with status 'inactive', active false, its own definitionFingerprint and a resumeTool hint, so the pending definition can be inspected rather than merely reported as blocking. Read-only and allowed for customer or standard objects.",
     inputSchema: { objectName: z.string(), connectionId: z.string() }
   },
   create_ddic_transparent_table: {

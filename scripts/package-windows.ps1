@@ -145,6 +145,30 @@ $portableConfig.connections[0].id = "w200"
 $portableConfig.connections[0].passwordEnv = "ABAP_MCP_W200_PASSWORD"
 $portableConfig | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageRoot "connections.json") -Encoding utf8
 
+# 出厂配置必须是占位符：真实主机/用户一旦进入发布物就是凭据与拓扑泄露。此处做独立于来源的最后一道闸门，
+# 不论 connections.example.json 或中间产物此前被谁改写过，都不允许把非占位配置压进归档。
+# 判据取结构化字段而非文本匹配：文本模式容易误伤端口和合法值。
+$shippedConfig = Get-Content -Raw -LiteralPath (Join-Path $packageRoot "connections.json") | ConvertFrom-Json
+if ($shippedConfig.connections.Count -ne 1) {
+    throw "Refusing to package connections.json: expected exactly one placeholder connection."
+}
+$shippedConnection = $shippedConfig.connections[0]
+if ($shippedConnection.id -ne "w200") {
+    throw "Refusing to package connections.json: connection id must be the w200 placeholder."
+}
+if ($shippedConnection.username -ne "DEVELOPER") {
+    throw "Refusing to package connections.json: username must be the DEVELOPER placeholder."
+}
+if ($shippedConnection.client -ne "200" -or $shippedConnection.language -ne "EN") {
+    throw "Refusing to package connections.json: expected the client 200 / language EN placeholder."
+}
+if (([uri]$shippedConnection.url).Host -notlike "*.invalid") {
+    throw "Refusing to package connections.json: host must be a reserved .invalid placeholder."
+}
+if ($shippedConnection.PSObject.Properties.Name -contains "password") {
+    throw "Refusing to package connections.json: a password property must never be shipped."
+}
+
 # Runtime execution is optional only for preparation; the manifest records the missing check.
 if (-not $SkipRuntimeCheck) {
     Push-Location $packageRoot

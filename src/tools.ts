@@ -3545,10 +3545,9 @@ export class ToolService {
    * new definition. This is the recovery path for a create or write that failed after DDIF_TABL_PUT
    * had already saved a non-active version (reported as DDIC_SAVE_FAILED with PHASE=inactive_saved).
    *
-   * The normal read path deliberately refuses to describe an inactive version
-   * (INACTIVE_VERSION_EXISTS), so the inactive fingerprint cannot be derived from a read. The helper
-   * publishes the fingerprint it observed in the failure metadata instead, and the resume call must
-   * echo it back; the helper compares it against the state it re-reads before activating.
+   * The stored definition is read back first, so the caller's expected fingerprint is verified
+   * against what SAP actually holds before anything is activated; a mismatch aborts without touching
+   * the object.
    */
   async resumeDdicTableActivation(input: ResumeDdicTableActivationInput): Promise<string> {
     if (input.confirmation !== "RESUME_INACTIVE_ACTIVATION") {
@@ -3557,13 +3556,34 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const objectName = customerDdicTableName(input.objectName)
     const packageName = ddicPackageName(input.packageName)
+    const stored = await this.backend.callSapDdic(connectionId, {
+      operation: "READ_TRANSPARENT_TABLE",
+      objectName
+    })
+    if (stored.metadata.INACTIVE !== "X") {
+      throw new Error(
+        stored.status.toUpperCase() === "S"
+          ? "NO_INACTIVE_VERSION: This table has no inactive version to resume"
+          : `SAP DDIC helper rejected the operation: ${stored.code}: ${stored.message}`
+      )
+    }
+    const storedDefinition = ddicDefinition(stored, "transparentTable")
+    const storedFingerprint = createHash("sha256")
+      .update(JSON.stringify(storedDefinition))
+      .digest("hex")
+    const expected = input.expectedInactiveFingerprint.trim().toLowerCase()
+    if (storedFingerprint !== expected) {
+      throw new Error(
+        `INACTIVE_STATE_CONFLICT: The stored inactive definition changed since it was read (expected ${expected}, found ${storedFingerprint})`
+      )
+    }
     const result = await this.backend.callSapDdic(connectionId, {
       operation: "RESUME_TRANSPARENT_TABLE_ACTIVATION",
       objectName,
       description: "Resume inactive transparent table activation",
       packageName,
       transportNumber: transportNumber(input.transportNumber),
-      expectedVersion: input.expectedInactiveFingerprint.trim().toLowerCase()
+      expectedVersion: expected
     })
     requireDdicSuccess(result)
     const active = JSON.parse(
@@ -3575,7 +3595,9 @@ export class ToolService {
         objectName,
         status: result.code,
         resumed: true,
-        expectedInactiveFingerprint: input.expectedInactiveFingerprint.trim().toLowerCase(),
+        expectedInactiveFingerprint: expected,
+        inactiveFingerprint: storedFingerprint,
+        inactiveDefinition: storedDefinition,
         activeVersion: result.objectVersion,
         active,
         recordedRequest: result.recordedRequest,
@@ -3673,6 +3695,31 @@ export class ToolService {
       objectName
     })
     requireDdicSuccess(result)
+    // A read of an object that only has a non-active version returns that version's definition with
+    // INACTIVE set, so the caller can inspect it and derive the fingerprint a resume needs instead of
+    // being told only that an inactive version exists.
+    if (result.metadata.INACTIVE === "X") {
+      const definition = ddicDefinition(result, kind)
+      return JSON.stringify(
+        {
+          connectionId: input.connectionId,
+          objectName,
+          status: "inactive",
+          active: false,
+          inactiveVersionDescribed: true,
+          gotState: result.metadata.GOTSTATE ?? "",
+          definition,
+          definitionFingerprint: createHash("sha256")
+            .update(JSON.stringify(definition))
+            .digest("hex"),
+          resumeTool: "resume_ddic_table_activation",
+          notice:
+            "This definition is stored but not active. Inspect it, then use resume_ddic_table_activation with expectedInactiveFingerprint set to definitionFingerprint to activate it. Do not call a create tool for this object."
+        },
+        null,
+        2
+      )
+    }
     return JSON.stringify(ddicResult(result, kind, objectName, input.connectionId), null, 2)
   }
 
