@@ -1,1 +1,1 @@
-export const PRODUCT_VERSION = "0.46.4"
+export const PRODUCT_VERSION = "0.46.5"

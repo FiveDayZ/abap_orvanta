@@ -3694,6 +3694,19 @@ export class ToolService {
       operation,
       objectName
     })
+    // Older helpers answer a read of an inactive-only object with a bare INACTIVE_VERSION_EXISTS,
+    // which reads like "unsupported" when the real problem is that the helper is stale. Translate it
+    // into an actionable deployment message rather than letting the caller guess.
+    if (result.code === "INACTIVE_VERSION_EXISTS" && result.metadata.INACTIVE !== "X") {
+      const protocol = await this.ddicHelperProtocol(input.connectionId.toLowerCase())
+      throw new Error(
+        `INACTIVE_VERSION_UNREADABLE: ${objectName} has only an inactive version and the installed DDIC helper cannot describe it. ` +
+          `The helper self-described protocol ${protocol ?? "unknown"}, below the 1.10 required to read an inactive definition ` +
+          `(support exists in the packaged helper script but has not been deployed to SAP). ` +
+          `This is a helper deployment gap, not a missing object, and not a reason to create the object again. ` +
+          `Deploy the current helper, or inspect DD02L/DD03L read-only, before retrying.`
+      )
+    }
     requireDdicSuccess(result)
     // A read of an object that only has a non-active version returns that version's definition with
     // INACTIVE set, so the caller can inspect it and derive the fingerprint a resume needs instead of
@@ -3721,6 +3734,24 @@ export class ToolService {
       )
     }
     return JSON.stringify(ddicResult(result, kind, objectName, input.connectionId), null, 2)
+  }
+
+  /**
+   * Best-effort read of the installed DDIC helper's self-described maximum protocol, used only to
+   * explain why an operation is unavailable. Never throws: an unreadable report yields undefined so
+   * the caller's message degrades to "unknown" rather than masking the original failure.
+   */
+  private async ddicHelperProtocol(connectionId: string): Promise<string | undefined> {
+    try {
+      const report = JSON.parse(await this.getCapabilityReport({ connectionId })) as {
+        helperAttestation?: Array<{ helper?: string; maxProtocol?: string; minProtocol?: string }>
+      }
+      const entries = report.helperAttestation ?? []
+      const ddic = entries.find((entry) => (entry.helper ?? "").includes("DDIC_API"))
+      return ddic?.maxProtocol ?? ddic?.minProtocol
+    } catch {
+      return undefined
+    }
   }
 
   async searchObjects(input: SearchInput): Promise<string> {
