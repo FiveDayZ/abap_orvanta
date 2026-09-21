@@ -106,6 +106,43 @@ if (operationGaps.length > 0) {
 }
 console.log(`helper operation requirements pinned for every ${OPERATION_CHECKED_HELPER} tool`)
 
+// R-2: the bootstrap script carries the DDIC helper's operation inventory in a marked table, and
+// that table is what a regenerated helper publishes. It drifted from the deployed carrier once
+// already - the script declared UPSERT_LOCK_OBJECT/DELETE_LOCK_OBJECT while the live helper did not
+// - so compare the declared codes with the codes the registry dispatches. A regeneration that drops
+// an operation the service still sends, or the service pinning one the generator never emits, now
+// fails here instead of at runtime against SAP.
+const DDIC_CAPABILITY_TABLE =
+  />>> ORVANTA-DDIC-CAPABILITY-TABLE([\s\S]*?)<<< ORVANTA-DDIC-CAPABILITY-TABLE/
+const bootstrapPath = resolve(projectRoot, "scripts", "bootstrap-sap-helper.ps1")
+const bootstrapSource = await readFile(bootstrapPath, "utf8")
+const capabilityTableMatch = DDIC_CAPABILITY_TABLE.exec(bootstrapSource)
+if (!capabilityTableMatch) {
+  fail(`${bootstrapPath} no longer carries the marked ORVANTA-DDIC-CAPABILITY-TABLE block`)
+}
+const declaredDdicOperations = new Set(
+  [...capabilityTableMatch[1].matchAll(/"([A-Z0-9_]+)\|\d+\.\d+\|[RW]"/g)].map((match) => match[1])
+)
+if (declaredDdicOperations.size === 0) {
+  fail(`${bootstrapPath} declares an empty DDIC capability table`)
+}
+const requiredDdicOperations = new Set(
+  TOOL_REGISTRY.filter((entry) => entry.sapHelper === OPERATION_CHECKED_HELPER).flatMap(
+    (entry) => entry.requiredHelperOperations
+  )
+)
+const undeclaredOperations = [...requiredDdicOperations]
+  .filter((operation) => !declaredDdicOperations.has(operation))
+  .sort()
+if (undeclaredOperations.length > 0) {
+  fail(
+    `${bootstrapPath} does not declare operation codes the registry dispatches: ${undeclaredOperations.join(", ")}`
+  )
+}
+console.log(
+  `bootstrap DDIC capability table declares every required operation: ${requiredDdicOperations.size} dispatched over ${declaredDdicOperations.size} declared`
+)
+
 // ---- generated content ----------------------------------------------------------------
 
 const groupCounts = new Map()
