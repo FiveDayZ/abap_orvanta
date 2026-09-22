@@ -280,6 +280,34 @@ if (!offline) {
   }
 }
 
+// A body that declares the same name twice cannot be compiled. Catch it here: the first R2 payload
+// shipped `DATA lv_put_subrc_text` twice and GENERATE reported only the later line
+// ("LV_PUT_SUBRC_TEXT" already declared), which cost one F8 round trip.
+{
+  const declared = new Map()
+  let duplicate = false
+  for (const [index, line] of hashedBody.entries()) {
+    const match =
+      /^\s*(DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS)\s+([A-Za-z_][A-Za-z0-9_]*)/i.exec(line)
+    if (!match) continue
+    const key = match[2].toUpperCase()
+    if (declared.has(key)) {
+      console.error("")
+      console.error(`REFUSING TO GENERATE: ${key} is declared twice in the canonical body.`)
+      console.error(`  line ${declared.get(key) + 1}: ${hashedBody[declared.get(key)].trim()}`)
+      console.error(`  line ${index + 1}: ${line.trim()}`)
+      duplicate = true
+      continue
+    }
+    declared.set(key, index)
+  }
+  if (duplicate) {
+    console.error("")
+    process.exit(6)
+  }
+  console.log(`declaration guard: ${declared.size} declarations, no duplicate names`)
+}
+
 // ------------------------------------------------------------------------------------------------
 // Render the report. R2 splices the BODY into the live include instead of replacing the whole
 // include, because the function module's parameter interface is part of that source text
