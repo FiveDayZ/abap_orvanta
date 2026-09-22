@@ -44,7 +44,7 @@ const outFile = value(
 const HELPER = "Z_ORVANTA_MCP_DDIC_API"
 const FUNCTION_GROUP = "ZORVANTA_MCP_CORE"
 const PROGRAM = "ZORVANTA_MCP_DDIC_LOCK_DEPLOY"
-const MARKER = "ORVANTA D6-2B LOCK OBJECT CARRIER"
+const MARKER = "ORVANTA D6-2B LOCK OBJECT CARRIER R2"
 const WRITE_OPERATIONS = ["UPSERT_LOCK_OBJECT", "DELETE_LOCK_OBJECT"]
 const REQUIRED_OPERATIONS = ["READ_LOCK_OBJECT", "RESUME_TRANSPARENT_TABLE_ACTIVATION"]
 
@@ -281,11 +281,16 @@ if (!offline) {
 }
 
 // ------------------------------------------------------------------------------------------------
-// Render the report. Skeleton matches the 1.10 carrier so the apply path is the one that is proven
-// to work on this system: read the include, refuse a second apply, refuse a regression, INSERT
-// REPORT + GENERATE, commit.
+// Render the report. R2 splices the BODY into the live include instead of replacing the whole
+// include, because the function module's parameter interface is part of that source text
+// (`FUNCTION name` + IMPORTING/EXPORTING/TABLES ... `.`). The first carrier wrote
+// `FUNCTION name.` + body + `ENDFUNCTION.`, which drops the interface - read-only evidence:
+// VALUE(IV_SCREEN), CT_FLOWLOGIC, ET_GUI_ATTRIBUTES and IT_SOURCE LIKE all match in the live base
+// source. R2 keeps every line up to the end of the interface and inserts the body after it, which is
+// also what the bootstrap installer does.
 // ------------------------------------------------------------------------------------------------
 const payload = [`FUNCTION ${HELPER}.`, ...hashedBody, "ENDFUNCTION."]
+const bodyLines = hashedBody
 const payloadDigest = createHash("sha256")
   .update(payload.join("\n"), "utf8")
   .digest("hex")
@@ -303,7 +308,7 @@ report.push(
 )
 report.push(
   live
-    ? `* Baseline : ${live.length} live lines -> ${payload.length} payload lines`
+    ? `* Baseline : ${live.length} live lines; this report keeps the interface and replaces the body`
     : "* Baseline : NOT READ (generated with --offline); the report does not pin the current line count"
 )
 report.push(
@@ -315,10 +320,14 @@ report.push(
 )
 report.push(`* Hash     : SOURCE|HASH recomputed as the installer does -> ${sourceHash}`)
 report.push(`* Digest   : payload sha256 -> ${payloadDigest}`)
+report.push("* Apply    : reads the live include, keeps every line up to the end of the parameter")
+report.push("*            interface, inserts the body after it, then INSERT REPORT + GENERATE.")
 report.push(
-  "* Review   : this replaces the whole include, so review the self-description rows printed"
+  "*            R2 supersedes the first carrier, which replaced the whole include and would"
 )
-report.push("*            by the generator (PACKAGE/TRANSPORT) against the live helper first.")
+report.push(
+  "*            have dropped the interface (FUNCTION ... IMPORTING/EXPORTING/TABLES ... .)."
+)
 report.push("")
 report.push(`CONSTANTS: c_group  TYPE c LENGTH 30 VALUE ${literal(FUNCTION_GROUP)},`)
 report.push(`           c_marker TYPE c LENGTH 40 VALUE ${literal(MARKER)},`)
@@ -326,6 +335,7 @@ report.push(`           c_digest TYPE c LENGTH 16 VALUE '${payloadDigest}'${live
 if (live) report.push(`           c_lines  TYPE i VALUE ${live.length}.`)
 report.push("")
 report.push("DATA: lt_new TYPE TABLE OF abaptxt255,")
+report.push("      lt_body TYPE TABLE OF abaptxt255,")
 report.push("      lt_cur TYPE TABLE OF abaptxt255,")
 report.push("      ls_new TYPE abaptxt255,")
 report.push("      ls_cur TYPE abaptxt255,")
@@ -333,22 +343,27 @@ report.push("      lv_name TYPE c LENGTH 30,")
 report.push("      lv_head TYPE c LENGTH 20,")
 report.push("      lv_found TYPE c LENGTH 1,")
 report.push("      lv_count TYPE i,")
+report.push("      lv_keep TYPE i,")
+report.push("      lv_in_interface TYPE c LENGTH 1,")
+report.push("      lv_line TYPE string,")
 report.push("      lv_suffix TYPE tfdir-include,")
-report.push("      lv_msg TYPE string.")
+report.push("      lv_msg TYPE string,")
+report.push("      lv_msg_line TYPE i,")
+report.push("      lv_msg_word TYPE string.")
 report.push("")
 report.push("START-OF-SELECTION.")
 report.push(`  WRITE: / '${MARKER}'.`)
 report.push("  WRITE: / 'Target      :', c_group.")
-report.push(`  WRITE: / 'Payload     :', ${payload.length}, 'lines; digest', c_digest.`)
+report.push(`  WRITE: / 'Body        :', ${bodyLines.length}, 'lines; digest', c_digest.`)
 report.push("  SKIP 1.")
 report.push("")
-report.push("  REFRESH lt_new.")
-for (const line of payload)
-  report.push(`  CLEAR ls_new. ls_new-line = ${literal(line)}. APPEND ls_new TO lt_new.`)
+report.push("  REFRESH lt_body.")
+for (const line of bodyLines)
+  report.push(`  CLEAR ls_new. ls_new-line = ${literal(line)}. APPEND ls_new TO lt_body.`)
 report.push("")
-report.push("  DESCRIBE TABLE lt_new LINES lv_count.")
-report.push(`  IF lv_count <> ${payload.length}.`)
-report.push("    WRITE: / 'ERROR: payload line count mismatch:', lv_count.")
+report.push("  DESCRIBE TABLE lt_body LINES lv_count.")
+report.push(`  IF lv_count <> ${bodyLines.length}.`)
+report.push("    WRITE: / 'ERROR: body line count mismatch:', lv_count.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
@@ -393,7 +408,7 @@ report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
 if (live) {
-  report.push("* Baseline guard: the payload was generated against this exact line count.")
+  report.push("* Baseline guard: the body was generated against this exact live include.")
   report.push(`  IF lv_count <> c_lines.`)
   report.push(
     "    WRITE: / 'ERROR: deployed include is not the reviewed baseline:', lv_count, c_lines."
@@ -411,6 +426,43 @@ report.push("    WRITE: / 'ERROR: existing include does not start with FUNCTION'
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
+report.push("* Locate the end of the parameter interface: keep it, replace only the body after it.")
+report.push(
+  "* A source-based interface opens with IMPORTING/EXPORTING/CHANGING/TABLES and closes with"
+)
+report.push("* the first period; a classic interface closes with its own separator line.")
+report.push("  CLEAR: lv_keep, lv_in_interface.")
+report.push("  LOOP AT lt_cur INTO ls_cur.")
+report.push("    lv_line = ls_cur-line.")
+report.push("    CONDENSE lv_line.")
+report.push("    IF lv_in_interface = 'X'.")
+report.push("      IF lv_line CP '*.'.")
+report.push("        lv_keep = sy-tabix. EXIT.")
+report.push("      ENDIF.")
+report.push("    ELSEIF lv_line CS '\"-----------------------------------------'")
+report.push("       AND sy-tabix <> 2.")
+report.push("      lv_keep = sy-tabix. EXIT.")
+report.push("    ELSEIF lv_line CP 'IMPORTING*' OR lv_line CP 'EXPORTING*'")
+report.push("       OR lv_line CP 'CHANGING*' OR lv_line CP 'TABLES*'.")
+report.push("      lv_in_interface = 'X'.")
+report.push("    ENDIF.")
+report.push("  ENDLOOP.")
+report.push("  IF lv_keep IS INITIAL.")
+report.push("    WRITE: / 'ERROR: cannot locate the parameter interface. Refusing to replace the'.")
+report.push("    WRITE: / 'include, because that would drop the function module parameters.'.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  WRITE: / 'Interface   : kept through line', lv_keep, 'of', lv_count.")
+report.push("")
+report.push("  REFRESH lt_new.")
+report.push("  LOOP AT lt_cur INTO ls_cur.")
+report.push("    IF sy-tabix > lv_keep. EXIT. ENDIF.")
+report.push("    APPEND ls_cur TO lt_new.")
+report.push("  ENDLOOP.")
+report.push("  CLEAR ls_new. APPEND ls_new TO lt_new.")
+report.push("  APPEND LINES OF lt_body TO lt_new.")
+report.push("  CLEAR ls_new. ls_new-line = 'ENDFUNCTION.'. APPEND ls_new TO lt_new.")
+report.push("")
 report.push("  INSERT REPORT lv_name FROM lt_new.")
 report.push("  IF sy-subrc <> 0.")
 report.push("    WRITE: / 'ERROR: INSERT REPORT failed', sy-subrc.")
@@ -418,23 +470,44 @@ report.push("    ROLLBACK WORK.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
-report.push(`  GENERATE REPORT 'SAPL${FUNCTION_GROUP}' MESSAGE lv_msg.`)
+report.push(`  GENERATE REPORT 'SAPL${FUNCTION_GROUP}' MESSAGE lv_msg`)
+report.push("    LINE lv_msg_line WORD lv_msg_word.")
 report.push("  IF sy-subrc <> 0.")
 report.push("    WRITE: / 'ERROR: GENERATE failed:', lv_msg.")
+report.push("    WRITE: / '  body line:', lv_msg_line, 'word:', lv_msg_word.")
+report.push("    WRITE: / '  the active version is unchanged; nothing was activated.'.")
+report.push("    ROLLBACK WORK.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push(`  UPDATE enlfdir SET generated = 'X' WHERE funcname = '${HELPER}'.`)
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'ERROR: generated flag update failed', sy-subrc.")
 report.push("    ROLLBACK WORK.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  COMMIT WORK AND WAIT.")
 report.push("")
-report.push("* Post-condition: the include must now publish all 26 operation codes.")
+report.push(
+  "* Post-condition: the include must still carry the interface and all 26 operation codes."
+)
 report.push("  REFRESH lt_cur.")
 report.push("  READ REPORT lv_name INTO lt_cur.")
-report.push("  CLEAR lv_count.")
+report.push("  CLEAR: lv_count, lv_found.")
 report.push("  LOOP AT lt_cur INTO ls_cur.")
 report.push("    IF ls_cur-line CS 'OPERATION|'.")
 report.push("      lv_count = lv_count + 1.")
 report.push("    ENDIF.")
+report.push("    IF ls_cur-line CS 'VALUE(IV_OPERATION)'.")
+report.push("      lv_found = 'X'.")
+report.push("    ENDIF.")
 report.push("  ENDLOOP.")
+report.push("  IF lv_found = 'X'.")
+report.push("    WRITE: / 'Interface   : parameter interface preserved in the deployed include.'.")
+report.push("  ELSE.")
+report.push(
+  "    WRITE: / 'ERROR: the deployed include no longer declares the parameter interface.'."
+)
+report.push("  ENDIF.")
 report.push("  WRITE: / 'DONE: helper regenerated;', lv_count, 'capability rows written.'.")
 report.push("  IF lv_count < 26.")
 report.push("    WRITE: / 'WARNING: expected 26 capability rows; check the payload before use.'.")
