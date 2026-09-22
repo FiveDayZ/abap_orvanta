@@ -1460,7 +1460,7 @@ const toolContractsBase = {
   },
   get_version_history: {
     description:
-      "ABAP object version history. Actions: list_versions, get_version_source, compare_versions. Version 1 is most recent.",
+      "ABAP object version history. Actions: list_versions, get_version_source, compare_versions. Version 1 is most recent. The version feed is resolved from the object's ADT structure document, for which the repository-navigation URL that search returns for DDIC objects is unusable: those objects are read through their canonical resource path instead. When ADT still serves no usable structure document, the tool returns a JSON state with status=unavailable and a stable code (VERSION_HISTORY_STRUCTURE_EMPTY, _NOT_XML, _UNPARSEABLE, _INCOMPLETE, _UNREADABLE, or VERSION_HISTORY_UNSUPPORTED_FOR_TYPE) instead of failing: that means the history could not be read, never that the object has no versions, and a local parse defect is never reported as an HTTP status.",
     inputSchema: {
       objectName: z.string(),
       objectType: z.string().optional(),

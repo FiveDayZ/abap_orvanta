@@ -15,6 +15,7 @@ import {
 } from "./configuration-preview.js"
 import { createHash } from "node:crypto"
 import { isDeepStrictEqual } from "node:util"
+import { VersionHistoryUnavailableError, structureUriFor } from "./adt-backend.js"
 import type { TransportRequest } from "abap-adt-api"
 import type {
   ActivationMessageInfo,
@@ -5919,7 +5920,10 @@ export class ToolService {
       return ` Failed to get version history: Could not find ABAP object: ${input.objectName}. Please check the object name and ensure it exists.`
     }
     try {
-      const revisions = await this.backend.revisions(connectionId, object.uri)
+      // ADT search returns a repository-navigation URL for DDIC objects, which cannot serve an ADT
+      // structure document; use the canonical resource path for those.
+      const versionHistoryUri = structureUriFor(object.type, input.objectName, object.uri)
+      const revisions = await this.backend.revisions(connectionId, versionHistoryUri)
       const action = input.action ?? "list_versions"
       if (action === "get_version_source") {
         const number = input.versionNumber
@@ -5985,6 +5989,42 @@ export class ToolService {
       })
       return result
     } catch (error) {
+      // An ADT structure document that carries no root element is a read that did not happen, not a
+      // server failure: the 18:07 incident was reported as "HTTP 500" and left the caller unable to
+      // tell "no versions" from "unavailable", one step before the pre-write checks it still owed.
+      // Return a structured state that says which it is, and what to use instead.
+      if (error instanceof VersionHistoryUnavailableError) {
+        return JSON.stringify(
+          {
+            connectionId,
+            objectName: input.objectName,
+            objectType: object.type,
+            objectUri: error.detail.objectUri,
+            status: "unavailable",
+            code: error.code,
+            versionHistoryAvailable: false,
+            reason:
+              "ADT returned no object structure document for this object, so the version list could not be resolved. This is not evidence that the object has no versions, and it is not an HTTP failure of the request.",
+            adt: {
+              httpStatus: error.detail.httpStatus ?? null,
+              contentType: error.detail.contentType ?? null,
+              bodyLength: error.detail.bodyLength ?? null,
+              bodyHead: error.detail.bodyHead ?? null
+            },
+            possibleCause:
+              "ADT served no structure document for the resource this tool resolved for the object. The repository-navigation URL that search returns for DDIC objects is not a structure resource; when the canonical resource path is used and still yields nothing, the object type may simply expose no version feed.",
+            substitutes: [
+              "read_ddic_transparent_table for the stored inactive definition and its fingerprint",
+              "read_abap_table(DD02L/DD03L/TADIR/E071) for object state, ownership and transport membership",
+              "read_ddic_table_conversion_status for the native TBATG worklist"
+            ],
+            automaticRetry: false,
+            cause: error.detail.cause
+          },
+          null,
+          2
+        )
+      }
       return ` Failed to get version history: ${error instanceof Error ? error.message : String(error)}`
     }
   }

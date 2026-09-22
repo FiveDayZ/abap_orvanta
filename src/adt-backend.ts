@@ -4,6 +4,7 @@ import {
   createSSLConfig,
   fromError,
   isClassStructure,
+  isHttpError,
   objectPath,
   session_types,
   type AbapObjectStructure,
@@ -651,9 +652,18 @@ export class AdtBackend implements SapBackend {
     const client = await this.getClient(connectionId)
     try {
       const structure = await loadRevisionObjectStructure(client, objectUri)
+      // The library reads `str.metaData["adtcore:name"]` and follows the version feed link from the
+      // structure. A structure without metadata cannot yield either, so report the same structured
+      // state as a missing document rather than letting a TypeError escape.
+      if (!structure || typeof structure !== "object" || !structure.metaData) {
+        throw new VersionHistoryUnavailableError("VERSION_HISTORY_STRUCTURE_INCOMPLETE", {
+          objectUri,
+          cause: "ADT object structure carried no metadata block"
+        })
+      }
       return await client.revisions(structure)
     } catch (error) {
-      throw capabilityFailure("version-history", error)
+      throw revisionFailure(error, objectUri)
     }
   }
 
@@ -2695,6 +2705,101 @@ export function standaloneClientOptions(
   }
 }
 
+/**
+ * ADT answered the object-structure request, but with no usable structure document.
+ *
+ * The version-history path needs that document twice: to resolve the object's name and version feed
+ * link, and to derive the revision URL. When the body carries no root element the library's
+ * `objectStructure` throws `Cannot read properties of undefined (reading 'adtcore:changedAt')`, which
+ * is a client-side defect report masquerading as a server error. The 18:07 incident hit exactly that
+ * on a transparent table whose only version was inactive: the caller saw an HTTP 500, could not tell
+ * "no versions exist" from "this read is unavailable", and stopped before the pre-write checks it
+ * still owed.
+ *
+ * This error carries the raw response facts so the tool can return a structured, actionable state
+ * instead of a crash message.
+ */
+export class VersionHistoryUnavailableError extends Error {
+  constructor(
+    readonly code: string,
+    readonly detail: {
+      objectUri: string
+      /** HTTP status of the structure request, when it completed. */
+      httpStatus?: number
+      contentType?: string
+      bodyLength?: number
+      bodyHead?: string
+      cause: string
+    }
+  ) {
+    super(
+      `${code}: ADT returned no object structure document for ${detail.objectUri} ` +
+        `(HTTP ${detail.httpStatus ?? "unknown"}, ${detail.bodyLength ?? "unknown"} bytes)`
+    )
+  }
+}
+
+/**
+ * Turn a structure-document failure into `VersionHistoryUnavailableError`, reading the raw response
+ * once for evidence. Never throws: an unreadable response only reduces the detail that is reported.
+ */
+async function describeUnavailableStructure(
+  client: ADTClient,
+  objectUri: string,
+  error: unknown
+): Promise<VersionHistoryUnavailableError> {
+  let httpStatus: number | undefined
+  let contentType: string | undefined
+  let bodyLength: number | undefined
+  let bodyHead: string | undefined
+  try {
+    const response = await client.httpClient.request(objectUri, {})
+    httpStatus = response.status
+    const header = response.headers?.["content-type"]
+    contentType = header === undefined || header === null ? undefined : String(header)
+    const body = String(response.body ?? "")
+    bodyLength = body.length
+    bodyHead = body.slice(0, 200)
+  } catch (readError) {
+    error = readError
+  }
+  // The library's parse already failed on this body, so classify what came back instead of guessing:
+  // nothing at all, something that is not XML, or XML the parser could not root.
+  const code =
+    bodyLength === undefined
+      ? "VERSION_HISTORY_STRUCTURE_UNREADABLE"
+      : bodyLength === 0
+        ? "VERSION_HISTORY_STRUCTURE_EMPTY"
+        : /^\s*</.test(bodyHead ?? "")
+          ? "VERSION_HISTORY_STRUCTURE_UNPARSEABLE"
+          : "VERSION_HISTORY_STRUCTURE_NOT_XML"
+  return new VersionHistoryUnavailableError(code, {
+    objectUri,
+    ...(httpStatus === undefined ? {} : { httpStatus }),
+    ...(contentType === undefined ? {} : { contentType }),
+    ...(bodyLength === undefined ? {} : { bodyLength }),
+    ...(bodyHead === undefined ? {} : { bodyHead }),
+    cause: errorText(error)
+  })
+}
+
+/**
+ * Pick a URI that can serve an ADT structure document.
+ *
+ * ADT search and object info return the repository-navigation URL
+ * (`/sap/bc/adt/vit/wb/object_type/<kind>/object_name/<NAME>`) for DDIC objects. That URL is not a
+ * structure resource: requesting it as one yields a body without a root element, which the library
+ * then crashes on while reading `adtcore:changedAt`. The 18:07 incident hit this for a table, and a
+ * control read proved the inactive state is not the cause - `DD02L` and an active Z table failed the
+ * same way while a class worked. The canonical resource path comes from the type's creation path, so
+ * use it whenever the resolved URI is only a navigation URL.
+ */
+export function structureUriFor(type: string, name: string, resolvedUri: string): string {
+  if (!/\/sap\/bc\/adt\/vit\/wb\//i.test(resolvedUri)) return resolvedUri
+  const canonical = objectPath(type as "DEVC/K", name)
+  return canonical || resolvedUri
+}
+
 export async function loadRevisionObjectStructure(
   client: ADTClient,
   objectUri: string
@@ -2702,6 +2807,12 @@ export async function loadRevisionObjectStructure(
   try {
     return await client.objectStructure(objectUri)
   } catch (error) {
+    // The library reads `adtcore:changedAt` off the root's attributes without checking that the
+    // parse produced a root. Any TypeError from this call is that defect: report it as a structured
+    // unavailable state with the raw response facts, never as an HTTP failure.
+    if (error instanceof TypeError || error instanceof RangeError) {
+      throw await describeUnavailableStructure(client, objectUri, error)
+    }
     if (
       !/\/oo\/classes\//i.test(objectUri) ||
       !errorText(error).includes("No content handler found for content type")
@@ -2721,6 +2832,9 @@ export async function loadRevisionObjectStructure(
       try {
         return await loadObjectStructure(legacyHttp, objectUri)
       } catch (retryError) {
+        if (retryError instanceof TypeError || retryError instanceof RangeError) {
+          throw await describeUnavailableStructure(client, objectUri, retryError)
+        }
         if (!errorText(retryError).includes("No content handler found for content type")) {
           throw retryError
         }
@@ -4589,16 +4703,28 @@ function classifyObjectSearchFailure(
 }
 
 export function capabilityFailure(capability: string, error: unknown): Error {
-  if (error instanceof InactiveInventoryError) {
+  if (error instanceof InactiveInventoryError || error instanceof VersionHistoryUnavailableError) {
     return new Error(`${capability} capability parser-or-content-type: ${error.message}`)
   }
+  // A TypeError/RangeError raised while reading a response is a defect on this side, not an HTTP
+  // failure. The 18:07 incident was reported as "request-failed (HTTP 500)" because the library's
+  // XML attribute read crashed on a structure document without a root element, which sent the caller
+  // looking for a server fault that never happened. Never attribute a status to a local parse crash.
+  if (error instanceof TypeError || error instanceof RangeError) {
+    return new Error(`${capability} capability parser-or-content-type: ${errorText(error)}`)
+  }
   const adtError = fromError(error)
-  const reportedStatus =
-    "status" in adtError ? adtError.status : "err" in adtError ? adtError.err : 0
   const message = adtError.message || String(error)
   const messageStatus = message.match(/(?:status code|error)\s+(\d{3})/i)?.[1]
   const parsedStatus = messageStatus ? Number.parseInt(messageStatus, 10) : 0
-  const status = reportedStatus >= 500 && parsedStatus ? parsedStatus : reportedStatus
+  // Only an error that actually carries an HTTP exchange may contribute an HTTP status. `fromError`
+  // defaults unknown failures to 500, so trusting it made every local defect look like a server fault
+  // - the 18:07 incident was reported as "HTTP 500" for a client-side XML parse crash. A status named
+  // inside the message is still accepted, because that is evidence the server said so.
+  const reportedStatus = isHttpError(error)
+    ? Number((error as { status?: unknown }).status ?? 0)
+    : 0
+  const status = reportedStatus || parsedStatus
   let category = "request-failed"
   if (status === 401 || status === 403) category = "forbidden-or-not-authorized"
   else if (status === 404 || status === 405 || status === 501) category = "unsupported-endpoint"
@@ -4608,6 +4734,25 @@ export function capabilityFailure(capability: string, error: unknown): Error {
   return new Error(
     `${capability} capability ${category}${status ? ` (HTTP ${status})` : ""}: ${message}`
   )
+}
+
+/**
+ * Map any failure of the version-history read to a stable, structured outcome.
+ *
+ * A structure document without the version feed relation means ADT offers no history for this
+ * resource: that is an answer for the caller, not a request failure. Anything else keeps the
+ * capability wording, and a local parse defect never acquires an HTTP status (see
+ * `capabilityFailure`).
+ */
+export function revisionFailure(error: unknown, objectUri: string): Error {
+  if (error instanceof VersionHistoryUnavailableError) return error
+  if (/Revision URL not found/i.test(errorText(error))) {
+    return new VersionHistoryUnavailableError("VERSION_HISTORY_UNSUPPORTED_FOR_TYPE", {
+      objectUri,
+      cause: errorText(error)
+    })
+  }
+  return capabilityFailure("version-history", error)
 }
 
 export function optimalSourceUri(type: string, uri: string): string {
