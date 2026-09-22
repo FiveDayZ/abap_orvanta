@@ -889,6 +889,77 @@ test("an inactive resume refuses while the helper cannot report technical settin
   assert.deepEqual(operations, ["READ_TRANSPARENT_TABLE"])
 })
 
+/**
+ * 0.46.13 guard for the 10:26 incident.
+ *
+ * `read_ddic_transparent_table` on the inactive `ZTPMC_TPRPI` returned `definition.fields: []` while
+ * DD03L held all 29 field rows with AS4LOCAL = 'N'. The deployed helper's inactive path took the
+ * field rows from the active version's table, which is empty for an object that has no active
+ * version. A transparent table or structure cannot have zero fields, so that read is not the stored
+ * definition - and a fingerprint hashed over the empty list would authorise activating exactly the
+ * partial state the caller is trying to verify.
+ */
+test("an inactive definition with no field rows refuses to issue an activation fingerprint", async () => {
+  const backend = new MockBackend()
+  backend.callSapDdic = async () => inactiveTableResult({ fields: [] })
+  const read = JSON.parse(
+    await new ToolService(backend).readDdicTransparentTable({
+      connectionId: "w200",
+      objectName: "ZTPMC_TPRPI"
+    })
+  ) as {
+    status: string
+    definition: Record<string, unknown>
+    definitionIncomplete: boolean
+    fieldsReported: number
+    definitionFingerprint: string | null
+    resumeTool?: string
+    substitutes: string[]
+    requiredAction: string
+    automaticRetry: boolean
+  }
+  assert.equal(read.status, "inactive-definition-incomplete")
+  assert.equal(read.definitionIncomplete, true)
+  assert.equal(read.fieldsReported, 0)
+  assert.equal(read.definition.fields instanceof Array, true)
+  // No usable fingerprint and no resume hint may be published for a definition this read did not see.
+  assert.equal(read.definitionFingerprint, null)
+  assert.equal(read.resumeTool, undefined)
+  // The substitutes name the read path that does show the stored rows, and the fix is stated.
+  assert.ok(read.substitutes.some((item) => item.includes("DD03L")))
+  assert.ok(read.substitutes.some((item) => item.includes("AS4LOCAL")))
+  assert.match(read.requiredAction, /Deploy the current DDIC helper/)
+  assert.equal(read.automaticRetry, false)
+})
+
+test("an inactive resume refuses a stored definition with no field rows", async () => {
+  // The fingerprint gate cannot replace the field check: a hash over an empty field list matches
+  // itself and would authorise activating the partial definition.
+  const backend = new MockBackend()
+  const operations: string[] = []
+  backend.callSapDdic = async (_connectionId, request) => {
+    operations.push(request.operation)
+    return inactiveTableResult({ fields: [] })
+  }
+  await assert.rejects(
+    () =>
+      new ToolService(backend).resumeDdicTableActivation({
+        connectionId: "w200",
+        objectName: "ZTPMC_TPRPI",
+        expectedInactiveFingerprint: "b".repeat(64),
+        packageName: "ZABAP",
+        transportNumber: "GR2K923427",
+        confirmation: "RESUME_INACTIVE_ACTIVATION"
+      }),
+    (error: Error) => {
+      assert.match(error.message, /INACTIVE_DEFINITION_INCOMPLETE/)
+      assert.match(error.message, /read_abap_table\(DD03L/)
+      return true
+    }
+  )
+  assert.deepEqual(operations, ["READ_TRANSPARENT_TABLE"])
+})
+
 test("an inactive resume with settingsRepair writes the settings, activates, and verifies them", async () => {
   const backend = new MockBackend()
   const operations: string[] = []

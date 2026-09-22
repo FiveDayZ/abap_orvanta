@@ -38,13 +38,13 @@ const endpoint = value("--endpoint", process.env.ABAP_MCP_ENDPOINT ?? "http://12
 const sourceFile = resolve(value("--source", ".cache/ddic-helper-canonical.json"))
 const outFile = value(
   "--out",
-  "C:/My/Workplace/Coding/vscode-abap/.doc/deploy-ddic-lock-object.abap"
+  "C:/My/Workplace/Coding/vscode-abap/.doc/deploy-ddic-lock-object-r2c.abap"
 )
 
 const HELPER = "Z_ORVANTA_MCP_DDIC_API"
 const FUNCTION_GROUP = "ZORVANTA_MCP_CORE"
 const PROGRAM = "ZORVANTA_MCP_DDIC_LOCK_DEPLOY"
-const MARKER = "ORVANTA D6-2B LOCK OBJECT CARRIER R2B"
+const MARKER = "ORVANTA D6-2B LOCK OBJECT CARRIER R2C"
 const WRITE_OPERATIONS = ["UPSERT_LOCK_OBJECT", "DELETE_LOCK_OBJECT"]
 const REQUIRED_OPERATIONS = ["READ_LOCK_OBJECT", "RESUME_TRANSPARENT_TABLE_ACTIVATION"]
 
@@ -173,12 +173,23 @@ if (!offline) {
       `the deployed helper lost ${op}`
     )
   }
-  for (const op of WRITE_OPERATIONS) {
-    assert.ok(
-      !live.some((l) => l.includes(`OPERATION|${op}`)),
-      `the deployed helper already declares ${op}: nothing to do, do not re-apply this carrier`
-    )
-  }
+  // 0.46.13 revision: a carrier whose body already matches SAP is pointless and must not run, but a
+  // carrier whose body differs is a revision - exactly what this script is for. The earlier guard
+  // keyed on "the write opcodes are not published yet", which only ever held for the first
+  // deployment. Compare the installed body region instead; the generator still refuses to build a
+  // body that lacks the write operations (asserted above), so a revision cannot regress them.
+  const normalizeBodyLine = (line) => String(line).replace(/\s+$/, "")
+  const installedBody = live.slice(live.length - 1 - hashedBody.length, live.length - 1)
+  const differentLines = hashedBody.filter(
+    (line, index) => normalizeBodyLine(installedBody[index]) !== normalizeBodyLine(line)
+  ).length
+  assert.ok(
+    installedBody.length !== hashedBody.length || differentLines > 0,
+    "the deployed helper body already matches this canonical body: nothing to do, do not re-apply"
+  )
+  console.log(
+    `body revision: ${differentLines} of ${hashedBody.length} body lines differ from the installed body`
+  )
   const selfDescription = (lines) =>
     lines.filter((l) => /'(?:HELPER|PROTOCOL|SOURCE)\|/.test(l)).map((l) => l.trim())
   const liveRows = selfDescription(live)
@@ -421,19 +432,13 @@ report.push("    WRITE: / 'NOTHING TO DO: this carrier is already applied.'.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
-report.push("* Refuse to regress a helper that already carries the write operations.")
-report.push("  CLEAR lv_found.")
-report.push("  LOOP AT lt_cur INTO ls_cur.")
-report.push("    IF ls_cur-line CS 'OPERATION|UPSERT_LOCK_OBJECT'.")
-report.push("      lv_found = 'X'. EXIT.")
-report.push("    ENDIF.")
-report.push("  ENDLOOP.")
-report.push("  IF lv_found = 'X'.")
 report.push(
-  "    WRITE: / 'NOTHING TO DO: the deployed helper already declares UPSERT_LOCK_OBJECT.'."
+  "* The canonical body declares UPSERT_LOCK_OBJECT / DELETE_LOCK_OBJECT (the generator asserts"
 )
-report.push("    RETURN.")
-report.push("  ENDIF.")
+report.push(
+  "* it before emitting this report), so replacing the body cannot regress them. The marker"
+)
+report.push("* check above is what stops a second application of this revision.")
 report.push("")
 if (live) {
   report.push("* Baseline guard: the body was generated against this exact live include.")

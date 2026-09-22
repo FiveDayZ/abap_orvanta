@@ -1913,7 +1913,12 @@ function New-DdicFunctionSource {
         "            add_payload 'M' '1' 'TABKAT' ls_current_dd09v-tabkat.",
         "            add_payload 'M' '1' 'BUFALLOW' ls_current_dd09v-bufallow.",
         "            add_payload 'M' '1' 'PUFFERUNG' ls_current_dd09v-pufferung.",
-        "            LOOP AT lt_dd03p ASSIGNING <ls_field>.",
+        # 10:26 事件：这里原先 LOOP AT lt_dd03p（活动版本字段表），而 state = 'M' 读到的是
+        # lt_current_dd03p。对只有非活动版本的对象，lt_dd03p 为空 → 非活动定义恒返回
+        # fields = []，而 DD03L 里 AS4LOCAL = 'N' 的 29 行真实存在；对活动+非活动并存的对象
+        # 更糟：会把活动版本的字段当成非活动定义上报。表头与 DD09V 已取自 ls_current_*，
+        # 字段必须同源。
+        "            LOOP AT lt_current_dd03p ASSIGNING <ls_field>.",
         "              lv_index = sy-tabix.",
         "              add_payload 'F' lv_index 'FIELDNAME'",
         "                <ls_field>-fieldname.",

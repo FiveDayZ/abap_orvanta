@@ -3610,6 +3610,17 @@ export class ToolService {
     const fingerprintOf = (definition: Record<string, unknown>) =>
       createHash("sha256").update(JSON.stringify(definition)).digest("hex")
     const storedDefinition = definitionOf(stored)
+    // The 10:26 incident showed the deployed helper's inactive path publishing no field rows at all,
+    // which hashed a 29-field table to a field-less definition. Refuse before the fingerprint gate:
+    // a fingerprint over an empty field list would authorise activating the partial state the caller
+    // is verifying, and DD03L proves the rows exist.
+    if (ddicFieldCount(storedDefinition) === 0) {
+      throw new Error(
+        `INACTIVE_DEFINITION_INCOMPLETE: the stored inactive version of ${objectName} reported 0 fields, so its definition cannot be verified and no activation fingerprint can be authorised. ` +
+          "The installed DDIC helper publishes no field rows for an inactive definition (its inactive path reads the active version's fields); deploy the current helper body from scripts/bootstrap-sap-helper.ps1 first. " +
+          "Read the physical rows with read_abap_table(DD03L, filters TABNAME and AS4LOCAL = 'N') to see the stored fields in the meantime. No activation was attempted."
+      )
+    }
     const storedFingerprint = fingerprintOf(storedDefinition)
     const expected = input.expectedInactiveFingerprint.trim().toLowerCase()
     if (storedFingerprint !== expected) {
@@ -3873,6 +3884,51 @@ export class ToolService {
     // being told only that an inactive version exists.
     if (result.metadata.INACTIVE === "X") {
       const definition = ddicDefinition(result, kind)
+      // The 10:26 incident read a 29-field inactive table as `fields: []` while DD03L held all 29
+      // rows with AS4LOCAL = 'N'. The deployed helper published DD02V attributes and DD09V settings
+      // for the inactive definition but took the field rows from the active version, which does not
+      // exist for an inactive-only object. A transparent table or structure always has at least one
+      // field, so an empty list means this read did not see the stored definition - and a fingerprint
+      // hashed over that empty list would authorise activating exactly the partial state the caller
+      // is trying to inspect. Never offer it.
+      if (kind === "transparentTable" || kind === "structure") {
+        if (ddicFieldCount(definition) === 0) {
+          return JSON.stringify(
+            {
+              connectionId: input.connectionId,
+              objectName,
+              status: "inactive-definition-incomplete",
+              active: false,
+              inactiveVersionDescribed: true,
+              gotState: result.metadata.GOTSTATE ?? "",
+              inactiveVersionAttributes: Object.fromEntries(
+                Object.entries(result.metadata).filter(
+                  ([key]) => key !== "INACTIVE" && key !== "GOTSTATE"
+                )
+              ),
+              definition,
+              fieldsReported: 0,
+              definitionIncomplete: true,
+              definitionFingerprint: null,
+              technicalSettingsReported: technicalSettingsReported(result),
+              reason:
+                "SAP holds an inactive definition for this object, but the installed DDIC helper published no field rows for it, so this is not the stored definition: a transparent table or structure always has at least one field. No activation fingerprint is offered, because a hash over an empty field list would certify exactly the partial state this read is meant to verify.",
+              likelyCause:
+                "The deployed helper's inactive path reads the field rows from the active version of the object instead of the inactive one. For an object that has no active version the active field table is empty in SAP; for an object that has both, it would report the active fields as if they were inactive.",
+              substitutes: [
+                "read_abap_table(DD03L, filters TABNAME = <object> and AS4LOCAL = 'N') for the physical inactive field rows",
+                "read_abap_table(DD02L, filters TABNAME = <object>) for the stored header state rows",
+                "read_ddic_table_conversion_status for the native TBATG worklist"
+              ],
+              requiredAction:
+                "Deploy the current DDIC helper body from scripts/bootstrap-sap-helper.ps1 and re-read this object; the resume tool also refuses to activate this state. No activation was attempted and no fingerprint was issued.",
+              automaticRetry: false
+            },
+            null,
+            2
+          )
+        }
+      }
       return JSON.stringify(
         {
           connectionId: input.connectionId,
@@ -8926,6 +8982,18 @@ function changeProtection(value: string): string {
     value ??
     "Unknown"
   )
+}
+
+/**
+ * How many field rows a DDIC definition carries.
+ *
+ * The 10:26 incident reported `fields: []` for an inactive table whose 29 DD03L rows were present,
+ * so an empty list is a read that did not see the stored definition rather than a valid definition.
+ * Callers must not issue an activation fingerprint over it.
+ */
+function ddicFieldCount(definition: Record<string, unknown>): number {
+  const fields = definition.fields
+  return Array.isArray(fields) ? fields.length : 0
 }
 
 /**
