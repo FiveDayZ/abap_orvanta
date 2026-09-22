@@ -6004,15 +6004,14 @@ export class ToolService {
             code: error.code,
             versionHistoryAvailable: false,
             reason:
-              "ADT returned no object structure document for this object, so the version list could not be resolved. This is not evidence that the object has no versions, and it is not an HTTP failure of the request.",
+              "ADT served no usable object structure document for this object, so the version list could not be resolved. This is not evidence that the object has no versions.",
             adt: {
               httpStatus: error.detail.httpStatus ?? null,
               contentType: error.detail.contentType ?? null,
               bodyLength: error.detail.bodyLength ?? null,
               bodyHead: error.detail.bodyHead ?? null
             },
-            possibleCause:
-              "ADT served no structure document for the resource this tool resolved for the object. The repository-navigation URL that search returns for DDIC objects is not a structure resource; when the canonical resource path is used and still yields nothing, the object type may simply expose no version feed.",
+            possibleCause: unsupportedEndpointCause(error),
             substitutes: [
               "read_ddic_transparent_table for the stored inactive definition and its fingerprint",
               "read_abap_table(DD02L/DD03L/TADIR/E071) for object state, ownership and transport membership",
@@ -8926,6 +8925,30 @@ function changeProtection(value: string): string {
     }[value] ??
     value ??
     "Unknown"
+  )
+}
+
+/**
+ * Explain a version-history read that ADT answered with an unsupported endpoint.
+ *
+ * ECC 7.31 serves no structure resource for DDIC objects, so the canonical table path answers HTTP
+ * 404 for every table, active or inactive. Reporting that as a capability fault made the caller stop
+ * one step before its pre-write checks, so name the resource, the status and the substitutes.
+ */
+function unsupportedEndpointCause(error: VersionHistoryUnavailableError): string {
+  const status = error.detail.httpStatus
+  if (status === 404 || status === 405 || status === 501) {
+    return (
+      `ADT answered the structure request for ${error.detail.objectUri} with HTTP ${status}: this ` +
+      "release serves no structure resource (or no version feed) for that object type, so no version " +
+      "list can be read here. ECC 7.31 does this for every DDIC table, active or inactive."
+    )
+  }
+  return (
+    "ADT served no structure document for the resource this tool resolved for the object. The " +
+    "repository-navigation URL that search returns for DDIC objects is not a structure resource; " +
+    "when the canonical resource path is used and still yields nothing, the object type may simply " +
+    "expose no version feed."
   )
 }
 

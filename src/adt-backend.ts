@@ -4702,6 +4702,23 @@ function classifyObjectSearchFailure(
   }
 }
 
+/**
+ * The HTTP status an error actually carries.
+ *
+ * Only an error that carries a real HTTP exchange may contribute a status. `fromError` defaults
+ * unknown failures to 500, so trusting it made every local defect look like a server fault - the
+ * 18:07 incident was reported as "HTTP 500" for a client-side XML parse crash. A status named inside
+ * the message is still accepted, because that is evidence the server said so.
+ */
+function reportedHttpStatus(error: unknown): number {
+  if (isHttpError(error)) {
+    const fromExchange = Number((error as { status?: unknown }).status ?? 0)
+    if (fromExchange) return fromExchange
+  }
+  const named = errorText(error).match(/(?:status code|error)\s+(\d{3})/i)?.[1]
+  return named ? Number.parseInt(named, 10) : 0
+}
+
 export function capabilityFailure(capability: string, error: unknown): Error {
   if (error instanceof InactiveInventoryError || error instanceof VersionHistoryUnavailableError) {
     return new Error(`${capability} capability parser-or-content-type: ${error.message}`)
@@ -4715,16 +4732,7 @@ export function capabilityFailure(capability: string, error: unknown): Error {
   }
   const adtError = fromError(error)
   const message = adtError.message || String(error)
-  const messageStatus = message.match(/(?:status code|error)\s+(\d{3})/i)?.[1]
-  const parsedStatus = messageStatus ? Number.parseInt(messageStatus, 10) : 0
-  // Only an error that actually carries an HTTP exchange may contribute an HTTP status. `fromError`
-  // defaults unknown failures to 500, so trusting it made every local defect look like a server fault
-  // - the 18:07 incident was reported as "HTTP 500" for a client-side XML parse crash. A status named
-  // inside the message is still accepted, because that is evidence the server said so.
-  const reportedStatus = isHttpError(error)
-    ? Number((error as { status?: unknown }).status ?? 0)
-    : 0
-  const status = reportedStatus || parsedStatus
+  const status = reportedHttpStatus(error)
   let category = "request-failed"
   if (status === 401 || status === 403) category = "forbidden-or-not-authorized"
   else if (status === 404 || status === 405 || status === 501) category = "unsupported-endpoint"
@@ -4746,9 +4754,22 @@ export function capabilityFailure(capability: string, error: unknown): Error {
  */
 export function revisionFailure(error: unknown, objectUri: string): Error {
   if (error instanceof VersionHistoryUnavailableError) return error
-  if (/Revision URL not found/i.test(errorText(error))) {
+  const status = reportedHttpStatus(error)
+  const unsupportedEndpoint =
+    status === 404 ||
+    status === 405 ||
+    status === 501 ||
+    /No URI-Mapping defined/i.test(errorText(error))
+  if (/Revision URL not found/i.test(errorText(error)) || unsupportedEndpoint) {
+    // No version feed relation, or no handler for the resource at all, is an answer for the caller -
+    // not a request failure. ECC 7.31 answers the canonical DDIC structure path
+    // /sap/bc/adt/ddic/tables/<name> with HTTP 404 for every table, active or inactive (T000
+    // included), and the library reports a resource it cannot map as "No URI-Mapping defined". The
+    // caller must be able to tell that apart from a transport fault, so the status is recorded
+    // instead of being formatted into a capability error string.
     return new VersionHistoryUnavailableError("VERSION_HISTORY_UNSUPPORTED_FOR_TYPE", {
       objectUri,
+      ...(status ? { httpStatus: status } : {}),
       cause: errorText(error)
     })
   }

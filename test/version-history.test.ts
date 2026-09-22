@@ -164,6 +164,93 @@ test("a structure without the version feed relation is a structured unsupported 
   assert.match(revisionFailure(new Error("boom"), TABLE_URI).message, /version-history capability/)
 })
 
+/**
+ * 0.46.13 guard for the 08:57 incident.
+ *
+ * `get_version_history` on the inactive table `ZTPMC_TPRPI` returned the plain text
+ * "version-history capability unsupported-endpoint (HTTP 404)" instead of the structured state the
+ * tool documents. 0.46.12 had moved the read onto the canonical DDIC structure path, which ECC 7.31
+ * answers with HTTP 404 for every table - `T000` behaved identically - so the status was a property
+ * of the release, not of the object, and the caller lost the "unavailable, not absent" answer.
+ */
+test("an unsupported structure endpoint is a structured answer, not a capability fault", () => {
+  for (const error of [
+    new Error("Request failed with status code 404"),
+    new Error("Request failed with status code 405"),
+    new Error("No URI-Mapping defined for URI /sap/bc/adt/ddic/tables/ztpmc_tprpi")
+  ]) {
+    const failure = revisionFailure(error, TABLE_URI)
+    assert.ok(
+      failure instanceof VersionHistoryUnavailableError,
+      `${error.message} must not stay a capability error`
+    )
+    assert.equal(failure.code, "VERSION_HISTORY_UNSUPPORTED_FOR_TYPE")
+    assert.equal(failure.detail.objectUri, TABLE_URI)
+    assert.match(failure.detail.cause, /404|405|URI-Mapping/)
+  }
+  const notFound = revisionFailure(new Error("Request failed with status code 404"), TABLE_URI)
+  assert.ok(notFound instanceof VersionHistoryUnavailableError)
+  assert.equal(notFound.detail.httpStatus, 404)
+  // A local defect still never acquires an HTTP status.
+  const localDefect = revisionFailure(
+    new TypeError("Cannot read properties of undefined (reading 'adtcore:changedAt')"),
+    TABLE_URI
+  )
+  assert.match(localDefect.message, /version-history capability/)
+})
+
+test("the tool reports an unsupported structure endpoint with its HTTP status", async () => {
+  const backend = new MockBackend()
+  // Search resolves DDIC objects to a repository-navigation URL, so this also proves the tool probes
+  // the canonical table path - the one ECC 7.31 answers with HTTP 404.
+  backend.searchObjects = async () => [
+    {
+      name: "ZTPMC_TPRPI",
+      type: "TABL/DT",
+      description: "Test table",
+      package: "ZABAP",
+      systemType: "CUSTOM",
+      uri: "/sap/bc/adt/vit/wb/object_type/tabldt/object_name/ZTPMC_TPRPI"
+    }
+  ]
+  backend.revisions = async () => {
+    throw new VersionHistoryUnavailableError("VERSION_HISTORY_UNSUPPORTED_FOR_TYPE", {
+      objectUri: TABLE_URI,
+      httpStatus: 404,
+      cause: "Request failed with status code 404"
+    })
+  }
+  const result = JSON.parse(
+    await new ToolService(backend).getVersionHistory({
+      action: "list_versions",
+      connectionId: "w200",
+      objectName: "ZTPMC_TPRPI",
+      objectType: "TABL",
+      maxVersions: 10
+    })
+  ) as {
+    status: string
+    code: string
+    objectUri: string
+    versionHistoryAvailable: boolean
+    reason: string
+    adt: { httpStatus: number | null }
+    possibleCause: string
+    substitutes: string[]
+    automaticRetry: boolean
+  }
+  assert.equal(result.status, "unavailable")
+  assert.equal(result.code, "VERSION_HISTORY_UNSUPPORTED_FOR_TYPE")
+  assert.equal(result.objectUri, TABLE_URI)
+  assert.equal(result.versionHistoryAvailable, false)
+  assert.match(result.reason, /not evidence that the object has no versions/)
+  assert.equal(result.adt.httpStatus, 404)
+  assert.match(result.possibleCause, /HTTP 404/)
+  assert.match(result.possibleCause, /no structure resource|no version feed/)
+  assert.ok(result.substitutes.some((item) => item.includes("read_ddic_transparent_table")))
+  assert.equal(result.automaticRetry, false)
+})
+
 test("version history returns a structured state for an unreadable object", async () => {
   const backend = new MockBackend()
   const error = new VersionHistoryUnavailableError("VERSION_HISTORY_STRUCTURE_EMPTY", {
