@@ -1,6 +1,8 @@
 # 工具兼容矩阵
 
-> 当前口径（2026-09-21，`0.46.10`）：工具注册表静态注册 **132 个工具（只读 77 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数。
+> 当前口径（2026-09-22，`0.46.12`）：工具注册表静态注册 **132 个工具（只读 77 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数。
+
+2026-09-22 增量（`0.46.12`，工具面不变，只读工具回执与 URI 解析）：**`get_version_history` 对 DDIC 表报 HTTP 500**——搜索/对象信息对 DDIC 对象给出的是仓库导航 URL（`/sap/bc/adt/vit/wb/object_type/...`），它不是结构资源，向它请求 objectstructure 得到无根响应体，库随即在 `attr["adtcore:changedAt"]` 上抛 TypeError，而包装又把它显示成 `request-failed (HTTP 500)`。线上只读对照证明**所有 DDIC 表**受影响（`DD02L`、活动表 `ZTPMC_BZWL` 均失败，类对象正常），与"非活动"无关。修复：`structureUriFor()` 按类型规范创建路径改写为 `/sap/bc/adt/ddic/tables/<NAME>` 等；无根/非 XML/缺 metadata/缺版本 feed 分别转为稳定码 `VERSION_HISTORY_STRUCTURE_EMPTY`／`_NOT_XML`／`_UNPARSEABLE`／`_INCOMPLETE`／`VERSION_HISTORY_UNSUPPORTED_FOR_TYPE`，回执为 JSON `status=unavailable` + 原始 `adt` 事实 + `substitutes`（"不可读"≠"没有版本"）；`capabilityFailure` 不再给本地解析崩溃标注 HTTP 状态。
 
 2026-09-21 增量（`0.46.11`，工具面不变，恢复激活契约变化）：**非活动读取的技术设置不可信**——助手只在活动路径上报 DD09V（`TABKAT/TABART/BUFALLOW/PUFFERUNG`），非活动路径一条不发，服务侧因此把空值当存储值；非活动回执新增 `technicalSettingsReported` 与 `warnings`。**`resume_ddic_table_activation` 拒绝不安全的激活**：无法确认可用技术设置时以 `INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED`／`INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE` 失败，不再调用 `DD_TABL_ACT`；新增可选 `settingsRepair`（指纹保护 + 显式确认）先用已部署的 `PATCH_TRANSPARENT_TABLE_SETTINGS` 写批准设置，再重读、以新指纹激活，并读回活动定义逐项比对（`technicalSettingsVerified`，不一致为 `ACTIVATED_TECHNICAL_SETTINGS_MISMATCH`）。源头侧规范正文已在非活动分支补报 DD09V 四项，载体 #2 重生成（载荷 2265 行、摘要 `3c61cea7e59992f2`、基线 2119、26 操作码，**未部署**）。
 

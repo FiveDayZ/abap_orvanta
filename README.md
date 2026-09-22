@@ -5,6 +5,22 @@ ORVANTA 是独立 ABAP MCP 服务，默认 MCP 注册名为 `orvanta`。它不�
 
 ## 当前实施基线
 
+2026-09-22 版本 `0.46.12` 修复 **18:07 事件**：`get_version_history` 对 DDIC 表报 HTTP 500。**工具面不变**（132 项 / 只读 77 项 / 能力组 18 组）；`get_version_history` 新增结构化不可用回执与稳定码。
+
+**事件**：对非活动表 `ZTPMC_TPRPI` 做写前版本历史核对时，工具返回 `Failed to get version history: version-history capability request-failed (HTTP 500): Cannot read properties of undefined (reading 'adtcore:changedAt')`。调用方无法区分"没有版本"与"读不到"，按规则停止。
+
+**线上只读取证推翻了"非活动专属"的初判**：`CLAS/OC CL_ABAP_TYPEDESCR` 正常列出 1 个版本，而 `TABL DD02L` 与**活动的** `TABL ZTPMC_BZWL` 都以同一文本失败——**所有 DDIC 表都受影响**。三个缺陷叠加：
+
+1. **解析用的 URI 不是结构资源**：ADT 搜索/对象信息对 DDIC 对象返回仓库导航 URL `/sap/bc/adt/vit/wb/object_type/tabldt/object_name/<NAME>`，向它请求 objectstructure 得到**没有根元素**的响应体。新增 `structureUriFor()`，把这类导航 URL 按类型规范创建路径改写为 `/sap/bc/adt/ddic/tables/<NAME>`（函数组同理）；已是资源 URL 的不动，无创建路径的类型保持原样。
+2. **库的 XML 属性读取无守卫**：无根时 `objectStructure` 直接读 `attr["adtcore:changedAt"]` 抛 TypeError。现在该错误转为 `VersionHistoryUnavailableError`，并**回读原始响应**给出 `httpStatus`/`contentType`/`bodyLength`/`bodyHead`，分类为 `VERSION_HISTORY_STRUCTURE_EMPTY`／`_NOT_XML`／`_UNPARSEABLE`；结构缺 metadata 为 `_INCOMPLETE`；缺版本 feed 关系为 `VERSION_HISTORY_UNSUPPORTED_FOR_TYPE`。
+3. **本地缺陷被报成服务端故障**：`capabilityFailure` 信任 `fromError`（未知错误默认 500），把客户端解析崩溃显示为 `request-failed (HTTP 500)`。现在只有错误**确实携带 HTTP 交换**（`isHttpError`）或消息点名状态码时才标注状态；TypeError/RangeError 一律归 `parser-or-content-type` 且不带状态。
+
+**给调用方的语义**：这类情形返回 JSON `status:"unavailable"` + 稳定码 + `versionHistoryAvailable:false` + 原始 `adt` 事实 + `possibleCause` + 仍可完成写前核对的只读替代 + `automaticRetry:false`。**"版本历史不可读"永远不等于"该对象没有版本"**。
+
+**本次边界**：仅服务侧代码与文档；**未修改任何 SAP 对象、未部署或升级助手、未执行 F8、未操作传输**；线上调用全部只读。
+
+## 实施基线（历史，倒序）
+
 2026-09-21 版本 `0.46.11` 修复 **17:37 事件**：非活动表的技术设置读不到，恢复激活可能固化不完整定义。**工具面与既有错误码取值不变**（132 项 / 只读 77 项 / 能力组 18 组）；`resume_ddic_table_activation` 新增可选入参与两个新拒绝码。
 
 **事件**：`read_ddic_transparent_table('ZTPMC_TPRPI')` 在 0.46.10 上已能给出描述、`tableClass=TRANSP`、`deliveryClass=A` 与 29 个字段，但 `dataClass` 为空、`sizeCategory=0`，而批准定义要求 **`APPL1/1`**。`resume_ddic_table_activation` 只重读已存定义、校验指纹后调用恢复激活，**不重发定义**，因此继续可能把不完整技术设置固化；调用方正确地停下了。
