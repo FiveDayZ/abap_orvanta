@@ -3371,6 +3371,8 @@ function New-DdicFunctionSource {
         "            INTO lv_ap_removed_text SEPARATED BY ','.",
         "        ENDIF.",
         "      ENDLOOP.",
+        # CONCATENATE ... SEPARATED BY 在左值为初始时仍会插入分隔符，故此处去掉前导逗号。
+        "      SHIFT lv_ap_removed_text LEFT DELETING LEADING ','.",
         "      IF lv_ap_removed_text IS NOT INITIAL.",
         "        ev_status = 'E'.",
         "        ev_code = 'APPEND_FIELD_REMOVAL_NOT_SUPPORTED'.",
@@ -3497,6 +3499,8 @@ function New-DdicFunctionSource {
         "            INTO lv_ap_base_mismatch_text SEPARATED BY ','.",
         "        ENDIF.",
         "      ENDLOOP.",
+        # 同上去掉前导逗号。
+        "      SHIFT lv_ap_base_mismatch_text LEFT DELETING LEADING ','.",
         "      CLEAR: lv_ap_expected_text, lv_ap_actual_text.",
         "      LOOP AT lt_ap_requested INTO ls_ap_requested.",
         "        IF lv_ap_expected_text IS INITIAL.",
