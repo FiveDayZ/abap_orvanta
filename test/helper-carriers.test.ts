@@ -23,6 +23,39 @@ test("every recorded carrier program is the one its generator writes", () => {
   )
 })
 
+test("every repository carrier program is the one its generator writes", () => {
+  const generator = readFileSync(
+    join(repositoryRoot, "scripts", "generate-repository-carrier.mjs"),
+    "utf8"
+  )
+  const targets = [
+    ...generator.matchAll(/(Z_ORVANTA_MCP_[A-Z_]+):\s*\{\s*program:\s*"([A-Z0-9_]+)"/g)
+  ]
+  assert.ok(targets.length > 0, "generate-repository-carrier.mjs must declare its TARGETS")
+  for (const match of targets) {
+    const helper = match[1]
+    const program = match[2]
+    assert.ok(helper && program, "a carrier target must name both a helper and a program")
+    assert.equal(
+      HELPER_CARRIER_PROGRAMS[helper],
+      program,
+      `the remedy for ${helper} would name a carrier nobody can run`
+    )
+    // ABAP program names are capped at 30 characters, so a carrier that exceeded it could not be
+    // created in SE38 at all - the remedy would send the operator to a nonexistent program.
+    assert.ok(program.length <= 30, `carrier program name too long for SE38: ${program}`)
+  }
+  // The shared repository body still needs one carrier per function module: two entries, not one.
+  assert.equal(targets.length, 2, "both repository helpers must have their own carrier")
+})
+
+test("a repository version shortfall names the repository carrier, not the DDIC one", () => {
+  const remedy = helperDeploymentRemedy("Z_ORVANTA_MCP_EXECUTE", "2.8")
+  assert.match(remedy, /ZORVANTA_MCP_EXEC_DEPLOY/)
+  assert.match(remedy, /SE38/)
+  assert.doesNotMatch(remedy, /ZORVANTA_MCP_DDIC_LOCK_DEPLOY/)
+})
+
 test("the remedy names the SAP-side step and states what does not work", () => {
   const remedy = helperDeploymentRemedy(DDIC_HELPER, "1.13")
   assert.match(remedy, /ZORVANTA_MCP_DDIC_LOCK_DEPLOY/)

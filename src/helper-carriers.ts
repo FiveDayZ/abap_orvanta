@@ -17,7 +17,13 @@
  * with no entry has no generated carrier yet, and the remedy says so rather than inventing a name.
  */
 export const HELPER_CARRIER_PROGRAMS: Readonly<Record<string, string>> = {
-  Z_ORVANTA_MCP_DDIC_API: "ZORVANTA_MCP_DDIC_LOCK_DEPLOY"
+  Z_ORVANTA_MCP_DDIC_API: "ZORVANTA_MCP_DDIC_LOCK_DEPLOY",
+  // The repository family (Z_ORVANTA_MCP_EXECUTE / Z_ORVANTA_MCP_DYNPRO_API) shares one body source
+  // but not one deployed include: each function module self-describes with its own name in the
+  // CAPABILITIES rows, so the 2.8 body needs one carrier per target
+  // (scripts/generate-repository-carrier.mjs, docs/release-process.md section 7.2).
+  Z_ORVANTA_MCP_EXECUTE: "ZORVANTA_MCP_EXEC_DEPLOY",
+  Z_ORVANTA_MCP_DYNPRO_API: "ZORVANTA_MCP_DYNPRO_DEPLOY"
 }
 
 /**
