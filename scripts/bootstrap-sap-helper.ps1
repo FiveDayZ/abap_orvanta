@@ -5330,7 +5330,11 @@ function New-DdicFunctionSource {
         "            IMPORTING rc = lv_rc EXCEPTIONS OTHERS = 1.",
         "        ENDIF.",
         "      WHEN 'SHLP'.",
-        "        CLEAR: lt_dd31v, lt_dd32p, lt_dd33v.",
+        # 这里原先有一句 CLEAR: lt_dd31v, lt_dd32p, lt_dd33v.，它在写入前把**解析好的入参**清空：
+        # 这三张表由 IT_SOURCE 的 S1/S2/S3 行在上方解析填充，CLEAR 之后下面的三个 LOOP 全部空转，
+        # DDIF_SHLP_PUT 收到三张空表；按 DDIF_*_PUT 的"整集替换"语义即**删除该搜索帮助的全部
+        # DD31S/DD32P/DD33S 行**。这正是 D6-1 缺陷②（改 HIDEFLAG 导致子表被静默丢弃）的根因。
+        # 三张表是函数模块局部变量，每次调用本就重新初始化，故该 CLEAR 既多余又有害，予以删除。
         "        ls_dd30v-shlpname = iv_object_name.",
         "        ls_dd30v-ddlanguage = sy-langu.",
         "        ls_dd30v-ddtext = iv_description.",
