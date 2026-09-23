@@ -138,7 +138,7 @@
 | `recover_ddic_table_conversion` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.7) |
 | `release_write_operation_lock` | platform | platform | 写 | local | — |
 | `replace_string_in_abap_object` | source | dev | 写 | native-adt | — |
-| `resume_ddic_table_activation` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.11) |
+| `resume_ddic_table_activation` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.13) |
 | `run_atc_analysis` | quality | dev | 写 | target-specific | — |
 | `run_sci_analysis` | quality | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_SCI_API (≥1.0) |
 | `run_unit_tests` | quality | dev | 写 | native-adt | — |

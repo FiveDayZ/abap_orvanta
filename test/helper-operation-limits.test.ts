@@ -194,8 +194,12 @@ test("the truncated operations were renamed and are not documented as blocked", 
     "# <<< ORVANTA-DDIC-CAPABILITY-TABLE"
   )
   assert.ok(
-    ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.11|W"'),
-    "the renamed resume operation must be recorded as introduced at 1.11"
+    ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.13|W"'),
+    "the operation must be recorded as introduced at 1.13, the first helper that can actually resume"
+  )
+  assert.ok(
+    !ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.11|W"'),
+    "no helper ever delivered a working resume operation at 1.11 or 1.12"
   )
   assert.ok(
     !ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.10|W"'),
@@ -287,7 +291,12 @@ test("the installer generates no operation that its own parameter would truncate
     [...block.matchAll(/WHEN '([A-Z0-9_]+)'/g)].map((match) => String(match[1]))
   const repositoryBody = sliceBetween(
     "$repositoryFunctionSource = @(",
-    '$functionSource = if ($FunctionName -eq "Z_ORVANTA_MCP_DDIC_API")'
+    // This anchor marks the end of the repository body assignment. It moved on 2026-09-23 when the
+    // body selector became `$usesRepositoryBody` (one shared predicate for the body AND the D7
+    // interface parameters, so EXECUTE and DYNPRO_API can never disagree). Anchoring on the selector
+    // line rather than on the FM name keeps this slice correct even though the predicate is no
+    // longer a literal comparison here.
+    "$functionSource = if ($usesRepositoryBody) {"
   )
   const ddicBody = sliceBetween(
     "function New-DdicFunctionSource {",

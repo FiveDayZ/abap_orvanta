@@ -453,8 +453,9 @@ test("the DDIC since values are the service contract minimums", async () => {
     groupSizes[operation.since] = (groupSizes[operation.since] ?? 0) + 1
   }
   assert.deepEqual(groupSizes, {
-    "1.11": 7,
+    "1.11": 6,
     "1.12": 1,
+    "1.13": 1,
     "1.2": 8,
     "1.5": 2,
     "1.6": 5,
@@ -477,7 +478,12 @@ test("the DDIC since values are the service contract minimums", async () => {
   // D6-5: UPSERT_APPEND_STRUCTURE_FIELDS is the single |1.12| row, so it alone raises PROTOCOL|MAX
   // from 1.11 to 1.12. A 1.11 helper does not know the opcode at all, which is exactly why
   // upsert_append_structure_fields declares protocol 1.12 and is reported unavailable on 1.11.
-  assert.equal(versions[versions.length - 1], "1.12", "PROTOCOL|MAX must derive to 1.12")
+  // 2026-09-23: RESUME_TABLE_ACTIVATION moved from |1.11| to |1.13| and is now the single |1.13| row,
+  // so it alone raises PROTOCOL|MAX from 1.12 to 1.13. The 1.11/1.12 carriers could dispatch the
+  // opcode but never resumed anything (they ran the TBATG conversion-recovery block instead), so
+  // 1.13 is the first helper that can serve resume_ddic_table_activation - and the service's
+  // contract minimum moved with it, which is what stops a 1.12 helper being reported available.
+  assert.equal(versions[versions.length - 1], "1.13", "PROTOCOL|MAX must derive to 1.13")
 })
 
 test("the DDIC branch reuses the repository hash slots and names its own helper", () => {

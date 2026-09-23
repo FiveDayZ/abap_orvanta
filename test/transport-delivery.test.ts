@@ -69,16 +69,44 @@ test("delivery does not equate R3TR containers and LIMU subobjects and preserves
   assert.equal(caseResult.comparison, "differences")
 })
 
-test("delivery rejects malformed and duplicate expectations before reading SAP", async () => {
+test("delivery rejects malformed expectations before reading SAP", async () => {
   const f = fixture()
   for (const change of [
     { expectedObjects: [] },
-    { expectedObjects: [object, object] },
     { expectedObjects: [{ ...object, name: " " }] },
     { transportNumber: "W20K900001/inject" }
   ])
     await assert.rejects(prepareTransportDelivery(f.backend, { ...input, ...change }))
   assert.equal(f.calls(), 0)
+})
+
+// E071 legitimately repeats keys - `LIMU TABD <table>` appears once per transported table fragment
+// - so a caller who transcribes the expected list from the transport itself sends the same key
+// twice. This used to throw TRANSPORT_DELIVERY_DUPLICATE_EXPECTATION and block the comparison
+// entirely. Falsification: restore that throw and this test fails on the first assertion below
+// while the `expectedObjectDuplicates` assertion never runs.
+test("delivery accepts a repeated expectation, compares it once, and still reports the repetition", async () => {
+  const f = fixture()
+  const limu = { pgmid: "LIMU", type: "TABD", name: "ZORVANTA_T_PROBE" }
+  f.request.objects = [row(limu)]
+  f.request.tasks = []
+
+  const result = await prepareTransportDelivery(f.backend, {
+    ...input,
+    expectedObjects: [limu, limu]
+  })
+
+  assert.equal(result.comparison, "exact_key_match")
+  assert.equal(result.missingFromObservedList.length, 0)
+  assert.equal(result.unexpectedInObservedList.length, 0)
+  assert.equal(result.expected.length, 1, "the comparison list holds the key once")
+  assert.deepEqual(result.expectedObjectDuplicates, [{ ...limu, occurrences: 2 }])
+  assert.match(
+    result.warnings.join(" "),
+    /Duplicate expected keys are compared once/,
+    "the repetition must stay visible instead of being silently collapsed"
+  )
+  assert.equal(f.calls(), 1)
 })
 
 test("delivery refuses wrong requests, duplicate containers, oversized and incomplete responses", async () => {

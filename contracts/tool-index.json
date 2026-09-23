@@ -1657,7 +1657,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
-      "minHelperProtocol": "1.11"
+      "minHelperProtocol": "1.13"
     },
     {
       "name": "run_atc_analysis",

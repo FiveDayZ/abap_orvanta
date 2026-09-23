@@ -322,7 +322,14 @@ const ROWS: readonly ToolRow[] = [
     // the helper's CHAR 32 IV_OPERATION before its dispatch arm could match. The renamed operation
     // is introduced by the same body change, so the contract minimum is 1.11 and not 1.10; claiming
     // 1.10 here would assert that a 1.10 helper can serve the tool.
-    "1.11",
+    //
+    // 2026-09-23 (1.13): 1.11 and 1.12 could dispatch the name but could never resume anything. The
+    // dispatch arm also set lv_recover, so the operation entered the TBATG conversion-recovery block,
+    // which requires a worklist (WORKLIST_REQUIRED - the observed incident) and otherwise runs
+    // DD_DB_CONVERTER and RETURN, leaving the lv_resume activation branch (DD_TABL_ACT) dead code.
+    // A minimum of 1.11 therefore advertised the capability as available against a helper that could
+    // not perform it. The first helper that actually resumes is 1.13, so the contract moves with it.
+    "1.13",
     ["RESUME_TABLE_ACTIVATION"]
   ],
   [

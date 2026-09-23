@@ -163,7 +163,12 @@ $ddicCapabilityOperations = @(
     # RESUME_TRANSPARENT_TABLE_ACTIVATION，被 CHAR 32 的 IV_OPERATION 截断，从未成功派发过。
     # 写 1.10 等于宣称"某个 1.10 助手投递过 RESUME_TABLE_ACTIVATION"，那是假的。见
     # test/helper-operation-limits.test.ts 与 src/helper-operation-limits.ts。
-    "RESUME_TABLE_ACTIVATION|1.11|W",
+    # 1.13 再抬一次：1.11/1.12 的助手虽然能派发这个名字，却从未真正执行过恢复激活——它们把该
+    # 操作当成转换恢复（lv_recover），无工作清单时回 WORKLIST_REQUIRED，有工作清单时执行一次
+    # DD_DB_CONVERTER 并 RETURN，永远到不了自己的 lv_resume 激活分支。既然没有任何已发布助手
+    # 提供**可用**的 RESUME_TABLE_ACTIVATION，sinceVersion 就必须是第一个可用的版本 1.13；否则
+    # 服务端会继续把 1.12 助手报成 available（2026-09-23 事件）。
+    "RESUME_TABLE_ACTIVATION|1.13|W",
     # D6-3 编号范围对象（TNRO + TNROT，区间值不在范围）。1.11 与 RESUME_TABLE_ACTIVATION 同批发布：
     # 三者都是本轮新加的 CASE 分支，任何已发布的助手都不曾提供，因此 sinceVersion 只能是 1.11。
     # 操作码长度：READ 24 / UPSERT 26 / DELETE 26，均在 DDIC 助手 BAPIRET2-PARAMETER(CHAR 32) 之内。
@@ -1636,7 +1641,14 @@ function New-DdicFunctionSource {
         # 这与事实一致：它们本来就从未成功派发过该操作。
         "    WHEN 'RESUME_TABLE_ACTIVATION'.",
         "      lv_object_type = 'TABL'.",
-        "      lv_write = 'X'. lv_recover = 'X'. lv_resume = 'X'.",
+        # 1.13 修复：本操作曾同时置 lv_recover = 'X'，于是它从未走到下面 TABL 分支里自己的
+        # lv_resume 激活路径（DD_TABL_ACT）。recover 块在 DD_DB_CONVERTER 之后直接 RETURN，因此
+        # 1.11/1.12 的助手只有两种结果：没有工作清单时回 WORKLIST_REQUIRED（2026-09-23 事件
+        # mcp-incident-20260923-152039-147），或者拿着工作清单**误做一次转换恢复**并把
+        # lv_resume 激活分支变成死代码。激活一个已保存的非活动定义与恢复 TBATG 转换是两件事，
+        # 各有各的工具（recover_ddic_table_conversion / resume_ddic_table_activation），
+        # 所以这里只置 lv_write + lv_resume。
+        "      lv_write = 'X'. lv_resume = 'X'.",
         "    WHEN 'READ_TABLE_TYPE'.",
         "      lv_object_type = 'TTYP'.",
         "    WHEN 'UPSERT_TABLE_TYPE'.",
@@ -3802,7 +3814,11 @@ function New-DdicFunctionSource {
         "       OR iv_request IS INITIAL",
         "       OR ( iv_description IS INITIAL AND lv_delete IS INITIAL",
         "         AND lv_append IS INITIAL AND lv_patch IS INITIAL",
-        "         AND lv_settings IS INITIAL AND lv_recover IS INITIAL ).",
+        "         AND lv_settings IS INITIAL AND lv_recover IS INITIAL",
+        # 1.13：resume 不再置 lv_recover，因此必须在这里与 recover 并列，否则一次不带 description
+        # 的恢复激活会被 WRITE_INPUT_REQUIRED 拦下（服务端目前会填 description，但这条守卫的语义
+        # 是『这些操作不需要描述』，不该依赖调用方恰好补了一个无关字段）。
+        "         AND lv_resume IS INITIAL ).",
         "      ev_status = 'E'. ev_code = 'WRITE_INPUT_REQUIRED'.",
         "      ev_message = 'Description package and request required'.",
         "      ev_version = '1.2'. RETURN.",
@@ -4496,6 +4512,14 @@ function New-DdicFunctionSource {
         "  ENDIF.",
         "  IF lv_gotstate IS NOT INITIAL.",
         "    IF lv_gotstate <> 'A'.",
+        # 1.13 恢复激活：目标就是这个非活动定义本身。它既不能落进下面的 INACTIVE_VERSION_EXISTS
+        # 拒绝（那正是 resume_ddic_table_activation 要解决的处境），更不能落进 DDIF_OBJECT_DELETE
+        # 重置——那个重置是给"创建时残留了旧非活动版本"用的，对恢复激活执行它会**删掉待激活的
+        # 定义**。把对象视为已存在后继续，交给 4665 的 TRANSP 类型校验、5027 的包归属校验，以及
+        # 5389 起本操作自己的 lv_resume 激活路径（DD_TABL_ACT）。
+        "      IF lv_resume = 'X'.",
+        "        lv_existing = 'X'.",
+        "      ELSE.",
         "      IF lv_write IS INITIAL.",
         "        IF lv_describe = 'X'.",
         "          ev_status = 'S'. ev_code = 'INACTIVE_VERSION_DESCRIBED'.",
@@ -4582,6 +4606,7 @@ function New-DdicFunctionSource {
         "      ENDIF.",
         "      COMMIT WORK AND WAIT.",
         "      CLEAR lv_gotstate.",
+        "      ENDIF.",
         "    ELSE.",
         "      lv_existing = 'X'.",
         "    ENDIF.",
@@ -4660,20 +4685,30 @@ function New-DdicFunctionSource {
         "    ev_version = '1.4'. RETURN.",
         "  ENDIF.",
         "  IF lv_write = 'X'.",
+        # 1.13：以下三道闸门都假设"写入 = 提交一份新定义"，因此对恢复激活必须放行：
+        #   * DDIC_OBJECT_EXISTS 拒绝的是**替换**已有表；恢复激活不提交定义，只激活已存的那份。
+        #   * EXPECTED_VERSION_REQUIRED / VERSION_CONFLICT 比对的是活动版本的时间戳令牌
+        #     （lv_current_version = AS4DATE + AS4TIME，14 位）。恢复激活没有活动版本可作令牌，
+        #     服务端送的又是定义内容指纹（64 位十六进制），两者永不可能相等。恢复激活的陈旧读
+        #     保护在服务端完成（expectedInactiveFingerprint 与它刚读到的存储定义比对），助手侧
+        #     由下面的 NO_INACTIVE_VERSION 守卫兜底。
         "    IF lv_object_type = 'TABL' AND lv_existing = 'X'",
         "       AND lv_append IS INITIAL AND lv_patch IS INITIAL",
-        "       AND lv_settings IS INITIAL AND lv_delete IS INITIAL.",
+        "       AND lv_settings IS INITIAL AND lv_delete IS INITIAL",
+        "       AND lv_resume IS INITIAL.",
         "      ev_status = 'E'. ev_code = 'DDIC_OBJECT_EXISTS'.",
         "      ev_message = 'Existing transparent tables cannot be replaced'.",
         "      ev_version = '1.3'. RETURN.",
         "    ENDIF.",
-        "    IF lv_existing = 'X' AND iv_expected_version IS INITIAL.",
+        "    IF lv_existing = 'X' AND iv_expected_version IS INITIAL",
+        "       AND lv_resume IS INITIAL.",
         "      ev_status = 'E'. ev_code = 'EXPECTED_VERSION_REQUIRED'.",
         "      ev_message = 'Existing object requires version token'.",
         "      ev_version = '1.2'. RETURN.",
         "    ENDIF.",
         "    IF lv_existing = 'X'",
-        "       AND iv_expected_version <> lv_current_version.",
+        "       AND iv_expected_version <> lv_current_version",
+        "       AND lv_resume IS INITIAL.",
         "      ev_status = 'E'. ev_code = 'VERSION_CONFLICT'.",
         "      ev_message = 'DDIC object changed since it was read'.",
         "      ev_version = '1.2'. RETURN.",
@@ -5394,9 +5429,10 @@ function New-DdicFunctionSource {
         "          IF lv_inactive_exists <> 'N'.",
         "            ev_status = 'E'. ev_code = 'NO_INACTIVE_VERSION'.",
         "            ev_message = 'No inactive DDIC version exists to resume'.",
-        # R-20：该分支的 ev_version 跟随表里的 RESUME_TABLE_ACTIVATION|1.11 行。旧名 1.10 从未
-        # 派发成功，因此"首次提供本操作的协议版本"是 1.11，而不是复制邻臂留下的 1.10/1.2。
-        "            ev_version = '1.11'. RETURN.",
+        # 1.13：该分支的 ev_version 跟随表里的 RESUME_TABLE_ACTIVATION|1.13 行。1.11 曾是对的值
+        # （旧名 1.10 被 CHAR 32 截断、从未派发），但 1.11/1.12 载体虽然能派发这个名字却从未真正
+        # 执行恢复激活——它们走的是转换恢复路径。首个可用的恢复激活就是本次修复所在的 1.13。
+        "            ev_version = '1.13'. RETURN.",
         "          ENDIF.",
         "          REFRESH lt_act_res.",
         # DD_TABL_ACT-TABNAME 是 DD02L-TABNAME（CHAR 30），而 IV_OBJECT_NAME 是 TADIR-OBJ_NAME
@@ -12162,11 +12198,17 @@ function New-InstallProgram {
         "      ev_message = ev_message",
         "      ev_version = ev_version )."
     )
-    $functionSource = if ($FunctionName -eq "Z_ORVANTA_MCP_DDIC_API") {
-        New-DdicFunctionSource
+    # One predicate decides BOTH which body is installed and which D7 interface parameters are
+    # declared, so a function module can never be installed with a body that references a field its
+    # interface omits. The repository body is shared by Z_ORVANTA_MCP_EXECUTE and
+    # Z_ORVANTA_MCP_DYNPRO_API, so gating the D7 parameters on one specific function module name
+    # would break exactly that invariant (precedent: GENERATE_ERROR 4902 on IV_EXPECTED_VERSION).
+    $usesRepositoryBody = $FunctionName -ne "Z_ORVANTA_MCP_DDIC_API"
+    $functionSource = if ($usesRepositoryBody) {
+        $repositoryFunctionSource
     }
     else {
-        $repositoryFunctionSource
+        New-DdicFunctionSource
     }
     # SOURCE|HASH is the SHA-256 (lowercase hex) of the exact ABAP text about to be
     # uploaded -- ($functionSource -join "`n") -- while its own four 16-character
@@ -12256,6 +12298,154 @@ function New-InstallProgram {
         "APPEND ls_source TO lt_source."
     }
 
+    # D7 interface extension (SAPscript form + SmartStyle), declared only for the function modules
+    # that receive the repository body. Every reference below was verified against w200 BEFORE this
+    # generator was changed; the plan's own §2.5 list was not taken on trust:
+    #   * each carrier object exists and is flat -- DD03L shows no STRING/XSTRING/INT8/DECFLOAT
+    #     field in any of the 15 row types exported to the service;
+    #   * each bare data element exists (TDSPRAS, TDVARIANT, TDACTIVATE, TDCHAR1);
+    #   * SAP's own SSF_READ_STYLE types its parameters exactly this way (I_STYLE_ACTIVE_FLAG ::
+    #     TDACTIVATE, I_STYLE_VARIANT :: TDVARIANT, I_STYLE_LANGUAGE :: TDSPRAS) and uses
+    #     SSFCATS/SSFPARAS/SSFSTRINGS/STXSTAB as its EXPORTING/TABLES types, so this interface shape
+    #     has a release-verified precedent rather than being an untried construct.
+    # The spec wrote SY-LANGU for IV_TEXT_LANGUAGE; TDSPRAS is the language data element the Smart
+    # Styles read path itself uses, so the verified carrier wins over the illustrative name.
+    # All new IMPORTING parameters are OPTIONAL, so the 37 existing operations are unaffected.
+    $repositoryInterfaceImportLines = if ($usesRepositoryBody) {
+        @(
+            "CLEAR ls_import.",
+            "ls_import-parameter = 'IV_TEXT_STATUS'.",
+            "ls_import-dbfield = 'ITCTA-TDSTATUS'.",
+            "ls_import-optional = 'X'.",
+            "APPEND ls_import TO lt_import.",
+            "CLEAR ls_import.",
+            "ls_import-parameter = 'IV_TEXT_LANGUAGE'.",
+            "ls_import-dbfield = 'TDSPRAS'.",
+            "ls_import-optional = 'X'.",
+            "APPEND ls_import TO lt_import.",
+            "CLEAR ls_import.",
+            "ls_import-parameter = 'IV_TEXT_VERSION'.",
+            "ls_import-dbfield = 'THEAD-TDVERSION'.",
+            "ls_import-optional = 'X'.",
+            "APPEND ls_import TO lt_import.",
+            "CLEAR ls_import.",
+            "ls_import-parameter = 'IV_STYLE_VARIANT'.",
+            "ls_import-dbfield = 'TDVARIANT'.",
+            "ls_import-optional = 'X'.",
+            "APPEND ls_import TO lt_import.",
+            "CLEAR ls_import.",
+            "ls_import-parameter = 'IV_STYLE_ACTIVE'.",
+            "ls_import-dbfield = 'TDACTIVATE'.",
+            "ls_import-optional = 'X'.",
+            "APPEND ls_import TO lt_import.",
+            "CLEAR ls_import.",
+            "ls_import-parameter = 'IV_STYLE_MODE'.",
+            "ls_import-dbfield = 'TDCHAR1'.",
+            "ls_import-optional = 'X'.",
+            "APPEND ls_import TO lt_import."
+        )
+    }
+    else {
+        @()
+    }
+    $repositoryInterfaceExportLines = if ($usesRepositoryBody) {
+        @(
+            "CLEAR ls_export.",
+            "ls_export-parameter = 'ES_FORM_HEADER'.",
+            "ls_export-dbfield = 'ITCTA'.",
+            "APPEND ls_export TO lt_export.",
+            "CLEAR ls_export.",
+            "ls_export-parameter = 'ES_TEXT_HEADER'.",
+            "ls_export-dbfield = 'THEAD'.",
+            "APPEND ls_export TO lt_export.",
+            "CLEAR ls_export.",
+            "ls_export-parameter = 'ES_STYLE_HEADER'.",
+            "ls_export-dbfield = 'SSFCATS'.",
+            "APPEND ls_export TO lt_export.",
+            "CLEAR ls_export.",
+            "ls_export-parameter = 'ES_SAPSCRIPT_STYLE_HEADER'.",
+            "ls_export-dbfield = 'ITCDA'.",
+            "APPEND ls_export TO lt_export."
+        )
+    }
+    else {
+        @()
+    }
+    # Row types are the real types of the called function modules' table parameters, all flat and
+    # RFC-serializable. `STXSTAB` is a transparent table, not a structure, and is used as such.
+    $repositoryInterfaceTableLines = if ($usesRepositoryBody) {
+        @(
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_LINES'.",
+            "ls_tables-dbstruct = 'TLINE'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_PAGES'.",
+            "ls_tables-dbstruct = 'ITCTG'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_PAGE_WINDOWS'.",
+            "ls_tables-dbstruct = 'ITCTH'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_PARAGRAPHS'.",
+            "ls_tables-dbstruct = 'ITCDP'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_STRINGS'.",
+            "ls_tables-dbstruct = 'ITCDS'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_TABS'.",
+            "ls_tables-dbstruct = 'ITCDQ'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_WINDOWS'.",
+            "ls_tables-dbstruct = 'ITCTW'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_FORM_VERSIONS'.",
+            "ls_tables-dbstruct = 'ITCFORMVER'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_TEXT_HEADERS'.",
+            "ls_tables-dbstruct = 'THEAD'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_STYLE_HEADERS'.",
+            "ls_tables-dbstruct = 'SSFCATS'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_STYLE_PARAGRAPHS'.",
+            "ls_tables-dbstruct = 'SSFPARAS'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_STYLE_STRINGS'.",
+            "ls_tables-dbstruct = 'SSFSTRINGS'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_STYLE_TABSTOPS'.",
+            "ls_tables-dbstruct = 'STXSTAB'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_STYLE_ITEMS_PARA'.",
+            "ls_tables-dbstruct = 'ITCDP'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_STYLE_ITEMS_STR'.",
+            "ls_tables-dbstruct = 'ITCDS'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables.",
+            "ls_tables-parameter = 'ET_STYLE_ITEMS_TAB'.",
+            "ls_tables-dbstruct = 'ITCDQ'.",
+            "APPEND ls_tables TO lt_tables.",
+            "CLEAR ls_tables."
+        )
+    }
+    else {
+        @()
+    }
+
     return @(
         "REPORT zorvanta_mcp_bootstrap.",
         "DATA lt_import TYPE TABLE OF rsimp.",
@@ -12328,7 +12518,7 @@ function New-InstallProgram {
         "ls_import-dbfield = 'TADIR-OBJ_NAME'.",
         "ls_import-optional = 'X'.",
         "APPEND ls_import TO lt_import."
-    ) + $ddicImportLines + @(
+    ) + $repositoryInterfaceImportLines + $ddicImportLines + $repositoryInterfaceExportLines + @(
         "ls_export-parameter = 'EV_STATUS'.",
         "ls_export-dbfield = 'SY-MSGTY'.",
         "APPEND ls_export TO lt_export.",
@@ -12376,7 +12566,7 @@ function New-InstallProgram {
         "ls_tables-dbstruct = 'ABAPTXT255'.",
         "APPEND ls_tables TO lt_tables.",
         "CLEAR ls_tables."
-    ) + $sourceProgramLines + @(
+    ) + $repositoryInterfaceTableLines + $sourceProgramLines + @(
         "CALL FUNCTION 'FUNCTION_CREATE'",
         "  EXPORTING",
         "    funcname = '$FunctionName'",

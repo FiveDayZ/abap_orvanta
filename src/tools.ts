@@ -3868,8 +3868,15 @@ export class ToolService {
       objectName,
       description: "Resume inactive transparent table activation",
       packageName,
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
-      expectedVersion: activeExpectedFingerprint
+      transportNumber: ddicTransport(input.packageName, input.transportNumber)
+      // No expectedVersion: the helper's iv_expected_version is the ACTIVE version's timestamp token
+      // (AS4DATE + AS4TIME, 14 characters) used by the create/patch paths. A resume has no active
+      // version to tokenise and this service holds a content fingerprint (64 hex characters), so the
+      // two can never be equal - passing the fingerprint here only ever produced VERSION_CONFLICT on
+      // a path that was unreachable anyway. Stale-read protection for the resume stays where it can
+      // actually be evaluated: the expectedInactiveFingerprint gate above, which compares the
+      // caller's fingerprint with the definition this call just re-read, plus the helper's own
+      // NO_INACTIVE_VERSION guard.
     })
     requireDdicSuccess(result)
     const active = JSON.parse(

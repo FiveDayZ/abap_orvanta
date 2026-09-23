@@ -776,12 +776,25 @@ export async function buildCapabilityReport(
             }
           }
         : {}),
-      helpers: [baseHelperRead, repositoryHelperRead, ddicHelper].map((helper) => ({
-        ...helper,
+      // The join key is the helper FUNCTION MODULE, not `helper.name`: the observation carries
+      // the short label ("base"/"repository"/"ddic") while a capability route carries the deployed
+      // FM (`Z_ORVANTA_MCP_EXECUTE`, ...). Matching on the short label silently produced three
+      // empty rollups on a real w200 report - a verification block that always reads "0 tools" is
+      // worse than no block, because it looks like an answer.
+      helpers: [
+        { observation: baseHelperRead, helperFunction: BASE_HELPER_FUNCTION },
+        { observation: repositoryHelperRead, helperFunction: REPOSITORY_HELPER_FUNCTION },
+        { observation: ddicHelper, helperFunction: DDIC_HELPER_FUNCTION }
+      ].map(({ observation, helperFunction }) => ({
+        ...observation,
+        // Published so the join key is visible to callers and testable: without it a consumer
+        // cannot tell which function module a rollup describes, and the earlier short-label join
+        // bug was invisible precisely because the key was never stated.
+        functionModule: helperFunction,
         verification: rollupVerification(
           verificationLookup,
           helperRoutes
-            .filter((route) => route.helper === helper.name)
+            .filter((route) => route.helper === helperFunction)
             .flatMap((route) => route.toolNames)
         )
       })),

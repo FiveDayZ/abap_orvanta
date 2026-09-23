@@ -309,6 +309,84 @@ foreach ($marker in @("Z_ORVANTA_MCP_DYNPRO_API", "FUNCTION_CREATE")) {
 if (-not ($repositoryProgram -match "FUNCTION_ACTIVATION_FLAG_ERROR")) {
     throw "Generated repository bootstrap must persist the active function flag"
 }
+# D7 interface extension (2026-09-23). The repository body is shared by Z_ORVANTA_MCP_EXECUTE and
+# Z_ORVANTA_MCP_DYNPRO_API, so both are installed with the SAME interface: declaring the new
+# parameters for only one of them would install a body that references fields its interface omits
+# (GENERATE_ERROR 4902, the IV_EXPECTED_VERSION precedent). The DDIC helper uses a different body
+# and must stay untouched, so the predicate must be "not the DDIC helper", never one FM name.
+$executeProgram = New-InstallProgram -FunctionName "Z_ORVANTA_MCP_EXECUTE"
+$repositoryParameterLines = @($repositoryProgram | Where-Object { $_ -match "ls_(import|export|tables)-parameter" })
+$executeParameterLines = @($executeProgram | Where-Object { $_ -match "ls_(import|export|tables)-parameter" })
+$ddicParameterLines = @($ddicProgram | Where-Object { $_ -match "ls_(import|export|tables)-parameter" })
+if (($repositoryParameterLines -join "`n") -ne ($executeParameterLines -join "`n")) {
+    throw "Z_ORVANTA_MCP_EXECUTE and Z_ORVANTA_MCP_DYNPRO_API share one body and must share one interface"
+}
+$d7Parameters = @(
+    "IV_TEXT_STATUS",
+    "IV_TEXT_LANGUAGE",
+    "IV_TEXT_VERSION",
+    "IV_STYLE_VARIANT",
+    "IV_STYLE_ACTIVE",
+    "IV_STYLE_MODE",
+    "ES_FORM_HEADER",
+    "ES_TEXT_HEADER",
+    "ES_STYLE_HEADER",
+    "ES_SAPSCRIPT_STYLE_HEADER",
+    "ET_FORM_LINES",
+    "ET_FORM_PAGES",
+    "ET_FORM_PAGE_WINDOWS",
+    "ET_FORM_PARAGRAPHS",
+    "ET_FORM_STRINGS",
+    "ET_FORM_TABS",
+    "ET_FORM_WINDOWS",
+    "ET_FORM_VERSIONS",
+    "ET_TEXT_HEADERS",
+    "ET_STYLE_HEADERS",
+    "ET_STYLE_PARAGRAPHS",
+    "ET_STYLE_STRINGS",
+    "ET_STYLE_TABSTOPS",
+    "ET_STYLE_ITEMS_PARA",
+    "ET_STYLE_ITEMS_STR",
+    "ET_STYLE_ITEMS_TAB"
+)
+foreach ($name in $d7Parameters) {
+    if (-not ($repositoryParameterLines -match [regex]::Escape("'$name'"))) {
+        throw "D7 interface extension is missing parameter: $name"
+    }
+    if ($ddicParameterLines -match [regex]::Escape("'$name'")) {
+        throw "The DDIC helper must not declare the repository-only parameter: $name"
+    }
+}
+# Every carrier below is a DDIC object that exists on the target system. Pinning the exact carrier
+# keeps the pre-change verification traceable: each one was read from w200 before this generator was
+# changed. The bare data element names match how SAP's own SSF_READ_STYLE types its parameters
+# (I_STYLE_ACTIVE_FLAG :: TDACTIVATE, I_STYLE_VARIANT :: TDVARIANT). All new IMPORTING parameters
+# must stay OPTIONAL so existing operations are unaffected.
+$verifiedCarriers = [ordered]@{
+    "IV_TEXT_STATUS"   = "ITCTA-TDSTATUS"
+    "IV_TEXT_LANGUAGE" = "TDSPRAS"
+    "IV_TEXT_VERSION"  = "THEAD-TDVERSION"
+    "IV_STYLE_VARIANT" = "TDVARIANT"
+    "IV_STYLE_ACTIVE"  = "TDACTIVATE"
+    "IV_STYLE_MODE"    = "TDCHAR1"
+}
+foreach ($name in $verifiedCarriers.Keys) {
+    $declaration = "ls_import-parameter = '$name'."
+    $index = -1
+    for ($position = 0; $position -lt $repositoryProgram.Count; $position++) {
+        if ($repositoryProgram[$position] -eq $declaration) { $index = $position; break }
+    }
+    if ($index -lt 0) {
+        throw "Missing import declaration for $name"
+    }
+    $carrier = $verifiedCarriers[$name]
+    if ($repositoryProgram[$index + 1] -ne "ls_import-dbfield = '$carrier'.") {
+        throw "$name must be typed on the verified carrier $carrier"
+    }
+    if ($repositoryProgram[$index + 2] -ne "ls_import-optional = 'X'.") {
+        throw "$name must stay OPTIONAL"
+    }
+}
 if (-not ($scriptText -match "TRANSACTION_NOT_FOUND") -or
     -not ($scriptText -match "Transaction does not exist")) {
     throw "Repository helper must distinguish a missing transaction from a read failure"

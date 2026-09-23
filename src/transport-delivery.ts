@@ -108,10 +108,26 @@ export async function prepareTransportDelivery(
   raw: z.input<typeof inputSchema>
 ) {
   const input = inputSchema.parse(raw)
-  if (new Set(input.expectedObjects.map(key)).size !== input.expectedObjects.length)
-    throw new Error("TRANSPORT_DELIVERY_DUPLICATE_EXPECTATION")
   const connectionId = input.connectionId.toLowerCase()
   const identity = (value: string) => value.toLowerCase().replace(/\/source\/main$/, "")
+  // A duplicate expectation is NOT an error. E071 legitimately repeats keys - `LIMU TABD
+  // <table>` appears once per transported table fragment - so a caller who transcribes the
+  // expected list from the transport itself will naturally send the same key twice. Rejecting
+  // that blocked the normal comparison with a failure that said nothing about the transport.
+  // The duplication is still reported (see `expectedObjectDuplicates`), because silently
+  // collapsing a caller's list would hide a genuine transcription mistake instead.
+  const expectedCounts = new Map<string, { object: ObjectKey; count: number }>()
+  for (const entry of input.expectedObjects) {
+    const id = key(entry)
+    const found = expectedCounts.get(id)
+    if (found) found.count++
+    else expectedCounts.set(id, { object: entry, count: 1 })
+  }
+  const expectedObjectDuplicates = [...expectedCounts.values()]
+    .filter((entry) => entry.count > 1)
+    .map((entry) => ({ ...entry.object, occurrences: entry.count }))
+    .sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0))
+  const distinctExpectedObjects = [...expectedCounts.values()].map((entry) => entry.object)
   const targets = input.inactiveTargets.map((target) => ({
     objectName: target.objectName,
     uri: sourceUri(target.objectUri, connectionId, target.objectName).replace(
@@ -143,12 +159,12 @@ export async function prepareTransportDelivery(
   }
   const sorted = <T extends ObjectKey>(items: T[]) =>
     items.sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0))
-  const expectedKeys = new Set(input.expectedObjects.map(key))
+  const expectedKeys = new Set(distinctExpectedObjects.map(key))
   const entries = sorted([...actual.values()]).map((entry) => ({
     ...entry,
     occurrences: entry.occurrences.sort()
   }))
-  const expected = sorted([...input.expectedObjects])
+  const expected = sorted([...distinctExpectedObjects])
   const missing = expected.filter((entry) => !actual.has(key(entry)))
   const unexpected = entries.filter((entry) => !expectedKeys.has(key(entry)))
   const duplicates = entries.filter((entry) => entry.occurrences.length > 1)
@@ -205,6 +221,7 @@ export async function prepareTransportDelivery(
     readyToRelease: "not_determined",
     headers,
     expected,
+    expectedObjectDuplicates,
     objects: entries,
     missingFromObservedList: missing,
     unexpectedInObservedList: unexpected,
@@ -224,6 +241,7 @@ export async function prepareTransportDelivery(
     },
     warnings: [
       "Exact CTS pgmid/type/name keys only; R3TR containers and LIMU subobjects are not treated as interchangeable.",
+      "Duplicate expected keys are compared once and listed in expectedObjectDuplicates: E071 repeats LIMU keys legitimately, so a repeated expectation is not a failure.",
       "Missing means absent from the observed list, not unassigned or nonexistent in SAP.",
       "Duplicate occurrences may legitimately exist in parent and task lists; they are not automatically defects.",
       "An exact key match does not establish activation, dependency completeness, transportability or release readiness.",

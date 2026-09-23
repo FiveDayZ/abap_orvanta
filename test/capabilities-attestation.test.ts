@@ -12,6 +12,7 @@ import {
 import type { SapHelperCapabilities } from "../src/backend.js"
 import {
   buildCapabilityReport,
+  helperCapabilityRoutes,
   loadVerificationLookup,
   rollupVerification
 } from "../src/capabilities.js"
@@ -43,6 +44,7 @@ interface ReportShape {
   }>
   helpers: Array<{
     name: string
+    functionModule?: string
     availability: string
     attestation?: unknown
     verification?: VerificationRollupShape
@@ -1191,9 +1193,31 @@ test("the report carries the evidence dimension from the verification registry",
       `capability ${capability.id} verification does not cover its advertised tools`
     )
   }
+  // Every host helper must roll up exactly the tools the registry routes through its own function
+  // module. Asserting only that the block exists would have passed while all three rollups were
+  // empty: the first version joined on the observation's short label ("base") instead of the
+  // deployed FM name ("Z_ORVANTA_MCP_EXECUTE"), and a real w200 report showed `tools: {}` for all
+  // three. A verification block that always reads zero tools looks like an answer, so it is worse
+  // than no block at all.
+  const routedByFunction = new Map<string, string[]>()
+  for (const route of helperCapabilityRoutes()) {
+    routedByFunction.set(route.helper, [
+      ...(routedByFunction.get(route.helper) ?? []),
+      ...route.toolNames
+    ])
+  }
+  let rollupTools = 0
   for (const helper of report.helpers) {
     assert.ok(helper.verification, `helper ${helper.name} has no verification rollup`)
+    assert.ok(helper.functionModule, `helper ${helper.name} does not publish its function module`)
+    assert.deepEqual(
+      Object.keys(helper.verification?.tools ?? {}).sort(),
+      [...new Set(routedByFunction.get(helper.functionModule ?? "") ?? [])].sort(),
+      `helper ${helper.name} verification does not cover the tools routed to its function module`
+    )
+    rollupTools += Object.keys(helper.verification?.tools ?? {}).length
   }
+  assert.ok(rollupTools > 0, "the versioned helper rollups must cover tools, not be silently empty")
 })
 
 // The point of the whole dimension: an availability verdict and an absence of evidence must be

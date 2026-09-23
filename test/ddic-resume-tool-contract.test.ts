@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFile } from "node:fs/promises"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -56,7 +57,7 @@ function validInput(): Record<string, unknown> {
   }
 }
 
-test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.11", () => {
+test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.13", () => {
   assert.ok(TOOL_NAMES.includes(RESUME_TOOL), `${RESUME_TOOL} must stay registered`)
   const entry = registryEntry(RESUME_TOOL)
   assert.ok(entry, `${RESUME_TOOL} must have a registry entry`)
@@ -64,7 +65,11 @@ test("resume_ddic_table_activation stays registered against the DDIC helper at p
   // R-20 raised this from 1.10: the operation the tool needs is RESUME_TABLE_ACTIVATION, and no
   // 1.10 helper delivers it, because 1.10 shipped the 35-character
   // RESUME_TRANSPARENT_TABLE_ACTIVATION that the helper's CHAR 32 IV_OPERATION truncated.
-  assert.equal(entry.minHelperProtocol, "1.11")
+  // 2026-09-23 raised it again to 1.13: the 1.11/1.12 carriers could dispatch the name but had also
+  // set lv_recover, so they answered WORKLIST_REQUIRED (no worklist) or ran DD_DB_CONVERTER and
+  // returned - never the lv_resume activation. A 1.11 minimum advertised an unusable capability as
+  // available, which is exactly what the 2026-09-23 incident hit.
+  assert.equal(entry.minHelperProtocol, "1.13")
   assert.equal(entry.route, "sap-helper-fallback")
   assert.equal(entry.annotations.readOnlyHint, false)
   assert.equal(entry.annotations.destructiveHint, true)
@@ -131,6 +136,116 @@ test("the resume contract publishes every recovery input", () => {
   assert.equal(repaired.settingsRepair.dataClass, "APPL1")
   assert.match(contract.description, /settingsRepair/)
   assert.match(contract.description, /technicalSettingsVerified/)
+})
+
+test("the helper resume arm activates without entering conversion recovery", async () => {
+  // 2026-09-23 incident: resume_ddic_table_activation failed with WORKLIST_REQUIRED even though
+  // read_ddic_table_conversion_status reported pending=false / entries=[] and the object was a
+  // complete inactive definition. The resume dispatch arm also set lv_recover, so the operation
+  // landed in the TBATG conversion-recovery block: with no worklist it answered WORKLIST_REQUIRED,
+  // and with one it ran DD_DB_CONVERTER and RETURNed - the lv_resume activation arm (DD_TABL_ACT)
+  // was dead code, and the capability was advertised as available the whole time.
+  // Resolved against the package root, like the other source-reading guards in this suite (the
+  // compiled test runs from dist/test, so a module-relative path would look under dist/scripts).
+  const script = await readFile("scripts/bootstrap-sap-helper.ps1", "utf8")
+  // Only the emitted ABAP string lines count as code. Reading quoted strings line by line (and
+  // skipping comment lines) matters: a PowerShell comment may contain an ASCII double quote, and a
+  // whole-file `"([^"]*)"` scan would then treat it as a string delimiter and misalign every
+  // following match - which would make these assertions test the wrong text.
+  const abapOf = (block: string): string =>
+    block
+      .split(/\r?\n/)
+      .filter((line) => !/^\s*#/.test(line))
+      .flatMap((line) => {
+        const first = /^\s*"([^"]*)"/.exec(line)
+        return first ? [String(first[1])] : []
+      })
+      .join("\n")
+
+  const arm = /"    WHEN 'RESUME_TABLE_ACTIVATION'\."([\s\S]*?)"    WHEN '/.exec(script)
+  assert.ok(arm?.[1], "the DDIC resume dispatch arm must exist")
+  const armAbap = abapOf(arm[1])
+  assert.match(armAbap, /lv_write = 'X'\. lv_resume = 'X'\./)
+  assert.doesNotMatch(
+    armAbap,
+    /lv_recover/,
+    "resume must not enter the TBATG conversion-recovery path: activating a saved inactive definition is not a conversion recovery"
+  )
+
+  // The recovery block must stay gated on lv_recover alone, so removing that flag from resume is
+  // what keeps resume out of it. If this guard were ever widened to lv_resume, resume would fall
+  // back into the broken path without the dispatch assertion above noticing.
+  const recoveryGuard = /"  IF lv_recover = 'X'\."([\s\S]{0,600}?)WORKLIST_REQUIRED/.exec(script)
+  assert.ok(recoveryGuard?.[1], "the conversion-recovery worklist guard must exist")
+  assert.doesNotMatch(abapOf(recoveryGuard[1]), /lv_resume/)
+
+  // Resume keeps its own activation arm, which is the only path that reaches DD_TABL_ACT for it.
+  const activation = /"        IF lv_resume = 'X'\."([\s\S]*?)CALL FUNCTION 'DD_TABL_ACT'/.exec(
+    script
+  )
+  assert.ok(activation?.[1], "the resume activation arm must call DD_TABL_ACT")
+  assert.match(abapOf(activation[1]), /NO_INACTIVE_VERSION/)
+
+  // Fixing the dispatch alone was not enough, and this chain check proved it: the resume arm sat
+  // behind four earlier gates in the shared write path that all assume "a write submits a new
+  // definition". Each one must exempt lv_resume or the operation still cannot run.
+  const body = abapOf(script)
+
+  // 1. The state='M' read finds only an inactive version - exactly the resume case. Without this
+  //    exemption the flow either refused with INACTIVE_VERSION_EXISTS or, when no version token was
+  //    supplied, ran DDIF_OBJECT_DELETE and deleted the very definition being resumed.
+  const inactiveOnly = /IF lv_gotstate <> 'A'\.([\s\S]*?)ELSE\./.exec(body)
+  assert.ok(inactiveOnly?.[1], "the inactive-version branch must exist")
+  assert.match(inactiveOnly[1], /IF lv_resume = 'X'\.\s+lv_existing = 'X'\./)
+  const resumeArm = /IF lv_resume = 'X'\.([\s\S]*?)ELSE\./.exec(body)
+  assert.ok(resumeArm?.[1], "the resume exemption must be the first arm of that branch")
+  assert.doesNotMatch(
+    resumeArm[1],
+    /DDIF_OBJECT_DELETE/,
+    "resume must never run the inactive-object reset: it would delete the definition being activated"
+  )
+
+  // 2-4. The three write gates that assume a new definition is being submitted.
+  assert.match(
+    body,
+    /AND lv_settings IS INITIAL AND lv_delete IS INITIAL\s+AND lv_resume IS INITIAL\./,
+    "resume does not replace an existing table, so DDIC_OBJECT_EXISTS must exempt it"
+  )
+  assert.match(
+    body,
+    /IF lv_existing = 'X' AND iv_expected_version IS INITIAL\s+AND lv_resume IS INITIAL\./,
+    "resume carries no active-version token, so EXPECTED_VERSION_REQUIRED must exempt it"
+  )
+  assert.match(
+    body,
+    /IF lv_existing = 'X'\s+AND iv_expected_version <> lv_current_version\s+AND lv_resume IS INITIAL\./,
+    "resume cannot satisfy the 14-character active-version token comparison, so it must exempt it"
+  )
+
+  // The resume arm must also be exempt from the "a description is required" guard, exactly like
+  // recovery: neither operation sends a new definition. Asserted on the emitted ABAP lines, so the
+  // generator's PowerShell comments cannot satisfy it.
+  assert.match(
+    body,
+    /AND lv_settings IS INITIAL AND lv_recover IS INITIAL\s+AND lv_resume IS INITIAL \)\./
+  )
+})
+
+test("the resume call does not send a content fingerprint as the active-version token", async () => {
+  // iv_expected_version is the ACTIVE version's timestamp token (AS4DATE + AS4TIME, 14 characters).
+  // A resume has no active version and this service holds a 64-hex content fingerprint, so passing
+  // one as the other can only ever produce VERSION_CONFLICT - which is why the resume call sends no
+  // expectedVersion at all and keeps its stale-read protection on the fingerprint gate instead.
+  const tools = await readFile("src/tools.ts", "utf8")
+  const call = /operation: "RESUME_TABLE_ACTIVATION"([\s\S]*?)\n    \}\)/.exec(tools)
+  assert.ok(call?.[1], "the resume helper call must exist")
+  // The rationale is written as comments inside the call, so they must not satisfy the assertion.
+  const codeOnly = call[1]
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*\/\//.test(line))
+    .join("\n")
+  assert.doesNotMatch(codeOnly, /expectedVersion/)
+  assert.match(codeOnly, /transportNumber: ddicTransport\(/)
 })
 
 test("the HTTP tool list publishes the resume tool with its complete JSON schema", async () => {
