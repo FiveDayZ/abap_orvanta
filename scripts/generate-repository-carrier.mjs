@@ -65,7 +65,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r09.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r10.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -875,6 +875,14 @@ report.push("* the same way FUNCTION_CREATE does before its own save.")
 report.push("    CALL FUNCTION 'DEQUEUE_ESFUNCTION'")
 report.push("      EXPORTING")
 report.push("        funcname = lv_func.")
+report.push("    SET PARAMETER ID 'EUA' FIELD c_request.")
+report.push(
+  "* The interface row and the include suffix only exist for an existing module; both are inputs"
+)
+report.push(
+  "* to the save path, which is skipped when the module is absent, so they are read only then."
+)
+report.push("    IF lv_missing_fm IS INITIAL.")
 report.push("    CLEAR ls_tfdir.")
 report.push("    SELECT SINGLE * FROM tfdir INTO ls_tfdir")
 report.push("      WHERE funcname = lv_func.")
@@ -898,8 +906,6 @@ report.push("    ls_rs38l-utask = lv_update.")
 report.push("    ls_rs38l-include = lv_fm_include.")
 report.push("    ls_rs38l-active = 'A'.")
 report.push("    ls_rs38l-generated = 'X'.")
-report.push("    SET PARAMETER ID 'EUA' FIELD c_request.")
-report.push("    IF lv_missing_fm IS INITIAL.")
 report.push("    PERFORM save_interface.")
 report.push("    IF lv_save_rc <> 0.")
 report.push("      WRITE: / 'Attempt 1   : plain save failed rc', lv_save_rc, 'id', lv_save_msgid,")
@@ -952,10 +958,8 @@ report.push("      CALL FUNCTION 'FUNCTION_CREATE'")
 report.push("        EXPORTING")
 report.push("          funcname = lv_func")
 report.push("          function_pool = lv_pool")
-report.push("          interface_global = lv_global")
 report.push("          remote_call = lv_remote")
 report.push("          short_text = lv_short")
-report.push("          corrnum = c_request")
 report.push("          suppress_corr_check = 'X'")
 report.push("          save_active = 'X'")
 report.push("        IMPORTING")
@@ -1435,5 +1439,3 @@ if (check) {
     console.log("  generated WITHOUT the live baseline: re-run without --offline before applying")
   console.log("  NOT deployed: run the report in SAP yourself (SE38, F8).")
 }
-
-
