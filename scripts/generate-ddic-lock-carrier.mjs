@@ -38,15 +38,26 @@ const endpoint = value("--endpoint", process.env.ABAP_MCP_ENDPOINT ?? "http://12
 const sourceFile = resolve(value("--source", ".cache/ddic-helper-canonical.json"))
 const outFile = value(
   "--out",
-  "C:/My/Workplace/Coding/vscode-abap/.doc/deploy-ddic-lock-object-r2c.abap"
+  "C:/My/Workplace/Coding/vscode-abap/.doc/deploy-ddic-lock-object-r2d.abap"
 )
 
 const HELPER = "Z_ORVANTA_MCP_DDIC_API"
 const FUNCTION_GROUP = "ZORVANTA_MCP_CORE"
 const PROGRAM = "ZORVANTA_MCP_DDIC_LOCK_DEPLOY"
-const MARKER = "ORVANTA D6-2B LOCK OBJECT CARRIER R2C"
+// Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
+// fixed string: the emitted report refuses to apply itself when the marker is already present in the
+// live include (`IF ls_cur-line CS c_marker`). A fixed marker shared with an earlier carrier makes a
+// *later* carrier no-op against a body it never deployed and print "NOTHING TO DO: this carrier is
+// already applied" - a silent false success, because that message reads as "nothing needed" when in
+// fact the new operations were never installed. Binding the marker to the protocol plus the body
+// hash keeps re-running the same carrier idempotent while guaranteeing a changed body gets a new one.
+let MARKER = "ORVANTA DDIC CARRIER"
 const WRITE_OPERATIONS = ["UPSERT_LOCK_OBJECT", "DELETE_LOCK_OBJECT"]
-const REQUIRED_OPERATIONS = ["READ_LOCK_OBJECT", "RESUME_TRANSPARENT_TABLE_ACTIVATION"]
+const REQUIRED_OPERATIONS = ["READ_LOCK_OBJECT", "RESUME_TABLE_ACTIVATION"]
+// Operation names this carrier renames. `IV_OPERATION` is BAPIRET2-PARAMETER (CHAR 32), so the
+// 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION could never match its `WHEN` arm: SAP truncated
+// it and answered OPERATION_NOT_SUPPORTED (2026-09-22 10:56 incident).
+const SUPERSEDED_OPERATIONS = { RESUME_TABLE_ACTIVATION: "RESUME_TRANSPARENT_TABLE_ACTIVATION" }
 
 // ------------------------------------------------------------------------------------------------
 // Canonical body: the exact source the bootstrap script would install, exported by the PowerShell
@@ -61,6 +72,12 @@ try {
   console.error(error instanceof Error ? error.message : String(error))
   process.exit(2)
 }
+// Bind the marker to the protocol and the body hash (see the MARKER declaration). 34 characters,
+// inside the emitted `c_marker TYPE c LENGTH 40`.
+MARKER = `ORVANTA DDIC CARRIER ${canonical.declaredMaxProtocol} ${canonical.sourceSha256
+  .slice(0, 8)
+  .toUpperCase()}`
+if (MARKER.length > 40) throw new Error(`marker exceeds c LENGTH 40: ${MARKER.length}`)
 
 assert.equal(canonical.helper, HELPER, "canonical body is for a different helper")
 assert.equal(canonical.functionGroup, FUNCTION_GROUP, "canonical body targets a different group")
@@ -168,8 +185,16 @@ if (!offline) {
     "the deployed helper is not at protocol 1.10 yet: apply the previous carrier first"
   )
   for (const op of REQUIRED_OPERATIONS) {
+    // The resume operation was renamed in R2D: the deployed helper still carries
+    // RESUME_TRANSPARENT_TABLE_ACTIVATION (35 characters), which the CHAR 32 IV_OPERATION
+    // parameter truncates so the dispatch arm can never match. Accept the superseded name here so
+    // the "did this carrier drop an operation" guard still holds while the rename is deployed.
+    const superseded = SUPERSEDED_OPERATIONS[op]
     assert.ok(
-      live.some((l) => l.includes(`OPERATION|${op}`)),
+      live.some(
+        (l) =>
+          l.includes(`OPERATION|${op}`) || (superseded && l.includes(`OPERATION|${superseded}`))
+      ),
       `the deployed helper lost ${op}`
     )
   }
@@ -268,10 +293,22 @@ if (!offline) {
     /^'[0-9a-f]{16}'/.test(line) ||
     line.includes("'OPERATION|")
   const regressions = []
+  const reviewedRenames = []
   for (const line of new Set(codeOf(live).map(normalize))) {
     if (canonicalNormalized.has(line) || benign(line)) continue
+    // A line that carries an operation name this carrier renames is an intentional replacement, not
+    // a lost live fix: the old name cannot be delivered through the CHAR 32 IV_OPERATION parameter.
+    const rename = Object.entries(SUPERSEDED_OPERATIONS).find(([, old]) => line.includes(old))
+    if (rename) {
+      reviewedRenames.push(`  ${line}  [renamed: ${rename[1]} -> ${rename[0]}]`)
+      continue
+    }
     const missing = tokens(line).filter((t) => !canonicalText.includes(t))
     if (missing.length > 0) regressions.push(`${line}  [absent: ${missing.join(", ")}]`)
+  }
+  if (reviewedRenames.length > 0) {
+    console.log(`reviewed operation renames (${reviewedRenames.length} live line(s) replaced):`)
+    for (const line of reviewedRenames) console.log(line)
   }
   if (regressions.length > 0) {
     console.error("")
@@ -351,9 +388,17 @@ report.push(
     : "* Baseline : NOT READ (generated with --offline); the report does not pin the current line count"
 )
 report.push(
-  "* Adds     : UPSERT_LOCK_OBJECT (1.9) and DELETE_LOCK_OBJECT (1.9), i.e. the write paths"
+  `* Deploys  : the CANONICAL body - protocol up to ${canonical.declaredMaxProtocol}, ${canonical.declaredOperations.length} operations.`
 )
-report.push("*            the 1.10 carrier deliberately left out, by deploying the CANONICAL body")
+report.push(
+  "*            This is a full-body carrier, not a feature-specific patch: whatever the canonical"
+)
+report.push(
+  "*            body currently declares is what SAP ends up with. The generator asserts the write"
+)
+report.push("*            paths below are present, so replacing the body cannot regress them:")
+report.push(`*              ${WRITE_OPERATIONS.join(", ")}`)
+report.push(`*            required (must not disappear): ${REQUIRED_OPERATIONS.join(", ")}`)
 report.push(
   `*            ${body.length} lines from scripts/bootstrap-sap-helper.ps1 (${canonical.sourceSha256.slice(0, 16)})`
 )
@@ -520,8 +565,12 @@ report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  COMMIT WORK AND WAIT.")
 report.push("")
+// The expected row count and protocol come from the canonical body, never from a literal: the r9
+// carrier deployed 32 operations while its own closing text still said "26" and "maxProtocol 1.10",
+// which reads as a failed deployment to whoever follows the printed instructions.
+const expectedOperations = canonical.declaredOperations.length
 report.push(
-  "* Post-condition: the include must still carry the interface and all 26 operation codes."
+  `* Post-condition: the include must still carry the interface and all ${expectedOperations} operation codes.`
 )
 report.push("  REFRESH lt_cur.")
 report.push("  READ REPORT lv_name INTO lt_cur.")
@@ -542,12 +591,14 @@ report.push(
 )
 report.push("  ENDIF.")
 report.push("  WRITE: / 'DONE: helper regenerated;', lv_count, 'capability rows written.'.")
-report.push("  IF lv_count < 26.")
-report.push("    WRITE: / 'WARNING: expected 26 capability rows; check the payload before use.'.")
+report.push(`  IF lv_count < ${expectedOperations}.`)
+report.push(
+  `    WRITE: / 'WARNING: expected ${expectedOperations} capability rows; check the payload before use.'.`
+)
 report.push("  ENDIF.")
 report.push("  WRITE: / 'Next: sap_helper_status ping, then get_capability_report and confirm'.")
 report.push(
-  "  WRITE: / 'maxProtocol 1.10 with UPSERT_LOCK_OBJECT and DELETE_LOCK_OBJECT present.'."
+  `  WRITE: / 'maxProtocol ${canonical.declaredMaxProtocol} with UPSERT_LOCK_OBJECT and DELETE_LOCK_OBJECT present.'.`
 )
 report.push("")
 

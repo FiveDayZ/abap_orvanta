@@ -80,7 +80,7 @@ const CAP_OPS = [
   "      CONCATENATE 'OPERATION|READ_LOCK_OBJECT' '1.9|R'",
   "        INTO ls_source-line SEPARATED BY '|'.",
   "      APPEND ls_source TO it_source.",
-  "      CONCATENATE 'OPERATION|RESUME_TRANSPARENT_TABLE_ACTIVATION' '1.10|W'",
+  "      CONCATENATE 'OPERATION|RESUME_TABLE_ACTIVATION' '1.10|W'",
   "        INTO ls_source-line SEPARATED BY '|'.",
   "      APPEND ls_source TO it_source."
 ]
@@ -150,7 +150,7 @@ const B6_ENQU = [
 const OP_DISP = [
   "    WHEN 'READ_LOCK_OBJECT'.",
   "      lv_object_type = 'ENQU'.",
-  "    WHEN 'RESUME_TRANSPARENT_TABLE_ACTIVATION'.",
+  "    WHEN 'RESUME_TABLE_ACTIVATION'.",
   "      lv_object_type = 'TABL'.",
   "      lv_write = 'X'. lv_recover = 'X'. lv_resume = 'X'."
 ]
@@ -204,7 +204,7 @@ const INACTIVE_GUARD_AFTER = [
 ]
 
 // The resume path: activate the stored inactive version without sending a new definition. This is the
-// body the RESUME_TRANSPARENT_TABLE_ACTIVATION dispatch arm promises, and it must exist or the
+// body the RESUME_TABLE_ACTIVATION dispatch arm promises, and it must exist or the
 // advertised capability is a lie. Inserted as a new arm before the TABL arm of the write CASE.
 const RESUME_ARM = [
   "      WHEN 'TABL'.",
@@ -260,7 +260,7 @@ assert.equal(before[0].trim(), `FUNCTION ${HELPER}.`, "unexpected first line")
 assert.match(String(before.at(-1)).trim(), /^ENDFUNCTION\./i, "unexpected last line")
 
 // The deployed helper must NOT already carry these operations, or this carrier would duplicate them.
-for (const op of ["READ_LOCK_OBJECT", "RESUME_TRANSPARENT_TABLE_ACTIVATION"])
+for (const op of ["READ_LOCK_OBJECT", "RESUME_TABLE_ACTIVATION"])
   assert.equal(
     before.some((l) => l.includes(op)),
     false,
@@ -491,7 +491,7 @@ report.push(`* ${MARKER}`)
 report.push(`* Target   : ${HELPER} (${FUNCTION_GROUP}, package ${PACKAGE})`)
 report.push(`* Transport: ${TRANSPORT} (recorded; never released by this report)`)
 report.push(`* Baseline : ${before.length} lines -> ${after.length} lines`)
-report.push("* Adds     : READ_LOCK_OBJECT (1.9); RESUME_TRANSPARENT_TABLE_ACTIVATION (1.10)")
+report.push("* Adds     : READ_LOCK_OBJECT (1.9); RESUME_TABLE_ACTIVATION (1.10)")
 report.push("*            plus non-active version description; PROTOCOL|MAX 1.8 -> 1.10")
 report.push("* NOT included: UPSERT_LOCK_OBJECT / DELETE_LOCK_OBJECT, whose write bodies")
 report.push("* (DDIF_ENQU_PUT / DDIF_ENQU_ACTIVATE) are not part of this carrier. They are")
