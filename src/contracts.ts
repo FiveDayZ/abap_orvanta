@@ -870,7 +870,7 @@ const toolContractsBase = {
   },
   read_ddic_structure: {
     description:
-      "Read one active SAP Dictionary structure, including component data elements, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",
+      "Read one active SAP Dictionary structure, including component data elements, package, concurrency version, and SHA-256 definition fingerprint. An append structure is a structure whose tableClass is APPEND; for it the response also carries baseTable, the table it is attached to (empty for a plain structure). Read-only and allowed for customer or standard objects.",
     inputSchema: { objectName: z.string(), connectionId: z.string() }
   },
   upsert_ddic_structure: {

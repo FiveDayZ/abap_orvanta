@@ -3973,6 +3973,8 @@ function New-DdicFunctionSource {
         # 配上活动版本的描述/类别。线上帮手已含此修复（1.10 载体），此处为回移。
         "            add_payload 'M' '1' 'DDTEXT' ls_current_dd02v-ddtext.",
         "            add_payload 'M' '1' 'TABCLASS' ls_current_dd02v-tabclass.",
+        # 与活动分支同源同发：非活动定义的 append 关系同样取自这次 state = 'M' 读取的表头。
+        "            add_payload 'M' '1' 'SQLTAB' ls_current_dd02v-sqltab.",
         "            add_payload 'M' '1' 'MAINFLAG' ls_current_dd02v-mainflag.",
         "            add_payload 'M' '1' 'CONTFLAG' ls_current_dd02v-contflag.",
         # 17:37 事件：非活动读取不报 DD09V 技术设置，调用方只能看到客户端默认的 dataClass = 空 /
@@ -5266,6 +5268,10 @@ function New-DdicFunctionSource {
         "      add_payload 'H' '1' 'TABNAME' ls_dd02v-tabname.",
         "      add_payload 'H' '1' 'DDTEXT' ls_dd02v-ddtext.",
         "      add_payload 'H' '1' 'TABCLASS' ls_dd02v-tabclass.",
+        # D6-5 读取侧前置：append 结构在 DD02L/DD02V 里是 TABCLASS='APPEND' 且 SQLTAB 指向基表。
+        # 此前 SQLTAB 从不外发，调用方读了 append 结构也无法知道它挂在哪张基表上，因而无法安全地
+        # 规划字段级追加（追加必须"写 append 自身的行 + 激活基表"）。空值即普通结构，不丢信息。
+        "      add_payload 'H' '1' 'SQLTAB' ls_dd02v-sqltab.",
         "      LOOP AT lt_dd03p INTO ls_dd03p.",
         "        lv_index = sy-tabix.",
         "        add_payload 'F' lv_index 'FIELDNAME'",
@@ -5283,6 +5289,7 @@ function New-DdicFunctionSource {
         "      add_payload 'H' '1' 'TABNAME' ls_dd02v-tabname.",
         "      add_payload 'H' '1' 'DDTEXT' ls_dd02v-ddtext.",
         "      add_payload 'H' '1' 'TABCLASS' ls_dd02v-tabclass.",
+        "      add_payload 'H' '1' 'SQLTAB' ls_dd02v-sqltab.",
         "      add_payload 'H' '1' 'CONTFLAG' ls_dd02v-contflag.",
         "      add_payload 'H' '1' 'MAINFLAG' ls_dd02v-mainflag.",
         "      add_payload 'H' '1' 'TABKAT' ls_dd09v-tabkat.",

@@ -9664,6 +9664,9 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
     return {
       description: result.header.DDTEXT ?? "",
       tableClass: result.header.TABCLASS ?? "",
+      // D6-5: for an append structure (tableClass "APPEND") this is the base table it is attached
+      // to. Empty for a plain structure. Without it a caller cannot see the append relation at all.
+      baseTable: result.header.SQLTAB ?? "",
       fields: result.fields.map((field) => ({
         name: field.FIELDNAME ?? "",
         position: numberValue(field.POSITION),
