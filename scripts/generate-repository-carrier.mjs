@@ -65,7 +65,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r06.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r07.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -866,7 +866,13 @@ report.push("    IF sy-subrc <> 0.")
 report.push("      WRITE: / 'ERROR: TFDIR has no entry for', lv_func.")
 report.push("      RETURN.")
 report.push("    ENDIF.")
-report.push("    lv_fm_include = ls_tfdir-include.")
+report.push(
+  "* TFDIR-INCLUDE holds the two digit include suffix; RS38L-INCLUDE and the workbench entries"
+)
+report.push(
+  "* use the three character form U<nn>, whose first character is the V / $ variant switch."
+)
+report.push("    CONCATENATE 'U' lv_suffix INTO lv_fm_include.")
 report.push("    CLEAR ls_rs38l.")
 report.push("    ls_rs38l-name = lv_func.")
 report.push("    ls_rs38l-area = lv_pool.")
@@ -1208,6 +1214,9 @@ report.push("      obj_name = lv_wa_name")
 report.push("    EXCEPTIONS")
 report.push("      OTHERS = 1.")
 report.push("  lv_wa_length = strlen( lv_fm_include ) - 3.")
+report.push("  IF lv_wa_length < 0.")
+report.push("    lv_wa_length = 0.")
+report.push("  ENDIF.")
 report.push("  IF NOT lv_remote IS INITIAL OR NOT lv_update IS INITIAL.")
 report.push("    lv_wa_name = lv_fm_include.")
 report.push("    lv_wa_name+lv_wa_length(1) = 'V'.")
