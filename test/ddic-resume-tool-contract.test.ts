@@ -56,12 +56,15 @@ function validInput(): Record<string, unknown> {
   }
 }
 
-test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.10", () => {
+test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.11", () => {
   assert.ok(TOOL_NAMES.includes(RESUME_TOOL), `${RESUME_TOOL} must stay registered`)
   const entry = registryEntry(RESUME_TOOL)
   assert.ok(entry, `${RESUME_TOOL} must have a registry entry`)
   assert.equal(entry.sapHelper, DDIC_HELPER)
-  assert.equal(entry.minHelperProtocol, "1.10")
+  // R-20 raised this from 1.10: the operation the tool needs is RESUME_TABLE_ACTIVATION, and no
+  // 1.10 helper delivers it, because 1.10 shipped the 35-character
+  // RESUME_TRANSPARENT_TABLE_ACTIVATION that the helper's CHAR 32 IV_OPERATION truncated.
+  assert.equal(entry.minHelperProtocol, "1.11")
   assert.equal(entry.route, "sap-helper-fallback")
   assert.equal(entry.annotations.readOnlyHint, false)
   assert.equal(entry.annotations.destructiveHint, true)

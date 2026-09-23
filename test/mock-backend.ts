@@ -193,7 +193,12 @@ function mockDdicResult(
     parameters: [],
     fieldAssignments: [],
     lockTables: [],
-    lockFields: []
+    lockFields: [],
+    numberRangeTexts: [],
+    baseTables: [],
+    viewFields: [],
+    selectionConditions: [],
+    warnings: []
   }
 }
 
@@ -1148,7 +1153,7 @@ export class MockBackend implements SapBackend {
           : [])
       ])
     }
-    if (request.operation === "MANAGE_CLASSIC_BADI_IMPLEMENTATION") {
+    if (request.operation === "MANAGE_CLASSIC_BADI_IMPL") {
       const objectName = request.objectName ?? ""
       if (request.objectType === "CREATE") {
         this.classicBadiImplementations.add(objectName)
@@ -1157,7 +1162,7 @@ export class MockBackend implements SapBackend {
       }
       return this.repositoryResult("CLASSIC_BADI_IMPLEMENTATION_CHANGED", request, [])
     }
-    if (request.operation === "READ_ENHANCEMENT_IMPLEMENTATION") {
+    if (request.operation === "READ_ENHANCEMENT_IMPL") {
       const source = this.enhancementImplementations.get(request.objectName ?? "")
       return source
         ? this.repositoryResult("ENHANCEMENT_IMPLEMENTATION_READ", request, source)
@@ -1328,7 +1333,7 @@ export class MockBackend implements SapBackend {
         []
       )
     }
-    if (request.operation === "DELETE_ENHANCEMENT_IMPLEMENTATION") {
+    if (request.operation === "DELETE_ENHANCEMENT_IMPL") {
       this.enhancementImplementations.delete(request.objectName ?? "")
       return this.repositoryResult("ENHANCEMENT_IMPLEMENTATION_DELETED", request, [])
     }

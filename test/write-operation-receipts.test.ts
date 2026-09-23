@@ -7,6 +7,7 @@ import { join } from "node:path"
 import test from "node:test"
 import { writeOperationContext, writeOperationTarget } from "../src/mcp.js"
 import type { SapBackend } from "../src/backend.js"
+import { HelperOperationNotDeliverableError } from "../src/helper-operation-limits.js"
 import { hashWriteInput, WriteOperationReceiptStore } from "../src/write-operation-receipts.js"
 
 const identity = {
@@ -465,6 +466,46 @@ async function receiptFiles(root: string): Promise<string[]> {
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex")
 }
+
+/**
+ * An operation rejected by the local deliverability preflight never reached SAP. The receipt must
+ * say so, otherwise `outcomeMayBeUnknown` forces the caller to reconcile state that cannot have
+ * changed (2026-09-22 10:56 incident).
+ */
+test("a preflight rejection is not reported as an unknown outcome", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-preflight-"))
+  try {
+    const store = new WriteOperationReceiptStore(root, "preflight-instance")
+    const rejected = await store.reserve({ ...identity, operationId: "preflight-rejected" })
+    if (rejected.status !== "reserved") throw new Error("Missing reservation")
+    await store.markSapInvocationStarted(rejected.reservation)
+    await store.fail(
+      rejected.reservation,
+      new HelperOperationNotDeliverableError(
+        "Z_ORVANTA_MCP_DYNPRO_API",
+        "READ_ENHANCEMENT_IMPLEMENTATION",
+        { ddicType: "RS38L-NAME", length: 30 },
+        true
+      ),
+      4
+    )
+    const rejectedStatus = await store.status("w200", "preflight-rejected")
+    assert.equal(rejectedStatus.status, "failed")
+    assert.equal(rejectedStatus.sapInvocationStarted, false)
+    assert.equal(rejectedStatus.outcomeMayBeUnknown, false)
+
+    // Control: a failure after the operation really was sent stays unknown.
+    const sent = await store.reserve({ ...identity, operationId: "preflight-sent" })
+    if (sent.status !== "reserved") throw new Error("Missing reservation")
+    await store.markSapInvocationStarted(sent.reservation)
+    await store.fail(sent.reservation, new Error("Request failed with status code 500"), 5)
+    const sentStatus = await store.status("w200", "preflight-sent")
+    assert.equal(sentStatus.sapInvocationStarted, true)
+    assert.equal(sentStatus.outcomeMayBeUnknown, true)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
 
 async function useExitedOwner(reservation: {
   receiptPath: string

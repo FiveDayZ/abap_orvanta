@@ -80,7 +80,7 @@ foreach ($functionName in @(
 }
 # 脚本顶层先执行 $ddic* 赋值（min/max 版本等），函数在真实运行中读这些变量。只取函数定义会让
 # 这些变量为空，生成的行会比真实运行短——0.46.8 的 R-16 修复因此漏掉了一条 74 字符的
-# RESUME_TRANSPARENT_TABLE_ACTIVATION 能力行，而 New-InstallProgram 在真实状态下会抛
+# RESUME_TABLE_ACTIVATION 能力行（历史上名为 RESUME_TRANSPARENT_TABLE_ACTIVATION，35 字符），而 New-InstallProgram 在真实状态下会抛
 # "Generated function source exceeds 72 characters"。这里复现真实状态，使该缺陷类无法再隐藏。
 foreach ($statement in $ast.EndBlock.Statements) {
     if ($statement -isnot [Management.Automation.Language.AssignmentStatementAst]) { continue }
@@ -408,14 +408,14 @@ foreach ($marker in @(
         "READ_CUSTOMER_EXIT_PROJECT",
         "READ_BTE_CONFIGURATION",
         "READ_CLASSIC_BADI_DEFINITION",
-        "READ_ENHANCEMENT_IMPLEMENTATION",
+        "READ_ENHANCEMENT_IMPL",
         "CREATE_HOOK_ENHANCEMENT",
         "CREATE_BADI_ENHANCEMENT",
         "UPDATE_HOOK_ENHANCEMENT",
         "UPDATE_BADI_ENHANCEMENT",
         "MANAGE_ENHANCEMENT_STATE",
-        "DELETE_ENHANCEMENT_IMPLEMENTATION",
-        "MANAGE_CLASSIC_BADI_IMPLEMENTATION",
+        "DELETE_ENHANCEMENT_IMPL",
+        "MANAGE_CLASSIC_BADI_IMPL",
         "CUSTOMER_EXIT_DEFINITION_READ",
         "CUSTOMER_EXIT_PROJECT_READ",
         "BTE_CONFIGURATION_READ",

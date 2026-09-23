@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto"
 import { mkdir, open, readFile, readdir, rename, unlink } from "node:fs/promises"
 import { basename, dirname, join, resolve } from "node:path"
 import { z } from "zod"
+import { HelperOperationNotDeliverableError } from "./helper-operation-limits.js"
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/
 const SERVICE_INSTANCE_ID = randomUUID()
@@ -224,11 +225,16 @@ export class WriteOperationReceiptStore {
     error: unknown,
     durationMs: number
   ): Promise<Record<string, unknown>> {
+    // An operation rejected by the local deliverability preflight never reached SAP, so the receipt
+    // must not claim that the invocation started: `outcomeMayBeUnknown` follows this flag and a
+    // false positive forces the caller to reconcile state that cannot have changed.
+    const notDelivered = error instanceof HelperOperationNotDeliverableError
     return this.finishOwned(reservation, {
       state: "failed",
       errorHash: sha256(String(error)),
       finishedAt: new Date().toISOString(),
-      durationMs
+      durationMs,
+      ...(notDelivered ? { sapInvocationStarted: false } : {})
     })
   }
 

@@ -1,18 +1,18 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 132,
-  "readOnlyToolCount": 77,
+  "toolCount": 136,
+  "readOnlyToolCount": 79,
   "profiles": {
-    "readonly": 77,
+    "readonly": 79,
     "platform": 12,
-    "dev": 116,
+    "dev": 120,
     "config": 28,
     "ops": 35,
-    "full": 132
+    "full": 136
   },
   "groups": {
     "data": 5,
-    "ddic": 21,
+    "ddic": 25,
     "debug": 6,
     "enhancement": 22,
     "form": 4,
@@ -1473,6 +1473,36 @@
       "minHelperProtocol": "1.9"
     },
     {
+      "name": "read_maintenance_view",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.11"
+    },
+    {
+      "name": "read_number_range_object",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.11"
+    },
+    {
       "name": "read_report_parameters",
       "group": "data",
       "profiles": [
@@ -1627,7 +1657,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
-      "minHelperProtocol": "1.10"
+      "minHelperProtocol": "1.11"
     },
     {
       "name": "run_atc_analysis",
@@ -2012,6 +2042,36 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
       "minHelperProtocol": "1.9"
+    },
+    {
+      "name": "upsert_maintenance_view",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.11"
+    },
+    {
+      "name": "upsert_number_range_object",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.11"
     },
     {
       "name": "upsert_search_help",

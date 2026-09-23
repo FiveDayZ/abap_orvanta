@@ -172,7 +172,7 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
     ]
   ],
   // Resuming an activation is a distinct recovery route: it needs the newer
-  // RESUME_TRANSPARENT_TABLE_ACTIVATION opcode, so it cannot share the 1.7 table-complex group.
+  // RESUME_TABLE_ACTIVATION opcode, so it cannot share the 1.7 table-complex group.
   ["ddic-helper-table-activation-resume", ["resume_ddic_table_activation"]],
   ["ddic-helper-controlled-delete", ["delete_ddic_object"]],
   // Search help is its own DDIC object kind with its own helper operations (READ_SEARCH_HELP /
@@ -185,7 +185,22 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // UPSERT_LOCK_OBJECT / DELETE_LOCK_OBJECT), so they get their own capability rather than being
   // folded into ddic-helper-core. Deletion goes through delete_ddic_object, so only the read and
   // upsert tools are listed here.
-  ["ddic-helper-lock-object", ["read_lock_object", "upsert_lock_object"]]
+  ["ddic-helper-lock-object", ["read_lock_object", "upsert_lock_object"]],
+  // Number range objects are a fourth DDIC object kind with their own helper operations
+  // (READ_NUMBER_RANGE_OBJECT / UPSERT_NUMBER_RANGE_OBJECT / DELETE_NUMBER_RANGE_OBJECT, protocol
+  // 1.11), so they get their own capability. delete_ddic_object reaches the delete operation through
+  // objectType NROB, so only the read and upsert tools are listed here. The protocol floor is 1.11
+  // because that is the first helper that publishes these opcodes, whose names are longer than the
+  // 30-character operation field the *other* helper uses: this one carries BAPIRET2-PARAMETER,
+  // CHAR 32, and UPSERT_NUMBER_RANGE_OBJECT is 26 characters.
+  ["ddic-helper-number-range-object", ["read_number_range_object", "upsert_number_range_object"]],
+  // Maintenance views are a fifth DDIC object kind with their own helper operations
+  // (READ_MAINTENANCE_VIEW / UPSERT_MAINTENANCE_VIEW / DELETE_MAINTENANCE_VIEW, protocol 1.11), so
+  // they get their own capability. delete_ddic_object reaches the delete operation through objectType
+  // VIEW, so only the read and upsert tools are listed here. The protocol floor is 1.11 for the same
+  // reason as the number range object group: UPSERT_MAINTENANCE_VIEW is 24 characters, which only
+  // fits the DDIC helper's BAPIRET2-PARAMETER (CHAR 32) operation field.
+  ["ddic-helper-maintenance-view", ["read_maintenance_view", "upsert_maintenance_view"]]
 ]
 
 export async function buildCapabilityReport(

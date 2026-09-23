@@ -71,6 +71,69 @@ test("pre-change observation covers repository, DDIC, message, and source target
   assert.equal(transparentTableDelete.exists, true)
   assert.equal(transparentTableDelete.packageName, "STRM")
 
+  // The lock-object family is a DDIC object kind like any other, and the pre-change gate must route
+  // it through the DDIC reader. Before that was wired, an ENQU deletion threw "Unsupported DDIC
+  // deletion type" before SAP was touched, and both upserts fell through to the program
+  // observation, which reports a lock object or a search help as an absent repository object.
+  const lockObjectDelete = await observeWritePreChange(
+    "delete_ddic_object",
+    { objectType: "ENQU", objectName: "EZLOCK_MISSING" },
+    "w200",
+    "enqu object EZLOCK_MISSING",
+    backend,
+    tools
+  )
+  assert.equal(lockObjectDelete.exists, false)
+  assert.deepEqual(lockObjectDelete.sources, ["sap_ddic_read"])
+
+  const lockObjectUpsert = await observeWritePreChange(
+    "upsert_lock_object",
+    { objectName: "EZLOCK_MISSING" },
+    "w200",
+    "lock object EZLOCK_MISSING",
+    backend,
+    tools
+  )
+  assert.equal(lockObjectUpsert.exists, false)
+  assert.deepEqual(lockObjectUpsert.sources, ["sap_ddic_read"])
+
+  // Number range objects are the fourth DDIC object kind this gate observes. Their version is a
+  // 40-character SHA-1 definition digest rather than a 14-digit DDIC timestamp, so a target that fell
+  // through to the generic program observation would report the object as absent and let a later write
+  // claim a creation. Both directions are asserted for that reason.
+  const numberRangeDelete = await observeWritePreChange(
+    "delete_ddic_object",
+    { objectType: "NROB", objectName: "ZNROMISS" },
+    "w200",
+    "number range object ZNROMISS",
+    backend,
+    tools
+  )
+  assert.equal(numberRangeDelete.exists, false)
+  assert.deepEqual(numberRangeDelete.sources, ["sap_ddic_read"])
+
+  const numberRangeUpsert = await observeWritePreChange(
+    "upsert_number_range_object",
+    { objectName: "ZNROMISS" },
+    "w200",
+    "number range object ZNROMISS",
+    backend,
+    tools
+  )
+  assert.equal(numberRangeUpsert.exists, false)
+  assert.deepEqual(numberRangeUpsert.sources, ["sap_ddic_read"])
+
+  const searchHelpUpsert = await observeWritePreChange(
+    "upsert_search_help",
+    { objectName: "ZSHLP_MISSING" },
+    "w200",
+    "search help ZSHLP_MISSING",
+    backend,
+    tools
+  )
+  assert.equal(searchHelpUpsert.exists, false)
+  assert.deepEqual(searchHelpUpsert.sources, ["sap_ddic_read"])
+
   const message = await observeWritePreChange(
     "create_abap_message_class",
     { messageClass: "ZMESSAGE_MISSING" },
@@ -334,4 +397,57 @@ test("source deletion observation reads a function module as FUNC source", async
     createHash("sha256").update("FUNCTION zcmcp_fm_0301.\nENDFUNCTION.").digest("hex")
   )
   assert.deepEqual(evidence.warnings, [])
+})
+
+/**
+ * Regression for the 2026-09-22 10:56 incident: resuming an activation observed the target through
+ * the generic ADT source search, which reported `exists: false` for a table that only exists as an
+ * inactive definition, while the dedicated DDIC read the tool had just performed saw it.
+ */
+test("pre-change observation reads the DDIC definition when resuming an activation", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+
+  const evidence = await observeWritePreChange(
+    "resume_ddic_table_activation",
+    { objectName: "T000" },
+    "w200",
+    "tabl object T000",
+    backend,
+    tools
+  )
+
+  assert.equal(evidence.exists, true)
+  assert.equal(evidence.active, true)
+  assert.deepEqual(evidence.sources, ["read_ddic_transparent_table"])
+  assert.ok(!evidence.sources.includes("adt_object_search"))
+  assert.ok(evidence.fingerprint, "the inactive definition fingerprint must be recorded")
+})
+
+test("pre-change observation reports an inactive definition as inactive", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const readResult = JSON.stringify({
+    status: "inactive",
+    active: false,
+    fingerprint: "b".repeat(64),
+    packageName: "ZPMC"
+  })
+  const stubbedTools = {
+    readDdicTransparentTable: async () => readResult
+  } as unknown as ToolService
+
+  const evidence = await observeWritePreChange(
+    "resume_ddic_table_activation",
+    { objectName: "ZTPMC_TPRPI" },
+    "w200",
+    "tabl object ZTPMC_TPRPI",
+    backend,
+    stubbedTools
+  )
+
+  assert.equal(evidence.exists, true)
+  assert.equal(evidence.active, false)
+  assert.equal(evidence.fingerprint, "b".repeat(64))
+  assert.equal(evidence.packageName, "ZPMC")
 })

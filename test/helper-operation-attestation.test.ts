@@ -35,10 +35,30 @@ const DEPLOYED_OPERATIONS = [
   "DELETE_SEARCH_HELP",
   "UPSERT_SEARCH_HELP",
   "READ_LOCK_OBJECT",
-  "RESUME_TRANSPARENT_TABLE_ACTIVATION"
+  "RESUME_TABLE_ACTIVATION"
+]
+
+// Maintenance views are the second 1.11 DDIC family (D6-4): read, upsert and the delete that
+// delete_ddic_object reaches through objectType VIEW.
+const MAINTENANCE_VIEW_OPERATIONS = [
+  "READ_MAINTENANCE_VIEW",
+  "UPSERT_MAINTENANCE_VIEW",
+  "DELETE_MAINTENANCE_VIEW"
 ]
 
 const LOCK_OBJECT_WRITE_OPERATIONS = ["UPSERT_LOCK_OBJECT", "DELETE_LOCK_OBJECT"]
+
+/**
+ * The number range object operations of D6-3. They are in the same position as the lock object writes
+ * were: the bootstrap script declares them (protocol 1.11) but no carrier has deployed them, so the
+ * deployed 1.10 inventory above must keep them absent and their capability must be reported as
+ * missing them rather than as available on the protocol version alone.
+ */
+const NUMBER_RANGE_OPERATIONS = [
+  "READ_NUMBER_RANGE_OBJECT",
+  "UPSERT_NUMBER_RANGE_OBJECT",
+  "DELETE_NUMBER_RANGE_OBJECT"
+]
 
 interface ToolObservation {
   availability: string
@@ -131,12 +151,14 @@ test("a helper that attests the protocol but not the operation code is not avail
     }
   })
 
-  // delete_ddic_object dispatches one opcode per objectType, so only the ENQU route is missing:
-  // the capability is partial and the other six routes stay usable.
+  // delete_ddic_object dispatches one opcode per objectType, so only the routes whose helper-side
+  // operation is missing report a gap: ENQU and NROB. The other six stay usable.
   const controlledDelete = observation(report, "ddic-helper-controlled-delete")
   assert.equal(controlledDelete.availability, "partial")
   assert.deepEqual(controlledDelete.toolObservations?.delete_ddic_object?.missingOperations, [
-    "DELETE_LOCK_OBJECT"
+    "DELETE_LOCK_OBJECT",
+    "DELETE_NUMBER_RANGE_OBJECT",
+    "DELETE_MAINTENANCE_VIEW"
   ])
   assert.deepEqual(controlledDelete.toolObservations?.delete_ddic_object?.requiredOperations, [
     "DELETE_DOMAIN",
@@ -145,15 +167,22 @@ test("a helper that attests the protocol but not the operation code is not avail
     "DELETE_TRANSPARENT_TABLE",
     "DELETE_TABLE_TYPE",
     "DELETE_SEARCH_HELP",
-    "DELETE_LOCK_OBJECT"
+    "DELETE_LOCK_OBJECT",
+    "DELETE_NUMBER_RANGE_OBJECT",
+    "DELETE_MAINTENANCE_VIEW"
   ])
+  // The number range family is a capability of its own from protocol 1.11, so a 1.10 helper cannot
+  // serve it at all: the version check, not the operation inventory, decides that verdict.
+  const numberRange = observation(report, "ddic-helper-number-range-object")
+  assert.equal(numberRange.availability, "unsupported")
+  assert.equal(numberRange.evidence.source, "version-check")
+  assert.match(numberRange.reason, /1\.10, which is below the required capability version 1\.11/)
 
   // Every other DDIC capability attests all of its operation codes and stays available.
   for (const id of [
     "ddic-helper-core",
     "ddic-helper-transparent-table",
     "ddic-helper-transparent-table-complex",
-    "ddic-helper-table-activation-resume",
     "ddic-helper-search-help"
   ]) {
     const entry = observation(report, id)
@@ -167,6 +196,16 @@ test("a helper that attests the protocol but not the operation code is not avail
     )
   }
 
+  // The resume tool is now rejected one gate earlier, on the protocol: R-20 raised its contract
+  // minimum to 1.11 because RESUME_TABLE_ACTIVATION only exists from 1.11 (the 1.10 carrier shipped
+  // the 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION that its CHAR 32 IV_OPERATION truncated).
+  // A 1.10 helper therefore cannot serve it, whatever its operation inventory says.
+  const resume = observation(report, "ddic-helper-table-activation-resume")
+  assert.equal(resume.availability, "unsupported")
+  assert.equal(resume.evidence.source, "version-check")
+  assert.match(resume.reason, /1\.10, which is below the required capability version 1\.11/)
+  assert.equal(resume.toolObservations, undefined)
+
   // Exactly the two capabilities that dispatch a missing operation are partial; nothing else moves.
   assert.deepEqual(partialIds(report), ["ddic-helper-controlled-delete", "ddic-helper-lock-object"])
   assert.equal(report.summary.partial, 2)
@@ -176,34 +215,77 @@ test("a helper that attests the protocol but not the operation code is not avail
 })
 
 test("a helper that attests every required operation code is available", async () => {
-  const report = await reportWithDdicOperations([
-    ...DEPLOYED_OPERATIONS,
-    ...LOCK_OBJECT_WRITE_OPERATIONS
-  ])
+  const report = await reportWithDdicOperations(
+    [
+      ...DEPLOYED_OPERATIONS,
+      ...LOCK_OBJECT_WRITE_OPERATIONS,
+      ...NUMBER_RANGE_OPERATIONS,
+      ...MAINTENANCE_VIEW_OPERATIONS
+    ],
+    "1.11"
+  )
 
   const lockObject = observation(report, "ddic-helper-lock-object")
   assert.equal(lockObject.availability, "available")
   assert.equal(lockObject.evidence.source, "version-and-operation-check")
   assert.deepEqual(lockObject.toolObservations?.upsert_lock_object?.missingOperations, [])
   assert.equal(observation(report, "ddic-helper-controlled-delete").availability, "available")
+  const numberRange = observation(report, "ddic-helper-number-range-object")
+  assert.equal(numberRange.availability, "available")
+  assert.equal(numberRange.evidence.source, "version-and-operation-check")
+  assert.deepEqual(numberRange.toolObservations, {
+    read_number_range_object: {
+      availability: "available",
+      requiredOperations: ["READ_NUMBER_RANGE_OBJECT"],
+      missingOperations: []
+    },
+    upsert_number_range_object: {
+      availability: "available",
+      requiredOperations: ["UPSERT_NUMBER_RANGE_OBJECT"],
+      missingOperations: []
+    }
+  })
   assert.equal(report.summary.partial, 0)
+  // D6-4: the maintenance view family is available only when the helper attests its own 1.11 opcodes,
+  // exactly like the number range family above.
+  const maintenanceView = observation(report, "ddic-helper-maintenance-view")
+  assert.equal(maintenanceView.availability, "available")
+  assert.equal(maintenanceView.evidence.source, "version-and-operation-check")
+  assert.deepEqual(maintenanceView.toolObservations, {
+    read_maintenance_view: {
+      availability: "available",
+      requiredOperations: ["READ_MAINTENANCE_VIEW"],
+      missingOperations: []
+    },
+    upsert_maintenance_view: {
+      availability: "available",
+      requiredOperations: ["UPSERT_MAINTENANCE_VIEW"],
+      missingOperations: []
+    }
+  })
 })
 
 test("a missing operation code alone makes its tool unsupported", async () => {
   // Falsification inside the suite: with the same helper identity and protocol but one operation
-  // removed, only the capability that dispatches it changes verdict.
+  // removed, only the capability that dispatches it changes verdict. The protocol is raised to the
+  // resume tool's own contract minimum (1.11) so the operation inventory - not the version check -
+  // is what decides the verdict.
   const report = await reportWithDdicOperations(
-    DEPLOYED_OPERATIONS.filter((opcode) => opcode !== "RESUME_TRANSPARENT_TABLE_ACTIVATION")
+    DEPLOYED_OPERATIONS.filter((opcode) => opcode !== "RESUME_TABLE_ACTIVATION"),
+    "1.11"
   )
 
   const resume = observation(report, "ddic-helper-table-activation-resume")
   assert.equal(resume.availability, "unsupported")
   assert.match(resume.reason, /attests none of the required operation codes/)
-  assert.match(
-    resume.reason,
-    /resume_ddic_table_activation needs RESUME_TRANSPARENT_TABLE_ACTIVATION/
-  )
+  assert.match(resume.reason, /resume_ddic_table_activation needs RESUME_TABLE_ACTIVATION/)
   assert.equal(observation(report, "ddic-helper-core").availability, "available")
+  // The number range family is judged on its own operation inventory too, and a 1.11 helper that
+  // published none of its three operation codes attests *nothing* it needs, so its verdict is
+  // unsupported rather than partial: the removal of one operation code alone decides the verdict.
+  const numberRange = observation(report, "ddic-helper-number-range-object")
+  assert.equal(numberRange.availability, "unsupported")
+  assert.match(numberRange.reason, /attests none of the required operation codes/)
   assert.deepEqual(partialIds(report), ["ddic-helper-controlled-delete", "ddic-helper-lock-object"])
   assert.equal(report.summary.partial, 2)
 })
@@ -219,7 +301,7 @@ test("a helper below the required protocol stays unsupported on the version chec
   assert.equal(resume.evidence.source, "version-check")
   assert.equal(
     resume.reason,
-    `The ${DDIC_HELPER} helper self-described protocol 1.6, which is below the required capability version 1.10.`
+    `The ${DDIC_HELPER} helper self-described protocol 1.6, which is below the required capability version 1.11.`
   )
   assert.equal(resume.toolObservations, undefined)
 })

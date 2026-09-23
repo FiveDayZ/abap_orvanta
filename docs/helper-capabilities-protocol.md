@@ -46,6 +46,14 @@
 - **2026-09-20 D3 起将变为 56 项能力**：`adt-quality` 原将 `run_atc_analysis` 与 `run_unit_tests` 绑在同一 `unknown` 上，已拆出 `adt-abap-unit`（按本平台**已**广告 `/sap/bc/adt/abapunit/testruns`，定性 `unknown`）；`adt-quality` 保留原 ID 与 ATC 语义，改为 `platform_unsupported`，`adt-debugger` 亦然。新分布预期为 `available 23 / unsupported 1 / platform_unsupported 2 / unknown 30`。**本节上面的 55 项数字是拆分前那份实测报告的原始值，按不可回改的记录保留**；56 项须以重启后的新真实报告为准，届时替换本行。
 - **`Z_ORVANTA_MCP_DYNPRO_API` 已在 SAP 侧升到协议 2.7**（2026-09-18 为 2.6），源指纹由 `06812bcc…` 变为 `f09e382b…`。上表该行是 09-18 的快照，此处为准。
 
+**2026-09-22 D6-3 工作树增量（未发布、未升版本、助手未部署）**
+
+- DDIC 助手能力表新增三个操作码：`READ_NUMBER_RANGE_OBJECT`(24) / `UPSERT_NUMBER_RANGE_OBJECT`(26) / `DELETE_NUMBER_RANGE_OBJECT`(26)，`sinceVersion` 均为 `1.11`，每行都有对应的 `CASE` 分支；`PROTOCOL|MAX` 由能力表**推导**为 `1.11`（不是手改的字面量），`PROTOCOL|MIN` 仍为 `1.2`。
+- 服务侧新增 `read_number_range_object` / `upsert_number_range_object`，`delete_ddic_object` 的 `objectType` 增 `NROB`；能力组由 **18** 增至 **19**（新增 `ddic-helper-number-range-object`）。范围仅 `TNRO` + `TNROT`，**区间值 `NRIV` 不在范围内**。
+- 并发令牌是 **40 字符 SHA-1 定义摘要**（覆盖规范 `TNRO` 行与**全部** `TNROT` 行，读路径与写路径算法同一处，因此与调用方登录语言无关），**不是** DDIC 时间戳：`TNRO` 既无 `AS4DATE` 也无 `AS4TIME`。工具 schema 把它声明为字符串并注明"定义摘要"。
+- **操作码长度上限逐助手不同，且是硬约束**：`Z_ORVANTA_MCP_DDIC_API` 的 `IV_OPERATION` 是 `BAPIRET2-PARAMETER`（**CHAR 32**）；`Z_ORVANTA_MCP_EXECUTE` 与 `Z_ORVANTA_MCP_DYNPRO_API` 的 `IV_OPERATION` 是 `RS38L-NAME`（**CHAR 30**）。超过上限的名字在抵达 `CASE` 之前就被 RFC 截断，助手只会回 `OPERATION_NOT_ALLOWED`（这正是 R-20 的成因），因此 `src/helper-operation-limits.ts` 在发出任何 SAP 调用之前失败关闭，`test/helper-operation-limits.test.ts` 按每个助手**自己的**参数类型推导上限，不设全局常量。新增操作码必须同时满足三条：能力表有行、`CASE` 有 `WHEN`、长度不超该助手上限。
+- **R-20c（同批）**：`repository-helper-enhancement-lifecycle` 组的仓库侧工具行补上 `requiredOperations`（`READ_ENHANCEMENT_IMPL` / `CREATE_HOOK_ENHANCEMENT` / `CREATE_BADI_ENHANCEMENT` / `UPDATE_HOOK_ENHANCEMENT` / `UPDATE_BADI_ENHANCEMENT` / `MANAGE_ENHANCEMENT_STATE` / `DELETE_ENHANCEMENT_IMPL` / `MANAGE_CLASSIC_BADI_IMPL`，逐个按助手能力表核对而非按工具名推断），使该组能力判定不再"仅凭协议版本"。
+
 ---
 
 ## 1. 问题与根因（已核实的证据）

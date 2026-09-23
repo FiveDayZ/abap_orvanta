@@ -117,6 +117,8 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_failed_update",
       "read_function_module_interface",
       "read_lock_object",
+      "read_maintenance_view",
+      "read_number_range_object",
       "read_report_parameters",
       "read_report_variants",
       "read_search_help",
@@ -152,6 +154,8 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "upsert_ddic_structure",
       "upsert_ddic_table_type",
       "upsert_lock_object",
+      "upsert_maintenance_view",
+      "upsert_number_range_object",
       "upsert_search_help",
       "validate_dynpro_application",
       "write_function_module_source"

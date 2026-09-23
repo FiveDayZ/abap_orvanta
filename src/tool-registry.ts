@@ -317,8 +317,13 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     DDIC,
-    "1.10",
-    ["RESUME_TRANSPARENT_TABLE_ACTIVATION"]
+    // R-20: the required operation is RESUME_TABLE_ACTIVATION, which no released helper delivers -
+    // the 1.10 carrier shipped the 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION, truncated by
+    // the helper's CHAR 32 IV_OPERATION before its dispatch arm could match. The renamed operation
+    // is introduced by the same body change, so the contract minimum is 1.11 and not 1.10; claiming
+    // 1.10 here would assert that a 1.10 helper can serve the tool.
+    "1.11",
+    ["RESUME_TABLE_ACTIVATION"]
   ],
   [
     "read_ddic_table_type",
@@ -355,7 +360,9 @@ const ROWS: readonly ToolRow[] = [
       "DELETE_TRANSPARENT_TABLE",
       "DELETE_TABLE_TYPE",
       "DELETE_SEARCH_HELP",
-      "DELETE_LOCK_OBJECT"
+      "DELETE_LOCK_OBJECT",
+      "DELETE_NUMBER_RANGE_OBJECT",
+      "DELETE_MAINTENANCE_VIEW"
     ]
   ],
   ["read_search_help", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.8", ["READ_SEARCH_HELP"]],
@@ -379,6 +386,46 @@ const ROWS: readonly ToolRow[] = [
     DDIC,
     "1.9",
     ["UPSERT_LOCK_OBJECT"]
+  ],
+  [
+    "read_number_range_object",
+    "ddic",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    DDIC,
+    "1.11",
+    ["READ_NUMBER_RANGE_OBJECT"]
+  ],
+  [
+    "upsert_number_range_object",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.11",
+    ["UPSERT_NUMBER_RANGE_OBJECT"]
+  ],
+  [
+    "read_maintenance_view",
+    "ddic",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    DDIC,
+    "1.11",
+    ["READ_MAINTENANCE_VIEW"]
+  ],
+  [
+    "upsert_maintenance_view",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.11",
+    ["UPSERT_MAINTENANCE_VIEW"]
   ],
   ["search_abap_objects", "source", DEV, "R", "native-adt", null, null],
   ["get_abap_object_info", "source", DEV, "R", "target-specific", null, null],
@@ -437,7 +484,8 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["MANAGE_CLASSIC_BADI_IMPL"]
   ],
   [
     "read_enhancement_implementation",
@@ -446,7 +494,8 @@ const ROWS: readonly ToolRow[] = [
     "R",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["READ_ENHANCEMENT_IMPL"]
   ],
   [
     "create_enhancement_hook_implementation",
@@ -455,7 +504,8 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["CREATE_HOOK_ENHANCEMENT"]
   ],
   [
     "create_new_badi_implementation",
@@ -464,7 +514,8 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["CREATE_BADI_ENHANCEMENT"]
   ],
   [
     "update_enhancement_hook_implementation",
@@ -473,7 +524,8 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["UPDATE_HOOK_ENHANCEMENT"]
   ],
   [
     "update_new_badi_implementation",
@@ -482,7 +534,8 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["UPDATE_BADI_ENHANCEMENT"]
   ],
   [
     "manage_enhancement_implementation_state",
@@ -491,7 +544,8 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["MANAGE_ENHANCEMENT_STATE"]
   ],
   [
     "delete_enhancement_implementation",
@@ -500,7 +554,8 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6"
+    "2.6",
+    ["DELETE_ENHANCEMENT_IMPL"]
   ],
   ["inspect_enhancement_framework", "enhancement", DEV, "R", "target-specific", null, null],
   ["inspect_fico_rule_exit_program", "enhancement", DEV_CFG, "R", "target-specific", null, null],

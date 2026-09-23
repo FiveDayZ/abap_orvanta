@@ -106,6 +106,34 @@ const ddicSearchHelpHeader = z.record(z.string())
 // FLPOSITION), which SAP derives.
 const ddicLockObjectRow = z.record(z.string())
 const ddicLockObjectHeader = z.record(z.string())
+// Number range object text row (one TNROT row): the language key plus its long and short text. The
+// service writes the helper logon language first and every other language as a follow-up text update.
+const ddicNumberRangeText = z.object({
+  language: z.string(),
+  text: z.string(),
+  shortText: z.string().optional()
+})
+// Maintenance view child rows. baseTables is one DD26V row (a base table plus its join to the root
+// table) and viewFields is one DD27P row (a base-table field plus its optional alias). The service
+// keeps the array order as the row order and never sends the key columns (VIEWNAME, TABPOS, OBJPOS,
+// DDLANGUAGE), which the helper derives.
+const ddicMaintenanceViewBaseTable = z.object({
+  tableName: z.string(),
+  foreignTable: z.string().optional(),
+  foreignField: z.string().optional(),
+  foreignDirection: z.string().optional()
+})
+const ddicMaintenanceViewField = z.object({
+  tableName: z.string(),
+  fieldName: z.string(),
+  viewField: z.string().optional()
+})
+const ddicMaintenanceViewHeader = z.object({
+  rootTable: z.string().optional(),
+  viewGrant: z.string().optional(),
+  customAuth: z.string().optional(),
+  globalFlag: z.string().optional()
+})
 const ddicStructureField = z.object({ name: z.string(), dataElement: z.string() })
 const ddicTableField = z.object({
   name: z.string(),
@@ -776,6 +804,47 @@ const toolContractsBase = {
       connectionId: z.string()
     }
   },
+  read_number_range_object: {
+    description:
+      "Read one active number range object definition: its TNRO attribute row (properties, every field in DDIC order with SAP's trailing padding removed) plus the TNROT text of each language (texts). version is a 40-character SHA-1 digest over the canonical TNRO row and every TNROT row, NOT a DDIC timestamp and never a number: TNRO has no AS4DATE/AS4TIME, so a definition digest is the only available content-based concurrency token. It is language-independent, so a reader in any logon language sees the same digest. Number range INTERVALS (NRIV) are deliberately outside this service: intervalExists only reports whether SAP already assigned numbers, and no tool here writes or deletes an interval. Requires a DDIC helper that publishes READ_NUMBER_RANGE_OBJECT (protocol 1.11 or later).",
+    inputSchema: { objectName: z.string(), connectionId: z.string() }
+  },
+  upsert_number_range_object: {
+    description:
+      "Create or update one Z* or Y* number range object DEFINITION through the installed DDIC helper. objectName is the TNRO OBJECT key (data element NROBJ, CHAR 10, characters A-Z 0-9 _ only). This tool never creates, changes or deletes a number range INTERVAL (NRIV), so it does not by itself make number assignment available. description is the long text of the helper logon language (TNROT-TXT, 60 characters). An existing object requires the version returned by read_number_range_object: a 40-character SHA-1 definition digest, NOT a 14-digit DDIC timestamp, never numeric, and rejected if the stored definition changed since the read. properties is a partial patch keyed by TNRO field name - omitted fields keep the value already stored, so an update never clears an attribute the caller did not mention and never deletes a row it did not send. A create starts from an empty TNRO row; SAP's own check_object then reports any attribute it still needs in the error message. TNRO fields are DTELSOBJ, NRTAB, NRINTFLD, NREXTFLD, NRFLD, NRSOBJFLD, NRELEFLD, YEARIND, DOMLEN (a domain name, not a length), PERCENTAGE, CODE, TEXTIND, NRELTXTTAB, NRELTXTSOB, NRELTXTELE, NRELTXTTXT, NRELTXTLNG, BUFFER, NOIVBUFFER, NONRSWAP, RFCDEST, NRCHECKASCII; any other key, including OBJECT, is rejected before SAP is called. texts carries TNROT rows (language, text, shortText up to 60 and 20 characters). The helper logon language must be among them and is written first; every other language follows as a text update, and a text in a language the caller did not send is preserved. The write is one atomic LUW: TNRO/TNROT, the R3TR/NROB transport registration and a single COMMIT WORK AND WAIT. It fails closed with NUMBER_RANGE_TADIR_FAILED or NUMBER_RANGE_TRANSPORT_RECORD_FAILED when the object cannot be recorded in the package's request, so an unrecorded definition never survives as success. Requires a helper that publishes UPSERT_NUMBER_RANGE_OBJECT (protocol 1.11 or later).",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      description: z.string(),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      expectedVersion: z.string().optional(),
+      properties: z.record(z.string()).optional(),
+      texts: z.array(ddicNumberRangeText).optional(),
+      connectionId: z.string()
+    }
+  },
+  read_maintenance_view: {
+    description:
+      "Read one SAP maintenance view (VIEWCLASS='C') definition: the DD25V header, the DD26V base tables, the DD27P view fields and the DD28V selection conditions, each as its raw DDIC property bag. version is the 14-digit AS4DATE+AS4TIME token of the reported version and is the concurrency token upsert_maintenance_view and delete_ddic_object expect. When only a revised version exists the revised definition is reported with inactive true. The DD28V selection conditions are read-only: no tool in this service writes or deletes them, because the legal values of DD28V-OPERATOR/NEGATION/CONTLINE/AND_OR were not established from this system's source. Requires a DDIC helper that publishes READ_MAINTENANCE_VIEW (protocol 1.11 or later).",
+    inputSchema: { objectName: z.string(), connectionId: z.string() }
+  },
+  upsert_maintenance_view: {
+    description:
+      "Create or update one Z* or Y* maintenance view (VIEWCLASS='C') through the installed DDIC helper. The helper writes the revised version (PUT_STATE='N'), activates it with ACT_MODE=11 (the Online activation path, which does not commit internally), registers the object in TADIR and in the transport request, and commits once with COMMIT WORK AND WAIT; every failure path rolls the whole LUW back, so the definition, the activation and the transport entry are all-or-nothing. baseTables (DD26V: tableName plus the optional join foreignTable/foreignField/foreignDirection) and viewFields (DD27P: tableName/fieldName plus the optional viewField alias) are COMPLETE REPLACEMENTS: SAP deletes the stored rows of the written version before inserting these, so an omitted row is deleted. Only those columns travel; the helper sets VIEWNAME, TABPOS/OBJPOS and DDLANGUAGE itself, and every other DD27P attribute is derived by the activation. header carries the DD25V properties a caller may control: rootTable (defaults to the first base table; the activation consumes it but never derives it), viewGrant (R/U/M), customAuth (A/C/L/G/E/S/W) and globalFlag (N/X). VIEWNAME, VIEWCLASS, AGGTYPE, DDLANGUAGE, MASTERLANG, DDTEXT and every AS4* field are helper- or SAP-owned. description is DD25V-DDTEXT (60 characters). An existing view requires the 14-digit version returned by read_maintenance_view; a view of another class (database, projection, help, append) is rejected with VIEW_CLASS_NOT_SUPPORTED rather than converted. The response echoes the activation controls actually used (actMode, getState, authCheck, dbAct, rc, putState, ctrlViewPut), where ctrlViewPut is the positional DD_VIEW_PUT switch 'XXX  ': the header, the base tables and the view fields are written and the selection conditions and technical settings are deliberately skipped. Requires a helper that publishes UPSERT_MAINTENANCE_VIEW (protocol 1.11 or later).",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      description: z.string(),
+      packageName: z.string(),
+      transportNumber: z.string(),
+      expectedVersion: z.string().optional(),
+      baseTables: z.array(ddicMaintenanceViewBaseTable),
+      viewFields: z.array(ddicMaintenanceViewField),
+      header: ddicMaintenanceViewHeader.optional(),
+      connectionId: z.string()
+    }
+  },
   read_ddic_data_element: {
     description:
       "Read one active SAP Dictionary data element, including labels, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",
@@ -906,7 +975,7 @@ const toolContractsBase = {
   },
   resume_ddic_table_activation: {
     description:
-      "Activate a Z* or Y* transparent table whose definition was saved but left inactive by an earlier failed create or write. Use this only after a write tool reported DDIC_SAVE_FAILED with PHASE=inactive_saved, or after a read reported INACTIVE_VERSION_EXISTS; read the current non-active state first and pass its exact fingerprint. This operation does not send a new table definition: it only runs the activation step against what is already stored, then re-reads the active table and returns it. Requires the current non-active fingerprint, the exact package and an existing transport, and RESUME_INACTIVE_ACTIVATION confirmation. SAP activation may commit internally; no automatic retry and no rollback of an already-saved definition. Requires a helper that publishes RESUME_TRANSPARENT_TABLE_ACTIVATION (protocol 1.10 or later). Because the helper does not report DD09V technical settings for an inactive definition, activation is refused (INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED, or INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE when the values are reported but unusable) unless usable values are visible; supply settingsRepair to write the approved dataClass/sizeCategory through PATCH_TRANSPARENT_TABLE_SETTINGS under the same fingerprint before activating. The reply reports the applied repair, the activated fingerprint, the active technical settings, and technicalSettingsVerified, which is false when the activated table does not match the expected values.",
+      "Activate a Z* or Y* transparent table whose definition was saved but left inactive by an earlier failed create or write. Use this only after a write tool reported DDIC_SAVE_FAILED with PHASE=inactive_saved, or after a read reported INACTIVE_VERSION_EXISTS; read the current non-active state first and pass its exact fingerprint. This operation does not send a new table definition: it only runs the activation step against what is already stored, then re-reads the active table and returns it. Requires the current non-active fingerprint, the exact package and an existing transport, and RESUME_INACTIVE_ACTIVATION confirmation. SAP activation may commit internally; no automatic retry and no rollback of an already-saved definition. Requires a helper that publishes RESUME_TABLE_ACTIVATION (protocol 1.11 or later; the earlier 1.10 carrier published the 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION, which the helper's CHAR 32 IV_OPERATION truncated, so no released helper can run this operation under its old name). Because the helper does not report DD09V technical settings for an inactive definition, activation is refused (INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED, or INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE when the values are reported but unusable) unless usable values are visible; supply settingsRepair to write the approved dataClass/sizeCategory through PATCH_TRANSPARENT_TABLE_SETTINGS under the same fingerprint before activating. The reply reports the applied repair, the activated fingerprint, the active technical settings, and technicalSettingsVerified, which is false when the activated table does not match the expected values.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
@@ -941,10 +1010,10 @@ const toolContractsBase = {
   },
   delete_ddic_object: {
     description:
-      "Permanently delete one existing Z* or Y* domain, data element, structure, table type, transparent table, search help, or lock object after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent-table deletion additionally requires data-loss acknowledgement. SAP references block deletion; automatic retry/rollback, SAP lock clearing, and transport release are not supported. Deleting a search help requires a helper that publishes DELETE_SEARCH_HELP (protocol 1.8 or later); deleting a lock object requires DELETE_LOCK_OBJECT (protocol 1.9 or later). Older helpers reject the operation with OPERATION_NOT_SUPPORTED.",
+      "Permanently delete one existing Z* or Y* domain, data element, structure, table type, transparent table, search help, lock object, or number range object after SAP dependency checking. Requires the current version, exact transportable package, an existing transport, and explicit confirmation. Transparent-table deletion additionally requires data-loss acknowledgement. SAP references block deletion; automatic retry/rollback, SAP lock clearing, and transport release are not supported. Deleting a number range object requires the 40-character definition digest returned by read_number_range_object (not a 14-digit DDIC timestamp) and permanently removes its TNRO row, every TNROT text, and its TADIR entry; number range intervals are never touched. Deleting a search help requires a helper that publishes DELETE_SEARCH_HELP (protocol 1.8 or later); deleting a lock object requires DELETE_LOCK_OBJECT (protocol 1.9 or later); deleting a number range object requires DELETE_NUMBER_RANGE_OBJECT (protocol 1.11 or later). SAP refuses a deletion that intervals or other references still require with the stable code NUMBER_RANGE_DELETE_NOT_ALLOWED. Older helpers reject the operation with OPERATION_NOT_SUPPORTED.",
     inputSchema: {
       ...writeOperationInput,
-      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP", "TABL", "SHLP", "ENQU"]),
+      objectType: z.enum(["DOMA", "DTEL", "STRU", "TTYP", "TABL", "SHLP", "ENQU", "NROB", "VIEW"]),
       objectName: z.string(),
       expectedVersion: z.string(),
       packageName: z.string(),

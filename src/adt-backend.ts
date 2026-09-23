@@ -18,6 +18,7 @@ import {
 } from "abap-adt-api"
 import { createHash } from "node:crypto"
 import { appendFileSync } from "node:fs"
+import { assertHelperOperationDeliverable } from "./helper-operation-limits.js"
 import { InactiveInventoryError, readInactiveInventory } from "./inactive-inventory.js"
 import { request as httpRequest } from "node:http"
 import { request as httpsRequest } from "node:https"
@@ -225,6 +226,7 @@ export class AdtBackend implements SapBackend {
   }
 
   async callSapHelper(connectionId: string, request: SapHelperRequest): Promise<SapHelperResult> {
+    assertHelperOperationDeliverable("Z_ORVANTA_MCP_EXECUTE", request.operation)
     const config = this.configs.get(connectionId.toLowerCase())
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
     const body = await postSapSoap(
@@ -254,6 +256,7 @@ export class AdtBackend implements SapBackend {
     connectionId: string,
     request: SapRepositoryRequest
   ): Promise<SapRepositoryResult> {
+    assertHelperOperationDeliverable("Z_ORVANTA_MCP_DYNPRO_API", request.operation)
     const config = this.configs.get(connectionId.toLowerCase())
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
     const body = await postSapSoap(
@@ -267,6 +270,7 @@ export class AdtBackend implements SapBackend {
   }
 
   async callSapDdic(connectionId: string, request: SapDdicRequest): Promise<SapDdicResult> {
+    assertHelperOperationDeliverable("Z_ORVANTA_MCP_DDIC_API", request.operation)
     const config = this.configs.get(connectionId.toLowerCase())
     if (!config) throw new Error(`Connection not found: ${connectionId}`)
     const body = await postSapSoap(
@@ -2051,7 +2055,7 @@ export function buildSapDdicEnvelope(request: SapDdicRequest): string {
 export function serializeDdicPayload(request: SapDdicRequest): string[] {
   const payload: string[] = []
   const appendRows = (
-    kind: "H" | "V" | "F" | "S1" | "S2" | "S3" | "L1" | "L2",
+    kind: "H" | "V" | "F" | "S1" | "S2" | "S3" | "L1" | "L2" | "N1" | "T1" | "T2",
     rows: SapStructureRow[]
   ) => {
     rows.forEach((row, rowIndex) => {
@@ -2077,6 +2081,14 @@ export function serializeDdicPayload(request: SapDdicRequest): string[] {
   // Both are two-character kinds, for the same reason as S1/S2/S3.
   appendRows("L1", request.lockTables ?? [])
   appendRows("L2", request.lockFields ?? [])
+  // Number range object texts. TNROT carries the per-language long and short text (N1). The helper
+  // requires contiguous, ascending row indexes, which is exactly what appendRows emits.
+  appendRows("N1", request.numberRangeTexts ?? [])
+  // Maintenance view rows. DD26V carries the base tables (T1) and DD27P the view fields (T2). Only
+  // the caller-controlled columns travel: the helper writes VIEWNAME, TABPOS/OBJPOS and DDLANGUAGE
+  // itself, and DD28V selection conditions are read-only for this service (T3 never appears here).
+  appendRows("T1", request.baseTables ?? [])
+  appendRows("T2", request.viewFields ?? [])
   return payload
 }
 
@@ -2101,7 +2113,12 @@ export function parseSapDdicResponse(body: string): SapDdicResult {
     parameters: payload.parameters,
     fieldAssignments: payload.fieldAssignments,
     lockTables: payload.lockTables,
-    lockFields: payload.lockFields
+    lockFields: payload.lockFields,
+    numberRangeTexts: payload.numberRangeTexts,
+    baseTables: payload.baseTables,
+    viewFields: payload.viewFields,
+    selectionConditions: payload.selectionConditions,
+    warnings: payload.warnings
   }
   if (!result.status || !result.code || !result.version) {
     throw new Error("SAP DDIC helper returned an incomplete SOAP response")
@@ -2119,6 +2136,11 @@ function parseDdicPayload(lines: string[]): {
   fieldAssignments: SapStructureRow[]
   lockTables: SapStructureRow[]
   lockFields: SapStructureRow[]
+  numberRangeTexts: SapStructureRow[]
+  baseTables: SapStructureRow[]
+  viewFields: SapStructureRow[]
+  selectionConditions: SapStructureRow[]
+  warnings: SapStructureRow[]
 } {
   const metadata: SapStructureRow = {}
   const header: SapStructureRow = {}
@@ -2129,10 +2151,16 @@ function parseDdicPayload(lines: string[]): {
   const fieldAssignments: SapStructureRow[] = []
   const lockTables: SapStructureRow[] = []
   const lockFields: SapStructureRow[] = []
+  const numberRangeTexts: SapStructureRow[] = []
+  const baseTables: SapStructureRow[] = []
+  const viewFields: SapStructureRow[] = []
+  const selectionConditions: SapStructureRow[] = []
+  const warnings: SapStructureRow[] = []
   for (const line of lines) {
-    // S1/S2/S3 (search help) and L1/L2 (lock object) are two-character kinds, so the kind
-    // alternation must be explicit.
-    const match = line.match(/^(M|H|V|F|S1|S2|S3|L1|L2)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    // S1/S2/S3 (search help), L1/L2 (lock object), N1 (number range object text) and T1/T2/T3
+    // (maintenance view base tables / view fields / selection conditions) are two-character kinds,
+    // so the kind alternation must be explicit.
+    const match = line.match(/^(M|H|V|F|S1|S2|S3|L1|L2|N1|T1|T2|T3|W)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
     if (!match?.[1] || !match[2] || !match[3]) {
       throw new Error(`SAP DDIC helper returned an invalid payload line: ${line}`)
     }
@@ -2149,7 +2177,11 @@ function parseDdicPayload(lines: string[]): {
     else if (kind === "S2") target = rowAt(parameters, index)
     else if (kind === "S3") target = rowAt(fieldAssignments, index)
     else if (kind === "L1") target = rowAt(lockTables, index)
-    else target = rowAt(lockFields, index)
+    else if (kind === "L2") target = rowAt(lockFields, index)
+    else if (kind === "T1") target = rowAt(baseTables, index)
+    else if (kind === "T2") target = rowAt(viewFields, index)
+    else if (kind === "T3") target = rowAt(selectionConditions, index)
+    else target = rowAt(numberRangeTexts, index)
     target[match[3]] = value
   }
   // The inactive-definition path of the helper publishes the same object attributes under M that the
@@ -2169,7 +2201,12 @@ function parseDdicPayload(lines: string[]): {
     parameters,
     fieldAssignments,
     lockTables,
-    lockFields
+    lockFields,
+    numberRangeTexts,
+    baseTables,
+    viewFields,
+    selectionConditions,
+    warnings
   }
 }
 

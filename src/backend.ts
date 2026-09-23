@@ -184,14 +184,14 @@ export type SapRepositoryOperation =
   | "READ_CUSTOMER_EXIT_PROJECT"
   | "READ_BTE_CONFIGURATION"
   | "READ_CLASSIC_BADI_DEFINITION"
-  | "READ_ENHANCEMENT_IMPLEMENTATION"
+  | "READ_ENHANCEMENT_IMPL"
   | "CREATE_HOOK_ENHANCEMENT"
   | "CREATE_BADI_ENHANCEMENT"
   | "UPDATE_HOOK_ENHANCEMENT"
   | "UPDATE_BADI_ENHANCEMENT"
   | "MANAGE_ENHANCEMENT_STATE"
-  | "DELETE_ENHANCEMENT_IMPLEMENTATION"
-  | "MANAGE_CLASSIC_BADI_IMPLEMENTATION"
+  | "DELETE_ENHANCEMENT_IMPL"
+  | "MANAGE_CLASSIC_BADI_IMPL"
   | "UPSERT_SCREEN"
   | "PATCH_SCREEN"
   | "READ_GUI_DEFINITION"
@@ -292,7 +292,7 @@ export type SapDdicOperation =
   | "PATCH_TRANSPARENT_TABLE_FIELDS"
   | "PATCH_TRANSPARENT_TABLE_SETTINGS"
   | "RECOVER_TABLE_CONVERSION"
-  | "RESUME_TRANSPARENT_TABLE_ACTIVATION"
+  | "RESUME_TABLE_ACTIVATION"
   | "READ_TABLE_TYPE"
   | "UPSERT_TABLE_TYPE"
   | "DELETE_DOMAIN"
@@ -306,6 +306,12 @@ export type SapDdicOperation =
   | "READ_LOCK_OBJECT"
   | "UPSERT_LOCK_OBJECT"
   | "DELETE_LOCK_OBJECT"
+  | "READ_NUMBER_RANGE_OBJECT"
+  | "UPSERT_NUMBER_RANGE_OBJECT"
+  | "DELETE_NUMBER_RANGE_OBJECT"
+  | "READ_MAINTENANCE_VIEW"
+  | "UPSERT_MAINTENANCE_VIEW"
+  | "DELETE_MAINTENANCE_VIEW"
 
 export interface SapDdicRequest {
   operation: SapDdicOperation
@@ -322,6 +328,25 @@ export interface SapDdicRequest {
   fieldAssignments?: SapStructureRow[] | undefined
   lockTables?: SapStructureRow[] | undefined
   lockFields?: SapStructureRow[] | undefined
+  /**
+   * TNROT text rows of a number range object, keyed LANGU/TXT/TXTSHORT. The helper writes the row of
+   * its own logon language in the initial create/update call and every other row with a follow-up
+   * text update, so several languages may be sent at once. NROB carries no interval data: number
+   * range intervals (NRIV) are out of scope for this service.
+   */
+  numberRangeTexts?: SapStructureRow[] | undefined
+  /**
+   * DD26V base tables of a maintenance view, keyed TABNAME/FORTABNAME/FORFIELD/FORDIR. The helper
+   * sets VIEWNAME, TABPOS and DDLANGUAGE itself, so the service never sends those key columns.
+   * The array is a complete replacement: DD_VIFD_PUT deletes the stored rows of the version it
+   * writes before inserting these, so an omitted base table is removed.
+   */
+  baseTables?: SapStructureRow[] | undefined
+  /**
+   * DD27P view fields of a maintenance view, keyed TABNAME/FIELDNAME/VIEWFIELD. As with baseTables
+   * this is a complete replacement; every other DD27P attribute is derived by the activation.
+   */
+  viewFields?: SapStructureRow[] | undefined
 }
 
 export interface SapDdicResult extends SapHelperResult {
@@ -337,6 +362,32 @@ export interface SapDdicResult extends SapHelperResult {
   fieldAssignments: SapStructureRow[]
   lockTables: SapStructureRow[]
   lockFields: SapStructureRow[]
+  /**
+   * TNROT rows (LANGU/TXT/TXTSHORT) read back for a number range object. Empty for every other kind.
+   */
+  numberRangeTexts: SapStructureRow[]
+  /**
+   * SAP check messages (INOER rows: MSGID/MSGTYPE/MSGNUMBER/MSGVAR1-4/TABLENAME/FIELDNAME/CRITCHANGE)
+   * that NUMBER_RANGE_OBJECT_UPDATE reported while applying the change. A warning means the change was
+   * applied but SAP flagged a consequence, e.g. an interval-affecting attribute change.
+   */
+  warnings: SapStructureRow[]
+  /**
+   * DD26V rows (DDLANGUAGE/VIEWNAME/TABNAME/TABPOS/FORTABNAME/FORFIELD/FORDIR) of a maintenance view.
+   * Empty for every other kind.
+   */
+  baseTables: SapStructureRow[]
+  /**
+   * DD27P rows of a maintenance view: the identity columns (VIEWFIELD/TABNAME/FIELDNAME) plus the
+   * attributes SAP derives from the base tables (KEYFLAG/ROLLNAME/DATATYPE/FLENGTH/DDTEXT/...).
+   * Empty for every other kind.
+   */
+  viewFields: SapStructureRow[]
+  /**
+   * DD28V rows (selection conditions) of a maintenance view. Read-only: this service neither writes
+   * nor deletes selection conditions, so the rows report what SAP already stored.
+   */
+  selectionConditions: SapStructureRow[]
 }
 
 export interface ExportFileInfo {

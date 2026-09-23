@@ -108,7 +108,7 @@ const dynproAttestation = {
   minProtocol: "1.1",
   maxProtocol: "2.6",
   operations: [
-    { opcode: "READ_ENHANCEMENT_IMPLEMENTATION", since: "2.6", write: false },
+    { opcode: "READ_ENHANCEMENT_IMPL", since: "2.6", write: false },
     { opcode: "PATCH_ABAP_SCREEN", since: "1.1", write: true }
   ],
   scopes: [{ scope: "SM37_DETAILS", enabled: true }],

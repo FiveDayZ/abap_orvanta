@@ -374,6 +374,25 @@ export function createMcpServer(
       tools.upsertLockObject(input)
     )
   )
+  registerTool("read_number_range_object", toolContracts.read_number_range_object, async (input) =>
+    invoke("read_number_range_object", () => tools.readNumberRangeObject(input))
+  )
+  registerTool(
+    "upsert_number_range_object",
+    toolContracts.upsert_number_range_object,
+    async (input) =>
+      invokeWrite("upsert_number_range_object", input, backend, writeReceipts, () =>
+        tools.upsertNumberRangeObject(input)
+      )
+  )
+  registerTool("read_maintenance_view", toolContracts.read_maintenance_view, async (input) =>
+    invoke("read_maintenance_view", () => tools.readMaintenanceView(input))
+  )
+  registerTool("upsert_maintenance_view", toolContracts.upsert_maintenance_view, async (input) =>
+    invokeWrite("upsert_maintenance_view", input, backend, writeReceipts, () =>
+      tools.upsertMaintenanceView(input)
+    )
+  )
   registerTool("read_ddic_data_element", toolContracts.read_ddic_data_element, async (input) =>
     invoke("read_ddic_data_element", () => tools.readDdicDataElement(input))
   )

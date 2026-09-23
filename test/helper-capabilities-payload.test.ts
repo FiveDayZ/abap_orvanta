@@ -453,7 +453,7 @@ test("the DDIC since values are the service contract minimums", async () => {
     groupSizes[operation.since] = (groupSizes[operation.since] ?? 0) + 1
   }
   assert.deepEqual(groupSizes, {
-    "1.10": 1,
+    "1.11": 7,
     "1.2": 8,
     "1.5": 2,
     "1.6": 5,
@@ -469,7 +469,11 @@ test("the DDIC since values are the service contract minimums", async () => {
     (left, right) => numeric(left) - numeric(right)
   )
   assert.equal(versions[0], "1.2", "PROTOCOL|MIN must derive to 1.2")
-  assert.equal(versions[versions.length - 1], "1.10", "PROTOCOL|MAX must derive to 1.10")
+  // R-20: the renamed resume operation and the three number range object operations are the |1.11|
+  // rows, so they alone raise PROTOCOL|MAX from 1.10 to 1.11 - a consequence of the table, not of a
+  // hand-edited literal. The literals above are the frozen expectation of a table-derived count:
+  // deleting a row from scripts/bootstrap-sap-helper.ps1 makes this assertion fail.
+  assert.equal(versions[versions.length - 1], "1.11", "PROTOCOL|MAX must derive to 1.11")
 })
 
 test("the DDIC branch reuses the repository hash slots and names its own helper", () => {

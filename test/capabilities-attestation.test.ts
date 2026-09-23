@@ -140,13 +140,20 @@ test("a self-described helper at or above the required protocol is available wit
   backend.helperCapabilities.set(REPOSITORY_HELPER, selfDescription({ maxProtocol: "2.6" }))
   const report = await buildReport(backend)
 
+  // A route whose registry row pins no operation code still decides on the self-described protocol,
+  // and it says so - the verdict does not pretend to have checked an inventory.
+  const messageUpdate = capabilityObservation(report, "repository-helper-message-update")
+  assert.equal(messageUpdate.availability, "available")
+  assert.match(messageUpdate.reason, /self-described protocol 2\.6, which satisfies minimum 1\.8/)
+  assert.match(messageUpdate.evidence.detail, /self-described protocol 2\.6/)
+
+  // R-20c pinned the enhancement lifecycle operation codes, so the same 2.6 helper is no longer
+  // reported as available for that family: it attests none of the operations the family dispatches.
   const lifecycle = capabilityObservation(report, "repository-helper-enhancement-lifecycle")
-  assert.equal(lifecycle.availability, "available")
-  assert.equal(
-    lifecycle.reason,
-    `The ${REPOSITORY_HELPER} helper self-described protocol 2.6, which satisfies minimum 2.6.`
-  )
-  assert.match(lifecycle.evidence.detail, /self-described protocol 2\.6/)
+  assert.equal(lifecycle.availability, "unsupported")
+  assert.equal(lifecycle.evidence.source, "version-and-operation-check")
+  assert.match(lifecycle.reason, /attests none of the required operation codes/)
+  assert.match(lifecycle.reason, /read_enhancement_implementation needs READ_ENHANCEMENT_IMPL/)
 
   const attestation = report.helperAttestation[1]
   assert.equal(attestation?.attestation, "self-described")

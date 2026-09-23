@@ -840,7 +840,12 @@ function inactiveTableResult(options: {
     parameters: [],
     fieldAssignments: [],
     lockTables: [],
-    lockFields: []
+    lockFields: [],
+    numberRangeTexts: [],
+    baseTables: [],
+    viewFields: [],
+    selectionConditions: [],
+    warnings: []
   }
 }
 
@@ -1030,7 +1035,7 @@ test("an inactive resume with settingsRepair writes the settings, activates, and
     "READ_TRANSPARENT_TABLE",
     "PATCH_TRANSPARENT_TABLE_SETTINGS",
     "READ_TRANSPARENT_TABLE",
-    "RESUME_TRANSPARENT_TABLE_ACTIVATION",
+    "RESUME_TABLE_ACTIVATION",
     "READ_TRANSPARENT_TABLE"
   ])
   assert.equal(result.resumed, true)
@@ -2128,7 +2133,12 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
         parameters: [],
         fieldAssignments: [],
         lockTables: [],
-        lockFields: []
+        lockFields: [],
+        numberRangeTexts: [],
+        baseTables: [],
+        viewFields: [],
+        selectionConditions: [],
+        warnings: []
       }
     }
     return callSapDdic(connectionId, request)
@@ -5231,7 +5241,7 @@ test("Enhancement hook lifecycle sends guarded payload and verifies create and d
   assert.deepEqual(created.definition.hookImplementations[0]?.source, [
     "CHECK vbak-vbeln IS NOT INITIAL."
   ])
-  assert.equal(backend.lastRepositoryRequest?.operation, "READ_ENHANCEMENT_IMPLEMENTATION")
+  assert.equal(backend.lastRepositoryRequest?.operation, "READ_ENHANCEMENT_IMPL")
 
   const deleted = JSON.parse(
     await tools.deleteEnhancementImplementation({
