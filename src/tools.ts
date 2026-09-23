@@ -119,6 +119,46 @@ interface PatchScreenInput extends ReadScreenInput {
   params?: Array<Record<string, string>> | undefined
 }
 
+/**
+ * D7-1: one SAPscript form read through the shared repository body.
+ *
+ * `version` is deliberately absent. The body answers a non-empty version with
+ * `FORM_VERSION_UNSUPPORTED` because the single-version branch is not implemented, and a strict
+ * schema that advertises an input the helper refuses would be a contract the tool cannot honour.
+ */
+interface ReadSapscriptFormInput {
+  formName: string
+  language?: string | undefined
+  status?: string | undefined
+  includeSource?: boolean | undefined
+  connectionId: string
+}
+
+type SapscriptFormRow = Record<string, string>
+
+interface SapscriptFormDefinition {
+  connectionId: string
+  objectName: string
+  formStatus: string
+  language: string
+  tdname: string
+  includeSource: boolean
+  header: SapscriptFormRow
+  textHeader: SapscriptFormRow
+  formLines: SapscriptFormRow[]
+  pages: SapscriptFormRow[]
+  pageWindows: SapscriptFormRow[]
+  windows: SapscriptFormRow[]
+  paragraphs: SapscriptFormRow[]
+  strings: SapscriptFormRow[]
+  tabs: SapscriptFormRow[]
+  source?: SapscriptFormRow[] | undefined
+  counts: Record<string, number>
+  returnedCount: number
+  truncated: boolean
+  fingerprint: string
+}
+
 interface ScreenModuleReference {
   name: string
   event: "PBO" | "PAI" | "POH" | "POV" | "UNKNOWN"
@@ -1210,6 +1250,10 @@ export class ToolService {
     )
   }
 
+  async readSapscriptForm(input: ReadSapscriptFormInput): Promise<string> {
+    return JSON.stringify(await this.readSapscriptFormDefinition(input), null, 2)
+  }
+
   async readAbapScreen(input: ReadScreenInput): Promise<string> {
     return JSON.stringify(await this.readScreenDefinition(input), null, 2)
   }
@@ -1507,6 +1551,22 @@ export class ToolService {
     })
     requireRepositorySuccess(result.status, result.code, result.message)
     return guiDefinition(connectionId, programName, result)
+  }
+
+  private async readSapscriptFormDefinition(
+    input: ReadSapscriptFormInput
+  ): Promise<SapscriptFormDefinition> {
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = sapscriptFormName(input.formName)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_SAPSCRIPT_FORM",
+      objectName,
+      textStatus: sapscriptFormStatus(input.status),
+      textLanguage: sapscriptFormLanguage(input.language),
+      includeSource: input.includeSource === true
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    return sapscriptFormDefinition(connectionId, objectName, result)
   }
 
   private async readScreenDefinition(input: ReadScreenInput): Promise<ScreenDefinition> {
@@ -7502,6 +7562,128 @@ export class ToolService {
   }
 }
 
+/**
+ * D7-1 payload kinds, as the shared repository body emits them.
+ *
+ * `H` and `T` are single rows (the ITCTA form header and the THEAD text header); every other kind
+ * is a table whose rows the body numbers from 1. The body resolves each row type's own components
+ * through RTTI, so these keys are the real DDIC field names and includes arrive already resolved.
+ */
+const SAPSCRIPT_FORM_SECTIONS = {
+  L: "formLines",
+  P: "pages",
+  W: "pageWindows",
+  X: "windows",
+  A: "paragraphs",
+  S: "strings",
+  B: "tabs",
+  D: "source"
+} as const
+
+type SapscriptFormSectionName =
+  (typeof SAPSCRIPT_FORM_SECTIONS)[keyof typeof SAPSCRIPT_FORM_SECTIONS]
+
+/**
+ * `source` alone can be empty for two different reasons, and the two must never be conflated:
+ * a form with no ID_DEF text is a fact, while a failed READ_TEXT is a gap. The body reports which
+ * one happened, and an unknown token is a drift error rather than a silent "not requested".
+ */
+function sapscriptSourceStatus(value: string): "not-requested" | "ok" | "failed" {
+  if (value === "NOT_REQUESTED") return "not-requested"
+  if (value === "OK") return "ok"
+  if (value === "FAILED") return "failed"
+  throw new Error(`SAP repository helper reported an unknown source status: ${value}`)
+}
+
+function sapscriptFormDefinition(
+  connectionId: string,
+  objectName: string,
+  result: SapRepositoryResult
+): SapscriptFormDefinition {
+  const metadata: SapscriptFormRow = {}
+  const header: SapscriptFormRow = {}
+  const textHeader: SapscriptFormRow = {}
+  const sections: Record<SapscriptFormSectionName, SapscriptFormRow[]> = {
+    formLines: [],
+    pages: [],
+    pageWindows: [],
+    windows: [],
+    paragraphs: [],
+    strings: [],
+    tabs: [],
+    source: []
+  }
+  for (const line of result.source) {
+    const match = line.match(/^([A-Z]+)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(`SAP repository helper returned an invalid payload line: ${line}`)
+    }
+    const index = Number.parseInt(match[2], 10)
+    if (index < 1) {
+      throw new Error(`SAP repository helper returned an invalid payload index: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    const kind = match[1]
+    if (kind === "M") {
+      metadata[match[3]] = value
+      continue
+    }
+    if (kind === "H") {
+      header[match[3]] = value
+      continue
+    }
+    if (kind === "T") {
+      textHeader[match[3]] = value
+      continue
+    }
+    const section = SAPSCRIPT_FORM_SECTIONS[kind as keyof typeof SAPSCRIPT_FORM_SECTIONS]
+    if (!section) {
+      throw new Error(`SAP repository helper returned an unknown form payload kind: ${line}`)
+    }
+    rowAtRepository(sections[section], index)[match[3]] = value
+  }
+  const includeSource = metadata.INCLUDE_SOURCE === "X"
+  const content = {
+    formStatus: metadata.FORM_STATUS ?? "",
+    language: metadata.LANGUAGE ?? "",
+    tdname: metadata.TDNAME ?? "",
+    includeSource,
+    sourceStatus: sapscriptSourceStatus(metadata.SOURCE_STATUS ?? ""),
+    header,
+    textHeader,
+    formLines: sections.formLines,
+    pages: sections.pages,
+    pageWindows: sections.pageWindows,
+    windows: sections.windows,
+    paragraphs: sections.paragraphs,
+    strings: sections.strings,
+    tabs: sections.tabs
+  }
+  const counts = {
+    formLines: sections.formLines.length,
+    pages: sections.pages.length,
+    pageWindows: sections.pageWindows.length,
+    windows: sections.windows.length,
+    paragraphs: sections.paragraphs.length,
+    strings: sections.strings.length,
+    tabs: sections.tabs.length
+  }
+  // The body appends every row READ_FORM returned and applies no cap of its own, so `truncated`
+  // reports the absence of a limit that was never applied instead of implying one.
+  return {
+    connectionId: connectionId.toLowerCase(),
+    objectName,
+    ...content,
+    ...(includeSource ? { source: sections.source } : {}),
+    counts,
+    returnedCount:
+      Object.values(counts).reduce((total, count) => total + count, 0) +
+      (includeSource ? sections.source.length : 0),
+    truncated: false,
+    fingerprint: hashCanonicalJson(content)
+  }
+}
+
 function screenDefinition(
   connectionId: string,
   programName: string,
@@ -12328,6 +12510,37 @@ function transactionCodeName(value: string): string {
   const normalized = value.trim().toUpperCase()
   if (!/^[A-Z0-9_/$]{1,20}$/.test(normalized)) {
     throw new Error("transactionCode must be an exact SAP transaction name")
+  }
+  return normalized
+}
+
+/**
+ * A form may live in the customer namespace or in a SAP namespace such as `/SAPSCRIPT/…`, and
+ * reading a standard form is a legitimate reference read, so this normalizes and length-checks the
+ * name instead of restricting it to the Z or Y customer namespace the way `customerName` does for
+ * writes.
+ */
+function sapscriptFormName(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!/^(?:[A-Z][A-Z0-9_]*|\/[A-Z0-9_]+\/[A-Z][A-Z0-9_]*)$/.test(normalized)) {
+    throw new Error("formName must be an ABAP object name or a namespaced name")
+  }
+  if (normalized.length > 16) throw new Error("formName must not exceed 16 characters")
+  return normalized
+}
+
+function sapscriptFormStatus(value: string | undefined): string {
+  const normalized = (value ?? "").trim().toUpperCase()
+  if (normalized !== "" && normalized !== "SAP" && normalized !== "CUS") {
+    throw new Error('status must be "", "SAP" or "CUS"')
+  }
+  return normalized
+}
+
+function sapscriptFormLanguage(value: string | undefined): string {
+  const normalized = (value ?? "").trim().toUpperCase()
+  if (normalized !== "" && !/^[A-Z0-9]$/.test(normalized)) {
+    throw new Error("language must be a single character")
   }
   return normalized
 }

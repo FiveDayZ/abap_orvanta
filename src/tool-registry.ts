@@ -131,6 +131,16 @@ const ROWS: readonly ToolRow[] = [
   ["create_smartform", "form", DEV, "D", "sap-helper-fallback", SMARTFORM, null],
   ["save_smartform", "form", DEV, "D", "sap-helper-fallback", SMARTFORM, null],
   ["activate_smartform", "form", DEV, "D", "sap-helper-fallback", SMARTFORM, null],
+  [
+    "read_sapscript_form",
+    "form",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.8",
+    ["READ_SAPSCRIPT_FORM"]
+  ],
   ["get_connected_systems", "platform", PL, "R", "local", null, null],
   ["get_capability_report", "platform", PL, "R", "target-specific", null, null],
   ["abap_debug_session", "debug", DEV, "W", "native-adt", null, null],

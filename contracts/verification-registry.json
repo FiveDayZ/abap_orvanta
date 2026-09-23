@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-22",
+  "updatedAt": "2026-09-23",
   "notes": "Every entry with status verified or failed must cite an immutable evidence file that exists in this repository; unverified entries must cite nothing and must not claim an attempt time. Default is unverified. availability and verification.status are ORTHOGONAL: verification.status never feeds any availability computation, and available + unverified is the honest normal state rather than a defect. failed entries keep failureBasis = runtime (a real call was made and failed) distinct from static (never called, but proven impossible), because after a fix a static entry still needs a real call before it can become verified.",
   "entries": [
     {
@@ -1178,6 +1178,18 @@
       "lastAttemptAt": null,
       "evidence": null,
       "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+    },
+    {
+      "tool": "read_sapscript_form",
+      "helper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": null,
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (READ_SAPSCRIPT_FORM), which is still a static inference and not an observation. The deployed repository helper still self-describes 2.7, so this tool is reported unavailable until the 2.8 carrier is deployed and a real read is observed."
     },
     {
       "tool": "read_search_help",

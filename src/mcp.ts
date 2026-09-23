@@ -174,6 +174,9 @@ export function createMcpServer(
   registerTool("sap_helper_status", toolContracts.sap_helper_status, async (input) =>
     invoke("sap_helper_status", () => tools.sapHelperStatus(input))
   )
+  registerTool("read_sapscript_form", toolContracts.read_sapscript_form, async (input) =>
+    invoke("read_sapscript_form", () => tools.readSapscriptForm(input))
+  )
   registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
     invoke("read_abap_screen", () => tools.readAbapScreen(input))
   )

@@ -1906,6 +1906,7 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
     xmlElement("IV_PACKAGE", request.packageName ?? "") +
     xmlElement("IV_REQUEST", request.transportNumber ?? "") +
     xmlElement("IV_EXPECTED_VERSION", request.expectedVersion ?? "") +
+    optionalRepositorySelectors(request) +
     xmlRecord("IS_HEADER", request.header ?? {}) +
     `<CT_FIELDS></CT_FIELDS>` +
     `<CT_FLOWLOGIC></CT_FLOWLOGIC>` +
@@ -1920,6 +1921,27 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
     `</soapenv:Body>` +
     `</soapenv:Envelope>`
   )
+}
+
+/**
+ * D7 selectors, emitted only when the request actually carries them.
+ *
+ * The shared repository body serves every operation through one function module, so a helper
+ * deployed before the 2.8 interface would be handed an element it does not declare even on an
+ * unrelated operation such as READ_SCREEN. An absent selector therefore leaves the SOAP request
+ * unchanged instead of travelling as an empty element.
+ */
+function optionalRepositorySelectors(request: SapRepositoryRequest): string {
+  const selectors: ReadonlyArray<readonly [string, string | undefined]> = [
+    ["IV_TEXT_STATUS", request.textStatus],
+    ["IV_TEXT_LANGUAGE", request.textLanguage],
+    ["IV_TEXT_VERSION", request.textVersion],
+    ["IV_INCLUDE_SOURCE", request.includeSource ? "X" : undefined]
+  ]
+  return selectors
+    .filter((selector): selector is readonly [string, string] => selector[1] !== undefined)
+    .map(([name, value]) => xmlElement(name, value))
+    .join("")
 }
 
 function serializeGuiDefinitionPayload(request: SapRepositoryRequest): string[] {

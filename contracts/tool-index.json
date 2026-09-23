@@ -1,21 +1,21 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 137,
-  "readOnlyToolCount": 79,
+  "toolCount": 138,
+  "readOnlyToolCount": 80,
   "profiles": {
-    "readonly": 79,
+    "readonly": 80,
     "platform": 12,
-    "dev": 121,
+    "dev": 122,
     "config": 28,
     "ops": 35,
-    "full": 137
+    "full": 138
   },
   "groups": {
     "data": 5,
     "ddic": 26,
     "debug": 6,
     "enhancement": 22,
-    "form": 4,
+    "form": 5,
     "function": 7,
     "message": 4,
     "ops": 18,
@@ -1537,6 +1537,21 @@
       "sapHelper": null,
       "minHelperProtocol": null,
       "note": "通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。"
+    },
+    {
+      "name": "read_sapscript_form",
+      "group": "form",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.8"
     },
     {
       "name": "read_search_help",

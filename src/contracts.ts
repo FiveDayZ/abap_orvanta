@@ -275,7 +275,37 @@ const guiAdminPatch = z
   })
   .strict()
 
+/**
+ * D7-1: one SAPscript form read.
+ *
+ * `version` is deliberately absent. The shared body answers a non-empty version with
+ * `FORM_VERSION_UNSUPPORTED` because its single-version branch is not implemented, and a strict
+ * schema must not advertise an input the helper refuses; omitting the key makes the refusal a
+ * named validation error instead of a silent one.
+ */
+const readSapscriptFormSchema = z
+  .object({
+    connectionId: z.string().regex(/^[a-z0-9_-]{1,100}$/),
+    formName: z
+      .string()
+      .max(16)
+      .regex(/^(?:[A-Z][A-Z0-9_]*|\/[A-Z0-9_]+\/[A-Z][A-Z0-9_]*)$/),
+    language: z
+      .string()
+      .regex(/^[A-Z0-9]$/)
+      .optional(),
+    status: z.enum(["", "SAP", "CUS"]).default(""),
+    includeSource: z.boolean().default(false)
+  })
+  .strict()
+
 const toolContractsBase = {
+  read_sapscript_form: {
+    description:
+      "Read one SAPscript form (SE71) through the shared SAP repository helper: the ITCTA form header, the THEAD text header, and the form lines, pages, page windows, windows, paragraphs, strings and tab stops, with a deterministic SHA-256 fingerprint. Optional includeSource also returns the raw ID_DEF layout definition and reports whether that read succeeded. Reads the form active in the requested status and language. It does not read a single version, does not print or generate, and never changes SAP.",
+    inputSchema: readSapscriptFormSchema.shape,
+    annotations: { readOnlyHint: true }
+  },
   read_smartform: {
     description:
       "Read a standard or customer Smart Form as complete native SMARTFORM XML, with active/saved flags and a repository fingerprint. Requires separately deployed Z_ORVANTA_SMARTFORM_API and SAP display authorization. Saved reads may fall back to active when no draft exists; flags distinguish this. Does not generate or execute a function module.",

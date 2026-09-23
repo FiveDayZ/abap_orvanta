@@ -269,6 +269,18 @@ export interface SapRepositoryRequest {
   guiDefinition?: SapGuiDefinitionPayload | undefined
   source?: string[] | undefined
   expectedVersion?: string | undefined
+  /**
+   * D7 selectors for the form/text/style reads.
+   *
+   * Each one is emitted only when a caller actually supplies it. A helper deployed before the 2.8
+   * interface does not declare these IMPORTING parameters, and the shared body is reached through
+   * one function module for every operation, so sending a selector unconditionally would put an
+   * undeclared element in front of a 2.7 body for unrelated operations such as READ_SCREEN.
+   */
+  textStatus?: string | undefined
+  textLanguage?: string | undefined
+  textVersion?: string | undefined
+  includeSource?: boolean | undefined
 }
 
 export interface SapRepositoryResult extends SapHelperResult {
