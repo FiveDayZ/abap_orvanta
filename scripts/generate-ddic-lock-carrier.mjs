@@ -178,11 +178,17 @@ if (!offline) {
   assert.equal(live[0].trim(), `FUNCTION ${HELPER}.`, `unexpected live first line: ${live[0]}`)
   assert.match(String(live.at(-1)).trim(), /^ENDFUNCTION\./i, "unexpected live last line")
   const liveText = live.join("\n")
-  // Carrier ordering invariant (.doc/d6-carrier-ordering-invariant.md): the previous carrier must
-  // already be applied, or this payload would silently undo it.
+  // Carrier ordering invariant (.doc/d6-carrier-ordering-invariant.md): a carrier replaces the whole
+  // body, so it may only be applied on top of a helper that already contains every predecessor
+  // change. The check must therefore accept the protocol the previous carrier deployed: 1.12 became
+  // the live protocol on 2026-09-23 (carrier r26, marker 1.12 47A7813A). Listing it here is what lets
+  // the next carrier be generated at all; leaving it out made every subsequent run abort on its own
+  // precondition.
   assert.ok(
-    liveText.includes("PROTOCOL|MAX|1.10") || liveText.includes("PROTOCOL|MAX|1.11"),
-    "the deployed helper is not at protocol 1.10 yet: apply the previous carrier first"
+    liveText.includes("PROTOCOL|MAX|1.10") ||
+      liveText.includes("PROTOCOL|MAX|1.11") ||
+      liveText.includes("PROTOCOL|MAX|1.12"),
+    "the deployed helper is not at protocol 1.10, 1.11 or 1.12: apply the previous carrier first"
   )
   for (const op of REQUIRED_OPERATIONS) {
     // The resume operation was renamed in R2D: the deployed helper still carries

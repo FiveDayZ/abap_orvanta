@@ -1540,6 +1540,8 @@ function New-DdicFunctionSource {
         "  DATA lv_ap_expected_text TYPE string.",
         "  DATA lv_ap_actual_text TYPE string.",
         "  DATA lv_ap_rc_text TYPE c LENGTH 10.",
+        # 并发令牌：与读取路径发布的对象版本同构（CONCATENATE as4date as4time = 14 位）。
+        "  DATA lv_ap_current_version TYPE c LENGTH 14.",
         "  DATA ls_ap_requested TYPE dd03p.",
         "  DATA ls_ap_stored TYPE dd03p.",
         "  DATA lt_ap_requested TYPE TABLE OF dd03p.",
@@ -3261,6 +3263,23 @@ function New-DdicFunctionSource {
         "        ev_message = 'Append structure has an inactive version'.",
         "        ev_version = '1.12'. RETURN.",
         "      ENDIF.",
+        # 并发令牌：本操作不走 lv_write 通用管线（无 lv_object_type 派发），
+        # 必须在本地等价校验，否则 expectedVersion 形同虚设、丢失更新不可检测。
+        # 令牌与读取路径同构：活动版本 as4date + as4time（14 位）。
+        "      IF iv_expected_version IS INITIAL.",
+        "        ev_status = 'E'. ev_code = 'EXPECTED_VERSION_REQUIRED'.",
+        "        ev_message =",
+        "          'Existing append structure requires version token'.",
+        "        ev_version = '1.12'. RETURN.",
+        "      ENDIF.",
+        "      CONCATENATE ls_ap_header-as4date ls_ap_header-as4time",
+        "        INTO lv_ap_current_version.",
+        "      IF iv_expected_version <> lv_ap_current_version.",
+        "        ev_status = 'E'. ev_code = 'VERSION_CONFLICT'.",
+        "        ev_message =",
+        "          'Append structure changed since it was read'.",
+        "        ev_version = '1.12'. RETURN.",
+        "      ENDIF.",
         "      LOOP AT lt_ap_requested INTO ls_ap_requested.",
         "        IF ls_ap_requested-fieldname IS INITIAL",
         "           OR ls_ap_requested-rollname IS INITIAL.",
@@ -4481,8 +4500,11 @@ function New-DdicFunctionSource {
         "    ev_message = 'Dictionary object is not a transparent table'.",
         "    ev_version = '1.3'. RETURN.",
         "  ENDIF.",
+        # APPEND 结构也是结构：其字段可读，且 SQLTAB 指向激活目标基表。
+        # 只认 INTTAB 会让 append 的读取侧完全不可达（读不到 baseTable / 版本令牌）。
         "  IF lv_object_type = 'STRU' AND lv_existing = 'X'",
-        "     AND ls_current_dd02v-tabclass <> 'INTTAB'.",
+        "     AND ls_current_dd02v-tabclass <> 'INTTAB'",
+        "     AND ls_current_dd02v-tabclass <> 'APPEND'.",
         "    ev_status = 'E'. ev_code = 'OBJECT_TYPE_MISMATCH'.",
         "    ev_message = 'Dictionary object is not a structure'.",
         "    ev_version = '1.4'. RETURN.",

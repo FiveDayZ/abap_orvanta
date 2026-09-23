@@ -1525,7 +1525,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (UPSERT_APPEND_STRUCTURE_FIELDS), which is still a static inference and not an observation. Unlike the other DDIC writes this one cannot create its target: the append structure must exist and is created in SE11. The helper branch and the arm are also uncompiled - the ABAP has never been through an F8, so the DD_TBFD_PUT parameter names used here are taken from the source quotation in .doc/d6-5-activation-sufficiency-20260922.md, not from a build."
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (UPSERT_APPEND_STRUCTURE_FIELDS), which is still a static inference and not an observation; the capability probe does now report this tool available against the live 1.12 helper. Unlike the other DDIC writes this one cannot create its target: the append structure must exist and is created in SE11. The arm itself has since compiled: the 1.12 helper was deployed on 2026-09-23 (carrier r26, marker 1.12 47A7813A, 33 capability rows), the first F8 that accepted the DD_TBFD_PUT parameter names. Compilation is not execution, so the write path, its runtime DD_TBFD_PUT semantics and the append-removal edge case remain unobserved. Reading an append structure also still needs the widened STRU guard (TABCLASS APPEND) deployed before a caller can obtain the baseTable or the expectedVersion token this tool requires."
     },
     {
       "tool": "upsert_ddic_data_element",
