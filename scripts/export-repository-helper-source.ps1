@@ -188,6 +188,72 @@ if ($sqlOperatorErrors.Count -gt 0) {
     throw "Open SQL cannot use CP (use LIKE): $($sqlOperatorErrors[0])"
 }
 
+# ---- canonical parameter interface --------------------------------------------------------------
+# The 2.8 repository body uses parameters the 2.7 interface does not declare (IV_TEXT_STATUS and
+# friends), so the carrier cannot only replace the body: it has to extend the function module's
+# parameter interface first. That extension is expressed as the same installer statements the
+# bootstrap script itself uses (`ls_import-parameter` / `ls_export-parameter` / `ls_tables-parameter`
+# rows), which the generator turns into a merge against the live interface.
+#
+# The blocks are read from the script text rather than from a second injected capture: the statement
+# that consumes them is one array literal spanning several hundred kilobytes, and PowerShell's AST does
+# not report a containing statement for that region (only the whole function matches), so there is no
+# reliable statement boundary to inject in front of. The blocks themselves are pure literal string
+# arrays, and the shape of every extracted line is asserted below.
+function Get-InterfaceBlockLines {
+    param([string]$Text, [string]$Variable)
+    $pattern = "\`$$Variable\s*=\s*if\s*\(\`$usesRepositoryBody\)\s*\{"
+    $match = [regex]::Match($Text, $pattern)
+    if (-not $match.Success) { throw "interface block not found in the bootstrap script: `$$Variable" }
+    $index = $match.Index + $match.Length
+    $depth = 1
+    $end = $index
+    while ($end -lt $Text.Length -and $depth -gt 0) {
+        $character = $Text[$end]
+        if ($character -eq '{') { $depth++ }
+        elseif ($character -eq '}') { $depth-- }
+        $end++
+    }
+    if ($depth -ne 0) { throw "unbalanced braces in `$$Variable" }
+    $block = $Text.Substring($index, $end - $index - 1)
+    $blockLines = @([regex]::Matches($block, '"([^"]*)"') | ForEach-Object { $_.Groups[1].Value })
+    if ($blockLines.Count -eq 0) { throw "`$$Variable declares no statement" }
+    foreach ($blockLine in $blockLines) {
+        if ($blockLine -notmatch "^(CLEAR ls_(import|export|tables)\.|ls_(import|export|tables)-[a-z]+ = '[^']*'\.|APPEND ls_(import|export|tables) TO lt_(import|export|tables)\.)$") {
+            throw "unexpected interface statement in `$$Variable`: $blockLine"
+        }
+        if ($blockLine.Contains('$')) {
+            throw "interface statement contains a PowerShell variable and would not survive extraction: $blockLine"
+        }
+    }
+    return $blockLines
+}
+
+$scriptText = Get-Content $scriptPath -Raw
+$importLines = @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceImportLines')
+$exportLines = @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceExportLines')
+$tableLines = @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceTableLines')
+if (($importLines.Count + $exportLines.Count + $tableLines.Count) -eq 0) {
+    throw "the repository interface declared no parameter; the body cannot be deployed without it"
+}
+$interfaceParameters = @(
+    @($importLines + $exportLines + $tableLines) |
+    ForEach-Object { [regex]::Match($_, "-parameter\s*=\s*'([A-Z0-9_]+)'") } |
+    Where-Object { $_.Success } | ForEach-Object { $_.Groups[1].Value }
+)
+if ($interfaceParameters.Count -eq 0) {
+    throw "the repository interface lines declare no named parameter"
+}
+$duplicateParameters = @($interfaceParameters | Group-Object | Where-Object { $_.Count -gt 1 })
+if ($duplicateParameters.Count -gt 0) {
+    throw "the repository interface declares $($duplicateParameters[0].Name) more than once"
+}
+foreach ($interfaceLine in @($importLines + $exportLines + $tableLines)) {
+    if ($interfaceLine.Length -gt 72) {
+        throw "interface line exceeds 72 characters: $interfaceLine"
+    }
+}
+
 # ---- capability table: the script's own declaration is the expectation -------------------------
 $raw = Get-Content $scriptPath -Raw
 $tableMatch = [regex]::Match(
@@ -256,6 +322,12 @@ $document = [pscustomobject]@{
     lineCount             = $lines.Count
     sourceSha256          = $sha
     bootstrapScript       = "scripts/bootstrap-sap-helper.ps1"
+    interfaceLines        = [pscustomobject]@{
+        import     = $importLines
+        export     = $exportLines
+        tables     = $tableLines
+        parameters = $interfaceParameters
+    }
     lines                 = $lines
 }
 
@@ -269,5 +341,7 @@ Write-Host "  lines      : $($lines.Count)"
 Write-Host "  sha256     : $sha"
 Write-Host "  maxProtocol: $declaredMax"
 Write-Host "  operations : $($operations.Count)"
+Write-Host "  interface  : $($interfaceParameters.Count) parameter(s) - $($importLines.Count) import /" `
+    "$($exportLines.Count) export / $($tableLines.Count) tables statement(s)"
 Write-Host "  written to : $Out"
 Write-Host "  no SAP connection, no install, no deploy: run the generated in-SAP report yourself (F8)"

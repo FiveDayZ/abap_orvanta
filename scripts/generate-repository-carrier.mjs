@@ -65,7 +65,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r01.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r02.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -176,6 +176,94 @@ const forbidden = body.filter((l) =>
 assert.deepEqual(forbidden, [], `body uses ABAP 7.40+ constructor syntax: ${forbidden[0]}`)
 
 // ------------------------------------------------------------------------------------------------
+// Canonical parameter interface. The 2.8 body uses parameters the deployed 2.7 interface does not
+// declare, so a body-only carrier aborts with `GENERATE failed: field "IV_TEXT_STATUS" is unknown`.
+// The interface therefore travels with the carrier as the installer's own parameter statements, and
+// the report merges them into the live interface before it touches the body.
+// ------------------------------------------------------------------------------------------------
+const interfaceLines = canonical.interfaceLines ?? {}
+const importStatements = interfaceLines.import ?? []
+const exportStatements = interfaceLines.export ?? []
+const tableStatements = interfaceLines.tables ?? []
+assert.ok(
+  importStatements.length + exportStatements.length + tableStatements.length > 0,
+  "the canonical JSON has no interfaceLines: re-run scripts/export-repository-helper-source.ps1"
+)
+
+// One canonical parameter per block: CLEAR ls_x. / ls_x-<field> = '..'. / APPEND ls_x TO lt_x.
+const interfaceRows = []
+const collectInterfaceRows = (statements, kind, table, row) => {
+  let current = null
+  // The canonical blocks may open or close with a bare `CLEAR ls_x.` reset, which declares nothing and
+  // is therefore dropped instead of being treated as an unclosed block.
+  const isReset = (block) => block !== null && !block.name && block.fields.length === 0
+  for (const statement of statements) {
+    if (/^CLEAR ls_\w+\.$/.test(statement)) {
+      assert.ok(
+        current === null || isReset(current),
+        `interface statement block is not closed: ${statement}`
+      )
+      current = { kind, table, row, name: null, fields: [] }
+      continue
+    }
+    assert.ok(current, `interface statement outside a parameter block: ${statement}`)
+    if (/^APPEND ls_\w+ TO lt_\w+\.$/.test(statement)) {
+      assert.ok(current.name, `interface block appends an unnamed parameter: ${statement}`)
+      interfaceRows.push(current)
+      current = null
+      continue
+    }
+    const field = /^ls_\w+-([a-z]+) = '([^']*)'\.$/.exec(statement)
+    assert.ok(field, `unexpected interface statement: ${statement}`)
+    if (field[1] === "parameter") {
+      assert.equal(current.name, null, `interface block declares two parameters: ${statement}`)
+      current.name = field[2]
+    }
+    current.fields.push({ field: field[1], value: field[2] })
+  }
+  assert.ok(
+    current === null || isReset(current),
+    "the last interface statement block is not closed"
+  )
+}
+collectInterfaceRows(importStatements, "I", "lt_fm_import", "ls_fm_import")
+collectInterfaceRows(exportStatements, "E", "lt_fm_export", "ls_fm_export")
+collectInterfaceRows(tableStatements, "T", "lt_fm_tables", "ls_fm_tables")
+const interfaceParameters = interfaceRows.map((row) => row.name)
+assert.equal(
+  new Set(interfaceParameters).size,
+  interfaceParameters.length,
+  "the canonical interface declares a parameter twice"
+)
+// The body may only reference parameters the canonical interface declares; anything else has to be a
+// local declaration. This is the offline form of the GENERATE error the first carrier revision hit.
+const localDeclarations = new Set()
+let declaring = false
+for (const line of body) {
+  const trimmed = line.trim()
+  if (/^(?:DATA|CONSTANTS|STATICS|TYPES|FIELD-SYMBOLS|CLASS-DATA)\b/.test(trimmed)) declaring = true
+  if (declaring) {
+    for (const token of trimmed.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g)) {
+      localDeclarations.add(token[1].toUpperCase())
+    }
+    if (trimmed.endsWith(".")) declaring = false
+  }
+}
+const declaredParameters = new Set(interfaceParameters)
+const referencedParameters = new Set()
+for (const line of body) {
+  for (const match of line.matchAll(/\b((?:IV|EV|ES|ET|CT|IT|IS|CV|CS)_[A-Z0-9_]+)\b/g)) {
+    referencedParameters.add(match[1])
+  }
+}
+// Every parameter the body references must be declared somewhere: the canonical interface, the live
+// interface, or a local declaration in the body. The live interface is only known after the live read
+// below, so the final decision happens there.
+const referencedCandidates = [...referencedParameters].filter(
+  (name) => !declaredParameters.has(name) && !localDeclarations.has(name)
+)
+
+// ------------------------------------------------------------------------------------------------
 // SOURCE|HASH: the installer hashes the body while its four 16-character placeholders are still in
 // place and then writes the digest into them (no length change), so reproduce that exactly or the
 // deployed helper would publish the literal placeholders.
@@ -226,6 +314,21 @@ if (!offline) {
   assert.equal(live[0].trim(), `FUNCTION ${HELPER}.`, `unexpected live first line: ${live[0]}`)
   assert.match(String(live.at(-1)).trim(), /^ENDFUNCTION\./i, "unexpected live last line")
   const liveText = live.join("\n")
+  // The deployed interface is authoritative for the parameters the carrier does not extend, so the
+  // body may reference anything the live helper already names. A name that appears nowhere is a real
+  // gap: the deployed body would fail to generate exactly like the first carrier revision did.
+  const liveNames = new Set()
+  for (const match of liveText.matchAll(/\b((?:IV|EV|ES|ET|CT|IT|IS|CV|CS)_[A-Z0-9_]+)\b/g)) {
+    liveNames.add(match[1])
+  }
+  const undeclared = referencedCandidates.filter((name) => !liveNames.has(name))
+  assert.deepEqual(
+    undeclared,
+    [],
+    `the body references parameter(s) that neither the live interface nor this carrier declares: ${undeclared
+      .slice(0, 6)
+      .join(", ")}`
+  )
   // Carrier ordering invariant (.doc/d6-carrier-ordering-invariant.md): a carrier replaces the whole
   // body, so it may only be applied on top of a helper that already contains every predecessor
   // change. The repository family deployed 2.7 as its highest protocol (2026-09-23); every protocol
@@ -411,13 +514,18 @@ if (!offline) {
 }
 
 // ------------------------------------------------------------------------------------------------
-// Render the report. The carrier splices the BODY into the live include instead of replacing the whole
-// include, because the function module's parameter interface is part of that source text
-// (`FUNCTION name` + IMPORTING/EXPORTING/CHANGING/TABLES ... `.`). Replacing the whole include would
-// drop the interface - the DDIC carrier learned that the expensive way (its first revision wrote
-// `FUNCTION name.` + body + `ENDFUNCTION.` and dropped VALUE(IV_SCREEN) and CT_FLOWLOGIC). This
-// carrier keeps every line up to the end of the interface and inserts the body after it, which is also
-// what the bootstrap installer does.
+// Render the report. The carrier deploys in two phases, because the 2.8 body needs both a new
+// parameter interface and a new body:
+//
+//   phase A (interface) - RPY_FUNCTIONMODULE_READ the live interface, append every canonical parameter
+//     that is missing, write it back with RPY_FUNCTIONMODULE_INSERT (the same API the helper's
+//     CREATE_FUNCTION_MODULE branch uses) while passing the source back unchanged, then re-read and
+//     verify. A classic function module keeps its parameters in the function module's parameter
+//     tables, not in the include text, so this is the only way to extend the interface.
+//   phase B (body) - re-read the include, keep every line up to the end of the parameter interface and
+//     splice the canonical body after it (INSERT REPORT + GENERATE), exactly as the earlier revision
+//     did. Replacing the whole include would drop the interface comment block: the DDIC carrier
+//     learned that the expensive way.
 // ------------------------------------------------------------------------------------------------
 const payload = [`FUNCTION ${HELPER}.`, ...hashedBody, "ENDFUNCTION."]
 const bodyLines = hashedBody
@@ -438,7 +546,7 @@ report.push(
 )
 report.push(
   live
-    ? `* Baseline : ${live.length} live lines; this report keeps the interface and replaces the body`
+    ? `* Baseline : ${live.length} live lines; this report pins that count, then extends the interface`
     : "* Baseline : NOT READ (generated with --offline); the report does not pin the current line count"
 )
 report.push(
@@ -458,11 +566,24 @@ report.push(
 )
 report.push(`* Hash     : SOURCE|HASH recomputed as the installer does -> ${sourceHash}`)
 report.push(`* Digest   : payload sha256 -> ${payloadDigest}`)
-report.push("* Apply    : reads the live include, keeps every line up to the end of the parameter")
-report.push("*            interface, inserts the body after it, then INSERT REPORT + GENERATE.")
+report.push(
+  "* Apply    : A) extend the live interface with the canonical parameters below and verify by"
+)
+report.push(
+  "*            re-reading it; B) re-read the include, keep every line up to the end of the"
+)
+report.push(
+  "*            parameter interface, splice the body after it, then INSERT REPORT + GENERATE."
+)
+report.push(
+  `* Params   : ${interfaceParameters.length} canonical parameter(s) travel with this carrier.`
+)
 report.push("")
 report.push(`CONSTANTS: c_group  TYPE c LENGTH 30 VALUE ${literal(FUNCTION_GROUP)},`)
 report.push(`           c_marker TYPE c LENGTH 40 VALUE ${literal(MARKER)},`)
+report.push(`           c_func   TYPE c LENGTH 30 VALUE ${literal(HELPER)},`)
+report.push(`           c_request TYPE c LENGTH 10 VALUE ${literal(canonical.transport ?? "")},`)
+report.push(`           c_hash   TYPE c LENGTH 16 VALUE '${sourceHash.slice(0, 16)}',`)
 report.push(`           c_digest TYPE c LENGTH 16 VALUE '${payloadDigest}'${live ? "," : "."}`)
 if (live) report.push(`           c_lines  TYPE i VALUE ${live.length}.`)
 report.push("")
@@ -482,6 +603,42 @@ report.push("      lv_suffix TYPE tfdir-include,")
 report.push("      lv_msg TYPE string,")
 report.push("      lv_msg_line TYPE i,")
 report.push("      lv_msg_word TYPE string.")
+report.push("")
+report.push(
+  "* The canonical parameter interface: one row per parameter the 2.8 body needs. I = IMPORTING,"
+)
+report.push(
+  "* E = EXPORTING, T = TABLES; dbfield/optional/dbstruct mirror the installer's own rows."
+)
+report.push("TYPES: BEGIN OF ty_canonical,")
+report.push("         kind TYPE c LENGTH 1,")
+report.push("         name TYPE rsimp-parameter,")
+report.push("         dbfield TYPE rsimp-dbfield,")
+report.push("         optional TYPE rsimp-optional,")
+report.push("         dbstruct TYPE rstbl-dbstruct,")
+report.push("       END OF ty_canonical.")
+report.push("")
+report.push("DATA: lt_canonical TYPE TABLE OF ty_canonical,")
+report.push("      ls_canonical TYPE ty_canonical,")
+report.push("      lt_fm_import TYPE TABLE OF rsimp,")
+report.push("      ls_fm_import TYPE rsimp,")
+report.push("      lt_fm_export TYPE TABLE OF rsexp,")
+report.push("      ls_fm_export TYPE rsexp,")
+report.push("      lt_fm_tables TYPE TABLE OF rstbl,")
+report.push("      ls_fm_tables TYPE rstbl,")
+report.push("      lt_fm_change TYPE TABLE OF rscha,")
+report.push("      lt_fm_except TYPE TABLE OF rsexc,")
+report.push("      lt_fm_docu TYPE TABLE OF rsfdo,")
+report.push("      lt_fm_source TYPE TABLE OF rssource,")
+report.push("      lv_func TYPE rs38l-name,")
+report.push("      lv_pool TYPE rs38l-area,")
+report.push("      lv_remote TYPE rs38l-remote,")
+report.push("      lv_short TYPE tftit-stext,")
+report.push("      lv_global TYPE rs38l-global,")
+report.push("      lv_update TYPE rs38l-utask,")
+report.push("      lv_present TYPE c LENGTH 1,")
+report.push("      lv_missing TYPE i,")
+report.push("      lv_added TYPE i.")
 report.push("")
 report.push("START-OF-SELECTION.")
 report.push(`  WRITE: / '${MARKER}'.`)
@@ -514,10 +671,13 @@ report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  DESCRIBE TABLE lt_cur LINES lv_count.")
 report.push("")
-report.push("* Idempotency: refuse to apply this carrier twice.")
+report.push(
+  "* Idempotency: refuse to apply this carrier twice. The marker only exists in this report's"
+)
+report.push("* header, so the deployed body is recognised by the SOURCE|HASH it publishes as well.")
 report.push("  CLEAR lv_found.")
 report.push("  LOOP AT lt_cur INTO ls_cur.")
-report.push("    IF ls_cur-line CS c_marker.")
+report.push("    IF ls_cur-line CS c_marker OR ls_cur-line CS c_hash.")
 report.push("      lv_found = 'X'. EXIT.")
 report.push("    ENDIF.")
 report.push("  ENDLOOP.")
@@ -537,6 +697,219 @@ if (live) {
   report.push("  ENDIF.")
   report.push("")
 }
+// ---- phase A: extend the parameter interface ----------------------------------------------------
+report.push(
+  "* ---- A) canonical parameter interface ------------------------------------------------"
+)
+report.push("  REFRESH: lt_canonical, lt_fm_import, lt_fm_export, lt_fm_tables,")
+report.push("    lt_fm_change, lt_fm_except, lt_fm_docu, lt_fm_source.")
+for (const row of interfaceRows) {
+  report.push(`  CLEAR ls_canonical. ls_canonical-kind = '${row.kind}'.`)
+  report.push(`  ls_canonical-name = ${literal(row.name)}.`)
+  for (const field of row.fields) {
+    if (field.field === "parameter") continue
+    report.push(`  ls_canonical-${field.field} = ${literal(field.value)}.`)
+  }
+  report.push("  APPEND ls_canonical TO lt_canonical.")
+}
+report.push("")
+report.push("  lv_func = c_func.")
+report.push("  CLEAR: lv_pool, lv_remote, lv_short, lv_global, lv_update.")
+report.push("  CALL FUNCTION 'RPY_FUNCTIONMODULE_READ'")
+report.push("    EXPORTING")
+report.push("      functionname = lv_func")
+report.push("    IMPORTING")
+report.push("      global_flag = lv_global")
+report.push("      remote_call = lv_remote")
+report.push("      update_task = lv_update")
+report.push("      short_text = lv_short")
+report.push("      function_pool = lv_pool")
+report.push("    TABLES")
+report.push("      import_parameter = lt_fm_import")
+report.push("      changing_parameter = lt_fm_change")
+report.push("      export_parameter = lt_fm_export")
+report.push("      tables_parameter = lt_fm_tables")
+report.push("      exception_list = lt_fm_except")
+report.push("      documentation = lt_fm_docu")
+report.push("      source = lt_fm_source")
+report.push("    EXCEPTIONS")
+report.push("      OTHERS = 1.")
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'ERROR: cannot read the function module interface', sy-subrc.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  IF lv_pool IS INITIAL. lv_pool = c_group. ENDIF.")
+report.push("  IF lv_remote IS INITIAL. lv_remote = 'R'. ENDIF.")
+report.push("  IF lv_short IS INITIAL. lv_short = 'ORVANTA MCP controlled entry point'. ENDIF.")
+report.push("")
+report.push(
+  "* Append only what is missing: the live interface stays the base, so no parameter can be lost."
+)
+report.push("  CLEAR lv_added.")
+report.push("  LOOP AT lt_canonical INTO ls_canonical.")
+report.push("    CLEAR lv_present.")
+report.push("    CASE ls_canonical-kind.")
+report.push("      WHEN 'I'.")
+report.push("        LOOP AT lt_fm_import TRANSPORTING NO FIELDS")
+report.push("          WHERE parameter = ls_canonical-name.")
+report.push("          lv_present = 'X'. EXIT.")
+report.push("        ENDLOOP.")
+report.push("      WHEN 'E'.")
+report.push("        LOOP AT lt_fm_export TRANSPORTING NO FIELDS")
+report.push("          WHERE parameter = ls_canonical-name.")
+report.push("          lv_present = 'X'. EXIT.")
+report.push("        ENDLOOP.")
+report.push("      WHEN 'T'.")
+report.push("        LOOP AT lt_fm_tables TRANSPORTING NO FIELDS")
+report.push("          WHERE parameter = ls_canonical-name.")
+report.push("          lv_present = 'X'. EXIT.")
+report.push("        ENDLOOP.")
+report.push("    ENDCASE.")
+report.push("    IF lv_present IS INITIAL.")
+report.push("      CASE ls_canonical-kind.")
+report.push("        WHEN 'I'.")
+report.push("          CLEAR ls_fm_import.")
+report.push("          ls_fm_import-parameter = ls_canonical-name.")
+report.push("          ls_fm_import-dbfield = ls_canonical-dbfield.")
+report.push("          ls_fm_import-optional = ls_canonical-optional.")
+report.push("          APPEND ls_fm_import TO lt_fm_import.")
+report.push("        WHEN 'E'.")
+report.push("          CLEAR ls_fm_export.")
+report.push("          ls_fm_export-parameter = ls_canonical-name.")
+report.push("          ls_fm_export-dbfield = ls_canonical-dbfield.")
+report.push("          APPEND ls_fm_export TO lt_fm_export.")
+report.push("        WHEN 'T'.")
+report.push("          CLEAR ls_fm_tables.")
+report.push("          ls_fm_tables-parameter = ls_canonical-name.")
+report.push("          ls_fm_tables-dbstruct = ls_canonical-dbstruct.")
+report.push("          APPEND ls_fm_tables TO lt_fm_tables.")
+report.push("      ENDCASE.")
+report.push("      lv_added = lv_added + 1.")
+report.push("      WRITE: / 'Interface + :', ls_canonical-name.")
+report.push("    ENDIF.")
+report.push("  ENDLOOP.")
+report.push("")
+report.push("  IF lv_added > 0.")
+report.push("    CALL FUNCTION 'ENQUEUE_ESFUNCTION'")
+report.push("      EXPORTING")
+report.push("        funcname = lv_func")
+report.push("        mode_tfdir = 'X'")
+report.push("      EXCEPTIONS")
+report.push("        foreign_lock = 1")
+report.push("        OTHERS = 2.")
+report.push("    IF sy-subrc <> 0.")
+report.push("      WRITE: / 'ERROR: the function module is locked', sy-subrc.")
+report.push("      RETURN.")
+report.push("    ENDIF.")
+report.push("    CALL FUNCTION 'RPY_FUNCTIONMODULE_INSERT'")
+report.push("      EXPORTING")
+report.push("        funcname = lv_func")
+report.push("        function_pool = lv_pool")
+report.push("        remote_call = lv_remote")
+report.push("        short_text = lv_short")
+report.push("        corrnum = c_request")
+report.push("      TABLES")
+report.push("        import_parameter = lt_fm_import")
+report.push("        changing_parameter = lt_fm_change")
+report.push("        export_parameter = lt_fm_export")
+report.push("        tables_parameter = lt_fm_tables")
+report.push("        exception_list = lt_fm_except")
+report.push("        parameter_docu = lt_fm_docu")
+report.push("        source = lt_fm_source")
+report.push("      EXCEPTIONS")
+report.push("        OTHERS = 1.")
+report.push("    IF sy-subrc <> 0.")
+report.push("      WRITE: / 'ERROR: the interface extension failed', sy-subrc, sy-msgid, sy-msgno.")
+report.push("      CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_func.")
+report.push("      ROLLBACK WORK.")
+report.push("      RETURN.")
+report.push("    ENDIF.")
+report.push("    CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_func.")
+report.push("    COMMIT WORK AND WAIT.")
+report.push("    WRITE: / 'Interface   : +', lv_added, 'canonical parameter(s) added.'.")
+report.push("  ELSE.")
+report.push("    WRITE: / 'Interface   : all canonical parameters already present.'.")
+report.push("  ENDIF.")
+report.push("")
+report.push("* Verify the interface from SAP, not from the in-memory tables.")
+report.push("  REFRESH: lt_fm_import, lt_fm_export, lt_fm_tables.")
+report.push("  CALL FUNCTION 'RPY_FUNCTIONMODULE_READ'")
+report.push("    EXPORTING")
+report.push("      functionname = lv_func")
+report.push("    IMPORTING")
+report.push("      global_flag = lv_global")
+report.push("      remote_call = lv_remote")
+report.push("      update_task = lv_update")
+report.push("      short_text = lv_short")
+report.push("      function_pool = lv_pool")
+report.push("    TABLES")
+report.push("      import_parameter = lt_fm_import")
+report.push("      changing_parameter = lt_fm_change")
+report.push("      export_parameter = lt_fm_export")
+report.push("      tables_parameter = lt_fm_tables")
+report.push("      exception_list = lt_fm_except")
+report.push("      documentation = lt_fm_docu")
+report.push("      source = lt_fm_source")
+report.push("    EXCEPTIONS")
+report.push("      OTHERS = 1.")
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'ERROR: cannot re-read the function module interface', sy-subrc.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  CLEAR lv_missing.")
+report.push("  LOOP AT lt_canonical INTO ls_canonical.")
+report.push("    CLEAR lv_present.")
+report.push("    CASE ls_canonical-kind.")
+report.push("      WHEN 'I'.")
+report.push("        LOOP AT lt_fm_import TRANSPORTING NO FIELDS")
+report.push("          WHERE parameter = ls_canonical-name.")
+report.push("          lv_present = 'X'. EXIT.")
+report.push("        ENDLOOP.")
+report.push("      WHEN 'E'.")
+report.push("        LOOP AT lt_fm_export TRANSPORTING NO FIELDS")
+report.push("          WHERE parameter = ls_canonical-name.")
+report.push("          lv_present = 'X'. EXIT.")
+report.push("        ENDLOOP.")
+report.push("      WHEN 'T'.")
+report.push("        LOOP AT lt_fm_tables TRANSPORTING NO FIELDS")
+report.push("          WHERE parameter = ls_canonical-name.")
+report.push("          lv_present = 'X'. EXIT.")
+report.push("        ENDLOOP.")
+report.push("    ENDCASE.")
+report.push("    IF lv_present IS INITIAL.")
+report.push("      lv_missing = lv_missing + 1.")
+report.push(
+  "      WRITE: / 'ERROR: interface parameter missing after the update:', ls_canonical-name."
+)
+report.push("    ENDIF.")
+report.push("  ENDLOOP.")
+report.push("  IF lv_missing > 0.")
+report.push(
+  "    WRITE: / 'ERROR: the interface still lacks', lv_missing, 'canonical parameter(s).'."
+)
+report.push("    WRITE: / '  the body was not touched; fix the interface before re-running.'.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push(
+  "  DESCRIBE TABLE lt_canonical LINES lv_count.",
+  "  WRITE: / 'Interface   : verified', lv_count, 'canonical parameter(s) in SAP.'."
+)
+report.push("")
+report.push(
+  "* ---- B) canonical body ---------------------------------------------------------------"
+)
+report.push(
+  "* Re-read the include: phase A rewrites the interface while keeping the source unchanged."
+)
+report.push("  REFRESH lt_cur.")
+report.push("  READ REPORT lv_name INTO lt_cur.")
+report.push("  IF sy-subrc <> 0 OR lt_cur IS INITIAL.")
+report.push("    WRITE: / 'ERROR: cannot re-read the function group include', lv_name.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  DESCRIBE TABLE lt_cur LINES lv_count.")
+report.push("  WRITE: / 'Body phase  : include has', lv_count, 'lines after the interface phase.'.")
+report.push("")
 report.push("  READ TABLE lt_cur INTO ls_cur INDEX 1.")
 report.push("  lv_head = ls_cur-line.")
 report.push("  TRANSLATE lv_head TO UPPER CASE.")
