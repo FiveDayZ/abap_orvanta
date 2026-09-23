@@ -226,6 +226,7 @@ export type SapRepositoryOperation =
   // D7 second shape: SmartStyles are read in-process by the same shared repository body. Form S
   // uses SSF_READ_STYLE (STXS* family), form P converts a legacy SAPscript style.
   | "READ_SMARTSTYLE"
+  | "READ_ADOBE_FORM"
 
 export type SapStructureRow = Record<string, string>
 

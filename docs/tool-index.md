@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：139
-- 只读工具：81
+- 工具总数：140
+- 只读工具：82
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,17 +10,17 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 81 |
+| profile: readonly | 82 |
 | profile: platform | 12 |
-| profile: dev | 123 |
+| profile: dev | 124 |
 | profile: config | 28 |
 | profile: ops | 35 |
-| profile: full | 139 |
+| profile: full | 140 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
 | 分组: enhancement | 22 |
-| 分组: form | 6 |
+| 分组: form | 7 |
 | 分组: function | 7 |
 | 分组: message | 4 |
 | 分组: ops | 18 |
@@ -109,6 +109,7 @@
 | `read_abap_message_class` | message | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.7) |
 | `read_abap_screen` | ui | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
 | `read_abap_table` | data | dev, config, ops | 只读 | target-specific | — |
+| `read_adobe_form` | form | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.8) |
 | `read_application_log` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_LOG_READ |
 | `read_background_job_details` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_OPS_READ |
 | `read_background_job_log` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_OPS_READ |

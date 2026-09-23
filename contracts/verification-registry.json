@@ -1204,6 +1204,18 @@
       "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (READ_SMARTSTYLE), which is still a static inference and not an observation. The READ_SMARTSTYLE branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed and a real read is observed."
     },
     {
+      "tool": "read_adobe_form",
+      "helper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": null,
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (READ_ADOBE_FORM), which is still a static inference and not an observation. The READ_ADOBE_FORM branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed and a real read is observed. The interface and context read paths are not implemented and are reported through interfaceAvailable=false and unsupported=[interface, context]."
+    },
+    {
       "tool": "read_search_help",
       "helper": "Z_ORVANTA_MCP_DDIC_API",
       "availabilityBasis": "protocol+operations",

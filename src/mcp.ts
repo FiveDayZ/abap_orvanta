@@ -180,6 +180,9 @@ export function createMcpServer(
   registerTool("read_smartstyle", toolContracts.read_smartstyle, async (input) =>
     invoke("read_smartstyle", () => tools.readSmartstyle(input))
   )
+  registerTool("read_adobe_form", toolContracts.read_adobe_form, async (input) =>
+    invoke("read_adobe_form", () => tools.readAdobeForm(input))
+  )
   registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
     invoke("read_abap_screen", () => tools.readAbapScreen(input))
   )

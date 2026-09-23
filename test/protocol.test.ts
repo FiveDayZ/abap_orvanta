@@ -99,6 +99,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_abap_message_class",
       "read_abap_screen",
       "read_abap_table",
+      "read_adobe_form",
       "read_application_log",
       "read_background_job_details",
       "read_background_job_log",

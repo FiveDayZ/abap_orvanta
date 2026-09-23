@@ -317,6 +317,20 @@ const readSmartstyleSchema = z
   })
   .strict()
 
+const readAdobeFormSchema = z
+  .object({
+    connectionId: z.string().regex(/^[a-z0-9_-]{1,100}$/),
+    formName: z
+      .string()
+      .max(30)
+      .regex(/^(?:[A-Z][A-Z0-9_]*|\/[A-Z0-9_]+\/[A-Z][A-Z0-9_]*)$/),
+    language: z
+      .string()
+      .regex(/^[A-Z0-9]$/)
+      .optional()
+  })
+  .strict()
+
 const toolContractsBase = {
   read_sapscript_form: {
     description:
@@ -328,6 +342,12 @@ const toolContractsBase = {
     description:
       "Read one SmartStyle or legacy SAPscript style (SE72) through the shared SAP repository helper: the SSFCATS header plus the paragraph, character-format and tab-stop rows, with a deterministic SHA-256 fingerprint. mode=S reads the STXS* SmartStyle family through SSF_READ_STYLE and also returns the variant list when no single variant was requested; mode=P converts a legacy SAPscript style through SSF_READ_SAPSCRIPT_STYLE. active selects the ACTIVE key column (A or I), variant narrows to one variant. Optional includeCss also returns the CSS conversion with its MIME type and reports whether the converted length matches the emitted body. It does not read a single version, does not activate or change a style, does not print or generate, and never changes SAP.",
     inputSchema: readSmartstyleSchema.shape,
+    annotations: { readOnlyHint: true }
+  },
+  read_adobe_form: {
+    description:
+      "Read one Adobe form layout (SFP) through the shared SAP repository helper: the runtime XDP of the active state and empty ID as base64, with the form's own state, dirty flag, ID, requested and master language, the layout byte length, and a SHA-256 of the returned bytes. It reports interfaceAvailable=false and unsupported=[interface, context] because the Adobe interface and context read paths are not implemented; those are stated explicitly rather than returned as empty objects. A layout larger than 1 MiB is capped and reported through truncated, and the hash is withheld for a capped layout. It does not read the interface definition, does not read a single version, does not print, activate or generate, and never changes SAP.",
+    inputSchema: readAdobeFormSchema.shape,
     annotations: { readOnlyHint: true }
   },
   read_smartform: {

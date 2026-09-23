@@ -202,6 +202,40 @@ interface SmartstyleDefinition {
   fingerprint: string
 }
 
+interface ReadAdobeFormInput {
+  formName: string
+  language?: string | undefined
+  connectionId: string
+}
+
+/**
+ * The XDP travels as base64 because the payload channel carries characters only. `xdpLength` is the
+ * byte length the helper found, which can exceed `xdpBytesReturned` when a very large layout was
+ * capped; in that case the body is a prefix and `xdpSha256` is withheld rather than published for a
+ * partial document.
+ *
+ * `interfaceAvailable` and `unsupported` are stated by the decoder, not read from the helper: the
+ * Adobe interface and context read paths are not implemented, and an empty object would report a
+ * gap as an absence.
+ */
+interface AdobeFormDefinition {
+  connectionId: string
+  objectName: string
+  language: string
+  masterLanguage: string
+  state: string
+  dirty: boolean
+  id: string
+  interfaceAvailable: false
+  unsupported: string[]
+  xdp: string
+  xdpLength: number
+  xdpBytesReturned: number
+  truncated: boolean
+  xdpSha256?: string | undefined
+  fingerprint: string
+}
+
 interface ScreenModuleReference {
   name: string
   event: "PBO" | "PAI" | "POH" | "POV" | "UNKNOWN"
@@ -1301,6 +1335,10 @@ export class ToolService {
     return JSON.stringify(await this.readSmartstyleDefinition(input), null, 2)
   }
 
+  async readAdobeForm(input: ReadAdobeFormInput): Promise<string> {
+    return JSON.stringify(await this.readAdobeFormDefinition(input), null, 2)
+  }
+
   async readAbapScreen(input: ReadScreenInput): Promise<string> {
     return JSON.stringify(await this.readScreenDefinition(input), null, 2)
   }
@@ -1609,7 +1647,7 @@ export class ToolService {
       operation: "READ_SAPSCRIPT_FORM",
       objectName,
       textStatus: sapscriptFormStatus(input.status),
-      textLanguage: sapscriptFormLanguage(input.language),
+      ...repositoryLanguageSelector(input.language),
       includeSource: input.includeSource === true
     })
     requireRepositorySuccess(result.status, result.code, result.message)
@@ -1627,11 +1665,23 @@ export class ToolService {
       styleMode: smartstyleMode(input.mode),
       styleActive: smartstyleActive(input.active),
       styleVariant: smartstyleVariant(input.variant),
-      textLanguage: sapscriptFormLanguage(input.language),
+      ...repositoryLanguageSelector(input.language),
       includeCss: input.includeCss === true
     })
     requireRepositorySuccess(result.status, result.code, result.message)
     return smartstyleDefinition(connectionId, objectName, result)
+  }
+
+  private async readAdobeFormDefinition(input: ReadAdobeFormInput): Promise<AdobeFormDefinition> {
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = adobeFormName(input.formName)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_ADOBE_FORM",
+      objectName,
+      ...repositoryLanguageSelector(input.language)
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    return adobeFormDefinition(connectionId, objectName, result)
   }
 
   private async readScreenDefinition(input: ReadScreenInput): Promise<ScreenDefinition> {
@@ -7775,6 +7825,81 @@ function smartstyleDefinition(
   }
 }
 
+function adobeFormNumber(value: string | undefined, field: string): number {
+  if (value === undefined || !/^\d+$/.test(value)) {
+    throw new Error(`SAP repository helper did not report a valid ${field}: ${value ?? ""}`)
+  }
+  return Number.parseInt(value, 10)
+}
+
+/**
+ * The helper returns the XDP as base64 chunks that share one index per source line, so reassembly
+ * is by index and then in arrival order. The helper's own byte counts are cross-checked against the
+ * decoded body: a disagreement is a drift error rather than a silently short layout.
+ */
+function adobeFormDefinition(
+  connectionId: string,
+  objectName: string,
+  result: SapRepositoryResult
+): AdobeFormDefinition {
+  const metadata: Record<string, string> = {}
+  const chunks = new Map<number, string[]>()
+  for (const line of result.source) {
+    const match = line.match(/^([A-Z]+)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(`SAP repository helper returned an invalid payload line: ${line}`)
+    }
+    const index = Number.parseInt(match[2], 10)
+    if (index < 1) {
+      throw new Error(`SAP repository helper returned an invalid payload index: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    if (match[1] === "M") {
+      metadata[match[3]] = value
+      continue
+    }
+    if (match[1] !== "Y") {
+      throw new Error(`SAP repository helper returned an unknown Adobe payload kind: ${line}`)
+    }
+    const parts = chunks.get(index)
+    if (parts) parts.push(value)
+    else chunks.set(index, [value])
+  }
+  const base64 = [...chunks.entries()]
+    .sort((left, right) => left[0] - right[0])
+    .map(([, parts]) => parts.join(""))
+    .join("")
+  const xdp = Buffer.from(base64, "base64")
+  const xdpLength = adobeFormNumber(metadata.XDP_LENGTH, "XDP_LENGTH")
+  const xdpBytesReturned = adobeFormNumber(metadata.XDP_RETURNED_LENGTH, "XDP_RETURNED_LENGTH")
+  if (xdpBytesReturned !== xdp.length) {
+    throw new Error(
+      `SAP repository helper reported ${xdpBytesReturned} layout bytes but returned ${xdp.length}`
+    )
+  }
+  const truncated = metadata.XDP_TRUNCATED === "X"
+  const content = {
+    language: metadata.LANGUAGE ?? "",
+    masterLanguage: metadata.MASTER_LANGUAGE ?? "",
+    state: metadata.STATE ?? "",
+    dirty: metadata.DIRTY === "X",
+    id: metadata.ID ?? "",
+    interfaceAvailable: false as const,
+    unsupported: ["interface", "context"],
+    xdpLength,
+    xdpBytesReturned,
+    truncated
+  }
+  return {
+    connectionId: connectionId.toLowerCase(),
+    objectName,
+    ...content,
+    xdp: base64,
+    ...(truncated ? {} : { xdpSha256: createHash("sha256").update(xdp).digest("hex") }),
+    fingerprint: hashCanonicalJson(content)
+  }
+}
+
 function sapscriptFormDefinition(
   connectionId: string,
   objectName: string,
@@ -12740,12 +12865,32 @@ function sapscriptFormLanguage(value: string | undefined): string {
   return normalized
 }
 
+/**
+ * The helper declares its language selectors optional, so an empty element would ask it to resolve a
+ * language it was never given. The key is omitted unless a language was supplied, which leaves the
+ * helper's own SY-LANGU default in force; this also keeps the SOAP request byte-identical for every
+ * caller that does not name a language.
+ */
+function repositoryLanguageSelector(language: string | undefined): { textLanguage?: string } {
+  const normalized = sapscriptFormLanguage(language)
+  return normalized === "" ? {} : { textLanguage: normalized }
+}
+
 function smartstyleName(value: string): string {
   const normalized = value.trim().toUpperCase()
   if (!/^(?:[A-Z][A-Z0-9_]*|\/[A-Z0-9_]+\/[A-Z][A-Z0-9_]*)$/.test(normalized)) {
     throw new Error("styleName must be an ABAP object name or a namespaced name")
   }
   if (normalized.length > 30) throw new Error("styleName must not exceed 30 characters")
+  return normalized
+}
+
+function adobeFormName(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!/^(?:[A-Z][A-Z0-9_]*|\/[A-Z0-9_]+\/[A-Z][A-Z0-9_]*)$/.test(normalized)) {
+    throw new Error("formName must be an ABAP object name or a namespaced name")
+  }
+  if (normalized.length > 30) throw new Error("formName must not exceed 30 characters")
   return normalized
 }
 

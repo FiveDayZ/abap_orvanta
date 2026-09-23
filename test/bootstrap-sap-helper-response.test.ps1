@@ -432,12 +432,19 @@ foreach ($marker in @(
         # renamed away - which is exactly the drift the guard exists to catch.
         "WHEN 'READ_SAPSCRIPT_FORM'.",
         "WHEN 'READ_SMARTSTYLE'.",
+        "WHEN 'READ_ADOBE_FORM'.",
         "READ_FORM'",
         "READ_TEXT'",
         "SSF_READ_STYLE'",
         "SSF_READ_STYLE_ALL_VARIANTS'",
         "SSF_READ_SAPSCRIPT_STYLE'",
         "SSF_CONVERT_STYLE_TO_CSS'",
+        "cl_fp_db_wrapper=>sel_lt_by_name_lang",
+        "cl_fp_db_wrapper=>sel_xdp_by_name_lang",
+        "cl_fp_wb_helper=>form_get_master_language",
+        "SCMS_BASE64_ENCODE_STR",
+        "ADOBE_FORM_NOT_FOUND",
+        "'XDP_TRUNCATED'",
         "'STYLE_MODE'",
         "'CSS_STATUS'",
         "ev_version = '2.8'",
@@ -886,6 +893,51 @@ foreach ($guarded in @(
                 throw "$($guarded.Name): CONCATENATE operand $numericName is numeric and must be converted with WRITE ... TO first: $statement"
             }
         }
+    }
+}
+
+# 载荷顺序守卫（2026-09-23）。响应载荷写进 it_source，而 it_source 同时也是入参表：读分支必须
+# 先 REFRESH it_source 丢掉请求载荷，再发射响应载荷。D7-4 曾把 REFRESH 放在 CSS 分片之后，会把
+# 刚写好的正文整段清掉——标记守卫看不见（标记都还在），行长守卫也看不见，只有运行时才暴露，
+# 而每次暴露的代价是一轮人工 F8。这里按分支断言顺序：首个载荷发射之前必须有一次 REFRESH。
+$payloadEmitterPattern = '\b(?:add_repo_payload|add_repo_component|emit_d7_rows)\b'
+foreach ($orderedBranch in @(
+        @{ Op = "READ_SAPSCRIPT_FORM"; Code = "SAPSCRIPT_FORM_READ" },
+        @{ Op = "READ_SMARTSTYLE"; Code = "SMARTSTYLE_READ" },
+        @{ Op = "READ_ADOBE_FORM"; Code = "ADOBE_FORM_READ" }
+    )) {
+    $bodyLines = @($repositoryFunctionSource | Where-Object { $null -ne $_ })
+    $branchStart = -1
+    for ($index = 0; $index -lt $bodyLines.Count; $index++) {
+        if ($bodyLines[$index] -match "WHEN '$($orderedBranch.Op)'") { $branchStart = $index; break }
+    }
+    if ($branchStart -lt 0) {
+        throw "the repository body does not dispatch $($orderedBranch.Op)"
+    }
+    $branchEnd = -1
+    for ($index = $branchStart; $index -lt $bodyLines.Count; $index++) {
+        if ($bodyLines[$index] -match "ev_code = '$($orderedBranch.Code)'") { $branchEnd = $index; break }
+    }
+    if ($branchEnd -lt 0) {
+        throw "$($orderedBranch.Op) never reports $($orderedBranch.Code)"
+    }
+    $firstPayload = -1
+    $lastRefreshBeforePayload = -1
+    for ($index = $branchStart; $index -le $branchEnd; $index++) {
+        $line = $bodyLines[$index]
+        if ($firstPayload -lt 0) {
+            if ($line -match $payloadEmitterPattern) {
+                $firstPayload = $index
+                continue
+            }
+            if ($line -match '^\s*REFRESH\s+it_source\s*\.') { $lastRefreshBeforePayload = $index }
+        }
+    }
+    if ($firstPayload -lt 0) {
+        throw "$($orderedBranch.Op) emits no response payload"
+    }
+    if ($lastRefreshBeforePayload -lt 0) {
+        throw "$($orderedBranch.Op) emits response payload without clearing it_source first: the request payload would leak into the response"
     }
 }
 

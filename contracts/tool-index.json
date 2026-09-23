@@ -1,21 +1,21 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 139,
-  "readOnlyToolCount": 81,
+  "toolCount": 140,
+  "readOnlyToolCount": 82,
   "profiles": {
-    "readonly": 81,
+    "readonly": 82,
     "platform": 12,
-    "dev": 123,
+    "dev": 124,
     "config": 28,
     "ops": 35,
-    "full": 139
+    "full": 140
   },
   "groups": {
     "data": 5,
     "ddic": 26,
     "debug": 6,
     "enhancement": 22,
-    "form": 6,
+    "form": 7,
     "function": 7,
     "message": 4,
     "ops": 18,
@@ -1192,6 +1192,21 @@
       "sapHelper": null,
       "minHelperProtocol": null,
       "note": "最多 500 行、仅字符比较、无联接/聚合/排序；宽表按主键分块并二次复核。"
+    },
+    {
+      "name": "read_adobe_form",
+      "group": "form",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.8"
     },
     {
       "name": "read_application_log",
