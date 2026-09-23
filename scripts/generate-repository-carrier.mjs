@@ -65,7 +65,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r08.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r09.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -663,6 +663,7 @@ report.push("      lt_fm_except TYPE TABLE OF rsexc,")
 report.push("      lt_fm_docu TYPE TABLE OF rsfdo,")
 report.push("      lt_fm_source TYPE TABLE OF rssource,")
 report.push("      lv_func TYPE rs38l-name,")
+report.push("      lv_missing_fm TYPE c LENGTH 1,")
 report.push("      lv_pool TYPE rs38l-area,")
 report.push("      lv_remote TYPE rs38l-remote,")
 report.push("      lv_short TYPE tftit-stext,")
@@ -704,11 +705,21 @@ report.push("    WRITE: / 'ERROR: body line count mismatch:', lv_count.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
+report.push(`  CLEAR lv_missing_fm.`)
 report.push(`  SELECT SINGLE include FROM tfdir INTO lv_suffix WHERE funcname = '${HELPER}'.`)
 report.push("  IF sy-subrc <> 0 OR lv_suffix IS INITIAL.")
-report.push(`    WRITE: / 'ERROR: function module ${HELPER} not found in TFDIR'.`)
-report.push("    RETURN.")
-report.push("  ENDIF.")
+report.push(
+  "* The module may legitimately be absent - an earlier delete step with a failed create leaves"
+)
+report.push(
+  "* exactly this state. In that case there is no include to read and nothing to make idempotent:"
+)
+report.push(
+  "* the interface is built from the canonical rows alone and the module is created below."
+)
+report.push("    lv_missing_fm = 'X'.")
+report.push(`    WRITE: / 'Note        : ${HELPER} does not exist yet; it will be created.'.`)
+report.push("  ELSE.")
 report.push("  CONCATENATE 'L' c_group 'U' lv_suffix INTO lv_name.")
 report.push("  REFRESH lt_cur.")
 report.push("  READ REPORT lv_name INTO lt_cur.")
@@ -732,8 +743,9 @@ report.push("  IF lv_found = 'X'.")
 report.push("    WRITE: / 'NOTHING TO DO: this carrier is already applied.'.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
+report.push("  ENDIF.")
 report.push("")
-if (live) {
+if (live && !process.argv.includes("--offline")) {
   report.push("* Baseline guard: the body was generated against this exact live include.")
   report.push(`  IF lv_count <> c_lines.`)
   report.push(
@@ -782,8 +794,12 @@ report.push("      source = lt_fm_source")
 report.push("    EXCEPTIONS")
 report.push("      OTHERS = 1.")
 report.push("  IF sy-subrc <> 0.")
-report.push("    WRITE: / 'ERROR: cannot read the function module interface', sy-subrc.")
-report.push("    RETURN.")
+report.push(
+  "* Nothing to extend: build the whole interface from the canonical rows, exactly as the create"
+)
+report.push("* path needs it. The read above already left the tables empty.")
+report.push("    lv_missing_fm = 'X'.")
+report.push("    WRITE: / 'Note        : no live interface to read; the canonical rows are used.'.")
 report.push("  ENDIF.")
 report.push("  IF lv_pool IS INITIAL. lv_pool = c_group. ENDIF.")
 report.push("  IF lv_remote IS INITIAL. lv_remote = 'R'. ENDIF.")
@@ -883,6 +899,7 @@ report.push("    ls_rs38l-include = lv_fm_include.")
 report.push("    ls_rs38l-active = 'A'.")
 report.push("    ls_rs38l-generated = 'X'.")
 report.push("    SET PARAMETER ID 'EUA' FIELD c_request.")
+report.push("    IF lv_missing_fm IS INITIAL.")
 report.push("    PERFORM save_interface.")
 report.push("    IF lv_save_rc <> 0.")
 report.push("      WRITE: / 'Attempt 1   : plain save failed rc', lv_save_rc, 'id', lv_save_msgid,")
@@ -900,6 +917,10 @@ report.push("        'no', lv_save_msgno.")
 report.push("      WRITE: / 'Attempt 2   : v1=[', lv_save_v1, ']'.")
 report.push("      WRITE: / 'Attempt 2   : v2=[', lv_save_v2, ']'.")
 report.push("    ENDIF.")
+report.push("    ELSE.")
+report.push("      lv_save_rc = 4.")
+report.push("      WRITE: / 'Attempt 1/2 : skipped, the function module does not exist yet.'.")
+report.push("    ENDIF.")
 report.push(
   "* Both save paths refuse: the update interface of an existing module cannot be written"
 )
@@ -912,6 +933,7 @@ report.push(
   "      WRITE: / 'Attempt 3   : delete and recreate', lv_func, 'with the merged interface.'."
 )
 report.push("      CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_func.")
+report.push("      IF lv_missing_fm IS INITIAL.")
 report.push("      CALL FUNCTION 'FUNCTION_DELETE'")
 report.push("        EXPORTING")
 report.push("          funcname = lv_func")
@@ -925,6 +947,7 @@ report.push("        ROLLBACK WORK.")
 report.push("        RETURN.")
 report.push("      ENDIF.")
 report.push("      COMMIT WORK AND WAIT.")
+report.push("      ENDIF.")
 report.push("      CALL FUNCTION 'FUNCTION_CREATE'")
 report.push("        EXPORTING")
 report.push("          funcname = lv_func")
@@ -937,6 +960,13 @@ report.push("          suppress_corr_check = 'X'")
 report.push("          save_active = 'X'")
 report.push("        IMPORTING")
 report.push("          function_include = lv_fm_include")
+report.push("        TABLES")
+report.push("          import_parameter = lt_fm_import")
+report.push("          changing_parameter = lt_fm_change")
+report.push("          export_parameter = lt_fm_export")
+report.push("          tables_parameter = lt_fm_tables")
+report.push("          exception_list = lt_fm_except")
+report.push("          parameter_docu = lt_fm_docu")
 report.push("        EXCEPTIONS")
 report.push("          double_task = 1")
 report.push("          error_message = 2")
@@ -1301,6 +1331,86 @@ report.push("      OTHERS = 1.")
 report.push("ENDFORM.")
 report.push("")
 
+// Guard: every dynamic call the carrier itself makes must supply the parameters the live
+// interface marks as required. TABLES parameters are only checked at runtime, so a missing one
+// surfaces as CALL_FUNCTION_PARM_MISSING in SAP rather than as a syntax error - FUNCTION_CREATE
+// needs all six interface tables for exactly that reason. The required sets below were read from
+// w200 on 2026-09-23 with read_function_module_interface. That tool also flags
+// RS_INSERT_INTO_WORKING_AREA.DELETED_FLAG as required, but SAP's own FUNCTION_CREATE calls the
+// module without it, so it is allowlisted rather than passed blind.
+const REQUIRED_DYNAMIC_PARAMS = {
+  RPY_FUNCTIONMODULE_READ: { importing: ["FUNCTIONNAME"], tables: [] },
+  RPY_FUNCTIONMODULE_READ_NEW: { importing: ["FUNCTIONNAME"], tables: [] },
+  FUNCTION_SAVE: {
+    importing: ["SHORT_TEXT", "P_RS38L"],
+    tables: [
+      "EXCEPTION_LIST",
+      "EXPORT_PARAMETER",
+      "IMPORT_PARAMETER",
+      "PARAMETER_DOCU",
+      "TABLES_PARAMETER"
+    ]
+  },
+  FUNCTION_CREATE: {
+    importing: ["FUNCNAME", "FUNCTION_POOL", "SHORT_TEXT"],
+    tables: [
+      "EXCEPTION_LIST",
+      "EXPORT_PARAMETER",
+      "IMPORT_PARAMETER",
+      "PARAMETER_DOCU",
+      "TABLES_PARAMETER"
+    ]
+  },
+  FUNCTION_DELETE: { importing: ["FUNCNAME"], tables: [] },
+  RS_WORKING_AREA_ACTIVE_CHECK: { importing: [], tables: [] },
+  RS_INSERT_INTO_WORKING_AREA: { importing: ["OBJECT", "OBJ_NAME"], tables: [] },
+  DEQUEUE_ESFUNCTION: { importing: [], tables: [] }
+}
+const ALLOWED_MISSING_DYNAMIC_PARAMS = new Set(["RS_INSERT_INTO_WORKING_AREA.DELETED_FLAG"])
+
+function assertDynamicCallParams(lines) {
+  const problems = []
+  let checked = 0
+  for (let i = 0; i < lines.length; i++) {
+    const call = /^\s*CALL FUNCTION '([A-Z0-9_]+)'/.exec(lines[i])
+    if (!call) continue
+    const name = call[1]
+    const spec = REQUIRED_DYNAMIC_PARAMS[name]
+    if (!spec) {
+      problems.push(`line ${i + 1}: CALL FUNCTION '${name}' is not covered by the guard`)
+      continue
+    }
+    const supplied = new Set()
+    for (let j = i; j < Math.min(lines.length, i + 30); j++) {
+      const line = lines[j]
+      if (j > i && /^\s*EXCEPTIONS\s*$/.test(line)) break
+      for (const param of line.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*=/g)) {
+        supplied.add(param[1].toUpperCase())
+      }
+      if (/\.\s*$/.test(line)) break
+    }
+    checked += 1
+    for (const kind of ["importing", "tables"]) {
+      for (const required of spec[kind]) {
+        if (supplied.has(required)) continue
+        if (ALLOWED_MISSING_DYNAMIC_PARAMS.has(`${name}.${required}`)) continue
+        problems.push(
+          `line ${i + 1}: CALL FUNCTION '${name}' does not supply required ${kind} parameter ${required}`
+        )
+      }
+    }
+  }
+  if (problems.length > 0) {
+    throw new Error(`dynamic call parameter guard failed:\n  ${problems.join("\n  ")}`)
+  }
+  return checked
+}
+
+const dynamicCallsChecked = assertDynamicCallParams(report)
+console.log(
+  `dynamic call guard: ${dynamicCallsChecked} carrier call(s) supply every required parameter`
+)
+
 const rendered = report.join("\n") + "\n"
 // The report program's own lines may be wide (SE38 on this system accepted that for the DDIC
 // carriers); the widths that matter are the embedded payload lines, asserted on `body` above.
@@ -1325,3 +1435,5 @@ if (check) {
     console.log("  generated WITHOUT the live baseline: re-run without --offline before applying")
   console.log("  NOT deployed: run the report in SAP yourself (SE38, F8).")
 }
+
+
