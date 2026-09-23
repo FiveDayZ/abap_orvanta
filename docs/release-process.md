@@ -63,7 +63,16 @@ release/
 
 ## 5. 归档保留
 
-脚本对 `release/` 中超过保留窗口（最近 5 个 `orvanta-mcp-*-win-x64*.zip`）的产物给出警告，但**不会自动删除发布物**。清理前需人工确认该产物没有被外部引用，且已有可回溯的提交与标签。
+保留窗口是最近 **5** 个 `orvanta-mcp-*-win-x64*.zip` 产物。窗口外的产物**不再只是警告**：打包脚本在写完索引后调用
+
+```powershell
+pwsh -NoLogo -NoProfile -File scripts/quarantine-release-artifacts.ps1            # 只报告计划
+pwsh -NoLogo -NoProfile -File scripts/quarantine-release-artifacts.ps1 -Apply     # 执行
+```
+
+把窗口外的 `.zip`、同名 `.zip.sha256` 与对应解包目录，以及**没有对应 zip 的散落解包目录与历史遗留目录**，**移动**（绝不删除）到 `release/quarantine/`。这样做的原因有两个：解包目录里的 `connections.json` 携带真实内网主机与用户名，长期散落在 `release/` 会扩大泄露面；而移动是可逆的，产物仍然可回溯。
+
+被服务占用而无法移动的路径会逐条报告，脚本以非零码退出，需要人工处理后重跑。
 
 ## 6. 标签
 
@@ -76,7 +85,41 @@ git rev-list -n 1 v<version>   # 应与 BUILD-INFO.json 的 standaloneSourceComm
 
 标签与 `standaloneSourceCommit` 不一致时，不得声称该产物对应该标签。
 
-## 7. 禁止事项
+## 7. SAP 侧助手部署（人工 F8）
+
+服务侧代码可以先发布，但**依赖新操作码的工具在助手部署前一律不可用**：助手的处理分支运行在 SAP 内，未部署时调用返回 `OPERATION_NOT_SUPPORTED`。因此助手部署是发布清单中的正式步骤，不是收尾杂事。
+
+### 7.1 为什么必须人工
+
+所有 `ZORVANTA_MCP_*` 助手都位于函数组 `ZORVANTA_MCP_CORE` 内，而该函数组带有自写保护：服务不得修改自己的助手（否则一次错误写入就能让服务失去修复自身的能力）。因此每次助手变更都必须由人在 SAP 内执行：
+
+1. 仓库内用生成器产出**载体程序**（`scripts/generate-*-carrier*.mjs` / `generate-*-deploy-report.mjs`），得到 `.doc/deploy-*.abap` 与逐字**部署报告**。报告必须包含 `SOURCE|HASH`、操作码清单、`PROTOCOL|MIN/MAX`、载体修订号（`rNN`）、正文行数与 digest。
+2. 人工用 SE38 执行该载体程序**并运行（F8）**生成助手主体，回传 `OK: generated and activated.` 级别的回执。
+3. 用 `verify-*-carrier-deployed.mjs` 之类的校验脚本核对线上 include 行数、marker 与特征字符串，再用 `get_capability_report` 复核 `PROTOCOL|MAX` 与操作码清单。
+
+载体带有**基线守卫**：对同一个载体重复 F8 会以 `deployed include is not the reviewed baseline` 失败。**这是保护，不是部署失败**——它阻止把已更新的对象按旧基线覆盖。看到该错误时先核对 include 行数（应为「正文行数 + 32」），不要重新生成载体。
+
+### 7.2 两条不可混淆的刻度
+
+| 助手族                                                             | 协议刻度 | 载体     |
+| ------------------------------------------------------------------ | -------- | -------- |
+| DDIC（`Z_ORVANTA_MCP_DDIC_API`）                                   | `1.x`    | 独立载体 |
+| repository（`Z_ORVANTA_MCP_EXECUTE` / `Z_ORVANTA_MCP_DYNPRO_API`） | `2.x`    | 独立载体 |
+
+两个刻度互相独立，**不得互相换算或混用**。能力报告中的 `helpers` 与 `helperAttestation` 按族分别自述，判断可用性时必须看对应族。
+
+### 7.3 载体顺序不变量
+
+载体必须**针对上一载体 F8 成功后的实际线上源码**重新生成；否则基线守卫会拒绝，或更糟——把别人的改动当作自己的基线覆盖掉。因此：一次只部署一个载体，部署成功并复核后再生成下一个。
+
+### 7.4 指纹重钉
+
+- **仅函数体变更**：`interfaceFingerprint` 不变，无需重钉，也无需重新审批接口。
+- **接口签名变更**：必须重新钉 `interfaceFingerprint`，并重新走接口审批；此时该载体涉及的所有工具都必须重新验收。
+
+部署记录按工作区规范写入 `.doc/code-update-YYYYMMDD-HHmmss.md`，并同步更新 `contracts/verification-registry.json` 中对应条目的 `status`、`lastAttemptAt` 与 `evidence`——**只有真实调用成功才能从 `unverified` 升为 `verified`**（见 `docs/helper-capabilities-protocol.md` 与验收登记表设计）。
+
+## 8. 禁止事项
 
 - 不得用未提交的工作树产出发布版（唯一例外是显式 `-AllowDirty` 的临时候选包，且必须如实标注）。
 - 不得手工修改包内 `BUILD-INFO.json`、`.sha256` 或 `INDEX.md`。

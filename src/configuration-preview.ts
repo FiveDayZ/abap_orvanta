@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
 import { z } from "zod"
+import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 
 export const CONFIGURATION_TABLE = "ZTPMC_TPCFG"
 export const CONFIGURATION_DDIC = "4c617b912277d9d19b9e0bd8760dbfd53c541adb2129b30a5b040bb6cdd537ed"
@@ -61,7 +62,7 @@ const character = z
   .regex(/^[\x20-\x7e]?$/)
 export const configurationPreviewSchema = z
   .object({
-    connectionId: z.literal("w200"),
+    connectionId: z.literal(CUSTOMER_CONNECTION_ID),
     plant: z.string().regex(/^[A-Z0-9]{4}$/),
     changes: z
       .object({
@@ -97,7 +98,7 @@ export async function previewConfiguration(
   for (const [name, type, length, domain] of CONFIGURATION_TYPES) {
     const metadata = z
       .object({
-        connectionId: z.literal("w200"),
+        connectionId: z.literal(CUSTOMER_CONNECTION_ID),
         tableName: z.literal("DD04L"),
         status: z.literal("ok"),
         readOnly: z.literal(true),
@@ -107,7 +108,7 @@ export async function previewConfiguration(
       })
       .safeParse(
         await readTypes({
-          connectionId: "w200",
+          connectionId: CUSTOMER_CONNECTION_ID,
           tableName: "DD04L",
           columns: ["ROLLNAME", "DATATYPE", "LENG", "DECIMALS", "DOMNAME"],
           filters: [
@@ -137,7 +138,7 @@ export async function previewConfiguration(
   }
   const modeDomain = z
     .object({
-      connectionId: z.literal("w200"),
+      connectionId: z.literal(CUSTOMER_CONNECTION_ID),
       objectKind: z.literal("domain"),
       objectName: z.literal(CONFIGURATION_MODE_DOMAIN),
       fingerprint: z.literal(CONFIGURATION_MODE_FINGERPRINT),
@@ -186,7 +187,7 @@ export async function previewConfiguration(
     })
     .parse(await readRows(query))
   const base = {
-    connectionId: "w200",
+    connectionId: CUSTOMER_CONNECTION_ID,
     client: "200",
     tableName: CONFIGURATION_TABLE,
     plant: input.plant,

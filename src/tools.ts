@@ -1,4 +1,5 @@
 import { resolve } from "node:path"
+import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
 import {
   cleanupTransportEntrySchema,
@@ -6613,7 +6614,7 @@ export class ToolService {
         async () =>
           JSON.parse(
             await this.readDdicTransparentTable({
-              connectionId: "w200",
+              connectionId: CUSTOMER_CONNECTION_ID,
               objectName: CONFIGURATION_TABLE
             })
           ),
@@ -6622,7 +6623,7 @@ export class ToolService {
         async () =>
           JSON.parse(
             await this.readDdicDomain({
-              connectionId: "w200",
+              connectionId: CUSTOMER_CONNECTION_ID,
               objectName: CONFIGURATION_MODE_DOMAIN
             })
           )

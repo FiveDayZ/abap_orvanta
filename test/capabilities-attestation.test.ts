@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import { createServer } from "node:http"
 import type { AddressInfo } from "node:net"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import test from "node:test"
 import {
   AdtBackend,
@@ -8,8 +10,14 @@ import {
   parseHelperCapabilitiesPayload
 } from "../src/adt-backend.js"
 import type { SapHelperCapabilities } from "../src/backend.js"
-import { buildCapabilityReport } from "../src/capabilities.js"
+import {
+  buildCapabilityReport,
+  loadVerificationLookup,
+  rollupVerification
+} from "../src/capabilities.js"
 import { parseConnections } from "../src/config.js"
+import { toolIndexNames } from "../src/verification-registry.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 import { MockBackend } from "./mock-backend.js"
 
 const BASE_HELPER = "Z_ORVANTA_MCP_EXECUTE"
@@ -22,7 +30,6 @@ const SCI_V2_HELPER = "Z_ORVANTA_MCP_SCI_V2"
 const SCI_E2_HELPER = "Z_ORVANTA_MCP_SCI_E2"
 
 interface ReportShape {
-  helpers: Array<{ name: string; availability: string; attestation?: unknown }>
   helperAttestation: SapHelperCapabilities[]
   capabilities: Array<{
     id: string
@@ -32,9 +39,41 @@ interface ReportShape {
       reason: string
       evidence: { source: string; detail: string }
     }
+    verification?: VerificationRollupShape
   }>
+  helpers: Array<{
+    name: string
+    availability: string
+    attestation?: unknown
+    verification?: VerificationRollupShape
+  }>
+  verification?: {
+    registryLoaded: boolean
+    updatedAt: string | null
+    reason?: string
+    totals: {
+      verified: number
+      unverified: number
+      failed: number
+      blocked: number
+      platformUnsupported: number
+      total: number
+    } | null
+    availabilityWithoutEvidence?: number
+    protocolOnlyToolCount: number
+    protocolOnlyTools: string[]
+    note: string
+  }
   quality: Record<string, { value: string; reason: string } | string | string[] | number>
   summary: Record<string, number>
+}
+
+interface VerificationRollupShape {
+  status: string
+  counts: Record<string, number>
+  tools: Record<string, string>
+  evidence: Array<{ tool: string; status: string; evidence: string | null }>
+  note: string
 }
 
 async function buildReport(backend: MockBackend): Promise<ReportShape> {
@@ -520,7 +559,7 @@ async function soapFixture(respond: (body: string) => string) {
       response.end(respond(body))
     })
   })
-  await new Promise<void>((done) => server.listen(0, "127.0.0.1", done))
+  await listenOnUnblockedPort(server)
   const address = server.address() as AddressInfo
   const config = parseConnections({
     connections: [
@@ -1118,4 +1157,89 @@ test("an unreachable SCI helper keeps an honest absent attestation", async () =>
   assert.equal(report.helperAttestation[7]?.attestation, "absent")
   assert.equal(sciCapability(report).availability, "unknown")
   assert.equal(sciCapability(report).reason, SCI_REASON)
+})
+
+// S4 / R-8 wiring: the report must carry the evidence dimension next to availability, and the two
+// must stay orthogonal. Before this the registry existed as a file that nothing read, so a tool
+// could be advertised as available with no way to tell whether it had ever worked.
+test("the report carries the evidence dimension from the verification registry", async () => {
+  const report = await buildReport(new MockBackend())
+
+  assert.ok(report.verification, "the report has no verification block")
+  assert.equal(report.verification.registryLoaded, true)
+  assert.ok(report.verification.totals, "a loaded registry must publish totals")
+  // The registry must cover the tool index exactly, and the report must publish all of it: the
+  // count comes from the index, not from the registry, so a truncated rollup cannot pass.
+  assert.equal(report.verification.totals?.total, toolIndexNames().length)
+  assert.equal(
+    (report.verification.totals?.verified ?? 0) +
+      (report.verification.totals?.unverified ?? 0) +
+      (report.verification.totals?.failed ?? 0) +
+      (report.verification.totals?.blocked ?? 0) +
+      (report.verification.totals?.platformUnsupported ?? 0),
+    report.verification.totals?.total
+  )
+  assert.match(report.verification.note, /never changes an availability verdict/)
+
+  // Every capability and every versioned helper carries its own rollup, and the rollup covers
+  // exactly the tools the capability advertises under the active profile.
+  for (const capability of report.capabilities) {
+    assert.ok(capability.verification, `capability ${capability.id} has no verification rollup`)
+    assert.deepEqual(
+      Object.keys(capability.verification?.tools ?? {}).sort(),
+      [...capability.toolNames].sort(),
+      `capability ${capability.id} verification does not cover its advertised tools`
+    )
+  }
+  for (const helper of report.helpers) {
+    assert.ok(helper.verification, `helper ${helper.name} has no verification rollup`)
+  }
+})
+
+// The point of the whole dimension: an availability verdict and an absence of evidence must be
+// able to coexist, and the report must say so rather than implying the verdict was verified.
+test("an available tool with no evidence is reported as available and unverified", async () => {
+  const report = await buildReport(new MockBackend())
+
+  const available = report.capabilities.filter(
+    (item) => item.observation.availability === "available"
+  )
+  assert.ok(available.length > 0, "expected at least one available capability in the mock report")
+
+  const unverifiedUnderAvailable = available.filter(
+    (item) => (item.verification?.counts.unverified ?? 0) > 0
+  )
+  assert.ok(
+    unverifiedUnderAvailable.length > 0,
+    "the mock report should contain available capabilities whose tools have no evidence"
+  )
+  for (const item of unverifiedUnderAvailable) {
+    // Both dimensions are present and neither was recomputed from the other.
+    assert.equal(item.observation.availability, "available")
+    assert.equal(item.verification?.status, "unverified")
+  }
+
+  const withoutEvidence = report.verification?.availabilityWithoutEvidence
+  assert.equal(typeof withoutEvidence, "number")
+  assert.ok((withoutEvidence ?? 0) > 0, "the honesty metric must count available+unverified tools")
+})
+
+test("an unreadable registry degrades to unverified instead of claiming evidence", () => {
+  const missing = join(tmpdir(), `orvanta-absent-verification-registry-${process.pid}.json`)
+  const lookup = loadVerificationLookup(missing)
+
+  assert.equal(lookup.loaded, false)
+  assert.equal(lookup.registry, null)
+  assert.match(String(lookup.reason), /unverified rather than assumed verified/)
+
+  const rollup = rollupVerification(lookup, ["read_ddic_transparent_table"])
+  assert.equal(rollup.status, "unverified")
+  assert.deepEqual(rollup.counts, {
+    verified: 0,
+    unverified: 1,
+    failed: 0,
+    blocked: 0,
+    "platform-unsupported": 0
+  })
+  assert.equal(rollup.evidence.length, 0)
 })

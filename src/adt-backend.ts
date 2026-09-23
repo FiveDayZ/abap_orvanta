@@ -18,6 +18,7 @@ import {
 } from "abap-adt-api"
 import { createHash } from "node:crypto"
 import { appendFileSync } from "node:fs"
+import { CUSTOMER_CLIENT, CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 import { assertHelperOperationDeliverable } from "./helper-operation-limits.js"
 import { InactiveInventoryError, readInactiveInventory } from "./inactive-inventory.js"
 import { request as httpRequest } from "node:http"
@@ -683,7 +684,12 @@ export class AdtBackend implements SapBackend {
     } catch (error) {
       if (options?.allowScopedFallback === false) throw error
       const config = this.configs.get(connectionId.toLowerCase())
-      if (!config || config.id.toLowerCase() !== "w200" || config.client !== "200") throw error
+      if (
+        !config ||
+        config.id.toLowerCase() !== CUSTOMER_CONNECTION_ID ||
+        config.client !== CUSTOMER_CLIENT
+      )
+        throw error
       return runScopedQueryFallback(sql, maxRows, config.client, error, (request) =>
         this.callRemoteFunction(connectionId, request)
       )

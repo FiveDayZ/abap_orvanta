@@ -4,6 +4,7 @@ import { createServer } from "node:http"
 import { parseQueryResponse } from "abap-adt-api/build/api/tablecontents.js"
 import { parseSapDataQueryResponse, runSapDataQuery } from "../src/data-query.js"
 import { ToolService } from "../src/tools.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 import { MockBackend } from "./mock-backend.js"
 import type { SapBackend } from "../src/backend.js"
 
@@ -115,7 +116,7 @@ test("public query flow rejects HTTP-200 error pages and retains row limits", as
     reply.writeHead(200, { "Content-Type": "application/xml" })
     reply.end(mode === "valid" ? table(column("WERKS", "C", ["809P", "809P"])) : "<error/>")
   })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  await listenOnUnblockedPort(server)
   t.after(async () => {
     server.closeAllConnections()
     await new Promise<void>((resolve, reject) =>

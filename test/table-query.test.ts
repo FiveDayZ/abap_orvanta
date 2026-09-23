@@ -12,6 +12,7 @@ import type { RemoteFunctionRequest, RemoteFunctionResult, SapBackend } from "..
 import { startHttpServer } from "../src/http.js"
 import { MockBackend } from "./mock-backend.js"
 import { AdtBackend } from "../src/adt-backend.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 
 const input = { connectionId: "w200", tableName: "TFDIR", columns: ["ID", "TEXT"], maxRows: 1 }
 const definition = {
@@ -798,7 +799,7 @@ test("table query legacy path uses actual HTTP and SOAP parsing for metadata and
       response.end("<graph/>")
     }
   })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  await listenOnUnblockedPort(server)
   const address = server.address()
   assert.ok(address && typeof address !== "string")
   const backend = new AdtBackend(

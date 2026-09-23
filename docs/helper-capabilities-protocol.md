@@ -344,8 +344,35 @@ export interface SapBackend {
         "upsert_lock_object": { "availability": "unsupported", "requiredOperations": ["UPSERT_LOCK_OBJECT"], "missingOperations": ["UPSERT_LOCK_OBJECT"] }
       }
     } }
-]
+],
+"verification": {
+  "registryLoaded": true, "registryPath": "contracts/verification-registry.json", "updatedAt": "2026-09-22",
+  "totals": { "verified": 3, "unverified": 129, "failed": 4, "blocked": 0, "platformUnsupported": 1, "total": 137 },
+  "availabilityWithoutEvidence": "<按本次报告实时统计，随连接与 profile 变化>",
+  "protocolOnlyToolCount": 44, "protocolOnlyTools": ["…"],
+  "note": "…; verification never changes an availability verdict."
+}
 ```
+
+（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。）
+
+### 4A. 证据维度（`verification`）与可用性维度正交
+
+0.47.1 起，能力报告在 `capabilities[]`、`helpers[]` 与顶层各带一个 `verification` 汇总，数据源是 `contracts/verification-registry.json`（S4/R-8 设计）。三个层次的分工必须分清：
+
+| 字段                                       | 回答的问题                           | 数据来源                                  |
+| ------------------------------------------ | ------------------------------------ | ----------------------------------------- |
+| `observation.availability`                 | 在当前连接上**能不能调用**           | 助手协议版本 + 操作码清单 + ADT discovery |
+| `verification.status`                      | 这个工具**被真实调用过吗、结果如何** | 验收登记表的人工/SAP 证据记录             |
+| `verification.availabilityWithoutEvidence` | 有多少工具"可用但从未被验证过"       | 两者的交叉统计                            |
+
+三条不变量：
+
+1. **验收状态永不反向影响可用性判定**：`available + unverified` 是正常状态，不是缺陷，也不得被改写为 `unsupported`。反之亦然——把某个工具标成 `verified` 不会让它在未部署助手的系统上变得可用。
+2. **读不到登记表时一律降级为 `unverified`**（`registryLoaded: false` + `reason`），而不是沿用上一次结果或声称已验证。健康度指标永远偏保守。
+3. **`verification.status` 取最差项**（`failed` > `platform-unsupported` > `blocked` > `unverified` > `verified`），并把每个工具的逐项状态放在 `tools` 里，避免用"平均分"掩盖单个失败。
+
+`protocolOnlyToolCount`/`protocolOnlyTools` 暴露的是 R-20c 的残余面：这些工具的判定**仅凭协议版本**、没有操作码清单可核对，属于已知的弱证据，必须能一眼数出来，而不是藏在汇总里。
 
 ---
 

@@ -6,6 +6,7 @@ import { ToolService } from "../src/tools.js"
 import { parseSapDataQueryResponse } from "../src/data-query.js"
 import { runScopedQueryFallback } from "../src/scoped-query.js"
 import type { RemoteFunctionResult } from "../src/backend.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 
 const sql = "SELECT WERKS, ZPOSNR FROM ZTPMC_BZWL WHERE WERKS = '809P'"
 let nativeError: unknown
@@ -175,7 +176,7 @@ test("real HTTP backend falls back through SOAP and public query pagination", as
       response.end("<graph/>")
     }
   })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  await listenOnUnblockedPort(server)
   const address = server.address()
   assert.ok(address && typeof address !== "string")
   const backend = new AdtBackend(

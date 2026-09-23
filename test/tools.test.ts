@@ -46,6 +46,7 @@ import { findAndReplaceSource } from "../src/source-edit.js"
 import { MockBackend } from "./mock-backend.js"
 import { PRODUCT_VERSION } from "../src/version.js"
 import { inactiveHttp } from "./inactive-http.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 
 const zclDemoSource = [
   "CLASS zcl_demo IMPLEMENTATION.",
@@ -513,7 +514,7 @@ test("remote function backend preserves an HTTP 500 SOAP fault for assertion", a
       `<soap-env:Envelope><soap-env:Body><soap-env:Fault><faultcode>soap-env:Server</faultcode><faultstring>Exception INVALID_INPUT raised</faultstring><detail><Name>INVALID_INPUT</Name></detail></soap-env:Fault></soap-env:Body></soap-env:Envelope>`
     )
   })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  await listenOnUnblockedPort(server)
   const port = (server.address() as AddressInfo).port
   process.env.ABAP_MCP_TEST_PASSWORD = "secret"
   try {
@@ -564,7 +565,7 @@ test("SAP SOAP helper uses a plain Basic-auth HTTP request outside the ADT sessi
       response.end(body)
     })
   })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  await listenOnUnblockedPort(server)
   const port = (server.address() as AddressInfo).port
   process.env.ABAP_MCP_TEST_PASSWORD = "secret"
 

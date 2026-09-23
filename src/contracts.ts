@@ -307,7 +307,7 @@ const toolContractsBase = {
   },
   get_capability_report: {
     description:
-      "Build a read-only capability report for one configured SAP connection. It separates local implementation, verified native ADT access, SAP helper fallback, unsupported endpoints, and unknown target-specific capabilities. Probes never invoke SAP writes, clear locks, retry writes, or claim RFC rollback.",
+      "Build a read-only capability report for one configured SAP connection. It separates local implementation, verified native ADT access, SAP helper fallback, unsupported endpoints, and unknown target-specific capabilities. It also publishes the independent evidence dimension from contracts/verification-registry.json under verification (per-capability and per-helper rollups plus availabilityWithoutEvidence): availability is inferred from helper protocol and opcode data, verification records what was actually called on SAP, and available plus unverified is the honest normal state rather than a defect. An unreadable registry degrades every entry to unverified instead of claiming evidence. Probes never invoke SAP writes, clear locks, retry writes, or claim RFC rollback.",
     inputSchema: {
       connectionId: z.string()
     }

@@ -7,6 +7,7 @@ import { whereUsedHttp } from "../src/where-used-request.js"
 import { AdtBackend } from "../src/adt-backend.js"
 import { collectWhereUsed } from "../src/where-used.js"
 import { legacyWhereUsedPaths } from "../src/legacy-where-used.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 
 const discovery = "/sap/bc/adt/discovery"
 const uri = "/sap/bc/adt/functions/groups/zgroup/fmodules/z_test/source/main"
@@ -133,8 +134,7 @@ test(
         // Deliberately no response: exercise the actual SDK transport, not a rejected mock.
       }
     })
-    server.listen(0, "127.0.0.1")
-    await once(server, "listening")
+    await listenOnUnblockedPort(server)
     try {
       const address = server.address()
       assert.ok(address && typeof address !== "string")

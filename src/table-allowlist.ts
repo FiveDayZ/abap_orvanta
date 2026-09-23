@@ -11,6 +11,8 @@
 //
 // 本模块是只读白名单，不做任何 SAP 访问、不缓存业务数据。
 
+import { SCOPED_QUERY_TABLE } from "./customer-scope.js"
+
 /** 允许集分层，键为档位，值为该档的表名。 */
 export const TABLE_TIERS = {
   /**
@@ -49,7 +51,7 @@ export const TABLE_TIERS = {
   /** B 档：定制 / 组织架构。低敏感。 */
   customizing: ["T000", "T001", "T001W", "T005", "T005T", "TSTC", "TSTCT", "T002", "T006", "T006A"],
   /** C 档：业务主数据 / 凭证。**逐表批准**，此处仅登记已获批准者。 */
-  business: ["ZTPMC_BZWL"],
+  business: [SCOPED_QUERY_TABLE],
   /**
    * 产品必需档：由 `src` 调用点清点得出，**不是** D5-2 取证候选表的子集。
    *

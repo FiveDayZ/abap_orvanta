@@ -1,6 +1,23 @@
 import type { RemoteFunctionRequest, RemoteFunctionResult } from "./backend.js"
+import {
+  SCOPED_QUERY_FIELDS,
+  SCOPED_QUERY_HELPER,
+  SCOPED_QUERY_PLANT,
+  SCOPED_QUERY_PLANT_FIELD,
+  SCOPED_QUERY_TABLE
+} from "./customer-scope.js"
 
-const fields = ["MANDT", "WERKS", "ZPOSNR", "ZPKGMATNR", "ZPKGTYPE", "ZPKGDESC"]
+const fields = SCOPED_QUERY_FIELDS
+
+/**
+ * The finite grammar the scoped fallback accepts, built from the customer-scope constants so the
+ * table, plant field and plant value cannot drift apart from the predicates checked below.
+ */
+const scopedQueryPattern = new RegExp(
+  `^\\s*SELECT\\s+(\\*|[A-Z_]+(?:(?:\\s*,\\s*|\\s+)[A-Z_]+)*)\\s+FROM\\s+${SCOPED_QUERY_TABLE}\\s+` +
+    `WHERE\\s+${SCOPED_QUERY_PLANT_FIELD}\\s*=\\s*'([^']*)'\\s*$`,
+  "i"
+)
 
 export async function runScopedQueryFallback(
   sql: string,
@@ -19,12 +36,10 @@ export async function runScopedQueryFallback(
     throw nativeError
   }
   // This is a finite query grammar, not an arbitrary SQL-to-RFC translator.
-  const match = sql.match(
-    /^\s*SELECT\s+(\*|[A-Z_]+(?:(?:\s*,\s*|\s+)[A-Z_]+)*)\s+FROM\s+ZTPMC_BZWL\s+WHERE\s+WERKS\s*=\s*'([^']*)'\s*$/i
-  )
+  const match = sql.match(scopedQueryPattern)
   if (
     !match ||
-    match[2] !== "809P" ||
+    match[2] !== SCOPED_QUERY_PLANT ||
     !Number.isInteger(maxRows) ||
     maxRows < 1 ||
     maxRows > 1001
@@ -41,8 +56,12 @@ export async function runScopedQueryFallback(
   let result: RemoteFunctionResult
   try {
     result = await invoke({
-      functionName: "Z_ORVANTA_MCP_QUERY_API",
-      inputParameters: { IV_WERKS: "809P", IV_LIMIT: String(maxRows), ET_ROWS: [] },
+      functionName: SCOPED_QUERY_HELPER,
+      inputParameters: {
+        IV_WERKS: SCOPED_QUERY_PLANT,
+        IV_LIMIT: String(maxRows),
+        ET_ROWS: []
+      },
       outputParameters: [
         ...["EV_STATUS", "EV_CODE", "EV_VERSION", "EV_COUNT"].map((name) => ({
           name,
@@ -79,7 +98,7 @@ export async function runScopedQueryFallback(
     if (
       fields.some((field) => typeof row[field] !== "string") ||
       row.MANDT !== client ||
-      row.WERKS !== "809P" ||
+      row.WERKS !== SCOPED_QUERY_PLANT ||
       !/^\d{6}$/.test(row.ZPOSNR ?? "") ||
       row.ZPOSNR! <= lastKey
     ) {

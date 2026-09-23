@@ -7,6 +7,7 @@ import type { AdtHTTP, RequestOptions } from "abap-adt-api/build/AdtHTTP.js"
 import { adtDiscovery } from "abap-adt-api/build/api/discovery.js"
 import { debuggerListeners } from "abap-adt-api/build/api/debugger.js"
 import { debugRequestFailure, inspectDebugger } from "../src/debug-precheck.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 
 const paths = [
   "/sap/bc/adt/debugger",
@@ -113,7 +114,7 @@ test("debug precheck uses actual SDK discovery/listener HTTP GET only", async ()
       response.end()
     }
   })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  await listenOnUnblockedPort(server)
   try {
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
     const http = {

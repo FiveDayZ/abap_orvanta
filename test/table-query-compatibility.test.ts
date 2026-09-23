@@ -6,6 +6,7 @@ import { ToolService } from "../src/tools.js"
 import { MockBackend } from "./mock-backend.js"
 import { createServer } from "node:http"
 import { AdtBackend } from "../src/adt-backend.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 
 const legacy = {
   functionName: "RFC_READ_TABLE",
@@ -292,7 +293,7 @@ test("small-integer mixed fallback completes actual HTTP/SOAP parsing without le
     response.writeHead(200, { "Content-Type": "application/xml", "x-csrf-token": "test-only" })
     response.end("<graph/>")
   })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  await listenOnUnblockedPort(server)
   const address = server.address()
   assert.ok(address && typeof address !== "string")
   const backend = new AdtBackend(

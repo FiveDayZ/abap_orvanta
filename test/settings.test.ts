@@ -10,6 +10,7 @@ import { startSettingsServer } from "../src/settings-server.js"
 import { AdtBackend } from "../src/adt-backend.js"
 import { parseConnections } from "../src/config.js"
 import { TOOL_COUNT, TOOL_NAMES } from "../src/tool-registry.js"
+import { listenOnUnblockedPort } from "./loopback-port.js"
 import { MockBackend } from "./mock-backend.js"
 import type { ConnectionConfig } from "../src/config.js"
 
@@ -183,7 +184,7 @@ test("settings starts only selected connections and allows deleting an unused co
     return new MockBackend()
   })
   const listener = createServer()
-  await new Promise<void>((done) => listener.listen(0, "127.0.0.1", done))
+  await listenOnUnblockedPort(listener)
   const address = listener.address()
   assert.ok(address && typeof address !== "string")
   const port = address.port
@@ -236,7 +237,7 @@ test("settings legacy start includes only credential-ready connections; deleting
     return new MockBackend()
   })
   const listener = createServer()
-  await new Promise<void>((done) => listener.listen(0, "127.0.0.1", done))
+  await listenOnUnblockedPort(listener)
   const address = listener.address()
   assert.ok(address && typeof address !== "string")
   await new Promise<void>((done) => listener.close(() => done()))
@@ -301,7 +302,7 @@ test("settings controls its own MCP service, refuses occupied ports and protects
   }
   const f = await fixture(() => backend)
   const blocker = createServer((_, response) => response.end("unrelated"))
-  await new Promise<void>((done) => blocker.listen(0, "127.0.0.1", done))
+  await listenOnUnblockedPort(blocker)
   const address = blocker.address()
   assert.ok(address && typeof address !== "string")
   const port = address.port
@@ -377,7 +378,7 @@ test("the settings password resolver is used by real SOAP HTTP requests without 
       "<Envelope><Body><EV_STATUS>S</EV_STATUS><EV_CODE>OK</EV_CODE><EV_MESSAGE>Ready</EV_MESSAGE><EV_VERSION>1.0</EV_VERSION></Body></Envelope>"
     )
   })
-  await new Promise<void>((done) => soap.listen(0, "127.0.0.1", done))
+  await listenOnUnblockedPort(soap)
   const address = soap.address()
   assert.ok(address && typeof address !== "string")
   const config = parseConnections({

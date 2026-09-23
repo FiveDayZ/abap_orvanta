@@ -9,6 +9,17 @@ import type {
 import { APPLICATION_LOG_HELPER } from "./application-logs.js"
 import { SCI_E2_HELPER, SCI_V2_HELPER } from "./sci-v2.js"
 import { registryEntry } from "./tool-registry.js"
+import {
+  VERIFICATION_REGISTRY_PATH,
+  availabilityWithoutEvidence,
+  loadVerificationRegistry,
+  protocolOnlyEntries,
+  verificationTotals,
+  type VerificationEntry,
+  type VerificationRegistry,
+  type VerificationStatus,
+  type VerificationTotals
+} from "./verification-registry.js"
 import { PRODUCT_VERSION } from "./version.js"
 
 type Availability = "available" | "partial" | "unsupported" | "platform_unsupported" | "unknown"
@@ -724,6 +735,21 @@ export async function buildCapabilityReport(
   const withheld = new Set(disabledToolNames)
   const disclosed = capabilities.map((item) => discloseToolProfile(item, withheld))
 
+  // Evidence dimension. Read once, fail soft, and never consulted by the availability verdicts
+  // above: the two dimensions are reported side by side precisely so that one cannot stand in for
+  // the other (R-20 was that substitution).
+  const verificationLookup = loadVerificationLookup()
+  const totals: VerificationTotals | null = verificationLookup.registry
+    ? verificationTotals(verificationLookup.registry)
+    : null
+  const availableToolNames = disclosed
+    .filter((item) => item.observation.availability === "available")
+    .flatMap((item) => item.toolNames)
+  const protocolOnly = verificationLookup.registry
+    ? protocolOnlyEntries(verificationLookup.registry).map((entry) => entry.tool)
+    : []
+  const helperRoutes = helperCapabilityRoutes()
+
   return JSON.stringify(
     {
       productVersion: PRODUCT_VERSION,
@@ -750,7 +776,15 @@ export async function buildCapabilityReport(
             }
           }
         : {}),
-      helpers: [baseHelperRead, repositoryHelperRead, ddicHelper],
+      helpers: [baseHelperRead, repositoryHelperRead, ddicHelper].map((helper) => ({
+        ...helper,
+        verification: rollupVerification(
+          verificationLookup,
+          helperRoutes
+            .filter((route) => route.helper === helper.name)
+            .flatMap((route) => route.toolNames)
+        )
+      })),
       // Stable order, and the only place a helper order is defined: base, repository, DDIC,
       // maintenance, operational-log, application-log, SCI V2, SCI E2. Appending the two SCI
       // helpers keeps every earlier index stable for callers that address the array positionally.
@@ -766,7 +800,28 @@ export async function buildCapabilityReport(
       ],
       discovery: discoverySummary(discovery),
       quality: qualityBlock(discovery, traces),
-      capabilities: disclosed,
+      capabilities: disclosed.map((item) => ({
+        ...item,
+        verification: rollupVerification(verificationLookup, item.toolNames)
+      })),
+      verification: {
+        registryLoaded: verificationLookup.loaded,
+        registryPath: "contracts/verification-registry.json",
+        updatedAt: verificationLookup.updatedAt,
+        ...(verificationLookup.reason ? { reason: verificationLookup.reason } : {}),
+        totals,
+        ...(verificationLookup.registry
+          ? {
+              availabilityWithoutEvidence: availabilityWithoutEvidence(
+                availableToolNames,
+                verificationLookup.registry
+              )
+            }
+          : {}),
+        protocolOnlyToolCount: protocolOnly.length,
+        protocolOnlyTools: protocolOnly,
+        note: "Availability is inferred from the helper protocol version and opcode list; verification is what was actually called on SAP. They are orthogonal: this block never changes an availability verdict, and an available tool with no evidence is reported as unverified rather than presented as verified."
+      },
       summary: {
         toolCount: disclosed.reduce((count, item) => count + item.toolNames.length, 0),
         ...(withheld.size > 0
@@ -1493,6 +1548,120 @@ function compareVersions(left: string, right: string): number {
     if (difference) return difference
   }
   return 0
+}
+
+/**
+ * The evidence dimension of the report: what has actually been called on SAP, as opposed to what
+ * the protocol and opcode checks infer.
+ *
+ * Availability and verification stay orthogonal on purpose. This lookup never feeds an availability
+ * verdict, and an unreadable or missing registry degrades every tool to `unverified` instead of
+ * failing the report - losing the file must never look like a verified tool. A packaged build does
+ * not ship `contracts/`, so that degradation is the expected packaged behaviour, and the safest one.
+ */
+export interface VerificationLookup {
+  loaded: boolean
+  updatedAt: string | null
+  reason: string | null
+  registry: VerificationRegistry | null
+  entries: Map<string, VerificationEntry>
+}
+
+/**
+ * The `path` parameter exists so the degradation path is testable: a packaged build and a
+ * deliberately unreadable registry must both end in "everything unverified", never in a claim.
+ */
+export function loadVerificationLookup(path?: string): VerificationLookup {
+  try {
+    const registry = loadVerificationRegistry(path)
+    return {
+      loaded: true,
+      updatedAt: registry.updatedAt,
+      reason: null,
+      registry,
+      entries: new Map(registry.entries.map((entry) => [entry.tool, entry]))
+    }
+  } catch (error) {
+    return {
+      loaded: false,
+      updatedAt: null,
+      reason:
+        `Verification registry unreadable (${VERIFICATION_REGISTRY_PATH}): ` +
+        `${error instanceof Error ? error.message : String(error)}. ` +
+        "Every tool is reported unverified rather than assumed verified.",
+      registry: null,
+      entries: new Map()
+    }
+  }
+}
+
+/** Worst-first: a rollup is only as strong as its least-verified tool. */
+const VERIFICATION_SEVERITY: readonly VerificationStatus[] = [
+  "failed",
+  "platform-unsupported",
+  "blocked",
+  "unverified",
+  "verified"
+]
+
+export interface VerificationRollup {
+  status: VerificationStatus
+  counts: Record<VerificationStatus, number>
+  tools: Record<string, VerificationStatus>
+  evidence: Array<{
+    tool: string
+    status: VerificationStatus
+    failureBasis: string | null
+    lastAttemptAt: string | null
+    evidence: string | null
+  }>
+  note: string
+}
+
+export function rollupVerification(
+  lookup: VerificationLookup,
+  toolNames: readonly string[]
+): VerificationRollup {
+  const counts: Record<VerificationStatus, number> = {
+    verified: 0,
+    unverified: 0,
+    failed: 0,
+    blocked: 0,
+    "platform-unsupported": 0
+  }
+  const tools: Record<string, VerificationStatus> = {}
+  const evidence: VerificationRollup["evidence"] = []
+  let worst: VerificationStatus = "verified"
+  let worstRank = VERIFICATION_SEVERITY.indexOf(worst)
+
+  for (const tool of toolNames) {
+    const entry = lookup.entries.get(tool)
+    const status: VerificationStatus = entry ? entry.status : "unverified"
+    counts[status]++
+    tools[tool] = status
+    const rank = VERIFICATION_SEVERITY.indexOf(status)
+    if (rank < worstRank) {
+      worst = status
+      worstRank = rank
+    }
+    if (entry && entry.status !== "unverified") {
+      evidence.push({
+        tool,
+        status: entry.status,
+        failureBasis: entry.failureBasis,
+        lastAttemptAt: entry.lastAttemptAt,
+        evidence: entry.evidence
+      })
+    }
+  }
+
+  return {
+    status: toolNames.length === 0 ? "unverified" : worst,
+    counts,
+    tools,
+    evidence,
+    note: "Evidence dimension only. It never changes availability: available + unverified is the honest normal state, not a defect, and never a claim that a tool was verified."
+  }
 }
 
 function countAvailability(capabilities: CapabilitySpec[]): Record<Availability, number> {

@@ -254,11 +254,16 @@ if ($CandidateSuffix) { $versionLabel += "-$CandidateSuffix" }
 $indexRow = "| $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) | $versionLabel | $([IO.Path]::GetFileName($zipPath)) | $artifactHash | $commitShort | $dirtyLabel | v$NodeVersion |"
 Add-Content -LiteralPath $indexPath -Value $indexRow -Encoding utf8
 
-$retained = @(Get-ChildItem -LiteralPath $releaseRoot -Filter "orvanta-mcp-*-win-x64*.zip" |
-    Sort-Object LastWriteTime -Descending)
-if ($retained.Count -gt 5) {
-    $stale = ($retained | Select-Object -Skip 5 | ForEach-Object { $_.Name }) -join ", "
-    Write-Warning "release/ 现有 $($retained.Count) 个产物，超出保留窗口 5 个：$stale。脚本不会自动删除发布物，请人工确认后清理。"
+$pruneScript = Join-Path $PSScriptRoot "quarantine-release-artifacts.ps1"
+if (Test-Path -LiteralPath $pruneScript) {
+    # 保留窗口不是建议而是动作：超出窗口的产物被移入 release/quarantine/（移动而非删除，
+    # 保持可逆），同时清掉没有对应 zip 的散落解包目录与历史遗留目录。
+    & $pruneScript -ReleaseRoot $releaseRoot -Keep 5 -Apply | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "release/ 保留窗口执行未能清空全部超窗产物；见上方 quarantine 输出。"
+    }
+} else {
+    Write-Warning "未找到 scripts/quarantine-release-artifacts.ps1，跳过 release/ 保留窗口执行。"
 }
 
 [pscustomobject]@{
