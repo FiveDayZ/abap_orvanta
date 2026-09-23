@@ -16,7 +16,8 @@ if (-not $EnableWrite) {
 }
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$baseConfigPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$baseConfigPath = Resolve-BaseConnectionsPath -ProjectRoot $projectRoot
 $configPath = Join-Path $env:TEMP ("abap-mcp-0250-connections-" + [guid]::NewGuid() + ".json")
 $stdout = Join-Path $env:TEMP "abap-mcp-0250-stdout.log"
 $stderr = Join-Path $env:TEMP "abap-mcp-0250-stderr.log"
@@ -25,7 +26,7 @@ $securePassword = if ($SecurePassword) {
     $SecurePassword
 }
 else {
-    Read-Host "Password for wys@w200" -AsSecureString
+    Read-Host "Password for $((Get-BaseConnections -ProjectRoot $projectRoot).Connection.username)@w200" -AsSecureString
 }
 $credential = [PSCredential]::new("unused", $securePassword)
 $plainPassword = $credential.GetNetworkCredential().Password

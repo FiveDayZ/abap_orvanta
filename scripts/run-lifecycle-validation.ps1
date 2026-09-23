@@ -12,7 +12,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$baseConfigPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$baseConfigPath = Resolve-BaseConnectionsPath -ProjectRoot $projectRoot
 $testRoot = Join-Path $env:TEMP ("abap-mcp-0302-" + [guid]::NewGuid())
 $configPath = Join-Path $testRoot "connections.json"
 $stateRoot = Join-Path $testRoot "state"
@@ -51,7 +52,7 @@ try {
         if ([Console]::IsInputRedirected) {
             throw "A visible PowerShell 7 terminal is required for secure password input."
         }
-        $SecurePassword = Read-Host "Password for wys@w200" -AsSecureString
+        $SecurePassword = Read-Host "Password for $((Get-BaseConnections -ProjectRoot $projectRoot).Connection.username)@w200" -AsSecureString
     }
     if ($SecurePassword.Length -eq 0) { throw "Password cannot be empty." }
     $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword)

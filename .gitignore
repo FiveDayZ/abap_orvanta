@@ -9,3 +9,5 @@ release/
 .logs/
 # 交付/传输归档不入库，保留在磁盘
 /*.zip
+# 本地真实 SAP 连接配置不入库，只保留出厂占位符 packaging/windows/default-connections.json
+packaging/windows/connections.local.json

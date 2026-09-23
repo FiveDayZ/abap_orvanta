@@ -1,0 +1,51 @@
+# R-12 — minimal CI gate: a reproducible entry point for the same `npm run verify`
+# that is run locally. It deliberately does NOT introduce a second, different set of
+# checks: the whole point is that CI and the local gate cannot drift apart.
+#
+# Runner choice: windows-latest. This is not a preference — the gate runs
+# `test:installer` and `test:setup`, which invoke `pwsh -File test/*.ps1`, and the
+# product ships as `packaging/windows`. Running the gate on Linux would test a
+# configuration that is never shipped.
+#
+# STATUS: NOT YET EXECUTED ON A RUNNER. The workflow has never been run by GitHub
+# Actions from this repository, so it is *unverified* — a syntactically valid file
+# is not evidence that the gate passes in CI. Treat the first real run as the
+# verification, and record its outcome before relying on this as a gate.
+name: verify
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Node 24 is required by package.json `engines`; do not lower this to match a
+      # runner default, because the gate's behaviour would then differ from local.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      # `npm ci` (not `npm install`): package-lock.json is tracked, and a gate that
+      # resolves fresh dependency versions is not reproducible.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify

@@ -3,11 +3,11 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 
 const endpoint = new URL(process.env.ABAP_MCP_ENDPOINT || "http://127.0.0.1:4848/mcp")
 const connectionId = process.env.ABAP_MCP_CONNECTION || "w200"
-const baseUrl = (process.env.ABAP_MCP_SAP_BASE_URL || "http://192.168.88.26:8000").replace(
+const baseUrl = (process.env.ABAP_MCP_SAP_BASE_URL || "https://sap.example.invalid:44300").replace(
   /\/$/,
   ""
 )
-const username = process.env.ABAP_MCP_SAP_USERNAME || "wys"
+const username = process.env.ABAP_MCP_SAP_USERNAME || "DEVELOPER"
 const password = process.env.ABAP_MCP_W200_PASSWORD
 const sapClient = process.env.ABAP_MCP_SAP_CLIENT || "200"
 const language = process.env.ABAP_MCP_SAP_LANGUAGE || "EN"

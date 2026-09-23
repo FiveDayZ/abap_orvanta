@@ -8,11 +8,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$configPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$baseConnections = Get-BaseConnections -ProjectRoot $projectRoot
+Assert-BaseConnectionsUsable -Info $baseConnections `
+    -EndpointOverride $env:ABAP_MCP_SAP_BASE_URL -UsernameOverride $env:ABAP_MCP_SAP_USERNAME
+$sapBaseUrl = if ($env:ABAP_MCP_SAP_BASE_URL) { $env:ABAP_MCP_SAP_BASE_URL }
+else { $baseConnections.Connection.url }
+$sapUsername = if ($env:ABAP_MCP_SAP_USERNAME) { $env:ABAP_MCP_SAP_USERNAME }
+else { $baseConnections.Connection.username }
+$configPath = $baseConnections.Path
 $stdout = Join-Path $env:TEMP "abap-mcp-0160-debug-stdout.log"
 $stderr = Join-Path $env:TEMP "abap-mcp-0160-debug-stderr.log"
 $probeStderr = Join-Path $env:TEMP "abap-mcp-0160-probe-stderr.log"
-$securePassword = Read-Host "Password for wys" -AsSecureString
+$securePassword = Read-Host "Password for $sapUsername" -AsSecureString
 $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
 $plainPassword = $null
 $service = $null
@@ -33,8 +41,8 @@ try {
         ABAP_MCP_CONFIG        = $configPath
         ABAP_MCP_PORT          = $Port.ToString()
         ABAP_MCP_ENDPOINT      = "http://127.0.0.1:$Port/mcp"
-        ABAP_MCP_SAP_BASE_URL  = "http://192.168.88.26:8000"
-        ABAP_MCP_SAP_USERNAME  = "wys"
+        ABAP_MCP_SAP_BASE_URL  = $sapBaseUrl
+        ABAP_MCP_SAP_USERNAME  = $sapUsername
         ABAP_MCP_SAP_CLIENT    = "200"
         ABAP_MCP_SAP_LANGUAGE  = "EN"
     }

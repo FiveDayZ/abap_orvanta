@@ -9,7 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 $Host.UI.RawUI.WindowTitle = "MCP 0.35.0 Read-Only Capability Validation"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$configPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$configPath = Resolve-BaseConnectionsPath -ProjectRoot $projectRoot
 $stdout = Join-Path $env:TEMP "sap-capability-0310-service.stdout.log"
 $stderr = Join-Path $env:TEMP "sap-capability-0310-service.stderr.log"
 $probeStderr = Join-Path $env:TEMP "sap-capability-0310-probe.stderr.log"
@@ -27,7 +28,7 @@ try {
         Pop-Location
     }
 
-    $securePassword = Read-Host "Password for wys@w200" -AsSecureString
+    $securePassword = Read-Host "Password for $((Get-BaseConnections -ProjectRoot $projectRoot).Connection.username)@w200" -AsSecureString
     $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
     $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
     if ([string]::IsNullOrEmpty($plainPassword)) { throw "Password cannot be empty." }

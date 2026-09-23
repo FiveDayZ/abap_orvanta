@@ -3,17 +3,25 @@
 [CmdletBinding()]
 param(
     [int]$Port = 0,
-    [string]$ResultPath = (Join-Path $env:TEMP "sap-ecc-fallback-validation-0260.json")
+    [string]$ResultPath = (Join-Path $env:TEMP "sap-ecc-fallback-validation-0260.json"),
+    [string]$BaseUrl,
+    [string]$Username
 )
 
 $ErrorActionPreference = "Stop"
 $Host.UI.RawUI.WindowTitle = "MCP 0.26.0 ECC Fallback Validation"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$configPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$baseConnections = Get-BaseConnections -ProjectRoot $projectRoot
+Assert-BaseConnectionsUsable -Info $baseConnections `
+    -EndpointOverride $BaseUrl -UsernameOverride $Username
+$sapBaseUrl = if ($BaseUrl) { $BaseUrl } else { $baseConnections.Connection.url }
+$sapUsername = if ($Username) { $Username } else { $baseConnections.Connection.username }
+$configPath = $baseConnections.Path
 $stdout = Join-Path $env:TEMP "abap-mcp-0260-stdout.log"
 $stderr = Join-Path $env:TEMP "abap-mcp-0260-stderr.log"
 $probeStderr = Join-Path $env:TEMP "abap-mcp-0260-probe-stderr.log"
-$securePassword = Read-Host "Password for wys@w200" -AsSecureString
+$securePassword = Read-Host "Password for $sapUsername" -AsSecureString
 $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
 $plainPassword = $null
 $service = $null
@@ -29,8 +37,8 @@ function Invoke-RepositoryBootstrap {
     )
 
     $result = & (Join-Path $PSScriptRoot "bootstrap-sap-helper.ps1") `
-        -BaseUrl "http://192.168.88.26:8000" `
-        -Username "wys" `
+        -BaseUrl $sapBaseUrl `
+        -Username $sapUsername `
         -Client "200" `
         -Language "EN" `
         -Action $Action `

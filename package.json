@@ -52,7 +52,7 @@
     "test:w200-ddic-table-lifecycle": "pwsh -NoLogo -NoProfile -File scripts/run-ddic-table-lifecycle-validation.ps1 -ApproveDestructiveWrite",
     "test:w200-debug-wave": "pwsh -NoLogo -NoProfile -File scripts/run-debug-validation.ps1",
     "test:w200-debug-acceptance": "node scripts/probe-debug-acceptance.mjs",
-    "test:w200-soap-rfc": "pwsh -NoLogo -NoProfile -File scripts/probe-soap-rfc.ps1 -BaseUrl http://192.168.88.26:8000 -Username wys -Client 200 -Language EN",
+    "test:w200-soap-rfc": "pwsh -NoLogo -NoProfile -File scripts/probe-soap-rfc.ps1 -Client 200 -Language EN",
     "verify:release": "npm run package:windows && npm run test:package && npm run test:settings-package",
     "verify:headless": "node scripts/verify-headless.mjs",
     "matrix:generate": "npm run build && node scripts/generate-tool-index.mjs",

@@ -1,8 +1,6 @@
 param(
-    [Parameter(Mandatory = $true)]
     [string]$BaseUrl,
 
-    [Parameter(Mandatory = $true)]
     [string]$Username,
 
     [string]$Client = "200",
@@ -19,6 +17,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$baseConnections = Get-BaseConnections -ProjectRoot (Split-Path -Parent $PSScriptRoot)
+Assert-BaseConnectionsUsable -Info $baseConnections `
+    -EndpointOverride $BaseUrl -UsernameOverride $Username
+if (-not $BaseUrl) { $BaseUrl = $baseConnections.Connection.url }
+if (-not $Username) { $Username = $baseConnections.Connection.username }
 
 $securePassword = Read-Host "Password for $Username" -AsSecureString
 $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)

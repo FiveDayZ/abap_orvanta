@@ -13,7 +13,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$baseConfigPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$baseConfigPath = Resolve-BaseConnectionsPath -ProjectRoot $projectRoot
 $testRoot = Join-Path $env:TEMP ("abap-mcp-0271-" + [guid]::NewGuid())
 $configPath = Join-Path $testRoot "connections.json"
 $stateRoot = Join-Path $testRoot "state"
@@ -55,7 +56,7 @@ try {
     New-Item -ItemType Directory -Force -Path $testRoot, $stateRoot | Out-Null
     Copy-Item -LiteralPath $baseConfigPath -Destination $configPath
 
-    $securePassword = Read-Host "Password for wys@w200" -AsSecureString
+    $securePassword = Read-Host "Password for $((Get-BaseConnections -ProjectRoot $projectRoot).Connection.username)@w200" -AsSecureString
     $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
     $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
     if ([string]::IsNullOrEmpty($plainPassword)) { throw "Password cannot be empty." }

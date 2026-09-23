@@ -8,14 +8,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$baseConfigPath = Join-Path $projectRoot "packaging\windows\default-connections.json"
+. (Join-Path $PSScriptRoot "get-base-connections.ps1")
+$baseConfigPath = Resolve-BaseConnectionsPath -ProjectRoot $projectRoot
 $testRoot = Join-Path $env:TEMP ("abap-mcp-0200-" + [guid]::NewGuid())
 $configPath = Join-Path $testRoot "connections.json"
 $stateRoot = Join-Path $testRoot "state"
 $firstResultPath = Join-Path $testRoot "first.json"
 $restartResultPath = Join-Path $testRoot "restart.json"
 $probeStderr = Join-Path $testRoot "probe-stderr.log"
-$securePassword = Read-Host "Password for wys" -AsSecureString
+$securePassword = Read-Host "Password for $((Get-BaseConnections -ProjectRoot $projectRoot).Connection.username)" -AsSecureString
 $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
 $plainPassword = $null
 $service = $null
