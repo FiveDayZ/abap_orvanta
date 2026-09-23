@@ -1366,6 +1366,14 @@ function New-DdicFunctionSource {
         "  DATA lv_mode TYPE c LENGTH 1.",
         "  DATA lv_rc TYPE sy-subrc.",
         "  DATA lv_activation_subrc TYPE sy-subrc.",
+        # 2026-09-23 运行时回归：1.13 助手终于派发到恢复激活分支，但 DD_TABL_ACT 返回
+        # subrc=0 且 act_result=0（DD_TABL_ACT 的 act_result 不是成功标志）而对象仍无活动
+        # 版本，于是卡在"激活后校验"并只回 VERIFY_FAILED——真正的原因（激活子返回码、
+        # act_res_tab 行数、DD_TABL_ACT 给出的 action/mode/dataloss）被丢弃，不可归因。
+        # 该变量承载这些诊断，失败时写进 ev_message（BAPIRET2-MESSAGE，CHAR 220）并同时
+        # 以 payload 行输出。
+        "  DATA lv_verify_detail TYPE string.",
+        "  DATA lv_act_rows TYPE i.",
         "  DATA lv_put_subrc TYPE sy-subrc.",
         "  DATA lv_put_subrc_text TYPE c LENGTH 10.",
         "  DATA lv_msg_class TYPE sy-msgid.",
@@ -5721,6 +5729,35 @@ function New-DdicFunctionSource {
         "    IF sy-subrc <> 0 OR lv_gotstate <> 'A'.",
         "      ev_status = 'E'. ev_code = 'VERIFY_FAILED'.",
         "      ev_message = 'Activated DDIC object could not be read'.",
+        # 只回一句"读不到"无法归因：TABL 的激活子返回码、act_res_tab 行数与 DD_TABL_ACT
+        # 给出的 action/mode/dataloss 才是判据。2026-09-23 实测该分支时这三项全部被丢弃。
+        "      IF lv_object_type = 'TABL'.",
+        "        DESCRIBE TABLE lt_act_res LINES lv_act_rows.",
+        "        CONCATENATE 'subrc' lv_activation_subrc 'rc' lv_rc",
+        "          'actres_rows' lv_act_rows",
+        "          INTO lv_verify_detail SEPARATED BY space.",
+        "        IF ls_act_res-action IS NOT INITIAL.",
+        "          CONCATENATE lv_verify_detail 'action'",
+        "            ls_act_res-action 'mode' ls_act_res-modeflag",
+        "            INTO lv_verify_detail SEPARATED BY space.",
+        "        ENDIF.",
+        "        CONCATENATE '(' lv_verify_detail ')'",
+        "          INTO lv_verify_detail.",
+        "        CONCATENATE ev_message lv_verify_detail",
+        "          INTO lv_verify_detail SEPARATED BY space.",
+        "        ev_message = lv_verify_detail.",
+        "        CLEAR it_source.",
+        "        add_payload 'M' '1' 'PHASE' 'verify_failed'.",
+        "        add_payload 'M' '1' 'ACT_SUBRC' lv_activation_subrc.",
+        "        add_payload 'M' '1' 'ACT_RC' lv_rc.",
+        "        add_payload 'M' '1' 'ACT_ROWS' lv_act_rows.",
+        "        add_payload 'M' '1' 'ACT_ACTION' ls_act_res-action.",
+        "        add_payload 'M' '1' 'ACT_MODE' ls_act_res-modeflag.",
+        "        add_payload 'M' '1' 'ACT_DATALOSS'",
+        "          ls_act_res-dataloss_d.",
+        "        add_payload 'M' '1' 'GOTSTATE' lv_gotstate.",
+        "        add_payload 'M' '1' 'RESUME' lv_resume.",
+        "      ENDIF.",
         "      ev_version = '1.2'. RETURN.",
         "    ENDIF.",
         "  ENDIF.",

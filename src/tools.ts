@@ -10498,9 +10498,16 @@ function containsLineSequence(actual: string[], expected: string[]): boolean {
 }
 
 /**
- * Keys the append-field write reports on failure so a caller can judge the
- * outcome instead of guessing. COMPENSATED is the important one: "N" means the
- * failed call could not restore the object and it may still be inconsistent.
+ * Keys the helper reports on failure so a caller can judge the outcome instead of
+ * guessing. COMPENSATED is the important one: "N" means the failed call could not
+ * restore the object and it may still be inconsistent.
+ *
+ * The activation keys cover a second failure shape found on 2026-09-23: the 1.13 helper
+ * reached the real activation branch, `DD_TABL_ACT` returned subrc=0 with act_result=0 (which
+ * is not a success flag), and the object still had no active version, so the call died in the
+ * post-activation verification with nothing but VERIFY_FAILED. Those rows now carry the
+ * activation return code, the act_res_tab row count, and the action/mode/dataloss DD_TABL_ACT
+ * reported, so the next failure names its cause.
  */
 const APPEND_FAILURE_DETAIL_KEYS = [
   "APPEND",
@@ -10513,6 +10520,14 @@ const APPEND_FAILURE_DETAIL_KEYS = [
   "EXPECTED_FIELDS",
   "ACTUAL_FIELDS",
   "ACT_RC",
+  "ACT_SUBRC",
+  "ACT_ROWS",
+  "ACT_ACTION",
+  "ACT_MODE",
+  "ACT_DATALOSS",
+  "GOTSTATE",
+  "RESUME",
+  "PHASE",
   "PUT_SUBRC"
 ]
 
