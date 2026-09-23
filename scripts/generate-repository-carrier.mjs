@@ -65,7 +65,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r02.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r03.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -309,6 +309,37 @@ if (!offline) {
   assert.equal(read.isError ?? false, false, "reading the live helper failed")
   const payload = JSON.parse((read.content ?? []).map((c) => c.text ?? "").join(""))
   live = payload.source ?? []
+  // The insert API is called dynamically, so ABAP type-checks every actual parameter against the
+  // formal parameter's DDIC type at runtime and terminates with CALL_FUNCTION_CONFLICT_TYPE on a
+  // mismatch - that is how `CORRNUM TYPE C LENGTH 10` failed its F8 run. Compare the declared types
+  // of the carrier's own variables against SAP's interface before generating.
+  const insertRead = await client.callTool(
+    {
+      name: "read_function_module_interface",
+      arguments: { connectionId: "w200", functionName: "RPY_FUNCTIONMODULE_INSERT" }
+    },
+    undefined,
+    { timeout: 300000 }
+  )
+  assert.equal(insertRead.isError ?? false, false, "reading RPY_FUNCTIONMODULE_INSERT failed")
+  const insertInterface = JSON.parse((insertRead.content ?? []).map((c) => c.text ?? "").join(""))
+  const insertTypes = new Map(
+    (insertInterface.importParameters ?? []).map((p) => [p.name, String(p.typeName).toLowerCase()])
+  )
+  const passedTypes = [
+    ["FUNCNAME", "lv_func", "rs38l-name"],
+    ["FUNCTION_POOL", "lv_pool", "rs38l-area"],
+    ["REMOTE_CALL", "lv_remote", "rs38l-remote"],
+    ["SHORT_TEXT", "lv_short", "tftit-stext"],
+    ["CORRNUM", "c_request", "e071-trkorr"]
+  ]
+  for (const [formal, actual, declared] of passedTypes) {
+    assert.equal(
+      insertTypes.get(formal),
+      declared,
+      `RPY_FUNCTIONMODULE_INSERT ${formal} is ${insertTypes.get(formal)} in SAP but the carrier passes ${actual} TYPE ${declared}`
+    )
+  }
   await client.close()
 
   assert.equal(live[0].trim(), `FUNCTION ${HELPER}.`, `unexpected live first line: ${live[0]}`)
@@ -582,7 +613,7 @@ report.push("")
 report.push(`CONSTANTS: c_group  TYPE c LENGTH 30 VALUE ${literal(FUNCTION_GROUP)},`)
 report.push(`           c_marker TYPE c LENGTH 40 VALUE ${literal(MARKER)},`)
 report.push(`           c_func   TYPE c LENGTH 30 VALUE ${literal(HELPER)},`)
-report.push(`           c_request TYPE c LENGTH 10 VALUE ${literal(canonical.transport ?? "")},`)
+report.push(`           c_request TYPE e071-trkorr VALUE ${literal(canonical.transport ?? "")},`)
 report.push(`           c_hash   TYPE c LENGTH 16 VALUE '${sourceHash.slice(0, 16)}',`)
 report.push(`           c_digest TYPE c LENGTH 16 VALUE '${payloadDigest}'${live ? "," : "."}`)
 if (live) report.push(`           c_lines  TYPE i VALUE ${live.length}.`)
@@ -790,17 +821,15 @@ report.push("    ENDIF.")
 report.push("  ENDLOOP.")
 report.push("")
 report.push("  IF lv_added > 0.")
-report.push("    CALL FUNCTION 'ENQUEUE_ESFUNCTION'")
+report.push(
+  "* The insert API locks nothing itself (the helper's own CREATE_FUNCTION_MODULE path does not"
+)
+report.push(
+  "* lock either), so only a lock left behind by an interrupted earlier run has to be cleared."
+)
+report.push("    CALL FUNCTION 'DEQUEUE_ESFUNCTION'")
 report.push("      EXPORTING")
-report.push("        funcname = lv_func")
-report.push("        mode_tfdir = 'X'")
-report.push("      EXCEPTIONS")
-report.push("        foreign_lock = 1")
-report.push("        OTHERS = 2.")
-report.push("    IF sy-subrc <> 0.")
-report.push("      WRITE: / 'ERROR: the function module is locked', sy-subrc.")
-report.push("      RETURN.")
-report.push("    ENDIF.")
+report.push("        funcname = lv_func.")
 report.push("    CALL FUNCTION 'RPY_FUNCTIONMODULE_INSERT'")
 report.push("      EXPORTING")
 report.push("        funcname = lv_func")
@@ -808,6 +837,7 @@ report.push("        function_pool = lv_pool")
 report.push("        remote_call = lv_remote")
 report.push("        short_text = lv_short")
 report.push("        corrnum = c_request")
+report.push("        suppress_corr_check = 'X'")
 report.push("      TABLES")
 report.push("        import_parameter = lt_fm_import")
 report.push("        changing_parameter = lt_fm_change")
@@ -824,7 +854,6 @@ report.push("      CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_fu
 report.push("      ROLLBACK WORK.")
 report.push("      RETURN.")
 report.push("    ENDIF.")
-report.push("    CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_func.")
 report.push("    COMMIT WORK AND WAIT.")
 report.push("    WRITE: / 'Interface   : +', lv_added, 'canonical parameter(s) added.'.")
 report.push("  ELSE.")
