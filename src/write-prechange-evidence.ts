@@ -256,7 +256,12 @@ export async function observeWritePreChange(
   } else if (
     name === "append_ddic_transparent_table_fields" ||
     name === "patch_ddic_transparent_table_fields" ||
-    name === "patch_ddic_transparent_table_settings"
+    name === "patch_ddic_transparent_table_settings" ||
+    // Resuming an activation must observe the same DDIC definition the write will activate. Without
+    // this branch it fell through to the generic ADT source observation, which reported
+    // exists=false for a table that only exists as an inactive definition (2026-09-22 10:56
+    // incident) and contradicted the dedicated DDIC read the tool had already performed.
+    name === "resume_ddic_table_activation"
   ) {
     await observeJson(
       evidence,
@@ -268,7 +273,10 @@ export async function observeWritePreChange(
         }),
       (value) => {
         evidence.exists = true
-        evidence.active = true
+        const status = String(value.status ?? "").toLowerCase()
+        // A saved-but-not-activated definition is readable and must be reported as inactive, not as
+        // an active table.
+        evidence.active = typeof value.active === "boolean" ? value.active : status !== "inactive"
         evidence.version = stringValue(value.version)
         evidence.fingerprint = stringValue(value.fingerprint)
         evidence.packageName = stringValue(value.packageName)
@@ -292,13 +300,21 @@ export async function observeWritePreChange(
       }
     )
   } else if (name === "delete_ddic_object") {
+    // Every deletion is preceded by the read operation of the *same* DDIC object kind, so the
+    // receipt proves what was removed. A kind missing here does not degrade to a weaker
+    // observation: it throws before SAP is touched, which is how `objectType: "ENQU"` was
+    // unreachable even though the registry, the contract and the helper all supported it, and how
+    // `objectType: "VIEW"` stayed unreachable after the 1.11 maintenance-view delete was added.
     const operation = {
       DOMA: "READ_DOMAIN",
       DTEL: "READ_DATA_ELEMENT",
       STRU: "READ_STRUCTURE",
       TABL: "READ_TRANSPARENT_TABLE",
       TTYP: "READ_TABLE_TYPE",
-      SHLP: "READ_SEARCH_HELP"
+      SHLP: "READ_SEARCH_HELP",
+      ENQU: "READ_LOCK_OBJECT",
+      NROB: "READ_NUMBER_RANGE_OBJECT",
+      VIEW: "READ_MAINTENANCE_VIEW"
     }[String(input.objectType).toUpperCase()] as SapDdicOperation | undefined
     if (!operation) throw new Error(`Unsupported DDIC deletion type: ${String(input.objectType)}`)
     await observeDdic(evidence, backend, connectionId, String(input.objectName), operation)
@@ -343,12 +359,24 @@ export async function observeWritePreChange(
   }
 }
 
+/**
+ * The DDIC read operation that observes the object an upsert is about to write.
+ *
+ * A DDIC object kind omitted here does not fail loudly: the target falls through to the generic
+ * source observation, which looks the name up as a program and therefore reports a lock object or
+ * a search help as an absent repository object. The receipt then claims a creation where an update
+ * happened. Every upsert that writes a distinct DDIC object kind belongs in this map.
+ */
 const DDIC_READ_OPERATION: Record<string, SapDdicOperation> = {
   upsert_ddic_domain: "READ_DOMAIN",
   upsert_ddic_data_element: "READ_DATA_ELEMENT",
   upsert_ddic_structure: "READ_STRUCTURE",
   create_ddic_transparent_table: "READ_TRANSPARENT_TABLE",
-  upsert_ddic_table_type: "READ_TABLE_TYPE"
+  upsert_ddic_table_type: "READ_TABLE_TYPE",
+  upsert_search_help: "READ_SEARCH_HELP",
+  upsert_lock_object: "READ_LOCK_OBJECT",
+  upsert_number_range_object: "READ_NUMBER_RANGE_OBJECT",
+  upsert_maintenance_view: "READ_MAINTENANCE_VIEW"
 }
 
 async function observeDdic(
@@ -372,7 +400,11 @@ async function observeDdic(
       throw new Error(`${result.code}: ${result.message}`)
     }
     evidence.exists = true
-    evidence.active = true
+    // A definition that only exists in its inactive (saved but not activated) version is still a
+    // readable DDIC object, but it is not active. Reporting active=true here made the receipt of a
+    // failed create claim an active table; the DDIC read marks the inactive version with
+    // metadata INACTIVE = 'X'.
+    evidence.active = String(result.metadata?.INACTIVE ?? "").toUpperCase() !== "X"
     evidence.version = result.objectVersion
     evidence.fingerprint = hashWriteInput({
       header: result.header,

@@ -560,6 +560,55 @@ interface UpsertLockObjectInput extends UpsertDdicInput {
   lockFields?: Array<Record<string, string>> | undefined
 }
 
+interface UpsertNumberRangeObjectInput extends UpsertDdicInput {
+  /**
+   * TNRO attribute values keyed by TNRO field name. Omitted fields keep the value already stored, so
+   * an update is a partial patch and a create starts from an empty TNRO row.
+   */
+  properties?: Record<string, string> | undefined
+  /** TNROT text rows. The helper logon language must be one of them, because SAP writes the first. */
+  texts?: Array<{ language: string; text: string; shortText?: string | undefined }> | undefined
+}
+
+interface MaintenanceViewHeaderInput {
+  /** DD25V-ROOTTAB. Defaults to the first base table, which is what the activation consumes. */
+  rootTable?: string | undefined
+  /** DD25V-VIEWGRANT: R, U or M. U/M only apply to a maintenance view. */
+  viewGrant?: string | undefined
+  /** DD25V-CUSTOMAUTH: one of A, C, L, G, E, S, W. */
+  customAuth?: string | undefined
+  /** DD25V-GLOBALFLAG: N or X. */
+  globalFlag?: string | undefined
+}
+
+interface MaintenanceViewBaseTableInput {
+  tableName: string
+  /** DD26V-FORTABNAME: the table this one is joined to (omit for a single-table view). */
+  foreignTable?: string | undefined
+  /** DD26V-FORFIELD: the field of the join partner. */
+  foreignField?: string | undefined
+  /**
+   * DD26V-FORDIR: the join direction. The legal value set of the FORDIR data element was not
+   * established from this system's source, so the value is passed through to SAP's own activation
+   * check instead of being restricted here; a rejected join rolls the whole operation back.
+   */
+  foreignDirection?: string | undefined
+}
+
+interface MaintenanceViewFieldInput {
+  tableName: string
+  fieldName: string
+  /** DD27P-VIEWFIELD: the alias shown in the view. Defaults to the base field name. */
+  viewField?: string | undefined
+}
+
+interface UpsertMaintenanceViewInput extends UpsertDdicInput {
+  /** DD25V-DDTEXT. */
+  baseTables: MaintenanceViewBaseTableInput[]
+  viewFields: MaintenanceViewFieldInput[]
+  header?: MaintenanceViewHeaderInput | undefined
+}
+
 interface CreateTransparentTableInput extends Omit<UpsertDdicInput, "expectedVersion"> {
   deliveryClass: "A" | "C" | "L" | "G" | "E" | "S" | "W"
   dataClass: "APPL0" | "APPL1" | "APPL2"
@@ -648,7 +697,7 @@ interface UpsertTableTypeInput extends UpsertDdicInput {
 }
 
 interface DeleteDdicInput extends ReadDdicInput {
-  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP" | "TABL" | "SHLP" | "ENQU"
+  objectType: "DOMA" | "DTEL" | "STRU" | "TTYP" | "TABL" | "SHLP" | "ENQU" | "NROB" | "VIEW"
   expectedVersion: string
   packageName: string
   transportNumber: string
@@ -3124,6 +3173,71 @@ export class ToolService {
     )
   }
 
+  async readNumberRangeObject(input: ReadDdicInput): Promise<string> {
+    return this.readDdic(input, "READ_NUMBER_RANGE_OBJECT", "numberRangeObject")
+  }
+
+  async upsertNumberRangeObject(input: UpsertNumberRangeObjectInput): Promise<string> {
+    const objectName = numberRangeObjectName(input.objectName)
+    validateDescription(input.description)
+    const properties = numberRangeProperties(input.properties)
+    const texts = numberRangeTexts(input.texts)
+    const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
+      operation: "UPSERT_NUMBER_RANGE_OBJECT",
+      objectName,
+      description: input.description,
+      packageName: ddicPackageName(input.packageName),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: numberRangeObjectVersion(input.expectedVersion),
+      header: properties,
+      numberRangeTexts: texts
+    })
+    return savedNumberRangeObjectResult(
+      result,
+      objectName,
+      input.packageName,
+      input.connectionId,
+      properties,
+      texts.map((row) => ({
+        language: row.LANGU ?? "",
+        text: row.TXT ?? "",
+        shortText: row.TXTSHORT ?? ""
+      }))
+    )
+  }
+
+  async readMaintenanceView(input: ReadDdicInput): Promise<string> {
+    return this.readDdic(input, "READ_MAINTENANCE_VIEW", "maintenanceView")
+  }
+
+  async upsertMaintenanceView(input: UpsertMaintenanceViewInput): Promise<string> {
+    const objectName = customerDdicName(input.objectName)
+    validateDescription(input.description)
+    const baseTables = maintenanceViewBaseTables(input.baseTables)
+    const viewFields = maintenanceViewViewFields(input.viewFields)
+    const header = maintenanceViewHeader(input.header, baseTables)
+    const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
+      operation: "UPSERT_MAINTENANCE_VIEW",
+      objectName,
+      description: input.description,
+      packageName: ddicPackageName(input.packageName),
+      transportNumber: transportNumber(input.transportNumber),
+      expectedVersion: versionToken(input.expectedVersion),
+      header,
+      baseTables,
+      viewFields
+    })
+    return savedMaintenanceViewResult(
+      result,
+      objectName,
+      input.packageName,
+      input.connectionId,
+      header,
+      baseTables,
+      viewFields
+    )
+  }
+
   async readDdicDataElement(input: ReadDdicInput): Promise<string> {
     return this.readDdic(input, "READ_DATA_ELEMENT", "dataElement")
   }
@@ -3718,7 +3832,7 @@ export class ToolService {
     }
 
     const result = await this.backend.callSapDdic(connectionId, {
-      operation: "RESUME_TRANSPARENT_TABLE_ACTIVATION",
+      operation: "RESUME_TABLE_ACTIVATION",
       objectName,
       description: "Resume inactive transparent table activation",
       packageName,
@@ -3818,7 +3932,9 @@ export class ToolService {
     const objectName =
       input.objectType === "TABL"
         ? customerDdicTableName(input.objectName)
-        : customerDdicName(input.objectName)
+        : input.objectType === "NROB"
+          ? numberRangeObjectName(input.objectName)
+          : customerDdicName(input.objectName)
     const expectedPackage = ddicPackageName(input.packageName)
     const operation = {
       DOMA: "DELETE_DOMAIN",
@@ -3827,17 +3943,34 @@ export class ToolService {
       TABL: "DELETE_TRANSPARENT_TABLE",
       TTYP: "DELETE_TABLE_TYPE",
       SHLP: "DELETE_SEARCH_HELP",
-      ENQU: "DELETE_LOCK_OBJECT"
+      ENQU: "DELETE_LOCK_OBJECT",
+      NROB: "DELETE_NUMBER_RANGE_OBJECT",
+      VIEW: "DELETE_MAINTENANCE_VIEW"
     }[input.objectType] as SapDdicOperation
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation,
       objectName,
       packageName: expectedPackage,
       transportNumber: transportNumber(input.transportNumber),
-      expectedVersion: requiredVersionToken(input.expectedVersion)
+      expectedVersion:
+        input.objectType === "NROB"
+          ? requiredNumberRangeObjectVersion(input.expectedVersion)
+          : requiredVersionToken(input.expectedVersion)
     })
     requireDdicSuccess(result)
-    if (result.header && Object.keys(result.header).length > 0) {
+    // A number range deletion reports its outcome under payload keys that the parser mirrors into
+    // header as a fallback for object attributes, so the strict "not one header row" test would reject
+    // a correct deletion. Its absence proof is the object key never coming back, together with the
+    // helper's own TNRO/TNROT read-back, which fails with NUMBER_RANGE_VERIFY_FAILED. A maintenance
+    // view deletion has the same shape: it publishes PACKAGE/VERSION/REQUEST/TADIR_ENTRY_REMOVED, so
+    // the absence proof is that VIEWNAME never comes back.
+    const residueKey =
+      input.objectType === "NROB" ? "OBJECT" : input.objectType === "VIEW" ? "VIEWNAME" : undefined
+    const definitionResidue =
+      residueKey === undefined
+        ? Object.keys(result.header).length > 0
+        : (result.header[residueKey] ?? "") !== ""
+    if (definitionResidue) {
       throw new Error("SAP DDIC deletion verification still returned an active definition")
     }
     return JSON.stringify(
@@ -3848,7 +3981,25 @@ export class ToolService {
         packageName: expectedPackage,
         recordedRequest: result.recordedRequest,
         status: result.code,
-        absenceVerified: true
+        absenceVerified: true,
+        ...(input.objectType === "NROB"
+          ? {
+              numberRangeObject: {
+                deletedVersion: result.objectVersion,
+                recordedPackage: result.packageName,
+                tadirEntryRemoved: result.metadata.TADIR_ENTRY_REMOVED === "X"
+              }
+            }
+          : {}),
+        ...(input.objectType === "VIEW"
+          ? {
+              maintenanceView: {
+                deletedVersion: result.objectVersion,
+                recordedPackage: result.packageName,
+                tadirEntryRemoved: result.metadata.TADIR_ENTRY_REMOVED === "X"
+              }
+            }
+          : {})
       },
       null,
       2
@@ -5363,7 +5514,7 @@ export class ToolService {
       )
     })
     const result = await this.backend.callSapRepository(connectionId, {
-      operation: "MANAGE_CLASSIC_BADI_IMPLEMENTATION",
+      operation: "MANAGE_CLASSIC_BADI_IMPL",
       objectName: implementationName,
       objectType: input.action.toUpperCase(),
       packageName: input.packageName.toUpperCase(),
@@ -5403,7 +5554,7 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
     const result = await this.backend.callSapRepository(connectionId, {
-      operation: "READ_ENHANCEMENT_IMPLEMENTATION",
+      operation: "READ_ENHANCEMENT_IMPL",
       objectName: enhancementName
     })
     requireRepositorySuccess(result.status, result.code, result.message)
@@ -5600,7 +5751,7 @@ export class ToolService {
       throw new Error("ENHANCEMENT_IMPLEMENTATION_PACKAGE_MISMATCH")
     }
     const result = await this.backend.callSapRepository(connectionId, {
-      operation: "DELETE_ENHANCEMENT_IMPLEMENTATION",
+      operation: "DELETE_ENHANCEMENT_IMPL",
       objectName: enhancementName,
       packageName: input.packageName.toUpperCase(),
       transportNumber: transportNumber(input.transportNumber),
@@ -9380,6 +9531,8 @@ type DdicKind =
   | "tableType"
   | "searchHelp"
   | "lockObject"
+  | "numberRangeObject"
+  | "maintenanceView"
 
 function ddicResult(
   result: SapDdicResult,
@@ -9445,6 +9598,25 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
       fieldAssignments: result.fieldAssignments
     }
   }
+  if (kind === "numberRangeObject") {
+    const texts = numberRangeStoredTexts(result)
+    const helperLanguage = result.metadata.LANGUAGE ?? ""
+    return {
+      // The text of the helper logon language when it has one, otherwise the first language read.
+      description: (texts.find((row) => row.language === helperLanguage) ?? texts[0])?.text ?? "",
+      helperLanguage,
+      // Number range intervals (NRIV) are outside this service: the flag only reports whether SAP
+      // already assigned numbers for the object, and no tool here writes or deletes an interval.
+      intervalExists: result.metadata.INTERVAL_EXISTS === "X",
+      // Every TNRO field, with SAP's trailing padding removed. An empty string means the field is
+      // empty in TNRO, not that the field is absent from the definition.
+      properties: numberRangeStoredProperties(result),
+      texts,
+      ...(result.warnings.length > 0
+        ? { warnings: result.warnings.map((row) => ({ ...row })) }
+        : {})
+    }
+  }
   if (kind === "lockObject") {
     // DD26V/DD27P rows are exposed as their raw DDIC property bags so the caller sees SAP's own
     // column names. The key columns (VIEWNAME, TABPOS, OBJPOS) are never returned as caller input;
@@ -9455,6 +9627,27 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
       rootTable: result.header.ROOTTAB ?? "",
       lockTables: result.lockTables,
       lockFields: result.lockFields
+    }
+  }
+  if (kind === "maintenanceView") {
+    // DD26V/DD27P/DD28V rows are exposed as their raw DDIC property bags so the caller sees SAP's own
+    // column names. The key columns (VIEWNAME, TABPOS, OBJPOS, DDLANGUAGE) are never caller input:
+    // the helper derives them from the object name and the row order. Only the DD27P identity columns
+    // and the alias are writable; every other attribute here is derived by the activation.
+    return {
+      description: result.header.DDTEXT ?? "",
+      viewClass: result.header.VIEWCLASS ?? "",
+      aggregationType: result.header.AGGTYPE ?? "",
+      rootTable: result.header.ROOTTAB ?? "",
+      viewGrant: result.header.VIEWGRANT ?? "",
+      customAuth: result.header.CUSTOMAUTH ?? "",
+      globalFlag: result.header.GLOBALFLAG ?? "",
+      readOnly: result.header.READONLY === "X",
+      maintenanceLanguage: result.header.MASTERLANG ?? "",
+      baseTables: result.baseTables,
+      viewFields: result.viewFields,
+      // Read-only: this service neither writes nor deletes DD28V selection conditions.
+      selectionConditions: result.selectionConditions
     }
   }
   if (kind === "dataElement") {
@@ -9554,7 +9747,9 @@ function savedDdicResult(
     transparentTable: "TABNAME",
     tableType: "TYPENAME",
     searchHelp: "SHLPNAME",
-    lockObject: "VIEWNAME"
+    lockObject: "VIEWNAME",
+    numberRangeObject: "OBJECT",
+    maintenanceView: "VIEWNAME"
   }[kind]
   if (result.header[identityField] !== objectName) {
     throw new Error(
@@ -9585,6 +9780,177 @@ function savedDdicResult(
   )
 }
 
+/**
+ * DD26V base table rows of a maintenance view. The key columns (VIEWNAME, TABPOS, DDLANGUAGE) are
+ * written by the helper from the object name and the row order, so the caller only supplies the base
+ * table and its join to the root table. The array is a complete replacement: DD_VIFD_PUT deletes the
+ * stored rows of the version it writes before inserting these, so an omitted base table is removed.
+ */
+function maintenanceViewBaseTables(rows: MaintenanceViewBaseTableInput[]): SapStructureRow[] {
+  if (rows.length === 0) throw new Error("baseTables must contain at least one base table")
+  return rows.map((row, index) => {
+    const entry: SapStructureRow = {
+      TABNAME: ddicName(row.tableName, `baseTables[${index}].tableName`)
+    }
+    if (row.foreignTable?.trim()) {
+      entry.FORTABNAME = ddicName(row.foreignTable, `baseTables[${index}].foreignTable`)
+    }
+    if (row.foreignField?.trim()) entry.FORFIELD = ddicFieldName(row.foreignField)
+    // FORDIR's legal value set was not established from this system's source, so the value is passed
+    // through to SAP's activation check instead of being restricted here.
+    if (row.foreignDirection?.trim()) {
+      entry.FORDIR = row.foreignDirection.trim().toUpperCase()
+    }
+    return entry
+  })
+}
+
+/**
+ * DD27P view field rows. Only the identity columns (TABNAME/FIELDNAME) and the optional alias
+ * (VIEWFIELD) are caller input: every other DD27P attribute is derived by the activation from the
+ * base table. Complete replacement, exactly like the base tables.
+ */
+function maintenanceViewViewFields(rows: MaintenanceViewFieldInput[]): SapStructureRow[] {
+  if (rows.length === 0) throw new Error("viewFields must contain at least one view field")
+  return rows.map((row, index) => {
+    const entry: SapStructureRow = {
+      TABNAME: ddicName(row.tableName, `viewFields[${index}].tableName`),
+      FIELDNAME: ddicFieldName(row.fieldName)
+    }
+    if (row.viewField?.trim()) entry.VIEWFIELD = ddicFieldName(row.viewField)
+    return entry
+  })
+}
+
+/**
+ * The DD25V header properties a caller may control. VIEWNAME, VIEWCLASS ('C'), AGGTYPE ('V'),
+ * DDLANGUAGE/MASTERLANG (the helper logon language), DDTEXT (the description) and every AS4* field
+ * are set by the helper or by the activation and are rejected by the helper with PROPERTY_READ_ONLY.
+ */
+function maintenanceViewHeader(
+  header: MaintenanceViewHeaderInput | undefined,
+  baseTables: SapStructureRow[]
+): SapStructureRow {
+  const entry: SapStructureRow = {}
+  // ROOTTAB is consumed by the activation but never derived from the base tables, so it must be set;
+  // the first base table is the documented default.
+  const rootTable = header?.rootTable?.trim()
+  entry.ROOTTAB = rootTable
+    ? ddicName(rootTable, "header.rootTable")
+    : (baseTables[0]?.TABNAME ?? "")
+  const viewGrant = header?.viewGrant?.trim().toUpperCase()
+  if (viewGrant) {
+    if (!["R", "U", "M"].includes(viewGrant)) {
+      throw new Error("header.viewGrant must be R, U or M")
+    }
+    entry.VIEWGRANT = viewGrant
+  }
+  const customAuth = header?.customAuth?.trim().toUpperCase()
+  if (customAuth) {
+    if (!["A", "C", "L", "G", "E", "S", "W"].includes(customAuth)) {
+      throw new Error("header.customAuth must be one of A, C, L, G, E, S, W")
+    }
+    entry.CUSTOMAUTH = customAuth
+  }
+  const globalFlag = header?.globalFlag?.trim().toUpperCase()
+  if (globalFlag) {
+    if (!["N", "X"].includes(globalFlag)) throw new Error("header.globalFlag must be N or X")
+    entry.GLOBALFLAG = globalFlag
+  }
+  return entry
+}
+
+/**
+ * Verifies the activated maintenance view the helper published and renders the tool result.
+ *
+ * The helper already read the active version back after its single COMMIT, so this is a second,
+ * independent reading of the same evidence: the object key, the package, the 14-digit version token,
+ * the recorded transport request, the view class and the root table must all agree, and the base
+ * tables and view fields must come back in the requested order.
+ */
+function savedMaintenanceViewResult(
+  result: SapDdicResult,
+  objectName: string,
+  packageName: string,
+  connectionId: string,
+  header: SapStructureRow,
+  baseTables: SapStructureRow[],
+  viewFields: SapStructureRow[]
+): string {
+  requireDdicSuccess(result)
+  if (result.header.VIEWNAME !== objectName) {
+    throw new Error(`SAP DDIC verification returned another view: ${result.header.VIEWNAME}`)
+  }
+  if (result.packageName !== packageName.trim().toUpperCase()) {
+    throw new Error(`SAP DDIC verification returned package ${result.packageName || "<empty>"}`)
+  }
+  if (!/^\d{14}$/.test(result.objectVersion)) {
+    throw new Error("SAP DDIC verification did not return an active version token")
+  }
+  if (!result.recordedRequest) {
+    throw new Error("SAP DDIC verification did not return the recorded transport request or task")
+  }
+  if (result.header.VIEWCLASS !== "C") {
+    throw new Error(`SAP stored view class ${result.header.VIEWCLASS || "<empty>"} instead of C`)
+  }
+  if (result.header.ROOTTAB !== header.ROOTTAB) {
+    throw new Error("SAP DDIC verification did not store the requested root table")
+  }
+  // DD26V-FORTABNAME names the table a base table is joined to. When the caller requests no join,
+  // SAP fills it with the root table (for a single base table root and base table are the same), so
+  // an omitted value must be compared as the root table instead of as an empty string. Comparing
+  // the raw caller value rejected correct writes: runtime evidence 2026-09-22 stored
+  // FORTABNAME = ZORV_MCP_T01 while the request had sent no foreign table.
+  const rootTableName = String(header.ROOTTAB ?? "").trim()
+  const pickBaseTable = (row: SapStructureRow): SapStructureRow => ({
+    TABNAME: row.TABNAME ?? "",
+    FORTABNAME: (row.FORTABNAME ?? "").trim() || rootTableName,
+    FORFIELD: row.FORFIELD ?? "",
+    FORDIR: row.FORDIR ?? ""
+  })
+  const pickViewField = (row: SapStructureRow): SapStructureRow => ({
+    TABNAME: row.TABNAME ?? "",
+    FIELDNAME: row.FIELDNAME ?? "",
+    VIEWFIELD: row.VIEWFIELD ?? ""
+  })
+  const expectedBaseTables = baseTables.map(pickBaseTable)
+  const actualBaseTables = result.baseTables.map(pickBaseTable)
+  if (JSON.stringify(actualBaseTables) !== JSON.stringify(expectedBaseTables)) {
+    throw new Error("SAP DDIC verification did not return the requested base tables")
+  }
+  const expectedViewFields = viewFields.map((row) => ({
+    ...pickViewField(row),
+    VIEWFIELD: row.VIEWFIELD ?? row.FIELDNAME ?? ""
+  }))
+  const actualViewFields = result.viewFields.map(pickViewField)
+  if (JSON.stringify(actualViewFields) !== JSON.stringify(expectedViewFields)) {
+    throw new Error("SAP DDIC verification did not return the requested view fields")
+  }
+  return JSON.stringify(
+    {
+      ...ddicResult(result, "maintenanceView", objectName, connectionId),
+      status: result.code,
+      recordedRequest: result.recordedRequest,
+      activation: {
+        actMode: result.metadata.ACT_MODE ?? "",
+        getState: "M",
+        // AUTH_CHK='X' suppresses SAP's immediate database adaptation, so a non-empty DBACT would mean
+        // the object is active but its database representation is not; the helper fails closed on it.
+        authCheck: result.metadata.AUTH_CHK ?? "",
+        dbAct: result.metadata.DBACT ?? "",
+        rc: result.metadata.ACT_RC ?? "",
+        putState: result.metadata.PUT_STATE ?? "",
+        // The positional DD_VIEW_PUT switch the helper actually used: XXX__ writes the header, the
+        // base tables and the view fields and deliberately skips the selection conditions and the
+        // technical settings.
+        ctrlViewPut: result.metadata.CTRL_VIEW_PUT ?? ""
+      }
+    },
+    null,
+    2
+  )
+}
+
 function matchesSubset(actual: unknown, expected: unknown): boolean {
   if (Array.isArray(expected)) {
     return (
@@ -9600,6 +9966,252 @@ function matchesSubset(actual: unknown, expected: unknown): boolean {
     )
   }
   return actual === expected
+}
+
+/**
+ * TNRO key field. The number range object name reaches SAP through objectName, never through a
+ * property, so a caller cannot disagree with itself about the key.
+ */
+const NUMBER_RANGE_KEY_FIELD = "OBJECT"
+
+/**
+ * The TNRO attributes of a number range object, in DDIC field order, each with the data element that
+ * documents it. Read live from TNRO on w200 (SAP_BASIS 7.31 SP04); no entry is inferred from a name.
+ * Every one of them is writable through upsert_number_range_object except the OBJECT key.
+ */
+const NUMBER_RANGE_OBJECT_FIELDS = [
+  "DTELSOBJ", // NRSOBJNAM - sub-object data element
+  "NRTAB", // NRTAB - group table name
+  "NRINTFLD", // NRINTNR - internal number range number field name
+  "NREXTFLD", // NRINTNR - external number range number field name
+  "NRFLD", // NRNRNAME - number range number field name
+  "NRSOBJFLD", // NRNRSUBOBJ - sub-object field name in the number range table
+  "NRELEFLD", // NRNRELEM - number range element field name
+  "YEARIND", // NRYEARIND - expiry-year flag
+  "DOMLEN", // NRLENDOM - number length domain (a domain name, not a length)
+  "PERCENTAGE", // NRPERC - warning percentage
+  "CODE", // NRCODE - CUA interface code
+  "TEXTIND", // NRTEXTIND - text indicator display element
+  "NRELTXTTAB", // NRELTXTTAB - element text table name
+  "NRELTXTSOB", // NRELTXTOBJ - sub-object field in the element text table
+  "NRELTXTELE", // NRELTXTELE - element field in the element text table
+  "NRELTXTTXT", // NRELTXTTXT - text field in the element text table
+  "NRELTXTLNG", // NRELTXTLNG - language field in the element text table
+  "BUFFER", // NRBUFFER - buffer flag
+  "NOIVBUFFER", // NRIVBUFFER - number of numbers to keep in the buffer
+  "NONRSWAP", // NRSWAP - no rolling intervals
+  "RFCDEST", // RFCDEST - logical destination
+  "NRCHECKASCII" // NRCHECKASCII - check external intervals for non-ASCII characters
+] as const
+
+/** Every TNRO field, i.e. the writable attributes plus the key that objectName supplies. */
+const NUMBER_RANGE_ALL_FIELDS: readonly string[] = [
+  NUMBER_RANGE_KEY_FIELD,
+  ...NUMBER_RANGE_OBJECT_FIELDS
+]
+
+/**
+ * TNRO-OBJECT is the NROBJ domain, CHAR 10, and the helper accepts only A-Z, 0-9 and _ on top of
+ * that, so a namespaced /Z.../ name is not a number range object name.
+ */
+function numberRangeObjectName(value: string): string {
+  const normalized = customerDdicName(value)
+  if (!/^[A-Z0-9_]+$/.test(normalized)) {
+    throw new Error("objectName must use characters A-Z, 0-9 and _ only")
+  }
+  if (normalized.length > 10) {
+    throw new Error(
+      "Number range object objectName must not exceed 10 characters (TNRO-OBJECT is NROBJ)"
+    )
+  }
+  return normalized
+}
+
+/**
+ * The concurrency token of a number range object is a SHA1 digest over its whole stored definition.
+ * TNRO has neither AS4DATE nor AS4TIME, so there is no modification timestamp to compare and the
+ * 14-digit DDIC token of the other read tools does not exist for this object kind.
+ */
+function numberRangeObjectVersion(value?: string): string | undefined {
+  const normalized = value?.trim().toUpperCase()
+  if (!normalized) return undefined
+  if (!/^[0-9A-F]{40}$/.test(normalized)) {
+    throw new Error(
+      "expectedVersion must be the 40-character definition digest returned by read_number_range_object"
+    )
+  }
+  return normalized
+}
+
+function requiredNumberRangeObjectVersion(value: string): string {
+  const normalized = numberRangeObjectVersion(value)
+  if (!normalized) throw new Error("expectedVersion is required")
+  return normalized
+}
+
+/** Validates caller-supplied TNRO attributes against the field list TNRO actually has. */
+function numberRangeProperties(properties: Record<string, string> | undefined): SapStructureRow {
+  if (!properties) return {}
+  const normalized: SapStructureRow = {}
+  for (const [name, value] of Object.entries(properties)) {
+    const field = name.trim().toUpperCase()
+    if (field === NUMBER_RANGE_KEY_FIELD) {
+      throw new Error(`properties must not carry ${NUMBER_RANGE_KEY_FIELD}; objectName is the key`)
+    }
+    if (
+      !NUMBER_RANGE_OBJECT_FIELDS.includes(field as (typeof NUMBER_RANGE_OBJECT_FIELDS)[number])
+    ) {
+      throw new Error(`properties carries a field that TNRO does not have: ${name}`)
+    }
+    if (typeof value !== "string") throw new Error(`properties.${field} must be a string`)
+    if (/[\r\n]/.test(value)) throw new Error(`properties.${field} must not contain line breaks`)
+    normalized[field] = value
+  }
+  return normalized
+}
+
+/** Validates caller-supplied TNROT text rows and keys them the way the 'N1' payload rows expect. */
+function numberRangeTexts(
+  texts: Array<{ language: string; text: string; shortText?: string | undefined }> | undefined
+): SapStructureRow[] {
+  if (!texts || texts.length === 0) return []
+  if (texts.length > 20) throw new Error("texts must not carry more than 20 languages in one call")
+  const seen = new Set<string>()
+  return texts.map((entry) => {
+    const language = entry.language.trim().toUpperCase()
+    if (!/^[A-Z]$/.test(language)) {
+      throw new Error(`texts language must be a one-character SAP language: ${entry.language}`)
+    }
+    if (seen.has(language)) throw new Error(`texts carries language ${language} more than once`)
+    seen.add(language)
+    if (!entry.text.trim()) throw new Error(`texts text is required for language ${language}`)
+    validateTextLength(entry.text, 60, "texts text")
+    validateTextLength(entry.shortText ?? "", 20, "texts shortText")
+    return {
+      LANGU: language,
+      TXT: entry.text,
+      ...(entry.shortText === undefined ? {} : { TXTSHORT: entry.shortText })
+    }
+  })
+}
+
+/** SAP pads character values to the DDIC width; that padding is never significant for TNRO. */
+function normalizeDdicValue(value: string): string {
+  return value.replace(/\s+$/u, "")
+}
+
+function numberRangeStoredProperties(result: SapDdicResult): Record<string, string> {
+  const properties: Record<string, string> = {}
+  for (const field of NUMBER_RANGE_ALL_FIELDS) {
+    properties[field] = normalizeDdicValue(result.header[field] ?? "")
+  }
+  return properties
+}
+
+function numberRangeStoredTexts(
+  result: SapDdicResult
+): Array<{ language: string; text: string; shortText: string }> {
+  return result.numberRangeTexts
+    .map((row) => ({
+      language: (row.LANGU ?? "").trim(),
+      text: normalizeDdicValue(row.TXT ?? ""),
+      shortText: normalizeDdicValue(row.TXTSHORT ?? "")
+    }))
+    .filter((row) => row.language !== "")
+    .sort((left, right) =>
+      left.language < right.language ? -1 : left.language > right.language ? 1 : 0
+    )
+}
+
+/**
+ * Verifies a number range write against what SAP stored.
+ *
+ * The version token is a SHA1 definition digest, so the 14-digit timestamp test of savedDdicResult
+ * cannot apply here. The helper already proved the recorded request and the E071 row; this checks what
+ * it cannot prove on its own: identity, package, digest shape, the attributes the caller sent, and
+ * every text row the caller sent.
+ */
+function savedNumberRangeObjectResult(
+  result: SapDdicResult,
+  objectName: string,
+  packageName: string,
+  connectionId: string,
+  sentProperties: SapStructureRow,
+  sentTexts: Array<{ language: string; text: string; shortText: string }>
+): string {
+  requireDdicSuccess(result)
+  const storedName = result.header[NUMBER_RANGE_KEY_FIELD] ?? ""
+  if (storedName !== objectName) {
+    throw new Error(
+      `SAP number range verification returned another object: ${storedName || "<empty>"}`
+    )
+  }
+  if (result.packageName !== packageName.trim().toUpperCase()) {
+    throw new Error(
+      `SAP number range verification returned package ${result.packageName || "<empty>"}`
+    )
+  }
+  if (!/^[0-9A-F]{40}$/.test(result.objectVersion)) {
+    throw new Error("SAP number range verification did not return a definition digest version")
+  }
+  if (!result.recordedRequest) {
+    throw new Error(
+      "SAP number range verification did not return the recorded transport request or task"
+    )
+  }
+  const storedProperties = numberRangeStoredProperties(result)
+  // TNRO-PERCENTAGE is a percentage carrying one decimal (SAP stores 10 percent as "10.0"), while a
+  // caller sends the plain percentage "10". The raw text therefore never matches even though the
+  // stored value is the requested one, which made every create with PERCENTAGE report a false
+  // failure after the write had already committed (runtime evidence 2026-09-22: read-back showed
+  // PERCENTAGE "10.0" for the accepted request). Compare that one field numerically; every other
+  // field keeps the exact text comparison.
+  const storedValueMatches = (
+    field: string,
+    stored: string | undefined,
+    expected: string
+  ): boolean => {
+    if (stored === expected) return true
+    if (field !== "PERCENTAGE") return false
+    if (stored === undefined || stored.trim() === "" || expected.trim() === "") return false
+    const storedNumber = Number(stored)
+    const expectedNumber = Number(expected)
+    return (
+      Number.isFinite(storedNumber) &&
+      Number.isFinite(expectedNumber) &&
+      storedNumber === expectedNumber
+    )
+  }
+  for (const [field, value] of Object.entries(sentProperties)) {
+    // NUMBER_RANGE_OBJECT_UPDATE normalises a set TEXTIND flag to 'X' before it stores the row.
+    const expected = field === "TEXTIND" && value.trim() !== "" ? "X" : normalizeDdicValue(value)
+    if (!storedValueMatches(field, storedProperties[field], expected)) {
+      throw new Error(`SAP number range verification did not store ${field}`)
+    }
+  }
+  const storedTexts = numberRangeStoredTexts(result)
+  for (const text of sentTexts) {
+    const stored = storedTexts.find((row) => row.language === text.language)
+    if (
+      !stored ||
+      stored.text !== normalizeDdicValue(text.text) ||
+      (text.shortText !== "" && stored.shortText !== normalizeDdicValue(text.shortText))
+    ) {
+      throw new Error(`SAP number range verification did not store the ${text.language} text`)
+    }
+  }
+  return JSON.stringify(
+    {
+      ...ddicResult(result, "numberRangeObject", objectName, connectionId),
+      status: result.code,
+      recordedRequest: result.recordedRequest,
+      ...(result.warnings.length > 0
+        ? { warnings: result.warnings.map((row) => ({ ...row })) }
+        : {})
+    },
+    null,
+    2
+  )
 }
 
 function containsLineSequence(actual: string[], expected: string[]): boolean {

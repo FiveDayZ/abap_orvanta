@@ -129,6 +129,26 @@ if ($blankRuns.Count -gt 0) {
     throw "the installer's 20-character chunker cannot carry these lines: $($blankRuns[0])"
 }
 
+# Open SQL does not accept the ABAP string operator CP: a WHERE clause needs LIKE. A continuation
+# line such as "AND ( hikey CP pattern" otherwise passes every local check and only fails in the
+# in-SAP GENERATE, costing a human F8 round (verified 2026-09-22, carrier r17 body line 3,893).
+# Track SQL statements so CP inside one fails here while CP in a normal IF stays legal.
+$sqlOpen = $false
+$sqlOperatorErrors = @()
+for ($i = 0; $i -lt $lines.Count; $i++) {
+    $code = ($lines[$i] -replace "'[^']*'", "''").Trim()
+    if (-not $sqlOpen -and $code -match '^(SELECT|DELETE\s+FROM|UPDATE|INSERT\s+INTO|MODIFY)\b') {
+        $sqlOpen = $true
+    }
+    if ($sqlOpen -and $code -match '\bCP\b') {
+        $sqlOperatorErrors += "line $($i + 1): $($lines[$i].Trim())"
+    }
+    if ($sqlOpen -and $code -match '\.$') { $sqlOpen = $false }
+}
+if ($sqlOperatorErrors.Count -gt 0) {
+    throw "Open SQL cannot use CP (use LIKE): $($sqlOperatorErrors[0])"
+}
+
 # ---- capability table: the script's own declaration is the expectation -------------------------
 $raw = Get-Content $scriptPath -Raw
 $tableMatch = [regex]::Match(
