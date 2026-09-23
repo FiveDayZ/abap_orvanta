@@ -547,6 +547,18 @@ interface UpsertStructureInput extends UpsertDdicInput {
   fields: Array<{ name: string; dataElement: string }>
 }
 
+/**
+ * Field-level append structure write. The append structure already exists, so there is no package or
+ * transport argument: its TADIR entry and transport recording already exist. expectedVersion is
+ * mandatory because an append structure always exists and must be updated against a known revision.
+ */
+interface UpsertAppendStructureFieldsInput {
+  objectName: string
+  fields: Array<{ name: string; dataElement: string }>
+  expectedVersion: string
+  connectionId: string
+}
+
 interface UpsertSearchHelpInput extends UpsertDdicInput {
   header?: Record<string, string> | undefined
   selectionMethods?: Array<Record<string, string>> | undefined
@@ -3236,6 +3248,25 @@ export class ToolService {
       baseTables,
       viewFields
     )
+  }
+
+  async upsertAppendStructureFields(input: UpsertAppendStructureFieldsInput): Promise<string> {
+    const objectName = customerDdicName(input.objectName)
+    if (!input.fields.length) throw new Error("fields must contain at least one component")
+    const names = new Set<string>()
+    const fields = input.fields.map((field) => {
+      const name = ddicFieldName(field.name)
+      if (names.has(name)) throw new Error(`Duplicate append field: ${name}`)
+      names.add(name)
+      return { FIELDNAME: name, ROLLNAME: ddicName(field.dataElement, "dataElement") }
+    })
+    const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
+      operation: "UPSERT_APPEND_STRUCTURE_FIELDS",
+      objectName,
+      expectedVersion: versionToken(input.expectedVersion),
+      appendFields: fields
+    })
+    return savedAppendStructureFieldsResult(result, objectName, input.connectionId, fields)
   }
 
   async readDdicDataElement(input: ReadDdicInput): Promise<string> {
@@ -9871,6 +9902,46 @@ function maintenanceViewHeader(
  * the recorded transport request, the view class and the root table must all agree, and the base
  * tables and view fields must come back in the requested order.
  */
+/**
+ * Verify the append structure write. The helper itself compares the stored field rows with the
+ * request after activating the base table, so this only re-checks the envelope and the counts the
+ * caller depends on. A missing base table or a field count that differs from the request means the
+ * helper verification did not run or described another object, so it fails instead of reporting a
+ * partial write as success.
+ */
+function savedAppendStructureFieldsResult(
+  result: SapDdicResult,
+  objectName: string,
+  connectionId: string,
+  fields: SapStructureRow[]
+): string {
+  requireDdicSuccess(result)
+  const baseTable = String(result.metadata.BASE_TABLE ?? "").trim()
+  if (!baseTable) {
+    throw new Error("SAP DDIC verification did not return the append structure base table")
+  }
+  const fieldCount = numberValue(result.metadata.FIELD_COUNT)
+  if (fieldCount !== fields.length) {
+    throw new Error(
+      `SAP DDIC verification reported ${fieldCount} append fields instead of ${fields.length}`
+    )
+  }
+  return JSON.stringify(
+    {
+      objectName,
+      connectionId,
+      baseTable,
+      tableClass: "APPEND",
+      changed: result.metadata.CHANGED === "X",
+      fieldCount,
+      baseFieldCount: numberValue(result.metadata.BASE_FIELD_COUNT),
+      fields: fields.map((field) => field.FIELDNAME ?? "")
+    },
+    null,
+    2
+  )
+}
+
 function savedMaintenanceViewResult(
   result: SapDdicResult,
   objectName: string,

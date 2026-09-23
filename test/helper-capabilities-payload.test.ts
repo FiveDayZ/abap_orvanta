@@ -454,6 +454,7 @@ test("the DDIC since values are the service contract minimums", async () => {
   }
   assert.deepEqual(groupSizes, {
     "1.11": 7,
+    "1.12": 1,
     "1.2": 8,
     "1.5": 2,
     "1.6": 5,
@@ -473,7 +474,10 @@ test("the DDIC since values are the service contract minimums", async () => {
   // rows, so they alone raise PROTOCOL|MAX from 1.10 to 1.11 - a consequence of the table, not of a
   // hand-edited literal. The literals above are the frozen expectation of a table-derived count:
   // deleting a row from scripts/bootstrap-sap-helper.ps1 makes this assertion fail.
-  assert.equal(versions[versions.length - 1], "1.11", "PROTOCOL|MAX must derive to 1.11")
+  // D6-5: UPSERT_APPEND_STRUCTURE_FIELDS is the single |1.12| row, so it alone raises PROTOCOL|MAX
+  // from 1.11 to 1.12. A 1.11 helper does not know the opcode at all, which is exactly why
+  // upsert_append_structure_fields declares protocol 1.12 and is reported unavailable on 1.11.
+  assert.equal(versions[versions.length - 1], "1.12", "PROTOCOL|MAX must derive to 1.12")
 })
 
 test("the DDIC branch reuses the repository hash slots and names its own helper", () => {

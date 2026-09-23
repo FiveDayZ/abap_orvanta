@@ -393,6 +393,14 @@ export function createMcpServer(
       tools.upsertMaintenanceView(input)
     )
   )
+  registerTool(
+    "upsert_append_structure_fields",
+    toolContracts.upsert_append_structure_fields,
+    async (input) =>
+      invokeWrite("upsert_append_structure_fields", input, backend, writeReceipts, () =>
+        tools.upsertAppendStructureFields(input)
+      )
+  )
   registerTool("read_ddic_data_element", toolContracts.read_ddic_data_element, async (input) =>
     invoke("read_ddic_data_element", () => tools.readDdicDataElement(input))
   )

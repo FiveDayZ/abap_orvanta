@@ -149,6 +149,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "update_enhancement_hook_implementation",
       "update_new_badi_implementation",
       "upsert_abap_screen",
+      "upsert_append_structure_fields",
       "upsert_ddic_data_element",
       "upsert_ddic_domain",
       "upsert_ddic_structure",

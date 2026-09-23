@@ -1516,6 +1516,18 @@
       "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
     },
     {
+      "tool": "upsert_append_structure_fields",
+      "helper": "Z_ORVANTA_MCP_DDIC_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "method": "controlled-write",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (UPSERT_APPEND_STRUCTURE_FIELDS), which is still a static inference and not an observation. Unlike the other DDIC writes this one cannot create its target: the append structure must exist and is created in SE11. The helper branch and the arm are also uncompiled - the ABAP has never been through an F8, so the DD_TBFD_PUT parameter names used here are taken from the source quotation in .doc/d6-5-activation-sufficiency-20260922.md, not from a build."
+    },
+    {
       "tool": "upsert_ddic_data_element",
       "helper": "Z_ORVANTA_MCP_DDIC_API",
       "availabilityBasis": "protocol+operations",

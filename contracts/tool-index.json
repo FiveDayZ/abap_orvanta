@@ -1,18 +1,18 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 136,
+  "toolCount": 137,
   "readOnlyToolCount": 79,
   "profiles": {
     "readonly": 79,
     "platform": 12,
-    "dev": 120,
+    "dev": 121,
     "config": 28,
     "ops": 35,
-    "full": 136
+    "full": 137
   },
   "groups": {
     "data": 5,
-    "ddic": 25,
+    "ddic": 26,
     "debug": 6,
     "enhancement": 22,
     "form": 4,
@@ -1967,6 +1967,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
       "minHelperProtocol": "1.1"
+    },
+    {
+      "name": "upsert_append_structure_fields",
+      "group": "ddic",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
+      "minHelperProtocol": "1.12"
     },
     {
       "name": "upsert_ddic_data_element",

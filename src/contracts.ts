@@ -845,6 +845,17 @@ const toolContractsBase = {
       connectionId: z.string()
     }
   },
+  upsert_append_structure_fields: {
+    description:
+      "Add or replace the fields of one EXISTING Z* or Y* append structure (tableClass APPEND) through the installed DDIC helper. The append structure must already exist and must be named explicitly: passing its base table is rejected with NOT_AN_APPEND_STRUCTURE, because DD_TBFD_PUT replaces a table's whole field row set and would destroy the base table definition. The helper writes the fields to the append structure itself (DD_TBFD_PUT with PUT_STATE='A'), then activates the BASE table (DDIF_TABL_ACTIVATE), which expands the append's active rows into it, then reads both back field by field. fields is a COMPLETE REPLACEMENT of the append structure's field list, keyed name/dataElement. Only nullable non-key fields whose data element is active are accepted (UNSAFE_TABLE_CHANGE / REFERENCE_NOT_FOUND otherwise). expectedVersion is the 14-digit token from read_ddic_structure and is mandatory, since the append structure always exists. If the stored field list already matches the request the helper writes nothing and reports APPEND_FIELDS_UNCHANGED. After activation the helper re-reads the append structure and reports APPEND_FIELDS_VERIFY_MISMATCH with expectedFields and actualFields when the stored rows do not match the request, so a partially applied write is never reported as success. The response echoes baseTable, changed, fieldCount and baseFieldCount (the base table's expanded field count, the evidence that the append was expanded). This tool cannot create or delete the append structure itself: no non-dialog API for that was established on this system, so create the append structure in SE11 first. Requires a DDIC helper that publishes UPSERT_APPEND_STRUCTURE_FIELDS (protocol 1.12 or later).",
+    inputSchema: {
+      ...writeOperationInput,
+      objectName: z.string(),
+      fields: z.array(ddicStructureField).min(1),
+      expectedVersion: z.string(),
+      connectionId: z.string()
+    }
+  },
   read_ddic_data_element: {
     description:
       "Read one active SAP Dictionary data element, including labels, package, concurrency version, and SHA-256 definition fingerprint. Read-only and allowed for customer or standard objects.",

@@ -1,7 +1,7 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：136
+- 工具总数：137
 - 只读工具：79
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
@@ -12,12 +12,12 @@
 | --- | --- |
 | profile: readonly | 79 |
 | profile: platform | 12 |
-| profile: dev | 120 |
+| profile: dev | 121 |
 | profile: config | 28 |
 | profile: ops | 35 |
-| profile: full | 136 |
+| profile: full | 137 |
 | 分组: data | 5 |
-| 分组: ddic | 25 |
+| 分组: ddic | 26 |
 | 分组: debug | 6 |
 | 分组: enhancement | 22 |
 | 分组: form | 4 |
@@ -159,6 +159,7 @@
 | `update_enhancement_hook_implementation` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `update_new_badi_implementation` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `upsert_abap_screen` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
+| `upsert_append_structure_fields` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.12) |
 | `upsert_ddic_data_element` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.2) |
 | `upsert_ddic_domain` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.2) |
 | `upsert_ddic_structure` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.2) |

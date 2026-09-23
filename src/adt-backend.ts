@@ -2055,7 +2055,7 @@ export function buildSapDdicEnvelope(request: SapDdicRequest): string {
 export function serializeDdicPayload(request: SapDdicRequest): string[] {
   const payload: string[] = []
   const appendRows = (
-    kind: "H" | "V" | "F" | "S1" | "S2" | "S3" | "L1" | "L2" | "N1" | "T1" | "T2",
+    kind: "H" | "V" | "F" | "S1" | "S2" | "S3" | "L1" | "L2" | "N1" | "T1" | "T2" | "A1",
     rows: SapStructureRow[]
   ) => {
     rows.forEach((row, rowIndex) => {
@@ -2089,6 +2089,9 @@ export function serializeDdicPayload(request: SapDdicRequest): string[] {
   // itself, and DD28V selection conditions are read-only for this service (T3 never appears here).
   appendRows("T1", request.baseTables ?? [])
   appendRows("T2", request.viewFields ?? [])
+  // Append structure field rows (A1). They are written to the append structure itself; the helper
+  // then activates the base table, which expands them into it. A two-character kind like S1/T1/N1.
+  appendRows("A1", request.appendFields ?? [])
   return payload
 }
 

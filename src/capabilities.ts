@@ -200,7 +200,13 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // VIEW, so only the read and upsert tools are listed here. The protocol floor is 1.11 for the same
   // reason as the number range object group: UPSERT_MAINTENANCE_VIEW is 24 characters, which only
   // fits the DDIC helper's BAPIRET2-PARAMETER (CHAR 32) operation field.
-  ["ddic-helper-maintenance-view", ["read_maintenance_view", "upsert_maintenance_view"]]
+  ["ddic-helper-maintenance-view", ["read_maintenance_view", "upsert_maintenance_view"]],
+  // Append structure field writes are a sixth DDIC write path with their own helper operation
+  // (UPSERT_APPEND_STRUCTURE_FIELDS, protocol 1.12), so they get their own capability: a 1.11 helper
+  // cannot accept the opcode at all. The protocol floor is 1.12 because that is the first helper that
+  // publishes the operation. Only the write is listed: reading an append structure goes through
+  // read_ddic_structure, which is served by ddic-helper-core.
+  ["ddic-helper-append-structure-fields", ["upsert_append_structure_fields"]]
 ]
 
 export async function buildCapabilityReport(

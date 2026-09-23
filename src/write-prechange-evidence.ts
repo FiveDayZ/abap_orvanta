@@ -376,7 +376,10 @@ const DDIC_READ_OPERATION: Record<string, SapDdicOperation> = {
   upsert_search_help: "READ_SEARCH_HELP",
   upsert_lock_object: "READ_LOCK_OBJECT",
   upsert_number_range_object: "READ_NUMBER_RANGE_OBJECT",
-  upsert_maintenance_view: "READ_MAINTENANCE_VIEW"
+  upsert_maintenance_view: "READ_MAINTENANCE_VIEW",
+  // An append structure is read with the ordinary structure read, which already reports its
+  // tableClass and, since the D6-5 read side, the base table it is attached to.
+  upsert_append_structure_fields: "READ_STRUCTURE"
 }
 
 async function observeDdic(

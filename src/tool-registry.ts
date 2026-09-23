@@ -427,6 +427,16 @@ const ROWS: readonly ToolRow[] = [
     "1.11",
     ["UPSERT_MAINTENANCE_VIEW"]
   ],
+  [
+    "upsert_append_structure_fields",
+    "ddic",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    DDIC,
+    "1.12",
+    ["UPSERT_APPEND_STRUCTURE_FIELDS"]
+  ],
   ["search_abap_objects", "source", DEV, "R", "native-adt", null, null],
   ["get_abap_object_info", "source", DEV, "R", "target-specific", null, null],
   ["get_abap_object_lines", "source", DEV, "R", "target-specific", null, null],

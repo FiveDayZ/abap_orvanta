@@ -312,6 +312,7 @@ export type SapDdicOperation =
   | "READ_MAINTENANCE_VIEW"
   | "UPSERT_MAINTENANCE_VIEW"
   | "DELETE_MAINTENANCE_VIEW"
+  | "UPSERT_APPEND_STRUCTURE_FIELDS"
 
 export interface SapDdicRequest {
   operation: SapDdicOperation
@@ -347,6 +348,14 @@ export interface SapDdicRequest {
    * this is a complete replacement; every other DD27P attribute is derived by the activation.
    */
   viewFields?: SapStructureRow[] | undefined
+  /**
+   * Field rows of an append structure, keyed FIELDNAME/ROLLNAME and optional type attributes. The
+   * helper writes them to the append structure itself and then activates the base table, so the base
+   * table's own DD03L rows are never written. The array is a complete replacement of the append
+   * structure's field list. Only an append structure (tableClass APPEND) is accepted: the helper
+   * rejects a base table name, because DD_TBFD_PUT replaces a table's whole field row set.
+   */
+  appendFields?: SapStructureRow[] | undefined
 }
 
 export interface SapDdicResult extends SapHelperResult {
