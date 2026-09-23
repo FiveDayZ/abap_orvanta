@@ -65,7 +65,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r03.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r04.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -309,36 +309,47 @@ if (!offline) {
   assert.equal(read.isError ?? false, false, "reading the live helper failed")
   const payload = JSON.parse((read.content ?? []).map((c) => c.text ?? "").join(""))
   live = payload.source ?? []
-  // The insert API is called dynamically, so ABAP type-checks every actual parameter against the
-  // formal parameter's DDIC type at runtime and terminates with CALL_FUNCTION_CONFLICT_TYPE on a
-  // mismatch - that is how `CORRNUM TYPE C LENGTH 10` failed its F8 run. Compare the declared types
-  // of the carrier's own variables against SAP's interface before generating.
-  const insertRead = await client.callTool(
-    {
-      name: "read_function_module_interface",
-      arguments: { connectionId: "w200", functionName: "RPY_FUNCTIONMODULE_INSERT" }
-    },
-    undefined,
-    { timeout: 300000 }
-  )
-  assert.equal(insertRead.isError ?? false, false, "reading RPY_FUNCTIONMODULE_INSERT failed")
-  const insertInterface = JSON.parse((insertRead.content ?? []).map((c) => c.text ?? "").join(""))
-  const insertTypes = new Map(
-    (insertInterface.importParameters ?? []).map((p) => [p.name, String(p.typeName).toLowerCase()])
-  )
-  const passedTypes = [
-    ["FUNCNAME", "lv_func", "rs38l-name"],
-    ["FUNCTION_POOL", "lv_pool", "rs38l-area"],
-    ["REMOTE_CALL", "lv_remote", "rs38l-remote"],
-    ["SHORT_TEXT", "lv_short", "tftit-stext"],
-    ["CORRNUM", "c_request", "e071-trkorr"]
-  ]
-  for (const [formal, actual, declared] of passedTypes) {
-    assert.equal(
-      insertTypes.get(formal),
-      declared,
-      `RPY_FUNCTIONMODULE_INSERT ${formal} is ${insertTypes.get(formal)} in SAP but the carrier passes ${actual} TYPE ${declared}`
+  // The insert and activation APIs are called dynamically, so ABAP type-checks every actual parameter
+  // against the formal parameter's DDIC type at runtime and terminates with
+  // CALL_FUNCTION_CONFLICT_TYPE on a mismatch - that is how `CORRNUM TYPE C LENGTH 10` failed its F8
+  // run. Compare the declared types of the carrier's own variables against SAP's interface here.
+  const passedTypes = {
+    RPY_FUNCTIONMODULE_INSERT: [
+      ["FUNCNAME", "lv_func", "rs38l-name"],
+      ["FUNCTION_POOL", "lv_pool", "rs38l-area"],
+      ["REMOTE_CALL", "lv_remote", "rs38l-remote"],
+      ["SHORT_TEXT", "lv_short", "tftit-stext"],
+      ["CORRNUM", "c_request", "e071-trkorr"]
+    ],
+    FUNCTION_CREATE: [
+      ["FUNCNAME", "lv_func", "rs38l-name"],
+      ["FUNCTION_POOL", "lv_pool", "rs38l-area"],
+      ["REMOTE_CALL", "lv_remote", "rs38l-remote"],
+      ["INTERFACE_GLOBAL", "lv_global", "rs38l-global"],
+      ["CORRNUM", "c_request", "e071-trkorr"]
+    ]
+  }
+  for (const [api, expectations] of Object.entries(passedTypes)) {
+    const apiRead = await client.callTool(
+      {
+        name: "read_function_module_interface",
+        arguments: { connectionId: "w200", functionName: api }
+      },
+      undefined,
+      { timeout: 300000 }
     )
+    assert.equal(apiRead.isError ?? false, false, `reading ${api} failed`)
+    const apiInterface = JSON.parse((apiRead.content ?? []).map((c) => c.text ?? "").join(""))
+    const apiTypes = new Map(
+      (apiInterface.importParameters ?? []).map((p) => [p.name, String(p.typeName).toLowerCase()])
+    )
+    for (const [formal, actual, declared] of expectations) {
+      assert.equal(
+        apiTypes.get(formal),
+        declared,
+        `${api} ${formal} is ${apiTypes.get(formal)} in SAP but the carrier passes ${actual} TYPE ${declared}`
+      )
+    }
   }
   await client.close()
 
@@ -669,6 +680,7 @@ report.push("      lv_global TYPE rs38l-global,")
 report.push("      lv_update TYPE rs38l-utask,")
 report.push("      lv_present TYPE c LENGTH 1,")
 report.push("      lv_missing TYPE i,")
+report.push("      lv_missing_new TYPE i,")
 report.push("      lv_added TYPE i.")
 report.push("")
 report.push("START-OF-SELECTION.")
@@ -854,8 +866,40 @@ report.push("      CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_fu
 report.push("      ROLLBACK WORK.")
 report.push("      RETURN.")
 report.push("    ENDIF.")
+report.push(
+  "* RPY_FUNCTIONMODULE_INSERT only writes the INACTIVE version, so the parameter tables have to"
+)
+report.push(
+  "* be activated explicitly. FUNCTION_CREATE is the call the installer uses to create and"
+)
+report.push(
+  "* activate a function module (save_active = 'X'); it is given the merged interface, so no"
+)
+report.push("* parameter can be lost, and it carries no source table, so the body stays untouched.")
+report.push("    CALL FUNCTION 'FUNCTION_CREATE'")
+report.push("      EXPORTING")
+report.push("        funcname = lv_func")
+report.push("        function_pool = lv_pool")
+report.push("        remote_call = lv_remote")
+report.push("        interface_global = lv_global")
+report.push("        short_text = 'ORVANTA MCP controlled entry point'")
+report.push("        corrnum = c_request")
+report.push("        suppress_corr_check = 'X'")
+report.push("        save_active = 'X'")
+report.push("      TABLES")
+report.push("        import_parameter = lt_fm_import")
+report.push("        changing_parameter = lt_fm_change")
+report.push("        export_parameter = lt_fm_export")
+report.push("        tables_parameter = lt_fm_tables")
+report.push("        exception_list = lt_fm_except")
+report.push("        parameter_docu = lt_fm_docu")
+report.push("      EXCEPTIONS")
+report.push("        OTHERS = 1.")
+report.push("    IF sy-subrc <> 0.")
+report.push("      WRITE: / 'WARNING: activation failed', sy-subrc, sy-msgid, sy-msgno.")
+report.push("    ENDIF.")
 report.push("    COMMIT WORK AND WAIT.")
-report.push("    WRITE: / 'Interface   : +', lv_added, 'canonical parameter(s) added.'.")
+report.push("    WRITE: / 'Interface   : +', lv_added, 'canonical parameter(s) written.'.")
 report.push("  ELSE.")
 report.push("    WRITE: / 'Interface   : all canonical parameters already present.'.")
 report.push("  ENDIF.")
@@ -912,6 +956,63 @@ report.push(
 )
 report.push("    ENDIF.")
 report.push("  ENDLOOP.")
+report.push(
+  "* Report the INACTIVE version too: it separates 'the write never landed' from 'the write landed"
+)
+report.push(
+  "* but was not activated', which is the difference the first interface revision ran into."
+)
+report.push("  REFRESH: lt_fm_import, lt_fm_export, lt_fm_tables.")
+report.push("  CALL FUNCTION 'RPY_FUNCTIONMODULE_READ_NEW'")
+report.push("    EXPORTING")
+report.push("      functionname = lv_func")
+report.push("    IMPORTING")
+report.push("      global_flag = lv_global")
+report.push("      remote_call = lv_remote")
+report.push("      update_task = lv_update")
+report.push("      short_text = lv_short")
+report.push("      function_pool = lv_pool")
+report.push("    TABLES")
+report.push("      import_parameter = lt_fm_import")
+report.push("      changing_parameter = lt_fm_change")
+report.push("      export_parameter = lt_fm_export")
+report.push("      tables_parameter = lt_fm_tables")
+report.push("      exception_list = lt_fm_except")
+report.push("      documentation = lt_fm_docu")
+report.push("      source = lt_fm_source")
+report.push("    EXCEPTIONS")
+report.push("      OTHERS = 1.")
+report.push("  IF sy-subrc = 0.")
+report.push("    CLEAR lv_missing_new.")
+report.push("    LOOP AT lt_canonical INTO ls_canonical.")
+report.push("      CLEAR lv_present.")
+report.push("      CASE ls_canonical-kind.")
+report.push("        WHEN 'I'.")
+report.push("          LOOP AT lt_fm_import TRANSPORTING NO FIELDS")
+report.push("            WHERE parameter = ls_canonical-name.")
+report.push("            lv_present = 'X'. EXIT.")
+report.push("          ENDLOOP.")
+report.push("        WHEN 'E'.")
+report.push("          LOOP AT lt_fm_export TRANSPORTING NO FIELDS")
+report.push("            WHERE parameter = ls_canonical-name.")
+report.push("            lv_present = 'X'. EXIT.")
+report.push("          ENDLOOP.")
+report.push("        WHEN 'T'.")
+report.push("          LOOP AT lt_fm_tables TRANSPORTING NO FIELDS")
+report.push("            WHERE parameter = ls_canonical-name.")
+report.push("            lv_present = 'X'. EXIT.")
+report.push("          ENDLOOP.")
+report.push("      ENDCASE.")
+report.push("      IF lv_present IS INITIAL.")
+report.push("        lv_missing_new = lv_missing_new + 1.")
+report.push("      ENDIF.")
+report.push("    ENDLOOP.")
+report.push(
+  "    WRITE: / 'Interface   : inactive version lacks', lv_missing_new, 'canonical parameter(s).'."
+)
+report.push("  ELSE.")
+report.push("    WRITE: / 'Interface   : no inactive version readable', sy-subrc.")
+report.push("  ENDIF.")
 report.push("  IF lv_missing > 0.")
 report.push(
   "    WRITE: / 'ERROR: the interface still lacks', lv_missing, 'canonical parameter(s).'."
