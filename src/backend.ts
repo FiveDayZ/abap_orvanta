@@ -219,6 +219,10 @@ export type SapRepositoryOperation =
   | "UPDATE_MESSAGE_CLASS"
   | "DELETE_MESSAGE_CLASS"
   | "READ_TRANSPORT_DETAILS"
+  // D7 first shape: SAPscript forms are read in-process by the shared repository body because
+  // READ_FORM/READ_TEXT are not remote-enabled. Since 2.8 the body also accepts the form-specific
+  // IMPORTING parameters, so the union and the helper capability table must gain the opcode together.
+  | "READ_SAPSCRIPT_FORM"
 
 export type SapStructureRow = Record<string, string>
 
