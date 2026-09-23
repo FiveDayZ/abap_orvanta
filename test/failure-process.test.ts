@@ -100,9 +100,16 @@ test(
       const { client } = await f.start()
       for (const name of ["test_remote_function_module", "invoke_customer_function_module"]) {
         const args = await input(client, "x".repeat(21), `invalid-${name}`)
+        // The two tools do not share a contract: only invoke_customer_function_module declares
+        // requestId, and only test_remote_function_module declares expectedOutputs. Both used to be
+        // discarded silently, so spreading one arg set into both looked harmless; the strict input
+        // schema now rejects the undeclared one, which is the point, so send each where declared.
+        const { requestId, ...shared } = args
         const result = await call(client, name, {
-          ...args,
-          expectedOutputs: { EV_OUTPUT: "unused" }
+          ...shared,
+          ...(name === "invoke_customer_function_module"
+            ? { requestId }
+            : { expectedOutputs: { EV_OUTPUT: "unused" } })
         })
         assert.equal(result.error, true)
         assert.match(result.text, /IV_INPUT exceeds 20 characters/)

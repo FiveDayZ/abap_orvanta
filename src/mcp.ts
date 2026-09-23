@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { z } from "zod"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { SapBackend } from "./backend.js"
 import { toolContracts } from "./contracts.js"
@@ -38,8 +39,31 @@ export function createMcpServer(
   const enabledToolNames = new Set(toolProfile.enabled)
   type RegisterTool = typeof server.registerTool
   const registerUnfiltered = server.registerTool.bind(server) as RegisterTool
+  /**
+   * Reject arguments the contract does not declare, instead of discarding them.
+   *
+   * Zod strips unknown keys by default, and the SDK validates before the handler runs, so an
+   * undeclared argument is already gone by the time any handler could notice it. That is how a
+   * caller can pass selectionMethod to upsert_search_help, get no error, and end up with a search
+   * help that has no selection method at all: the mistake surfaces later as a wrong object rather
+   * than as a rejected request. It cost a real misdiagnosis here, because the same silent strip
+   * made a correct verification look like two product defects.
+   *
+   * Every contract supplies a raw Zod shape, so wrapping it in a strict object is a single place
+   * that covers the whole tool surface. A contract that already supplies a built schema is left
+   * exactly as it is.
+   */
+  const strictInputSchema = (schema: unknown): unknown => {
+    if (!schema || typeof schema !== "object" || "parse" in schema) return schema
+    return z.object(schema as z.ZodRawShape).strict()
+  }
   const registerTool = ((name: string, config: unknown, callback: unknown) => {
-    const registered = registerUnfiltered(name as never, config as never, callback as never)
+    const contract = config as { inputSchema?: unknown } | null
+    const strictConfig =
+      contract && typeof contract === "object"
+        ? { ...contract, inputSchema: strictInputSchema(contract.inputSchema) }
+        : config
+    const registered = registerUnfiltered(name as never, strictConfig as never, callback as never)
     if (!enabledToolNames.has(name)) registered.disable()
     return registered
   }) as unknown as RegisterTool
