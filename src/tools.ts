@@ -10297,6 +10297,34 @@ function containsLineSequence(actual: string[], expected: string[]): boolean {
   )
 }
 
+/**
+ * Keys the append-field write reports on failure so a caller can judge the
+ * outcome instead of guessing. COMPENSATED is the important one: "N" means the
+ * failed call could not restore the object and it may still be inconsistent.
+ */
+const APPEND_FAILURE_DETAIL_KEYS = [
+  "APPEND",
+  "BASE_TABLE",
+  "CHANGED",
+  "COMPENSATED",
+  "COMPENSATION_REQUIRED",
+  "BASE_MISMATCH",
+  "REMOVED_FIELDS",
+  "EXPECTED_FIELDS",
+  "ACTUAL_FIELDS",
+  "ACT_RC",
+  "PUT_SUBRC"
+]
+
+function appendFailureDetail(result: SapDdicResult): string {
+  const detail: Record<string, string> = {}
+  for (const key of APPEND_FAILURE_DETAIL_KEYS) {
+    const value = result.metadata[key]
+    if (value) detail[key] = value
+  }
+  return Object.keys(detail).length === 0 ? "" : `; details=${JSON.stringify(detail)}`
+}
+
 function requireDdicSuccess(result: SapDdicResult): void {
   if (result.status.toUpperCase() !== "S") {
     const conversion = result.metadata.CONVERSION_ACTION
@@ -10307,7 +10335,8 @@ function requireDdicSuccess(result: SapDdicResult): void {
         })}`
       : ""
     throw new Error(
-      `SAP DDIC helper rejected the operation: ${result.code}: ${result.message}${conversion}`
+      `SAP DDIC helper rejected the operation: ${result.code}: ${result.message}${conversion}` +
+        appendFailureDetail(result)
     )
   }
 }
