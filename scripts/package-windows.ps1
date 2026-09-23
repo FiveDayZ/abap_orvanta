@@ -60,7 +60,49 @@ function Remove-ScopedPath([string]$Path, [string]$AllowedRoot) {
     }
 }
 
+# 出厂配置必须是占位符：真实主机/用户一旦进入发布物就是凭据与拓扑泄露。此处做独立于来源的最后一道闸门，
+# 不论 connections.example.json 或中间产物此前被谁改写过，都不允许把非占位配置压进归档。
+# 判据取结构化字段而非文本匹配：文本模式容易误伤端口和合法值。
+# 归档前会再调用一次同一函数：判据只有一份，两个调用点不可能漂移。
+function Assert-FactoryConfig([string]$ConfigPath) {
+    $shippedConfig = Get-Content -Raw -LiteralPath $ConfigPath | ConvertFrom-Json
+    if ($shippedConfig.connections.Count -ne 1) {
+        throw "Refusing to package connections.json: expected exactly one placeholder connection."
+    }
+    $shippedConnection = $shippedConfig.connections[0]
+    if ($shippedConnection.id -ne "w200") {
+        throw "Refusing to package connections.json: connection id must be the w200 placeholder."
+    }
+    if ($shippedConnection.username -ne "DEVELOPER") {
+        throw "Refusing to package connections.json: username must be the DEVELOPER placeholder."
+    }
+    if ($shippedConnection.client -ne "200" -or $shippedConnection.language -ne "EN") {
+        throw "Refusing to package connections.json: expected the client 200 / language EN placeholder."
+    }
+    if (([uri]$shippedConnection.url).Host -notlike "*.invalid") {
+        throw "Refusing to package connections.json: host must be a reserved .invalid placeholder."
+    }
+    if ($shippedConnection.PSObject.Properties.Name -contains "password") {
+        throw "Refusing to package connections.json: a password property must never be shipped."
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $releaseRoot, $cacheRoot | Out-Null
+
+# 打包目录同时就是「可运行包根」：用户常直接从 release/<artifact>/ 启动服务实测，而那个实例会把
+# 自己的真实连接配置写回 <packageRoot>\connections.json。若该写入落在「算完哈希」与「打 zip」之间，
+# 产物会带着真实主机/用户出厂，且与包内 BUILD-INFO.json 的 fileSha256 不一致
+# （2026-09-23 0.47.2 事件：BUILD-INFO 16:41:43 → 配置被改写 16:42:07 → zip 16:42:33）。
+# 因此先要求该目录内没有正在运行的实例；归档前另有 Assert-PackagedFilesUnchanged 兜底复检。
+$liveFromPackage = @(
+    Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($packageRoot, [StringComparison]::OrdinalIgnoreCase) }
+)
+if ($liveFromPackage.Count -gt 0) {
+    $liveLabel = ($liveFromPackage | Select-Object -First 5 | ForEach-Object { "$([IO.Path]::GetFileName($_.ExecutablePath))($($_.ProcessId))" }) -join ", "
+    throw "A live instance is running from the package directory ($liveLabel). Stop it first: it rewrites $packageRoot\connections.json, so the artifact could ship a real connection while BUILD-INFO.json records a placeholder."
+}
+
 if (-not $ReplaceExisting -and (@($packageRoot, $zipPath, $hashPath) | Where-Object { Test-Path -LiteralPath $_ })) {
     throw "Release already exists. Preserve it or explicitly use -ReplaceExisting after review."
 }
@@ -162,29 +204,7 @@ $portableConfig.connections[0].id = "w200"
 $portableConfig.connections[0].passwordEnv = "ABAP_MCP_W200_PASSWORD"
 $portableConfig | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageRoot "connections.json") -Encoding utf8
 
-# 出厂配置必须是占位符：真实主机/用户一旦进入发布物就是凭据与拓扑泄露。此处做独立于来源的最后一道闸门，
-# 不论 connections.example.json 或中间产物此前被谁改写过，都不允许把非占位配置压进归档。
-# 判据取结构化字段而非文本匹配：文本模式容易误伤端口和合法值。
-$shippedConfig = Get-Content -Raw -LiteralPath (Join-Path $packageRoot "connections.json") | ConvertFrom-Json
-if ($shippedConfig.connections.Count -ne 1) {
-    throw "Refusing to package connections.json: expected exactly one placeholder connection."
-}
-$shippedConnection = $shippedConfig.connections[0]
-if ($shippedConnection.id -ne "w200") {
-    throw "Refusing to package connections.json: connection id must be the w200 placeholder."
-}
-if ($shippedConnection.username -ne "DEVELOPER") {
-    throw "Refusing to package connections.json: username must be the DEVELOPER placeholder."
-}
-if ($shippedConnection.client -ne "200" -or $shippedConnection.language -ne "EN") {
-    throw "Refusing to package connections.json: expected the client 200 / language EN placeholder."
-}
-if (([uri]$shippedConnection.url).Host -notlike "*.invalid") {
-    throw "Refusing to package connections.json: host must be a reserved .invalid placeholder."
-}
-if ($shippedConnection.PSObject.Properties.Name -contains "password") {
-    throw "Refusing to package connections.json: a password property must never be shipped."
-}
+Assert-FactoryConfig (Join-Path $packageRoot "connections.json")
 
 # Runtime execution is optional only for preparation; the manifest records the missing check.
 if (-not $SkipRuntimeCheck) {
@@ -226,6 +246,25 @@ $buildInfo = [ordered]@{
     builtAt = (Get-Date).ToString("yyyy-MM-ddTHH:mm:sszzz")
 }
 $buildInfo | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageRoot "BUILD-INFO.json") -Encoding utf8
+
+# 收口闸门：哈希与归档之间不允许任何文件发生变化。哈希在 BUILD-INFO.json 之前算，归档在它之后，
+# 中间这段时间里任何外部写入——最典型的是从本目录启动的服务改写 connections.json——都会让产物与包内
+# fileSha256 不符，并且可能把真实配置带出厂。此处逐文件复检并复跑出厂配置判据，不一致即失败关闭。
+$driftedFiles = @()
+foreach ($relativePath in $fileHashes.Keys) {
+    $absolutePath = Join-Path $packageRoot ($relativePath.Replace("/", [IO.Path]::DirectorySeparatorChar))
+    if (-not (Test-Path -LiteralPath $absolutePath -PathType Leaf)) {
+        $driftedFiles += "$relativePath (missing)"
+        continue
+    }
+    if ((Get-FileHash -LiteralPath $absolutePath -Algorithm SHA256).Hash -ne $fileHashes[$relativePath]) {
+        $driftedFiles += $relativePath
+    }
+}
+if ($driftedFiles.Count -gt 0) {
+    throw "Packaged files changed after they were hashed and before the archive was written: $($driftedFiles -join ', '). Something wrote into $packageRoot during packaging; re-run with no instance running from that directory."
+}
+Assert-FactoryConfig (Join-Path $packageRoot "connections.json")
 
 Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zipPath -CompressionLevel Optimal
 $artifactHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash
