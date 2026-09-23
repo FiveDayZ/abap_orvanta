@@ -3067,7 +3067,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header: {
         DATATYPE: input.dataType,
@@ -3119,7 +3119,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header,
       selectionMethods,
@@ -3163,7 +3163,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header,
       lockTables,
@@ -3199,7 +3199,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: numberRangeObjectVersion(input.expectedVersion),
       header: properties,
       numberRangeTexts: texts
@@ -3233,7 +3233,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header,
       baseTables,
@@ -3284,7 +3284,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header: {
         DOMNAME: ddicName(input.domainName, "domainName"),
@@ -3331,7 +3331,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       fields
     })
@@ -3368,7 +3368,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       header: {
         CONTFLAG: input.deliveryClass,
         MAINFLAG: maintenanceFlag,
@@ -3457,7 +3457,7 @@ export class ToolService {
       objectName,
       description: current.header.DDTEXT ?? "",
       packageName,
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion,
       fields: appendedFields
     })
@@ -3521,7 +3521,7 @@ export class ToolService {
       objectName,
       description: String(currentDefinition.description ?? ""),
       packageName,
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion,
       fields: serializeDdicTableFields(fields)
     })
@@ -3544,7 +3544,7 @@ export class ToolService {
       connectionId,
       objectName,
       packageName,
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       settings: input.settings,
       expectedVersion: requiredVersionToken(input.expectedVersion),
       expectedFingerprint: requiredDdicFingerprint(input.expectedFingerprint)
@@ -3693,7 +3693,7 @@ export class ToolService {
       objectName,
       description: "Native table conversion recovery",
       packageName,
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       fields: before.entries
     })
     requireDdicSuccess(result)
@@ -3835,7 +3835,7 @@ export class ToolService {
         connectionId,
         objectName,
         packageName,
-        transportNumber: transportNumber(input.transportNumber),
+        transportNumber: ddicTransport(input.packageName, input.transportNumber),
         settings,
         expectedVersion: requiredVersionToken(stored.objectVersion),
         expectedFingerprint: storedFingerprint
@@ -3867,7 +3867,7 @@ export class ToolService {
       objectName,
       description: "Resume inactive transparent table activation",
       packageName,
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: activeExpectedFingerprint
     })
     requireDdicSuccess(result)
@@ -3938,7 +3938,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header: { ROWTYPE: ddicName(input.rowType, "rowType") }
     })
@@ -3982,7 +3982,7 @@ export class ToolService {
       operation,
       objectName,
       packageName: expectedPackage,
-      transportNumber: transportNumber(input.transportNumber),
+      transportNumber: ddicTransport(input.packageName, input.transportNumber),
       expectedVersion:
         input.objectType === "NROB"
           ? requiredNumberRangeObjectVersion(input.expectedVersion)
@@ -10406,6 +10406,16 @@ function ddicPackageName(value: string): string {
   if (value.trim().toUpperCase() === "$TMP") return "$TMP"
   const normalized = ddicName(value, "packageName")
   return normalized
+}
+
+/**
+ * DDIC writes in $TMP need no transport at all, exactly like the source-object case already
+ * handled by deletableSourcePackage. Without this, allowing $TMP in ddicPackageName would be
+ * inert: every $TMP write was still refused by the mandatory 10-character transport check, so
+ * no caller could actually use the local package. Non-$TMP packages keep the original rule.
+ */
+function ddicTransport(packageName: string, value: string): string {
+  return ddicPackageName(packageName) === "$TMP" ? "" : transportNumber(value)
 }
 
 function versionToken(value?: string): string | undefined {
