@@ -10398,9 +10398,12 @@ function ddicFieldName(value: string): string {
 }
 
 function ddicPackageName(value: string): string {
-  if (value.trim().toUpperCase() === "$TMP") {
-    throw new Error("A transportable package is required for DDIC objects")
-  }
+  // $TMP is accepted deliberately. It is the correct home for throwaway test objects, and it
+  // leaves no transport entry behind: test DDIC objects created in a transportable package have
+  // already left TADIR residue in this system that needed manual SE03 cleanup. Objects here stay
+  // local to this system and are never promoted, which is what a test object should be. Every
+  // other package name is still validated as before.
+  if (value.trim().toUpperCase() === "$TMP") return "$TMP"
   const normalized = ddicName(value, "packageName")
   return normalized
 }
