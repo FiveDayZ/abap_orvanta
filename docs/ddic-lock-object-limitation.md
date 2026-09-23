@@ -10,13 +10,13 @@ Tables (`TABL`), views (`VIEW`) and number ranges (`NROB`) are registered by the
 
 ## What the caller sees
 
-| Aspect | Behaviour |
-| --- | --- |
-| Stable code | `TADIR_ENTRY_FAILED` |
-| Message | SAP's original message text, e.g. `SAP 对象 ENQU <NAME> 无法被分配到包 <PACKAGE>` |
-| Short dump | none (the call is type-correct; see history below) |
-| Partial persistence | none — no `TADIR` row is left behind for the rejected object |
-| `ev_version` | `1.11` |
+| Aspect              | Behaviour                                                                         |
+| ------------------- | --------------------------------------------------------------------------------- |
+| Stable code         | `TADIR_ENTRY_FAILED`                                                              |
+| Message             | SAP's original message text, e.g. `SAP 对象 ENQU <NAME> 无法被分配到包 <PACKAGE>` |
+| Short dump          | none (the call is type-correct; see history below)                                |
+| Partial persistence | none — no `TADIR` row is left behind for the rejected object                      |
+| `ev_version`        | `1.11`                                                                            |
 
 The operation fails closed: it does not report success and does not leave a half-registered object.
 
