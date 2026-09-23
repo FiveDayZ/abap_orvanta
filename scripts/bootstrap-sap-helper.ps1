@@ -3962,7 +3962,11 @@ function New-DdicFunctionSource {
         "          ev_version = '1.10'.",
         "          add_payload 'M' '1' 'GOTSTATE' lv_gotstate.",
         "          add_payload 'M' '1' 'INACTIVE' 'X'.",
-        "          IF lv_object_type = 'TABL'.",
+        # N-2：STRU 与 TABL 走的是同一个 DDIF_TABL_GET state = 'M' 读取（见上方 WHEN 'STRU'），
+        # 三个数据源 ls_current_dd02v / ls_current_dd09v / lt_current_dd03p 完全同源；此处原先只
+        # 放行 TABL，导致结构对象的非活动定义恒只发 M|GOTSTATE 与 M|INACTIVE、fields 恒为空，
+        # 与 TABL 分支在 R2C 已修的行为不一致。同源即同发，一并放行 STRU。
+        "          IF lv_object_type = 'TABL' OR lv_object_type = 'STRU'.",
         "            add_payload 'M' '1' 'TABNAME' iv_object_name.",
         # 非活动定义的表头属性必须取自 state = 'M' 读到的 ls_current_dd02v；ls_dd02v 装的是
         # 活动版本表头（见上方 DDIF_TABL_GET state = 'A' 的 IMPORTING），用它会让 INACTIVE 行
