@@ -809,4 +809,61 @@ if ($document.SelectSingleNode("//ZEILE").InnerText -ne "READY") {
     throw "Valid SOAP XML should remain parseable"
 }
 
+# 2026-09-23 r33 第 9 次 F8 实测：CONCATENATE 只接受字符型操作数（C/N/D/T/STRING），把 sy-subrc
+# （INT4）或 I 直接当操作数会在 GENERATE 时报「LV_ACTIVATION_SUBRC 必须为字符型数据对象」。行长守卫
+# 看不见这一类，因为它只在编译期暴露，而每次暴露的代价是一轮人工 F8。
+# 只断言这一条：目标字段同时充当操作数是被允许的——生成器自己的分块累加
+# （CONCATENATE lv_source_line '…' INTO lv_source_line RESPECTING BLANKS）就依赖它，且已随多个载体成功编译，
+# 因此不得把它写成违规。
+$numericTypePattern = '^(?:i|p|f|int8|decfloat16|decfloat34|sy-subrc)$'
+# $repositoryFunctionSource 是 New-InstallProgram 的局部变量（不在脚本 EndBlock 里），
+# 因此按名字在整个 AST 里找这条赋值语句，再在当前作用域求值取出原始正文。
+$repositoryBodyStatement = $ast.FindAll(
+    {
+        param($node)
+        $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+            $node.Left.Extent.Text -eq '$repositoryFunctionSource'
+    },
+    $true
+) | Select-Object -First 1
+if (-not $repositoryBodyStatement) {
+    throw "the repository function body assignment was not found in bootstrap-sap-helper.ps1"
+}
+Invoke-Expression $repositoryBodyStatement.Extent.Text
+if (-not $repositoryFunctionSource -or $repositoryFunctionSource.Count -lt 100) {
+    throw "the repository function body did not load: $($repositoryFunctionSource.Count) line(s)"
+}
+foreach ($guarded in @(
+        @{ Name = "Z_ORVANTA_MCP_DDIC_API"; Lines = $ddicFunction },
+        @{ Name = "Z_ORVANTA_MCP_EXECUTE/Z_ORVANTA_MCP_DYNPRO_API"; Lines = $repositoryFunctionSource }
+    )) {
+    $guardedLines = @($guarded.Lines | Where-Object { $null -ne $_ })
+    $numericNames = @($guardedLines | ForEach-Object {
+            if ($_ -match '^\s*DATA\s+([A-Za-z_][A-Za-z0-9_]*)\s+TYPE\s+([A-Za-z0-9_-]+)\s*\.') {
+                # 先取值再匹配类型：内层 -match 会覆盖 $Matches，直接读 $Matches[1] 会拿到空串。
+                $declaredName = $Matches[1]
+                $declaredType = $Matches[2]
+                if ($declaredType.ToLower() -match $numericTypePattern) { $declaredName }
+            }
+        } | Where-Object { $_ })
+    $pendingStatement = ""
+    foreach ($line in $guardedLines) {
+        $pendingStatement = if ($pendingStatement) { "$pendingStatement $line" } else { $line }
+        if (-not $line.TrimEnd().EndsWith(".")) { continue }
+        $statement = $pendingStatement.Trim()
+        $pendingStatement = ""
+        if ($statement -notmatch '^CONCATENATE\b') { continue }
+        $intoMatch = [regex]::Match($statement, '\bINTO\s+([A-Za-z_][A-Za-z0-9_]*)')
+        if (-not $intoMatch.Success) {
+            throw "$($guarded.Name): CONCATENATE without an INTO target: $statement"
+        }
+        $operands = $statement.Substring(0, $intoMatch.Index)
+        foreach ($numericName in $numericNames) {
+            if ($operands -match "(?<![A-Za-z0-9_])$([regex]::Escape($numericName))(?![A-Za-z0-9_])") {
+                throw "$($guarded.Name): CONCATENATE operand $numericName is numeric and must be converted with WRITE ... TO first: $statement"
+            }
+        }
+    }
+}
+
 Write-Host "PASS: bootstrap SOAP response parsing and DDIC generator"
