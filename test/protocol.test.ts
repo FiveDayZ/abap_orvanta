@@ -894,3 +894,41 @@ test("health endpoint responds without an MCP session", async () => {
     await running.close()
   }
 })
+
+/**
+ * The input schemas are strict on purpose: zod strips unknown keys by default, and the SDK
+ * validates before the handler runs, so an undeclared argument used to disappear without a trace.
+ * A caller passing selectionMethod to upsert_search_help got no error and a search help with no
+ * selection method, and the same silent strip made a correct verification look like a product
+ * defect twice over. These assertions pin the replacement behaviour, because it is a deliberate
+ * breaking change for any client that sends arguments the contract does not declare.
+ */
+test("an argument the contract does not declare is rejected, not discarded", async () => {
+  const stateRoot = await mkdtemp(join(tmpdir(), "abap-mcp-strict-input-state-"))
+  const running = await startHttpServer(new MockBackend(), 0, stateRoot)
+  const client = new Client({ name: "strict-input-client", version: "0.1.0" })
+  try {
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(running.mcpUrl)) as Parameters<Client["connect"]>[0]
+    )
+    // A declared argument still works, so strictness rejects only what is undeclared.
+    const accepted = await client.callTool({
+      name: "get_connected_systems",
+      arguments: {}
+    })
+    assert.notEqual(accepted.isError, true)
+
+    const rejected = await client.callTool({
+      name: "get_connected_systems",
+      arguments: { selectionMethod: "LIKP" }
+    })
+    assert.equal(rejected.isError, true)
+    const text = ((rejected.content ?? []) as Array<{ text?: string }>)
+      .map((part) => part.text ?? "")
+      .join("")
+    assert.match(text, /unrecognized_keys/)
+    assert.match(text, /selectionMethod/)
+  } finally {
+    await running.close()
+  }
+})
