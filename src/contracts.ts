@@ -331,6 +331,22 @@ const readAdobeFormSchema = z
   })
   .strict()
 
+const createTransportRequestSchema = z
+  .object({
+    connectionId: z.string().regex(/^[a-z0-9_-]{1,100}$/),
+    requestType: z.enum(["K", "W"]),
+    description: z.string().min(1).max(60),
+    owner: z
+      .string()
+      .max(12)
+      .regex(/^[A-Z0-9_]+$/)
+      .optional(),
+    target: z.string().max(10).optional(),
+    allowDuplicate: z.boolean().default(false),
+    confirmation: z.literal("CREATE_TRANSPORT_REQUEST")
+  })
+  .strict()
+
 const toolContractsBase = {
   read_sapscript_form: {
     description:
@@ -349,6 +365,12 @@ const toolContractsBase = {
       "Read one Adobe form layout (SFP) through the shared SAP repository helper: the runtime XDP of the active state and empty ID as base64, with the form's own state, dirty flag, ID, requested and master language, the layout byte length, and a SHA-256 of the returned bytes. It reports interfaceAvailable=false and unsupported=[interface, context] because the Adobe interface and context read paths are not implemented; those are stated explicitly rather than returned as empty objects. A layout larger than 1 MiB is capped and reported through truncated, and the hash is withheld for a capped layout. It does not read the interface definition, does not read a single version, does not print, activate or generate, and never changes SAP.",
     inputSchema: readAdobeFormSchema.shape,
     annotations: { readOnlyHint: true }
+  },
+  create_transport_request: {
+    description:
+      "Create one modifiable CTS request (K workbench or W customizing) through the shared SAP repository helper, which calls TR_INSERT_REQUEST_WITH_TASKS inside SAP and commits only after the new request has been read back from E070. Returns the request number, type, status, owner, target, description and the created task numbers. Retry-safe: a repeat call is matched on owner, type, status and description, and the existing request is returned with created=false instead of silently creating a second one; allowDuplicate=true forces a new request. Requires the CREATE_TRANSPORT_REQUEST confirmation string, which is checked before SAP is contacted. S, R, X and Q are task types and are refused. It never releases a request, never adds objects to one and never deletes anything. The helper performs SAP's own CTS create authorization check, reported as TRANSPORT_REQUEST_INSERT_FAILED with SAP's message text.",
+    inputSchema: createTransportRequestSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
   },
   read_smartform: {
     description:

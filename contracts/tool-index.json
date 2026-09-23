@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 140,
+  "toolCount": 141,
   "readOnlyToolCount": 82,
   "profiles": {
     "readonly": 82,
     "platform": 12,
     "dev": 124,
     "config": 28,
-    "ops": 35,
-    "full": 140
+    "ops": 36,
+    "full": 141
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 7,
     "message": 4,
-    "ops": 18,
+    "ops": 19,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -438,6 +438,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
       "minHelperProtocol": "1.1"
+    },
+    {
+      "name": "create_transport_request",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.8"
     },
     {
       "name": "delete_abap_message_class",

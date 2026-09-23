@@ -50,6 +50,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "create_smartform",
       "create_test_include",
       "create_transaction_code",
+      "create_transport_request",
       "delete_abap_message_class",
       "delete_abap_source_object",
       "delete_ddic_object",

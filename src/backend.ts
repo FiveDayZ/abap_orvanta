@@ -227,6 +227,11 @@ export type SapRepositoryOperation =
   // uses SSF_READ_STYLE (STXS* family), form P converts a legacy SAPscript style.
   | "READ_SMARTSTYLE"
   | "READ_ADOBE_FORM"
+  // D9-1: transport request creation. TR_INSERT_REQUEST_WITH_TASKS is not remote-enabled and the
+  // ADT CTS endpoints are not advertised on this platform, so the shared repository body is the only
+  // entry point. TR_OBJECT_INSERT is deliberately not used: it hard-codes iv_with_dialog = 'X' into
+  // TRINT_OBJECTS_CHECK_AND_INSERT, whose 'X' branch calls POPUP_TO_CONFIRM_STEP.
+  | "CREATE_TRANSPORT_REQUEST"
 
 export type SapStructureRow = Record<string, string>
 
@@ -296,6 +301,20 @@ export interface SapRepositoryRequest {
   styleActive?: string | undefined
   styleVariant?: string | undefined
   includeCss?: boolean | undefined
+  /**
+   * D9-1 request-creation inputs. Same rule as the D7 selectors: each one travels only when a caller
+   * supplies it, so no undeclared element reaches a pre-2.8 helper on an unrelated operation.
+   *
+   * `requestType` is the TRFUNCTION request type (K workbench, W customizing), `requestText` is the
+   * AS4TEXT description, `requestOwner` defaults to the SAP user inside the helper, `requestTarget`
+   * is a free TR_TARGET value with no domain fixed values, and `requestAllowDuplicate` switches the
+   * helper's retry guard off.
+   */
+  requestType?: string | undefined
+  requestText?: string | undefined
+  requestOwner?: string | undefined
+  requestTarget?: string | undefined
+  requestAllowDuplicate?: boolean | undefined
 }
 
 export interface SapRepositoryResult extends SapHelperResult {

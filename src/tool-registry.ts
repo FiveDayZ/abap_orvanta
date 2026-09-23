@@ -647,6 +647,18 @@ const ROWS: readonly ToolRow[] = [
   ["analyze_abap_traces", "ops", OPSP, "R", "native-adt", null, null],
   ["manage_transport_requests", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["cleanup_transport_entries", "ops", OPSP, "D", "native-adt", null, null],
+  // D9-1. A write: the shared repository body creates a CTS request and commits it. The tool is
+  // ops-only and stays off the default surface; the helper protocol it needs is named here.
+  [
+    "create_transport_request",
+    "ops",
+    OPSP,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.8",
+    ["CREATE_TRANSPORT_REQUEST"]
+  ],
   ["abap_download", "source", DEV, "W", "target-specific", null, null],
   ["adt_discovery_export", "platform", PL, "W", "native-adt", null, null]
 ]

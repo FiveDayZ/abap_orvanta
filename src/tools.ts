@@ -236,6 +236,35 @@ interface AdobeFormDefinition {
   fingerprint: string
 }
 
+interface CreateTransportRequestInput {
+  connectionId: string
+  requestType: string
+  description: string
+  owner?: string | undefined
+  target?: string | undefined
+  allowDuplicate?: boolean | undefined
+  confirmation: string
+}
+
+/**
+ * `created` separates "SAP created this request now" from "the retry guard matched an existing
+ * request", because both are successful outcomes and reporting them identically would hide whether
+ * anything was written. `matchedBy` names the fields the match used, so the caller can see that the
+ * guard is a heuristic on owner, type, status and description rather than an external unique key.
+ */
+interface TransportRequestCreation {
+  connectionId: string
+  created: boolean
+  requestNumber: string
+  requestType: string
+  status: string
+  owner: string
+  target: string
+  description: string
+  taskNumbers: string[]
+  matchedBy?: string | undefined
+}
+
 interface ScreenModuleReference {
   name: string
   event: "PBO" | "PAI" | "POH" | "POV" | "UNKNOWN"
@@ -1337,6 +1366,35 @@ export class ToolService {
 
   async readAdobeForm(input: ReadAdobeFormInput): Promise<string> {
     return JSON.stringify(await this.readAdobeFormDefinition(input), null, 2)
+  }
+
+  /**
+   * Create one modifiable CTS request through the shared SAP repository helper.
+   *
+   * The confirmation string is checked before any SAP call: an unconfirmed call must not reach the
+   * system at all, so the check is the first statement and nothing above it touches the backend.
+   */
+  async createTransportRequest(input: CreateTransportRequestInput): Promise<string> {
+    if (input.confirmation !== "CREATE_TRANSPORT_REQUEST") {
+      throw new Error("confirmation must be CREATE_TRANSPORT_REQUEST")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const requestType = transportRequestType(input.requestType)
+    const requestText = transportRequestText(input.description)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "CREATE_TRANSPORT_REQUEST",
+      requestType,
+      requestText,
+      ...(input.owner ? { requestOwner: transportRequestOwner(input.owner) } : {}),
+      ...(input.target ? { requestTarget: transportRequestTarget(input.target) } : {}),
+      requestAllowDuplicate: input.allowDuplicate === true
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    return JSON.stringify(
+      transportRequestCreation(connectionId, requestType, requestText, result),
+      null,
+      2
+    )
   }
 
   async readAbapScreen(input: ReadScreenInput): Promise<string> {
@@ -12892,6 +12950,92 @@ function adobeFormName(value: string): string {
   }
   if (normalized.length > 30) throw new Error("formName must not exceed 30 characters")
   return normalized
+}
+
+/**
+ * The TRFUNCTION domain fixed values were read from w200 on 2026-09-23. Only K (workbench) and W
+ * (customizing) create a request; S, R, X and Q describe tasks, and T belongs to the transport-of-
+ * copies lifecycle, so none of them is accepted here.
+ */
+function transportRequestType(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (normalized !== "K" && normalized !== "W") {
+    throw new Error("requestType must be K (workbench) or W (customizing)")
+  }
+  return normalized
+}
+
+function transportRequestText(value: string): string {
+  const normalized = value.trim()
+  if (normalized === "") throw new Error("description must not be empty")
+  if (normalized.length > 60) throw new Error("description must not exceed 60 characters")
+  if (/[\r\n]/.test(normalized)) throw new Error("description must not contain line breaks")
+  return normalized
+}
+
+function transportRequestOwner(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!/^[A-Z0-9_]{1,12}$/.test(normalized)) {
+    throw new Error("owner must be a SAP user name of at most 12 characters")
+  }
+  return normalized
+}
+
+function transportRequestTarget(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (normalized.length > 10) throw new Error("target must not exceed 10 characters")
+  if (/[\r\n|%]/.test(normalized)) throw new Error("target must not contain line breaks or | or %")
+  return normalized
+}
+
+/**
+ * The helper reports both outcomes as successful, so `created` is decoded from the CREATED payload
+ * property rather than inferred from the status: a matched existing request and a freshly created
+ * one must never look the same to a caller.
+ */
+function transportRequestCreation(
+  connectionId: string,
+  requestType: string,
+  description: string,
+  result: SapRepositoryResult
+): TransportRequestCreation {
+  const metadata: Record<string, string> = {}
+  const taskNumbers: string[] = []
+  for (const line of result.source) {
+    const match = line.match(/^([A-Z]+)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(`SAP repository helper returned an invalid payload line: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    if (match[1] === "M") {
+      metadata[match[3]] = value
+      continue
+    }
+    if (match[1] !== "T" || match[3] !== "TRKORR") {
+      throw new Error(`SAP repository helper returned an unknown transport payload kind: ${line}`)
+    }
+    taskNumbers.push(value)
+  }
+  const requestNumber = (metadata.TRKORR ?? "").trim()
+  if (requestNumber === "") {
+    throw new Error("SAP repository helper did not report a transport request number")
+  }
+  const created = metadata.CREATED === "X"
+  if (!created && (metadata.MATCHED_BY ?? "") === "") {
+    throw new Error("SAP repository helper reported neither a created nor a matched request")
+  }
+  return {
+    connectionId: connectionId.toLowerCase(),
+    created,
+    requestNumber,
+    requestType: metadata.TRFUNCTION ?? requestType,
+    status: metadata.TRSTATUS ?? "",
+    owner: metadata.AS4USER ?? "",
+    target: metadata.TARSYSTEM ?? "",
+    description: metadata.AS4TEXT ?? description,
+    taskNumbers,
+    ...(created ? {} : { matchedBy: metadata.MATCHED_BY ?? "" })
+  }
 }
 
 function smartstyleMode(value: string | undefined): string {

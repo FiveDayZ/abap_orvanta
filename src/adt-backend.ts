@@ -1940,7 +1940,12 @@ function optionalRepositorySelectors(request: SapRepositoryRequest): string {
     ["IV_STYLE_MODE", request.styleMode],
     ["IV_STYLE_ACTIVE", request.styleActive],
     ["IV_STYLE_VARIANT", request.styleVariant],
-    ["IV_INCLUDE_CSS", request.includeCss ? "X" : undefined]
+    ["IV_INCLUDE_CSS", request.includeCss ? "X" : undefined],
+    ["IV_REQUEST_TYPE", request.requestType],
+    ["IV_REQUEST_TEXT", request.requestText],
+    ["IV_REQUEST_OWNER", request.requestOwner],
+    ["IV_REQUEST_TARGET", request.requestTarget],
+    ["IV_REQUEST_ALLOW_DUPLICATE", request.requestAllowDuplicate ? "X" : undefined]
   ]
   return selectors
     .filter((selector): selector is readonly [string, string] => selector[1] !== undefined)

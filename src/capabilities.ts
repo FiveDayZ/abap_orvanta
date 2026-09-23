@@ -144,6 +144,7 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   ["repository-helper-sapscript-form", ["read_sapscript_form"]],
   ["repository-helper-smartstyle", ["read_smartstyle"]],
   ["repository-helper-adobe-form", ["read_adobe_form"]],
+  ["repository-helper-transport-request", ["create_transport_request"]],
   ["repository-helper-gui-definition", ["read_abap_gui_definition", "patch_abap_gui_definition"]],
   [
     "repository-helper-ecc-fallbacks",

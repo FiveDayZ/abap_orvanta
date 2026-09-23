@@ -183,6 +183,11 @@ export function createMcpServer(
   registerTool("read_adobe_form", toolContracts.read_adobe_form, async (input) =>
     invoke("read_adobe_form", () => tools.readAdobeForm(input))
   )
+  registerTool("create_transport_request", toolContracts.create_transport_request, async (input) =>
+    invokeWrite("create_transport_request", input, backend, writeReceipts, () =>
+      tools.createTransportRequest(input)
+    )
+  )
   registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
     invoke("read_abap_screen", () => tools.readAbapScreen(input))
   )
@@ -1091,11 +1096,13 @@ export function writeOperationContext(
           ? `version ${String(input.expectedVersion)}`
           : input.oldString !== undefined
             ? `exact source match ${hashWriteInput(input.oldString)}`
-            : name.startsWith("create_")
-              ? "target must not already exist"
-              : name.startsWith("delete_")
-                ? "target identity and repository assignment must match"
-                : "tool-specific SAP readback and lock checks"
+            : name === "create_transport_request"
+              ? "no modifiable request with the same owner, type and description may already exist"
+              : name.startsWith("create_")
+                ? "target must not already exist"
+                : name.startsWith("delete_")
+                  ? "target identity and repository assignment must match"
+                  : "tool-specific SAP readback and lock checks"
   return {
     connectionId,
     targetKey: target.key,
@@ -1136,6 +1143,15 @@ export function writeOperationTarget(
   ) {
     const enhancement = String(input.enhancementName).toUpperCase()
     return { key: `ENHO:${enhancement}`, summary: `enhancement implementation ${enhancement}` }
+  }
+  if (name === "create_transport_request") {
+    const type = String(input.requestType).toUpperCase()
+    const owner = String(input.owner ?? "").toUpperCase()
+    const description = String(input.description)
+    return {
+      key: `CTS-NEW:${type}:${owner}:${description}`,
+      summary: `new CTS request of type ${type} for ${owner === "" ? "the calling user" : owner} described "${description}"`
+    }
   }
   if (name === "manage_classic_badi_implementation") {
     const implementation = String(input.implementationName).toUpperCase()

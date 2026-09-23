@@ -328,6 +328,18 @@
       "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
     },
     {
+      "tool": "create_transport_request",
+      "helper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "method": "controlled-write",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (CREATE_TRANSPORT_REQUEST), which is still a static inference and not an observation: the branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed. The create path was verified statically on w200: TR_INSERT_REQUEST_WITH_TASKS is not remote-enabled and contains no CALL SCREEN, no POPUP_TO and no COMMIT WORK, so the helper owns the commit and reads the new request back from E070 before reporting success. TR_OBJECT_INSERT is deliberately not used, because it hard-codes iv_with_dialog = 'X' into TRINT_OBJECTS_CHECK_AND_INSERT, whose 'X' branch calls POPUP_TO_CONFIRM_STEP."
+    },
+    {
       "tool": "delete_abap_message_class",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",

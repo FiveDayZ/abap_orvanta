@@ -1,7 +1,7 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：140
+- 工具总数：141
 - 只读工具：82
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
@@ -14,8 +14,8 @@
 | profile: platform | 12 |
 | profile: dev | 124 |
 | profile: config | 28 |
-| profile: ops | 35 |
-| profile: full | 140 |
+| profile: ops | 36 |
+| profile: full | 141 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 7 |
 | 分组: message | 4 |
-| 分组: ops | 18 |
+| 分组: ops | 19 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -60,6 +60,7 @@
 | `create_smartform` | form | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_SMARTFORM_API |
 | `create_test_include` | source | dev | 写 | native-adt | — |
 | `create_transaction_code` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
+| `create_transport_request` | ops | ops | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.8) |
 | `delete_abap_message_class` | message | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.9) |
 | `delete_abap_source_object` | source | dev | 破坏性写 | native-adt | — |
 | `delete_ddic_object` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.6) |

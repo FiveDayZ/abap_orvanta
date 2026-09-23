@@ -321,7 +321,9 @@ $ddicParameterLines = @($ddicProgram | Where-Object { $_ -match "ls_(import|expo
 if (($repositoryParameterLines -join "`n") -ne ($executeParameterLines -join "`n")) {
     throw "Z_ORVANTA_MCP_EXECUTE and Z_ORVANTA_MCP_DYNPRO_API share one body and must share one interface"
 }
-$d7Parameters = @(
+# Interface parameters that exist only on the repository helper (Z_ORVANTA_MCP_DYNPRO_API and the
+# shared Z_ORVANTA_MCP_EXECUTE body). The DDIC helper is a separate body and must not grow them.
+$repositoryOnlyParameters = @(
     "IV_TEXT_STATUS",
     "IV_TEXT_LANGUAGE",
     "IV_TEXT_VERSION",
@@ -330,6 +332,11 @@ $d7Parameters = @(
     "IV_STYLE_MODE",
     "IV_INCLUDE_SOURCE",
     "IV_INCLUDE_CSS",
+    "IV_REQUEST_TYPE",
+    "IV_REQUEST_TEXT",
+    "IV_REQUEST_OWNER",
+    "IV_REQUEST_TARGET",
+    "IV_REQUEST_ALLOW_DUPLICATE",
     "ES_FORM_HEADER",
     "ES_TEXT_HEADER",
     "ES_STYLE_HEADER",
@@ -351,9 +358,9 @@ $d7Parameters = @(
     "ET_STYLE_ITEMS_STR",
     "ET_STYLE_ITEMS_TAB"
 )
-foreach ($name in $d7Parameters) {
+foreach ($name in $repositoryOnlyParameters) {
     if (-not ($repositoryParameterLines -match [regex]::Escape("'$name'"))) {
-        throw "D7 interface extension is missing parameter: $name"
+        throw "Repository interface extension is missing parameter: $name"
     }
     if ($ddicParameterLines -match [regex]::Escape("'$name'")) {
         throw "The DDIC helper must not declare the repository-only parameter: $name"
@@ -373,6 +380,15 @@ $verifiedCarriers = [ordered]@{
     "IV_STYLE_MODE"    = "TDCHAR1"
     "IV_INCLUDE_SOURCE" = "TDCHAR1"
     "IV_INCLUDE_CSS"   = "TDCHAR1"
+    # create_transport_request (D9-1). Every carrier below was read from w200 on 2026-09-23 as part of
+    # the FM contract check: TRFUNCTION/AS4USER are E070 field data elements and TR_TARGET is the
+    # E070-TARSYSTEM data element, while AS4TEXT is E07T-AS4TEXT. TRBOOLEAN is the type SAP itself
+    # uses for TRINT_OBJECTS_CHECK_AND_INSERT-IV_WITH_DIALOG and TR_OBJECT_INSERT-IV_OLD_CALL.
+    "IV_REQUEST_TYPE"  = "TRFUNCTION"
+    "IV_REQUEST_TEXT"  = "AS4TEXT"
+    "IV_REQUEST_OWNER" = "AS4USER"
+    "IV_REQUEST_TARGET" = "TR_TARGET"
+    "IV_REQUEST_ALLOW_DUPLICATE" = "TRBOOLEAN"
 }
 foreach ($name in $verifiedCarriers.Keys) {
     $declaration = "ls_import-parameter = '$name'."
@@ -448,6 +464,25 @@ foreach ($marker in @(
         "'STYLE_MODE'",
         "'CSS_STATUS'",
         "ev_version = '2.8'",
+        # D9-1 create_transport_request (2026-09-23). The opcode must stay dispatched, and the branch
+        # must keep using TR_INSERT_REQUEST_WITH_TASKS: TR_OBJECT_INSERT is NOT a substitute, because
+        # it hard-codes iv_with_dialog = 'X' into TRINT_OBJECTS_CHECK_AND_INSERT, whose 'X' branch
+        # calls POPUP_TO_CONFIRM_STEP (read from w200). The commit, the retry guard and the read-back
+        # are the three properties the acceptance plan checks, so each is pinned separately.
+        "WHEN 'CREATE_TRANSPORT_REQUEST'.",
+        "CALL FUNCTION 'TR_INSERT_REQUEST_WITH_TASKS'",
+        "COMMIT WORK AND WAIT.",
+        "TRANSPORT_REQUEST_TYPE_REQUIRED",
+        "TRANSPORT_REQUEST_TYPE_INVALID",
+        "TRANSPORT_REQUEST_TEXT_REQUIRED",
+        "TRANSPORT_REQUEST_EXISTS",
+        "TRANSPORT_REQUEST_INSERT_FAILED",
+        "TRANSPORT_REQUEST_ENQUEUE_FAILED",
+        "TRANSPORT_REQUEST_NUMBER_MISSING",
+        "TRANSPORT_REQUEST_NOT_PERSISTED",
+        "'MATCHED_BY'",
+        "'TASK_COUNT'",
+        "DATA lv_d9_request_allow_dup TYPE trboolean.",
         "READ TEXTPOOL lv_textpool_program INTO lt_textpool",
         "INSERT TEXTPOOL lv_textpool_program FROM lt_textpool",
         "STATE 'A'",
@@ -904,7 +939,10 @@ $payloadEmitterPattern = '\b(?:add_repo_payload|add_repo_component|emit_d7_rows)
 foreach ($orderedBranch in @(
         @{ Op = "READ_SAPSCRIPT_FORM"; Code = "SAPSCRIPT_FORM_READ" },
         @{ Op = "READ_SMARTSTYLE"; Code = "SMARTSTYLE_READ" },
-        @{ Op = "READ_ADOBE_FORM"; Code = "ADOBE_FORM_READ" }
+        @{ Op = "READ_ADOBE_FORM"; Code = "ADOBE_FORM_READ" },
+        # A write branch reuses it_source as its request channel too, so the same invariant holds:
+        # clear it before emitting the response payload, or the request leaks into the response.
+        @{ Op = "CREATE_TRANSPORT_REQUEST"; Code = "TRANSPORT_REQUEST_CREATED" }
     )) {
     $bodyLines = @($repositoryFunctionSource | Where-Object { $null -ne $_ })
     $branchStart = -1
