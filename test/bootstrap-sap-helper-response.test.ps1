@@ -328,6 +328,8 @@ $d7Parameters = @(
     "IV_STYLE_VARIANT",
     "IV_STYLE_ACTIVE",
     "IV_STYLE_MODE",
+    "IV_INCLUDE_SOURCE",
+    "IV_INCLUDE_CSS",
     "ES_FORM_HEADER",
     "ES_TEXT_HEADER",
     "ES_STYLE_HEADER",
@@ -369,6 +371,8 @@ $verifiedCarriers = [ordered]@{
     "IV_STYLE_VARIANT" = "TDVARIANT"
     "IV_STYLE_ACTIVE"  = "TDACTIVATE"
     "IV_STYLE_MODE"    = "TDCHAR1"
+    "IV_INCLUDE_SOURCE" = "TDCHAR1"
+    "IV_INCLUDE_CSS"   = "TDCHAR1"
 }
 foreach ($name in $verifiedCarriers.Keys) {
     $declaration = "ls_import-parameter = '$name'."
@@ -418,6 +422,25 @@ if ($deleteProgramCall -lt 0 -or $deleteProgramCommit -lt 0 -or
     throw "RS_DELETE_PROGRAM deletion must commit before absence verification"
 }
 foreach ($marker in @(
+        # D7 form/style reads (2026-09-23). Both opcodes must stay dispatched by the shared
+        # repository body, and the style reads must keep calling these exact SAP APIs: the two
+        # storage forms are never interchangeable, so a silent rename is a drift error.
+        #
+        # These markers are deliberately pinned to the DISPATCH statement and to the quoted payload
+        # property names. A bare opcode such as READ_SMARTSTYLE also appears in the capability table
+        # and in the interface lines, so it would keep this guard green after the branch itself was
+        # renamed away - which is exactly the drift the guard exists to catch.
+        "WHEN 'READ_SAPSCRIPT_FORM'.",
+        "WHEN 'READ_SMARTSTYLE'.",
+        "READ_FORM'",
+        "READ_TEXT'",
+        "SSF_READ_STYLE'",
+        "SSF_READ_STYLE_ALL_VARIANTS'",
+        "SSF_READ_SAPSCRIPT_STYLE'",
+        "SSF_CONVERT_STYLE_TO_CSS'",
+        "'STYLE_MODE'",
+        "'CSS_STATUS'",
+        "ev_version = '2.8'",
         "READ TEXTPOOL lv_textpool_program INTO lt_textpool",
         "INSERT TEXTPOOL lv_textpool_program FROM lt_textpool",
         "STATE 'A'",

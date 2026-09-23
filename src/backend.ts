@@ -223,6 +223,9 @@ export type SapRepositoryOperation =
   // READ_FORM/READ_TEXT are not remote-enabled. Since 2.8 the body also accepts the form-specific
   // IMPORTING parameters, so the union and the helper capability table must gain the opcode together.
   | "READ_SAPSCRIPT_FORM"
+  // D7 second shape: SmartStyles are read in-process by the same shared repository body. Form S
+  // uses SSF_READ_STYLE (STXS* family), form P converts a legacy SAPscript style.
+  | "READ_SMARTSTYLE"
 
 export type SapStructureRow = Record<string, string>
 
@@ -281,6 +284,17 @@ export interface SapRepositoryRequest {
   textLanguage?: string | undefined
   textVersion?: string | undefined
   includeSource?: boolean | undefined
+  /**
+   * D7-4 selectors. Same rule as above: an absent value leaves the SOAP request unchanged.
+   *
+   * `styleMode` selects the storage family (S = STXS*, P = legacy SAPscript style), `styleActive`
+   * selects the ACTIVE key column of the STXS* tables, `styleVariant` narrows to one variant, and
+   * `includeCss` asks for the converted CSS body.
+   */
+  styleMode?: string | undefined
+  styleActive?: string | undefined
+  styleVariant?: string | undefined
+  includeCss?: boolean | undefined
 }
 
 export interface SapRepositoryResult extends SapHelperResult {

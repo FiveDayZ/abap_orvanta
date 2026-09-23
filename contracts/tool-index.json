@@ -1,21 +1,21 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 138,
-  "readOnlyToolCount": 80,
+  "toolCount": 139,
+  "readOnlyToolCount": 81,
   "profiles": {
-    "readonly": 80,
+    "readonly": 81,
     "platform": 12,
-    "dev": 122,
+    "dev": 123,
     "config": 28,
     "ops": 35,
-    "full": 138
+    "full": 139
   },
   "groups": {
     "data": 5,
     "ddic": 26,
     "debug": 6,
     "enhancement": 22,
-    "form": 5,
+    "form": 6,
     "function": 7,
     "message": 4,
     "ops": 18,
@@ -1582,6 +1582,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_SMARTFORM_API",
       "minHelperProtocol": null
+    },
+    {
+      "name": "read_smartstyle",
+      "group": "form",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.8"
     },
     {
       "name": "read_system_logs",

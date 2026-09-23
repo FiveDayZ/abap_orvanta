@@ -141,6 +141,16 @@ const ROWS: readonly ToolRow[] = [
     "2.8",
     ["READ_SAPSCRIPT_FORM"]
   ],
+  [
+    "read_smartstyle",
+    "form",
+    DEV,
+    "R",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.8",
+    ["READ_SMARTSTYLE"]
+  ],
   ["get_connected_systems", "platform", PL, "R", "local", null, null],
   ["get_capability_report", "platform", PL, "R", "target-specific", null, null],
   ["abap_debug_session", "debug", DEV, "W", "native-adt", null, null],

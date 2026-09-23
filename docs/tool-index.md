@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：138
-- 只读工具：80
+- 工具总数：139
+- 只读工具：81
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,17 +10,17 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 80 |
+| profile: readonly | 81 |
 | profile: platform | 12 |
-| profile: dev | 122 |
+| profile: dev | 123 |
 | profile: config | 28 |
 | profile: ops | 35 |
-| profile: full | 138 |
+| profile: full | 139 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
 | 分组: enhancement | 22 |
-| 分组: form | 5 |
+| 分组: form | 6 |
 | 分组: function | 7 |
 | 分组: message | 4 |
 | 分组: ops | 18 |
@@ -134,6 +134,7 @@
 | `read_sapscript_form` | form | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.8) |
 | `read_search_help` | ddic | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.8) |
 | `read_smartform` | form | dev | 只读 | sap-helper-fallback | Z_ORVANTA_SMARTFORM_API |
+| `read_smartstyle` | form | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.8) |
 | `read_system_logs` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_OPS_READ |
 | `read_transaction_code` | ui | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
 | `recover_ddic_table_conversion` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.7) |

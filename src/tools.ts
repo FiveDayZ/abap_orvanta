@@ -159,6 +159,49 @@ interface SapscriptFormDefinition {
   fingerprint: string
 }
 
+interface ReadSmartstyleInput {
+  styleName: string
+  mode?: string | undefined
+  active?: string | undefined
+  variant?: string | undefined
+  language?: string | undefined
+  includeCss?: boolean | undefined
+  connectionId: string
+}
+
+type SmartstyleRow = Record<string, string>
+
+/**
+ * `cssStatus` alone cannot distinguish "the caller did not ask for CSS" from "the conversion was
+ * requested and failed", and conflating the two would report a gap as an absence.
+ */
+interface SmartstyleCss {
+  mime: string
+  body: string
+  declaredLength: number | null
+  lengthMatches: boolean
+}
+
+interface SmartstyleDefinition {
+  connectionId: string
+  objectName: string
+  mode: string
+  active: string
+  variant: string
+  language: string
+  cssStatus: string
+  header: SmartstyleRow
+  paragraphs: SmartstyleRow[]
+  strings: SmartstyleRow[]
+  tabStops: SmartstyleRow[]
+  variants: SmartstyleRow[]
+  css?: SmartstyleCss | undefined
+  counts: Record<string, number>
+  returnedCount: number
+  truncated: boolean
+  fingerprint: string
+}
+
 interface ScreenModuleReference {
   name: string
   event: "PBO" | "PAI" | "POH" | "POV" | "UNKNOWN"
@@ -1254,6 +1297,10 @@ export class ToolService {
     return JSON.stringify(await this.readSapscriptFormDefinition(input), null, 2)
   }
 
+  async readSmartstyle(input: ReadSmartstyleInput): Promise<string> {
+    return JSON.stringify(await this.readSmartstyleDefinition(input), null, 2)
+  }
+
   async readAbapScreen(input: ReadScreenInput): Promise<string> {
     return JSON.stringify(await this.readScreenDefinition(input), null, 2)
   }
@@ -1567,6 +1614,24 @@ export class ToolService {
     })
     requireRepositorySuccess(result.status, result.code, result.message)
     return sapscriptFormDefinition(connectionId, objectName, result)
+  }
+
+  private async readSmartstyleDefinition(
+    input: ReadSmartstyleInput
+  ): Promise<SmartstyleDefinition> {
+    const connectionId = input.connectionId.toLowerCase()
+    const objectName = smartstyleName(input.styleName)
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_SMARTSTYLE",
+      objectName,
+      styleMode: smartstyleMode(input.mode),
+      styleActive: smartstyleActive(input.active),
+      styleVariant: smartstyleVariant(input.variant),
+      textLanguage: sapscriptFormLanguage(input.language),
+      includeCss: input.includeCss === true
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    return smartstyleDefinition(connectionId, objectName, result)
   }
 
   private async readScreenDefinition(input: ReadScreenInput): Promise<ScreenDefinition> {
@@ -7595,6 +7660,121 @@ function sapscriptSourceStatus(value: string): "not-requested" | "ok" | "failed"
   throw new Error(`SAP repository helper reported an unknown source status: ${value}`)
 }
 
+const SMARTSTYLE_SECTIONS = {
+  A: "paragraphs",
+  S: "strings",
+  B: "tabStops",
+  V: "variants"
+} as const
+
+type SmartstyleSectionName = (typeof SMARTSTYLE_SECTIONS)[keyof typeof SMARTSTYLE_SECTIONS]
+
+function smartstyleCssStatus(value: string): "not-requested" | "ok" | "failed" {
+  if (value === "NOT_REQUESTED") return "not-requested"
+  if (value === "OK") return "ok"
+  if (value === "FAILED") return "failed"
+  throw new Error(`SAP repository helper reported an unknown CSS status: ${value}`)
+}
+
+/**
+ * The CSS body travels through the same payload channel as the rows, so it arrives as chunks that
+ * share one index per source line. Reassembly is by index and then in arrival order, and the
+ * helper's own reported length is compared with the reassembled body: a mismatch is reported
+ * instead of being returned as if it were the whole stylesheet.
+ */
+function smartstyleDefinition(
+  connectionId: string,
+  objectName: string,
+  result: SapRepositoryResult
+): SmartstyleDefinition {
+  const metadata: SmartstyleRow = {}
+  const header: SmartstyleRow = {}
+  const sections: Record<SmartstyleSectionName, SmartstyleRow[]> = {
+    paragraphs: [],
+    strings: [],
+    tabStops: [],
+    variants: []
+  }
+  const cssChunks = new Map<number, string[]>()
+  for (const line of result.source) {
+    const match = line.match(/^([A-Z]+)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(`SAP repository helper returned an invalid payload line: ${line}`)
+    }
+    const index = Number.parseInt(match[2], 10)
+    if (index < 1) {
+      throw new Error(`SAP repository helper returned an invalid payload index: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    const kind = match[1]
+    if (kind === "M") {
+      metadata[match[3]] = value
+      continue
+    }
+    if (kind === "H") {
+      header[match[3]] = value
+      continue
+    }
+    if (kind === "C") {
+      const chunks = cssChunks.get(index)
+      if (chunks) chunks.push(value)
+      else cssChunks.set(index, [value])
+      continue
+    }
+    const section = SMARTSTYLE_SECTIONS[kind as keyof typeof SMARTSTYLE_SECTIONS]
+    if (!section) {
+      throw new Error(`SAP repository helper returned an unknown style payload kind: ${line}`)
+    }
+    rowAtRepository(sections[section], index)[match[3]] = value
+  }
+  const cssStatus = smartstyleCssStatus(metadata.CSS_STATUS ?? "")
+  const cssBody = [...cssChunks.entries()]
+    .sort((left, right) => left[0] - right[0])
+    .map(([, chunks]) => chunks.join(""))
+    .join("\n")
+  const declaredLength =
+    metadata.CSS_LENGTH === undefined ? Number.NaN : Number.parseInt(metadata.CSS_LENGTH, 10)
+  const css: SmartstyleCss | undefined =
+    cssStatus === "ok"
+      ? {
+          mime: metadata.CSS_MIME ?? "",
+          body: cssBody,
+          declaredLength: Number.isNaN(declaredLength) ? null : declaredLength,
+          lengthMatches: !Number.isNaN(declaredLength) && declaredLength === cssBody.length
+        }
+      : undefined
+  const content = {
+    mode: metadata.STYLE_MODE ?? "",
+    active: metadata.STYLE_ACTIVE ?? "",
+    variant: metadata.STYLE_VARIANT ?? "",
+    language: metadata.LANGUAGE ?? "",
+    cssStatus,
+    header,
+    paragraphs: sections.paragraphs,
+    strings: sections.strings,
+    tabStops: sections.tabStops,
+    variants: sections.variants,
+    ...(css ? { css } : {})
+  }
+  const counts = {
+    paragraphs: sections.paragraphs.length,
+    strings: sections.strings.length,
+    tabStops: sections.tabStops.length,
+    variants: sections.variants.length
+  }
+  // As with the SAPscript form reader: the body applies no row cap of its own, so `truncated`
+  // reports the absence of a limit that was never applied instead of implying one.
+  return {
+    connectionId: connectionId.toLowerCase(),
+    objectName,
+    ...content,
+    counts,
+    returnedCount: Object.values(counts).reduce((total, count) => total + count, 0),
+    truncated: false,
+    fingerprint: hashCanonicalJson(content)
+  }
+}
+
 function sapscriptFormDefinition(
   connectionId: string,
   objectName: string,
@@ -12557,6 +12737,37 @@ function sapscriptFormLanguage(value: string | undefined): string {
   if (normalized !== "" && !/^[A-Z0-9]$/.test(normalized)) {
     throw new Error("language must be a single character")
   }
+  return normalized
+}
+
+function smartstyleName(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!/^(?:[A-Z][A-Z0-9_]*|\/[A-Z0-9_]+\/[A-Z][A-Z0-9_]*)$/.test(normalized)) {
+    throw new Error("styleName must be an ABAP object name or a namespaced name")
+  }
+  if (normalized.length > 30) throw new Error("styleName must not exceed 30 characters")
+  return normalized
+}
+
+function smartstyleMode(value: string | undefined): string {
+  const normalized = (value ?? "").trim().toUpperCase()
+  if (normalized !== "" && normalized !== "S" && normalized !== "P") {
+    throw new Error('mode must be "S" or "P"')
+  }
+  return normalized
+}
+
+function smartstyleActive(value: string | undefined): string {
+  const normalized = (value ?? "").trim().toUpperCase()
+  if (normalized !== "" && normalized !== "A" && normalized !== "I") {
+    throw new Error('active must be "A" or "I"')
+  }
+  return normalized
+}
+
+function smartstyleVariant(value: string | undefined): string {
+  const normalized = (value ?? "").trim().toUpperCase()
+  if (normalized.length > 8) throw new Error("variant must not exceed 8 characters")
   return normalized
 }
 

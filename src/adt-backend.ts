@@ -1936,7 +1936,11 @@ function optionalRepositorySelectors(request: SapRepositoryRequest): string {
     ["IV_TEXT_STATUS", request.textStatus],
     ["IV_TEXT_LANGUAGE", request.textLanguage],
     ["IV_TEXT_VERSION", request.textVersion],
-    ["IV_INCLUDE_SOURCE", request.includeSource ? "X" : undefined]
+    ["IV_INCLUDE_SOURCE", request.includeSource ? "X" : undefined],
+    ["IV_STYLE_MODE", request.styleMode],
+    ["IV_STYLE_ACTIVE", request.styleActive],
+    ["IV_STYLE_VARIANT", request.styleVariant],
+    ["IV_INCLUDE_CSS", request.includeCss ? "X" : undefined]
   ]
   return selectors
     .filter((selector): selector is readonly [string, string] => selector[1] !== undefined)

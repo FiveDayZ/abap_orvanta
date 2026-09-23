@@ -124,6 +124,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_sapscript_form",
       "read_search_help",
       "read_smartform",
+      "read_smartstyle",
       "read_system_logs",
       "read_transaction_code",
       "recover_ddic_table_conversion",

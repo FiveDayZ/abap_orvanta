@@ -299,11 +299,35 @@ const readSapscriptFormSchema = z
   })
   .strict()
 
+const readSmartstyleSchema = z
+  .object({
+    connectionId: z.string().regex(/^[a-z0-9_-]{1,100}$/),
+    styleName: z
+      .string()
+      .max(30)
+      .regex(/^(?:[A-Z][A-Z0-9_]*|\/[A-Z0-9_]+\/[A-Z][A-Z0-9_]*)$/),
+    mode: z.enum(["S", "P"]).default("S"),
+    active: z.enum(["A", "I"]).default("A"),
+    variant: z.string().max(8).optional(),
+    language: z
+      .string()
+      .regex(/^[A-Z0-9]$/)
+      .optional(),
+    includeCss: z.boolean().default(false)
+  })
+  .strict()
+
 const toolContractsBase = {
   read_sapscript_form: {
     description:
       "Read one SAPscript form (SE71) through the shared SAP repository helper: the ITCTA form header, the THEAD text header, and the form lines, pages, page windows, windows, paragraphs, strings and tab stops, with a deterministic SHA-256 fingerprint. Optional includeSource also returns the raw ID_DEF layout definition and reports whether that read succeeded. Reads the form active in the requested status and language. It does not read a single version, does not print or generate, and never changes SAP.",
     inputSchema: readSapscriptFormSchema.shape,
+    annotations: { readOnlyHint: true }
+  },
+  read_smartstyle: {
+    description:
+      "Read one SmartStyle or legacy SAPscript style (SE72) through the shared SAP repository helper: the SSFCATS header plus the paragraph, character-format and tab-stop rows, with a deterministic SHA-256 fingerprint. mode=S reads the STXS* SmartStyle family through SSF_READ_STYLE and also returns the variant list when no single variant was requested; mode=P converts a legacy SAPscript style through SSF_READ_SAPSCRIPT_STYLE. active selects the ACTIVE key column (A or I), variant narrows to one variant. Optional includeCss also returns the CSS conversion with its MIME type and reports whether the converted length matches the emitted body. It does not read a single version, does not activate or change a style, does not print or generate, and never changes SAP.",
+    inputSchema: readSmartstyleSchema.shape,
     annotations: { readOnlyHint: true }
   },
   read_smartform: {
