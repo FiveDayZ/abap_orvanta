@@ -284,13 +284,13 @@ const toolContractsBase = {
   },
   create_smartform: {
     description:
-      "Create a new Z/Y Smart Form from complete native SMARTFORM XML as a saved draft. Existing targets are rejected under SAP lock. Explicit package and existing transport (except $TMP) required. Requires separately deployed helper. Does not activate, print, or create/release transports.",
+      "Create a new Z/Y Smart Form from complete native SMARTFORM XML as a saved draft. Existing targets are rejected under SAP lock. Explicit package and existing transport (except $TMP) required. Requires separately deployed helper. Does not activate, print, or create/release transports. The XML must name the same form in its own FORMNAME element: SAP rejects a document whose embedded form name differs from formName, and that rejection is reported as an opaque SMARTFORM_XML_INVALID rather than as a name mismatch. read_smartform returns the source name verbatim, so rewrite every FORMNAME element when reusing a read document under a new name.",
     inputSchema: createSmartformSchema.shape,
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }
   },
   save_smartform: {
     description:
-      "Replace a Z/Y Smart Form saved draft with complete native SMARTFORM XML. This is full replacement, not a patch. Requires the repository fingerprint from a fresh read; SAP rechecks it under lock. Does not activate or print. Never retry an unknown outcome.",
+      "Replace a Z/Y Smart Form saved draft with complete native SMARTFORM XML. This is full replacement, not a patch. Requires the repository fingerprint from a fresh read; SAP rechecks it under lock. Does not activate or print. Never retry an unknown outcome. The XML must name the same form in its own FORMNAME element, exactly as create_smartform requires: a document whose embedded form name differs from formName is rejected as an opaque SMARTFORM_XML_INVALID, not as a name mismatch.",
     inputSchema: saveSmartformSchema.shape,
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }
   },
