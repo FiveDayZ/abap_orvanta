@@ -347,6 +347,30 @@ const createTransportRequestSchema = z
   })
   .strict()
 
+const addObjectsToTransportSchema = z
+  .object({
+    connectionId: z.string().regex(/^[a-z0-9_-]{1,100}$/),
+    requestNumber: z.string().min(1).max(20),
+    objects: z
+      .array(
+        z
+          .object({
+            pgmid: z.string().min(1).max(10),
+            object: z.string().min(1).max(10),
+            objName: z.string().min(1).max(120),
+            language: z
+              .string()
+              .regex(/^[A-Za-z]{1,2}$/)
+              .optional()
+          })
+          .strict()
+      )
+      .min(1)
+      .max(20),
+    confirmation: z.literal("ADD_OBJECTS_TO_TRANSPORT")
+  })
+  .strict()
+
 const toolContractsBase = {
   read_sapscript_form: {
     description:
@@ -370,6 +394,12 @@ const toolContractsBase = {
     description:
       "Create one modifiable CTS request (K workbench or W customizing) through the shared SAP repository helper, which calls TR_INSERT_REQUEST_WITH_TASKS inside SAP and commits only after the new request has been read back from E070. Returns the request number, type, status, owner, target, description and the created task numbers. Retry-safe: a repeat call is matched on owner, type, status and description, and the existing request is returned with created=false instead of silently creating a second one; allowDuplicate=true forces a new request. Requires the CREATE_TRANSPORT_REQUEST confirmation string, which is checked before SAP is contacted. S, R, X and Q are task types and are refused. It never releases a request, never adds objects to one and never deletes anything. The helper performs SAP's own CTS create authorization check, reported as TRANSPORT_REQUEST_INSERT_FAILED with SAP's message text.",
     inputSchema: createTransportRequestSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
+  },
+  add_objects_to_transport: {
+    description:
+      "Attach objects to an existing CTS request or task through the shared SAP repository helper, which calls TRINT_OBJECTS_CHECK_AND_INSERT inside SAP with dialog suppression, commits at the top level, and only then reads E071 back. This is the one transport write the service cannot reach natively: the recorded transport of a write the service itself performed is covered elsewhere, but an object the service never wrote needs this call. Each object is a flat CTS entry of PGMID, OBJECT, OBJ_NAME and an optional LANG; table keys, AUTHOR, DEVCLASS and OPERATION are refused rather than guessed, so keyed objects are out of scope. Returns the request number, the task number SAP actually recorded the entries under, the requested and inserted object counts, and the object rows read back from E071. Requires the ADD_OBJECTS_TO_TRANSPORT confirmation string, which is checked before SAP is contacted. It never creates or releases a request, and never deletes an object entry.",
+    inputSchema: addObjectsToTransportSchema.shape,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
   },
   read_smartform: {

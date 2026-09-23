@@ -1890,7 +1890,9 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
         ? serializeScreenPatchPayload(request)
         : request.operation === "PATCH_GUI_DEFINITION"
           ? serializeGuiDefinitionPayload(request)
-          : (request.source ?? [])
+          : request.operation === "ADD_OBJECTS_TO_TRANSPORT"
+            ? serializeTransportObjectPayload(request)
+            : (request.source ?? [])
   return (
     `<?xml version="1.0" encoding="utf-8"?>` +
     `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">` +
@@ -1945,12 +1947,38 @@ function optionalRepositorySelectors(request: SapRepositoryRequest): string {
     ["IV_REQUEST_TEXT", request.requestText],
     ["IV_REQUEST_OWNER", request.requestOwner],
     ["IV_REQUEST_TARGET", request.requestTarget],
-    ["IV_REQUEST_ALLOW_DUPLICATE", request.requestAllowDuplicate ? "X" : undefined]
+    ["IV_REQUEST_ALLOW_DUPLICATE", request.requestAllowDuplicate ? "X" : undefined],
+    ["IV_ADD_REQUEST", request.addRequest]
   ]
   return selectors
     .filter((selector): selector is readonly [string, string] => selector[1] !== undefined)
     .map(([name, value]) => xmlElement(name, value))
     .join("")
+}
+
+/**
+ * The flat CTS object rows travel as `O|<index>|<PROPERTY>|<value>` payload lines, the same channel
+ * UPSERT_SCREEN uses for its dynpro rows. Only the four properties the helper accepts are emitted, so
+ * a caller cannot smuggle audit fields such as AUTHOR or DEVCLASS into the SAP object entry.
+ */
+function serializeTransportObjectPayload(request: SapRepositoryRequest): string[] {
+  const rows = request.transportObjects ?? []
+  if (rows.length === 0) throw new Error("ADD_OBJECTS_TO_TRANSPORT requires at least one object")
+  const payload: string[] = []
+  rows.forEach((row, rowIndex) => {
+    Object.entries(row).forEach(([name, value]) => {
+      if (/\r|\n/.test(value)) {
+        throw new Error("Transport object payload values must not contain line breaks")
+      }
+      const escapedValue = value.replaceAll("%", "%25").replaceAll("|", "%7C")
+      const line = `O|${rowIndex + 1}|${name.toUpperCase()}|${escapedValue}`
+      if (line.length > 255) {
+        throw new Error("Transport object payload line exceeds ABAPTXT255")
+      }
+      payload.push(line)
+    })
+  })
+  return payload
 }
 
 function serializeGuiDefinitionPayload(request: SapRepositoryRequest): string[] {

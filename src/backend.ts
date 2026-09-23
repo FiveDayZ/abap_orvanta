@@ -232,6 +232,12 @@ export type SapRepositoryOperation =
   // entry point. TR_OBJECT_INSERT is deliberately not used: it hard-codes iv_with_dialog = 'X' into
   // TRINT_OBJECTS_CHECK_AND_INSERT, whose 'X' branch calls POPUP_TO_CONFIRM_STEP.
   | "CREATE_TRANSPORT_REQUEST"
+  // D9-2: objects are attached to an existing request through the flat CTS_OBJ_ENTRIES channel.
+  // TR_OBJECT_INSERT and TR_OBJECTS_INSERT are both unusable: each hard-codes iv_with_dialog = 'X'
+  // into TRINT_OBJECTS_CHECK_AND_INSERT, whose 'X' branch calls POPUP_TO_CONFIRM_STEP. This
+  // operation therefore calls that function module directly with iv_with_dialog = 'D', which the
+  // callee turns into ls_g-suppress_dialog = 'X'.
+  | "ADD_OBJECTS_TO_TRANSPORT"
 
 export type SapStructureRow = Record<string, string>
 
@@ -315,6 +321,12 @@ export interface SapRepositoryRequest {
   requestOwner?: string | undefined
   requestTarget?: string | undefined
   requestAllowDuplicate?: boolean | undefined
+  /**
+   * D9-2 inputs. `addRequest` is the request or task the objects are attached to, and
+   * `transportObjects` are flat CTS object rows (PGMID/OBJECT/OBJ_NAME/LANG) sent as payload lines.
+   */
+  addRequest?: string | undefined
+  transportObjects?: SapStructureRow[] | undefined
 }
 
 export interface SapRepositoryResult extends SapHelperResult {

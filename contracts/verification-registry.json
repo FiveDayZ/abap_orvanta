@@ -340,6 +340,18 @@
       "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (CREATE_TRANSPORT_REQUEST), which is still a static inference and not an observation: the branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed. The create path was verified statically on w200: TR_INSERT_REQUEST_WITH_TASKS is not remote-enabled and contains no CALL SCREEN, no POPUP_TO and no COMMIT WORK, so the helper owns the commit and reads the new request back from E070 before reporting success. TR_OBJECT_INSERT is deliberately not used, because it hard-codes iv_with_dialog = 'X' into TRINT_OBJECTS_CHECK_AND_INSERT, whose 'X' branch calls POPUP_TO_CONFIRM_STEP."
     },
     {
+      "tool": "add_objects_to_transport",
+      "helper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "method": "controlled-write",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (ADD_OBJECTS_TO_TRANSPORT), which is still a static inference and not an observation: the branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed. The insert path was verified statically on w200. TR_OBJECT_INSERT and TR_OBJECTS_INSERT are both rejected: each hard-codes iv_with_dialog = 'X' into TRINT_OBJECTS_CHECK_AND_INSERT, and that value breaks the callee's API-mode assertion (is_api = 'X' requires space or 'D') before reaching POPUP_TO_CONFIRM_STEP at its line 1848. The helper therefore calls TRINT_OBJECTS_CHECK_AND_INSERT directly with iv_with_dialog = 'D', which the callee turns into ls_g-suppress_dialog = 'X' and which is also the value SAP sets internally; the callee has no CALL SCREEN at all and its only POPUP_TO_CONFIRM_STEP call sits in the 'X' branch. The callee issues ROLLBACK WORK on nine failure paths and never commits, so the helper commits at the top level and only reports success after reading E071 back for every requested object. The flat IT_OBJ_ENTRIES channel is used, and TRINT_CONVERT_OBJ_ENTRIES performs the flattening; SCTSA_S_API_CALL is deliberately not passed, because the type pool SCTSA is not reachable through ADT or the DDIC helper, and 'D' already suppresses the dialog."
+    },
+    {
       "tool": "delete_abap_message_class",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",

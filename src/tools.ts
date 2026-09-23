@@ -265,6 +265,35 @@ interface TransportRequestCreation {
   matchedBy?: string | undefined
 }
 
+interface AddObjectsToTransportInput {
+  connectionId: string
+  requestNumber: string
+  objects: TransportObjectEntry[]
+  confirmation: string
+}
+
+interface TransportObjectEntry {
+  pgmid: string
+  object: string
+  objName: string
+  language?: string | undefined
+}
+
+/**
+ * `requestNumber` and `taskNumber` are SAP's own `ev_order`/`ev_task`, not an echo of the input: the
+ * callee decides which task actually carries the entries, and the caller needs that key to read the
+ * result back. `insertedCount` is counted from E071 after the commit, so a reported success always
+ * has a persisted object entry behind it.
+ */
+interface TransportObjectAddition {
+  connectionId: string
+  requestNumber: string
+  taskNumber: string
+  objectCount: number
+  insertedCount: number
+  objects: TransportObjectEntry[]
+}
+
 interface ScreenModuleReference {
   name: string
   event: "PBO" | "PAI" | "POH" | "POV" | "UNKNOWN"
@@ -1395,6 +1424,39 @@ export class ToolService {
       null,
       2
     )
+  }
+
+  /**
+   * Attach objects the service never wrote itself to an existing transport request or task.
+   *
+   * The confirmation string is checked first, before the backend is touched, and the object rows are
+   * narrowed to the four properties SAP's own object entry accepts.
+   */
+  async addObjectsToTransport(input: AddObjectsToTransportInput): Promise<string> {
+    if (input.confirmation !== "ADD_OBJECTS_TO_TRANSPORT") {
+      throw new Error("confirmation must be ADD_OBJECTS_TO_TRANSPORT")
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    const requestNumber = transportRequestNumber(input.requestNumber)
+    if (input.objects.length === 0) throw new Error("objects must contain at least one entry")
+    if (input.objects.length > 20) throw new Error("objects must not contain more than 20 entries")
+    const objects = input.objects.map((entry) => transportObjectEntry(entry))
+    const transportObjects: SapStructureRow[] = objects.map((entry) => {
+      const row: SapStructureRow = {
+        PGMID: entry.pgmid,
+        OBJECT: entry.object,
+        OBJ_NAME: entry.objName
+      }
+      if (entry.language !== undefined) row.LANG = entry.language
+      return row
+    })
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "ADD_OBJECTS_TO_TRANSPORT",
+      addRequest: requestNumber,
+      transportObjects
+    })
+    requireRepositorySuccess(result.status, result.code, result.message)
+    return JSON.stringify(transportObjectAddition(connectionId, objects, result), null, 2)
   }
 
   async readAbapScreen(input: ReadScreenInput): Promise<string> {
@@ -13035,6 +13097,102 @@ function transportRequestCreation(
     description: metadata.AS4TEXT ?? description,
     taskNumbers,
     ...(created ? {} : { matchedBy: metadata.MATCHED_BY ?? "" })
+  }
+}
+
+function transportRequestNumber(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (normalized === "") throw new Error("requestNumber must not be empty")
+  if (normalized.length > 20) throw new Error("requestNumber must not exceed 20 characters")
+  if (/[\r\n|%]/.test(normalized)) {
+    throw new Error("requestNumber must not contain line breaks or | or %")
+  }
+  return normalized
+}
+
+function transportObjectEntry(entry: TransportObjectEntry): TransportObjectEntry {
+  const pgmid = transportObjectField(entry.pgmid, "pgmid", 10)
+  const object = transportObjectField(entry.object, "object", 10)
+  const objName = transportObjectField(entry.objName, "objName", 120)
+  const language = (entry.language ?? "").trim().toUpperCase()
+  if (language !== "" && !/^[A-Z]{1,2}$/.test(language)) {
+    throw new Error("language must be a one or two character SAP language code")
+  }
+  return { pgmid, object, objName, ...(language === "" ? {} : { language }) }
+}
+
+/**
+ * PGMID/OBJECT/OBJ_NAME are validated only for shape here. SAP owns the real domain values and
+ * lengths, so an unusable object type must come back from the helper as an explicit error code
+ * rather than being guessed at in the service.
+ */
+function transportObjectField(value: string, field: string, maxLength: number): string {
+  const normalized = value.trim().toUpperCase()
+  if (normalized === "") throw new Error(`${field} must not be empty`)
+  if (normalized.length > maxLength) {
+    throw new Error(`${field} must not exceed ${maxLength} characters`)
+  }
+  if (/[\r\n]/.test(normalized)) throw new Error(`${field} must not contain line breaks`)
+  return normalized
+}
+
+function transportObjectAddition(
+  connectionId: string,
+  objects: TransportObjectEntry[],
+  result: SapRepositoryResult
+): TransportObjectAddition {
+  const metadata: Record<string, string> = {}
+  const reported: Record<number, Record<string, string>> = {}
+  for (const line of result.source) {
+    const match = line.match(/^([A-Z]+)\|(\d+)\|([A-Z0-9_]+)\|(.*)$/)
+    if (!match?.[1] || !match[2] || !match[3]) {
+      throw new Error(`SAP repository helper returned an invalid payload line: ${line}`)
+    }
+    const value = (match[4] ?? "").replaceAll("%7C", "|").replaceAll("%25", "%")
+    if (match[1] === "M") {
+      metadata[match[3]] = value
+      continue
+    }
+    if (match[1] !== "T") {
+      throw new Error(`SAP repository helper returned an unknown object payload kind: ${line}`)
+    }
+    const index = Number.parseInt(match[2], 10)
+    reported[index] = { ...(reported[index] ?? {}), [match[3]]: value }
+  }
+  const insertedCount = Number.parseInt((metadata.INSERTED_COUNT ?? "").trim(), 10)
+  if (!Number.isInteger(insertedCount)) {
+    throw new Error("SAP repository helper did not report the inserted object count")
+  }
+  const readBack = Object.keys(reported)
+    .map((key) => Number.parseInt(key, 10))
+    .sort((left, right) => left - right)
+    .map((index) => reported[index] ?? {})
+  if (readBack.length !== objects.length) {
+    throw new Error("SAP repository helper did not echo every requested object")
+  }
+  for (let position = 0; position < objects.length; position++) {
+    const row = readBack[position] ?? {}
+    const requested = objects[position]
+    if (!requested) throw new Error("SAP repository helper echoed an unexpected object row")
+    if (
+      (row.PGMID ?? "") !== requested.pgmid ||
+      (row.OBJECT ?? "") !== requested.object ||
+      (row.OBJ_NAME ?? "") !== requested.objName
+    ) {
+      throw new Error("SAP repository helper echoed a different object than the one requested")
+    }
+  }
+  return {
+    connectionId: connectionId.toLowerCase(),
+    requestNumber: (metadata.REQUEST ?? "").trim(),
+    taskNumber: (metadata.TASK ?? "").trim(),
+    objectCount: Number.parseInt((metadata.OBJECT_COUNT ?? "").trim(), 10),
+    insertedCount,
+    objects: readBack.map((row) => ({
+      pgmid: row.PGMID ?? "",
+      object: row.OBJECT ?? "",
+      objName: row.OBJ_NAME ?? ""
+    }))
   }
 }
 

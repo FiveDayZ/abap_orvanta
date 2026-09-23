@@ -659,6 +659,19 @@ const ROWS: readonly ToolRow[] = [
     "2.8",
     ["CREATE_TRANSPORT_REQUEST"]
   ],
+  // D9-2. Also a write on the same repository body, and also ops-only. It is deliberately a
+  // separate tool from create_transport_request: attaching objects has its own preconditions and
+  // its own E071 read-back, so it must not be folded behind a mode flag.
+  [
+    "add_objects_to_transport",
+    "ops",
+    OPSP,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.8",
+    ["ADD_OBJECTS_TO_TRANSPORT"]
+  ],
   ["abap_download", "source", DEV, "W", "target-specific", null, null],
   ["adt_discovery_export", "platform", PL, "W", "native-adt", null, null]
 ]

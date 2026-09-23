@@ -337,6 +337,7 @@ $repositoryOnlyParameters = @(
     "IV_REQUEST_OWNER",
     "IV_REQUEST_TARGET",
     "IV_REQUEST_ALLOW_DUPLICATE",
+    "IV_ADD_REQUEST",
     "ES_FORM_HEADER",
     "ES_TEXT_HEADER",
     "ES_STYLE_HEADER",
@@ -389,6 +390,9 @@ $verifiedCarriers = [ordered]@{
     "IV_REQUEST_OWNER" = "AS4USER"
     "IV_REQUEST_TARGET" = "TR_TARGET"
     "IV_REQUEST_ALLOW_DUPLICATE" = "TRBOOLEAN"
+    # add_objects_to_transport (D9-2). IV_ADD_REQUEST is the E070-TRKORR key of the request or task
+    # the objects are added to, the same data element TR_INSERT_REQUEST_WITH_TASKS returns.
+    "IV_ADD_REQUEST"   = "TRKORR"
 }
 foreach ($name in $verifiedCarriers.Keys) {
     $declaration = "ls_import-parameter = '$name'."
@@ -483,6 +487,30 @@ foreach ($marker in @(
         "'MATCHED_BY'",
         "'TASK_COUNT'",
         "DATA lv_d9_request_allow_dup TYPE trboolean.",
+        # D9-2 add_objects_to_transport (2026-09-23). The callee is pinned by name because
+        # TR_OBJECT_INSERT and TR_OBJECTS_INSERT both hard-code iv_with_dialog = 'X' and would reach
+        # POPUP_TO_CONFIRM_STEP; the 'D' value is what suppresses the dialog inside the callee, so it
+        # is pinned separately from the call itself. The commit and the E071 read-back are the two
+        # properties the acceptance plan checks, and the property allowlist keeps caller-supplied
+        # audit fields (AUTHOR/DEVCLASS/OPERATION) out of the flat object entries.
+        "WHEN 'ADD_OBJECTS_TO_TRANSPORT'.",
+        "CALL FUNCTION 'TRINT_OBJECTS_CHECK_AND_INSERT'",
+        "iv_with_dialog = 'D'",
+        "it_obj_entries = lt_d9_add_objects",
+        "COMMIT WORK AND WAIT.",
+        "SELECT trkorr pgmid object obj_name FROM e071",
+        "TRANSPORT_REQUEST_REQUIRED",
+        "TRANSPORT_OBJECT_PAYLOAD_INVALID",
+        "TRANSPORT_OBJECT_KEYS_UNSUPPORTED",
+        "TRANSPORT_OBJECT_PROPERTY_UNKNOWN",
+        "TRANSPORT_OBJECTS_REQUIRED",
+        "TRANSPORT_OBJECT_INCOMPLETE",
+        "TRANSPORT_OBJECT_INSERT_FAILED",
+        "TRANSPORT_OBJECT_NOT_PERSISTED",
+        "'OBJECT_COUNT'",
+        "'INSERTED_COUNT'",
+        "DATA lt_d9_add_objects TYPE cts_obj_entries.",
+        "DATA ls_d9_add_e071 TYPE e071.",
         "READ TEXTPOOL lv_textpool_program INTO lt_textpool",
         "INSERT TEXTPOOL lv_textpool_program FROM lt_textpool",
         "STATE 'A'",
@@ -942,7 +970,8 @@ foreach ($orderedBranch in @(
         @{ Op = "READ_ADOBE_FORM"; Code = "ADOBE_FORM_READ" },
         # A write branch reuses it_source as its request channel too, so the same invariant holds:
         # clear it before emitting the response payload, or the request leaks into the response.
-        @{ Op = "CREATE_TRANSPORT_REQUEST"; Code = "TRANSPORT_REQUEST_CREATED" }
+        @{ Op = "CREATE_TRANSPORT_REQUEST"; Code = "TRANSPORT_REQUEST_CREATED" },
+        @{ Op = "ADD_OBJECTS_TO_TRANSPORT"; Code = "TRANSPORT_OBJECTS_ADDED" }
     )) {
     $bodyLines = @($repositoryFunctionSource | Where-Object { $null -ne $_ })
     $branchStart = -1

@@ -32,6 +32,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "abap_debug_variable",
       "abap_download",
       "activate_smartform",
+      "add_objects_to_transport",
       "adt_discovery_export",
       "analyze_abap_dumps",
       "analyze_abap_traces",
