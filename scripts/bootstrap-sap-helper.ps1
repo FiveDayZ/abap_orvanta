@@ -3295,8 +3295,11 @@ function New-DdicFunctionSource {
         "        <ls_ap_field>-ddlanguage = sy-langu.",
         "        <ls_ap_field>-position = lv_ap_index.",
         "        <ls_ap_field>-comptype = 'E'.",
-        "        <ls_ap_field>-as4local = 'A'.",
-        "        <ls_ap_field>-as4vers = '0000'.",
+        # 不要在这里写 AS4LOCAL / AS4VERS：DD03P（w200 实测 70 个组件）没有这两个字段。
+        # 2026-09-23 首次 F8 实证：GENERATE 报 `数据对象 "<LS_AP_FIELD>" 没有名为 "AS4LOCAL" 的组件`。
+        # 版本定位由 DD_TBFD_PUT 的 PUT_STATE='A' 决定（写 AS4LOCAL='A' 的活动行），
+        # 与既有可用的 APPEND_TRANSPARENT_TABLE_FIELDS 分支保持一致：它也只设
+        # TABNAME / DDLANGUAGE / COMPTYPE / POSITION。
         "        <ls_ap_field>-adminfield = '0'.",
         "      ENDLOOP.",
         "      DESCRIBE TABLE lt_ap_requested LINES lv_ap_field_count.",
