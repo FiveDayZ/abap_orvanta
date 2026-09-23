@@ -726,6 +726,46 @@ export class MockBackend implements SapBackend {
       }
     ],
     [
+      "READ_TRANSPARENT_TABLE:ZCMCP_TYPED",
+      {
+        ...mockDdicResult(
+          "transparentTable",
+          {
+            TABNAME: "ZCMCP_TYPED",
+            DDTEXT: "Typed field fixture",
+            TABCLASS: "TRANSP",
+            CONTFLAG: "A",
+            MAINFLAG: "",
+            TABKAT: "0",
+            TABART: "APPL0",
+            BUFALLOW: "N",
+            PUFFERUNG: ""
+          },
+          "ZABAP"
+        ),
+        fields: [
+          {
+            FIELDNAME: "ID",
+            POSITION: "1",
+            ROLLNAME: "CHAR20",
+            COMPTYPE: "E",
+            ADMINFIELD: "0",
+            KEYFLAG: "X",
+            NOTNULL: "X"
+          },
+          {
+            FIELDNAME: "RAW_TEXT",
+            POSITION: "2",
+            ROLLNAME: "",
+            COMPTYPE: "E",
+            ADMINFIELD: "0",
+            KEYFLAG: "",
+            NOTNULL: ""
+          }
+        ]
+      }
+    ],
+    [
       "READ_TRANSPARENT_TABLE:ZCMCP_COMPLEX",
       {
         ...mockDdicResult(

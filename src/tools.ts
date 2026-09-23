@@ -3761,9 +3761,22 @@ export class ToolService {
       ...current,
       fields: appendTransparentTableRawFields(current.fields, appendedFields)
     }
-    return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
-      ...ddicDefinition(expectedResult, "transparentTable")
-    })
+    const layoutComponents = transparentTableComponents(current.fields).map(
+      (component) => component.name
+    )
+    return savedDdicResult(
+      result,
+      "transparentTable",
+      objectName,
+      packageName,
+      connectionId,
+      {
+        ...ddicDefinition(expectedResult, "transparentTable")
+      },
+      // New direct fields are inserted before the first Append marker, so every component of the
+      // existing layout survives untouched; the caller gets that list back instead of inferring it.
+      layoutComponents.length ? { layoutComponents } : {}
+    )
   }
 
   async patchDdicTransparentTableFields(input: PatchTransparentTableFieldsInput): Promise<string> {
@@ -3795,6 +3808,9 @@ export class ToolService {
       )
     }
     const fields = applyTransparentTableRawFieldChanges(current.fields, input.changes)
+    const layoutComponents = transparentTableComponents(current.fields).map(
+      (component) => component.name
+    )
     const changedDataElements = new Set(
       input.changes.flatMap((change) =>
         change.action === "update" && change.dataElement !== undefined
@@ -3822,9 +3838,19 @@ export class ToolService {
       fields: serializeDdicTableFields(fields)
     })
     const expectedResult = { ...current, fields }
-    return savedDdicResult(result, "transparentTable", objectName, packageName, connectionId, {
-      ...ddicDefinition(expectedResult, "transparentTable")
-    })
+    return savedDdicResult(
+      result,
+      "transparentTable",
+      objectName,
+      packageName,
+      connectionId,
+      {
+        ...ddicDefinition(expectedResult, "transparentTable")
+      },
+      // The components that were preserved byte-for-byte are declared explicitly, so a caller never
+      // has to infer from the row set which parts of the layout it was not allowed to touch.
+      layoutComponents.length ? { layoutComponents } : {}
+    )
   }
 
   async patchDdicTransparentTableSettings(
@@ -10396,7 +10422,8 @@ function savedDdicResult(
   objectName: string,
   packageName: string,
   connectionId: string,
-  expectedDefinition: Record<string, unknown>
+  expectedDefinition: Record<string, unknown>,
+  extra: Record<string, unknown> = {}
 ): string {
   requireDdicSuccess(result)
   const identityField = {
@@ -10432,7 +10459,8 @@ function savedDdicResult(
     {
       ...ddicResult(result, kind, objectName, connectionId),
       status: result.code,
-      recordedRequest: result.recordedRequest
+      recordedRequest: result.recordedRequest,
+      ...extra
     },
     null,
     2
@@ -11334,18 +11362,67 @@ function requireCurrentDdicDefinition(
   }
 }
 
+/**
+ * The Include and Append components of a read transparent-table row set, in row order.
+ *
+ * A table that uses components stores them as pseudo-rows whose FIELDNAME starts with `.INCLU` and
+ * whose PRECFIELD names the component. Those rows, and the verbatim inline copies of the component's
+ * fields that follow them, belong to the component, not to the table: writing the table's own DD03L
+ * row set replaces only the table's rows and leaves the component's own definition untouched, so a
+ * change aimed at a component-owned field would either be lost or silently diverge. Inline copies are
+ * told apart from the table's own fields by ADMINFIELD (1 versus 0), not by row position: a table may
+ * keep its own direct fields between two components. Live example: base `ZXF_TEST2` carries
+ * `.INCLU--AP` -> `ZXF_TEST2_APP` followed by the twelve inline copies of that append's fields.
+ */
+function transparentTableComponents(
+  current: SapStructureRow[]
+): { marker: string; name: string }[] {
+  const components: { marker: string; name: string }[] = []
+  const seen = new Set<string>()
+  for (const field of current) {
+    if (!isDdicComponentMarker(field)) continue
+    const name = (field.PRECFIELD ?? "").trim().toUpperCase()
+    if (name === "" || seen.has(name)) continue
+    seen.add(name)
+    components.push({ marker: field.FIELDNAME ?? "", name })
+  }
+  return components
+}
+
 function applyTransparentTableRawFieldChanges(
   current: SapStructureRow[],
   changes: TransparentTableFieldChange[]
 ): SapStructureRow[] {
   const fields = current.map((field) => ({ ...field }))
+  const components = transparentTableComponents(current)
+  const componentNames = components.map((component) => component.name)
+  // A field that exists in the row set but is not a direct field of the table is component-owned:
+  // refusing it by name is the difference between "does not exist" and "is owned by ZCMCP_APPEND".
+  // A direct field that carries no active data element is reported as not editable by this tool
+  // instead of being denied existence: on real customer tables most typed fields have no ROLLNAME.
+  const unknownField = (fieldName: string): never => {
+    const existing = fields.find((field) => field.FIELDNAME === fieldName)
+    if (existing) {
+      if (!isDirectDdicField(existing) && existing.ROLLNAME) {
+        throw new Error(
+          `COMPONENT_FIELD_NOT_PATCHABLE: ${fieldName} belongs to an Include/Append component ` +
+            `(${componentNames.join(", ") || "<unnamed>"}); patch that component's own object instead`
+        )
+      }
+      throw new Error(
+        `FIELD_NOT_EDITABLE: ${fieldName} exists in the layout but is not a direct field with an ` +
+          `active data element, so this tool cannot change it`
+      )
+    }
+    throw new Error(`Transparent table field does not exist: ${fieldName}`)
+  }
   for (const change of changes) {
     const fieldName = ddicFieldName(change.fieldName)
     if (fieldName === "MANDT") throw new Error("MANDT cannot be changed")
     const index = fields.findIndex(
       (field) => isDirectDdicField(field) && field.FIELDNAME === fieldName
     )
-    if (index < 0) throw new Error(`Transparent table field does not exist: ${fieldName}`)
+    if (index < 0) unknownField(fieldName)
     if (change.action === "remove") {
       fields.splice(index, 1)
       continue

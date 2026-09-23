@@ -1048,7 +1048,7 @@ const toolContractsBase = {
   },
   append_ddic_transparent_table_fields: {
     description:
-      "Append nullable, non-key direct fields to one existing Z* or Y* transparent table while preserving its Include/Append components and all table settings. New direct fields are inserted before Append markers so the extension layout remains intact. Requires the current version and SHA-256 fingerprint from read_ddic_transparent_table, the exact package, an existing transport, and active data elements. Field removal, rename, type/key/nullability changes, technical-setting changes, automatic retries, and transport release are not supported.",
+      "Append nullable, non-key direct fields to one existing Z* or Y* transparent table while preserving its Include/Append components and all table settings. New direct fields are inserted before the first Append marker so the extension layout remains intact, and the components that were preserved are declared in layoutComponents. Requires the current version and SHA-256 fingerprint from read_ddic_transparent_table, the exact package, an existing transport, and active data elements. Field removal, rename, type/key/nullability changes, technical-setting changes, automatic retries, and transport release are not supported.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
@@ -1062,7 +1062,7 @@ const toolContractsBase = {
   },
   patch_ddic_transparent_table_fields: {
     description:
-      "Apply explicit remove, rename, or data-element/key/nullability updates to direct fields of one existing Z* or Y* transparent table. Existing Include and Append components are preserved byte-for-byte and cannot be edited through this tool. Requires the current version and SHA-256 fingerprint, exact package, existing transport, destructive-schema confirmation, and data-loss acknowledgement. Returns native Dictionary conversion evidence when SAP reports it. Automatic retry/rollback, SAP lock clearing, and transport release are not supported.",
+      "Apply explicit remove, rename, or data-element/key/nullability updates to direct fields of one existing Z* or Y* transparent table. Only the direct fields named in changes are editable; every Include and Append component is preserved byte-for-byte, is reported back as layoutComponents, and a change aimed at a component-owned field is refused with COMPONENT_FIELD_NOT_PATCHABLE naming the component, because that field's own definition lives under the component and must be patched through the component's own object. Requires the current version and SHA-256 fingerprint, exact package, existing transport, destructive-schema confirmation, and data-loss acknowledgement. Returns native Dictionary conversion evidence when SAP reports it. Automatic retry/rollback, SAP lock clearing, and transport release are not supported.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),

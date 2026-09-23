@@ -3746,7 +3746,7 @@ test("DDIC complex-table fields, technical settings, and native conversion recov
       acknowledgeDataLoss: true,
       connectionId: "w200"
     }),
-    /does not exist/
+    /COMPONENT_FIELD_NOT_PATCHABLE: INC_VALUE belongs to an Include\/Append component \(ZCMCP_INC, ZCMCP_APPEND\)/
   )
   await tools.patchDdicTransparentTableFields({
     objectName: "ZCMCP_COMPLEX",
