@@ -65,7 +65,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r04.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.8-r05.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -309,25 +309,12 @@ if (!offline) {
   assert.equal(read.isError ?? false, false, "reading the live helper failed")
   const payload = JSON.parse((read.content ?? []).map((c) => c.text ?? "").join(""))
   live = payload.source ?? []
-  // The insert and activation APIs are called dynamically, so ABAP type-checks every actual parameter
-  // against the formal parameter's DDIC type at runtime and terminates with
-  // CALL_FUNCTION_CONFLICT_TYPE on a mismatch - that is how `CORRNUM TYPE C LENGTH 10` failed its F8
-  // run. Compare the declared types of the carrier's own variables against SAP's interface here.
+  // The save API is called dynamically, so ABAP type-checks every actual parameter against the
+  // formal parameter's DDIC type at runtime and terminates with CALL_FUNCTION_CONFLICT_TYPE on a
+  // mismatch - that is how `CORRNUM TYPE C LENGTH 10` failed its F8 run. Compare the declared types
+  // of the carrier's own variables against SAP's interface here.
   const passedTypes = {
-    RPY_FUNCTIONMODULE_INSERT: [
-      ["FUNCNAME", "lv_func", "rs38l-name"],
-      ["FUNCTION_POOL", "lv_pool", "rs38l-area"],
-      ["REMOTE_CALL", "lv_remote", "rs38l-remote"],
-      ["SHORT_TEXT", "lv_short", "tftit-stext"],
-      ["CORRNUM", "c_request", "e071-trkorr"]
-    ],
-    FUNCTION_CREATE: [
-      ["FUNCNAME", "lv_func", "rs38l-name"],
-      ["FUNCTION_POOL", "lv_pool", "rs38l-area"],
-      ["REMOTE_CALL", "lv_remote", "rs38l-remote"],
-      ["INTERFACE_GLOBAL", "lv_global", "rs38l-global"],
-      ["CORRNUM", "c_request", "e071-trkorr"]
-    ]
+    FUNCTION_SAVE: [["P_RS38L", "ls_rs38l", "rs38l"]]
   }
   for (const [api, expectations] of Object.entries(passedTypes)) {
     const apiRead = await client.callTool(
@@ -344,6 +331,9 @@ if (!offline) {
       (apiInterface.importParameters ?? []).map((p) => [p.name, String(p.typeName).toLowerCase()])
     )
     for (const [formal, actual, declared] of expectations) {
+      // An empty type name means SAP did not report one (SHORT_TEXT is like that), so only what the
+      // live interface actually states can be asserted; the rest stays a runtime risk.
+      if (!apiTypes.get(formal)) continue
       assert.equal(
         apiTypes.get(formal),
         declared,
@@ -681,6 +671,10 @@ report.push("      lv_update TYPE rs38l-utask,")
 report.push("      lv_present TYPE c LENGTH 1,")
 report.push("      lv_missing TYPE i,")
 report.push("      lv_missing_new TYPE i,")
+report.push("      ls_rs38l TYPE rs38l,")
+report.push("      ls_tfdir TYPE tfdir,")
+report.push("      lv_fm_include TYPE rs38l-include,")
+report.push("      lv_fm_lock_mode TYPE enqmode VALUE 'X',")
 report.push("      lv_added TYPE i.")
 report.push("")
 report.push("START-OF-SELECTION.")
@@ -834,22 +828,54 @@ report.push("  ENDLOOP.")
 report.push("")
 report.push("  IF lv_added > 0.")
 report.push(
-  "* The insert API locks nothing itself (the helper's own CREATE_FUNCTION_MODULE path does not"
+  "* RPY_FUNCTIONMODULE_INSERT and FUNCTION_CREATE are both create-only - the first stops with"
 )
 report.push(
-  "* lock either), so only a lock left behind by an interrupted earlier run has to be cleared."
+  "* FL 050 '& already exists', the second raises FUNCTION_ALREADY_EXISTS (FL 800) - so the existing"
 )
-report.push("    CALL FUNCTION 'DEQUEUE_ESFUNCTION'")
-report.push("      EXPORTING")
-report.push("        funcname = lv_func.")
-report.push("    CALL FUNCTION 'RPY_FUNCTIONMODULE_INSERT'")
+report.push(
+  "* function module is updated through FUNCTION_SAVE, which takes the complete interface as tables"
+)
+report.push(
+  "* and writes it with rs38l-active = 'A'. That is the same call FUNCTION_CREATE makes for"
+)
+report.push(
+  "* save_active = 'X', minus the create-only checks, and it carries no source, so the body stays."
+)
+report.push("    CALL FUNCTION 'ENQUEUE_ESFUNCTION'")
 report.push("      EXPORTING")
 report.push("        funcname = lv_func")
-report.push("        function_pool = lv_pool")
-report.push("        remote_call = lv_remote")
+report.push("        mode_tfdir = lv_fm_lock_mode")
+report.push("      EXCEPTIONS")
+report.push("        foreign_lock = 1")
+report.push("        OTHERS = 2.")
+report.push("    IF sy-subrc <> 0.")
+report.push("      WRITE: / 'ERROR: the function module is locked', sy-subrc.")
+report.push("      RETURN.")
+report.push("    ENDIF.")
+report.push("    CLEAR ls_tfdir.")
+report.push("    SELECT SINGLE * FROM tfdir INTO ls_tfdir")
+report.push("      WHERE funcname = lv_func.")
+report.push("    IF sy-subrc <> 0.")
+report.push("      WRITE: / 'ERROR: TFDIR has no entry for', lv_func.")
+report.push("      CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_func.")
+report.push("      RETURN.")
+report.push("    ENDIF.")
+report.push("    lv_fm_include = ls_tfdir-include.")
+report.push("    CLEAR ls_rs38l.")
+report.push("    ls_rs38l-name = lv_func.")
+report.push("    ls_rs38l-area = lv_pool.")
+report.push("    ls_rs38l-global = lv_global.")
+report.push("    ls_rs38l-remote = lv_remote.")
+report.push("    ls_rs38l-utask = lv_update.")
+report.push("    ls_rs38l-include = lv_fm_include.")
+report.push("    ls_rs38l-active = 'A'.")
+report.push("    ls_rs38l-generated = 'X'.")
+report.push("    SET PARAMETER ID 'EUA' FIELD c_request.")
+report.push("    CALL FUNCTION 'FUNCTION_SAVE'")
+report.push("      EXPORTING")
 report.push("        short_text = lv_short")
-report.push("        corrnum = c_request")
-report.push("        suppress_corr_check = 'X'")
+report.push("        p_rs38l = ls_rs38l")
 report.push("      TABLES")
 report.push("        import_parameter = lt_fm_import")
 report.push("        changing_parameter = lt_fm_change")
@@ -857,47 +883,18 @@ report.push("        export_parameter = lt_fm_export")
 report.push("        tables_parameter = lt_fm_tables")
 report.push("        exception_list = lt_fm_except")
 report.push("        parameter_docu = lt_fm_docu")
-report.push("        source = lt_fm_source")
 report.push("      EXCEPTIONS")
-report.push("        OTHERS = 1.")
+report.push("        error_message = 1")
+report.push("        OTHERS = 2.")
 report.push("    IF sy-subrc <> 0.")
 report.push("      WRITE: / 'ERROR: the interface extension failed', sy-subrc, sy-msgid, sy-msgno.")
 report.push("      CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_func.")
 report.push("      ROLLBACK WORK.")
 report.push("      RETURN.")
 report.push("    ENDIF.")
-report.push(
-  "* RPY_FUNCTIONMODULE_INSERT only writes the INACTIVE version, so the parameter tables have to"
-)
-report.push(
-  "* be activated explicitly. FUNCTION_CREATE is the call the installer uses to create and"
-)
-report.push(
-  "* activate a function module (save_active = 'X'); it is given the merged interface, so no"
-)
-report.push("* parameter can be lost, and it carries no source table, so the body stays untouched.")
-report.push("    CALL FUNCTION 'FUNCTION_CREATE'")
+report.push("    CALL FUNCTION 'DEQUEUE_ESFUNCTION'")
 report.push("      EXPORTING")
-report.push("        funcname = lv_func")
-report.push("        function_pool = lv_pool")
-report.push("        remote_call = lv_remote")
-report.push("        interface_global = lv_global")
-report.push("        short_text = 'ORVANTA MCP controlled entry point'")
-report.push("        corrnum = c_request")
-report.push("        suppress_corr_check = 'X'")
-report.push("        save_active = 'X'")
-report.push("      TABLES")
-report.push("        import_parameter = lt_fm_import")
-report.push("        changing_parameter = lt_fm_change")
-report.push("        export_parameter = lt_fm_export")
-report.push("        tables_parameter = lt_fm_tables")
-report.push("        exception_list = lt_fm_except")
-report.push("        parameter_docu = lt_fm_docu")
-report.push("      EXCEPTIONS")
-report.push("        OTHERS = 1.")
-report.push("    IF sy-subrc <> 0.")
-report.push("      WRITE: / 'WARNING: activation failed', sy-subrc, sy-msgid, sy-msgno.")
-report.push("    ENDIF.")
+report.push("        funcname = lv_func.")
 report.push("    COMMIT WORK AND WAIT.")
 report.push("    WRITE: / 'Interface   : +', lv_added, 'canonical parameter(s) written.'.")
 report.push("  ELSE.")
