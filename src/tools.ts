@@ -3263,7 +3263,7 @@ export class ToolService {
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation: "UPSERT_APPEND_STRUCTURE_FIELDS",
       objectName,
-      expectedVersion: versionToken(input.expectedVersion),
+      expectedVersion: appendVersionToken(input.expectedVersion),
       appendFields: fields
     })
     return savedAppendStructureFieldsResult(result, objectName, input.connectionId, fields)
@@ -9579,6 +9579,16 @@ function ddicResult(
     packageName: result.packageName,
     version: result.objectVersion,
     fingerprint: createHash("sha256").update(JSON.stringify(definition)).digest("hex"),
+    ...(kind === "structure"
+      ? {
+          // The helper's field-set fingerprint (SHA1 over the active field rows), published as
+          // FINGERPRINT. Unlike `fingerprint` above, which hashes this projection and therefore cannot
+          // be reproduced inside SAP, it changes when a field is added or removed, so it is the token to
+          // pass back as expectedVersion for upsert_append_structure_fields. Falls back to the header
+          // version when an older helper does not publish it.
+          guardToken: result.metadata.FINGERPRINT ?? result.objectVersion
+        }
+      : {}),
     definition,
     ...(result.metadata.CONVERSION_ACTION
       ? {
@@ -10362,6 +10372,21 @@ function customerDdicTableName(value: string): string {
     throw new Error("Transparent table objectName must not exceed 16 characters on ECC 7.31")
   }
   return normalized
+}
+
+/**
+ * The append write accepts either the 14-digit header token or the helper's field-set fingerprint.
+ * The header token cannot see a field-level change, because DD_TBFD_PUT writes DD03P rows and never
+ * touches DD02V, so the fingerprint is the only token that detects a lost update on this operation.
+ * Uppercased because the helper publishes HASH160 in upper case and compares the token literally.
+ */
+function appendVersionToken(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (/^\d{14}$/.test(normalized)) return normalized
+  if (/^[0-9A-F]{40}$/.test(normalized)) return normalized
+  throw new Error(
+    "expectedVersion must be the 14-digit version or the 40-character fingerprint returned by read_ddic_structure"
+  )
 }
 
 function ddicFieldName(value: string): string {
