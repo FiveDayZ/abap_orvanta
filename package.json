@@ -1,6 +1,6 @@
 {
   "name": "abap-mcp-standalone",
-  "version": "0.47.2",
+  "version": "0.47.3",
   "private": true,
   "type": "module",
   "description": "ORVANTA - independent ABAP MCP service for SAP ADT",

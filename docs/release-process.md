@@ -119,6 +119,22 @@ git rev-list -n 1 v<version>   # 应与 BUILD-INFO.json 的 standaloneSourceComm
 
 部署记录按工作区规范写入 `.doc/code-update-YYYYMMDD-HHmmss.md`，并同步更新 `contracts/verification-registry.json` 中对应条目的 `status`、`lastAttemptAt` 与 `evidence`——**只有真实调用成功才能从 `unverified` 升为 `verified`**（见 `docs/helper-capabilities-protocol.md` 与验收登记表设计）。
 
+### 7.5 `unsupported` 不是发布缺陷（`remedy` 字段）
+
+安装、重打包或重启 MCP 服务**不会**改变 SAP 侧助手协议——助手正文在 SAP 内。因此版本检查得出的 `unsupported` 是关于 SAP 的陈述，不是关于本次发布包的缺陷。
+
+为免这一区别被误读（曾发生：新包安装后仍报 `unsupported`，被当作发布包坏了），能力报告的版本类判定会附带 `remedy` 字段，写明需要执行的 SAP 侧步骤与载体程序名：
+
+```json
+{
+  "availability": "unsupported",
+  "reason": "The Z_ORVANTA_MCP_DDIC_API helper self-described protocol 1.12, which is below the required capability version 1.13.",
+  "remedy": "Repackaging, reinstalling or restarting the MCP service cannot change the SAP-side helper protocol: the helper body lives in SAP. To satisfy this requirement, run the 1.13 carrier program ZORVANTA_MCP_DDIC_LOCK_DEPLOY in SE38 and press F8, then restart the MCP service and re-read the capability report."
+}
+```
+
+载体程序名由 `src/helper-carriers.ts` 记录，并由 `test/helper-carriers.test.ts` 回读生成器脚本核对，改载体名会让测试失败而不是产出指向不存在程序的 `remedy`；尚未生成载体的助手族不臆造程序名，只指向本节。
+
 ## 8. 禁止事项
 
 - 不得用未提交的工作树产出发布版（唯一例外是显式 `-AllowDirty` 的临时候选包，且必须如实标注）。

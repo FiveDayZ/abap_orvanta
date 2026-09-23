@@ -6,7 +6,13 @@
 
 ORVANTA is a standalone Model Context Protocol (MCP) service for SAP ABAP Development Tools. It exposes controlled ABAP discovery, source, repository, DDIC, diagnostics, transport inspection, RFC, and customer-object lifecycle tools to MCP clients.
 
-Current source version: `0.47.2`.
+Current source version: `0.47.3`.
+
+## 0.47.3
+
+- Adds `read_sapscript_form`: reads a SAPscript form (SE71) through the SAP repository helper. The tool is reported as unavailable until repository helper `2.8` is installed.
+- The capability report now explains a helper version gap. An `unsupported` verdict names the SAP-side carrier program to run in SE38, because installing or restarting ORVANTA cannot change a helper that lives inside SAP.
+- Tool surface: 138 tools, 80 read-only.
 
 ## 0.47.2
 

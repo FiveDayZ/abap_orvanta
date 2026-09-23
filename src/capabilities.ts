@@ -21,6 +21,7 @@ import {
   type VerificationTotals
 } from "./verification-registry.js"
 import { PRODUCT_VERSION } from "./version.js"
+import { helperDeploymentRemedy } from "./helper-carriers.js"
 
 type Availability = "available" | "partial" | "unsupported" | "platform_unsupported" | "unknown"
 type CapabilityRoute = "local" | "native-adt" | "sap-helper-fallback" | "target-specific"
@@ -47,6 +48,12 @@ interface CapabilityObservation {
   availability: Availability
   reason: string
   evidence: CapabilityEvidence
+  /**
+   * The SAP-side step that would satisfy this requirement, present only when the shortfall is a
+   * helper deployment gap. Without it a version-driven `unsupported` reads like a broken service
+   * build, and the operator rebuilds the MCP instead of deploying the carrier.
+   */
+  remedy?: string
   toolObservations?: Record<string, ToolCapabilityObservation>
 }
 
@@ -961,7 +968,7 @@ export function helperCapabilityRoutes(): HelperCapabilityRoute[] {
   )
 }
 
-function helperCapability(
+export function helperCapability(
   route: HelperCapabilityRoute,
   helper: VersionedHelperObservation
 ): CapabilitySpec {
@@ -981,7 +988,8 @@ function helperCapability(
         evidence: {
           source: "version-check",
           detail: `${attestation.helper} self-described protocol ${attestation.maxProtocol} (lowest compatible ${attestation.minProtocol ?? "unknown"}); capability minimum ${minimumVersion}`
-        }
+        },
+        remedy: helperDeploymentRemedy(attestation.helper, minimumVersion)
       })
     }
     return capability(
@@ -1092,6 +1100,7 @@ function operationCheckedObservation(
       source: "version-and-operation-check",
       detail: `${operationDetail}; missing: ${missingSummary}`
     },
+    remedy: helperDeploymentRemedy(attestation.helper, minimumVersion),
     toolObservations
   }
 }
