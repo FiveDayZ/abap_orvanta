@@ -1400,7 +1400,12 @@ export class ToolService {
   }
 
   async getCapabilityReport(input: { connectionId: string }): Promise<string> {
-    return buildCapabilityReport(this.backend, input.connectionId, this.disabledToolNames)
+    return buildCapabilityReport(
+      this.backend,
+      input.connectionId,
+      this.disabledToolNames,
+      this.readTransportTableRows.bind(this)
+    )
   }
 
   async sapHelperStatus(input: SapHelperInput): Promise<string> {
@@ -7022,6 +7027,32 @@ export class ToolService {
     )
   }
 
+  /**
+   * Read one allowlisted CTS table for the transport-list fallback through the reviewed table-query
+   * path, which compensates for the native ADT data preview that answers HTML on this system.
+   *
+   * A failed read throws. `readAbapTable` reports failures as `status: "unavailable"` with
+   * `data: null`, and returning that as an empty row set would report "this user has no transport
+   * requests" for a read that never happened - the same substitution the transport fallback exists
+   * to prevent.
+   */
+  async readTransportTableRows(
+    connectionId: string,
+    tableName: string,
+    columns: string[],
+    filters: { column: string; operator: "EQ"; value: string }[],
+    maxRows: number
+  ): Promise<Record<string, string>[]> {
+    const result = JSON.parse(
+      await this.readAbapTable({ connectionId, tableName, columns, filters, maxRows })
+    ) as { status?: string; code?: string; stage?: string; data?: unknown }
+    if (result.status !== "ok" || !Array.isArray(result.data))
+      throw new Error(
+        `TRANSPORT_LIST_TABLE_READ_FAILED: ${result.code ?? "unknown"}; stage=${result.stage ?? "unknown"}`
+      )
+    return result.data as Record<string, string>[]
+  }
+
   private async readClassicBadiTableProjection(input: TableQueryInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const allFields = input.columns.length === 1 && input.columns[0] === "*"
@@ -7598,7 +7629,11 @@ export class ToolService {
       const user = (
         input.user || this.backend.connectionDetails(connectionId).username
       ).toUpperCase()
-      const transports = await this.backend.listUserTransports(connectionId, user)
+      const transports = await this.backend.listUserTransports(
+        connectionId,
+        user,
+        this.readTransportTableRows.bind(this)
+      )
       let totalCount = 0
       // The source is part of the answer: an empty list from the ADT transport organizer and an
       // empty list from the CTS tables are different claims, and only the caller can decide whether

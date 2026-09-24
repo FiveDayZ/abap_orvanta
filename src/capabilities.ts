@@ -4,7 +4,8 @@ import type {
   SapDdicResult,
   SapHelperCapabilities,
   SapHelperResult,
-  SapRepositoryResult
+  SapRepositoryResult,
+  TransportTableReader
 } from "./backend.js"
 import { APPLICATION_LOG_HELPER } from "./application-logs.js"
 import { SCI_E2_HELPER, SCI_V2_HELPER } from "./sci-v2.js"
@@ -241,7 +242,8 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
 export async function buildCapabilityReport(
   backend: SapBackend,
   requestedConnectionId: string,
-  disabledToolNames: readonly string[] = []
+  disabledToolNames: readonly string[] = [],
+  readTransportTable?: TransportTableReader
 ): Promise<string> {
   const connectionId = requestedConnectionId.toLowerCase()
   const connection = backend.connectionDetails(connectionId)
@@ -310,8 +312,11 @@ export async function buildCapabilityReport(
     observeRead("ADT data preview accepted a one-row read-only query.", () =>
       backend.runQuery(connectionId, "SELECT MANDT FROM T000", 1)
     ),
-    observeRead("ADT transport service returned the configured user's transport list.", () =>
-      backend.listUserTransports(connectionId, connection.username)
+    // The transport list is read through the same path the tools use, including the CTS fallback:
+    // probing the ADT organizer alone reported the capability unavailable while the tools could
+    // still answer, and the label no longer claims which of the two sources answered.
+    observeRead("Transport list read returned the configured user's transports.", () =>
+      backend.listUserTransports(connectionId, connection.username, readTransportTable)
     ),
     observeDumps(() => backend.listDumps(connectionId)),
     observeRead("ADT trace service returned the existing trace list.", () =>

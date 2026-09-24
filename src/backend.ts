@@ -33,6 +33,23 @@ export type UserTransportsListing = TransportsOfUser & {
   source: "adt-transport-organizer" | "cts-tables"
 }
 
+/**
+ * Reads one allowlisted CTS table for the transport-list fallback.
+ *
+ * The fallback must not use `SapBackend.runQuery` directly: its native ADT data-preview path answers
+ * HTML on this ECC 7.31 system, which is why `create_transport_request` could never observe its own
+ * pre-change state. The injected reader is the reviewed table-query path, which compensates with the
+ * `rfc_read_table` fallback. It must **throw** when the read fails: returning an empty array would
+ * report "this user has no requests" for a read that never happened.
+ */
+export type TransportTableReader = (
+  connectionId: string,
+  tableName: string,
+  columns: string[],
+  filters: { column: string; operator: "EQ"; value: string }[],
+  maxRows: number
+) => Promise<Record<string, string>[]>
+
 export interface AbapObjectInfo {
   name: string
   type: string
@@ -870,7 +887,11 @@ export interface SapBackend {
     maxRows: number,
     options?: { allowScopedFallback: boolean }
   ): Promise<Record<string, unknown>[]>
-  listUserTransports(connectionId: string, user: string): Promise<UserTransportsListing>
+  listUserTransports(
+    connectionId: string,
+    user: string,
+    readTable?: TransportTableReader
+  ): Promise<UserTransportsListing>
   transportDetails(connectionId: string, transportNumber: string): Promise<TransportRequest>
   cleanupTransportEntries(
     connectionId: string,

@@ -49,7 +49,7 @@ export async function observeWritePreChange(
       throw new Error("CTS_CLEANUP_STALE_FINGERPRINT")
     }
   } else if (name === "create_transport_request") {
-    await observeTransportRequestCreate(evidence, backend, connectionId, input)
+    await observeTransportRequestCreate(evidence, backend, connectionId, input, tools)
   } else if (name === "add_objects_to_transport") {
     await observeTransportObjectAdd(evidence, backend, connectionId, input)
   } else if (["create_smartform", "save_smartform", "activate_smartform"].includes(name)) {
@@ -489,7 +489,8 @@ async function observeTransportRequestCreate(
   evidence: EvidenceDraft,
   backend: SapBackend,
   connectionId: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  tools: ToolService
 ): Promise<void> {
   const source = "list_user_transports"
   try {
@@ -500,10 +501,11 @@ async function observeTransportRequestCreate(
     const owner = String(input.owner ?? backend.connectionDetails(connectionId).username ?? "")
       .trim()
       .toUpperCase()
-    const transports = (await backend.listUserTransports(connectionId, owner)) as unknown as Record<
-      string,
-      unknown
-    >
+    const transports = (await backend.listUserTransports(
+      connectionId,
+      owner,
+      tools.readTransportTableRows.bind(tools)
+    )) as unknown as Record<string, unknown>
     evidence.sources.push(source)
     const targets = transports[type === "W" ? "customizing" : "workbench"]
     const modifiable = Array.isArray(targets)

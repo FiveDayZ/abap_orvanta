@@ -40,7 +40,7 @@ import {
 import { parse } from "abap-adt-api/build/utilities.js"
 import { legacyWhereUsed, legacyWhereUsedPaths } from "./legacy-where-used.js"
 import { whereUsedHttp, WhereUsedRequestError } from "./where-used-request.js"
-import type { LegacyUsageReferences } from "./backend.js"
+import type { LegacyUsageReferences, TransportTableReader } from "./backend.js"
 import {
   DEFAULT_OBJECT_TYPES,
   type ActivationInfo,
@@ -724,7 +724,11 @@ export class AdtBackend implements SapBackend {
    * for their texts - both of which are read-only and in the D5-2 allowlist. `source` names the
    * answer that was used, so an empty list is never mistaken for a successful empty read.
    */
-  async listUserTransports(connectionId: string, user: string): Promise<UserTransportsListing> {
+  async listUserTransports(
+    connectionId: string,
+    user: string,
+    readTable?: TransportTableReader
+  ): Promise<UserTransportsListing> {
     const owner = user.toUpperCase()
     const client = await this.getClient(connectionId)
     let primary: TransportsOfUser | undefined
@@ -737,7 +741,10 @@ export class AdtBackend implements SapBackend {
     if (primary && countTransportRequests(primary) > 0)
       return { ...primary, source: "adt-transport-organizer" }
     try {
-      return { ...(await this.transportsFromCtsTables(connectionId, owner)), source: "cts-tables" }
+      return {
+        ...(await this.transportsFromCtsTables(connectionId, owner, readTable)),
+        source: "cts-tables"
+      }
     } catch (error) {
       // The fallback is the more reliable of the two reads, so when it fails the primary failure is
       // the one that explains why - unless there was none.
@@ -755,23 +762,33 @@ export class AdtBackend implements SapBackend {
    */
   private async transportsFromCtsTables(
     connectionId: string,
-    owner: string
+    owner: string,
+    readTable?: TransportTableReader
   ): Promise<TransportsOfUser> {
     assertTableAllowed("E070")
     assertTableAllowed("E07T")
-    const escaped = owner.replaceAll("'", "''")
-    const requests = await this.runQuery(
-      connectionId,
-      `SELECT TRKORR, TRFUNCTION, TRSTATUS, TARSYSTEM, AS4USER, AS4DATE, AS4TIME FROM E070 WHERE AS4USER = '${escaped}'`,
-      500
-    )
+    // When the caller supplies the reviewed reader, the CTS read goes through it. `runQuery` alone
+    // cannot carry this read on this system: its native ADT data-preview path answers HTML, so the
+    // fallback used to fail and `create_transport_request` could not observe its own pre-change
+    // state. Both reads keep the same projection and the same 500-row bound either way.
+    const requests = readTable
+      ? await readTable(
+          connectionId,
+          "E070",
+          ["TRKORR", "TRFUNCTION", "TRSTATUS", "TARSYSTEM", "AS4USER", "AS4DATE", "AS4TIME"],
+          [{ column: "AS4USER", operator: "EQ", value: owner }],
+          500
+        )
+      : await this.runQuery(
+          connectionId,
+          `SELECT TRKORR, TRFUNCTION, TRSTATUS, TARSYSTEM, AS4USER, AS4DATE, AS4TIME FROM E070 WHERE AS4USER = '${owner.replaceAll("'", "''")}'`,
+          500
+        )
     const texts = new Map<string, string>()
     if (requests.length) {
-      const descriptions = await this.runQuery(
-        connectionId,
-        "SELECT TRKORR, LANGU, AS4TEXT FROM E07T",
-        500
-      )
+      const descriptions = readTable
+        ? await readTable(connectionId, "E07T", ["TRKORR", "LANGU", "AS4TEXT"], [], 500)
+        : await this.runQuery(connectionId, "SELECT TRKORR, LANGU, AS4TEXT FROM E07T", 500)
       for (const row of descriptions) {
         const number = String(row.TRKORR ?? "").trim()
         const description = String(row.AS4TEXT ?? "").trim()
