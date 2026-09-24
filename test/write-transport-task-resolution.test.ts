@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFile } from "node:fs/promises"
 import test from "node:test"
 import { resolveWriteTransportNumber, writeOperationContext } from "../src/mcp.js"
 import { MockBackend } from "./mock-backend.js"
@@ -129,4 +130,18 @@ test("no resolution leaves the pre-change summary unchanged", () => {
   assert.equal("requestedTaskNumber" in summary, false)
   assert.equal("transportResolution" in summary, false)
   assert.equal("transportCheckWarning" in summary, false)
+})
+
+test("the server binds the check to the table read that works here", async () => {
+  // Verified live 2026-09-24: on this ECC 7.31 system `SapBackend.runQuery`'s native ADT data
+  // preview answers `SAP_DATA_QUERY_RESPONSE_INVALID` (HTTP 200, text/html, 0 bytes), and the first
+  // cut of this check died there. `read_abap_table` survives it by falling back to
+  // `rfc_read_table`, so the check must ride that path - and must not go back to a bare runQuery.
+  const source = await readFile("src/mcp.ts", "utf8")
+  assert.match(source, /tools\.readAbapTable\(\{[\s\S]{0,400}?tableName: "E070"/)
+  assert.match(
+    source,
+    /invokeWriteTool\(name, input, backend, receipts, action, readTransportRows\)/
+  )
+  assert.doesNotMatch(source, /backend\.runQuery\(\s*\n?\s*connectionId,\s*`SELECT TRKORR/)
 })
