@@ -193,6 +193,7 @@ const ROWS: readonly ToolRow[] = [
   ],
   ["test_remote_function_module", "function", DEV, "W", "target-specific", null, null],
   ["invoke_customer_function_module", "function", DEV, "W", "target-specific", null, null],
+  ["run_abap_program", "function", DEV, "D", "target-specific", null, null],
   ["get_customer_function_call_status", "platform", PL, "R", "local", null, null],
   ["get_write_operation_status", "platform", PL, "R", "local", null, null],
   ["list_write_recovery_operations", "platform", PL, "R", "local", null, null],
@@ -727,6 +728,8 @@ const NOTES: Record<string, string> = {
     "写入本地 Markdown 文件；w200 Discovery 未返回 template link / core entry。",
   test_remote_function_module: "执行客户 RFC，可能产生业务副作用；白名单与显式确认必需。",
   invoke_customer_function_module: "正式白名单调用，非只读；需一次性请求凭证与副作用确认。",
+  run_abap_program:
+    "执行既有 Z/Y 程序本体，可能产生业务副作用；仅回 SUBMIT 返回码，列表输出不返回。",
   abap_debug_session: "w200 调试端点曾返回 404；仅 Mock 验证，真实会话未验收。",
   abap_debug_breakpoint: "仅允许 Z/Y 源码断点；真实调试链路未验收。",
   abap_debug_step: "单步/继续会驱动被调试程序执行，可能存在业务副作用。"

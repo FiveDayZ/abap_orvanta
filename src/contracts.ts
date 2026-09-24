@@ -360,6 +360,19 @@ const createTransportRequestSchema = z
   })
   .strict()
 
+const runAbapProgramSchema = z
+  .object({
+    ...writeOperationInput,
+    connectionId: z.string().regex(/^[a-z0-9_-]{1,100}$/),
+    programName: z
+      .string()
+      .min(1)
+      .max(40)
+      .regex(/^[A-Za-z0-9_/]{1,40}$/),
+    confirmation: z.literal("RUN_ABAP_PROGRAM")
+  })
+  .strict()
+
 const addObjectsToTransportSchema = z
   .object({
     connectionId: z.string().regex(/^[a-z0-9_-]{1,100}$/),
@@ -700,6 +713,12 @@ const toolContractsBase = {
       acknowledgePotentialSideEffects: z.literal(true),
       connectionId: z.string()
     }
+  },
+  run_abap_program: {
+    description:
+      "Execute one existing Z* or Y* ABAP program through the target system's Z_ORVANTA_RUN_PROGRAM runner and return the SUBMIT return code. The runner uses SUBMIT ... EXPORTING LIST TO MEMORY AND RETURN, so a report with list output runs without a user, and its list is captured rather than returned. This runs the program's real logic, including any database change it makes, which is why it requires the RUN_ABAP_PROGRAM confirmation string checked before SAP is contacted, and why SAP standard programs are refused. It does not create, activate or change any object, it does not return the program's list output, and it never retries: a program that writes must not be run twice by accident. A non-zero return code is reported as failed, and the program's own list output is not available here to explain it.",
+    inputSchema: runAbapProgramSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }
   },
   invoke_customer_function_module: {
     description:

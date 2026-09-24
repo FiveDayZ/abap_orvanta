@@ -236,6 +236,17 @@ interface AdobeFormDefinition {
   fingerprint: string
 }
 
+/**
+ * `run_abap_program` runs an existing customer program rather than composing one, so the only
+ * inputs are the program and the confirmation that says the caller knows it will run the program's
+ * real logic.
+ */
+interface RunAbapProgramInput {
+  connectionId: string
+  programName: string
+  confirmation: string
+}
+
 interface CreateTransportRequestInput {
   connectionId: string
   requestType: string
@@ -2468,6 +2479,68 @@ export class ToolService {
         },
         sideEffectsAcknowledged: true,
         automaticRetry: false
+      },
+      null,
+      2
+    )
+  }
+
+  /**
+   * Executes one existing customer program through the target system's `Z_ORVANTA_RUN_PROGRAM`
+   * runner. That runner submits the program with `EXPORTING LIST TO MEMORY AND RETURN`, because a
+   * plain `SUBMIT ... AND RETURN` inside RFC aborts with `SCREEN_OUTPUT_WITHOUT_CONNECTION_TO_USER`
+   * as soon as the program produces list output.
+   *
+   * Only the return code comes back, so this reports what SAP reported rather than what the program
+   * meant: a program that fails its own checks and one that could not start both answer non-zero.
+   * The confirmation string and the customer-namespace restriction are checked here, before the
+   * receipt is written and before SAP is contacted.
+   */
+  async runAbapProgram(
+    input: RunAbapProgramInput,
+    beforeInvoke?: () => Promise<void>
+  ): Promise<string> {
+    if (input.confirmation !== "RUN_ABAP_PROGRAM") {
+      throw new Error("confirmation must be RUN_ABAP_PROGRAM")
+    }
+    const programName = input.programName.trim().toUpperCase()
+    if (!/^[ZY][A-Z0-9_/]*$/.test(programName)) {
+      throw new Error(
+        `programName must name a Z* or Y* customer program, because this runs the program's real logic: ${input.programName}`
+      )
+    }
+    const connectionId = input.connectionId.toLowerCase()
+    this.backend.connectionDetails(connectionId)
+    await beforeInvoke?.()
+    const result = await this.backend.callRemoteFunction(connectionId, {
+      functionName: "Z_ORVANTA_RUN_PROGRAM",
+      inputParameters: { IV_PROGRAM: programName },
+      outputParameters: [{ name: "EV_SUBRC", kind: "scalar" }]
+    })
+    if (result.fault) {
+      const fault = `${result.fault.name} ${result.fault.code} ${result.fault.message}`.trim()
+      throw new Error(`SAP SOAP fault: ${fault}`)
+    }
+    const returned = result.outputs.EV_SUBRC
+    if (typeof returned !== "string") {
+      throw new Error("Z_ORVANTA_RUN_PROGRAM did not return EV_SUBRC")
+    }
+    const subrc = returned.trim()
+    return JSON.stringify(
+      {
+        status: subrc === "0" ? "passed" : "failed",
+        connectionId,
+        programName,
+        runner: "Z_ORVANTA_RUN_PROGRAM",
+        subrc,
+        sideEffectsAcknowledged: true,
+        automaticRetry: false,
+        ...(subrc === "0"
+          ? {}
+          : {
+              detail:
+                "SUBMIT returned a non-zero SUBRC. The runner captures the program's list output instead of returning it, so a program that reports its own failure cannot be told apart here from one that could not start; check the program's own log or list output."
+            })
       },
       null,
       2

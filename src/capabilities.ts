@@ -750,6 +750,14 @@ export async function buildCapabilityReport(
       unknownTargetObservation(
         "Availability and safety depend on the exact remote-enabled customer function, active interface fingerprint, allowlist, and explicit side-effect acknowledgement."
       )
+    ),
+    capability(
+      "program-execution",
+      "target-specific",
+      ["run_abap_program"],
+      unknownTargetObservation(
+        "Availability depends on the target system carrying the Z_ORVANTA_RUN_PROGRAM runner and on the explicit RUN_ABAP_PROGRAM confirmation. The return code cannot show what the program changed, so its side effects are not observable from this capability."
+      )
     )
   ]
 

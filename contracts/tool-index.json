@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 142,
+  "toolCount": 143,
   "readOnlyToolCount": 82,
   "profiles": {
     "readonly": 82,
     "platform": 12,
-    "dev": 124,
+    "dev": 125,
     "config": 28,
     "ops": 37,
-    "full": 142
+    "full": 143
   },
   "groups": {
     "data": 5,
@@ -16,7 +16,7 @@
     "debug": 6,
     "enhancement": 22,
     "form": 7,
-    "function": 7,
+    "function": 8,
     "message": 4,
     "ops": 20,
     "platform": 12,
@@ -1733,6 +1733,22 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
       "minHelperProtocol": "1.14"
+    },
+    {
+      "name": "run_abap_program",
+      "group": "function",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null,
+      "note": "执行既有 Z/Y 程序本体，可能产生业务副作用；仅回 SUBMIT 返回码，列表输出不返回。"
     },
     {
       "name": "run_atc_analysis",

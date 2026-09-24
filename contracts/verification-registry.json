@@ -736,6 +736,18 @@
       "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
     },
     {
+      "tool": "run_abap_program",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "no SAP object yet: the tool has not been invoked since it was added",
+      "method": "controlled-write",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Added in 0.47.11 and not yet invoked through MCP, so it stays unverified rather than inheriting the runner's success. The runner it calls, Z_ORVANTA_RUN_PROGRAM, was itself exercised successfully on w200 (see .doc/code-update-20260924-161230.md), which shows the call path works but not that this tool's own guards and result mapping were exercised end to end."
+    },
+    {
       "tool": "list_write_recovery_operations",
       "helper": null,
       "availabilityBasis": "native-adt",

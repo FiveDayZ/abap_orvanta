@@ -1,7 +1,7 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：142
+- 工具总数：143
 - 只读工具：82
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
@@ -12,16 +12,16 @@
 | --- | --- |
 | profile: readonly | 82 |
 | profile: platform | 12 |
-| profile: dev | 124 |
+| profile: dev | 125 |
 | profile: config | 28 |
 | profile: ops | 37 |
-| profile: full | 142 |
+| profile: full | 143 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
 | 分组: enhancement | 22 |
 | 分组: form | 7 |
-| 分组: function | 7 |
+| 分组: function | 8 |
 | 分组: message | 4 |
 | 分组: ops | 20 |
 | 分组: platform | 12 |
@@ -144,6 +144,7 @@
 | `release_write_operation_lock` | platform | platform | 写 | local | — |
 | `replace_string_in_abap_object` | source | dev | 写 | native-adt | — |
 | `resume_ddic_table_activation` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.14) |
+| `run_abap_program` | function | dev | 破坏性写 | target-specific | — |
 | `run_atc_analysis` | quality | dev | 写 | target-specific | — |
 | `run_sci_analysis` | quality | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_SCI_API (≥1.0) |
 | `run_unit_tests` | quality | dev | 写 | native-adt | — |
@@ -201,6 +202,7 @@
 - `read_report_parameters`：依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。
 - `read_report_variants`：通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。
 - `release_write_operation_lock`：仅解除本地目标锁，不触碰 SAP 锁；需人工确认与最新凭证哈希。
+- `run_abap_program`：执行既有 Z/Y 程序本体，可能产生业务副作用；仅回 SUBMIT 返回码，列表输出不返回。
 - `run_atc_analysis`：w200 原生 ATC 端点不可用，当前退化为语法报告；不得作为质量门禁通过依据。
 - `run_sci_analysis`：非原生 ATC，规则范围固定且依赖指纹匹配的 SCI 助手；timeout 不等于取消。
 - `run_unit_tests`：执行现有 ABAP Unit，测试代码可能有副作用；需先取得授权。

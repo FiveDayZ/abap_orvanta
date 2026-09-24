@@ -306,6 +306,11 @@ export function createMcpServer(
         (beforeInvoke) => tools.invokeCustomerFunctionModule(input, beforeInvoke)
       )
   )
+  registerTool("run_abap_program", toolContracts.run_abap_program, async (input) =>
+    invokeWrite("run_abap_program", input, backend, writeReceipts, (beforeInvoke) =>
+      tools.runAbapProgram(input, beforeInvoke)
+    )
+  )
   registerTool(
     "get_customer_function_call_status",
     toolContracts.get_customer_function_call_status,
