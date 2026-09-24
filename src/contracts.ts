@@ -135,14 +135,26 @@ const ddicMaintenanceViewHeader = z.object({
   globalFlag: z.string().optional()
 })
 const ddicStructureField = z.object({ name: z.string(), dataElement: z.string() })
+// referenceTable/referenceField carry DD03P-REFTABLE/REFFIELD. A quantity (QUAN) or currency (CURR)
+// field has no intrinsic unit, so DDIC activation fails its check with "specify reference table and
+// reference field" unless both are present; a 2026-09-24 live probe confirmed this is the only
+// activation blocker for a table whose fields otherwise resolve to active data elements (the
+// enhancement-category lines the same check emits are notes, not errors). Both must be supplied
+// together: a lone reference table names no field and a lone reference field has no table.
+const ddicTableFieldReference = {
+  referenceTable: z.string().optional(),
+  referenceField: z.string().optional()
+}
 const ddicTableField = z.object({
   name: z.string(),
   dataElement: z.string(),
-  key: z.boolean().optional()
+  key: z.boolean().optional(),
+  ...ddicTableFieldReference
 })
 const ddicAppendedTableField = z.object({
   name: z.string(),
-  dataElement: z.string()
+  dataElement: z.string(),
+  ...ddicTableFieldReference
 })
 const ddicTableFieldChange = z.discriminatedUnion("action", [
   z.object({ action: z.literal("remove"), fieldName: z.string() }),
@@ -152,7 +164,8 @@ const ddicTableFieldChange = z.discriminatedUnion("action", [
     fieldName: z.string(),
     dataElement: z.string().optional(),
     key: z.boolean().optional(),
-    notNull: z.boolean().optional()
+    notNull: z.boolean().optional(),
+    ...ddicTableFieldReference
   })
 ])
 const ddicTechnicalSettingsPatch = z
@@ -1031,7 +1044,7 @@ const toolContractsBase = {
   },
   create_ddic_transparent_table: {
     description:
-      "Create one new Z* or Y* transparent table whose fields reference active data elements. Existing tables are rejected to avoid destructive database conversion. Key fields must be contiguous at the beginning. Requires an existing transportable package and transport; never releases transports.",
+      "Create one new Z* or Y* transparent table whose fields reference active data elements. Existing tables are rejected to avoid destructive database conversion. Key fields must be contiguous at the beginning. A quantity or currency field must also carry referenceTable and referenceField (DD03P-REFTABLE/REFFIELD), because DDIC activation rejects such a field without them; supply both or neither. Requires an existing transportable package and transport; never releases transports.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
@@ -1112,7 +1125,7 @@ const toolContractsBase = {
   },
   resume_ddic_table_activation: {
     description:
-      "Activate a Z* or Y* transparent table whose definition was saved but left inactive by an earlier failed create or write. Use this only after a write tool reported DDIC_SAVE_FAILED with PHASE=inactive_saved, or after a read reported INACTIVE_VERSION_EXISTS; read the current non-active state first and pass its exact fingerprint. This operation does not send a new table definition: it only runs the activation step against what is already stored, then re-reads the active table and returns it. Requires the current non-active fingerprint, the exact package and an existing transport, and RESUME_INACTIVE_ACTIVATION confirmation. SAP activation may commit internally; no automatic retry and no rollback of an already-saved definition. Requires a helper that publishes RESUME_TABLE_ACTIVATION (protocol 1.13 or later; the earlier 1.10 carrier published the 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION, which the helper's CHAR 32 IV_OPERATION truncated, and the 1.11/1.12 carriers routed this operation into the TBATG conversion-recovery block, so they could only answer WORKLIST_REQUIRED or run a conversion recovery instead of activating). Because the helper does not report DD09V technical settings for an inactive definition, activation is refused (INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED, or INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE when the values are reported but unusable) unless usable values are visible; supply settingsRepair to write the approved dataClass/sizeCategory through PATCH_TRANSPARENT_TABLE_SETTINGS under the same fingerprint before activating. The reply reports the applied repair, the activated fingerprint, the active technical settings, and technicalSettingsVerified, which is false when the activated table does not match the expected values.",
+      "Activate a Z* or Y* transparent table whose definition was saved but left inactive by an earlier failed create or write. Use this only after a write tool reported DDIC_SAVE_FAILED with PHASE=inactive_saved, or after a read reported INACTIVE_VERSION_EXISTS; read the current non-active state first and pass its exact fingerprint. This operation does not send a new table definition: it only runs the activation step against what is already stored, then re-reads the active table and returns it. Requires the current non-active fingerprint, the exact package and an existing transport, and RESUME_INACTIVE_ACTIVATION confirmation. SAP activation may commit internally; no automatic retry and no rollback of an already-saved definition. Requires a helper that publishes RESUME_TABLE_ACTIVATION (protocol 1.14 or later; the 1.10 carrier published the 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION, which the helper's CHAR 32 IV_OPERATION truncated, the 1.11/1.12 carriers routed this operation into the TBATG conversion-recovery block so they could only answer WORKLIST_REQUIRED or run a conversion recovery instead of activating, and the 1.13 carrier called DD_TABL_ACT without opening a protocol channel, so mass_act_tabl never overwrote ACT_RESULT and every call returned the initial value 8 with an empty ACT_RES_TAB while the table stayed inactive). Because the helper does not report DD09V technical settings for an inactive definition, activation is refused (INACTIVE_TECHNICAL_SETTINGS_NOT_REPORTED, or INACTIVE_TECHNICAL_SETTINGS_INCOMPLETE when the values are reported but unusable) unless usable values are visible; supply settingsRepair to write the approved dataClass/sizeCategory through PATCH_TRANSPARENT_TABLE_SETTINGS under the same fingerprint before activating. The reply reports the applied repair, the activated fingerprint, the active technical settings, and technicalSettingsVerified, which is false when the activated table does not match the expected values.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),

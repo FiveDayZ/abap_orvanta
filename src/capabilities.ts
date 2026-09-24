@@ -181,18 +181,24 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
       "upsert_ddic_table_type"
     ]
   ],
+  ["ddic-helper-transparent-table", ["read_ddic_transparent_table"]],
+  // 1.15: writing table field rows may now carry DD03P-REFTABLE/REFFIELD, and a helper below 1.15
+  // rejects those two properties with PROPERTY_NOT_ALLOWED. That is a different helper route from
+  // the 1.5 read and from the 1.7 settings/conversion group, and a capability may not mix protocol
+  // minimums - raising the read to 1.15 would report a working read as unsupported, which is the
+  // same class of false claim this registry exists to prevent. Splitting is the established pattern
+  // here (see the resume route below, split off the 1.7 group for the same reason).
   [
-    "ddic-helper-transparent-table",
-    ["read_ddic_transparent_table", "create_ddic_transparent_table"]
+    "ddic-helper-transparent-table-reference",
+    [
+      "create_ddic_transparent_table",
+      "append_ddic_transparent_table_fields",
+      "patch_ddic_transparent_table_fields"
+    ]
   ],
   [
     "ddic-helper-transparent-table-complex",
-    [
-      "append_ddic_transparent_table_fields",
-      "patch_ddic_transparent_table_fields",
-      "patch_ddic_transparent_table_settings",
-      "recover_ddic_table_conversion"
-    ]
+    ["patch_ddic_transparent_table_settings", "recover_ddic_table_conversion"]
   ],
   // Resuming an activation is a distinct recovery route: it needs the newer
   // RESUME_TABLE_ACTIVATION opcode, so it cannot share the 1.7 table-complex group.

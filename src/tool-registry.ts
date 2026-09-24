@@ -296,7 +296,12 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.5",
+    // 1.15: table field rows may carry REFTABLE/REFFIELD. A helper below 1.15 rejects those two
+    // properties with PROPERTY_NOT_ALLOWED, so offering this tool's reference-field inputs against
+    // it would be a capability claim the helper cannot honour. A quantity or currency field without
+    // them cannot activate at all, which is why the minimum rises with the contract, not with the
+    // operation name (CREATE_TRANSPARENT_TABLE itself exists since 1.5).
+    "1.15",
     ["CREATE_TRANSPARENT_TABLE"]
   ],
   [
@@ -306,7 +311,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.7",
+    "1.15",
     ["APPEND_TRANSPARENT_TABLE_FIELDS"]
   ],
   [
@@ -316,7 +321,7 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     DDIC,
-    "1.7",
+    "1.15",
     ["PATCH_TRANSPARENT_TABLE_FIELDS"]
   ],
   [
@@ -358,8 +363,17 @@ const ROWS: readonly ToolRow[] = [
     // which requires a worklist (WORKLIST_REQUIRED - the observed incident) and otherwise runs
     // DD_DB_CONVERTER and RETURN, leaving the lv_resume activation branch (DD_TABL_ACT) dead code.
     // A minimum of 1.11 therefore advertised the capability as available against a helper that could
-    // not perform it. The first helper that actually resumes is 1.13, so the contract moves with it.
-    "1.13",
+    // not perform it.
+    //
+    // 2026-09-24 (1.14): 1.13 reached that branch but still resumed nothing. It called DD_TABL_ACT
+    // directly, so DEVICE defaulted to 'F' and PRID to 0; mass_act_tabl had no protocol channel,
+    // never overwrote ACT_RESULT, and every call returned the line-121 initial value 8 with an empty
+    // ACT_RES_TAB while the target stayed inactive (live run: ACT_RC=8 / ACT_SUBRC=0 / ACT_ROWS=0).
+    // The same defect sat in the TABL arm's normal create path, so no transparent table created by
+    // a 1.13 helper ever became active. Both sites now call DDIF_TABL_ACTIVATE, which opens the
+    // protocol first (START_PROTOCOL, DEVICE ' ', PRID GR_PRID). The first helper that actually
+    // resumes is 1.14, so the contract moves with it.
+    "1.14",
     ["RESUME_TABLE_ACTIVATION"]
   ],
   [

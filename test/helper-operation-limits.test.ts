@@ -194,8 +194,8 @@ test("the truncated operations were renamed and are not documented as blocked", 
     "# <<< ORVANTA-DDIC-CAPABILITY-TABLE"
   )
   assert.ok(
-    ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.13|W"'),
-    "the operation must be recorded as introduced at 1.13, the first helper that can actually resume"
+    ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.14|W"'),
+    "the operation must be recorded as introduced at 1.14, the first helper that can actually resume"
   )
   assert.ok(
     !ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.11|W"'),

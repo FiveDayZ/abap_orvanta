@@ -255,7 +255,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
-      "minHelperProtocol": "1.7"
+      "minHelperProtocol": "1.15"
     },
     {
       "name": "cleanup_transport_entries",
@@ -317,7 +317,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
-      "minHelperProtocol": "1.5"
+      "minHelperProtocol": "1.15"
     },
     {
       "name": "create_enhancement_hook_implementation",
@@ -1082,7 +1082,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
-      "minHelperProtocol": "1.7"
+      "minHelperProtocol": "1.15"
     },
     {
       "name": "patch_ddic_transparent_table_settings",
@@ -1732,7 +1732,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
-      "minHelperProtocol": "1.13"
+      "minHelperProtocol": "1.14"
     },
     {
       "name": "run_atc_analysis",

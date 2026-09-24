@@ -966,6 +966,73 @@ test("an inactive resume refuses a stored definition with no field rows", async 
   assert.deepEqual(operations, ["READ_TRANSPARENT_TABLE"])
 })
 
+test("table field writes carry the DD03P reference pair, and an unpaired half is refused", async () => {
+  // A quantity or currency field names the table and field holding its unit. DDIC activation refuses
+  // such a field without them ("specify reference table and reference field"), verified live on
+  // 2026-09-24, so the pair must reach the helper; and a lone half must fail here rather than be
+  // dropped silently, because the caller would otherwise believe a unit reference was applied.
+  const backend = new MockBackend()
+  const requests: Array<{ operation: string; fields?: Array<Record<string, string>> }> = []
+  // Delegate to the mock's own DDIC handler so the reply keeps the shape the create path expects;
+  // this test records what the client sent, it does not restate the mock's reply.
+  const original = backend.callSapDdic.bind(backend)
+  backend.callSapDdic = async (connectionId, request) => {
+    requests.push(
+      request as unknown as { operation: string; fields?: Array<Record<string, string>> }
+    )
+    return original(connectionId, request)
+  }
+  const tools = new ToolService(backend)
+  const base = {
+    description: "reference probe",
+    deliveryClass: "A" as const,
+    dataClass: "APPL1" as const,
+    dataBrowserMaintenance: "notAllowed" as const,
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    connectionId: "w200"
+  }
+  await tools.createDdicTransparentTable({
+    ...base,
+    objectName: "ZCMCP_TAB_REF",
+    fields: [
+      { name: "MANDT", dataElement: "MANDT", key: true },
+      { name: "QTY", dataElement: "MENGE_D", referenceTable: "MARA", referenceField: "MEINS" }
+    ]
+  })
+  const created = requests.find((request) => request.operation === "CREATE_TRANSPARENT_TABLE")
+  assert.ok(created, "the create must reach the DDIC helper")
+  const quantity = created.fields?.find((field) => field.FIELDNAME === "QTY")
+  assert.equal(quantity?.REFTABLE, "MARA")
+  assert.equal(quantity?.REFFIELD, "MEINS")
+
+  requests.length = 0
+  await assert.rejects(
+    () =>
+      tools.createDdicTransparentTable({
+        ...base,
+        objectName: "ZCMCP_TAB_REF",
+        fields: [
+          { name: "MANDT", dataElement: "MANDT", key: true },
+          { name: "QTY", dataElement: "MENGE_D", referenceTable: "MARA" }
+        ]
+      }),
+    /referenceTable and referenceField must be supplied together/
+  )
+  await assert.rejects(
+    () =>
+      tools.appendDdicTransparentTableFields({
+        ...base,
+        objectName: "ZCMCP_TAB_REF",
+        expectedVersion: "20260924120000",
+        expectedFingerprint: "a".repeat(64),
+        fields: [{ name: "QTY2", dataElement: "MENGE_D", referenceField: "MEINS" }]
+      }),
+    /referenceTable and referenceField must be supplied together/
+  )
+  assert.deepEqual(requests, [], "an unpaired reference must be refused before any SAP call")
+})
+
 test("an inactive resume with settingsRepair writes the settings, activates, and verifies them", async () => {
   const backend = new MockBackend()
   const operations: string[] = []

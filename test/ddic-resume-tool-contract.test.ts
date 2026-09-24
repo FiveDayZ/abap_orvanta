@@ -57,7 +57,7 @@ function validInput(): Record<string, unknown> {
   }
 }
 
-test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.13", () => {
+test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.14", () => {
   assert.ok(TOOL_NAMES.includes(RESUME_TOOL), `${RESUME_TOOL} must stay registered`)
   const entry = registryEntry(RESUME_TOOL)
   assert.ok(entry, `${RESUME_TOOL} must have a registry entry`)
@@ -69,7 +69,11 @@ test("resume_ddic_table_activation stays registered against the DDIC helper at p
   // set lv_recover, so they answered WORKLIST_REQUIRED (no worklist) or ran DD_DB_CONVERTER and
   // returned - never the lv_resume activation. A 1.11 minimum advertised an unusable capability as
   // available, which is exactly what the 2026-09-23 incident hit.
-  assert.equal(entry.minHelperProtocol, "1.13")
+  // 2026-09-24 raised it to 1.14: 1.13 reached the activation branch but called DD_TABL_ACT with no
+  // protocol channel, so mass_act_tabl never overwrote ACT_RESULT and the call always returned the
+  // line-121 initial value 8 while the table stayed inactive. A 1.13 minimum would keep advertising
+  // a capability that cannot be performed - the same class of error as the 2026-09-23 incident.
+  assert.equal(entry.minHelperProtocol, "1.14")
   assert.equal(entry.route, "sap-helper-fallback")
   assert.equal(entry.annotations.readOnlyHint, false)
   assert.equal(entry.annotations.destructiveHint, true)
@@ -179,12 +183,22 @@ test("the helper resume arm activates without entering conversion recovery", asy
   assert.ok(recoveryGuard?.[1], "the conversion-recovery worklist guard must exist")
   assert.doesNotMatch(abapOf(recoveryGuard[1]), /lv_resume/)
 
-  // Resume keeps its own activation arm, which is the only path that reaches DD_TABL_ACT for it.
-  const activation = /"        IF lv_resume = 'X'\."([\s\S]*?)CALL FUNCTION 'DD_TABL_ACT'/.exec(
-    script
-  )
-  assert.ok(activation?.[1], "the resume activation arm must call DD_TABL_ACT")
+  // Resume keeps its own activation arm. It must go through the DDIF wrapper: DDIF_TABL_ACTIVATE
+  // opens the DDIC activation protocol (START_PROTOCOL -> PRID) before calling DD_TABL_ACT, while a
+  // raw DD_TABL_ACT call leaves DEVICE at its 'F' default and PRID at 0, so mass_act_tabl has no
+  // protocol channel, never overwrites ACT_RESULT, and the caller reads the line-121 initial value 8
+  // with an empty ACT_RES_TAB (the 2026-09-24 incident).
+  const activation =
+    /"        IF lv_resume = 'X'\."([\s\S]*?)CALL FUNCTION 'DDIF_TABL_ACTIVATE'/.exec(script)
+  assert.ok(activation?.[1], "the resume activation arm must call DDIF_TABL_ACTIVATE")
   assert.match(abapOf(activation[1]), /NO_INACTIVE_VERSION/)
+  // The raw call must not come back anywhere in the emitted ABAP: both the resume arm and the normal
+  // create path used it, and neither could ever activate a transparent table.
+  assert.doesNotMatch(
+    abapOf(script),
+    /CALL FUNCTION 'DD_TABL_ACT'/,
+    "transparent-table activation must go through DDIF_TABL_ACTIVATE, never the raw DD_TABL_ACT"
+  )
 
   // Fixing the dispatch alone was not enough, and this chain check proved it: the resume arm sat
   // behind four earlier gates in the shared write path that all assume "a write submits a new

@@ -455,11 +455,12 @@ test("the DDIC since values are the service contract minimums", async () => {
   assert.deepEqual(groupSizes, {
     "1.11": 6,
     "1.12": 1,
-    "1.13": 1,
+    "1.14": 1,
+    "1.15": 3,
     "1.2": 8,
-    "1.5": 2,
+    "1.5": 1,
     "1.6": 5,
-    "1.7": 4,
+    "1.7": 2,
     "1.8": 3,
     "1.9": 3
   })
@@ -478,12 +479,21 @@ test("the DDIC since values are the service contract minimums", async () => {
   // D6-5: UPSERT_APPEND_STRUCTURE_FIELDS is the single |1.12| row, so it alone raises PROTOCOL|MAX
   // from 1.11 to 1.12. A 1.11 helper does not know the opcode at all, which is exactly why
   // upsert_append_structure_fields declares protocol 1.12 and is reported unavailable on 1.11.
-  // 2026-09-23: RESUME_TABLE_ACTIVATION moved from |1.11| to |1.13| and is now the single |1.13| row,
-  // so it alone raises PROTOCOL|MAX from 1.12 to 1.13. The 1.11/1.12 carriers could dispatch the
-  // opcode but never resumed anything (they ran the TBATG conversion-recovery block instead), so
-  // 1.13 is the first helper that can serve resume_ddic_table_activation - and the service's
-  // contract minimum moved with it, which is what stops a 1.12 helper being reported available.
-  assert.equal(versions[versions.length - 1], "1.13", "PROTOCOL|MAX must derive to 1.13")
+  // 2026-09-23: RESUME_TABLE_ACTIVATION moved from |1.11| to |1.13|. 2026-09-24 moved it again to
+  // |1.14|, where it is now the single |1.14| row, so it alone raises PROTOCOL|MAX from 1.12 to
+  // 1.14. The 1.11/1.12 carriers could dispatch the opcode but never resumed anything (they ran the
+  // TBATG conversion-recovery block instead), and the 1.13 carrier reached the activation branch but
+  // called DD_TABL_ACT with no protocol channel, so it always returned the initial ACT_RESULT 8 and
+  // left the table inactive. 1.14 is the first helper that can serve resume_ddic_table_activation -
+  // and the service's contract minimum moved with it, which is what stops a 1.13 helper being
+  // reported available.
+  // 2026-09-24 (1.15): the three transparent-table field-write operations (CREATE, APPEND, PATCH)
+  // moved to |1.15| because table field rows may now carry DD03P-REFTABLE/REFFIELD, which a 1.14
+  // helper rejects with PROPERTY_NOT_ALLOWED. They are the three |1.15| rows, so they alone raise
+  // PROTOCOL|MAX from 1.14 to 1.15, and the read stays at |1.5| in its own capability: a capability
+  // may not mix protocol minimums, and lifting the read to 1.15 would report a working read as
+  // unsupported.
+  assert.equal(versions[versions.length - 1], "1.15", "PROTOCOL|MAX must derive to 1.15")
 })
 
 test("the DDIC branch reuses the repository hash slots and names its own helper", () => {

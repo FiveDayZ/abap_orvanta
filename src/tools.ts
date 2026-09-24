@@ -813,22 +813,43 @@ interface UpsertMaintenanceViewInput extends UpsertDdicInput {
   header?: MaintenanceViewHeaderInput | undefined
 }
 
+/**
+ * DD03P-REFTABLE/REFFIELD. A quantity or currency field names the table and field that carry its
+ * unit, and DDIC activation refuses such a field without them; both halves travel together.
+ */
+interface DdicTableFieldReference {
+  referenceTable?: string | undefined
+  referenceField?: string | undefined
+}
+
+/** A table field row as the DDIC helper consumes it: payload keys plus the optional reference pair. */
+type TransparentTableFieldRow = {
+  FIELDNAME: string
+  ROLLNAME: string
+  KEYFLAG: string
+  NOTNULL: string
+  REFTABLE?: string
+  REFFIELD?: string
+}
+
 interface CreateTransparentTableInput extends Omit<UpsertDdicInput, "expectedVersion"> {
   deliveryClass: "A" | "C" | "L" | "G" | "E" | "S" | "W"
   dataClass: "APPL0" | "APPL1" | "APPL2"
   dataBrowserMaintenance: "allowed" | "restricted" | "notAllowed"
   sizeCategory?: number | undefined
-  fields: Array<{
-    name: string
-    dataElement: string
-    key?: boolean | undefined
-  }>
+  fields: Array<
+    {
+      name: string
+      dataElement: string
+      key?: boolean | undefined
+    } & DdicTableFieldReference
+  >
 }
 
 interface AppendTransparentTableFieldsInput extends ReadDdicInput {
   expectedVersion: string
   expectedFingerprint: string
-  fields: Array<{ name: string; dataElement: string }>
+  fields: Array<{ name: string; dataElement: string } & DdicTableFieldReference>
   packageName: string
   transportNumber: string
 }
@@ -836,13 +857,13 @@ interface AppendTransparentTableFieldsInput extends ReadDdicInput {
 type TransparentTableFieldChange =
   | { action: "remove"; fieldName: string }
   | { action: "rename"; fieldName: string; newName: string }
-  | {
+  | ({
       action: "update"
       fieldName: string
       dataElement?: string | undefined
       key?: boolean | undefined
       notNull?: boolean | undefined
-    }
+    } & DdicTableFieldReference)
 
 interface PatchTransparentTableFieldsInput extends ReadDdicInput {
   expectedVersion: string
@@ -10989,12 +11010,15 @@ function containsLineSequence(actual: string[], expected: string[]): boolean {
  * guessing. COMPENSATED is the important one: "N" means the failed call could not
  * restore the object and it may still be inconsistent.
  *
- * The activation keys cover a second failure shape found on 2026-09-23: the 1.13 helper
- * reached the real activation branch, `DD_TABL_ACT` returned subrc=0 with act_result=0 (which
- * is not a success flag), and the object still had no active version, so the call died in the
- * post-activation verification with nothing but VERIFY_FAILED. Those rows now carry the
- * activation return code, the act_res_tab row count, and the action/mode/dataloss DD_TABL_ACT
- * reported, so the next failure names its cause.
+ * The activation keys cover a second failure shape found on 2026-09-23 and root-caused on
+ * 2026-09-24: the 1.13 helper reached the real activation branch but called `DD_TABL_ACT` with no
+ * protocol channel, so `ACT_RESULT` kept its line-121 initial value 8 with an empty ACT_RES_TAB and
+ * subrc stayed 0 (8 is not a success flag), and the object still had no active version, so the call
+ * died in the post-activation verification with nothing but VERIFY_FAILED. Those rows carry the
+ * activation return code, the act_res_tab row count, and the action/mode/dataloss the helper saw,
+ * so the next failure names its cause. The 1.14 helper calls DDIF_TABL_ACTIVATE, which opens the
+ * protocol first and returns no ACT_RES_TAB by design: the rows stay, ACT_RC keeps its meaning as
+ * DD_TABL_ACT's ACT_RESULT, and ACT_ROWS is expected to be 0 on both paths.
  */
 const APPEND_FAILURE_DETAIL_KEYS = [
   "APPEND",
@@ -11305,6 +11329,30 @@ function validateDomainDefinition(input: UpsertDomainInput): void {
   }
 }
 
+/**
+ * DD03P-REFTABLE/REFFIELD for a quantity or currency table field.
+ *
+ * Both halves must be supplied or neither. DDIC activation refuses a QUAN/CURR field that names no
+ * unit ("specify reference table and reference field"), and a lone half names no usable reference,
+ * so an unpaired half is a caller error rather than a silently ignored input. Verified live on
+ * 2026-09-24: this is the only activation blocker once every field resolves to an active data
+ * element.
+ */
+function tableFieldReference(field: DdicTableFieldReference): Record<string, string> {
+  const referenceTable = field.referenceTable?.trim() ?? ""
+  const referenceField = field.referenceField?.trim() ?? ""
+  if (!referenceTable && !referenceField) return {}
+  if (!referenceTable || !referenceField) {
+    throw new Error(
+      "referenceTable and referenceField must be supplied together: a quantity or currency field needs both, and neither half is usable alone"
+    )
+  }
+  return {
+    REFTABLE: ddicName(referenceTable, "referenceTable"),
+    REFFIELD: ddicFieldName(referenceField)
+  }
+}
+
 function validateTransparentTableFields(
   input: CreateTransparentTableInput["fields"]
 ): Array<Record<string, string>> {
@@ -11327,14 +11375,15 @@ function validateTransparentTableFields(
       FIELDNAME: name,
       ROLLNAME: ddicName(field.dataElement, "dataElement"),
       KEYFLAG: key ? "X" : "",
-      NOTNULL: "X"
+      NOTNULL: "X",
+      ...tableFieldReference(field)
     }
   })
 }
 
 function validateAppendedTransparentTableFields(
   input: AppendTransparentTableFieldsInput["fields"]
-): Array<{ FIELDNAME: string; ROLLNAME: string; KEYFLAG: string; NOTNULL: string }> {
+): TransparentTableFieldRow[] {
   if (!input.length) throw new Error("fields must contain at least one field to append")
   if (input.length > 32) throw new Error("No more than 32 fields may be appended per operation")
   const names = new Set<string>()
@@ -11347,7 +11396,8 @@ function validateAppendedTransparentTableFields(
       FIELDNAME: name,
       ROLLNAME: ddicName(field.dataElement, "dataElement"),
       KEYFLAG: "",
-      NOTNULL: ""
+      NOTNULL: "",
+      ...tableFieldReference(field)
     }
   })
 }
@@ -11474,24 +11524,29 @@ function applyTransparentTableRawFieldChanges(
     if (
       change.dataElement === undefined &&
       change.key === undefined &&
-      change.notNull === undefined
+      change.notNull === undefined &&
+      change.referenceTable === undefined &&
+      change.referenceField === undefined
     ) {
       throw new Error(`Field update has no attributes: ${fieldName}`)
     }
     const field = fields[index]!
-    const updated = {
+    const updated: SapStructureRow = {
       ...field,
       ROLLNAME:
         change.dataElement === undefined
           ? (field.ROLLNAME ?? "")
           : ddicName(change.dataElement, "dataElement"),
       KEYFLAG: change.key === undefined ? (field.KEYFLAG ?? "") : change.key ? "X" : "",
-      NOTNULL: change.notNull === undefined ? (field.NOTNULL ?? "") : change.notNull ? "X" : ""
+      NOTNULL: change.notNull === undefined ? (field.NOTNULL ?? "") : change.notNull ? "X" : "",
+      ...tableFieldReference(change)
     }
     if (
       updated.ROLLNAME === field.ROLLNAME &&
       updated.KEYFLAG === field.KEYFLAG &&
-      updated.NOTNULL === field.NOTNULL
+      updated.NOTNULL === field.NOTNULL &&
+      (updated.REFTABLE ?? "") === (field.REFTABLE ?? "") &&
+      (updated.REFFIELD ?? "") === (field.REFFIELD ?? "")
     ) {
       throw new Error(`Field update is a no-op: ${fieldName}`)
     }
@@ -11523,6 +11578,8 @@ function serializeDdicTableFields(fields: SapStructureRow[]): SapStructureRow[] 
     "ROLLNAME",
     "KEYFLAG",
     "NOTNULL",
+    "REFTABLE",
+    "REFFIELD",
     "PRECFIELD",
     "COMPTYPE",
     "ADMINFIELD",
@@ -11540,7 +11597,7 @@ function serializeDdicTableFields(fields: SapStructureRow[]): SapStructureRow[] 
 
 function appendTransparentTableRawFields(
   current: SapStructureRow[],
-  appended: Array<{ FIELDNAME: string; ROLLNAME: string; KEYFLAG: string; NOTNULL: string }>
+  appended: TransparentTableFieldRow[]
 ): SapStructureRow[] {
   const fields = current.map((field) => ({ ...field }))
   const appendIndex = fields.findIndex((field) => field.FIELDNAME?.startsWith(".INCLU--AP"))

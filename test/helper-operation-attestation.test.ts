@@ -199,12 +199,14 @@ test("a helper that attests the protocol but not the operation code is not avail
   // The resume tool is now rejected one gate earlier, on the protocol: R-20 raised its contract
   // minimum to 1.11 because RESUME_TABLE_ACTIVATION only exists from 1.11 (the 1.10 carrier shipped
   // the 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION that its CHAR 32 IV_OPERATION truncated),
-  // and 2026-09-23 raised it again to 1.13 because 1.11/1.12 could dispatch the name but never
-  // resumed anything. A 1.10 helper therefore cannot serve it, whatever its inventory says.
+  // 2026-09-23 raised it again to 1.13 because 1.11/1.12 could dispatch the name but never resumed
+  // anything, and 2026-09-24 raised it to 1.14 because 1.13 reached the activation branch but called
+  // DD_TABL_ACT with no protocol channel and never activated the table. A 1.10 helper therefore
+  // cannot serve it, whatever its inventory says.
   const resume = observation(report, "ddic-helper-table-activation-resume")
   assert.equal(resume.availability, "unsupported")
   assert.equal(resume.evidence.source, "version-check")
-  assert.match(resume.reason, /1\.10, which is below the required capability version 1\.13/)
+  assert.match(resume.reason, /1\.10, which is below the required capability version 1\.14/)
   assert.equal(resume.toolObservations, undefined)
 
   // Exactly the two capabilities that dispatch a missing operation are partial; nothing else moves.
@@ -223,9 +225,10 @@ test("a helper that attests every required operation code is available", async (
       ...NUMBER_RANGE_OPERATIONS,
       ...MAINTENANCE_VIEW_OPERATIONS
     ],
-    // 1.13 is the resume tool's contract minimum: 1.11/1.12 routed the operation into conversion
-    // recovery, so the version gate - not the inventory - used to decide that verdict.
-    "1.13"
+    // 1.14 is the resume tool's contract minimum: 1.11/1.12 routed the operation into conversion
+    // recovery and 1.13 could not activate, so the version gate - not the inventory - used to decide
+    // that verdict.
+    "1.14"
   )
 
   const resume = observation(report, "ddic-helper-table-activation-resume")
@@ -276,11 +279,11 @@ test("a helper that attests every required operation code is available", async (
 test("a missing operation code alone makes its tool unsupported", async () => {
   // Falsification inside the suite: with the same helper identity and protocol but one operation
   // removed, only the capability that dispatches it changes verdict. The protocol is raised to the
-  // resume tool's own contract minimum (1.13) so the operation inventory - not the version check -
+  // resume tool's own contract minimum (1.14) so the operation inventory - not the version check -
   // is what decides the verdict.
   const report = await reportWithDdicOperations(
     DEPLOYED_OPERATIONS.filter((opcode) => opcode !== "RESUME_TABLE_ACTIVATION"),
-    "1.13"
+    "1.14"
   )
 
   const resume = observation(report, "ddic-helper-table-activation-resume")
@@ -309,7 +312,7 @@ test("a helper below the required protocol stays unsupported on the version chec
   assert.equal(resume.evidence.source, "version-check")
   assert.equal(
     resume.reason,
-    `The ${DDIC_HELPER} helper self-described protocol 1.6, which is below the required capability version 1.13.`
+    `The ${DDIC_HELPER} helper self-described protocol 1.6, which is below the required capability version 1.14.`
   )
   assert.equal(resume.toolObservations, undefined)
 })
@@ -331,7 +334,7 @@ test("a 1.12 helper - the deployed one during the 2026-09-23 incident - cannot b
   const resume = observation(report, "ddic-helper-table-activation-resume")
   assert.equal(resume.availability, "unsupported")
   assert.equal(resume.evidence.source, "version-check")
-  assert.match(resume.reason, /1\.12, which is below the required capability version 1\.13/)
+  assert.match(resume.reason, /1\.12, which is below the required capability version 1\.14/)
   // The inventory does attest the opcode here, so only the version gate can produce this verdict.
   assert.equal(resume.toolObservations, undefined)
   assert.ok(

@@ -148,14 +148,21 @@ $ddicCapabilityOperations = @(
     "READ_TABLE_TYPE|1.2|R",
     "UPSERT_TABLE_TYPE|1.2|W",
     "READ_TRANSPARENT_TABLE|1.5|R",
-    "CREATE_TRANSPARENT_TABLE|1.5|W",
+    # 1.15：透明表字段写入新增 REFTABLE/REFFIELD（DD03P 参考表/参考字段）。数量(QUAN)与货币
+    # (CURR)字段没有内在单位，DDIC 激活检查会以"指定参考表和参考字段"拒绝，而调用方此前**无法
+    # 表达**这两个属性——2026-09-24 实测：SE11 与助手对同一对象同样失败，日志给出该原因，且
+    # 同日的对照实验（字段全部为字符型的表）创建后 DD02L AS4LOCAL='A' 正常激活，证明这是唯一
+    # 阻塞项（同一检查输出的"增强类别"两行是提示而非错误：对照表 EXCLASS='0' 也激活成功）。
+    # 属性集变了，能拒绝该属性的 1.14 及更早助手就不能再被报成 available，故三个字段写入操作的
+    # sinceVersion 一律抬到 1.15；已发布的 1.14 仍提供 RESUME_TABLE_ACTIVATION，那一行不动。
+    "CREATE_TRANSPARENT_TABLE|1.15|W",
     "DELETE_DOMAIN|1.6|W",
     "DELETE_DATA_ELEMENT|1.6|W",
     "DELETE_STRUCTURE|1.6|W",
     "DELETE_TRANSPARENT_TABLE|1.6|W",
     "DELETE_TABLE_TYPE|1.6|W",
-    "APPEND_TRANSPARENT_TABLE_FIELDS|1.7|W",
-    "PATCH_TRANSPARENT_TABLE_FIELDS|1.7|W",
+    "APPEND_TRANSPARENT_TABLE_FIELDS|1.15|W",
+    "PATCH_TRANSPARENT_TABLE_FIELDS|1.15|W",
     "PATCH_TRANSPARENT_TABLE_SETTINGS|1.7|W",
     "RECOVER_TABLE_CONVERSION|1.7|W",
     "READ_SEARCH_HELP|1.8|R",
@@ -168,12 +175,15 @@ $ddicCapabilityOperations = @(
     # RESUME_TRANSPARENT_TABLE_ACTIVATION，被 CHAR 32 的 IV_OPERATION 截断，从未成功派发过。
     # 写 1.10 等于宣称"某个 1.10 助手投递过 RESUME_TABLE_ACTIVATION"，那是假的。见
     # test/helper-operation-limits.test.ts 与 src/helper-operation-limits.ts。
-    # 1.13 再抬一次：1.11/1.12 的助手虽然能派发这个名字，却从未真正执行过恢复激活——它们把该
+    # 1.14 再抬一次：1.11/1.12 的助手虽然能派发这个名字，却从未真正执行过恢复激活——它们把该
     # 操作当成转换恢复（lv_recover），无工作清单时回 WORKLIST_REQUIRED，有工作清单时执行一次
-    # DD_DB_CONVERTER 并 RETURN，永远到不了自己的 lv_resume 激活分支。既然没有任何已发布助手
-    # 提供**可用**的 RESUME_TABLE_ACTIVATION，sinceVersion 就必须是第一个可用的版本 1.13；否则
-    # 服务端会继续把 1.12 助手报成 available（2026-09-23 事件）。
-    "RESUME_TABLE_ACTIVATION|1.13|W",
+    # DD_DB_CONVERTER 并 RETURN，永远到不了自己的 lv_resume 激活分支。1.13 走通了这条分支，但
+    # 分支里裸调 DD_TABL_ACT：未传 DEVICE/PRID 时 mass_act_tabl 没有协议通道、不改写 ACT_RESULT，
+    # 实测恒返回 ACT_RC=8 / ACT_ROWS=0 且对象保持非活动（2026-09-24 事件，同一缺陷也存在于
+    # TABL 臂的正常创建路径）。既然没有任何已发布助手提供**可用**的 RESUME_TABLE_ACTIVATION，
+    # sinceVersion 就必须是第一个可用的版本 1.14；否则服务端会继续把 1.13 助手报成 available
+    # （与 2026-09-23 事件同一类错误）。
+    "RESUME_TABLE_ACTIVATION|1.14|W",
     # D6-3 编号范围对象（TNRO + TNROT，区间值不在范围）。1.11 与 RESUME_TABLE_ACTIVATION 同批发布：
     # 三者都是本轮新加的 CASE 分支，任何已发布的助手都不曾提供，因此 sinceVersion 只能是 1.11。
     # 操作码长度：READ 24 / UPSERT 26 / DELETE 26，均在 DDIC 助手 BAPIRET2-PARAMETER(CHAR 32) 之内。
@@ -3245,6 +3255,9 @@ function New-DdicFunctionSource {
         "        ENDIF.",
         "        IF lv_ap_property <> 'FIELDNAME'",
         "           AND lv_ap_property <> 'ROLLNAME'",
+        # 1.15：追加的透明表字段同样可能是数量/货币型，缺参考表/参考字段一样激活不了。
+        "           AND lv_ap_property <> 'REFTABLE'",
+        "           AND lv_ap_property <> 'REFFIELD'",
         "           AND lv_ap_property <> 'DATATYPE'",
         "           AND lv_ap_property <> 'LENG'",
         "           AND lv_ap_property <> 'DECIMALS'",
@@ -4210,6 +4223,10 @@ function New-DdicFunctionSource {
         "             AND ( lv_object_type <> 'TABL'",
         "               OR ( lv_property <> 'KEYFLAG'",
         "                 AND lv_property <> 'NOTNULL'",
+        # 1.15：参考表/参考字段。DD03P 的这两个组件由下面的 ASSIGN COMPONENT 直接承载，
+        # 无需额外赋值代码；没有它们，数量/货币字段的定义写得出、却永远激活不了。
+        "                 AND lv_property <> 'REFTABLE'",
+        "                 AND lv_property <> 'REFFIELD'",
         "                 AND lv_property <> 'PRECFIELD'",
         "                 AND lv_property <> 'COMPTYPE'",
         "                 AND lv_property <> 'ADMINFIELD'",
@@ -5449,28 +5466,34 @@ function New-DdicFunctionSource {
         "          IF lv_inactive_exists <> 'N'.",
         "            ev_status = 'E'. ev_code = 'NO_INACTIVE_VERSION'.",
         "            ev_message = 'No inactive DDIC version exists to resume'.",
-        # 1.13：该分支的 ev_version 跟随表里的 RESUME_TABLE_ACTIVATION|1.13 行。1.11 曾是对的值
-        # （旧名 1.10 被 CHAR 32 截断、从未派发），但 1.11/1.12 载体虽然能派发这个名字却从未真正
-        # 执行恢复激活——它们走的是转换恢复路径。首个可用的恢复激活就是本次修复所在的 1.13。
-        "            ev_version = '1.13'. RETURN.",
+        # 1.14：该分支的 ev_version 跟随表里的 RESUME_TABLE_ACTIVATION|1.14 行。1.11 曾是对的值
+        # （旧名 1.10 被 CHAR 32 截断、从未派发），1.11/1.12 能派发这个名字却走转换恢复路径，
+        # 1.13 走到了本分支却因裸调 DD_TABL_ACT 从未激活过任何对象。首个真正可用的恢复激活
+        # 就是本次修复所在的 1.14。
+        "            ev_version = '1.14'. RETURN.",
         "          ENDIF.",
         "          REFRESH lt_act_res.",
-        # DD_TABL_ACT-TABNAME 是 DD02L-TABNAME（CHAR 30），而 IV_OBJECT_NAME 是 TADIR-OBJ_NAME
-        # （CHAR 40）。字符类型长度不同即视为不兼容，调用会以 CALL_FUNCTION_CONFLICT_TYPE 终止
-        # （第八次 F8，body 4089 与 4027）。lv_ddic_name 是 DDOBJNAME（CHAR 30），同分支的
-        # DDIF_TABL_PUT 已经在用它。
-        "          CALL FUNCTION 'DD_TABL_ACT'",
-        "            EXPORTING tabname = lv_ddic_name auth_chk = 'X'",
+        # 1.14：透明表的激活必须走 DDIF 包装器，不能裸调 DD_TABL_ACT。DDIF_TABL_ACTIVATE 先
+        # START_PROTOCOL 'TABL' 取得 GR_PRID，再以 DEVICE = ' ' 与 PRID = GR_PRID 调用
+        # DD_TABL_ACT；裸调省略这些参数时 DEVICE 取默认 'F'、PRID = 0，mass_act_tabl 拿不到
+        # 可用协议通道，于是不改写 ACT_RESULT——调用方读到的是第 121 行的初始化值 8、
+        # act_res_tab 为空、sy-subrc = 0，表现成「激活失败但没有任何原因」。同臂的 STRU 分支
+        # 与兄弟分支（DDIF_DOMA / DTEL / SHLP / ENQU / TTYP_ACTIVATE）都是这么调的，只有
+        # TABL 臂的两处激活曾是例外。依据 .doc/d6-5-activation-sufficiency-20260922.md
+        # §4 步骤 2：该文确认 DDIF_TABL_ACTIVATE 是标准单对象激活路径，且基表 ACTFLAG = ' '
+        # 亦可（mode 1 的 '4U ' 允许）。NAME 是 DDOBJNAME（CHAR 30），与同臂 DDIF_TABL_PUT
+        # 一致，因此也不再有 DD_TABL_ACT-TABNAME（DD02L-TABNAME，CHAR 30）对
+        # IV_OBJECT_NAME（TADIR-OBJ_NAME，CHAR 40）的 CALL_FUNCTION_CONFLICT_TYPE 风险。
+        # DDIF_TABL_ACTIVATE 不返回 ACT_RES_TAB，故 lt_act_res 保持为空；失败原因写入 ABAP/4
+        # Dictionary 日志 ACTTABL<NAME>，不在本接口的回执里。
+        "          CALL FUNCTION 'DDIF_TABL_ACTIVATE'",
+        "            EXPORTING name = lv_ddic_name auth_chk = 'X'",
         "              excommit = 'X'",
-        "            IMPORTING act_result = lv_rc",
-        "            TABLES act_res_tab = lt_act_res",
-        "            EXCEPTIONS actok_failure = 1 dbchange_failure = 2",
-        "              lockact_failure = 3 ntab_gen_failure = 4",
-        "              put_failure = 5 read_failure = 6",
-        "              unlockact_failure = 7 access_failure = 8",
-        "              OTHERS = 9.",
-        # 必须在 DD_TABL_ACT 之后立刻取 sy-subrc：紧随其后的诊断性 READ TABLE 会把 sy-subrc 改成 4
-        # （成功激活时 ACT_RES_TAB 为空），从而把成功激活误判为失败。
+        "            IMPORTING rc = lv_rc",
+        "            EXCEPTIONS not_found = 1 put_failure = 2",
+        "              OTHERS = 3.",
+        # 必须在激活调用之后立刻取 sy-subrc：紧随其后的诊断性 READ TABLE 会把 sy-subrc 改成 4
+        # （DDIF_TABL_ACTIVATE 不返回 ACT_RES_TAB，lt_act_res 恒为空），从而把成功激活误判为失败。
         "          lv_activation_subrc = sy-subrc.",
         "          READ TABLE lt_act_res INTO ls_act_res",
         "            WITH KEY tabname = lv_ddic_name.",
@@ -5524,22 +5547,27 @@ function New-DdicFunctionSource {
         "        ENDIF.",
         "        IF lv_put_subrc = 0.",
         "          REFRESH lt_act_res.",
-        # DD_TABL_ACT-TABNAME 是 DD02L-TABNAME（CHAR 30），而 IV_OBJECT_NAME 是 TADIR-OBJ_NAME
-        # （CHAR 40）。字符类型长度不同即视为不兼容，调用会以 CALL_FUNCTION_CONFLICT_TYPE 终止
-        # （第八次 F8，body 4089 与 4027）。lv_ddic_name 是 DDOBJNAME（CHAR 30），同分支的
-        # DDIF_TABL_PUT 已经在用它。
-        "          CALL FUNCTION 'DD_TABL_ACT'",
-        "            EXPORTING tabname = lv_ddic_name auth_chk = 'X'",
+        # 1.14：透明表的激活必须走 DDIF 包装器，不能裸调 DD_TABL_ACT。DDIF_TABL_ACTIVATE 先
+        # START_PROTOCOL 'TABL' 取得 GR_PRID，再以 DEVICE = ' ' 与 PRID = GR_PRID 调用
+        # DD_TABL_ACT；裸调省略这些参数时 DEVICE 取默认 'F'、PRID = 0，mass_act_tabl 拿不到
+        # 可用协议通道，于是不改写 ACT_RESULT——调用方读到的是第 121 行的初始化值 8、
+        # act_res_tab 为空、sy-subrc = 0，表现成「激活失败但没有任何原因」。同臂的 STRU 分支
+        # 与兄弟分支（DDIF_DOMA / DTEL / SHLP / ENQU / TTYP_ACTIVATE）都是这么调的，只有
+        # TABL 臂的两处激活曾是例外。依据 .doc/d6-5-activation-sufficiency-20260922.md
+        # §4 步骤 2：该文确认 DDIF_TABL_ACTIVATE 是标准单对象激活路径，且基表 ACTFLAG = ' '
+        # 亦可（mode 1 的 '4U ' 允许）。NAME 是 DDOBJNAME（CHAR 30），与同臂 DDIF_TABL_PUT
+        # 一致，因此也不再有 DD_TABL_ACT-TABNAME（DD02L-TABNAME，CHAR 30）对
+        # IV_OBJECT_NAME（TADIR-OBJ_NAME，CHAR 40）的 CALL_FUNCTION_CONFLICT_TYPE 风险。
+        # DDIF_TABL_ACTIVATE 不返回 ACT_RES_TAB，故 lt_act_res 保持为空；失败原因写入 ABAP/4
+        # Dictionary 日志 ACTTABL<NAME>，不在本接口的回执里。
+        "          CALL FUNCTION 'DDIF_TABL_ACTIVATE'",
+        "            EXPORTING name = lv_ddic_name auth_chk = 'X'",
         "              excommit = 'X'",
-        "            IMPORTING act_result = lv_rc",
-        "            TABLES act_res_tab = lt_act_res",
-        "            EXCEPTIONS actok_failure = 1 dbchange_failure = 2",
-        "              lockact_failure = 3 ntab_gen_failure = 4",
-        "              put_failure = 5 read_failure = 6",
-        "              unlockact_failure = 7 access_failure = 8",
-        "              OTHERS = 9.",
-        # 必须在 DD_TABL_ACT 之后立刻取 sy-subrc：紧随其后的诊断性 READ TABLE 会把 sy-subrc 改成 4
-        # （成功激活时 ACT_RES_TAB 为空），从而把成功激活误判为失败。
+        "            IMPORTING rc = lv_rc",
+        "            EXCEPTIONS not_found = 1 put_failure = 2",
+        "              OTHERS = 3.",
+        # 必须在激活调用之后立刻取 sy-subrc：紧随其后的诊断性 READ TABLE 会把 sy-subrc 改成 4
+        # （DDIF_TABL_ACTIVATE 不返回 ACT_RES_TAB，lt_act_res 恒为空），从而把成功激活误判为失败。
         "          lv_activation_subrc = sy-subrc.",
         "          READ TABLE lt_act_res INTO ls_act_res",
         "            WITH KEY tabname = lv_ddic_name.",

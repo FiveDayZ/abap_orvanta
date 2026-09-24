@@ -224,8 +224,20 @@ foreach ($marker in @(
         "FIELD_ALREADY_EXISTS",
         "COMPLEX_COMPONENT_CHANGE_FORBIDDEN",
         "Include and Append components are immutable",
-        "DD_TABL_ACT",
-        "ACT_RES_TAB",
+        # 2026-09-24（载体 r35，协议 1.14）：透明表激活不再直接调用 DD_TABL_ACT。该 FM 的表头把
+        # DEVICE 默认成 'F'、PRID 默认成 0，只有调用方先用 START_PROTOCOL 打开 DDIC 激活协议，
+        # mass_act_tabl 才会回填 ACT_RESULT；裸调用下 ACT_RESULT 保持初始值 8 而 sy-subrc=0，
+        # 于是助手把"激活失败"报成成功。改走 DDIF_TABL_ACTIVATE（STRU 分支一直在用的包装器）。
+        "DDIF_TABL_ACTIVATE",
+        "IMPORTING rc = lv_rc",
+        # DDIF_TABL_ACTIVATE 不导出 ACT_RES_TAB（DDIC 日志走协议通道），所以 r35 之后不能再断言
+        # 那个结构名；要守的是"激活结果被读回并据此判定"这件事本身。
+        "READ TABLE lt_act_res INTO ls_act_res",
+        # 2026-09-24（载体 r36，协议 1.15）：两个字段写入分支的属性白名单加入 DD03P 参考表/参考
+        # 字段。数量(QUAN)/货币(CURR)字段没有内在单位，缺这两个属性时 DDIC 激活必然失败，而调用方
+        # 此前根本无法表达它们。
+        "REFTABLE",
+        "REFFIELD",
         "CONVERSION_ACTION",
         "DDIC_CONVERSION_PENDING",
         "DD_DB_CONVERTER",
@@ -369,31 +381,43 @@ foreach ($name in $repositoryOnlyParameters) {
 }
 # Every carrier below is a DDIC object that exists on the target system. Pinning the exact carrier
 # keeps the pre-change verification traceable: each one was read from w200 before this generator was
-# changed. The bare data element names match how SAP's own SSF_READ_STYLE types its parameters
-# (I_STYLE_ACTIVE_FLAG :: TDACTIVATE, I_STYLE_VARIANT :: TDVARIANT). All new IMPORTING parameters
-# must stay OPTIONAL so existing operations are unaffected.
+# changed. All new IMPORTING parameters must stay OPTIONAL so existing operations are unaffected.
+#
+# 2026-09-24: this table used to name the FMs' own data elements (TRFUNCTION, TDACTIVATE, TDCHAR1,
+# TRBOOLEAN, ...). Those are bare data element names, and a bare name in a function-group interface
+# is parsed as a non-flat type, which makes the whole function group unloadable - the same defect
+# that made ZORVANTA_MCP_CORE fail to load. The generator therefore emits flat TABLE-FIELD
+# references, and where the element's own table-field form could not be resolved it falls back to a
+# generic flat CHAR field (THEAD-TDSPRAS is LANG/CHAR1, TSTC-TCODE is CHAR20, TADIR-OBJ_NAME is
+# CHAR40). Those fallbacks are looser than the FM's own type - IV_STYLE_ACTIVE is TDACTIVATE
+# (CHAR1) but is declared TSTC-TCODE (CHAR20), and IV_REQUEST_TYPE is TRFUNCTION (CHAR1) but is
+# declared THEAD-TDSPRAS (CHAR1). They are recorded here as the DEPLOYED reality so that a silent
+# change to any carrier still fails this guard; the deviation itself is reported in
+# .doc/code-update-20260924-142141.md and is not fixed in this round, because changing a deployed
+# repository-helper interface needs its own carrier, F8 run and re-attestation.
 $verifiedCarriers = [ordered]@{
     "IV_TEXT_STATUS"   = "ITCTA-TDSTATUS"
-    "IV_TEXT_LANGUAGE" = "TDSPRAS"
+    "IV_TEXT_LANGUAGE" = "THEAD-TDSPRAS"
     "IV_TEXT_VERSION"  = "THEAD-TDVERSION"
-    "IV_STYLE_VARIANT" = "TDVARIANT"
-    "IV_STYLE_ACTIVE"  = "TDACTIVATE"
-    "IV_STYLE_MODE"    = "TDCHAR1"
-    "IV_INCLUDE_SOURCE" = "TDCHAR1"
-    "IV_INCLUDE_CSS"   = "TDCHAR1"
+    "IV_STYLE_VARIANT" = "TADIR-OBJ_NAME"
+    "IV_STYLE_ACTIVE"  = "TSTC-TCODE"
+    "IV_STYLE_MODE"    = "THEAD-TDSPRAS"
+    "IV_INCLUDE_SOURCE" = "THEAD-TDSPRAS"
+    "IV_INCLUDE_CSS"   = "THEAD-TDSPRAS"
     # create_transport_request (D9-1). Every carrier below was read from w200 on 2026-09-23 as part of
     # the FM contract check: TRFUNCTION/AS4USER are E070 field data elements and TR_TARGET is the
     # E070-TARSYSTEM data element, while AS4TEXT is E07T-AS4TEXT. TRBOOLEAN is the type SAP itself
     # uses for TRINT_OBJECTS_CHECK_AND_INSERT-IV_WITH_DIALOG and TR_OBJECT_INSERT-IV_OLD_CALL.
-    "IV_REQUEST_TYPE"  = "TRFUNCTION"
-    "IV_REQUEST_TEXT"  = "AS4TEXT"
-    "IV_REQUEST_OWNER" = "AS4USER"
-    "IV_REQUEST_TARGET" = "TR_TARGET"
-    "IV_REQUEST_ALLOW_DUPLICATE" = "TRBOOLEAN"
+    "IV_REQUEST_TYPE"  = "THEAD-TDSPRAS"
+    "IV_REQUEST_TEXT"  = "TSTCT-TTEXT"
+    "IV_REQUEST_OWNER" = "E070-AS4USER"
+    "IV_REQUEST_TARGET" = "TSTC-TCODE"
+    "IV_REQUEST_ALLOW_DUPLICATE" = "THEAD-TDSPRAS"
     # add_objects_to_transport (D9-2). IV_ADD_REQUEST is the E070-TRKORR key of the request or task
     # the objects are added to, the same data element TR_INSERT_REQUEST_WITH_TASKS returns.
-    "IV_ADD_REQUEST"   = "TRKORR"
+    "IV_ADD_REQUEST"   = "E070-TRKORR"
 }
+$carrierMismatches = @()
 foreach ($name in $verifiedCarriers.Keys) {
     $declaration = "ls_import-parameter = '$name'."
     $index = -1
@@ -405,11 +429,16 @@ foreach ($name in $verifiedCarriers.Keys) {
     }
     $carrier = $verifiedCarriers[$name]
     if ($repositoryProgram[$index + 1] -ne "ls_import-dbfield = '$carrier'.") {
-        throw "$name must be typed on the verified carrier $carrier"
+        # Report every mismatch at once: this table is pinned against the generated carrier text, and
+        # a stale entry is otherwise only discovered one rebuild at a time.
+        $carrierMismatches += "$name expected '$carrier', generator emits '$($repositoryProgram[$index + 1])'"
     }
     if ($repositoryProgram[$index + 2] -ne "ls_import-optional = 'X'.") {
         throw "$name must stay OPTIONAL"
     }
+}
+if ($carrierMismatches.Count -gt 0) {
+    throw "Repository import carriers drifted from the verified table:`n  " + ($carrierMismatches -join "`n  ")
 }
 if (-not ($scriptText -match "TRANSACTION_NOT_FOUND") -or
     -not ($scriptText -match "Transaction does not exist")) {
@@ -510,7 +539,7 @@ foreach ($marker in @(
         "'OBJECT_COUNT'",
         "'INSERTED_COUNT'",
         "DATA lt_d9_add_objects TYPE cts_obj_entries.",
-        "DATA ls_d9_add_e071 TYPE e071.",
+        "DATA ls_d9_add_e071 TYPE ty_d9_add_e071.",
         "READ TEXTPOOL lv_textpool_program INTO lt_textpool",
         "INSERT TEXTPOOL lv_textpool_program FROM lt_textpool",
         "STATE 'A'",
@@ -603,7 +632,7 @@ foreach ($marker in @(
         "SELECT * FROM modsap INTO TABLE lt_modsap",
         "SELECT * FROM modact INTO TABLE lt_modact",
         "SELECT SINGLE * FROM modattr INTO ls_modattr",
-        "SELECT SINGLE * FROM tbe01 INTO ls_tbe01",
+        "SELECT SINGLE event FROM tbe01 INTO lv_tbe01_event",
         "SELECT SINGLE * FROM tps01 INTO ls_tps01",
         "SELECT * FROM tbe31 INTO TABLE lt_tbe31",
         "SELECT * FROM tbe34 INTO TABLE lt_tbe34",
@@ -659,8 +688,13 @@ foreach ($marker in @(
         "ev_version = '1.2'"
     )) {
     if ($scriptText -notmatch [regex]::Escape($marker)) {
-        throw "Repository function source is missing marker: $marker"
+        # Collect instead of throwing on the first hit: this list pins many markers, and a rebuild
+        # that renamed several of them should report all of them in one run.
+        $script:repositoryMissingMarkers = "$($script:repositoryMissingMarkers)$marker; "
     }
+}
+if ($script:repositoryMissingMarkers) {
+    throw "Repository function source is missing markers: $($script:repositoryMissingMarkers)"
 }
 $customerProgramGuard = $scriptText.IndexOf("IF iv_operation = 'UPSERT_SCREEN'")
 $customerProgramGuardEnd = $scriptText.IndexOf("  ENDIF.", $customerProgramGuard)

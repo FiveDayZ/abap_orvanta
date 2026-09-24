@@ -57,10 +57,10 @@ test("a repository version shortfall names the repository carrier, not the DDIC 
 })
 
 test("the remedy names the SAP-side step and states what does not work", () => {
-  const remedy = helperDeploymentRemedy(DDIC_HELPER, "1.13")
+  const remedy = helperDeploymentRemedy(DDIC_HELPER, "1.14")
   assert.match(remedy, /ZORVANTA_MCP_DDIC_LOCK_DEPLOY/)
   assert.match(remedy, /SE38/)
-  assert.match(remedy, /1\.13/)
+  assert.match(remedy, /1\.14/)
   // The mistake this exists to prevent: rebuilding the service and expecting SAP to change.
   assert.match(remedy, /cannot change the SAP-side helper protocol/)
 })
@@ -98,7 +98,7 @@ test("a version gap verdict carries the remedy, not only the shortfall", () => {
     } satisfies SapHelperCapabilities
   })
   assert.equal(spec.observation.availability, "unsupported")
-  assert.match(spec.observation.reason, /below the required capability version 1\.13/)
+  assert.match(spec.observation.reason, /below the required capability version 1\.14/)
   assert.match(spec.observation.remedy ?? "", /ZORVANTA_MCP_DDIC_LOCK_DEPLOY/)
   assert.match(spec.observation.remedy ?? "", /cannot change the SAP-side helper protocol/)
 })

@@ -181,15 +181,16 @@ if (!offline) {
   // Carrier ordering invariant (.doc/d6-carrier-ordering-invariant.md): a carrier replaces the whole
   // body, so it may only be applied on top of a helper that already contains every predecessor
   // change. The check must therefore accept the protocol the previous carrier deployed: 1.12 became
-  // the live protocol on 2026-09-23 (carrier r26, marker 1.12 47A7813A) and 1.13 later the same day
-  // (carrier r32, marker 1.13 A815B8A8), which finally deployed the resume-activation dispatch.
+  // the live protocol on 2026-09-23 (carrier r26, marker 1.12 47A7813A), 1.13 later the same day
+  // (carrier r32, marker 1.13 A815B8A8), and 1.14 on 2026-09-24 (carrier r35), which replaced the
+  // TABL arm's two raw DD_TABL_ACT calls with DDIF_TABL_ACTIVATE.
   // Listing each deployed protocol here is what lets the next carrier be generated at all; leaving
   // one out makes every subsequent run abort on its own precondition.
   assert.ok(
-    ["1.10", "1.11", "1.12", "1.13"].some((protocol) =>
+    ["1.10", "1.11", "1.12", "1.13", "1.14", "1.15"].some((protocol) =>
       liveText.includes(`PROTOCOL|MAX|${protocol}`)
     ),
-    "the deployed helper is not at protocol 1.10, 1.11, 1.12 or 1.13: apply the previous carrier first"
+    "the deployed helper is not at protocol 1.10, 1.11, 1.12, 1.13, 1.14 or 1.15: apply the previous carrier first"
   )
   for (const op of REQUIRED_OPERATIONS) {
     // The resume operation was renamed in R2D: the deployed helper still carries
