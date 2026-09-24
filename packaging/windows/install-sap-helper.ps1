@@ -225,18 +225,24 @@ if ($SecurePassword.Length -eq 0) {
 
 $actions = switch ($Mode) {
     "inspect_repository" { @("InspectRepositoryApis") }
-    "install" { @("Install", "InstallRepositoryApi", "InstallDdicApi") }
+    # install/upgrade must bring the helper APIs to the version bundled in THIS package. The plain
+    # Install* actions only create a missing object: New-InstallProgram fetches the existing object
+    # lines only when -ReplaceExisting is set, and otherwise writes "ALREADY_EXISTS" and leaves the
+    # deployed helper untouched. That silently kept a stale helper after a package upgrade - a fixed
+    # guard in bootstrap-sap-helper.ps1 never reached w200 - so every mode that is supposed to
+    # converge uses the replace-aware actions (2026-09-24 22:43 incident).
+    "install" { @("RepairInterface", "RepairRepositoryApi", "RepairDdicApi") }
     "upgrade" {
         if ($TransportNumber) {
             @(
                 "InspectAssignment",
                 "AssignPackageTransport",
-                "Install",
+                "RepairInterface",
                 "RepairRepositoryApi",
                 "RepairDdicApi"
             )
         } else {
-            @("Install", "RepairRepositoryApi", "RepairDdicApi")
+            @("RepairInterface", "RepairRepositoryApi", "RepairDdicApi")
         }
     }
     "repair" { @("RepairInterface", "RepairRepositoryApi", "RepairDdicApi") }

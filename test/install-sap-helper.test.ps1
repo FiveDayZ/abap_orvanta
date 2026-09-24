@@ -166,8 +166,8 @@ try {
 
     $env:ABAP_MCP_INSTALLER_HELPERS_READY = "1"
     $expectedModes = @{
-        install = "Install|,InstallRepositoryApi|,InstallDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
-        upgrade = "Install|,RepairRepositoryApi|,RepairDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
+        install = "RepairInterface|,RepairRepositoryApi|,RepairDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
+        upgrade = "RepairInterface|,RepairRepositoryApi|,RepairDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
         repair = "RepairInterface|,RepairRepositoryApi|,RepairDdicApi|,DiagnoseHelperApis|,DiagnoseFunctionGroup|"
     }
 
@@ -179,7 +179,7 @@ try {
     $expectedTransportActions = @(
         "InspectAssignment|GR2K923472",
         "AssignPackageTransport|GR2K923472",
-        "Install|GR2K923472",
+        "RepairInterface|GR2K923472",
         "RepairRepositoryApi|GR2K923472",
         "RepairDdicApi|GR2K923472",
         "DiagnoseHelperApis|GR2K923472",
@@ -198,6 +198,27 @@ try {
             throw "$mode invoked an unexpected action sequence: $((Get-Actions) -join ',')"
         }
     }
+
+    # A mode that is supposed to converge must never use a create-only action. Those leave an
+    # already-deployed helper untouched (New-InstallProgram only replaces with -ReplaceExisting), so a
+    # fixed guard in bootstrap-sap-helper.ps1 never reaches SAP and the user sees the old behaviour
+    # after installing a new package (2026-09-24 22:43 incident).
+    foreach ($mode in @("install", "upgrade", "repair")) {
+        Remove-Item -LiteralPath $actionLog -Force -ErrorAction SilentlyContinue
+        & $installer -Mode $mode -ConnectionId w200 -ConfigPath $configPath -BootstrapScriptPath $fakeBootstrap -SecurePassword $password | Out-Null
+        $createOnly = @((Get-Actions) | Where-Object { $_ -match '^(Install|InstallRepositoryApi|InstallDdicApi)\|' })
+        if ($createOnly.Count -ne 0) {
+            throw "$mode used a create-only helper action and would leave a stale helper: $($createOnly -join ',')"
+        }
+    }
+
+    # The packaged setup is how a user installs a new build, so it must deploy the helpers rather than
+    # only reporting on them.
+    $setupSource = Get-Content -Raw -LiteralPath (Join-Path $projectRoot "packaging\windows\setup.ps1")
+    if ($setupSource -notmatch '-Mode\s+install\b') {
+        throw "setup.ps1 must install the SAP helpers; a preflight-only setup leaves the deployed helper stale"
+    }
+    Write-Host "Replace-aware helper install : PASS"
 
     $badConfig = $config | ConvertTo-Json -Depth 5 | ConvertFrom-Json
     $badConfig.connections[0] | Add-Member -NotePropertyName password -NotePropertyValue "must-not-be-read"

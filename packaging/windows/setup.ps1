@@ -65,8 +65,8 @@ if ($SecurePassword.Length -eq 0) {
 }
 
 try {
-    Write-Host "[1/3] SAP helper preflight"
-    & $installerPath -Mode preflight -ConnectionId $ConnectionId -SecurePassword $SecurePassword | Out-Host
+    Write-Host "[1/3] SAP helper install (creates or updates the helper APIs)"
+    & $installerPath -Mode install -ConnectionId $ConnectionId -SecurePassword $SecurePassword | Out-Host
 
     if ($SkipCodex) {
         Write-Host "[2/3] Codex registration skipped"

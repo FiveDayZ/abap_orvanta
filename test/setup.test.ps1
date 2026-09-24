@@ -53,10 +53,12 @@ param(
     [Security.SecureString]$SecurePassword
 )
 if ($env:ABAP_MCP_SETUP_FAIL_PREFLIGHT -eq "1") { throw "controlled preflight failure" }
-if ($Mode -ne "preflight" -or $ConnectionId -ne "w200" -or -not $SecurePassword) {
+# setup.ps1 must deploy the helpers, not merely report on them: a preflight-only setup left the
+# deployed helper stale after a package upgrade (2026-09-24 22:43 incident).
+if ($Mode -ne "install" -or $ConnectionId -ne "w200" -or -not $SecurePassword) {
     throw "Invalid preflight contract."
 }
-Add-Content -LiteralPath $env:ABAP_MCP_SETUP_ACTION_LOG -Value "preflight"
+Add-Content -LiteralPath $env:ABAP_MCP_SETUP_ACTION_LOG -Value "install"
 '{"status":{"ready":true}}'
 '@ | Set-Content -LiteralPath (Join-Path $testRoot "install-sap-helper.ps1") -Encoding utf8
 
@@ -108,7 +110,7 @@ try {
     }
 
     & $setup -ConnectionId w200 -Port 4947 -ServerName setup_test -ForceCodex -SecurePassword $password
-    if ((Get-Actions) -join "," -ne "preflight,codex,start") {
+    if ((Get-Actions) -join "," -ne "install,codex,start") {
         throw "One-click setup invoked an unexpected sequence: $((Get-Actions) -join ',')"
     }
     if (-not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($passwordEnv, "Process"))) {
@@ -117,7 +119,7 @@ try {
 
     Remove-Item -LiteralPath $actionLog -Force
     & $setup -ConnectionId w200 -Port 4947 -ServerName setup_test -SkipCodex -SecurePassword $password
-    if ((Get-Actions) -join "," -ne "preflight,start") {
+    if ((Get-Actions) -join "," -ne "install,start") {
         throw "SkipCodex invoked an unexpected sequence."
     }
 
