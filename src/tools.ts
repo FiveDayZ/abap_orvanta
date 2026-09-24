@@ -1,5 +1,11 @@
 import { resolve } from "node:path"
 import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
+import {
+  isFunctionModuleType,
+  searchCodeOfAdtType,
+  searchTypeCode,
+  searchTypeCodes
+} from "./object-types.js"
 import { preSapValidation } from "./pre-sap-validation.js"
 import { isMissing } from "./write-prechange-evidence.js"
 import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
@@ -4781,7 +4787,7 @@ export class ToolService {
     const objects = await this.backend.searchObjects(
       connectionId,
       input.pattern,
-      input.types,
+      input.types ? searchTypeCodes(input.types) : undefined,
       input.maxResults ?? 20
     )
     if (!objects.length) return `No ABAP objects found matching pattern: ${input.pattern}`
@@ -6620,9 +6626,9 @@ export class ToolService {
   async getWorkspaceUri(input: WorkspaceUriInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const requestedType = input.objectType.toUpperCase()
-    const functionModule = new Set(["FUGR/FF", "FUNC/FM", "FUNC"]).has(requestedType)
+    const functionModule = isFunctionModuleType(requestedType)
     const functionGroupInclude = requestedType === "FUGR/I"
-    const searchType = functionModule ? "FUNC" : functionGroupInclude ? "PROG" : requestedType
+    const searchType = searchTypeCode(requestedType)
     const results = await this.backend.searchObjects(
       connectionId,
       input.objectName,
@@ -6637,7 +6643,7 @@ export class ToolService {
       return (
         object.name.toUpperCase() === input.objectName.toUpperCase() &&
         (functionModule
-          ? new Set(["FUGR/FF", "FUNC/FM", "FUNC"]).has(actualType)
+          ? isFunctionModuleType(actualType)
           : functionGroupInclude
             ? actualType === requestedType ||
               actualType === "PROG" ||
@@ -6755,7 +6761,18 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const object = await this.findOne(connectionId, input.objectName, input.objectType)
     if (!object) {
-      return ` Failed to get version history: Could not find ABAP object: ${input.objectName}. Please check the object name and ensure it exists.`
+      // The repository search skips object types the target cannot search, so an empty result is a
+      // failed lookup, not proof of absence. Measured on w200: a type token the search cannot use
+      // produced exactly this answer for a live function module.
+      return (
+        ` Failed to get version history: no ABAP object matched ${input.objectName}` +
+        `${input.objectType ? ` (${input.objectType})` : ""} in ${connectionId}. The version feed ` +
+        `was not read, so this is not evidence that the object has no versions or does not exist. ` +
+        `Check the object type token: the repository search takes short codes (FUNC, PROG, CLAS, ` +
+        `TABL, FUGR, ...) while this service reports ADT paths (FUGR/FF, PROG/P, CLAS/OC, ...); ` +
+        `both are accepted here. Confirm the object with get_abap_object_lines or ` +
+        `get_abap_object_workspace_uri.`
+      )
     }
     try {
       // ADT search returns a repository-navigation URL for DDIC objects, which cannot serve an ADT
@@ -6999,12 +7016,10 @@ export class ToolService {
       throw new Error("parentName must not exceed 26 characters")
     }
     const objectName = deletedSourceObjectName(input.objectType, input.objectName, parentName)
-    const searchTypes =
-      input.objectType === "FUGR/FF"
-        ? ["FUNC"]
-        : input.objectType === "FUGR/I"
-          ? ["PROG"]
-          : [input.objectType]
+    // The caller's type token is translated by the shared vocabulary. This path used to carry its
+    // own two-alias copy (`FUGR/FF` and `FUGR/I` only) and passed every other token through, so a
+    // function module named `FUNC/FM` and any ADT path the search rejects reached the search raw.
+    const searchTypes = searchTypeCodes([input.objectType])
 
     const matches = await this.backend.searchObjects(connectionId, objectName, searchTypes, 20)
     const object = matches.find(
@@ -8117,10 +8132,13 @@ export class ToolService {
     objectName: string,
     objectType?: string
   ): Promise<AbapObjectInfo | undefined> {
+    // The caller may hand back the ADT type path this service printed in its own results
+    // (`FUGR/FF`); the repository search only understands the short code (`FUNC`). Searching the
+    // path made the backend skip the type and this helper answer "not found" for a live object.
     const results = await this.backend.searchObjects(
       connectionId,
       objectName,
-      objectType ? [objectType] : undefined,
+      objectType ? [searchTypeCode(objectType)] : undefined,
       1
     )
     return results[0]
@@ -10078,7 +10096,7 @@ function transactionFor(objectType: string): { name: string; field: string; okco
   if (objectType === "CLAS/OC" || objectType === "CLAS/I") {
     return { name: "SE24", field: "SEOCLASS-CLSNAME", okcode: "WB_EXEC" }
   }
-  if (new Set(["FUGR/FF", "FUNC/FM", "FUNC"]).has(objectType)) {
+  if (isFunctionModuleType(objectType)) {
     return { name: "SE37", field: "RS38L-NAME", okcode: "WB_EXEC" }
   }
   return { name: "SE38", field: "RS38M-PROGRAMM", okcode: "STRT" }
@@ -13884,14 +13902,13 @@ function deletedSourceTypeMatches(
   requested: DeleteSourceObjectInput["objectType"],
   actual: string
 ): boolean {
-  const normalized = actual.toUpperCase()
-  if (requested === "FUGR/FF") {
-    return normalized === "FUGR/FF" || normalized === "FUNC/FM" || normalized === "FUNC"
-  }
-  if (requested === "FUGR/I") {
-    return normalized === "FUGR/I" || normalized === "PROG/I" || normalized === "PROG"
-  }
-  return normalized === requested
+  // The requested token and the type SAP reports name the same object kind when they classify to
+  // the same search code: a function module is `FUGR/FF` to a caller and `FUNC` to a search. A
+  // fourth hand-written alias list lived here, which is how the copies drifted apart.
+  const requestedCode = searchCodeOfAdtType(requested)
+  const actualCode = searchCodeOfAdtType(actual)
+  if (requestedCode && actualCode) return requestedCode === actualCode
+  return actual.trim().toUpperCase() === requested.trim().toUpperCase()
 }
 
 function functionGroupChildOwnedBy(uri: string, parentName: string): boolean {

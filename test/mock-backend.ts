@@ -56,6 +56,7 @@ import type {
   DebugVariableRequest
 } from "../src/debug-manager.js"
 import { findAndReplaceSource } from "../src/source-edit.js"
+import { searchCodeOfAdtType } from "../src/object-types.js"
 import { resolveEditableSourceTarget } from "../src/adt-backend.js"
 
 const objects: AbapObjectInfo[] = [
@@ -90,6 +91,18 @@ const objects: AbapObjectInfo[] = [
     package: "ZVALIDATION",
     systemType: "CUSTOM",
     uri: "/sap/bc/adt/ddic/tables/ztable_demo"
+  },
+  {
+    // A function module is the case that exposes the two-vocabulary trap: the repository search is
+    // asked for `FUNC` and answers with the ADT path `FUGR/FF`, which the callers then hand back.
+    // Without a row here the mock could not reproduce the false "object does not exist" answer that
+    // `get_version_history` gave on w200 for a live function module (2026-09-25T00:37).
+    name: "Z_FM_DEMO",
+    type: "FUGR/FF",
+    description: "Standalone validation function module",
+    package: "ZVALIDATION",
+    systemType: "CUSTOM",
+    uri: "/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo"
   }
 ]
 
@@ -117,6 +130,25 @@ const sources = new Map([
     ].join("\n")
   ]
 ])
+
+/**
+ * Match the way the real quick search does: the caller supplies a type token, the returned row
+ * carries an ADT type path.
+ *
+ * The search accepts a path whose parent segment is its own search code (`CLAS/OC`, `PROG/P`,
+ * `TABL/DT`), verified live on w200, but not the function-module path: the same call with `FUNC`
+ * returned the function module while `FUGR/FF` returned nothing, and callers turned that emptiness
+ * into "the object does not exist". Reproducing that asymmetry is the point of this helper — a
+ * caller-side vocabulary mistake must fail here instead of passing as a successful lookup.
+ */
+function matchesSearchType(requestedToken: string, objectAdtType: string): boolean {
+  const token = requestedToken.trim().toUpperCase()
+  const objectCode = searchCodeOfAdtType(objectAdtType)
+  if (objectCode === undefined) return false
+  const requestedCode = searchCodeOfAdtType(token)
+  if (requestedCode !== objectCode) return false
+  return !token.includes("/") || token.split("/")[0] === objectCode
+}
 
 function payloadRows(
   kind: "M" | "F" | "T" | "C" | "A" | "S" | "I" | "H" | "B",
@@ -2196,11 +2228,19 @@ export class MockBackend implements SapBackend {
         .replaceAll("?", ".")}$`,
       "i"
     )
-    return objects
-      .filter((object) => regex.test(object.name))
-      .filter((object) => !this.deletedSourceObjects.has(`${object.type}:${object.name}`))
-      .filter((object) => !types?.length || types.some((type) => object.type.startsWith(type)))
-      .slice(0, maxResults)
+    return (
+      objects
+        .filter((object) => regex.test(object.name))
+        .filter((object) => !this.deletedSourceObjects.has(`${object.type}:${object.name}`))
+        // The real quick search is asked for a search code (`FUNC`) and answers with ADT type paths
+        // (`FUGR/FF`); a path it cannot search yields no rows, because the backend skips that type.
+        // Reproducing the asymmetry is the point: matching the raw token made a caller-side
+        // vocabulary mistake look like a successful lookup (live w200, 2026-09-25T00:37).
+        .filter(
+          (object) => !types?.length || types.some((type) => matchesSearchType(type, object.type))
+        )
+        .slice(0, maxResults)
+    )
   }
 
   async searchObjectTypes(

@@ -5814,6 +5814,57 @@ test("read-only migration wave exposes URI, search, metadata and history behavio
   assert.match(history, /W200K900001/)
 })
 
+test("an ADT type path resolves like the search code it came from", async () => {
+  const tools = new ToolService(new MockBackend())
+
+  // The service prints `FUGR/FF` in its own results, so a caller hands that token back. Before the
+  // shared vocabulary the search was given the path unchanged and the lookup answered "Could not
+  // find ABAP object" for a live function module (w200, 2026-09-25T00:37).
+  const history = await tools.getVersionHistory({
+    objectName: "Z_FM_DEMO",
+    objectType: "FUGR/FF",
+    connectionId: "w200"
+  })
+  assert.match(history, /Version History for Z_FM_DEMO \(FUGR\/FF\)/)
+  assert.doesNotMatch(history, /Could not find ABAP object/)
+
+  // Every alias of the same object kind reaches the same row, and the search still works when given
+  // the plain code instead of a path.
+  for (const objectType of ["FUNC/FM", "FUNC"]) {
+    const info = await tools.getObjectInfo({
+      objectName: "Z_FM_DEMO",
+      objectType,
+      connectionId: "w200"
+    })
+    assert.doesNotMatch(info, /Could not find ABAP object/, `objectType ${objectType}`)
+  }
+
+  // The same translation covers the program families and the structures that share their search
+  // code, so no alias may resolve to a different object than the code does.
+  const report = await tools.searchObjects({
+    pattern: "ZREPORT_DEMO",
+    types: ["PROG/P"],
+    connectionId: "w200"
+  })
+  assert.match(report, /Found 1 ABAP objects/)
+})
+
+test("a failed object lookup is not reported as proof of absence", async () => {
+  const tools = new ToolService(new MockBackend())
+
+  const missing = await tools.getVersionHistory({
+    objectName: "Z_NOT_THERE",
+    objectType: "FUGR/FF",
+    connectionId: "w200"
+  })
+  // The repository search skips object types it cannot search, so an empty result is a failed
+  // lookup. Answering "ensure it exists" turns that failure into a claim about SAP state.
+  assert.doesNotMatch(missing, /ensure it exists/)
+  assert.doesNotMatch(missing, /Could not find ABAP object/)
+  assert.match(missing, /not evidence that the object has no versions or does not exist/)
+  assert.match(missing, /Z_NOT_THERE \(FUGR\/FF\)/)
+})
+
 test("diagnostic wave is headless, bounded and read-only", async () => {
   const tools = new ToolService(new MockBackend())
 

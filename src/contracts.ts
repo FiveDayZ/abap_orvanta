@@ -15,6 +15,7 @@ import {
 import { configurationPreviewSchema } from "./configuration-preview.js"
 import { withRegistryAnnotations } from "./tool-registry.js"
 import { DEFAULT_OBJECT_TYPES } from "./backend.js"
+import { SEARCHABLE_OBJECT_TYPE_TOKENS } from "./object-types.js"
 import { runtimeDiagnosticSchema } from "./runtime-diagnostics.js"
 import { tableQuerySchema } from "./table-query.js"
 import {
@@ -44,6 +45,14 @@ import {
 } from "./maintenance-diagnostics.js"
 
 const objectType = z.enum(DEFAULT_OBJECT_TYPES)
+/**
+ * A searchable object type: a repository search code (`FUNC`, `PROG`, …) or the ADT type path this
+ * service prints in its own results (`FUGR/FF`, `PROG/P`, `CLAS/OC`, …). Accepting both keeps the
+ * round trip closed — a caller can pass back exactly what a previous call returned instead of
+ * learning a second vocabulary, which is what produced a false "object does not exist" answer for a
+ * live function module on w200 (2026-09-25T00:37).
+ */
+const searchableObjectType = z.enum(SEARCHABLE_OBJECT_TYPE_TOKENS as [string, ...string[]])
 const enhancementObjectType = z.enum(["ENHC", "ENHS", "ENHO", "BADI", "BADII"])
 const customerExitObjectType = z.enum(["SMOD", "CMOD"])
 const bteKind = z.enum(["event", "process"])
@@ -1198,7 +1207,7 @@ const toolContractsBase = {
 
     inputSchema: {
       pattern: z.string(),
-      types: z.array(objectType),
+      types: z.array(searchableObjectType),
       maxResults: z.number().default(20).optional(),
       connectionId: z.string()
     }
@@ -1209,7 +1218,7 @@ const toolContractsBase = {
 
     inputSchema: {
       objectName: z.string(),
-      objectType: objectType.optional(),
+      objectType: searchableObjectType.optional(),
       connectionId: z.string()
     }
   },
@@ -1218,7 +1227,7 @@ const toolContractsBase = {
       "Read active ABAP source and return the SHA-256 fingerprint of the complete untrimmed source. objectType disambiguates same-named objects. methodName extracts one method body from a class while retaining the complete-source fingerprint.",
     inputSchema: {
       objectName: z.string(),
-      objectType: objectType.optional(),
+      objectType: searchableObjectType.optional(),
       methodName: z.string().optional(),
       startLine: z.number().default(1).optional(),
       lineCount: z.number().default(50).optional(),
@@ -1265,7 +1274,7 @@ const toolContractsBase = {
       "Inspect one exact ABAP source object for active ADT enhancement implementation elements, preserving implementation type/version, element identity and mode, replacement flag, zero-based position, enhanced object, and optional source. ENHO/XH implementation containers are reported as not_applicable instead of being misrepresented as empty ABAP implementations; inspect their implementing classes through the BAdI tools. Also returns factual source markers such as USEREXIT forms, CALL CUSTOMER-FUNCTION, BAdI calls, BTE dispatch calls, and explicit enhancement points or sections. Endpoint failures remain unavailable rather than becoming empty results. SAP ECC 7.31 systems may not expose a usable ADT enhancement metadata endpoint; in that case metadata.status=unsupported is an explicit system limitation, while source markers remain independently available. This does not inspect New BAdI definitions, filters, switches, or runtime execution.",
     inputSchema: {
       objectName: z.string(),
-      objectType: objectType.optional(),
+      objectType: searchableObjectType.optional(),
       includeImplementationSource: z.boolean().default(false).optional(),
       connectionId: z.string()
     },
@@ -1646,7 +1655,7 @@ const toolContractsBase = {
       "Inspect one exact active ABAP source object for explicit ENHANCEMENT-POINT and ENHANCEMENT-SECTION declarations, enhancement implementation statements, and source-derived implicit enhancement candidates at source and FORM, METHOD, FUNCTION, or MODULE boundaries. Implicit candidates are structural hints only and require confirmation in the SAP enhancement editor; this tool does not prove activation, configuration, switch state, or runtime execution.",
     inputSchema: {
       objectName: z.string(),
-      objectType: objectType.optional(),
+      objectType: searchableObjectType.optional(),
       connectionId: z.string()
     },
     annotations: { readOnlyHint: true, destructiveHint: false }
@@ -1698,10 +1707,10 @@ const toolContractsBase = {
   },
   get_version_history: {
     description:
-      "ABAP object version history. Actions: list_versions, get_version_source, compare_versions. Version 1 is most recent. The version feed is resolved from the object's ADT structure document, for which the repository-navigation URL that search returns for DDIC objects is unusable: those objects are read through their canonical resource path instead. When ADT still serves no usable structure document, the tool returns a JSON state with status=unavailable and a stable code (VERSION_HISTORY_STRUCTURE_EMPTY, _NOT_XML, _UNPARSEABLE, _INCOMPLETE, _UNREADABLE, or VERSION_HISTORY_UNSUPPORTED_FOR_TYPE) instead of failing: that means the history could not be read, never that the object has no versions, and a local parse defect is never reported as an HTTP status. An unsupported structure endpoint (HTTP 404/405/501, or a resource this release has no handler for) is reported as VERSION_HISTORY_UNSUPPORTED_FOR_TYPE with the status in adt.httpStatus: ECC 7.31 answers the canonical DDIC table path that way for every table, active or inactive, so a DDIC table's history is not readable on this release and the substitutes in the reply carry the pre-write checks.",
+      "ABAP object version history. Actions: list_versions, get_version_source, compare_versions. Version 1 is most recent. The version feed is resolved from the object's ADT structure document, for which the repository-navigation URL that search returns for DDIC objects is unusable: those objects are read through their canonical resource path instead. When ADT still serves no usable structure document, the tool returns a JSON state with status=unavailable and a stable code (VERSION_HISTORY_STRUCTURE_EMPTY, _NOT_XML, _UNPARSEABLE, _INCOMPLETE, _UNREADABLE, or VERSION_HISTORY_UNSUPPORTED_FOR_TYPE) instead of failing: that means the history could not be read, never that the object has no versions, and a local parse defect is never reported as an HTTP status. An unsupported structure endpoint (HTTP 404/405/501, or a resource this release has no handler for) is reported as VERSION_HISTORY_UNSUPPORTED_FOR_TYPE with the status in adt.httpStatus: ECC 7.31 answers the canonical DDIC table path that way for every table, active or inactive, so a DDIC table's history is not readable on this release and the substitutes in the reply carry the pre-write checks. objectType accepts both vocabularies: the repository search code (FUNC, PROG, CLAS, TABL, FUGR, ...) and the ADT path this service prints in its own results (FUGR/FF, PROG/P, CLAS/OC, ...). A failed name resolution is reported as a failed lookup and never as proof that the object does not exist.",
     inputSchema: {
       objectName: z.string(),
-      objectType: z.string().optional(),
+      objectType: searchableObjectType.optional(),
       connectionId: z.string(),
       action: z
         .enum(["list_versions", "get_version_source", "compare_versions"])
