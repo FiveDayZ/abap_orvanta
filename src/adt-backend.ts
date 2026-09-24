@@ -19,7 +19,7 @@ import {
   type TransportsOfUser
 } from "abap-adt-api"
 import { createHash } from "node:crypto"
-import { appendFileSync } from "node:fs"
+import { appendFileSync, renameSync, statSync } from "node:fs"
 import { CUSTOMER_CLIENT, CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 import { assertHelperOperationDeliverable } from "./helper-operation-limits.js"
 import { InactiveInventoryError, readInactiveInventory } from "./inactive-inventory.js"
@@ -4228,8 +4228,9 @@ export async function replaceSourceWithClient(
   }
 
   let lock
+  const lockUri = lockTargetUri(target.objectUri, target.sourceUri, target.kind)
   try {
-    lock = await client.lock(lockTargetUri(target.objectUri, target.sourceUri), "MODIFY")
+    lock = await client.lock(lockUri, "MODIFY")
   } catch (error) {
     throw capabilityFailure("lock", error)
   }
@@ -4276,7 +4277,7 @@ export async function replaceSourceWithClient(
   }
 
   try {
-    await client.unLock(lockTargetUri(target.objectUri, target.sourceUri), lock.LOCK_HANDLE)
+    await client.unLock(lockUri, lock.LOCK_HANDLE)
   } catch (unlockError) {
     if (operationError) {
       throw new Error(
@@ -4745,14 +4746,19 @@ function isTimeoutError(error: unknown): boolean {
   return false
 }
 
-function writeClientOptions(
+export function writeClientOptions(
   allowUnauthorized: boolean,
   report: (diagnostic: string) => void
 ): ReturnType<typeof createSSLConfig> & { debugCallback: (data: LogData) => void } {
   return {
     ...standaloneClientOptions(allowUnauthorized),
     debugCallback(data) {
-      if (process.env.ABAP_MCP_ADT_TRACE) traceAdtRequest(data, report)
+      // The trace always reaches adt-trace.log. Every lock refusal on record (2026-08-14 11:39,
+      // four attempts on 2026-09-18 09:18-10:48, 2026-09-25 01:03) was investigated without the request
+      // sequence that names the cause, because the only copy was opt-in and switched off. The copy that
+      // rides the error message back to the caller stays behind ABAP_MCP_ADT_TRACE, so an ordinary
+      // failure still reads short and the file keeps the evidence.
+      traceAdtRequest(data, process.env.ABAP_MCP_ADT_TRACE ? report : () => undefined)
       if (data.response.statusCode < 400) return
       const body = sanitizeDiagnosticBody(data.response.body ?? "")
       report(
@@ -4874,13 +4880,22 @@ function tokenFingerprint(headers: Record<string, unknown> | undefined): string 
  * when the operation fails, so a trace line would be lost. Append every line to adt-trace.log under
  * ABAP_MCP_EXPORT_ROOT, or the working directory when that is unset, so the whole lock/save/unlock
  * sequence can be read back afterwards. Tracing must never break a write, so file errors are ignored.
+ *
+ * The trace runs on every ADT request, not only when a diagnosis was asked for, so the file is rotated
+ * at a fixed size and the previous one kept as adt-trace.log.1.
  */
 function appendTraceLine(line: string, file = "adt-trace.log"): void {
   const entry = `${new Date().toISOString()} ${line}\n`
   for (const root of [process.env.ABAP_MCP_EXPORT_ROOT, process.cwd()]) {
     if (!root) continue
+    const path = `${root}/${file}`
     try {
-      appendFileSync(`${root}/${file}`, entry)
+      try {
+        if (statSync(path).size >= 2_000_000) renameSync(path, `${path}.1`)
+      } catch {
+        // no file yet, or it cannot be renamed: the append below reports the real problem
+      }
+      appendFileSync(path, entry)
       return
     } catch {
       // the configured export root may not exist yet; the working directory always does
@@ -4919,19 +4934,31 @@ export function traceHelperProbe(
 }
 
 /**
- * The URI an ADT edit locks. The default - the function module's own URI - is the flow every recorded
- * deployment used. ABAP_MCP_LOCK_TARGET=fugr locks the function group instead (tried on 2026-09-18 10:55:
- * SAP still refused the write), and ABAP_MCP_LOCK_TARGET=source locks the exact resource being written
- * (.../source/main), which is the resource SAP itself names when it answers 423 "Resource MAIN ... is not
- * locked". Unset keeps the historical behaviour.
+ * The URI an ADT edit locks.
+ *
+ * A program, class or interface is locked on its own URI: that is the flow every recorded deployment
+ * used, and those writes still succeed. A **function module** is different. Its source is the MAIN
+ * include of the function group, which is a resource of its own, and on this 7.31 system locking
+ * `.../fmodules/<fm>` leaves that include unlocked: SAP grants the lock and then refuses the save with
+ * `HTTP 423 Resource MAIN <fm> is not locked (invalid lock handle)`. That refusal is on record for
+ * 2026-08-14 11:39, four attempts on 2026-09-18 09:18-10:48 (both 4847 and a fresh 4848 session, three
+ * different handles) and again 2026-09-25 01:03 for `ZPMC_FM_TP_STOCK_CALC`. The 2026-08-14 root cause
+ * was already "the handle belongs to one ADT resource while the PUT targets another"; SAP names in the
+ * 423 the exact resource it refused, so a function module is locked on the resource being written.
+ *
+ * ABAP_MCP_LOCK_TARGET still overrides the choice: `fugr` locks the function group (tried 2026-09-18
+ * 10:55, SAP still refused), `source` locks the resource being written for every object type, and
+ * `object` restores the historical object-URI lock for a function module.
  */
-function lockTargetUri(objectUri: string, sourceUri: string): string {
+function lockTargetUri(objectUri: string, sourceUri: string, kind?: string): string {
   const mode = process.env.ABAP_MCP_LOCK_TARGET
   if (mode === "fugr") {
     const group = objectUri.split(/\/fmodules\//i)[0]
     return group && group !== objectUri ? group : objectUri
   }
   if (mode === "source") return sourceUri || objectUri
+  if (mode === "object") return objectUri
+  if (kind === "function-module") return sourceUri || objectUri
   return objectUri
 }
 

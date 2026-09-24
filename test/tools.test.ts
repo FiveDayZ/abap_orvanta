@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises"
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { createServer } from "node:http"
 import type { AddressInfo } from "node:net"
 import { tmpdir } from "node:os"
@@ -36,6 +36,7 @@ import {
   replaceSourceWithClient,
   sanitizeObjectName,
   standaloneClientOptions,
+  writeClientOptions,
   writeTextElementsWithClient
 } from "../src/adt-backend.js"
 import type { AbapObjectInfo, SapDdicResult } from "../src/backend.js"
@@ -6660,6 +6661,119 @@ test("ADT write coordination locks, saves, unlocks, and activates the exact cust
     "activate",
     "read"
   ])
+})
+
+test("a function module source write locks the MAIN include it writes", async () => {
+  const locked: string[] = []
+  const unlocked: string[] = []
+  let savedSource = "FUNCTION z_fm_demo.\nENDFUNCTION."
+  const client = {
+    stateful: "stateful",
+    httpClient: inactiveHttp(),
+    async lock(uri: string) {
+      locked.push(uri)
+      return {
+        LOCK_HANDLE: "secret-lock",
+        CORRNR: "W200K900001",
+        CORRUSER: "",
+        CORRTEXT: "",
+        IS_LOCAL: "",
+        IS_LINK_UP: "",
+        MODIFICATION_SUPPORT: ""
+      }
+    },
+    async getObjectSource() {
+      return savedSource
+    },
+    async setObjectSource(_uri: string, source: string) {
+      savedSource = source
+    },
+    async unLock(uri: string) {
+      unlocked.push(uri)
+      return ""
+    },
+    async activate() {
+      return { success: true, messages: [], inactive: [] }
+    }
+  }
+
+  const result = await replaceSourceWithClient(
+    client as never,
+    "w200",
+    "adt://w200/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo",
+    "FUNCTION z_fm_demo.",
+    "FUNCTION z_fm_demo.\n  WRITE 'OK'."
+  )
+
+  // SAP names the resource it refuses as "Resource MAIN <fm>": the function module's own URI is a
+  // different ADT resource from the MAIN include its source is written to, and locking it left the
+  // include unlocked. That refusal is on record for 2026-08-14, 2026-09-18 and 2026-09-25.
+  assert.deepEqual(locked, [
+    "/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo/source/main"
+  ])
+  assert.deepEqual(unlocked, locked)
+  assert.equal(result.activation.success, true)
+  assert.match(savedSource, /WRITE 'OK'/)
+})
+
+test("an ADT request trace reaches disk even when the diagnostic flag is off", async () => {
+  const root = await mkdtemp(join(tmpdir(), "orvanta-trace-"))
+  const traceFlag = process.env.ABAP_MCP_ADT_TRACE
+  const exportRoot = process.env.ABAP_MCP_EXPORT_ROOT
+  const reported: string[] = []
+  try {
+    process.env.ABAP_MCP_EXPORT_ROOT = root
+    delete process.env.ABAP_MCP_ADT_TRACE
+    const options = writeClientOptions(true, (line) => reported.push(line))
+    const put = {
+      id: 7,
+      request: {
+        method: "PUT",
+        uri: "/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo/source/main",
+        params: { lockHandle: "raw-handle-must-not-be-logged" },
+        headers: { cookie: "SAP_SESSIONID_GR2_200=secret" }
+      },
+      response: {
+        statusCode: 423,
+        body: "Resource MAIN Z_FM_DEMO is not locked (invalid lock handle: also-secret)",
+        headers: {}
+      },
+      stateful: "stateful",
+      duration: 15
+    }
+    options.debugCallback(put as never)
+
+    const written = await readFile(join(root, "adt-trace.log"), "utf8")
+    assert.match(written, /ADT-TRACE #7 PUT /)
+    assert.match(written, /-> 423 stateful=stateful/)
+    // The handle and the session cookie are what a diagnosis needs to correlate, and neither may be
+    // written out: only short hashes reach the file.
+    assert.match(written, /lockSent=sha256:/)
+    assert.doesNotMatch(written, /raw-handle-must-not-be-logged/)
+    assert.doesNotMatch(written, /also-secret/)
+    assert.doesNotMatch(written, /SAP_SESSIONID_GR2_200=secret/)
+    // The copy that rides the error message stays opt-in, so an ordinary failure stays short.
+    assert.equal(
+      reported.some((line) => line.startsWith("ADT-TRACE")),
+      false
+    )
+    assert.ok(reported.some((line) => /returned HTTP 423/.test(line)))
+
+    // Always-on tracing must not grow without limit on a long-lived service.
+    await writeFile(join(root, "adt-trace.log"), "x".repeat(2_000_001))
+    options.debugCallback(put as never)
+    const rotated = await readFile(join(root, "adt-trace.log.1"), "utf8")
+    const current = await readFile(join(root, "adt-trace.log"), "utf8")
+    assert.equal(rotated.length, 2_000_001)
+    assert.match(current, /ADT-TRACE #7 PUT /)
+    assert.ok(current.length < 2_000_001)
+  } finally {
+    if (traceFlag === undefined) delete process.env.ABAP_MCP_ADT_TRACE
+    else process.env.ABAP_MCP_ADT_TRACE = traceFlag
+    if (exportRoot === undefined) delete process.env.ABAP_MCP_EXPORT_ROOT
+    else process.env.ABAP_MCP_EXPORT_ROOT = exportRoot
+    await rm(root, { recursive: true, force: true })
+  }
 })
 
 test("ADT source deletion compares the fingerprint while holding the SAP lock", async () => {

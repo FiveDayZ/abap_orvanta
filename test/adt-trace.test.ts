@@ -120,12 +120,16 @@ test("the ADT trace identifies the lock, the session and the handle without expo
   }
 })
 
-test("the trace is off unless ABAP_MCP_ADT_TRACE is set", async () => {
+test("the request sequence reaches the trace file even when no diagnosis was asked for", async () => {
   const source = await readFile(resolve("src/adt-backend.ts"), "utf8")
+  // The lock refusals of 2026-08-14, 2026-09-18 and 2026-09-25 were each investigated without the
+  // request sequence that names the cause, because the only trace copy was opt-in. The file copy is now
+  // unconditional; only the copy appended to the caller's error message stays behind the variable, so an
+  // ordinary failure still reads short.
   assert.match(
     source,
-    /if \(process\.env\.ABAP_MCP_ADT_TRACE\) traceAdtRequest\(data, report\)/,
-    "the write client must gate the trace on the environment variable"
+    /traceAdtRequest\(data, process\.env\.ABAP_MCP_ADT_TRACE \? report : \(\) => undefined\)/,
+    "the trace must always reach adt-trace.log"
   )
   assert.match(source, /if \(data\.response\.statusCode < 400\) return/)
 })
