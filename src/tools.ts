@@ -1461,11 +1461,58 @@ export class ToolService {
       requestAllowDuplicate: input.allowDuplicate === true
     })
     requireRepositorySuccess(result.status, result.code, result.message)
+    const creation = transportRequestCreation(connectionId, requestType, requestText, result)
     return JSON.stringify(
-      transportRequestCreation(connectionId, requestType, requestText, result),
+      creation.created ? creation : await this.completeMatchedTransportRequest(creation),
       null,
       2
     )
+  }
+
+  /**
+   * Fill a matched request's status, owner, target and task list from the CTS tables.
+   *
+   * The helper answers a duplicate with the matched request number and the match basis only, so a
+   * caller used to receive an empty status, owner, target and task list for a request that plainly
+   * has all four. E070 carries one row per request and one per task (`TRFUNCTION = 'S'`, with
+   * `STRKORR` naming the request the task belongs to). The matched request number itself is never
+   * changed, and a read-back that fails throws: an unread request must not be reported as an empty
+   * one.
+   */
+  private async completeMatchedTransportRequest(
+    creation: TransportRequestCreation
+  ): Promise<TransportRequestCreation> {
+    const header = (
+      await this.readTransportTableRows(
+        creation.connectionId,
+        "E070",
+        ["TRKORR", "TRFUNCTION", "TRSTATUS", "TARSYSTEM", "AS4USER"],
+        [{ column: "TRKORR", operator: "EQ", value: creation.requestNumber }],
+        1
+      )
+    )[0]
+    const tasks = await this.readTransportTableRows(
+      creation.connectionId,
+      "E070",
+      ["TRKORR"],
+      [
+        { column: "STRKORR", operator: "EQ", value: creation.requestNumber },
+        { column: "TRFUNCTION", operator: "EQ", value: "S" }
+      ],
+      500
+    )
+    return {
+      ...creation,
+      status: creation.status || String(header?.TRSTATUS ?? "").trim(),
+      owner: creation.owner || String(header?.AS4USER ?? "").trim(),
+      target: creation.target || String(header?.TARSYSTEM ?? "").trim(),
+      taskNumbers: creation.taskNumbers.length
+        ? creation.taskNumbers
+        : tasks
+            .map((row) => String(row.TRKORR ?? "").trim())
+            .filter((number) => number !== "")
+            .sort()
+    }
   }
 
   /**
@@ -7040,7 +7087,7 @@ export class ToolService {
     connectionId: string,
     tableName: string,
     columns: string[],
-    filters: { column: string; operator: "EQ"; value: string }[],
+    filters: { column: string; operator: "EQ" | "NE" | "LT" | "LE" | "GT" | "GE"; value: string }[],
     maxRows: number
   ): Promise<Record<string, string>[]> {
     const result = JSON.parse(

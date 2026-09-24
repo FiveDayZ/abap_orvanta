@@ -784,12 +784,46 @@ export class AdtBackend implements SapBackend {
           `SELECT TRKORR, TRFUNCTION, TRSTATUS, TARSYSTEM, AS4USER, AS4DATE, AS4TIME FROM E070 WHERE AS4USER = '${owner.replaceAll("'", "''")}'`,
           500
         )
+    // E07T holds one row per request and language. An unfiltered read is bounded at 500 rows in
+    // unspecified key order, and a user's request numbers sort past that bound on this system, so
+    // every description came back empty even though E07T carried it. The read is therefore
+    // bracketed by the TRKORR range the E070 result actually spans, and the rows are ordered
+    // before the first description per request is chosen so one request always resolves to one
+    // text. An OPTIONS line is capped at 72 characters, which is why the bracket is a range and
+    // not a TRKORR IN list.
     const texts = new Map<string, string>()
     if (requests.length) {
-      const descriptions = readTable
-        ? await readTable(connectionId, "E07T", ["TRKORR", "LANGU", "AS4TEXT"], [], 500)
-        : await this.runQuery(connectionId, "SELECT TRKORR, LANGU, AS4TEXT FROM E07T", 500)
-      for (const row of descriptions) {
+      const numbers = requests
+        .map((row) => String(row.TRKORR ?? "").trim())
+        .filter((number) => number !== "")
+        .sort()
+      const lowest = numbers[0]
+      const highest = numbers[numbers.length - 1]
+      const descriptions =
+        lowest === undefined || highest === undefined
+          ? []
+          : readTable
+            ? await readTable(
+                connectionId,
+                "E07T",
+                ["TRKORR", "LANGU", "AS4TEXT"],
+                [
+                  { column: "TRKORR", operator: "GE", value: lowest },
+                  { column: "TRKORR", operator: "LE", value: highest }
+                ],
+                500
+              )
+            : await this.runQuery(
+                connectionId,
+                `SELECT TRKORR, LANGU, AS4TEXT FROM E07T WHERE TRKORR >= '${lowest}' AND TRKORR <= '${highest}'`,
+                500
+              )
+      const ordered = [...descriptions].sort((left, right) =>
+        `${String(left.TRKORR ?? "")}|${String(left.LANGU ?? "")}`.localeCompare(
+          `${String(right.TRKORR ?? "")}|${String(right.LANGU ?? "")}`
+        )
+      )
+      for (const row of ordered) {
         const number = String(row.TRKORR ?? "").trim()
         const description = String(row.AS4TEXT ?? "").trim()
         if (number && description && !texts.has(number)) texts.set(number, description)

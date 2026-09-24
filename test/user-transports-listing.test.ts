@@ -144,9 +144,38 @@ const readCtsTable: TransportTableReader = async (
   const source = texts ? e07tRows : e070Rows
   return source
     .filter((row) =>
-      filters.every((filter) => row[projection.indexOf(filter.column)] === filter.value)
+      filters.every((filter) =>
+        compare(row[projection.indexOf(filter.column)], filter.operator, filter.value)
+      )
     )
     .map((row) => Object.fromEntries(projection.map((name, index) => [name, row[index]!])))
+}
+
+/**
+ * Compare one projected value the way the reader's operators do.
+ *
+ * The production E07T read is bracketed with GE/LE over TRKORR, because an unfiltered read is
+ * bounded at 500 rows and a user's request numbers sort past that bound. The stand-in has to apply
+ * the same operators, or it would answer a bracketed read with nothing and hide the real behaviour.
+ */
+function compare(left: string | undefined, operator: string, right: string): boolean {
+  const value = left ?? ""
+  switch (operator) {
+    case "EQ":
+      return value === right
+    case "NE":
+      return value !== right
+    case "LT":
+      return value < right
+    case "LE":
+      return value <= right
+    case "GT":
+      return value > right
+    case "GE":
+      return value >= right
+    default:
+      return false
+  }
 }
 
 async function backendAgainst(organizerDocument: string) {
@@ -213,6 +242,14 @@ test("D-5: an empty organizer document falls back to the CTS tables and names th
   // user's requests as this user's. The projection and the 500-row bound are pinned by the reader.
   assert.deepEqual(readerCalls[0]?.filters, [{ column: "AS4USER", operator: "EQ", value: "TEST" }])
   assert.equal(readerCalls.length, 2, "one read for the requests and one for their texts")
+  // The text read is bracketed by the request range the E070 result spans. An unfiltered E07T read
+  // is bounded at 500 rows in key order, and a user's request numbers sort past that bound, so the
+  // descriptions came back empty even though E07T carried them. A TRKORR IN list cannot replace the
+  // bracket: one OPTIONS line is capped at 72 characters.
+  assert.deepEqual(readerCalls[1]?.filters, [
+    { column: "TRKORR", operator: "GE", value: "GR2K900001" },
+    { column: "TRKORR", operator: "LE", value: "GR2K900003" }
+  ])
   // The fallback must not go back to `runQuery`: its native data-preview path answers HTML on the
   // target system, so that read reports a failure as an empty list.
   assert.equal(fixture.queries.length, 0, "the native query path must not be used")

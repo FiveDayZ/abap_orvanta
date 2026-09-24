@@ -6522,6 +6522,15 @@ function New-InstallProgram {
         # SAPscript style through SSF_READ_SAPSCRIPT_STYLE. Both return SSFCATS plus SSF* rows, so one
         # emit path serves both. TSFSTBODY is a table type whose row is the predefined type STRG
         # (rowKind E), i.e. a table of strings - not a structure, so the CSS body arrives as lines.
+        #
+        # The three row tables must be declared with the table types the function modules declare
+        # themselves, not with an equivalent "TYPE TABLE OF <row>". SSF_READ_SAPSCRIPT_STYLE exports
+        # E_PARAGRAPHS/E_STRINGS/E_TABS as pass-by-value parameters, and a pass-by-value table
+        # parameter requires the actual parameter to be that very table type; an anonymous table with
+        # the same row type is rejected at runtime with "Type conflict when calling a function module"
+        # (RABAX_STATE), which made every mode=P read fail. TSFPARAS/TSFSTRINGS/TSFTABS are row-
+        # compatible with SSF_READ_STYLE's TABLES parameters (SSFPARAS/SSFSTRINGS/STXSTAB), so the
+        # same declarations still serve form S.
         "  DATA lv_d7_style_name TYPE tdssname.",
         "  DATA lv_d7_style_mode TYPE tdchar1.",
         "  DATA lv_d7_style_active TYPE tdactivate.",
@@ -6531,12 +6540,20 @@ function New-InstallProgram {
         "  DATA lt_d7_style_header_one TYPE TABLE OF ssfcats.",
         "  DATA ls_d7_style_header_row TYPE ssfcats.",
         "  DATA lt_d7_style_headers TYPE TABLE OF ssfcats.",
-        "  DATA lt_d7_style_paras TYPE TABLE OF ssfparas.",
+        "  DATA lt_d7_style_paras TYPE tsfparas.",
         "  DATA ls_d7_style_para TYPE ssfparas.",
-        "  DATA lt_d7_style_strings TYPE TABLE OF ssfstrings.",
+        "  DATA lt_d7_style_strings TYPE tsfstrings.",
         "  DATA ls_d7_style_string TYPE ssfstrings.",
-        "  DATA lt_d7_style_tabs TYPE TABLE OF stxstab.",
+        "  DATA lt_d7_style_tabs TYPE tsftabs.",
         "  DATA ls_d7_style_tab TYPE stxstab.",
+        # SSF_READ_SAPSCRIPT_STYLE passes I_NAME/I_OBJECT/I_LANGUAGE by value and declares them as
+        # TDOBNAME/TDOBJECT/TDSPRAS. The SmartStyle path holds a TDSSNAME name and an SPRAS
+        # language, so passing those fields straight in aborts the call with
+        # CALL_FUNCTION_CONFLICT_TYPE at runtime - the same trap the CSS name widening above
+        # documents. The three bridge fields below carry the formal parameter's own type.
+        "  DATA lv_d7_ss_name TYPE tdobname.",
+        "  DATA lv_d7_ss_object TYPE tdobject.",
+        "  DATA lv_d7_ss_language TYPE tdspras.",
         "  DATA lv_d7_css_status TYPE string.",
         "  DATA lv_d7_css_mime TYPE sfhttptype.",
         "  DATA lv_d7_css_length TYPE i.",
@@ -11360,11 +11377,18 @@ function New-InstallProgram {
         "          ENDIF.",
         "        ENDIF.",
         "      ELSE.",
+        "* SSF_READ_SAPSCRIPT_STYLE passes I_NAME/I_OBJECT/I_LANGUAGE by",
+        "* value: each actual parameter must carry the formal parameter's own",
+        "* type. TDSSNAME/SPRAS differ from TDOBNAME/TDSPRAS, so the bridge",
+        "* fields widen them before the call.",
+        "        lv_d7_ss_name = lv_d7_style_name.",
+        "        lv_d7_ss_object = 'STYLE'.",
+        "        lv_d7_ss_language = lv_d7_style_language.",
         "        CALL FUNCTION 'SSF_READ_SAPSCRIPT_STYLE'",
         "          EXPORTING",
-        "            i_name = lv_d7_style_name",
-        "            i_object = 'STYLE'",
-        "            i_language = lv_d7_style_language",
+        "            i_name = lv_d7_ss_name",
+        "            i_object = lv_d7_ss_object",
+        "            i_language = lv_d7_ss_language",
         "          IMPORTING",
         "            e_header = ls_d7_style_header",
         "            e_paragraphs = lt_d7_style_paras",

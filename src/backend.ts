@@ -46,7 +46,7 @@ export type TransportTableReader = (
   connectionId: string,
   tableName: string,
   columns: string[],
-  filters: { column: string; operator: "EQ"; value: string }[],
+  filters: { column: string; operator: "EQ" | "NE" | "LT" | "LE" | "GT" | "GE"; value: string }[],
   maxRows: number
 ) => Promise<Record<string, string>[]>
 
