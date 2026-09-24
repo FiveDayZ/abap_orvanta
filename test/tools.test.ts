@@ -7737,3 +7737,53 @@ test("read_smartstyle surfaces the helper's reason instead of one flattened code
   }
   await assert.rejects(tools.readSmartstyle(input), /STYLE_NOT_FOUND/)
 })
+
+/**
+ * SAP's ENQU convention prefixes a lock object with E, and this system already stores the customer
+ * lock object EZPMCTP that read_lock_object returns. The 2026-09-24 18:05 incident had
+ * upsert_lock_object refuse EZPMCTPRP on its name while the read side accepted EZPMCTP, so a caller
+ * could inspect a lock object it was forbidden to write. The customer test has to survive the
+ * relaxation, otherwise EMARA would become writable.
+ */
+test("a customer lock object keeps SAP's E prefix and a standard one is still refused", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const input = {
+    connectionId: "w200",
+    objectName: "EZPMCTPRP",
+    description: "Upsert the reorganisation request lock",
+    packageName: "ZABAP",
+    transportNumber: "GR2K923472",
+    header: { AGGTYPE: "E" },
+    lockTables: [
+      {
+        TABNAME: "ZTPMC_TPRPH",
+        FORTABNAME: "ZTPMC_TPRPH",
+        FORFIELD: "",
+        FORDIR: "",
+        ENQMODE: "E"
+      }
+    ],
+    lockFields: [
+      {
+        VIEWFIELD: "MANDT",
+        TABNAME: "ZTPMC_TPRPH",
+        FIELDNAME: "MANDT",
+        ENQMODE: "E",
+        ROLLNAME: "MANDT",
+        KEYFLAG: "X",
+        CHECKTABLE: ""
+      }
+    ]
+  }
+
+  await tools.upsertLockObject(input)
+
+  // The optional E must not become a licence for standard lock objects.
+  await assert.rejects(
+    tools.upsertLockObject({ ...input, objectName: "EMARA" }),
+    /customer lock object/
+  )
+  // And a bare customer name still works, so the E stays optional.
+  await tools.upsertLockObject({ ...input, objectName: "ZPMCTPRP" })
+})

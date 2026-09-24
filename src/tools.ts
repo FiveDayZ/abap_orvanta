@@ -1,5 +1,6 @@
 import { resolve } from "node:path"
 import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
+import { preSapValidation } from "./pre-sap-validation.js"
 import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
 import {
   cleanupTransportEntrySchema,
@@ -3645,7 +3646,7 @@ export class ToolService {
   }
 
   async upsertLockObject(input: UpsertLockObjectInput): Promise<string> {
-    const objectName = customerDdicName(input.objectName)
+    const objectName = customerLockObjectName(input.objectName)
     validateDescription(input.description)
     const header = lockObjectHeader(input.header)
     const lockTables = lockObjectRows(input.lockTables, "lockTables")
@@ -4490,7 +4491,9 @@ export class ToolService {
         ? customerDdicTableName(input.objectName)
         : input.objectType === "NROB"
           ? numberRangeObjectName(input.objectName)
-          : customerDdicName(input.objectName)
+          : input.objectType === "ENQU"
+            ? customerLockObjectName(input.objectName)
+            : customerDdicName(input.objectName)
     const expectedPackage = ddicPackageName(input.packageName)
     const operation = {
       DOMA: "DELETE_DOMAIN",
@@ -11262,9 +11265,35 @@ function ddicName(value: string, field: string): string {
 }
 
 function customerDdicName(value: string): string {
-  const normalized = ddicName(value, "objectName")
-  if (!/^[ZY]/.test(normalized)) throw new Error("objectName must name a Z* or Y* customer object")
-  return normalized
+  // Wrapped rather than thrown directly: every caller is a method-top argument guard that runs
+  // before the tool's first backend call, so a rejection here proves the write never reached SAP
+  // and the receipt must say so instead of sending the caller to reconcile unchanged state.
+  return preSapValidation(() => {
+    const normalized = ddicName(value, "objectName")
+    if (!/^[ZY]/.test(normalized))
+      throw new Error("objectName must name a Z* or Y* customer object")
+    return normalized
+  })
+}
+
+/**
+ * SAP's ENQU convention prefixes a lock object with `E`, so the lock object of table `T` is normally
+ * named `ET`, and this system already stores the customer lock object `EZPMCTP` that
+ * `read_lock_object` returns. Requiring a bare `Z*`/`Y*` here therefore rejected `EZPMCTPRP` while
+ * the read side accepted `EZPMCTP`, leaving a caller able to inspect a lock object it was not
+ * allowed to write. The customer test moves to the character after the optional `E`, so a standard
+ * lock object such as `EMARA` is still refused.
+ */
+function customerLockObjectName(value: string): string {
+  return preSapValidation(() => {
+    const normalized = ddicName(value, "objectName")
+    if (!/^E?[ZY]/.test(normalized)) {
+      throw new Error(
+        "objectName must name a Z* or Y* customer lock object, optionally with the E prefix SAP's ENQU convention uses (for example EZPMCTP)"
+      )
+    }
+    return normalized
+  })
 }
 
 function customerDdicTableName(value: string): string {
@@ -11335,8 +11364,12 @@ function requiredVersionToken(value: string): string {
 }
 
 function validateDescription(value: string): void {
-  validateTextLength(value, 60, "description")
-  if (!value.trim()) throw new Error("description is required")
+  // Same reasoning as customerDdicName: every caller is an argument guard at the top of a write
+  // method, before that tool's first backend call.
+  return preSapValidation(() => {
+    validateTextLength(value, 60, "description")
+    if (!value.trim()) throw new Error("description is required")
+  })
 }
 
 function validateTextLength(value: string, maximum: number, field: string): void {

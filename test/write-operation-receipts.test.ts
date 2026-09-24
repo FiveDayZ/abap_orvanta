@@ -8,6 +8,7 @@ import test from "node:test"
 import { writeOperationContext, writeOperationTarget } from "../src/mcp.js"
 import type { SapBackend } from "../src/backend.js"
 import { HelperOperationNotDeliverableError } from "../src/helper-operation-limits.js"
+import { PreSapValidationError } from "../src/pre-sap-validation.js"
 import { hashWriteInput, WriteOperationReceiptStore } from "../src/write-operation-receipts.js"
 
 const identity = {
@@ -502,6 +503,26 @@ test("a preflight rejection is not reported as an unknown outcome", async () => 
     const sentStatus = await store.status("w200", "preflight-sent")
     assert.equal(sentStatus.sapInvocationStarted, true)
     assert.equal(sentStatus.outcomeMayBeUnknown, true)
+
+    // The deliverability preflight was the first guard of this kind, not the only one. An argument
+    // guard that rejects the request locally proves the same thing, so it must reach the same
+    // answer: the 2026-09-24 18:05 incident refused EZPMCTPRP on its name in 50 ms and still
+    // reported outcomeMayBeUnknown.
+    const argumentRejected = await store.reserve({
+      ...identity,
+      operationId: "argument-rejected"
+    })
+    if (argumentRejected.status !== "reserved") throw new Error("Missing reservation")
+    await store.markSapInvocationStarted(argumentRejected.reservation)
+    await store.fail(
+      argumentRejected.reservation,
+      new PreSapValidationError("objectName must name a Z* or Y* customer object"),
+      50
+    )
+    const argumentStatus = await store.status("w200", "argument-rejected")
+    assert.equal(argumentStatus.status, "failed")
+    assert.equal(argumentStatus.sapInvocationStarted, false)
+    assert.equal(argumentStatus.outcomeMayBeUnknown, false)
   } finally {
     await rm(root, { recursive: true, force: true })
   }

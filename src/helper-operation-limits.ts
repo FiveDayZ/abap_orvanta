@@ -28,6 +28,8 @@
  * The service therefore refuses to send an operation that cannot be delivered, before any SAP
  * call, instead of relying on the helper to reject it.
  */
+import { PreSapValidationError } from "./pre-sap-validation.js"
+
 export interface HelperOperationParameter {
   /** DDIC type of the helper's `IV_OPERATION` import parameter. */
   ddicType: string
@@ -81,7 +83,7 @@ export function helperOperationParameter(helper: string): HelperOperationParamet
  * operation is reported as `sapInvocationStarted: false` / `outcomeMayBeUnknown: false` instead of
  * leaving the caller unable to tell whether the write reached SAP.
  */
-export class HelperOperationNotDeliverableError extends Error {
+export class HelperOperationNotDeliverableError extends PreSapValidationError {
   readonly helper: string
   readonly operation: string
   readonly parameterLength: number

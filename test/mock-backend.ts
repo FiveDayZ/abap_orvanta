@@ -174,7 +174,14 @@ function parseEnhancementPayload(
 }
 
 function mockDdicResult(
-  _kind: "domain" | "dataElement" | "structure" | "transparentTable" | "tableType" | "searchHelp",
+  _kind:
+    | "domain"
+    | "dataElement"
+    | "structure"
+    | "transparentTable"
+    | "tableType"
+    | "searchHelp"
+    | "lockObject",
   header: Record<string, string>,
   packageName: string
 ): SapDdicResult {
@@ -205,11 +212,14 @@ function mockDdicResult(
 
 function ddicKind(
   operation: SapDdicRequest["operation"]
-): "domain" | "dataElement" | "structure" | "transparentTable" | "tableType" {
+): "domain" | "dataElement" | "structure" | "transparentTable" | "tableType" | "lockObject" {
   if (operation.endsWith("DOMAIN")) return "domain"
   if (operation.endsWith("DATA_ELEMENT")) return "dataElement"
   if (operation.endsWith("STRUCTURE")) return "structure"
   if (operation.endsWith("TRANSPARENT_TABLE")) return "transparentTable"
+  // Without this, UPSERT_LOCK_OBJECT fell through to tableType and the readback check compared an
+  // object it never asked for, so the mock could not exercise the lock-object path at all.
+  if (operation.endsWith("LOCK_OBJECT")) return "lockObject"
   return "tableType"
 }
 
@@ -1958,6 +1968,11 @@ export class MockBackend implements SapBackend {
     const identity = {
       domain: { DOMNAME: request.objectName },
       dataElement: { ROLLNAME: request.objectName },
+      lockObject: {
+        // DD25V holds lock objects, and its identity column is VIEWNAME, not LOCKOBJECT.
+        VIEWNAME: request.objectName,
+        AGGTYPE: request.header?.AGGTYPE ?? "E"
+      },
       structure: { TABNAME: request.objectName, TABCLASS: "INTTAB" },
       transparentTable: { TABNAME: request.objectName, TABCLASS: "TRANSP" },
       tableType: {
@@ -1979,6 +1994,10 @@ export class MockBackend implements SapBackend {
       message: "DDIC object saved activated and verified",
       recordedRequest: request.transportNumber ?? "",
       fixedValues: request.fixedValues ?? [],
+      // DD26V/DD27P rows travel the same way fields do, so a lock-object write has to echo them
+      // back or the readback check compares a definition no caller ever sent.
+      lockTables: request.lockTables ?? [],
+      lockFields: request.lockFields ?? [],
       fields: (request.fields ?? []).map((field, index) => ({
         ...field,
         POSITION: String(index + 1)
