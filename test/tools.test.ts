@@ -2346,6 +2346,38 @@ test("function module tools create, read, fingerprint, inspect, and reject unsaf
   )
 })
 
+test("function module verification names the part of the definition SAP did not return", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  // A read-back that differs in one known place must say which place. Reporting only "did not return
+  // the requested definition" makes a legitimate SAP normalisation and a real defect indistinguishable,
+  // which is how this check was previously read as a false negative.
+  backend.functionCreateReadbackDropsSourceLine = true
+  const input = {
+    functionName: "ZCMCP_FM_READBACK",
+    functionGroup: "ZCMCP_FG_1501",
+    description: "MCP read-back diagnostic",
+    remoteEnabled: true,
+    importParameters: [{ name: "IV_INPUT", typeName: "CHAR20" }],
+    exportParameters: [{ name: "EV_OUTPUT", typeName: "CHAR40" }],
+    changingParameters: [],
+    tableParameters: [],
+    exceptions: [],
+    source: ["  CONCATENATE 'a' iv_input INTO ev_output.", "  CLEAR iv_input."],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    connectionId: "w200"
+  }
+  await assert.rejects(
+    tools.createFunctionModuleWithInterface(input),
+    /source line 2 is absent from the saved source: "  CLEAR iv_input\."/
+  )
+  await assert.rejects(
+    tools.createFunctionModuleWithInterface({ ...input, functionName: "ZCMCP_FM_READBACK2" }),
+    /verification did not return the requested definition/
+  )
+})
+
 test("function interface patch applies controlled operations and preserves implementation source", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)

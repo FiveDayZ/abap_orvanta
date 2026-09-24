@@ -562,9 +562,19 @@ test("the registry records the honest gap rather than inflating it", () => {
   // Raised from 5 to 8 on 2026-09-24: one acceptance run (.doc/d7-d9-acceptance-20260924.json)
   // recorded real evidence for five 2.8 tools at once, three read-only reads plus the two CTS write
   // tools, and the same run recorded cleanup_transport_entries as a runtime failure.
+  // Raised from 8 to 9 on 2026-09-24: run_abap_program was invoked through MCP for the first time on
+  // 0.47.12 and returned status passed with subrc 0 (.doc/code-update-20260924-165500.md).
   assert.ok(
-    totals.verified <= 8,
+    totals.verified <= 9,
     `only a handful of tools have real recorded evidence; found ${totals.verified}`
   )
+  // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
+  // names the record it was verified from, so every one of them must carry an evidence path.
+  for (const entry of registry.entries.filter((candidate) => candidate.status === "verified")) {
+    assert.ok(
+      typeof entry.evidence === "string" && entry.evidence.trim() !== "",
+      `verified entry ${entry.tool} must name the record it was verified from`
+    )
+  }
   assert.ok(totals.unverified > totals.verified, "the honest default should dominate")
 })

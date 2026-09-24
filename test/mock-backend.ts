@@ -240,6 +240,12 @@ export class MockBackend implements SapBackend {
   lastRepositoryRequest: SapRepositoryRequest | undefined
   lastHelperRequest: SapHelperRequest | undefined
   functionPatchReadbackMismatch = false
+  /**
+   * Reproduces a read-back whose stored source is not what was sent - SAP normalises and truncates
+   * source on save, so the verification has to say which line disagreed instead of only that
+   * something did.
+   */
+  functionCreateReadbackDropsSourceLine = false
   /** When true the helper answers FUNCTION_PATCH_SAVE_NOT_OBSERVED and changes nothing. */
   functionPatchHelperMismatch = false
   /** When true the applied interface patch also changes the stored implementation source rows. */
@@ -1442,7 +1448,7 @@ export class MockBackend implements SapBackend {
         return this.repositoryError("FUNCTION_EXISTS", "Function module already exists")
       }
       if (request.operation === "CREATE_FUNCTION_MODULE") {
-        this.functionModules.set(name, [
+        const stored = [
           `M|1|FUNCTION_GROUP|${request.program ?? ""}`,
           `M|1|SHORT_TEXT|${request.description ?? ""}`,
           `M|1|REMOTE_ENABLED|${request.objectType === "R" ? "X" : ""}`,
@@ -1455,7 +1461,23 @@ export class MockBackend implements SapBackend {
             return parts[0] === "S" ? `S|${index}|${parts.slice(2).join("|")}` : line
           }),
           `S|${(request.source ?? []).filter((line) => line.startsWith("S|")).length + 2}|LINE|ENDFUNCTION.`
-        ])
+        ]
+        // The last `S|` row that is not the closing ENDFUNCTION row is the last stored body line.
+        // Dropping it stands in for the source SAP rewrites on save, so the read-back disagrees with
+        // the request in exactly one known place.
+        let body = -1
+        if (this.functionCreateReadbackDropsSourceLine) {
+          for (let index = stored.length - 2; index >= 0; index -= 1) {
+            if (stored[index]!.startsWith("S|")) {
+              body = index
+              break
+            }
+          }
+        }
+        this.functionModules.set(
+          name,
+          stored.filter((_line, index) => index !== body)
+        )
       }
       if (request.operation === "PATCH_FUNCTION_INTERFACE") {
         if (!existing) {

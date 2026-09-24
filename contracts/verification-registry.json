@@ -739,13 +739,13 @@
       "tool": "run_abap_program",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "no SAP object yet: the tool has not been invoked since it was added",
+      "verificationTarget": "w200: executed existing program ZORVANTA_MCP_DYNPRO_R11 through Z_ORVANTA_RUN_PROGRAM",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "Added in 0.47.11 and not yet invoked through MCP, so it stays unverified rather than inheriting the runner's success. The runner it calls, Z_ORVANTA_RUN_PROGRAM, was itself exercised successfully on w200 (see .doc/code-update-20260924-161230.md), which shows the call path works but not that this tool's own guards and result mapping were exercised end to end."
+      "lastAttemptAt": "2026-09-24",
+      "evidence": ".doc/code-update-20260924-165500.md",
+      "notes": "Real call observed on 0.47.12: status passed, subrc 0, runner Z_ORVANTA_RUN_PROGRAM, automaticRetry false, no detail. The first attempt on 0.47.11 never reached SAP - the tool had no pre-change observation branch, so observeSourceTarget could not establish whether the program object exists and the call was refused with sapInvocationStarted false. 0.47.12 records that the program's own side effects cannot be observed before it runs instead of trying to snapshot the program definition, which is what unblocked the call. The tool still reports only the SUBMIT return code, so a failing program and a failing launch are not distinguishable; refusal paths (wrong confirmation, an SAP standard program name) are covered by unit tests rather than live calls."
     },
     {
       "tool": "list_write_recovery_operations",

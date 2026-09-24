@@ -2992,14 +2992,44 @@ export class ToolService {
     requireRepositorySuccess(result.status, result.code, result.message)
     const saved = functionModuleResult(result, input.connectionId.toLowerCase(), functionName)
     const { source: requestedSource, ...requestedInterface } = definition
-    if (
-      saved.functionGroup !== functionGroup ||
-      saved.shortText !== input.description ||
-      saved.remoteEnabled !== input.remoteEnabled ||
-      !matchesSubset(saved, requestedInterface) ||
-      !containsLineSequence(saved.source, requestedSource)
-    ) {
-      throw new Error("SAP function module verification did not return the requested definition")
+    // The comparison below is the only thing standing between "SAP accepted the definition" and
+    // "the definition is what was asked for", so a failure has to name the part that disagreed.
+    // Without that, a legitimate mismatch (for example a source line SAP stored differently) and a
+    // genuine defect look identical, which is exactly how this check was read as a false negative.
+    const mismatches: string[] = []
+    if (saved.functionGroup !== functionGroup) {
+      mismatches.push(
+        `functionGroup requested ${functionGroup} but SAP reported ${saved.functionGroup}`
+      )
+    }
+    if (saved.shortText !== input.description) {
+      mismatches.push(
+        `shortText requested "${input.description}" but SAP reported "${saved.shortText}"`
+      )
+    }
+    if (saved.remoteEnabled !== input.remoteEnabled) {
+      mismatches.push(
+        `remoteEnabled requested ${input.remoteEnabled} but SAP reported ${saved.remoteEnabled}`
+      )
+    }
+    for (const [key, requested] of Object.entries(requestedInterface)) {
+      if (key === "remoteEnabled") continue
+      if (!matchesSubset((saved as Record<string, unknown>)[key], requested)) {
+        mismatches.push(`the saved ${key} do not match the requested ${key}`)
+      }
+    }
+    if (!containsLineSequence(saved.source, requestedSource)) {
+      const missing = requestedSource.findIndex((line) => !saved.source.includes(line))
+      mismatches.push(
+        missing >= 0
+          ? `source line ${missing + 1} is absent from the saved source: "${requestedSource[missing]}"`
+          : `every requested source line is present but not as one contiguous sequence (requested ${requestedSource.length} lines, saved ${saved.source.length})`
+      )
+    }
+    if (mismatches.length) {
+      throw new Error(
+        `SAP function module verification did not return the requested definition: ${mismatches.join("; ")}`
+      )
     }
     return JSON.stringify(
       {
