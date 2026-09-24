@@ -7704,3 +7704,36 @@ function injectClient(backend: AdtBackend, client: object): void {
   }
   state.clients.set("w200", { client, login: Promise.resolve() })
 }
+
+test("read_smartstyle surfaces the helper's reason instead of one flattened code", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const input = {
+    connectionId: "w200",
+    styleName: "ZTESTSTYLE1",
+    mode: "S" as const,
+    active: "A" as const,
+    includeCss: false
+  }
+
+  // Live w200 evidence: ZTESTSTYLE1 exists but has no active version. The helper used to fold that,
+  // a missing variant, and a missing style into one STYLE_NOT_FOUND, so the caller could not tell a
+  // style that needs activating from a name that is simply wrong.
+  backend.smartstyleFailure = {
+    code: "STYLE_ACTIVE_NOT_FOUND",
+    message: "Smart style has no active version"
+  }
+  await assert.rejects(tools.readSmartstyle(input), /STYLE_ACTIVE_NOT_FOUND/)
+
+  backend.smartstyleFailure = {
+    code: "STYLE_VARIANT_NOT_FOUND",
+    message: "Smart style variant does not exist"
+  }
+  await assert.rejects(tools.readSmartstyle(input), /STYLE_VARIANT_NOT_FOUND/)
+
+  backend.smartstyleFailure = {
+    code: "STYLE_NOT_FOUND",
+    message: "Smart style does not exist"
+  }
+  await assert.rejects(tools.readSmartstyle(input), /STYLE_NOT_FOUND/)
+})

@@ -250,6 +250,16 @@ export class MockBackend implements SapBackend {
   functionPatchHelperMismatch = false
   /** When true the applied interface patch also changes the stored implementation source rows. */
   functionPatchSourceMutation = false
+  /**
+   * The repository helper reports why a SmartStyle read failed only through the code it maps
+   * SSF_READ_STYLE's sy-subrc to. The service must surface that code unchanged: flattening every
+   * exception into STYLE_NOT_FOUND told the caller nothing it could act on, which is why a style
+   * that simply had no active version looked identical to a style that does not exist.
+   */
+  smartstyleFailure: { code: string; message: string } | null = {
+    code: "STYLE_NOT_FOUND",
+    message: "Smart style does not exist"
+  }
   private readonly enhancementImplementations = new Map<string, string[]>([
     [
       "ZENH_DEMO",
@@ -1548,6 +1558,10 @@ export class MockBackend implements SapBackend {
           )
         ]
       )
+    }
+    if (request.operation === "READ_SMARTSTYLE") {
+      const failure = this.smartstyleFailure
+      if (failure) return this.repositoryError(failure.code, failure.message)
     }
     if (
       request.operation === "READ_MESSAGE_CLASS" ||
