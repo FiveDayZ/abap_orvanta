@@ -330,6 +330,17 @@ export async function observeWritePreChange(
       String(input.objectName),
       DDIC_READ_OPERATION[name]
     )
+  } else if (name === "run_abap_program") {
+    // The target of this tool is whatever the program itself changes, and no read can bound that.
+    // Treating the program object as the target would attach a green pre-change snapshot to a write
+    // whose real effect is somewhere else, so the evidence records that it could not be established
+    // and says why. `exists: false` means "no target object was snapshotted", which is exactly the
+    // case here: the run itself is what changes SAP, not the program definition.
+    evidence.sources.push("program-execution")
+    evidence.exists = false
+    evidence.warnings.push(
+      "the program's own side effects cannot be observed before it runs; only the SUBMIT return code is reported afterwards"
+    )
   } else {
     await observeSourceTarget(evidence, name, input, connectionId, backend)
     const assignment = sourceAssignment(name, input)

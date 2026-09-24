@@ -118,6 +118,18 @@ const SOURCE_READ_TIMEOUT_MS = 30_000
 const SYNTAX_CHECK_TIMEOUT_MS = 10_000
 const ENHANCEMENT_READ_TIMEOUT_MS = 3_000
 
+/**
+ * E07T request-text reads for a transport listing.
+ *
+ * `E07T_MAX_ROWS` is the bound the CTS read path enforces; a chunk that returns exactly that many
+ * rows is treated as truncated and split, because the read is ordered by TRKORR and a truncation
+ * therefore drops the highest request numbers. `E07T_CHUNK_REQUESTS` is the starting chunk size: it
+ * keeps the number of reads proportional to the listing rather than to the request count, while
+ * leaving each bracket narrow enough that the split path is the exception.
+ */
+const E07T_MAX_ROWS = 500
+const E07T_CHUNK_REQUESTS = 50
+
 const XML_METADATA_TYPES = new Set([
   "MSAG/N",
   "XSLT/VT",
@@ -784,49 +796,64 @@ export class AdtBackend implements SapBackend {
           `SELECT TRKORR, TRFUNCTION, TRSTATUS, TARSYSTEM, AS4USER, AS4DATE, AS4TIME FROM E070 WHERE AS4USER = '${owner.replaceAll("'", "''")}'`,
           500
         )
-    // E07T holds one row per request and language. An unfiltered read is bounded at 500 rows in
-    // unspecified key order, and a user's request numbers sort past that bound on this system, so
-    // every description came back empty even though E07T carried it. The read is therefore
-    // bracketed by the TRKORR range the E070 result actually spans, and the rows are ordered
-    // before the first description per request is chosen so one request always resolves to one
-    // text. An OPTIONS line is capped at 72 characters, which is why the bracket is a range and
-    // not a TRKORR IN list.
+    // E07T holds one row per request and language. Two separate bounds lose descriptions here, and
+    // both were observed on w200 rather than inferred:
+    //   - an unfiltered read is capped at 500 rows in key order, and a user's request numbers sort
+    //     past that bound, so every description came back empty even though E07T carried it;
+    //   - one bracket over the whole TRKORR span a user's requests cover is still truncated at 500
+    //     rows, and because E07T is keyed by TRKORR the truncation drops the HIGHEST numbers - which
+    //     is exactly where that user's newest workbench requests live.
+    // The span is therefore read in bounded chunks, and a chunk that comes back at the bound is
+    // split and re-read, so a description is never lost to a truncation the caller cannot see. An
+    // OPTIONS line is capped at 72 characters, which is why this is a range and not a TRKORR IN list.
     const texts = new Map<string, string>()
     if (requests.length) {
-      const numbers = requests
-        .map((row) => String(row.TRKORR ?? "").trim())
-        .filter((number) => number !== "")
-        .sort()
-      const lowest = numbers[0]
-      const highest = numbers[numbers.length - 1]
-      const descriptions =
-        lowest === undefined || highest === undefined
-          ? []
-          : readTable
-            ? await readTable(
-                connectionId,
-                "E07T",
-                ["TRKORR", "LANGU", "AS4TEXT"],
-                [
-                  { column: "TRKORR", operator: "GE", value: lowest },
-                  { column: "TRKORR", operator: "LE", value: highest }
-                ],
-                500
-              )
-            : await this.runQuery(
-                connectionId,
-                `SELECT TRKORR, LANGU, AS4TEXT FROM E07T WHERE TRKORR >= '${lowest}' AND TRKORR <= '${highest}'`,
-                500
-              )
-      const ordered = [...descriptions].sort((left, right) =>
-        `${String(left.TRKORR ?? "")}|${String(left.LANGU ?? "")}`.localeCompare(
-          `${String(right.TRKORR ?? "")}|${String(right.LANGU ?? "")}`
+      const numbers = [
+        ...new Set(
+          requests.map((row) => String(row.TRKORR ?? "").trim()).filter((number) => number !== "")
         )
-      )
-      for (const row of ordered) {
-        const number = String(row.TRKORR ?? "").trim()
-        const description = String(row.AS4TEXT ?? "").trim()
-        if (number && description && !texts.has(number)) texts.set(number, description)
+      ].sort()
+      const queue: string[][] = []
+      for (let index = 0; index < numbers.length; index += E07T_CHUNK_REQUESTS) {
+        queue.push(numbers.slice(index, index + E07T_CHUNK_REQUESTS))
+      }
+      while (queue.length) {
+        const chunk = queue.shift()
+        const lowest = chunk?.[0]
+        const highest = chunk?.[chunk.length - 1]
+        if (!chunk?.length || lowest === undefined || highest === undefined) continue
+        const descriptions = readTable
+          ? await readTable(
+              connectionId,
+              "E07T",
+              ["TRKORR", "LANGU", "AS4TEXT"],
+              [
+                { column: "TRKORR", operator: "GE", value: lowest },
+                { column: "TRKORR", operator: "LE", value: highest }
+              ],
+              E07T_MAX_ROWS
+            )
+          : await this.runQuery(
+              connectionId,
+              `SELECT TRKORR, LANGU, AS4TEXT FROM E07T WHERE TRKORR >= '${lowest}' AND TRKORR <= '${highest}'`,
+              E07T_MAX_ROWS
+            )
+        // Rows are ordered before the first description per request is chosen, so one request always
+        // resolves to one text regardless of the language rows the range also returned.
+        const ordered = [...descriptions].sort((left, right) =>
+          `${String(left.TRKORR ?? "")}|${String(left.LANGU ?? "")}`.localeCompare(
+            `${String(right.TRKORR ?? "")}|${String(right.LANGU ?? "")}`
+          )
+        )
+        for (const row of ordered) {
+          const number = String(row.TRKORR ?? "").trim()
+          const description = String(row.AS4TEXT ?? "").trim()
+          if (number && description && !texts.has(number)) texts.set(number, description)
+        }
+        if (descriptions.length >= E07T_MAX_ROWS && chunk.length > 1) {
+          const middle = Math.ceil(chunk.length / 2)
+          queue.unshift(chunk.slice(middle), chunk.slice(0, middle))
+        }
       }
     }
     const workbench = new Map<string, TransportTarget>()

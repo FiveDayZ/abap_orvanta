@@ -355,3 +355,45 @@ test("F1/F5: the description reaches the listing when only a bracketed text read
   assert.equal(target?.modifiable[0]?.["tm:desc"], "First workbench request")
   assert.equal(target?.released[0]?.["tm:desc"], "Released request")
 })
+
+test("F1/F5: a truncated E07T chunk is split and re-read until the description is found", async (t) => {
+  const fixture = await backendAgainst(emptyOrganizerDocument)
+  t.after(fixture.close)
+  // A bracket wide enough to cover a whole listing comes back at the 500-row bound, and because
+  // E07T is keyed by TRKORR the truncation drops the highest numbers - which is exactly where a
+  // user's newest workbench requests live. This reader reproduces that, so a regression to a single
+  // wide read loses the description below instead of passing quietly.
+  const reads: { low: string; high: string }[] = []
+  const reader: TransportTableReader = async (
+    connectionId,
+    tableName,
+    columns,
+    filters,
+    maxRows
+  ) => {
+    if (tableName !== "E07T")
+      return readCtsTable(connectionId, tableName, columns, filters, maxRows)
+    assert.equal(maxRows, 500)
+    const low = String(filters[0]?.value ?? "")
+    const high = String(filters[1]?.value ?? "")
+    reads.push({ low, high })
+    if (low === "GR2K900001" && high === "GR2K900003") {
+      return Array.from({ length: 500 }, (_value, index) => ({
+        TRKORR: `GR2K80${String(index).padStart(4, "0")}`,
+        LANGU: "E",
+        AS4TEXT: "another request"
+      }))
+    }
+    return [
+      { TRKORR: "GR2K900001", LANGU: "E", AS4TEXT: "First workbench request" },
+      { TRKORR: "GR2K900003", LANGU: "E", AS4TEXT: "Released request" }
+    ].filter((row) => row.TRKORR >= low && row.TRKORR <= high)
+  }
+
+  const listing = await fixture.backend.listUserTransports("w200", "test", reader)
+
+  assert.ok(reads.length > 1, "a chunk answered at the bound must be split and re-read")
+  const target = listing.workbench[0]
+  assert.equal(target?.modifiable[0]?.["tm:desc"], "First workbench request")
+  assert.equal(target?.released[0]?.["tm:desc"], "Released request")
+})
