@@ -18,6 +18,7 @@ import { collectChangeImpact } from "./change-impact.js"
 import { readReportVariants } from "./report-variants.js"
 import { SmartformService } from "./smartforms.js"
 import { resolveToolProfile, toolProfileSummary } from "./tool-profile.js"
+import { assertTableAllowed } from "./table-allowlist.js"
 
 export function createMcpServer(
   backend: SapBackend,
@@ -896,7 +897,10 @@ async function invokeWriteTool<T extends object>(
   const values = input as Record<string, unknown>
   const operationId =
     typeof values.operationId === "string" && values.operationId ? values.operationId : randomUUID()
-  const context = writeOperationContext(name, values, backend)
+  // Resolve a CTS task to its request before the pre-change summary and the payload are built, so
+  // the receipt, the helper and the SAP readback all describe the same container.
+  const requestedTaskNumber = await resolveWriteTransportNumber(values, backend)
+  const context = writeOperationContext(name, values, backend, requestedTaskNumber)
   const recoveryGuide =
     `Read back ${context.targetSummary} from SAP and compare it with the pre-change summary and requested change. ` +
     "Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
@@ -1031,7 +1035,10 @@ async function invokeWriteTool<T extends object>(
 
   try {
     const receipt = await receipts.complete(reservation.reservation, result, Date.now() - started)
-    return textResult(withOperationReceipt(result, operationId, receipt))
+    const note = requestedTaskNumber
+      ? `Transport container: ${requestedTaskNumber} is a CTS task, not a request; the objects were recorded in the request that owns it (${String(values.transportNumber)}). Pass the request number directly to target it explicitly.`
+      : null
+    return textResult(withOperationReceipt(result, operationId, receipt, note))
   } catch (error) {
     return {
       ...textResult(
@@ -1058,24 +1065,81 @@ async function invokeWriteTool<T extends object>(
 function withOperationReceipt(
   result: string,
   operationId: string,
-  receipt: Record<string, unknown>
+  receipt: Record<string, unknown>,
+  note?: string | null
 ): string {
   const operationReceipt = { operationId, ...receipt }
   try {
     const parsed = JSON.parse(result) as unknown
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return JSON.stringify({ ...parsed, operationReceipt }, null, 2)
+      return JSON.stringify(
+        { ...parsed, ...(note ? { transportResolution: note } : {}), operationReceipt },
+        null,
+        2
+      )
     }
   } catch {
     // Text results keep their original body and receive a receipt footer.
   }
-  return `${result}\n\nOperation Receipt\n${JSON.stringify(operationReceipt, null, 2)}`
+  return `${note ? `${note}\n\n` : ""}${result}\n\nOperation Receipt\n${JSON.stringify(operationReceipt, null, 2)}`
+}
+
+/**
+ * Normalize a write tool's `transportNumber` from a CTS **task** to the **request** that owns it.
+ *
+ * A write tool's `transportNumber` names a request: the tools that need a task expose
+ * `taskNumber` separately (`cleanup_transport_entries`). The DDIC helper hands the number to
+ * `RS_CORR_INSERT`, which - with the `use_korrnum_immediatedly = 'X'` the helper sets - takes the
+ * `ELSE` branch and passes it as `iv_request` to `TR_RECORD_OBJ_CHANGE_TO_REQ` ->
+ * `TRINT_OBJECTS_CHECK_AND_INSERT( iv_order = ... )`. That parameter is a request and its
+ * companion outputs are `ev_order`/`ev_task`, so the task is *derived*; a task passed in its
+ * place is rejected with `TK 886` "request type not allowed".
+ *
+ * SE09/SE10 and the ADT transport tree both print task numbers next to request numbers, so a task
+ * here is a plausible thing for a caller to paste rather than a mistake to punish. Verified
+ * 2026-09-24: the resume of `ZTPMC_TPRPI` was refused because the caller passed task `GR2K923428`
+ * (`E070`: `TRFUNCTION = 'S'`, `STRKORR = 'GR2K923427'`) where request `GR2K923427` was meant.
+ *
+ * The substitution is returned so the receipt can state what the caller actually asked for; it is
+ * never applied silently. A lookup that fails leaves the value untouched: a diagnostic read must
+ * not block a legitimate write, and the helper's own rejection stays the backstop.
+ */
+export async function resolveWriteTransportNumber(
+  values: Record<string, unknown>,
+  backend: SapBackend
+): Promise<string | null> {
+  const raw = values.transportNumber
+  if (typeof raw !== "string") return null
+  const container = raw.trim().toUpperCase()
+  if (!container) return null
+  const uri = String(values.fileUri ?? values.url ?? "")
+  const connectionId = String(
+    values.connectionId ?? /^adt:\/\/([^/]+)/i.exec(uri)?.[1] ?? backend.connectionIds()[0] ?? ""
+  ).toLowerCase()
+  if (!connectionId) return null
+  try {
+    assertTableAllowed("E070")
+    const rows = await backend.runQuery(
+      connectionId,
+      `SELECT TRKORR, TRFUNCTION, STRKORR FROM E070 WHERE TRKORR = '${container.replaceAll("'", "''")}'`,
+      1
+    )
+    const parent = String(rows[0]?.STRKORR ?? "")
+      .trim()
+      .toUpperCase()
+    if (!parent || parent === container) return null
+    values.transportNumber = parent
+    return container
+  } catch {
+    return null
+  }
 }
 
 export function writeOperationContext(
   name: string,
   input: Record<string, unknown>,
-  backend: SapBackend
+  backend: SapBackend,
+  requestedTaskNumber?: string | null
 ): {
   connectionId: string
   targetKey: string
@@ -1119,6 +1183,14 @@ export function writeOperationContext(
       requestedOperation: name,
       concurrencyGuard: guard,
       transportNumber: input.transportNumber ?? "existing assignment",
+      // Only present when the caller named a task: `transportNumber` above is then the request that
+      // owns it, and this records what was actually asked for so the receipt cannot be misread.
+      ...(requestedTaskNumber
+        ? {
+            requestedTaskNumber,
+            transportResolution: `${requestedTaskNumber} is a CTS task; the objects were recorded in its request ${String(input.transportNumber)}`
+          }
+        : {}),
       automaticRollback: false
     })
   }
