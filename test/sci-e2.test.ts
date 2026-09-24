@@ -170,5 +170,5 @@ test("SCI E2 contract is opt-in and unapproved/missing-helper calls cannot execu
     tools.runSciAnalysis({ ...input, acknowledgePotentialSideEffects: false as never }),
     /acknowledgePotentialSideEffects/
   )
-  await assert.rejects(tools.runSciAnalysis(input), /FUNCTION_NOT_FOUND/)
+  await assert.rejects(tools.runSciAnalysis(input), /FUNCTION_READ_FAILED/)
 })

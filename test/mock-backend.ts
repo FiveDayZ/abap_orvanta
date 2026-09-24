@@ -1442,7 +1442,10 @@ export class MockBackend implements SapBackend {
       const name = (request.objectName ?? "").toUpperCase()
       const existing = this.functionModules.get(name)
       if (request.operation === "READ_FUNCTION_INTERFACE" && !existing) {
-        return this.repositoryError("FUNCTION_NOT_FOUND", "Function module does not exist")
+        // Mirrors w200 exactly. The helper answers a missing function module with a code that says
+        // only that the read failed and a message whose "does not exist" wording is localised, so a
+        // mock that said FUNCTION_NOT_FOUND would hide the defect this shape caused.
+        return this.repositoryError("FUNCTION_READ_FAILED", `功能模块 ${name} 不存在`)
       }
       if (request.operation === "CREATE_FUNCTION_MODULE" && existing) {
         return this.repositoryError("FUNCTION_EXISTS", "Function module already exists")

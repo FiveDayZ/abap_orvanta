@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import test from "node:test"
 import { ToolService } from "../src/tools.js"
-import { observeWritePreChange } from "../src/write-prechange-evidence.js"
+import { isMissing, observeWritePreChange } from "../src/write-prechange-evidence.js"
 import { MockBackend } from "./mock-backend.js"
 
 test("pre-change observation covers repository, DDIC, message, and source targets", async () => {
@@ -456,6 +456,26 @@ test("pre-change observation reports an inactive definition as inactive", async 
 // branches existed they fell through to the generic ADT source observation, which threw "write
 // target has no readable source identity": the gate then reported exists=null and both writes were
 // refused before SAP was contacted, so the two 2.8 transport tools were unreachable.
+test("a localised not-found is recognised as the target being absent", () => {
+  // Live evidence from w200: the helper answers a missing function module with a code that says only
+  // that the read failed and a message whose "does not exist" wording is localised. Creating a
+  // function module therefore produced a receipt with an unexplained warning and an observation
+  // downgraded to partial, even though "the target does not exist yet" is the normal state before
+  // every create. The English patterns below never matched that message.
+  assert.equal(
+    isMissing(
+      "Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_DOES_NOT_EXIST_99 不存在"
+    ),
+    true
+  )
+  assert.equal(isMissing("Error: object 未找到"), true)
+  assert.equal(isMissing("Error: FUNCTION_NOT_FOUND: Function module does not exist"), true)
+  // A read that failed for a reason other than absence must stay an error: the code alone says
+  // nothing about whether the object exists.
+  assert.equal(isMissing("Error: FUNCTION_READ_FAILED: 没有权限"), false)
+  assert.equal(isMissing("Error: RFC_ERROR_SYSTEM_FAILURE: connection reset"), false)
+})
+
 test("pre-change observation covers CTS request creation and object addition", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)

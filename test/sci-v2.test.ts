@@ -189,7 +189,7 @@ test("SCI E1 rejects missing helpers and unapproved calls before SAP execution",
     tools.runSciAnalysis({ ...input, acknowledgePotentialSideEffects: false as never }),
     /acknowledgePotentialSideEffects/
   )
-  await assert.rejects(tools.runSciAnalysis(input), /FUNCTION_NOT_FOUND/)
+  await assert.rejects(tools.runSciAnalysis(input), /FUNCTION_READ_FAILED/)
 })
 
 test("SCI E1 HTTP tool exposes target and routes it to V2 without silently using V1", async () => {

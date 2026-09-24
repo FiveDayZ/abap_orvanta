@@ -454,7 +454,11 @@ async function observeAssignment(
     )
     evidence.sources.push("repository_assignment")
     if (assignmentDefinesExistence) evidence.exists = true
-    evidence.active = booleanValue(value.active)
+    // A create observes the enclosing function group to learn where the new object will land. That
+    // group is active by definition, but this evidence describes the target, so reporting the
+    // group's state as the target's claimed an active version for an object that does not exist yet
+    // (observed live: exists false with active true in the same receipt).
+    evidence.active = evidence.exists === false ? null : booleanValue(value.active)
     evidence.packageName = stringValue(value.packageName)
     evidence.requestNumber = stringValue(value.requestNumber)
     evidence.taskNumber = stringValue(value.taskNumber)
@@ -752,9 +756,17 @@ function classicBadiSnapshot(
   }
 }
 
-function isMissing(error: unknown): boolean {
+export function isMissing(error: unknown): boolean {
+  const text = String(error)
+  // The helper answers a missing object with a code that says only that the read failed and a
+  // message whose "does not exist" wording is localised. On w200 (system language 1) a function
+  // module that does not exist comes back as
+  // "FUNCTION_READ_FAILED: 功能模块 <name> 不存在", which no English pattern matches, so the normal
+  // state before every create was recorded as an observation error instead of as evidence that the
+  // target is absent - a warning the receipt could not explain and an observationStatus of partial.
+  if (/不存在|未找到|没有找到/.test(text)) return true
   return /(?:SCREEN|TRANSACTION|FUNCTION|MESSAGE_CLASS|REPOSITORY_OBJECT|DDIC_OBJECT|ENHANCEMENT_IMPLEMENTATION|OBJECT)_(?:NOT_FOUND|DOES_NOT_EXIST)|(?:screen|transaction|function(?: module)?|message class|repository object|ABAP object|program) (?:does not exist|was not found)|could not find (?:ABAP )?object/i.test(
-    String(error)
+    text
   )
 }
 

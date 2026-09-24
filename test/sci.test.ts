@@ -137,7 +137,7 @@ test("SCI tool refuses unapproved execution, a missing helper, and a mismatched 
     tools.runSciAnalysis({ ...input, acknowledgePotentialSideEffects: false as never }),
     /acknowledgePotentialSideEffects/
   )
-  await assert.rejects(tools.runSciAnalysis(input), /FUNCTION_NOT_FOUND/)
+  await assert.rejects(tools.runSciAnalysis(input), /FUNCTION_READ_FAILED/)
   class WrongHelperBackend extends MockBackend {
     override callSapRepository(
       connectionId: string,
