@@ -22,7 +22,8 @@ test("every registered tier entry is allowed", () => {
     ...TABLE_TIERS.metadata,
     ...TABLE_TIERS.customizing,
     ...TABLE_TIERS.business,
-    ...TABLE_TIERS.productRequired
+    ...TABLE_TIERS.productRequired,
+    ...TABLE_TIERS.indirectFormatReads
   ]
   assert.ok(registered.length > 0, "allowlist must not be empty")
   for (const name of registered) assert.equal(isTableAllowed(name), true, `${name} must be allowed`)
@@ -119,4 +120,42 @@ test("D-6: the CTS text table E07T is registered beside E070 and E071", () => {
 test("D-6: E07T is neither sensitive nor pending approval", () => {
   assert.equal((TABLE_NEVER_ALLOWED as readonly string[]).includes("E07T"), false)
   assert.equal((TABLE_PENDING_APPROVAL as readonly string[]).includes("E07T"), false)
+})
+
+// D7 spec §8.2: the helper already reads the SmartStyle, SAPscript and Adobe format tables inside
+// ABAP. Registering them makes that existing read path auditable instead of invisible; it does not
+// add a capability. The tier is pinned so a later removal is a deliberate, visible change.
+test("D7 §8.2: the indirectly read form and text tables are registered", () => {
+  const expected = [
+    "STXSHEAD",
+    "STXSPARA",
+    "STXSCHAR",
+    "STXSTAB",
+    "STXH",
+    "STXL",
+    "FPLAYOUT",
+    "FPLAYOUTT",
+    "FPINTERFACE",
+    "FPINTERFACET"
+  ]
+  assert.deepEqual([...TABLE_TIERS.indirectFormatReads].sort(), [...expected].sort())
+  for (const name of expected) {
+    assert.equal(isTableAllowed(name), true, `${name} must be allowed`)
+    assert.equal(describeAllowlistRejection(name), null)
+  }
+})
+
+test("D7 §8.2: registering the format tables does not widen the sensitive tier", () => {
+  for (const name of TABLE_TIERS.indirectFormatReads) {
+    assert.equal(
+      (TABLE_NEVER_ALLOWED as readonly string[]).includes(name),
+      false,
+      `${name} must not be in the never-allowed tier`
+    )
+    assert.equal(
+      (TABLE_PENDING_APPROVAL as readonly string[]).includes(name),
+      false,
+      `${name} must not be in the pending-approval tier`
+    )
+  }
 })

@@ -69,7 +69,36 @@ export const TABLE_TIERS = {
    *
    * 这一档的存在本身即是发现：**白名单必须同时覆盖"产品必需"，否则安全加固会变成功能回退。**
    */
-  productRequired: ["SXCI", "VARID", "TBATG"]
+  productRequired: ["SXCI", "VARID", "TBATG"],
+  /**
+   * 格式与文本载体档：D7 规格 §8.2 的**间接访问门禁登记**（2026-09-24 用户逐项授权后登记）。
+   *
+   * 这些表**已经**被 SAP 侧助手在 ABAP 内间接读取：`read_smartstyle` 经 `SSF_READ_STYLE`/
+   * `SSF_READ_SAPSCRIPT_STYLE` 读 `STXS*` 族，`read_adobe_form` 经
+   * `cl_fp_db_wrapper=>sel_lt_by_name_lang` 读 `FPLAYOUTT`。既然它们事实上已被读取，登记它们
+   * 是把这条既有读取路径**变得可审计**，而不是新增能力——规格明确要求"不得以'白名单没报错'
+   * 推断没读"，因此登记本身即是门禁声明。
+   *
+   * 分类依据：`STXS*`/`FPLAYOUT*`/`FPINTERFACE*` 是格式定义（段落、字符格式、制表位、XDP 布局），
+   * `STXH`/`STXL` 是 SAPscript 文档文本载体。均为客户可读的文本/格式元数据，不含口令、个人数据
+   * 或财务凭证明细（对照 X 档）。
+   *
+   * 登记后的直接用途：① 用 `read_abap_table` 独立核对助手返回的条数（D7 §3 的可选一致性判据）；
+   * ② 从服务侧发现既有对象名，而不必依赖调用方提供。**未登记 `SSF*` 运行时结构**——那些是接口
+   * 结构体而非存储表，登记它们只会制造误导。
+   */
+  indirectFormatReads: [
+    "STXSHEAD",
+    "STXSPARA",
+    "STXSCHAR",
+    "STXSTAB",
+    "STXH",
+    "STXL",
+    "FPLAYOUT",
+    "FPLAYOUTT",
+    "FPINTERFACE",
+    "FPINTERFACET"
+  ]
 } as const
 
 /**
@@ -104,7 +133,8 @@ const allowed = new Set<string>([
   ...TABLE_TIERS.metadata,
   ...TABLE_TIERS.customizing,
   ...TABLE_TIERS.business,
-  ...TABLE_TIERS.productRequired
+  ...TABLE_TIERS.productRequired,
+  ...TABLE_TIERS.indirectFormatReads
 ])
 
 const neverAllowed = new Set<string>(TABLE_NEVER_ALLOWED)
