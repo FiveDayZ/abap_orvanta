@@ -276,6 +276,13 @@ export async function observeWritePreChange(
           connectionId
         }),
       (value) => {
+        // A missing object now arrives as a parsed result instead of a thrown error, so this callback
+        // has to read the verdict itself. Treating every parsed payload as existence would undo the
+        // 2026-09-22 10:56 correction that reports a saved-but-not-activated definition as inactive.
+        if (value.exists === false) {
+          evidence.exists = false
+          return
+        }
         evidence.exists = true
         const status = String(value.status ?? "").toLowerCase()
         // A saved-but-not-activated definition is readable and must be reported as inactive, not as

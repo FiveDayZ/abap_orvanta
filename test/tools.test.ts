@@ -7787,3 +7787,52 @@ test("a customer lock object keeps SAP's E prefix and a standard one is still re
   // And a bare customer name still works, so the E stays optional.
   await tools.upsertLockObject({ ...input, objectName: "ZPMCTPRP" })
 })
+
+/**
+ * The 2026-09-24 20:46 incident tried to reconcile the unknown outcome of a failed lock object write
+ * by reading the object back, and got a tool-level error: "Error invoking read_lock_object: ...:
+ * DDIC_OBJECT_NOT_FOUND: DDIC object does not exist". The read had answered the question - the object
+ * is not there - but it arrived as isError=true, which reads the same as a broken helper, so the
+ * caller could not safely conclude that the earlier write had never reached SAP.
+ *
+ * A read that completes and finds nothing is a successful read. This asserts the caller-visible
+ * answer is a parseable verdict, and that the relaxation did not swallow other failures.
+ */
+test("a read of a missing DDIC object answers not-found instead of failing", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+
+  const result = JSON.parse(
+    await tools.readLockObject({ connectionId: "w200", objectName: "EZPMCTPRP" })
+  ) as Record<string, unknown>
+  assert.equal(result.status, "not-found")
+  assert.equal(result.exists, false)
+  assert.equal(result.authoritative, true)
+  assert.equal(result.objectName, "EZPMCTPRP")
+  assert.equal(result.objectType, "lockObject")
+  assert.equal(result.version, null)
+  assert.equal(result.fingerprint, null)
+
+  // The same object type is still readable once it exists, so not-found is a verdict about this
+  // object and not a blanket relaxation of the read path.
+  await tools.upsertLockObject({
+    connectionId: "w200",
+    objectName: "EZPMCTPRP",
+    description: "Upsert the reorganisation request lock",
+    packageName: "ZABAP",
+    transportNumber: "GR2K923472",
+    header: { AGGTYPE: "E" },
+    lockTables: [{ TABNAME: "ZTPMC_TPRPH", ENQMODE: "E" }],
+    lockFields: [{ VIEWFIELD: "MANDT", TABNAME: "ZTPMC_TPRPH", FIELDNAME: "MANDT", ENQMODE: "E" }]
+  })
+  const found = JSON.parse(
+    await tools.readLockObject({ connectionId: "w200", objectName: "EZPMCTPRP" })
+  ) as Record<string, unknown>
+  assert.notEqual(found.status, "not-found")
+
+  // A malformed name is a caller error, not a missing object, and must still be reported as one.
+  await assert.rejects(
+    tools.readLockObject({ connectionId: "w200", objectName: "not a name!" }),
+    /not a valid SAP Dictionary name/
+  )
+})

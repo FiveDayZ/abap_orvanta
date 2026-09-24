@@ -1,6 +1,7 @@
 import { resolve } from "node:path"
 import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 import { preSapValidation } from "./pre-sap-validation.js"
+import { isMissing } from "./write-prechange-evidence.js"
 import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
 import {
   cleanupTransportEntrySchema,
@@ -3547,7 +3548,7 @@ export class ToolService {
   }
 
   async readDdicDomain(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_DOMAIN", "domain")
+    return this.readDdicTool(input, "READ_DOMAIN", "domain")
   }
 
   async upsertDdicDomain(input: UpsertDomainInput): Promise<string> {
@@ -3597,7 +3598,7 @@ export class ToolService {
   }
 
   async readSearchHelp(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_SEARCH_HELP", "searchHelp")
+    return this.readDdicTool(input, "READ_SEARCH_HELP", "searchHelp")
   }
 
   async upsertSearchHelp(input: UpsertSearchHelpInput): Promise<string> {
@@ -3642,7 +3643,7 @@ export class ToolService {
   }
 
   async readLockObject(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_LOCK_OBJECT", "lockObject")
+    return this.readDdicTool(input, "READ_LOCK_OBJECT", "lockObject")
   }
 
   async upsertLockObject(input: UpsertLockObjectInput): Promise<string> {
@@ -3679,7 +3680,7 @@ export class ToolService {
   }
 
   async readNumberRangeObject(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_NUMBER_RANGE_OBJECT", "numberRangeObject")
+    return this.readDdicTool(input, "READ_NUMBER_RANGE_OBJECT", "numberRangeObject")
   }
 
   async upsertNumberRangeObject(input: UpsertNumberRangeObjectInput): Promise<string> {
@@ -3712,7 +3713,7 @@ export class ToolService {
   }
 
   async readMaintenanceView(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_MAINTENANCE_VIEW", "maintenanceView")
+    return this.readDdicTool(input, "READ_MAINTENANCE_VIEW", "maintenanceView")
   }
 
   async upsertMaintenanceView(input: UpsertMaintenanceViewInput): Promise<string> {
@@ -3763,7 +3764,7 @@ export class ToolService {
   }
 
   async readDdicDataElement(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_DATA_ELEMENT", "dataElement")
+    return this.readDdicTool(input, "READ_DATA_ELEMENT", "dataElement")
   }
   async upsertDdicDataElement(input: UpsertDataElementInput): Promise<string> {
     const objectName = customerDdicName(input.objectName)
@@ -3805,7 +3806,7 @@ export class ToolService {
   }
 
   async readDdicStructure(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_STRUCTURE", "structure")
+    return this.readDdicTool(input, "READ_STRUCTURE", "structure")
   }
 
   async upsertDdicStructure(input: UpsertStructureInput): Promise<string> {
@@ -3840,7 +3841,7 @@ export class ToolService {
   }
 
   async readDdicTransparentTable(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_TRANSPARENT_TABLE", "transparentTable")
+    return this.readDdicTool(input, "READ_TRANSPARENT_TABLE", "transparentTable")
   }
 
   async createDdicTransparentTable(input: CreateTransparentTableInput): Promise<string> {
@@ -4453,7 +4454,7 @@ export class ToolService {
   }
 
   async readDdicTableType(input: ReadDdicInput): Promise<string> {
-    return this.readDdic(input, "READ_TABLE_TYPE", "tableType")
+    return this.readDdicTool(input, "READ_TABLE_TYPE", "tableType")
   }
 
   async upsertDdicTableType(input: UpsertTableTypeInput): Promise<string> {
@@ -4563,6 +4564,54 @@ export class ToolService {
       null,
       2
     )
+  }
+
+  /**
+   * The public read tools answer "this object does not exist" as a result, not as a failure.
+   *
+   * A read that completed and found nothing is a successful read. The 2026-09-24 20:46 incident could
+   * not conclude that EZPMCTPRP had never been created - the reconciliation read its own receipt asked
+   * for - because the authoritative read of a missing object arrived as a tool-level error with
+   * isError=true, which is indistinguishable from a broken helper. write-prechange-evidence has always
+   * modelled the same answer as exists=false; this makes the caller-visible read agree with it.
+   *
+   * Every other DDIC failure still throws, and INACTIVE_VERSION_EXISTS is never reclassified: that
+   * code means the object exists without an active version, which is the opposite of not found.
+   */
+  private async readDdicTool(
+    input: ReadDdicInput,
+    operation: SapDdicOperation,
+    kind: DdicKind
+  ): Promise<string> {
+    try {
+      return await this.readDdic(input, operation, kind)
+    } catch (error) {
+      if (!isMissing(error) || /INACTIVE_VERSION_EXISTS/.test(String(error))) throw error
+      return JSON.stringify(
+        {
+          connectionId: input.connectionId,
+          objectName: input.objectName.trim().toUpperCase(),
+          objectType: kind,
+          status: "not-found",
+          exists: false,
+          active: null,
+          version: null,
+          fingerprint: null,
+          packageName: null,
+          requestNumber: null,
+          authoritative: true,
+          readOnly: true,
+          reason:
+            "The DDIC read completed and SAP answered that this object does not exist. This is a definite answer, not a tool failure and not an inconclusive result: there is nothing to reconcile for this object.",
+          substitutes: [
+            "read_abap_table(TADIR, filters OBJECT = <object type>, OBJ_NAME = <name>) for the recorded repository entry",
+            "read_abap_table(DD02L or DD25L, filters for the object) for the stored header rows"
+          ]
+        },
+        null,
+        2
+      )
+    }
   }
 
   private async readDdic(

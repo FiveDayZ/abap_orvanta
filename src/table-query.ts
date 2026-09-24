@@ -146,6 +146,16 @@ export async function readAbapTable(
         throw new Error("TABLE_QUERY_TABLE_NOT_FOUND")
       return readWithRfcMetadataFallback(input, base, conditions, backend, readReader)
     }
+    // The DDIC probe answers a missing object as a result instead of throwing, so the
+    // table-not-found verdict has to be read from the payload too. Without this a table with no DDIC
+    // definition would be reported as a dictionary mismatch instead of falling back to the RFC
+    // metadata path below.
+    if (
+      rawDefinition !== null &&
+      typeof rawDefinition === "object" &&
+      (rawDefinition as { status?: unknown }).status === "not-found"
+    )
+      throw new Error("TABLE_QUERY_TABLE_NOT_FOUND")
     const definition = tableDefinition.safeParse(rawDefinition)
     if (!definition.success || definition.data.objectName !== input.tableName)
       throw new Error("TABLE_QUERY_DICTIONARY_INVALID")

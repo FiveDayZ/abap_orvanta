@@ -2129,6 +2129,46 @@ const toolContractsBase = {
  * read-only / destructive hint. An annotation declared in this file always wins, and a
  * tool present in only one of the two places fails at load time instead of drifting.
  */
-export const toolContracts: typeof toolContractsBase = withRegistryAnnotations(toolContractsBase)
+/**
+ * A DDIC read that completes and finds nothing answers with a result instead of throwing.
+ *
+ * The 2026-09-24 20:46 incident needed exactly that distinction and did not get it: the
+ * reconciliation read its own receipt asked for came back as "Error invoking read_lock_object:
+ * ...: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist", which is isError=true and therefore reads
+ * the same as a broken helper, so the caller could not conclude that the earlier write had never
+ * reached SAP. Appending the sentence here, at the one place every caller-visible description passes
+ * through, keeps the nine DDIC read tools from drifting apart.
+ */
+const DDIC_READ_NOT_FOUND_NOTE =
+  ' A read that completes and finds nothing answers with status "not-found", exists false and ' +
+  "authoritative true instead of failing, so a missing object is distinguishable from a broken " +
+  "helper; every other failure is still reported as an error."
+
+const DDIC_READ_TOOLS = [
+  "read_ddic_domain",
+  "read_search_help",
+  "read_lock_object",
+  "read_number_range_object",
+  "read_maintenance_view",
+  "read_ddic_data_element",
+  "read_ddic_structure",
+  "read_ddic_transparent_table",
+  "read_ddic_table_type"
+] as const satisfies readonly (keyof typeof toolContractsBase)[]
+
+const ddicReadContracts = Object.fromEntries(
+  DDIC_READ_TOOLS.map((name) => [
+    name,
+    {
+      ...toolContractsBase[name],
+      description: `${toolContractsBase[name].description}${DDIC_READ_NOT_FOUND_NOTE}`
+    }
+  ])
+) as Partial<typeof toolContractsBase>
+
+export const toolContracts: typeof toolContractsBase = withRegistryAnnotations({
+  ...toolContractsBase,
+  ...ddicReadContracts
+})
 
 export type ToolName = keyof typeof toolContracts
