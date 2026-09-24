@@ -3441,11 +3441,19 @@ export class ToolService {
       )
     }
     const saved = messageClassResult(result)
-    if (
-      saved.packageName !== input.packageName.trim().toUpperCase() ||
-      !matchesSubset(saved.definition, { description: input.description, messages })
-    ) {
-      throw new Error("SAP message class verification did not return the requested definition")
+    if (saved.packageName !== input.packageName.trim().toUpperCase()) {
+      throw new Error(
+        `SAP message class verification did not return the requested definition: SAP stored package ${saved.packageName || "<empty>"} instead of ${input.packageName.trim().toUpperCase()}`
+      )
+    }
+    const mismatches = definitionMismatches(saved.definition, {
+      description: input.description,
+      messages
+    })
+    if (mismatches.length) {
+      throw new Error(
+        `SAP message class verification did not return the requested definition: ${formatMismatches(mismatches)}`
+      )
     }
     return JSON.stringify(
       {
@@ -3481,12 +3489,16 @@ export class ToolService {
       transportNumber(input.transportNumber)
     )
     const saved = messageClassResult(result)
-    if (
-      saved.packageName !== expectedPackage ||
-      JSON.stringify(saved.definition.messages) !== JSON.stringify(messages)
-    ) {
+    if (saved.packageName !== expectedPackage) {
       throw new Error(
-        "SAP message class verification did not return the requested active definition"
+        `SAP message class verification did not return the requested active definition: SAP stored package ${saved.packageName || "<empty>"} instead of ${expectedPackage}`
+      )
+    }
+    // The verdict stays the strict whole-value comparison it always was; only the reason is added, so
+    // a mismatch names the message line that differs instead of "something did not match".
+    if (JSON.stringify(saved.definition.messages) !== JSON.stringify(messages)) {
+      throw new Error(
+        `SAP message class verification did not return the requested active definition: ${formatDifference(saved.definition.messages, messages)}`
       )
     }
     return JSON.stringify(
@@ -3635,9 +3647,10 @@ export class ToolService {
         selectionExit: header.SELMEXIT ?? "",
         hotkey: header.HOTKEY ?? "",
         dialogType: header.DIALOGTYPE ?? "",
-        selectionMethods,
-        parameters,
-        fieldAssignments
+        // The numeric columns of these rows come back zero-padded (see padNumericTextToStoredWidth).
+        selectionMethods: padNumericTextToStoredWidth(selectionMethods, result.selectionMethods),
+        parameters: padNumericTextToStoredWidth(parameters, result.parameters),
+        fieldAssignments: padNumericTextToStoredWidth(fieldAssignments, result.fieldAssignments)
       }
     )
   }
@@ -3669,13 +3682,12 @@ export class ToolService {
       objectName,
       input.packageName,
       input.connectionId,
-      {
-        description: input.description,
-        aggregationType: header.AGGTYPE ?? "",
-        rootTable: header.ROOTTAB ?? "",
-        lockTables,
-        lockFields
-      }
+      lockObjectExpectedDefinition(input.description, header, lockTables, lockFields),
+      // The top-level convenience copy is taken from SAP's read-back, not from the request. DD25V
+      // holds values the caller never sent (see lockObjectExpectedDefinition), so echoing the request
+      // here would report an empty root table for an object SAP stored a root table in, hiding the
+      // derivation from the caller who has to decide what to do next.
+      ddicDefinition(result, "lockObject")
     )
   }
 
@@ -10744,8 +10756,11 @@ function savedDdicResult(
     throw new Error("SAP DDIC verification did not return the recorded transport request or task")
   }
   const definition = ddicDefinition(result, kind)
-  if (!matchesSubset(definition, expectedDefinition)) {
-    throw new Error("SAP DDIC verification did not return the requested active definition")
+  const mismatches = definitionMismatches(definition, expectedDefinition)
+  if (mismatches.length) {
+    throw new Error(
+      `SAP DDIC verification did not return the requested active definition: ${formatMismatches(mismatches)}`
+    )
   }
   return JSON.stringify(
     {
@@ -10935,7 +10950,9 @@ function savedMaintenanceViewResult(
   const expectedBaseTables = baseTables.map(pickBaseTable)
   const actualBaseTables = result.baseTables.map(pickBaseTable)
   if (JSON.stringify(actualBaseTables) !== JSON.stringify(expectedBaseTables)) {
-    throw new Error("SAP DDIC verification did not return the requested base tables")
+    throw new Error(
+      `SAP DDIC verification did not return the requested base tables: ${formatDifference(actualBaseTables, expectedBaseTables)}`
+    )
   }
   const expectedViewFields = viewFields.map((row) => ({
     ...pickViewField(row),
@@ -10943,7 +10960,9 @@ function savedMaintenanceViewResult(
   }))
   const actualViewFields = result.viewFields.map(pickViewField)
   if (JSON.stringify(actualViewFields) !== JSON.stringify(expectedViewFields)) {
-    throw new Error("SAP DDIC verification did not return the requested view fields")
+    throw new Error(
+      `SAP DDIC verification did not return the requested view fields: ${formatDifference(actualViewFields, expectedViewFields)}`
+    )
   }
   return JSON.stringify(
     {
@@ -10970,21 +10989,114 @@ function savedMaintenanceViewResult(
   )
 }
 
-function matchesSubset(actual: unknown, expected: unknown): boolean {
+/**
+ * Whether two texts denote the same non-negative integer once DDIC zero padding is ignored. Both
+ * sides must be plain digits, so a blank, a sign or a decimal point is not this case and falls back
+ * to the caller's stricter comparison. "0" and "000" are the same number, as they are in SAP.
+ */
+function isZeroPaddedSameInteger(stored: string, expected: string): boolean {
+  const digits = (value: string): string | null => {
+    const trimmed = value.trim()
+    return /^\d+$/.test(trimmed) ? trimmed.replace(/^0+/, "") : null
+  }
+  const storedDigits = digits(stored)
+  const expectedDigits = digits(expected)
+  return storedDigits !== null && storedDigits === expectedDigits
+}
+
+/**
+ * DD31V/DD32P/DD33V numeric columns are NUMC in the DDIC, and the helper assigns the caller's text
+ * into the component, so SAP stores the value zero-padded and the read-back publishes that padded
+ * text. Live w200 evidence (.doc/code-update-20260920-135257.md): the parameters of ZOIGD_H read back
+ * LENG "000010" and SHLPSELPOS "00" for rows written as 10 and 1, so comparing the raw caller text
+ * rejected stored values that were the requested ones.
+ *
+ * The expected text is padded to the width SAP itself reported, so no column width is assumed here.
+ * Padding two digit strings to a common width preserves the numeric value only when the digits agree,
+ * so a genuinely different stored value is still rejected: a requested 10 against a stored 000020
+ * becomes 000010 and does not match.
+ */
+function padNumericTextToStoredWidth(
+  rows: SapStructureRow[],
+  storedRows: SapStructureRow[]
+): SapStructureRow[] {
+  return rows.map((row, index) => {
+    const stored = storedRows[index]
+    if (!stored) return row
+    const padded: SapStructureRow = { ...row }
+    for (const [column, value] of Object.entries(row)) {
+      const storedValue = stored[column]
+      if (typeof storedValue !== "string") continue
+      if (storedValue.length <= value.length) continue
+      if (!/^\d+$/.test(value) || !/^\d+$/.test(storedValue)) continue
+      padded[column] = value.padStart(storedValue.length, "0")
+    }
+    return padded
+  })
+}
+
+/**
+ * Why a read-back definition differs from the request, field by field, as "path: SAP stored X
+ * instead of Y". A verification that answers only yes/no costs one SAP round trip per disagreeing
+ * field, because the caller cannot tell a wrong expectation from a wrong write; the same reason made
+ * the function-module check name its mismatches (see the comment on that check). matchesSubset is
+ * defined in terms of this function so the two answers can never drift apart.
+ */
+function definitionMismatches(actual: unknown, expected: unknown, path = ""): string[] {
+  const where = path || "definition"
   if (Array.isArray(expected)) {
-    return (
-      Array.isArray(actual) &&
-      actual.length === expected.length &&
-      expected.every((value, index) => matchesSubset(actual[index], value))
+    if (!Array.isArray(actual)) {
+      return [
+        `${where}: SAP returned ${describeValue(actual)} instead of ${expected.length} row(s)`
+      ]
+    }
+    if (actual.length !== expected.length) {
+      return [`${where}: SAP returned ${actual.length} row(s) instead of ${expected.length}`]
+    }
+    return expected.flatMap((value, index) =>
+      definitionMismatches(actual[index], value, `${where}[${index}]`)
     )
   }
   if (expected && typeof expected === "object") {
-    if (!actual || typeof actual !== "object" || Array.isArray(actual)) return false
-    return Object.entries(expected).every(([key, value]) =>
-      matchesSubset((actual as Record<string, unknown>)[key], value)
+    if (!actual || typeof actual !== "object" || Array.isArray(actual)) {
+      return [`${where}: SAP returned ${describeValue(actual)} instead of an object`]
+    }
+    return Object.entries(expected).flatMap(([key, value]) =>
+      definitionMismatches((actual as Record<string, unknown>)[key], value, `${where}.${key}`)
     )
   }
   return actual === expected
+    ? []
+    : [`${where}: SAP stored ${describeValue(actual)} instead of ${describeValue(expected)}`]
+}
+
+function matchesSubset(actual: unknown, expected: unknown): boolean {
+  return definitionMismatches(actual, expected).length === 0
+}
+
+function describeValue(value: unknown): string {
+  return value === undefined ? "<absent>" : JSON.stringify(value)
+}
+
+/**
+ * The mismatch report appended to a verification error. Capped so one wrong array cannot produce a
+ * message longer than the caller can read, but never silenced: the count of the remainder is stated.
+ */
+function formatMismatches(mismatches: string[], limit = 4): string {
+  const head = mismatches.slice(0, limit).join("; ")
+  return mismatches.length > limit ? `${head}; and ${mismatches.length - limit} more` : head
+}
+
+/**
+ * The reason a strict whole-value comparison refused a result. Used where the verdicts must stay as
+ * strict as they were (a wholesale JSON comparison) while the error still has to name the difference;
+ * the field walk covers the usual case and the raw pair is the fallback when it cannot.
+ */
+function formatDifference(actual: unknown, expected: unknown): string {
+  const mismatches = definitionMismatches(actual, expected)
+  if (mismatches.length) return formatMismatches(mismatches)
+  const pair = `SAP returned ${describeValue(actual)} instead of ${describeValue(expected)}`
+  return pair.length > 400 ? `${pair.slice(0, 400)}...` : pair
 }
 
 /**
@@ -11191,8 +11303,16 @@ function savedNumberRangeObjectResult(
     expected: string
   ): boolean => {
     if (stored === expected) return true
+    if (stored === undefined) return false
+    // TNRO-NOIVBUFFER (NRIVBUFFER) is N 16, measured on w200 by the DD03L probe recorded in
+    // .doc/code-update-20260922-140723.md. The helper assigns the caller's text into that numeric
+    // component, so SAP stores the zero-padded value and the read-back publishes it: a request of
+    // "1000" reads back as "0000000000001000", and the raw text never matches although the stored
+    // value is the requested one. This is the same shape as PERCENTAGE below and was left unfixed
+    // when that one was corrected.
+    if (field === "NOIVBUFFER") return isZeroPaddedSameInteger(stored, expected)
     if (field !== "PERCENTAGE") return false
-    if (stored === undefined || stored.trim() === "" || expected.trim() === "") return false
+    if (stored.trim() === "" || expected.trim() === "") return false
     const storedNumber = Number(stored)
     const expectedNumber = Number(expected)
     return (
@@ -11465,6 +11585,36 @@ const LOCK_OBJECT_DERIVED_HEADER_PROPERTIES = new Set([
 const LOCK_OBJECT_KEY_PROPERTIES = new Set(["VIEWNAME", "TABPOS", "OBJPOS", "FLPOSITION"])
 
 const LOCK_OBJECT_MAX_CHILD_ROWS = 200
+
+/**
+ * The lock object definition a caller may be held to after the write. DD26V/DD27P rows are compared
+ * as the subset the caller sent, and the same has to be true of the DD25V header: the helper assigns
+ * a supplied header property into DD25V with ASSIGN COMPONENT, but it owns neither AGGTYPE nor
+ * ROOTTAB - the ENQU activation derives them when the request leaves them out. An expectation may
+ * therefore only assert properties the caller actually sent; turning an omitted property into "" and
+ * comparing it rejects a write SAP has already performed and activated.
+ *
+ * Live w200 evidence, 2026-09-24 23:20 (incident mcp-incident-20260924-232032-532): operation
+ * repack-r1b1-create-ezpmctprp-20260924-04 sent header AGGTYPE=E and no ROOTTAB, and the object was
+ * created and activated as version 20260924232006 with DD25V-ROOTTAB = ZTPMC_TPRPH, the locked table.
+ * The invented "" expectation still made the tool report that activated create as failed with
+ * outcomeMayBeUnknown, which then blocked the dependent work.
+ */
+function lockObjectExpectedDefinition(
+  description: string,
+  header: SapStructureRow,
+  lockTables: SapStructureRow[],
+  lockFields: SapStructureRow[]
+): Record<string, unknown> {
+  const expected: Record<string, unknown> = { description, lockTables, lockFields }
+  if (Object.prototype.hasOwnProperty.call(header, "AGGTYPE")) {
+    expected.aggregationType = header.AGGTYPE
+  }
+  if (Object.prototype.hasOwnProperty.call(header, "ROOTTAB")) {
+    expected.rootTable = header.ROOTTAB
+  }
+  return expected
+}
 
 function lockObjectHeader(input: Record<string, string> | undefined): SapStructureRow {
   const header: SapStructureRow = {}

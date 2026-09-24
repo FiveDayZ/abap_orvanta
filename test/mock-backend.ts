@@ -181,7 +181,8 @@ function mockDdicResult(
     | "transparentTable"
     | "tableType"
     | "searchHelp"
-    | "lockObject",
+    | "lockObject"
+    | "numberRangeObject",
   header: Record<string, string>,
   packageName: string
 ): SapDdicResult {
@@ -210,9 +211,44 @@ function mockDdicResult(
   }
 }
 
+/**
+ * The NUMC columns of DD31V/DD32P/DD33V, with the widths the live read-back shows
+ * (.doc/code-update-20260920-135257.md: LENG "000010", SHLPSELPOS "00"). SAP stores the caller's text
+ * zero-padded because the helper assigns it into the numeric component, so the fake has to pad too:
+ * a fake that echoed the raw text would agree with the service's raw comparison and the padding bug
+ * could never fail a test.
+ */
+const MOCK_SEARCH_HELP_NUMERIC_WIDTHS: Record<string, number> = {
+  LENG: 6,
+  DECIMALS: 6,
+  OUTPUTLEN: 6,
+  SHLPSELPOS: 2,
+  SHLPLISPOS: 2
+}
+
+function padMockSearchHelpRows(rows: Record<string, string>[]): Record<string, string>[] {
+  return rows.map((row) => {
+    const padded: Record<string, string> = { ...row }
+    for (const [column, width] of Object.entries(MOCK_SEARCH_HELP_NUMERIC_WIDTHS)) {
+      const value = row[column]
+      if (value === undefined || !/^\d+$/.test(value)) continue
+      padded[column] = value.padStart(width, "0")
+    }
+    return padded
+  })
+}
+
 function ddicKind(
   operation: SapDdicRequest["operation"]
-): "domain" | "dataElement" | "structure" | "transparentTable" | "tableType" | "lockObject" {
+):
+  | "domain"
+  | "dataElement"
+  | "structure"
+  | "transparentTable"
+  | "tableType"
+  | "lockObject"
+  | "searchHelp"
+  | "numberRangeObject" {
   if (operation.endsWith("DOMAIN")) return "domain"
   if (operation.endsWith("DATA_ELEMENT")) return "dataElement"
   if (operation.endsWith("STRUCTURE")) return "structure"
@@ -220,6 +256,11 @@ function ddicKind(
   // Without this, UPSERT_LOCK_OBJECT fell through to tableType and the readback check compared an
   // object it never asked for, so the mock could not exercise the lock-object path at all.
   if (operation.endsWith("LOCK_OBJECT")) return "lockObject"
+  // Same reasoning for the other two kinds that have their own read-back comparison: while they fell
+  // through to tableType, UPSERT_SEARCH_HELP and UPSERT_NUMBER_RANGE_OBJECT could not run against
+  // this fake at all, so their verification code had no test.
+  if (operation.endsWith("SEARCH_HELP")) return "searchHelp"
+  if (operation.endsWith("NUMBER_RANGE_OBJECT")) return "numberRangeObject"
   return "tableType"
 }
 
@@ -1965,13 +2006,33 @@ export class MockBackend implements SapBackend {
       return structuredClone(saved)
     }
     const kind = ddicKind(request.operation)
+    // TNRO-NOIVBUFFER (NRIVBUFFER) is N 16, measured on w200 by the DD03L probe recorded in
+    // .doc/code-update-20260922-140723.md. As with the search help columns above, the helper assigns
+    // the caller's text into that numeric component, so SAP stores the padded value; the padding is
+    // modelled here because the raw echo is exactly what hid the service's raw-text comparison.
+    const numberRangeIdentity: Record<string, string> = { OBJECT: request.objectName }
+    const numericBuffer = request.header?.NOIVBUFFER
+    if (numericBuffer !== undefined && /^\d+$/.test(numericBuffer)) {
+      numberRangeIdentity.NOIVBUFFER = numericBuffer.padStart(16, "0")
+    }
     const identity = {
       domain: { DOMNAME: request.objectName },
       dataElement: { ROLLNAME: request.objectName },
+      numberRangeObject: numberRangeIdentity,
+      searchHelp: { SHLPNAME: request.objectName },
       lockObject: {
         // DD25V holds lock objects, and its identity column is VIEWNAME, not LOCKOBJECT.
         VIEWNAME: request.objectName,
-        AGGTYPE: request.header?.AGGTYPE ?? "E"
+        AGGTYPE: request.header?.AGGTYPE ?? "E",
+        // DD25V-ROOTTAB is derived by the ENQU activation, it is not a copy of the request. Live w200
+        // evidence 2026-09-24 23:20: creating EZPMCTPRP with no ROOTTAB in the header stored
+        // ROOTTAB = ZTPMC_TPRPH, the locked table. A fake that left this unset made the service's
+        // invented "" expectation agree with itself, which is how a false-negative verification
+        // shipped with 862 green tests; the derivation is modelled here so the comparison can fail.
+        // FORTABNAME handling for lock tables is deliberately NOT modelled: no live evidence
+        // establishes what ENQU activation fills in, and the service only asserts row keys the caller
+        // actually sent, so guessing here would invent SAP behaviour instead of testing it.
+        ROOTTAB: request.header?.ROOTTAB || request.lockTables?.[0]?.TABNAME || ""
       },
       structure: { TABNAME: request.objectName, TABCLASS: "INTTAB" },
       transparentTable: { TABNAME: request.objectName, TABCLASS: "TRANSP" },
@@ -1993,11 +2054,21 @@ export class MockBackend implements SapBackend {
       code: "DDIC_OBJECT_SAVED",
       message: "DDIC object saved activated and verified",
       recordedRequest: request.transportNumber ?? "",
+      // TNRO has neither AS4DATE nor AS4TIME, so a number range object's concurrency token is a
+      // 40-character SHA1 digest over the stored definition, not the 14-digit timestamp every other
+      // kind uses. Without this the fake answered the timestamp and the number range verification
+      // rejected it before reaching the comparison under test.
+      ...(kind === "numberRangeObject" ? { objectVersion: "A1B2C3D4E5".repeat(4) } : {}),
       fixedValues: request.fixedValues ?? [],
       // DD26V/DD27P rows travel the same way fields do, so a lock-object write has to echo them
       // back or the readback check compares a definition no caller ever sent.
       lockTables: request.lockTables ?? [],
       lockFields: request.lockFields ?? [],
+      // DD31V/DD32P/DD33V rows travel the same way and come back zero-padded in SAP's numeric columns.
+      selectionMethods: padMockSearchHelpRows(request.selectionMethods ?? []),
+      parameters: padMockSearchHelpRows(request.parameters ?? []),
+      fieldAssignments: padMockSearchHelpRows(request.fieldAssignments ?? []),
+      numberRangeTexts: request.numberRangeTexts ?? [],
       fields: (request.fields ?? []).map((field, index) => ({
         ...field,
         POSITION: String(index + 1)

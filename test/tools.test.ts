@@ -7836,3 +7836,165 @@ test("a read of a missing DDIC object answers not-found instead of failing", asy
     /not a valid SAP Dictionary name/
   )
 })
+
+/**
+ * DD25V-ROOTTAB is derived by the ENQU activation, not copied from the request. Live w200 evidence,
+ * 2026-09-24 23:20: operation repack-r1b1-create-ezpmctprp-20260924-04 sent header AGGTYPE=E and no
+ * ROOTTAB, and SAP created and activated the object as version 20260924232006 with
+ * DD25V-ROOTTAB = ZTPMC_TPRPH, the locked table. The service still reported "SAP DDIC verification
+ * did not return the requested active definition" with status=failed and outcomeMayBeUnknown, because
+ * it compared an invented empty root table against the value SAP had derived. The write had in fact
+ * succeeded and activated; the false failure then blocked the dependent reorganisation work.
+ *
+ * So a caller who sends no root table must not be held to an empty one, and must be told the root
+ * table SAP stored instead of the request echo that would report an empty one.
+ */
+test("a lock object create that sends no root table is not reported as a failed verification", async () => {
+  const tools = new ToolService(new MockBackend())
+  const created = JSON.parse(
+    await tools.upsertLockObject({
+      connectionId: "w200",
+      objectName: "EZPMCTPRP",
+      description: "Upsert the reorganisation request lock",
+      packageName: "ZPMC",
+      transportNumber: "GR2K923428",
+      header: { AGGTYPE: "E" },
+      lockTables: [{ TABNAME: "ZTPMC_TPRPH", FORTABNAME: "ZTPMC_TPRPH", ENQMODE: "E" }],
+      lockFields: [{ VIEWFIELD: "MANDT", TABNAME: "ZTPMC_TPRPH", FIELDNAME: "MANDT", ENQMODE: "E" }]
+    })
+  ) as { definition: { rootTable: string; aggregationType: string }; rootTable: string }
+
+  assert.equal(created.definition.rootTable, "ZTPMC_TPRPH")
+  // The top-level copy reports what SAP stored, not the omitted request field.
+  assert.equal(created.rootTable, "ZTPMC_TPRPH")
+  assert.equal(created.definition.aggregationType, "E")
+})
+
+/**
+ * The relaxation above must not become a licence to stop checking a root table the caller did send,
+ * and a refused verification has to name the field and both values: an anonymous "did not return the
+ * requested active definition" costs one SAP round trip per disagreeing field, which is the pattern
+ * that made this chain of faults surface one error at a time.
+ */
+test("a supplied root table is still verified and the mismatch names the field", async () => {
+  class DivergedRootTableBackend extends MockBackend {
+    override async callSapDdic(
+      connectionId: string,
+      request: Parameters<MockBackend["callSapDdic"]>[1]
+    ) {
+      const result = await super.callSapDdic(connectionId, request)
+      if (typeof result.header.VIEWNAME === "string") result.header.ROOTTAB = "ZTPMC_OTHER"
+      return result
+    }
+  }
+
+  await assert.rejects(
+    new ToolService(new DivergedRootTableBackend()).upsertLockObject({
+      connectionId: "w200",
+      objectName: "EZPMCTPRP",
+      description: "Upsert the reorganisation request lock",
+      packageName: "ZPMC",
+      transportNumber: "GR2K923428",
+      header: { AGGTYPE: "E", ROOTTAB: "ZTPMC_TPRPH" },
+      lockTables: [{ TABNAME: "ZTPMC_TPRPH", ENQMODE: "E" }],
+      lockFields: [{ VIEWFIELD: "MANDT", TABNAME: "ZTPMC_TPRPH", FIELDNAME: "MANDT" }]
+    }),
+    /definition\.rootTable: SAP stored "ZTPMC_OTHER" instead of "ZTPMC_TPRPH"/
+  )
+})
+
+/**
+ * TNRO-NOIVBUFFER (NRIVBUFFER) is N 16, measured on w200 by the DD03L probe recorded in
+ * .doc/code-update-20260922-140723.md. The helper assigns the caller's text into that numeric
+ * component, so SAP stores "1000" as "0000000000001000" and the read-back publishes the padded text.
+ * The verification compared the raw text, so a write that committed correctly was reported as a
+ * failure. This is the same shape as TNRO-PERCENTAGE, fixed on 2026-09-22 while this field was left
+ * behind; the padding tolerance is deliberately limited to the two numeric fields, because a plain
+ * "007" against a stored "7" is still a difference in a character field.
+ */
+test("a number range write accepts the zero padding SAP stores in NOIVBUFFER", async () => {
+  const input = {
+    connectionId: "w200",
+    objectName: "ZPMC_NR01",
+    description: "Reorganisation request numbers",
+    packageName: "ZPMC",
+    transportNumber: "GR2K923428",
+    properties: { NOIVBUFFER: "1000", PERCENTAGE: "10" }
+  }
+  const created = JSON.parse(
+    await new ToolService(new MockBackend()).upsertNumberRangeObject(input)
+  ) as {
+    definition: { properties: Record<string, string> }
+  }
+  // The reported value is SAP's stored text, not the request echo.
+  assert.equal(created.definition.properties.NOIVBUFFER, "0000000000001000")
+
+  // A stored value that denotes another number must still be refused.
+  class DivergedBufferBackend extends MockBackend {
+    override async callSapDdic(
+      connectionId: string,
+      request: Parameters<MockBackend["callSapDdic"]>[1]
+    ) {
+      const result = await super.callSapDdic(connectionId, request)
+      if (typeof result.header.OBJECT === "string") result.header.NOIVBUFFER = "0000000000002000"
+      return result
+    }
+  }
+  await assert.rejects(
+    new ToolService(new DivergedBufferBackend()).upsertNumberRangeObject(input),
+    /did not store NOIVBUFFER/
+  )
+})
+
+/**
+ * The DD31V/DD32P/DD33V numeric columns are NUMC, and the helper assigns the caller's text into the
+ * component, so SAP stores the value zero-padded: the live read-back recorded in
+ * .doc/code-update-20260920-135257.md shows LENG "000010" and SHLPSELPOS "00" for rows written as 10
+ * and 1. Comparing the raw caller text rejected stored values that were the requested ones. The
+ * expectation is padded to the width SAP itself reported, so no column width is assumed here.
+ */
+test("a search help write accepts the zero padding SAP stores in the DD32P numeric columns", async () => {
+  const input = {
+    connectionId: "w200",
+    objectName: "ZPMC_SHLP1",
+    description: "Reorganisation request search help",
+    packageName: "ZPMC",
+    transportNumber: "GR2K923428",
+    header: { SELMETHOD: "ZTPMC_TPRPH", DIALOGTYPE: "D" },
+    selectionMethods: [],
+    parameters: [
+      {
+        FIELDNAME: "REQID",
+        ROLLNAME: "ZPMCEL_TP_REQ_ID",
+        LENG: "10",
+        DECIMALS: "0",
+        OUTPUTLEN: "10",
+        SHLPSELPOS: "1",
+        SHLPLISPOS: "1"
+      }
+    ],
+    fieldAssignments: []
+  }
+  const created = JSON.parse(await new ToolService(new MockBackend()).upsertSearchHelp(input)) as {
+    definition: { parameters: Array<Record<string, string>> }
+  }
+  assert.equal(created.definition.parameters[0]?.LENG, "000010")
+  assert.equal(created.definition.parameters[0]?.SHLPSELPOS, "01")
+
+  // Padding to a common width must not turn a different number into a match.
+  class DivergedParameterBackend extends MockBackend {
+    override async callSapDdic(
+      connectionId: string,
+      request: Parameters<MockBackend["callSapDdic"]>[1]
+    ) {
+      const result = await super.callSapDdic(connectionId, request)
+      const parameter = result.parameters[0]
+      if (parameter) parameter.LENG = "000020"
+      return result
+    }
+  }
+  await assert.rejects(
+    new ToolService(new DivergedParameterBackend()).upsertSearchHelp(input),
+    /definition\.parameters\[0\]\.LENG: SAP stored "000020" instead of "000010"/
+  )
+})
