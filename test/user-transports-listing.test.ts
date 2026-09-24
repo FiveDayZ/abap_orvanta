@@ -317,3 +317,41 @@ test("D-5: a failing CTS read is reported, never passed off as an empty list", a
     /transport-list/
   )
 })
+
+test("F1/F5: the description reaches the listing when only a bracketed text read can reach it", async (t) => {
+  const fixture = await backendAgainst(emptyOrganizerDocument)
+  t.after(fixture.close)
+  // E07T is keyed by TRKORR, so an unfiltered read returns the lowest numbers first. On the target
+  // system a user's requests sort past the 500-row bound, which is why every description came back
+  // empty. This reader models that: it answers only a read that names the TRKORR range, so a
+  // regression to an unfiltered read fails the assertions below instead of passing quietly.
+  const texts: TransportTableReader = async (
+    connectionId,
+    tableName,
+    columns,
+    filters,
+    maxRows
+  ) => {
+    assert.equal(tableName, "E07T")
+    assert.equal(maxRows, 500)
+    assert.deepEqual(filters, [
+      { column: "TRKORR", operator: "GE", value: "GR2K900001" },
+      { column: "TRKORR", operator: "LE", value: "GR2K900003" }
+    ])
+    return [
+      { TRKORR: "GR2K900001", LANGU: "E", AS4TEXT: "First workbench request" },
+      { TRKORR: "GR2K900003", LANGU: "E", AS4TEXT: "Released request" }
+    ]
+  }
+  const reader: TransportTableReader = (connectionId, tableName, columns, filters, maxRows) =>
+    tableName === "E07T"
+      ? texts(connectionId, tableName, columns, filters, maxRows)
+      : readCtsTable(connectionId, tableName, columns, filters, maxRows)
+
+  const listing = await fixture.backend.listUserTransports("w200", "test", reader)
+
+  assert.equal(listing.source, "cts-tables")
+  const target = listing.workbench[0]
+  assert.equal(target?.modifiable[0]?.["tm:desc"], "First workbench request")
+  assert.equal(target?.released[0]?.["tm:desc"], "Released request")
+})
