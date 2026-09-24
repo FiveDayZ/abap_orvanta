@@ -1514,6 +1514,9 @@ function New-DdicFunctionSource {
         # 当作不在字符集内的字符，于是任何合法名称都会被判为 OBJECT_NAME_INVALID。
         # 赋给 STRING 时尾随空格被截掉；1.2 的通用写入校验（lv_value）一直使用同一写法。
         "  DATA lv_name_guard TYPE string.",
+        # 客户命名判定的结果位。共享写入守卫要区分「Z/Y 开头」与「ENQU 的 E + Z/Y」两种合法形态，
+        # 判定一次后由守卫统一拒绝，避免同一规则在两个地方各写一遍。
+        "  DATA lv_customer_name TYPE c LENGTH 1.",
         "  DATA lv_mv_viewclass TYPE dd25v-viewclass.",
         # 固定长度 c(14)（= AS4DATE + AS4TIME），与公共 DDIC 流程的 lv_current_version 同型：
         # iv_expected_version 是 CHAR 220（BAPIRET2-MESSAGE），若本字段声明为 STRING，则 c 侧会
@@ -3830,10 +3833,22 @@ function New-DdicFunctionSource {
         "  ENDIF.",
         "  lv_ddic_name = iv_object_name.",
         "  IF lv_write = 'X'.",
-        "    IF iv_object_name(1) <> 'Z'",
-        "       AND iv_object_name(1) <> 'Y'.",
+        # ENQU 是唯一一个 SAP 自己就给客户对象加 E 前缀的 DDIC 家族：表 T 的锁对象通常命名为 ET。
+        # 这条共享守卫原来只认 Z/Y 开头，于是服务端 0.47.16 已经放行的 EZPMCTPRP 到这里仍被拦
+        # （2026-09-24 21:22 事件），调用方看到的是「公开说明允许、后端拒绝」。客户判定必须落在
+        # 可选 E 之后的那个字符上；标准对象（EMARA）没有 Z/Y 紧随其后，仍然被拒。
+        "    lv_customer_name = ''.",
+        "    IF iv_object_name(1) = 'Z' OR iv_object_name(1) = 'Y'.",
+        "      lv_customer_name = 'X'.",
+        "    ENDIF.",
+        "    IF lv_object_type = 'ENQU' AND iv_object_name(1) = 'E'.",
+        "      IF iv_object_name+1(1) = 'Z' OR iv_object_name+1(1) = 'Y'.",
+        "        lv_customer_name = 'X'.",
+        "      ENDIF.",
+        "    ENDIF.",
+        "    IF lv_customer_name IS INITIAL.",
         "      ev_status = 'E'. ev_code = 'CUSTOMER_OBJECT_REQUIRED'.",
-        "      ev_message = 'Only Z or Y DDIC objects are writable'.",
+        "      ev_message = 'Only Z or Y, or E plus Z or Y for a lock object'.",
         "      ev_version = '1.2'. RETURN.",
         "    ENDIF.",
         "    lv_value = iv_object_name.",
