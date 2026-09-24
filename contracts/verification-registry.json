@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-23",
+  "updatedAt": "2026-09-24",
   "notes": "Every entry with status verified or failed must cite an immutable evidence file that exists in this repository; unverified entries must cite nothing and must not claim an attempt time. Default is unverified. availability and verification.status are ORTHOGONAL: verification.status never feeds any availability computation, and available + unverified is the honest normal state rather than a defect. failed entries keep failureBasis = runtime (a real call was made and failed) distinct from static (never called, but proven impossible), because after a fix a static entry still needs a real call before it can become verified.",
   "entries": [
     {
@@ -175,13 +175,13 @@
       "tool": "cleanup_transport_entries",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200: attempted removal of R3TR TABL ZORV_MCP_T01 position 000024 from task GR2K923473 in request GR2K923472",
       "method": "controlled-write",
-      "status": "unverified",
-      "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "status": "failed",
+      "failureBasis": "runtime",
+      "lastAttemptAt": "2026-09-24",
+      "evidence": ".doc/d7-d9-acceptance-20260924.json",
+      "notes": "A real call was made and failed. The tool located the entry and passed its own pre-checks, then reported CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS, and the entry is still present when E071 is read for GR2K923473 (returnedCount 25 including the target row). The PUT to /sap/bc/adt/cts/transportrequests/<task> returned 2xx and changed nothing: the request body listed tm:abap_object directly under tm:request, while the entry belongs to the task container, and SAP resolves the object against the container it is named in. The HTTP status alone could not have revealed this, because the ADT client already rejects 4xx and 5xx. The payload was corrected on 2026-09-24 to nest the objects in tm:task whenever the caller names a task that differs from the request, and that correction was then tested against w200: the PUT still returned 2xx and the entry was still present in E071, so the nesting is not proven to work. Two structurally different payload shapes have now been tried and neither removed anything, while the native ADT removeobject action is absent from the bundled abap-adt-api client and this tool's own availability has always been reported as unknown because it requires successful native ADT removeobject support on the target system. The tool is therefore best read as a platform limitation of ECC 7.31 SP04 rather than an open code defect - and it fails safely, because its own post-check refuses to report success, so no caller can be misled into believing an entry was removed. The practical remedy is to remove the entry in SE09/SE10. Nothing was released and no SAP standard object was touched."
     },
     {
       "tool": "correlate_sap_logs",
@@ -331,25 +331,25 @@
       "tool": "create_transport_request",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200: created CTS request GR2K923488 (workbench, target GR3)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (CREATE_TRANSPORT_REQUEST), which is still a static inference and not an observation: the branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed. The create path was verified statically on w200: TR_INSERT_REQUEST_WITH_TASKS is not remote-enabled and contains no CALL SCREEN, no POPUP_TO and no COMMIT WORK, so the helper owns the commit and reads the new request back from E070 before reporting success. TR_OBJECT_INSERT is deliberately not used, because it hard-codes iv_with_dialog = 'X' into TRINT_OBJECTS_CHECK_AND_INSERT, whose 'X' branch calls POPUP_TO_CONFIRM_STEP."
+      "lastAttemptAt": "2026-09-24",
+      "evidence": ".doc/d7-d9-acceptance-20260924.json",
+      "notes": "Real call observed. The request was created (created true, requestNumber GR2K923488, task GR2K923489, owner WYS, status D) and read back from E070 with matching TRFUNCTION K, TRSTATUS D, TARSYSTEM GR3, AS4USER WYS and AS4TIME 102459. Repeating the identical call returned the same request number with created false, so the retry guard is effective. All refusal paths were exercised first: a missing or wrong confirmation and requestType S are rejected by the schema before SAP, and an invalid target ZZZZ reaches SAP and is refused there with TRANSPORT_REQUEST_INSERT_FAILED, creating nothing. This tool was unusable before this acceptance: it had no pre-change observation branch, so every call was refused before dispatch. Cleanup is not possible through the MCP surface: no action deletes a CTS request, so GR2K923488 remains empty, modifiable and unreleased."
     },
     {
       "tool": "add_objects_to_transport",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200: object recording observed in CTS containers GR2K923487 and GR2K923473",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (ADD_OBJECTS_TO_TRANSPORT), which is still a static inference and not an observation: the branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed. The insert path was verified statically on w200. TR_OBJECT_INSERT and TR_OBJECTS_INSERT are both rejected: each hard-codes iv_with_dialog = 'X' into TRINT_OBJECTS_CHECK_AND_INSERT, and that value breaks the callee's API-mode assertion (is_api = 'X' requires space or 'D') before reaching POPUP_TO_CONFIRM_STEP at its line 1848. The helper therefore calls TRINT_OBJECTS_CHECK_AND_INSERT directly with iv_with_dialog = 'D', which the callee turns into ls_g-suppress_dialog = 'X' and which is also the value SAP sets internally; the callee has no CALL SCREEN at all and its only POPUP_TO_CONFIRM_STEP call sits in the 'X' branch. The callee issues ROLLBACK WORK on nine failure paths and never commits, so the helper commits at the top level and only reports success after reading E071 back for every requested object. The flat IT_OBJ_ENTRIES channel is used, and TRINT_CONVERT_OBJ_ENTRIES performs the flattening; SCTSA_S_API_CALL is deliberately not passed, because the type pool SCTSA is not reachable through ADT or the DDIC helper, and 'D' already suppresses the dialog."
+      "lastAttemptAt": "2026-09-24",
+      "evidence": ".doc/d7-d9-acceptance-20260924.json",
+      "notes": "Real calls observed. The operation completed and the requested object was read back from E071, and repeating the identical call created no additional row, so the operation is idempotent. This tool was unusable before this acceptance for two independent reasons, both fixed: it had no pre-change observation branch, and the helper's post-insert read-back selected four columns into a table typed as the full E071 structure, whose first field is MANDT (CLNT 3), so the SELECT raised DBIF_RSQL_INVALID_RSQL and dumped after the entry had already been recorded. One contract hazard remains and is not fixed: TRINT_OBJECTS_CHECK_AND_INSERT refuses to record an object that already belongs to another open transport and returns that order and task instead, so the tool can report status completed with insertedCount 1 while the object is not in the request that was asked for. The returned requestNumber and taskNumber carry SAP's own values rather than an echo of the input, which is how a caller can detect the difference."
     },
     {
       "tool": "delete_abap_message_class",
@@ -1207,37 +1207,37 @@
       "tool": "read_sapscript_form",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": null,
+      "verificationTarget": "read-only against w200: MEDRUCK (positive, with and without includeSource) and ZZZZ_NOT_A_FORM (negative)",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (READ_SAPSCRIPT_FORM), which is still a static inference and not an observation. The deployed repository helper still self-describes 2.7, so this tool is reported unavailable until the 2.8 carrier is deployed and a real read is observed."
+      "lastAttemptAt": "2026-09-24",
+      "evidence": ".doc/d7-d9-acceptance-20260924.json",
+      "notes": "Real reads observed on the deployed 2.8 helper. MEDRUCK returned 1479 form lines, 2 pages, 14 page windows, 10 windows, 31 paragraphs, 5 strings and 91 tabs with fingerprint 222b2664; includeSource added sourceStatus ok with 104 definition lines and fingerprint b803dbf8. ZZZZ_NOT_A_FORM was rejected with NOT_FOUND and touched no state. Two helper-side defects were found and fixed during this acceptance: the source-status field was declared LENGTH 12 while the literal NOT_REQUESTED is 13 characters, so the service rejected its own truncated status; and the ID_DEF read used the display language instead of the definition language from the text header (TDOSPRAS), which made includeSource return an empty source for delivered forms."
     },
     {
       "tool": "read_smartstyle",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": null,
+      "verificationTarget": "read-only against w200: SYSTEM in mode S (positive, with and without includeCss) and ZZZZ_NOT_A_STYLE (negative)",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (READ_SMARTSTYLE), which is still a static inference and not an observation. The READ_SMARTSTYLE branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed and a real read is observed."
+      "lastAttemptAt": "2026-09-24",
+      "evidence": ".doc/d7-d9-acceptance-20260924.json",
+      "notes": "Real reads observed on the deployed 2.8 helper. SYSTEM returned 2 paragraphs, 4 strings, 0 tab stops and 3 variants; includeCss added cssStatus ok with a text/css body of 754 characters. ZZZZ_NOT_A_STYLE was rejected with STYLE_NOT_FOUND. One helper-side defect was found and fixed: SSF_CONVERT_STYLE_TO_CSS declares STYLENAME as STRING while the helper passed a CHAR 30 field, which raised CX_SY_DYN_CALL_ILLEGAL_TYPE and an HTTP 500 dump; a STRING copy is now used."
     },
     {
       "tool": "read_adobe_form",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": null,
+      "verificationTarget": "read-only against w200: FP_TEST_00, DEMO_ADOBE_OFFLINE, EPM_PO_FORM (positives) and ZZZZ_NOT_A_FORM (negative)",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcode (READ_ADOBE_FORM), which is still a static inference and not an observation. The READ_ADOBE_FORM branch is newer than every deployed repository carrier, so this tool must be reported unavailable until the 2.8 carrier is deployed and a real read is observed. The interface and context read paths are not implemented and are reported through interfaceAvailable=false and unsupported=[interface, context]."
+      "lastAttemptAt": "2026-09-24",
+      "evidence": ".doc/d7-d9-acceptance-20260924.json",
+      "notes": "Real reads observed on the deployed 2.8 helper: XDP lengths 5056, 182799 and 106709 with stable sha256 values, and interfaceAvailable false with unsupported [interface, context] on all three. ZZZZ_NOT_A_FORM was rejected with ADOBE_FORM_NOT_FOUND. One helper-side defect was found and fixed: the helper formatted the byte counts with WRITE into a character field, which applies the calling user's thousands separator, so the service received 5,056 and rejected it. The helper now assigns the numeric value and the service tolerates grouped digits, so neither side depends on the caller's number format."
     },
     {
       "tool": "read_search_help",

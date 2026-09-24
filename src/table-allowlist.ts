@@ -39,6 +39,11 @@ export const TABLE_TIERS = {
     "TFDIR",
     "E070",
     "E071",
+    // E07T holds the CTS request/task **texts** (TRKORR + LANGU + AS4TEXT). E070 carries no
+    // description column, so without E07T a request number can be read back but its short text
+    // cannot - and the text is the only human-meaningful key when several requests exist. It is
+    // the same class of pure transport metadata as E070/E071, with no business or personal data.
+    "E07T",
     "DD30L",
     "DD30V",
     "DD31S",

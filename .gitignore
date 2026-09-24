@@ -11,3 +11,5 @@ release/
 /*.zip
 # 本地真实 SAP 连接配置不入库，只保留出厂占位符 packaging/windows/default-connections.json
 packaging/windows/connections.local.json
+# 手工改动前的本地备份：保留在磁盘以便回溯，但不是可提交的源码，且会挡住「工作树必须干净」的打包闸门
+*.bak

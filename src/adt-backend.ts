@@ -14,13 +14,16 @@ import {
   type NewObjectOptions,
   type NodeParents,
   type TextElement,
-  type TransportRequest
+  type TransportRequest,
+  type TransportTarget,
+  type TransportsOfUser
 } from "abap-adt-api"
 import { createHash } from "node:crypto"
 import { appendFileSync } from "node:fs"
 import { CUSTOMER_CLIENT, CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 import { assertHelperOperationDeliverable } from "./helper-operation-limits.js"
 import { InactiveInventoryError, readInactiveInventory } from "./inactive-inventory.js"
+import { assertTableAllowed } from "./table-allowlist.js"
 import { request as httpRequest } from "node:http"
 import { request as httpsRequest } from "node:https"
 import type { AdtHTTP } from "abap-adt-api/build/AdtHTTP.js"
@@ -86,7 +89,8 @@ import {
   type UnitTestAlertInfo,
   type UnitTestClassInfo,
   type UsageReferenceInfo,
-  type UsageSnippetInfo
+  type UsageSnippetInfo,
+  type UserTransportsListing
 } from "./backend.js"
 import type { ConnectionConfig } from "./config.js"
 import { AtcStageError, executeNativeAtc, inspectNativeAtc } from "./native-atc.js"
@@ -185,6 +189,20 @@ interface ClientState {
 
 type AdtConnectionInput = Omit<ConnectionConfig, "remoteFunctionAllowlist"> & {
   remoteFunctionAllowlist?: string[] | undefined
+}
+
+/**
+ * Number of requests a transport-organizer listing actually carries.
+ *
+ * Used only to decide whether the primary read produced anything: a listing with no request in any
+ * target is indistinguishable from a document the parser could not read, and that ambiguity is what
+ * hid the empty answer.
+ */
+function countTransportRequests(listing: TransportsOfUser): number {
+  return [...listing.workbench, ...listing.customizing].reduce(
+    (total, target) => total + target.modifiable.length + target.released.length,
+    0
+  )
 }
 
 export class AdtBackend implements SapBackend {
@@ -696,13 +714,105 @@ export class AdtBackend implements SapBackend {
     }
   }
 
-  async listUserTransports(connectionId: string, user: string) {
+  /**
+   * List one user's transport requests.
+   *
+   * The ADT transport-organizer list is asked first, but on ECC 7.31 it answers with a document
+   * that carries no `tm:workbench/tm:target` grouping, so the client's parse yields nothing and the
+   * tool reported "0 transport requests" for a user who demonstrably had several. An empty primary
+   * result therefore falls back to the authoritative CTS tables - E070 for the requests and E07T
+   * for their texts - both of which are read-only and in the D5-2 allowlist. `source` names the
+   * answer that was used, so an empty list is never mistaken for a successful empty read.
+   */
+  async listUserTransports(connectionId: string, user: string): Promise<UserTransportsListing> {
+    const owner = user.toUpperCase()
     const client = await this.getClient(connectionId)
+    let primary: TransportsOfUser | undefined
+    let primaryError: unknown
     try {
-      return await client.userTransports(user.toUpperCase(), true)
+      primary = await client.userTransports(owner, true)
     } catch (error) {
-      throw capabilityFailure("transport-list", error)
+      primaryError = error
     }
+    if (primary && countTransportRequests(primary) > 0)
+      return { ...primary, source: "adt-transport-organizer" }
+    try {
+      return { ...(await this.transportsFromCtsTables(connectionId, owner)), source: "cts-tables" }
+    } catch (error) {
+      // The fallback is the more reliable of the two reads, so when it fails the primary failure is
+      // the one that explains why - unless there was none.
+      throw capabilityFailure("transport-list", primaryError ?? error)
+    }
+  }
+
+  /**
+   * Rebuild the transport-organizer listing shape from the CTS tables.
+   *
+   * E070 holds one row per request/task; TRFUNCTION separates the workbench (K) from customizing (W)
+   * and other kinds, and TRSTATUS separates modifiable (D) from released (R/L). Rows are grouped by
+   * TARSYSTEM so the result matches the target-grouped shape the callers already consume, and E07T
+   * supplies the short text that E070 does not carry.
+   */
+  private async transportsFromCtsTables(
+    connectionId: string,
+    owner: string
+  ): Promise<TransportsOfUser> {
+    assertTableAllowed("E070")
+    assertTableAllowed("E07T")
+    const escaped = owner.replaceAll("'", "''")
+    const requests = await this.runQuery(
+      connectionId,
+      `SELECT TRKORR, TRFUNCTION, TRSTATUS, TARSYSTEM, AS4USER, AS4DATE, AS4TIME FROM E070 WHERE AS4USER = '${escaped}'`,
+      500
+    )
+    const texts = new Map<string, string>()
+    if (requests.length) {
+      const descriptions = await this.runQuery(
+        connectionId,
+        "SELECT TRKORR, LANGU, AS4TEXT FROM E07T",
+        500
+      )
+      for (const row of descriptions) {
+        const number = String(row.TRKORR ?? "").trim()
+        const description = String(row.AS4TEXT ?? "").trim()
+        if (number && description && !texts.has(number)) texts.set(number, description)
+      }
+    }
+    const workbench = new Map<string, TransportTarget>()
+    const customizing = new Map<string, TransportTarget>()
+    for (const row of requests) {
+      const number = String(row.TRKORR ?? "").trim()
+      if (!number) continue
+      const target = String(row.TARSYSTEM ?? "").trim() || "LOCAL"
+      const kind = String(row.TRFUNCTION ?? "")
+        .trim()
+        .toUpperCase()
+      const status = String(row.TRSTATUS ?? "").trim()
+      const released = /^[RL]$/.test(status.toUpperCase())
+      const request: TransportRequest = {
+        "tm:number": number,
+        "tm:owner": String(row.AS4USER ?? "").trim() || owner,
+        "tm:desc": texts.get(number) ?? "",
+        "tm:status": status,
+        "tm:uri": "",
+        links: [],
+        tasks: [],
+        objects: []
+      }
+      // TRFUNCTION is not part of the requested projection's identity: K is workbench and
+      // everything else is reported under customizing, which is the same split the ADT document
+      // uses and keeps a caller's existing grouping stable.
+      const bucket = kind === "K" ? workbench : customizing
+      const entry = bucket.get(target) ?? {
+        "tm:name": target,
+        "tm:desc": target,
+        modifiable: [],
+        released: []
+      }
+      entry[released ? "released" : "modifiable"].push(request)
+      bucket.set(target, entry)
+    }
+    return { workbench: [...workbench.values()], customizing: [...customizing.values()] }
   }
 
   async transportDetails(connectionId: string, transportNumber: string) {
@@ -1762,10 +1872,20 @@ export function buildTransportCleanupRequest(
         ` tm:position="${encodeXml(entry.position)}"/>`
     )
     .join("")
+  // A CTS entry belongs to a container: either the request itself or one of its tasks. SAP's own
+  // transport-organizer document nests `tm:abap_object` inside the container that holds it, and a
+  // PUT that lists an object under the wrong container is answered with 2xx while nothing is
+  // removed - which is why the caller's post-check, not the HTTP status, is what catches it. The
+  // objects therefore go inside the task whenever the caller names one that differs from the
+  // request, and directly under the request only when the entry really lives there.
+  const container =
+    taskNumber === parentTransportNumber
+      ? objects
+      : `<tm:task tm:number="${encodeXml(taskNumber)}">${objects}</tm:task>`
   return (
     `<?xml version="1.0" encoding="utf-8"?>` +
     `<tm:root xmlns:tm="http://www.sap.com/cts/adt/tm" tm:useraction="removeobject" tm:number="${encodeXml(taskNumber)}">` +
-    `<tm:request tm:number="${encodeXml(parentTransportNumber)}">${objects}</tm:request>` +
+    `<tm:request tm:number="${encodeXml(parentTransportNumber)}">${container}</tm:request>` +
     `</tm:root>`
   )
 }

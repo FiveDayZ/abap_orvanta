@@ -43,7 +43,8 @@ import type {
   TraceRunInfo,
   UnitTestClassInfo,
   UsageReferenceInfo,
-  UsageSnippetInfo
+  UsageSnippetInfo,
+  UserTransportsListing
 } from "../src/backend.js"
 import type {
   DebugSessionInfo,
@@ -2203,7 +2204,7 @@ export class MockBackend implements SapBackend {
     return []
   }
 
-  async listUserTransports(): Promise<TransportsOfUser> {
+  async listUserTransports(): Promise<UserTransportsListing> {
     return {
       workbench: [
         {
@@ -2213,7 +2214,8 @@ export class MockBackend implements SapBackend {
           released: []
         }
       ],
-      customizing: []
+      customizing: [],
+      source: "adt-transport-organizer"
     }
   }
 

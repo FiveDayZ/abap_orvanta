@@ -20,6 +20,19 @@ export interface TransportCleanupEntry {
   wbType?: string | undefined
 }
 
+/**
+ * `TransportsOfUser` plus the origin of the listing.
+ *
+ * The ADT transport-organizer list document (`tm:root/tm:workbench/tm:target`) is not what this
+ * system returns, so the backend falls back to the authoritative CTS tables. Without a `source`
+ * the caller cannot tell "this user really has no requests" from "the primary source answered with
+ * an empty document", and that distinction is the whole defect: an empty list was being reported as
+ * fact while the user did have requests.
+ */
+export type UserTransportsListing = TransportsOfUser & {
+  source: "adt-transport-organizer" | "cts-tables"
+}
+
 export interface AbapObjectInfo {
   name: string
   type: string
@@ -857,7 +870,7 @@ export interface SapBackend {
     maxRows: number,
     options?: { allowScopedFallback: boolean }
   ): Promise<Record<string, unknown>[]>
-  listUserTransports(connectionId: string, user: string): Promise<TransportsOfUser>
+  listUserTransports(connectionId: string, user: string): Promise<UserTransportsListing>
   transportDetails(connectionId: string, transportNumber: string): Promise<TransportRequest>
   cleanupTransportEntries(
     connectionId: string,

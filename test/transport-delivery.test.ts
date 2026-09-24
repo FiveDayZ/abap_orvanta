@@ -424,4 +424,19 @@ test("native transport cleanup payload uses the task endpoint contract and escap
   assert.match(body, /tm:name="Z&amp;A"/)
   assert.match(body, /tm:position="000001"/)
   assert.doesNotMatch(body, /tm:wbtype=/)
+  // The entry lives in the task, so the object must be nested in that task. Listing it directly
+  // under the request was answered with 2xx and removed nothing: SAP resolves the object against
+  // the container it is named in, and the request does not hold a task's entry.
+  assert.match(
+    body,
+    /<tm:request tm:number="W20K900001"><tm:task tm:number="W20K900002"><tm:abap_object [^>]*\/><\/tm:task><\/tm:request>/
+  )
+})
+
+test("native transport cleanup payload keeps a request-level entry directly under the request", () => {
+  // A caller that names the request as the container is asking for an entry recorded on the
+  // request itself, which has no task to nest into.
+  const body = buildTransportCleanupRequest("W20K900001", "W20K900001", [cleanupEntry])
+  assert.match(body, /<tm:request tm:number="W20K900001"><tm:abap_object [^>]*\/><\/tm:request>/)
+  assert.doesNotMatch(body, /tm:task/)
 })

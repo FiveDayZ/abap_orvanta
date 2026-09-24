@@ -559,8 +559,11 @@ test("the registry records the honest gap rather than inflating it", () => {
   )
   // Verified must remain a small, individually justified set: only entries with a real record in
   // this workspace qualify. If this ever grows without new evidence, the registry is being padded.
+  // Raised from 5 to 8 on 2026-09-24: one acceptance run (.doc/d7-d9-acceptance-20260924.json)
+  // recorded real evidence for five 2.8 tools at once, three read-only reads plus the two CTS write
+  // tools, and the same run recorded cleanup_transport_entries as a runtime failure.
   assert.ok(
-    totals.verified <= 5,
+    totals.verified <= 8,
     `only a handful of tools have real recorded evidence; found ${totals.verified}`
   )
   assert.ok(totals.unverified > totals.verified, "the honest default should dominate")

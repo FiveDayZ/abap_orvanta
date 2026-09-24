@@ -292,6 +292,22 @@ interface TransportObjectAddition {
   objectCount: number
   insertedCount: number
   objects: TransportObjectEntry[]
+  /**
+   * The container the caller asked for, next to the one SAP actually recorded into.
+   *
+   * `TRINT_OBJECTS_CHECK_AND_INSERT` refuses to record an object that already belongs to another
+   * open transport and reports the order and task it used instead, so the two can differ while the
+   * call still succeeds. Reporting only the callee's numbers made that look like the requested
+   * container had been used.
+   */
+  requestedRequestNumber: string
+  recordedInRequestedContainer: boolean
+  containerMismatch: {
+    requested: string
+    recordedIn: string
+    task: string
+    reason: string
+  } | null
 }
 
 interface ScreenModuleReference {
@@ -1456,7 +1472,11 @@ export class ToolService {
       transportObjects
     })
     requireRepositorySuccess(result.status, result.code, result.message)
-    return JSON.stringify(transportObjectAddition(connectionId, objects, result), null, 2)
+    return JSON.stringify(
+      transportObjectAddition(connectionId, requestNumber, objects, result),
+      null,
+      2
+    )
   }
 
   async readAbapScreen(input: ReadScreenInput): Promise<string> {
@@ -7559,7 +7579,10 @@ export class ToolService {
       ).toUpperCase()
       const transports = await this.backend.listUserTransports(connectionId, user)
       let totalCount = 0
-      let result = `Transport Requests for User: ${user}\n\n`
+      // The source is part of the answer: an empty list from the ADT transport organizer and an
+      // empty list from the CTS tables are different claims, and only the caller can decide whether
+      // an empty result is plausible.
+      let result = `Transport Requests for User: ${user}\nSource: ${transports.source}\n\n`
       for (const category of ["workbench", "customizing", "transportofcopies"] as const) {
         const targets = transports[category as keyof typeof transports]
         if (!Array.isArray(targets) || !targets.length) continue
@@ -7578,7 +7601,7 @@ export class ToolService {
         }
         result += "\n"
       }
-      return `${result}\nSummary: ${totalCount} transport requests for user ${user}`
+      return `${result}\nSummary: ${totalCount} transport requests for user ${user} (source: ${transports.source})`
     }
 
     if (input.action === "compare_transports") {
@@ -7929,7 +7952,9 @@ function smartstyleDefinition(
     .map(([, chunks]) => chunks.join(""))
     .join("\n")
   const declaredLength =
-    metadata.CSS_LENGTH === undefined ? Number.NaN : Number.parseInt(metadata.CSS_LENGTH, 10)
+    metadata.CSS_LENGTH === undefined
+      ? Number.NaN
+      : helperInteger(metadata.CSS_LENGTH, "CSS_LENGTH")
   const css: SmartstyleCss | undefined =
     cssStatus === "ok"
       ? {
@@ -7971,11 +7996,20 @@ function smartstyleDefinition(
   }
 }
 
-function adobeFormNumber(value: string | undefined, field: string): number {
-  if (value === undefined || !/^\d+$/.test(value)) {
+/**
+ * The helper reports integer metadata - byte lengths and row counts - as decimal text. A SAP-side
+ * `WRITE <number> TO <character field>` applies the calling user's number format, so any value of
+ * 1000 or more can arrive grouped ("5,056"). `Number.parseInt` stops at that separator and returns
+ * 5 without raising anything, which turns a formatting difference into a silently wrong count or
+ * length rather than a visible failure. Accept a plain integer or a cleanly grouped one, and reject
+ * anything else instead of guessing.
+ */
+function helperInteger(value: string | undefined, field: string): number {
+  const text = (value ?? "").trim()
+  if (!/^\d+$/.test(text) && !/^\d{1,3}(?:[.,\u00A0\u202F ]\d{3})+$/.test(text)) {
     throw new Error(`SAP repository helper did not report a valid ${field}: ${value ?? ""}`)
   }
-  return Number.parseInt(value, 10)
+  return Number.parseInt(text.replace(/\D/g, ""), 10)
 }
 
 /**
@@ -8016,8 +8050,8 @@ function adobeFormDefinition(
     .map(([, parts]) => parts.join(""))
     .join("")
   const xdp = Buffer.from(base64, "base64")
-  const xdpLength = adobeFormNumber(metadata.XDP_LENGTH, "XDP_LENGTH")
-  const xdpBytesReturned = adobeFormNumber(metadata.XDP_RETURNED_LENGTH, "XDP_RETURNED_LENGTH")
+  const xdpLength = helperInteger(metadata.XDP_LENGTH, "XDP_LENGTH")
+  const xdpBytesReturned = helperInteger(metadata.XDP_RETURNED_LENGTH, "XDP_RETURNED_LENGTH")
   if (xdpBytesReturned !== xdp.length) {
     throw new Error(
       `SAP repository helper reported ${xdpBytesReturned} layout bytes but returned ${xdp.length}`
@@ -13215,6 +13249,7 @@ function transportObjectField(value: string, field: string, maxLength: number): 
 
 function transportObjectAddition(
   connectionId: string,
+  requestedRequestNumber: string,
   objects: TransportObjectEntry[],
   result: SapRepositoryResult
 ): TransportObjectAddition {
@@ -13236,7 +13271,7 @@ function transportObjectAddition(
     const index = Number.parseInt(match[2], 10)
     reported[index] = { ...(reported[index] ?? {}), [match[3]]: value }
   }
-  const insertedCount = Number.parseInt((metadata.INSERTED_COUNT ?? "").trim(), 10)
+  const insertedCount = helperInteger(metadata.INSERTED_COUNT, "INSERTED_COUNT")
   if (!Number.isInteger(insertedCount)) {
     throw new Error("SAP repository helper did not report the inserted object count")
   }
@@ -13259,17 +13294,44 @@ function transportObjectAddition(
       throw new Error("SAP repository helper echoed a different object than the one requested")
     }
   }
+  // The helper refuses before it reports when an object did not reach E071, so a lower count here
+  // means the payload contradicts itself. It was parsed and then never compared, which left a
+  // partial insert reportable as a clean success.
+  if (insertedCount !== objects.length) {
+    throw new Error(
+      `SAP repository helper reported ${insertedCount} of ${objects.length} objects as inserted; a partial insert is not a success`
+    )
+  }
+  const recordedRequest = (metadata.REQUEST ?? "").trim()
+  const recordedTask = (metadata.TASK ?? "").trim()
+  const requested = requestedRequestNumber.trim().toUpperCase()
+  const recorded = recordedRequest.toUpperCase()
+  // An empty report is a mismatch as well: the caller asked for one exact container, and a callee
+  // that names none has not confirmed that container was used.
+  const recordedInRequestedContainer = recorded !== "" && recorded === requested
   return {
     connectionId: connectionId.toLowerCase(),
-    requestNumber: (metadata.REQUEST ?? "").trim(),
-    taskNumber: (metadata.TASK ?? "").trim(),
-    objectCount: Number.parseInt((metadata.OBJECT_COUNT ?? "").trim(), 10),
+    requestNumber: recordedRequest,
+    taskNumber: recordedTask,
+    objectCount: helperInteger(metadata.OBJECT_COUNT, "OBJECT_COUNT"),
     insertedCount,
     objects: readBack.map((row) => ({
       pgmid: row.PGMID ?? "",
       object: row.OBJECT ?? "",
       objName: row.OBJ_NAME ?? ""
-    }))
+    })),
+    requestedRequestNumber: requested,
+    recordedInRequestedContainer,
+    containerMismatch: recordedInRequestedContainer
+      ? null
+      : {
+          requested,
+          recordedIn: recordedRequest,
+          task: recordedTask,
+          reason: recorded
+            ? "SAP recorded the objects in a different transport container: an object that already belongs to another open transport is never moved, and TRINT_OBJECTS_CHECK_AND_INSERT reports the container it used instead. Re-read the reported container before releasing anything."
+            : "SAP reported no transport container for the inserted objects, so the requested container is unconfirmed."
+        }
   }
 }
 

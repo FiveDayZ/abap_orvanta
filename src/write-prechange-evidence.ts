@@ -3,7 +3,7 @@ import type { SapBackend, SapDdicOperation } from "./backend.js"
 import type { ToolService } from "./tools.js"
 import { hashWriteInput, type SapPreChangeEvidence } from "./write-operation-receipts.js"
 import { SmartformService } from "./smartforms.js"
-import { transportFingerprint } from "./transport-delivery.js"
+import { transportEntries, transportFingerprint } from "./transport-delivery.js"
 
 type EvidenceDraft = Omit<SapPreChangeEvidence, "observedAt" | "observationStatus">
 
@@ -48,6 +48,10 @@ export async function observeWritePreChange(
     if (evidence.fingerprint !== String(input.expectedFingerprint).toLowerCase()) {
       throw new Error("CTS_CLEANUP_STALE_FINGERPRINT")
     }
+  } else if (name === "create_transport_request") {
+    await observeTransportRequestCreate(evidence, backend, connectionId, input)
+  } else if (name === "add_objects_to_transport") {
+    await observeTransportObjectAdd(evidence, backend, connectionId, input)
   } else if (["create_smartform", "save_smartform", "activate_smartform"].includes(name)) {
     try {
       const result = await new SmartformService(backend).read({
@@ -470,6 +474,110 @@ async function observeJson(
     }
     recordObservationError(evidence, source, error)
   }
+}
+
+/**
+ * A new CTS request has no source identity, so the generic ADT source observation threw
+ * "write target has no readable source identity" and the tool aborted before SAP was contacted:
+ * the observation gate, not the helper, is what made create_transport_request unreachable.
+ *
+ * The pre-change state that matters is the tool's own retry guard - a modifiable request with the
+ * same owner, type and description. The request type selects the CTS category, which is how
+ * listUserTransports already separates workbench (K) from customizing (W).
+ */
+async function observeTransportRequestCreate(
+  evidence: EvidenceDraft,
+  backend: SapBackend,
+  connectionId: string,
+  input: Record<string, unknown>
+): Promise<void> {
+  const source = "list_user_transports"
+  try {
+    const type = String(input.requestType ?? "")
+      .trim()
+      .toUpperCase()
+    const description = String(input.description ?? "").trim()
+    const owner = String(input.owner ?? backend.connectionDetails(connectionId).username ?? "")
+      .trim()
+      .toUpperCase()
+    const transports = (await backend.listUserTransports(connectionId, owner)) as unknown as Record<
+      string,
+      unknown
+    >
+    evidence.sources.push(source)
+    const targets = transports[type === "W" ? "customizing" : "workbench"]
+    const modifiable = Array.isArray(targets)
+      ? (targets as Array<Record<string, unknown>>).flatMap((target) =>
+          Array.isArray(target.modifiable)
+            ? (target.modifiable as Array<Record<string, string>>)
+            : []
+        )
+      : []
+    const match = modifiable.find(
+      (candidate) =>
+        String(candidate["tm:owner"] ?? "")
+          .trim()
+          .toUpperCase() === owner && String(candidate["tm:desc"] ?? "").trim() === description
+    )
+    if (!match) {
+      evidence.exists = false
+      return
+    }
+    evidence.exists = true
+    evidence.active = true
+    evidence.version = stringValue(match["tm:number"])
+    evidence.requestNumber = stringValue(match["tm:number"])
+  } catch (error) {
+    recordObservationError(evidence, source, error)
+  }
+}
+
+/**
+ * The write target is an entry inside an existing request, which likewise has no source identity.
+ * The pre-change state is whether the exact CTS entries are already recorded: all of them present
+ * means this call repeats an earlier one, any missing means there is work to do.
+ */
+async function observeTransportObjectAdd(
+  evidence: EvidenceDraft,
+  backend: SapBackend,
+  connectionId: string,
+  input: Record<string, unknown>
+): Promise<void> {
+  const source = "transport_details"
+  try {
+    const requestNumber = String(input.requestNumber ?? "")
+      .trim()
+      .toUpperCase()
+    const objects = Array.isArray(input.objects)
+      ? (input.objects as Array<Record<string, unknown>>)
+      : []
+    const request = await backend.transportDetails(connectionId, requestNumber)
+    evidence.sources.push(source)
+    evidence.requestNumber = requestNumber
+    const recorded = new Set(
+      transportEntries(request).map((entry) => ctsEntryKey(entry.pgmid, entry.type, entry.name))
+    )
+    const missing = objects.filter(
+      (object) =>
+        !recorded.has(
+          ctsEntryKey(
+            String(object.pgmid ?? ""),
+            String(object.object ?? ""),
+            String(object.objName ?? "")
+          )
+        )
+    )
+    evidence.exists = missing.length === 0
+    evidence.version = stringValue(request["tm:status"])
+    evidence.fingerprint = transportFingerprint(request)
+    if (evidence.exists) evidence.active = true
+  } catch (error) {
+    recordObservationError(evidence, source, error)
+  }
+}
+
+function ctsEntryKey(pgmid: string, type: string, name: string): string {
+  return `${pgmid.trim().toUpperCase()}|${type.trim().toUpperCase()}|${name.trim().toUpperCase()}`
 }
 
 async function observeSourceTarget(

@@ -102,3 +102,21 @@ test("ruling W3: read_abap_table rejects a sensitive table before touching SAP",
   )
   assert.equal(backendTouched, false, "a rejected table must never reach the backend")
 })
+
+// D-6: E07T was missing while E070/E071 were registered, so a request number could be read back
+// but its short text could not - the one human-meaningful key when several requests exist.
+test("D-6: the CTS text table E07T is registered beside E070 and E071", () => {
+  for (const name of ["E070", "E071", "E07T"]) {
+    assert.equal(isTableAllowed(name), true, `${name} must be allowed`)
+    assert.equal(describeAllowlistRejection(name), null)
+  }
+  assert.ok(
+    (TABLE_TIERS.metadata as readonly string[]).includes("E07T"),
+    "E07T belongs to the metadata tier"
+  )
+})
+
+test("D-6: E07T is neither sensitive nor pending approval", () => {
+  assert.equal((TABLE_NEVER_ALLOWED as readonly string[]).includes("E07T"), false)
+  assert.equal((TABLE_PENDING_APPROVAL as readonly string[]).includes("E07T"), false)
+})

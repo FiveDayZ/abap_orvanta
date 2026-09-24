@@ -451,3 +451,97 @@ test("pre-change observation reports an inactive definition as inactive", async 
   assert.equal(evidence.fingerprint, "b".repeat(64))
   assert.equal(evidence.packageName, "ZPMC")
 })
+
+// A new CTS request and a new CTS object entry both have no source identity. Before these two
+// branches existed they fell through to the generic ADT source observation, which threw "write
+// target has no readable source identity": the gate then reported exists=null and both writes were
+// refused before SAP was contacted, so the two 2.8 transport tools were unreachable.
+test("pre-change observation covers CTS request creation and object addition", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+
+  const createMissing = await observeWritePreChange(
+    "create_transport_request",
+    { requestType: "K", description: "Nothing like this exists" },
+    "w200",
+    'new CTS request of type K described "Nothing like this exists"',
+    backend,
+    tools
+  )
+  assert.equal(createMissing.exists, false)
+  assert.equal(createMissing.observationStatus, "complete")
+  assert.deepEqual(createMissing.sources, ["list_user_transports"])
+
+  // The retry guard is owner plus type plus description, and the mock holds one modifiable
+  // workbench request owned by the calling user.
+  const createExisting = await observeWritePreChange(
+    "create_transport_request",
+    { requestType: "K", description: "Mock W20K900001" },
+    "w200",
+    'new CTS request of type K described "Mock W20K900001"',
+    backend,
+    tools
+  )
+  assert.equal(createExisting.exists, true)
+  assert.equal(createExisting.requestNumber, "W20K900001")
+
+  // A customizing request must not be matched against the workbench category, or the observation
+  // would report an existing request for a type that has none.
+  const createWrongCategory = await observeWritePreChange(
+    "create_transport_request",
+    { requestType: "W", description: "Mock W20K900001" },
+    "w200",
+    'new CTS request of type W described "Mock W20K900001"',
+    backend,
+    tools
+  )
+  assert.equal(createWrongCategory.exists, false)
+
+  const addMissing = await observeWritePreChange(
+    "add_objects_to_transport",
+    {
+      requestNumber: "W20K900001",
+      objects: [{ pgmid: "R3TR", object: "CLAS", objName: "ZCL_ABSENT" }]
+    },
+    "w200",
+    "CTS request W20K900001 objects",
+    backend,
+    tools
+  )
+  assert.equal(addMissing.exists, false)
+  assert.equal(addMissing.observationStatus, "complete")
+  assert.match(String(addMissing.fingerprint), /^[a-f0-9]{64}$/)
+  assert.deepEqual(addMissing.sources, ["transport_details"])
+
+  // An entry that is already recorded means the call repeats an earlier one.
+  const addExisting = await observeWritePreChange(
+    "add_objects_to_transport",
+    {
+      requestNumber: "W20K900001",
+      objects: [{ pgmid: "R3TR", object: "CLAS", objName: "ZCL_DEMO" }]
+    },
+    "w200",
+    "CTS request W20K900001 objects",
+    backend,
+    tools
+  )
+  assert.equal(addExisting.exists, true)
+  assert.equal(addExisting.active, true)
+
+  // An unreadable request must stay a hard failure: exists=null throws before SAP is touched rather
+  // than reporting the target as absent and letting the write claim a creation.
+  await assert.rejects(
+    observeWritePreChange(
+      "add_objects_to_transport",
+      {
+        requestNumber: "W20K999999",
+        objects: [{ pgmid: "R3TR", object: "CLAS", objName: "ZCL_DEMO" }]
+      },
+      "w200",
+      "CTS request W20K999999 objects",
+      backend,
+      tools
+    ),
+    /could not establish whether/
+  )
+})

@@ -229,10 +229,112 @@ function Get-InterfaceBlockLines {
     return $blockLines
 }
 
+# The 2.7 interface the body was written against is declared as a literal array in front of the
+# repository extension block. A carrier that has to create the function module from scratch needs it:
+# without IV_OPERATION the body cannot be generated at all. The installed helper concatenates it
+# before $repositoryInterfaceImportLines, so the canonical keeps that order.
+function Get-BaseImportBlockLines {
+    param([string]$Text)
+    $start = [regex]::Match($Text, '\$existingObjectLines\s*\+\s*@\(')
+    if (-not $start.Success) { throw "base import block not found in the bootstrap script" }
+    $from = $start.Index + $start.Length
+    $stop = [regex]::Match($Text.Substring($from), '\)\s*\+\s*\$repositoryInterfaceImportLines')
+    if (-not $stop.Success) { throw "base import block end not found in the bootstrap script" }
+    $block = $Text.Substring($from, $stop.Index)
+    $blockLines = @([regex]::Matches($block, '"([^"]*)"') | ForEach-Object { $_.Groups[1].Value })
+    if ($blockLines.Count -eq 0) { throw "the base import block declares no statement" }
+    $blockLines = @($blockLines | ForEach-Object { $_.Replace('$operationDbField', 'RS38L-NAME') })
+    # The installer block closes every parameter with CLEAR, while the generator expects CLEAR to open
+    # one. Normalise to the generator's shape so both blocks concatenate without a doubled CLEAR.
+    while ($blockLines.Count -gt 0 -and $blockLines[-1] -eq 'CLEAR ls_import.') {
+        $blockLines = @($blockLines[0..($blockLines.Count - 2)])
+    }
+    $blockLines = @('CLEAR ls_import.') + $blockLines
+    foreach ($blockLine in $blockLines) {
+        if ($blockLine -notmatch "^(CLEAR ls_import\.|ls_import-[a-z]+ = '[^']*'\.|APPEND ls_import TO lt_import\.)$") {
+            throw "unexpected base interface statement: $blockLine"
+        }
+        if ($blockLine.Contains('$')) {
+            throw "base interface statement still contains a PowerShell variable: $blockLine"
+        }
+    }
+    return $blockLines
+}
+
+# The base export and table parameters sit in one literal block behind $repositoryInterfaceExportLines.
+# They belong to the shared body just like the base imports, so the canonical needs them too.
+function Get-BaseTailBlockLines {
+    param([string]$Text)
+    $start = [regex]::Match($Text, '\$repositoryInterfaceExportLines\s*\+\s*@\(')
+    if (-not $start.Success) { throw "base export block not found in the bootstrap script" }
+    $from = $start.Index + $start.Length
+    $stop = [regex]::Match($Text.Substring($from), '\)\s*\+\s*\$repositoryInterfaceTableLines')
+    if (-not $stop.Success) { throw "base export block end not found in the bootstrap script" }
+    $block = $Text.Substring($from, $stop.Index)
+    $blockLines = @([regex]::Matches($block, '"([^"]*)"') | ForEach-Object { $_.Groups[1].Value })
+    if ($blockLines.Count -eq 0) { throw "the base export block declares no statement" }
+    foreach ($blockLine in $blockLines) {
+        if ($blockLine -notmatch "^(CLEAR ls_(export|tables)\.|ls_(export|tables)-[a-z]+ = '[^']*'\.|APPEND ls_(export|tables) TO lt_(export|tables)\.)$") {
+            throw "unexpected base export statement: $blockLine"
+        }
+        if ($blockLine.Contains('$')) {
+            throw "base export statement still contains a PowerShell variable: $blockLine"
+        }
+    }
+    return $blockLines
+}
+
+# The installer concatenates one more import block between the repository extension and the base
+# export parameters: $ddicImportLines, which declares IV_EXPECTED_VERSION for every helper (the DDIC
+# body patches DDIC objects with it, the shared repository body uses it for optimistic concurrency).
+# Leaving it out of the canonical made the carrier install a 56-parameter interface that its own
+# body could not compile against -- GENERATE failed with "The field IV_EXPECTED_VERSION is unknown"
+# even though the installed interface matched the canonical exactly. The live interface is the base
+# and the carrier appends only what is missing, so a parameter absent from the canonical can never
+# be added; the canonical has to carry every block the installer concatenates.
+function Get-DdicImportBlockLines {
+    param([string]$Text)
+    $match = [regex]::Match(
+        $Text, '(?s)\$ddicImportLines\s*=\s*@\((.*?)\)\s*\r?\n\s*\$sourceProgramLines')
+    if (-not $match.Success) { throw "ddic import block not found in the bootstrap script" }
+    $blockLines = @([regex]::Matches($match.Groups[1].Value, '"([^"]*)"') |
+        ForEach-Object { $_.Groups[1].Value })
+    if ($blockLines.Count -eq 0) { throw "the ddic import block declares no statement" }
+    foreach ($blockLine in $blockLines) {
+        if ($blockLine -notmatch "^(CLEAR ls_import\.|ls_import-[a-z]+ = '[^']*'\.|APPEND ls_import TO lt_import\.)$") {
+            throw "unexpected ddic interface statement: $blockLine"
+        }
+        if ($blockLine.Contains('$')) {
+            throw "ddic interface statement contains a PowerShell variable and would not survive extraction: $blockLine"
+        }
+    }
+    return $blockLines
+}
+
+function Group-InterfaceBlockLines {
+    param([string[]]$Lines, [string]$Kind)
+    $grouped = @()
+    $current = @()
+    foreach ($line in $Lines) {
+        if ($line -match "^CLEAR ls_$Kind\." -and $current.Count -gt 0) { continue }
+        if ($line -match "^ls_$Kind-") { $current += $line }
+        elseif ($line -match "^APPEND ls_$Kind TO ") { $current += $line; $grouped += , $current; $current = @() }
+    }
+    $result = @()
+    foreach ($group in $grouped) { $result += @("CLEAR ls_$Kind.") + $group }
+    return $result
+}
+
 $scriptText = Get-Content $scriptPath -Raw
-$importLines = @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceImportLines')
-$exportLines = @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceExportLines')
-$tableLines = @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceTableLines')
+$baseImportLines = @(Get-BaseImportBlockLines -Text $scriptText)
+$baseTailLines = @(Get-BaseTailBlockLines -Text $scriptText)
+$baseExportLines = @(Group-InterfaceBlockLines -Lines @($baseTailLines | Where-Object { $_ -match '^ls_export-|^APPEND ls_export |^CLEAR ls_export\.' }) -Kind 'export')
+$baseTableLines = @(Group-InterfaceBlockLines -Lines @($baseTailLines | Where-Object { $_ -match '^ls_tables-|^APPEND ls_tables |^CLEAR ls_tables\.' }) -Kind 'tables')
+$importLines = $baseImportLines +
+    @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceImportLines') +
+    @(Get-DdicImportBlockLines -Text $scriptText)
+$exportLines = $baseExportLines + @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceExportLines')
+$tableLines = $baseTableLines + @(Get-InterfaceBlockLines -Text $scriptText -Variable 'repositoryInterfaceTableLines')
 if (($importLines.Count + $exportLines.Count + $tableLines.Count) -eq 0) {
     throw "the repository interface declared no parameter; the body cannot be deployed without it"
 }
