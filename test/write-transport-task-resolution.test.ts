@@ -12,48 +12,64 @@ import { MockBackend } from "./mock-backend.js"
 // passes the number as `iv_request` to TR_RECORD_OBJ_CHANGE_TO_REQ ->
 // TRINT_OBJECTS_CHECK_AND_INSERT( iv_order = ... ), whose companion outputs are ev_order/ev_task:
 // the task is derived from the request, never supplied as one.
-
-function backendWith(row: Record<string, unknown> | null, queries: string[] = []): MockBackend {
-  const backend = new MockBackend()
-  backend.runQuery = async (_connectionId, sql) => {
-    queries.push(sql)
-    return row ? [row] : []
-  }
-  return backend
-}
+//
+// The first cut of this check read E070 through `SapBackend.runQuery`, whose native ADT data
+// preview answers SAP_DATA_QUERY_RESPONSE_INVALID on this system, so the check failed on every
+// call and the `catch` hid it - the release reproduced TK/886 exactly. The read is therefore
+// injected, and a failure is reported rather than swallowed.
 
 const taskRow = { TRKORR: "GR2K923428", TRFUNCTION: "S", STRKORR: "GR2K923427" }
 const requestRow = { TRKORR: "GR2K923427", TRFUNCTION: "K", STRKORR: "" }
 
+function reader(rows: Record<string, unknown>[], seen: string[] = []) {
+  return async (_connectionId: string, container: string) => {
+    seen.push(container)
+    return rows
+  }
+}
+
 test("a CTS task number is resolved to the request that owns it", async () => {
-  const queries: string[] = []
+  const seen: string[] = []
   const values: Record<string, unknown> = { connectionId: "w200", transportNumber: "gr2k923428" }
-  const resolved = await resolveWriteTransportNumber(values, backendWith(taskRow, queries))
-  assert.equal(resolved, "GR2K923428", "the caller's own value is reported back")
+  const resolution = await resolveWriteTransportNumber(
+    values,
+    new MockBackend(),
+    reader([taskRow], seen)
+  )
+  assert.equal(resolution.requestedTaskNumber, "GR2K923428", "the caller's own value is reported")
+  assert.equal(resolution.unresolvedReason, null)
   assert.equal(values.transportNumber, "GR2K923427", "the payload now names the request")
-  assert.equal(queries.length, 1)
-  assert.match(queries[0] ?? "", /FROM E070 WHERE TRKORR = 'GR2K923428'/)
+  assert.deepEqual(seen, ["GR2K923428"], "the container is upper-cased before it reaches SAP")
 })
 
 test("a request number is left exactly as the caller wrote it", async () => {
   const values: Record<string, unknown> = { connectionId: "w200", transportNumber: "GR2K923427" }
-  assert.equal(await resolveWriteTransportNumber(values, backendWith(requestRow)), null)
+  const resolution = await resolveWriteTransportNumber(
+    values,
+    new MockBackend(),
+    reader([requestRow])
+  )
+  assert.equal(resolution.requestedTaskNumber, null)
+  assert.equal(resolution.unresolvedReason, null)
   assert.equal(values.transportNumber, "GR2K923427")
 })
 
-test("an unknown number is left alone rather than rewritten on a guess", async () => {
+test("a container SAP does not know is reported, not silently passed on", async () => {
   const values: Record<string, unknown> = { connectionId: "w200", transportNumber: "GR2K999999" }
-  assert.equal(await resolveWriteTransportNumber(values, backendWith(null)), null)
-  assert.equal(values.transportNumber, "GR2K999999")
+  const resolution = await resolveWriteTransportNumber(values, new MockBackend(), reader([]))
+  assert.equal(resolution.requestedTaskNumber, null)
+  assert.match(String(resolution.unresolvedReason), /no row for GR2K999999/)
+  assert.equal(values.transportNumber, "GR2K999999", "it is never rewritten on a guess")
 })
 
-test("a lookup failure does not block the write", async () => {
-  const backend = new MockBackend()
-  backend.runQuery = async () => {
-    throw new Error("E070 unavailable")
-  }
+test("a failed lookup is reported instead of being swallowed", async () => {
   const values: Record<string, unknown> = { connectionId: "w200", transportNumber: "GR2K923428" }
-  assert.equal(await resolveWriteTransportNumber(values, backend), null)
+  const resolution = await resolveWriteTransportNumber(values, new MockBackend(), async () => {
+    throw new Error("SAP_DATA_QUERY_RESPONSE_INVALID: expected XML data preview")
+  })
+  assert.equal(resolution.requestedTaskNumber, null)
+  assert.match(String(resolution.unresolvedReason), /E070 could not be read for GR2K923428/)
+  assert.match(String(resolution.unresolvedReason), /SAP_DATA_QUERY_RESPONSE_INVALID/)
   assert.equal(
     values.transportNumber,
     "GR2K923428",
@@ -62,10 +78,15 @@ test("a lookup failure does not block the write", async () => {
 })
 
 test("an empty transport number never reaches SAP", async () => {
-  const queries: string[] = []
+  const seen: string[] = []
   const values: Record<string, unknown> = { connectionId: "w200", transportNumber: "   " }
-  assert.equal(await resolveWriteTransportNumber(values, backendWith(taskRow, queries)), null)
-  assert.equal(queries.length, 0)
+  const resolution = await resolveWriteTransportNumber(
+    values,
+    new MockBackend(),
+    reader([taskRow], seen)
+  )
+  assert.equal(resolution.requestedTaskNumber, null)
+  assert.equal(seen.length, 0)
 })
 
 test("the pre-change summary records the substitution beside the request it used", () => {
@@ -73,16 +94,30 @@ test("the pre-change summary records the substitution beside the request it used
     "resume_ddic_table_activation",
     { connectionId: "w200", transportNumber: "GR2K923427" },
     new MockBackend(),
-    "GR2K923428"
+    { requestedTaskNumber: "GR2K923428", unresolvedReason: null }
   )
   const summary = JSON.parse(context.preChangeSummary) as Record<string, unknown>
   assert.equal(summary.transportNumber, "GR2K923427")
   assert.equal(summary.requestedTaskNumber, "GR2K923428")
   assert.match(String(summary.transportResolution), /GR2K923428 is a CTS task/)
   assert.match(String(summary.transportResolution), /GR2K923427/)
+  assert.equal("transportCheckWarning" in summary, false)
 })
 
-test("no substitution leaves the pre-change summary unchanged", () => {
+test("an unclassified container is recorded as a warning", () => {
+  const context = writeOperationContext(
+    "resume_ddic_table_activation",
+    { connectionId: "w200", transportNumber: "GR2K923428" },
+    new MockBackend(),
+    { requestedTaskNumber: null, unresolvedReason: "connection refused" }
+  )
+  const summary = JSON.parse(context.preChangeSummary) as Record<string, unknown>
+  assert.equal(summary.transportNumber, "GR2K923428", "the value is never rewritten on a guess")
+  assert.match(String(summary.transportCheckWarning), /connection refused/)
+  assert.equal("requestedTaskNumber" in summary, false)
+})
+
+test("no resolution leaves the pre-change summary unchanged", () => {
   const context = writeOperationContext(
     "resume_ddic_table_activation",
     { connectionId: "w200", transportNumber: "GR2K923427" },
@@ -93,4 +128,5 @@ test("no substitution leaves the pre-change summary unchanged", () => {
   assert.equal(summary.transportNumber, "GR2K923427")
   assert.equal("requestedTaskNumber" in summary, false)
   assert.equal("transportResolution" in summary, false)
+  assert.equal("transportCheckWarning" in summary, false)
 })

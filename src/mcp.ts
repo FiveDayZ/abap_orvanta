@@ -105,8 +105,33 @@ export function createMcpServer(
     }
   }
   const invoke = (...args: Parameters<typeof invokeTool>) => tracked(() => invokeTool(...args))
-  const invokeWrite = <T extends object>(...args: Parameters<typeof invokeWriteTool<T>>) =>
-    tracked(() => invokeWriteTool(...args))
+  // The CTS container check rides `read_abap_table`, the one table read that is known to work here:
+  // it falls back to `rfc_read_table` when the native ADT data preview answers HTML, which
+  // `SapBackend.runQuery` alone does not survive on this ECC 7.31 system.
+  const readTransportRows = async (connectionId: string, container: string) => {
+    assertTableAllowed("E070")
+    const parsed = JSON.parse(
+      await tools.readAbapTable({
+        connectionId,
+        tableName: "E070",
+        columns: ["TRKORR", "TRFUNCTION", "STRKORR"],
+        filters: [{ column: "TRKORR", operator: "EQ", value: container }],
+        maxRows: 1
+      })
+    ) as { status?: string; code?: string; data?: Record<string, unknown>[] }
+    // Throw rather than return empty, so "the read failed" stays distinct from "no such container".
+    if (parsed.status !== "ok") {
+      throw new Error(`read_abap_table reported ${String(parsed.code ?? parsed.status)}`)
+    }
+    return Array.isArray(parsed.data) ? parsed.data : []
+  }
+  const invokeWrite = <T extends object>(
+    name: string,
+    input: T,
+    backend: SapBackend,
+    receipts: WriteOperationReceiptStore,
+    action: (beforeInvoke: () => Promise<void>) => Promise<string>
+  ) => tracked(() => invokeWriteTool(name, input, backend, receipts, action, readTransportRows))
 
   registerTool("read_smartform", toolContracts.read_smartform, async (input) =>
     invoke("read_smartform", async () => JSON.stringify(await smartforms.read(input)))
@@ -892,15 +917,16 @@ async function invokeWriteTool<T extends object>(
   input: T,
   backend: SapBackend,
   receipts: WriteOperationReceiptStore,
-  action: (beforeInvoke: () => Promise<void>) => Promise<string>
+  action: (beforeInvoke: () => Promise<void>) => Promise<string>,
+  readTransportRows: (connectionId: string, container: string) => Promise<Record<string, unknown>[]>
 ) {
   const values = input as Record<string, unknown>
   const operationId =
     typeof values.operationId === "string" && values.operationId ? values.operationId : randomUUID()
   // Resolve a CTS task to its request before the pre-change summary and the payload are built, so
   // the receipt, the helper and the SAP readback all describe the same container.
-  const requestedTaskNumber = await resolveWriteTransportNumber(values, backend)
-  const context = writeOperationContext(name, values, backend, requestedTaskNumber)
+  const transport = await resolveWriteTransportNumber(values, backend, readTransportRows)
+  const context = writeOperationContext(name, values, backend, transport)
   const recoveryGuide =
     `Read back ${context.targetSummary} from SAP and compare it with the pre-change summary and requested change. ` +
     "Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
@@ -1035,8 +1061,8 @@ async function invokeWriteTool<T extends object>(
 
   try {
     const receipt = await receipts.complete(reservation.reservation, result, Date.now() - started)
-    const note = requestedTaskNumber
-      ? `Transport container: ${requestedTaskNumber} is a CTS task, not a request; the objects were recorded in the request that owns it (${String(values.transportNumber)}). Pass the request number directly to target it explicitly.`
+    const note = transport.requestedTaskNumber
+      ? `Transport container: ${transport.requestedTaskNumber} is a CTS task, not a request; the objects were recorded in the request that owns it (${String(values.transportNumber)}). Pass the request number directly to target it explicitly.`
       : null
     return textResult(withOperationReceipt(result, operationId, receipt, note))
   } catch (error) {
@@ -1101,45 +1127,68 @@ function withOperationReceipt(
  * (`E070`: `TRFUNCTION = 'S'`, `STRKORR = 'GR2K923427'`) where request `GR2K923427` was meant.
  *
  * The substitution is returned so the receipt can state what the caller actually asked for; it is
- * never applied silently. A lookup that fails leaves the value untouched: a diagnostic read must
- * not block a legitimate write, and the helper's own rejection stays the backstop.
+ * never applied silently. A lookup that fails leaves the value untouched - a diagnostic read must
+ * not block a legitimate write, and the helper's own rejection stays the backstop - but the failure
+ * is reported, because the first cut of this check swallowed it.
+ *
+ * That first cut read `E070` through `SapBackend.runQuery`, whose native ADT data-preview path
+ * answers `SAP_DATA_QUERY_RESPONSE_INVALID` on this ECC 7.31 system; only `execute_data_query`
+ * compensates, with its own `rfc_read_table` fallback. The check therefore failed on every call,
+ * the `catch` hid it, and the release was a no-op that reproduced `TK 886` exactly. The caller now
+ * supplies the read (`readRows`), so the check rides the same path `read_abap_table` uses.
  */
+export interface WriteTransportResolution {
+  /** The task number the caller supplied, when it was resolved to the request that owns it. */
+  requestedTaskNumber: string | null
+  /** Why the container could not be classified, when the check itself failed. */
+  unresolvedReason: string | null
+}
+
 export async function resolveWriteTransportNumber(
   values: Record<string, unknown>,
-  backend: SapBackend
-): Promise<string | null> {
+  backend: SapBackend,
+  readRows: (connectionId: string, container: string) => Promise<Record<string, unknown>[]>
+): Promise<WriteTransportResolution> {
+  const unchanged: WriteTransportResolution = { requestedTaskNumber: null, unresolvedReason: null }
   const raw = values.transportNumber
-  if (typeof raw !== "string") return null
+  if (typeof raw !== "string") return unchanged
   const container = raw.trim().toUpperCase()
-  if (!container) return null
+  if (!container) return unchanged
   const uri = String(values.fileUri ?? values.url ?? "")
   const connectionId = String(
     values.connectionId ?? /^adt:\/\/([^/]+)/i.exec(uri)?.[1] ?? backend.connectionIds()[0] ?? ""
   ).toLowerCase()
-  if (!connectionId) return null
+  if (!connectionId) return unchanged
+  let rows: Record<string, unknown>[]
   try {
-    assertTableAllowed("E070")
-    const rows = await backend.runQuery(
-      connectionId,
-      `SELECT TRKORR, TRFUNCTION, STRKORR FROM E070 WHERE TRKORR = '${container.replaceAll("'", "''")}'`,
-      1
-    )
-    const parent = String(rows[0]?.STRKORR ?? "")
-      .trim()
-      .toUpperCase()
-    if (!parent || parent === container) return null
-    values.transportNumber = parent
-    return container
-  } catch {
-    return null
+    rows = await readRows(connectionId, container)
+  } catch (error) {
+    return {
+      requestedTaskNumber: null,
+      unresolvedReason: `E070 could not be read for ${container} (${String(error)}); it was submitted unchanged`
+    }
   }
+  if (rows.length === 0) {
+    // A container that exists always has an E070 row, so this is a number SAP will not know. The
+    // write still goes ahead; the receipt says why it may be refused.
+    return {
+      requestedTaskNumber: null,
+      unresolvedReason: `E070 has no row for ${container}; it was submitted unchanged`
+    }
+  }
+  const parent = String(rows[0]?.STRKORR ?? "")
+    .trim()
+    .toUpperCase()
+  if (!parent || parent === container) return unchanged
+  values.transportNumber = parent
+  return { requestedTaskNumber: container, unresolvedReason: null }
 }
 
 export function writeOperationContext(
   name: string,
   input: Record<string, unknown>,
   backend: SapBackend,
-  requestedTaskNumber?: string | null
+  resolution?: WriteTransportResolution | null
 ): {
   connectionId: string
   targetKey: string
@@ -1185,11 +1234,16 @@ export function writeOperationContext(
       transportNumber: input.transportNumber ?? "existing assignment",
       // Only present when the caller named a task: `transportNumber` above is then the request that
       // owns it, and this records what was actually asked for so the receipt cannot be misread.
-      ...(requestedTaskNumber
+      ...(resolution?.requestedTaskNumber
         ? {
-            requestedTaskNumber,
-            transportResolution: `${requestedTaskNumber} is a CTS task; the objects were recorded in its request ${String(input.transportNumber)}`
+            requestedTaskNumber: resolution.requestedTaskNumber,
+            transportResolution: `${resolution.requestedTaskNumber} is a CTS task; the objects were recorded in its request ${String(input.transportNumber)}`
           }
+        : {}),
+      // The container was never classified. The write still goes ahead, but the receipt says so, so
+      // a later TK/886 is explained instead of being a mystery.
+      ...(resolution?.unresolvedReason
+        ? { transportCheckWarning: resolution.unresolvedReason }
         : {}),
       automaticRollback: false
     })
