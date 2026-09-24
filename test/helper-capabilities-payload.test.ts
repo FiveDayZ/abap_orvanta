@@ -453,16 +453,14 @@ test("the DDIC since values are the service contract minimums", async () => {
     groupSizes[operation.since] = (groupSizes[operation.since] ?? 0) + 1
   }
   assert.deepEqual(groupSizes, {
-    "1.11": 6,
-    "1.12": 1,
-    "1.14": 1,
-    "1.15": 3,
-    "1.2": 8,
+    "1.11": 4,
+    "1.16": 14,
+    "1.2": 4,
     "1.5": 1,
     "1.6": 5,
-    "1.7": 2,
-    "1.8": 3,
-    "1.9": 3
+    "1.7": 1,
+    "1.8": 2,
+    "1.9": 2
   })
 
   // Compare numerically: a lexicographic sort puts "1.9" after "1.10".
@@ -489,11 +487,20 @@ test("the DDIC since values are the service contract minimums", async () => {
   // reported available.
   // 2026-09-24 (1.15): the three transparent-table field-write operations (CREATE, APPEND, PATCH)
   // moved to |1.15| because table field rows may now carry DD03P-REFTABLE/REFFIELD, which a 1.14
-  // helper rejects with PROPERTY_NOT_ALLOWED. They are the three |1.15| rows, so they alone raise
-  // PROTOCOL|MAX from 1.14 to 1.15, and the read stays at |1.5| in its own capability: a capability
+  // helper rejects with PROPERTY_NOT_ALLOWED. They were the three |1.15| rows, so they alone raised
+  // PROTOCOL|MAX from 1.14 to 1.15, and the read stayed at |1.5| in its own capability: a capability
   // may not mix protocol minimums, and lifting the read to 1.15 would report a working read as
   // unsupported.
-  assert.equal(versions[versions.length - 1], "1.15", "PROTOCOL|MAX must derive to 1.15")
+  // 2026-09-25 (1.16): every DDIC write that saves and activates a definition moved to |1.16|. A
+  // helper below 1.16 verified the write by reading the active version only, so a refused activation
+  // was reported as completed (live w200 evidence in
+  // .logs/mcp-incident-20260925-001201-upsert-lock-object-false-success). The 14 |1.16| rows are the
+  // upserts, the three table-field writes, the settings patch, the resume operation and the append
+  // structure write; they alone raise PROTOCOL|MAX from 1.15 to 1.16. The reads that shared their
+  // capabilities stayed behind at 1.5/1.8/1.9/1.11 in their own groups, and the deletes (which do not
+  // activate) stayed at 1.6/1.8/1.9/1.11 - a capability may not mix protocol minimums, and lifting a
+  // read or a delete to 1.16 would report working operations as unsupported.
+  assert.equal(versions[versions.length - 1], "1.16", "PROTOCOL|MAX must derive to 1.16")
 })
 
 test("the DDIC branch reuses the repository hash slots and names its own helper", () => {

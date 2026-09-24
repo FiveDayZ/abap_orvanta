@@ -57,7 +57,7 @@ function validInput(): Record<string, unknown> {
   }
 }
 
-test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.14", () => {
+test("resume_ddic_table_activation stays registered against the DDIC helper at protocol 1.16", () => {
   assert.ok(TOOL_NAMES.includes(RESUME_TOOL), `${RESUME_TOOL} must stay registered`)
   const entry = registryEntry(RESUME_TOOL)
   assert.ok(entry, `${RESUME_TOOL} must have a registry entry`)
@@ -73,16 +73,24 @@ test("resume_ddic_table_activation stays registered against the DDIC helper at p
   // protocol channel, so mass_act_tabl never overwrote ACT_RESULT and the call always returned the
   // line-121 initial value 8 while the table stayed inactive. A 1.13 minimum would keep advertising
   // a capability that cannot be performed - the same class of error as the 2026-09-23 incident.
-  assert.equal(entry.minHelperProtocol, "1.14")
+  // 2026-09-25 raised it to 1.16: 1.14/1.15 confirmed the resume by reading the *active* version,
+  // which succeeds even when the resume did not activate anything. The same blind spot let a refused
+  // DDIC write be reported as a completed one (incident mcp-incident-20260925-001201), so the resume
+  // now rides the helper that proves no inactive version is left behind.
+  assert.equal(entry.minHelperProtocol, "1.16")
   assert.equal(entry.route, "sap-helper-fallback")
   assert.equal(entry.annotations.readOnlyHint, false)
   assert.equal(entry.annotations.destructiveHint, true)
 
   // The recovery action is neither the create action nor a source activation: their registry
-  // routes differ, so a substitution would fail this identity check.
+  // routes differ, so a substitution would fail this identity check. The protocol minimum no longer
+  // distinguishes them - since 2026-09-25 every write that saves and activates is floored at 1.16,
+  // for the same reason - so the checked identity is the helper operation each one dispatches.
   const create = registryEntry("create_ddic_transparent_table")
   assert.ok(create, "create_ddic_transparent_table must stay registered")
-  assert.notEqual(create.minHelperProtocol, entry.minHelperProtocol)
+  assert.equal(create.minHelperProtocol, entry.minHelperProtocol)
+  assert.notDeepEqual(create.requiredHelperOperations, entry.requiredHelperOperations)
+  assert.deepEqual(entry.requiredHelperOperations, ["RESUME_TABLE_ACTIVATION"])
   const activate = registryEntry("abap_activate")
   assert.ok(activate, "abap_activate must stay registered")
   assert.notEqual(activate.route, entry.route)

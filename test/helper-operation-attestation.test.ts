@@ -126,35 +126,45 @@ const partialIds = (report: ReportShape): string[] =>
     .map((item) => item.id)
     .sort()
 
-test("a helper that attests the protocol but not the operation code is not available", async () => {
+test("a helper that attests the protocol but not the operation code is not reported as available", async () => {
   const report = await reportWithDdicOperations(DEPLOYED_OPERATIONS)
 
-  // The defect this replaces: the helper self-describes 1.10, the registry minimum is 1.9, and the
-  // version-only check called the lock-object capability available while neither of its write
-  // operations exists. The verdict now follows the helper's own operation list.
+  // The defect this replaces: the helper self-describes 1.10, the registry minimum was 1.9, and the
+  // version-only check called a capability available while some of its operations do not exist. The
+  // verdict follows the helper's own operation list. The lock object kind keeps only its read here
+  // (its write moved to the 1.16 group below), so the inventory rule is now demonstrated by the
+  // delete capability, which is missing the three delete opcodes this 1.10 carrier never implemented.
   const lockObject = observation(report, "ddic-helper-lock-object")
-  assert.equal(lockObject.availability, "partial")
+  assert.equal(lockObject.availability, "available")
   assert.equal(lockObject.evidence.source, "version-and-operation-check")
-  assert.match(lockObject.reason, /self-described protocol 1\.10, which satisfies minimum 1\.9/)
-  assert.match(lockObject.reason, /upsert_lock_object needs UPSERT_LOCK_OBJECT/)
-  assert.match(lockObject.reason, /OPERATION_NOT_SUPPORTED/)
   assert.deepEqual(lockObject.toolObservations, {
     read_lock_object: {
       availability: "available",
       requiredOperations: ["READ_LOCK_OBJECT"],
       missingOperations: []
-    },
-    upsert_lock_object: {
-      availability: "unsupported",
-      requiredOperations: ["UPSERT_LOCK_OBJECT"],
-      missingOperations: ["UPSERT_LOCK_OBJECT"]
     }
   })
 
+  // The nine DDIC writes that save and activate a definition are one capability at 1.16, and the
+  // version gate rejects them before the inventory is consulted. That is deliberate: the minimum does
+  // not claim these opcodes are absent - it claims this helper cannot prove the save became active,
+  // which is not something an operation list can express.
+  const verifiedWrites = observation(report, "ddic-helper-write-activation-verified")
+  assert.equal(verifiedWrites.availability, "unsupported")
+  assert.equal(verifiedWrites.evidence.source, "version-check")
+  assert.match(verifiedWrites.reason, /1\.10, which is below the required capability version 1\.16/)
+  assert.equal(verifiedWrites.toolObservations, undefined)
+
   // delete_ddic_object dispatches one opcode per objectType, so only the routes whose helper-side
-  // operation is missing report a gap: ENQU and NROB. The other six stay usable.
+  // operation is missing report a gap: ENQU, NROB and VIEW. The other six stay usable.
   const controlledDelete = observation(report, "ddic-helper-controlled-delete")
   assert.equal(controlledDelete.availability, "partial")
+  assert.match(
+    controlledDelete.reason,
+    /self-described protocol 1\.10, which satisfies minimum 1\.6/
+  )
+  assert.match(controlledDelete.reason, /delete_ddic_object needs DELETE_LOCK_OBJECT/)
+  assert.match(controlledDelete.reason, /OPERATION_NOT_SUPPORTED/)
   assert.deepEqual(controlledDelete.toolObservations?.delete_ddic_object?.missingOperations, [
     "DELETE_LOCK_OBJECT",
     "DELETE_NUMBER_RANGE_OBJECT",
@@ -200,18 +210,22 @@ test("a helper that attests the protocol but not the operation code is not avail
   // minimum to 1.11 because RESUME_TABLE_ACTIVATION only exists from 1.11 (the 1.10 carrier shipped
   // the 35-character RESUME_TRANSPARENT_TABLE_ACTIVATION that its CHAR 32 IV_OPERATION truncated),
   // 2026-09-23 raised it again to 1.13 because 1.11/1.12 could dispatch the name but never resumed
-  // anything, and 2026-09-24 raised it to 1.14 because 1.13 reached the activation branch but called
-  // DD_TABL_ACT with no protocol channel and never activated the table. A 1.10 helper therefore
-  // cannot serve it, whatever its inventory says.
+  // anything, 2026-09-24 raised it to 1.14 because 1.13 reached the activation branch but called
+  // DD_TABL_ACT with no protocol channel and never activated the table, and 2026-09-25 raised it to
+  // 1.16 because 1.14/1.15 confirmed the resume by reading the active version only - the same blind
+  // spot that let a refused DDIC write be reported as completed. A 1.10 helper therefore cannot serve
+  // it, whatever its inventory says.
   const resume = observation(report, "ddic-helper-table-activation-resume")
   assert.equal(resume.availability, "unsupported")
   assert.equal(resume.evidence.source, "version-check")
-  assert.match(resume.reason, /1\.10, which is below the required capability version 1\.14/)
+  assert.match(resume.reason, /1\.10, which is below the required capability version 1\.16/)
   assert.equal(resume.toolObservations, undefined)
 
-  // Exactly the two capabilities that dispatch a missing operation are partial; nothing else moves.
-  assert.deepEqual(partialIds(report), ["ddic-helper-controlled-delete", "ddic-helper-lock-object"])
-  assert.equal(report.summary.partial, 2)
+  // Exactly one capability is partial: the one whose inventory is missing operation codes the helper
+  // otherwise satisfies by version. Nothing else moves - the 1.16 writes are unsupported on the
+  // version gate rather than partial, because no opcode list could make them trustworthy.
+  assert.deepEqual(partialIds(report), ["ddic-helper-controlled-delete"])
+  assert.equal(report.summary.partial, 1)
   const baseline = await reportWithDdicOperations(null)
   assert.equal(baseline.summary.partial ?? 0, 0)
   assert.deepEqual(partialIds(baseline), [])
@@ -225,10 +239,12 @@ test("a helper that attests every required operation code is available", async (
       ...NUMBER_RANGE_OPERATIONS,
       ...MAINTENANCE_VIEW_OPERATIONS
     ],
-    // 1.14 is the resume tool's contract minimum: 1.11/1.12 routed the operation into conversion
-    // recovery and 1.13 could not activate, so the version gate - not the inventory - used to decide
-    // that verdict.
-    "1.14"
+    // 1.16 is the highest DDIC contract minimum: the resume tool and the nine activation-verified
+    // writes all need a helper that proves a saved definition became the active one. 1.11/1.12 routed
+    // the resume into conversion recovery, 1.13 could not activate, and 1.14/1.15 confirmed an
+    // activation by reading the active version only - so below 1.16 the version gate, not the
+    // inventory, used to decide those verdicts.
+    "1.16"
   )
 
   const resume = observation(report, "ddic-helper-table-activation-resume")
@@ -236,11 +252,41 @@ test("a helper that attests every required operation code is available", async (
   assert.equal(resume.evidence.source, "version-and-operation-check")
   assert.deepEqual(resume.toolObservations?.resume_ddic_table_activation?.missingOperations, [])
 
+  // Each DDIC kind's read keeps its own capability at its own lower minimum; the write it used to
+  // share that group with is judged - and reported - in the 1.16 group instead.
   const lockObject = observation(report, "ddic-helper-lock-object")
   assert.equal(lockObject.availability, "available")
   assert.equal(lockObject.evidence.source, "version-and-operation-check")
-  assert.deepEqual(lockObject.toolObservations?.upsert_lock_object?.missingOperations, [])
+  assert.deepEqual(lockObject.toolObservations, {
+    read_lock_object: {
+      availability: "available",
+      requiredOperations: ["READ_LOCK_OBJECT"],
+      missingOperations: []
+    }
+  })
   assert.equal(observation(report, "ddic-helper-controlled-delete").availability, "available")
+
+  const verifiedWrites = observation(report, "ddic-helper-write-activation-verified")
+  assert.equal(verifiedWrites.availability, "available", verifiedWrites.reason)
+  assert.equal(verifiedWrites.evidence.source, "version-and-operation-check")
+  assert.deepEqual(Object.keys(verifiedWrites.toolObservations ?? {}).sort(), [
+    "patch_ddic_transparent_table_settings",
+    "upsert_ddic_data_element",
+    "upsert_ddic_domain",
+    "upsert_ddic_structure",
+    "upsert_ddic_table_type",
+    "upsert_lock_object",
+    "upsert_maintenance_view",
+    "upsert_number_range_object",
+    "upsert_search_help"
+  ])
+  assert.equal(
+    Object.values(verifiedWrites.toolObservations ?? {}).every(
+      (item) => item.missingOperations.length === 0
+    ),
+    true
+  )
+
   const numberRange = observation(report, "ddic-helper-number-range-object")
   assert.equal(numberRange.availability, "available")
   assert.equal(numberRange.evidence.source, "version-and-operation-check")
@@ -249,15 +295,10 @@ test("a helper that attests every required operation code is available", async (
       availability: "available",
       requiredOperations: ["READ_NUMBER_RANGE_OBJECT"],
       missingOperations: []
-    },
-    upsert_number_range_object: {
-      availability: "available",
-      requiredOperations: ["UPSERT_NUMBER_RANGE_OBJECT"],
-      missingOperations: []
     }
   })
   assert.equal(report.summary.partial, 0)
-  // D6-4: the maintenance view family is available only when the helper attests its own 1.11 opcodes,
+  // D6-4: the maintenance view family is available only when the helper attests its own 1.11 opcode,
   // exactly like the number range family above.
   const maintenanceView = observation(report, "ddic-helper-maintenance-view")
   assert.equal(maintenanceView.availability, "available")
@@ -267,11 +308,6 @@ test("a helper that attests every required operation code is available", async (
       availability: "available",
       requiredOperations: ["READ_MAINTENANCE_VIEW"],
       missingOperations: []
-    },
-    upsert_maintenance_view: {
-      availability: "available",
-      requiredOperations: ["UPSERT_MAINTENANCE_VIEW"],
-      missingOperations: []
     }
   })
 })
@@ -279,11 +315,11 @@ test("a helper that attests every required operation code is available", async (
 test("a missing operation code alone makes its tool unsupported", async () => {
   // Falsification inside the suite: with the same helper identity and protocol but one operation
   // removed, only the capability that dispatches it changes verdict. The protocol is raised to the
-  // resume tool's own contract minimum (1.14) so the operation inventory - not the version check -
-  // is what decides the verdict.
+  // highest DDIC contract minimum (1.16) so the operation inventory - not the version check - is what
+  // decides the verdict.
   const report = await reportWithDdicOperations(
     DEPLOYED_OPERATIONS.filter((opcode) => opcode !== "RESUME_TABLE_ACTIVATION"),
-    "1.14"
+    "1.16"
   )
 
   const resume = observation(report, "ddic-helper-table-activation-resume")
@@ -291,13 +327,21 @@ test("a missing operation code alone makes its tool unsupported", async () => {
   assert.match(resume.reason, /attests none of the required operation codes/)
   assert.match(resume.reason, /resume_ddic_table_activation needs RESUME_TABLE_ACTIVATION/)
   assert.equal(observation(report, "ddic-helper-core").availability, "available")
-  // The number range family is judged on its own operation inventory too, and a 1.11 helper that
-  // published none of its three operation codes attests *nothing* it needs, so its verdict is
-  // unsupported rather than partial: the removal of one operation code alone decides the verdict.
+  // The number range family is judged on its own operation inventory too, and a helper that published
+  // none of its three operation codes attests *nothing* it needs, so its verdict is unsupported rather
+  // than partial: the removal of one operation code alone decides the verdict.
   const numberRange = observation(report, "ddic-helper-number-range-object")
   assert.equal(numberRange.availability, "unsupported")
   assert.match(numberRange.reason, /attests none of the required operation codes/)
-  assert.deepEqual(partialIds(report), ["ddic-helper-controlled-delete", "ddic-helper-lock-object"])
+  // Two capabilities are partial here: the delete routes (three delete opcodes absent from this 1.10
+  // inventory) and the 1.16 write group, whose six opcodes this fixture attests and whose three -
+  // UPSERT_LOCK_OBJECT, UPSERT_NUMBER_RANGE_OBJECT, UPSERT_MAINTENANCE_VIEW - it never implemented.
+  // The lock object kind itself stays available: only its read is left in that capability.
+  assert.equal(observation(report, "ddic-helper-lock-object").availability, "available")
+  assert.deepEqual(partialIds(report), [
+    "ddic-helper-controlled-delete",
+    "ddic-helper-write-activation-verified"
+  ])
   assert.equal(report.summary.partial, 2)
 })
 
@@ -312,7 +356,7 @@ test("a helper below the required protocol stays unsupported on the version chec
   assert.equal(resume.evidence.source, "version-check")
   assert.equal(
     resume.reason,
-    `The ${DDIC_HELPER} helper self-described protocol 1.6, which is below the required capability version 1.14.`
+    `The ${DDIC_HELPER} helper self-described protocol 1.6, which is below the required capability version 1.16.`
   )
   assert.equal(resume.toolObservations, undefined)
 })
@@ -320,7 +364,8 @@ test("a helper below the required protocol stays unsupported on the version chec
 test("a 1.12 helper - the deployed one during the 2026-09-23 incident - cannot be reported as able to resume", async () => {
   // The incident's helper self-described protocol 1.12 and did attest RESUME_TABLE_ACTIVATION, so the
   // old 1.11 contract minimum made the capability read "available" while the operation could only
-  // answer WORKLIST_REQUIRED (or run a conversion recovery). The contract minimum must reject it.
+  // answer WORKLIST_REQUIRED (or run a conversion recovery). The contract minimum must reject it - as
+  // it does at 1.16, where the resume must additionally prove the activation took effect.
   const report = await reportWithDdicOperations(
     [
       ...DEPLOYED_OPERATIONS,
@@ -334,7 +379,7 @@ test("a 1.12 helper - the deployed one during the 2026-09-23 incident - cannot b
   const resume = observation(report, "ddic-helper-table-activation-resume")
   assert.equal(resume.availability, "unsupported")
   assert.equal(resume.evidence.source, "version-check")
-  assert.match(resume.reason, /1\.12, which is below the required capability version 1\.14/)
+  assert.match(resume.reason, /1\.12, which is below the required capability version 1\.16/)
   // The inventory does attest the opcode here, so only the version gate can produce this verdict.
   assert.equal(resume.toolObservations, undefined)
   assert.ok(

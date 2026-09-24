@@ -290,6 +290,20 @@ export class MockBackend implements SapBackend {
   }
   lastRepositoryRequest: SapRepositoryRequest | undefined
   lastHelperRequest: SapHelperRequest | undefined
+  /**
+   * 1.16 post-condition: a write is only complete once the saved definition is the active one. A
+   * helper that answers this code saved the definition, could not prove it is active, and left an
+   * inactive version behind - the exact shape of the 2026-09-25 false-success incident, where the
+   * object kept its previous active version and the old code reported the write as completed. The
+   * fake has to be able to produce it, or a test can never fail for the missing post-condition.
+   */
+  ddicWriteFailureCode: string | null = null
+  /**
+   * A DDIC read of an object that carries an inactive version. The helper's read requests
+   * `state = 'M'`, so it cannot describe which version is active; metadata.INACTIVE stays unset to
+   * model a helper that cannot describe the inactive definition either.
+   */
+  ddicReadFailure: { code: string; message: string } | null = null
   functionPatchReadbackMismatch = false
   /**
    * Reproduces a read-back whose stored source is not what was sent - SAP normalises and truncates
@@ -1889,6 +1903,15 @@ export class MockBackend implements SapBackend {
     const key = `${readOperation}:${request.objectName}`
     const existing = this.ddicByKey.get(key)
     if (request.operation.startsWith("READ")) {
+      if (this.ddicReadFailure) {
+        return {
+          ...(existing ?? mockDdicResult(ddicKind(request.operation), {}, "")),
+          status: "E",
+          code: this.ddicReadFailure.code,
+          message: this.ddicReadFailure.message,
+          metadata: {}
+        }
+      }
       return existing
         ? structuredClone(existing)
         : {
@@ -1961,6 +1984,23 @@ export class MockBackend implements SapBackend {
         status: "E",
         code: "VERSION_CONFLICT",
         message: "Expected object version no longer exists"
+      }
+    }
+    if (this.ddicWriteFailureCode) {
+      // The definition was saved but never proven active: SAP keeps the previous active version and
+      // an inactive version remains. Nothing in the store changes, which is what makes the old
+      // "read the active version back" verification pass and report a completed write.
+      return {
+        ...(existing ?? mockDdicResult(ddicKind(request.operation), {}, request.packageName ?? "")),
+        status: "E",
+        code: this.ddicWriteFailureCode,
+        message: "The saved definition is still not active",
+        metadata: {
+          PHASE: "activation_incomplete",
+          ACT_RC: "4",
+          ACT_SUBRC: "0",
+          GOTSTATE: "M"
+        }
       }
     }
     if (request.operation === "APPEND_TRANSPARENT_TABLE_FIELDS" && existing) {

@@ -140,13 +140,22 @@ $helperCapabilityOperations = @(
 # >>> ORVANTA-DDIC-CAPABILITY-TABLE
 $ddicCapabilityOperations = @(
     "READ_DOMAIN|1.2|R",
-    "UPSERT_DOMAIN|1.2|W",
+    # 1.16：写入成功的判据从"存在活动版本"改成"保存产生的非活动版本已被激活消费"
+    # （写后 state = 'M' 读取的 gotstate 必须为 'A'）。1.15 及更早的助手在对象原本
+    # 就活动时无论激活是否生效都报成功——2026-09-25 锁对象假成功事件正是如此
+    # （.logs/mcp-incident-20260925-001201-upsert-lock-object-false-success.md）。
+    # 凡是走"PUT + ACTIVATE + 写后校验"的写操作，其成功含义都变了，因此这些行的
+    # sinceVersion 一律抬到 1.16；只读操作与删除路径（不激活）不受影响，保持原值。
+    # 这 14 行是唯一的 |1.16| 行，故 PROTOCOL|MAX 由 1.15 派生为 1.16。
+    # 1.11 行的 READ/DELETE 号码段与维护视图、1.8/1.9 的搜索帮助与锁对象读取都不动：
+    # 能力不得混用最低协议，抬读操作会把可用的读报成 unsupported。
+    "UPSERT_DOMAIN|1.16|W",
     "READ_DATA_ELEMENT|1.2|R",
-    "UPSERT_DATA_ELEMENT|1.2|W",
+    "UPSERT_DATA_ELEMENT|1.16|W",
     "READ_STRUCTURE|1.2|R",
-    "UPSERT_STRUCTURE|1.2|W",
+    "UPSERT_STRUCTURE|1.16|W",
     "READ_TABLE_TYPE|1.2|R",
-    "UPSERT_TABLE_TYPE|1.2|W",
+    "UPSERT_TABLE_TYPE|1.16|W",
     "READ_TRANSPARENT_TABLE|1.5|R",
     # 1.15：透明表字段写入新增 REFTABLE/REFFIELD（DD03P 参考表/参考字段）。数量(QUAN)与货币
     # (CURR)字段没有内在单位，DDIC 激活检查会以"指定参考表和参考字段"拒绝，而调用方此前**无法
@@ -155,21 +164,22 @@ $ddicCapabilityOperations = @(
     # 阻塞项（同一检查输出的"增强类别"两行是提示而非错误：对照表 EXCLASS='0' 也激活成功）。
     # 属性集变了，能拒绝该属性的 1.14 及更早助手就不能再被报成 available，故三个字段写入操作的
     # sinceVersion 一律抬到 1.15；已发布的 1.14 仍提供 RESUME_TABLE_ACTIVATION，那一行不动。
-    "CREATE_TRANSPARENT_TABLE|1.15|W",
+    # 1.16 起这三行再抬一次：属性集不变，但成功判据变了（见上方 1.16 段）。
+    "CREATE_TRANSPARENT_TABLE|1.16|W",
     "DELETE_DOMAIN|1.6|W",
     "DELETE_DATA_ELEMENT|1.6|W",
     "DELETE_STRUCTURE|1.6|W",
     "DELETE_TRANSPARENT_TABLE|1.6|W",
     "DELETE_TABLE_TYPE|1.6|W",
-    "APPEND_TRANSPARENT_TABLE_FIELDS|1.15|W",
-    "PATCH_TRANSPARENT_TABLE_FIELDS|1.15|W",
-    "PATCH_TRANSPARENT_TABLE_SETTINGS|1.7|W",
+    "APPEND_TRANSPARENT_TABLE_FIELDS|1.16|W",
+    "PATCH_TRANSPARENT_TABLE_FIELDS|1.16|W",
+    "PATCH_TRANSPARENT_TABLE_SETTINGS|1.16|W",
     "RECOVER_TABLE_CONVERSION|1.7|W",
     "READ_SEARCH_HELP|1.8|R",
-    "UPSERT_SEARCH_HELP|1.8|W",
+    "UPSERT_SEARCH_HELP|1.16|W",
     "DELETE_SEARCH_HELP|1.8|W",
     "READ_LOCK_OBJECT|1.9|R",
-    "UPSERT_LOCK_OBJECT|1.9|W",
+    "UPSERT_LOCK_OBJECT|1.16|W",
     "DELETE_LOCK_OBJECT|1.9|W",
     # R-20 改名后的操作码在这里记录为 1.11 而不是 1.10：1.10 载体发布的是 35 字符的
     # RESUME_TRANSPARENT_TABLE_ACTIVATION，被 CHAR 32 的 IV_OPERATION 截断，从未成功派发过。
@@ -182,24 +192,26 @@ $ddicCapabilityOperations = @(
     # 实测恒返回 ACT_RC=8 / ACT_ROWS=0 且对象保持非活动（2026-09-24 事件，同一缺陷也存在于
     # TABL 臂的正常创建路径）。既然没有任何已发布助手提供**可用**的 RESUME_TABLE_ACTIVATION，
     # sinceVersion 就必须是第一个可用的版本 1.14；否则服务端会继续把 1.13 助手报成 available
-    # （与 2026-09-23 事件同一类错误）。
-    "RESUME_TABLE_ACTIVATION|1.14|W",
+    # （与 2026-09-23 事件同一类错误）。1.16 起再抬一次：恢复激活同样要证明"没有残留
+    # 维护版本"，1.14/1.15 的恢复分支只做激活、不校验结果，与本次修复同一判据。
+    "RESUME_TABLE_ACTIVATION|1.16|W",
     # D6-3 编号范围对象（TNRO + TNROT，区间值不在范围）。1.11 与 RESUME_TABLE_ACTIVATION 同批发布：
     # 三者都是本轮新加的 CASE 分支，任何已发布的助手都不曾提供，因此 sinceVersion 只能是 1.11。
     # 操作码长度：READ 24 / UPSERT 26 / DELETE 26，均在 DDIC 助手 BAPIRET2-PARAMETER(CHAR 32) 之内。
     "READ_NUMBER_RANGE_OBJECT|1.11|R",
-    "UPSERT_NUMBER_RANGE_OBJECT|1.11|W",
+    "UPSERT_NUMBER_RANGE_OBJECT|1.16|W",
     "DELETE_NUMBER_RANGE_OBJECT|1.11|W",
     # D6-4 维护视图（DD25V/DD26V/DD27P/DD28V）。同样与 1.11 同批发布：这三个 CASE 分支在
     # 1.10 及以前不存在。操作码长度：READ 21 / UPSERT 23 / DELETE 23，均在 CHAR 32 之内。
     "READ_MAINTENANCE_VIEW|1.11|R",
-    "UPSERT_MAINTENANCE_VIEW|1.11|W",
+    "UPSERT_MAINTENANCE_VIEW|1.16|W",
     "DELETE_MAINTENANCE_VIEW|1.11|W",
     # D6-5 append 结构字段级写入。字段行只写 append 自身（DD_TBFD_PUT），随后直接激活基表
     # （DDIF_TABL_ACTIVATE），绝不手写基表的 DD03L 行集——依据 .doc/d6-5-activation-sufficiency-20260922.md
     # §4 的源码追踪。1.11 及以前不存在该分支，故 sinceVersion 只能是 1.12。
     # 操作码长度：UPSERT_APPEND_STRUCTURE_FIELDS = 31，在 BAPIRET2-PARAMETER(CHAR 32) 之内。
-    "UPSERT_APPEND_STRUCTURE_FIELDS|1.12|W"
+    # 1.16：该分支同样以"保存后必须已激活"为成功判据（写后 state = 'M' 探针），故随写路径抬起。
+    "UPSERT_APPEND_STRUCTURE_FIELDS|1.16|W"
 )
 # <<< ORVANTA-DDIC-CAPABILITY-TABLE
 
@@ -1363,6 +1375,14 @@ function New-DdicFunctionSource {
         "  DATA lv_state_type TYPE ddobjtyp.",
         "  DATA lv_gotstate TYPE ddgotstate.",
         "  DATA lv_active_state TYPE ddgotstate.",
+        # 2026-09-25 假成功事件（.logs/mcp-incident-20260925-001201-upsert-lock-object-false-success.md）：
+        # 写后校验原先只以 state = 'A' 读活动版本，对象**原本就活动**时该读取与本
+        # 次写入是否激活无关、必然成功；而各类型 DDIF_*_ACTIVATE 的 rc 除 TABL 的
+        # 转换判定外从不判定（原 5642-5649 取到的 lv_active_state 是死代码），于是
+        # 激活被拒也报成功，DDIF_*_PUT 产生的非活动版本留存。本变量承载"写后是否
+        # 仍残留非活动版本"的探针：以 state = 'M' 读取，gotstate 必须为 'A'（与读
+        # 路径判定 INACTIVE_VERSION_EXISTS 的判据同源），否则按契约失败返回。
+        "  DATA lv_leftover_state TYPE ddgotstate.",
         "  DATA lv_current_version TYPE c LENGTH 14.",
         "  DATA lv_existing TYPE c LENGTH 1.",
         "  DATA lv_write TYPE c LENGTH 1.",
@@ -5484,8 +5504,8 @@ function New-DdicFunctionSource {
         # 1.14：该分支的 ev_version 跟随表里的 RESUME_TABLE_ACTIVATION|1.14 行。1.11 曾是对的值
         # （旧名 1.10 被 CHAR 32 截断、从未派发），1.11/1.12 能派发这个名字却走转换恢复路径，
         # 1.13 走到了本分支却因裸调 DD_TABL_ACT 从未激活过任何对象。首个真正可用的恢复激活
-        # 就是本次修复所在的 1.14。
-        "            ev_version = '1.14'. RETURN.",
+        # 就是本次修复所在的 1.14。1.16 起该行随写后激活判据抬到 1.16，本分支的回答版本同步。
+        "            ev_version = '1.16'. RETURN.",
         "          ENDIF.",
         "          REFRESH lt_act_res.",
         # 1.14：透明表的激活必须走 DDIF 包装器，不能裸调 DD_TABL_ACT。DDIF_TABL_ACTIVATE 先
@@ -5816,6 +5836,66 @@ function New-DdicFunctionSource {
         "        add_payload 'M' '1' 'RESUME' lv_resume.",
         "      ENDIF.",
         "      ev_version = '1.2'. RETURN.",
+        "    ENDIF.",
+        # 1.16：写入成功的判据不能只是"存在活动版本"。对象原本就活动时，上面那次
+        # state = 'A' 读取与本次写入是否激活无关，必然成功——这正是 2026-09-25
+        # 锁对象假成功事件的机制。真正的不变量是"没有残留的维护版本"：保存
+        # （DDIF_*_PUT）产生的非活动版本必须已被激活消费掉。判定方式与读路径的
+        # INACTIVE_VERSION_EXISTS 同源：以 state = 'M' 读取，gotstate 为 'A' 才算
+        # 没有非活动版本。此处不得用 DDIF_STATE_GET（其 state = 'M' 语义未验证），
+        # 各类型均用读路径已在用的同一批 DDIF_*_GET 调用。
+        "    CLEAR lv_leftover_state.",
+        "    CASE lv_object_type.",
+        "      WHEN 'DOMA'.",
+        "        CALL FUNCTION 'DDIF_DOMA_GET'",
+        "          EXPORTING name = lv_ddic_name state = 'M'",
+        "            langu = sy-langu",
+        "          IMPORTING gotstate = lv_leftover_state",
+        "          EXCEPTIONS OTHERS = 1.",
+        "      WHEN 'DTEL'.",
+        "        CALL FUNCTION 'DDIF_DTEL_GET'",
+        "          EXPORTING name = lv_ddic_name state = 'M'",
+        "            langu = sy-langu",
+        "          IMPORTING gotstate = lv_leftover_state",
+        "          EXCEPTIONS OTHERS = 1.",
+        "      WHEN 'STRU' OR 'TABL'.",
+        "        CALL FUNCTION 'DDIF_TABL_GET'",
+        "          EXPORTING name = lv_ddic_name state = 'M'",
+        "            langu = sy-langu",
+        "          IMPORTING gotstate = lv_leftover_state",
+        "          EXCEPTIONS OTHERS = 1.",
+        "      WHEN 'TTYP'.",
+        "        CALL FUNCTION 'DDIF_TTYP_GET'",
+        "          EXPORTING name = lv_ddic_name state = 'M'",
+        "            langu = sy-langu",
+        "          IMPORTING gotstate = lv_leftover_state",
+        "          EXCEPTIONS OTHERS = 1.",
+        "      WHEN 'SHLP'.",
+        "        CALL FUNCTION 'DDIF_SHLP_GET'",
+        "          EXPORTING name = lv_ddic_name state = 'M'",
+        "            langu = sy-langu",
+        "          IMPORTING gotstate = lv_leftover_state",
+        "          EXCEPTIONS OTHERS = 1.",
+        "      WHEN 'ENQU'.",
+        "        CALL FUNCTION 'DDIF_ENQU_GET'",
+        "          EXPORTING name = lv_ddic_name state = 'M'",
+        "            langu = sy-langu",
+        "          IMPORTING gotstate = lv_leftover_state",
+        "          EXCEPTIONS OTHERS = 1.",
+        "    ENDCASE.",
+        "    IF sy-subrc <> 0 OR lv_leftover_state <> 'A'.",
+        # 失败原因必须是可执行的：把激活返回码、调用返回码与探针状态一起交回，调用方
+        # 据此区分"激活被 SAP 拒绝"（rc <> 0）与"保存本身没留下可激活版本"。真正的
+        # 激活日志在 DDIC 日志（如 ACTTABL<NAME>）与 SE11 激活日志里，不在本接口回执。
+        "      CLEAR it_source.",
+        "      add_payload 'M' '1' 'PHASE' 'activation_incomplete'.",
+        "      add_payload 'M' '1' 'ACT_RC' lv_rc.",
+        "      add_payload 'M' '1' 'ACT_SUBRC' lv_activation_subrc.",
+        "      add_payload 'M' '1' 'GOTSTATE' lv_leftover_state.",
+        "      add_payload 'M' '1' 'VERSION' lv_current_version.",
+        "      ev_status = 'E'. ev_code = 'DDIC_ACTIVATION_INCOMPLETE'.",
+        "      ev_message = 'The saved definition is still not active'.",
+        "      ev_version = '1.16'. RETURN.",
         "    ENDIF.",
         "  ENDIF.",
         "  SELECT SINGLE * FROM tadir INTO ls_tadir",

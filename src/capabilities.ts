@@ -171,16 +171,7 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   ["repository-helper-function-source-write", ["write_function_module_source"]],
   [
     "ddic-helper-core",
-    [
-      "read_ddic_domain",
-      "upsert_ddic_domain",
-      "read_ddic_data_element",
-      "upsert_ddic_data_element",
-      "read_ddic_structure",
-      "upsert_ddic_structure",
-      "read_ddic_table_type",
-      "upsert_ddic_table_type"
-    ]
+    ["read_ddic_domain", "read_ddic_data_element", "read_ddic_structure", "read_ddic_table_type"]
   ],
   ["ddic-helper-transparent-table", ["read_ddic_transparent_table"]],
   // 1.15: writing table field rows may now carry DD03P-REFTABLE/REFFIELD, and a helper below 1.15
@@ -188,7 +179,9 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // the 1.5 read and from the 1.7 settings/conversion group, and a capability may not mix protocol
   // minimums - raising the read to 1.15 would report a working read as unsupported, which is the
   // same class of false claim this registry exists to prevent. Splitting is the established pattern
-  // here (see the resume route below, split off the 1.7 group for the same reason).
+  // here (see the resume route below, split off the 1.7 group for the same reason). The floor is
+  // 1.16 since 2026-09-25: the group holds only writes that save and activate, and 1.16 is the first
+  // helper that proves the save was activated rather than that some active version is readable.
   [
     "ddic-helper-transparent-table-reference",
     [
@@ -197,45 +190,71 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
       "patch_ddic_transparent_table_fields"
     ]
   ],
-  [
-    "ddic-helper-transparent-table-complex",
-    ["patch_ddic_transparent_table_settings", "recover_ddic_table_conversion"]
-  ],
+  ["ddic-helper-transparent-table-complex", ["recover_ddic_table_conversion"]],
   // Resuming an activation is a distinct recovery route: it needs the newer
-  // RESUME_TABLE_ACTIVATION opcode, so it cannot share the 1.7 table-complex group.
+  // RESUME_TABLE_ACTIVATION opcode, so it cannot share the 1.7 table-complex group. It is a pure
+  // write group, so its floor is 1.16: a resume is an activation, and 1.14/1.15 confirmed it by
+  // reading the active version only.
   ["ddic-helper-table-activation-resume", ["resume_ddic_table_activation"]],
   ["ddic-helper-controlled-delete", ["delete_ddic_object"]],
   // Search help is its own DDIC object kind with its own helper operations (READ_SEARCH_HELP /
   // UPSERT_SEARCH_HELP / DELETE_SEARCH_HELP), so it gets its own capability rather than being folded
-  // into ddic-helper-core. Without this entry the coverage assertion in tools.test.ts fails: those
-  // two tools are routable but belonged to no capability, which is exactly the drift the assertion
-  // exists to catch.
-  ["ddic-helper-search-help", ["read_search_help", "upsert_search_help"]],
+  // into ddic-helper-core. Without this entry the coverage assertion in tools.test.ts fails: a
+  // routable tool that belongs to no capability is exactly the drift the assertion exists to catch.
+  // Only the read is listed: the upsert writes and activates, so it sits in
+  // ddic-helper-write-activation-verified at 1.16, and deletion goes through delete_ddic_object.
+  ["ddic-helper-search-help", ["read_search_help"]],
   // Lock objects are a third DDIC object kind with their own helper operations (READ_LOCK_OBJECT /
   // UPSERT_LOCK_OBJECT / DELETE_LOCK_OBJECT), so they get their own capability rather than being
-  // folded into ddic-helper-core. Deletion goes through delete_ddic_object, so only the read and
-  // upsert tools are listed here.
-  ["ddic-helper-lock-object", ["read_lock_object", "upsert_lock_object"]],
+  // folded into ddic-helper-core. Only the read is listed: the upsert is in
+  // ddic-helper-write-activation-verified at 1.16, and deletion goes through delete_ddic_object.
+  ["ddic-helper-lock-object", ["read_lock_object"]],
   // Number range objects are a fourth DDIC object kind with their own helper operations
   // (READ_NUMBER_RANGE_OBJECT / UPSERT_NUMBER_RANGE_OBJECT / DELETE_NUMBER_RANGE_OBJECT, protocol
-  // 1.11), so they get their own capability. delete_ddic_object reaches the delete operation through
-  // objectType NROB, so only the read and upsert tools are listed here. The protocol floor is 1.11
-  // because that is the first helper that publishes these opcodes, whose names are longer than the
-  // 30-character operation field the *other* helper uses: this one carries BAPIRET2-PARAMETER,
-  // CHAR 32, and UPSERT_NUMBER_RANGE_OBJECT is 26 characters.
-  ["ddic-helper-number-range-object", ["read_number_range_object", "upsert_number_range_object"]],
+  // 1.11), so they get their own capability. Only the read is listed here: the upsert is in
+  // ddic-helper-write-activation-verified at 1.16, and delete_ddic_object reaches the delete
+  // operation through objectType NROB. The protocol floor is 1.11 because that is the first helper
+  // that publishes these opcodes, whose names are longer than the 30-character operation field the
+  // *other* helper uses: this one carries BAPIRET2-PARAMETER, CHAR 32, and
+  // UPSERT_NUMBER_RANGE_OBJECT is 26 characters.
+  ["ddic-helper-number-range-object", ["read_number_range_object"]],
   // Maintenance views are a fifth DDIC object kind with their own helper operations
   // (READ_MAINTENANCE_VIEW / UPSERT_MAINTENANCE_VIEW / DELETE_MAINTENANCE_VIEW, protocol 1.11), so
-  // they get their own capability. delete_ddic_object reaches the delete operation through objectType
-  // VIEW, so only the read and upsert tools are listed here. The protocol floor is 1.11 for the same
-  // reason as the number range object group: UPSERT_MAINTENANCE_VIEW is 24 characters, which only
-  // fits the DDIC helper's BAPIRET2-PARAMETER (CHAR 32) operation field.
-  ["ddic-helper-maintenance-view", ["read_maintenance_view", "upsert_maintenance_view"]],
+  // they get their own capability. Only the read is listed here: the upsert is in
+  // ddic-helper-write-activation-verified at 1.16, and delete_ddic_object reaches the delete
+  // operation through objectType VIEW. The protocol floor is 1.11 for the same reason as the number
+  // range object group: UPSERT_MAINTENANCE_VIEW is 24 characters, which only fits the DDIC helper's
+  // BAPIRET2-PARAMETER (CHAR 32) operation field.
+  ["ddic-helper-maintenance-view", ["read_maintenance_view"]],
+  // 1.16: every DDIC write that saves and activates a definition now proves the saved version was
+  // activated (no inactive version may remain) instead of only that an active version is readable.
+  // Those writes are one contract - "this helper does not report an unactivated save as a completed
+  // write" - so they share one capability at one minimum rather than nine. A capability may not mix
+  // protocol minimums, and each kind's *read* stays in its own group at its own (lower) minimum:
+  // lifting a read to 1.16 would report a working read as unsupported, which is the false claim this
+  // registry exists to prevent. The group is separate from ddic-helper-controlled-delete, whose
+  // deletes do not activate, and from ddic-helper-table-activation-resume, which is a pure write
+  // group and therefore carries 1.16 itself.
+  [
+    "ddic-helper-write-activation-verified",
+    [
+      "upsert_ddic_domain",
+      "upsert_ddic_data_element",
+      "upsert_ddic_structure",
+      "upsert_ddic_table_type",
+      "patch_ddic_transparent_table_settings",
+      "upsert_search_help",
+      "upsert_lock_object",
+      "upsert_number_range_object",
+      "upsert_maintenance_view"
+    ]
+  ],
   // Append structure field writes are a sixth DDIC write path with their own helper operation
-  // (UPSERT_APPEND_STRUCTURE_FIELDS, protocol 1.12), so they get their own capability: a 1.11 helper
-  // cannot accept the opcode at all. The protocol floor is 1.12 because that is the first helper that
-  // publishes the operation. Only the write is listed: reading an append structure goes through
-  // read_ddic_structure, which is served by ddic-helper-core.
+  // (UPSERT_APPEND_STRUCTURE_FIELDS, published since 1.12), so they get their own capability: a 1.11
+  // helper cannot accept the opcode at all. The protocol floor is 1.16, not 1.12, because the group
+  // is a pure write group and 1.16 is the first helper that proves the append was activated. Only the
+  // write is listed: reading an append structure goes through read_ddic_structure, which is served by
+  // ddic-helper-core.
   ["ddic-helper-append-structure-fields", ["upsert_append_structure_fields"]]
 ]
 

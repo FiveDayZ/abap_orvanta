@@ -4636,17 +4636,28 @@ export class ToolService {
       operation,
       objectName
     })
-    // Older helpers answer a read of an inactive-only object with a bare INACTIVE_VERSION_EXISTS,
-    // which reads like "unsupported" when the real problem is that the helper is stale. Translate it
-    // into an actionable deployment message rather than letting the caller guess.
+    // A read of an object that carries an inactive version answers INACTIVE_VERSION_EXISTS unless the
+    // helper was asked to describe the inactive definition, and only the table resume path asks for
+    // that. The helper's own message is "Inactive DDIC version must be resolved"; its test is
+    // `DDIF_*_GET state = 'M'` returning gotstate <> 'A', so it proves an inactive version exists and
+    // says nothing about whether an active version still does.
+    //
+    // The previous text here invented two claims: that the object "has only an inactive version" and
+    // that the helper protocol was "below the 1.10 required to read an inactive definition" (1.15 is
+    // not below 1.10, and no comparison ever ran). 2026-09-25 evidence
+    // (mcp-incident-20260925-001201-upsert-lock-object-false-success): EZPMCTPRP was still active
+    // with a leftover inactive version after a write, and this read refused it with that wording -
+    // which reads as "the object is gone" when the real state is "a pending version must be resolved".
+    // Report what the helper actually observed and make the next step explicit.
     if (result.code === "INACTIVE_VERSION_EXISTS" && result.metadata.INACTIVE !== "X") {
       const protocol = await this.ddicHelperProtocol(input.connectionId.toLowerCase())
       throw new Error(
-        `INACTIVE_VERSION_UNREADABLE: ${objectName} has only an inactive version and the installed DDIC helper cannot describe it. ` +
-          `The helper self-described protocol ${protocol ?? "unknown"}, below the 1.10 required to read an inactive definition ` +
-          `(support exists in the packaged helper script but has not been deployed to SAP). ` +
-          `This is a helper deployment gap, not a missing object, and not a reason to create the object again. ` +
-          `Deploy the current helper, or inspect DD02L/DD03L read-only, before retrying.`
+        `INACTIVE_VERSION_PENDING: ${objectName} has an inactive version, and this read path describes only the active definition. ` +
+          `The helper reported ${result.code}: ${result.message}. ` +
+          `That does not mean the object is inactive: the read requests state = 'M' and cannot say which version is active. ` +
+          `If a write preceded this read, its saved definition may never have been activated - check the activation log in SE11. ` +
+          `Resolve the inactive version in SE11 (activate it, or remove it) before retrying. ` +
+          `The installed DDIC helper protocol is ${protocol ?? "unknown"}, and only its table resume path can describe an inactive definition.`
       )
     }
     requireDdicSuccess(result)
@@ -11396,7 +11407,8 @@ const APPEND_FAILURE_DETAIL_KEYS = [
   "GOTSTATE",
   "RESUME",
   "PHASE",
-  "PUT_SUBRC"
+  "PUT_SUBRC",
+  "VERSION"
 ]
 
 function appendFailureDetail(result: SapDdicResult): string {
@@ -11417,6 +11429,19 @@ function requireDdicSuccess(result: SapDdicResult): void {
           dataLossReported: result.metadata.CONVERSION_DATA_LOSS === "X"
         })}`
       : ""
+    // The 1.16 helper proves the saved version was activated (no inactive version remains) instead of
+    // only that an active version is readable. A caller that hits this code must not treat the write
+    // as done: SAP saved the definition, the object kept its previous active version, and a pending
+    // inactive version is now the thing to resolve. Say that, and point at the activation log rather
+    // than leaving the caller to guess whether the object was changed at all.
+    if (result.code === "DDIC_ACTIVATION_INCOMPLETE") {
+      throw new Error(
+        `SAP DDIC helper rejected the operation: DDIC_ACTIVATION_INCOMPLETE: SAP saved the definition but it is still not active. ` +
+          `The object keeps its previous active version and now carries an inactive version, so this write did not take effect. ` +
+          `Open the object in SE11 and read its activation log for the reason, then activate or remove the inactive version before retrying.` +
+          appendFailureDetail(result)
+      )
+    }
     throw new Error(
       `SAP DDIC helper rejected the operation: ${result.code}: ${result.message}${conversion}` +
         appendFailureDetail(result)

@@ -98,7 +98,7 @@ test("a version gap verdict carries the remedy, not only the shortfall", () => {
     } satisfies SapHelperCapabilities
   })
   assert.equal(spec.observation.availability, "unsupported")
-  assert.match(spec.observation.reason, /below the required capability version 1\.14/)
+  assert.match(spec.observation.reason, /below the required capability version 1\.16/)
   assert.match(spec.observation.remedy ?? "", /ZORVANTA_MCP_DDIC_LOCK_DEPLOY/)
   assert.match(spec.observation.remedy ?? "", /cannot change the SAP-side helper protocol/)
 })

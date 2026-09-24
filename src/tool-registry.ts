@@ -247,8 +247,19 @@ const ROWS: readonly ToolRow[] = [
   // DDIC rows carry the helper operation inventory they dispatch to, so the capability report
   // checks the helper's own operation list and not only its protocol version. delete_ddic_object
   // selects its opcode from objectType, so it declares every opcode it can send.
+  //
+  // 2026-09-25 (1.16) - every DDIC row that saves and activates a definition is floored at 1.16.
+  // A helper below 1.16 verified a write by reading the *active* version with state = 'A', which
+  // succeeds whenever the object was already active, and it never evaluated the DDIF_*_ACTIVATE
+  // return code outside the TABL conversion check. A refused activation was therefore reported as a
+  // completed write (live w200 evidence: .logs/mcp-incident-20260925-001201-upsert-lock-object-false-success,
+  // where EZPMCTPRP kept its old active version and gained a leftover inactive one). 1.16 adds the
+  // missing post-condition - no inactive version may remain (DDIF_*_GET state = 'M' must report
+  // gotstate = 'A') - and answers DDIC_ACTIVATION_INCOMPLETE otherwise. Rows that only read, or that
+  // delete without activating, keep their existing minimums: raising those would report a working
+  // read as unsupported.
   ["read_ddic_domain", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2", ["READ_DOMAIN"]],
-  ["upsert_ddic_domain", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.2", ["UPSERT_DOMAIN"]],
+  ["upsert_ddic_domain", "ddic", DEV, "W", "sap-helper-fallback", DDIC, "1.16", ["UPSERT_DOMAIN"]],
   [
     "read_ddic_data_element",
     "ddic",
@@ -266,7 +277,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.2",
+    "1.16",
     ["UPSERT_DATA_ELEMENT"]
   ],
   ["read_ddic_structure", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.2", ["READ_STRUCTURE"]],
@@ -277,7 +288,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.2",
+    "1.16",
     ["UPSERT_STRUCTURE"]
   ],
   [
@@ -301,8 +312,9 @@ const ROWS: readonly ToolRow[] = [
     // properties with PROPERTY_NOT_ALLOWED, so offering this tool's reference-field inputs against
     // it would be a capability claim the helper cannot honour. A quantity or currency field without
     // them cannot activate at all, which is why the minimum rises with the contract, not with the
-    // operation name (CREATE_TRANSPARENT_TABLE itself exists since 1.5).
-    "1.15",
+    // operation name (CREATE_TRANSPARENT_TABLE itself exists since 1.5). 1.16 raises it again for
+    // the post-write activation post-condition described above.
+    "1.16",
     ["CREATE_TRANSPARENT_TABLE"]
   ],
   [
@@ -312,7 +324,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.15",
+    "1.16",
     ["APPEND_TRANSPARENT_TABLE_FIELDS"]
   ],
   [
@@ -322,7 +334,7 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     DDIC,
-    "1.15",
+    "1.16",
     ["PATCH_TRANSPARENT_TABLE_FIELDS"]
   ],
   [
@@ -332,7 +344,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.7",
+    "1.16",
     ["PATCH_TRANSPARENT_TABLE_SETTINGS"]
   ],
   ["read_ddic_table_conversion_status", "ddic", DEV_OPS, "R", "target-specific", null, null],
@@ -374,7 +386,11 @@ const ROWS: readonly ToolRow[] = [
     // a 1.13 helper ever became active. Both sites now call DDIF_TABL_ACTIVATE, which opens the
     // protocol first (START_PROTOCOL, DEVICE ' ', PRID GR_PRID). The first helper that actually
     // resumes is 1.14, so the contract moves with it.
-    "1.14",
+    //
+    // 2026-09-25 (1.16): resuming is also an activation, and 1.14/1.15 confirmed it by reading the
+    // active version only - the same blind spot as the normal write path. The contract therefore
+    // moves to the first helper that proves no inactive version is left behind.
+    "1.16",
     ["RESUME_TABLE_ACTIVATION"]
   ],
   [
@@ -394,7 +410,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.2",
+    "1.16",
     ["UPSERT_TABLE_TYPE"]
   ],
   [
@@ -425,7 +441,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.8",
+    "1.16",
     ["UPSERT_SEARCH_HELP"]
   ],
   ["read_lock_object", "ddic", DEV, "R", "sap-helper-fallback", DDIC, "1.9", ["READ_LOCK_OBJECT"]],
@@ -436,7 +452,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.9",
+    "1.16",
     ["UPSERT_LOCK_OBJECT"]
   ],
   [
@@ -456,7 +472,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.11",
+    "1.16",
     ["UPSERT_NUMBER_RANGE_OBJECT"]
   ],
   [
@@ -476,7 +492,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.11",
+    "1.16",
     ["UPSERT_MAINTENANCE_VIEW"]
   ],
   [
@@ -486,7 +502,7 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.12",
+    "1.16",
     ["UPSERT_APPEND_STRUCTURE_FIELDS"]
   ],
   ["search_abap_objects", "source", DEV, "R", "native-adt", null, null],

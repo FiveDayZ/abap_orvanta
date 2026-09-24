@@ -185,17 +185,19 @@ test("the truncated operations were renamed and are not documented as blocked", 
     ddicDeclared.includes("RESUME_TABLE_ACTIVATION"),
     "the DDIC table must declare the resume opcode"
   )
-  // The rename is itself the protocol change: RESUME_TABLE_ACTIVATION is introduced by the same
-  // body that renames it, so its row records 1.11 and PROTOCOL|MAX derives to 1.11 from that row.
-  // A |1.10| row would assert that some 1.10 helper delivers the renamed operation, which is false:
-  // 1.10 shipped the 35-character name this guard refuses.
+  // The rename is itself the protocol change: RESUME_TABLE_ACTIVATION is introduced by the same body
+  // that renames it, so its row records 1.11 and PROTOCOL|MAX derives from that row. The row itself
+  // moved to |1.16| on 2026-09-25 with the other activation-verified writes: the version a helper must
+  // reach is the first one that proves a saved definition became the active one. A |1.10| row would
+  // assert that some 1.10 helper delivers the renamed operation, which is false: 1.10 shipped the
+  // 35-character name this guard refuses.
   const ddicTableText = sliceBetween(
     "# >>> ORVANTA-DDIC-CAPABILITY-TABLE",
     "# <<< ORVANTA-DDIC-CAPABILITY-TABLE"
   )
   assert.ok(
-    ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.14|W"'),
-    "the operation must be recorded as introduced at 1.14, the first helper that can actually resume"
+    ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.16|W"'),
+    "the operation must be recorded as introduced at 1.16, the first helper that proves the resume took effect"
   )
   assert.ok(
     !ddicTableText.includes('"RESUME_TABLE_ACTIVATION|1.11|W"'),

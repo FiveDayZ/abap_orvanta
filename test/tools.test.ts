@@ -7998,3 +7998,75 @@ test("a search help write accepts the zero padding SAP stores in the DD32P numer
     /definition\.parameters\[0\]\.LENG: SAP stored "000020" instead of "000010"/
   )
 })
+
+/**
+ * The mirror image of the false-negative family. Every check above makes the service stop rejecting a
+ * write SAP really performed; this one makes it stop accepting a write SAP never activated. A helper
+ * below 1.16 verified a save by reading the *active* version with state = 'A', which succeeds even
+ * when the activation was refused, because the object was already active (live w200 evidence:
+ * .logs/mcp-incident-20260925-001201-upsert-lock-object-false-success, where EZPMCTPRP kept version
+ * 20260924232006 and gained a leftover inactive version while the receipt said completed).
+ *
+ * The 1.16 helper adds the missing post-condition and answers DDIC_ACTIVATION_INCOMPLETE with the
+ * activation diagnostics. The service must report that as a failure and must carry the diagnostics
+ * through, otherwise the caller is back to guessing whether the object was changed at all.
+ */
+test("a write the helper could not prove active is reported as a failure, not a completed save", async () => {
+  const backend = new MockBackend()
+  backend.ddicWriteFailureCode = "DDIC_ACTIVATION_INCOMPLETE"
+  const tools = new ToolService(backend)
+
+  await assert.rejects(
+    tools.upsertLockObject({
+      connectionId: "w200",
+      objectName: "EZPMCTPRP",
+      description: "Upsert the reorganisation request lock",
+      packageName: "ZPMC",
+      transportNumber: "GR2K923428",
+      header: { AGGTYPE: "E" },
+      lockTables: [{ TABNAME: "ZTPMC_TPRPH", ENQMODE: "E" }],
+      lockFields: [{ VIEWFIELD: "MANDT", TABNAME: "ZTPMC_TPRPH", FIELDNAME: "MANDT" }]
+    }),
+    (error: unknown) => {
+      const message = String(error)
+      assert.match(message, /DDIC_ACTIVATION_INCOMPLETE/)
+      // The state the caller has to act on, not only the fact that something failed.
+      assert.match(message, /keeps its previous active version/)
+      assert.match(message, /inactive version/)
+      // The helper's diagnostics survive: GOTSTATE 'M' is what proves a pending version remains.
+      assert.match(message, /"GOTSTATE":"M"/)
+      assert.match(message, /"ACT_RC":"4"/)
+      return true
+    }
+  )
+})
+
+/**
+ * The read half of the same incident. A read of an object that carries an inactive version answers
+ * INACTIVE_VERSION_EXISTS from the helper, whose test is `DDIF_*_GET state = 'M'` returning
+ * gotstate <> 'A'. That proves an inactive version exists and says nothing about the active one, yet
+ * the service used to answer "has only an inactive version" and to quote a protocol comparison that
+ * never ran ("protocol 1.15, below the 1.10 required"). EZPMCTPRP was still active when that message
+ * was produced, so the wording sent the reader after a missing object instead of a pending version.
+ */
+test("an unreadable inactive version does not claim the object has only an inactive version", async () => {
+  const backend = new MockBackend()
+  backend.ddicReadFailure = {
+    code: "INACTIVE_VERSION_EXISTS",
+    message: "Inactive DDIC version must be resolved"
+  }
+
+  await assert.rejects(
+    new ToolService(backend).readLockObject({ connectionId: "w200", objectName: "EZPMCTPRP" }),
+    (error: unknown) => {
+      const message = String(error)
+      assert.match(message, /INACTIVE_VERSION_PENDING/)
+      assert.match(message, /Inactive DDIC version must be resolved/)
+      assert.match(message, /does not mean the object is inactive/)
+      // The two invented claims must not come back.
+      assert.doesNotMatch(message, /has only an inactive version/)
+      assert.doesNotMatch(message, /below the 1\.10/)
+      return true
+    }
+  )
+})
