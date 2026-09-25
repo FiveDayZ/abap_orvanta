@@ -679,3 +679,42 @@ SELECT A.TRKORR, B.AS4TEXT
 翻译"，并注明**联接路径尚无运行期证据**（在跑的服务仍是本方言之前的构建）。两个工具
 （`read_abap_table`、`execute_data_query`）在登记表里保持 `verified`，但**不**用它来宣告族闭环：新增能力
 未在真实系统上跑过，闭环主张就不成立。
+
+### 7.12 OP0-2 取证扫描器 - 构建陈旧必须先被拦下（2026-09-26）
+
+**为什么要有这个闸门**：2026-09-25 那次 DB02 结论出错，根因不是判断力，而是**证据的来源没有被标识**：
+在跑的构建与源码**版本号相同、工具面不同**（143 vs 151），而当时的探针只比对了版本号，于是"旧构建的一次
+拒绝"被当成了"源码的事实"。所以任何取证动作都必须先回答一个问题：**我正对着的这棵树，是不是我本地这棵树？**
+
+**扫描器**：`scripts/probe-ops-read-sweep.mjs`（只读，无任何写工具）。
+
+```powershell
+# 本地描述这棵树：不连服务、不碰 SAP
+node scripts/probe-ops-read-sweep.mjs --self-check
+# 取证（需用户授权的只读会话；输出目录必须不存在，绝不覆盖既有记录）
+node scripts/probe-ops-read-sweep.mjs --label=ops-r22 --url=http://127.0.0.1:4848/mcp --dir=/usr/sap/trans
+```
+
+**闸门（写任何证据之前）**：① `get_runtime_info` 传入本机 `dist` 树的
+`expectedArtifactFingerprint`（与 `RuntimeIdentity` 同一套算法，不复制配方）与模块版本，要求
+`checks.expectedArtifact === "match"`——**"unknown" 同样拒绝**，因为无法指纹自证不等于当前；② `tools/list`
+的名集合必须覆盖本扫描器的 8 个目标工具，且工具数与本地 `TOOL_NAMES`（151）一致；③ 服务的工具面指纹
+（排序名集合的 sha256 前 16 位）与本地比对。任一不满足 ⇒ 写 `STALE-BUILD.json`、**退出码 2、不写任何证据**，
+并给出补救命令（`npm run build` + 从本仓库 `dist` 启动；单纯重启已安装的 release 不会增加工具——工具面与
+表白名单都是**编译期常量**）。
+
+**取证内容**：8 个尚无真实调用记录的只读 ops 工具各一次（`read_work_processes`、`read_user_sessions`、
+`read_workload_directory`、`read_system_parameters`、`read_qrfc_queues`、`read_idoc_status`、
+`read_user_authorizations`、`read_file_system_directory`；最后一个需要 `--dir`，未给则该工具记为 `not-run`
+而不是编一个路径），加 OP1-7 的联接正例（`E070`/`E07T`，两条都在白名单内）与负例（联接 `MARA`，只待批准，
+必须在触碰 SAP 前被拒）。原始答复逐工具落盘为 `<tool>.txt`。
+
+**诚实性约定**：每个工具只记 4 种结论之一——`answered` / `empty` / `refused` / `failed`；**空结果记为空结果**，
+绝不当作正例；`refused`/`failed` **不进** `registry-delta.json` 的 `verified` 提议，只作为 finding 列出。扫描器
+**不改** `contracts/verification-registry.json`——它只产出 `summary.json`、`registry-delta.json` 与逐工具原始
+证据，登记动作由读过证据的人/模型来落。
+
+**静态自检（本轮已执行，未连服务、未碰 SAP）**：`--self-check` 报 151 工具、底面指纹
+`87cda976496896b6`、`dist` 树指纹 `ba573b3733bcdf8847f42ee389e4ff45a72e2353185b4cba9345a36ea3726549`；
+联接正例被 `parseJoinedTableSelect` 解析为 `E070, E07T` 且两者 `isTableAllowed=true`；负例语法合法但
+`MARA` 被判 `TABLE_NOT_ALLOWED`（`assertTableAllowed` 抛出）。
