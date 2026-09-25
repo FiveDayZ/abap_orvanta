@@ -6,22 +6,9 @@
 
 ORVANTA is a standalone Model Context Protocol (MCP) service for SAP ABAP Development Tools. It exposes controlled ABAP discovery, source, repository, DDIC, diagnostics, transport inspection, RFC, and customer-object lifecycle tools to MCP clients.
 
-Current source version: `0.47.3`.
+Current source version: `0.50.6`.
 
-## 0.47.3
-
-- Adds `read_sapscript_form`: reads a SAPscript form (SE71) through the SAP repository helper. The tool is reported as unavailable until repository helper `2.8` is installed.
-- The capability report now explains a helper version gap. An `unsupported` verdict names the SAP-side carrier program to run in SE38, because installing or restarting ORVANTA cannot change a helper that lives inside SAP.
-- Tool surface: 138 tools, 80 read-only.
-
-## 0.47.2
-
-- Fixes `resume_ddic_table_activation`: a table that is saved but not yet active can now be activated. Before this release the call was routed into the conversion-recovery path and failed with a worklist error.
-- The helper no longer asks for a conversion worklist for this operation, and no longer deletes the definition it was asked to activate.
-- The resume capability is reported as unavailable until DDIC helper `1.13` is installed, instead of being advertised as available.
-- Tool surface is unchanged: 137 tools, 79 read-only.
-
-Local build and static checks do not establish SAP runtime acceptance. Review the release notes before deploying helpers or using state-changing tools.
+Local build and static checks do not establish SAP runtime acceptance. Review the applicable development record before deploying helpers or using state-changing tools.
 
 ## Requirements
 

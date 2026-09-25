@@ -13,3 +13,5 @@ release/
 packaging/windows/connections.local.json
 # 手工改动前的本地备份：保留在磁盘以便回溯，但不是可提交的源码，且会挡住「工作树必须干净」的打包闸门
 *.bak
+# 本地测试启动脚本（test-*.cmd）：只在开发机上跑，保留在磁盘但不入库、不推送
+test-*.cmd
