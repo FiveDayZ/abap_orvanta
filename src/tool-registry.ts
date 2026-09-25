@@ -228,8 +228,12 @@ const ROWS: readonly ToolRow[] = [
     "sap-helper-fallback",
     // The opcode is part of the shared repository body, which both helper function modules
     // receive; the service sends it to the base helper Z_ORVANTA_MCP_EXECUTE.
+    // Revision 2.9 accepts both include layouts: the interface skeleton form and the form that
+    // keeps the interface in the function module parameter tables (FUNCTION ... . followed by the
+    // body). A helper that only knows the skeleton form refuses the second layout with
+    // SOURCE_MARKER_ERROR, so the minimum has to move with the opcode revision.
     EXECUTE,
-    "2.7"
+    "2.9"
   ],
   [
     "inspect_repository_assignment",
@@ -710,7 +714,7 @@ const ROWS: readonly ToolRow[] = [
 /** Non-obvious boundaries that callers must know before trusting a tool result. */
 const NOTES: Record<string, string> = {
   replace_string_in_abap_object:
-    "函数模块改由仓库助手写入（SAP_BASIS 7.31 上 ADT 源码 PUT 一律 HTTP 423，2026-09-18 追踪 12/12），因此该目标额外依赖助手操作码 WRITE_FUNCTION_SOURCE（仓库助手协议 ≥2.7）；程序、类、接口等仍是原生 ADT。函数模块只能替换实现正文，接口段改动被拒绝并指向 patch_function_module_interface 或 SE37。",
+    "函数模块改由仓库助手写入（SAP_BASIS 7.31 上 ADT 源码 PUT 一律 HTTP 423，2026-09-18 追踪 12/12），因此该目标额外依赖助手操作码 WRITE_FUNCTION_SOURCE（仓库助手协议 ≥2.9：该修订同时接受「接口骨架」与「接口留在函数模块参数表、正文紧随 FUNCTION 语句」两种 include 布局，旧助手对第二种报 SOURCE_MARKER_ERROR）；程序、类、接口等仍是原生 ADT。函数模块只能替换实现正文，接口段改动被拒绝并指向 patch_function_module_interface 或 SE37。",
   analyze_abap_traces:
     "w200 上 ADT trace 端点返回 HTTP 404（能力报告判定 unsupported）；注册不等于可用。",
   preview_configuration:

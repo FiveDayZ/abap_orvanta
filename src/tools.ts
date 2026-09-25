@@ -13012,6 +13012,16 @@ function normalizeFunctionBody(source: string[]): string[] {
       .map((line, index) => (/^\*"-+$/.test(line.trim()) ? index : -1))
       .filter((index) => index >= 0)
     start = separators.length >= 2 ? separators[1]! + 1 : 0
+    if (!separators.length) {
+      // An include that keeps the interface in the function module parameter tables carries no
+      // interface skeleton, so the body starts after the statement ending the FUNCTION statement.
+      // This is the same boundary the SAP side helper and functionSourceSegments apply.
+      const firstCode = lines.findIndex((line) => line.trim() !== "")
+      const interfaceEnd = lines.findIndex(
+        (line, index) => index >= firstCode && line.trimEnd().endsWith(".")
+      )
+      start = interfaceEnd >= 0 ? interfaceEnd + 1 : 0
+    }
   }
   let end = lines.length
   for (let index = lines.length - 1; index >= start; index -= 1) {
@@ -13047,9 +13057,18 @@ function functionSourceSegments(source: string[]): FunctionSourceSegments {
     .map((line, index) => (/^\*"-+$/.test(line.trim()) ? index : -1))
     .filter((index) => index >= 0)
   let start = separators.length >= 2 ? separators[1]! + 1 : 0
-  if (!separators.length && /^FUNCTION\b/i.test(source[0] ?? "")) {
-    const interfaceEnd = source.findIndex((line) => line.trimEnd().endsWith("."))
-    start = interfaceEnd >= 0 ? interfaceEnd + 1 : 1
+  if (!separators.length) {
+    // An include that keeps the interface in the function module parameter tables starts the body
+    // after the statement that ends the FUNCTION statement. Leading blank lines are skipped first:
+    // a repository payload can carry them, and reading `source[0]` as the FUNCTION statement would
+    // then fall back to "no boundary" and hand the FUNCTION statement to SAP as body text.
+    const firstCode = source.findIndex((line) => line.trim() !== "")
+    if (firstCode >= 0 && /^FUNCTION\b/i.test(source[firstCode]!)) {
+      const interfaceEnd = source.findIndex(
+        (line, index) => index >= firstCode && line.trimEnd().endsWith(".")
+      )
+      start = interfaceEnd >= 0 ? interfaceEnd + 1 : firstCode + 1
+    }
   }
   let end = source.length
   for (let index = source.length - 1; index >= start; index -= 1) {

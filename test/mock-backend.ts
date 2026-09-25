@@ -1152,7 +1152,7 @@ export class MockBackend implements SapBackend {
         status: "E",
         code: "FUNCTION_NOT_FOUND",
         message: "Function module does not exist",
-        version: "2.7"
+        version: "2.9"
       }
     }
     const currentBody = this.storedFunctionBody(stored)
@@ -1164,7 +1164,7 @@ export class MockBackend implements SapBackend {
         status: "E",
         code: "VERSION_CONFLICT",
         message: "The active function implementation changed",
-        version: "2.7"
+        version: "2.9"
       }
     }
     if (this.functionWriteReadbackMismatch) {
@@ -1173,34 +1173,43 @@ export class MockBackend implements SapBackend {
         status: "S",
         code: "FUNCTION_SOURCE_WRITTEN",
         message: "Function source written",
-        version: "2.7"
+        version: "2.9"
       }
     }
     const lines = this.storedFunctionSourceRows(stored)
     const { start, end } = this.storedFunctionBodyRange(lines)
     const sourceRows = stored.filter((line) => /^S\|\d+\|LINE\|/.test(line))
+    // SAP numbers the source rows 1..n inside their own row family, so the source index must not be
+    // the position in the whole payload: a payload whose metadata rows come first would otherwise
+    // return `S|12|` as its first source line and the read-back would carry blank rows before the
+    // FUNCTION statement.
+    let sourceIndex = 0
     const merged = [
       ...stored.filter((line) => !/^S\|/.test(line)),
       ...sourceRows.slice(0, start),
       ...(request.source ?? []).map((line) => `S|0|LINE|${line}`),
       ...sourceRows.slice(end)
-    ].map((line, index) =>
-      line.startsWith("S|") ? line.replace(/^S\|\d+\|/, `S|${index + 1}|`) : line
-    )
+    ].map((line) => {
+      if (!line.startsWith("S|")) return line
+      sourceIndex += 1
+      return line.replace(/^S\|\d+\|/, `S|${sourceIndex}|`)
+    })
     this.functionModules.set(name, merged)
     return {
       status: "S",
       code: "FUNCTION_SOURCE_WRITTEN",
       message: "Function source written and verified",
-      version: "2.7"
+      version: "2.9"
     }
   }
 
   /**
    * Body line range of a stored function module payload. Mirrors the split the SAP side helper
-   * performs: the implementation body starts after the second `*"---` interface separator and ends
-   * before ENDFUNCTION. A second copy of that rule lives here on purpose - this stands in for SAP -
-   * but it is the service side copy in `src/tools.ts` that owns the real boundary decision.
+   * performs, in both include layouts it accepts: with an interface skeleton the body starts after
+   * the second `*"---` separator, and without one (the interface stays in the function module
+   * parameter tables) it starts after the statement that ends the FUNCTION statement. A second copy
+   * of that rule lives here on purpose - this stands in for SAP - but it is the service side copy in
+   * `src/tools.ts` that owns the real boundary decision.
    */
   private storedFunctionSourceRows(stored: string[]): string[] {
     return stored
@@ -1212,7 +1221,16 @@ export class MockBackend implements SapBackend {
     const separators = lines
       .map((line, index) => (/^\*"-+$/.test(line.trim()) ? index : -1))
       .filter((index) => index >= 0)
-    const start = separators.length >= 2 ? separators[1]! + 1 : 0
+    let start = separators.length >= 2 ? separators[1]! + 1 : 0
+    if (!separators.length) {
+      const firstCode = lines.findIndex((line) => line.trim() !== "")
+      if (firstCode >= 0 && /^FUNCTION\b/i.test(lines[firstCode]!)) {
+        const interfaceEnd = lines.findIndex(
+          (line, index) => index >= firstCode && line.trimEnd().endsWith(".")
+        )
+        start = interfaceEnd >= 0 ? interfaceEnd + 1 : firstCode + 1
+      }
+    }
     let end = lines.length
     for (let index = lines.length - 1; index >= start; index -= 1) {
       if (/^ENDFUNCTION\./i.test(lines[index]!.trim())) {
@@ -2415,6 +2433,47 @@ export class MockBackend implements SapBackend {
     const source = this.sourceByName.get(object.name)
     if (!source) throw new Error(`No source for ${object.name}`)
     return { source, uriUsed: `${object.uri}/source/main` }
+  }
+
+  /**
+   * Seed one function module in the layout SAP keeps when the interface lives in the function module
+   * parameter tables: the SAP side include is `FUNCTION <name>.` followed directly by the body and
+   * `ENDFUNCTION.` with no `*"---` interface skeleton, while the ADT view renders the same body under
+   * plain interface declarations. w200 keeps function modules in this layout, and the body boundary
+   * rule has to accept it in every copy of that rule.
+   */
+  seedFunctionModuleWithoutInterfaceSkeleton(name: string, body: string[]): void {
+    const upper = name.toUpperCase()
+    this.functionModules.set(upper, [
+      "M|1|FUNCTION_GROUP|ZCMCP_FG_1501",
+      "M|1|SHORT_TEXT|MCP seeded function module",
+      "M|1|REMOTE_ENABLED|X",
+      "M|1|UPDATE_TASK|",
+      "M|1|GLOBAL_INTERFACE|",
+      "I|1|PARAMETER|IV_INPUT",
+      "I|1|TYP|CHAR20",
+      "I|1|PASSVALUE|X",
+      "E|1|PARAMETER|EV_OUTPUT",
+      "E|1|TYP|CHAR40",
+      "E|1|PASSVALUE|X",
+      `S|1|LINE|FUNCTION ${upper}.`,
+      ...body.map((line, index) => `S|${index + 2}|LINE|${line}`),
+      `S|${body.length + 2}|LINE|ENDFUNCTION.`
+    ])
+    this.functionAdtSources.set(
+      upper,
+      [
+        `FUNCTION ${upper}`,
+        "  IMPORTING",
+        "    VALUE(IV_INPUT) TYPE CHAR20",
+        "  EXPORTING",
+        "    VALUE(EV_OUTPUT) TYPE CHAR40",
+        "",
+        ...body,
+        "",
+        "ENDFUNCTION."
+      ].join("\n")
+    )
   }
 
   async readSourceByUri(_connectionId: string, uri: string): Promise<SourceResult> {
