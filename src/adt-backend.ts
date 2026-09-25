@@ -3395,6 +3395,11 @@ export async function createObjectWithClient(
     throw capabilityFailure(`create-${request.objectType.toLowerCase().replace("/", "-")}`, error)
   }
 
+  // The object exists in SAP from here on, so a later failure must name the step that failed and say
+  // that the object itself was created. On 2026-09-26 00:53 a PROG/I probe reported only "created ...
+  // but post-create verification failed" while the initial source had never been written, which left
+  // "created but empty" and "not created" indistinguishable for the caller.
+  let phase = "post-create verification"
   try {
     // Older ECC systems may index a successful create after this immediate lookup.
     await client.findObjectPath(request.objectUri)
@@ -3411,6 +3416,7 @@ export async function createObjectWithClient(
     // which is the evidence an operator would otherwise supply by hand, so the guard keeps its full
     // meaning for every other caller.
     if (request.source.length) {
+      phase = "initial source write"
       const inspection = await inspectSourceWithClient(
         client,
         request.connectionId,
@@ -3430,6 +3436,7 @@ export async function createObjectWithClient(
       )
     }
 
+    phase = "activation"
     const activation = await activateTarget(client, request.objectUri, request.objectName)
     return {
       connectionId: request.connectionId,
@@ -3444,8 +3451,13 @@ export async function createObjectWithClient(
       activation
     }
   } catch (error) {
+    // One stable code per partial state: the object exists in SAP either way, and the caller must be
+    // able to tell "created with the requested source" from "created empty" without parsing prose.
+    const code =
+      phase === "initial source write" ? "CREATE_SOURCE_NOT_WRITTEN" : "CREATE_VERIFICATION_FAILED"
     throw new Error(
-      `${request.objectName} was created in SAP, but post-create verification failed: ${errorText(error)}`
+      `${code}: ${request.objectName} was created in SAP, but ${phase} failed: ${errorText(error)}. ` +
+        "The object exists; read it back before adopting or deleting it."
     )
   }
 }
@@ -4386,7 +4398,13 @@ export async function inspectSourceWithClient(
 ): Promise<SourceInspectionInfo> {
   const target = resolveEditableSourceTarget(fileUri, connectionId)
   const activeSource = await client.getObjectSource(target.sourceUri, { version: "active" })
-  const contexts = await includeMainProgramUris(client, target.objectUri)
+  // The main-program context only enriches the inactive-inventory error below. Reading an include
+  // never needs it, and 7.31 does not implement `/mainprograms` (HTTP 501), so a failed or
+  // unavailable lookup must not fail the observation: that made every include change unobservable
+  // (w200 2026-09-26 00:41) even though the include source itself read fine.
+  const contexts = await includeMainProgramContexts(client, target.objectUri)
+    .then((resolution) => (resolution.status === "resolved" ? resolution.contexts : []))
+    .catch(() => [])
   let inactive
   try {
     inactive = await inactiveObjectForTarget(client, target.objectUri)
@@ -4571,7 +4589,11 @@ export async function activateTarget(
 ): Promise<ActivationInfo> {
   let attempted = false
   try {
-    const contexts = await includeMainProgramUris(client, objectUri)
+    // Where the release implements `/mainprograms`, an include is activated through its main-program
+    // context; where it does not (7.31 answers HTTP 501), the include is activated by its own URI and
+    // SAP remains the authority on whether that is enough.
+    const resolution = await includeMainProgramContexts(client, objectUri)
+    const contexts = resolution.status === "resolved" ? resolution.contexts : []
     let inactive
     try {
       inactive = await inactiveObjectForTarget(client, objectUri)
@@ -4599,6 +4621,16 @@ export async function activateTarget(
           "INCLUDE_MAIN_PROGRAM_AMBIGUOUS: resolve the SAP main-program context before activation."
         )
       }
+    } else if (isIncludeObjectUri(objectUri) && inactive) {
+      // A release that implements `/mainprograms` always answered above; reaching here for an include
+      // means the endpoint is unavailable (7.31 answers HTTP 501). SAP's own inactive inventory still
+      // names the draft's main program as `.../includes/<include>?context=<main program>`, so use that
+      // value when it is well formed. `inactiveObjectForTarget` refuses duplicate matches, so this is
+      // never a first-match guess, and nothing is invented when SAP supplies no context.
+      const supplied = new URL(inactive["adtcore:uri"], "https://sap.invalid").searchParams.get(
+        "context"
+      )
+      if (supplied && /^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i.test(supplied)) context = supplied
     }
     attempted = true
     // The inactive inventory identifies the draft and, for includes, its parent context.
@@ -4635,14 +4667,57 @@ export async function activateTarget(
   }
 }
 
-async function includeMainProgramUris(client: ADTClient, objectUri: string): Promise<string[]> {
-  if (!/\/(?:programs|functions\/groups\/[^/]+)\/includes\/[^/]+$/i.test(objectUri)) return []
-  const programs = await client.mainPrograms(objectUri)
+const INCLUDE_OBJECT_URI = /\/(?:programs|functions\/groups\/[^/]+)\/includes\/[^/]+$/i
+
+function isIncludeObjectUri(objectUri: string): boolean {
+  return INCLUDE_OBJECT_URI.test(objectUri)
+}
+
+/**
+ * SAP_BASIS 7.31 does not implement `/includes/<name>/mainprograms` at all. The request is answered
+ * with HTTP 501 and reaches the caller wrapped in a 404 ("ADT GET .../mainprograms returned HTTP
+ * 501", observed on w200 2026-09-26 00:53). That is a statement about the release's ADT surface, not
+ * about the include: the include is addressed by its own URI, so reading, writing and activating it
+ * never need the reverse lookup. An unimplemented endpoint therefore means "the main program cannot
+ * be discovered", while every other failure (transport, authorization, SAP error) keeps its meaning.
+ */
+function isMainProgramEndpointUnavailable(error: unknown): boolean {
+  const text = errorText(error)
+  if (!/mainprograms/i.test(text)) return false
+  return (
+    isUnsupportedEndpointStatus(reportedHttpStatus(error)) || /\bHTTP (?:404|405|501)\b/.test(text)
+  )
+}
+
+/**
+ * Status codes that mean "this release has no handler for the resource" rather than "the request
+ * failed": SAP_BASIS 7.31 answers `/includes/<name>/mainprograms` with 501 and the canonical DDIC
+ * path of every table with 404. One rule, one place - a caller may never treat one of these as a
+ * fault while another treats it as an answer.
+ */
+function isUnsupportedEndpointStatus(status: number): boolean {
+  return status === 404 || status === 405 || status === 501
+}
+
+type MainProgramContexts = { status: "resolved"; contexts: string[] } | { status: "unavailable" }
+
+async function includeMainProgramContexts(
+  client: ADTClient,
+  objectUri: string
+): Promise<MainProgramContexts> {
+  if (!isIncludeObjectUri(objectUri)) return { status: "resolved", contexts: [] }
+  let programs
+  try {
+    programs = await client.mainPrograms(objectUri)
+  } catch (error) {
+    if (isMainProgramEndpointUnavailable(error)) return { status: "unavailable" }
+    throw error
+  }
   const contexts = [...new Set(programs.map((program) => program["adtcore:uri"]))]
   if (!contexts.length || contexts.some((uri) => !/^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i.test(uri))) {
     throw new Error("INCLUDE_MAIN_PROGRAM_UNAVAILABLE: no valid SAP main-program context.")
   }
-  return contexts
+  return { status: "resolved", contexts }
 }
 
 function sameObjectUri(left: string, right: string): boolean {
@@ -5091,7 +5166,7 @@ export function capabilityFailure(capability: string, error: unknown): Error {
   const status = reportedHttpStatus(error)
   let category = "request-failed"
   if (status === 401 || status === 403) category = "forbidden-or-not-authorized"
-  else if (status === 404 || status === 405 || status === 501) category = "unsupported-endpoint"
+  else if (isUnsupportedEndpointStatus(status)) category = "unsupported-endpoint"
   else if (/content handler|content[- ]type|parse|decode|validation/i.test(message)) {
     category = "parser-or-content-type"
   }
@@ -5112,10 +5187,7 @@ export function revisionFailure(error: unknown, objectUri: string): Error {
   if (error instanceof VersionHistoryUnavailableError) return error
   const status = reportedHttpStatus(error)
   const unsupportedEndpoint =
-    status === 404 ||
-    status === 405 ||
-    status === 501 ||
-    /No URI-Mapping defined/i.test(errorText(error))
+    isUnsupportedEndpointStatus(status) || /No URI-Mapping defined/i.test(errorText(error))
   if (/Revision URL not found/i.test(errorText(error)) || unsupportedEndpoint) {
     // No version feed relation, or no handler for the resource at all, is an answer for the caller -
     // not a request failure. ECC 7.31 answers the canonical DDIC structure path

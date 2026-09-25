@@ -4,7 +4,9 @@ import { activate as sdkActivate } from "abap-adt-api/build/api/activate.js"
 import {
   AdtBackend,
   activateTarget,
+  createObjectWithClient,
   inspectSourceWithClient,
+  prepareCreateObjectRequest,
   replaceSourceWithClient
 } from "../src/adt-backend.js"
 import { hashSource } from "../src/source-preflight.js"
@@ -346,4 +348,109 @@ test("duplicate inactive target contexts are never resolved by first-match selec
   assert.equal(result.attempted, false)
   assert.equal(state.posts.length, 0)
   assert.match(result.messages[0]!.text, /INACTIVE_TARGET_CONTEXT_AMBIGUOUS/)
+})
+
+// A release without a `/mainprograms` handler (SAP_BASIS 7.31 answers HTTP 501, wrapped in a 404;
+// observed on w200 2026-09-26 00:41/00:53) is the input the tests below share: the include is
+// addressed by its own URI, so an unavailable reverse lookup must not decide anything.
+async function unimplementedMainPrograms(): Promise<never> {
+  throw new Error(
+    "Request failed with status code 404; ADT GET /sap/bc/adt/programs/includes/ztest_top/mainprograms " +
+      "returned HTTP 501; stateful=true"
+  )
+}
+
+test("an include stays observable and writable when the release has no main-program endpoint", async () => {
+  const { state, client, replace } = fixture()
+  client.mainPrograms = unimplementedMainPrograms
+
+  const inspection = await inspectSourceWithClient(client as never, "w200", fileUri)
+  assert.equal(inspection.activeSource, oldSource)
+  assert.equal(inspection.objectName, "ZTEST_TOP")
+
+  const result = await replace()
+  assert.equal(result.saveSucceeded, true)
+  assert.equal(state.saves, 1)
+  assert.equal(result.activation.success, true)
+  assert.equal(result.activeFingerprint, hashSource(newSource))
+  // Activated by its own URI: no context can be invented for a lookup SAP does not implement.
+  assert.equal(state.posts.length, 1)
+  assert.ok(!state.posts[0]!.includes("context="))
+})
+
+test("an unavailable main-program endpoint still uses SAP's own inventory context for the draft", async () => {
+  const { state, client } = fixture()
+  client.mainPrograms = unimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [
+    entry(`${objectUri}?context=${encodeURIComponent(mainUri)}`)
+  ])
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP")
+  assert.equal(result.success, true)
+  assert.equal(state.posts.length, 1)
+  assert.ok(state.posts[0]!.includes(`${objectUri}?context=${encodeURIComponent(mainUri)}`))
+})
+
+test("a main-program lookup that really fails never becomes a silent activation", async () => {
+  const { state, client } = fixture()
+  client.mainPrograms = async () => {
+    throw new Error(
+      "ADT GET /sap/bc/adt/programs/includes/ztest_top/mainprograms returned HTTP 500; stateful=true"
+    )
+  }
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP")
+  assert.equal(result.success, false)
+  assert.equal(result.attempted, false)
+  assert.equal(state.posts.length, 0)
+  assert.match(result.messages[0]!.text, /HTTP 500/)
+})
+test("an unimplemented main-program endpoint never excuses an unreadable include source", async () => {
+  const { client } = fixture()
+  client.mainPrograms = unimplementedMainPrograms
+  client.getObjectSource = async () => {
+    throw new Error("HTTP 404 include source unavailable")
+  }
+  await assert.rejects(
+    inspectSourceWithClient(client as never, "w200", fileUri),
+    /include source unavailable/
+  )
+})
+
+test("an include created without its requested source reports the partial state, not a bare failure", async () => {
+  const request = prepareCreateObjectRequest("w200", {
+    objectType: "PROG/I",
+    name: "ZPROBE_INC",
+    description: "include write capability probe",
+    packageName: "$TMP",
+    source: ["DATA gv_probe TYPE c LENGTH 1."]
+  })
+  await assert.rejects(
+    createObjectWithClient(
+      {
+        username: "DEVELOPER",
+        stateful: "stateful",
+        async loadTypes() {
+          return [{ OBJECT_TYPE: "PROG/I" }]
+        },
+        async validateNewObject() {
+          return { success: true }
+        },
+        async createObject() {},
+        async findObjectPath() {
+          return []
+        },
+        httpClient: inactiveHttp(),
+        async getObjectSource() {
+          return ""
+        },
+        // The edit lock is refused, so the requested source never reaches SAP while the object exists.
+        async lock() {
+          throw new Error("HTTP 403 not authorized for this object")
+        },
+        mainPrograms: unimplementedMainPrograms
+      } as never,
+      request,
+      "EN"
+    ),
+    /CREATE_SOURCE_NOT_WRITTEN: ZPROBE_INC was created in SAP, but initial source write failed/
+  )
 })
