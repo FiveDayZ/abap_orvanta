@@ -77,8 +77,10 @@ import {
   groupedReadColumns,
   nativeEmptyHtml,
   parseGroupedTableSelect,
+  parseJoinedTableSelect,
   readAbapTable,
   readGroupedRows,
+  readJoinedRows,
   selectedTableNames,
   sortRowsByColumns,
   tableQuerySchema
@@ -8072,75 +8074,138 @@ export class ToolService {
       // refusal this service is about to raise - must not replace the platform's own error.
       if (!(error instanceof Error) || error.message !== nativeEmptyHtml) throw error
       const structured = parseGroupedTableSelect(sql)
-      if (!structured) throw error
-      // The dialect reads at most the allowlist ceiling in one statement, so a larger caller
-      // budget is clamped instead of refused. Refusing here replaced the caller's own request
-      // with the platform's empty-preview error, which reads as "this release cannot query"
-      // rather than "your row budget is too large for the fallback". The clamp cannot hide a
-      // smaller answer: the result still reports `truncated`/`incompleteBranches`, and an
-      // aggregate over an incomplete read is refused outright.
       const dialectCap = Math.min(rowCap, ALLOWLIST_MAX_ROWS)
-      // One server-side read per disjunct. The reader's own comparison stays authoritative, so an
-      // `OR` becomes a union of pushed-down predicates rather than a client-side comparison that
-      // would have to re-implement SAP's type-aware handling of `NUMC`, dates and packed numbers -
-      // the kind of re-implementation that silently answers a different question. An aggregate
-      // statement reads the whole row: row identity is what keeps a row matched by two overlapping
-      // branches from being counted twice.
-      const readColumns = groupedReadColumns(structured)
-      const reads: Record<string, unknown>[] = []
-      const grouped = await readGroupedRows(
-        structured,
-        async (filters) => {
-          const result = JSON.parse(
-            await this.readAbapTable(
-              {
-                connectionId: input.connectionId,
-                tableName: structured.tableName,
-                columns: readColumns,
-                filters,
-                maxRows: dialectCap
-              },
-              error
+      if (!structured) {
+        // A joined statement cannot be answered by the single-table grammar, and the platform itself
+        // cannot answer it on this release (that is why this path is running at all). The parser
+        // decides every rule before the first read, so a statement it refuses never reaches SAP.
+        const joined = parseJoinedTableSelect(sql)
+        if (!joined) throw error
+        const joinResult = await readJoinedRows(
+          joined,
+          async (tableName, columns, filters) => {
+            const result = JSON.parse(
+              await this.readAbapTable(
+                {
+                  connectionId: input.connectionId,
+                  tableName,
+                  columns: columns.length > 0 ? columns : ["*"],
+                  filters,
+                  maxRows: dialectCap
+                },
+                error
+              )
             )
-          )
-          if (result.status !== "ok") {
-            throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
-          }
-          reads.push({
-            method: result.method,
-            nativeCode: result.nativeCode,
-            representation: result.representation,
-            definitionFingerprint: result.definitionFingerprint,
-            fieldMetadata: result.fieldMetadata
-          })
-          return {
-            rows: result.data as Record<string, unknown>[],
-            truncated: result.truncated === true,
-            detail: {}
-          }
-        },
-        dialectCap
-      )
-      const first = reads[0] ?? {}
-      rawRows = grouped.rows
-      fallback = {
-        method: first.method,
-        nativeCode: first.nativeCode,
-        representation: first.representation,
-        definitionFingerprint: first.definitionFingerprint,
-        fieldMetadata: first.fieldMetadata,
-        snapshot: false,
-        truncated: grouped.incompleteBranches.length > 0,
-        disjuncts: grouped.disjuncts,
-        deduplicatedRows: grouped.deduplicatedRows,
-        repeatedProjectedRows: grouped.repeatedProjectedRows,
-        incompleteBranches: grouped.incompleteBranches,
-        orderByApplied: grouped.orderByApplied,
-        aggregated: grouped.aggregated,
-        // An aggregate answer is exact over the whole match set, so `groupCount` - not `resultCount`
-        // after the row range - is what says how many groups the statement produced.
-        groupCount: grouped.groupCount,
-        aggregateColumns: grouped.aggregateColumns
+            if (result.status !== "ok") {
+              throw new Error(
+                `SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}; table=${tableName}`
+              )
+            }
+            return {
+              rows: result.data as Record<string, unknown>[],
+              truncated: result.truncated === true,
+              detail: {
+                table: tableName,
+                method: result.method,
+                nativeCode: result.nativeCode,
+                representation: result.representation,
+                definitionFingerprint: result.definitionFingerprint,
+                fieldMetadata: result.fieldMetadata
+              }
+            }
+          },
+          dialectCap
+        )
+        const firstRead = joinResult.join.reads[0] ?? {}
+        rawRows = joinResult.rows
+        fallback = {
+          method: firstRead.method,
+          nativeCode: firstRead.nativeCode,
+          representation: firstRead.representation,
+          definitionFingerprint: firstRead.definitionFingerprint,
+          fieldMetadata: firstRead.fieldMetadata,
+          snapshot: false,
+          truncated: joinResult.truncated,
+          disjuncts: 1,
+          deduplicatedRows: 0,
+          repeatedProjectedRows: 0,
+          incompleteBranches: [],
+          incompleteAliases: joinResult.join.incompleteAliases,
+          orderByApplied: joinResult.orderByApplied,
+          aggregated: joinResult.aggregated,
+          groupCount: joinResult.groupCount,
+          aggregateColumns: joinResult.aggregateColumns,
+          join: joinResult.join
+        }
+      } else {
+        // The dialect reads at most the allowlist ceiling in one statement, so a larger caller
+        // budget is clamped instead of refused. Refusing here replaced the caller's own request
+        // with the platform's empty-preview error, which reads as "this release cannot query"
+        // rather than "your row budget is too large for the fallback". The clamp cannot hide a
+        // smaller answer: the result still reports `truncated`/`incompleteBranches`, and an
+        // aggregate over an incomplete read is refused outright.
+        // One server-side read per disjunct. The reader's own comparison stays authoritative, so an
+        // `OR` becomes a union of pushed-down predicates rather than a client-side comparison that
+        // would have to re-implement SAP's type-aware handling of `NUMC`, dates and packed numbers -
+        // the kind of re-implementation that silently answers a different question. An aggregate
+        // statement reads the whole row: row identity is what keeps a row matched by two overlapping
+        // branches from being counted twice.
+        const readColumns = groupedReadColumns(structured)
+        const reads: Record<string, unknown>[] = []
+        const grouped = await readGroupedRows(
+          structured,
+          async (filters) => {
+            const result = JSON.parse(
+              await this.readAbapTable(
+                {
+                  connectionId: input.connectionId,
+                  tableName: structured.tableName,
+                  columns: readColumns,
+                  filters,
+                  maxRows: dialectCap
+                },
+                error
+              )
+            )
+            if (result.status !== "ok") {
+              throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
+            }
+            reads.push({
+              method: result.method,
+              nativeCode: result.nativeCode,
+              representation: result.representation,
+              definitionFingerprint: result.definitionFingerprint,
+              fieldMetadata: result.fieldMetadata
+            })
+            return {
+              rows: result.data as Record<string, unknown>[],
+              truncated: result.truncated === true,
+              detail: {}
+            }
+          },
+          dialectCap
+        )
+        const first = reads[0] ?? {}
+        rawRows = grouped.rows
+        fallback = {
+          method: first.method,
+          nativeCode: first.nativeCode,
+          representation: first.representation,
+          definitionFingerprint: first.definitionFingerprint,
+          fieldMetadata: first.fieldMetadata,
+          snapshot: false,
+          truncated: grouped.incompleteBranches.length > 0,
+          disjuncts: grouped.disjuncts,
+          deduplicatedRows: grouped.deduplicatedRows,
+          repeatedProjectedRows: grouped.repeatedProjectedRows,
+          incompleteBranches: grouped.incompleteBranches,
+          orderByApplied: grouped.orderByApplied,
+          aggregated: grouped.aggregated,
+          // An aggregate answer is exact over the whole match set, so `groupCount` - not `resultCount`
+          // after the row range - is what says how many groups the statement produced.
+          groupCount: grouped.groupCount,
+          aggregateColumns: grouped.aggregateColumns
+        }
       }
     }
     const truncated = fallback?.truncated === true || rawRows.length > rowCap

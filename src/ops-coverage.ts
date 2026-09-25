@@ -224,10 +224,13 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     actionRequired: false,
     gap:
       "The native data preview endpoint is platform-unsupported on this release, so only the " +
-      "single-table fallback path works: up to 8 disjuncts of up to 8 comparisons joined by AND " +
-      "over =, <>, <, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; and " +
-      "ORDER BY applied only over a complete read. No joins, expressions or subqueries, so a " +
-      "question that needs two tables at once is not possible."
+      "fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, " +
+      "<, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only " +
+      "over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three " +
+      "allowlisted tables on equality keys, with every column reference qualified. Still absent: " +
+      "right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP itself " +
+      "would have to plan cannot be asked. The join path also has no runtime evidence yet: the " +
+      "connected service still serves a build from before it."
   },
   {
     id: "runtime-resources",

@@ -1561,3 +1561,774 @@ export function selectedTableNames(maskedSql: string): string[] | undefined {
   }
   return names.size > 0 ? [...names].sort() : undefined
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * Joined statements (OP1-7)
+ *
+ * The degraded path has always answered one table, because the native ADT preview is not served on
+ * this release and the RFC reader takes one table at a time. Ops questions are rarely single-table -
+ * "which jobs produced no spool", "which IDocs belong to which partner" - so this section adds a
+ * bounded join to the same finite grammar: at most {@link joinTableLimit} allowlisted tables, an
+ * equality `ON` clause per join, and every remaining comparison written as
+ * `WHERE <alias>.<column> <op> <literal>`.
+ *
+ * Four rules keep a join from answering a different question than the caller asked:
+ *
+ * - **Qualification is mandatory.** Every column reference is written `<alias>.<column>`. An
+ *   unqualified name would have to be resolved against two table definitions to know which side the
+ *   comparison belongs to, and a predicate placed on the wrong side of an outer join is a different
+ *   answer - so such a statement is refused instead of guessed at.
+ * - **Predicates are pushed down, never re-implemented.** A `WHERE` conjunct is handed to the reader
+ *   of the table it names, so SAP's own type-aware comparison decides it. The service compares only
+ *   join keys, and those are text comparisons over the reader's own representation.
+ * - **`WHERE` never touches the optional side of an outer join.** In SQL such a predicate filters the
+ *   joined result rather than the optional read, which is exactly what a pushed-down filter cannot
+ *   express; the statement is refused and the caller is told to move the condition into `ON`, where
+ *   pushing it down is right.
+ * - **A capped read is reported, never silently joined.** A side that hits the row bound turns the
+ *   merge into a sample of a join, so the answer carries `truncated` plus the aliases involved, and an
+ *   aggregate or `ORDER BY` over such a merge is refused outright.
+ * ---------------------------------------------------------------------------------------------- */
+
+/** How many tables one joined statement may read; every extra table is another bounded read. */
+const joinTableLimit = 3
+/** How many probe keys one `ON` clause may carry. */
+const joinOnLimit = 8
+/** Keywords that may never be read as an alias. */
+const joinKeywords = new Set([
+  "AS",
+  "INNER",
+  "LEFT",
+  "RIGHT",
+  "FULL",
+  "CROSS",
+  "OUTER",
+  "JOIN",
+  "ON",
+  "WHERE",
+  "GROUP",
+  "ORDER"
+])
+/** `ALIAS.COLUMN`, the only column reference a joined statement may contain. */
+const qualifiedPattern = /^([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)$/
+const qualifiedJoinPattern = /^([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)/
+
+/** One `ON` condition: the join key of the table being introduced, and what it must equal. */
+export interface JoinOnCondition {
+  left: { alias: string; column: string }
+  right: { alias: string; column: string } | { literal: string }
+}
+
+export interface JoinedTableRef {
+  tableName: string
+  /** The name every column reference of this table uses; the alias, or the table name itself. */
+  alias: string
+  /** `inner` for the first table, which no join introduces. */
+  joinType: "inner" | "left"
+  on: JoinOnCondition[]
+}
+
+export interface JoinWhereCondition {
+  alias: string
+  column: string
+  operator: SelectFilter["operator"]
+  value: string
+}
+
+export interface JoinedTableSelect {
+  tables: JoinedTableRef[]
+  /** Published names, qualified as `ALIAS.COLUMN`, in the order the caller wrote them. */
+  columns: string[]
+  aggregates: SelectAggregate[]
+  /** Qualified names, exactly the selected columns when the statement is keyed. */
+  groupBy: string[]
+  /** Conjuncts only: a join never merges `OR` branches, so each is one read per table. */
+  where: JoinWhereCondition[]
+  orderBy: { column: string; direction: "asc" | "desc" }[]
+}
+
+/** Split `ALIAS.COLUMN` into its parts, or `undefined` when it is not a qualified reference. */
+function splitQualified(text: string): { alias: string; column: string } | undefined {
+  const match = text.match(qualifiedPattern)
+  if (!match) return undefined
+  const alias = match[1]!.toUpperCase()
+  const column = match[2]!.toUpperCase()
+  if (!/^[A-Z][A-Z0-9_]{0,29}$/.test(column)) return undefined
+  return { alias, column }
+}
+
+/**
+ * Blank every string literal, keeping all offsets. Clause boundaries are then searched on the masked
+ * text, so a value that contains ` WHERE ` or ` ORDER BY ` cannot split a statement in the wrong place.
+ */
+function maskLiterals(text: string): string {
+  let result = ""
+  let inString = false
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index]!
+    if (character === "'") {
+      if (inString && text[index + 1] === "'") {
+        result += "  "
+        index++
+        continue
+      }
+      inString = !inString
+      result += " "
+      continue
+    }
+    result += inString ? " " : character
+  }
+  return result
+}
+
+/** Where the table list ends and `WHERE`/`GROUP BY`/`ORDER BY` begin. */
+function splitJoinTail(text: string): { from: string; tail: string } | undefined {
+  const match = maskLiterals(text).match(/\b(?:WHERE|GROUP\s+BY|ORDER\s+BY)\b/i)
+  if (!match) return { from: text.trim(), tail: "" }
+  const from = text.slice(0, match.index!).trim()
+  if (!from) return undefined
+  return { from, tail: text.slice(match.index!).trim() }
+}
+
+/** A `FROM`/`JOIN` target: the table name plus the alias its column references must use. */
+function parseJoinTableRef(
+  text: string
+): { tableName: string; alias: string; consumed: number } | undefined {
+  const match = text.match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\s+(?:AS\s+)?([A-Za-z_][A-Za-z0-9_]*))?/i)
+  if (!match) return undefined
+  const tableName = match[1]!.toUpperCase()
+  const candidate = match[2]?.toUpperCase()
+  const named = candidate !== undefined && !joinKeywords.has(candidate)
+  const alias = named ? candidate : tableName
+  if (!/^[A-Z][A-Z0-9_]{0,29}$/.test(tableName) || !/^[A-Z][A-Z0-9_]{0,29}$/.test(alias))
+    return undefined
+  return { tableName, alias, consumed: named ? match[0]!.length : match[1]!.length }
+}
+
+/** The `ON` conditions of one join, ending at the next join keyword or at the end of the list. */
+function parseJoinOn(
+  text: string,
+  alias: string,
+  previous: string[]
+): { conditions: JoinOnCondition[]; rest: string } | undefined {
+  const pattern =
+    /^([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)\s*(<=|>=|<>|=|<|>)\s*([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*|'(?:[^']|'')*'|-?\d+(?:\.\d+)?)/i
+  const conditions: JoinOnCondition[] = []
+  let rest = text.trim()
+  while (rest) {
+    if (conditions.length === joinOnLimit) return undefined
+    const match = rest.match(pattern)
+    if (!match) return undefined
+    const left = splitQualified(match[1]!)
+    if (!left) return undefined
+    const operator = match[2]!
+    if (operator !== "=") {
+      throw new Error(
+        `TABLE_QUERY_JOIN_ON_OPERATOR: ON ${left.alias}.${left.column} ${operator} ... is a range, ` +
+          "not a join key. ON takes equality between two columns (or between a column and a " +
+          "literal); put a range comparison in WHERE."
+      )
+    }
+    const target = match[3]!
+    // The condition may be written either way round; the table this join introduces is the probe
+    // side either way.
+    const columnRight = splitQualified(target)
+    if (columnRight) {
+      const swapped = left.alias !== alias && columnRight.alias === alias
+      const probe = swapped ? columnRight : left
+      const other = swapped ? left : columnRight
+      if (probe.alias !== alias)
+        throw new Error(
+          `TABLE_QUERY_JOIN_ON_ALIAS: ON ${match[1]} = ${target} must relate ${alias} to a table ` +
+            `joined before it (${previous.join(", ")}).`
+        )
+      if (!previous.includes(other.alias))
+        throw new Error(
+          `TABLE_QUERY_JOIN_ON_ALIAS: ON ${match[1]} = ${target} references ${other.alias}, which ` +
+            `is neither ${alias} nor a table joined before it (${previous.join(", ")}).`
+        )
+      conditions.push({ left: probe, right: other })
+    } else {
+      const literal = target.startsWith("'") ? target.slice(1, -1).replaceAll("''", "'") : target
+      if (literal.length > 40) return undefined
+      if (left.alias !== alias)
+        throw new Error(
+          `TABLE_QUERY_JOIN_ON_ALIAS: ON ${match[1]} = ${target} must name the table this join ` +
+            `introduces (${alias}) on the left of the comparison.`
+        )
+      conditions.push({ left, right: { literal } })
+    }
+    rest = rest.slice(match[0].length)
+    const and = rest.match(/^\s+AND\s+([\s\S]*)$/i)
+    if (and) {
+      rest = and[1]!.trim()
+      if (!rest) return undefined
+      continue
+    }
+    if (/^\s*$/.test(rest)) return { conditions, rest: "" }
+    if (/^\s+(?:INNER|LEFT|RIGHT|FULL|CROSS|JOIN)\b/i.test(rest))
+      return { conditions, rest: rest.trim() }
+    return undefined
+  }
+  return conditions.length > 0 ? { conditions, rest: "" } : undefined
+}
+
+/** The whole table list, with the join that introduces each table after the first. */
+function parseJoinedTables(text: string): JoinedTableRef[] | undefined {
+  const first = parseJoinTableRef(text)
+  if (!first) return undefined
+  const tables: JoinedTableRef[] = [
+    { tableName: first.tableName, alias: first.alias, joinType: "inner", on: [] }
+  ]
+  let rest = text.slice(first.consumed).trim()
+  while (rest) {
+    if (tables.length === joinTableLimit) {
+      throw new Error(
+        `TABLE_QUERY_JOIN_TABLE_LIMIT: a joined statement reads at most ${joinTableLimit} tables, ` +
+          "because every table is another bounded read. Split the question, or ask SAP."
+      )
+    }
+    const join = rest.match(
+      /^(INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/i
+    )
+    if (!join) return undefined
+    const keyword = (join[1] ?? "").trim().toUpperCase()
+    if (keyword && keyword !== "INNER" && !keyword.startsWith("LEFT")) {
+      throw new Error(
+        `TABLE_QUERY_JOIN_TYPE_UNSUPPORTED: ${keyword || "JOIN"} is not translated. This grammar ` +
+          "reads INNER JOIN and LEFT JOIN; a right or full join is the same question asked from " +
+          "the other side, and a cross join has no key to bound it."
+      )
+    }
+    const joinType = keyword.startsWith("LEFT") ? ("left" as const) : ("inner" as const)
+    const target = parseJoinTableRef(rest.slice(join[0].length).trim())
+    if (!target) return undefined
+    const afterTarget = rest.slice(join[0].length).trim().slice(target.consumed).trim()
+    if (!/^ON\b/i.test(afterTarget)) {
+      throw new Error(
+        `TABLE_QUERY_JOIN_ON_MISSING: the join of ${target.tableName} has no ON clause, so the ` +
+          "statement would pair every row with every row. Write ON <alias>.<column> = " +
+          "<alias>.<column>."
+      )
+    }
+    const parsed = parseJoinOn(
+      afterTarget.replace(/^ON\b/i, "").trim(),
+      target.alias,
+      tables.map((table) => table.alias)
+    )
+    if (!parsed || parsed.conditions.length === 0) return undefined
+    tables.push({
+      tableName: target.tableName,
+      alias: target.alias,
+      joinType,
+      on: parsed.conditions
+    })
+    rest = parsed.rest
+  }
+  return tables
+}
+
+/** The projection of a joined statement: qualified columns and the four supported aggregates. */
+function parseJoinProjection(
+  text: string,
+  aliases: string[]
+): { columns: string[]; aggregates: SelectAggregate[] } | undefined {
+  const items = text.split(/\s*,\s*/)
+  if (items.length === 0) return undefined
+  const columns: string[] = []
+  const aggregates: SelectAggregate[] = []
+  const qualify = (reference: string, item: string): string => {
+    const split = splitQualified(reference)
+    if (!split)
+      throw new Error(
+        `TABLE_QUERY_JOIN_COLUMN_UNQUALIFIED: ${item} is not written as <alias>.<column>. In a ` +
+          `joined statement every column reference names its table (aliases: ${aliases.join(", ")}), ` +
+          "because a comparison on the wrong side of a join is a different answer."
+      )
+    if (!aliases.includes(split.alias))
+      throw new Error(
+        `TABLE_QUERY_JOIN_ALIAS_UNKNOWN: ${reference} names ${split.alias}, which is not a table in ` +
+          `this statement (aliases: ${aliases.join(", ")}).`
+      )
+    return `${split.alias}.${split.column}`
+  }
+  for (const item of items) {
+    if (item === "*") {
+      throw new Error(
+        "TABLE_QUERY_JOIN_WILDCARD: * has no meaning in a joined statement - name each column as " +
+          "<alias>.<column>, so the answer says which table every value came from."
+      )
+    }
+    const aggregate = item.match(
+      /^(COUNT|SUM|MIN|MAX)\s*\(\s*(\*|[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)\s*\)$/i
+    )
+    if (aggregate) {
+      const fn = aggregate[1]!.toUpperCase() as AggregateFunction
+      const argument = aggregate[2]!
+      if (argument === "*" && fn !== "COUNT") {
+        throw new Error(
+          `TABLE_QUERY_AGGREGATE_ARGUMENT: ${fn}(*) has no meaning - ${fn} needs a column, and only ` +
+            `COUNT may count whole rows.`
+        )
+      }
+      aggregates.push({
+        fn,
+        column: argument === "*" ? null : qualify(argument, item)
+      })
+      continue
+    }
+    const call = item.match(projectionFunctionPattern)
+    if (call) {
+      const name = call[1]!.toUpperCase()
+      throw new Error(
+        `TABLE_QUERY_AGGREGATE_UNSUPPORTED: ${name} is not translated. Supported aggregates are ` +
+          `${aggregateFunctions.join(", ")}; AVG is not among them because it is SUM divided by ` +
+          `COUNT, which this statement can ask for in two columns.`
+      )
+    }
+    columns.push(qualify(item, item))
+  }
+  if (new Set(columns).size !== columns.length) return undefined
+  const names = aggregates.map(aggregateColumnName)
+  if (new Set(names).size !== names.length) {
+    throw new Error(
+      "TABLE_QUERY_AGGREGATE_DUPLICATE: the same aggregate expression was selected twice, so one " +
+        "published column would overwrite the other."
+    )
+  }
+  const shadowed = names.filter((name) => columns.includes(name))
+  if (shadowed.length > 0) {
+    throw new Error(
+      `TABLE_QUERY_AGGREGATE_SHADOWED: ${shadowed.join(", ")} is both a selected column and the ` +
+        `column an aggregate publishes; rename the selected column out of the way.`
+    )
+  }
+  return { columns, aggregates }
+}
+
+/** A qualified key list for `GROUP BY` / `ORDER BY`. */
+function parseQualifiedKeys(
+  text: string,
+  limit: number,
+  direction: boolean
+): JoinedTableSelect["orderBy"] | undefined {
+  const keys: JoinedTableSelect["orderBy"] = []
+  let rest = text.trim()
+  while (rest) {
+    const match = rest.match(
+      /^([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)(?:\s+(ASC|DESC))?\s*(?:,\s*|$)/i
+    )
+    if (!match) return undefined
+    if (match[2] !== undefined && !direction)
+      throw new Error(
+        "TABLE_QUERY_GROUP_BY_DIRECTION: GROUP BY takes column names only; a direction belongs to " +
+          "ORDER BY, which sorts the groups this statement returns."
+      )
+    const split = splitQualified(match[1]!)
+    if (!split) return undefined
+    const name = `${split.alias}.${split.column}`
+    if (keys.some((key) => key.column === name) || keys.length === limit) return undefined
+    keys.push({
+      column: name,
+      direction: match[2]?.toUpperCase() === "DESC" ? "desc" : "asc"
+    })
+    rest = rest.slice(match[0].length).trim()
+  }
+  return keys.length > 0 ? keys : undefined
+}
+
+/** The `WHERE` conjuncts of a joined statement: one table, one column, one literal, `AND` only. */
+function parseJoinWhere(text: string, aliases: string[]): JoinWhereCondition[] | undefined {
+  const conditions: JoinWhereCondition[] = []
+  let rest = text.trim()
+  while (rest) {
+    if (conditions.length === selectDisjunctLimit) return undefined
+    const match = rest.match(
+      /^([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)\s*(<=|>=|<>|=|<|>)\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?)([\s\S]*)$/
+    )
+    if (!match) {
+      const reference = rest.match(qualifiedJoinPattern)
+      if (reference)
+        throw new Error(
+          `TABLE_QUERY_JOIN_WHERE_CROSS_TABLE: ${rest.slice(0, 40)} compares two tables or a ` +
+            "column with a column. A WHERE conjunct compares one column with a literal; a " +
+            "column-to-column condition belongs in the ON clause of the join it relates."
+        )
+      if (/^[A-Za-z_][A-Za-z0-9_]*\s*(<=|>=|<>|=|<|>)/.test(rest))
+        throw new Error(
+          `TABLE_QUERY_JOIN_COLUMN_UNQUALIFIED: ${rest.slice(0, 40)} does not name its table. Write ` +
+            `it as <alias>.<column> (aliases: ${aliases.join(", ")}).`
+        )
+      return undefined
+    }
+    const left = splitQualified(match[1]!)
+    if (!left) return undefined
+    if (!aliases.includes(left.alias))
+      throw new Error(
+        `TABLE_QUERY_JOIN_ALIAS_UNKNOWN: ${match[1]} names ${left.alias}, which is not a table in ` +
+          `this statement (aliases: ${aliases.join(", ")}).`
+      )
+    const operator = selectOperators.find(([token]) => token === match[2])?.[1]
+    if (!operator) return undefined
+    const literal = match[3]!
+    const value = literal.startsWith("'") ? literal.slice(1, -1).replaceAll("''", "'") : literal
+    // The reader bounds a filter value at 40 characters, so a longer literal cannot be pushed down.
+    if (value.length > 40) return undefined
+    conditions.push({ alias: left.alias, column: left.column, operator, value })
+    const after = match[4]!.trim()
+    if (!after) break
+    const and = after.match(/^AND\s+([\s\S]*)$/i)
+    if (!and) {
+      if (/^OR\b/i.test(after))
+        throw new Error(
+          "TABLE_QUERY_JOIN_WHERE_OR: a joined statement reads each table once, so it takes a " +
+            "conjunction (AND) only. Ask the two branches as two statements."
+        )
+      return undefined
+    }
+    rest = and[1]!.trim()
+    if (!rest) return undefined
+  }
+  return conditions
+}
+
+/**
+ * Parse a joined statement, or return `undefined` when this is not one.
+ *
+ * Statements the grammar understands but refuses throw a `TABLE_QUERY_*` error naming the fix, on the
+ * same reasoning as {@link parseGroupedTableSelect}: the caller only reaches this parser after the
+ * platform's own path answered with the known empty-HTML failure, so a descriptive refusal is
+ * strictly more useful than that error. Everything here is decided before the first read, so a
+ * statement that violates a rule never reaches SAP.
+ */
+export function parseJoinedTableSelect(sql: string): JoinedTableSelect | undefined {
+  const head = sql.match(/^\s*SELECT\s+([\s\S]*?)\s+FROM\s+([\s\S]*)$/i)
+  if (!head) return undefined
+  if (!/\bJOIN\b/i.test(maskLiterals(head[2]!))) return undefined
+  const split = splitJoinTail(head[2]!)
+  if (!split) return undefined
+  const tables = parseJoinedTables(split.from)
+  if (!tables) return undefined
+  const aliases = tables.map((table) => table.alias)
+  if (new Set(aliases).size !== aliases.length) {
+    throw new Error(
+      `TABLE_QUERY_JOIN_ALIAS_DUPLICATE: ${aliases.join(", ")} names a table twice, so a column ` +
+        "reference would be ambiguous. Give each joined table its own alias."
+    )
+  }
+  const outerIndex = tables.findIndex((table) => table.joinType === "left")
+  if (outerIndex >= 0 && outerIndex !== tables.length - 1) {
+    throw new Error(
+      "TABLE_QUERY_JOIN_OUTER_NOT_LAST: a LEFT JOIN must be the last join in this grammar. An " +
+        "inner join after an outer join removes the null-extended rows again, and this path will " +
+        "not guess which of the two readings the caller meant."
+    )
+  }
+  const projection = parseJoinProjection(head[1]!.trim(), aliases)
+  if (!projection) return undefined
+  const tail = split.tail
+  let where: JoinWhereCondition[] = []
+  let groupBy: string[] = []
+  let orderBy: JoinedTableSelect["orderBy"] = []
+  if (tail) {
+    if (/^WHERE\b/i.test(tail)) {
+      const clause = tail.match(
+        /^WHERE\s+([\s\S]*?)(?:\s+GROUP\s+BY\s+([\s\S]*?))?(?:\s+ORDER\s+BY\s+([\s\S]+))?$/i
+      )
+      if (!clause) return undefined
+      if (clause[2] !== undefined) {
+        const keys = parseQualifiedKeys(clause[2], selectGroupLimit, false)
+        if (!keys) return undefined
+        groupBy = keys.map((key) => key.column)
+      }
+      if (clause[3] !== undefined) {
+        const keys = parseQualifiedKeys(clause[3], selectOrderLimit, true)
+        if (!keys) return undefined
+        orderBy = keys
+      }
+      const conditions = parseJoinWhere(clause[1]!, aliases)
+      if (!conditions) return undefined
+      where = conditions
+    } else {
+      const clause = tail.match(
+        /^(?:GROUP\s+BY\s+([\s\S]*?)(?:\s+ORDER\s+BY\s+([\s\S]+))?|ORDER\s+BY\s+([\s\S]+))$/i
+      )
+      if (!clause) return undefined
+      if (clause[1] !== undefined) {
+        const keys = parseQualifiedKeys(clause[1], selectGroupLimit, false)
+        if (!keys) return undefined
+        groupBy = keys.map((key) => key.column)
+      }
+      const orderText = clause[1] !== undefined ? clause[2] : clause[3]
+      if (orderText !== undefined) {
+        const keys = parseQualifiedKeys(orderText, selectOrderLimit, true)
+        if (!keys) return undefined
+        orderBy = keys
+      }
+    }
+  }
+  if (outerIndex >= 0) {
+    const optional = tables[outerIndex]!.alias
+    const offending = where.filter((condition) => condition.alias === optional)
+    if (offending.length > 0) {
+      throw new Error(
+        `TABLE_QUERY_JOIN_WHERE_OUTER_COLUMN: ${offending
+          .map((condition) => `${condition.alias}.${condition.column}`)
+          .join(
+            ", "
+          )} is on the optional side of the LEFT JOIN of ${optional}. A WHERE predicate ` +
+          "there filters the joined result, which this path cannot evaluate in SAP; move it into " +
+          "the ON clause of that join, where it is applied to the optional read."
+      )
+    }
+  }
+  const keyed = projection.aggregates.length > 0 || groupBy.length > 0
+  if (keyed) {
+    const selected = [...projection.columns].sort()
+    const grouped = [...groupBy].sort()
+    if (
+      selected.length !== grouped.length ||
+      selected.some((column, index) => column !== grouped[index])
+    ) {
+      throw new Error(
+        "TABLE_QUERY_GROUP_BY_KEYS_MISMATCH: GROUP BY must name exactly the selected columns " +
+          `(selected ${selected.length ? selected.join(", ") : "none"}, grouped ` +
+          `${grouped.length ? grouped.join(", ") : "none"}). Select each grouping column and group ` +
+          "by exactly those columns, or drop the GROUP BY."
+      )
+    }
+  }
+  return {
+    tables,
+    columns: projection.columns,
+    aggregates: projection.aggregates,
+    groupBy,
+    where,
+    orderBy
+  }
+}
+
+/** One side of a join, as the caller's reader reports it. */
+export interface JoinedReadBranch {
+  rows: Record<string, unknown>[]
+  /** True when the read hit the reader's row bound: this side holds a sample. */
+  truncated: boolean
+  /** The reader's own evidence for this read, passed through so nothing is lost. */
+  detail: Record<string, unknown>
+}
+
+export interface JoinedReadResult {
+  rows: Record<string, unknown>[]
+  truncated: boolean
+  orderByApplied: boolean
+  aggregated: boolean
+  groupCount: number
+  aggregateColumns: Array<{ expression: string; column: string }>
+  join: {
+    tables: Array<{
+      alias: string
+      tableName: string
+      joinType: "inner" | "left"
+      onKeys: string[]
+      pushedFilters: SelectFilter[]
+    }>
+    /** Aliases whose read stopped at the row bound, in join order. */
+    incompleteAliases: string[]
+    /** One entry per read, in join order. */
+    reads: Record<string, unknown>[]
+    joinedRows: number
+  }
+}
+
+/** The reader answers an initial field as an empty string; a join key compares the same way. */
+function joinKeyValue(row: Record<string, unknown>, qualified: string): string {
+  const value = row[qualified]
+  return value === undefined || value === null ? "" : String(value)
+}
+
+/**
+ * Run a joined statement: one bounded read per table, a hash join on the `ON` keys, then the same
+ * grouping and ordering rules the single-table path applies.
+ */
+export async function readJoinedRows(
+  select: JoinedTableSelect,
+  readTable: (
+    tableName: string,
+    columns: string[],
+    filters: SelectFilter[]
+  ) => Promise<JoinedReadBranch>,
+  rowBound: number
+): Promise<JoinedReadResult> {
+  const aggregated = select.aggregates.length > 0 || select.groupBy.length > 0
+  const published = [...select.columns, ...select.aggregates.map(aggregateColumnName)]
+  const unprojected = [...new Set(select.orderBy.map((key) => key.column))].filter(
+    (column) => !published.includes(column)
+  )
+  if (unprojected.length > 0) {
+    throw new Error(
+      `TABLE_QUERY_ORDER_BY_COLUMN_NOT_SELECTED: ORDER BY ${unprojected.join(", ")} is not in the ` +
+        `projection, so the rows carry nothing to compare. Add it to the SELECT list.`
+    )
+  }
+  // Only the columns the statement actually uses are read: the projection, the aggregate arguments,
+  // both sides of every join key, and every pushed-down predicate. A joined row is therefore never
+  // built from columns the caller did not ask about or compare.
+  const needed = new Map<string, string[]>()
+  const demand = (qualified: string) => {
+    const split = splitQualified(qualified)
+    if (!split) return
+    const list = needed.get(split.alias) ?? []
+    if (!list.includes(split.column)) list.push(split.column)
+    needed.set(split.alias, list)
+  }
+  for (const column of [...select.columns, ...select.groupBy]) demand(column)
+  for (const key of select.orderBy) demand(key.column)
+  for (const aggregate of select.aggregates) if (aggregate.column) demand(aggregate.column)
+  for (const table of select.tables)
+    for (const condition of table.on) {
+      demand(`${condition.left.alias}.${condition.left.column}`)
+      if ("alias" in condition.right) demand(`${condition.right.alias}.${condition.right.column}`)
+    }
+  for (const condition of select.where) demand(`${condition.alias}.${condition.column}`)
+
+  const pushed = new Map<string, SelectFilter[]>()
+  const push = (alias: string, filter: SelectFilter) => {
+    const list = pushed.get(alias) ?? []
+    list.push(filter)
+    pushed.set(alias, list)
+  }
+  for (const condition of select.where)
+    push(condition.alias, {
+      column: condition.column,
+      operator: condition.operator,
+      value: condition.value
+    })
+  for (const table of select.tables)
+    for (const condition of table.on)
+      if ("literal" in condition.right)
+        push(table.alias, {
+          column: condition.left.column,
+          operator: "EQ",
+          value: condition.right.literal
+        })
+
+  const incompleteAliases: string[] = []
+  const reads: Record<string, unknown>[] = []
+  const readSide = async (table: JoinedTableRef): Promise<Record<string, unknown>[]> => {
+    const branch = await readTable(
+      table.tableName,
+      needed.get(table.alias) ?? [],
+      pushed.get(table.alias) ?? []
+    )
+    if (branch.truncated) incompleteAliases.push(table.alias)
+    reads.push(branch.detail)
+    const columns = needed.get(table.alias) ?? []
+    return branch.rows.map((row) => {
+      const qualified: Record<string, unknown> = {}
+      for (const column of columns) qualified[`${table.alias}.${column}`] = row[column]
+      return qualified
+    })
+  }
+
+  let rows = await readSide(select.tables[0]!)
+  let truncated = rows.length > rowBound
+  for (let index = 1; index < select.tables.length && !truncated; index++) {
+    const table = select.tables[index]!
+    const right = await readSide(table)
+    const keys = table.on.filter(
+      (condition): condition is JoinOnCondition & { right: { alias: string; column: string } } =>
+        "alias" in condition.right
+    )
+    const buckets = new Map<string, Record<string, unknown>[]>()
+    for (const row of right) {
+      const key = JSON.stringify(
+        keys.map((condition) =>
+          joinKeyValue(row, `${condition.left.alias}.${condition.left.column}`)
+        )
+      )
+      const bucket = buckets.get(key)
+      if (bucket) bucket.push(row)
+      else buckets.set(key, [row])
+    }
+    const merged: Record<string, unknown>[] = []
+    for (const partial of rows) {
+      const key = JSON.stringify(
+        keys.map((condition) =>
+          joinKeyValue(partial, `${condition.right.alias}.${condition.right.column}`)
+        )
+      )
+      const matches = buckets.get(key)
+      if (matches && matches.length > 0) {
+        for (const match of matches) merged.push({ ...partial, ...match })
+      } else if (table.joinType === "left") {
+        // No matching row: the optional side stays empty, the way the reader writes an initial field.
+        const empty: Record<string, unknown> = {}
+        for (const column of needed.get(table.alias) ?? []) empty[`${table.alias}.${column}`] = ""
+        merged.push({ ...partial, ...empty })
+      }
+      if (merged.length > rowBound) break
+    }
+    rows = merged
+    if (rows.length > rowBound) truncated = true
+  }
+  if (incompleteAliases.length > 0) truncated = true
+  const bound = `the ${rowBound}-row bound`
+  if (aggregated && truncated) {
+    throw new Error(
+      `TABLE_QUERY_AGGREGATE_INCOMPLETE: an aggregate describes the whole match set, but ` +
+        `${incompleteAliases.length > 0 ? `the read of ${incompleteAliases.join(", ")} stopped at ${bound}` : `the join stopped at ${bound}`}, ` +
+        `so the count would be a count of the sample. Narrow the WHERE clause until every read ` +
+        `completes. Nothing was aggregated.`
+    )
+  }
+  if (!aggregated && select.orderBy.length > 0 && truncated) {
+    throw new Error(
+      `TABLE_QUERY_ORDER_BY_INCOMPLETE: ORDER BY describes the whole match set, but ` +
+        `${incompleteAliases.length > 0 ? `the read of ${incompleteAliases.join(", ")} stopped at ${bound}` : `the join stopped at ${bound}`}. ` +
+        `Narrow the WHERE clause until every read completes, or sort the returned page with ` +
+        `sortColumns. Nothing was ordered.`
+    )
+  }
+  const result = aggregated ? aggregateRows(rows, select) : rows
+  const ordered = select.orderBy.length > 0 ? sortRowsByColumns(result, select.orderBy) : result
+  // A joined row carries the join keys and the pushed-down predicate columns as well, but only the
+  // projection is the answer: publishing the key of the other side would put a column in the reply
+  // that the caller never selected, and an absent optional side reads as the reader's own empty value.
+  const outputRows = aggregated
+    ? ordered
+    : ordered.slice(0, rowBound).map((row) => {
+        const output: Record<string, unknown> = {}
+        for (const column of select.columns) {
+          const value = row[column]
+          output[column] = value === undefined || value === null ? "" : value
+        }
+        return output
+      })
+  return {
+    rows: outputRows,
+    truncated,
+    orderByApplied: select.orderBy.length > 0,
+    aggregated,
+    groupCount: aggregated ? result.length : 0,
+    aggregateColumns: select.aggregates.map((aggregate) => ({
+      expression: aggregateExpression(aggregate),
+      column: aggregateColumnName(aggregate)
+    })),
+    join: {
+      tables: select.tables.map((table) => ({
+        alias: table.alias,
+        tableName: table.tableName,
+        joinType: table.joinType,
+        onKeys: table.on.map((condition) =>
+          "alias" in condition.right
+            ? `${condition.left.alias}.${condition.left.column} = ${condition.right.alias}.${condition.right.column}`
+            : `${condition.left.alias}.${condition.left.column} = '${condition.right.literal}'`
+        ),
+        pushedFilters: pushed.get(table.alias) ?? []
+      })),
+      incompleteAliases,
+      reads,
+      joinedRows: rows.length
+    }
+  }
+}
