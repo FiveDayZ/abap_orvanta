@@ -718,3 +718,18 @@ node scripts/probe-ops-read-sweep.mjs --label=ops-r22 --url=http://127.0.0.1:484
 `87cda976496896b6`、`dist` 树指纹 `ba573b3733bcdf8847f42ee389e4ff45a72e2353185b4cba9345a36ea3726549`；
 联接正例被 `parseJoinedTableSelect` 解析为 `E070, E07T` 且两者 `isTableAllowed=true`；负例语法合法但
 `MARA` 被判 `TABLE_NOT_ALLOWED`（`assertTableAllowed` 抛出）。
+
+### 7.13 验收口径的两处硬读法（2026-09-26）
+
+验收矩阵新增 **DoD 读数块**（计划 §8 四条逐条计算，见 `docs/ops-acceptance-matrix.md` 的
+"Definition of done"）。两处必须写死的读法：
+
+1. **门槛是 14/14，不是 13。** 计划 §8 第 1 条写作"至少 **13** 族（≥95%）"，而 13/14 = **92.9%**，
+   句子前后半自相矛盾。本服务按 95% 的字面口径取 `ceil(14 × 0.95) = 14`，即**必需族全闭环**才算达标；
+   若要按"13 族"验收，等于把 92.9% 称作 95%，需要操作方明确裁定（该冲突已写进矩阵，等裁定）。
+2. **第 3 条按"存在的处置工具"计，平台边界算豁免而不是欠账。** 现存的 3 个处置工具中
+   `create_transport_request`、`add_objects_to_transport` 有 `verified` 的受控写记录；
+   `cleanup_transport_entries` 是**有裁定记录的平台边界**（ECC 7.31 SP04 无原生 `removeobject`，两次结构
+   不同的载荷都没能移除条目，工具自身写后复检拒绝报成功 ⇒ 失败是安全的，补救在 SE09/SE10），因此计为
+   豁免。第 3 条的"未完成"因此不是欠账，而是**尚未实现的处置能力**：`transport (2)`、`jobs (4)`、
+   `locks (1)`、`updates (1)`、`landscape (2)` 共 10 个计划中的处置工具还不存在（对应计划 Q-O1 的裁定）。

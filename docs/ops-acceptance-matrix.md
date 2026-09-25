@@ -26,6 +26,25 @@ what is still missing.
 | Outstanding required families | transport, jobs, locks, updates, system-info, query, runtime-resources, interfaces, authorizations, spool-output, archive-alerts, landscape |
 | Waiting on each route | this repository 1, SAP-side helper + F8 6, operator approval 2, write authorisation (OP2) 4, multi-system configuration (OP3) 2, the platform (exempt) 1, - 2 |
 
+## Definition of done (plan section 8)
+
+The operations plan states four conditions before a 95% claim may be made. Clauses 1 and 2 are
+computed here, clause 3 reads the action tools that exist today (a platform boundary with a
+recorded ruling counts as an exemption, not as an open defect), and clause 4 is enforced by the
+classification guard that has to pass before this file can be generated at all.
+
+| Clause | Reading | Met |
+| ------ | ------- | --- |
+| 1. at least 95% of the 14 scenario families end-to-end | 2 / 14 closed (14%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 17 / 30 of the tools the families declare are verified (the `ops` group itself holds 28, of which 15 are verified); not verified: cleanup_transport_entries, read_background_job_spool, analyze_abap_traces, search_failed_updates, read_failed_update, read_system_parameters, read_work_processes, read_user_sessions, read_file_system_directory, read_workload_directory, read_qrfc_queues, read_idoc_status, read_user_authorizations | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 3 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service). Action capability is still planned but unbuilt in: transport (2), jobs (4), locks (1), updates (1), landscape (2) | yes (open items: none) |
+| 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
+
+**Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
+families *(>= 95%)*. Thirteen of fourteen is 92.9%, so the two halves of that sentence disagree.
+This service therefore requires **14 of 14** unless the operator rules that the plan's *13* is the
+binding number - and that ruling decides whether a 92.9% reading may be presented as 95%.
+
 ## The matrix
 
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |

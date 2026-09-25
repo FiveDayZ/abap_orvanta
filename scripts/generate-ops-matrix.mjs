@@ -15,6 +15,7 @@ const target = "docs/ops-acceptance-matrix.md"
 const check = process.argv.includes("--check")
 
 const { opsCapabilityBlock } = await import(new URL("../dist/src/ops-coverage.js", import.meta.url))
+const { TOOL_REGISTRY } = await import(new URL("../dist/src/tool-registry.js", import.meta.url))
 
 const registryPath = resolve(root, "contracts/verification-registry.json")
 let registry
@@ -124,6 +125,101 @@ lines.push(
     .join(", ")} |`
 )
 lines.push("")
+
+lines.push("## Definition of done (plan section 8)")
+lines.push("")
+lines.push(
+  "The operations plan states four conditions before a 95% claim may be made. Clauses 1 and 2 are"
+)
+lines.push(
+  "computed here, clause 3 reads the action tools that exist today (a platform boundary with a"
+)
+lines.push(
+  "recorded ruling counts as an exemption, not as an open defect), and clause 4 is enforced by the"
+)
+lines.push("classification guard that has to pass before this file can be generated at all.")
+lines.push("")
+const opsToolsInFamilies = [...new Set(block.families.flatMap((family) => family.toolNames))]
+const statusOf = (tool) => entries.get(tool)?.status ?? "unregistered"
+const nonVerified = opsToolsInFamilies.filter((tool) => statusOf(tool) !== "verified")
+const actionTools = [...new Set(block.families.flatMap((family) => family.actionTools))]
+// Clause 3 is about the safety machinery of action tools, not about whether the platform supports the
+// operation: a tool whose operation is a documented platform boundary still fails safely, so it is an
+// exemption with a recorded ruling rather than an open defect - the same rule the families use.
+const actionToolsVerified = actionTools.filter(
+  (tool) => statusOf(tool) === "verified" && entries.get(tool)?.method === "controlled-write"
+)
+const actionToolsExempt = actionTools.filter((tool) => statusOf(tool) === "platform-unsupported")
+const actionToolsOpen = actionTools.filter(
+  (tool) => !actionToolsVerified.includes(tool) && !actionToolsExempt.includes(tool)
+)
+const plannedActionFamilies = block.families
+  .filter((family) => family.actionRequired && family.missingToolNames.length > 0)
+  .map((family) => `${family.id} (${family.missingToolNames.length})`)
+const opsGroupTools = TOOL_REGISTRY.filter((entry) => entry.group === "ops").map(
+  (entry) => entry.name
+)
+const opsGroupNonVerified = opsGroupTools.filter((tool) => statusOf(tool) !== "verified")
+const platformBlocked = [
+  ...new Set(block.families.flatMap((family) => family.platformBlockedTools))
+]
+lines.push("| Clause | Reading | Met |")
+lines.push("| ------ | ------- | --- |")
+lines.push(
+  `| 1. at least 95% of the 14 scenario families end-to-end | ${summary.closedRequiredFamilyCount} / ${summary.requiredEndToEndFamilyCount} closed (${summary.endToEndPercentOfRequired}%) | ${summary.criterionMet ? "yes" : "**no**"} |`
+)
+lines.push(
+  `| 2. every ops tool verified with real w200 evidence | ${opsToolsInFamilies.length - nonVerified.length} / ${opsToolsInFamilies.length} of the tools the families declare are verified (the \`ops\` group itself holds ${opsGroupTools.length}, of which ${opsGroupTools.length - opsGroupNonVerified.length} are verified); not verified: ${nonVerified.join(", ") || "none"} | ${nonVerified.length === 0 ? "yes" : "**no**"} |`
+)
+lines.push(
+  `| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | ${
+    actionTools.length === 0
+      ? "0 action tools exist, so the clause is vacuously true while the capability it exists to guarantee is absent - the plan's Q-O1 (whether to authorise OP2 at all) is the decision that changes this"
+      : `${actionToolsVerified.length} / ${actionTools.length} declared action tool(s) carry a verified controlled-write record: ${actionToolsVerified.join(", ") || "none"}` +
+        (actionToolsExempt.length
+          ? `; exempt with a recorded platform ruling: ${actionToolsExempt.join(", ")} (fails safely, remedy outside the service)`
+          : "") +
+        (actionToolsOpen.length ? `; open: ${actionToolsOpen.join(", ")}` : "") +
+        (plannedActionFamilies.length
+          ? `. Action capability is still planned but unbuilt in: ${plannedActionFamilies.join(", ")}`
+          : "")
+  } | ${actionToolsOpen.length === 0 ? (actionTools.length === 0 ? "**no (unmet by absence)**" : "yes (open items: none)") : "**no**"} |`
+)
+lines.push(
+  `| 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when \`opsClassificationProblems\` is non-empty; ${platformBlocked.length} platform-blocked tool(s) recorded (${platformBlocked.join(", ") || "none"}) | yes |`
+)
+lines.push("")
+lines.push(
+  "**Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*"
+)
+lines.push(
+  "families *(>= 95%)*. Thirteen of fourteen is 92.9%, so the two halves of that sentence disagree."
+)
+lines.push(
+  "This service therefore requires **14 of 14** unless the operator rules that the plan's *13* is the"
+)
+lines.push(
+  "binding number - and that ruling decides whether a 92.9% reading may be presented as 95%."
+)
+lines.push("")
+
+// A generated view may not contradict its own inputs.
+if (
+  summary.criterionMet &&
+  summary.closedRequiredFamilyCount < summary.requiredEndToEndFamilyCount
+) {
+  throw new Error("the criterion claims 95% while required families are still open")
+}
+const declaredBlocking = new Set(
+  block.families.flatMap((family) => family.verification.blockingTools)
+)
+const unreported = nonVerified.filter((tool) => !declaredBlocking.has(tool))
+if (unreported.length > 0) {
+  throw new Error(`registry and family rollup disagree about: ${unreported.join(", ")}`)
+}
+if (opsGroupNonVerified.length < nonVerified.length) {
+  throw new Error("the ops group cannot hold fewer unverified tools than the families declare")
+}
 
 lines.push("## The matrix")
 lines.push("")
