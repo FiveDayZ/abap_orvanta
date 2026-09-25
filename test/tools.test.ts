@@ -5971,6 +5971,88 @@ test("controlled write wave performs exact replacement and activation through th
   assert.equal(await tools.activateObject({ url: fileUri }), `Activation successful for ${fileUri}`)
 })
 
+test("a function module replacement goes through the SAP side function write, not the ADT PUT", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  // ADT refuses a function module source PUT with HTTP 423 on this release, so the write must not
+  // use that path at all: the ADT write is broken in the double to prove it is never reached.
+  backend.adtSourceWriteRefused = true
+  const fileUri =
+    "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_1501/fmodules/zcmcp_fm_1501/source/main"
+
+  const result = await tools.replaceStringInObject({
+    fileUri,
+    oldString: "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+    newString: "  CONCATENATE 'CHANGED:' iv_input INTO ev_output.",
+    transportNumber: "GR2K923421"
+  })
+
+  assert.match(result, /through the SAP side function write/)
+  assert.match(result, /No ADT lock was taken and no ADT source PUT was sent/)
+  assert.match(result, /Transport: GR2K923421/)
+  assert.equal(backend.lastHelperRequest?.operation, "WRITE_FUNCTION_SOURCE")
+  assert.equal(backend.lastHelperRequest?.objectName, "ZCMCP_FM_1501")
+  assert.equal(backend.lastHelperRequest?.program, "ZCMCP_FG_1501")
+  // The package is the one SAP reports for the object, not a caller-supplied value.
+  assert.equal(backend.lastHelperRequest?.packageName, "ZABAP")
+  assert.deepEqual(backend.lastHelperRequest?.source, [
+    "  CONCATENATE 'CHANGED:' iv_input INTO ev_output."
+  ])
+  // The helper receives the digest of the body it is replacing, so a concurrent change fails closed.
+  const readBack = await backend.callSapRepository("w200", {
+    operation: "READ_FUNCTION_INTERFACE",
+    objectType: "SRC1",
+    objectName: "ZCMCP_FM_1501"
+  })
+  assert.match(readBack.source.join("\n"), /CHANGED:/)
+})
+
+test("a function module replacement that reaches the interface is refused, and nothing is written", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const fileUri = "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_1501/fmodules/zcmcp_fm_1501"
+
+  await assert.rejects(
+    tools.replaceStringInObject({
+      fileUri,
+      oldString: '*"*Local Interface:',
+      newString: '*"*Renamed Interface:',
+      transportNumber: "GR2K923421"
+    }),
+    /reaches the function module interface[\s\S]*patch_function_module_interface or manually in SE37/
+  )
+  assert.notEqual(backend.lastHelperRequest?.operation, "WRITE_FUNCTION_SOURCE")
+
+  // A stale fingerprint is refused before the helper is called, with the ADT path's own error.
+  await assert.rejects(
+    tools.replaceStringInObject({
+      fileUri,
+      oldString: "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+      newString: "  CONCATENATE 'CHANGED:' iv_input INTO ev_output.",
+      transportNumber: "GR2K923421",
+      expectedSourceFingerprint: "0".repeat(64)
+    }),
+    /SOURCE_FINGERPRINT_CONFLICT/
+  )
+  assert.notEqual(backend.lastHelperRequest?.operation, "WRITE_FUNCTION_SOURCE")
+})
+
+test("a helper success that did not change the function body is not reported as a successful replacement", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  backend.functionWriteReadbackMismatch = true
+
+  await assert.rejects(
+    tools.replaceStringInObject({
+      fileUri: "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_1501/fmodules/zcmcp_fm_1501",
+      oldString: "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+      newString: "  CONCATENATE 'CHANGED:' iv_input INTO ev_output.",
+      transportNumber: "GR2K923421"
+    }),
+    /verification did not return the requested replacement[\s\S]*body: expected/
+  )
+})
+
 test("object creation wave exposes headless create and test-include workflows", async () => {
   const tools = new ToolService(new MockBackend())
   const created = await tools.createObject({

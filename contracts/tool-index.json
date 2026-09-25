@@ -1717,7 +1717,8 @@
       },
       "route": "native-adt",
       "sapHelper": null,
-      "minHelperProtocol": null
+      "minHelperProtocol": null,
+      "note": "函数模块改由仓库助手写入（SAP_BASIS 7.31 上 ADT 源码 PUT 一律 HTTP 423，2026-09-18 追踪 12/12），因此该目标额外依赖助手操作码 WRITE_FUNCTION_SOURCE（仓库助手协议 ≥2.7）；程序、类、接口等仍是原生 ADT。函数模块只能替换实现正文，接口段改动被拒绝并指向 patch_function_module_interface 或 SE37。"
     },
     {
       "name": "resume_ddic_table_activation",

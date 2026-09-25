@@ -7,6 +7,7 @@ import {
   searchTypeCodes
 } from "./object-types.js"
 import { preSapValidation } from "./pre-sap-validation.js"
+import { findAndReplaceSource } from "./source-edit.js"
 import { isMissing } from "./write-prechange-evidence.js"
 import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
 import {
@@ -24,7 +25,11 @@ import {
 } from "./configuration-preview.js"
 import { createHash } from "node:crypto"
 import { isDeepStrictEqual } from "node:util"
-import { VersionHistoryUnavailableError, structureUriFor } from "./adt-backend.js"
+import {
+  VersionHistoryUnavailableError,
+  resolveEditableSourceTarget,
+  structureUriFor
+} from "./adt-backend.js"
 import type { TransportRequest } from "abap-adt-api"
 import type {
   ActivationMessageInfo,
@@ -6912,6 +6917,18 @@ export class ToolService {
 
   async replaceStringInObject(input: ReplaceSourceInput): Promise<string> {
     const uri = parseWorkspaceUri(input.fileUri)
+    const connectionId = uri.hostname.toLowerCase()
+    // ADT refuses a function module source PUT on this SAP_BASIS 7.31 system whatever resource is
+    // locked: the archived trace holds 12 function module source PUTs, every one HTTP 423, against 97
+    // program source PUTs, every one HTTP 200, including runs that locked the resource being written in
+    // one unchanged session and sent back the handle SAP issued. A function module therefore takes the
+    // SAP side function write instead of the ADT source write.
+    if (/\/functions\/groups\/[^/]+\/fmodules\/[^/?#]+/i.test(input.fileUri)) {
+      const target = resolveEditableSourceTarget(input.fileUri, connectionId)
+      if (target.kind === "function-module") {
+        return this.replaceFunctionModuleSource(input, connectionId, target)
+      }
+    }
     const result = await this.backend.replaceSource(
       uri.hostname.toLowerCase(),
       input.fileUri,
@@ -6948,6 +6965,172 @@ export class ToolService {
         ? `\nSource SHA-256 before: ${result.sourceFingerprintBefore}\nIntended saved source SHA-256: ${result.sourceFingerprintAfter}`
         : "") +
       `${result.transportNumber ? `\nTransport: ${result.transportNumber}` : "\nTransport: local object"}`
+    )
+  }
+
+  /**
+   * Replace text in a function module implementation through the SAP side helper.
+   *
+   * ADT cannot write function module source on SAP_BASIS 7.31, so the ADT lock/save/unlock/activate
+   * path is not used here. The helper can, because it is generated into a function group and can
+   * therefore declare RSFB_SOURCE - the function-group-local type that RPY_FUNCTIONMODULE_READ_NEW and
+   * RPY_FUNCTIONMODULE_INSERT expose and no external caller can name.
+   *
+   * The guards keep the semantics of the ADT path rather than inventing a second set: the caller's
+   * oldString must match the freshly read source exactly once, and expectedSourceFingerprint is still
+   * verified against an ADT read of the same object before anything is written. The replacement must
+   * land inside the implementation body: the helper replaces the body only, so a replacement that
+   * reaches the FUNCTION ... section or the ENDFUNCTION line is refused instead of being applied
+   * somewhere else. Nothing here creates, releases or changes a transport, and no ADT lock is taken.
+   */
+  private async replaceFunctionModuleSource(
+    input: ReplaceSourceInput,
+    connectionId: string,
+    target: ReturnType<typeof resolveEditableSourceTarget>
+  ): Promise<string> {
+    if (input.recoverInactiveSource) {
+      throw new Error(
+        "recoverInactiveSource is not available for a function module: the SAP side function write replaces the active implementation body and has no inactive source version. Read the active function source and retry with the exact current text. No write was started."
+      )
+    }
+    const functionName = customerName(target.objectName ?? "", "functionName")
+    const groupMatch = /\/functions\/groups\/([^/]+)/i.exec(target.objectUri)
+    const functionGroup = customerName(
+      groupMatch?.[1] ? decodeURIComponent(groupMatch[1]) : "",
+      "functionGroup"
+    )
+
+    const readResult = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
+      objectName: functionName
+    })
+    requireRepositorySuccess(readResult.status, readResult.code, readResult.message)
+    const current = functionModuleResult(readResult, connectionId, functionName)
+    if (current.functionGroup.toUpperCase() !== functionGroup) {
+      throw new Error(
+        `Function group mismatch: ${functionName} belongs to ${current.functionGroup || "none"}, not ${functionGroup}. Obtain the current URI with get_abap_object_workspace_uri. No write was started.`
+      )
+    }
+
+    if (input.expectedSourceFingerprint) {
+      const adtRead = await this.backend.readSourceByUri(connectionId, target.sourceUri)
+      const adtFingerprint = createHash("sha256").update(adtRead.source).digest("hex")
+      if (adtFingerprint !== input.expectedSourceFingerprint.toLowerCase()) {
+        throw new Error(
+          `SOURCE_FINGERPRINT_CONFLICT: expected ${input.expectedSourceFingerprint.toLowerCase()}, current ${adtFingerprint}`
+        )
+      }
+    }
+
+    const currentSegments = functionSourceSegments(current.source)
+    const currentBody = currentSegments.body
+    const updated = functionSourceSegments(
+      findAndReplaceSource(current.source.join("\n"), input.oldString, input.newString).split("\n")
+    )
+    if (
+      updated.prefix.join("\n") !== currentSegments.prefix.join("\n") ||
+      updated.suffix.join("\n") !== currentSegments.suffix.join("\n")
+    ) {
+      throw new Error(
+        "The replacement reaches the function module interface (the FUNCTION ... section) or its ENDFUNCTION line. SAP_BASIS 7.31 has no headless interface write API, so only the implementation body can be replaced: apply interface changes with patch_function_module_interface or manually in SE37. No write was started."
+      )
+    }
+    const requestedBody = updated.body.map((line) => line.trimEnd())
+    if (!requestedBody.length) {
+      throw new Error(
+        "The replacement would leave the function module implementation body empty. No write was started."
+      )
+    }
+    if (requestedBody.some((line) => line.length > 255)) {
+      throw new Error(
+        "Function body source lines must not exceed 255 characters; no write was started"
+      )
+    }
+    if (requestedBody.join("\n") === currentBody.join("\n")) {
+      throw new Error("The replacement would leave the function module implementation unchanged.")
+    }
+
+    const assignmentResult = await this.backend.callSapRepository(connectionId, {
+      operation: "INSPECT_REPOSITORY_ASSIGNMENT",
+      objectType: "FUNC",
+      objectName: functionName
+    })
+    requireRepositorySuccess(
+      assignmentResult.status,
+      assignmentResult.code,
+      assignmentResult.message
+    )
+    const assignment = parseFunctionPayload(assignmentResult.source).metadata
+    if (assignment.PARENT_OBJECT !== functionGroup) {
+      throw new Error(
+        `Function repository parent changed: expected ${functionGroup}, current ${assignment.PARENT_OBJECT || "none"}. No write was started.`
+      )
+    }
+    const writePackage = (assignment.PACKAGE ?? "").trim().toUpperCase()
+    if (!writePackage) {
+      throw new Error(
+        `SAP returned no package for ${functionName}, so the function source write cannot record one. No write was started.`
+      )
+    }
+    const recordedTransports = [assignment.REQUEST, assignment.TASK].filter(
+      (value): value is string => !!value
+    )
+    const requestedTransport =
+      input.transportNumber?.trim().toUpperCase() || recordedTransports[0] || ""
+    if (recordedTransports.length && !recordedTransports.includes(requestedTransport)) {
+      throw new Error(
+        `Function module is not assigned to transport ${requestedTransport}: the recorded request is ${assignment.REQUEST || "none"} and the task is ${assignment.TASK || "none"}. No write was started.`
+      )
+    }
+    if (!recordedTransports.length && requestedTransport) {
+      throw new Error(
+        `Function module ${functionName} is not assigned to a transport, so ${requestedTransport} cannot be used. No write was started.`
+      )
+    }
+
+    const helperResult = await this.backend.callSapHelper(connectionId, {
+      operation: "WRITE_FUNCTION_SOURCE",
+      objectName: functionName,
+      program: functionGroup,
+      packageName: writePackage,
+      transportNumber: requestedTransport,
+      expectedVersion: functionBodyHash(currentBody),
+      source: requestedBody
+    })
+    requireRepositorySuccess(helperResult.status, helperResult.code, helperResult.message)
+
+    const verifyResult = await this.backend.callSapRepository(connectionId, {
+      operation: "READ_FUNCTION_INTERFACE",
+      objectType: "SRC1",
+      objectName: functionName
+    })
+    requireRepositorySuccess(verifyResult.status, verifyResult.code, verifyResult.message)
+    const activated = functionModuleResult(verifyResult, connectionId, functionName)
+    const activatedBody = functionImplementationSource(activated.source)
+    const mismatches = [
+      ["functionGroup", functionGroup, activated.functionGroup.toUpperCase()],
+      ["interfaceFingerprint", current.interfaceFingerprint, activated.interfaceFingerprint],
+      ["body", requestedBody.join("\n"), activatedBody.join("\n")]
+    ]
+      .filter(([, expected, actual]) => JSON.stringify(expected) !== JSON.stringify(actual))
+      .map(
+        ([field, expected, actual]) =>
+          `${field}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`
+      )
+    if (mismatches.length) {
+      throw new Error(
+        `SAP function source verification did not return the requested replacement:\n${mismatches.join("\n")}`
+      )
+    }
+
+    return (
+      `Successfully replaced ${input.oldString.split("\n").length} line(s) with ${input.newString.split("\n").length} line(s) in ${input.fileUri}.\n` +
+      `Saved and activated ${functionName} in SAP through the SAP side function write. No ADT lock was taken and no ADT source PUT was sent: SAP_BASIS 7.31 refuses that PUT with HTTP 423.\n` +
+      `Function implementation body SHA-256 before: ${functionBodyHash(currentBody)}\n` +
+      `Function implementation body SHA-256 after: ${functionBodyHash(requestedBody)}\n` +
+      `Interface fingerprint (unchanged): ${activated.interfaceFingerprint}\n` +
+      `Transport: ${requestedTransport || "local object"}`
     )
   }
 
@@ -12811,7 +12994,18 @@ function functionBodyHash(body: string[]): string {
   return createHash("sha256").update(body.join("\n")).digest("hex")
 }
 
-function functionImplementationSource(source: string[]): string[] {
+interface FunctionSourceSegments {
+  prefix: string[]
+  body: string[]
+  suffix: string[]
+}
+
+/**
+ * Split a function module source into the interface prefix, the implementation body and the tail that
+ * holds ENDFUNCTION. The body is what the SAP side function write replaces and what `sourceFingerprint`
+ * hashes, so the boundary rules exist once: a second copy would drift from this one.
+ */
+function functionSourceSegments(source: string[]): FunctionSourceSegments {
   const separators = source
     .map((line, index) => (/^\*"-+$/.test(line.trim()) ? index : -1))
     .filter((index) => index >= 0)
@@ -12827,10 +13021,15 @@ function functionImplementationSource(source: string[]): string[] {
       break
     }
   }
-  const body = source.slice(start, end >= start ? end : source.length)
+  const stop = end >= start ? end : source.length
+  const body = source.slice(start, stop)
   while (body[0]?.trim() === "") body.shift()
   while (body.at(-1)?.trim() === "") body.pop()
-  return body
+  return { prefix: source.slice(0, start), body, suffix: source.slice(stop) }
+}
+
+function functionImplementationSource(source: string[]): string[] {
+  return functionSourceSegments(source).body
 }
 
 function decodeSoapText(value: string): string {

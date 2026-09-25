@@ -150,6 +150,24 @@ function matchesSearchType(requestedToken: string, objectAdtType: string): boole
   return !token.includes("/") || token.split("/")[0] === objectCode
 }
 
+/**
+ * SOAP entity decoding for stored helper payload rows. The helper sends source lines as they exist
+ * in SAP, entity-escaped on the wire, and digests the unescaped lines - so a double that hashed the
+ * escaped text would disagree with the service about the same body.
+ */
+function decodeHelperSoapText(value: string): string {
+  return value
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code: string) =>
+      String.fromCodePoint(Number.parseInt(code, 16))
+    )
+    .replace(/&#(\d+);/g, (_match, code: string) => String.fromCodePoint(Number.parseInt(code, 10)))
+    .replaceAll("&quot;", '"')
+    .replaceAll("&apos;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&")
+}
+
 function payloadRows(
   kind: "M" | "F" | "T" | "C" | "A" | "S" | "I" | "H" | "B",
   rows: Array<Record<string, string>>
@@ -337,6 +355,14 @@ export class MockBackend implements SapBackend {
    */
   ddicReadFailure: { code: string; message: string } | null = null
   functionPatchReadbackMismatch = false
+  /**
+   * `WRITE_FUNCTION_SOURCE` answers success but SAP keeps the previous body. The service replaces a
+   * function module body through the helper instead of the ADT PUT, so this proves the read-back
+   * comparison still decides, and that a helper code alone is never taken as proof of the write.
+   */
+  functionWriteReadbackMismatch = false
+  /** When true the ADT source write path fails, so a test can prove a write did not use it. */
+  adtSourceWriteRefused = false
   /**
    * Reproduces a read-back whose stored source is not what was sent - SAP normalises and truncates
    * source on save, so the verification has to say which line disagreed instead of only that
@@ -1090,12 +1116,104 @@ export class MockBackend implements SapBackend {
           : {})
       }
     }
+    if (request.operation === "WRITE_FUNCTION_SOURCE") {
+      return this.writeFunctionSourceThroughHelper(request)
+    }
     return {
       status: "S",
       code: "TARGET_ALLOWED",
       message: "Customer object target is allowed",
       version: "1.0"
     }
+  }
+
+  /** `WRITE_FUNCTION_SOURCE`: the helper replaces the implementation body and nothing else. */
+  private writeFunctionSourceThroughHelper(request: SapHelperRequest): SapHelperResult {
+    const name = (request.objectName ?? "").toUpperCase()
+    const stored = this.functionModules.get(name)
+    if (!stored) {
+      return {
+        status: "E",
+        code: "FUNCTION_NOT_FOUND",
+        message: "Function module does not exist",
+        version: "2.7"
+      }
+    }
+    const currentBody = this.storedFunctionBody(stored)
+    if (
+      request.expectedVersion &&
+      createHash("sha256").update(currentBody.join("\n")).digest("hex") !== request.expectedVersion
+    ) {
+      return {
+        status: "E",
+        code: "VERSION_CONFLICT",
+        message: "The active function implementation changed",
+        version: "2.7"
+      }
+    }
+    if (this.functionWriteReadbackMismatch) {
+      // SAP accepts the save and keeps the previous body: the service must not report success.
+      return {
+        status: "S",
+        code: "FUNCTION_SOURCE_WRITTEN",
+        message: "Function source written",
+        version: "2.7"
+      }
+    }
+    const lines = this.storedFunctionSourceRows(stored)
+    const { start, end } = this.storedFunctionBodyRange(lines)
+    const sourceRows = stored.filter((line) => /^S\|\d+\|LINE\|/.test(line))
+    const merged = [
+      ...stored.filter((line) => !/^S\|/.test(line)),
+      ...sourceRows.slice(0, start),
+      ...(request.source ?? []).map((line) => `S|0|LINE|${line}`),
+      ...sourceRows.slice(end)
+    ].map((line, index) =>
+      line.startsWith("S|") ? line.replace(/^S\|\d+\|/, `S|${index + 1}|`) : line
+    )
+    this.functionModules.set(name, merged)
+    return {
+      status: "S",
+      code: "FUNCTION_SOURCE_WRITTEN",
+      message: "Function source written and verified",
+      version: "2.7"
+    }
+  }
+
+  /**
+   * Body line range of a stored function module payload. Mirrors the split the SAP side helper
+   * performs: the implementation body starts after the second `*"---` interface separator and ends
+   * before ENDFUNCTION. A second copy of that rule lives here on purpose - this stands in for SAP -
+   * but it is the service side copy in `src/tools.ts` that owns the real boundary decision.
+   */
+  private storedFunctionSourceRows(stored: string[]): string[] {
+    return stored
+      .filter((line) => /^S\|\d+\|LINE\|/.test(line))
+      .map((line) => decodeHelperSoapText(line.split("|").slice(3).join("|")))
+  }
+
+  private storedFunctionBodyRange(lines: string[]): { start: number; end: number } {
+    const separators = lines
+      .map((line, index) => (/^\*"-+$/.test(line.trim()) ? index : -1))
+      .filter((index) => index >= 0)
+    const start = separators.length >= 2 ? separators[1]! + 1 : 0
+    let end = lines.length
+    for (let index = lines.length - 1; index >= start; index -= 1) {
+      if (/^ENDFUNCTION\./i.test(lines[index]!.trim())) {
+        end = index
+        break
+      }
+    }
+    return { start, end }
+  }
+
+  private storedFunctionBody(stored: string[]): string[] {
+    const lines = this.storedFunctionSourceRows(stored)
+    const { start, end } = this.storedFunctionBodyRange(lines)
+    const body = lines.slice(start, end)
+    while (body[0]?.trim() === "") body.shift()
+    while (body.at(-1)?.trim() === "") body.pop()
+    return body
   }
 
   /**
@@ -2586,6 +2704,9 @@ export class MockBackend implements SapBackend {
     _recoverInactiveSource?: boolean
   ): Promise<SourceMutationInfo> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
+    if (this.adtSourceWriteRefused) {
+      throw new Error("ADT source write refused by the test double")
+    }
     if (expectedSourceFingerprint) {
       const source = await this.readSourceByUri(connectionId, fileUri)
       if (

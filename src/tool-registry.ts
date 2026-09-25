@@ -709,6 +709,8 @@ const ROWS: readonly ToolRow[] = [
 
 /** Non-obvious boundaries that callers must know before trusting a tool result. */
 const NOTES: Record<string, string> = {
+  replace_string_in_abap_object:
+    "函数模块改由仓库助手写入（SAP_BASIS 7.31 上 ADT 源码 PUT 一律 HTTP 423，2026-09-18 追踪 12/12），因此该目标额外依赖助手操作码 WRITE_FUNCTION_SOURCE（仓库助手协议 ≥2.7）；程序、类、接口等仍是原生 ADT。函数模块只能替换实现正文，接口段改动被拒绝并指向 patch_function_module_interface 或 SE37。",
   analyze_abap_traces:
     "w200 上 ADT trace 端点返回 HTTP 404（能力报告判定 unsupported）；注册不等于可用。",
   preview_configuration:

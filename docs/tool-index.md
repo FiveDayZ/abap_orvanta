@@ -202,6 +202,7 @@
 - `read_report_parameters`：依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。
 - `read_report_variants`：通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。
 - `release_write_operation_lock`：仅解除本地目标锁，不触碰 SAP 锁；需人工确认与最新凭证哈希。
+- `replace_string_in_abap_object`：函数模块改由仓库助手写入（SAP_BASIS 7.31 上 ADT 源码 PUT 一律 HTTP 423，2026-09-18 追踪 12/12），因此该目标额外依赖助手操作码 WRITE_FUNCTION_SOURCE（仓库助手协议 ≥2.7）；程序、类、接口等仍是原生 ADT。函数模块只能替换实现正文，接口段改动被拒绝并指向 patch_function_module_interface 或 SE37。
 - `run_abap_program`：执行既有 Z/Y 程序本体，可能产生业务副作用；仅回 SUBMIT 返回码，列表输出不返回。
 - `run_atc_analysis`：w200 原生 ATC 端点不可用，当前退化为语法报告；不得作为质量门禁通过依据。
 - `run_sci_analysis`：非原生 ATC，规则范围固定且依赖指纹匹配的 SCI 助手；timeout 不等于取消。
