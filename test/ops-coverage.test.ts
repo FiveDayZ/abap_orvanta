@@ -6,7 +6,8 @@ import {
   OPS_TOOL_ROLES,
   opsCapabilityBlock,
   opsClassificationProblems,
-  opsFamilyState
+  opsFamilyState,
+  type OpsFamilyDefinition
 } from "../src/ops-coverage.js"
 import { TOOL_REGISTRY } from "../src/tool-registry.js"
 import { MockBackend } from "./mock-backend.js"
@@ -67,6 +68,8 @@ test("family states are derived from the surface, and the plan's gaps stay visib
     {
       id: "transport",
       label: "Transport",
+      purpose: "Which request holds this object?",
+      closeRoutes: ["none"] as const,
       plannedToolNames: ["manage_transport_requests", "release_transport_task"],
       actionRequired: true,
       gap: ""
@@ -99,6 +102,8 @@ test("family states are derived from the surface, and the plan's gaps stay visib
     {
       id: "jobs",
       label: "Jobs",
+      purpose: "Did the job run?",
+      closeRoutes: ["none"] as const,
       plannedToolNames: ["search_background_jobs"],
       actionRequired: false,
       gap: "",
@@ -107,6 +112,8 @@ test("family states are derived from the surface, and the plan's gaps stay visib
     {
       id: "logs",
       label: "Logs",
+      purpose: "What does the log say?",
+      closeRoutes: ["none"] as const,
       plannedToolNames: ["read_system_logs"],
       actionRequired: false,
       gap: "",
@@ -125,6 +132,72 @@ test("family states are derived from the surface, and the plan's gaps stay visib
       /family logs claims an exemption with an empty reason/.test(problem)
     ),
     "the guard accepted a blank exemption reason"
+  )
+})
+
+test("every family states a purpose and a route, and the two cannot contradict the gap", () => {
+  // The real tables first: a purpose is what makes a gap actionable, and the route says who can
+  // remove it, so neither may be blank on a family that still counts against the target.
+  for (const family of OPS_FAMILIES) {
+    assert.notEqual(family.purpose.trim(), "", `family ${family.id} has no purpose`)
+    assert.ok(family.closeRoutes.length > 0, `family ${family.id} has no closure route`)
+  }
+  const block = opsCapabilityBlock()
+  const byId = Object.fromEntries(block.families.map((family) => [family.id, family]))
+  assert.equal(byId.logs!.closeRoutes[0], "none")
+  assert.deepEqual(byId.query!.closeRoutes, ["service"])
+  assert.ok(byId["runtime-resources"]!.closeRoutes.includes("helper"))
+  assert.equal(block.summary.closeRouteCounts.none, 2)
+  assert.equal(block.summary.closeRouteCounts.platform, 1)
+  assert.equal(block.summary.closeRouteCounts.service, 1)
+
+  // Then the guard, on families that lie about their own state. A gap with no owner is a wish.
+  const withProblem = (problems: string[], pattern: RegExp) =>
+    problems.some((problem) => pattern.test(problem))
+  const base = {
+    label: "Probe",
+    purpose: "Does the guard read the route?",
+    plannedToolNames: ["search_background_jobs"],
+    actionRequired: false
+  }
+  const cases: Array<[Partial<OpsFamilyDefinition>, RegExp]> = [
+    [{ gap: "still missing", closeRoutes: ["none"] }, /declares a gap and the "none" route/],
+    [{ gap: "", closeRoutes: ["service"] }, /declares no gap but a closure route/],
+    [{ gap: "", closeRoutes: ["service", "service"] }, /repeats a closure route/],
+    [{ gap: "", closeRoutes: [] }, /states no route to closure/],
+    [{ gap: "", purpose: " ", closeRoutes: ["none"] }, /states no purpose/],
+    [{ gap: "still missing", closeRoutes: ["platform"] }, /names the platform as its route/],
+    [
+      {
+        gap: "still missing",
+        closeRoutes: ["authorization"],
+        exemptReason: "the platform stops it"
+      },
+      /claims a platform exemption without naming the platform route/
+    ]
+  ]
+  for (const [overrides, pattern] of cases) {
+    const problems = opsClassificationProblems({
+      families: [{ id: "probe", ...base, closeRoutes: ["none"], gap: "", ...overrides }]
+    })
+    assert.ok(
+      withProblem(problems, pattern),
+      `the guard missed ${String(pattern)}: ${problems.join("; ")}`
+    )
+  }
+  // The matching combinations stay silent, so the guard is not simply rejecting everything. An
+  // override list always leaves other ops tools unfiled, so only route and purpose problems are read.
+  const clean = opsClassificationProblems({
+    families: [
+      { id: "probe", ...base, gap: "still missing", closeRoutes: ["helper"] },
+      { id: "probe-clean", ...base, gap: "", closeRoutes: ["none"] }
+    ]
+  })
+  assert.ok(
+    !clean.some((problem) =>
+      /closure route|route to closure|states no purpose|platform/.test(problem)
+    ),
+    `a consistent pair was rejected: ${clean.join("; ")}`
   )
 })
 

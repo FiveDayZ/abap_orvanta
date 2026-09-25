@@ -77,6 +77,15 @@ The guard accepts an exemption only for a family whose every present tool is `pl
 which carries a non-empty written reason, so the target cannot be lowered by declaring families
 exempt.
 
+`docs/ops-acceptance-matrix.md` is the plan's OP4-1 deliverable: the same 14 families plus the
+exemption, each row carrying the family's purpose, the read and action side it has, its state, the
+evidence pointer behind every tool, and **who can remove what is still missing** (`closeRoute`:
+`service` / `helper` / `approval` / `authorization` / `landscape` / `platform` / `none`). It is
+generated from this module and the registry - `npm run ops:matrix:generate`, checked by
+`npm run ops:matrix:check` inside the repository gate - so a state change cannot ship with a stale
+acceptance table, and the guard refuses a family that declares a gap without naming a route to
+removing it.
+
 At product version 0.50.9 the block reports **2 of 15 families end-to-end (13%)**, which is **2 of the
 14 required families (14%)**, with 23 planned tools still unbuilt and `criterionMet: false`. The
 earlier assessment put end-to-end closure near 40%; that figure counted read-side breadth across

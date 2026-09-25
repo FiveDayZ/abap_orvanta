@@ -2,6 +2,8 @@ contracts/source-baseline.json
 # 生成文件：由 scripts/generate-tool-index.mjs 产出，格式以生成器为准
 contracts/tool-index.json
 docs/tool-index.md
+# 生成文件：由 scripts/generate-ops-matrix.mjs 产出，格式以生成器为准
+docs/ops-acceptance-matrix.md
 dist/
 node_modules/
 release/

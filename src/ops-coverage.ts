@@ -39,9 +39,40 @@ export type OpsToolRole = "read-only" | "action" | "platform-blocked"
  */
 export type OpsFamilyState = "absent" | "blocked" | "partial" | "read-only" | "read-and-act"
 
+/**
+ * Who has to act before a family can close.
+ *
+ * A family's `gap` says what is missing; this says who can remove it, which is the difference
+ * between work this service can still do on its own and work that needs an operator decision. It is
+ * a closed vocabulary rather than prose so the acceptance matrix can group families by route - "four
+ * families are waiting on the SAP-side helper, three on a write authorisation" - and so the guard can
+ * refuse a family that declares a gap and no route to removing it.
+ */
+export type OpsCloseRoute =
+  | "none"
+  | "service"
+  | "helper"
+  | "approval"
+  | "authorization"
+  | "landscape"
+  | "platform"
+
 export interface OpsFamilyDefinition {
   id: string
   label: string
+  /**
+   * The operational question this family answers, in one line. Without it the matrix can only say
+   * "jobs is partial", which is not a statement anyone can act on: the purpose is what makes a
+   * missing capability legible as a missing answer rather than a missing tool.
+   */
+  purpose: string
+  /**
+   * Who can remove the declared gap. Empty gaps close with `none`; an exempt family names the
+   * platform. Several routes may apply to one family, and listing them keeps the matrix honest about
+   * the fact that, for example, releasing a transport needs a write authorisation while importing
+   * one additionally needs a second system to exist.
+   */
+  closeRoutes: readonly OpsCloseRoute[]
   /** Service tool names this family needs; absent entries are the gap, present ones are the surface. */
   plannedToolNames: readonly string[]
   /** Whether finishing this family requires an action that changes SAP state. */
@@ -124,6 +155,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "release_transport_task",
       "import_transport_queue"
     ],
+    purpose: "Which request holds this object, what is in it, and is it ready to hand over?",
+    closeRoutes: ["authorization", "landscape"],
     actionRequired: true,
     gap:
       "Release and import are absent: release_transport_task and import_transport_queue. " +
@@ -142,6 +175,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "release_background_job",
       "cancel_background_job"
     ],
+    purpose: "Did the job run, what did it do, and why is a job stuck or missing?",
+    closeRoutes: ["authorization"],
     actionRequired: true,
     gap:
       "No job control: create/modify/release/cancel are absent, so a stuck or missing job is " +
@@ -157,6 +192,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "read_application_log",
       "correlate_sap_logs"
     ],
+    purpose: "What does the system log or an application log say about a reported failure?",
+    closeRoutes: ["none"],
     actionRequired: false,
     gap: ""
   },
@@ -164,6 +201,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "dumps",
     label: "Short dumps (ST22): list and structured diagnosis",
     plannedToolNames: ["analyze_abap_dumps", "diagnose_sap_failure"],
+    purpose: "Why did the program dump, and what failed first?",
+    closeRoutes: ["none"],
     actionRequired: false,
     gap: ""
   },
@@ -171,6 +210,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "traces",
     label: "Runtime traces",
     plannedToolNames: ["analyze_abap_traces"],
+    purpose: "What did one execution actually do, statement by statement?",
+    closeRoutes: ["platform"],
     actionRequired: false,
     gap: "",
     // The assessment's family matrix lists 14 families and allows exactly one written exemption for a
@@ -187,6 +228,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "locks",
     label: "Enqueue locks (SM12): search and release",
     plannedToolNames: ["search_sap_locks", "delete_sap_lock"],
+    purpose: "Who holds the lock that is blocking an object or document right now?",
+    closeRoutes: ["authorization"],
     actionRequired: true,
     gap: "Locks can be listed but never released; a blocking lock must be cleared in SAP GUI."
   },
@@ -194,6 +237,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "updates",
     label: "Failed updates (SM13): search, detail, reprocess",
     plannedToolNames: ["search_failed_updates", "read_failed_update", "reprocess_failed_update"],
+    purpose: "Which update terminated, and what does the failed update contain?",
+    closeRoutes: ["authorization"],
     actionRequired: true,
     gap: "Failed updates can be read but never reprocessed."
   },
@@ -207,6 +252,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     // interpreted as a support-package level (docs/system-info.md). Committing to tools whose data is
     // already reachable, or whose semantics the project declined to fix, would inflate the gap.
     plannedToolNames: ["get_sap_system_info", "read_system_parameters"],
+    purpose:
+      "Which release, kernel, patch level, client settings and profile parameters is this system running?",
+    closeRoutes: ["helper"],
     actionRequired: false,
     gap:
       "Reported: client role and cross-client change protection (SCC4), system type, release, the " +
@@ -221,6 +269,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "query",
     label: "Ad-hoc troubleshooting queries over allowlisted tables",
     plannedToolNames: ["read_abap_table", "execute_data_query"],
+    purpose: "Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI.",
+    closeRoutes: ["service"],
     actionRequired: false,
     gap:
       "The native data preview endpoint is platform-unsupported on this release, so only the " +
@@ -244,6 +294,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "read_file_system_directory",
       "read_workload_directory"
     ],
+    purpose:
+      "Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists?",
+    closeRoutes: ["helper", "approval"],
     actionRequired: false,
     gap:
       "Reported: the work process list (TH_WPINFO) through read_work_processes, the user and " +
@@ -266,6 +319,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "interfaces",
     label: "Interface and queue monitoring: qRFC/tRFC, IDoc, email",
     plannedToolNames: ["read_qrfc_queues", "read_idoc_status", "read_email_queue"],
+    purpose: "Is an outbound or inbound queue stuck, did the IDoc arrive, and is mail piling up?",
+    closeRoutes: ["approval", "helper"],
     actionRequired: false,
     gap:
       "Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) " +
@@ -277,6 +332,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "authorizations",
     label: "User and authorization troubleshooting (SUIM read, ST01/SU53 trace)",
     plannedToolNames: ["read_user_authorizations", "read_authorization_trace"],
+    purpose: "Why did this user's transaction fail on authorization, and what is assigned to them?",
+    closeRoutes: ["helper", "approval"],
     actionRequired: false,
     gap:
       "Reported: the stored role assignments per user (AGR_USERS), the transactions of a " +
@@ -290,6 +347,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "spool-output",
     label: "Spool output formats: text, OTF/PDF, printing, original report execution",
     plannedToolNames: ["read_background_job_spool"],
+    purpose:
+      "What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output?",
+    closeRoutes: ["helper"],
     actionRequired: false,
     gap:
       "Only rendered text is available: OTF/PDF conversion, printing and original report " +
@@ -299,6 +359,8 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "archive-alerts",
     label: "Archive administration (SARA) and CCMS alerts (RZ20)",
     plannedToolNames: ["read_archive_status", "read_ccms_alerts"],
+    purpose: "Did archiving run, and is CCMS reporting alerts?",
+    closeRoutes: ["helper"],
     actionRequired: false,
     gap: "No archive-status or CCMS alert tool exists at all."
   },
@@ -306,6 +368,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     id: "landscape",
     label: "Multi-system landscape: compare systems and promote objects",
     plannedToolNames: ["compare_systems", "promote_object"],
+    purpose:
+      "How does development compare with test and production, and can an object be promoted?",
+    closeRoutes: ["landscape"],
     actionRequired: true,
     gap:
       "One connection is pinned as the validated landscape, with no DEV/QAS/PRD roles, so neither " +
@@ -432,6 +497,42 @@ export function opsClassificationProblems(
     if (state === "absent" && definition.gap.trim() === "") {
       problems.push(`family ${definition.id} has no tool and declares no gap`)
     }
+
+    // The route is part of the honest state, so a family that contradicts itself is refused: a gap
+    // with no owner is a wish, and a closed family that still claims a route is a stale note.
+    if (definition.purpose.trim() === "") {
+      problems.push(`family ${definition.id} states no purpose`)
+    }
+    if (definition.closeRoutes.length === 0) {
+      problems.push(`family ${definition.id} states no route to closure`)
+    }
+    if (new Set(definition.closeRoutes).size !== definition.closeRoutes.length) {
+      problems.push(`family ${definition.id} repeats a closure route`)
+    }
+    const gapDeclared = definition.gap.trim() !== ""
+    const claimsPlatform = definition.closeRoutes.includes("platform")
+    // A family with nothing missing waits for nobody: `none`. An exempt family is the one exception,
+    // because it is closed on paper and impossible in practice, and the exemption says which it is.
+    const closedRoute = definition.exemptReason !== undefined ? "platform" : "none"
+    if (!gapDeclared && definition.closeRoutes.some((route) => route !== closedRoute)) {
+      problems.push(
+        `family ${definition.id} declares no gap but a closure route: a family with nothing missing ` +
+          "has nobody left to wait for"
+      )
+    }
+    if (gapDeclared && definition.closeRoutes.includes("none")) {
+      problems.push(`family ${definition.id} declares a gap and the "none" route`)
+    }
+    if (definition.exemptReason !== undefined && !claimsPlatform) {
+      problems.push(
+        `family ${definition.id} claims a platform exemption without naming the platform route`
+      )
+    }
+    if (definition.exemptReason === undefined && claimsPlatform) {
+      problems.push(
+        `family ${definition.id} names the platform as its route without a written exemption reason`
+      )
+    }
   }
 
   for (const tool of opsGroupTools) {
@@ -449,6 +550,8 @@ export interface OpsVerificationLookup {
 export interface OpsFamilyRollup {
   id: string
   label: string
+  purpose: string
+  closeRoutes: readonly OpsCloseRoute[]
   state: OpsFamilyState
   actionRequired: boolean
   /** True when the platform, not the plan, makes this family impossible on this release. */
@@ -478,6 +581,7 @@ export interface OpsCapabilityBlock {
   vocabulary: {
     toolRole: string
     familyState: string
+    closeRoute: string
     endToEndRule: string
     criterionRule: string
     exemptionRule: string
@@ -486,6 +590,8 @@ export interface OpsCapabilityBlock {
   summary: {
     familyCount: number
     stateCounts: Record<OpsFamilyState, number>
+    /** How many families each route has to unblock before the target can be met. */
+    closeRouteCounts: Record<OpsCloseRoute, number>
     /** The state dimension: families whose declared gap is empty. */
     endToEndFamilyCount: number
     endToEndPercent: number
@@ -565,6 +671,8 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
     return {
       id: definition.id,
       label: definition.label,
+      purpose: definition.purpose,
+      closeRoutes: definition.closeRoutes,
       state: opsFamilyState(definition),
       actionRequired: definition.actionRequired,
       exempt: definition.exemptReason !== undefined,
@@ -595,6 +703,19 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
     "read-and-act": 0
   }
   for (const family of families) stateCounts[family.state]++
+
+  const closeRouteCounts: Record<OpsCloseRoute, number> = {
+    none: 0,
+    service: 0,
+    helper: 0,
+    approval: 0,
+    authorization: 0,
+    landscape: 0,
+    platform: 0
+  }
+  for (const family of families) {
+    for (const route of family.closeRoutes) closeRouteCounts[route]++
+  }
 
   const isStateClosed = (family: OpsFamilyRollup): boolean =>
     family.state === "read-only" || family.state === "read-and-act"
@@ -632,6 +753,13 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
     vocabulary: {
       toolRole:
         "read-only (observes) | action (changes SAP state) | platform-blocked (this release does not serve it)",
+      closeRoute:
+        "Who removes the gap: service (this repository can still do it) | helper (an SAP-side helper " +
+        "operation, its carrier and a manual F8) | approval (an operator allowlist or approval " +
+        "decision) | authorization (a written authorisation for a state-changing operation) | " +
+        "landscape (a multi-system configuration decision) | platform (this release cannot do it at " +
+        "all, which requires the written exemption) | none (nothing is missing). A family may carry " +
+        "several routes, because two different things can stand between the plan and one answer.",
       familyState:
         "absent (no tool) | blocked (every present tool is stopped by the platform) | " +
         "partial (a declared gap remains) | read-only (closed, no action needed) | " +
@@ -657,6 +785,7 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
     summary: {
       familyCount: families.length,
       stateCounts,
+      closeRouteCounts,
       endToEndFamilyCount: endToEndFamilies.length,
       endToEndPercent: Math.round((endToEndFamilies.length / families.length) * 100),
       endToEndFamilies,
