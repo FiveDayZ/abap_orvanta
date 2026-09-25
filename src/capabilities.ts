@@ -498,6 +498,14 @@ export async function buildCapabilityReport(
       )
     ),
     capability(
+      "runtime-resources",
+      "target-specific",
+      ["read_work_processes", "read_user_sessions"],
+      unknownTargetObservation(
+        "Calls the kernel's own work process and session list over SOAP-RFC (TH_WPINFO / TH_USER_LIST) after verifying both interfaces by fingerprint, so availability follows those function modules and the caller's authorization rather than an ADT endpoint probe - ADT publishes no endpoint for this data. See adt-data-preview for the native verdict."
+      )
+    ),
+    capability(
       "interface-queues",
       "target-specific",
       ["read_qrfc_queues", "read_idoc_status"],

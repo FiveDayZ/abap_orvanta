@@ -60,6 +60,7 @@ import type { InvocationReceiptStore, InvocationReservation } from "./invocation
 import { buildCapabilityReport } from "./capabilities.js"
 import { collectIdocStatus } from "./idoc-status.js"
 import { collectQrfcQueues } from "./qrfc-queues.js"
+import { collectUserSessions, collectWorkProcesses } from "./runtime-resources.js"
 import { collectServerFacts } from "./server-facts.js"
 import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
@@ -1240,6 +1241,17 @@ interface UserAuthorizationsInput {
   maxRows?: number | undefined
 }
 
+interface WorkProcessesInput {
+  connectionId: string
+  serverName?: string | undefined
+  maxRows?: number | undefined
+}
+
+interface UserSessionsInput {
+  connectionId: string
+  userName?: string | undefined
+  maxRows?: number | undefined
+}
 interface QrfcQueuesInput {
   connectionId: string
   queueName?: string | undefined
@@ -6945,6 +6957,52 @@ export class ToolService {
     return `${summary}${JSON.stringify(authorizations, null, 2)}`
   }
 
+  async readWorkProcesses(input: WorkProcessesInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const workProcesses = await collectWorkProcesses(
+      this.backend,
+      connectionId,
+      { serverName: input.serverName, maxRows: input.maxRows },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "TH_WPINFO"
+          })
+        )
+    )
+    let summary =
+      `Work processes: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${workProcesses.status}\n` +
+      `- Returned: ${workProcesses.returnedCount}${workProcesses.truncated ? " (truncated)" : ""}\n`
+    if (workProcesses.queryWarnings.length)
+      summary += `- Query warnings: ${workProcesses.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(workProcesses, null, 2)}`
+  }
+
+  async readUserSessions(input: UserSessionsInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const sessions = await collectUserSessions(
+      this.backend,
+      connectionId,
+      { userName: input.userName, maxRows: input.maxRows },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "TH_USER_LIST"
+          })
+        )
+    )
+    let summary =
+      `User sessions: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${sessions.status}\n` +
+      `- Sessions: ${sessions.returnedCount}${sessions.truncated ? " (truncated)" : ""}` +
+      `${sessions.filters.userName ? ` for user ${sessions.filters.userName}` : ""}\n`
+    if (sessions.queryWarnings.length)
+      summary += `- Query warnings: ${sessions.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(sessions, null, 2)}`
+  }
   async readQrfcQueues(input: QrfcQueuesInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const queues = await collectQrfcQueues(

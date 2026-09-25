@@ -97,7 +97,10 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_qrfc_queues: "read-only",
   read_idoc_status: "read-only",
   // Users and authorizations
-  read_user_authorizations: "read-only"
+  read_user_authorizations: "read-only",
+  // Runtime resources (SM50/SM66 and SM04)
+  read_work_processes: "read-only",
+  read_user_sessions: "read-only"
 }
 
 /**
@@ -236,7 +239,11 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "read_file_system_directory"
     ],
     actionRequired: false,
-    gap: "No work-process, session, performance, database-activity or file-system tool exists at all."
+    gap:
+      "Reported: the work process list (TH_WPINFO) through read_work_processes and the user and " +
+      "session list (TH_USER_LIST) through read_user_sessions. Still absent: " +
+      "read_performance_snapshot (ST03/STAD workload aggregates), read_db_activity (DB02, whose " +
+      "source is database-vendor specific) and read_file_system_directory (AL11)."
   },
   {
     id: "interfaces",

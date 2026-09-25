@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-25T23:36:02+08:00",
-  "notes": "Verification status is recorded per tool, never inferred from availability or from passing tests. 2026-09-25 (OP0-2 evidence registration): thirteen tools moved from unverified to a status their existing evidence supports - twelve to verified and analyze_abap_traces to platform-unsupported. Every one of them cites a .doc record that contains a real w200 call with an observed result; the earliest is 2026-09-08 and the latest 2026-09-25, and each entry states the version it was observed on. These are historical runs recovered from this workspace's records, not new probes: the current build has not been re-probed, and entries whose records were plans rather than calls (read_background_job_details, read_background_job_spool, search_failed_updates, read_failed_update) deliberately stayed unverified. 2026-09-25 (OP0-2 / D1 read-only session): two tools moved from unverified to verified on the strength of a live w200 session - read_background_job_details (a real job detail read) and execute_data_query (the finite fallback dialect over the allowlisted customer table ZTPMC_BZWL, including an exact COUNT(*), a consistent GROUP BY and an exact-or-refuse result). The session also exercised search_background_jobs again and proved the SM13 path callable while finding no failed update to read, and found no job with spool output, so read_background_job_spool, search_failed_updates and read_failed_update keep unverified status and instead carry what the session observed in their notes. Evidence: .doc/code-update-20260925-221900.md with raw output in .doc/orvanta-mcp-ops-evidence-20260925.json. 2026-09-25 (D2/D3 rulings): cleanup_transport_entries moved from failed to platform-unsupported on an explicit operator decision, and fourteen tables were individually approved for the default-deny allowlist (src/table-allowlist.ts) after their existence, class, field counts and keys were checked against w200's DD02L/DD03L. Both rulings are recorded in .doc/code-update-20260925-223946.md. 2026-09-25 (OP1-4): read_system_parameters was added to the ops surface and registered as unverified - the honest default, because the running service has not been restarted with it yet; get_sap_system_info keeps its verified citation and now states that the RFC_SYSTEM_INFO half is outside that run. 2026-09-25 (OP1-1): read_qrfc_queues and read_idoc_status were added to the ops surface and registered as unverified, the honest default while the running service has not been restarted with them; the interfaces family gap narrows to the email queue (SOST is not on the approved allowlist). 2026-09-25 (OP1-3): read_user_authorizations was added and registered as unverified; the authorizations family gap now names the SU53/ST01 trace as its only remainder, and the registry again holds one entry per tool.",
+  "updatedAt": "2026-09-25T23:55:10+08:00",
+  "notes": "2026-09-25 (OP1-1 runtime-resources): read_work_processes and read_user_sessions were added and registered unverified. Both are the kernel's own monitor reads (TH_WPINFO / TH_USER_LIST) called over SOAP-RFC after an interface-fingerprint check; the assessment had expected this family to need the SAP-side helper, and the probe evidence that removed that dependency is recorded in each entry. Verification status is recorded per tool, never inferred from availability or from passing tests.",
   "entries": [
     {
       "tool": "abap_activate",
@@ -674,6 +674,30 @@
       "lastAttemptAt": null,
       "evidence": null,
       "notes": "Landed 2026-09-25 (OP1-3, authorizations family) and none of the four unverified fields is claimed. Table access was approved by the operator on 2026-09-25; the field selection and key order come from the DD03L metadata of w200 (AGR_USERS 93 characters, AGR_TCODES 91, UST04 27), all well below the 512-character row the reviewed reader can carry. The answer is assignment master data and is explicitly not an authorization decision: role-to-authorization-object resolution is out of scope because AGR_1251/AGR_1252/AGR_PROF/USOB*/UST10* are not on the approved allowlist, and a real trace is the SU53/ST01 path on the SAP-side helper. The password-bearing USR02/USR01 are permanently forbidden and never read. No call has been recorded yet because the running service still serves the previous tool surface; the surface and the table allowlist are compile-time constants, so a restart is required before a caller can reach this tool."
+    },
+    {
+      "tool": "read_work_processes",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 work process list (TH_WPINFO): no authorized call yet",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Landed 2026-09-25 (OP1-1, runtime-resources family) and none of the four unverified fields is claimed. Routing evidence: the assessment expected this family to need the in-SAP helper because ADT publishes no work-process endpoint, but a read-only probe of w200 on 2026-09-25 found TH_WPINFO remote-enabled with output table WPLIST (WPINFO) resolved entirely to verified RFC scalar types - only three optional imports (WITH_CPU, WITH_MTX_INFO, MAX_ELEMS) are unresolvable, and the tool passes none of them. The call therefore goes over the same SOAP-RFC path get_sap_system_info uses for RFC_SYSTEM_INFO, after pinning the interface fingerprint e5d7078c36abdbbe48cb23c47071e101f82320ec1723dbc7f93b7a4c8edc2f70 and the source fingerprint cf3be4d651ae9af6f156fde4d8cf6ea3fd932102df575ae1d4908eae23e2ed16. No value is translated and no domain text was read, so type/status stay the kernel's own codes and texts. No call has been recorded yet because the running service still serves the previous tool surface; the tool surface is a compile-time constant, so a restart is required before a caller can reach this tool."
+    },
+    {
+      "tool": "read_user_sessions",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 user and session list (TH_USER_LIST): no authorized call yet",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Landed 2026-09-25 (OP1-1, runtime-resources family) and none of the four unverified fields is claimed. Routing evidence: TH_USER_LIST is remote-enabled and its USRLIST output (USRINFO) resolves entirely to verified RFC scalar types, so the service calls it directly over SOAP-RFC after pinning interface fingerprint 8d88542a7b1793f646033e41bb96ffb59b27b4fb73d58190b4a9fc103e429a01 and source fingerprint 1cc2a482e5e08b3edbe5ce921d8fe4c5ae4065b7088da7154d5aeadd006716dc. Only USRLIST is requested: the kernel's LIST output carries MSHOSTADR, a type this service cannot verify, so it is deliberately not read and the answer says so. userName is a service-side filter because the function module has no user import. The one open risk, not resolvable before a real call, is whether the platform accepts a request that omits the non-optional LIST parameter; the tool reports that outcome as RUNTIME_RESOURCES_RFC_FAILED rather than inventing data. No call has been recorded yet because the running service still serves the previous tool surface, so a restart is required before a caller can reach this tool."
     },
     {
       "tool": "get_version_history",

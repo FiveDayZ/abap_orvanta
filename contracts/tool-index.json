@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 147,
-  "readOnlyToolCount": 86,
+  "toolCount": 149,
+  "readOnlyToolCount": 88,
   "profiles": {
-    "readonly": 86,
+    "readonly": 88,
     "platform": 12,
-    "dev": 129,
-    "config": 32,
-    "ops": 41,
-    "full": 147
+    "dev": 131,
+    "config": 34,
+    "ops": 43,
+    "full": 149
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 24,
+    "ops": 26,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1726,6 +1726,40 @@
     },
     {
       "name": "read_user_authorizations",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
+    },
+    {
+      "name": "read_user_sessions",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
+    },
+    {
+      "name": "read_work_processes",
       "group": "ops",
       "profiles": [
         "dev",

@@ -134,6 +134,8 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_system_parameters",
       "read_transaction_code",
       "read_user_authorizations",
+      "read_user_sessions",
+      "read_work_processes",
       "recover_ddic_table_conversion",
       "release_write_operation_lock",
       "replace_string_in_abap_object",

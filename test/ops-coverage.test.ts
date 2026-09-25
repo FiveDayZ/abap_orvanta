@@ -29,7 +29,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
   updates: "partial",
   "system-info": "partial",
   query: "partial",
-  "runtime-resources": "absent",
+  "runtime-resources": "partial",
   interfaces: "partial",
   authorizations: "partial",
   "spool-output": "partial",
@@ -38,7 +38,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
 }
 
 /** The plan's outstanding tool commitments; adding one to the plan must update this number. */
-const PLANNED_GAP_TOOL_COUNT = 19
+const PLANNED_GAP_TOOL_COUNT = 17
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -47,7 +47,7 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  assert.equal(opsGroupTools.length, 24)
+  assert.equal(opsGroupTools.length, 26)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -133,9 +133,9 @@ test("the block counts only families with an empty gap as end-to-end", () => {
 
   assert.equal(block.summary.familyCount, Object.keys(EXPECTED_FAMILY_STATES).length)
   assert.deepEqual(block.summary.stateCounts, {
-    absent: 3,
+    absent: 2,
     blocked: 1,
-    partial: 9,
+    partial: 10,
     "read-only": 2,
     "read-and-act": 0
   })
@@ -147,7 +147,7 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
 
-  assert.equal(block.summary.classifiedToolCount, 24)
+  assert.equal(block.summary.classifiedToolCount, 26)
   assert.equal(block.summary.actionToolCount, 3)
   assert.equal(block.summary.platformBlockedToolCount, 1)
   assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)

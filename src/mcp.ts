@@ -745,6 +745,12 @@ export function createMcpServer(
   registerTool("read_user_authorizations", toolContracts.read_user_authorizations, async (input) =>
     invoke("read_user_authorizations", () => tools.readUserAuthorizations(input))
   )
+  registerTool("read_work_processes", toolContracts.read_work_processes, async (input) =>
+    invoke("read_work_processes", () => tools.readWorkProcesses(input))
+  )
+  registerTool("read_user_sessions", toolContracts.read_user_sessions, async (input) =>
+    invoke("read_user_sessions", () => tools.readUserSessions(input))
+  )
   registerTool("read_qrfc_queues", toolContracts.read_qrfc_queues, async (input) =>
     invoke("read_qrfc_queues", () => tools.readQrfcQueues(input))
   )

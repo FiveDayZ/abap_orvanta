@@ -401,7 +401,9 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
   四个未验证字段一个都不声明）；`get_sap_system_info` 保留原 citation，并在 notes 中写明 RFC_SYSTEM_INFO 半边
   不在那次验收范围内。族状态仍为 `partial`，`criterionMet=false`（已闭环 2/14）。
 
-### 7.6 OP1-1 - 接口与队列（2026-09-25）
+### 7.6 OP1-2 - 接口与队列（2026-09-25）
+
+> 编号更正：接口与队列在实施记录 .doc/code-update-20260925-232602.md 中曾被标为 OP1-1；按评估计划 OP1-1 是工作进程/会话/性能/DB/文件系统，队列属 OP1-2（见 §7.8）。原记录保持不可变，此处更正编号。
 
 新增两个只读工具，读的都是 D3 批准的十四张表；与 7.5 一样，**运行期未取证**（4848 上仍是旧工具面，
 重启前不可达）。
@@ -450,3 +452,46 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
 **族缺口收窄。** `authorizations` 族由"完全没有工具"变为 `partial`：角色/事务/参数文件分配已实现，
 剩余缺口是 **SU53/ST01 授权追踪**（需 SAP 侧助手）与角色→权限对象展开（表未获批准）。工具在服务重启并
 完成一次真实 w200 调用前保持 `unverified`（registry 条目数再次等于工具数）。
+
+### 7.8 OP1-1 - 运行时资源：工作进程与会话（2026-09-25）
+
+**路由取证推翻了计划里的一条假设。** 评估把整个族（族 9：工作进程/会话/性能/DB/文件系统）判为"预计
+SAP 助手"通路。2026-09-25 的只读探测（`read_function_module_interface`，证据落在
+`.cache/evidence-r16/fm-*.txt`）表明：SAP 侧监视器函数模块本身就是 **remote-enabled 的标准 FM**，而服务
+的 `callRemoteFunction` 是把 SOAP 信封直接 POST 到 `http://www.sap.com/<函数名>`（`adt-backend.ts`
+L428-434），即"外部 SOAP-RFC 调用"，只要求函数模块 remote-enabled——**不需要助手操作码、不需要载体、
+不需要人工 F8**。于是本族的前两个工具走服务侧实现。
+
+| 函数模块                                                                                                                                 | remoteEnabled | 输出表（全部字段均可验证）      | 结论                                                                                   |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------- | -------------------------------------------------------------------------------------- |
+| `TH_WPINFO`                                                                                                                              | 是            | `WPLIST`（`WPINFO`，25 字段）   | 可用；仅 `WITH_CPU`/`WITH_MTX_INFO`/`MAX_ELEMS` 三个**可选导入**无法解析，工具不传它们 |
+| `TH_USER_LIST`                                                                                                                           | 是            | `USRLIST`（`USRINFO`，16 字段） | 可用；`LIST`（`UINFO`）含无法验证的 `MSHOSTADR`，**故意不请求**                        |
+| `TH_SERVER_LIST`                                                                                                                         | 是            | -                               | 可用（后续可选）                                                                       |
+| `SWNC_COLLECTOR_GET_AGGREGATES`                                                                                                          | 是            | -                               | 可用（`read_performance_snapshot` 的候选入口）                                         |
+| `EPS2_GET_DIRECTORY_LISTING`                                                                                                             | 是            | -                               | 可用（`read_file_system_directory` 的候选入口）                                        |
+| `RSPO_RETURN_SPOOLJOB`                                                                                                                   | **否**        | -                               | 不可直连 ⇒ OP1-5 的 Spool OTF/PDF 确实必须走助手                                       |
+| `TH_GET_SERVER_INFO`、`SAPWL_GET_AGGREGATED_DATA`、`CCMS_GET_ALERT_TREE`、`DB02_DB_ACTIVITY`、`DB_GET_DB_RELEASE_INFO`、`GET_DB_RELEASE` | -             | -                               | 按该名字**未找到**（记录为"未命中"，不等于不存在）                                     |
+
+**新增工具。** 两个工具都以"接口指纹闸门 + 直接 SOAP-RFC 调用 + 强制行数上限"实现，字段清单来自 w200
+的 DD03L 元数据（`.cache/evidence-r16/dd03l-{USRINFO,WPINFO}.txt`）：
+
+- `read_work_processes` · `TH_WPINFO.WPLIST`：`serverName`（`SRVNAME`，`MSXXLIST-NAME`，40 字符）原样下传，
+  缺省时由内核返回它自己的默认列表（答案里明写）。固定指纹 source
+  `cf3be4d651ae9af6f156fde4d8cf6ea3fd932102df575ae1d4908eae23e2ed16` / interface
+  `e5d7078c36abdbbe48cb23c47071e101f82320ec1723dbc7f93b7a4c8edc2f70`。`maxRows` 缺省 200、硬上限 500；
+  内核返回行数超过上限时报 `partial` + `truncated`，绝不声称完整。
+- `read_user_sessions` · `TH_USER_LIST.USRLIST`：**只请求 `USRLIST`**，`LIST` 因含服务无法验证的类型而不读，
+  答案 `notes` 明写这一点。`userName`（12 字符）在服务侧过滤（FM 没有用户导入参数），因此空结果的含义是
+  "该用户在此快照中没有会话"而不是"用户不存在"，`kernelRowCount`/`matchedCount` 让过滤保持可见。固定指纹
+  source `1cc2a482e5e08b3edbe5ce921d8fe4c5ae4065b7088da7154d5aeadd006716dc` / interface
+  `8d88542a7b1793f646033e41bb96ffb59b27b4fb73d58190b4a9fc103e429a01`。
+
+**诚实边界。** 两个工具**不翻译任何值**：`type`/`status`/`state`/`sessionType` 等是内核自己的代码与文本，
+域定值（DD07L）没有被读取，所以不做"忙/闲"这类标签映射，`counts.*` 是对**原始值**的忠实计数。每条记录同时
+带 `raw`（未翻译的整行）与 `interpretedFields`（每个名字来自哪个 SAP 字段）。读数均为快照、不留历史；都
+不能重启/停止/调试工作进程，也不能终止会话或改变会话状态。
+
+**族缺口收窄。** `runtime-resources` 族由 `absent` 变为 `partial`：工作进程与会话已实现，剩余缺口是
+`read_performance_snapshot`（ST03/STAD）、`read_db_activity`（DB02，源随数据库厂商而变）与
+`read_file_system_directory`（AL11）。两个新工具在服务重启并完成一次真实 w200 调用前保持 `unverified`；
+registry 条目数再次等于工具数（149）。
