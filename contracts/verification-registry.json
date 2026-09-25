@@ -1,7 +1,7 @@
 {
   "version": 1,
   "updatedAt": "2026-09-25",
-  "notes": "Verification status is recorded per tool, never inferred from availability or from passing tests. 2026-09-25 (OP0-2 evidence registration): thirteen tools moved from unverified to a status their existing evidence supports - twelve to verified and analyze_abap_traces to platform-unsupported. Every one of them cites a .doc record that contains a real w200 call with an observed result; the earliest is 2026-09-08 and the latest 2026-09-25, and each entry states the version it was observed on. These are historical runs recovered from this workspace's records, not new probes: the current build has not been re-probed, and entries whose records were plans rather than calls (read_background_job_details, read_background_job_spool, search_failed_updates, read_failed_update) deliberately stayed unverified.",
+  "notes": "Verification status is recorded per tool, never inferred from availability or from passing tests. 2026-09-25 (OP0-2 evidence registration): thirteen tools moved from unverified to a status their existing evidence supports - twelve to verified and analyze_abap_traces to platform-unsupported. Every one of them cites a .doc record that contains a real w200 call with an observed result; the earliest is 2026-09-08 and the latest 2026-09-25, and each entry states the version it was observed on. These are historical runs recovered from this workspace's records, not new probes: the current build has not been re-probed, and entries whose records were plans rather than calls (read_background_job_details, read_background_job_spool, search_failed_updates, read_failed_update) deliberately stayed unverified. 2026-09-25 (OP0-2 / D1 read-only session): two tools moved from unverified to verified on the strength of a live w200 session - read_background_job_details (a real job detail read) and execute_data_query (the finite fallback dialect over the allowlisted customer table ZTPMC_BZWL, including an exact COUNT(*), a consistent GROUP BY and an exact-or-refuse result). The session also exercised search_background_jobs again and proved the SM13 path callable while finding no failed update to read, and found no job with spool output, so read_background_job_spool, search_failed_updates and read_failed_update keep unverified status and instead carry what the session observed in their notes. Evidence: .doc/code-update-20260925-221900.md with raw output in .doc/orvanta-mcp-ops-evidence-20260925.json.",
   "entries": [
     {
       "tool": "abap_activate",
@@ -451,13 +451,13 @@
       "tool": "execute_data_query",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": null,
+      "verificationTarget": "w200 client 200, allowlisted customer table ZTPMC_BZWL through the finite fallback dialect, 2026-09-25",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-25T22:12:00+08:00",
+      "evidence": ".doc/code-update-20260925-221900.md",
+      "notes": "Real calls recorded on 0.50.15 against w200. The platform does not serve the native ADT preview endpoint (the known empty-HTML answer), so every call ran the finite fallback dialect over RFC_READ_TABLE: SELECT * FROM ZTPMC_BZWL returned data with querySource.method=rfc_read_table, nativeCode=SAP_DATA_QUERY_RESPONSE_INVALID and six real field definitions; SELECT COUNT(*) returned the exact aggregate {COUNT: 70} with aggregateColumns [{expression: 'COUNT(*)', column: 'COUNT'}]; SELECT WERKS, COUNT(*) ... GROUP BY WERKS returned two groups, {WERKS: 8020, COUNT: 3} and {WERKS: 809P, COUNT: 67}, whose sum matches the ungrouped count; and the same COUNT(*) with maxRows=50 was refused with TABLE_QUERY_AGGREGATE_INCOMPLETE rather than reporting a count of the sample, which is the exact-or-refuse contract observed rather than asserted. Two limits found by the same session and recorded in the evidence file: the dialect path is only reached when maxRows <= 500 (src/tools.ts throws the platform's own error above that, and the tool description does not state the cap), and read_ddic_structure rejects tables with OBJECT_TYPE_MISMATCH, so a table's field list has to come from read_abap_table or from the query's own fieldMetadata. What this does not prove: the native preview path stays unavailable on this release, and only one allowlisted table (the customer scope table) was exercised, so the dialect is verified against that table's types, not against every allowlisted type."
     },
     {
       "tool": "find_where_used",
@@ -967,13 +967,13 @@
       "tool": "read_background_job_details",
       "helper": "Z_ORVANTA_OPS_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SM37 job detail (SWWDHEX, jobCount 00001200), 2026-09-25",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded. The 2026-09-11 job-detail wave deployed the helper and grew the approved SM37 scope, and its own record states that no functional call or job read was executed, so this entry stays unverified rather than inheriting the neighbouring job list's evidence. Closing it needs one approved jobName/jobCount read. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
+      "lastAttemptAt": "2026-09-25T22:12:00+08:00",
+      "evidence": ".doc/code-update-20260925-221900.md",
+      "notes": "Real call recorded on 0.50.15 against w200: read_background_job_details(jobName=SWWDHEX, jobCount=00001200) returned status=ok with one step (program RSWWDHEX, execution user WF-BATCH) and a revision, so the detail path is proven on live data rather than only deployed. What the same call does not prove: that job had spool id 0000000000, so nothing here covers spool content, and one job is one sample - no statement about steps of other types. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "read_background_job_log",
@@ -997,7 +997,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded. The spool-read design was written from RSPOLIST source inspection and its own record says the chosen call combination was never SAP-syntax or runtime validated, so the tool is unverified on evidence rather than on suspicion. Closing it needs one approved step with a real spool id. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
+      "notes": "No real call has been recorded. The spool-read design was written from RSPOLIST source inspection and its own record says the chosen call combination was never SAP-syntax or runtime validated, so the tool is unverified on evidence rather than on suspicion. Closing it needs one approved step with a real spool id. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry. 2026-09-25 (D1 session, 0.50.15): still no sample. The approved SM37 window held dozens of workflow jobs (SWWDHEX, SWWERRE, SWWCOND) and every step scanned - five SWWDHEX job counts (00001200, 00031200, 00061200, 00121200, 00151200) - reported spool id 0000000000, while twelve standard spool-producing job names (SAP_COLLECTOR_FOR_PERFMONITOR, RSBTCDEL2, RSPO0041, RDDNEWPP, SAP_REORG_SPOOL and others) held no job at all across a three-day window. No job with spool output exists on this system to read, and the accepted rule is that no sample may be created to close the row, so the entry stays unverified on evidence rather than on suspicion."
     },
     {
       "tool": "read_bte_configuration",
@@ -1141,7 +1141,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded. The same unexecuted SM13 acceptance entry point covers this tool's updateKey detail read; its record explicitly warns against creating a failed update just to have a sample. Closing it needs one approved existing update key. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
+      "notes": "No real call has been recorded. The same unexecuted SM13 acceptance entry point covers this tool's updateKey detail read; its record explicitly warns against creating a failed update just to have a sample. Closing it needs one approved existing update key. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry. 2026-09-25 (D1 session, 0.50.15): the same seven approved SM13 windows returned no failed update at all, so there was no updateKey to read and this detail tool still has neither a call nor a sample to cite."
     },
     {
       "tool": "read_function_module_interface",
@@ -1513,7 +1513,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded. The 2026-09-10 SM13 wave built an interactive acceptance entry point that requires a human operator and an explicit READ confirmation, and it was never run, so there is no attempt to cite and no attempt time to claim. Closing it needs one approved SM13 window with a real user. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
+      "notes": "No real call has been recorded. The 2026-09-10 SM13 wave built an interactive acceptance entry point that requires a human operator and an explicit READ confirmation, and it was never run, so there is no attempt to cite and no attempt time to claim. Closing it needs one approved SM13 window with a real user. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry. 2026-09-25 (D1 session, 0.50.15): the approved SM13 path is now proven callable - seven approved one-hour windows across users wys, WF-BATCH and DDIC each returned status=ok, code=OK and returnedCount=0 with coverage retained_failed_update_headers_current_client, and the SM13 scope is approved in maintenance-diagnostic-approvals.json next to the pre-existing SM12 scope. That still only exercises the empty path: no window contained a real failed update, and fabricating one is forbidden, so the status deliberately stays unverified and no attempt time is claimed here."
     },
     {
       "tool": "search_sap_locks",

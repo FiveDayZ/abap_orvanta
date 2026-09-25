@@ -573,9 +573,16 @@ test("the registry records the honest gap rather than inflating it", () => {
   // dump read (.doc/code-update-20260925-142324.md). Each of those entries names the record it came
   // from and the version it was observed on; none of them was inferred from passing tests, and the
   // four ops tools whose records were plans rather than calls were deliberately left unverified.
+  // Raised from 21 to 23 on 2026-09-25 (OP0-2 / D1): a live read-only session on 0.50.15
+  // (.doc/code-update-20260925-221900.md) read a real job detail
+  // (read_background_job_details: SWWDHEX/00001200, status ok, one step and a revision) and ran the
+  // finite fallback dialect over the allowlisted customer table ZTPMC_BZWL
+  // (execute_data_query: exact COUNT(*), a GROUP BY whose parts sum to that count, and an
+  // exact-or-refuse refusal at the row bound). Both entries name the record and the version, and the
+  // same session deliberately left the three tools without a sample unverified.
   // This bound is a tripwire, not a quality bar: raising it again requires the same kind of citation.
   assert.ok(
-    totals.verified <= 21,
+    totals.verified <= 23,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

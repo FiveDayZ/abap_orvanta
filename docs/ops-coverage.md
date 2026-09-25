@@ -257,31 +257,48 @@ whose tools carry no recorded call is not complete.
   `test/ops-coverage.test.ts`; it runs under the repository test gate with the authorisation
   required by `AGENTS.md` section 1.1.
 
-### 7.1 Evidence standing and the OP0-2 worklist (2026-09-25, 0.50.11)
+### 7.1 Evidence standing and the OP0-2 worklist (2026-09-25; table at 0.50.11, D1 session at 0.50.15)
 
-Of the 20 `ops` tools, `contracts/verification-registry.json` now records `verified` 14,
+Of the 20 `ops` tools, `contracts/verification-registry.json` now records `verified` 15,
 `platform-unsupported` 1 (`analyze_abap_traces`), `failed` 1 (`cleanup_transport_entries`) and
-`unverified` 4. The 14 verified entries were registered from runtime records this workspace already
-held (2026-08-27 to 2026-09-25, versions 0.3.x to 0.50.4) - see
-`docs/helper-capabilities-protocol.md` section 4A-0. Point 2 of section 6 is therefore no longer the
-binding constraint for the closed families; what remains for evidence is exactly these five rows:
+`unverified` 3. The first fourteen verified entries were registered from runtime records this
+workspace already held (2026-08-27 to 2026-09-25, versions 0.3.x to 0.50.4) - see
+`docs/helper-capabilities-protocol.md` section 4A-0. The fifteenth, `read_background_job_details`,
+was closed by the D1 read-only session on 2026-09-25 (0.50.15), recorded in
+`.doc/code-update-20260925-221900.md` with its raw output in
+`.doc/orvanta-mcp-ops-evidence-20260925.json`; the same session verified `execute_data_query`, a
+`data`-group tool exposed in the `ops` profile, against the allowlisted customer table. Point 2 of
+section 6 is therefore no longer the binding constraint for the closed families; the table below
+states each row's standing, including what that session changed and what it could not:
 
-| Tool                          | Status             | What closing it needs                                                                                                           | Why it is not closed already                                                                                                                                                                                                                                                                                                     |
-| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `read_background_job_details` | `unverified`       | one approved read with an exact `jobName`/`jobCount` on a real job                                                              | the 2026-09-11 wave deployed the helper and widened the approved SM37 scope, and its own record states no functional call or job read was executed                                                                                                                                                                               |
-| `read_background_job_spool`   | `unverified`       | one approved read with a real `stepNumber`/`spoolId` from a job that produced spool output                                      | the call combination was chosen from RSPOLIST source inspection and its record states it was never SAP-syntax or runtime validated                                                                                                                                                                                               |
-| `search_failed_updates`       | `unverified`       | one approved SM13 window (<= 1 hour) with an explicit username that actually contains a failed update                           | the interactive acceptance entry point exists but was never run; an empty window would only prove the empty path, and creating a failed update to have a sample is forbidden                                                                                                                                                     |
-| `read_failed_update`          | `unverified`       | one approved existing `updateKey` (revision optional)                                                                           | same unexecuted entry point; the record explicitly refuses to fabricate a sample                                                                                                                                                                                                                                                 |
-| `cleanup_transport_entries`   | `failed` (runtime) | either Basis-level native ADT `removeobject` support on this release, or an explicit decision to accept the platform limitation | two structurally different payloads were tried against w200, the entry survived both, and the tool fails safe by refusing to report success. Per section 6 point 2 this may count as "the platform limitation is itself the closed finding" only if that decision is taken deliberately, which is a user call, not a code change |
+| Tool                          | Status             | What closing it needs                                                                                                           | Standing after the 2026-09-25 D1 session                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read_background_job_details` | `verified`         | closed                                                                                                                          | `read_background_job_details(jobName=SWWDHEX, jobCount=00001200)` returned `status=ok` with one step (program `RSWWDHEX`, execution user `WF-BATCH`) and a revision, so the detail path is proven on live data rather than only deployed. That job reported spool id `0000000000`, so nothing in this call covers spool content.                                                                                                                                                                                                                                                                        |
+| `read_background_job_spool`   | `unverified`       | one approved read with a real `stepNumber`/`spoolId` from a job that produced spool output                                      | attempted and still blocked by the system rather than by the tool: every step of five `SWWDHEX` job counts (`00001200`, `00031200`, `00061200`, `00121200`, `00151200`) reported spool id `0000000000`, and twelve standard spool-producing job names (`SAP_COLLECTOR_FOR_PERFMONITOR`, `RSBTCDEL2`, `RSPO0041`, `RDDNEWPP`, `SAP_REORG_SPOOL` and others) held no job at all across a three-day window. The approved SM37 window holds only aborted single-step workflow jobs (`SWWDHEX`, `SWWERRE`, `SWWCOND`), so no spool-bearing job exists to read and no sample may be created to close the row. |
+| `search_failed_updates`       | `unverified`       | one approved SM13 window (<= 1 hour) with an explicit username that actually contains a failed update                           | the approved SM13 path is now proven callable - seven approved one-hour windows across `wys`, `WF-BATCH` and `DDIC` each returned `status=ok`, `code=OK`, `returnedCount=0` with `coverage=retained_failed_update_headers_current_client` - which exercises only the empty path. No window contained a real failed update, and fabricating one is forbidden, so the row stays unverified on a missing sample rather than on an unproven call.                                                                                                                                                           |
+| `read_failed_update`          | `unverified`       | one approved existing `updateKey` (revision optional)                                                                           | the same seven windows were empty, so no `updateKey` exists to read; the detail tool has neither a call nor a sample to cite.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `cleanup_transport_entries`   | `failed` (runtime) | either Basis-level native ADT `removeobject` support on this release, or an explicit decision to accept the platform limitation | unchanged by this session: two structurally different payloads were tried against w200, the entry survived both, and the tool fails safe by refusing to report success. Per section 6 point 2 this may count as "the platform limitation is itself the closed finding" only if that decision is taken deliberately, which is a user call, not a code change.                                                                                                                                                                                                                                            |
 
-The first four rows are the same read-only family of calls and can be closed in one authorised probe
-session (SM37 and SM13 only; no writes, no cancellations, no retries, nothing created to serve as a
-sample).
+The same session produced two facts about this surface that are not evidence standing at all, both
+recorded in the session's `.doc` record:
+
+- `execute_data_query` reaches the finite fallback dialect only when `maxRows <= 500`
+  (`src/tools.ts` throws the platform's own `SAP_DATA_QUERY_RESPONSE_INVALID` above that), and the
+  tool description does not state the cap, so an unqualified `SELECT` reads as a platform failure
+  rather than as a rejected input.
+- `read_ddic_structure` rejects tables with `OBJECT_TYPE_MISMATCH: Dictionary object is not a
+structure`; a table's field list has to come from `read_abap_table` or from the query's own
+  `fieldMetadata`.
+
+The approval files were a prerequisite of the session rather than a result of it:
+`operational-log-approvals.json` did not exist at all, so every operational-log read was refusing
+with `APPROVAL_FILE_MISSING`, and `maintenance-diagnostic-approvals.json` approved only `SM12`.
+Section 7.3 records how both are re-issued.
 
 One counting note so the numbers above cannot be misread: the twenty tools of the `ops` **group** are
 what the table above covers, and the `query` family additionally holds two tools from the `data` group
-that are exposed in the `ops` **profile** (`read_abap_table`, verified; `execute_data_query`,
-unverified). Evidence standing is therefore stated per tool in
+that are exposed in the `ops` **profile** (`read_abap_table`, verified; `execute_data_query`, verified
+by the D1 session). Evidence standing is therefore stated per tool in
 `contracts/verification-registry.json`, never as a single family-level score.
 
 ### 7.2 Ops runbooks (OP4-2)
@@ -298,3 +315,39 @@ cover nine families (`jobs`, `spool-output`, `dumps`, `logs`, `locks`, `updates`
 which is the same gap the table above lists. A runbook is not a coverage claim: it cannot make a
 family end-to-end, and it names the tools whose evidence is still missing instead of implying
 verification.
+
+### 7.3 Re-issuing the approval files (helper-bound approvals)
+
+Section 5.5 states why these files exist, where they live and what "cross-machine" means; this section
+is the procedure. Both families below read the file on every call and refuse the call when it is
+missing, when the connection is absent from it, or when the deployed helper's fingerprints no longer
+match the ones the file pins:
+
+| File                                    | Family                  | Approved sources               | Refusal when not satisfied                      |
+| --------------------------------------- | ----------------------- | ------------------------------ | ----------------------------------------------- |
+| `operational-log-approvals.json`        | `logs` (SM37/SM21/SP01) | `SM37`, `SM37_DETAILS`, `SP01` | `HELPER_NOT_APPROVED` / `APPROVAL_FILE_MISSING` |
+| `maintenance-diagnostic-approvals.json` | `locks`, `updates`      | `SM12`, `SM13`                 | `HELPER_NOT_APPROVED` / `APPROVAL_FILE_MISSING` |
+
+Both files pin `connectionId`, `url`, `client`, `username`, the helper's `sourceFingerprint` and
+`interfaceFingerprint`, and the enabled sources. Because the fingerprints describe the **deployed**
+helper, re-deploying a helper (SE38 carrier + F8) invalidates every approval for it until the file is
+re-issued; the call then fails closed rather than reading through an unreviewed helper build. Both
+files are re-read per call, so no service restart is needed after a re-issue.
+
+The maintenance family ships a preparer, and the fingerprints it records come from
+`read_function_module_interface` (a read) rather than from any document:
+
+```
+node scripts/prepare-maintenance-approval.mjs --sources SM12,SM13 --write --connections <connections.json>
+node scripts/prepare-maintenance-approval.mjs --sources SM12,SM13 --verify --connections <connections.json>
+```
+
+The operational-log family has no shipped preparer. The equivalent is a small MCP client that reads
+`Z_ORVANTA_OPS_READ` through `read_function_module_interface`, checks that `functionGroup` is
+`ZORVANTA_LOG`, `remoteEnabled` is true, `updateTask` is false and both fingerprints are sha256, then
+merges `{version: 1, connections: [...]}` into the file. Merging matters: replacing the whole document
+would withdraw another operator's approval. The D1 session's implementation is recorded in the
+session's `.doc` record.
+
+Withdrawal is the operator's act and stays explicit: removing one connection entry (or the file)
+revokes those reads, and nothing infers an approval from a missing source list.
