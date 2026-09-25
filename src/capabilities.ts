@@ -149,10 +149,14 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   ["repository-helper-transport-request", ["create_transport_request"]],
   ["repository-helper-transport-objects", ["add_objects_to_transport"]],
   ["repository-helper-gui-definition", ["read_abap_gui_definition", "patch_abap_gui_definition"]],
-  [
-    "repository-helper-ecc-fallbacks",
-    ["read_abap_message_class", "create_abap_message_class", "manage_text_elements"]
-  ],
+  ["repository-helper-ecc-fallbacks", ["read_abap_message_class", "create_abap_message_class"]],
+  // 2.12: the text element payload carries the entry kind, and the helper writes selection texts
+  // (pool row `S`) as well as text symbols (`I`). A helper below 2.12 rejects the property or
+  // addresses every entry as a 3-character symbol, so a selection screen label cannot be written.
+  // The message class pair stays at 1.7 on the same helper, so this is a split rather than a lift:
+  // raising the shared group would report two working tools as unsupported, which is the false
+  // claim this registry exists to prevent (see the DDIC groups below for the same pattern).
+  ["repository-helper-text-elements", ["manage_text_elements"]],
   ["repository-helper-message-update", ["update_abap_message_class"]],
   ["repository-helper-message-delete", ["delete_abap_message_class"]],
   ["repository-helper-function-interface-patch", ["patch_function_module_interface"]],

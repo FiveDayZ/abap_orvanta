@@ -1,6 +1,7 @@
 import type { TransportRequest, TransportsOfUser } from "abap-adt-api"
 import type { SmartformRequest, SmartformResponse } from "./smartforms.js"
 import type { WhereUsedRequestTrace } from "./where-used-request.js"
+import type { TextElementIdType } from "./text-elements.js"
 import type {
   DebugBreakpointInfo,
   DebugSessionInfo,
@@ -755,6 +756,11 @@ export interface TextElementInfo {
   id: string
   text: string
   maxLength?: number | undefined
+  /**
+   * Text pool entry kind. Absent means `SYMBOL`, which is what every caller written before
+   * selection texts existed meant: `SELECTION` addresses a selection screen element label instead.
+   */
+  idType?: TextElementIdType | undefined
 }
 
 export interface TextElementsInfo {

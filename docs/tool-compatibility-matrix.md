@@ -1,6 +1,8 @@
 # 工具兼容矩阵
 
-> 当前口径（2026-09-25，`0.50.14`）：工具注册表静态注册 **143 个工具（只读 82 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验（实测输出：`tool index consistent: 143 tools, 82 read-only, 12 groups`；`helper capabilities consistent: 29 capabilities over 60 tools`）。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数；`0.47.4`–`0.50.6` 各轮增量的细节记录在 `.doc/code-update-*.md`，本表未逐轮补登。
+> 当前口径（2026-09-25，`0.50.15`）：工具注册表静态注册 **143 个工具（只读 82 个，能力组 12 个）**，由 `npm run matrix:check` 与能力规格做一致性校验（实测输出：`tool index consistent: 143 tools, 82 read-only, 12 groups`；`helper capabilities consistent: 30 capabilities over 60 tools`）。下方按时间倒序保留各轮增量，其中"91 个工具""0.41.0 候选"等陈述均为各自时点的历史记录，不代表当前工具数；`0.47.4`–`0.50.6` 各轮增量的细节记录在 `.doc/code-update-*.md`，本表未逐轮补登。
+
+2026-09-25 增量（`0.50.15`，选择文本贯通：`manage_text_elements` 从"只能维护 3 字符文本符号"改为按条目类型维护）：SAP 文本池（`TEXTPOOL`）用 `ID` 区分两类条目——`I` 是文本符号（KEY 恰好 3 字符），`S` 是**选择文本**（KEY 是选择屏幕元素名：`PARAMETER`／`SELECT-OPTION`／`RADIOBUTTON`，1–8 字符）。屏幕元素的中文标签正是 `S` 行，而此前 `manage_text_elements` 全链路只认 `I`：服务端 `validateProgramTextElements` 硬编码 `^[A-Z0-9_]{3}$`；助手生成脚本的文本分支把 `TEXTPOOL-ID` 钉死为 `'I'`（读取循环也是 `WHERE id = 'I'`，写入 `MODIFY … WHERE id = 'I'`）；ADT 通路的 `getTextElements`／`setTextElements` 三处都硬编码 `"symbols"` 类别。后果有两半：**写不进**（`P_WERKS` 被以 `Text symbol ID P_WERKS must contain exactly 3 characters` 拒绝，参数校验阶段即失败）与**看不见**（读取只发布 `I` 行，已存在的 `S` 行既无法发现也无法核对）。本轮按链条整体修复：① 新增单一规则来源 `src/text-elements.ts`（`idType` 归一、按类型的 KEY 规则与文本上限、`textElementKey()`=`类型:KEY` 的条目身份、`textElementCategory()`）——服务端此前有**三份**相同规则的副本（`tools.ts` 的 `validateProgramTextElements`、`adt-backend.ts` 的 `normalizeTextElements`／`mergeTextElementChanges`），全部收敛到该模块；② 契约新增可选 `idType: "SYMBOL" | "SELECTION"`（**缺省 `SYMBOL`，既有调用语义不变**），读取输出改为 `- [SYMBOL] 001: …`／`- [SELECTION] P_WERKS: …`，写入与合并一律按 `(类型, KEY)` 判定，因此**同名符号与选择文本互不覆盖**；③ 选择文本上限取 **30 字符**——ADT 文本元素服务自身对 selections 类的限制（`abap-adt-api` 亦在此处校验），报告中提出的 132 字符未采纳：助手直写文本池虽可存更长的串，但那样会写出 ADT 与 SE38 都读不回的条目；选择文本**不接受 `maxLength`**（其 `TEXTPOOL-LENGTH` 由文本长度决定，声明长度是符号概念），传入即以 `has no declared length` 拒绝；④ 助手生成器：载荷新增 `TYPE` 属性（缺省 `SYMBOL`），写入按类型选择文本池行 `I`／`S`、按类型分别校验 KEY（`id+3`／`id+8` 越界检查）、查找与 `MODIFY` 一律用 `lv_text_pool_id`，读取循环改为 `WHERE id = 'I' OR id = 'S'` 并对每行发布 `TYPE`（`SYMBOL`／`SELECTION`）——`INSERT TEXTPOOL` 是整表写入，读取-再写回的结构保持不变，因此未触碰的条目（含既有 `S` 行）仍被保留；⑤ 能力表把 `READ_TEXT_ELEMENTS`／`MERGE_TEXT_ELEMENTS` 两行抬到协议 **2.12**（仓库助手的协议是单一单调刻度，`PROTOCOL|MAX` 由表推导为 2.12——必须高于该助手此前的最大值 2.11，否则能力闸门无法把新正文与"写不进选择文本的旧正文"区分开；能力项 29 → **30**），并给 `manage_text_elements` **单独建组** `repository-helper-text-elements`：`repository-helper-ecc-fallbacks` 里的消息类读写仍是 1.7，同组混合最低协议会让两个仍可用的工具被报成 `unsupported`；注册表同时补上该工具的操作码清单（`READ_TEXT_ELEMENTS`／`MERGE_TEXT_ELEMENTS`），能力判定因此可走"版本+操作码清单"而不只凭版本。防漂移守卫：新增 `test/text-element-selection.test.ts`，直接读生成器脚本断言"按类型选行、按类型校验、查找/写入不再硬编码 `'I'`、读取发布两类条目与 `TYPE`、协议行与注册表最低版本一致"，并按 `z.object(shape).strict()` 校验契约接受 `idType`；`test/tools.test.ts` 增加同名两类型共存、选择文本 KEY／长度／`maxLength` 拒绝、ADT 双类别读写只动自身类别等往返用例。**助手尚未部署到 `w200`（线上仍是旧协议）⇒ 报告里该工具为 version-check `unsupported`，属待部署状态而非缺陷。** 静态检查与 `npm run verify` 证据见 `.doc/code-update-20260925-*.md`。**未修改任何 SAP 标准对象，未释放传输，未执行 SAP 运行时验证。**
 
 2026-09-25 增量（`0.50.14`，DDIC 引用对 `REFTABLE`/`REFFIELD` 在结构与追加结构上的贯通）：数量（QUAN）与币种（CURR）字段必须用 `DD03P-REFTABLE`/`REFFIELD` 指明单位或币种所在的表与字段，否则 DDIC 激活直接拒绝该字段（`specify reference table and reference field`，2026-09-24 实机确认）；此前只有透明表写入路径能表达这对属性——服务端 `upsert_ddic_structure`／`upsert_append_structure_fields` 的 `fields` 只保留 `name`/`dataElement`，助手生成脚本又把这对属性关在 `lv_object_type = 'TABL'` 组内，结构写入必被助手以 `PROPERTY_NOT_ALLOWED` 拒绝，即"在结构里放一个可激活的数量组件"当时无法表达。本轮按链条整体修复：① 契约层抽出 `ddicTableFieldReference`，由 `ddicTableField`／`ddicAppendedTableField`／`ddicStructureField`／`ddicTableFieldChange` 共用，两个结构写入工具的 `fields` 从此接受该对属性；② 服务端把"两半齐全才发布"收敛为单一函数 `fieldReferencePair()`，定义读取（结构分支、透明表分支）与写入的期望定义回显全部走它，半对在发出任何 SAP 调用之前即以 `referenceTable and referenceField must be supplied together` 拒绝；③ 助手生成器把这对属性从表专属组提到通用字段属性白名单（`STRU` 与 `TABL` 都接受，`KEYFLAG`/`NOTNULL` 等仍留在表专属组），并在结构读取、透明表读取与非活动版本定义三处一并**发布**该对属性——读不到它，patch 就会在 `DDIF_TABL_PUT` 的整行集替换下静默抹掉未触碰字段的引用；④ 能力分组把 `upsert_ddic_structure` 从 `ddic-helper-write-activation-verified` 拆出为 `ddic-helper-structure-reference`，助手能力表 4 行抬到协议 **1.17**（`PROTOCOL|MAX` 由表推导为 1.17，能力项 28 → **29**，工具面 143／82／12 与 60 个受能力约束的工具数不变）；`create_ddic_transparent_table`／`append_ddic_transparent_table_fields`／`patch_ddic_transparent_table_fields` 同步抬到 1.17，因为它们的期望定义现在会断言该对属性，旧助手读不回来会把正确写入报成不匹配。`upsert_append_structure_fields` **保持 1.16**：该操作解析 A1 行时有自己的白名单（自 1.15 起已允许该对属性），结果按字段数与字段名校验，既不依赖也不需要读取侧的发布。防漂移守卫：新增 `test/ddic-field-reference.test.ts`，直接读生成器脚本断言"通用白名单在表专属组之外允许该对属性""结构、透明表、非活动三处读取都发布该对属性""追加结构自己的白名单仍接受该对属性"，并按 `mcp.ts` 的同一包装（`z.object(shape).strict()`）校验 5 个字段写入工具的契约；`test/tools.test.ts` 增加结构写入、追加结构写入、读回可见与 patch 不丢引用的往返用例；`test/helper-capabilities-payload.test.ts` 的版本分组由 `1.16:14` 改为 `1.16:10 / 1.17:4`。**助手尚未部署到 `w200`（线上仍是旧协议）⇒ 报告里这 4 项为 version-check `unsupported`，属待部署状态而非缺陷。** 静态检查与 `npm run verify` 的执行证据见 `.doc/code-update-20260925-*.md`。**未修改任何 SAP 对象，未执行 SAP 运行时验证。**
 
@@ -69,124 +71,124 @@
 
 工作区[全局实施基线](../../.doc/global-implementation-baseline.md)统一M1-M8、延期决定与证据索引（不随便携包交付）。M6.4为引用分析，M6.5为真实调试；历史m64-\*调试记录不重命名。
 
-| 工具                                         | 名称/输入契约 | 独立实现                                   | VS Code依赖替代           | 当前结论                                 |
-| -------------------------------------------- | ------------- | ------------------------------------------ | ------------------------- | ---------------------------------------- |
-| `get_connected_systems`                      | 已冻结        | 已实现                                     | 独立连接配置              | 真实双跑通过                             |
-| `get_capability_report`                      | 独立扩展      | 已实现，只读动态能力报告                   | ADT/助手有界只读探测      | w200只读验收通过                         |
-| `get_runtime_info`                           | 独立扩展      | 运行版本及启动/当前磁盘指纹对照            | 独立Node文件读取          | 0.36.31候选；测试待人工执行              |
-| `preview_source_changes`                     | 独立扩展      | 多对象只读差异、非活动版本和分配预检       | ADT读取及现有仓库助手     | 0.36.31候选；不写入，真实预检待验        |
-| `search_sap_locks`                           | 独立扩展      | 精确用户与可选表/锁对象/字面键查询         | 新只读助手候选            | 第二批本地；未部署、未执行测试           |
-| `search_failed_updates`                      | 独立扩展      | 当前客户端、一小时内精确用户失败更新检索   | 新只读助手候选            | 第二批本地；非空/空/权限样本待验         |
-| `read_failed_update`                         | 独立扩展      | 精确更新键模块、错误标识、修订及关联线索   | 新只读助手候选            | 第二批本地；无参数载荷或完整错误正文     |
-| `abap_debug_session`                         | 独立扩展      | 已实现，含只读precheck                     | ADT Debugger API          | 预检已验；未通告，真实调试未验           |
-| `abap_debug_breakpoint`                      | 独立扩展      | 已实现，仅Z/Y源码断点                      | ADT Debugger API          | Mock通过                                 |
-| `abap_debug_status`                          | 独立扩展      | 已实现，会话状态与清理                     | 服务内会话状态            | idle/零断点已验；真实会话清理未验        |
-| `abap_debug_stack`                           | 独立扩展      | 已实现，暂停调用栈                         | ADT Debugger API          | Mock通过                                 |
-| `abap_debug_variable`                        | 独立扩展      | 已实现，有界只读变量                       | ADT Debugger API          | Mock通过                                 |
-| `abap_debug_step`                            | 独立扩展      | 已实现，单步与继续                         | ADT Debugger API          | Mock通过                                 |
-| `sap_helper_status`                          | 独立扩展      | 已实现，只读PING与目标校验                 | SAP SOAP/RFC助手          | w200通过                                 |
-| `read_function_module_interface`             | 独立扩展      | 已实现，接口、源码与指纹回读               | SAP仓库助手1.3            | w200通过                                 |
-| `test_remote_function_module`                | 独立扩展      | 已实现，客户RFC标量/结构/表断言            | SAP SOAP/RFC              | w200通过                                 |
-| `invoke_customer_function_module`            | 独立扩展      | 已实现，白名单客户RFC正式调用              | SAP SOAP/RFC              | w200通过                                 |
-| `get_customer_function_call_status`          | 独立扩展      | 已实现，持久化调用凭证只读查询             | Node本地文件系统          | 本地通过                                 |
-| `get_write_operation_status`                 | 独立扩展      | 已实现，统一写操作凭证只读查询             | Node本地文件系统          | w200通过                                 |
-| `list_write_recovery_operations`             | 独立扩展      | 已实现，中断/陈旧操作只读列表              | Node本地文件系统          | 本地通过                                 |
-| `release_write_operation_lock`               | 独立扩展      | 已实现，人工确认后仅解除本地锁             | Node本地文件系统          | 本地通过                                 |
-| `create_function_module_with_interface`      | 独立扩展      | 已实现，客户远程函数受控创建               | SAP仓库助手1.3            | w200通过                                 |
-| `patch_function_module_interface`            | 独立扩展      | 已实现，函数接口有序安全补丁               | SAP仓库助手2.0            | IMPORTING四操作已验证                    |
-| `inspect_repository_assignment`              | 独立扩展      | 已实现，包与开放传输只读检查               | SAP仓库助手1.3            | w200通过                                 |
-| `read_abap_screen`                           | 独立扩展      | 已实现，原生结构回读                       | SAP仓库助手1.1            | w200通过                                 |
-| `upsert_abap_screen`                         | 独立扩展      | 已实现，客户屏幕受控写入                   | SAP仓库助手1.1            | w200通过                                 |
-| `patch_abap_screen`                          | 独立扩展      | 已实现，组件增删改及坐标移动               | SAP仓库助手1.4            | w200通过                                 |
-| `validate_dynpro_application`                | 独立扩展      | 已实现，屏幕与PBO/PAI静态校验              | 仓库助手及ADT源码读取     | w200通过                                 |
-| `read_abap_gui_definition`                   | 独立扩展      | 已实现，完整原生CUA定义回读                | SAP仓库助手1.5            | w200通过                                 |
-| `patch_abap_gui_definition`                  | 独立扩展      | 已实现，原生CUA行级增删改                  | SAP仓库助手1.5            | w200 Titlebar通过                        |
-| `create_module_pool`                         | 独立扩展      | 已实现，客户模块池创建                     | SAP仓库助手1.1            | w200通过                                 |
-| `delete_module_pool`                         | 独立扩展      | 已实现，客户模块池受控删除                 | SAP仓库助手               | w200临时对象删除及不存在回读通过         |
-| `read_transaction_code`                      | 独立扩展      | 已实现，事务与GUI属性回读                  | SAP仓库助手1.1            | w200通过                                 |
-| `create_transaction_code`                    | 独立扩展      | 已实现，客户对话事务创建                   | SAP仓库助手1.1            | w200通过                                 |
-| `delete_transaction_code`                    | 独立扩展      | 已实现，对话/Report事务受控删除            | SAP仓库助手               | 对话及Report临时对象范围已验             |
-| `create_report_transaction`                  | 独立扩展      | 已实现，仅新建客户Report事务               | SAP仓库助手1.2            | w200通过                                 |
-| `read_abap_message_class`                    | 独立扩展      | 已实现，活动消息类完整回读                 | ADT或仓库助手1.7          | w200助手通过                             |
-| `create_abap_message_class`                  | 独立扩展      | 已实现，仅新建客户消息类                   | ADT或仓库助手1.7          | w200助手通过                             |
-| `update_abap_message_class`                  | 独立扩展      | 已实现，版本化消息增量更新                 | SAP仓库助手               | w200增量更新及陈旧版本拒绝已验           |
-| `delete_abap_message_class`                  | 独立扩展      | 已实现，版本化客户消息类删除               | SAP仓库助手1.9            | 真实SAP已通过                            |
-| `read_ddic_domain`                           | 独立扩展      | 已实现，活动域和固定值回读                 | SAP DDIC助手1.2           | w200通过                                 |
-| `upsert_ddic_domain`                         | 独立扩展      | 已实现，客户域完整替换                     | SAP DDIC助手1.2           | w200通过                                 |
-| `read_ddic_data_element`                     | 独立扩展      | 已实现，活动数据元素回读                   | SAP DDIC助手1.2           | w200通过                                 |
-| `upsert_ddic_data_element`                   | 独立扩展      | 已实现，客户数据元素完整替换               | SAP DDIC助手1.2           | w200通过                                 |
-| `read_ddic_structure`                        | 独立扩展      | 已实现，活动平面结构回读                   | SAP DDIC助手1.2           | w200通过                                 |
-| `upsert_ddic_structure`                      | 独立扩展      | 已实现，客户平面结构完整替换               | SAP DDIC助手1.2           | w200通过                                 |
-| `read_ddic_transparent_table`                | 独立扩展      | 已实现，活动透明表完整定义回读             | SAP DDIC助手1.3           | w200通过                                 |
-| `create_ddic_transparent_table`              | 独立扩展      | 已实现，仅新建客户透明表                   | SAP DDIC助手1.3           | w200通过                                 |
-| `append_ddic_transparent_table_fields`       | 独立扩展      | 候选支持复杂布局并保留Include/Append       | SAP DDIC助手1.7           | 本地测试及真实复杂表待人工验证           |
-| `patch_ddic_transparent_table_fields`        | 独立扩展      | 候选仅修改直接字段并保留复杂组件           | SAP DDIC助手1.7           | 本地测试及真实复杂表待人工验证           |
-| `patch_ddic_transparent_table_settings`      | 独立扩展      | 受控修改数据类、大小、缓冲和日志设置       | SAP DDIC助手1.7           | 本地测试及真实SAP待人工验证              |
-| `read_ddic_table_conversion_status`          | 独立扩展      | 只读TBATG状态及稳定指纹                    | 有界单表读取              | 源码完成；真实非空状态待人工验证         |
-| `recover_ddic_table_conversion`              | 独立扩展      | 精确状态门禁后调用SAP标准转换器            | SAP DDIC助手1.7           | 未执行真实转换；不承诺重建丢失值         |
-| `read_ddic_table_type`                       | 独立扩展      | 已实现，活动表类型回读                     | SAP DDIC助手1.2           | w200通过                                 |
-| `upsert_ddic_table_type`                     | 独立扩展      | 已实现，STANDARD默认键表类型替换           | SAP DDIC助手1.2           | w200通过                                 |
-| `delete_ddic_object`                         | 独立扩展      | 已实现，含透明表受控删除                   | SAP DDIC助手1.6           | w200通过                                 |
-| `search_abap_objects`                        | 已冻结        | 已实现                                     | `ADTClient.searchObject`  | 真实双跑通过                             |
-| `get_abap_object_info`                       | 已冻结        | 已实现，含DDIC和Enhancement                | ADT源码与DD表查询         | 真实双跑通过                             |
-| `get_abap_object_lines`                      | 已冻结        | 已实现，含方法提取和DDIC回退               | ADT源码与DD表查询         | 真实双跑通过                             |
-| `get_batch_lines`                            | 已冻结        | 已实现                                     | 独立并行读取              | 真实双跑通过                             |
-| `get_object_by_uri`                          | 已冻结        | 已实现                                     | 直接读取ADT URI           | 真实调用通过                             |
-| `search_abap_object_lines`                   | 已冻结        | 已实现，含正则和增强搜索                   | 服务端源码搜索            | 真实调用通过                             |
-| `inspect_source_enhancements`                | 独立扩展      | 活动实现/元素/位置元数据及源码标记         | ADT增强端点及活动源码     | 已补充Mock用例；尚未执行或真实验收       |
-| `search_enhancement_objects`                 | 独立扩展      | 五类增强仓库对象独立搜索及状态             | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收       |
-| `search_customer_exit_objects`               | 独立扩展      | SMOD/CMOD独立仓库搜索及状态                | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收       |
-| `read_customer_exit_definition`              | 独立扩展      | 精确SMOD定义、原始类型及组件成员           | SAP助手2.2 MODSAP         | 已补充Mock用例；助手未部署或真实验收     |
-| `read_customer_exit_project`                 | 独立扩展      | 精确CMOD项目、原始状态及增强分配           | SAP助手2.2 MODATTR/MODACT | 已补充Mock用例；助手未部署或真实验收     |
-| `inspect_customer_function_exits`            | 独立扩展      | 函数出口调用、精确出口函数及ZX include关联 | 活动源码及仓库搜索        | 已补充Mock用例；尚未执行或真实验收       |
-| `inspect_customer_screen_menu_exits`         | 独立扩展      | Customer Subscreen钩子及+菜单功能码检查    | 屏幕Flow Logic及GUI定义   | 已补充Mock用例；尚未执行或真实验收       |
-| `search_bte_dispatchers`                     | 独立扩展      | Event/Process调度函数搜索及标识符提取      | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收       |
-| `read_bte_configuration`                     | 独立扩展      | 定义、SAP/客户处理分配及原始激活字段       | SAP助手2.3 BTE配置表      | 已补充Mock用例；助手未部署或真实验收     |
-| `prepare_enhancement_configuration_workflow` | 独立扩展      | CMOD/FIBF/FI配置只读预检及受控人工步骤     | 现有读工具及静态流程模板  | 已补充Mock用例；尚未执行或真实验收       |
-| `search_badi_objects`                        | 独立扩展      | Classic/New精确仓库子类型独立搜索          | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收       |
-| `read_classic_badi_definition`               | 独立扩展      | Classic定义、接口、过滤、实现类及激活原值  | SAP助手2.4 Classic表      | 已补充Mock用例；助手未部署或真实验收     |
-| `manage_classic_badi_implementation`         | 独立扩展      | Classic实现创建、激活、停用、删除          | SAP助手2.6 SXO标准API     | 已补充Mock用例；未执行或真实验收         |
-| `read_enhancement_implementation`            | 独立扩展      | ENHO四类版本状态、包、实现及逐Hook源码     | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收         |
-| `create_enhancement_hook_implementation`     | 独立扩展      | 显式/隐式Hook实现创建、保存及激活          | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收         |
-| `create_new_badi_implementation`             | 独立扩展      | New BAdI实现、类、过滤器创建及激活         | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收         |
-| `update_enhancement_hook_implementation`     | 独立扩展      | 按extId更新单个Hook源码并激活              | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收         |
-| `update_new_badi_implementation`             | 独立扩展      | 更新New BAdI类、过滤器、默认/活动状态      | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收         |
-| `manage_enhancement_implementation_state`    | 独立扩展      | 激活或丢弃ENHO非活动版本                   | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收         |
-| `delete_enhancement_implementation`          | 独立扩展      | 指纹/包/传输保护的ENHO永久删除             | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收         |
-| `inspect_enhancement_framework`              | 独立扩展      | 显式锚点及源码推导的隐式候选               | 活动源码静态解析          | 已补充Mock用例；尚未执行或真实验收       |
-| `inspect_fico_rule_exit_program`             | 独立扩展      | FI出口目录声明与FORM实现关联               | 活动程序源码静态解析      | 已补充Mock用例；尚未执行或真实验收       |
-| `get_abap_object_workspace_uri`              | 已冻结        | 已实现                                     | 确定性 `adt://` URI       | 真实调用通过                             |
-| `get_abap_object_url`                        | 已冻结        | 已实现                                     | 独立生成WebGUI URL        | 真实调用通过                             |
-| `find_where_used`                            | 已冻结        | 已实现，含旧RIS适配与超时诊断              | ADT/RIS引用映射           | 映射超时/RIS故障；真实引用正例未验       |
-| `get_sap_system_info`                        | 已冻结        | 固定表后备及来源状态                       | 标准只读RFC，双指纹       | 接口范围已验；时区原生独立对照未验       |
-| `get_version_history`                        | 已冻结        | 已实现，含读取和比较版本                   | `ADTClient.revisions`     | w200通过                                 |
-| `get_abap_diagnostics`                       | 已冻结        | 已实现，检查活动源码                       | ADT syntax check          | w200通过                                 |
-| `get_abap_sql_syntax`                        | 已冻结        | 已实现，无头安全指南                       | 内置静态文档              | Mock通过                                 |
-| `execute_data_query`                         | 已冻结        | 已实现，只读/限行/internal                 | ADT及限定后备             | 限定查询有证据；非通用SQL恢复证明        |
-| `read_abap_table`                            | 独立扩展      | 有界结构化单表查询                         | ADT/受限标准RFC           | w200五项真实检查通过；仅单表范围         |
-| `run_atc_analysis`                           | 兼容扩展      | 批量语法报告及ATC完整性保护                | ADT语法诊断/可选原生ATC   | 语法/边界已验；原生ATC批准延期           |
-| `run_sci_analysis`                           | 独立扩展      | 显式目标、隔离helper与E2 profile           | SAP SCI助手               | 三类对象/三规则入口已验；整体部分验证    |
-| `run_unit_tests`                             | 已冻结        | 已实现，不自动激活                         | ADT ABAP Unit             | 请求已通；既有样本无测试类，不算断言执行 |
-| `discover_application_logs`                  | 独立扩展      | 已实现，有界日志头抽样                     | SAP只读日志助手           | 非空读取有记录；不代表全量发现           |
-| `search_application_logs`                    | 独立扩展      | 已实现，精确对象与有界检索                 | SAP只读日志助手           | 已有限定检索证据；不扩展到全权限范围     |
-| `read_application_log`                       | 独立扩展      | 已实现，正文、分页与修订检查               | SAP只读日志助手           | 限定正文/分页/修订/英文原生对照已验      |
-| `search_background_jobs`                     | 独立扩展      | 已实现，精确作业与有界检索                 | SAP只读运行日志助手       | 已有限定检索证据；非作业管理能力         |
-| `read_background_job_log`                    | 独立扩展      | 已实现，八槽正文与修订分页                 | SAP只读运行日志助手       | 两作业正文/分页/修订/原生对照已验        |
-| `read_system_logs`                           | 独立扩展      | 已实现，本机有界尾部读取                   | SAP只读运行日志助手       | 英文正文/程序过滤已验；非全实例全历史    |
-| `correlate_sap_logs`                         | 独立扩展      | 已实现，固定来源及候选关联                 | 复用只读日志工具          | 覆盖/质量标志已验；不证明因果            |
-| `analyze_abap_dumps`                         | 已冻结        | 已实现，只读现有Dump                       | ADT feeds/dumps           | w200通过                                 |
-| `diagnose_sap_failure`                       | 独立扩展      | ST22结构化诊断、过滤和时间候选关联         | ADT feed + 本地解析       | 0.36.8专用工具真实非空读取已验           |
-| `analyze_abap_traces`                        | 已冻结        | 已实现，只读现有Trace                      | ADT trace APIs            | w200返回404                              |
-| `manage_transport_requests`                  | 已冻结        | 已实现，四个只读查询动作                   | ADT或仓库助手1.7          | w200助手通过                             |
-| `cleanup_transport_entries`                  | 独立扩展      | 已实现，开放任务精确条目清理与写后回读     | 原生ADT removeobject      | 本地静态待检；w200未验证                 |
-| `abap_download`                              | 已冻结        | 已实现，对象和包本地导出                   | Node文件系统 + ADT读取    | w200包内通过                             |
-| `adt_discovery_export`                       | 已冻结        | 已实现，四文件Markdown导出                 | Node文件系统 + ADT发现    | w200包内通过                             |
-| `replace_string_in_abap_object`              | 已冻结        | 已实现，客户源码矩阵和完整锁流程           | ADT lock/source/activate  | w200类写通过                             |
-| `abap_activate`                              | 已冻结        | 已实现，仅限显式Z/Y对象URI                 | ADT activation            | w200链路通过                             |
-| `create_object_programmatically`             | 已冻结        | 已实现，客户源码创建和传输保护             | ADT或仓库助手1.7          | Include助手通过                          |
-| `delete_abap_source_object`                  | 独立扩展      | 已实现，客户源码对象受控删除               | ADT原生锁和删除           | w200通过                                 |
-| `create_test_include`                        | 已冻结        | 已实现，客户类测试Include创建              | ADT class include API     | w200通过                                 |
-| `manage_text_elements`                       | 已冻结        | 三类对象ADT优先、助手后备                  | ADT或仓库助手1.7          | w200助手通过                             |
+| 工具                                         | 名称/输入契约 | 独立实现                                                    | VS Code依赖替代           | 当前结论                                      |
+| -------------------------------------------- | ------------- | ----------------------------------------------------------- | ------------------------- | --------------------------------------------- |
+| `get_connected_systems`                      | 已冻结        | 已实现                                                      | 独立连接配置              | 真实双跑通过                                  |
+| `get_capability_report`                      | 独立扩展      | 已实现，只读动态能力报告                                    | ADT/助手有界只读探测      | w200只读验收通过                              |
+| `get_runtime_info`                           | 独立扩展      | 运行版本及启动/当前磁盘指纹对照                             | 独立Node文件读取          | 0.36.31候选；测试待人工执行                   |
+| `preview_source_changes`                     | 独立扩展      | 多对象只读差异、非活动版本和分配预检                        | ADT读取及现有仓库助手     | 0.36.31候选；不写入，真实预检待验             |
+| `search_sap_locks`                           | 独立扩展      | 精确用户与可选表/锁对象/字面键查询                          | 新只读助手候选            | 第二批本地；未部署、未执行测试                |
+| `search_failed_updates`                      | 独立扩展      | 当前客户端、一小时内精确用户失败更新检索                    | 新只读助手候选            | 第二批本地；非空/空/权限样本待验              |
+| `read_failed_update`                         | 独立扩展      | 精确更新键模块、错误标识、修订及关联线索                    | 新只读助手候选            | 第二批本地；无参数载荷或完整错误正文          |
+| `abap_debug_session`                         | 独立扩展      | 已实现，含只读precheck                                      | ADT Debugger API          | 预检已验；未通告，真实调试未验                |
+| `abap_debug_breakpoint`                      | 独立扩展      | 已实现，仅Z/Y源码断点                                       | ADT Debugger API          | Mock通过                                      |
+| `abap_debug_status`                          | 独立扩展      | 已实现，会话状态与清理                                      | 服务内会话状态            | idle/零断点已验；真实会话清理未验             |
+| `abap_debug_stack`                           | 独立扩展      | 已实现，暂停调用栈                                          | ADT Debugger API          | Mock通过                                      |
+| `abap_debug_variable`                        | 独立扩展      | 已实现，有界只读变量                                        | ADT Debugger API          | Mock通过                                      |
+| `abap_debug_step`                            | 独立扩展      | 已实现，单步与继续                                          | ADT Debugger API          | Mock通过                                      |
+| `sap_helper_status`                          | 独立扩展      | 已实现，只读PING与目标校验                                  | SAP SOAP/RFC助手          | w200通过                                      |
+| `read_function_module_interface`             | 独立扩展      | 已实现，接口、源码与指纹回读                                | SAP仓库助手1.3            | w200通过                                      |
+| `test_remote_function_module`                | 独立扩展      | 已实现，客户RFC标量/结构/表断言                             | SAP SOAP/RFC              | w200通过                                      |
+| `invoke_customer_function_module`            | 独立扩展      | 已实现，白名单客户RFC正式调用                               | SAP SOAP/RFC              | w200通过                                      |
+| `get_customer_function_call_status`          | 独立扩展      | 已实现，持久化调用凭证只读查询                              | Node本地文件系统          | 本地通过                                      |
+| `get_write_operation_status`                 | 独立扩展      | 已实现，统一写操作凭证只读查询                              | Node本地文件系统          | w200通过                                      |
+| `list_write_recovery_operations`             | 独立扩展      | 已实现，中断/陈旧操作只读列表                               | Node本地文件系统          | 本地通过                                      |
+| `release_write_operation_lock`               | 独立扩展      | 已实现，人工确认后仅解除本地锁                              | Node本地文件系统          | 本地通过                                      |
+| `create_function_module_with_interface`      | 独立扩展      | 已实现，客户远程函数受控创建                                | SAP仓库助手1.3            | w200通过                                      |
+| `patch_function_module_interface`            | 独立扩展      | 已实现，函数接口有序安全补丁                                | SAP仓库助手2.0            | IMPORTING四操作已验证                         |
+| `inspect_repository_assignment`              | 独立扩展      | 已实现，包与开放传输只读检查                                | SAP仓库助手1.3            | w200通过                                      |
+| `read_abap_screen`                           | 独立扩展      | 已实现，原生结构回读                                        | SAP仓库助手1.1            | w200通过                                      |
+| `upsert_abap_screen`                         | 独立扩展      | 已实现，客户屏幕受控写入                                    | SAP仓库助手1.1            | w200通过                                      |
+| `patch_abap_screen`                          | 独立扩展      | 已实现，组件增删改及坐标移动                                | SAP仓库助手1.4            | w200通过                                      |
+| `validate_dynpro_application`                | 独立扩展      | 已实现，屏幕与PBO/PAI静态校验                               | 仓库助手及ADT源码读取     | w200通过                                      |
+| `read_abap_gui_definition`                   | 独立扩展      | 已实现，完整原生CUA定义回读                                 | SAP仓库助手1.5            | w200通过                                      |
+| `patch_abap_gui_definition`                  | 独立扩展      | 已实现，原生CUA行级增删改                                   | SAP仓库助手1.5            | w200 Titlebar通过                             |
+| `create_module_pool`                         | 独立扩展      | 已实现，客户模块池创建                                      | SAP仓库助手1.1            | w200通过                                      |
+| `delete_module_pool`                         | 独立扩展      | 已实现，客户模块池受控删除                                  | SAP仓库助手               | w200临时对象删除及不存在回读通过              |
+| `read_transaction_code`                      | 独立扩展      | 已实现，事务与GUI属性回读                                   | SAP仓库助手1.1            | w200通过                                      |
+| `create_transaction_code`                    | 独立扩展      | 已实现，客户对话事务创建                                    | SAP仓库助手1.1            | w200通过                                      |
+| `delete_transaction_code`                    | 独立扩展      | 已实现，对话/Report事务受控删除                             | SAP仓库助手               | 对话及Report临时对象范围已验                  |
+| `create_report_transaction`                  | 独立扩展      | 已实现，仅新建客户Report事务                                | SAP仓库助手1.2            | w200通过                                      |
+| `read_abap_message_class`                    | 独立扩展      | 已实现，活动消息类完整回读                                  | ADT或仓库助手1.7          | w200助手通过                                  |
+| `create_abap_message_class`                  | 独立扩展      | 已实现，仅新建客户消息类                                    | ADT或仓库助手1.7          | w200助手通过                                  |
+| `update_abap_message_class`                  | 独立扩展      | 已实现，版本化消息增量更新                                  | SAP仓库助手               | w200增量更新及陈旧版本拒绝已验                |
+| `delete_abap_message_class`                  | 独立扩展      | 已实现，版本化客户消息类删除                                | SAP仓库助手1.9            | 真实SAP已通过                                 |
+| `read_ddic_domain`                           | 独立扩展      | 已实现，活动域和固定值回读                                  | SAP DDIC助手1.2           | w200通过                                      |
+| `upsert_ddic_domain`                         | 独立扩展      | 已实现，客户域完整替换                                      | SAP DDIC助手1.2           | w200通过                                      |
+| `read_ddic_data_element`                     | 独立扩展      | 已实现，活动数据元素回读                                    | SAP DDIC助手1.2           | w200通过                                      |
+| `upsert_ddic_data_element`                   | 独立扩展      | 已实现，客户数据元素完整替换                                | SAP DDIC助手1.2           | w200通过                                      |
+| `read_ddic_structure`                        | 独立扩展      | 已实现，活动平面结构回读                                    | SAP DDIC助手1.2           | w200通过                                      |
+| `upsert_ddic_structure`                      | 独立扩展      | 已实现，客户平面结构完整替换                                | SAP DDIC助手1.2           | w200通过                                      |
+| `read_ddic_transparent_table`                | 独立扩展      | 已实现，活动透明表完整定义回读                              | SAP DDIC助手1.3           | w200通过                                      |
+| `create_ddic_transparent_table`              | 独立扩展      | 已实现，仅新建客户透明表                                    | SAP DDIC助手1.3           | w200通过                                      |
+| `append_ddic_transparent_table_fields`       | 独立扩展      | 候选支持复杂布局并保留Include/Append                        | SAP DDIC助手1.7           | 本地测试及真实复杂表待人工验证                |
+| `patch_ddic_transparent_table_fields`        | 独立扩展      | 候选仅修改直接字段并保留复杂组件                            | SAP DDIC助手1.7           | 本地测试及真实复杂表待人工验证                |
+| `patch_ddic_transparent_table_settings`      | 独立扩展      | 受控修改数据类、大小、缓冲和日志设置                        | SAP DDIC助手1.7           | 本地测试及真实SAP待人工验证                   |
+| `read_ddic_table_conversion_status`          | 独立扩展      | 只读TBATG状态及稳定指纹                                     | 有界单表读取              | 源码完成；真实非空状态待人工验证              |
+| `recover_ddic_table_conversion`              | 独立扩展      | 精确状态门禁后调用SAP标准转换器                             | SAP DDIC助手1.7           | 未执行真实转换；不承诺重建丢失值              |
+| `read_ddic_table_type`                       | 独立扩展      | 已实现，活动表类型回读                                      | SAP DDIC助手1.2           | w200通过                                      |
+| `upsert_ddic_table_type`                     | 独立扩展      | 已实现，STANDARD默认键表类型替换                            | SAP DDIC助手1.2           | w200通过                                      |
+| `delete_ddic_object`                         | 独立扩展      | 已实现，含透明表受控删除                                    | SAP DDIC助手1.6           | w200通过                                      |
+| `search_abap_objects`                        | 已冻结        | 已实现                                                      | `ADTClient.searchObject`  | 真实双跑通过                                  |
+| `get_abap_object_info`                       | 已冻结        | 已实现，含DDIC和Enhancement                                 | ADT源码与DD表查询         | 真实双跑通过                                  |
+| `get_abap_object_lines`                      | 已冻结        | 已实现，含方法提取和DDIC回退                                | ADT源码与DD表查询         | 真实双跑通过                                  |
+| `get_batch_lines`                            | 已冻结        | 已实现                                                      | 独立并行读取              | 真实双跑通过                                  |
+| `get_object_by_uri`                          | 已冻结        | 已实现                                                      | 直接读取ADT URI           | 真实调用通过                                  |
+| `search_abap_object_lines`                   | 已冻结        | 已实现，含正则和增强搜索                                    | 服务端源码搜索            | 真实调用通过                                  |
+| `inspect_source_enhancements`                | 独立扩展      | 活动实现/元素/位置元数据及源码标记                          | ADT增强端点及活动源码     | 已补充Mock用例；尚未执行或真实验收            |
+| `search_enhancement_objects`                 | 独立扩展      | 五类增强仓库对象独立搜索及状态                              | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收            |
+| `search_customer_exit_objects`               | 独立扩展      | SMOD/CMOD独立仓库搜索及状态                                 | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收            |
+| `read_customer_exit_definition`              | 独立扩展      | 精确SMOD定义、原始类型及组件成员                            | SAP助手2.2 MODSAP         | 已补充Mock用例；助手未部署或真实验收          |
+| `read_customer_exit_project`                 | 独立扩展      | 精确CMOD项目、原始状态及增强分配                            | SAP助手2.2 MODATTR/MODACT | 已补充Mock用例；助手未部署或真实验收          |
+| `inspect_customer_function_exits`            | 独立扩展      | 函数出口调用、精确出口函数及ZX include关联                  | 活动源码及仓库搜索        | 已补充Mock用例；尚未执行或真实验收            |
+| `inspect_customer_screen_menu_exits`         | 独立扩展      | Customer Subscreen钩子及+菜单功能码检查                     | 屏幕Flow Logic及GUI定义   | 已补充Mock用例；尚未执行或真实验收            |
+| `search_bte_dispatchers`                     | 独立扩展      | Event/Process调度函数搜索及标识符提取                       | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收            |
+| `read_bte_configuration`                     | 独立扩展      | 定义、SAP/客户处理分配及原始激活字段                        | SAP助手2.3 BTE配置表      | 已补充Mock用例；助手未部署或真实验收          |
+| `prepare_enhancement_configuration_workflow` | 独立扩展      | CMOD/FIBF/FI配置只读预检及受控人工步骤                      | 现有读工具及静态流程模板  | 已补充Mock用例；尚未执行或真实验收            |
+| `search_badi_objects`                        | 独立扩展      | Classic/New精确仓库子类型独立搜索                           | ADT Repository Search     | 已补充Mock用例；尚未执行或真实验收            |
+| `read_classic_badi_definition`               | 独立扩展      | Classic定义、接口、过滤、实现类及激活原值                   | SAP助手2.4 Classic表      | 已补充Mock用例；助手未部署或真实验收          |
+| `manage_classic_badi_implementation`         | 独立扩展      | Classic实现创建、激活、停用、删除                           | SAP助手2.6 SXO标准API     | 已补充Mock用例；未执行或真实验收              |
+| `read_enhancement_implementation`            | 独立扩展      | ENHO四类版本状态、包、实现及逐Hook源码                      | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收              |
+| `create_enhancement_hook_implementation`     | 独立扩展      | 显式/隐式Hook实现创建、保存及激活                           | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收              |
+| `create_new_badi_implementation`             | 独立扩展      | New BAdI实现、类、过滤器创建及激活                          | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收              |
+| `update_enhancement_hook_implementation`     | 独立扩展      | 按extId更新单个Hook源码并激活                               | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收              |
+| `update_new_badi_implementation`             | 独立扩展      | 更新New BAdI类、过滤器、默认/活动状态                       | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收              |
+| `manage_enhancement_implementation_state`    | 独立扩展      | 激活或丢弃ENHO非活动版本                                    | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收              |
+| `delete_enhancement_implementation`          | 独立扩展      | 指纹/包/传输保护的ENHO永久删除                              | SAP助手2.6增强框架API     | 已补充Mock用例；未执行或真实验收              |
+| `inspect_enhancement_framework`              | 独立扩展      | 显式锚点及源码推导的隐式候选                                | 活动源码静态解析          | 已补充Mock用例；尚未执行或真实验收            |
+| `inspect_fico_rule_exit_program`             | 独立扩展      | FI出口目录声明与FORM实现关联                                | 活动程序源码静态解析      | 已补充Mock用例；尚未执行或真实验收            |
+| `get_abap_object_workspace_uri`              | 已冻结        | 已实现                                                      | 确定性 `adt://` URI       | 真实调用通过                                  |
+| `get_abap_object_url`                        | 已冻结        | 已实现                                                      | 独立生成WebGUI URL        | 真实调用通过                                  |
+| `find_where_used`                            | 已冻结        | 已实现，含旧RIS适配与超时诊断                               | ADT/RIS引用映射           | 映射超时/RIS故障；真实引用正例未验            |
+| `get_sap_system_info`                        | 已冻结        | 固定表后备及来源状态                                        | 标准只读RFC，双指纹       | 接口范围已验；时区原生独立对照未验            |
+| `get_version_history`                        | 已冻结        | 已实现，含读取和比较版本                                    | `ADTClient.revisions`     | w200通过                                      |
+| `get_abap_diagnostics`                       | 已冻结        | 已实现，检查活动源码                                        | ADT syntax check          | w200通过                                      |
+| `get_abap_sql_syntax`                        | 已冻结        | 已实现，无头安全指南                                        | 内置静态文档              | Mock通过                                      |
+| `execute_data_query`                         | 已冻结        | 已实现，只读/限行/internal                                  | ADT及限定后备             | 限定查询有证据；非通用SQL恢复证明             |
+| `read_abap_table`                            | 独立扩展      | 有界结构化单表查询                                          | ADT/受限标准RFC           | w200五项真实检查通过；仅单表范围              |
+| `run_atc_analysis`                           | 兼容扩展      | 批量语法报告及ATC完整性保护                                 | ADT语法诊断/可选原生ATC   | 语法/边界已验；原生ATC批准延期                |
+| `run_sci_analysis`                           | 独立扩展      | 显式目标、隔离helper与E2 profile                            | SAP SCI助手               | 三类对象/三规则入口已验；整体部分验证         |
+| `run_unit_tests`                             | 已冻结        | 已实现，不自动激活                                          | ADT ABAP Unit             | 请求已通；既有样本无测试类，不算断言执行      |
+| `discover_application_logs`                  | 独立扩展      | 已实现，有界日志头抽样                                      | SAP只读日志助手           | 非空读取有记录；不代表全量发现                |
+| `search_application_logs`                    | 独立扩展      | 已实现，精确对象与有界检索                                  | SAP只读日志助手           | 已有限定检索证据；不扩展到全权限范围          |
+| `read_application_log`                       | 独立扩展      | 已实现，正文、分页与修订检查                                | SAP只读日志助手           | 限定正文/分页/修订/英文原生对照已验           |
+| `search_background_jobs`                     | 独立扩展      | 已实现，精确作业与有界检索                                  | SAP只读运行日志助手       | 已有限定检索证据；非作业管理能力              |
+| `read_background_job_log`                    | 独立扩展      | 已实现，八槽正文与修订分页                                  | SAP只读运行日志助手       | 两作业正文/分页/修订/原生对照已验             |
+| `read_system_logs`                           | 独立扩展      | 已实现，本机有界尾部读取                                    | SAP只读运行日志助手       | 英文正文/程序过滤已验；非全实例全历史         |
+| `correlate_sap_logs`                         | 独立扩展      | 已实现，固定来源及候选关联                                  | 复用只读日志工具          | 覆盖/质量标志已验；不证明因果                 |
+| `analyze_abap_dumps`                         | 已冻结        | 已实现，只读现有Dump                                        | ADT feeds/dumps           | w200通过                                      |
+| `diagnose_sap_failure`                       | 独立扩展      | ST22结构化诊断、过滤和时间候选关联                          | ADT feed + 本地解析       | 0.36.8专用工具真实非空读取已验                |
+| `analyze_abap_traces`                        | 已冻结        | 已实现，只读现有Trace                                       | ADT trace APIs            | w200返回404                                   |
+| `manage_transport_requests`                  | 已冻结        | 已实现，四个只读查询动作                                    | ADT或仓库助手1.7          | w200助手通过                                  |
+| `cleanup_transport_entries`                  | 独立扩展      | 已实现，开放任务精确条目清理与写后回读                      | 原生ADT removeobject      | 本地静态待检；w200未验证                      |
+| `abap_download`                              | 已冻结        | 已实现，对象和包本地导出                                    | Node文件系统 + ADT读取    | w200包内通过                                  |
+| `adt_discovery_export`                       | 已冻结        | 已实现，四文件Markdown导出                                  | Node文件系统 + ADT发现    | w200包内通过                                  |
+| `replace_string_in_abap_object`              | 已冻结        | 已实现，客户源码矩阵和完整锁流程                            | ADT lock/source/activate  | w200类写通过                                  |
+| `abap_activate`                              | 已冻结        | 已实现，仅限显式Z/Y对象URI                                  | ADT activation            | w200链路通过                                  |
+| `create_object_programmatically`             | 已冻结        | 已实现，客户源码创建和传输保护                              | ADT或仓库助手1.7          | Include助手通过                               |
+| `delete_abap_source_object`                  | 独立扩展      | 已实现，客户源码对象受控删除                                | ADT原生锁和删除           | w200通过                                      |
+| `create_test_include`                        | 已冻结        | 已实现，客户类测试Include创建                               | ADT class include API     | w200通过                                      |
+| `manage_text_elements`                       | 已冻结        | 三类对象ADT优先、助手后备；文本符号与选择文本按`idType`区分 | ADT或仓库助手2.12         | w200助手通过（2.12待部署，当前报unsupported） |
 
 工具名称和输入契约按原服务基线冻结；仅将依赖编辑器上下文的工具说明调整为独立服务语义。
 

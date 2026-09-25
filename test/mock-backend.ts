@@ -205,6 +205,20 @@ function parsePayloadRows(lines: string[], kind: "F" | "T"): Array<Record<string
   return rows
 }
 
+/**
+ * Text pool identity in the mock, mirroring the helper: the kind selects the pool row ID (`I` for
+ * text symbols, `S` for selection texts), and an entry is identified by the pair, not the key.
+ */
+function mockTextElementKey(element: { id: string; idType?: TextElementInfo["idType"] }): string {
+  return `${element.idType ?? "SYMBOL"}:${element.id.toUpperCase()}`
+}
+
+function mockTextElementIdType(value: string | undefined): "SYMBOL" | "SELECTION" {
+  const normalized = (value ?? "").trim().toUpperCase()
+  if (normalized === "SELECTION" || normalized === "S") return "SELECTION"
+  return "SYMBOL"
+}
+
 function parseEnhancementPayload(
   lines: string[],
   kind: "M" | "H" | "B" | "F" | "S"
@@ -541,7 +555,15 @@ export class MockBackend implements SapBackend {
     BIV: [] as Array<Record<string, string>>
   }
   private readonly textElementsByName = new Map<string, TextElementInfo[]>([
-    ["ZREPORT_DEMO", [{ id: "001", text: "Existing text", maxLength: 20 }]]
+    [
+      "ZREPORT_DEMO",
+      [
+        { id: "001", text: "Existing text", maxLength: 20, idType: "SYMBOL" },
+        // A selection screen label lives in the same pool under its element name. It carries the
+        // same shape of key space as a symbol, so the pair (kind, ID) is the real identity.
+        { id: "P_WERKS", text: "工厂", idType: "SELECTION" }
+      ]
+    ]
   ])
   private readonly messageClasses = new Map<
     string,
@@ -1798,21 +1820,39 @@ export class MockBackend implements SapBackend {
       const name = (request.program ?? "").toUpperCase()
       const existing = this.textElementsByName.get(name) ?? []
       if (request.operation === "MERGE_TEXT_ELEMENTS") {
-        const merged = new Map(existing.map((element) => [element.id, element]))
+        // Mirrors the helper: the kind picks the text pool row ID, the ID rules differ per kind, and
+        // an existing entry is matched on the (kind, ID) pair rather than on the ID alone.
+        const merged = new Map(existing.map((element) => [mockTextElementKey(element), element]))
         for (const row of parsePayloadRows(request.source ?? [], "T")) {
           const id = (row.ID ?? "").toUpperCase()
+          const idType = mockTextElementIdType(row.TYPE)
           const action = row.ACTION ?? ""
-          if (action === "CREATE" && merged.has(id)) {
-            return this.repositoryError("TEXT_ELEMENT_EXISTS", `Text element ${id} already exists`)
-          }
-          if (action === "UPDATE" && !merged.has(id)) {
+          const invalidId =
+            idType === "SYMBOL" ? !/^[A-Z0-9_]{3}$/.test(id) : !/^[A-Z0-9_]{1,8}$/.test(id)
+          if (invalidId) {
             return this.repositoryError(
-              "TEXT_ELEMENT_NOT_FOUND",
-              `Text element ${id} does not exist`
+              "TEXT_ID_INVALID",
+              idType === "SYMBOL"
+                ? "Text symbol ID must be 3 characters"
+                : "Selection text ID must be 1-8 characters"
             )
           }
-          merged.set(id, {
+          const key = mockTextElementKey({ id, idType })
+          if (action === "CREATE" && merged.has(key)) {
+            return this.repositoryError(
+              "TEXT_ELEMENT_EXISTS",
+              `Text element ${idType} ${id} already exists`
+            )
+          }
+          if (action === "UPDATE" && !merged.has(key)) {
+            return this.repositoryError(
+              "TEXT_ELEMENT_NOT_FOUND",
+              `Text element ${idType} ${id} does not exist`
+            )
+          }
+          merged.set(key, {
             id,
+            idType,
             text: row.TEXT ?? "",
             maxLength: Number.parseInt(row.MAXLENGTH ?? "0", 10)
           })
@@ -1831,6 +1871,7 @@ export class MockBackend implements SapBackend {
             "T",
             saved.map((element) => ({
               ID: element.id,
+              TYPE: element.idType ?? "SYMBOL",
               TEXT: element.text,
               MAXLENGTH: String(element.maxLength ?? 0)
             }))
@@ -3087,9 +3128,16 @@ export class MockBackend implements SapBackend {
     const normalized = objectName.toUpperCase()
     if (!/^[ZY]/.test(normalized)) throw new Error("Only Z* or Y* customer objects are allowed")
     const existing = this.textElementsByName.get(normalized) ?? []
-    const merged = new Map(existing.map((element) => [element.id, element]))
+    // Symbols and selection texts are different pool entries that may share a key, so the mock
+    // merges on the pair exactly as the real merge does.
+    const merged = new Map(existing.map((element) => [mockTextElementKey(element), element]))
     for (const element of textElements) {
-      merged.set(element.id.toUpperCase(), { ...element, id: element.id.toUpperCase() })
+      const idType = element.idType ?? "SYMBOL"
+      merged.set(mockTextElementKey({ id: element.id, idType }), {
+        ...element,
+        id: element.id.toUpperCase(),
+        idType
+      })
     }
     const result = [...merged.values()]
     this.textElementsByName.set(normalized, result)

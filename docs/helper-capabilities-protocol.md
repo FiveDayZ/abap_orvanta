@@ -439,6 +439,15 @@ export interface SapBackend {
 - 助手生成脚本（`scripts/bootstrap-sap-helper.ps1`）两处改动：① 通用字段属性白名单把这对属性提到 `lv_object_type <> 'TABL'` 判定**之外**（`STRU` 与 `TABL` 都接受，`KEYFLAG`/`NOTNULL`/`PRECFIELD` 等仍留在表专属组）；② 结构读取、透明表读取与非活动版本定义三处循环都发布 `REFTABLE`/`REFFIELD`。守卫：`test/ddic-field-reference.test.ts` 直接读该脚本断言这两点与追加结构自己的白名单。
 - **助手尚未部署到 `w200`**（线上仍是旧协议），因此报告里这 4 项为 version-check `unsupported`——这是待部署状态，不是缺陷；部署后应转为 `available`，并以 `SOURCE|HASH` 与生成器一致性核对（见 §5 A4-2）。
 
+**2026-09-25 工作树增量（`0.50.15`：仓库助手协议 2.12 —— 选择文本）**
+
+- 仓库能力表 2 行抬到 `sinceVersion = 2.12`：`READ_TEXT_ELEMENTS`、`MERGE_TEXT_ELEMENTS`（此前的行记录为 `1.7`）；`PROTOCOL|MAX` 由能力表推导为 **2.12**（`PROTOCOL|MIN` 仍为 `1.1`，与该表无关）。**为什么是 2.12 而不是 1.18**：仓库助手的协议是单一单调刻度，能力闸门比较的正是 `PROTOCOL|MAX` 这一个标量；2.11 是该助手此前的最大值，若把这次契约变化记成低于它的 1.18，闸门就无法把"支持 `TYPE` 的新正文"与"只能维护文本符号的旧正文"区分开，报告会把该工具在旧正文上判成 `available`——这正是能力注册表要避免的假声明。
+- **契约变化内容**：文本池条目从此带类型。载荷新增 `TYPE` 属性（`SYMBOL` 缺省 / `SELECTION`），助手按类型选择 `TEXTPOOL-ID`（`I`／`S`）、按类型校验 KEY（符号 3 字符，选择文本 1–8 字符），读取循环改为 `WHERE id = 'I' OR id = 'S'` 并对每行发布 `TYPE`。2.11 及更早的助手收到 `TYPE` 会以 `TEXT_PROPERTY_INVALID` 拒绝（未知属性），且读取只发布 `I` 行、写入只落到 `I` 行——即"选择屏幕标签写不进也看不见"。按 R4 语义（`since` = 服务端契约所依赖的属性集合），这是契约变化，必须抬版本。
+- 文本上限：选择文本取 **30 字符**（ADT 文本元素服务对 `selections` 类的自身限制），符号仍 1–255；选择文本**不接受** `maxLength`（声明长度是符号概念）。助手侧沿用既有 `TEXT_VALUE_INVALID` 长度校验（`length < strlen(entry)` 即拒）。
+- 新增能力项 `repository-helper-text-elements`（覆盖 `manage_text_elements`，下限 2.12）：`repository-helper-ecc-fallbacks` 里的消息类读写仍是 `1.7`，同组混合下限会把两个仍可用的工具报成 `unsupported`，故拆组（与 `0.50.14` 的 `ddic-helper-structure-reference` 同一做法）。注册表同时为该工具补上操作码清单（`READ_TEXT_ELEMENTS`／`MERGE_TEXT_ELEMENTS`），判定可从"仅凭版本"升级为"版本 + 操作码清单"。
+- 助手生成脚本（`scripts/bootstrap-sap-helper.ps1`）改动：① 文本载荷 `CASE` 新增 `WHEN 'TYPE'`；② 写入循环按类型选 `lv_text_pool_id`、按类型校验 KEY、查找与 `MODIFY` 不再硬编码 `'I'`；③ 读取循环发布 `TYPE`。读取-再整表写回（`INSERT TEXTPOOL`）的结构保持不变，未触碰的条目仍被保留。守卫：`test/text-element-selection.test.ts` 直接读该脚本断言这三点与能力表行同注册表下限一致。
+- **助手尚未部署到 `w200`**（线上仍是旧协议），因此报告里该工具为 version-check `unsupported`——待部署状态，不是缺陷；部署后应转为 `available`，并以 `SOURCE|HASH` 与生成器一致性核对（见 §5 A4-2）。
+
 ---
 
 ## 5. 验收标准（部署后由人工执行）

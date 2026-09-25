@@ -1019,7 +1019,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
-      "minHelperProtocol": "1.7"
+      "minHelperProtocol": "2.12"
     },
     {
       "name": "manage_transport_requests",

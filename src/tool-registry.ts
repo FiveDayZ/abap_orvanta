@@ -674,7 +674,24 @@ const ROWS: readonly ToolRow[] = [
   ["create_object_programmatically", "source", DEV, "W", "target-specific", null, null],
   ["delete_abap_source_object", "source", DEV, "D", "native-adt", null, null],
   ["create_test_include", "source", DEV, "W", "native-adt", null, null],
-  ["manage_text_elements", "source", DEV, "W", "sap-helper-fallback", REPOSITORY, "1.7"],
+  // 2.12: the payload carries the entry kind (`TYPE`), the helper writes text symbols to pool row
+  // `I` and selection texts to row `S`, and a read publishes both kinds. A helper below 2.12 either
+  // rejects the property or addresses every entry as a 3-character symbol, so a selection screen
+  // label could not be written at all - the same "the contract the criteria rely on moved" rule as
+  // the DD03P reference pair above. It is 2.12 and not a 1.x value because the repository helper's
+  // protocol is one monotone revision and PROTOCOL|MAX is what the capability gate compares: a
+  // mid-life contract change takes the next value above the helper's current maximum (2.11), while a
+  // number below it would leave the gate unable to tell this body from the one before it.
+  [
+    "manage_text_elements",
+    "source",
+    DEV,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.12",
+    ["READ_TEXT_ELEMENTS", "MERGE_TEXT_ELEMENTS"]
+  ],
   ["get_abap_diagnostics", "quality", DEV, "R", "native-adt", null, null],
   ["get_abap_sql_syntax", "platform", PL, "R", "local", null, null],
   ["execute_data_query", "data", DEV_CFG_OPS, "R", "target-specific", null, null],

@@ -13,7 +13,6 @@ import {
   type LogData,
   type NewObjectOptions,
   type NodeParents,
-  type TextElement,
   type TransportRequest,
   type TransportTarget,
   type TransportsOfUser
@@ -113,6 +112,17 @@ import {
 } from "./smartforms.js"
 import { runSapDataQuery } from "./data-query.js"
 import { runScopedQueryFallback } from "./scoped-query.js"
+import {
+  mergeTextElementChanges,
+  normalizeExistingTextElements,
+  normalizeTextElements,
+  textElementCategory,
+  textElementIdTypeFromPoolId,
+  textElementKey,
+  TEXT_ELEMENT_ID_TYPES,
+  type NormalizedTextElement,
+  type TextElementIdType
+} from "./text-elements.js"
 
 const SOURCE_READ_TIMEOUT_MS = 30_000
 const SYNTAX_CHECK_TIMEOUT_MS = 10_000
@@ -1518,6 +1528,7 @@ export class AdtBackend implements SapBackend {
         "T",
         requested.map((element) => ({
           ID: element.id,
+          TYPE: element.idType,
           TEXT: element.text,
           MAXLENGTH: String(element.maxLength),
           ACTION: action.toUpperCase()
@@ -3789,6 +3800,9 @@ function textElementsFromRepository(
     textElements: repositoryPayloadRows(source, "T").map((row) => ({
       id: row.ID ?? "",
       text: row.TEXT ?? "",
+      // The helper publishes the pool row ID it read (`I` or `S`). A helper that predates selection
+      // texts publishes `I` rows only, so an absent TYPE is the symbol kind either way.
+      idType: textElementIdTypeFromPoolId(row.TYPE),
       maxLength: Number.parseInt(row.MAXLENGTH ?? "0", 10) || 0
     }))
   }
@@ -3966,51 +3980,15 @@ function readableObjectName(value: string): string {
   return normalized
 }
 
-function normalizeTextElements(elements: TextElementInfo[]): TextElement[] {
-  if (!elements.length) throw new Error("textElements is required for create/update actions")
-  const ids = new Set<string>()
-  return elements.map((element) => {
-    const id = element.id.trim().toUpperCase()
-    if (!/^[A-Z0-9_]{3}$/.test(id)) {
-      throw new Error(`Text symbol ID ${element.id} must contain exactly 3 characters`)
-    }
-    if (ids.has(id)) throw new Error(`Duplicate text element ID: ${id}`)
-    ids.add(id)
-    if (!element.text || element.text.length > 255) {
-      throw new Error(`Text element ${id} must contain 1-255 characters`)
-    }
-    const maxLength = element.maxLength ?? Math.max(10, element.text.length)
-    if (maxLength < element.text.length || maxLength > 255) {
-      throw new Error(`Invalid maxLength for ${id}: expected ${element.text.length}-255`)
-    }
-    return { id, text: element.text, maxLength }
-  })
-}
-
-export function mergeTextElementChanges(
-  existing: TextElementInfo[],
-  requested: TextElementInfo[],
-  action: "create" | "update"
-): TextElement[] {
-  const normalized = normalizeTextElements(requested)
-  const existingById = new Map(existing.map((element) => [element.id.toUpperCase(), element]))
-  for (const element of normalized) {
-    const exists = existingById.has(element.id)
-    if (action === "create" && exists) {
-      throw new Error(`Text element ${element.id} already exists; use action=update`)
-    }
-    if (action === "update" && !exists) {
-      throw new Error(`Text element ${element.id} does not exist; use action=create`)
-    }
-    existingById.set(element.id, element)
-  }
-  return [...existingById.values()].map((element) => ({
-    id: element.id.toUpperCase(),
-    text: element.text,
-    ...(element.maxLength === undefined ? {} : { maxLength: element.maxLength })
-  }))
-}
-
+/**
+ * Read every text pool kind this service maintains.
+ *
+ * Both categories are read because a caller that asks for "the text elements" of a program needs to
+ * see the selection texts too: they are the labels of its selection screen, and a read that returned
+ * symbols only made an existing `S` entry invisible, so a caller could neither discover nor verify
+ * it. Symbols and selection texts share keys but are different entries, so each element carries the
+ * kind it came from.
+ */
 export async function readTextElementsWithClient(
   client: ADTClient,
   connectionId: string,
@@ -4021,16 +3999,23 @@ export async function readTextElementsWithClient(
   await client.getObjectSource(optimalSourceUri(target.adtType, target.objectUri), {
     version: "active"
   })
-  const result = await client.getTextElements(target.textElementsUri, "symbols")
+  const textElements: TextElementInfo[] = []
+  for (const idType of TEXT_ELEMENT_ID_TYPES) {
+    const result = await client.getTextElements(target.textElementsUri, textElementCategory(idType))
+    textElements.push(
+      ...result.textElements.map((element) => ({
+        id: element.id,
+        text: element.text,
+        idType,
+        ...(element.maxLength === undefined ? {} : { maxLength: element.maxLength })
+      }))
+    )
+  }
   return {
     connectionId,
     objectName: target.objectName,
     objectType: target.objectType,
-    textElements: result.textElements.map((element) => ({
-      id: element.id,
-      text: element.text,
-      ...(element.maxLength === undefined ? {} : { maxLength: element.maxLength })
-    }))
+    textElements
   }
 }
 
@@ -4043,6 +4028,9 @@ export async function writeTextElementsWithClient(
   textElements: TextElementInfo[]
 ): Promise<TextElementMutationInfo> {
   const target = textElementTarget(objectName, objectType, true)
+  const requested = normalizeTextElements(textElements)
+  // One write per category, because ADT serves (and replaces) each category as its own document.
+  const categories = [...new Set(requested.map((element) => textElementCategory(element.idType)))]
   let lock: AdtLock
   try {
     lock = await lockTextElementsWithClient(client, target.textElementsUri)
@@ -4052,18 +4040,36 @@ export async function writeTextElementsWithClient(
 
   let operationError: unknown
   let selectedTransport = ""
-  let merged: TextElement[] = []
+  let merged: NormalizedTextElement[] = []
   try {
-    const existing = await client.getTextElements(target.textElementsUri, "symbols")
-    merged = mergeTextElementChanges(existing.textElements, textElements, action)
     selectedTransport = selectTransport(lock)
-    await client.setTextElements(
-      target.textElementsUri,
-      "symbols",
-      merged,
-      lock.LOCK_HANDLE,
-      selectedTransport
-    )
+    for (const category of categories) {
+      const idType: TextElementIdType = category === "selections" ? "SELECTION" : "SYMBOL"
+      const existing = await client.getTextElements(target.textElementsUri, category)
+      // The category document is replaced as a whole, so the requested changes are merged into what
+      // the category currently holds - an unrelated symbol or selection text must survive a write
+      // that never mentioned it.
+      const mergedCategory = mergeTextElementChanges(
+        normalizeExistingTextElements(existing.textElements).map((element) => ({
+          ...element,
+          idType
+        })),
+        requested.filter((element) => textElementCategory(element.idType) === category),
+        action
+      )
+      await client.setTextElements(
+        target.textElementsUri,
+        category,
+        mergedCategory.map((element) =>
+          category === "symbols"
+            ? { id: element.id, text: element.text, maxLength: element.maxLength }
+            : { id: element.id, text: element.text }
+        ),
+        lock.LOCK_HANDLE,
+        selectedTransport
+      )
+      merged = merged.concat(mergedCategory)
+    }
   } catch (error) {
     operationError = error
   }
@@ -4081,12 +4087,31 @@ export async function writeTextElementsWithClient(
   if (operationError) throw operationError
 
   const activation = await activateTarget(client, target.textElementsUri, target.objectName)
-  const verified = await client.getTextElements(target.textElementsUri, "symbols")
-  const verifiedById = new Map(verified.textElements.map((element) => [element.id, element]))
+  const verified: TextElementInfo[] = []
+  for (const category of categories) {
+    const idType: TextElementIdType = category === "selections" ? "SELECTION" : "SYMBOL"
+    const result = await client.getTextElements(target.textElementsUri, category)
+    verified.push(
+      ...result.textElements.map((element) => ({
+        id: element.id,
+        text: element.text,
+        idType,
+        ...(element.maxLength === undefined ? {} : { maxLength: element.maxLength })
+      }))
+    )
+  }
+  const verifiedByKey = new Map(verified.map((element) => [textElementKey(element), element]))
   for (const expected of merged) {
-    const actual = verifiedById.get(expected.id)
-    if (!actual || actual.text !== expected.text || actual.maxLength !== expected.maxLength) {
-      throw new Error(`Text elements were saved but verification failed for ${expected.id}`)
+    const actual = verifiedByKey.get(textElementKey(expected))
+    const textMatches = actual?.text === expected.text
+    // A selection text has no declared length: ADT reports a length for symbols only, and the
+    // caller's contract for a selection text is the label itself.
+    const lengthMatches =
+      expected.idType === "SELECTION" || actual?.maxLength === expected.maxLength
+    if (!actual || !textMatches || !lengthMatches) {
+      throw new Error(
+        `Text elements were saved but verification failed for ${expected.idType} ${expected.id}`
+      )
     }
   }
   return {
@@ -4094,14 +4119,10 @@ export async function writeTextElementsWithClient(
     objectName: target.objectName,
     objectType: target.objectType,
     action,
-    changedIds: textElements.map((element) => element.id.trim().toUpperCase()),
+    changedIds: requested.map((element) => element.id),
     transportNumber: selectedTransport,
     activation,
-    textElements: verified.textElements.map((element) => ({
-      id: element.id,
-      text: element.text,
-      ...(element.maxLength === undefined ? {} : { maxLength: element.maxLength })
-    }))
+    textElements: verified
   }
 }
 

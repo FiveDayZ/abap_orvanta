@@ -97,7 +97,7 @@
 | `list_write_recovery_operations` | platform | platform | 只读 | local | — |
 | `manage_classic_badi_implementation` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `manage_enhancement_implementation_state` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
-| `manage_text_elements` | source | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.7) |
+| `manage_text_elements` | source | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.12) |
 | `manage_transport_requests` | ops | dev, config, ops | 只读 | target-specific | — |
 | `patch_abap_gui_definition` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.5) |
 | `patch_abap_screen` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.4) |

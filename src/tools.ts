@@ -72,6 +72,12 @@ import {
   tableQuerySchema
 } from "./table-query.js"
 import { assertTableAllowed, TABLE_ALLOWLIST_UNVERIFIABLE } from "./table-allowlist.js"
+import {
+  normalizeTextElements,
+  textElementIdType,
+  textElementIdTypeFromPoolId,
+  textElementKey
+} from "./text-elements.js"
 import { checkFailure, checkQuality } from "./quality-checks.js"
 import { collectWhereUsed, formatWhereUsed, type WhereUsedInput } from "./where-used.js"
 import { formatSciResult, SCI_HELPER, SCI_HELPER_FINGERPRINT, type SciInput } from "./sci.js"
@@ -7436,7 +7442,7 @@ export class ToolService {
     if (write && !input.textElements?.length) {
       throw new Error("textElements is required for create/update actions")
     }
-    const requested = write ? validateProgramTextElements(input.textElements!) : []
+    const requested = write ? normalizeTextElements(input.textElements!) : []
     const result = await this.backend.callSapRepository(connectionId, {
       operation: write ? "MERGE_TEXT_ELEMENTS" : "READ_TEXT_ELEMENTS",
       objectType: "PROGRAM",
@@ -7446,8 +7452,9 @@ export class ToolService {
             "T",
             requested.map((element) => ({
               ID: element.id,
+              TYPE: element.idType,
               TEXT: element.text,
-              MAXLENGTH: String(element.maxLength ?? Math.max(10, element.text.length)),
+              MAXLENGTH: String(element.maxLength),
               ACTION: input.action.toUpperCase()
             }))
           )
@@ -7458,6 +7465,7 @@ export class ToolService {
     const textElements = payload.textRows.map((row) => ({
       id: row.ID ?? "",
       text: row.TEXT ?? "",
+      idType: textElementIdTypeFromPoolId(row.TYPE),
       maxLength: numberValue(row.MAXLENGTH)
     }))
     if (!write) {
@@ -7470,9 +7478,10 @@ export class ToolService {
       )
     }
     const changedIds = requested.map((element) => element.id)
-    for (const changedId of changedIds) {
-      if (!textElements.some((element) => element.id === changedId)) {
-        throw new Error(`SAP text pool verification did not return ${changedId}`)
+    for (const element of requested) {
+      const key = textElementKey(element)
+      if (!textElements.some((read) => textElementKey(read) === key)) {
+        throw new Error(`SAP text pool verification did not return ${element.idType} ${element.id}`)
       }
     }
     return (
@@ -10810,7 +10819,8 @@ function formatActivationFailure(
 }
 
 function formatTextElement(element: TextElementInfo): string {
-  return `- ${element.id}: ${JSON.stringify(element.text)}${
+  const idType = textElementIdType(element.idType)
+  return `- [${idType}] ${element.id}: ${JSON.stringify(element.text)}${
     element.maxLength === undefined ? "" : ` (max: ${element.maxLength})`
   }`
 }
@@ -14007,28 +14017,6 @@ function applyMessageClassOperations(
   return [...messages]
     .map(([number, text]) => ({ number, text }))
     .sort((a, b) => a.number.localeCompare(b.number))
-}
-
-function validateProgramTextElements(
-  elements: TextElementInfo[]
-): Array<Required<TextElementInfo>> {
-  const ids = new Set<string>()
-  return elements.map((element) => {
-    const id = element.id.trim().toUpperCase()
-    if (!/^[A-Z0-9_]{3}$/.test(id)) {
-      throw new Error(`Text symbol ID ${element.id} must contain exactly 3 characters`)
-    }
-    if (ids.has(id)) throw new Error(`Duplicate text element ID: ${id}`)
-    ids.add(id)
-    if (!element.text || element.text.length > 255) {
-      throw new Error(`Text element ${id} must contain 1-255 characters`)
-    }
-    const maxLength = element.maxLength ?? Math.max(10, element.text.length)
-    if (maxLength < element.text.length || maxLength > 255) {
-      throw new Error(`Invalid maxLength for ${id}: expected ${element.text.length}-255`)
-    }
-    return { id, text: element.text, maxLength }
-  })
 }
 
 function reportVariant(value: string | undefined): string {

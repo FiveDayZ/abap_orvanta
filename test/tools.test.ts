@@ -21,7 +21,6 @@ import {
   detectTypeFromUri,
   loadRevisionObjectStructure,
   lockTextElementsWithClient,
-  mergeTextElementChanges,
   normalizeAdtUri,
   optimalSourceUri,
   preserveCookieSessionWithoutCsrf,
@@ -32,6 +31,7 @@ import {
   parseSapRepositoryResponse,
   prepareCreateObjectRequest,
   readDictionaryObject,
+  readTextElementsWithClient,
   resolveEditableSourceTarget,
   replaceSourceWithClient,
   sanitizeObjectName,
@@ -44,6 +44,7 @@ import { toolContracts } from "../src/contracts.js"
 import { InvocationReceiptStore } from "../src/invocation-receipts.js"
 import { ToolService, extractMethod, validateReadOnlySql } from "../src/tools.js"
 import { findAndReplaceSource } from "../src/source-edit.js"
+import { mergeTextElementChanges } from "../src/text-elements.js"
 import { MockBackend } from "./mock-backend.js"
 import { PRODUCT_VERSION } from "../src/version.js"
 import { inactiveHttp } from "./inactive-http.js"
@@ -6319,7 +6320,10 @@ test("text element wave reads and merges customer text symbols", async () => {
     action: "read",
     connectionId: "w200"
   })
-  assert.match(initial, /001: "Existing text" \(max: 20\)/)
+  assert.match(initial, /\[SYMBOL\] 001: "Existing text" \(max: 20\)/)
+  // A read reports the selection screen label as its own kind: before this, selection texts were
+  // invisible to a caller that could only see `I` rows.
+  assert.match(initial, /\[SELECTION\] P_WERKS: "工厂"/)
 
   const created = await tools.manageTextElements({
     objectName: "ZREPORT_DEMO",
@@ -6329,8 +6333,114 @@ test("text element wave reads and merges customer text symbols", async () => {
     connectionId: "w200"
   })
   assert.match(created, /Changed IDs: 002/)
-  assert.match(created, /Total after merge: 2/)
+  assert.match(created, /Total after merge: 3/)
   assert.match(created, /saved and verified/)
+})
+
+test("text element wave writes selection texts and keeps the same-named symbol apart", async () => {
+  const tools = new ToolService(new MockBackend())
+  const created = await tools.manageTextElements({
+    objectName: "ZREPORT_DEMO",
+    objectType: "PROGRAM",
+    action: "create",
+    textElements: [
+      { id: "P_BUKRS", text: "公司代码", idType: "SELECTION" },
+      // The same key as a symbol and as a selection text is two entries with two own rules; the
+      // symbol must not be written under the selection text's identity or the other way round.
+      { id: "SRC", text: "SRC symbol", idType: "SYMBOL", maxLength: 12 },
+      { id: "SRC", text: "源托盘", idType: "SELECTION" }
+    ],
+    connectionId: "w200"
+  })
+  assert.match(created, /Changed IDs: P_BUKRS, SRC, SRC/)
+  assert.match(created, /Total after merge: 5/)
+
+  const readBack = await tools.manageTextElements({
+    objectName: "ZREPORT_DEMO",
+    objectType: "PROGRAM",
+    action: "read",
+    connectionId: "w200"
+  })
+  assert.match(readBack, /\[SYMBOL\] SRC: "SRC symbol"/)
+  assert.match(readBack, /\[SELECTION\] SRC: "源托盘"/)
+  assert.match(readBack, /\[SELECTION\] P_BUKRS: "公司代码"/)
+
+  // Updating the selection text leaves the symbol with the same key untouched.
+  const updated = await tools.manageTextElements({
+    objectName: "ZREPORT_DEMO",
+    objectType: "PROGRAM",
+    action: "update",
+    textElements: [{ id: "SRC", text: "原始根托盘号", idType: "SELECTION" }],
+    connectionId: "w200"
+  })
+  assert.match(updated, /Changed IDs: SRC/)
+  const afterUpdate = await tools.manageTextElements({
+    objectName: "ZREPORT_DEMO",
+    objectType: "PROGRAM",
+    action: "read",
+    connectionId: "w200"
+  })
+  assert.match(afterUpdate, /\[SYMBOL\] SRC: "SRC symbol"/)
+  assert.match(afterUpdate, /\[SELECTION\] SRC: "原始根托盘号"/)
+})
+
+test("selection text writes enforce their own key and length rules", async () => {
+  const tools = new ToolService(new MockBackend())
+  // A selection screen element name may be longer than three characters - that is the whole defect.
+  await assert.rejects(
+    tools.manageTextElements({
+      objectName: "ZREPORT_DEMO",
+      objectType: "PROGRAM",
+      action: "create",
+      textElements: [{ id: "P_WERKS_LANG", text: "9 chars", idType: "SELECTION" }],
+      connectionId: "w200"
+    }),
+    /must contain 1-8 valid selection screen element characters/
+  )
+  // Without the kind, the same name is a text symbol and the three-character rule applies.
+  await assert.rejects(
+    tools.manageTextElements({
+      objectName: "ZREPORT_DEMO",
+      objectType: "PROGRAM",
+      action: "create",
+      textElements: [{ id: "P_WERKS", text: "工厂" }],
+      connectionId: "w200"
+    }),
+    /must contain exactly 3 characters/
+  )
+  // A selection text has no declared length, so a caller cannot smuggle one in.
+  await assert.rejects(
+    tools.manageTextElements({
+      objectName: "ZREPORT_DEMO",
+      objectType: "PROGRAM",
+      action: "create",
+      textElements: [{ id: "P_BUKRS", text: "公司代码", idType: "SELECTION", maxLength: 40 }],
+      connectionId: "w200"
+    }),
+    /has no declared length/
+  )
+  // The ADT text element service refuses more than 30 characters for a selection text, so the
+  // repository helper route refuses it too instead of storing an entry ADT cannot read back.
+  await assert.rejects(
+    tools.manageTextElements({
+      objectName: "ZREPORT_DEMO",
+      objectType: "PROGRAM",
+      action: "create",
+      textElements: [{ id: "P_BUKRS", text: "x".repeat(31), idType: "SELECTION" }],
+      connectionId: "w200"
+    }),
+    /must contain 1-30 characters/
+  )
+  await assert.rejects(
+    tools.manageTextElements({
+      objectName: "ZREPORT_DEMO",
+      objectType: "PROGRAM",
+      action: "create",
+      textElements: [{ id: "P_BUKRS", text: "公司代码", idType: "FIELD" as never }],
+      connectionId: "w200"
+    }),
+    /Invalid text element idType/
+  )
 })
 
 test("program text element helper rejects duplicate IDs and invalid create-update states", async () => {
@@ -6346,7 +6456,7 @@ test("program text element helper rejects duplicate IDs and invalid create-updat
       ],
       connectionId: "w200"
     }),
-    /Duplicate text element ID/
+    /Duplicate text element: SYMBOL 002/
   )
   await assert.rejects(
     tools.manageTextElements({
@@ -6378,16 +6488,27 @@ test("program text element helper rejects duplicate IDs and invalid create-updat
     }),
     /TEXT_ELEMENT_NOT_FOUND/
   )
+  // An existing symbol is not an existing selection text: the update must be refused per kind.
+  await assert.rejects(
+    tools.manageTextElements({
+      objectName: "ZREPORT_DEMO",
+      objectType: "PROGRAM",
+      action: "update",
+      textElements: [{ id: "001", text: "Not a selection text", idType: "SELECTION" }],
+      connectionId: "w200"
+    }),
+    /TEXT_ELEMENT_NOT_FOUND/
+  )
 })
 
 test("text element merge distinguishes create from update and preserves unrelated symbols", () => {
   const existing = [{ id: "001", text: "Existing", maxLength: 20 }]
   assert.deepEqual(mergeTextElementChanges(existing, [{ id: "002", text: "Created" }], "create"), [
-    { id: "001", text: "Existing", maxLength: 20 },
-    { id: "002", text: "Created", maxLength: 10 }
+    { idType: "SYMBOL", id: "001", text: "Existing", maxLength: 20 },
+    { idType: "SYMBOL", id: "002", text: "Created", maxLength: 10 }
   ])
   assert.deepEqual(mergeTextElementChanges(existing, [{ id: "001", text: "Updated" }], "update"), [
-    { id: "001", text: "Updated", maxLength: 10 }
+    { idType: "SYMBOL", id: "001", text: "Updated", maxLength: 10 }
   ])
   assert.throws(
     () => mergeTextElementChanges(existing, [{ id: "001", text: "Duplicate" }], "create"),
@@ -6451,7 +6572,10 @@ test("ADT text element write locks, merges, saves, unlocks, activates, and verif
 
   assert.equal(result.activation.success, true)
   assert.deepEqual(result.changedIds, ["002"])
-  assert.deepEqual(result.textElements, stored)
+  assert.deepEqual(result.textElements, [
+    { id: "001", text: "Existing", maxLength: 20, idType: "SYMBOL" },
+    { id: "002", text: "Created", maxLength: 10, idType: "SYMBOL" }
+  ])
   assert.deepEqual(calls, [
     "lock:/sap/bc/adt/textelements/programs/zreport_demo",
     "read",
@@ -6460,6 +6584,122 @@ test("ADT text element write locks, merges, saves, unlocks, activates, and verif
     "inactive",
     "activate",
     "read"
+  ])
+})
+
+test("ADT text element read returns both pool kinds with their category", async () => {
+  const categories: string[] = []
+  const result = await readTextElementsWithClient(
+    {
+      httpClient: {
+        async request() {
+          return {
+            body: `<abap><values><DATA><LOCK_HANDLE>LOCK</LOCK_HANDLE></DATA></values></abap>`,
+            status: 200,
+            statusText: "OK",
+            headers: {}
+          }
+        }
+      },
+      async getObjectSource() {
+        return { source: "REPORT zreport_demo.", objectVersion: "active" }
+      },
+      async getTextElements(_uri: string, category: string) {
+        categories.push(category)
+        return category === "symbols"
+          ? {
+              programName: "zreport_demo",
+              textElements: [{ id: "001", text: "Symbol", maxLength: 20 }]
+            }
+          : { programName: "zreport_demo", textElements: [{ id: "P_WERKS", text: "工厂" }] }
+      }
+    } as never,
+    "w200",
+    "ZREPORT_DEMO",
+    "PROGRAM"
+  )
+  // A read that asked for the symbols category only is what hid every selection text.
+  assert.deepEqual(categories, ["symbols", "selections"])
+  assert.deepEqual(result.textElements, [
+    { id: "001", text: "Symbol", idType: "SYMBOL", maxLength: 20 },
+    { id: "P_WERKS", text: "工厂", idType: "SELECTION" }
+  ])
+})
+
+test("ADT selection text write merges only the selections category", async () => {
+  const calls: string[] = []
+  const stores: Record<string, Array<{ id: string; text: string; maxLength?: number }>> = {
+    symbols: [{ id: "001", text: "Symbol", maxLength: 20 }],
+    selections: [{ id: "S_SRC", text: "原始根托盘", maxLength: 5 }]
+  }
+  const result = await writeTextElementsWithClient(
+    {
+      httpClient: {
+        async request(uri: string, options: { qs?: Record<string, string> }) {
+          if (uri.endsWith("/activation/inactiveobjects")) {
+            calls.push("inactive")
+            return inactiveHttp().request()
+          }
+          calls.push(`lock:${uri}`)
+          assert.equal(options.qs?._action, "LOCK")
+          return {
+            body: `<abap><values><DATA><LOCK_HANDLE>LOCK</LOCK_HANDLE><CORRNR></CORRNR><IS_LOCAL>X</IS_LOCAL></DATA></values></abap>`,
+            status: 200,
+            statusText: "OK",
+            headers: {}
+          }
+        }
+      },
+      async getTextElements(_uri: string, category: string) {
+        calls.push(`read:${category}`)
+        return { programName: "zreport_demo", textElements: stores[category] ?? [] }
+      },
+      async setTextElements(
+        _uri: string,
+        category: string,
+        elements: Array<{ id: string; text: string; maxLength?: number }>,
+        lockHandle: string,
+        transport: string
+      ) {
+        calls.push(`save:${category}:${lockHandle}:${transport}`)
+        stores[category] = elements
+      },
+      async unLock() {
+        calls.push("unlock")
+      },
+      async activate() {
+        calls.push("activate")
+        return { success: true, messages: [], inactive: [] }
+      }
+    } as never,
+    "w200",
+    "ZREPORT_DEMO",
+    "PROGRAM",
+    "create",
+    [{ id: "P_WERKS", text: "工厂", idType: "SELECTION" }]
+  )
+
+  // Only the category the request touches is written, read back and verified.
+  assert.deepEqual(calls, [
+    "lock:/sap/bc/adt/textelements/programs/zreport_demo",
+    "read:selections",
+    "save:selections:LOCK:",
+    "unlock",
+    "inactive",
+    "activate",
+    "read:selections"
+  ])
+  // The symbol in the other category is untouched, and the existing selection text was preserved by
+  // the merge (the category document is replaced as a whole). A selection text carries no declared
+  // length, so the write body does not send one.
+  assert.deepEqual(stores.symbols, [{ id: "001", text: "Symbol", maxLength: 20 }])
+  assert.deepEqual(stores.selections, [
+    { id: "P_WERKS", text: "工厂" },
+    { id: "S_SRC", text: "原始根托盘" }
+  ])
+  assert.deepEqual(result.textElements, [
+    { id: "P_WERKS", text: "工厂", idType: "SELECTION" },
+    { id: "S_SRC", text: "原始根托盘", idType: "SELECTION" }
   ])
 })
 
