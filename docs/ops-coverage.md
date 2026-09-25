@@ -45,8 +45,8 @@ Per-family state:
 Roles are checked against the registry annotations by `opsClassificationProblems()`, and
 `opsCapabilityBlock()` refuses to publish a block when that check is non-empty: an ops block that
 silently drops a tool or a family looks like an answer without being one. The gate test additionally
-falsifies the guard itself (a family that loses a planned tool, a role that contradicts the
-registry), so the check is known to be able to fail.
+falsifies the guard itself (a family that loses a planned tool, a role that contradicts the registry,
+an exemption on a family the platform does not block), so the check is known to be able to fail.
 
 ## 3. The end-to-end rule
 
@@ -61,12 +61,27 @@ Two consequences worth stating explicitly, because both were previously easy to 
   `partial`, because release and import - the operations that actually move an object forward - are
   absent.
 
-At product version 0.50.8 the block reports **2 of 15 families end-to-end (13%)**: `logs` and
-`dumps`, with 23 planned tools still unbuilt. The earlier assessment
-(`.doc/orvanta-mcp-ops-coverage-assessment-and-next-phase-plan-20260925.md`) put end-to-end closure
-near 40%; that figure counted read-side breadth across families, not family purposes. This document's
-rule is the stricter one, and it is the one the completion criterion uses. Both readings agree the
-95% target is far from met.
+### 3.1 Family count, and the one exemption
+
+The assessment's frozen matrix
+(`.doc/orvanta-mcp-ops-coverage-assessment-and-next-phase-plan-20260925.md` §3.1) lists **14**
+families and allows **one** family to be exempt when the platform - not the plan - makes it
+impossible (§6). The block therefore reports **15** families: the matrix's 14 plus the runtime-trace
+family, whose only tool (`analyze_abap_traces`) is `platform-blocked` because this release serves no
+ADT trace endpoint.
+
+Splitting that family out instead of folding it into another one is deliberate: it keeps the
+disappointing number visible and it makes the exemption a checkable claim in the block itself -
+`requiredEndToEndFamilyCount` (14), `exemptFamilies` (`["traces"]`) and `outstandingRequiredFamilies`.
+The guard accepts an exemption only for a family whose every present tool is `platform-blocked` and
+which carries a non-empty written reason, so the target cannot be lowered by declaring families
+exempt.
+
+At product version 0.50.9 the block reports **2 of 15 families end-to-end (13%)**, which is **2 of the
+14 required families (14%)**, with 23 planned tools still unbuilt and `criterionMet: false`. The
+earlier assessment put end-to-end closure near 40%; that figure counted read-side breadth across
+families, not family purposes. This document's rule is the stricter one, and it is the one the
+completion criterion uses. Both readings agree the 95% target is far from met.
 
 ## 4. Reading the evidence dimension
 
@@ -120,8 +135,9 @@ attestation.
 
 ## 6. Completion criterion for the operations programme
 
-The operations programme is complete when, for at least 95% of the families in
-`src/ops-coverage.ts`:
+The operations programme is complete when, for at least 95% of the **required** families in
+`src/ops-coverage.ts` - the 15 minus the ones carrying a written platform exemption (§3.1), i.e. 14 of
+14 required families today, because 95% of 14 rounded **up** is 14:
 
 1. the family state is `read-only` or `read-and-act` (declared gap empty);
 2. every tool in the family is `verified` in `contracts/verification-registry.json`, with evidence
@@ -132,13 +148,21 @@ The operations programme is complete when, for at least 95% of the families in
 4. the family's behaviour is covered by the regression matrix, and the gate (`npm run verify`)
    passes with the new evidence.
 
+The rounding is stated because it is the difference between a criterion and a slogan: 95% of 14 is
+13.3 families, a fraction of a family cannot be closed, and rounding down would let the programme
+declare success with a required family still open. The block computes exactly this - `criterionMet` is
+`closedRequiredFamilies >= ceil(requiredEndToEndFamilyCount * 0.95)` - so the criterion is checked in
+code, not in prose.
+
 Point 2 is what separates this document from a progress narrative: a family that reads correctly but
 whose tools carry no recorded call is not complete.
 
 ## 7. Checking the current state
 
 - Read the block directly: call `get_capability_report` and inspect `opsCapability.families`,
-  `opsCapability.summary.stateCounts`, `opsCapability.summary.missingPlannedTools`.
+  `opsCapability.summary.stateCounts`, `opsCapability.summary.missingPlannedTools`, and the criterion
+  fields `requiredEndToEndFamilyCount`, `endToEndPercentOfRequired`, `outstandingRequiredFamilies`
+  and `criterionMet`.
 - Static checks (no test execution): `npm run typecheck`, `npm run matrix:check`.
 - The classification guard and the expected family states are asserted in
   `test/ops-coverage.test.ts`; it runs under the repository test gate with the authorisation

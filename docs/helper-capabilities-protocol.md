@@ -353,22 +353,25 @@ export interface SapBackend {
   "note": "…; verification never changes an availability verdict."
 },
 "opsCapability": {
-  "vocabulary": { "toolRole": "read-only | action | platform-blocked", "familyState": "absent | blocked | partial | read-only | read-and-act", "endToEndRule": "…" },
+  "vocabulary": { "toolRole": "read-only | action | platform-blocked", "familyState": "absent | blocked | partial | read-only | read-and-act", "endToEndRule": "…", "exemptionRule": "…" },
   "families": [
-    { "id": "transport", "state": "partial", "actionRequired": true,
+    { "id": "transport", "state": "partial", "actionRequired": true, "exempt": false, "exemptReason": "",
       "toolNames": ["…"], "missingToolNames": ["…"], "readTools": ["…"], "actionTools": ["…"], "platformBlockedTools": [],
       "verification": { "verified": ["…"], "unverified": ["…"], "failing": ["…"] },
       "gap": "Release and import are absent: …" }
   ],
   "summary": { "familyCount": 15, "stateCounts": { "absent": 5, "blocked": 1, "partial": 7, "read-only": 2, "read-and-act": 0 },
                "endToEndFamilyCount": 2, "endToEndPercent": 13, "endToEndFamilies": ["logs", "dumps"],
+               "requiredEndToEndFamilyCount": 14, "requiredEndToEndPercent": 95, "endToEndPercentOfRequired": 14,
+               "remainingRequiredFamilyCount": 12, "outstandingRequiredFamilies": ["…"], "exemptFamilies": ["traces"],
+               "criterionMet": false,
                "actionToolCount": 3, "platformBlockedToolCount": 1, "classifiedToolCount": 20,
-               "missingPlannedToolCount": 25, "missingPlannedTools": ["…"] },
+               "missingPlannedToolCount": 23, "missingPlannedTools": ["…"] },
   "note": "…; it never changes an availability or verification verdict."
 }
 ```
 
-（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。`opsCapability` 的数例为 0.50.6 的实测值，随工具面变化，不是常量。）
+（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。`opsCapability` 的数例为 0.50.9 的实测值，随工具面变化，不是常量。）
 
 ### 4A. 证据维度（`verification`）与可用性维度正交
 
@@ -390,14 +393,15 @@ export interface SapBackend {
 
 ### 4B. 运维覆盖维度（`opsCapability`）：工具清单不是覆盖结论
 
-0.50.6 起，能力报告顶层新增 `opsCapability`，把运维（`ops`）面按**场景族**表述，而不是按工具条数表述。单一事实源是 `src/ops-coverage.ts`；报告里的族状态由工具登记表加"声明缺口"**推导**，不手写，因此数字只在工具面真的变化时才动。
+0.50.7 起，能力报告顶层新增 `opsCapability`，把运维（`ops`）面按**场景族**表述，而不是按工具条数表述。单一事实源是 `src/ops-coverage.ts`；报告里的族状态由工具登记表加"声明缺口"**推导**，不手写，因此数字只在工具面真的变化时才动。
 
 - 工具角色（`read-only` / `action` / `platform-blocked`）与 `src/tool-registry.ts` 的注解互相校验：角色与注解矛盾、`ops` 组工具未分档、工具未归入任何族，都会让 `opsClassificationProblems()` 非空，而 `opsCapabilityBlock()` 拒绝在这种状态下发布报告——一个悄悄漏掉工具或族的块比没有块更糟，因为它看起来像个答案。
 - 族状态（`absent` / `blocked` / `partial` / `read-only` / `read-and-act`）由"是否存在工具、是否全被平台挡住、声明的缺口是否为空"推导。**只有缺口为空的族才算端到端**；"读得到"永不顶替"处置得了"——作业族不会因为能读作业明细与 Spool 就变成 `read-and-act`，它停在 `partial` 并写明缺的是作业控制。
 - `blocked` 与"尚未实现"是两句话：前者是平台（本版本不提供该端点）挡住，后者是没做。
+- **完成判据在块里，不在散文里**：`requiredEndToEndFamilyCount` 只排除「全部工具都被平台挡住**且**带有书面豁免理由」的族，`criterionMet` = 已闭合的必需族 ≥ `ceil(必需族 × 0.95)`（**向上取整**，向下取整会允许"仍有必需族未闭合"时宣称达标），`outstandingRequiredFamilies` 就是判据仍在等的工单清单。豁免只对 `blocked` 族成立，守卫拒绝给未建或未完成的族开豁免——否则把族声明成豁免就能自己调低目标。
 - 该块与 `verification` 一样，**永不改变可用性判定**；族的逐工具证据状态来自验收登记表的交叉统计。运维面的判定规则、授权模型与完成判据见 `docs/ops-coverage.md`。
 
-  0.50.8 实测：15 个场景族中 2 族端到端（`logs`、`dumps`，13%），`partial` 7、`absent` 5、`blocked` 1，还有 23 个计划内工具未建（0.50.7 首版为 25：`read_patch_level` 与 `read_client_settings` 已从计划中撤下——这两项的数据要么已由 `get_sap_system_info` 报告，要么其语义被项目刻意不换算，见 `docs/system-info.md`）。
+  0.50.9 实测：15 个场景族（= 评估矩阵的 14 族 + 平台挡住的运行追踪族，后者即那份书面豁免），2 族端到端（`logs`、`dumps`，占全部 13%、占**必需 14 族** 14%），`partial` 7、`absent` 5、`blocked` 1，`criterionMet: false`，`remainingRequiredFamilyCount: 12`，还有 23 个计划内工具未建（0.50.7 首版为 25：`read_patch_level` 与 `read_client_settings` 已从计划中撤下——这两项的数据要么已由 `get_sap_system_info` 报告，要么其语义被项目刻意不换算，见 `docs/system-info.md`）。
 
 ---
 

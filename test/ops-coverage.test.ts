@@ -92,6 +92,40 @@ test("family states are derived from the surface, and the plan's gaps stay visib
     ),
     "the guard did not report a role that contradicts the registry"
   )
+
+  // A platform exemption is a claim, so an exemption on a family the plan simply has not built must
+  // fail: otherwise the target could be lowered by declaring families exempt.
+  const bogusExemptions = [
+    {
+      id: "jobs",
+      label: "Jobs",
+      plannedToolNames: ["search_background_jobs"],
+      actionRequired: false,
+      gap: "",
+      exemptReason: "looks hard"
+    },
+    {
+      id: "logs",
+      label: "Logs",
+      plannedToolNames: ["read_system_logs"],
+      actionRequired: false,
+      gap: "",
+      exemptReason: ""
+    }
+  ]
+  const exemptionProblems = opsClassificationProblems({ families: bogusExemptions })
+  assert.ok(
+    exemptionProblems.some((problem) =>
+      /family jobs claims a platform exemption but its state is read-only/.test(problem)
+    ),
+    `the guard accepted an exemption on an unbuilt family: ${exemptionProblems.join("; ")}`
+  )
+  assert.ok(
+    exemptionProblems.some((problem) =>
+      /family logs claims an exemption with an empty reason/.test(problem)
+    ),
+    "the guard accepted a blank exemption reason"
+  )
 })
 
 test("the block counts only families with an empty gap as end-to-end", () => {
@@ -119,6 +153,26 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)
   assert.equal(block.summary.missingPlannedToolCount, block.summary.missingPlannedTools.length)
 
+  // The criterion is stated in the block, not left to the reader: the assessment's matrix has 14
+  // families, the surface carries 15 because the platform-blocked trace family is its own family,
+  // and that family is the one documented exemption. So 14 families have to close - the number the
+  // objective names - and 2 of 14 is 14%, not the 13% that dividing by 15 would give.
+  assert.deepEqual(block.summary.exemptFamilies, ["traces"])
+  assert.equal(block.summary.requiredEndToEndFamilyCount, 14)
+  assert.equal(block.summary.requiredEndToEndPercent, 95)
+  assert.equal(block.summary.endToEndPercentOfRequired, 14)
+  assert.equal(block.summary.remainingRequiredFamilyCount, 12)
+  assert.equal(block.summary.criterionMet, false)
+  assert.equal(
+    block.summary.outstandingRequiredFamilies.length,
+    block.summary.requiredEndToEndFamilyCount - block.summary.endToEndFamilyCount
+  )
+  assert.ok(
+    !block.summary.outstandingRequiredFamilies.includes("traces") &&
+      !block.summary.outstandingRequiredFamilies.includes("logs"),
+    "the worklist must name neither the exempt family nor a closed one"
+  )
+
   // A monitor-only family never becomes end-to-end just because a reader exists.
   const jobs = block.families.find((family) => family.id === "jobs")
   assert.ok(jobs)
@@ -137,6 +191,13 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   assert.ok(traces)
   assert.equal(traces.state, "blocked")
   assert.deepEqual(traces.platformBlockedTools, ["analyze_abap_traces"])
+  assert.equal(traces.exempt, true)
+  assert.match(traces.exemptReason, /platform-blocked/)
+  // Only the platform-blocked family may carry an exemption.
+  assert.deepEqual(
+    block.families.filter((family) => family.exempt).map((family) => family.id),
+    ["traces"]
+  )
 
   // The system baseline keeps only the commitment that is still real: the client role, its change
   // protection and CVERS.EXTRELEASE verbatim are already reported by get_sap_system_info, so

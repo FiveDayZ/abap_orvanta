@@ -48,6 +48,17 @@ export interface OpsFamilyDefinition {
   actionRequired: boolean
   /** What is still missing before the family can be finished inside the service; empty when closed. */
   gap: string
+  /**
+   * Written basis for excluding this family from the end-to-end requirement, when the platform - not
+   * the plan - makes the family impossible on this release.
+   *
+   * An exemption is a claim someone has to defend, so it is only accepted for a family whose every
+   * present tool is `platform-blocked`, and the text has to say why the platform is the reason. A
+   * family that is merely unbuilt, or built but incomplete, is not exempt: it counts against the
+   * target. Without this field the block could not state what "95%" is measured over, and an
+   * impossible family would silently eat the whole target.
+   */
+  exemptReason?: string
 }
 
 /**
@@ -150,7 +161,16 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     label: "Runtime traces",
     plannedToolNames: ["analyze_abap_traces"],
     actionRequired: false,
-    gap: ""
+    gap: "",
+    // The assessment's family matrix lists 14 families and allows exactly one written exemption for a
+    // family the platform makes impossible (.doc/orvanta-mcp-ops-coverage-assessment-and-next-phase-plan-20260925.md
+    // §6). This is that exemption: `analyze_abap_traces` is present but `platform-blocked`, because
+    // this release serves no ADT runtime-trace endpoint. Keeping it as its own family - rather than
+    // folding it into another one to protect a nicer percentage - is what lets the block report 15
+    // families, require 14 of them, and still point at one documented exemption.
+    exemptReason:
+      "This release serves no ADT runtime-trace endpoint (the trace resources answer 404), so the " +
+      "family is platform-blocked rather than unbuilt or incomplete."
   },
   {
     id: "locks",
@@ -347,6 +367,17 @@ export function opsClassificationProblems(
     }
 
     const state = opsFamilyState(definition)
+    if (definition.exemptReason !== undefined) {
+      if (definition.exemptReason.trim() === "") {
+        problems.push(`family ${definition.id} claims an exemption with an empty reason`)
+      }
+      if (state !== "blocked") {
+        problems.push(
+          `family ${definition.id} claims a platform exemption but its state is ${state}: only a ` +
+            "family whose every present tool is platform-blocked can be exempt from the target"
+        )
+      }
+    }
     if (
       state === "read-and-act" &&
       !definition.plannedToolNames.some(
@@ -377,6 +408,9 @@ export interface OpsFamilyRollup {
   label: string
   state: OpsFamilyState
   actionRequired: boolean
+  /** True when the platform, not the plan, makes this family impossible on this release. */
+  exempt: boolean
+  exemptReason: string
   toolNames: string[]
   missingToolNames: string[]
   readTools: string[]
@@ -395,6 +429,7 @@ export interface OpsCapabilityBlock {
     toolRole: string
     familyState: string
     endToEndRule: string
+    exemptionRule: string
   }
   families: OpsFamilyRollup[]
   summary: {
@@ -403,6 +438,21 @@ export interface OpsCapabilityBlock {
     endToEndFamilyCount: number
     endToEndPercent: number
     endToEndFamilies: string[]
+    /**
+     * The families the completion criterion is measured over: the assessment's matrix minus the
+     * documented exemptions. With one exemption this is 14 of 15, which is where the objective's
+     * "14 families at 95%" comes from.
+     */
+    requiredEndToEndFamilyCount: number
+    requiredEndToEndPercent: number
+    /** End-to-end progress against the required families, not against all families. */
+    endToEndPercentOfRequired: number
+    /** How many more required families have to close before the criterion is met. */
+    remainingRequiredFamilyCount: number
+    /** The required families that are still open - the worklist the criterion is waiting on. */
+    outstandingRequiredFamilies: string[]
+    exemptFamilies: string[]
+    criterionMet: boolean
     actionToolCount: number
     platformBlockedToolCount: number
     classifiedToolCount: number
@@ -441,6 +491,8 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
       label: definition.label,
       state: opsFamilyState(definition),
       actionRequired: definition.actionRequired,
+      exempt: definition.exemptReason !== undefined,
+      exemptReason: definition.exemptReason ?? "",
       toolNames: present,
       missingToolNames: missingOpsToolNamesForFamily(definition),
       readTools: present.filter((tool) => roles.get(tool) === "read-only"),
@@ -467,6 +519,16 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
   const endToEndFamilies = families
     .filter((family) => family.state === "read-only" || family.state === "read-and-act")
     .map((family) => family.id)
+  const exemptFamilies = families.filter((family) => family.exempt).map((family) => family.id)
+  const requiredFamilies = families.filter((family) => !family.exempt)
+  const outstandingRequiredFamilies = requiredFamilies
+    .filter((family) => family.state !== "read-only" && family.state !== "read-and-act")
+    .map((family) => family.id)
+  // 95% of the required families, rounded up: a fraction of a family cannot be closed, so the
+  // criterion never rounds in the service's favour.
+  const requiredEndToEndFamilyCount = requiredFamilies.length
+  const closedRequiredFamilyCount = requiredEndToEndFamilyCount - outstandingRequiredFamilies.length
+  const criterionFloor = Math.ceil(requiredEndToEndFamilyCount * 0.95)
   const missingPlannedTools = [
     ...new Set(families.flatMap((family) => family.missingToolNames))
   ].sort()
@@ -483,7 +545,12 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
       endToEndRule:
         "A family counts as end-to-end only when its declared gap is empty. Monitoring reads never " +
         "compensate for a missing action, so a family that can see a problem but not act on it " +
-        "stays partial."
+        "stays partial.",
+      exemptionRule:
+        "The completion criterion is measured over the families the plan can actually close: a " +
+        "family is exempt only when every one of its tools is platform-blocked *and* it carries a " +
+        "written reason why the platform is the obstacle. An unbuilt or incomplete family is never " +
+        "exempt, and the block refuses to publish an exemption without a blocked state."
     },
     families,
     summary: {
@@ -492,6 +559,15 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
       endToEndFamilyCount: endToEndFamilies.length,
       endToEndPercent: Math.round((endToEndFamilies.length / families.length) * 100),
       endToEndFamilies,
+      requiredEndToEndFamilyCount,
+      requiredEndToEndPercent: 95,
+      endToEndPercentOfRequired: Math.round(
+        (closedRequiredFamilyCount / requiredEndToEndFamilyCount) * 100
+      ),
+      remainingRequiredFamilyCount: outstandingRequiredFamilies.length,
+      outstandingRequiredFamilies,
+      exemptFamilies,
+      criterionMet: closedRequiredFamilyCount >= criterionFloor,
       actionToolCount: roles.filter((role) => role === "action").length,
       platformBlockedToolCount: roles.filter((role) => role === "platform-blocked").length,
       classifiedToolCount: roles.length,
@@ -501,6 +577,8 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
     note:
       "This block states what the operations surface can close, not whether a helper is deployed: " +
       "it never changes an availability or verification verdict. Family state is derived from the " +
-      "tool registry plus the declared gap, so the numbers move only when the surface does."
+      "tool registry plus the declared gap, so the numbers move only when the surface does. " +
+      "`endToEndPercent` is over all families; `endToEndPercentOfRequired` and `criterionMet` are " +
+      "over the required ones, which is the reading the assessment's 95% criterion uses."
   }
 }
