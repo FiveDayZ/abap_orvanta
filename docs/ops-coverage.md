@@ -282,13 +282,12 @@ states each row's standing, including what that session changed and what it coul
 The same session produced two facts about this surface that are not evidence standing at all, both
 recorded in the session's `.doc` record:
 
-- `execute_data_query` reaches the finite fallback dialect only when `maxRows <= 500`
-  (`src/tools.ts` throws the platform's own `SAP_DATA_QUERY_RESPONSE_INVALID` above that), and the
-  tool description does not state the cap, so an unqualified `SELECT` reads as a platform failure
-  rather than as a rejected input.
-- `read_ddic_structure` rejects tables with `OBJECT_TYPE_MISMATCH: Dictionary object is not a
-structure`; a table's field list has to come from `read_abap_table` or from the query's own
-  `fieldMetadata`.
+- `execute_data_query` only reached the finite fallback dialect when `maxRows <= 500`, because
+  `src/tools.ts` rethrew the platform's own `SAP_DATA_QUERY_RESPONSE_INVALID` above that, and the
+  description did not state the ceiling - so an unqualified call, whose budget defaults to 1000,
+  read as a platform failure rather than as a rejected input. Fixed the same day: the dialect read
+  is clamped to the allowlist ceiling (`ALLOWLIST_MAX_ROWS`), the description states it, the
+  truncation is still reported, and an aggregate over an incomplete read is still refused.
 
 The approval files were a prerequisite of the session rather than a result of it:
 `operational-log-approvals.json` did not exist at all, so every operational-log read was refusing

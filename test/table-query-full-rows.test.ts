@@ -455,6 +455,40 @@ test("execute_data_query routes full rows through the shared reader without repe
   assert.equal(result.querySource.method, "bbp_rfc_read_table")
 })
 
+test("execute_data_query clamps the fallback read to the allowlist ceiling instead of failing", async () => {
+  // An unqualified call carries maxRows 1000, which used to rethrow the platform's own
+  // empty-preview error - indistinguishable from "this release cannot query at all".
+  const f = fixture(6, 6)
+  const backend = Object.assign(new MockBackend(), f.backend)
+  let nativeCalls = 0
+  backend.runQuery = async () => {
+    nativeCalls++
+    throw nativeError
+  }
+  const tools = new ToolService(backend)
+  tools.readDdicTransparentTable = async () => JSON.stringify(f.definition)
+  tools.readFunctionModuleInterface = async (input) =>
+    JSON.stringify(await f.readReader(input.connectionId, input.functionName))
+  const result = JSON.parse(
+    await tools.executeDataQuery({
+      connectionId: "w200",
+      displayMode: "internal",
+      sql: "SELECT * FROM TFDIR WHERE KUNNR = '0001100059'",
+      maxRows: 1000,
+      rowRange: { start: 0, end: 5 }
+    })
+  )
+  assert.equal(nativeCalls, 1)
+  assert.equal(result.querySource.method, "bbp_rfc_read_table")
+  assert.deepEqual(result.data, f.rows.slice(0, 5))
+  // ALLOWLIST_MAX_ROWS (500) + 1: the reader is asked for one row beyond the ceiling so
+  // truncation is detectable, and never for more than that.
+  assert.ok(
+    f.requests.every((request) => Number(request.inputParameters.ROWCOUNT) <= 501),
+    "the dialect must never ask the reader for more than the allowlist ceiling"
+  )
+})
+
 test("execute_data_query reads each disjunct on the server and merges what comes back", async () => {
   const f = fixture(6, 6)
   const backend = Object.assign(new MockBackend(), f.backend)

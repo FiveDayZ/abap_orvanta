@@ -72,7 +72,11 @@ import {
   sortRowsByColumns,
   tableQuerySchema
 } from "./table-query.js"
-import { assertTableAllowed, TABLE_ALLOWLIST_UNVERIFIABLE } from "./table-allowlist.js"
+import {
+  ALLOWLIST_MAX_ROWS,
+  assertTableAllowed,
+  TABLE_ALLOWLIST_UNVERIFIABLE
+} from "./table-allowlist.js"
 import {
   normalizeTextElements,
   textElementIdType,
@@ -7766,7 +7770,14 @@ export class ToolService {
       // refusal this service is about to raise - must not replace the platform's own error.
       if (!(error instanceof Error) || error.message !== nativeEmptyHtml) throw error
       const structured = parseGroupedTableSelect(sql)
-      if (!structured || rowCap > 500) throw error
+      if (!structured) throw error
+      // The dialect reads at most the allowlist ceiling in one statement, so a larger caller
+      // budget is clamped instead of refused. Refusing here replaced the caller's own request
+      // with the platform's empty-preview error, which reads as "this release cannot query"
+      // rather than "your row budget is too large for the fallback". The clamp cannot hide a
+      // smaller answer: the result still reports `truncated`/`incompleteBranches`, and an
+      // aggregate over an incomplete read is refused outright.
+      const dialectCap = Math.min(rowCap, ALLOWLIST_MAX_ROWS)
       // One server-side read per disjunct. The reader's own comparison stays authoritative, so an
       // `OR` becomes a union of pushed-down predicates rather than a client-side comparison that
       // would have to re-implement SAP's type-aware handling of `NUMC`, dates and packed numbers -
@@ -7785,7 +7796,7 @@ export class ToolService {
                 tableName: structured.tableName,
                 columns: readColumns,
                 filters,
-                maxRows: rowCap
+                maxRows: dialectCap
               },
               error
             )
@@ -7806,7 +7817,7 @@ export class ToolService {
             detail: {}
           }
         },
-        rowCap
+        dialectCap
       )
       const first = reads[0] ?? {}
       rawRows = grouped.rows
