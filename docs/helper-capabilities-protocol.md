@@ -346,8 +346,8 @@ export interface SapBackend {
     } }
 ],
 "verification": {
-  "registryLoaded": true, "registryPath": "contracts/verification-registry.json", "updatedAt": "2026-09-22",
-  "totals": { "verified": 3, "unverified": 129, "failed": 4, "blocked": 0, "platformUnsupported": 1, "total": 137 },
+  "registryLoaded": true, "registryPath": "contracts/verification-registry.json", "updatedAt": "2026-09-25",
+  "totals": { "verified": 21, "unverified": 115, "failed": 5, "blocked": 0, "platformUnsupported": 2, "total": 143 },
   "availabilityWithoutEvidence": "<按本次报告实时统计，随连接与 profile 变化>",
   "protocolOnlyToolCount": 44, "protocolOnlyTools": ["…"],
   "note": "…; verification never changes an availability verdict."
@@ -371,7 +371,28 @@ export interface SapBackend {
 }
 ```
 
-（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。`opsCapability` 的数例为 0.50.9 的实测值，随工具面变化，不是常量。）
+（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值（2026-09-25：`verified 21 / unverified 115 / failed 5 / platformUnsupported 2 / total 143`，其中 21 条 verified 与 2 条 platform-unsupported 均逐条指向 `.doc` 记录，见 §4A）；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。`opsCapability` 的数例为 0.50.11 的实测值，随工具面变化，不是常量；证据维度的升级不改变任何族状态，它只改变各族 `verification` 名单。）
+
+### 4A-0. 上面 `verification.totals` 的来源：OP0-2 证据补登（2026-09-25，0.50.11）
+
+`verified` 从 9 条升到 21 条、`platformUnsupported` 从 1 条升到 2 条，全部是**本工作区早已存在、但从未登记进验收表的真实调用记录**，不是新探针：
+
+| 证据来源（`.doc`）                        | 版本 / 日期          | 登记的工具                                                                                                               |
+| ----------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `log-joint-acceptance-20260908-121025.md` | 0.36.12 / 2026-09-08 | `search_application_logs`、`search_background_jobs`                                                                      |
+| `code-update-20260908-163230.md`          | 0.36.15 / 2026-09-08 | `discover_application_logs`、`read_application_log`、`read_background_job_log`、`read_system_logs`、`correlate_sap_logs` |
+| `code-update-20260908-091820.md`          | 0.36.8 / 2026-09-08  | `diagnose_sap_failure`                                                                                                   |
+| `code-update-20260909-084306.md`          | 0.36.17 / 2026-09-09 | `get_sap_system_info`                                                                                                    |
+| `code-update-20260827-173838.md`          | 0.3.x / 2026-08-27   | `analyze_abap_traces`（→ `platform-unsupported`）                                                                        |
+| `code-update-20260924-125930.md`          | 0.47.6 / 2026-09-24  | `search_sap_locks`                                                                                                       |
+| `code-update-20260924-165500.md`          | 0.47.12 / 2026-09-24 | `manage_transport_requests`                                                                                              |
+| `code-update-20260925-142324.md`          | 0.50.4 / 2026-09-25  | `analyze_abap_dumps`                                                                                                     |
+
+两条必须分清的事实：①这些是**历史运行**（最早 2026-08-27、最新 2026-09-25），每条登记都写明它是在哪个版本上观察到的，**不代表当前构建已被重新探测**；②**计划不是证据**——`code-update-20260911-140842.md`、`code-update-20260910-173827.md`、`code-update-20260911-110723.md` 里写的是实施与人工验收步骤，且各自明说本轮未发起 SAP 调用，所以 `read_background_job_details`、`read_background_job_spool`、`search_failed_updates`、`read_failed_update` 仍然保持 `unverified`（`evidence` 与 `lastAttemptAt` 均为 `null`，不编造尝试时间）。
+
+**运维证据维度的当前standing（20 个 ops 工具）**：`verified 14` / `platform-unsupported 1`（`analyze_abap_traces`，入口不可用，对应族豁免）/ `failed 1`（`cleanup_transport_entries`）/ `unverified 4`（上表列出的四个）。机器可读的按族名单来自报告的 `opsCapability.families[].verification`；此处的 4 个未登记项就是 OP0-2 剩余工作，每一项需要的输入类型写在 `docs/ops-coverage.md` §7。
+
+一个值得保留的教训：`manage_transport_requests` 的历史记录里，2026-09-24 上午的 D9 验收曾观察到 `get_user_transports` 对 `WYS` 返回 **0 条**，而同一份记录里 `GR2K923488` 刚从 `E070` 读回 `AS4USER=WYS`——**空清单当时真的是假阴性**，随后由 CTS 表后备修掉。登记这条证据时如果把"有记录"直接写成 `verified` 而不写这段历史，读者就会以为"0 条"从来不是问题；因此该条 `notes` 保留了整个前因后果，并附上 500 行读取上限的告诫。
 
 ### 4A. 证据维度（`verification`）与可用性维度正交
 

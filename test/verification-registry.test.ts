@@ -564,9 +564,19 @@ test("the registry records the honest gap rather than inflating it", () => {
   // tools, and the same run recorded cleanup_transport_entries as a runtime failure.
   // Raised from 8 to 9 on 2026-09-24: run_abap_program was invoked through MCP for the first time on
   // 0.47.12 and returned status passed with subrc 0 (.doc/code-update-20260924-165500.md).
+  // Raised from 9 to 21 on 2026-09-25 (OP0-2): twelve ops tools were re-registered from runtime
+  // evidence this workspace had already collected but never entered - the 2026-09-08 log/job
+  // acceptances (.doc/log-joint-acceptance-20260908-121025.md, .doc/code-update-20260908-163230.md,
+  // .doc/code-update-20260908-091820.md), the 2026-09-09 system-info probe
+  // (.doc/code-update-20260909-084306.md), the 2026-09-24 lock and CTS reads
+  // (.doc/code-update-20260924-125930.md, .doc/code-update-20260924-165500.md) and the 2026-09-25
+  // dump read (.doc/code-update-20260925-142324.md). Each of those entries names the record it came
+  // from and the version it was observed on; none of them was inferred from passing tests, and the
+  // four ops tools whose records were plans rather than calls were deliberately left unverified.
+  // This bound is a tripwire, not a quality bar: raising it again requires the same kind of citation.
   assert.ok(
-    totals.verified <= 9,
-    `only a handful of tools have real recorded evidence; found ${totals.verified}`
+    totals.verified <= 21,
+    `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
   // names the record it was verified from, so every one of them must carry an evidence path.

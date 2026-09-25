@@ -167,3 +167,24 @@ whose tools carry no recorded call is not complete.
 - The classification guard and the expected family states are asserted in
   `test/ops-coverage.test.ts`; it runs under the repository test gate with the authorisation
   required by `AGENTS.md` section 1.1.
+
+### 7.1 Evidence standing and the OP0-2 worklist (2026-09-25, 0.50.11)
+
+Of the 20 `ops` tools, `contracts/verification-registry.json` now records `verified` 14,
+`platform-unsupported` 1 (`analyze_abap_traces`), `failed` 1 (`cleanup_transport_entries`) and
+`unverified` 4. The 14 verified entries were registered from runtime records this workspace already
+held (2026-08-27 to 2026-09-25, versions 0.3.x to 0.50.4) - see
+`docs/helper-capabilities-protocol.md` section 4A-0. Point 2 of section 6 is therefore no longer the
+binding constraint for the closed families; what remains for evidence is exactly these five rows:
+
+| Tool                          | Status             | What closing it needs                                                                                                           | Why it is not closed already                                                                                                                                                                                                                                                                                                     |
+| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read_background_job_details` | `unverified`       | one approved read with an exact `jobName`/`jobCount` on a real job                                                              | the 2026-09-11 wave deployed the helper and widened the approved SM37 scope, and its own record states no functional call or job read was executed                                                                                                                                                                               |
+| `read_background_job_spool`   | `unverified`       | one approved read with a real `stepNumber`/`spoolId` from a job that produced spool output                                      | the call combination was chosen from RSPOLIST source inspection and its record states it was never SAP-syntax or runtime validated                                                                                                                                                                                               |
+| `search_failed_updates`       | `unverified`       | one approved SM13 window (<= 1 hour) with an explicit username that actually contains a failed update                           | the interactive acceptance entry point exists but was never run; an empty window would only prove the empty path, and creating a failed update to have a sample is forbidden                                                                                                                                                     |
+| `read_failed_update`          | `unverified`       | one approved existing `updateKey` (revision optional)                                                                           | same unexecuted entry point; the record explicitly refuses to fabricate a sample                                                                                                                                                                                                                                                 |
+| `cleanup_transport_entries`   | `failed` (runtime) | either Basis-level native ADT `removeobject` support on this release, or an explicit decision to accept the platform limitation | two structurally different payloads were tried against w200, the entry survived both, and the tool fails safe by refusing to report success. Per section 6 point 2 this may count as "the platform limitation is itself the closed finding" only if that decision is taken deliberately, which is a user call, not a code change |
+
+The first four rows are the same read-only family of calls and can be closed in one authorised probe
+session (SM37 and SM13 only; no writes, no cancellations, no retries, nothing created to serve as a
+sample).

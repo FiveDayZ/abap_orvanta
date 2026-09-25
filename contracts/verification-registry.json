@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-24",
-  "notes": "Every entry with status verified or failed must cite an immutable evidence file that exists in this repository; unverified entries must cite nothing and must not claim an attempt time. Default is unverified. availability and verification.status are ORTHOGONAL: verification.status never feeds any availability computation, and available + unverified is the honest normal state rather than a defect. failed entries keep failureBasis = runtime (a real call was made and failed) distinct from static (never called, but proven impossible), because after a fix a static entry still needs a real call before it can become verified.",
+  "updatedAt": "2026-09-25",
+  "notes": "Verification status is recorded per tool, never inferred from availability or from passing tests. 2026-09-25 (OP0-2 evidence registration): thirteen tools moved from unverified to a status their existing evidence supports - twelve to verified and analyze_abap_traces to platform-unsupported. Every one of them cites a .doc record that contains a real w200 call with an observed result; the earliest is 2026-09-08 and the latest 2026-09-25, and each entry states the version it was observed on. These are historical runs recovered from this workspace's records, not new probes: the current build has not been re-probed, and entries whose records were plans rather than calls (read_background_job_details, read_background_job_spool, search_failed_updates, read_failed_update) deliberately stayed unverified.",
   "entries": [
     {
       "tool": "abap_activate",
@@ -127,13 +127,13 @@
       "tool": "analyze_abap_dumps",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": null,
+      "verificationTarget": "w200 ST22 dump list and body during the 2.11 helper work",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-25T14:23:24+08:00",
+      "evidence": ".doc/code-update-20260925-142324.md",
+      "notes": "Real calls recorded at 14:17-14:23 on 2026-09-25. analyze_abap_dumps list_dumps surfaced the newly created dump STRING_OFFSET_TOO_LARGE (14:17:50) and reading it named helper line 7264 with offset 34, which is what located the 2.10 helper's trailing-character defect and led to the 2.11 fix; a dump reader that returned an empty or unrelated list could not have produced that pointer. Not proven: parsing of dump types other than this one, and nothing about the retention window. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "analyze_abap_traces",
@@ -141,11 +141,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": "w200 ADT trace endpoint (HTTP 404)",
       "method": "read-only",
-      "status": "unverified",
+      "status": "platform-unsupported",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded through this service. The tool index notes that the w200 ADT trace endpoint returned HTTP 404, but that is a boundary observed elsewhere rather than a call this registry can cite, so this entry stays unverified instead of borrowing a status it has no evidence file for. The endpoint must be exposed before any call can succeed."
+      "lastAttemptAt": "2026-08-27T17:38:38+08:00",
+      "evidence": ".doc/code-update-20260827-173838.md",
+      "notes": "The boundary now has an evidence file instead of a borrowed status, which is what this entry was holding open. A live probe recorded in the cited run called analyze_abap_traces against w200 and got HTTP 404, and the same run discriminates the cause: where-used moved from 403 to 404 once the account and session were ruled out (so 404 means the endpoint is absent, not that permission failed), and the client-side defect that masked wrapped 404s as HTTP 500 had already been fixed by then. w200 does not offer the trace endpoint, so no call can succeed until Basis exposes it, and an absent trace result must never be read as 'this program was never traced'. This is the evidence behind the ops coverage block's platform exemption for the traces family. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "analyze_change_impact",
@@ -187,13 +187,13 @@
       "tool": "correlate_sap_logs",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": null,
+      "verificationTarget": "w200 four-source correlation, 11:00-12:00 SAP-local, systemLog.program RSWWDHEX",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-08T16:32:01+08:00",
+      "evidence": ".doc/code-update-20260908-163230.md",
+      "notes": "Real call through the deployed MCP interface: 2026-09-08T11:00:00-12:00:00 SAP-local with systemLog.program=RSWWDHEX, includeDumps=false and maxPerSource=5 returned timeline=5, every source status ok, overall status partial and qualityGate not_evaluated, reporting coverage local_instance_bounded_tail for server GRAPP2_GR2_00 over scannedRecords=1537 with truncated=true. The earlier 12:10 run returned 10 timeline entries and 5 candidates in which every candidate was evidenceLevel=time_only with matchingFields=[] and causalRelationship=not_proven, and it dropped per-record text-quality flags on the way into the timeline (documented as a defect in that same record). So partial plus time_only is the tool being honest about what it can prove. Not proven: any causal root-cause attribution. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "create_abap_message_class",
@@ -427,25 +427,25 @@
       "tool": "diagnose_sap_failure",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": null,
+      "verificationTarget": "w200 existing dump, read through scripts/probe-runtime-diagnostics.mjs",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-08T09:18:20+08:00",
+      "evidence": ".doc/code-update-20260908-091820.md",
+      "notes": "Real call recorded: on 0.36.8 the read-only probe scripts/probe-runtime-diagnostics.mjs reported orvanta 0.36.8 with 77 tools and both the older dump tool and the new diagnose_sap_failure successfully reading an existing real w200 dump, which is why that record could call the new tool verified while the package was still being deployed. The exact dump identifier is not quoted in the record, so this entry does not name one. Not proven: cross-source root-cause attribution, which the tool's own contract marks as not_proven rather than guessed. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "discover_application_logs",
       "helper": "Z_ORVANTA_LOG_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SLG1 discovery (0.36.15)",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-08T16:32:01+08:00",
+      "evidence": ".doc/code-update-20260908-163230.md",
+      "notes": "Real call recorded. On 0.36.15 the recovery check ran discover_application_logs(maxResults=1) and found one existing log; the earlier acceptance that same day (.doc/log-joint-acceptance-20260908-121025.md, 12:10) read a 5-result page containing SM30/STRUCTURE, WF/WIERRE and CA/CA_JF, so discovery returns logs that exist rather than a fabricated empty list. Not proven by this evidence: nothing about SLG1 message bodies, which is a separate tool, and no claim of full retention or cross-client coverage. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "execute_data_query",
@@ -619,13 +619,13 @@
       "tool": "get_sap_system_info",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": null,
+      "verificationTarget": "w200 system information, both component output modes (0.36.17 package)",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-09T08:43:06+08:00",
+      "evidence": ".doc/code-update-20260909-084306.md",
+      "notes": "Real acceptance recorded: node scripts/probe-system-info.mjs ran against the deployed 0.36.17 package and reported status Passed for both component modes, reading 114 software components completely with componentsComplete=true; with includeComponents=false the array is hidden while completeness and classification survive rather than being faked as absent. That read is the scoped fallback over six fixed tables after the native data preview answered HTTP 200 with text/html and zero bytes - the earlier 12:10 acceptance had all four tables failing with SAP_DATA_QUERY_RESPONSE_INVALID, which is why the fallback exists. Not proven: kernel and database release values, because the tool never reads RFC_SYSTEM_INFO. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "get_version_history",
@@ -799,13 +799,13 @@
       "tool": "manage_transport_requests",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": null,
+      "verificationTarget": "w200 CTS listing for user WYS, 0.47.12 after the service restart",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-24T16:53:00+08:00",
+      "evidence": ".doc/code-update-20260924-165500.md",
+      "notes": "Real call recorded after the 0.47.12 restart: get_user_transports for WYS listed 500 requests with 500 descriptions and 0 empty, including the workbench requests that previously had no description (GR2K923472 as ZABAP_ORVANTA_MCP_WYS_20260917_01 and GR2K923490). History that must not be lost: the D9 acceptance earlier that same day saw this same action answer 'Summary: 0 transport requests for user WYS' while GR2K923488 existed and E070 read back AS4USER WYS - an empty user list really was a false negative, and the fix was the CTS-table fallback, which is why the reply now names the source that answered. Caution: exactly 500 rows came back and the same record notes E070's 500-row read cap, so an answer that reaches 500 must not be read as a complete list. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "patch_abap_gui_definition",
@@ -955,13 +955,13 @@
       "tool": "read_application_log",
       "helper": "Z_ORVANTA_LOG_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SLG1 message read, log 00000000000000007802",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-08T16:32:01+08:00",
+      "evidence": ".doc/code-update-20260908-163230.md",
+      "notes": "Real call recorded after the log helper was deployed: logNumber 00000000000000007802 with maxMessages=2 returned status ok, 2 non-empty readable bodies, hasMore=true and no unusable or truncated markers. The earlier 12:10 acceptance on 0.36.12 had this same tool answer READ_ONLY_UNSUPPORTED for three different logs; that rejection is kept as history rather than overwritten, because it is what the helper deployment changed. Not proven: long-body behaviour, revision handling and non-ASCII extremes. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "read_background_job_details",
@@ -973,19 +973,19 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "notes": "No real call has been recorded. The 2026-09-11 job-detail wave deployed the helper and grew the approved SM37 scope, and its own record states that no functional call or job read was executed, so this entry stays unverified rather than inheriting the neighbouring job list's evidence. Closing it needs one approved jobName/jobCount read. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "read_background_job_log",
       "helper": "Z_ORVANTA_OPS_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SM37 job log body, SWWDHEX / jobCount 00025900",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-08T16:32:01+08:00",
+      "evidence": ".doc/code-update-20260908-163230.md",
+      "notes": "Real call recorded after the helper deployment: jobName SWWDHEX, jobCount 00025900 and maxMessages=5 returned status ok with 4 non-empty readable bodies, hasMore=false and no unusable or truncated markers. The 12:10 acceptance on 0.36.12 had this tool answer READ_ONLY_UNSUPPORTED for jobCount 00025900 and 10595900, which is the state the cited record supersedes. Not proven: long spool-like bodies, other job types or other clients. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "read_background_job_spool",
@@ -997,7 +997,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "notes": "No real call has been recorded. The spool-read design was written from RSPOLIST source inspection and its own record says the chosen call combination was never SAP-syntax or runtime validated, so the tool is unverified on evidence rather than on suspicion. Closing it needs one approved step with a real spool id. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "read_bte_configuration",
@@ -1141,7 +1141,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "notes": "No real call has been recorded. The same unexecuted SM13 acceptance entry point covers this tool's updateKey detail read; its record explicitly warns against creating a failed update just to have a sample. Closing it needs one approved existing update key. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "read_function_module_interface",
@@ -1279,13 +1279,13 @@
       "tool": "read_system_logs",
       "helper": "Z_ORVANTA_OPS_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SM21 (program RSWWDHEX), one-hour SAP-local window, client 200",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-08T16:32:01+08:00",
+      "evidence": ".doc/code-update-20260908-163230.md",
+      "notes": "Real calls recorded. program=RSWWDHEX with maxResults=5 returned status ok and 5 records after the deployment; the 12:10 run returned scannedRecords=1306 over a one-hour window with client=200 and truncated=true, and it correctly refused a 3601-second window (Diagnostic range must be between 0 and 3600 seconds), so the bound is enforced rather than clamped in silence. truncated=true is the normal shape of a bounded tail and must not be read as a complete log. The 12:10 record also documents a body-quality defect present on that build - 3 of 5 records were type=p parameter records rendered as body with textUnavailable=false - and the cited record proves only the recovery of the read path, not that the parameter-record rendering was corrected. Not proven: cross-instance or full-retention coverage, or non-empty ST22 parsing. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "read_transaction_code",
@@ -1435,25 +1435,25 @@
       "tool": "search_application_logs",
       "helper": "Z_ORVANTA_LOG_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SLG1 header filter and paging (object SM30, subobject STRUCTURE)",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-08T12:10:25+08:00",
+      "evidence": ".doc/log-joint-acceptance-20260908-121025.md",
+      "notes": "Real calls recorded on 0.36.12. Filtering object=SM30, subobject=STRUCTURE over one SAP-local day returned log 00000000000000007801 with hasMore=true, and paging from that key returned 00000000000000007802 with hasMore=false; both pages carried 4 messages, so the cursor advanced instead of repeating or stopping early. Only one object/subobject and one day were sampled, and the same record shows message bodies were rejected on that build (READ_ONLY_UNSUPPORTED) - the header read is what this entry covers. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "search_background_jobs",
       "helper": "Z_ORVANTA_OPS_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SM37 job list (SWWDHEX, SWWERRE), 2026-09-08",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-08T12:10:25+08:00",
+      "evidence": ".doc/log-joint-acceptance-20260908-121025.md",
+      "notes": "Real calls recorded on 0.36.12. For 2026-09-08 both SWWDHEX and SWWERRE returned 2 real jobs with hasMore=true; the narrower 11:00-12:00 window returned job counts 10595900 and 11025900, and paging with afterJobCount=11025900 returned 11055900 and 11085900, so the cursor moved forward. The same record is explicit that an empty answer for a guessed job name is not evidence that the system has no matching jobs: two name guesses returned empty before SWWDHEX/SWWERRE were found non-empty. Not proven: any full-window completeness claim. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "search_badi_objects",
@@ -1513,19 +1513,19 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "notes": "No real call has been recorded. The 2026-09-10 SM13 wave built an interactive acceptance entry point that requires a human operator and an explicit READ confirmation, and it was never run, so there is no attempt to cite and no attempt time to claim. Closing it needs one approved SM13 window with a real user. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "search_sap_locks",
       "helper": "Z_ORVANTA_MAINT_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "w200 SM12 lock list for user WYS",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-24T12:59:30+08:00",
+      "evidence": ".doc/code-update-20260924-125930.md",
+      "notes": "Real call recorded: search_sap_locks(WYS) returned status ok with entries [] while the same record was checking for leftover locks around two failed resume_ddic_table_activation calls, so an empty list is a real observation for that user at that moment. It is not proof that no lock exists anywhere, and this tool is read-only by contract - it never unlocks. Not proven: a non-empty lock sample, lock-object filtering, or parameter matching. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
     },
     {
       "tool": "test_remote_function_module",
