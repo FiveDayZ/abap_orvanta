@@ -8,6 +8,7 @@ import {
   mergeTextElementChanges,
   normalizeExistingTextElements,
   normalizeTextElements,
+  TEXT_ELEMENT_ID_TYPES,
   textElementCategory,
   textElementIdTypeFromPoolId,
   textElementKey
@@ -38,6 +39,34 @@ function abapOf(block: string): string {
       return first ? [String(first[1])] : []
     })
     .join("\n")
+}
+
+/**
+ * The kind crosses the payload as the idType name, so every helper field that carries it must be at
+ * least as wide as the longest idType. `id_kind TYPE c LENGTH 8` truncated `SELECTION` to
+ * `SELECTIO`, so a selection text write was rejected as `TEXT_ID_TYPE_INVALID` and a read published
+ * an unknown kind - found by the 2026-09-25 runtime acceptance, after a local gate that had asserted
+ * the eight-character width instead of the rule.
+ */
+const KIND_FIELD_DECLARATIONS = [
+  { name: "lv_text_entry_kind", pattern: /"  DATA lv_text_entry_kind TYPE c LENGTH (\d+)\./ },
+  { name: "id_kind", pattern: /"    id_kind TYPE c LENGTH (\d+),/ }
+]
+
+function kindFieldWidthViolations(script: string): string[] {
+  const longest = Math.max(...TEXT_ELEMENT_ID_TYPES.map((value) => value.length))
+  const violations: string[] = []
+  for (const declaration of KIND_FIELD_DECLARATIONS) {
+    const match = declaration.pattern.exec(script)
+    if (!match) {
+      violations.push(`${declaration.name} declaration not found`)
+      continue
+    }
+    if (Number(match[1]) < longest) {
+      violations.push(`${declaration.name} must hold ${longest} characters, found ${match[1]}`)
+    }
+  }
+  return violations
 }
 
 test("the text pool kind selects the row ID, its ID rule and its identity", () => {
@@ -181,8 +210,18 @@ test("the helper writes to the pool row ID the entry kind selects", async () => 
   assert.match(branch, /WHEN 'TYPE'\./)
   assert.match(branch, /<ls_text_change>-id_kind = lv_payload_value\./)
   assert.match(script, /"  DATA lv_text_pool_id TYPE textpool-id\."/)
-  assert.match(script, /"  DATA lv_text_entry_kind TYPE c LENGTH 8\."/)
-  assert.match(script, /"    id_kind TYPE c LENGTH 8,"/)
+  assert.deepEqual(
+    kindFieldWidthViolations(script),
+    [],
+    "a kind field is narrower than the longest idType"
+  )
+  // The guard has to reject the width that truncated the kind, not just accept today's number.
+  assert.deepEqual(
+    kindFieldWidthViolations(
+      script.replace('"    id_kind TYPE c LENGTH 9,"', '"    id_kind TYPE c LENGTH 8,"')
+    ),
+    ["id_kind must hold 9 characters, found 8"]
+  )
   assert.match(branch, /lv_text_pool_id = 'I'\./)
   assert.match(branch, /lv_text_pool_id = 'S'\./)
   assert.match(branch, /TEXT_ID_TYPE_INVALID/)
@@ -252,4 +291,18 @@ test("the helper capability rows and the service contract agree on the protocol 
     route.requiredOperations.map((item) => [item.tool, [...item.operations].sort()]),
     [["manage_text_elements", ["MERGE_TEXT_ELEMENTS", "READ_TEXT_ELEMENTS"]]]
   )
+})
+
+test("the generated body keeps ABAP comment markers in column one", async () => {
+  const script = await readFile(SCRIPT, "utf8")
+  // `*` marks a comment in column one only; anywhere else it is the multiplication operator, so an
+  // indented comment breaks the statement it sits in. The 2026-09-25 revision indented four comments
+  // above the text change structure and GENERATE rejected the whole body with "no colon before
+  // comma" on the comment's own line - while the 72-column limit, the declaration scan, the export
+  // and the ADT syntax check all passed. This reads the emitter, so the next one fails before F8.
+  assert.doesNotMatch(script, /^\s*"\s+\*/m)
+  // Both places that hand a generated body to SAP carry the rule, next to the column limit.
+  assert.match(script, /Generated function source indents a comment/)
+  const columnRule = script.match(/if \(\$line -match '\^\\s\+\\\*'\) \{/g) ?? []
+  assert.equal(columnRule.length, 2, "the column-one rule must sit at both generation sites")
 })

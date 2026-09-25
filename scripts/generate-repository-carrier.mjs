@@ -365,25 +365,29 @@ if (!offline) {
   )
   // Carrier ordering invariant (.doc/d6-carrier-ordering-invariant.md): a carrier replaces the whole
   // body, so it may only be applied on top of a helper that already contains every predecessor
-  // change. The repository family deployed 2.10 as its highest protocol (2026-09-25); every protocol
-  // that a predecessor carrier may have left behind is listed here, because leaving one out makes
-  // every subsequent run abort on its own precondition. This carrier's own revision (2.11, the
-  // two-layout function body boundary, anchored on the FUNCTION statement itself) is listed as well, so a repeat run after a partial or
-  // complete application is still allowed instead of aborting on its own output.
-  assert.ok(
-    ["2.5", "2.6", "2.7", "2.8", "2.9", "2.10", "2.11"].some((protocol) =>
-      liveText.includes(`PROTOCOL|MAX|${protocol}`)
-    ),
-    "the deployed helper is not at protocol 2.5, 2.6, 2.7, 2.8, 2.9, 2.10 or 2.11: apply the previous carrier first"
-  )
-  // Operations already deployed must survive the replacement; operations this carrier introduces
-  // cannot exist yet, so requiring them live would make the carrier ungeneratable. The capability
-  // table's own sinceVersion decides which is which, instead of a hand-maintained exemption list.
+  // change. The bound is the rule, not a hand-maintained list of revisions: every protocol from the
+  // oldest one that carries the payload contract up to the protocol this body declares is an
+  // ancestor, and the body's own protocol has to be accepted as well, or a repeat run after a
+  // partial or complete application aborts on its own output. A live helper above that is newer, so
+  // its own carrier is applied first. (The list this replaced ended at 2.11 while the body already
+  // declared 2.12, so a same-protocol repair could not be generated online at all.)
   const versionRank = (v) =>
     String(v)
       .split(".")
       .map(Number)
       .reduce((a, b) => a * 1000 + b, 0)
+  const liveProtocols = [...liveText.matchAll(/PROTOCOL\|MAX\|([0-9.]+)/g)].map((match) => match[1])
+  assert.ok(
+    liveProtocols.some(
+      (protocol) =>
+        versionRank(protocol) >= versionRank("2.5") &&
+        versionRank(protocol) <= versionRank(canonical.declaredMaxProtocol)
+    ),
+    `the deployed helper is not at protocol 2.5 through ${canonical.declaredMaxProtocol}: apply the carrier for the newer protocol first`
+  )
+  // Operations already deployed must survive the replacement; operations this carrier introduces
+  // cannot exist yet, so requiring them live would make the carrier ungeneratable. The capability
+  // table's own sinceVersion decides which is which, instead of a hand-maintained exemption list.
   const introduced = (canonical.declaredOperationRows ?? [])
     .filter((row) => versionRank(row.version) >= versionRank(canonical.declaredMaxProtocol))
     .map((row) => row.opcode)

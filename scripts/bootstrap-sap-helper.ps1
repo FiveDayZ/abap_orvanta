@@ -6573,17 +6573,21 @@ function New-InstallProgram {
         "  FIELD-SYMBOLS <ls_fm_changing> TYPE rscha.",
         "  FIELD-SYMBOLS <ls_fm_table> TYPE rstbl.",
         "  FIELD-SYMBOLS <ls_fm_exception> TYPE rsexc.",
+        "* The kind crosses the payload as the idType name, so both fields",
+        "* below must hold the longest one, 'SELECTION' (nine characters).",
+        "* At eight a write was rejected as TEXT_ID_TYPE_INVALID and a read",
+        "* published an unknown kind.",
         "  DATA: BEGIN OF ls_text_change,",
         "    id TYPE textpool-key,",
         "    entry TYPE textpool-entry,",
         "    length TYPE textpool-length,",
         "    action TYPE c LENGTH 6,",
-        "    id_kind TYPE c LENGTH 8,",
+        "    id_kind TYPE c LENGTH 9,",
         "  END OF ls_text_change.",
         "  DATA lt_text_changes LIKE TABLE OF ls_text_change.",
         "  FIELD-SYMBOLS <ls_text_change> LIKE ls_text_change.",
         "  DATA lv_text_pool_id TYPE textpool-id.",
-        "  DATA lv_text_entry_kind TYPE c LENGTH 8.",
+        "  DATA lv_text_entry_kind TYPE c LENGTH 9.",
         "  DATA lv_text_id_length TYPE i.",
         "  FIELD-SYMBOLS <ls_message_row> TYPE t100.",
         "  DATA lv_payload_kind TYPE c LENGTH 1.",
@@ -13753,6 +13757,13 @@ function New-InstallProgram {
         if ($line.Length -gt 72) {
             throw "Generated function source exceeds 72 characters: $line"
         }
+        # ABAP marks a comment with `*` in column one only; anywhere else it is the multiplication
+        # operator, so an indented comment breaks the statement around it. GENERATE reports it as
+        # "no colon before comma" on the comment's own line, while the column limit, the declaration
+        # scan and the ADT syntax check all pass (2026-09-25, one SE38/F8 round on this body).
+        if ($line -match '^\s+\*') {
+            throw "Generated function source indents a comment: $line"
+        }
         $chunks = @()
         $offset = 0
         while ($offset -lt $line.Length) {
@@ -15656,6 +15667,10 @@ function New-SoapEnvelope {
     foreach ($line in $ProgramLines) {
         if ($line.Length -gt 72) {
             throw "Bootstrap ABAP line exceeds 72 characters: $line"
+        }
+        # Same column-one rule as New-InstallProgram: an indented `*` is multiplication, not a comment.
+        if ($line -match '^\s+\*') {
+            throw "Generated function source indents a comment: $line"
         }
     }
 
