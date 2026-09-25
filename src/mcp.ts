@@ -751,6 +751,12 @@ export function createMcpServer(
   registerTool("read_user_sessions", toolContracts.read_user_sessions, async (input) =>
     invoke("read_user_sessions", () => tools.readUserSessions(input))
   )
+  registerTool(
+    "read_file_system_directory",
+    toolContracts.read_file_system_directory,
+    async (input) =>
+      invoke("read_file_system_directory", () => tools.readFileSystemDirectory(input))
+  )
   registerTool("read_qrfc_queues", toolContracts.read_qrfc_queues, async (input) =>
     invoke("read_qrfc_queues", () => tools.readQrfcQueues(input))
   )

@@ -136,8 +136,25 @@ export const reviewedSessionListDefinition = z.object({
   )
 })
 
+/**
+ * The third monitor interface, read from w200 on 2026-09-25.
+ *
+ * `EPS2_GET_DIRECTORY_LISTING` is the newer of the two directory listings: its `EPS2FILI` row type
+ * carries five fields (name, size, timestamp, owner, return code) against the three of the older
+ * `EPSFILI`, and both were fully resolvable to RFC scalar types.
+ */
+export const reviewedDirectoryDefinition = z.object({
+  functionName: z.literal("EPS2_GET_DIRECTORY_LISTING"),
+  remoteEnabled: z.literal(true),
+  updateTask: z.literal(false),
+  sourceFingerprint: z.literal("50a403b6ad5276063ac101178f612c19650e92f9a5610dfe9b8b19784fd7bde6"),
+  interfaceFingerprint: z.literal(
+    "3951eb2659cf3bf01fd74769262050bec5ffd84c83517b84d23f0725a0c3ebeb"
+  )
+})
+
 export type RuntimeResourceSource = {
-  table: "TH_WPINFO" | "TH_USER_LIST"
+  table: "TH_WPINFO" | "TH_USER_LIST" | "EPS2_GET_DIRECTORY_LISTING"
   status: "ok" | "unavailable" | "invalid"
   method: "rfc_call"
   returnedCount: number
@@ -151,6 +168,10 @@ export const RUNTIME_RESOURCES_MAX_ROWS = 500
 export const RUNTIME_RESOURCES_SERVER_LIMIT = 40
 /** `TH_USER_LIST` has no user import, so the user name is only a service-side filter. */
 export const RUNTIME_RESOURCES_USER_LIMIT = 12
+/** `EPS2_GET_DIRECTORY_LISTING.IV_DIR_NAME` is `EPS2FILNAM` (`CHAR200`). */
+export const RUNTIME_RESOURCES_DIRECTORY_LIMIT = 200
+/** `EPS2_GET_DIRECTORY_LISTING.FILE_MASK` is `EPSF-EPSFILNAM` (`CHAR40`). */
+export const RUNTIME_RESOURCES_MASK_LIMIT = 40
 
 const codes = [
   "RUNTIME_RESOURCES_SCOPE_INVALID",
@@ -204,7 +225,14 @@ type Session = Record<string, string>
 type WorkProcessEntry = Record<keyof typeof WORK_PROCESS_FIELDS, string> & { raw: Session }
 type SessionEntry = Record<keyof typeof SESSION_FIELD_MAP, string> & { raw: Session }
 
-/** Rows as the SOAP-RFC reader returns them: trimmed strings, no type coercion. */
+/**
+ * Rows as the SOAP-RFC reader returns them: trimmed text.
+ *
+ * A numeric cell stays the reader's own rendering of that value: DIR_LIST carries DEC and INT4
+ * columns, so rejecting anything but a string would reject a valid answer, and parsing them into
+ * numbers would state a precision the answer never claimed. Objects, arrays and booleans are still
+ * refused - those are not scalar row values.
+ */
 function tableRows(value: unknown): Session[] {
   if (!Array.isArray(value)) throw new Error("RUNTIME_RESOURCES_RESPONSE_INVALID")
   return value.map((row) => {
@@ -212,9 +240,10 @@ function tableRows(value: unknown): Session[] {
       throw new Error("RUNTIME_RESOURCES_RESPONSE_INVALID")
     const record: Session = {}
     for (const field of Object.keys(row)) {
-      const cell = (row as Session)[field]
-      if (typeof cell !== "string") throw new Error("RUNTIME_RESOURCES_RESPONSE_INVALID")
-      record[field] = cell.trim()
+      const cell = (row as Record<string, unknown>)[field]
+      if (typeof cell === "string") record[field] = cell.trim()
+      else if (typeof cell === "number" && Number.isFinite(cell)) record[field] = String(cell)
+      else throw new Error("RUNTIME_RESOURCES_RESPONSE_INVALID")
     }
     return record
   })
@@ -441,6 +470,194 @@ export async function collectUserSessions(
       bySessionType: tally(selected.map((row) => row.TYPE ?? ""))
     },
     interpretedFields: { ...SESSION_FIELD_MAP },
+    notes,
+    sources: [source],
+    queryTimestamp: new Date().toISOString(),
+    queryWarnings
+  }
+}
+
+/**
+ * `EPS2FILI`, the DIR_LIST row type, read from w200 DD03L on 2026-09-25.
+ *
+ * Every lifted name is supported by the data element behind the field: `EPS2FILNAM` (name,
+ * `CHAR200`), `EPS2FILSIZ` (`DEC15`), `EPS2TIMESTMP` (timestamp, `CHAR30`), `EPSFILOWN` (owner,
+ * `CHAR8`) and `EPSFTPRC` (return code, domain `EPSRC`). The return code is lifted verbatim - its
+ * fixed values were not read, so it is never turned into a success/failure verdict.
+ */
+export const DIRECTORY_FIELD_MAP = {
+  name: "NAME",
+  size: "SIZE",
+  modifiedAt: "MTIM",
+  owner: "OWNER",
+  returnCode: "RC"
+} as const
+
+const DIRECTORY_FIELDS = Object.values(DIRECTORY_FIELD_MAP)
+
+type DirectoryEntry = Record<keyof typeof DIRECTORY_FIELD_MAP, string> & { raw: Session }
+
+/** A scalar output as text, or "" when the kernel did not return it. */
+function scalarText(value: unknown): string {
+  if (typeof value === "string") return value.trim()
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  return ""
+}
+
+/** The value read as a whole number, or null when it is not one. */
+function integer(value: string): number | null {
+  return /^\d+$/.test(value) ? Number(value) : null
+}
+
+export interface FileSystemDirectoryOptions {
+  directory?: string | undefined
+  fileMask?: string | undefined
+  maxRows?: number | undefined
+}
+
+/**
+ * List one directory of the application server, as AL11 does.
+ *
+ * Deliberately narrow: it reads names, sizes, timestamps, owners and per-entry return codes from the
+ * kernel's own listing and never opens a file. What is visible is decided by the operating-system
+ * user the instance runs under and by the kernel's own authorization check, and the request carries
+ * the name exactly as the caller gave it - the answer reports the kernel's own `DIR_NAME` back, so a
+ * caller can see which path was really listed.
+ */
+export async function collectFileSystemDirectory(
+  backend: Pick<SapBackend, "callRemoteFunction">,
+  connectionId: string,
+  options: FileSystemDirectoryOptions,
+  readDefinition: () => Promise<unknown>
+) {
+  const requested = rowLimit(options.maxRows)
+  const directory = printable(options.directory, RUNTIME_RESOURCES_DIRECTORY_LIMIT)
+  // The kernel resolves the name it is given; refusing a parent reference keeps one call on the path
+  // the caller named instead of letting it walk upward from there.
+  if (!directory || directory.split(/[\\/]/).includes(".."))
+    throw new Error("RUNTIME_RESOURCES_SCOPE_INVALID")
+  const fileMask = printable(options.fileMask, RUNTIME_RESOURCES_MASK_LIMIT)
+  const source: RuntimeResourceSource = {
+    table: "EPS2_GET_DIRECTORY_LISTING",
+    status: "unavailable",
+    method: "rfc_call",
+    returnedCount: 0
+  }
+  const queryWarnings: string[] = []
+  const notes = [
+    "Directory entries come from EPS2_GET_DIRECTORY_LISTING, the kernel's own directory listing " +
+      "(the source behind AL11), read as a snapshot. File contents are never read, and this tool " +
+      "cannot create, move, rename or delete anything.",
+    "What appears depends on the operating-system user the instance runs under and on the kernel's " +
+      "own authorization check; this tool widens neither.",
+    "An empty listing is reported as an empty listing: it is not evidence that the directory does " +
+      "not exist, and not evidence that it is empty for other callers.",
+    "No value is translated: `name`, `size`, `modifiedAt` and `owner` are the kernel's own values, " +
+      "and `returnCode` is its per-entry code with the domain fixed values unread.",
+    "Each entry carries the untranslated SAP row in `raw`, and `interpretedFields` names the SAP " +
+      "field every lifted value came from."
+  ]
+  if (!fileMask)
+    notes.push("No fileMask was given, so the kernel applied its own default selection.")
+
+  let rows: Session[] = []
+  let listed = { directory: "", files: "", errors: "" }
+  try {
+    if (!reviewedDirectoryDefinition.safeParse(await readDefinition()).success)
+      throw new Error("RUNTIME_RESOURCES_FUNCTION_UNVERIFIED")
+    const result = await backend.callRemoteFunction(connectionId, {
+      functionName: "EPS2_GET_DIRECTORY_LISTING",
+      inputParameters: fileMask
+        ? { IV_DIR_NAME: directory, FILE_MASK: fileMask }
+        : { IV_DIR_NAME: directory },
+      outputParameters: [
+        { name: "DIR_NAME", kind: "scalar" },
+        { name: "FILE_COUNTER", kind: "scalar" },
+        { name: "ERROR_COUNTER", kind: "scalar" },
+        { name: "DIR_LIST", kind: "table", fields: [...DIRECTORY_FIELDS] }
+      ]
+    })
+    if (result.fault)
+      throw new Error(
+        result.fault.name === "NOT_AUTHORIZED"
+          ? "RUNTIME_RESOURCES_NOT_AUTHORIZED"
+          : "RUNTIME_RESOURCES_RFC_FAILED"
+      )
+    const raw = result.outputs.DIR_LIST
+    if (raw === undefined) throw new Error("RUNTIME_RESOURCES_RESPONSE_INVALID")
+    // Unlike the work process and session lists, an empty directory is an ordinary answer.
+    rows = tableRows(raw)
+    listed = {
+      directory: scalarText(result.outputs.DIR_NAME),
+      files: scalarText(result.outputs.FILE_COUNTER),
+      errors: scalarText(result.outputs.ERROR_COUNTER)
+    }
+    source.status = "ok"
+    source.returnedCount = rows.length
+  } catch (error) {
+    source.code = failure(error)
+    if (source.code === "RUNTIME_RESOURCES_RESPONSE_INVALID") source.status = "invalid"
+    queryWarnings.push(`EPS2_GET_DIRECTORY_LISTING: ${source.code}`)
+  }
+
+  const truncated = rows.length > requested
+  if (truncated)
+    notes.push(
+      `The kernel returned ${rows.length} entries and the row cap is ${requested}, so the answer ` +
+        "is partial: the entries beyond the cap were not read into the result."
+    )
+  const selected = rows.slice(0, requested)
+  const entries: DirectoryEntry[] = selected.map((row) => ({
+    ...lift(row, DIRECTORY_FIELD_MAP),
+    raw: row
+  }))
+
+  if (source.status === "ok") {
+    const counted = integer(listed.files)
+    if (counted !== null && counted !== rows.length)
+      queryWarnings.push(
+        `EPS2_GET_DIRECTORY_LISTING: FILE_COUNTER is ${counted} but DIR_LIST carried ` +
+          `${rows.length} entries, so the kernel's own count and its row list disagree.`
+      )
+    const errored = integer(listed.errors)
+    if (errored !== null && errored > 0)
+      queryWarnings.push(
+        `EPS2_GET_DIRECTORY_LISTING: ERROR_COUNTER is ${errored}, so the kernel reported at least ` +
+          "one entry it could not process."
+      )
+    if (listed.directory && listed.directory !== directory)
+      notes.push(
+        `The kernel reported DIR_NAME=${listed.directory}, which differs from the requested ` +
+          `${directory}; the answer reports the kernel's own value.`
+      )
+  }
+
+  return {
+    status:
+      source.status !== "ok"
+        ? ("unavailable" as const)
+        : truncated
+          ? ("partial" as const)
+          : ("ok" as const),
+    connectionId,
+    readOnly: true,
+    directory,
+    filters: { directory, fileMask: fileMask || null },
+    /** The kernel's own echo of the directory it listed; null when it returned none. */
+    directoryReported: listed.directory || null,
+    /** The kernel's own counters, verbatim; not recomputed from the rows this service kept. */
+    kernelCounters: { files: listed.files || null, errors: listed.errors || null },
+    rowLimit: requested,
+    rowLimitRequested: options.maxRows ?? null,
+    rowLimitApplied: requested,
+    returnedCount: selected.length,
+    truncated,
+    entries,
+    counts: {
+      returned: selected.length,
+      byReturnCode: tally(selected.map((row) => row.RC ?? ""))
+    },
+    interpretedFields: { ...DIRECTORY_FIELD_MAP },
     notes,
     sources: [source],
     queryTimestamp: new Date().toISOString(),

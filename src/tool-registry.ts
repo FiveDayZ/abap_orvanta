@@ -672,6 +672,7 @@ const ROWS: readonly ToolRow[] = [
   ["read_user_authorizations", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_work_processes", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_user_sessions", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["read_file_system_directory", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["get_version_history", "source", DEV, "R", "target-specific", null, null],
   ["preview_source_changes", "source", DEV, "R", "target-specific", null, null],
   ["get_runtime_info", "platform", PL, "R", "local", null, null],

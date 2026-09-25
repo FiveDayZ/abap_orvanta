@@ -118,6 +118,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_ddic_transparent_table",
       "read_enhancement_implementation",
       "read_failed_update",
+      "read_file_system_directory",
       "read_function_module_interface",
       "read_idoc_status",
       "read_lock_object",

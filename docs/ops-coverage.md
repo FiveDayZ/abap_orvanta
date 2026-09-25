@@ -495,3 +495,53 @@ L428-434），即"外部 SOAP-RFC 调用"，只要求函数模块 remote-enabled
 `read_performance_snapshot`（ST03/STAD）、`read_db_activity`（DB02，源随数据库厂商而变）与
 `read_file_system_directory`（AL11）。两个新工具在服务重启并完成一次真实 w200 调用前保持 `unverified`；
 registry 条目数再次等于工具数（149）。
+
+### 7.9 OP1-1 第二批 - 应用服务器目录列表（2026-09-26）
+
+**第二个"无需助手"的运行时资源落地，同时否掉一个候选。** 2026-09-26 的只读探测（证据在
+`.cache/evidence-r17/`）给出两条结论：
+
+| 函数模块                        | remoteEnabled | 可序列化性                               | 结论                            |
+| ------------------------------- | ------------- | ---------------------------------------- | ------------------------------- |
+| `EPS2_GET_DIRECTORY_LISTING`    | 是            | 整模块 `supported=true`（无任何 reason） | **采用**                        |
+| `EPS_GET_DIRECTORY_LISTING`     | 是            | 整模块 `supported=true`                  | 备用（旧版，行类型只有 3 字段） |
+| `SWNC_COLLECTOR_GET_AGGREGATES` | 是            | `supported=false`：**主表全部不可用**    | **不采用**（见下）              |
+| `EPS_GET_FILE_ATTR`             | -             | 按该名字不存在                           | 记录为未命中                    |
+
+**新增工具 `read_file_system_directory`（AL11 式目录列表）。** 走与 §7.8 完全相同的通路：接口指纹闸门 +
+直接 SOAP-RFC 调用 `EPS2_GET_DIRECTORY_LISTING`，固定指纹 source
+`50a403b6ad5276063ac101178f612c19650e92f9a5610dfe9b8b19784fd7bde6` / interface
+`3951eb2659cf3bf01fd74769262050bec5ffd84c83517b84d23f0725a0c3ebeb`。
+
+- 输入 `directory` 原样下传 `IV_DIR_NAME`（`EPS2FILNAM`，`CHAR200`），`fileMask` 原样下传 `FILE_MASK`
+  （`EPSF-EPSFILNAM`，`CHAR40`）。缺省掩码时由内核自己选择，答案 `notes` 明写。
+- **宽严取舍**：不做"绝对路径"这类会误伤合法用法的形状校验——路径原样交给内核，答案回传内核自己的
+  `DIR_NAME` 回显（`directoryReported`），调用方能看出**实际被列的是哪个路径**；但拒绝空路径、`..`
+  段、超长（>200 / >40）与控制字符，在触达 SAP 前以 `RUNTIME_RESOURCES_SCOPE_INVALID` 失败。
+- 行字段来自 `EPS2FILI`（w200 DD03L）：`name`←`NAME`(`EPS2FILNAM`)、`size`←`SIZE`(`EPS2FILSIZ`)、
+  `modifiedAt`←`MTIM`(`EPS2TIMESTEMP`)、`owner`←`OWNER`(`EPSFILOWN`)、`returnCode`←`RC`(`EPSFTPRC`，域
+  `EPSRC`)。**不翻译任何值**：`returnCode` 原样返回，域定值未读，`counts.byReturnCode` 是对原始值的忠实
+  计数，绝不充当"成功/失败"判定。
+- **只列不读**：从不读取文件内容，也不能创建/移动/改名/删除。可见性取决于实例运行的操作系统用户与内核自身
+  的权限检查，本工具不放大任何一侧。空目录是**正常答案**（`status=ok`），不是"目录不存在"的证据——这是与
+  工作进程/会话两个工具刻意不同的一点（后两者空表按 `RESPONSE_EMPTY` 报失败）。
+- 内核自己的 `FILE_COUNTER`/`ERROR_COUNTER` 原样进 `kernelCounters`；`FILE_COUNTER` 与 `DIR_LIST` 实际
+  行数不一致、或 `ERROR_COUNTER>0` 时给出 `queryWarnings`，**不平账、不掩盖**。
+- `maxRows` 缺省 200、硬上限 500，超出报 `partial` + `truncated`。
+
+**`SWNC_COLLECTOR_GET_AGGREGATES` 不可用于本服务**（计划修正）：函数模块本身 remote-enabled，但
+`executionSupport.supported=false`，26 张聚合表里 workload 主集（`TASKTYPE`、`TASKTIMES`、`TIMES`、
+`USERTCODE`、`USERWORKLOAD`、`TABLEREC`、`MEMORY`、`VMC`、`DBPROCS`、`DBCON`…）要么字段名不满足校验
+（`structure … field name must contain 1-30 letters, digits, or underscores`），要么含无法验证的标量类型
+（`SWNCTASKTYPERAW`）。仅 `FRONTEND`、`SPOOLACT`、`COMP_HIERARCHY`、`ORG_UNITS` 四张可用——用它们拼出的
+"性能快照"既不覆盖工作负载也不覆盖响应时间，**不构成 `read_performance_snapshot`**，因此不实现：宁可缺口
+留着，也不用一张显示不了工作负载的表冒充性能快照。该族的性能项与 DB02 项仍需助手通路或另找入口。
+
+**族缺口收窄。** `runtime-resources` 由 3/5 变为 **4/5**：工作进程、会话、目录列表已实现；剩余
+`read_performance_snapshot`（上述结论）与 `read_db_activity`（DB02，源随数据库厂商而变）。工具面
+**150 工具 / 89 只读**，ops 组 27，registry **150 条 = 工具数**（verified 23 / unverified 120）。
+新工具在服务重启并完成一次真实 w200 调用前保持 `unverified`。
+
+**旁证修正**：`tableRows` 原先把"非字符串单元格"一律判为非法。`EPS2FILI` 的 `SIZE` 是 `DEC15`、`RC` 是
+`NUMC4`，`EPSFILI.SIZE` 是 `INT4` ⇒ 数值单元格是**正常答案**。现在数值被保留为读取器自己的呈现文本
+（不解析、不重算精度），仅对象/数组/布尔仍判非法；并补了一条断言固定这个行为。

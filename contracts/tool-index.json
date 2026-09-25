@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 149,
-  "readOnlyToolCount": 88,
+  "toolCount": 150,
+  "readOnlyToolCount": 89,
   "profiles": {
-    "readonly": 88,
+    "readonly": 89,
     "platform": 12,
-    "dev": 131,
-    "config": 34,
-    "ops": 43,
-    "full": 149
+    "dev": 132,
+    "config": 35,
+    "ops": 44,
+    "full": 150
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 26,
+    "ops": 27,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1486,6 +1486,23 @@
       "sapHelper": "Z_ORVANTA_MAINT_READ",
       "minHelperProtocol": null,
       "note": "只读；不提供参数载荷或完整错误正文。"
+    },
+    {
+      "name": "read_file_system_directory",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
     },
     {
       "name": "read_function_module_interface",

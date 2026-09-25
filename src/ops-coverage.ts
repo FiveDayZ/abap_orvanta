@@ -100,7 +100,8 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_user_authorizations: "read-only",
   // Runtime resources (SM50/SM66 and SM04)
   read_work_processes: "read-only",
-  read_user_sessions: "read-only"
+  read_user_sessions: "read-only",
+  read_file_system_directory: "read-only"
 }
 
 /**
@@ -240,10 +241,12 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     ],
     actionRequired: false,
     gap:
-      "Reported: the work process list (TH_WPINFO) through read_work_processes and the user and " +
-      "session list (TH_USER_LIST) through read_user_sessions. Still absent: " +
-      "read_performance_snapshot (ST03/STAD workload aggregates), read_db_activity (DB02, whose " +
-      "source is database-vendor specific) and read_file_system_directory (AL11)."
+      "Reported: the work process list (TH_WPINFO) through read_work_processes, the user and " +
+      "session list (TH_USER_LIST) through read_user_sessions, and the application-server " +
+      "directory listing (EPS2_GET_DIRECTORY_LISTING) through read_file_system_directory. Still " +
+      "absent: read_performance_snapshot and read_db_activity - the workload collector " +
+      "(SWNC_COLLECTOR_GET_AGGREGATES) is remote-enabled but its aggregate tables are not " +
+      "RFC-serializable for this service, and DB02's source is database-vendor specific."
   },
   {
     id: "interfaces",

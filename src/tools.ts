@@ -60,7 +60,11 @@ import type { InvocationReceiptStore, InvocationReservation } from "./invocation
 import { buildCapabilityReport } from "./capabilities.js"
 import { collectIdocStatus } from "./idoc-status.js"
 import { collectQrfcQueues } from "./qrfc-queues.js"
-import { collectUserSessions, collectWorkProcesses } from "./runtime-resources.js"
+import {
+  collectFileSystemDirectory,
+  collectUserSessions,
+  collectWorkProcesses
+} from "./runtime-resources.js"
 import { collectServerFacts } from "./server-facts.js"
 import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
@@ -1250,6 +1254,12 @@ interface WorkProcessesInput {
 interface UserSessionsInput {
   connectionId: string
   userName?: string | undefined
+  maxRows?: number | undefined
+}
+interface FileSystemDirectoryInput {
+  connectionId: string
+  directory: string
+  fileMask?: string | undefined
   maxRows?: number | undefined
 }
 interface QrfcQueuesInput {
@@ -7002,6 +7012,29 @@ export class ToolService {
     if (sessions.queryWarnings.length)
       summary += `- Query warnings: ${sessions.queryWarnings.length}\n`
     return `${summary}${JSON.stringify(sessions, null, 2)}`
+  }
+  async readFileSystemDirectory(input: FileSystemDirectoryInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const listing = await collectFileSystemDirectory(
+      this.backend,
+      connectionId,
+      { directory: input.directory, fileMask: input.fileMask, maxRows: input.maxRows },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "EPS2_GET_DIRECTORY_LISTING"
+          })
+        )
+    )
+    let summary =
+      `Directory listing: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${listing.status}\n` +
+      `- Directory: ${listing.directoryReported ?? listing.directory}\n` +
+      `- Entries: ${listing.returnedCount}${listing.truncated ? " (truncated)" : ""}\n`
+    if (listing.queryWarnings.length)
+      summary += `- Query warnings: ${listing.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(listing, null, 2)}`
   }
   async readQrfcQueues(input: QrfcQueuesInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()

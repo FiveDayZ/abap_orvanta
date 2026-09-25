@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { collectUserSessions, collectWorkProcesses } from "../src/runtime-resources.js"
+import {
+  collectFileSystemDirectory,
+  collectUserSessions,
+  collectWorkProcesses
+} from "../src/runtime-resources.js"
 import type { RemoteFunctionRequest, SapBackend } from "../src/backend.js"
 
 const workProcessDefinition = {
@@ -19,6 +23,14 @@ const sessionDefinition = {
   interfaceFingerprint: "8d88542a7b1793f646033e41bb96ffb59b27b4fb73d58190b4a9fc103e429a01"
 }
 
+const directoryDefinition = {
+  functionName: "EPS2_GET_DIRECTORY_LISTING",
+  remoteEnabled: true,
+  updateTask: false,
+  sourceFingerprint: "50a403b6ad5276063ac101178f612c19650e92f9a5610dfe9b8b19784fd7bde6",
+  interfaceFingerprint: "3951eb2659cf3bf01fd74769262050bec5ffd84c83517b84d23f0725a0c3ebeb"
+}
+
 type SapStructureRow = Record<string, string>
 
 type Double = {
@@ -31,7 +43,7 @@ type Double = {
  * outputs these tools request and records every request so the call itself can be asserted.
  */
 function double(
-  outputs: Record<string, SapStructureRow[]>,
+  outputs: Record<string, unknown>,
   fault?: { name: string; code: string; message: string }
 ): Double {
   const calls: RemoteFunctionRequest[] = []
@@ -197,13 +209,24 @@ test("an empty, invalid or unauthorized work process answer stays an explicit fa
   assert.deepEqual(empty.workProcesses, [])
 
   const invalid = await collectWorkProcesses(
-    double({ WPLIST: [{ WP_NO: 1 } as unknown as SapStructureRow] }).backend,
+    double({ WPLIST: [{ WP_NO: { nested: "x" } } as unknown as SapStructureRow] }).backend,
     "w200",
     {},
     async () => workProcessDefinition
   )
   assert.equal(invalid.sources[0]!.status, "invalid")
   assert.equal(invalid.sources[0]!.code, "RUNTIME_RESOURCES_RESPONSE_INVALID")
+
+  // DIR_LIST carries DEC and INT4 columns, so a numeric cell is the reader's own rendering of a
+  // value rather than a malformed row; it is kept as text and never reinterpreted.
+  const numeric = await collectWorkProcesses(
+    double({ WPLIST: [{ WP_NO: 42, WP_TYP: "DIA" } as unknown as SapStructureRow] }).backend,
+    "w200",
+    {},
+    async () => workProcessDefinition
+  )
+  assert.equal(numeric.status, "ok")
+  assert.equal(numeric.workProcesses[0]!.raw.WP_NO, "42")
 
   const denied = await collectWorkProcesses(
     double({}, { name: "NOT_AUTHORIZED", code: "N", message: "no" }).backend,
@@ -376,4 +399,219 @@ test("a changed session interface or an unusable user name never reaches SAP", a
     /RUNTIME_RESOURCES_SCOPE_INVALID/
   )
   assert.equal(refused.calls.length, 0)
+})
+
+/** An EPS2FILI row: the five fields DIR_LIST carries, as the reader returns them. */
+function directoryRow(overrides: Record<string, string> = {}): SapStructureRow {
+  return {
+    NAME: "tran.log",
+    SIZE: "4096",
+    MTIM: "2026-09-25 10:00:00",
+    OWNER: "wys",
+    RC: "0000",
+    ...overrides
+  }
+}
+
+test("a directory listing lifts the kernel's own fields and keeps the raw row", async () => {
+  const { backend, calls } = double({
+    DIR_NAME: "/usr/sap/W200",
+    FILE_COUNTER: "2",
+    ERROR_COUNTER: "0",
+    DIR_LIST: [
+      directoryRow(),
+      directoryRow({ NAME: "dev_w0", SIZE: "1024", RC: "0004", OWNER: "root" })
+    ]
+  })
+  const result = await collectFileSystemDirectory(
+    backend,
+    "w200",
+    { directory: "/usr/sap/W200" },
+    async () => directoryDefinition
+  )
+
+  assert.equal(result.status, "ok")
+  assert.equal(result.readOnly, true)
+  assert.equal(result.returnedCount, 2)
+  assert.equal(result.truncated, false)
+  assert.equal(result.entries[0]!.name, "tran.log")
+  assert.equal(result.entries[0]!.size, "4096")
+  assert.equal(result.entries[0]!.modifiedAt, "2026-09-25 10:00:00")
+  assert.equal(result.entries[0]!.owner, "wys")
+  assert.equal(result.entries[0]!.returnCode, "0000")
+  assert.equal(result.entries[0]!.raw.NAME, "tran.log")
+  assert.deepEqual(result.counts.byReturnCode, { "0000": 1, "0004": 1 })
+  assert.equal(result.directoryReported, "/usr/sap/W200")
+  assert.deepEqual(result.kernelCounters, { files: "2", errors: "0" })
+  assert.deepEqual(result.sources[0]!.table, "EPS2_GET_DIRECTORY_LISTING")
+  assert.deepEqual(result.queryWarnings, [])
+  assert.ok(result.notes.some((note) => /File contents are never read/.test(note)))
+  assert.ok(result.notes.some((note) => /No fileMask was given/.test(note)))
+
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0]!.functionName, "EPS2_GET_DIRECTORY_LISTING")
+  assert.deepEqual(calls[0]!.inputParameters, { IV_DIR_NAME: "/usr/sap/W200" })
+  assert.deepEqual(calls[0]!.outputParameters, [
+    { name: "DIR_NAME", kind: "scalar" },
+    { name: "FILE_COUNTER", kind: "scalar" },
+    { name: "ERROR_COUNTER", kind: "scalar" },
+    { name: "DIR_LIST", kind: "table", fields: ["NAME", "SIZE", "MTIM", "OWNER", "RC"] }
+  ])
+})
+
+test("a file mask is passed through verbatim when one is given", async () => {
+  const { backend, calls } = double({ DIR_LIST: [directoryRow()] })
+  const result = await collectFileSystemDirectory(
+    backend,
+    "w200",
+    { directory: "/usr/sap/W200/work", fileMask: "*.log" },
+    async () => directoryDefinition
+  )
+
+  assert.deepEqual(calls[0]!.inputParameters, {
+    IV_DIR_NAME: "/usr/sap/W200/work",
+    FILE_MASK: "*.log"
+  })
+  assert.deepEqual(result.filters, { directory: "/usr/sap/W200/work", fileMask: "*.log" })
+  assert.ok(!result.notes.some((note) => /No fileMask was given/.test(note)))
+})
+
+test("an empty directory is an ordinary answer, not a failure", async () => {
+  const { backend, calls } = double({ DIR_LIST: [], DIR_NAME: "/usr/sap/W200/empty" })
+  const result = await collectFileSystemDirectory(
+    backend,
+    "w200",
+    { directory: "/usr/sap/W200/empty" },
+    async () => directoryDefinition
+  )
+
+  assert.equal(calls.length, 1)
+  assert.equal(result.status, "ok")
+  assert.equal(result.returnedCount, 0)
+  assert.deepEqual(result.entries, [])
+  assert.deepEqual(result.queryWarnings, [])
+  assert.equal(result.sources[0]!.code, undefined)
+  assert.ok(
+    result.notes.some((note) => /not evidence that the directory does not exist/.test(note))
+  )
+})
+
+test("a listing that disagrees with the kernel's own counters says so", async () => {
+  const { backend } = double({
+    DIR_NAME: "/usr/sap/W200/other",
+    FILE_COUNTER: "7",
+    ERROR_COUNTER: "2",
+    DIR_LIST: [directoryRow(), directoryRow({ NAME: "dev_w1" })]
+  })
+  const result = await collectFileSystemDirectory(
+    backend,
+    "w200",
+    { directory: "/usr/sap/W200" },
+    async () => directoryDefinition
+  )
+
+  assert.equal(result.status, "ok")
+  assert.ok(
+    result.queryWarnings.some((warning) =>
+      /FILE_COUNTER is 7 but DIR_LIST carried 2 entries/.test(warning)
+    )
+  )
+  assert.ok(result.queryWarnings.some((warning) => /ERROR_COUNTER is 2/.test(warning)))
+  assert.ok(
+    result.notes.some((note) => /The kernel reported DIR_NAME=\/usr\/sap\/W200\/other/.test(note))
+  )
+})
+
+test("a listing longer than the row cap is reported as partial", async () => {
+  const rows = [1, 2, 3].map((index) => directoryRow({ NAME: `file-${index}` }))
+  const result = await collectFileSystemDirectory(
+    double({ DIR_LIST: rows, FILE_COUNTER: "3" }).backend,
+    "w200",
+    { directory: "/usr/sap/W200", maxRows: 2 },
+    async () => directoryDefinition
+  )
+
+  assert.equal(result.status, "partial")
+  assert.equal(result.truncated, true)
+  assert.equal(result.returnedCount, 2)
+  assert.equal(result.entries.length, 2)
+  assert.deepEqual(result.queryWarnings, [])
+  assert.ok(result.notes.some((note) => /the entries beyond the cap/.test(note)))
+})
+
+test("a changed directory interface never reaches SAP", async () => {
+  const changed = double({ DIR_LIST: [directoryRow()] })
+  const result = await collectFileSystemDirectory(
+    changed.backend,
+    "w200",
+    { directory: "/tmp" },
+    async () => ({
+      ...directoryDefinition,
+      interfaceFingerprint: "0".repeat(64)
+    })
+  )
+
+  assert.equal(changed.calls.length, 0)
+  assert.equal(result.sources[0]!.code, "RUNTIME_RESOURCES_FUNCTION_UNVERIFIED")
+  assert.deepEqual(result.queryWarnings, [
+    "EPS2_GET_DIRECTORY_LISTING: RUNTIME_RESOURCES_FUNCTION_UNVERIFIED"
+  ])
+})
+
+test("an unusable path or mask is refused before the call", async () => {
+  for (const directory of ["", "   ", "/usr/sap/../etc", `/${"a".repeat(200)}`, "/tmp\n/dev"]) {
+    const refused = double({ DIR_LIST: [directoryRow()] })
+    await assert.rejects(
+      () =>
+        collectFileSystemDirectory(
+          refused.backend,
+          "w200",
+          { directory },
+          async () => directoryDefinition
+        ),
+      /RUNTIME_RESOURCES_SCOPE_INVALID/
+    )
+    assert.equal(refused.calls.length, 0)
+  }
+
+  const longMask = double({ DIR_LIST: [directoryRow()] })
+  await assert.rejects(
+    () =>
+      collectFileSystemDirectory(
+        longMask.backend,
+        "w200",
+        { directory: "/tmp", fileMask: "a".repeat(41) },
+        async () => directoryDefinition
+      ),
+    /RUNTIME_RESOURCES_SCOPE_INVALID/
+  )
+  assert.equal(longMask.calls.length, 0)
+})
+
+test("an unauthorized or malformed directory answer stays an explicit failure", async () => {
+  const denied = await collectFileSystemDirectory(
+    double({}, { name: "NOT_AUTHORIZED", code: "N", message: "no" }).backend,
+    "w200",
+    { directory: "/tmp" },
+    async () => directoryDefinition
+  )
+  assert.equal(denied.status, "unavailable")
+  assert.equal(denied.sources[0]!.code, "RUNTIME_RESOURCES_NOT_AUTHORIZED")
+
+  const failed = await collectFileSystemDirectory(
+    double({}, { name: "SYSTEM_FAILURE", code: "S", message: "no" }).backend,
+    "w200",
+    { directory: "/tmp" },
+    async () => directoryDefinition
+  )
+  assert.equal(failed.sources[0]!.code, "RUNTIME_RESOURCES_RFC_FAILED")
+
+  const malformed = await collectFileSystemDirectory(
+    double({ DIR_NAME: "/tmp" }).backend,
+    "w200",
+    { directory: "/tmp" },
+    async () => directoryDefinition
+  )
+  assert.equal(malformed.sources[0]!.status, "invalid")
+  assert.equal(malformed.sources[0]!.code, "RUNTIME_RESOURCES_RESPONSE_INVALID")
 })

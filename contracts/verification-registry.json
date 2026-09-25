@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-25T23:55:10+08:00",
-  "notes": "2026-09-25 (OP1-1 runtime-resources): read_work_processes and read_user_sessions were added and registered unverified. Both are the kernel's own monitor reads (TH_WPINFO / TH_USER_LIST) called over SOAP-RFC after an interface-fingerprint check; the assessment had expected this family to need the SAP-side helper, and the probe evidence that removed that dependency is recorded in each entry. Verification status is recorded per tool, never inferred from availability or from passing tests.",
+  "updatedAt": "2026-09-26T00:14:53+08:00",
+  "notes": "2026-09-25 (OP1-1 runtime-resources, second batch): read_file_system_directory was added and registered unverified. The listing is the kernel's own EPS2_GET_DIRECTORY_LISTING call, and the probe evidence that removed the expected helper dependency is recorded in the entry. The workload candidate SWNC_COLLECTOR_GET_AGGREGATES was probed in the same session and turned out not to be usable for this service: the function module is remote-enabled, but its aggregate tables (TASKTYPE, TASKTIMES, TIMES, USERTCODE, DBPROCS and the rest of the workload set) hold structures whose field names or scalar types this service cannot verify, so a workload snapshot cannot be built from it. 2026-09-25 (OP1-1 runtime-resources): read_work_processes and read_user_sessions were added and registered unverified. Both are the kernel's own monitor reads (TH_WPINFO / TH_USER_LIST) called over SOAP-RFC after an interface-fingerprint check; the assessment had expected this family to need the SAP-side helper, and the probe evidence that removed that dependency is recorded in each entry. Verification status is recorded per tool, never inferred from availability or from passing tests.",
   "entries": [
     {
       "tool": "abap_activate",
@@ -662,6 +662,18 @@
       "lastAttemptAt": null,
       "evidence": null,
       "notes": "Landed 2026-09-25 (OP1-1, interfaces family) and none of the four unverified fields is claimed. Same reviewed read path as read_qrfc_queues. Table access was approved by the operator on 2026-09-25 and the field selection comes from the DD03L metadata of w200. The EDI_STATUS / EDI_DIRECT / EDI_TEST codes and the EDIDS status text are reported verbatim; EDIDS is only read when docnum is given or includeStatusRecords is set. No call has been recorded yet because the running service still serves the 0.47.x tool surface without this tool; the tool surface and the table allowlist are compiled in, so a restart is required before a caller can reach it."
+    },
+    {
+      "tool": "read_file_system_directory",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 application-server directory listing (EPS2_GET_DIRECTORY_LISTING): no authorized call yet",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Landed 2026-09-25 (OP1-1, runtime-resources family) and none of the four unverified fields is claimed. Routing evidence: the assessment expected this read to need the in-SAP helper, but a read-only probe of w200 on 2026-09-25 found EPS2_GET_DIRECTORY_LISTING remote-enabled with execution support fully satisfied - exports DIR_NAME, FILE_COUNTER and ERROR_COUNTER, and row type EPS2FILI (name EPS2FILNAM CHAR200, size EPS2FILSIZ DEC15, timestamp EPS2TIMESTMP CHAR30, owner EPSFILOWN CHAR8, return code EPSFTPRC NUMC4 domain EPSRC) - so the service calls it directly over SOAP-RFC after pinning source fingerprint 50a403b6ad5276063ac101178f612c19650e92f9a5610dfe9b8b19784fd7bde6 and interface fingerprint 3951eb2659cf3bf01fd74769262050bec5ffd84c83517b84d23f0725a0c3ebeb. The DEC and INT4 columns are why the shared row reader now keeps a numeric cell as the reader's own rendering instead of refusing it. Deliberately narrow: only names, sizes, timestamps, owners and per-entry return codes are read, never file contents, and nothing can be created, moved or deleted. No call has been recorded yet because the running service still serves the previous tool surface; the tool surface is a compile-time constant, so a restart is required before a caller can reach this tool."
     },
     {
       "tool": "read_user_authorizations",
