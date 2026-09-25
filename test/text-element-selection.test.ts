@@ -187,10 +187,18 @@ test("the helper writes to the pool row ID the entry kind selects", async () => 
   assert.match(branch, /lv_text_pool_id = 'S'\./)
   assert.match(branch, /TEXT_ID_TYPE_INVALID/)
 
-  // Per-kind ID rules: three characters for a symbol, one to eight for a selection text.
-  assert.match(branch, /IF <ls_text_change>-id\+3 IS NOT INITIAL\./)
-  assert.match(branch, /IF <ls_text_change>-id\+8 IS NOT INITIAL\./)
+  // Per-kind ID rules: three characters for a symbol, one to eight for a selection text. The pool
+  // key is eight characters wide and blank padded, so every test runs on its significant part.
+  // The first deployed revision of this half read `<ls_text_change>-id+8` - an offset at the key's
+  // own length, which is a syntax error that the ADT syntax check does not report and only GENERATE
+  // catches (2026-09-25, one SE38/F8 round) - and applied `CN` to the whole padded key, which would
+  // have rejected every ID shorter than eight characters at runtime.
+  assert.match(branch, /lv_text_id_length = strlen\( <ls_text_change>-id \)\./)
+  assert.match(branch, /IF lv_text_id_length <> 3\./)
+  assert.match(branch, /-id\(lv_text_id_length\)/)
+  assert.match(branch, /IF lv_text_id_length = 0\./)
   assert.match(branch, /Selection text ID must be 1-8 characters/)
+  assert.doesNotMatch(branch, /<ls_text_change>-id\+\d/)
 
   // The lookup and the write follow the kind. A hard-coded `id = 'I'` is exactly the defect: it is
   // why a selection text could not be created and why an existing one was never found.

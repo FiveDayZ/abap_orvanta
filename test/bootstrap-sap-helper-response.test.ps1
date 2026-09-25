@@ -891,9 +891,10 @@ if ($scriptText -match "ls_trdir-utime") {
 if ($scriptText -match "DATA lv_report_variant TYPE raldb_vari\.") {
     throw "RPY_TRANSACTION_INSERT VARIANT must use the exact TCVARIANT type"
 }
-if ($scriptText -match "strlen\( <ls_text_change>-id \)" -or
-    $scriptText -notmatch [regex]::Escape("<ls_text_change>-id+3 IS NOT INITIAL")) {
-    throw "TEXTPOOL keys must validate the three-character prefix instead of the fixed CHAR length"
+if ($scriptText -notmatch [regex]::Escape("lv_text_id_length = strlen( <ls_text_change>-id )") -or
+    $scriptText -notmatch [regex]::Escape("<ls_text_change>-id(lv_text_id_length)") -or
+    $scriptText -match "<ls_text_change>-id\+\d") {
+    throw "TEXTPOOL keys must validate their significant part: the key is eight blank-padded characters, so a fixed CHAR test rejects every shorter key and an offset at the key's own length (id+8) fails GENERATE"
 }
 if ($scriptText -match [regex]::Escape("TEXT_TRANSPORT_RECORD_FAILED") -or
     $scriptText -match [regex]::Escape("object_class = 'REPT'")) {
