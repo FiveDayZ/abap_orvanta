@@ -3,7 +3,8 @@ import test from "node:test"
 import {
   collectFileSystemDirectory,
   collectUserSessions,
-  collectWorkProcesses
+  collectWorkProcesses,
+  collectWorkloadDirectory
 } from "../src/runtime-resources.js"
 import type { RemoteFunctionRequest, SapBackend } from "../src/backend.js"
 
@@ -29,6 +30,14 @@ const directoryDefinition = {
   updateTask: false,
   sourceFingerprint: "50a403b6ad5276063ac101178f612c19650e92f9a5610dfe9b8b19784fd7bde6",
   interfaceFingerprint: "3951eb2659cf3bf01fd74769262050bec5ffd84c83517b84d23f0725a0c3ebeb"
+}
+
+const workloadDirectoryDefinition = {
+  functionName: "SWNC_GET_WORKLOAD_DIRECTORY",
+  remoteEnabled: true,
+  updateTask: false,
+  sourceFingerprint: "80c9c534b86010b44769b225c0fb4795d85bdaa03c6c51504fd0db17f86171af",
+  interfaceFingerprint: "cbf0f41e2155f4906dc0943db710fb03d158449a19a287482b01462a54919c4c"
 }
 
 type SapStructureRow = Record<string, string>
@@ -614,4 +623,161 @@ test("an unauthorized or malformed directory answer stays an explicit failure", 
   )
   assert.equal(malformed.sources[0]!.status, "invalid")
   assert.equal(malformed.sources[0]!.code, "RUNTIME_RESOURCES_RESPONSE_INVALID")
+})
+
+/** A WORKLOAD_DIRECTORY row with the ten fields the reader lifts. */
+function workloadDirectoryRow(overrides: Record<string, string> = {}): SapStructureRow {
+  return {
+    ASSIGNDSYS: "GR2",
+    COMPONENT: "SAP_BASIS",
+    PERIODTYPE: "D",
+    PERIODSTRT: "2026-09-25",
+    FIRSTRECDY: "2026-09-25",
+    FIRSTRECTI: "00:01:02",
+    LASTRECDY: "2026-09-25",
+    LASTRECTI: "23:59:00",
+    AGR_TZONE: "UTC+8",
+    LONG_COMPONENT: "SAP_BASIS",
+    ...overrides
+  }
+}
+
+test("a workload directory read lifts the row and asks for exactly that one table", async () => {
+  const { backend, calls } = double({
+    WORKLOAD_DIRECTORY: [
+      workloadDirectoryRow(),
+      workloadDirectoryRow({ PERIODTYPE: "W", PERIODSTRT: "2026-09-21" })
+    ]
+  })
+  const directory = await collectWorkloadDirectory(
+    backend,
+    "w200",
+    {},
+    async () => workloadDirectoryDefinition
+  )
+  assert.equal(directory.status, "ok")
+  assert.equal(directory.returnedCount, 2)
+  assert.equal(directory.entries[0]!.periodType, "D")
+  assert.equal(directory.entries[0]!.aggregationTimezone, "UTC+8")
+  assert.equal(directory.entries[0]!.firstRecordTime, "00:01:02")
+  assert.equal(directory.entries[0]!.raw.AGR_TZONE, "UTC+8")
+  assert.deepEqual(directory.counts.byPeriodType, { D: 1, W: 1 })
+  assert.deepEqual(directory.counts.byComponent, { SAP_BASIS: 2 })
+  assert.equal(directory.collectorReportedEmpty, false)
+  assert.deepEqual(calls[0]!.inputParameters, {})
+  assert.deepEqual(calls[0]!.outputParameters, [
+    {
+      name: "WORKLOAD_DIRECTORY",
+      kind: "table",
+      fields: [
+        "ASSIGNDSYS",
+        "COMPONENT",
+        "PERIODTYPE",
+        "PERIODSTRT",
+        "FIRSTRECDY",
+        "FIRSTRECTI",
+        "LASTRECDY",
+        "LASTRECTI",
+        "AGR_TZONE",
+        "LONG_COMPONENT"
+      ]
+    }
+  ])
+  assert.ok(directory.notes.some((note) => /not a performance snapshot/.test(note)))
+})
+
+test("an empty workload directory is an ordinary answer, not a failure", async () => {
+  const directory = await collectWorkloadDirectory(
+    double({ WORKLOAD_DIRECTORY: [] }).backend,
+    "w200",
+    {},
+    async () => workloadDirectoryDefinition
+  )
+  assert.equal(directory.status, "ok")
+  assert.equal(directory.returnedCount, 0)
+  assert.equal(directory.collectorReportedEmpty, false)
+  assert.deepEqual(directory.entries, [])
+  assert.deepEqual(directory.queryWarnings, [])
+  assert.ok(directory.notes.some((note) => /empty directory/.test(note)))
+})
+
+test("the kernel's own NO_DATA_FOUND is reported as an empty directory", async () => {
+  const directory = await collectWorkloadDirectory(
+    double({}, { name: "NO_DATA_FOUND", code: "N", message: "nothing collected" }).backend,
+    "w200",
+    {},
+    async () => workloadDirectoryDefinition
+  )
+  assert.equal(directory.status, "ok")
+  assert.equal(directory.collectorReportedEmpty, true)
+  assert.equal(directory.sources[0]!.code, "NO_DATA_FOUND")
+  assert.deepEqual(directory.queryWarnings, [])
+  assert.ok(directory.notes.some((note) => /NO_DATA_FOUND/.test(note)))
+})
+
+test("any other workload directory fault stays an explicit failure", async () => {
+  const denied = await collectWorkloadDirectory(
+    double({}, { name: "NOT_AUTHORIZED", code: "N", message: "no" }).backend,
+    "w200",
+    {},
+    async () => workloadDirectoryDefinition
+  )
+  assert.equal(denied.status, "unavailable")
+  assert.equal(denied.collectorReportedEmpty, false)
+  assert.equal(denied.sources[0]!.code, "RUNTIME_RESOURCES_NOT_AUTHORIZED")
+
+  const failed = await collectWorkloadDirectory(
+    double({}, { name: "UNKNOWN_ERROR", code: "U", message: "no" }).backend,
+    "w200",
+    {},
+    async () => workloadDirectoryDefinition
+  )
+  assert.equal(failed.status, "unavailable")
+  assert.equal(failed.sources[0]!.code, "RUNTIME_RESOURCES_RFC_FAILED")
+
+  const malformed = await collectWorkloadDirectory(
+    double({}).backend,
+    "w200",
+    {},
+    async () => workloadDirectoryDefinition
+  )
+  assert.equal(malformed.sources[0]!.status, "invalid")
+  assert.equal(malformed.sources[0]!.code, "RUNTIME_RESOURCES_RESPONSE_INVALID")
+})
+
+test("a longer workload directory than the row cap is reported as partial", async () => {
+  const rows = [1, 2, 3].map((index) => workloadDirectoryRow({ PERIODSTRT: `2026-09-2${index}` }))
+  const directory = await collectWorkloadDirectory(
+    double({ WORKLOAD_DIRECTORY: rows }).backend,
+    "w200",
+    { maxRows: 2 },
+    async () => workloadDirectoryDefinition
+  )
+  assert.equal(directory.status, "partial")
+  assert.equal(directory.truncated, true)
+  assert.equal(directory.returnedCount, 2)
+  assert.equal(directory.rowLimit, 2)
+})
+
+test("a changed workload directory interface is refused before any call", async () => {
+  const changed = await collectWorkloadDirectory(
+    double({ WORKLOAD_DIRECTORY: [workloadDirectoryRow()] }).backend,
+    "w200",
+    {},
+    async () => ({ ...workloadDirectoryDefinition, interfaceFingerprint: "0".repeat(64) })
+  )
+  assert.equal(changed.sources[0]!.code, "RUNTIME_RESOURCES_FUNCTION_UNVERIFIED")
+  assert.equal(changed.status, "unavailable")
+
+  const tooMany = double({ WORKLOAD_DIRECTORY: [workloadDirectoryRow()] })
+  await assert.rejects(
+    collectWorkloadDirectory(
+      tooMany.backend,
+      "w200",
+      { maxRows: 501 },
+      async () => workloadDirectoryDefinition
+    ),
+    /RUNTIME_RESOURCES_ROW_LIMIT_INVALID/
+  )
+  assert.equal(tooMany.calls.length, 0)
 })

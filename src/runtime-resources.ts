@@ -154,7 +154,7 @@ export const reviewedDirectoryDefinition = z.object({
 })
 
 export type RuntimeResourceSource = {
-  table: "TH_WPINFO" | "TH_USER_LIST" | "EPS2_GET_DIRECTORY_LISTING"
+  table: "TH_WPINFO" | "TH_USER_LIST" | "EPS2_GET_DIRECTORY_LISTING" | "SWNC_GET_WORKLOAD_DIRECTORY"
   status: "ok" | "unavailable" | "invalid"
   method: "rfc_call"
   returnedCount: number
@@ -658,6 +658,185 @@ export async function collectFileSystemDirectory(
       byReturnCode: tally(selected.map((row) => row.RC ?? ""))
     },
     interpretedFields: { ...DIRECTORY_FIELD_MAP },
+    notes,
+    sources: [source],
+    queryTimestamp: new Date().toISOString(),
+    queryWarnings
+  }
+}
+
+const WORKLOAD_DIRECTORY_FIELDS = [
+  "ASSIGNDSYS",
+  "COMPONENT",
+  "PERIODTYPE",
+  "PERIODSTRT",
+  "FIRSTRECDY",
+  "FIRSTRECTI",
+  "LASTRECDY",
+  "LASTRECTI",
+  "AGR_TZONE",
+  "LONG_COMPONENT"
+] as const
+
+/** The workload directory columns the tool lifts, and the SAP field each one came from. */
+const WORKLOAD_DIRECTORY_FIELD_MAP = {
+  assignedSystem: "ASSIGNDSYS",
+  component: "COMPONENT",
+  periodType: "PERIODTYPE",
+  periodStart: "PERIODSTRT",
+  firstRecordDate: "FIRSTRECDY",
+  firstRecordTime: "FIRSTRECTI",
+  lastRecordDate: "LASTRECDY",
+  lastRecordTime: "LASTRECTI",
+  aggregationTimezone: "AGR_TZONE",
+  longComponent: "LONG_COMPONENT"
+} as const
+
+type WorkloadDirectoryEntry = Record<keyof typeof WORKLOAD_DIRECTORY_FIELD_MAP, string> & {
+  raw: Session
+}
+
+/**
+ * The workload directory, read from w200 on 2026-09-26.
+ *
+ * `SWNC_GET_WORKLOAD_DIRECTORY` is the one member of the workload family this service can call: it
+ * takes no inputs and exports a single table whose ten fields all resolve to verified RFC scalar
+ * types. Every read that carries the workload *numbers* is out of reach, which is why this reader is
+ * named for the directory and not for a snapshot: `SWNC_COLLECTOR_GET_AGGREGATES`,
+ * `SWNC_GET_WORKLOAD_SNAPSHOT`, `SWNC_GET_WORKLOAD_STATISTIC`, `SWNC_READ_SNAPSHOT` and
+ * `SAPWLN3_AGGREGATE_SNAPSHOT_GET` are remote-enabled, but their aggregate row structures
+ * (`SWNCGL_T_AGG*`) are refused by the interface verifier - either the generated field names fail
+ * its name check or a scalar type such as `SWNCTASKTYPERAW` cannot be verified. The single-record
+ * read `SWNC_STATREC_READ` is remote-enabled too, but its `NORMAL_RECORDS` table - the record header
+ * that gives a subrecord its user, transaction and response time - is refused as well, so what
+ * remains are context-free subrecords. The best-supported source, `SWNC_COLLECTOR_KERNEL_STAT`, is
+ * fully resolvable but **not** remote-enabled, so it needs the in-SAP helper. Those facts are
+ * recorded in the runtime-resources gap in `ops-coverage.ts`; this reader claims only what it reads.
+ */
+export const reviewedWorkloadDirectoryDefinition = z.object({
+  functionName: z.literal("SWNC_GET_WORKLOAD_DIRECTORY"),
+  remoteEnabled: z.literal(true),
+  updateTask: z.literal(false),
+  sourceFingerprint: z.literal("80c9c534b86010b44769b225c0fb4795d85bdaa03c6c51504fd0db17f86171af"),
+  interfaceFingerprint: z.literal(
+    "cbf0f41e2155f4906dc0943db710fb03d158449a19a287482b01462a54919c4c"
+  )
+})
+
+export interface WorkloadDirectoryOptions {
+  maxRows?: number | undefined
+}
+
+export async function collectWorkloadDirectory(
+  backend: Pick<SapBackend, "callRemoteFunction">,
+  connectionId: string,
+  options: WorkloadDirectoryOptions,
+  readDefinition: () => Promise<unknown>
+) {
+  const requested = rowLimit(options.maxRows)
+  const source: RuntimeResourceSource = {
+    table: "SWNC_GET_WORKLOAD_DIRECTORY",
+    status: "unavailable",
+    method: "rfc_call",
+    returnedCount: 0
+  }
+  const queryWarnings: string[] = []
+  const notes = [
+    "Directory rows come from SWNC_GET_WORKLOAD_DIRECTORY, the workload collector's own index of " +
+      "the data it holds, read as a snapshot. No history is kept.",
+    "This is the index, not the workload. The collector's aggregate rows - response and wait times, " +
+      "database and CPU time, user and transaction workload - are not readable by this service, so " +
+      "no such number appears here and this tool is not a performance snapshot.",
+    "An empty directory is reported as an empty directory: it means the collector holds no data for " +
+      "any period type, which is the normal state after a collector restart or on a system that " +
+      "never collected. It is not evidence that performance is fine.",
+    "No value is translated: `periodType` is the kernel's own code and the domain fixed values were " +
+      "not read, so the tally counts the kernel's raw codes rather than named periods.",
+    "`periodStart`, the first and last record date and time are the kernel's own DATS/TIMS values " +
+      "returned verbatim, and `aggregationTimezone` is its own aggregation time zone; this service " +
+      "converts none of them and holds no second source to cross-check them against.",
+    "Each entry carries the untranslated SAP row in `raw`, and `interpretedFields` names the SAP " +
+      "field every lifted value came from."
+  ]
+
+  let rows: Session[] = []
+  let emptyByKernel = false
+  try {
+    if (!reviewedWorkloadDirectoryDefinition.safeParse(await readDefinition()).success)
+      throw new Error("RUNTIME_RESOURCES_FUNCTION_UNVERIFIED")
+    const result = await backend.callRemoteFunction(connectionId, {
+      functionName: "SWNC_GET_WORKLOAD_DIRECTORY",
+      inputParameters: {},
+      outputParameters: [
+        { name: "WORKLOAD_DIRECTORY", kind: "table", fields: [...WORKLOAD_DIRECTORY_FIELDS] }
+      ]
+    })
+    if (result.fault) {
+      // The interface declares NO_DATA_FOUND for "the collector holds nothing". That is an answer,
+      // not a failure, so it is reported the way an empty directory listing is: status ok, no rows.
+      if (result.fault.name === "NO_DATA_FOUND") emptyByKernel = true
+      else
+        throw new Error(
+          result.fault.name === "NOT_AUTHORIZED"
+            ? "RUNTIME_RESOURCES_NOT_AUTHORIZED"
+            : "RUNTIME_RESOURCES_RFC_FAILED"
+        )
+    }
+    if (emptyByKernel) {
+      source.status = "ok"
+      source.code = "NO_DATA_FOUND"
+      notes.push(
+        "The kernel answered with its own NO_DATA_FOUND exception, which is how the interface " +
+          "reports that the collector holds no workload data."
+      )
+    } else {
+      const raw = result.outputs.WORKLOAD_DIRECTORY
+      if (raw === undefined) throw new Error("RUNTIME_RESOURCES_RESPONSE_INVALID")
+      rows = tableRows(raw)
+      source.status = "ok"
+      source.returnedCount = rows.length
+    }
+  } catch (error) {
+    source.code = failure(error)
+    if (source.code === "RUNTIME_RESOURCES_RESPONSE_INVALID") source.status = "invalid"
+    queryWarnings.push(`SWNC_GET_WORKLOAD_DIRECTORY: ${source.code}`)
+  }
+
+  const truncated = rows.length > requested
+  if (truncated)
+    notes.push(
+      `The kernel returned ${rows.length} directory rows and the row cap is ${requested}, so the ` +
+        "answer is partial: the rows beyond the cap were not read into the result."
+    )
+  const selected = rows.slice(0, requested)
+  const entries: WorkloadDirectoryEntry[] = selected.map((row) => ({
+    ...lift(row, WORKLOAD_DIRECTORY_FIELD_MAP),
+    raw: row
+  }))
+
+  return {
+    status:
+      source.status !== "ok"
+        ? ("unavailable" as const)
+        : truncated
+          ? ("partial" as const)
+          : ("ok" as const),
+    connectionId,
+    readOnly: true,
+    /** True only when the kernel said so itself, which is distinct from an empty row table. */
+    collectorReportedEmpty: emptyByKernel,
+    rowLimit: requested,
+    rowLimitRequested: options.maxRows ?? null,
+    rowLimitApplied: requested,
+    returnedCount: selected.length,
+    truncated,
+    entries,
+    counts: {
+      returned: selected.length,
+      byPeriodType: tally(selected.map((row) => row.PERIODTYPE ?? "")),
+      byComponent: tally(selected.map((row) => row.COMPONENT ?? ""))
+    },
+    interpretedFields: { ...WORKLOAD_DIRECTORY_FIELD_MAP },
     notes,
     sources: [source],
     queryTimestamp: new Date().toISOString(),

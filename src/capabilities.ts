@@ -500,9 +500,14 @@ export async function buildCapabilityReport(
     capability(
       "runtime-resources",
       "target-specific",
-      ["read_work_processes", "read_user_sessions", "read_file_system_directory"],
+      [
+        "read_work_processes",
+        "read_user_sessions",
+        "read_file_system_directory",
+        "read_workload_directory"
+      ],
       unknownTargetObservation(
-        "Calls the kernel's own work process list, session list and application-server directory listing over SOAP-RFC (TH_WPINFO / TH_USER_LIST / EPS2_GET_DIRECTORY_LISTING) after verifying each interface by fingerprint, so availability follows those function modules and the caller's authorization rather than an ADT endpoint probe - ADT publishes no endpoint for this data. See adt-data-preview for the native verdict."
+        "Calls the kernel's own work process list, session list, application-server directory listing and workload-collector directory over SOAP-RFC (TH_WPINFO / TH_USER_LIST / EPS2_GET_DIRECTORY_LISTING / SWNC_GET_WORKLOAD_DIRECTORY) after verifying each interface by fingerprint, so availability follows those function modules and the caller's authorization rather than an ADT endpoint probe - ADT publishes no endpoint for this data. The workload read is the collector's own directory of what it holds, not the workload numbers, which this service cannot verify. so availability follows those function modules and the caller's authorization rather than an ADT endpoint probe - ADT publishes no endpoint for this data. See adt-data-preview for the native verdict."
       )
     ),
     capability(

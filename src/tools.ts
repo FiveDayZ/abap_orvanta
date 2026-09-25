@@ -63,7 +63,8 @@ import { collectQrfcQueues } from "./qrfc-queues.js"
 import {
   collectFileSystemDirectory,
   collectUserSessions,
-  collectWorkProcesses
+  collectWorkProcesses,
+  collectWorkloadDirectory
 } from "./runtime-resources.js"
 import { collectServerFacts } from "./server-facts.js"
 import { collectSystemInfo } from "./system-info.js"
@@ -1260,6 +1261,10 @@ interface FileSystemDirectoryInput {
   connectionId: string
   directory: string
   fileMask?: string | undefined
+  maxRows?: number | undefined
+}
+interface WorkloadDirectoryInput {
+  connectionId: string
   maxRows?: number | undefined
 }
 interface QrfcQueuesInput {
@@ -7035,6 +7040,29 @@ export class ToolService {
     if (listing.queryWarnings.length)
       summary += `- Query warnings: ${listing.queryWarnings.length}\n`
     return `${summary}${JSON.stringify(listing, null, 2)}`
+  }
+  async readWorkloadDirectory(input: WorkloadDirectoryInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const directory = await collectWorkloadDirectory(
+      this.backend,
+      connectionId,
+      { maxRows: input.maxRows },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "SWNC_GET_WORKLOAD_DIRECTORY"
+          })
+        )
+    )
+    let summary =
+      `Workload directory: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${directory.status}\n` +
+      `- Periods: ${directory.returnedCount}${directory.truncated ? " (truncated)" : ""}\n`
+    if (directory.collectorReportedEmpty) summary += "- The collector reported no data\n"
+    if (directory.queryWarnings.length)
+      summary += `- Query warnings: ${directory.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(directory, null, 2)}`
   }
   async readQrfcQueues(input: QrfcQueuesInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()

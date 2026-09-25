@@ -545,3 +545,58 @@ registry 条目数再次等于工具数（149）。
 **旁证修正**：`tableRows` 原先把"非字符串单元格"一律判为非法。`EPS2FILI` 的 `SIZE` 是 `DEC15`、`RC` 是
 `NUMC4`，`EPSFILI.SIZE` 是 `INT4` ⇒ 数值单元格是**正常答案**。现在数值被保留为读取器自己的呈现文本
 （不解析、不重算精度），仅对象/数组/布尔仍判非法；并补了一条断言固定这个行为。
+
+### 7.10 OP1-1 第三批 - 负载目录与性能通路的取证结论（2026-09-26）
+
+**本批两件事：把运行期家族最后一个可读项落地，并把剩下两项从"待找入口"变成"有结论"。** 2026-09-26
+的只读探测（证据 `.cache/evidence-r18/`）覆盖 SWNC/SAPWL 全族与 DB02 各厂商模块。
+
+**新增 `read_workload_directory`（负载采集器的目录）。** 走同一通路：指纹闸门 + 直接 SOAP-RFC 调用
+`SWNC_GET_WORKLOAD_DIRECTORY`（固定指纹 source `80c9c534…71af` / interface `cbf0f41e…9c4c`）。该函数
+模块**无任何导入参数**，只导出一张表 `WORKLOAD_DIRECTORY`（10 字段，逐字段均可验证），因此它成为本族唯一
+既能被本服务序列化、又确实携带"性能数据是否存在"答案的读。
+
+| 字段                                          | 含义（内核原值）                  | 本服务是否翻译             |
+| --------------------------------------------- | --------------------------------- | -------------------------- |
+| `COMPONENT` / `LONG_COMPONENT` / `ASSIGNDSYS` | 采集组件 / 长名 / 归属系统        | 否，原样                   |
+| `PERIODTYPE` / `PERIODSTRT`                   | 周期类型码 / 周期起始日           | 否，域定值未读，计数按原码 |
+| `FIRSTRECDY/TI`、`LASTRECDY/TI`               | 数据覆盖窗口首末记录（DATS/TIMS） | 否，原样回传，不做时区换算 |
+| `AGR_TZONE`                                   | 采集器的聚合时区                  | 否，原样                   |
+
+- **它明确不是性能快照**：工具名与描述都写明"这是数据目录，不是负载本身"，`notes` 第一条即声明本服务
+  读不到聚合数字。
+- **空目录就是空目录**（`status=ok` + 空 `entries`）：表示采集器没有任何周期的数据（采集器重启后或从未
+  采集），**不是**"性能正常"的证据。接口自己声明的 `NO_DATA_FOUND` 异常同样映射为空目录而非失败
+  （`collectorReportedEmpty=true`，`sources[0].code="NO_DATA_FOUND"`），其余故障（`NOT_AUTHORIZED`、
+  `UNKNOWN_ERROR`）仍显式失败——"空"与"读不到"在这里被分开。
+- 行数上限沿用 200/500，超出报 `partial`；每条仍带 `raw` 与 `interpretedFields`。
+
+**性能（ST03/STAD）通路的结论：服务侧不可达，需助手。** 逐候选取证（`remoteEnabled` 与整模块/逐参数
+`supported`）：
+
+| 函数模块                                                                               | remoteEnabled | 可序列化      | 结论                                                                                                  |
+| -------------------------------------------------------------------------------------- | ------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
+| `SWNC_COLLECTOR_GET_AGGREGATES`                                                        | 是            | 否            | 26 张聚合表主集全拒                                                                                   |
+| `SWNC_GET_WORKLOAD_SNAPSHOT`                                                           | 是            | 否            | 导出 `SWNCGL_T_AGG*` 全拒（`SWNCTASKTYPERAW` 等无法验证）                                             |
+| `SWNC_GET_WORKLOAD_STATISTIC`                                                          | 是            | 否            | 同上（字段名不满足 1-30 校验）                                                                        |
+| `SWNC_READ_SNAPSHOT`                                                                   | 是            | 否            | 同上                                                                                                  |
+| `SAPWL_AS_WORKL_GET_STATISTIC` / `SAPWLN3_AGGREGATE_SNAPSHOT_GET`                      | 是            | 否            | 同上                                                                                                  |
+| `SWNC_STATREC_READ`（STAD 单记录）                                                     | 是            | 否            | **`NORMAL_RECORDS` 被拒**——那是给出子记录所属用户/事务/响应时间的记录头；可用的只有上下文缺失的子记录 |
+| `SWNC_COLLECTOR_GET_SYSTEMLOAD` / `SWNC_COLLECTOR_GET_DIRECTORY`                       | 是            | 否            | 关键表被拒（后者仅 3 张目录表可用）                                                                   |
+| `SWNC_FETCH_AGGR_*` / `SWNC_STAD_READ_STATRECS_RFC` / `SWNC_STATREC_READ_INSTANCE_RFC` | **否**        | —（无需再判） | 名字像外部入口，实则非 remote-enabled                                                                 |
+| `SWNC_COLLECTOR_KERNEL_STAT`                                                           | **否**        | 是            | 唯一"整模块可验证"的性能源，偏偏不可远程调用 ⇒ **须走助手**                                           |
+
+**判断**：本服务能读到的性能数据只有"数据目录"这一层；响应时间、DB/CPU 时间、用户与事务负载这一整层，
+服务侧没有任何可序列化的入口。因此**不实现空壳 `read_performance_snapshot`**，缺口保留并写明需要助手
+（通路 C）。
+
+**DB02（`read_db_activity`）的结论：厂商切分 + 平台读不到。** `DB02_ORA_SELECT_SEGMENTS`、
+`DB02_ORA_LAST_ANALYZED`（Oracle）与 `DB02_GET_EXTENT_LIST_DB2`（DB2）均 `remoteEnabled=true` 且整模块
+可验证，但**都必须先知道数据库平台**才能选对模块；而平台在已批准的服务侧来源里读不到——本轮尝试读
+`TPFYPROPTY` 得到 `TABLE_NOT_ALLOWED`，原因是**在跑的 4848 仍是 D3 授权之前的构建**（不仅是工具面，
+**表白名单也是编译期常量**）。因此 `read_db_activity` 要么等重启后经新白名单取证平台、要么走助手。
+
+**族状态**：`runtime-resources` 声明集合由 5 项变为 **6 项**（新增的 `read_workload_directory` 已同时
+实现），**缺口集合不变**（仍是 `read_performance_snapshot` 与 `read_db_activity`），族仍为 `partial`。
+工具面 **151 工具 / 90 只读**，ops 组 **28**，registry **151 条 = 工具数**（verified 23 / unverified 121）。
+新工具在服务重启并完成一次真实 w200 调用前保持 `unverified`。

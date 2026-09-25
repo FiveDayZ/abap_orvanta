@@ -757,6 +757,9 @@ export function createMcpServer(
     async (input) =>
       invoke("read_file_system_directory", () => tools.readFileSystemDirectory(input))
   )
+  registerTool("read_workload_directory", toolContracts.read_workload_directory, async (input) =>
+    invoke("read_workload_directory", () => tools.readWorkloadDirectory(input))
+  )
   registerTool("read_qrfc_queues", toolContracts.read_qrfc_queues, async (input) =>
     invoke("read_qrfc_queues", () => tools.readQrfcQueues(input))
   )

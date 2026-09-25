@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 150,
-  "readOnlyToolCount": 89,
+  "toolCount": 151,
+  "readOnlyToolCount": 90,
   "profiles": {
-    "readonly": 89,
+    "readonly": 90,
     "platform": 12,
-    "dev": 132,
-    "config": 35,
-    "ops": 44,
-    "full": 150
+    "dev": 133,
+    "config": 36,
+    "ops": 45,
+    "full": 151
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 27,
+    "ops": 28,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1777,6 +1777,23 @@
     },
     {
       "name": "read_work_processes",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
+    },
+    {
+      "name": "read_workload_directory",
       "group": "ops",
       "profiles": [
         "dev",

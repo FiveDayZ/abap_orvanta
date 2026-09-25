@@ -101,7 +101,8 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   // Runtime resources (SM50/SM66 and SM04)
   read_work_processes: "read-only",
   read_user_sessions: "read-only",
-  read_file_system_directory: "read-only"
+  read_file_system_directory: "read-only",
+  read_workload_directory: "read-only"
 }
 
 /**
@@ -237,16 +238,26 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "read_user_sessions",
       "read_performance_snapshot",
       "read_db_activity",
-      "read_file_system_directory"
+      "read_file_system_directory",
+      "read_workload_directory"
     ],
     actionRequired: false,
     gap:
       "Reported: the work process list (TH_WPINFO) through read_work_processes, the user and " +
-      "session list (TH_USER_LIST) through read_user_sessions, and the application-server " +
-      "directory listing (EPS2_GET_DIRECTORY_LISTING) through read_file_system_directory. Still " +
-      "absent: read_performance_snapshot and read_db_activity - the workload collector " +
-      "(SWNC_COLLECTOR_GET_AGGREGATES) is remote-enabled but its aggregate tables are not " +
-      "RFC-serializable for this service, and DB02's source is database-vendor specific."
+      "session list (TH_USER_LIST) through read_user_sessions, the application-server directory " +
+      "listing (EPS2_GET_DIRECTORY_LISTING) through read_file_system_directory, and the workload " +
+      "collector's own directory of what it holds (SWNC_GET_WORKLOAD_DIRECTORY) through " +
+      "read_workload_directory. Still absent: read_performance_snapshot and read_db_activity, and " +
+      "the 2026-09-26 probe narrowed why. Every remote-enabled read carrying the workload numbers " +
+      "refuses to serialize: SWNC_COLLECTOR_GET_AGGREGATES, SWNC_GET_WORKLOAD_SNAPSHOT, " +
+      "SWNC_GET_WORKLOAD_STATISTIC, SWNC_READ_SNAPSHOT and SAPWLN3_AGGREGATE_SNAPSHOT_GET expose " +
+      "SWNCGL_T_AGG* rows whose field names or scalar types (SWNCTASKTYPERAW) fail verification, " +
+      "and SWNC_STATREC_READ cannot return NORMAL_RECORDS, the record header that gives a " +
+      "subrecord its user and response time. SWNC_COLLECTOR_KERNEL_STAT is fully resolvable but " +
+      "not remote-enabled, so the workload numbers need the in-SAP helper. DB02 is split by " +
+      "database vendor (DB02_ORA_*, DB02_*_DB2, DB6_*) and the platform is not readable from the " +
+      "approved service-side sources, so read_db_activity needs either a newly approved source for " +
+      "the platform or the helper."
   },
   {
     id: "interfaces",
