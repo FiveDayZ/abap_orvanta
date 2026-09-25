@@ -241,6 +241,14 @@ const functionExceptionPatch = z.discriminatedUnion("operation", [
 const scalarParameters = z.record(z.string())
 const structureParameters = z.record(z.record(z.string()))
 const tableParameters = z.record(z.array(z.record(z.string())))
+// One read publishes three identity fingerprints of the same active function module, and the
+// names invite mixing them up, so every tool that takes this field accepts any of the three.
+const interfaceFingerprintInput = z
+  .string()
+  .regex(/^[a-f0-9]{64}$/i)
+  .describe(
+    "Any fingerprint of the same active function module, as returned by read_function_module_interface: `fingerprint` (whole definition), `interfaceFingerprint` (interface only) or `sourceFingerprint` (implementation only). An implementation-only change leaves interfaceFingerprint untouched."
+  )
 const writeOperationInput = {
   operationId: z
     .string()
@@ -704,7 +712,7 @@ const toolContractsBase = {
   },
   test_remote_function_module: {
     description:
-      "Invoke one remote-enabled Z* or Y* function module through SOAP/RFC and verify exact scalar, flat-structure, and bounded table outputs or one declared exception. The tool reads the active interface and DDIC shapes first, rejects unsupported deep types and update-task modules, requires an interface fingerprint for complex payloads, and requires explicit acknowledgement that customer RFC code may change SAP business data.",
+      "Invoke one remote-enabled Z* or Y* function module through SOAP/RFC and verify exact scalar, flat-structure, and bounded table outputs or one declared exception. The tool reads the active interface and DDIC shapes first, rejects unsupported deep types and update-task modules, requires an interface fingerprint for complex payloads, and requires explicit acknowledgement that customer RFC code may change SAP business data. A structure expectation asserts only the fields it names, so a wide output structure does not have to be repeated field by field; a field the returned structure does not have is refused by name, while a table expectation must match the whole returned table. Any of the three fingerprints read_function_module_interface returns is accepted, so an implementation-only change does not force a re-read of the interface.",
     inputSchema: {
       ...writeOperationInput,
       functionName: z.string(),
@@ -715,10 +723,7 @@ const toolContractsBase = {
       expectedStructureOutputs: structureParameters.optional(),
       expectedTableOutputs: tableParameters.optional(),
       expectedException: z.string().optional(),
-      expectedInterfaceFingerprint: z
-        .string()
-        .regex(/^[a-f0-9]{64}$/i)
-        .optional(),
+      expectedInterfaceFingerprint: interfaceFingerprintInput.optional(),
       acknowledgePotentialSideEffects: z.literal(true),
       connectionId: z.string()
     }
@@ -731,7 +736,7 @@ const toolContractsBase = {
   },
   invoke_customer_function_module: {
     description:
-      "Invoke one explicitly allowlisted remote-enabled Z* or Y* function module through SOAP/RFC and return its actual bounded scalar, flat-structure, and table results. Every call requires the active interface fingerprint, a one-time caller requestId, and explicit side-effect acknowledgement. A persistent receipt blocks duplicate or conflicting request IDs across concurrent calls and service restarts. Declared SAP exceptions are returned as structured faults. Calls are never retried automatically.",
+      "Invoke one explicitly allowlisted remote-enabled Z* or Y* function module through SOAP/RFC and return its actual bounded scalar, flat-structure, and table results. Every call requires the active interface fingerprint, a one-time caller requestId, and explicit side-effect acknowledgement; any of the three fingerprints read_function_module_interface returns is accepted. A persistent receipt blocks duplicate or conflicting request IDs across concurrent calls and service restarts. Declared SAP exceptions are returned as structured faults. Calls are never retried automatically.",
     inputSchema: {
       ...writeOperationInput,
       functionName: z.string(),
@@ -739,7 +744,7 @@ const toolContractsBase = {
       inputParameters: scalarParameters.default({}).optional(),
       structureInputs: structureParameters.optional(),
       tableInputs: tableParameters.optional(),
-      expectedInterfaceFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      expectedInterfaceFingerprint: interfaceFingerprintInput,
       acknowledgePotentialSideEffects: z.literal(true),
       connectionId: z.string()
     }
@@ -806,7 +811,7 @@ const toolContractsBase = {
       ...writeOperationInput,
       functionName: z.string(),
       functionGroup: z.string(),
-      expectedInterfaceFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      expectedInterfaceFingerprint: interfaceFingerprintInput,
       expectedSourceFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
       parameterOperations: z.array(functionParameterPatch),
       exceptionOperations: z.array(functionExceptionPatch),

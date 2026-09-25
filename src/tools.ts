@@ -2186,8 +2186,13 @@ export class ToolService {
       Object.keys(expectedOutputs).length +
       Object.keys(expectedStructureOutputs).length +
       Object.keys(expectedTableOutputs).length
-    if (!!expectationCount === !!expectedException) {
+    if (expectationCount > 0 && expectedException) {
       throw new Error("Provide output expectations or expectedException, but not both")
+    }
+    if (expectationCount === 0 && !expectedException) {
+      throw new Error(
+        "Provide at least one output expectation (expectedOutputs, expectedStructureOutputs or expectedTableOutputs) or an expectedException"
+      )
     }
     assertRemotePayloadSize(
       { inputs, structureInputs, tableInputs },
@@ -2224,13 +2229,11 @@ export class ToolService {
       Object.keys(expectedStructureOutputs).length > 0 ||
       Object.keys(expectedTableOutputs).length > 0
     if (input.expectedInterfaceFingerprint) {
-      if (input.expectedInterfaceFingerprint.toLowerCase() !== definition.fingerprint) {
-        throw new Error(
-          `Function interface fingerprint changed: expected ${input.expectedInterfaceFingerprint.toLowerCase()}, current ${definition.fingerprint}`
-        )
-      }
+      assertFunctionModuleFingerprint(input.expectedInterfaceFingerprint, definition)
     } else if (complexPayload) {
-      throw new Error("expectedInterfaceFingerprint is required for structure or table payloads")
+      throw new Error(
+        `expectedInterfaceFingerprint is required for structure or table payloads; use the fingerprint, interfaceFingerprint or sourceFingerprint field of read_function_module_interface (currently fingerprint ${definition.fingerprint})`
+      )
     }
 
     const allowedInputs = new Map(
@@ -2636,11 +2639,7 @@ export class ToolService {
     const definition = functionModuleResult(repository, connectionId, functionName)
     if (!definition.remoteEnabled) throw new Error(`${functionName} is not remote-enabled`)
     if (definition.updateTask) throw new Error("Update-task function modules cannot be invoked")
-    if (input.expectedInterfaceFingerprint.toLowerCase() !== definition.fingerprint) {
-      throw new Error(
-        `Function interface fingerprint changed: expected ${input.expectedInterfaceFingerprint.toLowerCase()}, current ${definition.fingerprint}`
-      )
-    }
+    assertFunctionModuleFingerprint(input.expectedInterfaceFingerprint, definition)
     const contract = await this.resolveFunctionExecutionContract(connectionId, definition)
     if (!contract.supported) {
       throw new Error(`Function interface is not supported: ${contract.reasons.join("; ")}`)
@@ -3097,11 +3096,7 @@ export class ToolService {
         `Function group changed: expected ${functionGroup}, current ${current.functionGroup}`
       )
     }
-    if (current.interfaceFingerprint !== input.expectedInterfaceFingerprint.toLowerCase()) {
-      throw new Error(
-        `Function interface fingerprint changed: expected ${input.expectedInterfaceFingerprint.toLowerCase()}, current ${current.interfaceFingerprint}`
-      )
-    }
+    assertFunctionModuleFingerprint(input.expectedInterfaceFingerprint, current)
     if (current.sourceFingerprint !== input.expectedSourceFingerprint.toLowerCase()) {
       throw new Error(
         `Function implementation source fingerprint changed: expected ${input.expectedSourceFingerprint.toLowerCase()}, current ${current.sourceFingerprint}`
@@ -13352,12 +13347,71 @@ function assertExpectedRemoteOutputs<T extends Record<string, unknown>>(
   expected: T
 ): void {
   for (const [name, value] of Object.entries(expected)) {
-    if (!isDeepStrictEqual(actual[name], value)) {
+    const received = actual[name]
+    if (isPlainRecord(value) && isPlainRecord(received)) {
+      // A structure expectation asserts the fields the caller names; the remaining fields of the
+      // returned structure are reported to the caller but not compared, exactly as a scalar
+      // expectation asserts only the scalars it lists. A named field the structure does not
+      // return is still refused, so a mistyped field name cannot pass silently.
+      assertExpectedStructureFields(name, received, value)
+      continue
+    }
+    if (!isDeepStrictEqual(received, value)) {
       throw new Error(
-        `Output assertion failed for ${name}: expected ${JSON.stringify(value)}, received ${JSON.stringify(actual[name])}`
+        `Output assertion failed for ${name}: expected ${JSON.stringify(value)}, received ${JSON.stringify(received)}`
       )
     }
   }
+}
+
+function assertExpectedStructureFields(
+  name: string,
+  received: Record<string, unknown>,
+  expected: Record<string, unknown>
+): void {
+  for (const [field, value] of Object.entries(expected)) {
+    if (!Object.prototype.hasOwnProperty.call(received, field)) {
+      throw new Error(
+        `Output assertion failed for ${name}: the returned structure has no field ${field} (fields: ${Object.keys(received).join(", ")})`
+      )
+    }
+    if (!isDeepStrictEqual(received[field], value)) {
+      throw new Error(
+        `Output assertion failed for ${name}.${field}: expected ${JSON.stringify(value)}, received ${JSON.stringify(received[field])}`
+      )
+    }
+  }
+}
+
+/**
+ * One read publishes three identity fingerprints of the same active function module under names
+ * that are easy to confuse, and every tool takes them through the same input field:
+ *
+ * - `fingerprint` — the whole definition, interface plus implementation;
+ * - `interfaceFingerprint` — the interface alone, so an implementation-only change leaves it
+ *   untouched;
+ * - `sourceFingerprint` — the implementation body alone.
+ *
+ * Any of the three proves the caller inspected this same object, so all three are accepted; a
+ * value matching none is refused with the current value of every fingerprint named by field,
+ * because "the fingerprint changed" on its own is what makes this field hard to use.
+ */
+function assertFunctionModuleFingerprint(
+  expected: string,
+  current: { fingerprint: string; interfaceFingerprint: string; sourceFingerprint: string }
+): void {
+  const wanted = expected.toLowerCase()
+  const candidates: Array<[string, string]> = [
+    ["fingerprint", current.fingerprint],
+    ["interfaceFingerprint", current.interfaceFingerprint],
+    ["sourceFingerprint", current.sourceFingerprint]
+  ]
+  if (candidates.some(([, value]) => value.toLowerCase() === wanted)) return
+  const available = candidates.map(([name, value]) => `${name} ${value}`).join(", ")
+  throw new Error(
+    `Function interface fingerprint changed: expected ${wanted}, current ${available}. ` +
+      `Pass any of these fingerprints of the same active interface, normally the interfaceFingerprint or fingerprint field of read_function_module_interface.`
+  )
 }
 
 function flatStructureFields(result: SapDdicResult, typeName: string): string[] {

@@ -200,3 +200,50 @@ test("scalar output length is checked and an uncertain formal result remains out
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test("every fingerprint the interface read publishes is accepted, a stale one is not", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const metadata = JSON.parse(await tools.readFunctionModuleInterface(base))
+  const call = (expectedInterfaceFingerprint: string) =>
+    tools.testRemoteFunctionModule({
+      ...base,
+      inputParameters: {},
+      structureInputs: { IS_REQUEST: { TYPE: "S", MESSAGE: "VALIDATION" } },
+      expectedStructureOutputs: { ES_RESPONSE: { MESSAGE: "MCP:VALIDATION" } },
+      expectedInterfaceFingerprint
+    })
+  for (const fingerprint of [
+    metadata.fingerprint,
+    metadata.interfaceFingerprint,
+    metadata.sourceFingerprint
+  ]) {
+    assert.equal(JSON.parse(await call(fingerprint)).status, "passed")
+  }
+  // The refusal still names every current fingerprint so the caller can pick the right field.
+  await assert.rejects(
+    call("0".repeat(64)),
+    /fingerprint changed.*fingerprint .*interfaceFingerprint/s
+  )
+})
+
+test("a structure expectation asserts the fields it names and refuses a field that is absent", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const metadata = JSON.parse(await tools.readFunctionModuleInterface(base))
+  const call = (expectedStructureOutputs: Record<string, Record<string, string>>) =>
+    tools.testRemoteFunctionModule({
+      ...base,
+      inputParameters: {},
+      structureInputs: { IS_REQUEST: { TYPE: "S", MESSAGE: "VALIDATION" } },
+      expectedStructureOutputs,
+      expectedInterfaceFingerprint: metadata.fingerprint
+    })
+  // One named field of the wider returned structure is enough; the other fields are reported.
+  assert.equal(
+    JSON.parse(await call({ ES_RESPONSE: { MESSAGE: "MCP:VALIDATION" } })).status,
+    "passed"
+  )
+  await assert.rejects(call({ ES_RESPONSE: { MESSAGE: "WRONG" } }), /ES_RESPONSE\.MESSAGE/)
+  await assert.rejects(call({ ES_RESPONSE: { NOSUCHFIELD: "X" } }), /has no field NOSUCHFIELD/)
+})
