@@ -357,14 +357,19 @@ export interface SapBackend {
   "families": [
     { "id": "transport", "state": "partial", "actionRequired": true, "exempt": false, "exemptReason": "",
       "toolNames": ["…"], "missingToolNames": ["…"], "readTools": ["…"], "actionTools": ["…"], "platformBlockedTools": [],
-      "verification": { "verified": ["…"], "unverified": ["…"], "failing": ["…"] },
+      "verification": { "verified": ["…"], "unverified": ["…"], "failing": ["…"],
+                        "closed": true, "blockingTools": [] },
       "gap": "Release and import are absent: …" }
   ],
   "summary": { "familyCount": 15, "stateCounts": { "absent": 5, "blocked": 1, "partial": 7, "read-only": 2, "read-and-act": 0 },
                "endToEndFamilyCount": 2, "endToEndPercent": 13, "endToEndFamilies": ["logs", "dumps"],
                "requiredEndToEndFamilyCount": 14, "requiredEndToEndPercent": 95, "endToEndPercentOfRequired": 14,
                "remainingRequiredFamilyCount": 12, "outstandingRequiredFamilies": ["…"], "exemptFamilies": ["traces"],
-               "criterionMet": false,
+               "registryLoaded": true, "criterionBasis": "gap empty + every tool verified (verification registry loaded)",
+               "evidenceClosedFamilyCount": 2, "evidenceClosedFamilies": ["logs", "dumps"],
+               "stateClosedRequiredFamilyCount": 2, "closedRequiredFamilyCount": 2,
+               "evidenceUnregisteredFamilies": [],
+               "stateCriterionMet": false, "criterionMet": false,
                "actionToolCount": 3, "platformBlockedToolCount": 1, "classifiedToolCount": 20,
                "missingPlannedToolCount": 23, "missingPlannedTools": ["…"] },
   "note": "…; it never changes an availability or verification verdict."
@@ -419,10 +424,11 @@ export interface SapBackend {
 - 工具角色（`read-only` / `action` / `platform-blocked`）与 `src/tool-registry.ts` 的注解互相校验：角色与注解矛盾、`ops` 组工具未分档、工具未归入任何族，都会让 `opsClassificationProblems()` 非空，而 `opsCapabilityBlock()` 拒绝在这种状态下发布报告——一个悄悄漏掉工具或族的块比没有块更糟，因为它看起来像个答案。
 - 族状态（`absent` / `blocked` / `partial` / `read-only` / `read-and-act`）由"是否存在工具、是否全被平台挡住、声明的缺口是否为空"推导。**只有缺口为空的族才算端到端**；"读得到"永不顶替"处置得了"——作业族不会因为能读作业明细与 Spool 就变成 `read-and-act`，它停在 `partial` 并写明缺的是作业控制。
 - `blocked` 与"尚未实现"是两句话：前者是平台（本版本不提供该端点）挡住，后者是没做。
-- **完成判据在块里，不在散文里**：`requiredEndToEndFamilyCount` 只排除「全部工具都被平台挡住**且**带有书面豁免理由」的族，`criterionMet` = 已闭合的必需族 ≥ `ceil(必需族 × 0.95)`（**向上取整**，向下取整会允许"仍有必需族未闭合"时宣称达标），`outstandingRequiredFamilies` 就是判据仍在等的工单清单。豁免只对 `blocked` 族成立，守卫拒绝给未建或未完成的族开豁免——否则把族声明成豁免就能自己调低目标。
+- **完成判据在块里，不在散文里**：`requiredEndToEndFamilyCount` 只排除「全部工具都被平台挡住**且**带有书面豁免理由」的族，`criterionMet` = **同时满足两点**的必需族 ≥ `ceil(必需族 × 0.95)`（**向上取整**，向下取整会允许"仍有必需族未闭合"时宣称达标）。两点是：① 该族声明的缺口为空（结构上闭合）；② 该族**每个**工具在验收登记表里都是 `verified`。只满足 ① 不算——"工具存在"是关于计划的话，不是关于系统的话。`outstandingRequiredFamilies` 就是判据仍在等的工单清单；`closedRequiredFamilyCount` 是判据的分子，`stateClosedRequiredFamilyCount` 是只按 ① 算的弱读数，两者之差就是 `evidenceUnregisteredFamilies`（缺口已空、但工具还没被证明跑过）。豁免只对 `blocked` 族成立，守卫拒绝给未建或未完成的族开豁免——否则把族声明成豁免就能自己调低目标。
+- **读不到登记表时判据不给通过**：`registryLoaded: false`（打包产物不含 `contracts/`）时分子为 0、`criterionBasis` 明说"只按缺口算、无族可被认证"，而不是退回只按 ① 的宽松读数。`criterionMet` 这一处刻意**不**沿用其它 `verification` 字段"降级为 unverified 但仍照常判定"的体例，因为判据是一句"这件事完成了"的断言——证据读不到时它只能说"不能认证"。
 - 该块与 `verification` 一样，**永不改变可用性判定**；族的逐工具证据状态来自验收登记表的交叉统计。运维面的判定规则、授权模型与完成判据见 `docs/ops-coverage.md`。
 
-  0.50.9 实测：15 个场景族（= 评估矩阵的 14 族 + 平台挡住的运行追踪族，后者即那份书面豁免），2 族端到端（`logs`、`dumps`，占全部 13%、占**必需 14 族** 14%），`partial` 7、`absent` 5、`blocked` 1，`criterionMet: false`，`remainingRequiredFamilyCount: 12`，还有 23 个计划内工具未建（0.50.7 首版为 25：`read_patch_level` 与 `read_client_settings` 已从计划中撤下——这两项的数据要么已由 `get_sap_system_info` 报告，要么其语义被项目刻意不换算，见 `docs/system-info.md`）。
+  0.50.13 实测：15 个场景族（= 评估矩阵的 14 族 + 平台挡住的运行追踪族，后者即那份书面豁免），结构上 2 族端到端（`logs`、`dumps`，占全部 13%），且**这 2 族的全部工具都有登记证据**，故判据分子同为 2（占**必需 14 族** 14%）、`evidenceUnregisteredFamilies: []`；`partial` 7、`absent` 5、`blocked` 1，`criterionMet: false`，`remainingRequiredFamilyCount: 12`，还有 23 个计划内工具未建（0.50.7 首版为 25：`read_patch_level` 与 `read_client_settings` 已从计划中撤下——这两项的数据要么已由 `get_sap_system_info` 报告，要么其语义被项目刻意不换算，见 `docs/system-info.md`）。
 
 ---
 

@@ -421,6 +421,13 @@ export interface OpsFamilyRollup {
     verified: string[]
     unverified: string[]
     failing: string[]
+    /**
+     * True when every present tool carries recorded evidence. An empty family is never closed:
+     * `[].every(...)` is true, but "no tool exists" is the opposite of a closed family.
+     */
+    closed: boolean
+    /** Present tools that keep this family from being evidence-closed (empty when closed). */
+    blockingTools: string[]
   }
   gap: string
 }
@@ -430,12 +437,14 @@ export interface OpsCapabilityBlock {
     toolRole: string
     familyState: string
     endToEndRule: string
+    criterionRule: string
     exemptionRule: string
   }
   families: OpsFamilyRollup[]
   summary: {
     familyCount: number
     stateCounts: Record<OpsFamilyState, number>
+    /** The state dimension: families whose declared gap is empty. */
     endToEndFamilyCount: number
     endToEndPercent: number
     endToEndFamilies: string[]
@@ -453,6 +462,28 @@ export interface OpsCapabilityBlock {
     /** The required families that are still open - the worklist the criterion is waiting on. */
     outstandingRequiredFamilies: string[]
     exemptFamilies: string[]
+    /**
+     * Whether the evidence dimension was available while building the block. A packaged build ships
+     * without `contracts/`, so this is false there and nothing can be certified closed.
+     */
+    registryLoaded: boolean
+    /** What the criterion was decided on; states out loud when evidence could not be consulted. */
+    criterionBasis: string
+    /** Families that are structurally closed and whose every present tool carries evidence. */
+    evidenceClosedFamilyCount: number
+    evidenceClosedFamilies: string[]
+    /** Required families closed on the gap alone, ignoring evidence - the weaker reading. */
+    stateClosedRequiredFamilyCount: number
+    /** The criterion's numerator: required families closed on the gap *and* on evidence. */
+    closedRequiredFamilyCount: number
+    /**
+     * Structurally closed families that the evidence point keeps out of the numerator. This list is
+     * the difference between "the tools exist" and "the tools were shown to work", and it is empty
+     * whenever the open families are still open for structural reasons anyway.
+     */
+    evidenceUnregisteredFamilies: string[]
+    /** The same floor test the criterion applies, but over the state dimension alone. */
+    stateCriterionMet: boolean
     criterionMet: boolean
     actionToolCount: number
     platformBlockedToolCount: number
@@ -487,6 +518,8 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
   const families: OpsFamilyRollup[] = OPS_FAMILIES.map((definition) => {
     const present = opsToolNamesForFamily(definition)
     const roles = new Map(present.map((tool) => [tool, opsToolRole(tool)]))
+    const verified = present.filter((tool) => statusOf(tool) === "verified")
+    const blockingTools = present.filter((tool) => statusOf(tool) !== "verified")
     return {
       id: definition.id,
       label: definition.label,
@@ -500,9 +533,13 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
       actionTools: present.filter((tool) => roles.get(tool) === "action"),
       platformBlockedTools: present.filter((tool) => roles.get(tool) === "platform-blocked"),
       verification: {
-        verified: present.filter((tool) => statusOf(tool) === "verified"),
+        verified,
         unverified: present.filter((tool) => statusOf(tool) === "unverified"),
-        failing: present.filter((tool) => FAILING_STATUSES.includes(statusOf(tool)))
+        failing: present.filter((tool) => FAILING_STATUSES.includes(statusOf(tool))),
+        // A family with no tools at all is not closed: absence is the opposite of coverage, and an
+        // `every` over an empty list would otherwise report it as satisfied.
+        closed: present.length > 0 && blockingTools.length === 0,
+        blockingTools
       },
       gap: definition.gap
     }
@@ -517,19 +554,33 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
   }
   for (const family of families) stateCounts[family.state]++
 
-  const endToEndFamilies = families
-    .filter((family) => family.state === "read-only" || family.state === "read-and-act")
-    .map((family) => family.id)
+  const isStateClosed = (family: OpsFamilyRollup): boolean =>
+    family.state === "read-only" || family.state === "read-and-act"
+  const endToEndFamilies = families.filter(isStateClosed).map((family) => family.id)
   const exemptFamilies = families.filter((family) => family.exempt).map((family) => family.id)
   const requiredFamilies = families.filter((family) => !family.exempt)
+  // The plan's criterion has two points: the family's declared gap is empty, and every tool in it
+  // carries evidence of a real call. Counting the first alone would let a family be declared closed
+  // on the strength of tools that were never exercised - the exact claim this block exists to
+  // prevent - so the criterion's numerator requires both, and the state-only reading is kept beside
+  // it as `stateClosedRequiredFamilyCount`/`stateCriterionMet` rather than being conflated with it.
+  const stateClosedRequiredFamilyCount = requiredFamilies.filter(isStateClosed).length
+  const evidenceUnregisteredFamilies = requiredFamilies
+    .filter((family) => isStateClosed(family) && !family.verification.closed)
+    .map((family) => family.id)
+  const closedRequiredFamilyCount =
+    stateClosedRequiredFamilyCount - evidenceUnregisteredFamilies.length
   const outstandingRequiredFamilies = requiredFamilies
-    .filter((family) => family.state !== "read-only" && family.state !== "read-and-act")
+    .filter((family) => !isStateClosed(family) || !family.verification.closed)
     .map((family) => family.id)
   // 95% of the required families, rounded up: a fraction of a family cannot be closed, so the
   // criterion never rounds in the service's favour.
   const requiredEndToEndFamilyCount = requiredFamilies.length
-  const closedRequiredFamilyCount = requiredEndToEndFamilyCount - outstandingRequiredFamilies.length
   const criterionFloor = Math.ceil(requiredEndToEndFamilyCount * 0.95)
+  const evidenceClosedFamilies = families
+    .filter((family) => isStateClosed(family) && family.verification.closed)
+    .map((family) => family.id)
+  const registryLoaded = lookup !== undefined
   const missingPlannedTools = [
     ...new Set(families.flatMap((family) => family.missingToolNames))
   ].sort()
@@ -547,6 +598,13 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
         "A family counts as end-to-end only when its declared gap is empty. Monitoring reads never " +
         "compensate for a missing action, so a family that can see a problem but not act on it " +
         "stays partial.",
+      criterionRule:
+        "The completion criterion needs both points on the same required family: the declared gap " +
+        "is empty *and* every tool in it is `verified` in the verification registry. A closed gap " +
+        "with unexercised tools does not count, because that is a statement about the plan rather " +
+        "than about the system. When the registry cannot be read - a packaged build ships without " +
+        "`contracts/` - nothing is certified closed and the block says so in `criterionBasis` " +
+        "instead of guessing.",
       exemptionRule:
         "The completion criterion is measured over the families the plan can actually close: a " +
         "family is exempt only when every one of its tools is platform-blocked *and* it carries a " +
@@ -568,6 +626,16 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
       remainingRequiredFamilyCount: outstandingRequiredFamilies.length,
       outstandingRequiredFamilies,
       exemptFamilies,
+      registryLoaded,
+      criterionBasis: registryLoaded
+        ? "gap empty + every tool verified (verification registry loaded)"
+        : "gap only: verification registry unavailable, so no family can be certified closed",
+      evidenceClosedFamilyCount: evidenceClosedFamilies.length,
+      evidenceClosedFamilies,
+      stateClosedRequiredFamilyCount,
+      closedRequiredFamilyCount,
+      evidenceUnregisteredFamilies,
+      stateCriterionMet: stateClosedRequiredFamilyCount >= criterionFloor,
       criterionMet: closedRequiredFamilyCount >= criterionFloor,
       actionToolCount: roles.filter((role) => role === "action").length,
       platformBlockedToolCount: roles.filter((role) => role === "platform-blocked").length,
@@ -578,8 +646,10 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
     note:
       "This block states what the operations surface can close, not whether a helper is deployed: " +
       "it never changes an availability or verification verdict. Family state is derived from the " +
-      "tool registry plus the declared gap, so the numbers move only when the surface does. " +
-      "`endToEndPercent` is over all families; `endToEndPercentOfRequired` and `criterionMet` are " +
-      "over the required ones, which is the reading the assessment's 95% criterion uses."
+      "tool registry plus the declared gap; the criterion's numerator additionally requires " +
+      "recorded evidence for every tool in the family, so the numbers move only when the surface " +
+      "does and the evidence is registered. `endToEndPercent` is over all families; " +
+      "`endToEndPercentOfRequired` and `criterionMet` are over the required ones, which is the " +
+      "reading the assessment's 95% criterion uses."
   }
 }

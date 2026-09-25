@@ -160,17 +160,26 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   assert.deepEqual(block.summary.exemptFamilies, ["traces"])
   assert.equal(block.summary.requiredEndToEndFamilyCount, 14)
   assert.equal(block.summary.requiredEndToEndPercent, 95)
-  assert.equal(block.summary.endToEndPercentOfRequired, 14)
-  assert.equal(block.summary.remainingRequiredFamilyCount, 12)
+  assert.equal(block.summary.endToEndPercentOfRequired, 0)
+
+  // This call passes no registry, which is the packaged-build case: the two structurally closed
+  // families cannot be certified, so the criterion's numerator is zero and the block says why
+  // instead of quietly falling back to the gap-only reading.
+  assert.equal(block.summary.registryLoaded, false)
+  assert.match(block.summary.criterionBasis, /registry unavailable/)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 2)
+  assert.equal(block.summary.closedRequiredFamilyCount, 0)
+  assert.deepEqual(block.summary.evidenceUnregisteredFamilies, ["logs", "dumps"])
+  assert.equal(block.summary.remainingRequiredFamilyCount, 14)
   assert.equal(block.summary.criterionMet, false)
+  assert.equal(block.summary.stateCriterionMet, false)
   assert.equal(
     block.summary.outstandingRequiredFamilies.length,
-    block.summary.requiredEndToEndFamilyCount - block.summary.endToEndFamilyCount
+    block.summary.requiredEndToEndFamilyCount - block.summary.closedRequiredFamilyCount
   )
   assert.ok(
-    !block.summary.outstandingRequiredFamilies.includes("traces") &&
-      !block.summary.outstandingRequiredFamilies.includes("logs"),
-    "the worklist must name neither the exempt family nor a closed one"
+    !block.summary.outstandingRequiredFamilies.includes("traces"),
+    "the worklist must never name the exempt family"
   )
 
   // A monitor-only family never becomes end-to-end just because a reader exists.
@@ -238,12 +247,69 @@ test("the block joins with the evidence dimension without changing it", () => {
   assert.equal(logs.verification.unverified.length, logs.toolNames.length)
 })
 
+test("a closed gap does not certify a family whose tools were never exercised", () => {
+  // `logs` and `dumps` are the two families whose declared gap is empty, so both are structurally
+  // closed. Here every logs tool is verified except one, which is marked failed: the family state
+  // must not move, but the criterion's numerator must drop it - otherwise "closed" would be a
+  // statement about the plan rather than about the system.
+  const logsTools = [
+    "read_system_logs",
+    "discover_application_logs",
+    "search_application_logs",
+    "read_application_log",
+    "correlate_sap_logs"
+  ]
+  const entries = new Map(
+    logsTools.map((tool) => [
+      tool,
+      { status: (tool === "read_application_log" ? "failed" : "verified") as "failed" | "verified" }
+    ])
+  )
+  entries.set("analyze_abap_dumps", { status: "verified" })
+  entries.set("diagnose_sap_failure", { status: "verified" })
+  const block = opsCapabilityBlock({ entries })
+
+  const logs = block.families.find((family) => family.id === "logs")
+  assert.ok(logs)
+  assert.equal(logs.state, "read-only", "the structural state must not depend on evidence")
+  assert.equal(logs.verification.closed, false)
+  assert.deepEqual(logs.verification.blockingTools, ["read_application_log"])
+
+  const dumps = block.families.find((family) => family.id === "dumps")
+  assert.ok(dumps)
+  assert.equal(dumps.verification.closed, true)
+  assert.deepEqual(dumps.verification.blockingTools, [])
+
+  assert.equal(block.summary.registryLoaded, true)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 2)
+  assert.equal(block.summary.closedRequiredFamilyCount, 1)
+  assert.deepEqual(block.summary.evidenceClosedFamilies, ["dumps"])
+  assert.deepEqual(block.summary.evidenceUnregisteredFamilies, ["logs"])
+  assert.ok(block.summary.outstandingRequiredFamilies.includes("logs"))
+  assert.equal(block.summary.remainingRequiredFamilyCount, 13)
+  assert.equal(block.summary.criterionMet, false)
+  assert.equal(block.summary.stateCriterionMet, false)
+  // The two readings are deliberately both visible: a gap-only criterion would have said 2.
+  assert.equal(block.summary.endToEndFamilyCount, 2)
+  assert.equal(block.summary.endToEndPercentOfRequired, 7)
+})
+
 test("the capability report carries the ops block", async () => {
   const report = JSON.parse(await buildCapabilityReport(new MockBackend(), "w200")) as {
     opsCapability?: {
       families: Array<{ id: string; state: string }>
-      summary: { familyCount: number; endToEndPercent: number }
-      vocabulary: { endToEndRule: string }
+      summary: {
+        familyCount: number
+        endToEndPercent: number
+        registryLoaded: boolean
+        criterionBasis: string
+        closedRequiredFamilyCount: number
+        evidenceUnregisteredFamilies: string[]
+        outstandingRequiredFamilies: string[]
+        remainingRequiredFamilyCount: number
+        endToEndPercentOfRequired: number
+      }
+      vocabulary: { endToEndRule: string; criterionRule: string }
       note: string
     }
   }
@@ -255,9 +321,26 @@ test("the capability report carries the ops block", async () => {
     report.opsCapability.vocabulary.endToEndRule,
     /never\s+compensate for a missing action/
   )
+  assert.match(report.opsCapability.vocabulary.criterionRule, /every tool in it is `verified`/)
   assert.match(report.opsCapability.note, /never changes an availability or verification verdict/)
   assert.deepEqual(
     Object.fromEntries(report.opsCapability.families.map((family) => [family.id, family.state])),
     EXPECTED_FAMILY_STATES
+  )
+
+  // The deployed service reads the real registry, so here - and only here - the criterion's
+  // numerator is the two families whose gap is empty and whose tools all carry evidence.
+  const summary = report.opsCapability.summary
+  assert.equal(summary.registryLoaded, true)
+  assert.match(summary.criterionBasis, /verification registry loaded/)
+  assert.equal(summary.closedRequiredFamilyCount, 2)
+  assert.deepEqual(summary.evidenceUnregisteredFamilies, [])
+  assert.equal(summary.remainingRequiredFamilyCount, 12)
+  assert.equal(summary.endToEndPercentOfRequired, 14)
+  assert.ok(
+    !summary.outstandingRequiredFamilies.includes("logs") &&
+      !summary.outstandingRequiredFamilies.includes("dumps") &&
+      !summary.outstandingRequiredFamilies.includes("traces"),
+    "the worklist must name neither the exempt family nor an evidence-closed one"
   )
 })

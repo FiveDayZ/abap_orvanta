@@ -154,6 +154,21 @@ declare success with a required family still open. The block computes exactly th
 `closedRequiredFamilies >= ceil(requiredEndToEndFamilyCount * 0.95)` - so the criterion is checked in
 code, not in prose.
 
+Points 1 and 2 are the same conjunction in the code, not two independent readings: a required family
+enters the criterion's numerator (`closedRequiredFamilyCount`) only when its declared gap is empty
+**and** every present tool is `verified`. A family whose gap is empty while a tool is `failed`,
+`unverified` or `platform-unsupported` is a statement about the plan rather than about the system, so
+it is listed in `evidenceUnregisteredFamilies` and stays in `outstandingRequiredFamilies`. The weaker
+gap-only reading is still published beside it as `stateClosedRequiredFamilyCount` / `stateCriterionMet`
+so the difference is visible instead of being argued about, and `endToEndFamilyCount` remains the
+structural count (families whose gap is empty) rather than a completion claim.
+
+When the registry cannot be read at all - a packaged build ships without `contracts/`, so every tool
+degrades to `unverified` - the block reports `registryLoaded: false`, a `criterionBasis` that says the
+criterion could only be decided on gaps, and a numerator of zero. That is deliberately stricter than
+the rest of the verification dimension, which degrades to `unverified` and carries on: the criterion is
+the sentence "this is done", and without evidence the only honest answer is "cannot certify".
+
 Point 2 is what separates this document from a progress narrative: a family that reads correctly but
 whose tools carry no recorded call is not complete.
 
@@ -161,8 +176,9 @@ whose tools carry no recorded call is not complete.
 
 - Read the block directly: call `get_capability_report` and inspect `opsCapability.families`,
   `opsCapability.summary.stateCounts`, `opsCapability.summary.missingPlannedTools`, and the criterion
-  fields `requiredEndToEndFamilyCount`, `endToEndPercentOfRequired`, `outstandingRequiredFamilies`
-  and `criterionMet`.
+  fields `requiredEndToEndFamilyCount`, `endToEndPercentOfRequired`, `outstandingRequiredFamilies`,
+  `closedRequiredFamilyCount`, `stateClosedRequiredFamilyCount`, `evidenceUnregisteredFamilies`,
+  `registryLoaded`, `criterionBasis` and `criterionMet`.
 - Static checks (no test execution): `npm run typecheck`, `npm run matrix:check`.
 - The classification guard and the expected family states are asserted in
   `test/ops-coverage.test.ts`; it runs under the repository test gate with the authorisation
