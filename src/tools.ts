@@ -7031,18 +7031,26 @@ export class ToolService {
     }
 
     const currentSegments = functionSourceSegments(current.source)
-    const currentBody = currentSegments.body
-    const adtLines = adtRead.source.split("\n")
-    const bodyStart = locateImplementationBody(adtLines, currentBody)
-    if (bodyStart < 0) {
+    // The SAP side helper hashes and stores the body with trailing blanks and blank edge lines
+    // removed, so the service works on the same normalised form: it has to align against the ADT
+    // view, it has to send the form the helper expects, and its expectedVersion has to be the hash the
+    // helper computes for the same current body.
+    const currentBody = trimBlankEdges(currentSegments.body).map(normalizeSourceLine)
+    // The ADT source may use CRLF while the SAP side rows never do, and `findAndReplaceSource`
+    // normalises line endings by itself. Normalise once here so the body alignment, the anchor match
+    // and the body sent to SAP all work on the same line endings. The fingerprint above stays over
+    // the raw source, which is the text the caller holds a fingerprint for.
+    const adtSource = adtRead.source.replaceAll("\r\n", "\n")
+    const adtLines = adtSource.split("\n")
+    const alignment = locateImplementationBody(adtLines, currentBody)
+    if (alignment.start < 0) {
       throw new Error(
-        `The SAP side implementation body of ${functionName} does not appear exactly once in the ADT source view of the same function module, so the replacement cannot be located safely. No write was started.`
+        `The SAP side implementation body of ${functionName} does not appear exactly once in the ADT source view of the same function module, so the replacement cannot be located safely: ${alignment.detail}. No write was started.`
       )
     }
+    const bodyStart = alignment.start
     const suffixLength = adtLines.length - bodyStart - currentBody.length
-    const patched = findAndReplaceSource(adtRead.source, input.oldString, input.newString).split(
-      "\n"
-    )
+    const patched = findAndReplaceSource(adtSource, input.oldString, input.newString).split("\n")
     if (
       patched.slice(0, bodyStart).join("\n") !== adtLines.slice(0, bodyStart).join("\n") ||
       patched.slice(patched.length - suffixLength).join("\n") !==
@@ -7054,7 +7062,7 @@ export class ToolService {
     }
     const requestedBody = trimBlankEdges(
       patched.slice(bodyStart, patched.length - suffixLength)
-    ).map((line) => line.trimEnd())
+    ).map(normalizeSourceLine)
     if (!requestedBody.length) {
       throw new Error(
         "The replacement would leave the function module implementation body empty. No write was started."
@@ -13058,28 +13066,67 @@ function trimBlankEdges(lines: string[]): string[] {
 }
 
 /**
+ * The content of one ABAP source line: SAP stores the body without trailing blanks and the newline
+ * convention differs between the ADT view and the SAP side rows, so both are removed before two views
+ * of the same source are compared or hashed.
+ */
+function normalizeSourceLine(line: string): string {
+  return line.replace(/\r$/, "").trimEnd()
+}
+
+/**
  * Locate the SAP side implementation body inside the ADT source view of the same function module.
  * Only the implementation text is identical between the two views (the interface is comment lines on
  * the SAP side and plain declarations in the ADT view), so the body is the one block that can be
- * aligned. Returns -1 unless the block matches exactly once, because an ambiguous alignment would
- * make the replacement boundary a guess.
+ * aligned. A single exact match is required, because an ambiguous alignment would make the
+ * replacement boundary a guess; anything else returns -1 with the evidence that explains it, so a
+ * refusal names the two lines that disagree instead of only saying that no match was found.
  */
-function locateImplementationBody(adtLines: string[], bodyLines: string[]): number {
-  if (!bodyLines.length || bodyLines.length > adtLines.length) return -1
-  let found = -1
-  for (let start = 0; start <= adtLines.length - bodyLines.length; start += 1) {
-    let same = true
-    for (let offset = 0; offset < bodyLines.length; offset += 1) {
-      if (adtLines[start + offset] !== bodyLines[offset]) {
-        same = false
-        break
-      }
-    }
-    if (!same) continue
-    if (found >= 0) return -1
-    found = start
+function locateImplementationBody(
+  adtLines: string[],
+  bodyLines: string[]
+): { start: number; detail: string } {
+  if (!bodyLines.length) {
+    return { start: -1, detail: "the SAP side read returned an empty implementation body" }
   }
-  return found
+  if (bodyLines.length > adtLines.length) {
+    return {
+      start: -1,
+      detail: `the SAP side body has ${bodyLines.length} lines and the ADT view has ${adtLines.length}`
+    }
+  }
+  // Trailing blanks are not part of either view's content (SAP removes them when it stores the body),
+  // so the comparison ignores them; a line ending difference is normalised by the caller.
+  const adt = adtLines.map(normalizeSourceLine)
+  const body = bodyLines.map(normalizeSourceLine)
+  const matches: number[] = []
+  let bestPartial = -1
+  let bestPartialStart = -1
+  let bestPartialDetail = ""
+  for (let start = 0; start <= adt.length - body.length; start += 1) {
+    let offset = 0
+    while (offset < body.length && adt[start + offset] === body[offset]) offset += 1
+    if (offset === body.length) {
+      matches.push(start)
+      continue
+    }
+    if (offset > bestPartial) {
+      bestPartial = offset
+      bestPartialStart = start
+      bestPartialDetail = `ADT line ${start + offset + 1} is ${JSON.stringify(adtLines[start + offset])} where the SAP side body has ${JSON.stringify(bodyLines[offset])}`
+    }
+  }
+  if (matches.length === 1) return { start: matches[0]!, detail: "" }
+  if (matches.length > 1) {
+    return { start: -1, detail: `the implementation body matches ${matches.length} times` }
+  }
+  return {
+    start: -1,
+    detail:
+      bestPartial < 0
+        ? `its first line ${JSON.stringify(bodyLines[0])} does not occur in the ADT view at all (ADT lines: ${adtLines.length}, SAP side body lines: ${bodyLines.length})`
+        : `the closest match starts at ADT line ${bestPartialStart + 1} and stops after ${bestPartial} of ${bodyLines.length} lines: ${bestPartialDetail}`
+  }
 }
 
 function decodeSoapText(value: string): string {

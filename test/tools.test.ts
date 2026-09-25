@@ -6029,6 +6029,54 @@ test("a function module replacement keeps the caller's ADT anchor and sends only
   ])
 })
 
+test("a function module replacement works when the ADT view answers with CRLF line endings", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  backend.adtSourceWriteRefused = true
+  // The live ADT read answered with CRLF while the SAP side rows never do. Aligning the two views
+  // without normalising line endings found no match at all, so a correct anchor on an unchanged
+  // object was refused.
+  backend.functionAdtSourceCrlf = true
+
+  const result = await tools.replaceStringInObject({
+    fileUri:
+      "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_1501/fmodules/zcmcp_fm_1501/source/main",
+    oldString: "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+    newString: "  CONCATENATE 'CHANGED:' iv_input INTO ev_output.",
+    transportNumber: "GR2K923421"
+  })
+
+  assert.match(result, /through the SAP side function write/)
+  assert.deepEqual(backend.lastHelperRequest?.source, [
+    "  CONCATENATE 'CHANGED:' iv_input INTO ev_output."
+  ])
+})
+
+test("a function module replacement names the two views' first disagreeing line when they cannot be aligned", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  backend.adtSourceWriteRefused = true
+  backend.functionHelperReadMutation = true
+
+  await assert.rejects(
+    () =>
+      tools.replaceStringInObject({
+        fileUri:
+          "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_1501/fmodules/zcmcp_fm_1501/source/main",
+        oldString: "  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+        newString: "  CONCATENATE 'CHANGED:' iv_input INTO ev_output.",
+        transportNumber: "GR2K923421"
+      }),
+    (error: Error) => {
+      assert.match(error.message, /does not appear exactly once/)
+      assert.match(error.message, /closest match starts at ADT line/)
+      assert.match(error.message, /CONCATENATE_SAP_VIEW/)
+      return true
+    }
+  )
+  assert.equal(backend.lastHelperRequest, undefined)
+})
+
 test("a function module replacement that reaches the interface is refused, and nothing is written", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)

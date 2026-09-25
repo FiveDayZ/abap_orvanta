@@ -373,6 +373,10 @@ export class MockBackend implements SapBackend {
   functionPatchHelperMismatch = false
   /** When true the applied interface patch also changes the stored implementation source rows. */
   functionPatchSourceMutation = false
+  /** When true the ADT source read of a function module answers with CRLF line endings. */
+  functionAdtSourceCrlf = false
+  /** When true the SAP side read of a function module reports a body that differs from the ADT view. */
+  functionHelperReadMutation = false
   /**
    * The repository helper reports why a SmartStyle read failed only through the code it maps
    * SSF_READ_STYLE's sy-subrc to. The service must surface that code unchanged: flattening every
@@ -1736,7 +1740,17 @@ export class MockBackend implements SapBackend {
             ? "FUNCTION_MODULE_CREATED"
             : "FUNCTION_INTERFACE_PATCHED",
         request,
-        this.functionModules.get(name)!
+        // The SAP side view of the implementation can drift from the ADT view; the service must
+        // refuse with the evidence instead of guessing a boundary.
+        this.functionHelperReadMutation
+          ? this.functionModules
+              .get(name)!
+              .map((line) =>
+                line.includes("CONCATENATE 'MCP:' iv_input INTO ev_output.")
+                  ? line.replace("CONCATENATE", "CONCATENATE_SAP_VIEW")
+                  : line
+              )
+          : this.functionModules.get(name)!
       )
       return request.operation === "PATCH_FUNCTION_INTERFACE"
         ? { ...result, version: "2.0" }
@@ -2412,7 +2426,16 @@ export class MockBackend implements SapBackend {
     }
     const functionName = /\/fmodules\/([^/?]+)/i.exec(uri)?.[1]?.toUpperCase()
     const functionSource = functionName ? this.functionAdtSources.get(functionName) : undefined
-    if (functionSource) return { source: functionSource, uriUsed: `${uri}/source/main` }
+    if (functionSource) {
+      // w200 ADT answers can carry CRLF while the SAP side rows never do: the service must normalise
+      // before it aligns the two views.
+      return {
+        source: this.functionAdtSourceCrlf
+          ? functionSource.replaceAll("\n", "\r\n")
+          : functionSource,
+        uriUsed: `${uri}/source/main`
+      }
+    }
     const object = objects.find((candidate) => uri.includes(candidate.uri))
     if (!object) throw new Error(`No source for ${uri}`)
     return this.readSource("w200", object)
