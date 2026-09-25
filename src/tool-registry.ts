@@ -228,12 +228,15 @@ const ROWS: readonly ToolRow[] = [
     "sap-helper-fallback",
     // The opcode is part of the shared repository body, which both helper function modules
     // receive; the service sends it to the base helper Z_ORVANTA_MCP_EXECUTE.
-    // Revision 2.9 accepts both include layouts: the interface skeleton form and the form that
-    // keeps the interface in the function module parameter tables (FUNCTION ... . followed by the
-    // body). A helper that only knows the skeleton form refuses the second layout with
+    // Revision 2.11 accepts both include layouts: the interface skeleton form and the form that
+    // keeps the interface in the function module parameter tables. In the second layout the body
+    // starts after the FUNCTION statement itself, and that anchor has to be the line the service
+    // resolves: revision 2.9 searched for the first statement terminator but skipped the FUNCTION
+    // line, so it treated a leading declaration block as interface and started the body further
+    // down. A helper that only knows the skeleton form refuses the second layout with
     // SOURCE_MARKER_ERROR, so the minimum has to move with the opcode revision.
     EXECUTE,
-    "2.9"
+    "2.11"
   ],
   [
     "inspect_repository_assignment",

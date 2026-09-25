@@ -1152,7 +1152,7 @@ export class MockBackend implements SapBackend {
         status: "E",
         code: "FUNCTION_NOT_FOUND",
         message: "Function module does not exist",
-        version: "2.9"
+        version: "2.11"
       }
     }
     const currentBody = this.storedFunctionBody(stored)
@@ -1164,7 +1164,7 @@ export class MockBackend implements SapBackend {
         status: "E",
         code: "VERSION_CONFLICT",
         message: "The active function implementation changed",
-        version: "2.9"
+        version: "2.11"
       }
     }
     if (this.functionWriteReadbackMismatch) {
@@ -1173,7 +1173,7 @@ export class MockBackend implements SapBackend {
         status: "S",
         code: "FUNCTION_SOURCE_WRITTEN",
         message: "Function source written",
-        version: "2.9"
+        version: "2.11"
       }
     }
     const lines = this.storedFunctionSourceRows(stored)
@@ -1199,7 +1199,7 @@ export class MockBackend implements SapBackend {
       status: "S",
       code: "FUNCTION_SOURCE_WRITTEN",
       message: "Function source written and verified",
-      version: "2.9"
+      version: "2.11"
     }
   }
 

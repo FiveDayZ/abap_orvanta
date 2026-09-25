@@ -175,7 +175,7 @@
 | `upsert_number_range_object` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
 | `upsert_search_help` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
 | `validate_dynpro_application` | ui | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.4) |
-| `write_function_module_source` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥2.9) |
+| `write_function_module_source` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥2.11) |
 
 ## 边界说明
 

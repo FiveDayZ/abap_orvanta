@@ -2223,7 +2223,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_EXECUTE",
-      "minHelperProtocol": "2.9"
+      "minHelperProtocol": "2.11"
     }
   ]
 }

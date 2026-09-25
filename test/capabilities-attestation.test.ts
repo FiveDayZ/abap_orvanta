@@ -271,14 +271,14 @@ test("a self-description under another helper identity is not used as evidence",
 
 test("a capability follows the helper the registry routes its tool to, not a stale literal", async () => {
   // Regression for the drift that reported `write_function_module_source` as `unsupported`: the
-  // tool is routed to the base helper at 2.9 (WRITE_FUNCTION_SOURCE locates the implementation body
+  // tool is routed to the base helper at 2.11 (WRITE_FUNCTION_SOURCE locates the implementation body
   // in both include layouts since that revision), while the repository helper must stay at 2.6. A
   // capability spec that still named the repository helper judged the tool against 2.6 and
   // reported a deployed capability as unsupported.
   const backend = new MockBackend()
   backend.helperCapabilities.set(
     BASE_HELPER,
-    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.9" })
+    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.11" })
   )
   backend.helperCapabilities.set(REPOSITORY_HELPER, selfDescription({ maxProtocol: "2.6" }))
   const report = await buildReport(backend)
@@ -287,7 +287,7 @@ test("a capability follows the helper the registry routes its tool to, not a sta
   assert.equal(sourceWrite.availability, "available")
   assert.match(
     sourceWrite.reason,
-    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.9`)
+    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.11`)
   )
 
   // The interface patch moved to the same base helper for the same reason (the native ADT lock
@@ -311,14 +311,14 @@ test("a capability follows the helper the registry routes its tool to, not a sta
   const after = await buildReport(backend)
   assert.match(
     capabilityObservation(after, "repository-helper-function-source-write").reason,
-    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.9`)
+    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.11`)
   )
 
   // And a base helper below the minimum still reports unsupported, not a silent pass. 2.8 is the
   // revision that only knew the interface skeleton form, so it must stay below the minimum.
   backend.helperCapabilities.set(
     BASE_HELPER,
-    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.8" })
+    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.10" })
   )
   const below = await buildReport(backend)
   assert.equal(

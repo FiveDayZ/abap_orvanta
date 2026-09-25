@@ -120,9 +120,16 @@ test("every copy of the function body boundary rule keeps both include layouts",
       file: "scripts/bootstrap-sap-helper.ps1",
       // The helper body is ABAP inside a PowerShell string, so the same rule reads as the separator
       // test on the second character and as the FUNCTION statement terminator search. The quotes are
-      // doubled because the ABAP literal sits inside a single quoted PowerShell string.
+      // doubled because the ABAP literal sits inside a single quoted PowerShell string. The third
+      // anchor is the one line FUNCTION statement: revision 2.9 checked the FUNCTION line for the
+      // keyword but not for its terminator, so its anchor landed on the first declaration block
+      // instead of the statement, which is what the SAP side fingerprint conflict exposed.
       skeleton: ["lv_fm_body_line(2) = ''*\"''", "lv_fm_marker_count = 2"],
-      plain: ["lv_fm_body_line(8) <> 'FUNCTION'", "lv_fm_body_text+lv_fm_body_length(1) = '.'"]
+      plain: [
+        "lv_fm_body_line(8) <> 'FUNCTION'",
+        "lv_fm_body_text+lv_fm_body_length(1) = '.'",
+        "lv_fm_body_start = 2."
+      ]
     }
   ]
 
@@ -139,5 +146,5 @@ test("every copy of the function body boundary rule keeps both include layouts",
   // The helper must still fail closed when neither layout matches, instead of writing anywhere.
   const helper = await readFile(join(repositoryRoot(), "scripts/bootstrap-sap-helper.ps1"), "utf8")
   assert.ok(helper.includes("ev_code = 'SOURCE_MARKER_ERROR'"))
-  assert.ok(helper.includes("WRITE_FUNCTION_SOURCE|2.9|W"))
+  assert.ok(helper.includes("WRITE_FUNCTION_SOURCE|2.11|W"))
 })

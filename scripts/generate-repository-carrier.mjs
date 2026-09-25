@@ -14,7 +14,7 @@
  * path that works is a report program a human runs with F8 (docs/release-process.md section 7.2 lists
  * the repository family as "independent carrier", exactly like the DDIC family).
  *
- * The body it deploys carries protocol 2.9: the D7 form reads (SAPscript / SmartStyles / Adobe), the
+ * The body it deploys carries protocol 2.11: the D7 form reads (SAPscript / SmartStyles / Adobe), the
  * D9 transport self-service (CREATE_TRANSPORT_REQUEST, ADD_OBJECTS_TO_TRANSPORT) and the two-layout
  * function body boundary (WRITE_FUNCTION_SOURCE locates the implementation body both in the include
  * with an interface skeleton and in the include that keeps the interface in the function module
@@ -67,7 +67,7 @@ const sourceFile = resolve(
 )
 const outFile = value(
   "--out",
-  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.9-r11.abap`
+  `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.11-r13.abap`
 )
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
@@ -365,16 +365,16 @@ if (!offline) {
   )
   // Carrier ordering invariant (.doc/d6-carrier-ordering-invariant.md): a carrier replaces the whole
   // body, so it may only be applied on top of a helper that already contains every predecessor
-  // change. The repository family deployed 2.8 as its highest protocol (2026-09-25); every protocol
+  // change. The repository family deployed 2.10 as its highest protocol (2026-09-25); every protocol
   // that a predecessor carrier may have left behind is listed here, because leaving one out makes
-  // every subsequent run abort on its own precondition. This carrier's own revision (2.9, the
-  // two-layout function body boundary) is listed as well, so a repeat run after a partial or
+  // every subsequent run abort on its own precondition. This carrier's own revision (2.11, the
+  // two-layout function body boundary, anchored on the FUNCTION statement itself) is listed as well, so a repeat run after a partial or
   // complete application is still allowed instead of aborting on its own output.
   assert.ok(
-    ["2.5", "2.6", "2.7", "2.8", "2.9"].some((protocol) =>
+    ["2.5", "2.6", "2.7", "2.8", "2.9", "2.10", "2.11"].some((protocol) =>
       liveText.includes(`PROTOCOL|MAX|${protocol}`)
     ),
-    "the deployed helper is not at protocol 2.5, 2.6, 2.7, 2.8 or 2.9: apply the previous carrier first"
+    "the deployed helper is not at protocol 2.5, 2.6, 2.7, 2.8, 2.9, 2.10 or 2.11: apply the previous carrier first"
   )
   // Operations already deployed must survive the replacement; operations this carrier introduces
   // cannot exist yet, so requiring them live would make the carrier ungeneratable. The capability
