@@ -41,20 +41,28 @@
 `execute_data_query`仅在已知空HTML错误后，将下述有限语法交给同一读取器；要求显式maxRows不超过500。
 
 ```
-SELECT <*|字段列表> FROM <表> [WHERE <析取>] [ORDER BY <键列表>]
+SELECT <投影> FROM <表> [WHERE <析取>] [GROUP BY <键列表>] [ORDER BY <键列表>]
+投影   := * | 字段列表 | 聚合列表（可与分组字段混写）
+聚合   := COUNT(*) | COUNT(字段) | SUM(字段) | MIN(字段) | MAX(字段)
 析取   := 合取 (OR 合取)*                       // 最多 8 个分支
 合取   := 比较 (AND 比较)*                      // 每分支最多 8 项
 比较   := 字段 (=|<>|<|<=|>|>=) '字面量' | 裸数字
-键列表 := 字段 [ASC|DESC] (, 字段 [ASC|DESC])*  // 最多 8 个键
+键列表 := 字段 [ASC|DESC] (, 字段 [ASC|DESC])*  // 最多 8 个键（GROUP BY 键不带方向）
 ```
 
-- `OR` 逐分支下推：每个分支一次服务端读取，读取器自身的比较语义保持权威（NUMC、日期、PACKED 不在服务端重写）。合并时按行身份去重：`SELECT *` 取得的完整行（含主键字段）即为行身份，同一行被多个分支命中只保留一次并计入 `querySource.deduplicatedRows`；仅投影部分字段时两行可能逐列相同，此时**不丢弃任何行**，只把重复计数写入 `querySource.repeatedProjectedRows` —— 不得把调用方写的 `OR` 私自改写成 `DISTINCT`。两种情况下"成员"都精确：返回的每一行都满足该语句，满足该语句的每一行至少出现一次。
+- `OR` 逐分支下推：每个分支一次服务端读取，读取器自身的比较语义保持权威（NUMC、日期、PACKED 不在服务端重写）。合并时按行身份去重：`SELECT *` 取得的完整行（含主键字段）即为行身份，同一行被多个分支命中只保留一次并计入 `querySource.deduplicatedRows`；仅投影部分字段时两行可能逐列相同，此时**不丢弃任何行**，只把重复计数写入 `querySource.repeatedProjectedRows` —— 不得把调用方写的 `OR` 私自改写成 `DISTINCT`。两种情况下"成员"都精确：返回的每一行都满足该语句，满足该语句的每一行至少出现一次。**聚合与 `GROUP BY` 语句一律读整行**（`read_abap_table` 的 `columns=["*"]`）：行身份是"同一行被两个分支都命中只算一次"的唯一依据，否则计数会把一行数两次。
 - 任一分支命中行上界时 `querySource.incompleteBranches` 给出分支序号且 `truncated=true`：此时答案是"匹配行的一页"，不是完整匹配集。
 - `ORDER BY` 是对完整匹配集的断言，因此只在每个分支都读完时执行；任一分支被行上界截断即整体拒绝（`TABLE_QUERY_ORDER_BY_INCOMPLETE`，附分支序号与上界），不允许用样本冒充"排序最前"。排序键必须出现在投影列中，否则在读取之前拒绝（`TABLE_QUERY_ORDER_BY_COLUMN_NOT_SELECTED`）。比较按读取器文本表示做数值感知的字典序，**不等于** SAP 的按类型排序（NUMC/DATS 按文本比较）；需要 SAP 自身排序时应走原生路径。`sortColumns` 仍是对返回页的重新排序，与本语句的 `ORDER BY` 各司其职。
+- 聚合**要么精确、要么拒绝**：任何分支被行上界截断即整体拒绝（`TABLE_QUERY_AGGREGATE_INCOMPLETE`）——样本的计数只是样本的计数，不能写成更小的数交出去。因此聚合只对"读取器能一次读完的匹配集"成立（每分支 ≤ 显式 `maxRows` ≤ 500）；超出时正确做法是收窄 `WHERE`，不是把数字当近似值用。
+- `COUNT(*)` 数行，其余聚合忽略空值（SAP 初值以空串返回，等同于 SQL 的 NULL）：`COUNT(字段)` 只数非空值，`MIN`/`MAX` 取非空值的极值（无则返回空串）。`SUM` 是唯一需要服务端**计算**的聚合：只接受纯十进制文本，按最长小数位整体放大成整数相加（`1.1 + 2.2 = 3.3`，不是 `3.3000000000000003`），单个加数或累计和超出双精度可精确表示范围（2^53）时拒绝（`TABLE_QUERY_AGGREGATE_NOT_EXACT`），非十进制文本拒绝（`TABLE_QUERY_AGGREGATE_NOT_NUMERIC`，如 PACKED 的尾随负号写法）——**宁可不给数，也不给一个静默错误的数**。
+- `GROUP BY` 必须**恰好**等于选中的普通字段集合（`TABLE_QUERY_GROUP_BY_KEYS_MISMATCH`）：没分组的选中字段在组内没有唯一值，没选中的分组字段在答案里读不出来。`*` 不能参与分组或聚合（`TABLE_QUERY_AGGREGATE_WITH_WILDCARD`），`GROUP BY` 键不带方向（`TABLE_QUERY_GROUP_BY_DIRECTION`），四个聚合以外的函数按名字拒绝（`TABLE_QUERY_AGGREGATE_UNSUPPORTED`，`AVG` 就是其中之一——写成 `SUM` 与 `COUNT` 两列即可）。只有 `COUNT` 可以数整行，`SUM(*)` 之类拒绝（`TABLE_QUERY_AGGREGATE_ARGUMENT`）。
+- 每个聚合由表达式推导出一个发布列名，便于排序且不必猜别名：`COUNT(*)`→`COUNT`、`COUNT(F)`→`COUNT_F`、`SUM(F)`→`SUM_F`、`MIN(F)`→`MIN_F`、`MAX(F)`→`MAX_F`；`querySource.aggregateColumns` 给出表达式到列名的映射，`querySource.aggregated` 与 `querySource.groupCount` 说明答案是不是聚合结果、共几组。分组按首次出现的顺序排列，`ORDER BY`（或 `sortColumns`）才是排名手段。`COUNT(*)` 在零匹配时返回 `0` 一行；带 `GROUP BY` 时零匹配就是零组。
+- 工具自身的 `filters`/`sortColumns` 作用于**返回行**：聚合语句的返回行就是分组，因此那里的 `filters` 只能筛掉分组、**不是** `HAVING` 的替代、更不能当 `WHERE` 用——要缩小匹配集必须在 `WHERE` 里写，否则先分组再筛与先筛再分组会给出不同的计数。
+- 行身份是**行的取值**：读取器不返回行号，两条内容完全相同的行（无唯一键的表）在这个路径上无法区分，会被当成同一行——这是截断之外的另一个计数边界。
 - 无 `WHERE` 的语句按单分支有界读取，返回一页。
-- 可翻译的比较运算符集合与`read_abap_table`完全一致——降级路径不该拒绝它所调用的读取器本就能表达的比较。值超过读取器40字符上界、或运算符不属于该方言（如C式`!=`）时不予翻译，仍返回原生ADT错误。字面量自身含 `ORDER BY` 的语句因无法确定切分位置而整体拒绝（拒绝，而不是猜读）。
-- 仍不翻译：JOIN、聚合、`GROUP BY`、表达式、别名、子查询、`LIMIT`、分号与注释。聚合与 `GROUP BY` 同属"对完整集合的断言"，未实现前一律拒绝。
-- 返回保留原data结构，并以querySource记录方法、原生错误、字段类型及snapshot=false，另附 `disjuncts`、`deduplicatedRows`、`repeatedProjectedRows`、`incompleteBranches`、`orderByApplied`。不改变既有ZTPMC_BZWL限定helper路径。
+- 可翻译的比较运算符集合与`read_abap_table`完全一致——降级路径不该拒绝它所调用的读取器本就能表达的比较。值超过读取器40字符上界、或运算符不属于该方言（如C式`!=`）时不予翻译，仍返回原生ADT错误。字面量自身含 `ORDER BY`/`GROUP BY` 的语句因无法确定切分位置而整体拒绝（拒绝，而不是猜读）。
+- 仍不翻译：JOIN、表达式、别名、子查询、`LIMIT`、分号与注释。JOIN 与表达式属"要么实现要么拒绝"，未实现前一律拒绝。
+- 返回保留原data结构，并以querySource记录方法、原生错误、字段类型及snapshot=false，另附 `disjuncts`、`deduplicatedRows`、`repeatedProjectedRows`、`incompleteBranches`、`orderByApplied`、`aggregated`、`groupCount`、`aggregateColumns`。不改变既有ZTPMC_BZWL限定helper路径。
 
 ## 输出语义
 

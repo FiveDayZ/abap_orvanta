@@ -63,6 +63,7 @@ import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
 import {
+  groupedReadColumns,
   nativeEmptyHtml,
   parseGroupedTableSelect,
   readAbapTable,
@@ -7761,18 +7762,18 @@ export class ToolService {
     try {
       rawRows = await this.backend.runQuery(input.connectionId.toLowerCase(), sql, rowCap + 1)
     } catch (error) {
+      // Only the known empty-HTML answer is translated. Anything else - including a descriptive
+      // refusal this service is about to raise - must not replace the platform's own error.
+      if (!(error instanceof Error) || error.message !== nativeEmptyHtml) throw error
       const structured = parseGroupedTableSelect(sql)
-      if (
-        !(error instanceof Error) ||
-        error.message !== nativeEmptyHtml ||
-        !structured ||
-        rowCap > 500
-      )
-        throw error
+      if (!structured || rowCap > 500) throw error
       // One server-side read per disjunct. The reader's own comparison stays authoritative, so an
       // `OR` becomes a union of pushed-down predicates rather than a client-side comparison that
       // would have to re-implement SAP's type-aware handling of `NUMC`, dates and packed numbers -
-      // the kind of re-implementation that silently answers a different question.
+      // the kind of re-implementation that silently answers a different question. An aggregate
+      // statement reads the whole row: row identity is what keeps a row matched by two overlapping
+      // branches from being counted twice.
+      const readColumns = groupedReadColumns(structured)
       const reads: Record<string, unknown>[] = []
       const grouped = await readGroupedRows(
         structured,
@@ -7782,7 +7783,7 @@ export class ToolService {
               {
                 connectionId: input.connectionId,
                 tableName: structured.tableName,
-                columns: structured.columns,
+                columns: readColumns,
                 filters,
                 maxRows: rowCap
               },
@@ -7821,7 +7822,12 @@ export class ToolService {
         deduplicatedRows: grouped.deduplicatedRows,
         repeatedProjectedRows: grouped.repeatedProjectedRows,
         incompleteBranches: grouped.incompleteBranches,
-        orderByApplied: grouped.orderByApplied
+        orderByApplied: grouped.orderByApplied,
+        aggregated: grouped.aggregated,
+        // An aggregate answer is exact over the whole match set, so `groupCount` - not `resultCount`
+        // after the row range - is what says how many groups the statement produced.
+        groupCount: grouped.groupCount,
+        aggregateColumns: grouped.aggregateColumns
       }
     }
     const truncated = fallback?.truncated === true || rawRows.length > rowCap

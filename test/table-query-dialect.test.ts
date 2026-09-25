@@ -1,7 +1,10 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import {
+  aggregateColumnName,
+  aggregateExpression,
   branchRowKey,
+  groupedReadColumns,
   parseGroupedTableSelect,
   readGroupedRows,
   sortRowsByColumns
@@ -22,6 +25,10 @@ test("the grammar reads one conjunct, disjuncts and an ordering", () => {
   assert.deepEqual(select("SELECT * FROM TBTCO WHERE STATUS = 'F'"), {
     tableName: "TBTCO",
     columns: ["*"],
+    aggregates: [],
+    groupBy: [],
+    // `SELECT *` is already the whole row, which is the identity a merge needs.
+    readWholeRow: true,
     groups: [[{ column: "STATUS", operator: "EQ", value: "F" }]],
     orderBy: []
   })
@@ -34,6 +41,10 @@ test("the grammar reads one conjunct, disjuncts and an ordering", () => {
     {
       tableName: "TBTCO",
       columns: ["MANDT", "JOBNUM"],
+      aggregates: [],
+      groupBy: [],
+      // A partial projection is not an identity: two rows may agree on both columns.
+      readWholeRow: false,
       groups: [
         [
           { column: "SDATE", operator: "EQ", value: "20260925" },
@@ -67,6 +78,9 @@ test("the grammar reads ORDER BY with its keys, directions and a missing WHERE",
   assert.deepEqual(select("SELECT MANDT FROM T000 ORDER BY MTEXT"), {
     tableName: "T000",
     columns: ["MANDT"],
+    aggregates: [],
+    groupBy: [],
+    readWholeRow: false,
     groups: [[]],
     orderBy: [{ column: "MTEXT", direction: "asc" }]
   })
@@ -74,13 +88,12 @@ test("the grammar reads ORDER BY with its keys, directions and a missing WHERE",
 })
 
 test("the grammar refuses what it cannot describe exactly", () => {
-  // Aggregates, grouping, joins and expressions stay out: a wrong reading of any of them is a wrong
-  // answer, and this path exists to avoid exactly that.
-  refuse("SELECT COUNT(*) FROM TBTCO")
-  refuse("SELECT * FROM TBTCO GROUP BY STATUS")
-  refuse("SELECT * FROM TBTCO WHERE STATUS = 'F' GROUP BY STATUS")
-  refuse("SELECT * FROM TBTCO WHERE LENGTH(STATUS) = 1")
+  // Joins, expressions and subqueries stay out: a wrong reading of any of them is a wrong answer, and
+  // this path exists to avoid exactly that. Aggregates and `GROUP BY` are read now (they have their
+  // own tests below), including their refusal to combine with `*`.
   refuse("SELECT * FROM TBTCO INNER JOIN TBTCO2 ON 1 = 1")
+  refuse("SELECT * FROM TBTCO LEFT OUTER JOIN TBTCO2 ON 1 = 1")
+  refuse("SELECT * FROM TBTCO WHERE LENGTH(STATUS) = 1")
   refuse("SELECT * FROM TBTCO WHERE (STATUS = 'F' OR STATUS = 'A') AND SDATE = '20260925'")
   // Truncated and unterminated statements are refusals, not filters with missing operands.
   refuse("SELECT * FROM TBTCO WHERE STATUS = 'F' AND ")
@@ -259,4 +272,244 @@ test("the shared comparator sorts by several keys with numeric awareness", () =>
   )
   // No keys is not a sort: the input order is returned untouched, not re-sorted alphabetically.
   assert.deepEqual(sortRowsByColumns(rows, []), rows)
+})
+
+test("the grammar reads aggregates and groups, and publishes one column per aggregate", () => {
+  const grouped = select("SELECT STATUS, COUNT(*) FROM TBTCO GROUP BY STATUS")
+  assert.deepEqual(grouped.columns, ["STATUS"])
+  assert.deepEqual(grouped.aggregates, [{ fn: "COUNT", column: null }])
+  assert.deepEqual(grouped.groupBy, ["STATUS"])
+  // A grouped statement reads the whole row: row identity is what keeps a row matched by two
+  // overlapping `OR` branches out of the count twice.
+  assert.equal(grouped.readWholeRow, true)
+  assert.deepEqual(groupedReadColumns(grouped), ["*"])
+
+  // Several aggregates, a WHERE, an ordering by the grouping column, and a missing GROUP BY.
+  const summed = select(
+    "SELECT UNAME, SUM(NETWR), MAX(ERDAT) FROM TBTCO WHERE BUKRS = '1000' GROUP BY UNAME ORDER BY UNAME DESC"
+  )
+  assert.deepEqual(summed.aggregates, [
+    { fn: "SUM", column: "NETWR" },
+    { fn: "MAX", column: "ERDAT" }
+  ])
+  assert.deepEqual(summed.orderBy, [{ column: "UNAME", direction: "desc" }])
+  assert.deepEqual(summed.groups, [[{ column: "BUKRS", operator: "EQ", value: "1000" }]])
+
+  // `COUNT(*)` without a group is one row, and `GROUP BY` without an aggregate is the distinct key
+  // list - both are statements, not errors.
+  assert.deepEqual(select("SELECT COUNT(*) FROM TBTCO").aggregates, [{ fn: "COUNT", column: null }])
+  assert.equal(select("SELECT UNAME FROM TBTCO GROUP BY UNAME").readWholeRow, true)
+  assert.deepEqual(select("SELECT UNAME FROM TBTCO GROUP BY UNAME ORDER BY UNAME").orderBy, [
+    { column: "UNAME", direction: "asc" }
+  ])
+
+  // The published column name is derived from the expression, so a caller can order by it; the
+  // mapping is returned with the answer as well, so nothing has to be guessed.
+  assert.equal(aggregateColumnName({ fn: "COUNT", column: null }), "COUNT")
+  assert.equal(aggregateColumnName({ fn: "COUNT", column: "UNAME" }), "COUNT_UNAME")
+  assert.equal(aggregateColumnName({ fn: "SUM", column: "NETWR" }), "SUM_NETWR")
+  assert.equal(aggregateExpression({ fn: "MAX", column: "ERDAT" }), "MAX(ERDAT)")
+  assert.equal(aggregateExpression({ fn: "COUNT", column: null }), "COUNT(*)")
+})
+
+test("the grammar refuses aggregates and groupings it cannot answer exactly", () => {
+  const throws = (sql: string, pattern: RegExp) =>
+    assert.throws(() => parseGroupedTableSelect(sql), pattern, sql)
+
+  // A function outside the four aggregates is refused by name, with the fix in the message.
+  throws("SELECT AVG(NETWR) FROM TBTCO", /TABLE_QUERY_AGGREGATE_UNSUPPORTED: AVG/)
+  // Only `COUNT` counts whole rows.
+  throws("SELECT SUM(*) FROM TBTCO", /TABLE_QUERY_AGGREGATE_ARGUMENT: SUM\(\*\)/)
+  // `*` cannot be combined with, or grouped by way of, an aggregate statement.
+  throws("SELECT *, COUNT(*) FROM TBTCO", /TABLE_QUERY_AGGREGATE_WITH_WILDCARD/)
+  throws("SELECT * FROM TBTCO GROUP BY STATUS", /TABLE_QUERY_AGGREGATE_WITH_WILDCARD/)
+  // A selected column that is not grouped has no single value per group; a grouped column that is
+  // not selected cannot be read off the answer.
+  throws("SELECT STATUS, COUNT(*) FROM TBTCO", /TABLE_QUERY_GROUP_BY_KEYS_MISMATCH/)
+  throws("SELECT STATUS, COUNT(*) FROM TBTCO GROUP BY SDATE", /TABLE_QUERY_GROUP_BY_KEYS_MISMATCH/)
+  throws(
+    "SELECT STATUS, JOBNUM, COUNT(*) FROM TBTCO GROUP BY STATUS",
+    /TABLE_QUERY_GROUP_BY_KEYS_MISMATCH/
+  )
+  // Two identical aggregates would publish one column twice, and a derived name may not shadow a
+  // selected column.
+  throws(
+    "SELECT STATUS, COUNT(*), COUNT(*) FROM TBTCO GROUP BY STATUS",
+    /TABLE_QUERY_AGGREGATE_DUPLICATE/
+  )
+  throws("SELECT COUNT, COUNT(*) FROM TBTCO", /TABLE_QUERY_AGGREGATE_SHADOWED: COUNT/)
+  // A direction belongs to ORDER BY, not to the grouping.
+  throws(
+    "SELECT STATUS, COUNT(*) FROM TBTCO GROUP BY STATUS DESC",
+    /TABLE_QUERY_GROUP_BY_DIRECTION/
+  )
+
+  // Bounds and malformed key lists are plain refusals, like every other bound in this grammar.
+  const keys = (count: number) =>
+    `SELECT ${Array.from({ length: count }, (_, index) => `F${index}`).join(", ")} FROM T ` +
+    `GROUP BY ${Array.from({ length: count }, (_, index) => `F${index}`).join(", ")}`
+  assert.equal(select(keys(8)).groupBy.length, 8)
+  refuse(keys(9))
+  refuse("SELECT STATUS, COUNT(*) FROM TBTCO GROUP BY STATUS, STATUS")
+  refuse("SELECT STATUS, COUNT(*) FROM TBTCO GROUP BY")
+})
+
+test("the grouped reader counts each row once across overlapping disjuncts", async () => {
+  const duplicate = { MANDT: "200", JOBNUM: "0001", STATUS: "F" }
+  const read: Parameters<typeof readGroupedRows>[1] = async (filters) =>
+    filters[0]!.value === "F"
+      ? { rows: [duplicate], truncated: false, detail: {} }
+      : {
+          // The second branch sees the same row again plus one of its own: a count over the union is
+          // two rows, not three.
+          rows: [duplicate, { MANDT: "200", JOBNUM: "0002", STATUS: "A" }],
+          truncated: false,
+          detail: {}
+        }
+
+  const counted = await readGroupedRows(
+    select("SELECT COUNT(*) FROM TBTCO WHERE STATUS = 'F' OR STATUS = 'A'"),
+    read
+  )
+  assert.equal(counted.aggregated, true)
+  assert.equal(counted.groupCount, 1)
+  assert.deepEqual(counted.rows, [{ COUNT: 2 }])
+  assert.equal(counted.deduplicatedRows, 1)
+  assert.equal(counted.repeatedProjectedRows, 0)
+  assert.deepEqual(counted.aggregateColumns, [{ expression: "COUNT(*)", column: "COUNT" }])
+})
+
+test("an aggregate over a truncated read is refused rather than reported smaller", async () => {
+  await assert.rejects(
+    readGroupedRows(
+      select("SELECT COUNT(*) FROM TBTCO WHERE STATUS = 'F' OR STATUS = 'A'"),
+      async (filters) => ({
+        rows: [{ MANDT: "200", JOBNUM: "0001", STATUS: filters[0]!.value }],
+        truncated: filters[0]!.value === "A",
+        detail: {}
+      }),
+      500
+    ),
+    /TABLE_QUERY_AGGREGATE_INCOMPLETE: an aggregate describes the whole match set, but 1 of 2 read\(s\) stopped at the 500-row bound \(branch 1\)/
+  )
+  // A page is still an answer when the caller asked for rows: only the aggregate refuses.
+  const page = await readGroupedRows(
+    select("SELECT MANDT, JOBNUM FROM TBTCO WHERE STATUS = 'F' OR STATUS = 'A'"),
+    async (filters) => ({
+      rows: [{ MANDT: "200", JOBNUM: "0001", STATUS: filters[0]!.value }],
+      truncated: filters[0]!.value === "A",
+      detail: {}
+    }),
+    500
+  )
+  assert.deepEqual(page.incompleteBranches, [1])
+  assert.equal(page.aggregated, false)
+})
+
+test("groups carry exact counts and sums, and ignore empty values", async () => {
+  const rows: Record<string, unknown>[] = [
+    { UNAME: "A", NETWR: "1.1", ERDAT: "20260201" },
+    { UNAME: "A", NETWR: "2.2", ERDAT: "20260101" },
+    { UNAME: "A", NETWR: "", ERDAT: "" },
+    { UNAME: "B", NETWR: "5", ERDAT: "" }
+  ]
+  const read: Parameters<typeof readGroupedRows>[1] = async () => ({
+    rows,
+    truncated: false,
+    detail: {}
+  })
+
+  const grouped = await readGroupedRows(
+    select(
+      "SELECT UNAME, COUNT(*), COUNT(NETWR), SUM(NETWR), MIN(ERDAT), MAX(ERDAT) FROM TBTCO GROUP BY UNAME"
+    ),
+    read
+  )
+  assert.equal(grouped.groupCount, 2)
+  assert.deepEqual(grouped.aggregateColumns, [
+    { expression: "COUNT(*)", column: "COUNT" },
+    { expression: "COUNT(NETWR)", column: "COUNT_NETWR" },
+    { expression: "SUM(NETWR)", column: "SUM_NETWR" },
+    { expression: "MIN(ERDAT)", column: "MIN_ERDAT" },
+    { expression: "MAX(ERDAT)", column: "MAX_ERDAT" }
+  ])
+  // `COUNT(*)` counts rows, the other aggregates ignore the empty value; the sum of `1.1` and `2.2`
+  // is `3.3` because the service adds scaled integers, not doubles; `MIN`/`MAX` ignore the empty
+  // date and publish the reader's own text.
+  assert.deepEqual(grouped.rows, [
+    {
+      UNAME: "A",
+      COUNT: 3,
+      COUNT_NETWR: 2,
+      SUM_NETWR: "3.3",
+      MIN_ERDAT: "20260101",
+      MAX_ERDAT: "20260201"
+    },
+    { UNAME: "B", COUNT: 1, COUNT_NETWR: 1, SUM_NETWR: "5", MIN_ERDAT: "", MAX_ERDAT: "" }
+  ])
+
+  // Groups appear in first-seen order, and `ORDER BY` over a published column is what ranks them.
+  // The rows carry a key column because identity is the row's values: two rows that agree on every
+  // column are the same row to this reader, and counting them twice would be the guess.
+  const ranked = await readGroupedRows(
+    select(
+      "SELECT UNAME, COUNT(*) FROM TBTCO WHERE UNAME = 'x' OR UNAME = 'y' GROUP BY UNAME ORDER BY COUNT DESC"
+    ),
+    async (filters) =>
+      filters[0]!.value === "x"
+        ? {
+            rows: [
+              { UNAME: "x", JOBNUM: "0001" },
+              { UNAME: "x", JOBNUM: "0002" },
+              { UNAME: "y", JOBNUM: "0003" }
+            ],
+            truncated: false,
+            detail: {}
+          }
+        : { rows: [], truncated: false, detail: {} }
+  )
+  assert.equal(ranked.orderByApplied, true)
+  assert.deepEqual(ranked.rows, [
+    { UNAME: "x", COUNT: 2 },
+    { UNAME: "y", COUNT: 1 }
+  ])
+})
+
+test("a sum the service cannot compute exactly is refused, and an empty match set still counts", async () => {
+  const summing = (value: string) =>
+    readGroupedRows(select("SELECT SUM(NETWR) FROM TBTCO"), async () => ({
+      rows: [{ NETWR: value }],
+      truncated: false,
+      detail: {}
+    }))
+  // A trailing sign convention the reader uses for packed numbers is not a decimal this service will
+  // add: the caller gets a refusal instead of a number that is quietly wrong.
+  await assert.rejects(summing("9007199254740993.123-"), /TABLE_QUERY_AGGREGATE_NOT_NUMERIC/)
+  await assert.rejects(summing("abc"), /TABLE_QUERY_AGGREGATE_NOT_NUMERIC/)
+  await assert.rejects(summing("9007199254740993"), /TABLE_QUERY_AGGREGATE_NOT_EXACT: the value/)
+  await assert.rejects(
+    readGroupedRows(select("SELECT SUM(NETWR) FROM TBTCO"), async () => ({
+      // Each addend is exact on its own; their sum is not, so the answer is refused rather than
+      // rounded to the nearest double.
+      rows: [{ NETWR: "9007199254740991" }, { NETWR: "1" }],
+      truncated: false,
+      detail: {}
+    })),
+    /TABLE_QUERY_AGGREGATE_NOT_EXACT: the running total/
+  )
+
+  // No matching row is zero rows counted, not an error and not an empty answer.
+  const empty = await readGroupedRows(
+    select("SELECT COUNT(*) FROM TBTCO WHERE STATUS = 'X'"),
+    async () => ({ rows: [], truncated: false, detail: {} })
+  )
+  assert.deepEqual(empty.rows, [{ COUNT: 0 }])
+  assert.equal(empty.groupCount, 1)
+  // With `GROUP BY` there is no group to report, because the caller asked for the keys.
+  const noGroups = await readGroupedRows(
+    select("SELECT STATUS, COUNT(*) FROM TBTCO GROUP BY STATUS"),
+    async () => ({ rows: [], truncated: false, detail: {} })
+  )
+  assert.deepEqual(noGroups.rows, [])
+  assert.equal(noGroups.groupCount, 0)
 })

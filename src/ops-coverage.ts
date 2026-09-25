@@ -211,9 +211,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     gap:
       "The native data preview endpoint is platform-unsupported on this release, so only the " +
       "single-table fallback path works: up to 8 disjuncts of up to 8 comparisons joined by AND " +
-      "over =, <>, <, <=, >, >=, with ORDER BY applied only over a complete read. No joins, " +
-      "aggregates, GROUP BY or expressions, so group-by style troubleshooting queries are not " +
-      "possible."
+      "over =, <>, <, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; and " +
+      "ORDER BY applied only over a complete read. No joins, expressions or subqueries, so a " +
+      "question that needs two tables at once is not possible."
   },
   {
     id: "runtime-resources",

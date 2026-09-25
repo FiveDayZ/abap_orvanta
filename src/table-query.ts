@@ -849,19 +849,41 @@ const selectOperators: readonly (readonly [string, SelectFilter["operator"]])[] 
 ]
 
 /**
- * The finite fallback grammar: `SELECT <columns> FROM <table> [WHERE <disjunction>] [ORDER BY <keys>]`,
- * where the disjunction is `AND`-joined comparisons joined by `OR`, and the ordering is a key list.
+ * The finite fallback grammar:
+ * `SELECT <projection> FROM <table> [WHERE <disjunction>] [GROUP BY <keys>] [ORDER BY <keys>]`,
+ * where the disjunction is `AND`-joined comparisons joined by `OR`, the projection is `*`, a column
+ * list, or a list of aggregates, and the ordering is a key list.
  *
- * Two bounds are refusals rather than silent adjustments. {@link selectDisjunctLimit} bounds the `OR`
- * branches, because every branch is one server-side read; {@link selectOrderLimit} bounds the sort
- * keys, which are evaluated in the service (the reader has no ordering parameter at all).
+ * Three bounds are refusals rather than silent adjustments. {@link selectDisjunctLimit} bounds the
+ * `OR` branches, because every branch is one server-side read; {@link selectOrderLimit} bounds the
+ * sort keys, which are evaluated in the service (the reader has no ordering parameter at all);
+ * {@link selectGroupLimit} bounds the `GROUP BY` keys, which are compared in the service.
  */
 const selectDisjunctLimit = 8
 const selectOrderLimit = 8
+const selectGroupLimit = 8
+
+/** The aggregates this grammar can evaluate exactly. Anything else is refused by name. */
+export type AggregateFunction = "COUNT" | "SUM" | "MIN" | "MAX"
+const aggregateFunctions: readonly AggregateFunction[] = ["COUNT", "SUM", "MIN", "MAX"]
+
+export interface SelectAggregate {
+  fn: AggregateFunction
+  /** `null` for `COUNT(*)`, the only aggregate that counts whole rows rather than one column. */
+  column: string | null
+}
 
 export interface GroupedTableSelect {
   tableName: string
   columns: string[]
+  aggregates: SelectAggregate[]
+  groupBy: string[]
+  /**
+   * True when the answer needs the row's own columns rather than a projection: `SELECT *`, and every
+   * aggregate or `GROUP BY` statement, whose row identity is what makes a union of `OR` branches
+   * countable without counting a row twice.
+   */
+  readWholeRow: boolean
   /**
    * Disjunction of conjunctions: a row matches when every conjunct of **one** group matches. Always
    * at least one group, and every group holds at least one conjunct, so a single-conjunct statement
@@ -869,6 +891,143 @@ export interface GroupedTableSelect {
    */
   groups: SelectFilter[][]
   orderBy: { column: string; direction: "asc" | "desc" }[]
+}
+
+/**
+ * The column an aggregate publishes, derived from the expression itself so a caller can sort the
+ * result (`sortColumns`, `ORDER BY`) without inventing an alias this grammar does not have:
+ * `COUNT(*)` publishes `COUNT`, `SUM(NETWR)` publishes `SUM_NETWR`, and so on. The mapping is also
+ * returned as `querySource.aggregateColumns` so nothing has to be guessed from this rule.
+ */
+export function aggregateColumnName(aggregate: SelectAggregate): string {
+  return aggregate.fn === "COUNT" && aggregate.column === null
+    ? "COUNT"
+    : `${aggregate.fn}_${aggregate.column}`
+}
+
+/** The expression as the caller wrote it, used in messages and in the published mapping. */
+export function aggregateExpression(aggregate: SelectAggregate): string {
+  return `${aggregate.fn}(${aggregate.column ?? "*"})`
+}
+
+/**
+ * The columns the reader must return for a statement.
+ *
+ * An aggregate or `GROUP BY` statement reads the whole row even though the answer is a count, because
+ * row identity is what lets the merge tell "the same row matched two `OR` branches" from "two rows
+ * matched": without it a count over overlapping branches would count one row twice.
+ */
+export function groupedReadColumns(
+  select: Pick<GroupedTableSelect, "columns" | "readWholeRow" | "aggregates" | "groupBy">
+): string[] {
+  const wholeRow = select.readWholeRow || select.aggregates.length > 0 || select.groupBy.length > 0
+  return wholeRow ? ["*"] : select.columns
+}
+
+/** The columns a statement publishes: the grouped columns, then one column per aggregate. */
+function groupedOutputColumns(
+  select: Pick<GroupedTableSelect, "columns" | "aggregates">
+): string[] {
+  return [...select.columns, ...select.aggregates.map(aggregateColumnName)]
+}
+
+const projectionFunctionPattern = /^([A-Z][A-Z0-9_]*)\s*\(/i
+const projectionItemPattern =
+  /^(?:(COUNT|SUM|MIN|MAX)\s*\(\s*(\*|[A-Z][A-Z0-9_]*)\s*\)|([A-Z][A-Z0-9_]*))$/i
+
+/**
+ * Read the projection, or refuse.
+ *
+ * A function name this grammar does not evaluate is refused **by name** - the message can say what to
+ * write instead, which the platform's own "empty HTML" error cannot. Any other expression (an
+ * arithmetic term, `CASE`, `X AS Y`) is left to the platform: this parser cannot describe it, and
+ * guessing would answer a question the caller did not ask.
+ */
+function parseProjection(
+  text: string
+): { columns: string[]; aggregates: SelectAggregate[]; selectAll: boolean } | undefined {
+  const items = text.split(/\s*,\s*/)
+  if (items.length === 0) return undefined
+  const columns: string[] = []
+  const aggregates: SelectAggregate[] = []
+  for (const item of items) {
+    if (item === "*") {
+      if (items.length > 1) {
+        throw new Error(
+          "TABLE_QUERY_AGGREGATE_WITH_WILDCARD: * cannot be combined with aggregates or other " +
+            "columns - select the grouped columns explicitly."
+        )
+      }
+      return { columns: ["*"], aggregates: [], selectAll: true }
+    }
+    const match = item.match(projectionItemPattern)
+    if (!match) {
+      const call = item.match(projectionFunctionPattern)
+      if (call) {
+        const name = call[1]!.toUpperCase()
+        throw new Error(
+          `TABLE_QUERY_AGGREGATE_UNSUPPORTED: ${name} is not translated. Supported aggregates are ` +
+            `${aggregateFunctions.join(", ")}; AVG is not among them because it is SUM divided by ` +
+            `COUNT, which this statement can ask for in two columns.`
+        )
+      }
+      return undefined
+    }
+    if (match[1]) {
+      const fn = match[1]!.toUpperCase() as AggregateFunction
+      const argument = match[2]!.toUpperCase()
+      if (argument === "*" && fn !== "COUNT") {
+        throw new Error(
+          `TABLE_QUERY_AGGREGATE_ARGUMENT: ${fn}(*) has no meaning - ${fn} needs a column, and only ` +
+            `COUNT may count whole rows.`
+        )
+      }
+      aggregates.push({ fn, column: argument === "*" ? null : argument })
+      continue
+    }
+    columns.push(match[3]!.toUpperCase())
+  }
+  if (new Set(columns).size !== columns.length) return undefined
+  const names = aggregates.map(aggregateColumnName)
+  if (new Set(names).size !== names.length) {
+    throw new Error(
+      "TABLE_QUERY_AGGREGATE_DUPLICATE: the same aggregate expression was selected twice, so one " +
+        "published column would overwrite the other."
+    )
+  }
+  // A derived name that shadows a selected column would publish two different answers under one key.
+  const shadowed = names.filter((name) => columns.includes(name))
+  if (shadowed.length > 0) {
+    throw new Error(
+      `TABLE_QUERY_AGGREGATE_SHADOWED: ${shadowed.join(", ")} is both a selected column and the ` +
+        `column an aggregate publishes; rename the selected column out of the way.`
+    )
+  }
+  return { columns, aggregates, selectAll: false }
+}
+
+function parseGroupBy(text: string): string[] | undefined {
+  const keys: string[] = []
+  let rest = text.trim()
+  while (rest) {
+    const key = rest.match(/^([A-Z][A-Z0-9_]*)([\s\S]*)$/i)
+    if (!key || keys.length === selectGroupLimit) return undefined
+    const column = key[1]!.toUpperCase()
+    if (keys.includes(column)) return undefined
+    keys.push(column)
+    const after = key[2]!.trim()
+    if (!after) break
+    if (/^(ASC|DESC)\b/i.test(after)) {
+      throw new Error(
+        "TABLE_QUERY_GROUP_BY_DIRECTION: GROUP BY takes column names only; a direction belongs to " +
+          "ORDER BY, which sorts the groups this statement returns."
+      )
+    }
+    if (!after.startsWith(",")) return undefined
+    rest = after.slice(1).trim()
+    if (!rest) return undefined
+  }
+  return keys.length > 0 ? keys : undefined
 }
 
 /**
@@ -924,29 +1083,41 @@ function parseOrderBy(text: string): GroupedTableSelect["orderBy"] | undefined {
  * refused, because the alternative is a query whose meaning in SAP differs from the SQL the caller
  * wrote. Parentheses are therefore absent on purpose - without them the grouping is unambiguous
  * (`OR` of `AND`s) and no precedence rule has to be invented.
+ *
+ * Statements the grammar *does* understand but cannot answer exactly (an ungrouped selected column, a
+ * `SUM(*)`, a function that is not one of the four aggregates) throw a `TABLE_QUERY_*` error naming
+ * the fix. The caller only reaches this parser after the platform's own path failed with the known
+ * empty-HTML answer, so a descriptive refusal is strictly more useful than that error.
  */
 export function parseGroupedTableSelect(sql: string): GroupedTableSelect | undefined {
   // Same finite-grammar approach as scoped-query.ts; never translate arbitrary SQL.
-  const match = sql.match(
-    /^\s*SELECT\s+(\*|[A-Z][A-Z0-9_]*(?:\s*,\s*[A-Z][A-Z0-9_]*)*)\s+FROM\s+([A-Z][A-Z0-9_]*)\s*([\s\S]*?)\s*$/i
-  )
+  const match = sql.match(/^\s*SELECT\s+([\s\S]*?)\s+FROM\s+([A-Z][A-Z0-9_]*)\s*([\s\S]*?)\s*$/i)
   if (!match) return undefined
-  const columns = match[1]!.split(/\s*,\s*/).map((column) => column.toUpperCase())
+  const projection = parseProjection(match[1]!.trim())
+  if (!projection) return undefined
   const tableName = match[2]!.toUpperCase()
   const tail = match[3]!.trim()
   const groups: SelectFilter[][] = []
+  let groupBy: string[] = []
   let orderBy: GroupedTableSelect["orderBy"] = []
   if (tail) {
     if (/^WHERE\b/i.test(tail)) {
-      // The optional `ORDER BY` is split off by pattern, not by a tokenizer. A string literal that
-      // itself contains " ORDER BY " therefore splits in the wrong place - and is then refused by
-      // `parseOrderBy`, because a key list cannot end in the literal's closing quote. A refusal is
-      // the intended outcome: this grammar never guesses which reading the caller meant.
-      const where = tail.match(/^WHERE\s+([\s\S]*?)(?:\s+ORDER\s+BY\s+([\s\S]+))?$/i)
+      // The optional `GROUP BY` / `ORDER BY` clauses are split off by pattern, not by a tokenizer. A
+      // string literal that itself contains " ORDER BY " therefore splits in the wrong place - and is
+      // then refused by `parseOrderBy`, because a key list cannot end in the literal's closing quote.
+      // A refusal is the intended outcome: this grammar never guesses which reading the caller meant.
+      const where = tail.match(
+        /^WHERE\s+([\s\S]*?)(?:\s+GROUP\s+BY\s+([A-Z][\s\S]*?))?(?:\s+ORDER\s+BY\s+([\s\S]+))?$/i
+      )
       if (!where) return undefined
       let rest = where[1]!.trim()
       if (where[2] !== undefined) {
-        const keys = parseOrderBy(where[2])
+        const keys = parseGroupBy(where[2])
+        if (!keys) return undefined
+        groupBy = keys
+      }
+      if (where[3] !== undefined) {
+        const keys = parseOrderBy(where[3])
         if (!keys) return undefined
         orderBy = keys
       }
@@ -972,14 +1143,57 @@ export function parseGroupedTableSelect(sql: string): GroupedTableSelect | undef
         if (!rest) break
       }
     } else {
-      const keys = tail.match(/^ORDER\s+BY\s+([\s\S]+)$/i)
-      if (!keys) return undefined
-      const parsed = parseOrderBy(keys[1]!)
-      if (!parsed) return undefined
-      orderBy = parsed
+      const clauses = tail.match(
+        /^(?:GROUP\s+BY\s+([A-Z][\s\S]*?)(?:\s+ORDER\s+BY\s+([\s\S]+))?|ORDER\s+BY\s+([\s\S]+))$/i
+      )
+      if (!clauses) return undefined
+      if (clauses[1] !== undefined) {
+        const keys = parseGroupBy(clauses[1])
+        if (!keys) return undefined
+        groupBy = keys
+      }
+      const orderText = clauses[1] !== undefined ? clauses[2] : clauses[3]
+      if (orderText !== undefined) {
+        const keys = parseOrderBy(orderText)
+        if (!keys) return undefined
+        orderBy = keys
+      }
     }
   }
-  return { tableName, columns, groups: groups.length > 0 ? groups : [[]], orderBy }
+  const keyed = projection.aggregates.length > 0 || groupBy.length > 0
+  if (keyed) {
+    if (projection.selectAll) {
+      throw new Error(
+        "TABLE_QUERY_AGGREGATE_WITH_WILDCARD: * cannot be grouped or aggregated over - name the " +
+          "grouping columns and the aggregate expressions you want."
+      )
+    }
+    // The grouped columns and the selected columns must be the same set. A selected column that is
+    // not grouped has no single value per group (the answer would carry one arbitrary row's value),
+    // and a grouped column that is not selected cannot be read off the answer at all.
+    const selected = [...projection.columns].sort()
+    const grouped = [...groupBy].sort()
+    if (
+      selected.length !== grouped.length ||
+      selected.some((column, index) => column !== grouped[index])
+    ) {
+      throw new Error(
+        "TABLE_QUERY_GROUP_BY_KEYS_MISMATCH: GROUP BY must name exactly the selected columns " +
+          `(selected ${selected.length ? selected.join(", ") : "none"}, grouped ` +
+          `${grouped.length ? grouped.join(", ") : "none"}). Select each grouping column and group ` +
+          "by exactly those columns, or drop the GROUP BY."
+      )
+    }
+  }
+  return {
+    tableName,
+    columns: projection.columns,
+    aggregates: projection.aggregates,
+    groupBy,
+    readWholeRow: projection.selectAll || keyed,
+    groups: groups.length > 0 ? groups : [[]],
+    orderBy
+  }
 }
 
 /**
@@ -1026,41 +1240,211 @@ export interface GroupedReadResult {
   /** Branch ordinals that hit the row bound and therefore hold a sample. */
   incompleteBranches: number[]
   orderByApplied: boolean
+  /** True when the statement asked for aggregates or groups, so `rows` is its result, not a page. */
+  aggregated: boolean
+  /** How many groups the answer holds; 0 unless {@link GroupedReadResult.aggregated}. */
+  groupCount: number
+  /** Which expression published which column, so a caller can order the result without guessing. */
+  aggregateColumns: Array<{ expression: string; column: string }>
+}
+
+/**
+ * The comparator behind both the statement's `ORDER BY` and the tool's own `sortColumns`. One
+ * implementation, so the two ways of asking for an order cannot disagree.
+ *
+ * The comparison is lexical with numeric awareness over the reader's text representation, which is
+ * not SAP's type-aware ordering (`NUMC` and `DATS` sort as characters here, not as numbers or
+ * dates): a caller who needs SAP's ordering must get it from the platform, not from this degraded
+ * path.
+ */
+function compareText(left: unknown, right: unknown): number {
+  return String(left ?? "").localeCompare(String(right ?? ""), undefined, {
+    numeric: true,
+    sensitivity: "base"
+  })
+}
+
+/** The reader answers an initial field as an empty string, so empty - not null - means "no value". */
+function isEmptyValue(value: unknown): boolean {
+  return value === undefined || value === null || value === ""
+}
+
+/** A plain decimal as the reader writes it, split so it can be added without floating point error. */
+function numericParts(
+  value: string
+): { sign: number; integer: string; fraction: string } | undefined {
+  const match = value.trim().match(/^(-)?(\d+)(?:\.(\d+))?$/)
+  if (!match) return undefined
+  return { sign: match[1] ? -1 : 1, integer: match[2]!, fraction: match[3] ?? "" }
+}
+
+/** Render a scaled integer back into the reader's decimal notation, keeping the widest scale seen. */
+function formatScaled(total: number, scale: number): string {
+  const sign = total < 0 ? "-" : ""
+  const digits = String(Math.abs(total)).padStart(scale + 1, "0")
+  return scale === 0
+    ? `${sign}${digits}`
+    : `${sign}${digits.slice(0, -scale)}.${digits.slice(-scale)}`
+}
+
+/**
+ * Sum the values the reader returned, or refuse. A sum is the one aggregate whose value the service
+ * has to *compute* rather than pick, so it is the one that can be silently wrong.
+ *
+ * Every value is scaled to a common number of decimals and added as an integer: a sum of `1.1` and
+ * `2.2` is `3.3`, not the `3.3000000000000003` that doubles would produce. A value that is not a
+ * plain decimal, or an addend or total outside the range a double holds exactly (2^53), is refused
+ * instead of approximated - a caller who gets a number from this tool must be able to trust it.
+ */
+function sumValues(expression: string, values: string[]): string {
+  const parsed: Array<{ value: string; parts: NonNullable<ReturnType<typeof numericParts>> }> = []
+  for (const value of values) {
+    const parts = numericParts(value)
+    if (!parts) {
+      throw new Error(
+        `TABLE_QUERY_AGGREGATE_NOT_NUMERIC: ${expression} met the value "${value.slice(0, 40)}", ` +
+          "which is not a plain decimal number. Sum a field only when every value is numeric; " +
+          "COUNT, MIN and MAX do not interpret the values at all."
+      )
+    }
+    parsed.push({ value, parts })
+  }
+  if (parsed.length === 0) return ""
+  const scale = Math.max(...parsed.map((entry) => entry.parts.fraction.length))
+  let total = 0
+  for (const entry of parsed) {
+    const digits = entry.parts.integer + entry.parts.fraction.padEnd(scale, "0")
+    const scaled = Number(digits) * entry.parts.sign
+    if (!Number.isSafeInteger(scaled)) {
+      throw new Error(
+        `TABLE_QUERY_AGGREGATE_NOT_EXACT: the value "${entry.value.slice(0, 40)}" carries more ` +
+          "digits than a double can add exactly (2^53). Sum a narrower window, or aggregate in SAP."
+      )
+    }
+    total += scaled
+    if (!Number.isSafeInteger(total)) {
+      throw new Error(
+        `TABLE_QUERY_AGGREGATE_NOT_EXACT: the running total left the exact range at ` +
+          `"${entry.value.slice(0, 40)}". Sum a narrower window, or aggregate in SAP.`
+      )
+    }
+  }
+  return formatScaled(total, scale)
+}
+
+function aggregateValue(aggregate: SelectAggregate, members: Record<string, unknown>[]): unknown {
+  const expression = aggregateExpression(aggregate)
+  if (aggregate.fn === "COUNT" && aggregate.column === null) return members.length
+  const column = aggregate.column!
+  // Every aggregate except `COUNT(*)` ignores empty values, the way SQL ignores NULL: an initial
+  // field is absent data, not a zero and not a value to compare.
+  const present = members.filter((row) => !isEmptyValue(row[column]))
+  if (aggregate.fn === "COUNT") return present.length
+  if (aggregate.fn === "SUM") {
+    return sumValues(
+      expression,
+      present.map((row) => String(row[column]))
+    )
+  }
+  let best: unknown
+  for (const row of present) {
+    const value = row[column]
+    if (best === undefined) {
+      best = value
+      continue
+    }
+    const comparison = compareText(value, best)
+    if (aggregate.fn === "MIN" ? comparison < 0 : comparison > 0) best = value
+  }
+  return best === undefined ? "" : best
+}
+
+/**
+ * Fold the merged rows into groups and aggregate each one.
+ *
+ * Groups appear in the order their first row appeared, which is the reader's own order and therefore
+ * stable; `ORDER BY` (or the tool's `sortColumns`) is what turns that into a ranking.
+ */
+function aggregateRows(
+  rows: Record<string, unknown>[],
+  select: Pick<GroupedTableSelect, "columns" | "aggregates" | "groupBy">
+): Record<string, unknown>[] {
+  const grouped = new Map<string, Record<string, unknown>[]>()
+  for (const row of rows) {
+    const key = JSON.stringify(
+      select.groupBy.map((column) => [column, isEmptyValue(row[column]) ? "" : String(row[column])])
+    )
+    const members = grouped.get(key)
+    if (members) members.push(row)
+    else grouped.set(key, [row])
+  }
+  // `COUNT(*)` over an empty match set is 0, not "no rows": the caller asked a question that has an
+  // answer, and SQL agrees. Without `GROUP BY` there is exactly one group, empty or not.
+  if (rows.length === 0 && select.groupBy.length === 0 && select.aggregates.length > 0) {
+    grouped.set("[]", [])
+  }
+  return [...grouped.values()].map((members) => {
+    const output: Record<string, unknown> = {}
+    // Grouped columns hold the same value in every member, by construction of the key.
+    for (const column of select.columns) output[column] = members[0]?.[column] ?? ""
+    for (const aggregate of select.aggregates) {
+      output[aggregateColumnName(aggregate)] = aggregateValue(aggregate, members)
+    }
+    return output
+  })
 }
 
 /**
  * Run a grouped statement as one read per disjunct and merge the results.
  *
- * Three rules keep the merge from inventing an answer:
+ * Four rules keep the merge from inventing an answer:
  *
  * - **Row identity.** Only a read that returned the whole row has one: `SELECT *` includes the key
  *   fields, so a row returned by two disjuncts is the same row. With a partial projection, identical
- *   projected values prove nothing, so such rows are counted as repeats and kept.
+ *   projected values prove nothing, so such rows are counted as repeats and kept. Aggregate and
+ *   `GROUP BY` statements always read the whole row for exactly this reason: without identity, a row
+ *   matched by two overlapping branches would be counted twice.
  * - **Membership versus ordering.** Without `ORDER BY` the answer is a page of matching rows, and a
  *   disjunct that hit the row bound is reported through `incompleteBranches`. With `ORDER BY` the
  *   answer claims to be the top of an ordering, which a sample cannot support, so the statement is
  *   refused rather than answered with rows that are not the top.
+ * - **Aggregates are exact or absent.** A count of a sample is a count of the sample, so any
+ *   aggregate over a truncated read is refused instead of reported with a smaller number.
+ * - **No invented values.** `SUM` refuses a value it cannot add exactly, and every aggregate ignores
+ *   empty values rather than treating them as zero.
  */
 export async function readGroupedRows(
-  select: Pick<GroupedTableSelect, "columns" | "groups" | "orderBy">,
+  select: Pick<
+    GroupedTableSelect,
+    "columns" | "aggregates" | "groupBy" | "readWholeRow" | "groups" | "orderBy"
+  >,
   readBranch: (filters: SelectFilter[]) => Promise<GroupedReadBranch>,
   rowBound?: number
 ): Promise<GroupedReadResult> {
+  const keyed = select.aggregates.length > 0 || select.groupBy.length > 0
   // An `ORDER BY` column that is not projected would compare `undefined` with `undefined` for every
   // row: a sort that reports success while changing nothing is worse than a refusal, and the fix is
-  // one word in the SELECT list. `SELECT *` needs no check - the reader expands it to every column.
-  const unprojected = select.columns.includes("*")
-    ? []
-    : [...new Set(select.orderBy.map((key) => key.column))].filter(
-        (column) => !select.columns.includes(column)
-      )
+  // one word in the SELECT list. `SELECT *` needs no check - the reader expands it to every column -
+  // and an aggregate statement compares against the columns it publishes.
+  const outputColumns = groupedOutputColumns(select)
+  const unprojected =
+    select.readWholeRow && !keyed
+      ? []
+      : [...new Set(select.orderBy.map((key) => key.column))].filter(
+          (column) => !outputColumns.includes(column)
+        )
   if (unprojected.length > 0) {
     throw new Error(
       `TABLE_QUERY_ORDER_BY_COLUMN_NOT_SELECTED: ORDER BY ${unprojected.join(", ")} is not in the ` +
         `projection, so the rows carry nothing to compare. Add it to the SELECT list (or select *).`
     )
   }
-  const fullRow = select.columns.includes("*")
+  const fullRow = select.readWholeRow || keyed
+  // Identity is taken over what the read actually returned. For a projection that is not the whole
+  // row, that is the projection itself; for a whole-row read the key is the row's own column set, so
+  // a grouped column must never shrink the identity to the grouped columns alone - two rows of one
+  // group would collapse into one and `COUNT(*)` would undercount silently.
+  const identityColumns = fullRow ? ["*"] : select.columns
   const rows: Record<string, unknown>[] = []
   const seen = new Set<string>()
   const incompleteBranches: number[] = []
@@ -1070,7 +1454,7 @@ export async function readGroupedRows(
     const branch = await readBranch(group)
     if (branch.truncated) incompleteBranches.push(index)
     for (const row of branch.rows) {
-      const key = branchRowKey(row, select.columns)
+      const key = branchRowKey(row, identityColumns)
       if (seen.has(key)) {
         if (fullRow) {
           deduplicatedRows++
@@ -1083,44 +1467,47 @@ export async function readGroupedRows(
       rows.push(row)
     }
   }
-  if (select.orderBy.length > 0) {
-    if (incompleteBranches.length > 0) {
-      const bound = rowBound === undefined ? "the row bound" : `the ${rowBound}-row bound`
-      throw new Error(
-        `TABLE_QUERY_ORDER_BY_INCOMPLETE: ORDER BY describes the whole match set, but ` +
-          `${incompleteBranches.length} of ${select.groups.length} read(s) stopped at ${bound} ` +
-          `(branch${incompleteBranches.length > 1 ? "es" : ""} ${incompleteBranches.join(", ")}). ` +
-          `Narrow the WHERE clause until every read completes, or sort the returned page with ` +
-          `sortColumns. Nothing was ordered.`
-      )
-    }
-    return {
-      rows: sortRowsByColumns(rows, select.orderBy),
-      disjuncts: select.groups.length,
-      deduplicatedRows,
-      repeatedProjectedRows,
-      incompleteBranches,
-      orderByApplied: true
-    }
+  const bound = rowBound === undefined ? "the row bound" : `the ${rowBound}-row bound`
+  if (keyed && incompleteBranches.length > 0) {
+    throw new Error(
+      `TABLE_QUERY_AGGREGATE_INCOMPLETE: an aggregate describes the whole match set, but ` +
+        `${incompleteBranches.length} of ${select.groups.length} read(s) stopped at ${bound} ` +
+        `(branch${incompleteBranches.length > 1 ? "es" : ""} ${incompleteBranches.join(", ")}), so ` +
+        `the count would be a count of the sample. Narrow the WHERE clause until every read ` +
+        `completes. Nothing was aggregated.`
+    )
   }
-  return {
-    rows,
+  if (!keyed && select.orderBy.length > 0 && incompleteBranches.length > 0) {
+    throw new Error(
+      `TABLE_QUERY_ORDER_BY_INCOMPLETE: ORDER BY describes the whole match set, but ` +
+        `${incompleteBranches.length} of ${select.groups.length} read(s) stopped at ${bound} ` +
+        `(branch${incompleteBranches.length > 1 ? "es" : ""} ${incompleteBranches.join(", ")}). ` +
+        `Narrow the WHERE clause until every read completes, or sort the returned page with ` +
+        `sortColumns. Nothing was ordered.`
+    )
+  }
+  const result = keyed ? aggregateRows(rows, select) : rows
+  const base = {
     disjuncts: select.groups.length,
     deduplicatedRows,
     repeatedProjectedRows,
     incompleteBranches,
-    orderByApplied: false
+    aggregated: keyed,
+    groupCount: keyed ? result.length : 0,
+    aggregateColumns: select.aggregates.map((aggregate) => ({
+      expression: aggregateExpression(aggregate),
+      column: aggregateColumnName(aggregate)
+    }))
   }
+  if (select.orderBy.length > 0) {
+    return { rows: sortRowsByColumns(result, select.orderBy), ...base, orderByApplied: true }
+  }
+  return { rows: result, ...base, orderByApplied: false }
 }
 
 /**
  * Order rows by a key list, using the same comparator as the tool's own `sortColumns` input so the
  * two ways of asking for an order cannot disagree.
- *
- * The comparison is lexical with numeric awareness over the reader's text representation, which is
- * not SAP's type-aware ordering (`NUMC` and `DATS` sort as characters here, not as numbers or
- * dates): a caller who needs SAP's ordering must get it from the platform, not from this degraded
- * path.
  */
 export function sortRowsByColumns(
   rows: Record<string, unknown>[],
@@ -1129,16 +1516,7 @@ export function sortRowsByColumns(
   if (!sorts.length) return rows
   return [...rows].sort((left, right) => {
     for (const sort of sorts) {
-      const leftValue = left[sort.column]
-      const rightValue = right[sort.column]
-      const comparison = String(leftValue ?? "").localeCompare(
-        String(rightValue ?? ""),
-        undefined,
-        {
-          numeric: true,
-          sensitivity: "base"
-        }
-      )
+      const comparison = compareText(left[sort.column], right[sort.column])
       if (comparison) return sort.direction === "asc" ? comparison : -comparison
     }
     return 0

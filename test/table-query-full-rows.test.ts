@@ -348,6 +348,9 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
     {
       tableName: "TFDIR",
       columns: ["*"],
+      aggregates: [],
+      groupBy: [],
+      readWholeRow: true,
       groups: [
         [
           { column: "KUNNR", operator: "EQ", value: "O'Brien" },
@@ -367,6 +370,9 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
     {
       tableName: "ZTPMC_BZWL",
       columns: ["MANDT", "BUKRS"],
+      aggregates: [],
+      groupBy: [],
+      readWholeRow: false,
       groups: [
         [
           { column: "ZPOSNR", operator: "GE", value: "100" },
@@ -398,7 +404,9 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
   for (const sql of [
     "SELECT * FROM TFDIR WHERE ID = '1' AND ",
     "SELECT * FROM TFDIR WHERE ID = '1' OR ",
-    "SELECT COUNT(*) FROM TFDIR WHERE ID = '1'",
+    // Aggregates and GROUP BY moved into the dialect (see the aggregate test below); an expression
+    // that is not one of the four aggregates is still not translated.
+    "SELECT ID + 1 FROM TFDIR WHERE ID = '1'",
     "SELECT * FROM TFDIR WHERE ID = '1';DELETE FROM TFDIR",
     // Not the dialect: C-style inequality is not ABAP Open SQL, and a value beyond the reader's
     // 40-character bound is refused here rather than rejected later as a malformed request.
@@ -527,5 +535,60 @@ test("execute_data_query refuses an ordering it cannot compute over the whole ma
   assert.deepEqual(
     ordered.data.map((row: Record<string, string>) => row.ZRKJHH),
     ["00000000000000000002", "00000000000000000001", "00000000000000000000"]
+  )
+})
+
+test("execute_data_query aggregates over a complete read and refuses a sample", async () => {
+  const f = fixture(6, 6)
+  const backend = Object.assign(new MockBackend(), f.backend)
+  backend.runQuery = async () => {
+    throw nativeError
+  }
+  const tools = new ToolService(backend)
+  tools.readDdicTransparentTable = async () => JSON.stringify(f.definition)
+  tools.readFunctionModuleInterface = async (input) =>
+    JSON.stringify(await f.readReader(input.connectionId, input.functionName))
+  const query = (sql: string, maxRows = 20) =>
+    tools.executeDataQuery({
+      connectionId: "w200",
+      displayMode: "internal",
+      sql,
+      maxRows,
+      rowRange: { start: 0, end: maxRows }
+    })
+
+  // Two identical disjuncts over all six rows: each branch reads the whole match set, so the union
+  // holds the same six rows twice. An aggregate statement reads whole rows for exactly this reason -
+  // a row both branches matched is counted once, and the merge says how many it collapsed.
+  const counted = JSON.parse(
+    await query(
+      "SELECT WERKS, COUNT(*) FROM TFDIR WHERE MANDT = '200' OR MANDT = '200' GROUP BY WERKS"
+    )
+  )
+  assert.equal(counted.querySource.aggregated, true)
+  assert.equal(counted.querySource.groupCount, 2)
+  assert.equal(counted.querySource.deduplicatedRows, 6)
+  assert.deepEqual(counted.querySource.incompleteBranches, [])
+  assert.equal(counted.truncated, false)
+  assert.deepEqual(counted.querySource.aggregateColumns, [
+    { expression: "COUNT(*)", column: "COUNT" }
+  ])
+  // The answer carries the grouped column and the derived aggregate column, nothing else.
+  assert.deepEqual(counted.data, [
+    { WERKS: "810P", COUNT: 3 },
+    { WERKS: "809P", COUNT: 3 }
+  ])
+
+  // The same statement under a five-row bound can only describe a sample of the six matching rows, so
+  // it refuses - a count of the sample is not a smaller answer, it is a different question.
+  await assert.rejects(
+    query("SELECT COUNT(*) FROM TFDIR WHERE MANDT = '200'", 5),
+    /TABLE_QUERY_AGGREGATE_INCOMPLETE: .*stopped at the 5-row bound/
+  )
+  // A grouping this grammar cannot answer exactly is refused by name rather than answered with one
+  // arbitrary row's value per group.
+  await assert.rejects(
+    query("SELECT WERKS, COUNT(*) FROM TFDIR"),
+    /TABLE_QUERY_GROUP_BY_KEYS_MISMATCH/
   )
 })
