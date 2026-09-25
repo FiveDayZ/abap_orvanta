@@ -2841,20 +2841,31 @@ export class ToolService {
   ): Promise<Record<string, RfcValueContract>> {
     const result: Record<string, RfcValueContract> = {}
     const elements = new Map<string, RfcValueContract>()
+    const elementContract = async (name: string): Promise<RfcValueContract> => {
+      const element = ddicName(name, "field data element")
+      let contract = elements.get(element)
+      if (!contract) {
+        contract = (await this.resolveRemoteScalarType(connectionId, element)).valueContract!
+        elements.set(element, contract)
+      }
+      return contract
+    }
     for (const field of record.fields) {
       const name = field.FIELDNAME!
+      let contract: RfcValueContract | undefined
       // DD03P metadata is authoritative when complete; otherwise resolve the referenced element.
       if (field.DATATYPE?.trim() && field.LENG?.trim()) {
-        result[name] = rfcValueContract(field, name)
-      } else {
-        const element = ddicName(field.ROLLNAME ?? "", "field data element")
-        let contract = elements.get(element)
-        if (!contract) {
-          contract = (await this.resolveRemoteScalarType(connectionId, element)).valueContract!
-          elements.set(element, contract)
+        try {
+          contract = rfcValueContract(field, name)
+        } catch (error) {
+          // A field list can name a decimal type without a usable precision (for example a row
+          // whose DECIMALS column is absent). The referenced data element, and through it its
+          // domain, stays authoritative then, so the precision is read there instead of the
+          // whole interface being refused. Without a data element the original refusal stands.
+          if (!field.ROLLNAME?.trim()) throw error
         }
-        result[name] = contract
       }
+      result[name] = contract ?? (await elementContract(field.ROLLNAME ?? ""))
       if (["STRG", "SSTRING"].includes(result[name]!.dataType)) {
         throw new Error(`Structure field ${name} is not a flat fixed-length value`)
       }

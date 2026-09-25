@@ -93,6 +93,40 @@ test("both RFC entry points reject invalid nested values before dispatch", async
   }
 })
 
+test("a decimal field row without a usable precision resolves through its data element", async () => {
+  const backend = new MockBackend()
+  const ddic = backend.callSapDdic.bind(backend)
+  backend.callSapDdic = async (id, request) => {
+    const result = await ddic(id, request)
+    if (request.operation === "READ_STRUCTURE" && request.objectName === "BAPIRET2") {
+      // The field list names a decimal type and length but carries no usable precision. BAPI_MTYPE
+      // resolves to domain CHAR1, so that element contract is the one that has to be applied
+      // instead of the whole interface being refused.
+      result.fields.push({
+        FIELDNAME: "AMOUNT",
+        ROLLNAME: "BAPI_MTYPE",
+        COMPTYPE: "E",
+        DATATYPE: "QUAN",
+        LENG: "13"
+      })
+    }
+    return result
+  }
+  const tools = new ToolService(backend)
+  const metadata = JSON.parse(await tools.readFunctionModuleInterface(base))
+  await assert.rejects(
+    tools.testRemoteFunctionModule({
+      ...base,
+      inputParameters: {},
+      structureInputs: { IS_REQUEST: { AMOUNT: "12" } },
+      expectedStructureOutputs: { ES_RESPONSE: {} },
+      expectedInterfaceFingerprint: metadata.fingerprint
+    }),
+    /exceeds 1 characters/
+  )
+  assert.equal(backend.remoteFunctionCalls, 0)
+})
+
 test("TABLES values share field contracts and unknown fields remain rejected", async () => {
   const backend = fixture()
   const tools = new ToolService(backend)

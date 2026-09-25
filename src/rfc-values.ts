@@ -32,7 +32,10 @@ export function rfcValueContract(
         decimals > length ||
         length > 31
       ) {
-        throw new Error(`DDIC decimal precision is invalid for ${typeName}`)
+        throw new Error(
+          `DDIC decimal precision is invalid for ${typeName} ` +
+            `(DATATYPE ${dataType}, LENG ${header.LENG ?? ""}, DECIMALS ${header.DECIMALS ?? ""})`
+        )
       }
       return { dataType, length, decimals }
     }
