@@ -53,10 +53,65 @@ export const TABLE_TIERS = {
     "DD33S",
     "DD33V"
   ],
-  /** B 档：定制 / 组织架构。低敏感。 */
-  customizing: ["T000", "T001", "T001W", "T005", "T005T", "TSTC", "TSTCT", "T002", "T006", "T006A"],
-  /** C 档：业务主数据 / 凭证。**逐表批准**，此处仅登记已获批准者。 */
-  business: [SCOPED_QUERY_TABLE],
+  /**
+   * B 档：定制 / 组织架构。低敏感。
+   *
+   * 2026-09-25（D3 逐表授权，用户裁定）：加入系统参数表 TPFYPROPTY（实例参数当前值，29 字段，
+   * 键 OBJ_NAME）与 TPFHT（参数文件头，17 字段，键 PFNAME/VERSNR），用于 OP1-4 的 RZ10/RZ11
+   * 只读参数核对。二者是系统级配置而非业务数据；参数值里可能出现主机名与路径，因此只作为参数
+   * 文本返回，服务侧不据此发起任何文件系统访问。
+   */
+  customizing: [
+    "T000",
+    "T001",
+    "T001W",
+    "T005",
+    "T005T",
+    "TSTC",
+    "TSTCT",
+    "T002",
+    "T006",
+    "T006A",
+    "TPFYPROPTY",
+    "TPFHT"
+  ],
+  /**
+   * C 档：业务主数据 / 凭证。**逐表批准**，此处仅登记已获批准者。
+   *
+   * 2026-09-25（D3 逐表授权，用户裁定）新增十四张表，用于把 OP1 的只读盲区从"必须由 SAP 助手
+   * 实现"拉回服务侧。每张表的敏感面写在这里，以免"已放行"被误读成"无风险"：
+   *
+   *   作业与 Spool 元数据 —— TBTCO（作业头，58 字段，键 JOBNAME/JOBCOUNT）、TBTCP（作业步骤，
+   *     73 字段，键 JOBNAME/JOBCOUNT/STEPCOUNT）、TSP01（Spool 请求，47 字段，键 RQIDENT）、
+   *     TSP02（Spool 输出，35 字段，键 PJIDENT/PJNUMMER）。价值：SM37/SP01 现在必须已知精确
+   *     作业名才能查，作业与 Spool 表支持"按时间窗/用户列出"，这正是日常排障最缺的一步。
+   *     风险：作业步骤参数与 Spool 输出可能含业务选择值或报表内容，故与业务数据同档。
+   *   接口与队列 —— EDIDC/EDIDS（IDoc 控制与状态，49/25 字段，键 DOCNUM）、TRFCQOUT/
+   *     TRFCQIN/TRFCQSTATE（qRFC 出/入队列与状态，20/25/20 字段）。价值：OP1-2 的只读排障。
+   *     风险：队列载荷与业务单据号；只读，重处理仍属 OP2 且未获授权。
+   *   权限分配 —— AGR_USERS（11 字段，键 AGR_NAME/UNAME/FROM_DAT/TO_DAT）、AGR_TCODES（8 字段，
+   *     键 AGR_NAME/TCODE/TYPE）、UST04（3 字段，键 BNAME/PROFILE）。价值：OP1-3 的角色/事务/
+   *     参数文件分配只读。风险：只含用户名与角色名，**不含口令**；USR02/USR01/PA0001/PA0008/
+   *     BSEG/CDHRS 仍在 TABLE_NEVER_ALLOWED 中永久禁止，不受本次授权影响。
+   *
+   * 表的存在性、表类型、字段与键全部由 w200 的 DD02L/DD03L 实测核对（`.doc/code-update-20260925-221900.md`
+   * 同批证据）。同批候选里的 ARCH_STAT 经核对是 INTTAB（仅 2 字段，非存储表），因此未登记。
+   */
+  business: [
+    SCOPED_QUERY_TABLE,
+    "TBTCO",
+    "TBTCP",
+    "TSP01",
+    "TSP02",
+    "EDIDC",
+    "EDIDS",
+    "TRFCQOUT",
+    "TRFCQIN",
+    "TRFCQSTATE",
+    "AGR_USERS",
+    "AGR_TCODES",
+    "UST04"
+  ],
   /**
    * 产品必需档：由 `src` 调用点清点得出，**不是** D5-2 取证候选表的子集。
    *
