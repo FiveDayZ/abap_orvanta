@@ -1034,6 +1034,156 @@ test("table field writes carry the DD03P reference pair, and an unpaired half is
   assert.deepEqual(requests, [], "an unpaired reference must be refused before any SAP call")
 })
 
+test("structure and append-structure writes carry the same reference pair, and the read publishes it", async () => {
+  // The same pair for the same reason, on the two object kinds that could not express it at all: a
+  // structure component may be a quantity or currency too, and DDIC activation refuses such a
+  // component without a reference table and field. Until 2026-09-25 the service kept only
+  // name/dataElement for structures and the helper's STRU branch answered PROPERTY_NOT_ALLOWED, so
+  // no caller could build an activatable quantity component.
+  const backend = new MockBackend()
+  const requests: Array<{
+    operation: string
+    fields?: Array<Record<string, string>>
+    appendFields?: Array<Record<string, string>>
+  }> = []
+  const original = backend.callSapDdic.bind(backend)
+  backend.callSapDdic = async (connectionId, request) => {
+    requests.push(
+      request as unknown as {
+        operation: string
+        fields?: Array<Record<string, string>>
+        appendFields?: Array<Record<string, string>>
+      }
+    )
+    return original(connectionId, request)
+  }
+  const tools = new ToolService(backend)
+  const base = {
+    description: "reference probe",
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    connectionId: "w200"
+  }
+  const quantity = {
+    name: "QTY",
+    dataElement: "MENGE_D",
+    referenceTable: "MARA",
+    referenceField: "MEINS"
+  }
+
+  // A structure write forwards the pair on the same F rows a table write uses.
+  await tools.upsertDdicStructure({
+    ...base,
+    objectName: "ZCMCP_STRU_REF",
+    fields: [{ name: "MATNR", dataElement: "MATNR" }, quantity]
+  })
+  const structure = requests.find((request) => request.operation === "UPSERT_STRUCTURE")
+  assert.ok(structure, "the structure write must reach the DDIC helper")
+  const structureQuantity = structure.fields?.find((field) => field.FIELDNAME === "QTY")
+  assert.equal(structureQuantity?.REFTABLE, "MARA")
+  assert.equal(structureQuantity?.REFFIELD, "MEINS")
+
+  // An append structure takes the pair on the A1 rows, which its own helper arm parses.
+  const appendVersion = JSON.parse(
+    await tools.readDdicStructure({ objectName: "ZCMCP_APPEND_REF", connectionId: "w200" })
+  ) as { version: string }
+  await tools.upsertAppendStructureFields({
+    objectName: "ZCMCP_APPEND_REF",
+    fields: [
+      { name: "APPQTY", dataElement: "MENGE_D", referenceTable: "MARA", referenceField: "MEINS" }
+    ],
+    expectedVersion: appendVersion.version,
+    connectionId: "w200"
+  })
+  const appended = requests.find(
+    (request) => request.operation === "UPSERT_APPEND_STRUCTURE_FIELDS"
+  )
+  assert.ok(appended, "the append structure write must reach the DDIC helper")
+  assert.equal(appended.appendFields?.[0]?.REFTABLE, "MARA")
+  assert.equal(appended.appendFields?.[0]?.REFFIELD, "MEINS")
+
+  // A lone half stays a caller error for both structure writers, refused before any SAP call.
+  requests.length = 0
+  await assert.rejects(
+    () =>
+      tools.upsertDdicStructure({
+        ...base,
+        objectName: "ZCMCP_STRU_REF",
+        fields: [{ name: "QTY", dataElement: "MENGE_D", referenceTable: "MARA" }]
+      }),
+    /referenceTable and referenceField must be supplied together/
+  )
+  await assert.rejects(
+    () =>
+      tools.upsertAppendStructureFields({
+        objectName: "ZCMCP_APPEND_REF",
+        fields: [{ name: "APPQTY", dataElement: "MENGE_D", referenceField: "MEINS" }],
+        expectedVersion: appendVersion.version,
+        connectionId: "w200"
+      }),
+    /referenceTable and referenceField must be supplied together/
+  )
+  assert.equal(requests.length, 0, "an unpaired reference must be refused before any SAP call")
+
+  // The read publishes the stored pair. That is not cosmetic: DDIF_TABL_PUT replaces the whole field
+  // row set, so a patch that says nothing about an untouched quantity field writes it back from what
+  // the read returned. Before 2026-09-25 neither the read nor the structure schema carried the pair,
+  // which is why the same defect is asserted here rather than in two separate tests.
+  await tools.createDdicTransparentTable({
+    ...base,
+    deliveryClass: "A",
+    dataClass: "APPL1",
+    dataBrowserMaintenance: "notAllowed",
+    objectName: "ZCMCP_TAB_REF",
+    fields: [
+      { name: "MANDT", dataElement: "MANDT", key: true },
+      { name: "TXT", dataElement: "BAPI_MTYPE" },
+      quantity
+    ]
+  })
+  const stored = JSON.parse(
+    await tools.readDdicTransparentTable({ objectName: "ZCMCP_TAB_REF", connectionId: "w200" })
+  ) as {
+    version: string
+    fingerprint: string
+    definition: { fields: Array<{ name: string; referenceTable?: string }> }
+  }
+  assert.equal(
+    stored.definition.fields.find((field) => field.name === "QTY")?.referenceTable,
+    "MARA",
+    "the read must publish the stored reference, or no caller can see what a write kept"
+  )
+
+  requests.length = 0
+  await tools.patchDdicTransparentTableFields({
+    objectName: "ZCMCP_TAB_REF",
+    expectedVersion: stored.version,
+    expectedFingerprint: stored.fingerprint,
+    changes: [{ action: "rename", fieldName: "TXT", newName: "TXT2" }],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923421",
+    confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+    acknowledgeDataLoss: true,
+    connectionId: "w200"
+  })
+  const patched = requests.find((request) => request.operation === "PATCH_TRANSPARENT_TABLE_FIELDS")
+  assert.ok(patched, "the patch must reach the DDIC helper")
+  const keptQuantity = patched.fields?.find((field) => field.FIELDNAME === "QTY")
+  assert.equal(
+    keptQuantity?.REFTABLE,
+    "MARA",
+    "a patch that names another field must not drop the quantity field's reference"
+  )
+  assert.equal(keptQuantity?.REFFIELD, "MEINS")
+  const afterPatch = JSON.parse(
+    await tools.readDdicTransparentTable({ objectName: "ZCMCP_TAB_REF", connectionId: "w200" })
+  ) as { definition: { fields: Array<{ name: string; referenceTable?: string }> } }
+  assert.equal(
+    afterPatch.definition.fields.find((field) => field.name === "QTY")?.referenceTable,
+    "MARA"
+  )
+})
+
 test("an inactive resume with settingsRepair writes the settings, activates, and verifies them", async () => {
   const backend = new MockBackend()
   const operations: string[] = []

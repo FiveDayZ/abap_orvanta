@@ -146,14 +146,16 @@ $ddicCapabilityOperations = @(
     # （.logs/mcp-incident-20260925-001201-upsert-lock-object-false-success.md）。
     # 凡是走"PUT + ACTIVATE + 写后校验"的写操作，其成功含义都变了，因此这些行的
     # sinceVersion 一律抬到 1.16；只读操作与删除路径（不激活）不受影响，保持原值。
-    # 这 14 行是唯一的 |1.16| 行，故 PROTOCOL|MAX 由 1.15 派生为 1.16。
+    # 1.16 留 10 行、1.17 另起 4 行，是两个不同的台阶：1.16 = 成功判据改成"保存已被激活消费"，
+    # 1.17 = 参考表/参考字段在表与结构两个方向上都可读可写。本表按最高行派生 PROTOCOL|MAX，
+    # 故 1.15 → 1.16（本段）→ 1.17（下方两处 1.17 段）。
     # 1.11 行的 READ/DELETE 号码段与维护视图、1.8/1.9 的搜索帮助与锁对象读取都不动：
     # 能力不得混用最低协议，抬读操作会把可用的读报成 unsupported。
     "UPSERT_DOMAIN|1.16|W",
     "READ_DATA_ELEMENT|1.2|R",
     "UPSERT_DATA_ELEMENT|1.16|W",
     "READ_STRUCTURE|1.2|R",
-    "UPSERT_STRUCTURE|1.16|W",
+    "UPSERT_STRUCTURE|1.17|W",
     "READ_TABLE_TYPE|1.2|R",
     "UPSERT_TABLE_TYPE|1.16|W",
     "READ_TRANSPARENT_TABLE|1.5|R",
@@ -165,14 +167,20 @@ $ddicCapabilityOperations = @(
     # 属性集变了，能拒绝该属性的 1.14 及更早助手就不能再被报成 available，故三个字段写入操作的
     # sinceVersion 一律抬到 1.15；已发布的 1.14 仍提供 RESUME_TABLE_ACTIVATION，那一行不动。
     # 1.16 起这三行再抬一次：属性集不变，但成功判据变了（见上方 1.16 段）。
-    "CREATE_TRANSPARENT_TABLE|1.16|W",
+    # 1.17 起第三次抬高，理由是**读方向**：写后校验现在会断言调用方给出的参考表/参考字段确实
+    # 存下了，而断言要读得回来才成立——1.16 的读不发布这两个属性，校验会把"存下了但读不回"报成
+    # 定义不符（假失败），故创建/追加/改字段三行一并抬到 1.17。改字段另有一层：它的写入行由
+    # 调用方"读现状 → 改一行 → 整集写回"得到（DDIF_TABL_PUT 是整集替换），读不回参考就会在
+    # 整集写回时抹掉未改动字段的参考。追加的合并发生在助手侧（用自读的 lt_current_dd03p），
+    # 不依赖服务端读取，但它同样要过上面那道断言。
+    "CREATE_TRANSPARENT_TABLE|1.17|W",
     "DELETE_DOMAIN|1.6|W",
     "DELETE_DATA_ELEMENT|1.6|W",
     "DELETE_STRUCTURE|1.6|W",
     "DELETE_TRANSPARENT_TABLE|1.6|W",
     "DELETE_TABLE_TYPE|1.6|W",
-    "APPEND_TRANSPARENT_TABLE_FIELDS|1.16|W",
-    "PATCH_TRANSPARENT_TABLE_FIELDS|1.16|W",
+    "APPEND_TRANSPARENT_TABLE_FIELDS|1.17|W",
+    "PATCH_TRANSPARENT_TABLE_FIELDS|1.17|W",
     "PATCH_TRANSPARENT_TABLE_SETTINGS|1.16|W",
     "RECOVER_TABLE_CONVERSION|1.7|W",
     "READ_SEARCH_HELP|1.8|R",
@@ -4255,13 +4263,17 @@ function New-DdicFunctionSource {
         "          ENDIF.",
         "          IF lv_property <> 'FIELDNAME'",
         "             AND lv_property <> 'ROLLNAME'",
+        # 1.17：参考表/参考字段对结构（STRU）同样必需，不能只挂在 TABL 那一组里。数量(QUAN)与
+        # 货币(CURR)组件没有内在单位，DDIC 激活对结构与对表一视同仁地要求"指定参考表和参考字段"；
+        # 原先这两个属性只在 lv_object_type = 'TABL' 时才放行，结构写入因此只能表达
+        # FIELDNAME/ROLLNAME，调用方根本写不出可激活的数量/货币组件。DD03P 的这两个组件由下面的
+        # ASSIGN COMPONENT 直接承载，无需额外赋值；KEYFLAG/NOTNULL 仍只对表开放（结构无键、无
+        # NOT NULL 语义），故留在 TABL 组内，只把两个参考属性提到组外。
+        "             AND lv_property <> 'REFTABLE'",
+        "             AND lv_property <> 'REFFIELD'",
         "             AND ( lv_object_type <> 'TABL'",
         "               OR ( lv_property <> 'KEYFLAG'",
         "                 AND lv_property <> 'NOTNULL'",
-        # 1.15：参考表/参考字段。DD03P 的这两个组件由下面的 ASSIGN COMPONENT 直接承载，
-        # 无需额外赋值代码；没有它们，数量/货币字段的定义写得出、却永远激活不了。
-        "                 AND lv_property <> 'REFTABLE'",
-        "                 AND lv_property <> 'REFFIELD'",
         "                 AND lv_property <> 'PRECFIELD'",
         "                 AND lv_property <> 'COMPTYPE'",
         "                 AND lv_property <> 'ADMINFIELD'",
@@ -4638,6 +4650,10 @@ function New-DdicFunctionSource {
         "              add_payload 'F' lv_index 'DATATYPE' <ls_field>-datatype.",
         "              add_payload 'F' lv_index 'LENG' <ls_field>-leng.",
         "              add_payload 'F' lv_index 'DECIMALS' <ls_field>-decimals.",
+        # 1.17：非活动定义与活动定义同源同发（本段即 state = 'M' 读到的行），参考表/参考字段一并
+        # 上报，否则调用方看到的两份定义在数量/货币字段上恒等，无法判断差异出在哪。
+        "              add_payload 'F' lv_index 'REFTABLE' <ls_field>-reftable.",
+        "              add_payload 'F' lv_index 'REFFIELD' <ls_field>-reffield.",
         "            ENDLOOP.",
         "          ENDIF.",
         "          RETURN.",
@@ -6044,6 +6060,8 @@ function New-DdicFunctionSource {
         "        add_payload 'F' lv_index 'DATATYPE' ls_dd03p-datatype.",
         "        add_payload 'F' lv_index 'LENG' ls_dd03p-leng.",
         "        add_payload 'F' lv_index 'COMPTYPE' ls_dd03p-comptype.",
+        "        add_payload 'F' lv_index 'REFTABLE' ls_dd03p-reftable.",
+        "        add_payload 'F' lv_index 'REFFIELD' ls_dd03p-reffield.",
         "      ENDLOOP.",
         # D-4：发布字段集指纹，供调用方作为 expectedVersion 回传，实现字段级并发保护。
         # 与写入路径同构：同一 state='A' 读取、同一排序与拼接、同一 SHA1。
@@ -6104,6 +6122,11 @@ function New-DdicFunctionSource {
         "          ls_dd03p-keyflag.",
         "        add_payload 'F' lv_index 'NOTNULL'",
         "          ls_dd03p-notnull.",
+        # 1.17：参考表/参考字段必须**读得回来**，否则写方向给了也白给。DDIF_TABL_PUT 是整集替换，
+        # 而 patch/append 的写入行由调用方"读现状→改一行→整集写回"得到：读取若不含这两个属性，
+        # 未被改动的数量/货币字段就会在整集写回时丢掉参考，激活随即以"指定参考表和参考字段"失败。
+        "        add_payload 'F' lv_index 'REFTABLE' ls_dd03p-reftable.",
+        "        add_payload 'F' lv_index 'REFFIELD' ls_dd03p-reffield.",
         "      ENDLOOP.",
         "    WHEN 'TTYP'.",
         "      add_payload 'H' '1' 'TYPENAME' ls_dd40v-typename.",

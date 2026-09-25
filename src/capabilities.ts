@@ -182,7 +182,11 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // same class of false claim this registry exists to prevent. Splitting is the established pattern
   // here (see the resume route below, split off the 1.7 group for the same reason). The floor is
   // 1.16 since 2026-09-25: the group holds only writes that save and activate, and 1.16 is the first
-  // helper that proves the save was activated rather than that some active version is readable.
+  // helper that proves the save was activated rather than that some active version is readable. The
+  // floor is 1.17 since 2026-09-25 as well, and for the third of this pair's capabilities: DDIF_TABL
+  // _PUT replaces the whole field row set, so create/append/patch can keep an untouched quantity or
+  // currency field's reference only if the helper's read publishes REFTABLE/REFFIELD. They also
+  // assert the pair on write-back, which only a helper that reads it back can be checked against.
   [
     "ddic-helper-transparent-table-reference",
     [
@@ -230,7 +234,7 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // 1.16: every DDIC write that saves and activates a definition now proves the saved version was
   // activated (no inactive version may remain) instead of only that an active version is readable.
   // Those writes are one contract - "this helper does not report an unactivated save as a completed
-  // write" - so they share one capability at one minimum rather than nine. A capability may not mix
+  // write" - so they share one capability at one minimum rather than eight. A capability may not mix
   // protocol minimums, and each kind's *read* stays in its own group at its own (lower) minimum:
   // lifting a read to 1.16 would report a working read as unsupported, which is the false claim this
   // registry exists to prevent. The group is separate from ddic-helper-controlled-delete, whose
@@ -241,7 +245,6 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
     [
       "upsert_ddic_domain",
       "upsert_ddic_data_element",
-      "upsert_ddic_structure",
       "upsert_ddic_table_type",
       "patch_ddic_transparent_table_settings",
       "upsert_search_help",
@@ -250,6 +253,15 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
       "upsert_maintenance_view"
     ]
   ],
+  // Writing a structure is the same activation-verified contract as the eight writes above, but it
+  // cannot share their 1.16 floor: since 2026-09-25 a structure component may carry
+  // DD03P-REFTABLE/REFFIELD (a quantity or currency component needs the pair or DDIC refuses to
+  // activate it), and only a 1.17 helper accepts those two properties on the structure path - 1.16
+  // answers PROPERTY_NOT_ALLOWED for both. A capability may not mix protocol minimums, and lifting
+  // the eight siblings to 1.17 would report writes that a 1.16 helper performs correctly as
+  // unsupported, so the structure write is split off at its own floor, the same way the table
+  // reference group was split from the table read group.
+  ["ddic-helper-structure-reference", ["upsert_ddic_structure"]],
   // Append structure field writes are a sixth DDIC write path with their own helper operation
   // (UPSERT_APPEND_STRUCTURE_FIELDS, published since 1.12), so they get their own capability: a 1.11
   // helper cannot accept the opcode at all. The protocol floor is 1.16, not 1.12, because the group

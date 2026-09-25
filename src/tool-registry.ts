@@ -295,7 +295,13 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.16",
+    // 1.17: structure field rows may carry REFTABLE/REFFIELD, the same pair a transparent table field
+    // takes since 1.15. A helper below 1.17 answers PROPERTY_NOT_ALLOWED for both properties on the
+    // structure path, so offering this tool's reference inputs against it would be a capability claim
+    // it cannot honour; a quantity or currency component without them cannot activate at all.
+    // UPSERT_STRUCTURE itself exists since 1.16, which is why the floor follows the contract (the two
+    // new properties) rather than the operation name.
+    "1.17",
     ["UPSERT_STRUCTURE"]
   ],
   [
@@ -320,8 +326,11 @@ const ROWS: readonly ToolRow[] = [
     // it would be a capability claim the helper cannot honour. A quantity or currency field without
     // them cannot activate at all, which is why the minimum rises with the contract, not with the
     // operation name (CREATE_TRANSPARENT_TABLE itself exists since 1.5). 1.16 raises it again for
-    // the post-write activation post-condition described above.
-    "1.16",
+    // the post-write activation post-condition described above, and 1.17 once more because the
+    // verification now asserts the pair the caller supplied: that assertion can only be made by a
+    // helper whose DDIC reads publish REFTABLE/REFFIELD, and on an older one it would be a false
+    // failure rather than a false success.
+    "1.17",
     ["CREATE_TRANSPARENT_TABLE"]
   ],
   [
@@ -331,7 +340,12 @@ const ROWS: readonly ToolRow[] = [
     "W",
     "sap-helper-fallback",
     DDIC,
-    "1.16",
+    // 1.17: the expected definition a write is verified against now carries the pair the caller
+    // supplied, and only a helper whose DDIC reads publish REFTABLE/REFFIELD can be checked against
+    // it - on a 1.16 helper the read-back would omit them and the verification would report a
+    // mismatch the caller cannot fix. The helper merges the appended rows into its own read of the
+    // table, so preservation itself does not depend on the server-side read.
+    "1.17",
     ["APPEND_TRANSPARENT_TABLE_FIELDS"]
   ],
   [
@@ -341,7 +355,10 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     DDIC,
-    "1.16",
+    // 1.17 for the same reason as the append above, and more sharply: a patch names only the fields it
+    // changes and spreads every other row unchanged into the write, so the reference of an untouched
+    // field survives only when the read published it.
+    "1.17",
     ["PATCH_TRANSPARENT_TABLE_FIELDS"]
   ],
   [

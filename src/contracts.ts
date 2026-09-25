@@ -143,7 +143,6 @@ const ddicMaintenanceViewHeader = z.object({
   customAuth: z.string().optional(),
   globalFlag: z.string().optional()
 })
-const ddicStructureField = z.object({ name: z.string(), dataElement: z.string() })
 // referenceTable/referenceField carry DD03P-REFTABLE/REFFIELD. A quantity (QUAN) or currency (CURR)
 // field has no intrinsic unit, so DDIC activation fails its check with "specify reference table and
 // reference field" unless both are present; a 2026-09-24 live probe confirmed this is the only
@@ -154,6 +153,16 @@ const ddicTableFieldReference = {
   referenceTable: z.string().optional(),
   referenceField: z.string().optional()
 }
+// The same pair applies to a structure component, which can be a quantity or currency too: DDIC
+// activation refuses such a component with the same message it uses for a table field. Until
+// 2026-09-25 only the table shapes carried the two properties - the server dropped them and the
+// helper's STRU branch answered PROPERTY_NOT_ALLOWED - so no caller could express an activatable
+// quantity or currency component in a structure or an append structure.
+const ddicStructureField = z.object({
+  name: z.string(),
+  dataElement: z.string(),
+  ...ddicTableFieldReference
+})
 const ddicTableField = z.object({
   name: z.string(),
   dataElement: z.string(),
@@ -1019,7 +1028,7 @@ const toolContractsBase = {
   },
   upsert_append_structure_fields: {
     description:
-      "Add or replace the fields of one EXISTING Z* or Y* append structure (tableClass APPEND) through the installed DDIC helper. The append structure must already exist and must be named explicitly: passing its base table is rejected with NOT_AN_APPEND_STRUCTURE, because DD_TBFD_PUT replaces a table's whole field row set and would destroy the base table definition. The helper writes the fields to the append structure itself (DD_TBFD_PUT with PUT_STATE='A'), then activates the BASE table (DDIF_TABL_ACTIVATE), which expands the append's active rows into it, then reads both back field by field. fields is a COMPLETE REPLACEMENT of the append structure's field list, keyed name/dataElement. Only nullable non-key fields whose data element is active are accepted (UNSAFE_TABLE_CHANGE / REFERENCE_NOT_FOUND otherwise). expectedVersion is mandatory and accepts either the 14-digit version or the 40-character fingerprint from read_ddic_structure, since the append structure always exists. Prefer guardToken: DD_TBFD_PUT writes DD03P rows and never touches DD02V, so the 14-digit header version does not change when append fields change and cannot detect a lost update, whereas guardToken is a SHA-1 hash over the active field rows and does. If the stored field list already matches the request the helper writes nothing and reports APPEND_FIELDS_UNCHANGED. REMOVING a field is rejected before any write with APPEND_FIELD_REMOVAL_NOT_SUPPORTED: measured on this system, deleting an append field row does not propagate to the base table, so a removal cannot succeed and is refused up front rather than applied and then compensated. After activation the helper re-reads BOTH the append structure and the base table. It reports APPEND_FIELDS_VERIFY_MISMATCH when the stored rows do not match the request, and also when a requested field is missing from the base table or a dropped field survived in it, naming the offending fields in BASE_MISMATCH. Because the append rows are written by DD_TBFD_PUT and that change is not undone by ROLLBACK, a failing call restores the pre-call field set and reports whether it succeeded in COMPENSATED (X or N); N means the object may still be inconsistent, so read it back before retrying. The failure text carries these details, so a partially applied write is never reported as success. The response echoes baseTable, changed, fieldCount and baseFieldCount (the base table's expanded field count, the evidence that the append was expanded). This tool cannot create or delete the append structure itself: no non-dialog API for that was established on this system, so create the append structure in SE11 first. It cannot remove a field either: removal is refused, so delete the field in SE11 and reactivate the base table if you really need it gone. Requires a DDIC helper that publishes UPSERT_APPEND_STRUCTURE_FIELDS (protocol 1.12 or later).",
+      "Add or replace the fields of one EXISTING Z* or Y* append structure (tableClass APPEND) through the installed DDIC helper. A quantity or currency field may carry referenceTable and referenceField (DD03P-REFTABLE/REFFIELD), which DDIC activation requires for such a field; the append helper has accepted both properties since protocol 1.15, so this tool's minimum does not rise with them. The append structure must already exist and must be named explicitly: passing its base table is rejected with NOT_AN_APPEND_STRUCTURE, because DD_TBFD_PUT replaces a table's whole field row set and would destroy the base table definition. The helper writes the fields to the append structure itself (DD_TBFD_PUT with PUT_STATE='A'), then activates the BASE table (DDIF_TABL_ACTIVATE), which expands the append's active rows into it, then reads both back field by field. fields is a COMPLETE REPLACEMENT of the append structure's field list, keyed name/dataElement. Only nullable non-key fields whose data element is active are accepted (UNSAFE_TABLE_CHANGE / REFERENCE_NOT_FOUND otherwise). expectedVersion is mandatory and accepts either the 14-digit version or the 40-character fingerprint from read_ddic_structure, since the append structure always exists. Prefer guardToken: DD_TBFD_PUT writes DD03P rows and never touches DD02V, so the 14-digit header version does not change when append fields change and cannot detect a lost update, whereas guardToken is a SHA-1 hash over the active field rows and does. If the stored field list already matches the request the helper writes nothing and reports APPEND_FIELDS_UNCHANGED. REMOVING a field is rejected before any write with APPEND_FIELD_REMOVAL_NOT_SUPPORTED: measured on this system, deleting an append field row does not propagate to the base table, so a removal cannot succeed and is refused up front rather than applied and then compensated. After activation the helper re-reads BOTH the append structure and the base table. It reports APPEND_FIELDS_VERIFY_MISMATCH when the stored rows do not match the request, and also when a requested field is missing from the base table or a dropped field survived in it, naming the offending fields in BASE_MISMATCH. Because the append rows are written by DD_TBFD_PUT and that change is not undone by ROLLBACK, a failing call restores the pre-call field set and reports whether it succeeded in COMPENSATED (X or N); N means the object may still be inconsistent, so read it back before retrying. The failure text carries these details, so a partially applied write is never reported as success. The response echoes baseTable, changed, fieldCount and baseFieldCount (the base table's expanded field count, the evidence that the append was expanded). This tool cannot create or delete the append structure itself: no non-dialog API for that was established on this system, so create the append structure in SE11 first. It cannot remove a field either: removal is refused, so delete the field in SE11 and reactivate the base table if you really need it gone. Requires a DDIC helper that publishes UPSERT_APPEND_STRUCTURE_FIELDS (protocol 1.12 or later).",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
@@ -1058,7 +1067,7 @@ const toolContractsBase = {
   },
   upsert_ddic_structure: {
     description:
-      "Create or fully replace one Z* or Y* flat structure whose fields reference data elements. Existing objects require the version returned by read_ddic_structure. Field omission means removal. Requires an existing package and transport.",
+      "Create or fully replace one Z* or Y* flat structure whose fields reference data elements. Existing objects require the version returned by read_ddic_structure. Field omission means removal. A quantity or currency component must also carry referenceTable and referenceField (DD03P-REFTABLE/REFFIELD), because DDIC activation rejects such a component without them; supply both or neither. Requires an existing package and transport, and a helper that publishes UPSERT_STRUCTURE at protocol 1.17 or later — older helpers reject the two reference properties with PROPERTY_NOT_ALLOWED.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),

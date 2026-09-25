@@ -83,12 +83,16 @@ test("resume_ddic_table_activation stays registered against the DDIC helper at p
   assert.equal(entry.annotations.destructiveHint, true)
 
   // The recovery action is neither the create action nor a source activation: their registry
-  // routes differ, so a substitution would fail this identity check. The protocol minimum no longer
-  // distinguishes them - since 2026-09-25 every write that saves and activates is floored at 1.16,
-  // for the same reason - so the checked identity is the helper operation each one dispatches.
+  // routes differ, so a substitution would fail this identity check. The protocol minimum
+  // distinguishes them too since 2026-09-25: the create was floored at 1.16 with the resume, and both
+  // moved on again, but for different contracts - the create to 1.17 because it now asserts the
+  // DD03P-REFTABLE/REFFIELD pair it was given (readable only from a 1.17 helper) and the resume
+  // staying at 1.16 on the prove-no-inactive-version contract. So the checked identity is the helper
+  // operation each one dispatches, and the two floors are asserted separately.
   const create = registryEntry("create_ddic_transparent_table")
   assert.ok(create, "create_ddic_transparent_table must stay registered")
-  assert.equal(create.minHelperProtocol, entry.minHelperProtocol)
+  assert.equal(create.minHelperProtocol, "1.17")
+  assert.notEqual(create.minHelperProtocol, entry.minHelperProtocol)
   assert.notDeepEqual(create.requiredHelperOperations, entry.requiredHelperOperations)
   assert.deepEqual(entry.requiredHelperOperations, ["RESUME_TABLE_ACTIVATION"])
   const activate = registryEntry("abap_activate")

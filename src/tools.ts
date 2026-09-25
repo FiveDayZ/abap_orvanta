@@ -763,7 +763,7 @@ interface UpsertDataElementInput extends UpsertDdicInput {
 }
 
 interface UpsertStructureInput extends UpsertDdicInput {
-  fields: Array<{ name: string; dataElement: string }>
+  fields: Array<{ name: string; dataElement: string } & DdicTableFieldReference>
 }
 
 /**
@@ -773,7 +773,7 @@ interface UpsertStructureInput extends UpsertDdicInput {
  */
 interface UpsertAppendStructureFieldsInput {
   objectName: string
-  fields: Array<{ name: string; dataElement: string }>
+  fields: Array<{ name: string; dataElement: string } & DdicTableFieldReference>
   expectedVersion: string
   connectionId: string
 }
@@ -3789,7 +3789,11 @@ export class ToolService {
       const name = ddicFieldName(field.name)
       if (names.has(name)) throw new Error(`Duplicate append field: ${name}`)
       names.add(name)
-      return { FIELDNAME: name, ROLLNAME: ddicName(field.dataElement, "dataElement") }
+      return {
+        FIELDNAME: name,
+        ROLLNAME: ddicName(field.dataElement, "dataElement"),
+        ...tableFieldReference(field)
+      }
     })
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation: "UPSERT_APPEND_STRUCTURE_FIELDS",
@@ -3855,7 +3859,11 @@ export class ToolService {
       const name = ddicFieldName(field.name)
       if (names.has(name)) throw new Error(`Duplicate structure field: ${name}`)
       names.add(name)
-      return { FIELDNAME: name, ROLLNAME: ddicName(field.dataElement, "dataElement") }
+      return {
+        FIELDNAME: name,
+        ROLLNAME: ddicName(field.dataElement, "dataElement"),
+        ...tableFieldReference(field)
+      }
     })
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation: "UPSERT_STRUCTURE",
@@ -3872,7 +3880,8 @@ export class ToolService {
       fields: fields.map((field, index) => ({
         name: field.FIELDNAME,
         position: index + 1,
-        dataElement: field.ROLLNAME
+        dataElement: field.ROLLNAME,
+        ...fieldReferencePair(field)
       }))
     })
   }
@@ -3929,7 +3938,8 @@ export class ToolService {
           position: index + 1,
           dataElement: field.ROLLNAME,
           key: field.KEYFLAG === "X",
-          notNull: field.NOTNULL === "X"
+          notNull: field.NOTNULL === "X",
+          ...fieldReferencePair(field)
         }))
       }
     )
@@ -10963,7 +10973,8 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
         name: field.FIELDNAME ?? "",
         position: numberValue(field.POSITION),
         dataElement: field.ROLLNAME ?? "",
-        description: field.DDTEXT ?? ""
+        description: field.DDTEXT ?? "",
+        ...fieldReferencePair(field)
       }))
     }
   }
@@ -11001,6 +11012,7 @@ function ddicDefinition(result: SapDdicResult, kind: DdicKind): Record<string, u
           description: field.DDTEXT ?? "",
           key: field.KEYFLAG === "X",
           notNull: field.NOTNULL === "X",
+          ...fieldReferencePair(field),
           ...(componentKind === "field"
             ? {}
             : {
@@ -12067,13 +12079,15 @@ function validateDomainDefinition(input: UpsertDomainInput): void {
 }
 
 /**
- * DD03P-REFTABLE/REFFIELD for a quantity or currency table field.
+ * DD03P-REFTABLE/REFFIELD for a quantity or currency table field or structure component.
  *
  * Both halves must be supplied or neither. DDIC activation refuses a QUAN/CURR field that names no
  * unit ("specify reference table and reference field"), and a lone half names no usable reference,
  * so an unpaired half is a caller error rather than a silently ignored input. Verified live on
  * 2026-09-24: this is the only activation blocker once every field resolves to an active data
- * element.
+ * element. The rule is stated once and used by every writer of DD03P field rows — transparent-table
+ * create/append/patch and both structure writers (upsert_ddic_structure, upsert_append_structure_
+ * fields) — so the structure paths cannot drift back to a field list without references.
  */
 function tableFieldReference(field: DdicTableFieldReference): Record<string, string> {
   const referenceTable = field.referenceTable?.trim() ?? ""
@@ -12088,6 +12102,28 @@ function tableFieldReference(field: DdicTableFieldReference): Record<string, str
     REFTABLE: ddicName(referenceTable, "referenceTable"),
     REFFIELD: ddicFieldName(referenceField)
   }
+}
+
+/**
+ * The read-back half of the same pair: DD03P-REFTABLE/REFFIELD as a definition report shows them.
+ *
+ * This is the single place a stored reference is turned back into report fields, used by both the
+ * definition a read or a verification reports and by the expected definition a write compares it
+ * with. Two consequences are deliberate:
+ *
+ * - It is absent when the pair is empty, so a helper that does not report references (or a field
+ *   that has none) leaves the definition exactly as before. Reporting it as "" instead would change
+ *   every fingerprint and would compare unequal to an expected definition that omits it.
+ * - It is present on BOTH sides whenever it is present on either, which is what makes the write
+ *   verification assert the pair the caller asked for: DDIF_TABL_PUT replaces the whole field row
+ *   set, so a write that quietly dropped an untouched field's reference would otherwise verify as
+ *   saved (2026-09-25: reads published neither property, so patch/append could not preserve it).
+ */
+function fieldReferencePair(row: SapStructureRow): Record<string, string> {
+  const referenceTable = (row.REFTABLE ?? "").trim()
+  const referenceField = (row.REFFIELD ?? "").trim()
+  if (!referenceTable || !referenceField) return {}
+  return { referenceTable, referenceField }
 }
 
 function validateTransparentTableFields(

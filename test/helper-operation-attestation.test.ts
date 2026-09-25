@@ -145,10 +145,12 @@ test("a helper that attests the protocol but not the operation code is not repor
     }
   })
 
-  // The nine DDIC writes that save and activate a definition are one capability at 1.16, and the
+  // The eight DDIC writes that save and activate a definition are one capability at 1.16, and the
   // version gate rejects them before the inventory is consulted. That is deliberate: the minimum does
   // not claim these opcodes are absent - it claims this helper cannot prove the save became active,
-  // which is not something an operation list can express.
+  // which is not something an operation list can express. The structure write is no longer one of
+  // them: it moved to ddic-helper-structure-reference at 1.17, where its DD03P-REFTABLE/REFFIELD
+  // inputs are the contract, so a 1.10 helper cannot serve it either - on the same version gate.
   const verifiedWrites = observation(report, "ddic-helper-write-activation-verified")
   assert.equal(verifiedWrites.availability, "unsupported")
   assert.equal(verifiedWrites.evidence.source, "version-check")
@@ -239,12 +241,14 @@ test("a helper that attests every required operation code is available", async (
       ...NUMBER_RANGE_OPERATIONS,
       ...MAINTENANCE_VIEW_OPERATIONS
     ],
-    // 1.16 is the highest DDIC contract minimum: the resume tool and the nine activation-verified
-    // writes all need a helper that proves a saved definition became the active one. 1.11/1.12 routed
-    // the resume into conversion recovery, 1.13 could not activate, and 1.14/1.15 confirmed an
-    // activation by reading the active version only - so below 1.16 the version gate, not the
-    // inventory, used to decide those verdicts.
-    "1.16"
+    // 1.17 is the highest DDIC contract minimum: four rows - the structure write and the three
+    // table-field writes - need a helper that both accepts and publishes DD03P-REFTABLE/REFFIELD,
+    // because a quantity or currency component cannot activate without the pair and the write-back
+    // verification asserts it. Below 1.17 the version gate decides those rows; 1.16 is the floor for
+    // the resume and the eight activation-verified writes (1.11/1.12 routed the resume into
+    // conversion recovery, 1.13 could not activate, and 1.14/1.15 confirmed an activation by reading
+    // the active version only).
+    "1.17"
   )
 
   const resume = observation(report, "ddic-helper-table-activation-resume")
@@ -273,7 +277,6 @@ test("a helper that attests every required operation code is available", async (
     "patch_ddic_transparent_table_settings",
     "upsert_ddic_data_element",
     "upsert_ddic_domain",
-    "upsert_ddic_structure",
     "upsert_ddic_table_type",
     "upsert_lock_object",
     "upsert_maintenance_view",
@@ -286,6 +289,19 @@ test("a helper that attests every required operation code is available", async (
     ),
     true
   )
+
+  // The structure write is its own capability at 1.17, and it is available here for the same reason
+  // as the group above: the helper attests UPSERT_STRUCTURE and its protocol reaches 1.17.
+  const structureWrite = observation(report, "ddic-helper-structure-reference")
+  assert.equal(structureWrite.availability, "available", structureWrite.reason)
+  assert.equal(structureWrite.evidence.source, "version-and-operation-check")
+  assert.deepEqual(structureWrite.toolObservations, {
+    upsert_ddic_structure: {
+      availability: "available",
+      requiredOperations: ["UPSERT_STRUCTURE"],
+      missingOperations: []
+    }
+  })
 
   const numberRange = observation(report, "ddic-helper-number-range-object")
   assert.equal(numberRange.availability, "available")
@@ -315,11 +331,11 @@ test("a helper that attests every required operation code is available", async (
 test("a missing operation code alone makes its tool unsupported", async () => {
   // Falsification inside the suite: with the same helper identity and protocol but one operation
   // removed, only the capability that dispatches it changes verdict. The protocol is raised to the
-  // highest DDIC contract minimum (1.16) so the operation inventory - not the version check - is what
+  // highest DDIC contract minimum (1.17) so the operation inventory - not the version check - is what
   // decides the verdict.
   const report = await reportWithDdicOperations(
     DEPLOYED_OPERATIONS.filter((opcode) => opcode !== "RESUME_TABLE_ACTIVATION"),
-    "1.16"
+    "1.17"
   )
 
   const resume = observation(report, "ddic-helper-table-activation-resume")
@@ -334,9 +350,10 @@ test("a missing operation code alone makes its tool unsupported", async () => {
   assert.equal(numberRange.availability, "unsupported")
   assert.match(numberRange.reason, /attests none of the required operation codes/)
   // Two capabilities are partial here: the delete routes (three delete opcodes absent from this 1.10
-  // inventory) and the 1.16 write group, whose six opcodes this fixture attests and whose three -
+  // inventory) and the 1.16 write group, whose five opcodes this fixture attests and whose three -
   // UPSERT_LOCK_OBJECT, UPSERT_NUMBER_RANGE_OBJECT, UPSERT_MAINTENANCE_VIEW - it never implemented.
-  // The lock object kind itself stays available: only its read is left in that capability.
+  // The lock object kind itself stays available: only its read is left in that capability. The
+  // structure write is not partial: it is its own 1.17 capability and its one opcode is attested.
   assert.equal(observation(report, "ddic-helper-lock-object").availability, "available")
   assert.deepEqual(partialIds(report), [
     "ddic-helper-controlled-delete",

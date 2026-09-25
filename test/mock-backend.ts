@@ -777,6 +777,26 @@ export class MockBackend implements SapBackend {
       }
     ],
     [
+      "READ_STRUCTURE:ZCMCP_APPEND_REF",
+      {
+        // An append structure on the table the reference tests create. TABCLASS APPEND and SQLTAB
+        // naming the base table are what read_ddic_structure reports for one, and the single stored
+        // component is a quantity: the pair that makes it activatable is what the append-structure
+        // write now has to carry, so the fixture starts without it.
+        ...mockDdicResult(
+          "structure",
+          {
+            TABNAME: "ZCMCP_APPEND_REF",
+            DDTEXT: "Append structure with a quantity component",
+            TABCLASS: "APPEND",
+            SQLTAB: "ZCMCP_TAB_REF"
+          },
+          "ZABAP"
+        ),
+        fields: [{ FIELDNAME: "APPQTY", POSITION: "1", ROLLNAME: "MENGE_D", DDTEXT: "Quantity" }]
+      }
+    ],
+    [
       "READ_TRANSPARENT_TABLE:T000",
       {
         ...mockDdicResult(
@@ -2088,6 +2108,11 @@ export class MockBackend implements SapBackend {
       }
     }
     const readOperation = request.operation
+      // The append-structure write rewrites the append structure itself (TABCLASS APPEND), so its
+      // fixture is the one READ_STRUCTURE serves. Without this the generic UPSERT->READ rewrite
+      // asked for READ_APPEND_STRUCTURE_FIELDS, found nothing, and the write came back as
+      // VERSION_CONFLICT before it could reach the rows under test.
+      .replace("UPSERT_APPEND_STRUCTURE_FIELDS", "READ_STRUCTURE")
       .replace("UPSERT", "READ")
       .replace("CREATE_TRANSPARENT_TABLE", "READ_TRANSPARENT_TABLE")
       .replace("APPEND_TRANSPARENT_TABLE_FIELDS", "READ_TRANSPARENT_TABLE")
@@ -2235,6 +2260,33 @@ export class MockBackend implements SapBackend {
         objectVersion: "20260831150000",
         recordedRequest: request.transportNumber ?? "",
         header: { ...existing.header, ...request.header }
+      }
+      this.ddicByKey.set(key, saved)
+      return structuredClone(saved)
+    }
+    if (request.operation === "UPSERT_APPEND_STRUCTURE_FIELDS" && existing) {
+      // The real helper writes the requested rows to the append structure itself (DD_TBFD_PUT with
+      // PUT_STATE='A'), activates the base table and answers BASE_TABLE / FIELD_COUNT / CHANGED plus
+      // the base table's field count. The requested rows are echoed as the stored ones so the pair a
+      // caller sent is visible in the read-back.
+      const fields = (request.appendFields ?? []).map((field, index) => ({
+        ...field,
+        POSITION: String(index + 1)
+      }))
+      const saved: SapDdicResult = {
+        ...existing,
+        code: "APPEND_FIELDS_SAVED",
+        message: "Append structure fields saved activated and verified",
+        objectVersion: "20260831170000",
+        recordedRequest: request.transportNumber ?? "",
+        fields,
+        metadata: {
+          ...existing.metadata,
+          BASE_TABLE: existing.header.SQLTAB ?? "",
+          FIELD_COUNT: String(fields.length),
+          BASE_FIELD_COUNT: String(fields.length),
+          CHANGED: "X"
+        }
       }
       this.ddicByKey.set(key, saved)
       return structuredClone(saved)

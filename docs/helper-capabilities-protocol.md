@@ -430,6 +430,15 @@ export interface SapBackend {
 
   0.50.13 实测：15 个场景族（= 评估矩阵的 14 族 + 平台挡住的运行追踪族，后者即那份书面豁免），结构上 2 族端到端（`logs`、`dumps`，占全部 13%），且**这 2 族的全部工具都有登记证据**，故判据分子同为 2（占**必需 14 族** 14%）、`evidenceUnregisteredFamilies: []`；`partial` 7、`absent` 5、`blocked` 1，`criterionMet: false`，`remainingRequiredFamilyCount: 12`，还有 23 个计划内工具未建（0.50.7 首版为 25：`read_patch_level` 与 `read_client_settings` 已从计划中撤下——这两项的数据要么已由 `get_sap_system_info` 报告，要么其语义被项目刻意不换算，见 `docs/system-info.md`）。
 
+**2026-09-25 工作树增量（`0.50.14`：DDIC 助手协议 1.17 —— 字段引用对 `REFTABLE`/`REFFIELD`）**
+
+- DDIC 能力表 4 行抬到 `sinceVersion = 1.17`：`UPSERT_STRUCTURE`、`CREATE_TRANSPARENT_TABLE`、`APPEND_TRANSPARENT_TABLE_FIELDS`、`PATCH_TRANSPARENT_TABLE_FIELDS`；`PROTOCOL|MAX` 由能力表推导为 **1.17**（`PROTOCOL|MIN` 仍为 `1.2`）。1.16 组由 14 行减为 10 行（`upsert_ddic_structure` 拆出，见下）。
+- **为什么必须抬协议版本**：`DD03P-REFTABLE`/`REFFIELD` 是数量（QUAN）与币种（CURR）字段可激活的前提，1.16 及更早的助手把这对属性关在 `lv_object_type = 'TABL'` 组内，`STRU` 路径写入会得到 `PROPERTY_NOT_ALLOWED`；同时 1.16 及更早的读取不发布这对属性，而写入的期望定义现在会断言它（`DDIF_TABL_PUT` 是整行集替换，读取不发布就会在 patch 时静默抹掉未触碰字段的引用）。按 R4 的语义（`since` = **服务端契约所依赖的属性集合**，不是历史实现版本），这属于契约变化，必须抬版本，不能只加操作码了事。
+- 新增能力项 `ddic-helper-structure-reference`（覆盖 `upsert_ddic_structure`，下限 1.17）：它**不能**与 `ddic-helper-write-activation-verified` 同组——同一能力项不得混合协议下限，而把该组其余 8 个"保存并激活"的写入或共享它的只读项一起抬到 1.17，会把在旧助手上**确实可用**的能力报成 `unsupported`。故沿用既有做法拆组，而不是整体抬组。
+- `upsert_append_structure_fields` **留在 1.16**：该操作解析 A1 行时有自己的属性白名单（自 1.15 起已允许这对属性），并在助手侧合并、按字段数与字段名核对结果，既不依赖读取侧的发布，也不断言该对属性。
+- 助手生成脚本（`scripts/bootstrap-sap-helper.ps1`）两处改动：① 通用字段属性白名单把这对属性提到 `lv_object_type <> 'TABL'` 判定**之外**（`STRU` 与 `TABL` 都接受，`KEYFLAG`/`NOTNULL`/`PRECFIELD` 等仍留在表专属组）；② 结构读取、透明表读取与非活动版本定义三处循环都发布 `REFTABLE`/`REFFIELD`。守卫：`test/ddic-field-reference.test.ts` 直接读该脚本断言这两点与追加结构自己的白名单。
+- **助手尚未部署到 `w200`**（线上仍是旧协议），因此报告里这 4 项为 version-check `unsupported`——这是待部署状态，不是缺陷；部署后应转为 `available`，并以 `SOURCE|HASH` 与生成器一致性核对（见 §5 A4-2）。
+
 ---
 
 ## 5. 验收标准（部署后由人工执行）

@@ -47,11 +47,11 @@
 | `analyze_abap_dumps` | ops | dev, ops | 只读 | native-adt | — |
 | `analyze_abap_traces` | ops | ops | 只读 | native-adt | — |
 | `analyze_change_impact` | source | dev | 只读 | target-specific | — |
-| `append_ddic_transparent_table_fields` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
+| `append_ddic_transparent_table_fields` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
 | `cleanup_transport_entries` | ops | ops | 破坏性写 | native-adt | — |
 | `correlate_sap_logs` | ops | ops | 只读 | target-specific | — |
 | `create_abap_message_class` | message | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.7) |
-| `create_ddic_transparent_table` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
+| `create_ddic_transparent_table` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
 | `create_enhancement_hook_implementation` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `create_function_module_with_interface` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.3) |
 | `create_module_pool` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
@@ -101,7 +101,7 @@
 | `manage_transport_requests` | ops | dev, config, ops | 只读 | target-specific | — |
 | `patch_abap_gui_definition` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.5) |
 | `patch_abap_screen` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.4) |
-| `patch_ddic_transparent_table_fields` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
+| `patch_ddic_transparent_table_fields` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
 | `patch_ddic_transparent_table_settings` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
 | `patch_function_module_interface` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥2.0) |
 | `prepare_enhancement_configuration_workflow` | enhancement | config | 只读 | target-specific | — |
@@ -168,7 +168,7 @@
 | `upsert_append_structure_fields` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
 | `upsert_ddic_data_element` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
 | `upsert_ddic_domain` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
-| `upsert_ddic_structure` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
+| `upsert_ddic_structure` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
 | `upsert_ddic_table_type` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
 | `upsert_lock_object` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
 | `upsert_maintenance_view` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
