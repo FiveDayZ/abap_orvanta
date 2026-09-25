@@ -624,7 +624,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。"
+      "note": "w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。ECC 7.31 无 usageReferences 端点，只走 legacy RIS 通路，该通路覆盖函数模块、类、接口、程序的声明位置（0.50.5 起），不含片段检索。"
     },
     {
       "name": "get_abap_diagnostics",

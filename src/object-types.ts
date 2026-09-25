@@ -22,7 +22,12 @@
 import { DEFAULT_OBJECT_TYPES } from "./backend.js"
 
 /** Historical aliases of a function module, as the write and workspace-URI paths already accept. */
-export const FUNCTION_MODULE_TYPE_TOKENS: readonly string[] = ["FUGR/FF", "FUNC/FM", "FUNC"]
+export const FUNCTION_MODULE_TYPE_TOKENS: readonly string[] = [
+  "FUGR/FF",
+  "FUNC/FM",
+  "FUNC/FF",
+  "FUNC"
+]
 
 /**
  * ADT type path (or historical alias) -> the repository search code that finds that object kind.
@@ -33,6 +38,11 @@ export const FUNCTION_MODULE_TYPE_TOKENS: readonly string[] = ["FUGR/FF", "FUNC/
  */
 const SEARCH_TYPE_BY_ALIAS: Readonly<Record<string, string>> = {
   "FUNC/FM": "FUNC",
+  // `detectTypeFromUri` answers `FUNC/FF` for a `/sap/bc/adt/functions/...` URI, so it is a token
+  // this service hands out and must accept back. The reverse direction already classified it by
+  // parent segment; leaving it out of this table made the forward direction refuse a token the
+  // service itself prints (found by the 0.50.5 gate, not by a caller).
+  "FUNC/FF": "FUNC",
   "FUGR/FF": "FUNC",
   "CLAS/OC": "CLAS",
   "INTF/OI": "INTF",

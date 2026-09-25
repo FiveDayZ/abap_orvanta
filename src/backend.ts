@@ -551,6 +551,15 @@ export interface LegacyUsageReferences {
   engine: "ADT_RIS_WHEREUSED"
   references: UsageReferenceInfo[]
   relationshipTypes: Array<{ trobjtype: string; subtype: string; legacy_type: string }>
+  /**
+   * Relationship types whose query came back as an empty HTTP 200 body.
+   *
+   * The RIS where-used content handler writes nothing at all when a result set is empty, so an
+   * empty body cannot be told apart from a broken response. Those types are neither evidence of a
+   * reference nor evidence of absence, and the caller must report them as unverified rather than
+   * folding them into an empty result.
+   */
+  unverifiedRelationshipTypes?: Array<{ trobjtype: string; subtype: string; legacy_type: string }>
   requestTrace?: WhereUsedRequestTrace[]
 }
 

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import { z } from "zod"
 import type { SapBackend, UsageReferenceInfo, UsageSnippetInfo } from "./backend.js"
+import { searchCodeOfAdtType, searchTypeCode } from "./object-types.js"
 import { redactDiagnosticText } from "./runtime-diagnostics.js"
 import { WhereUsedRequestError, type WhereUsedRequestTrace } from "./where-used-request.js"
 
@@ -91,8 +92,17 @@ export function sourceUri(value: string, connectionId: string, objectName: strin
 }
 
 const identity = (uri: string) => uri.toLowerCase().replace(/\/source\/main$/, "")
-const typeIdentity = (type: string) =>
-  type.toUpperCase() === "FUNC/FF" ? "FUGR/FF" : type.toUpperCase()
+/**
+ * Compare object types in the one vocabulary both sides can express.
+ *
+ * The repository search answers with ADT type paths (`CLAS/OC`, `FUGR/FF`, `PROG/P`) while this
+ * schema and its callers speak search codes (`CLAS`, `FUNC`, `PROG`). Comparing the raw tokens made
+ * a class unresolvable through its own reported type: the typed search returned `CLAS/OC`, the
+ * equality test against `CLAS` dropped it, and the tool answered `RESOLUTION_INCONCLUSIVE` for an
+ * object that exists (live w200, 2026-09-25T14:49). The shared translation in `object-types.ts` is
+ * the single source for that mapping; a second local alias table here is what drifted.
+ */
+const typeIdentity = (type: string) => searchCodeOfAdtType(type) ?? type.trim().toUpperCase()
 
 function position(source: string, input: WhereUsedInput) {
   const lines = source.split(/\r?\n/)
@@ -165,7 +175,6 @@ export async function collectWhereUsed(
   const connectionId = input.connectionId.toLowerCase()
   if (input.character !== undefined && input.line === undefined)
     throw new Error("character requires line.")
-  if (input.objectUri && input.objectType) throw new Error("Use objectUri or objectType, not both.")
   const explicit = input.objectUri
     ? sourceUri(input.objectUri, connectionId, input.objectName)
     : undefined
@@ -193,6 +202,10 @@ export async function collectWhereUsed(
       "Native semantic references only; no text-scan fallback. Output paging is not a snapshot or a bound on SAP internal work."
     ]
   }
+  if (explicit && input.objectType)
+    result.warnings.push(
+      `objectType "${input.objectType}" was ignored because objectUri was supplied: the URI identifies the target, and both were accepted instead of refused.`
+    )
   try {
     let uri = explicit
     if (uri) result.resolution = "explicit_uri"
@@ -214,7 +227,9 @@ export async function collectWhereUsed(
         const objects = await backend.searchObjects(
           connectionId,
           input.objectName,
-          [input.objectType],
+          // The search takes a search code, so an ADT path from this service's own output is
+          // translated here rather than searched verbatim and reported as an empty result.
+          [searchTypeCode(input.objectType)],
           100
         )
         if (objects.length >= 100) throw new Error("Discovery limit reached; supply objectUri.")
@@ -258,9 +273,13 @@ export async function collectWhereUsed(
       result.engine = response.engine
       if (response.requestTrace) result.requestTrace = response.requestTrace
       result.warnings.push(
-        "Legacy RIS generic results: function declaration queries only; no reference type, package or snippet evidence. Coverage is partial, including empty results.",
+        "Legacy RIS generic results: declaration-position queries of function modules, classes, interfaces and programs only; no reference type, package or snippet evidence. Coverage is partial, including empty results.",
         `Queried relationship types: ${JSON.stringify(response.relationshipTypes)}`
       )
+      if (response.unverifiedRelationshipTypes?.length)
+        result.warnings.push(
+          `Relationship types answered with an empty body and no XML envelope: ${JSON.stringify(response.unverifiedRelationshipTypes)}. Those types are unverified, not empty: their references are neither confirmed nor excluded.`
+        )
       if (input.filter?.objectTypes?.length)
         throw new Error(
           "Legacy generic results do not provide reference types; type filtering is unsupported."

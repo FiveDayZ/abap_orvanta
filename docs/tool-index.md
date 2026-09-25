@@ -190,7 +190,7 @@
 - `diagnose_sap_failure`：只读 ST22 解析；时间关联是候选证据，不认定根因。
 - `discover_application_logs`：需要管理员批准的只读助手；返回有界样本，不是完整日志清单。
 - `execute_data_query`：w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。原生与后备两条路径都过 D5-2 白名单（默认拒绝），表名无法静态枚举即拒绝。
-- `find_where_used`：w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。
+- `find_where_used`：w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。ECC 7.31 无 usageReferences 端点，只走 legacy RIS 通路，该通路覆盖函数模块、类、接口、程序的声明位置（0.50.5 起），不含片段检索。
 - `invoke_customer_function_module`：正式白名单调用，非只读；需一次性请求凭证与副作用确认。
 - `manage_transport_requests`：只读：不创建、不释放、不导入传输。
 - `preview_configuration`：仅服务 w200/200 的 ZTPMC_TPCFG 工厂行预览，属客户项目对象固化在通用服务中的待整改项。

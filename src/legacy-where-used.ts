@@ -11,6 +11,37 @@ export const legacyWhereUsedPaths = [
   `${base}metadata`
 ] as const
 
+/**
+ * The declaration positions the legacy RIS route can map.
+ *
+ * This route is reached only when the modern `usageReferences` endpoint is absent, which is the
+ * case on ECC 7.31, and its first call (`MAP_URI_TO_RIS_REQUEST`) needs a source position that
+ * really is the object's declaration. Only function modules were accepted at first, so a class
+ * query failed with "supports only an exact function declaration position" - a message from this
+ * file, not from SAP, which was never asked (live w200, 2026-09-25T14:51). The families below are
+ * the same individual source targets `sourceUri` already accepts, so a caller that can name the
+ * object can also ask for its references.
+ */
+const declarationFamilies: readonly { path: RegExp; declaration: RegExp }[] = [
+  {
+    path: /^\/sap\/bc\/adt\/functions\/groups\/[^/]+\/fmodules\/([a-z0-9_]+)\/source\/main$/i,
+    declaration: /^\s*FUNCTION\s+([a-z0-9_]+)\s*(?:\.|$)/i
+  },
+  {
+    // `DEFINITION DEFERRED` declares nothing usable, so it is not a target position.
+    path: /^\/sap\/bc\/adt\/oo\/classes\/([a-z0-9_]+)(?:\/source\/main|\/includes\/[^/]+)?$/i,
+    declaration: /^\s*CLASS\s+([a-z0-9_]+)\s+DEFINITION\b(?!\s+DEFERRED\b)/i
+  },
+  {
+    path: /^\/sap\/bc\/adt\/oo\/interfaces\/([a-z0-9_]+)(?:\/source\/main)?$/i,
+    declaration: /^\s*INTERFACE\s+([a-z0-9_]+)\b(?!\s+DEFERRED\b)/i
+  },
+  {
+    path: /^\/sap\/bc\/adt\/programs\/programs\/([a-z0-9_]+)(?:\/source\/main)?$/i,
+    declaration: /^\s*(?:REPORT|PROGRAM)\s+([a-z0-9_]+)\s*(?:\.|$)/i
+  }
+]
+
 const objectType = z.object({
   trobjtype: z.string().max(4),
   subtype: z.string().max(4),
@@ -137,18 +168,20 @@ export async function legacyWhereUsed(
   character: number,
   source: string
 ): Promise<LegacyUsageReferences> {
-  const target = uri.match(
-    /^\/sap\/bc\/adt\/functions\/groups\/[^/]+\/fmodules\/([a-z0-9_]+)\/source\/main$/i
-  )
   const sourceLine = source.split(/\r?\n/)[line - 1] ?? ""
-  const declaration = sourceLine.match(/^\s*FUNCTION\s+([a-z0-9_]+)\s*(?:\.|$)/i)
-  const name = target?.[1]?.toUpperCase()
+  const family = declarationFamilies.find((candidate) => candidate.path.test(uri))
+  const name = family ? uri.match(family.path)?.[1]?.toUpperCase() : undefined
+  const declaration = family ? sourceLine.match(family.declaration) : null
   if (
     !name ||
     declaration?.[1]?.toUpperCase() !== name ||
     character !== sourceLine.toUpperCase().indexOf(name)
   )
-    throw new Error("Legacy where-used supports only an exact function declaration position.")
+    throw new Error(
+      "Legacy where-used supports only the exact declaration position of the named object " +
+        `(function module, class, interface or program); ${uri} line ${line} character ${character} ` +
+        "is not one."
+    )
 
   const post = (path: string, action: string, body: string, contentType = "application/xml") =>
     http.request(path, {
@@ -168,18 +201,27 @@ export async function legacyWhereUsed(
   )
   if (!mapped.success) invalid("source position mapping is incomplete; no object-level fallback")
   const mapping = mapped.data
+  const scope = [
+    mapping.scope_trobjtype,
+    mapping.scope_subtype,
+    mapping.scope_legacy_type,
+    mapping.scope_object_name,
+    mapping.scope_encl_object_name
+  ]
+    .filter(Boolean)
+    .join(" ")
   if (
     mapping.object_name.toUpperCase() !== name ||
     (!mapping.trobjtype && !mapping.legacy_type) ||
-    [
-      mapping.scope_trobjtype,
-      mapping.scope_subtype,
-      mapping.scope_legacy_type,
-      mapping.scope_object_name,
-      mapping.scope_encl_object_name
-    ].some(Boolean)
+    scope
   )
-    invalid("mapping identity or scope is unsupported")
+    // Name what SAP mapped, so a family this route cannot express is diagnosable instead of
+    // looking like a generic parse failure.
+    invalid(
+      `mapping identity or scope is unsupported for ${name}: mapped object ` +
+        `${mapping.object_name || "(none)"}, type ${mapping.trobjtype || "-"}/` +
+        `${mapping.subtype || "-"}/${mapping.legacy_type || "-"}, scope ${scope || "(none)"}`
+    )
   const types = rows(
     xmlRoot(
       await post(legacyWhereUsedPaths[2], "WUL_TYPES_COMPLETE", requestXml(mapping, mapping)),
@@ -196,8 +238,18 @@ export async function legacyWhereUsed(
   if (!types.length || types.length > 32) invalid("relationship discovery is inconclusive")
   const uniqueTypes = [...new Map(types.map((type) => [JSON.stringify(type), type])).values()]
   const references: UsageReferenceInfo[] = []
+  const unverified: Array<{ trobjtype: string; subtype: string; legacy_type: string }> = []
   for (const type of uniqueTypes) {
     const result = await post(legacyWhereUsedPaths[0], "WHERE_USED", requestXml(mapping, type))
+    // A result set the handler considers empty comes back as a 200 with no body at all (observed on
+    // w200 for a class declaration position, 2026-09-25T14:5x), while a genuinely empty result can
+    // also arrive as `<ris_generic_results/>`. An empty body therefore proves nothing in either
+    // direction: it is recorded as an unverified type and the remaining types are still queried,
+    // instead of aborting the whole analysis or being folded into "no references".
+    if (result.status >= 200 && result.status < 300 && result.body.trim() === "") {
+      unverified.push(type)
+      continue
+    }
     references.push(...parseLegacyReferences(result))
     if (references.length > 10000) invalid("reference safety limit reached")
   }
@@ -211,6 +263,7 @@ export async function legacyWhereUsed(
         ])
       ).values()
     ],
-    relationshipTypes: uniqueTypes
+    relationshipTypes: uniqueTypes,
+    ...(unverified.length ? { unverifiedRelationshipTypes: unverified } : {})
   }
 }

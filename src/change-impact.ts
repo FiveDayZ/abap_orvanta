@@ -47,9 +47,11 @@ export async function collectChangeImpact(
   const connectionId = input.connectionId.toLowerCase()
   if (!input.semanticReferences && !input.candidateSources.length)
     throw new Error("Select semantic references or provide explicit candidate sources.")
-  if (input.objectUri && input.objectType) throw new Error("Use objectUri or objectType, not both.")
   if (input.character !== undefined && input.line === undefined)
     throw new Error("character requires line.")
+  // objectUri and objectType may both be supplied: the URI identifies the target and wins, which
+  // `collectWhereUsed` reports as a warning. Refusing the combination was a trap, because a caller
+  // naturally passes the URI it resolved together with the type it searched for (2026-09-25T14:50).
   if (input.objectUri) sourceUri(input.objectUri, connectionId, input.objectName)
   // Validate the entire explicit scope before making any remote request.
   const candidates = input.candidateSources.map((candidate) => ({

@@ -97,6 +97,60 @@ test("where-used typed exact match does not trigger a broader second search", as
   assert.equal(calls.filter((call) => call[0] === "search").length, 1)
 })
 
+test("where-used resolves a class whose reported type is the ADT path, not the search code", async () => {
+  // Live w200 2026-09-25T14:49: the repository search answered `CLAS/OC` for
+  // ZCL_PMC_TP_REPACK_PLAN while the caller passed `CLAS`; comparing the raw tokens dropped the
+  // only exact match and the tool reported RESOLUTION_INCONCLUSIVE for an existing class.
+  const { backend, calls } = fixture()
+  const classObject: AbapObjectInfo = {
+    name: "ZCL_PMC_TP_REPACK_PLAN",
+    type: "CLAS/OC",
+    description: "",
+    package: "",
+    systemType: "CUSTOM",
+    uri: "/sap/bc/adt/oo/classes/zcl_pmc_tp_repack_plan"
+  }
+  backend.searchObjects = async (_connection, _pattern, types) => {
+    calls.push(["search", types])
+    return types?.length ? [classObject] : []
+  }
+  backend.readSourceByUri = async () => ({
+    source: "CLASS zcl_pmc_tp_repack_plan DEFINITION PUBLIC FINAL CREATE PUBLIC.\nENDCLASS.",
+    uriUsed: `${classObject.uri}/source/main`
+  })
+  const input = { connectionId: "w200", objectName: classObject.name, objectType: "CLAS" }
+  const result = await collectWhereUsed(backend, input)
+  assert.equal(result.status, "ok")
+  assert.equal(result.resolution, "typed_search")
+  assert.deepEqual(result.target, {
+    uri: `adt://w200${classObject.uri}/source/main`,
+    line: 1,
+    character: 6
+  })
+  assert.equal(calls.filter((call) => call[0] === "search").length, 1)
+  // The search code is what the repository search accepts, so an ADT path from this service's own
+  // output is translated instead of searched verbatim and answered with an empty result.
+  const typed = await collectWhereUsed(backend, { ...input, objectType: "CLAS/OC" })
+  assert.equal(typed.status, "ok")
+  assert.deepEqual(
+    calls.filter((call) => call[0] === "search").map((call) => call[1]),
+    [["CLAS"], ["CLAS"]]
+  )
+})
+
+test("where-used accepts objectUri together with objectType and reports the ignored type", async () => {
+  const { backend, calls } = fixture()
+  const result = await collectWhereUsed(backend, {
+    ...base,
+    objectUri: uri,
+    objectType: "FUGR/FF"
+  })
+  assert.equal(result.status, "ok")
+  assert.equal(result.resolution, "explicit_uri")
+  assert.equal(calls.filter((call) => call[0] === "search").length, 0)
+  assert.match(result.warnings.join(" "), /objectType "FUGR\/FF" was ignored/)
+})
+
 test("where-used discovery ambiguity, limits, prefix matches and failure never imply absence", async () => {
   for (const results of [
     [],
@@ -132,7 +186,6 @@ test("where-used validates URI identity and numeric bounds before any SAP reques
     { objectUri: uri.replace("w200", "user:password@w200") },
     { objectUri: uri.replace("w200", "w200:8000") },
     { objectUri: "adt://w200/sap/bc/adt/packages/zabap" },
-    { objectUri: uri, objectType: "FUGR/FF" },
     { maxResults: 0 },
     { maxResults: 101 },
     { maxResults: 1.5 },

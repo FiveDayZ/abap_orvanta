@@ -1694,12 +1694,12 @@ const toolContractsBase = {
   },
   find_where_used: {
     description:
-      "Read native semantic references for an exact individual source object. Optional objectUri bypasses name/type discovery; responseFormat=json reports resolution/source/position/endpoint failures separately from empty results. Line is 1-based and character is 0-based; ambiguous text positions are refused. Up to 100 results per page, no text-scan fallback, no writes. Namespaced and non-source targets are not supported in this increment.",
+      "Read native semantic references for an exact individual source object. Optional objectUri bypasses name/type discovery; when objectUri and objectType are both supplied the URI wins and the ignored type is reported as a warning. objectType accepts both vocabularies: the repository search code (FUNC, CLAS, PROG, ...) and the ADT path this service prints in its own results (FUGR/FF, CLAS/OC, PROG/P, ...). responseFormat=json reports resolution/source/position/endpoint failures separately from empty results. Line is 1-based and character is 0-based; ambiguous text positions are refused. Up to 100 results per page, no text-scan fallback, no writes. Namespaced and non-source targets are not supported in this increment.",
     inputSchema: whereUsedSchema.shape
   },
   analyze_change_impact: {
     description:
-      "Read-only change-impact evidence: native semantic references with cursor, paging, filters and optional native snippets, plus independent text matches in up to 20 explicit source URIs (including program includes). Text uses textSearchTerm, then searchTerm, then objectName. Reports source fingerprints and coverage limits; text hits are never semantic callers. No repository-wide scan, writes, execution or safe-to-change certification. Legacy RIS remains restricted to function declarations without snippets.",
+      "Read-only change-impact evidence: native semantic references with cursor, paging, filters and optional native snippets, plus independent text matches in up to 20 explicit source URIs (including program includes). Text uses textSearchTerm, then searchTerm, then objectName. Reports source fingerprints and coverage limits; text hits are never semantic callers. No repository-wide scan, writes, execution or safe-to-change certification. Legacy RIS covers the declaration positions of function modules, classes, interfaces and programs, and has no snippet contract.",
     inputSchema: changeImpactSchema.shape
   },
   get_sap_system_info: {

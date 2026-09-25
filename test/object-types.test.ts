@@ -23,6 +23,7 @@ import {
 test("every ADT type path the service hands out translates to the search code that finds it", () => {
   const expected: Record<string, string> = {
     "FUNC/FM": "FUNC",
+    "FUNC/FF": "FUNC",
     "FUGR/FF": "FUNC",
     "CLAS/OC": "CLAS",
     "INTF/OI": "INTF",

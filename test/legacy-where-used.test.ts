@@ -146,7 +146,7 @@ test("legacy declaration recognition retains exact name and line boundaries", as
   ]) {
     await assert.rejects(
       legacyWhereUsed(http, uri, 1, header.indexOf("Z_TEST"), `${header}\nENDFUNCTION.`),
-      /function declaration/
+      /declaration position/
     )
   }
   assert.equal(calls.length, 0)
@@ -162,9 +162,113 @@ test("legacy adapter rejects unsupported cursor positions before any SAP request
   ] as const)
     await assert.rejects(
       legacyWhereUsed(http, args[0], args[1], args[2], args[3]),
-      /function declaration/
+      /declaration position/
     )
   assert.equal(calls.length, 0)
+})
+
+test("legacy adapter accepts class, interface and program declaration positions", async () => {
+  // Live w200 2026-09-25T14:51: a class query was refused by this file's function-module-only
+  // guard, and the refusal read as a SAP-side limitation. The route itself takes any declaration
+  // position its mapper can express, so the accepted families are the individual source targets
+  // `sourceUri` already validates.
+  const cases = [
+    {
+      uri: "/sap/bc/adt/oo/classes/zcl_plan/source/main",
+      source: "CLASS zcl_plan DEFINITION PUBLIC FINAL CREATE PUBLIC.\nENDCLASS.",
+      name: "ZCL_PLAN",
+      mapping:
+        "<ris_data_request><trobjtype>CLAS</trobjtype><subtype></subtype><legacy_type>OC</legacy_type><object_name>ZCL_PLAN</object_name><encl_object_name></encl_object_name><scope_trobjtype></scope_trobjtype><scope_subtype></scope_subtype><scope_legacy_type></scope_legacy_type><scope_object_name></scope_object_name><scope_encl_object_name></scope_encl_object_name><full_name>CLAS=ZCL_PLAN</full_name><suppress_selection_dialog>X</suppress_selection_dialog></ris_data_request>"
+    },
+    {
+      uri: "/sap/bc/adt/oo/interfaces/zif_plan/source/main",
+      source: "INTERFACE zif_plan PUBLIC.\nENDINTERFACE.",
+      name: "ZIF_PLAN",
+      mapping:
+        "<ris_data_request><trobjtype>INTF</trobjtype><subtype></subtype><legacy_type>OI</legacy_type><object_name>ZIF_PLAN</object_name><encl_object_name></encl_object_name><scope_trobjtype></scope_trobjtype><scope_subtype></scope_subtype><scope_legacy_type></scope_legacy_type><scope_object_name></scope_object_name><scope_encl_object_name></scope_encl_object_name><full_name>INTF=ZIF_PLAN</full_name><suppress_selection_dialog>X</suppress_selection_dialog></ris_data_request>"
+    },
+    {
+      uri: "/sap/bc/adt/programs/programs/z_plan/source/main",
+      source: "REPORT z_plan.\nWRITE 'x'.",
+      name: "Z_PLAN",
+      mapping:
+        "<ris_data_request><trobjtype>PROG</trobjtype><subtype></subtype><legacy_type>P</legacy_type><object_name>Z_PLAN</object_name><encl_object_name></encl_object_name><scope_trobjtype></scope_trobjtype><scope_subtype></scope_subtype><scope_legacy_type></scope_legacy_type><scope_object_name></scope_object_name><scope_encl_object_name></scope_encl_object_name><full_name>PROG=Z_PLAN</full_name><suppress_selection_dialog>X</suppress_selection_dialog></ris_data_request>"
+    }
+  ]
+  for (const item of cases) {
+    // Two relationship types come back from the metadata call, so two WHERE_USED requests follow.
+    const { http, calls } = fixture([
+      item.mapping,
+      metadata,
+      reference("ZCALLER"),
+      reference("YCALLER")
+    ])
+    const column = item.source.split("\n")[0]!.toUpperCase().indexOf(item.name)
+    const result = await legacyWhereUsed(http, item.uri, 1, column, item.source)
+    assert.equal(result.references.length, 2)
+    assert.equal(calls[0]!.options.body, item.source)
+    assert.equal(calls[0]!.options.qs?.uri, `${item.uri}#start=1,${column}`)
+  }
+})
+
+test("legacy adapter still refuses positions that are not the named declaration", async () => {
+  const { http, calls } = fixture()
+  for (const [target, text, column] of [
+    ["/sap/bc/adt/oo/classes/zcl_plan/source/main", "CLASS zcl_plan IMPLEMENTATION.\nENDCLASS.", 6],
+    ["/sap/bc/adt/oo/classes/zcl_plan/source/main", "CLASS zcl_plan DEFINITION DEFERRED.\n", 6],
+    ["/sap/bc/adt/oo/classes/zcl_plan/source/main", "* CLASS zcl_plan DEFINITION.\n", 8],
+    ["/sap/bc/adt/oo/classes/zcl_plan/source/main", "METHOD zcl_plan.\n", 7],
+    ["/sap/bc/adt/programs/includes/z_inc/source/main", "INCLUDE z_inc.\n", 8],
+    ["/sap/bc/adt/programs/programs/z_plan/source/main", "FUNCTION Z_PLAN.\n", 9]
+  ] as const)
+    await assert.rejects(legacyWhereUsed(http, target, 1, column, text), /declaration position/)
+  assert.equal(calls.length, 0)
+})
+
+test("legacy adapter keeps an empty-body relationship type unverified instead of aborting", async () => {
+  // Live w200 2026-09-25T14:5x: for a class declaration position the first WHERE_USED POST answered
+  // HTTP 200 with a zero-byte body, and the parser treated that as a malformed envelope and aborted
+  // the whole analysis. An empty body is SAP writing nothing for an empty result set, so it is
+  // neither a reference nor proof of absence: the remaining types are still queried.
+  const run = async (bodies: string[]) => {
+    const calls: string[] = []
+    const http = {
+      async request(path: string) {
+        calls.push(path)
+        if (path === legacyWhereUsedPaths[1]) return xml(mapping)
+        if (path === legacyWhereUsedPaths[2]) return xml(metadata)
+        const body = bodies.shift() ?? ""
+        return {
+          body,
+          status: 200,
+          statusText: "OK",
+          headers: { "content-type": "application/xml" }
+        } as HttpClientResponse
+      }
+    }
+    return {
+      calls,
+      result: await legacyWhereUsed(http as Pick<AdtHTTP, "request">, uri, 1, 9, source)
+    }
+  }
+  const partial = await run(["", reference("ZCALLER")])
+  assert.equal(partial.result.references.length, 1)
+  assert.equal(partial.result.unverifiedRelationshipTypes?.length, 1)
+  assert.equal(partial.calls.filter((path) => path === legacyWhereUsedPaths[0]).length, 2)
+
+  const backend: SapBackend = new MockBackend()
+  backend.readSourceByUri = async () => ({ source, uriUsed: uri })
+  const none = await run(["", ""])
+  backend.usageReferences = async () => none.result
+  const report = await collectWhereUsed(backend, {
+    connectionId: "w200",
+    objectName: "Z_TEST",
+    objectUri: uri
+  })
+  assert.equal(report.status, "partial")
+  assert.equal(report.code, "LEGACY_NO_REFERENCES_UNVERIFIED")
+  assert.match(report.warnings.join(" "), /unverified, not empty/)
+  assert.doesNotMatch(formatWhereUsed(report), /No references found/)
 })
 
 test("legacy report never labels partial or empty coverage as a complete success", async () => {
