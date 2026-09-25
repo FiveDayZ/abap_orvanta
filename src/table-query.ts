@@ -826,6 +826,23 @@ async function readCompleteRows(
   return result
 }
 
+/** A filter as the reader's own schema defines it, so the parser below cannot drift from it. */
+type SelectFilter = z.infer<typeof tableQuerySchema>["filters"][number]
+
+/**
+ * The comparison operators the finite grammar translates, longest token first so `<=` is never read
+ * as `<`. This is deliberately the same set {@link readAbapTable} accepts: the degraded path has no
+ * business refusing a comparison the reader it calls can already express.
+ */
+const selectOperators: readonly (readonly [string, SelectFilter["operator"]])[] = [
+  ["<=", "LE"],
+  [">=", "GE"],
+  ["<>", "NE"],
+  ["=", "EQ"],
+  ["<", "LT"],
+  [">", "GT"]
+]
+
 export function parseSimpleTableSelect(sql: string) {
   // Same finite-grammar approach as scoped-query.ts; never translate arbitrary SQL.
   const match = sql.match(
@@ -833,15 +850,20 @@ export function parseSimpleTableSelect(sql: string) {
   )
   if (!match) return undefined
   let rest = match[3]!
-  const filters: { column: string; operator: "EQ"; value: string }[] = []
+  const filters: SelectFilter[] = []
   while (rest) {
-    const condition = rest.match(/^([A-Z][A-Z0-9_]*)\s*=\s*'((?:[^']|'')*)'\s*(?:AND\s+|$)/i)
+    const condition = rest.match(
+      /^([A-Z][A-Z0-9_]*)\s*(<=|>=|<>|=|<|>)\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?)\s*(?:AND\s+|$)/i
+    )
     if (!condition || filters.length === 8) return undefined
-    filters.push({
-      column: condition[1]!.toUpperCase(),
-      operator: "EQ",
-      value: condition[2]!.replaceAll("''", "'")
-    })
+    const operator = selectOperators.find(([token]) => token === condition[2])?.[1]
+    if (!operator) return undefined
+    const literal = condition[3]!
+    const value = literal.startsWith("'") ? literal.slice(1, -1).replaceAll("''", "'") : literal
+    // The reader bounds a filter value at 40 characters. Refusing here keeps the caller's reply the
+    // original ADT error instead of a schema rejection about a request they never wrote.
+    if (value.length > 40) return undefined
+    filters.push({ column: condition[1]!.toUpperCase(), operator, value })
     rest = rest.slice(condition[0].length)
     if (!rest && /\bAND\s+$/i.test(condition[0])) return undefined
   }

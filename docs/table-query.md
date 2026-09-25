@@ -38,7 +38,7 @@
 
 原读器指纹详见 [系统信息说明](system-info.md)。新对齐读器源码199行已从w200完整读取，保留VIEW_AUTHORITY_CHECK；repository接口sourceFingerprint为`e08069939315d594527fe58fc1a52e32e583d0987bc173295ddb816be9051b94`，interfaceFingerprint为`d85d035301f09d00229fa830e7c4cd7c63c8a167055d53bb62ddebb44d17743a`。这不同于ADT渲染源码指纹，不能混用。无需新增 SAP 对象、修改角色或安装通用查询 Helper。原生 ADT 路径可以返回数字和日期；RFC后备的类型限制不推广到原生路径。
 
-`execute_data_query`仅在已知空HTML错误后，将有限语法`SELECT *`或逗号分隔字段、单表、WHERE字符等值及最多8项AND条件交给同一读取器；要求显式maxRows不超过500。不翻译JOIN、OR、表达式、别名、排序或任意SQL。返回保留原data结构，并以querySource记录方法、原生错误、字段类型及snapshot=false。不改变既有ZTPMC_BZWL限定helper路径。
+`execute_data_query`仅在已知空HTML错误后，将有限语法`SELECT *`或逗号分隔字段、单表、WHERE比较条件（`=`、`<>`、`<`、`<=`、`>`、`>=`，最多8项AND连接，值为单引号字面量或裸数字）交给同一读取器；要求显式maxRows不超过500。可翻译的比较运算符集合与`read_abap_table`完全一致——降级路径不该拒绝它所调用的读取器本就能表达的比较。值超过读取器40字符上界、或运算符不属于该方言（如C式`!=`）时不予翻译，仍返回原生ADT错误。不翻译JOIN、OR、表达式、别名、排序、聚合或任意SQL。返回保留原data结构，并以querySource记录方法、原生错误、字段类型及snapshot=false。不改变既有ZTPMC_BZWL限定helper路径。
 
 ## 输出语义
 

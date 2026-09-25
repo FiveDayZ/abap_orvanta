@@ -354,16 +354,51 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
       ]
     }
   )
+  // The degraded path translates exactly the comparisons read_abap_table can express. Refusing
+  // "<" or ">" here would be the service being stricter than the reader it calls.
+  assert.deepEqual(
+    parseSimpleTableSelect(
+      "SELECT MANDT, BUKRS FROM ZTPMC_BZWL WHERE ZPOSNR >= 100 AND ZPOSNR <= 200 " +
+        "AND WERKS <> '809P' AND ZPKGMATNR > '0' AND ZPKGTYPE < 9 AND ZPKGDESC = 'x''y'"
+    ),
+    {
+      tableName: "ZTPMC_BZWL",
+      columns: ["MANDT", "BUKRS"],
+      filters: [
+        { column: "ZPOSNR", operator: "GE", value: "100" },
+        { column: "ZPOSNR", operator: "LE", value: "200" },
+        { column: "WERKS", operator: "NE", value: "809P" },
+        { column: "ZPKGMATNR", operator: "GT", value: "0" },
+        { column: "ZPKGTYPE", operator: "LT", value: "9" },
+        { column: "ZPKGDESC", operator: "EQ", value: "x'y" }
+      ]
+    }
+  )
+  // A bare number keeps its sign and decimals; the reader quotes it for SAP.
+  assert.deepEqual(parseSimpleTableSelect("SELECT * FROM TFDIR WHERE N > -12.5")?.filters, [
+    { column: "N", operator: "GT", value: "-12.5" }
+  ])
   for (const sql of [
     "SELECT * FROM TFDIR",
     "SELECT * FROM TFDIR WHERE ID = '1' OR ID = '2'",
     "SELECT * FROM TFDIR WHERE ID = '1' AND ",
     "SELECT * FROM TFDIR WHERE ID = '1' ORDER BY ID",
     "SELECT COUNT(*) FROM TFDIR WHERE ID = '1'",
-    "SELECT * FROM TFDIR WHERE ID = '1';DELETE FROM TFDIR"
+    "SELECT * FROM TFDIR WHERE ID = '1';DELETE FROM TFDIR",
+    // Not the dialect: C-style inequality is not ABAP Open SQL, and a value beyond the reader's
+    // 40-character bound is refused here rather than rejected later as a malformed request.
+    "SELECT * FROM TFDIR WHERE ID != '1'",
+    `SELECT * FROM TFDIR WHERE ID = '${"x".repeat(41)}'`,
+    // The comparison token must not be glued to the value or dropped.
+    "SELECT * FROM TFDIR WHERE ID '1'",
+    "SELECT * FROM TFDIR WHERE ID >=< '1'"
   ]) {
     assert.equal(parseSimpleTableSelect(sql), undefined, sql)
   }
+  // Exactly the reader's ceiling: the ninth conjunct is not translated.
+  const eight = Array.from({ length: 8 }, (_, index) => `F${index} = '1'`).join(" AND ")
+  assert.equal(parseSimpleTableSelect(`SELECT * FROM TFDIR WHERE ${eight}`)?.filters.length, 8)
+  assert.equal(parseSimpleTableSelect(`SELECT * FROM TFDIR WHERE ${eight} AND F8 = '1'`), undefined)
 })
 
 test("execute_data_query routes full rows through the shared reader without repeating native ADT", async () => {

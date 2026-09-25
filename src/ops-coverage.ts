@@ -210,8 +210,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     actionRequired: false,
     gap:
       "The native data preview endpoint is platform-unsupported on this release, so only the " +
-      "single-table fallback path works: no joins, aggregates, expressions, OR or ORDER BY. " +
-      "Group-by style troubleshooting queries are not possible."
+      "single-table fallback path works: up to 8 conjuncts joined by AND over =, <>, <, <=, >, >=. " +
+      "No joins, aggregates, expressions, OR or ORDER BY, so group-by style troubleshooting queries " +
+      "are not possible."
   },
   {
     id: "runtime-resources",
