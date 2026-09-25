@@ -1704,7 +1704,7 @@ const toolContractsBase = {
   },
   get_sap_system_info: {
     description:
-      "Read SAP client, component-based system type/release, standard-time UTC offset and optional components. Reports ok/partial/unavailable, per-table provenance and truncation. Only the observed empty-HTML ADT failure permits fingerprint-verified RFC_READ_TABLE fallback over six fixed system-information tables; no generic query fallback.",
+      "Read the SAP client with its SCC4 role and cross-client change protection, the component-based system type and release, the standard-time UTC offset, and optionally the component list. Each component carries CVERS.EXTRELEASE verbatim: it is reported as read and deliberately never interpreted as a support-package level, because that mapping needs SPAM data this tool does not read. Reports ok/partial/unavailable, per-table provenance and truncation. Only the observed empty-HTML ADT failure permits fingerprint-verified RFC_READ_TABLE fallback over six fixed system-information tables; no generic query fallback.",
     inputSchema: {
       connectionId: z.string(),
       includeComponents: z.boolean().default(false).optional()

@@ -301,6 +301,9 @@ test("system information tool distinguishes hidden components from unavailable c
     assert.equal(result.currentClient.category, "Test")
     assert.equal(result.currentClient.categoryCode, "T")
     assert.match(response, /standard time/)
+    // The summary carries the SCC4 question operations actually asks, without parsing the payload.
+    assert.match(response, /- Client role: Test \(T\)/)
+    assert.match(response, /change protection: /)
   }
 })
 
@@ -327,6 +330,10 @@ test("system information labels reflect reviewed cross-client domain semantics",
     assert.equal(
       result.currentClient.changeProtectionScope,
       "Repository and cross-client Customizing"
+    )
+    assert.ok(
+      response.includes(`change protection: ${label} (${code || "blank"})`),
+      `the summary did not carry the decoded change protection for code "${code}"`
     )
   }
 })

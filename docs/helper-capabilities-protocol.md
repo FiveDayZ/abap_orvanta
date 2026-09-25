@@ -397,7 +397,7 @@ export interface SapBackend {
 - `blocked` 与"尚未实现"是两句话：前者是平台（本版本不提供该端点）挡住，后者是没做。
 - 该块与 `verification` 一样，**永不改变可用性判定**；族的逐工具证据状态来自验收登记表的交叉统计。运维面的判定规则、授权模型与完成判据见 `docs/ops-coverage.md`。
 
-  0.50.6 实测：15 个场景族中 2 族端到端（`logs`、`dumps`，13%），`partial` 7、`absent` 5、`blocked` 1，还有 25 个计划内工具未建。
+  0.50.8 实测：15 个场景族中 2 族端到端（`logs`、`dumps`，13%），`partial` 7、`absent` 5、`blocked` 1，还有 23 个计划内工具未建（0.50.7 首版为 25：`read_patch_level` 与 `read_client_settings` 已从计划中撤下——这两项的数据要么已由 `get_sap_system_info` 报告，要么其语义被项目刻意不换算，见 `docs/system-info.md`）。
 
 ---
 

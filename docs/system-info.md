@@ -14,6 +14,8 @@
 - `timezone.utcOffset` 来自 `TTZR.UTCSIGN/UTCDIFF`，`offsetKind=standard_time`。这是不含夏令时的标准偏移，不是查询时刻的实际偏移；`dstRule` 保留规则代码。
 - 兼容字段 `timezone.rawOffset` 仍保留 ZONERULE 原值，它是规则名而非时差。缺英文描述时保留时区和偏移并标记部分可用。
 - 客户端保留原始 `categoryCode`、`changeProtectionCode`；变更保护文字依据 w200 域 `CCNOCLIIND` 修正，范围仅为仓库对象及跨客户端配置，不能解释为账户权限或传输放行状态。
+- 摘要（`SAP System:` 文本）除客户端号与名称外，另起一行给出客户端角色与变更保护（`- Client role: <角色> (<代码>); change protection: <文字> (<代码或 blank>)`）。这两项此前只存在于 JSON 载荷里，基线自检无须再解析载荷。判定文字仍以 JSON 中的原始代码为准。
+- `softwareComponents[].extRelease` 按 `CVERS.EXTRELEASE` 原样输出、逐组件给出；它**不是**支持包级别，工具也不把它换算成 SP 名称（换算需要本工具不读的 SPAM 数据）。组件数组仅在 `includeComponents=true` 时输出，`extRelease` 不会单独提升为摘要行。
 
 ## 有界读取
 

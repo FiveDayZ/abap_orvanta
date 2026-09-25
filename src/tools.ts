@@ -6775,6 +6775,13 @@ export class ToolService {
       `- Release: ${result.sapRelease || "N/A"}\n`
     if (result.currentClient) {
       summary += `- Client: ${result.currentClient.clientNumber} (${result.currentClient.clientName})\n`
+      // SCC4 semantics, and the question operations actually asks of a client: can it be changed?
+      // Both are already reported in the JSON; the summary carries them so a baseline check does not
+      // depend on parsing the payload.
+      summary +=
+        `- Client role: ${result.currentClient.category} (${result.currentClient.categoryCode})` +
+        `; change protection: ${result.currentClient.changeProtection}` +
+        ` (${result.currentClient.changeProtectionCode || "blank"})\n`
     }
     if (result.timezone) {
       summary += `- Timezone: ${result.timezone.timezone} (${result.timezone.description}), ${result.timezone.utcOffset} (standard time)`

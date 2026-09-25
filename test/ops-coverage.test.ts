@@ -38,7 +38,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
 }
 
 /** The plan's outstanding tool commitments; adding one to the plan must update this number. */
-const PLANNED_GAP_TOOL_COUNT = 25
+const PLANNED_GAP_TOOL_COUNT = 23
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -137,6 +137,16 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   assert.ok(traces)
   assert.equal(traces.state, "blocked")
   assert.deepEqual(traces.platformBlockedTools, ["analyze_abap_traces"])
+
+  // The system baseline keeps only the commitment that is still real: the client role, its change
+  // protection and CVERS.EXTRELEASE verbatim are already reported by get_sap_system_info, so
+  // treating them as separate future tools would inflate the gap.
+  const systemInfo = block.families.find((family) => family.id === "system-info")
+  assert.ok(systemInfo)
+  assert.deepEqual(systemInfo.toolNames, ["get_sap_system_info"])
+  assert.deepEqual(systemInfo.missingToolNames, ["read_system_parameters"])
+  assert.match(systemInfo.gap, /kernel and database release/)
+  assert.match(systemInfo.gap, /never RFC_SYSTEM_INFO/)
 })
 
 test("the block joins with the evidence dimension without changing it", () => {

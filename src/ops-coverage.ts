@@ -168,18 +168,20 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
   },
   {
     id: "system-info",
-    label: "System baseline: client, release, components, patch level, parameters, client settings",
-    plannedToolNames: [
-      "get_sap_system_info",
-      "read_patch_level",
-      "read_system_parameters",
-      "read_client_settings"
-    ],
+    label:
+      "System baseline: client role and change protection, release, components, kernel/DB, parameters",
+    // `read_patch_level` and `read_client_settings` were dropped from this plan rather than built:
+    // `get_sap_system_info` already reports the client's SCC4 role and cross-client change protection,
+    // and CVERS.EXTRELEASE is published verbatim per component while being deliberately *not*
+    // interpreted as a support-package level (docs/system-info.md). Committing to tools whose data is
+    // already reachable, or whose semantics the project declined to fix, would inflate the gap.
+    plannedToolNames: ["get_sap_system_info", "read_system_parameters"],
     actionRequired: false,
     gap:
-      "Only client, system type, release, components and the UTC offset are reported: patch level " +
-      "(SPAM/SAINT), kernel and database version, system parameters (RZ10/RZ11) and client " +
-      "settings (SCC4) are absent."
+      "Reported: client role and cross-client change protection (SCC4), system type, release, the " +
+      "standard-time UTC offset, and CVERS.EXTRELEASE per component verbatim. Still absent: kernel and " +
+      "database release, and profile parameters (RZ10/RZ11) - the tool reads exactly six fixed tables " +
+      "and never RFC_SYSTEM_INFO."
   },
   {
     id: "query",

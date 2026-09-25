@@ -61,8 +61,8 @@ Two consequences worth stating explicitly, because both were previously easy to 
   `partial`, because release and import - the operations that actually move an object forward - are
   absent.
 
-At product version 0.50.6 the block reports **2 of 15 families end-to-end (13%)**: `logs` and
-`dumps`. The earlier assessment
+At product version 0.50.8 the block reports **2 of 15 families end-to-end (13%)**: `logs` and
+`dumps`, with 23 planned tools still unbuilt. The earlier assessment
 (`.doc/orvanta-mcp-ops-coverage-assessment-and-next-phase-plan-20260925.md`) put end-to-end closure
 near 40%; that figure counted read-side breadth across families, not family purposes. This document's
 rule is the stricter one, and it is the one the completion criterion uses. Both readings agree the
