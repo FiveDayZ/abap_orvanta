@@ -7013,30 +7013,48 @@ export class ToolService {
       )
     }
 
-    if (input.expectedSourceFingerprint) {
-      const adtRead = await this.backend.readSourceByUri(connectionId, target.sourceUri)
-      const adtFingerprint = createHash("sha256").update(adtRead.source).digest("hex")
-      if (adtFingerprint !== input.expectedSourceFingerprint.toLowerCase()) {
-        throw new Error(
-          `SOURCE_FINGERPRINT_CONFLICT: expected ${input.expectedSourceFingerprint.toLowerCase()}, current ${adtFingerprint}`
-        )
-      }
+    // The caller's baseline is the ADT source view: that is the text the caller holds a fingerprint
+    // for and the text the ADT path used to replace. The SAP side read of the same function module
+    // renders the implementation body identically but describes the interface as comment lines
+    // (`*"  EXPORTING`, `*"    VALUE(...) TYPE ...`), so the two views are not interchangeable and
+    // an anchor taken from the ADT view must never be matched against the SAP side view. Match and
+    // replace in the ADT view, then send the body of the SAP side view to the helper.
+    const adtRead = await this.backend.readSourceByUri(connectionId, target.sourceUri)
+    const adtFingerprint = createHash("sha256").update(adtRead.source).digest("hex")
+    if (
+      input.expectedSourceFingerprint &&
+      adtFingerprint !== input.expectedSourceFingerprint.toLowerCase()
+    ) {
+      throw new Error(
+        `SOURCE_FINGERPRINT_CONFLICT: expected ${input.expectedSourceFingerprint.toLowerCase()}, current ${adtFingerprint}`
+      )
     }
 
     const currentSegments = functionSourceSegments(current.source)
     const currentBody = currentSegments.body
-    const updated = functionSourceSegments(
-      findAndReplaceSource(current.source.join("\n"), input.oldString, input.newString).split("\n")
+    const adtLines = adtRead.source.split("\n")
+    const bodyStart = locateImplementationBody(adtLines, currentBody)
+    if (bodyStart < 0) {
+      throw new Error(
+        `The SAP side implementation body of ${functionName} does not appear exactly once in the ADT source view of the same function module, so the replacement cannot be located safely. No write was started.`
+      )
+    }
+    const suffixLength = adtLines.length - bodyStart - currentBody.length
+    const patched = findAndReplaceSource(adtRead.source, input.oldString, input.newString).split(
+      "\n"
     )
     if (
-      updated.prefix.join("\n") !== currentSegments.prefix.join("\n") ||
-      updated.suffix.join("\n") !== currentSegments.suffix.join("\n")
+      patched.slice(0, bodyStart).join("\n") !== adtLines.slice(0, bodyStart).join("\n") ||
+      patched.slice(patched.length - suffixLength).join("\n") !==
+        adtLines.slice(adtLines.length - suffixLength).join("\n")
     ) {
       throw new Error(
         "The replacement reaches the function module interface (the FUNCTION ... section) or its ENDFUNCTION line. SAP_BASIS 7.31 has no headless interface write API, so only the implementation body can be replaced: apply interface changes with patch_function_module_interface or manually in SE37. No write was started."
       )
     }
-    const requestedBody = updated.body.map((line) => line.trimEnd())
+    const requestedBody = trimBlankEdges(
+      patched.slice(bodyStart, patched.length - suffixLength)
+    ).map((line) => line.trimEnd())
     if (!requestedBody.length) {
       throw new Error(
         "The replacement would leave the function module implementation body empty. No write was started."
@@ -13030,6 +13048,38 @@ function functionSourceSegments(source: string[]): FunctionSourceSegments {
 
 function functionImplementationSource(source: string[]): string[] {
   return functionSourceSegments(source).body
+}
+
+function trimBlankEdges(lines: string[]): string[] {
+  const trimmed = [...lines]
+  while (trimmed[0]?.trim() === "") trimmed.shift()
+  while (trimmed.at(-1)?.trim() === "") trimmed.pop()
+  return trimmed
+}
+
+/**
+ * Locate the SAP side implementation body inside the ADT source view of the same function module.
+ * Only the implementation text is identical between the two views (the interface is comment lines on
+ * the SAP side and plain declarations in the ADT view), so the body is the one block that can be
+ * aligned. Returns -1 unless the block matches exactly once, because an ambiguous alignment would
+ * make the replacement boundary a guess.
+ */
+function locateImplementationBody(adtLines: string[], bodyLines: string[]): number {
+  if (!bodyLines.length || bodyLines.length > adtLines.length) return -1
+  let found = -1
+  for (let start = 0; start <= adtLines.length - bodyLines.length; start += 1) {
+    let same = true
+    for (let offset = 0; offset < bodyLines.length; offset += 1) {
+      if (adtLines[start + offset] !== bodyLines[offset]) {
+        same = false
+        break
+      }
+    }
+    if (!same) continue
+    if (found >= 0) return -1
+    found = start
+  }
+  return found
 }
 
 function decodeSoapText(value: string): string {

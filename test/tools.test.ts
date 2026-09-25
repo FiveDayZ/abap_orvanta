@@ -2510,11 +2510,7 @@ test("function interface patch applies controlled operations and preserves imple
   assert.equal(backend.lastHelperRequest?.expectedVersion, current.interfaceFingerprint)
   assert.ok(backend.lastHelperRequest?.source?.some((line) => line.startsWith("m|")))
   assert.ok(backend.lastHelperRequest?.source?.some((line) => line.startsWith("s|")))
-  assert.ok(
-    backend.lastHelperRequest?.source?.includes(
-      's|1|LINE|*"--------------------------------------------------------------------'
-    )
-  )
+  assert.ok(backend.lastHelperRequest?.source?.includes("s|1|LINE|FUNCTION ZCMCP_FM_1501."))
   assert.ok(!backend.lastHelperRequest?.source?.some((line) => line.includes("&#34;")))
   assert.ok(backend.lastHelperRequest?.source?.includes("i|1|DBFIELD|"))
   // RSEXP has no OPTIONAL component, so an exporting payload row must never name it.
@@ -6007,6 +6003,32 @@ test("a function module replacement goes through the SAP side function write, no
   assert.match(readBack.source.join("\n"), /CHANGED:/)
 })
 
+test("a function module replacement keeps the caller's ADT anchor and sends only the SAP side body", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  backend.adtSourceWriteRefused = true
+  const fileUri =
+    "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_1501/fmodules/zcmcp_fm_1501/source/main"
+  // The caller's anchor is the ADT view of the whole function module, exactly as the live caller
+  // sent it. The SAP side read of the same object renders the interface as comment lines, so an
+  // implementation that matches the anchor against the SAP side text cannot find it at all.
+  const adt = (await backend.readSourceByUri("w200", fileUri)).source
+
+  const result = await tools.replaceStringInObject({
+    fileUri,
+    oldString: adt,
+    newString: adt.replace("'MCP:'", "'CHANGED:'"),
+    transportNumber: "GR2K923421"
+  })
+
+  assert.match(result, /through the SAP side function write/)
+  // Only the implementation body reaches the helper: the commented interface block and ENDFUNCTION.
+  // stay with SAP, which is why an interface change cannot be written this way.
+  assert.deepEqual(backend.lastHelperRequest?.source, [
+    "  CONCATENATE 'CHANGED:' iv_input INTO ev_output."
+  ])
+})
+
 test("a function module replacement that reaches the interface is refused, and nothing is written", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)
@@ -6015,8 +6037,8 @@ test("a function module replacement that reaches the interface is refused, and n
   await assert.rejects(
     tools.replaceStringInObject({
       fileUri,
-      oldString: '*"*Local Interface:',
-      newString: '*"*Renamed Interface:',
+      oldString: "  IMPORTING",
+      newString: "  IMPORTING.",
       transportNumber: "GR2K923421"
     }),
     /reaches the function module interface[\s\S]*patch_function_module_interface or manually in SE37/

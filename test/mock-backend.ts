@@ -592,10 +592,22 @@ export class MockBackend implements SapBackend {
         "E|1|PASSVALUE|X",
         "X|1|EXCEPTION|INVALID_INPUT",
         "X|1|TEXT|Input is invalid",
-        "S|1|LINE|*&#34;--------------------------------------------------------------------",
-        "S|2|LINE|*&#34;*Local Interface:",
-        "S|3|LINE|*&#34;--------------------------------------------------------------------",
-        "S|4|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output."
+        // w200 renders the SAP side read of the same function module like this: the interface is a
+        // commented block between two `*"---` separators and the header line carries a trailing
+        // period. The ADT view in `functionAdtSources` holds the same implementation body but plain
+        // interface declarations, so the two views must not be treated as interchangeable text.
+        "S|1|LINE|FUNCTION ZCMCP_FM_1501.",
+        "S|2|LINE|*&#34;--------------------------------------------------------------------",
+        "S|3|LINE|*&#34;*Local Interface:",
+        "S|4|LINE|*&#34;  IMPORTING",
+        "S|5|LINE|*&#34;     VALUE(IV_INPUT) TYPE  CHAR20",
+        "S|6|LINE|*&#34;  EXPORTING",
+        "S|7|LINE|*&#34;     VALUE(EV_OUTPUT) TYPE  CHAR40",
+        "S|8|LINE|*&#34;  EXCEPTIONS",
+        "S|9|LINE|*&#34;     INVALID_INPUT.",
+        "S|10|LINE|*&#34;--------------------------------------------------------------------",
+        "S|11|LINE|  CONCATENATE 'MCP:' iv_input INTO ev_output.",
+        "S|12|LINE|ENDFUNCTION."
       ]
     ],
     [
@@ -1097,7 +1109,7 @@ export class MockBackend implements SapBackend {
       const saved = this.functionPatchSourceMutation
         ? applied.map((line) =>
             line.includes("CONCATENATE 'MCP:' iv_input INTO ev_output.")
-              ? "S|4|LINE|  CONCATENATE 'CHANGED:' iv_input INTO ev_output."
+              ? line.replace("'MCP:'", "'CHANGED:'")
               : line
           )
         : applied
