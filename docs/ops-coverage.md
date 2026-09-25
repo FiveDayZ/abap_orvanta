@@ -188,3 +188,24 @@ binding constraint for the closed families; what remains for evidence is exactly
 The first four rows are the same read-only family of calls and can be closed in one authorised probe
 session (SM37 and SM13 only; no writes, no cancellations, no retries, nothing created to serve as a
 sample).
+
+One counting note so the numbers above cannot be misread: the twenty tools of the `ops` **group** are
+what the table above covers, and the `query` family additionally holds two tools from the `data` group
+that are exposed in the `ops` **profile** (`read_abap_table`, verified; `execute_data_query`,
+unverified). Evidence standing is therefore stated per tool in
+`contracts/verification-registry.json`, never as a single family-level score.
+
+### 7.2 Ops runbooks (OP4-2)
+
+`docs/ops-runbooks.md` turns the parts of this surface that already work into repeatable playbooks
+(trigger, ordered calls with real parameter names, how to read the result, when to stop, and what the
+result cannot prove). Its acceptance criterion - "a runbook can run inside the `ops` profile" - is
+code rather than prose: `test/ops-runbooks.test.ts` parses the manifest in that document and asserts
+that every tool it names resolves under `ABAP_MCP_TOOL_PROFILE=ops`, that every tool is read-only
+(runbooks cannot mutate SAP state), that manifest and prose agree in both directions, and that all
+fifteen families are either covered by a runbook or listed with a written reason. Eight runbooks
+cover nine families (`jobs`, `spool-output`, `dumps`, `logs`, `locks`, `updates`, `transport`,
+`system-info`, `query`); the other six carry reasons that are mostly "the tools do not exist yet",
+which is the same gap the table above lists. A runbook is not a coverage claim: it cannot make a
+family end-to-end, and it names the tools whose evidence is still missing instead of implying
+verification.
