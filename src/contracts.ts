@@ -1730,6 +1730,29 @@ const toolContractsBase = {
       maxRows: z.number().int().min(1).max(500).default(200).optional()
     }
   },
+  read_qrfc_queues: {
+    description:
+      "Read qRFC/tRFC queue state from the three tables the operator approved for this purpose on 2026-09-25: TRFCQOUT (outbound queues), TRFCQIN (inbound queues) and TRFCQSTATE (LUW state). Fields are selected from the DD03L metadata of the target system and every field list stays well under the 512-character row the reviewed reader can carry. state values are the domain codes stored in QRFCSTATE and ARFCSTATE, reported verbatim and never translated - the domain texts live in DD07L, which read_abap_table already reaches - and the TID is returned both as its four stored fields and as the composite transactionId. queueName and destination are exact, case-sensitive filters; a value longer than 24 characters is refused with QRFC_QUEUE_SCOPE_INVALID before SAP is touched. TRFCQSTATE is only read when includeLuwStates is set or a destination filter is given, because it is the widest of the three tables; the answer states which case applied. Without a filter the read is bounded by maxRows (default 200, hard cap 500) and reports per-table truncation instead of claiming completeness. Read path: native data preview first, then the fingerprint-verified RFC_READ_TABLE implementation only when the platform answers the observed empty HTML document; no generic SQL fallback and no writes. Codes: QRFC_QUEUE_SCOPE_INVALID, _FALLBACK_UNVERIFIED, _NOT_AUTHORIZED, _RFC_FAILED, _RESPONSE_INVALID, _RESPONSE_SCOPE_MISMATCH, _AMBIGUOUS_RESULT, _QUERY_FAILED, _ROW_LIMIT_INVALID.",
+    inputSchema: {
+      connectionId: z.string(),
+      queueName: z.string().max(24).optional(),
+      destination: z.string().max(24).optional(),
+      includeLuwStates: z.boolean().default(false).optional(),
+      maxRows: z.number().int().min(1).max(500).default(200).optional()
+    }
+  },
+  read_idoc_status: {
+    description:
+      "Read IDoc control records (EDIDC) and their status records (EDIDS), the two tables the operator approved for this purpose on 2026-09-25. Fields are selected from the DD03L metadata of the target system. status, direction and test are the domain codes stored in EDIDC (EDI_STATUS, EDI_DIRECT, EDI_TEST) and the status text is whatever EDIDS stores - none of them is translated here, and a text the source system left blank is returned blank rather than filled in. Filters are exact and case-sensitive: docnum (exact match, also applied to EDIDS), status and messageType; a value longer than 30 characters is refused with IDOC_STATUS_SCOPE_INVALID before SAP is touched. EDIDS is only read when docnum is given or includeStatusRecords is set, because the reviewed reader supports one condition per call and an unfiltered status-record read is large. Without a filter the read is bounded by maxRows (default 200, hard cap 500) and reports idocsTruncated and statusRecordsTruncated instead of claiming a complete list. Read path: native data preview first, then the fingerprint-verified RFC_READ_TABLE implementation only when the platform answers the observed empty HTML document; no generic SQL fallback and no writes. Codes: IDOC_STATUS_SCOPE_INVALID, _FALLBACK_UNVERIFIED, _NOT_AUTHORIZED, _RFC_FAILED, _RESPONSE_INVALID, _RESPONSE_SCOPE_MISMATCH, _AMBIGUOUS_RESULT, _QUERY_FAILED, _ROW_LIMIT_INVALID.",
+    inputSchema: {
+      connectionId: z.string(),
+      docnum: z.string().max(16).optional(),
+      status: z.string().max(2).optional(),
+      messageType: z.string().max(30).optional(),
+      includeStatusRecords: z.boolean().default(false).optional(),
+      maxRows: z.number().int().min(1).max(500).default(200).optional()
+    }
+  },
   get_version_history: {
     description:
       "ABAP object version history. Actions: list_versions, get_version_source, compare_versions. Version 1 is most recent. The version feed is resolved from the object's ADT structure document, for which the repository-navigation URL that search returns for DDIC objects is unusable: those objects are read through their canonical resource path instead. When ADT still serves no usable structure document, the tool returns a JSON state with status=unavailable and a stable code (VERSION_HISTORY_STRUCTURE_EMPTY, _NOT_XML, _UNPARSEABLE, _INCOMPLETE, _UNREADABLE, or VERSION_HISTORY_UNSUPPORTED_FOR_TYPE) instead of failing: that means the history could not be read, never that the object has no versions, and a local parse defect is never reported as an HTTP status. An unsupported structure endpoint (HTTP 404/405/501, or a resource this release has no handler for) is reported as VERSION_HISTORY_UNSUPPORTED_FOR_TYPE with the status in adt.httpStatus: ECC 7.31 answers the canonical DDIC table path that way for every table, active or inactive, so a DDIC table's history is not readable on this release and the substitutes in the reply carry the pre-write checks. objectType accepts both vocabularies: the repository search code (FUNC, PROG, CLAS, TABL, FUGR, ...) and the ADT path this service prints in its own results (FUGR/FF, PROG/P, CLAS/OC, ...). A failed name resolution is reported as a failed lookup and never as proof that the object does not exist.",

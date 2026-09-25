@@ -58,6 +58,8 @@ import type { DebugStepRequest, DebugVariableRequest } from "./debug-manager.js"
 import { writeDiscoveryExport, writeResourceExport } from "./export.js"
 import type { InvocationReceiptStore, InvocationReservation } from "./invocation-receipts.js"
 import { buildCapabilityReport } from "./capabilities.js"
+import { collectIdocStatus } from "./idoc-status.js"
+import { collectQrfcQueues } from "./qrfc-queues.js"
 import { collectServerFacts } from "./server-facts.js"
 import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
@@ -1225,6 +1227,23 @@ interface ObjectUrlInput {
   objectName: string
   objectType?: string | undefined
   connectionId: string
+}
+
+interface QrfcQueuesInput {
+  connectionId: string
+  queueName?: string | undefined
+  destination?: string | undefined
+  includeLuwStates?: boolean | undefined
+  maxRows?: number | undefined
+}
+
+interface IdocStatusInput {
+  connectionId: string
+  docnum?: string | undefined
+  status?: string | undefined
+  messageType?: string | undefined
+  includeStatusRecords?: boolean | undefined
+  maxRows?: number | undefined
 }
 
 interface SystemParametersInput {
@@ -6880,6 +6899,66 @@ export class ToolService {
       summary += `- Query warnings: ${parameters.queryWarnings.length}\n`
     }
     return `${summary}${JSON.stringify(parameters, null, 2)}`
+  }
+
+  async readQrfcQueues(input: QrfcQueuesInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const queues = await collectQrfcQueues(
+      this.backend,
+      connectionId,
+      {
+        queueName: input.queueName,
+        destination: input.destination,
+        includeLuwStates: input.includeLuwStates,
+        maxRows: input.maxRows
+      },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        )
+    )
+    let summary =
+      `qRFC/tRFC queues: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${queues.status}\n` +
+      `- Outbound: ${queues.counts.outbound}${queues.truncated.outbound ? " (truncated)" : ""}; ` +
+      `inbound: ${queues.counts.inbound}${queues.truncated.inbound ? " (truncated)" : ""}; ` +
+      `LUW states: ${queues.counts.luwStates}${queues.truncated.luwStates ? " (truncated)" : ""}\n`
+    if (queues.queryWarnings.length) summary += `- Query warnings: ${queues.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(queues, null, 2)}`
+  }
+
+  async readIdocStatus(input: IdocStatusInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const idocs = await collectIdocStatus(
+      this.backend,
+      connectionId,
+      {
+        docnum: input.docnum,
+        status: input.status,
+        messageType: input.messageType,
+        includeStatusRecords: input.includeStatusRecords,
+        maxRows: input.maxRows
+      },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        )
+    )
+    let summary =
+      `IDoc status: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${idocs.status}\n` +
+      `- Control records: ${idocs.idocCount}${idocs.idocsTruncated ? " (truncated)" : ""}; ` +
+      `status records: ${idocs.statusRecordCount}${idocs.statusRecordsTruncated ? " (truncated)" : ""}\n`
+    if (idocs.queryWarnings.length) {
+      summary += `- Query warnings: ${idocs.queryWarnings.length}\n`
+    }
+    return `${summary}${JSON.stringify(idocs, null, 2)}`
   }
 
   async getVersionHistory(input: VersionHistoryInput): Promise<string> {

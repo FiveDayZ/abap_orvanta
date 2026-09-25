@@ -490,6 +490,14 @@ export async function buildCapabilityReport(
       )
     ),
     capability(
+      "interface-queues",
+      "target-specific",
+      ["read_qrfc_queues", "read_idoc_status"],
+      unknownTargetObservation(
+        "Reads the approved queue and IDoc tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. See adt-data-preview for the native verdict."
+      )
+    ),
+    capability(
       "structured-table-query",
       "target-specific",
       ["read_abap_table", "preview_configuration", "read_ddic_table_conversion_status"],

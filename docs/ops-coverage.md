@@ -400,3 +400,26 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
 - 登记：`read_system_parameters` 以 `unverified` 进 `contracts/verification-registry.json`（144 条 = 工具数，
   四个未验证字段一个都不声明）；`get_sap_system_info` 保留原 citation，并在 notes 中写明 RFC_SYSTEM_INFO 半边
   不在那次验收范围内。族状态仍为 `partial`，`criterionMet=false`（已闭环 2/14）。
+
+### 7.6 OP1-1 - 接口与队列（2026-09-25）
+
+新增两个只读工具，读的都是 D3 批准的十四张表；与 7.5 一样，**运行期未取证**（4848 上仍是旧工具面，
+重启前不可达）。
+
+- **`read_qrfc_queues`** 读 `TRFCQOUT`（出站队列）、`TRFCQIN`（入站队列）、`TRFCQSTATE`（LUW 状态）。
+  字段清单来自 w200 的 DD03L 元数据（位置/键标志/数据元素/长度），每张表的字段宽度合计都远低于评审读取器
+  512 字符的行上限。`QSTATE`/`ARFCSTATE` 是域代码，**原样返回、不翻译**（域文本在 `DD07L`，`read_abap_table`
+  已可读）；TID 既给四个原始字段，也给合成值 `transactionId`。`queueName`/`destination` 为精确、大小写敏感过滤，
+  过滤值上限 24 字符（超限在触达 SAP 前以 `QRFC_QUEUE_SCOPE_INVALID` 拒绝）；`TRFCQSTATE` 只在
+  `includeLuwStates` 或给出 `destination` 时读取（它是三张表里最宽的一张），答案里明确写出走了哪种情况；
+  无过滤时按 `maxRows`（缺省 200、硬上限 500）截断并按表报告 `truncated`。
+- **`read_idoc_status`** 读 `EDIDC`（控制记录）与 `EDIDS`（状态记录）。`STATUS`/`DIRECT`/`TEST` 是域代码
+  （`EDI_STATUS`/`EDI_DIRECT`/`EDI_TEST`），状态文本就是 `EDIDS` 里存的内容，**都不翻译**；源系统留空的文本
+  原样返回空，不补写。过滤 `docnum`（精确，同时作用于 `EDIDS`）、`status`、`messageType`，过滤值上限 30 字符；
+  `EDIDS` 只在给出 `docnum` 或显式 `includeStatusRecords` 时读取（评审读取器一次只支持一个条件，未过滤的状态
+  记录读取过大）；无过滤时按 `maxRows` 截断并用 `idocsTruncated`/`statusRecordsTruncated` 明示。
+- **族缺口收窄。** `interfaces` 族由"完全没有工具"变为 `partial`：qRFC/tRFC 与 IDoc 已实现，
+  剩余缺口只有**邮件队列**——`SOST` 不在批准的允许清单内，`read_email_queue` 需要单独批准后才能实现。
+  两个新工具在重启并完成一次真实 w200 调用前保持 `unverified`（registry 146 条 = 工具数）。
+- 读路径与 7.5 完全一致：共用 `src/reviewed-table-reader.ts`，错误码前缀 `QRFC_QUEUE_` / `IDOC_STATUS_`，
+  无通用 SQL 回退、无写操作。

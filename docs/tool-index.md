@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：144
-- 只读工具：83
+- 工具总数：146
+- 只读工具：85
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,12 +10,12 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 83 |
+| profile: readonly | 85 |
 | profile: platform | 12 |
-| profile: dev | 126 |
-| profile: config | 29 |
-| profile: ops | 38 |
-| profile: full | 144 |
+| profile: dev | 128 |
+| profile: config | 31 |
+| profile: ops | 40 |
+| profile: full | 146 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 8 |
 | 分组: message | 4 |
-| 分组: ops | 21 |
+| 分组: ops | 23 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -129,9 +129,11 @@
 | `read_enhancement_implementation` | enhancement | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `read_failed_update` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_MAINT_READ |
 | `read_function_module_interface` | function | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.3) |
+| `read_idoc_status` | ops | dev, config, ops | 只读 | target-specific | — |
 | `read_lock_object` | ddic | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.9) |
 | `read_maintenance_view` | ddic | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.11) |
 | `read_number_range_object` | ddic | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.11) |
+| `read_qrfc_queues` | ops | dev, config, ops | 只读 | target-specific | — |
 | `read_report_parameters` | data | dev, config, ops | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API |
 | `read_report_variants` | data | dev, config, ops | 只读 | target-specific | — |
 | `read_sapscript_form` | form | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.8) |

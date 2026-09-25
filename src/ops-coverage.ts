@@ -92,7 +92,10 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_failed_update: "read-only",
   // System baseline
   get_sap_system_info: "read-only",
-  read_system_parameters: "read-only"
+  read_system_parameters: "read-only",
+  // Interfaces and queues
+  read_qrfc_queues: "read-only",
+  read_idoc_status: "read-only"
 }
 
 /**
@@ -238,7 +241,11 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     label: "Interface and queue monitoring: qRFC/tRFC, IDoc, email",
     plannedToolNames: ["read_qrfc_queues", "read_idoc_status", "read_email_queue"],
     actionRequired: false,
-    gap: "No qRFC/tRFC, IDoc or email queue tool exists at all."
+    gap:
+      "Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) " +
+      "through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through " +
+      "read_idoc_status. Still absent: the email queue - SOST is not on the approved allowlist, " +
+      "so read_email_queue needs a separate approval before it can be implemented."
   },
   {
     id: "authorizations",

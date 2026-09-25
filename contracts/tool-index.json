@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 144,
-  "readOnlyToolCount": 83,
+  "toolCount": 146,
+  "readOnlyToolCount": 85,
   "profiles": {
-    "readonly": 83,
+    "readonly": 85,
     "platform": 12,
-    "dev": 126,
-    "config": 29,
-    "ops": 38,
-    "full": 144
+    "dev": 128,
+    "config": 31,
+    "ops": 40,
+    "full": 146
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 21,
+    "ops": 23,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1503,6 +1503,23 @@
       "minHelperProtocol": "1.3"
     },
     {
+      "name": "read_idoc_status",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
+    },
+    {
       "name": "read_lock_object",
       "group": "ddic",
       "profiles": [
@@ -1546,6 +1563,23 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
       "minHelperProtocol": "1.11"
+    },
+    {
+      "name": "read_qrfc_queues",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
     },
     {
       "name": "read_report_parameters",
