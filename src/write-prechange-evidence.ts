@@ -229,7 +229,12 @@ export async function observeWritePreChange(
       (value) => {
         evidence.exists = true
         evidence.active = true
+        // `fingerprint` keeps its historical value, the interface fingerprint the write guard
+        // compares against. The two fields below carry the read tool's own names and meanings, so a
+        // receipt reader no longer has to guess which of the three hashes a generic name holds.
         evidence.fingerprint = stringValue(value.interfaceFingerprint ?? value.fingerprint)
+        evidence.interfaceFingerprint = stringValue(value.interfaceFingerprint)
+        evidence.definitionFingerprint = stringValue(value.fingerprint)
       }
     )
     await observeAssignment(evidence, tools, connectionId, "FUGR/FF", input.functionName, true)

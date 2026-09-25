@@ -15,7 +15,14 @@ const receiptSchema = z
     connectionId: z.string().min(1),
     functionName: z.string().regex(/^[ZY][A-Z0-9_]{0,29}$/),
     requestIdHash: z.string().regex(HASH_PATTERN),
+    // Interface-only fingerprint of the called function module, under the name and meaning
+    // `read_function_module_interface` gives it. Receipts written before the fingerprints were
+    // split stored the whole-definition hash in this field, which is what `definitionFingerprint`
+    // distinguishes: its absence marks such a legacy receipt.
     interfaceFingerprint: z.string().regex(HASH_PATTERN),
+    // Whole-definition fingerprint (interface plus implementation). Absent in receipts written
+    // before the split, whose `interfaceFingerprint` held exactly this value.
+    definitionFingerprint: z.string().regex(HASH_PATTERN).optional(),
     inputHash: z.string().regex(HASH_PATTERN),
     outputHash: z.string().regex(HASH_PATTERN).optional(),
     faultName: z.string().max(30).optional(),
@@ -33,7 +40,10 @@ export interface InvocationIdentity {
   connectionId: string
   functionName: string
   requestId: string
+  /** Interface-only fingerprint, as `read_function_module_interface` returns it. */
   interfaceFingerprint: string
+  /** Whole-definition fingerprint, as `read_function_module_interface` returns it. */
+  definitionFingerprint: string
   inputHash: string
 }
 
@@ -79,6 +89,7 @@ export class InvocationReceiptStore {
       functionName: identity.functionName,
       requestIdHash: sha256(identity.requestId),
       interfaceFingerprint: identity.interfaceFingerprint,
+      definitionFingerprint: identity.definitionFingerprint,
       inputHash: identity.inputHash,
       startedAt: new Date().toISOString(),
       serviceInstanceId: this.serviceInstanceId
@@ -93,7 +104,7 @@ export class InvocationReceiptStore {
       const existing = await this.readRequired(path)
       const conflict =
         existing.functionName !== identity.functionName ||
-        existing.interfaceFingerprint !== identity.interfaceFingerprint ||
+        !sameInterfaceFingerprint(existing, identity) ||
         existing.inputHash !== identity.inputHash
       return {
         status: "duplicate",
@@ -201,6 +212,9 @@ export class InvocationReceiptStore {
       functionName: receipt.functionName,
       requestIdHash: receipt.requestIdHash,
       interfaceFingerprint: receipt.interfaceFingerprint,
+      ...(receipt.definitionFingerprint
+        ? { definitionFingerprint: receipt.definitionFingerprint }
+        : {}),
       inputHash: receipt.inputHash,
       ...(receipt.outputHash ? { outputHash: receipt.outputHash } : {}),
       ...(receipt.faultName ? { faultName: receipt.faultName } : {}),
@@ -210,6 +224,22 @@ export class InvocationReceiptStore {
       automaticRetry: false
     }
   }
+}
+
+/**
+ * The duplicate guard compares the identity the payload was built from. Receipts written before the
+ * fingerprints were split stored the whole-definition hash under `interfaceFingerprint`, so such a
+ * legacy receipt is compared against the definition fingerprint; everything written since compares
+ * interface fingerprints, which is what a call payload actually depends on. A body-only change
+ * therefore no longer turns an exact retry into a conflict.
+ */
+function sameInterfaceFingerprint(
+  existing: InvocationReceipt,
+  identity: InvocationIdentity
+): boolean {
+  return existing.definitionFingerprint
+    ? existing.interfaceFingerprint === identity.interfaceFingerprint
+    : existing.interfaceFingerprint === identity.definitionFingerprint
 }
 
 async function createExclusiveReceipt(path: string, receipt: InvocationReceipt): Promise<void> {

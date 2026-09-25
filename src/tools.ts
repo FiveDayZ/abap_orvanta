@@ -2319,7 +2319,8 @@ export class ToolService {
           status: "passed",
           connectionId: input.connectionId.toLowerCase(),
           functionName,
-          interfaceFingerprint: definition.fingerprint,
+          interfaceFingerprint: definition.interfaceFingerprint,
+          definitionFingerprint: definition.fingerprint,
           expectedException,
           fault: result.fault,
           sideEffectsAcknowledged: true
@@ -2349,7 +2350,8 @@ export class ToolService {
         status: "passed",
         connectionId: input.connectionId.toLowerCase(),
         functionName,
-        interfaceFingerprint: definition.fingerprint,
+        interfaceFingerprint: definition.interfaceFingerprint,
+        definitionFingerprint: definition.fingerprint,
         inputParameterNames: [...suppliedInputKinds.keys()],
         outputs: actual.scalars,
         structureOutputs: actual.structures,
@@ -2377,7 +2379,8 @@ export class ToolService {
       connectionId: prepared.connectionId,
       functionName: prepared.functionName,
       requestId,
-      interfaceFingerprint: prepared.definition.fingerprint,
+      interfaceFingerprint: prepared.definition.interfaceFingerprint,
+      definitionFingerprint: prepared.definition.fingerprint,
       inputHash
     })
     if (reservationResult.status === "duplicate") {
@@ -2435,7 +2438,8 @@ export class ToolService {
           status: "fault",
           connectionId: prepared.connectionId,
           functionName: prepared.functionName,
-          interfaceFingerprint: prepared.definition.fingerprint,
+          interfaceFingerprint: prepared.definition.interfaceFingerprint,
+          definitionFingerprint: prepared.definition.fingerprint,
           fault: result.fault,
           callReceipt: {
             requestId,
@@ -2479,7 +2483,8 @@ export class ToolService {
         status: "completed",
         connectionId: prepared.connectionId,
         functionName: prepared.functionName,
-        interfaceFingerprint: prepared.definition.fingerprint,
+        interfaceFingerprint: prepared.definition.interfaceFingerprint,
+        definitionFingerprint: prepared.definition.fingerprint,
         inputParameterNames: [...prepared.suppliedInputKinds.keys()],
         outputs: actual.scalars,
         structureOutputs: actual.structures,

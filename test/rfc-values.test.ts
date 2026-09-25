@@ -218,7 +218,12 @@ test("every fingerprint the interface read publishes is accepted, a stale one is
     metadata.interfaceFingerprint,
     metadata.sourceFingerprint
   ]) {
-    assert.equal(JSON.parse(await call(fingerprint)).status, "passed")
+    const passed = JSON.parse(await call(fingerprint))
+    assert.equal(passed.status, "passed")
+    // The result carries both hashes under the names the interface read uses, so either can be fed
+    // back as the expected fingerprint of a later call.
+    assert.equal(passed.interfaceFingerprint, metadata.interfaceFingerprint)
+    assert.equal(passed.definitionFingerprint, metadata.fingerprint)
   }
   // The refusal still names every current fingerprint so the caller can pick the right field.
   await assert.rejects(

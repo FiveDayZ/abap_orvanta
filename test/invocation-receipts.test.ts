@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
+import { createHash } from "node:crypto"
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
@@ -10,7 +11,12 @@ const identity = {
   functionName: "ZCMCP_FM_1901",
   requestId: "receipt-concurrency",
   interfaceFingerprint: "a".repeat(64),
+  definitionFingerprint: "d".repeat(64),
   inputHash: "b".repeat(64)
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex")
 }
 
 test("persistent RFC receipts reserve one concurrent call and retain only hashes", async () => {
@@ -61,6 +67,84 @@ test("service restart classifies an unfinished receipt as outcome unknown", asyn
     assert.equal(duplicate.status, "duplicate")
     if (duplicate.status !== "duplicate") throw new Error("Expected duplicate")
     assert.equal(duplicate.receipt.status, "outcome_unknown")
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a retry conflicts on the interface fingerprint, not on a body-only change", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-receipts-split-"))
+  try {
+    const store = new InvocationReceiptStore(root, "split-instance")
+    const requestId = "receipt-split"
+    assert.equal((await store.reserve({ ...identity, requestId })).status, "reserved")
+    const status = await store.status(identity.connectionId, requestId)
+    assert.equal(status.interfaceFingerprint, identity.interfaceFingerprint)
+    assert.equal(status.definitionFingerprint, identity.definitionFingerprint)
+
+    // Only the implementation body moved: the interface a payload is built from is unchanged.
+    const sameInterface = await store.reserve({
+      ...identity,
+      requestId,
+      definitionFingerprint: "c".repeat(64)
+    })
+    assert.equal(sameInterface.status, "duplicate")
+    if (sameInterface.status !== "duplicate") throw new Error("Expected duplicate")
+    assert.equal(sameInterface.conflict, false)
+
+    const changedInterface = await store.reserve({
+      ...identity,
+      requestId,
+      interfaceFingerprint: "9".repeat(64)
+    })
+    assert.equal(changedInterface.status, "duplicate")
+    if (changedInterface.status !== "duplicate") throw new Error("Expected duplicate")
+    assert.equal(changedInterface.conflict, true)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a receipt written before the fingerprints were split is compared by definition fingerprint", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-receipts-legacy-"))
+  try {
+    const store = new InvocationReceiptStore(root, "legacy-instance")
+    const requestId = "receipt-legacy"
+    const directory = join(root, "rfc-receipts", sha256(identity.connectionId))
+    await mkdir(directory, { recursive: true })
+    await writeFile(
+      join(directory, `${sha256(requestId)}.json`),
+      JSON.stringify({
+        version: 1,
+        state: "completed",
+        connectionId: identity.connectionId,
+        functionName: identity.functionName,
+        requestIdHash: sha256(requestId),
+        // A pre-split receipt stored the whole-definition hash under this name.
+        interfaceFingerprint: identity.definitionFingerprint,
+        inputHash: identity.inputHash,
+        startedAt: new Date().toISOString(),
+        serviceInstanceId: "legacy-instance"
+      }),
+      "utf8"
+    )
+
+    const duplicate = await store.reserve({ ...identity, requestId })
+    assert.equal(duplicate.status, "duplicate")
+    if (duplicate.status !== "duplicate") throw new Error("Expected duplicate")
+    assert.equal(duplicate.conflict, false)
+    // The legacy value is reported under the name that matches what it actually holds.
+    assert.equal(duplicate.receipt.interfaceFingerprint, identity.definitionFingerprint)
+    assert.equal(duplicate.receipt.definitionFingerprint, undefined)
+
+    const moved = await store.reserve({
+      ...identity,
+      requestId,
+      definitionFingerprint: "e".repeat(64)
+    })
+    assert.equal(moved.status, "duplicate")
+    if (moved.status !== "duplicate") throw new Error("Expected duplicate")
+    assert.equal(moved.conflict, true)
   } finally {
     await rm(root, { recursive: true, force: true })
   }

@@ -16,8 +16,12 @@ Those results do not attest the renamed helpers or a newly built service.
 The pinned values come from `read_function_module_interface.fingerprint` on
 w200/client 200 after reviewing the new helpers. That complete fingerprint is
 not interchangeable with `interfaceFingerprint`, `sourceFingerprint`, or an
-ADT source hash. Re-read and review it after any helper source or metadata
-change; never disable the comparison to complete a namespace migration.
+ADT source hash. Since 0.47.29 the call gate accepts any of the three
+fingerprints the same read returns (`fingerprint`, `interfaceFingerprint`,
+`sourceFingerprint`), so a stale pin only refuses when it matches none of them;
+the pin itself still means the complete fingerprint. Re-read and review it after
+any helper source or metadata change; never disable the comparison to complete a
+namespace migration.
 Local and SAP regression execution remains subject to human-first approval.
 Building source alone does not replace or restart an existing release process.
 

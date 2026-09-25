@@ -251,7 +251,7 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 **现行缺陷：SCI V2／E2 的接口指纹钉已失效（2026-09-20 只读实测确认）**
 
-`src/tools.ts:6213-6217` 把 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT` 作为 `expectedInterfaceFingerprint` 传给 `testRemoteFunctionModule`，后者在**任何 SAP 调用之前**（`src/tools.ts:1719-1727`）与 `definition.fingerprint` 比较，不一致即抛错。实测值：
+`src/tools.ts:6213-6217` 把 `SCI_V2_FINGERPRINT`／`SCI_E2_FINGERPRINT` 作为 `expectedInterfaceFingerprint` 传给 `testRemoteFunctionModule`，后者在**任何 SAP 调用之前**（`src/tools.ts:1719-1727`）比对接口身份，不一致即抛错。**0.47.29 起该闸门接受 `read_function_module_interface` 三个指纹中的任意一个**（`fingerprint` 整个定义 / `interfaceFingerprint` 仅接口 / `sourceFingerprint` 仅正文），0.47.29 之前只接受 `fingerprint`。下表"失效"结论按当时的单值判据成立，**按三值判据需重新核实**：钉住的值若等于该助手的 `interfaceFingerprint` 或 `sourceFingerprint`，现在会通过。实测值（0.47.29 之前读取的 `fingerprint`）：
 
 | 助手                          | 钉住的值        | w200 线上 `fingerprint` | 结论             |
 | ----------------------------- | --------------- | ----------------------- | ---------------- |

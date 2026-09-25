@@ -10,7 +10,7 @@ SHA-256改用已核实的静态方法；消息序号先经整数转换，避免N
 补充已有36274作为第三个可读样本。联合15项真实检查通过；低权限与SAP原生显示独立对照仍未完成。
 下文0.36.9至0.36.11内容为分阶段历史，不表示READ当前仍关闭。
 
-只读自检动作READ_BODY_CHECK复用原权限、范围与解压预算；成功返回OK，缺失定义与语言不支持可区分，其他检查失败返回阶段码或原有结构化拒绝。它不返回消息正文或变量，也不恢复消息类。通过已有RFC测试入口执行，需绑定实际读取的综合fingerprint；该工具的expectedInterfaceFingerprint字段使用综合fingerprint，而不是独立interfaceFingerprint。
+只读自检动作READ_BODY_CHECK复用原权限、范围与解压预算；成功返回OK，缺失定义与语言不支持可区分，其他检查失败返回阶段码或原有结构化拒绝。它不返回消息正文或变量，也不恢复消息类。通过已有RFC测试入口执行，需绑定实际读取的综合fingerprint；该字段自 0.47.29 起接受 `read_function_module_interface` 三个指纹中的任意一个（`fingerprint` 整个定义 / `interfaceFingerprint` 仅接口 / `sourceFingerprint` 仅正文），实际仍按综合 `fingerprint` 钉住。
 
 0.36.9 新增 `search_application_logs`、`read_application_log` 两个 MCP 入口，
 实现输入约束、批准记录与指纹核对、固定助手调用、分页校验、结果脱敏和失败分类。

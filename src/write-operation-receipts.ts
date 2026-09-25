@@ -15,6 +15,11 @@ const sapPreChangeEvidenceSchema = z
     active: z.boolean().nullable(),
     version: z.string().nullable(),
     fingerprint: z.string().regex(HASH_PATTERN).nullable(),
+    // The function-module fingerprints under the names `read_function_module_interface` uses. Set
+    // only for function-module targets, where `fingerprint` above keeps its historical value (the
+    // interface fingerprint the write guard compares against).
+    interfaceFingerprint: z.string().regex(HASH_PATTERN).nullable().optional(),
+    definitionFingerprint: z.string().regex(HASH_PATTERN).nullable().optional(),
     packageName: z.string().nullable(),
     requestNumber: z.string().nullable(),
     taskNumber: z.string().nullable(),
