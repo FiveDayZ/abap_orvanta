@@ -296,7 +296,7 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     ],
     purpose:
       "Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists?",
-    closeRoutes: ["helper", "approval"],
+    closeRoutes: ["helper"],
     actionRequired: false,
     gap:
       "Reported: the work process list (TH_WPINFO) through read_work_processes, the user and " +
@@ -311,9 +311,24 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "and SWNC_STATREC_READ cannot return NORMAL_RECORDS, the record header that gives a " +
       "subrecord its user and response time. SWNC_COLLECTOR_KERNEL_STAT is fully resolvable but " +
       "not remote-enabled, so the workload numbers need the in-SAP helper. DB02 is split by " +
-      "database vendor (DB02_ORA_*, DB02_*_DB2, DB6_*) and the platform is not readable from the " +
-      "approved service-side sources, so read_db_activity needs either a newly approved source for " +
-      "the platform or the helper."
+      "database vendor (DB02_ORA_*, DB02_*_DB2, DB6_*), and the platform is readable after all: " +
+      "RFC_SYSTEM_INFO returns RFCDBSYS (data element SYDBSYS, the central database system) " +
+      "through the fingerprint-pinned reader whose kernel and database values get_sap_system_info " +
+      "already publishes as serverFacts - that half has no recorded call yet, but it is a source " +
+      "the service owns, not an approval it waits for. The 2026-09-26 claim that the platform was " +
+      "unreadable rested on a single TPFYPROPTY read refused with TABLE_NOT_ALLOWED by the " +
+      "then-running build, which is a stale allowlist rather than an unavailable source " +
+      "(TPFYPROPTY was approved on 2026-09-25). What is actually missing is a vendor module that " +
+      "reports activity: the storage and statistics modules that probe reached " +
+      "(DB02_ORA_SELECT_SEGMENTS, DB02_ORA_LAST_ANALYZED, DB02_GET_EXTENT_LIST_DB2) are " +
+      "remote-enabled but answer for space and analysis - the Oracle pair reads " +
+      "dba_tab_columns.last_analyzed/sample_size/num_rows, statistics freshness rather than " +
+      "activity - DB02_DB_ACTIVITY was not found by name, and the vendor-neutral DB_AN_DB_KPIS " +
+      "requires a CCMS node handle (MT_TOOL_INFO typed ALTLEXDESC) and raises MESSAGE e001(sada) " +
+      "when it cannot read one, so an external caller can neither supply its context nor survive " +
+      "its failure. read_db_activity therefore needs the helper: the platform is the service's to " +
+      "read, but no module it can reach reports database activity rather than space, statistics " +
+      "or analysis."
   },
   {
     id: "interfaces",

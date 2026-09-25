@@ -610,6 +610,26 @@ registry 条目数再次等于工具数（149）。
 工具面 **151 工具 / 90 只读**，ops 组 **28**，registry **151 条 = 工具数**（verified 23 / unverified 121）。
 新工具在服务重启并完成一次真实 w200 调用前保持 `unverified`。
 
+**更正（2026-09-26，本轮复核）：「平台读不到」不成立。** 上面那句结论只依据**一次** `TPFYPROPTY`
+读取被拒（`TABLE_NOT_ALLOWED`）——而被拒的原因是**当时在跑的构建**的表白名单早于 2026-09-25 的
+逐表批准，属于**构建陈旧，不是来源不可得**；该表在源码里已经放行。更要紧的是，平台的常规来源一直
+在服务自己手里：`RFC_SYSTEM_INFO` 的 `RFCDBSYS`（数据元素 `SYDBSYS`，中央数据库系统）由**已部署、
+指纹钉死**的读取器返回，`get_sap_system_info` 已把它作为 `serverFacts.databaseSystem` 发布
+（`src/server-facts.ts` 与 `src/tools.ts`，见 §7.7）。该半段**尚无真实调用记录**——这一点必须保留，
+但它意味着"等一个平台来源的批准"，而不是"平台不可读"。
+
+因此 `runtime-resources` 的真实缺口收窄为一件事：**没有任何已取证的厂商模块报告"活动"**。同一次探测
+到达的存储/统计模块（`DB02_ORA_SELECT_SEGMENTS`、`DB02_ORA_LAST_ANALYZED`、`DB02_GET_EXTENT_LIST_DB2`）
+确实 `remoteEnabled=true`（三者连同 `DB6_BUFFERPOOL_SNAPSHOT` 的 source/interface 指纹已随定义留证于
+`.cache/evidence-r18/fm-*.txt`，若日后要在服务侧钉死它们无需再探测），但它们回答的是空间与分析，不是
+活动——Oracle 那一对读的是 `dba_tab_columns.last_analyzed`/`sample_size`/`num_rows`，即**统计新鲜度**；
+`DB02_DB_ACTIVITY` 按名未找到；厂商中立的 `DB_AN_DB_KPIS` 虽可远程调用，却要求调用方给出 CCMS 节点句柄
+（`MT_TOOL_INFO` 类型 `ALTLEXDESC`），读不到节点时直接 `MESSAGE e001(sada)`——外部调用方既无法提供该
+上下文，也无法承受该消息，已在 `.cache/evidence-r18/fm-DB_AN_DB_KPIS.txt` 留证。名字空间已按
+`DB02*`/`DB*`/`DB6*`/`SDB*`/`SAPDBA*`/`STAT*` 穷举过，因此结论是**须走助手**：平台是服务自己读得到的，
+但服务够得着的模块里没有"数据库活动"这一类答案。族的闭环路线相应由 `helper + approval` 改为 **`helper`**
+——平台不再是"待批准项"（这是一个被错误归因的等待），两个缺口（工作负载数字、DB 活动）都等助手。
+
 ### 7.11 OP1-7 收口 - 受控只读查询的联接支持（2026-09-26）
 
 **背景**：O-7 的剩余缺口是"排障问题常常要两张表一起看，而本服务只能查一张"。`execute_data_query`

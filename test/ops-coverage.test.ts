@@ -146,10 +146,19 @@ test("every family states a purpose and a route, and the two cannot contradict t
   const byId = Object.fromEntries(block.families.map((family) => [family.id, family]))
   assert.equal(byId.logs!.closeRoutes[0], "none")
   assert.deepEqual(byId.query!.closeRoutes, ["service"])
-  assert.ok(byId["runtime-resources"]!.closeRoutes.includes("helper"))
+  // The DB02 half waits on the helper like the workload half: the platform is the service's to read
+  // (RFC_SYSTEM_INFO.RFCDBSYS), but no module it can reach reports activity rather than space.
+  assert.deepEqual(byId["runtime-resources"]!.closeRoutes, ["helper"])
   assert.equal(block.summary.closeRouteCounts.none, 2)
   assert.equal(block.summary.closeRouteCounts.platform, 1)
   assert.equal(block.summary.closeRouteCounts.service, 1)
+  assert.equal(block.summary.closeRouteCounts.approval, 2)
+  assert.equal(block.summary.closeRouteCounts.helper, 6)
+  // A claim of unavailability may not survive in the gap text once its source is proven to be ours.
+  const runtimeGap = byId["runtime-resources"]!.gap
+  assert.match(runtimeGap, /RFCDBSYS/)
+  assert.doesNotMatch(runtimeGap, /platform is not readable/)
+  assert.doesNotMatch(runtimeGap, /newly approved source for the platform/)
 
   // Then the guard, on families that lie about their own state. A gap with no owner is a wish.
   const withProblem = (problems: string[], pattern: RegExp) =>
