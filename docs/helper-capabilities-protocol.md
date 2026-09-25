@@ -351,10 +351,24 @@ export interface SapBackend {
   "availabilityWithoutEvidence": "<按本次报告实时统计，随连接与 profile 变化>",
   "protocolOnlyToolCount": 44, "protocolOnlyTools": ["…"],
   "note": "…; verification never changes an availability verdict."
+},
+"opsCapability": {
+  "vocabulary": { "toolRole": "read-only | action | platform-blocked", "familyState": "absent | blocked | partial | read-only | read-and-act", "endToEndRule": "…" },
+  "families": [
+    { "id": "transport", "state": "partial", "actionRequired": true,
+      "toolNames": ["…"], "missingToolNames": ["…"], "readTools": ["…"], "actionTools": ["…"], "platformBlockedTools": [],
+      "verification": { "verified": ["…"], "unverified": ["…"], "failing": ["…"] },
+      "gap": "Release and import are absent: …" }
+  ],
+  "summary": { "familyCount": 15, "stateCounts": { "absent": 5, "blocked": 1, "partial": 7, "read-only": 2, "read-and-act": 0 },
+               "endToEndFamilyCount": 2, "endToEndPercent": 13, "endToEndFamilies": ["logs", "dumps"],
+               "actionToolCount": 3, "platformBlockedToolCount": 1, "classifiedToolCount": 20,
+               "missingPlannedToolCount": 25, "missingPlannedTools": ["…"] },
+  "note": "…; it never changes an availability or verification verdict."
 }
 ```
 
-（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。）
+（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。`opsCapability` 的数例为 0.50.6 的实测值，随工具面变化，不是常量。）
 
 ### 4A. 证据维度（`verification`）与可用性维度正交
 
@@ -373,6 +387,17 @@ export interface SapBackend {
 3. **`verification.status` 取最差项**（`failed` > `platform-unsupported` > `blocked` > `unverified` > `verified`），并把每个工具的逐项状态放在 `tools` 里，避免用"平均分"掩盖单个失败。
 
 `protocolOnlyToolCount`/`protocolOnlyTools` 暴露的是 R-20c 的残余面：这些工具的判定**仅凭协议版本**、没有操作码清单可核对，属于已知的弱证据，必须能一眼数出来，而不是藏在汇总里。
+
+### 4B. 运维覆盖维度（`opsCapability`）：工具清单不是覆盖结论
+
+0.50.6 起，能力报告顶层新增 `opsCapability`，把运维（`ops`）面按**场景族**表述，而不是按工具条数表述。单一事实源是 `src/ops-coverage.ts`；报告里的族状态由工具登记表加"声明缺口"**推导**，不手写，因此数字只在工具面真的变化时才动。
+
+- 工具角色（`read-only` / `action` / `platform-blocked`）与 `src/tool-registry.ts` 的注解互相校验：角色与注解矛盾、`ops` 组工具未分档、工具未归入任何族，都会让 `opsClassificationProblems()` 非空，而 `opsCapabilityBlock()` 拒绝在这种状态下发布报告——一个悄悄漏掉工具或族的块比没有块更糟，因为它看起来像个答案。
+- 族状态（`absent` / `blocked` / `partial` / `read-only` / `read-and-act`）由"是否存在工具、是否全被平台挡住、声明的缺口是否为空"推导。**只有缺口为空的族才算端到端**；"读得到"永不顶替"处置得了"——作业族不会因为能读作业明细与 Spool 就变成 `read-and-act`，它停在 `partial` 并写明缺的是作业控制。
+- `blocked` 与"尚未实现"是两句话：前者是平台（本版本不提供该端点）挡住，后者是没做。
+- 该块与 `verification` 一样，**永不改变可用性判定**；族的逐工具证据状态来自验收登记表的交叉统计。运维面的判定规则、授权模型与完成判据见 `docs/ops-coverage.md`。
+
+  0.50.6 实测：15 个场景族中 2 族端到端（`logs`、`dumps`，13%），`partial` 7、`absent` 5、`blocked` 1，还有 25 个计划内工具未建。
 
 ---
 

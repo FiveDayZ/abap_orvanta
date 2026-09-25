@@ -23,6 +23,7 @@ import {
 } from "./verification-registry.js"
 import { PRODUCT_VERSION } from "./version.js"
 import { helperDeploymentRemedy } from "./helper-carriers.js"
+import { opsCapabilityBlock } from "./ops-coverage.js"
 
 type Availability = "available" | "partial" | "unsupported" | "platform_unsupported" | "unknown"
 type CapabilityRoute = "local" | "native-adt" | "sap-helper-fallback" | "target-specific"
@@ -885,6 +886,12 @@ export async function buildCapabilityReport(
         protocolOnlyTools: protocolOnly,
         note: "Availability is inferred from the helper protocol version and opcode list; verification is what was actually called on SAP. They are orthogonal: this block never changes an availability verdict, and an available tool with no evidence is reported as unverified rather than presented as verified."
       },
+      // OP0: the tool list is not a coverage claim. This block files every ops tool into the
+      // operational scenario families it serves and derives each family's state from the registry
+      // plus a declared gap, so "how much of daily operations is closed" is machine-readable and
+      // cannot be asserted by wording. Like `verification`, it joins with the evidence dimension
+      // but never feeds an availability verdict.
+      opsCapability: opsCapabilityBlock(verificationLookup),
       summary: {
         toolCount: disclosed.reduce((count, item) => count + item.toolNames.length, 0),
         ...(withheld.size > 0

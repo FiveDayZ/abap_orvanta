@@ -1,0 +1,192 @@
+import assert from "node:assert/strict"
+import test from "node:test"
+import { buildCapabilityReport } from "../src/capabilities.js"
+import {
+  OPS_FAMILIES,
+  OPS_TOOL_ROLES,
+  opsCapabilityBlock,
+  opsClassificationProblems,
+  opsFamilyState
+} from "../src/ops-coverage.js"
+import { TOOL_REGISTRY } from "../src/tool-registry.js"
+import { MockBackend } from "./mock-backend.js"
+
+/**
+ * OP0: the ops block is a coverage claim, so the gate has to be able to fail.
+ *
+ * These assertions are deliberately explicit rather than derived: a family that quietly loses a
+ * planned tool, or a tool that stops being read-only, has to break a test that names the expected
+ * value. Deriving the expectation from the same table would assert nothing.
+ */
+
+const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
+  transport: "partial",
+  jobs: "partial",
+  logs: "read-only",
+  dumps: "read-only",
+  traces: "blocked",
+  locks: "partial",
+  updates: "partial",
+  "system-info": "partial",
+  query: "partial",
+  "runtime-resources": "absent",
+  interfaces: "absent",
+  authorizations: "absent",
+  "spool-output": "partial",
+  "archive-alerts": "absent",
+  landscape: "absent"
+}
+
+/** The plan's outstanding tool commitments; adding one to the plan must update this number. */
+const PLANNED_GAP_TOOL_COUNT = 25
+
+test("every ops tool has exactly one role and agrees with the registry annotation", () => {
+  assert.deepEqual(opsClassificationProblems(), [])
+
+  const opsGroupTools = TOOL_REGISTRY.filter((entry) => entry.group === "ops")
+    .map((entry) => entry.name)
+    .sort()
+  assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
+  assert.equal(opsGroupTools.length, 20)
+})
+
+test("family states are derived from the surface, and the plan's gaps stay visible", () => {
+  const states = Object.fromEntries(OPS_FAMILIES.map((item) => [item.id, opsFamilyState(item)]))
+  assert.deepEqual(states, EXPECTED_FAMILY_STATES)
+
+  // The two families that are closed are closed because nothing has to act on SAP on their behalf.
+  const closed = Object.entries(states)
+    .filter(([, state]) => state === "read-only" || state === "read-and-act")
+    .map(([id]) => id)
+    .sort()
+  assert.deepEqual(closed, ["dumps", "logs"])
+
+  // A family may not lose a planned tool without saying so; the guard has to catch that, not just
+  // the real tables that currently happen to be consistent.
+  const brokenFamily = [
+    {
+      id: "transport",
+      label: "Transport",
+      plannedToolNames: ["manage_transport_requests", "release_transport_task"],
+      actionRequired: true,
+      gap: ""
+    }
+  ]
+  const problems = opsClassificationProblems({ families: brokenFamily })
+  assert.ok(
+    problems.some((problem) =>
+      /missing planned tool release_transport_task but declares no gap/.test(problem)
+    ),
+    `the guard did not report the silent gap: ${problems.join("; ")}`
+  )
+  assert.ok(
+    problems.some((problem) => /not filed into any scenario family/.test(problem)),
+    `the guard did not report unfiled ops tools: ${problems.join("; ")}`
+  )
+
+  // A role that contradicts the registry annotation must fail too.
+  const wrongRole = { ...OPS_TOOL_ROLES, create_transport_request: "read-only" as const }
+  assert.ok(
+    opsClassificationProblems({ roles: wrongRole }).some((problem) =>
+      /create_transport_request has role read-only but is not readOnlyHint/.test(problem)
+    ),
+    "the guard did not report a role that contradicts the registry"
+  )
+})
+
+test("the block counts only families with an empty gap as end-to-end", () => {
+  const block = opsCapabilityBlock()
+
+  assert.equal(block.summary.familyCount, Object.keys(EXPECTED_FAMILY_STATES).length)
+  assert.deepEqual(block.summary.stateCounts, {
+    absent: 5,
+    blocked: 1,
+    partial: 7,
+    "read-only": 2,
+    "read-and-act": 0
+  })
+  assert.deepEqual(block.summary.endToEndFamilies, ["logs", "dumps"])
+  assert.equal(block.summary.endToEndFamilyCount, 2)
+  assert.equal(block.summary.endToEndPercent, 13)
+  assert.ok(
+    block.summary.endToEndPercent < 95,
+    "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
+  )
+
+  assert.equal(block.summary.classifiedToolCount, 20)
+  assert.equal(block.summary.actionToolCount, 3)
+  assert.equal(block.summary.platformBlockedToolCount, 1)
+  assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)
+  assert.equal(block.summary.missingPlannedToolCount, block.summary.missingPlannedTools.length)
+
+  // A monitor-only family never becomes end-to-end just because a reader exists.
+  const jobs = block.families.find((family) => family.id === "jobs")
+  assert.ok(jobs)
+  assert.equal(jobs.state, "partial")
+  assert.equal(jobs.actionRequired, true)
+  assert.deepEqual(jobs.actionTools, [])
+  assert.deepEqual(jobs.missingToolNames, [
+    "create_background_job",
+    "modify_background_job",
+    "release_background_job",
+    "cancel_background_job"
+  ])
+
+  // A platform-stopped family is reported as blocked, which is a different claim from "not built".
+  const traces = block.families.find((family) => family.id === "traces")
+  assert.ok(traces)
+  assert.equal(traces.state, "blocked")
+  assert.deepEqual(traces.platformBlockedTools, ["analyze_abap_traces"])
+})
+
+test("the block joins with the evidence dimension without changing it", () => {
+  const block = opsCapabilityBlock({
+    entries: new Map([
+      ["create_transport_request", { status: "verified" as const }],
+      ["manage_transport_requests", { status: "unverified" as const }],
+      ["cleanup_transport_entries", { status: "failed" as const }]
+    ])
+  })
+
+  const transport = block.families.find((family) => family.id === "transport")
+  assert.ok(transport)
+  assert.deepEqual(transport.verification.verified, ["create_transport_request"])
+  // `add_objects_to_transport` is present in the family but absent from the fabricated lookup, so it
+  // is unverified - the default, not an accusation.
+  assert.deepEqual(transport.verification.unverified, [
+    "manage_transport_requests",
+    "add_objects_to_transport"
+  ])
+  assert.deepEqual(transport.verification.failing, ["cleanup_transport_entries"])
+
+  // No lookup at all is the packaged-build case: everything is unverified, nothing is implied.
+  const withoutRegistry = opsCapabilityBlock()
+  const logs = withoutRegistry.families.find((family) => family.id === "logs")
+  assert.ok(logs)
+  assert.deepEqual(logs.verification.verified, [])
+  assert.equal(logs.verification.unverified.length, logs.toolNames.length)
+})
+
+test("the capability report carries the ops block", async () => {
+  const report = JSON.parse(await buildCapabilityReport(new MockBackend(), "w200")) as {
+    opsCapability?: {
+      families: Array<{ id: string; state: string }>
+      summary: { familyCount: number; endToEndPercent: number }
+      vocabulary: { endToEndRule: string }
+      note: string
+    }
+  }
+
+  assert.ok(report.opsCapability, "the report has no opsCapability block")
+  assert.equal(report.opsCapability.summary.familyCount, Object.keys(EXPECTED_FAMILY_STATES).length)
+  assert.equal(report.opsCapability.summary.endToEndPercent, 13)
+  assert.match(
+    report.opsCapability.vocabulary.endToEndRule,
+    /never\s+compensate for a missing action/
+  )
+  assert.match(report.opsCapability.note, /never changes an availability or verification verdict/)
+  assert.deepEqual(
+    Object.fromEntries(report.opsCapability.families.map((family) => [family.id, family.state])),
+    EXPECTED_FAMILY_STATES
+  )
+})
