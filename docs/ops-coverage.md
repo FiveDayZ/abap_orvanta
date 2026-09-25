@@ -423,3 +423,30 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
   两个新工具在重启并完成一次真实 w200 调用前保持 `unverified`（registry 146 条 = 工具数）。
 - 读路径与 7.5 完全一致：共用 `src/reviewed-table-reader.ts`，错误码前缀 `QRFC_QUEUE_` / `IDOC_STATUS_`，
   无通用 SQL 回退、无写操作。
+
+### 7.7 OP1-3 - 用户与权限分配（2026-09-25）
+
+新增 `read_user_authorizations`（ops 组、只读、`target-specific`），读 D3 批准的权限分配三表：
+
+- `AGR_USERS`（用户↔角色分配，11 字段 / 93 字符，键 AGR_NAME/UNAME/FROM_DAT/TO_DAT）
+- `AGR_TCODES`（角色的菜单与事务，8 字段 / 91 字符，键 AGR_NAME/TCODE/TYPE）
+- `UST04`（用户主记录的参数文件分配，3 字段 / 27 字符，键 BNAME/PROFILE）
+
+字段与键序取自 w200 的 DD03L 元数据；三表宽度都远低于评审读取器 512 字符的行上限。**这是分配主数据，
+不是权限判定**：工具从不说某用户"有/没有某权限"，也不把角色展开成权限对象——`AGR_1251`/`AGR_1252`/
+`AGR_PROF`/`USOB*`/`UST10*` 不在批准允许清单内，真实追踪走 SAP 侧助手的 SU53/ST01 通路
+（`read_authorization_trace`，尚未实现）。存储标志 `EXCLUDE`/`ORG_FLAG`/`COL_FLAG`/`DIRECT`/
+`INHERITED` 与节点类型 `TYPE` 一律原样返回、不解释；`FROM_DAT`/`TO_DAT` 是 AGR_USERS 里存的
+有效期窗口，**由工具判断"今天是否生效"被明确排除**。`UST04` 只有用户名与参数文件名；含口令的
+`USR02`/`USR01` 仍永久禁止，从不读取。
+
+过滤 `userName`（UNAME）、`roleName`（AGR_NAME，同时作为 AGR_TCODES 的条件）、`profileName`
+（PROFILE），精确、大小写敏感，值上限 30 字符（超限在触达 SAP 前以 `USER_AUTHORIZATIONS_SCOPE_INVALID`
+拒绝）。因评审读取器一次只支持一个条件：`AGR_USERS` 优先按 `userName`、否则按 `roleName` 过滤；
+`AGR_TCODES` 仅在给出 `roleName` 或 `includeRoleTransactions` 时读取；`UST04` 仅在给出
+`userName`/`profileName` 或 `includeProfiles` 时读取——答案的 `notes` 明写走了哪种情况。无过滤时按
+`maxRows`（缺省 200、硬上限 500）截断并按表报告 `truncated.*`。
+
+**族缺口收窄。** `authorizations` 族由"完全没有工具"变为 `partial`：角色/事务/参数文件分配已实现，
+剩余缺口是 **SU53/ST01 授权追踪**（需 SAP 侧助手）与角色→权限对象展开（表未获批准）。工具在服务重启并
+完成一次真实 w200 调用前保持 `unverified`（registry 条目数再次等于工具数）。

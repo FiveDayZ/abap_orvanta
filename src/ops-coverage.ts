@@ -95,7 +95,9 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_system_parameters: "read-only",
   // Interfaces and queues
   read_qrfc_queues: "read-only",
-  read_idoc_status: "read-only"
+  read_idoc_status: "read-only",
+  // Users and authorizations
+  read_user_authorizations: "read-only"
 }
 
 /**
@@ -253,8 +255,12 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     plannedToolNames: ["read_user_authorizations", "read_authorization_trace"],
     actionRequired: false,
     gap:
-      "No user or authorization tool exists at all, so the most common operations ticket " +
-      '("user reports missing authorization") is a blind spot.'
+      "Reported: the stored role assignments per user (AGR_USERS), the transactions of a " +
+      "role (AGR_TCODES) and the profile assignments of a user master record (UST04) through " +
+      "read_user_authorizations - assignment master data, never an authorization decision. " +
+      "Still absent: the SU53/ST01 authorization trace (read_authorization_trace), which " +
+      "needs the SAP-side helper, and any role-to-authorization-object resolution, because " +
+      "AGR_1251/AGR_1252/AGR_PROF/USOB*/UST10* are not on the approved allowlist."
   },
   {
     id: "spool-output",

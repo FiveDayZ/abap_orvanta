@@ -669,6 +669,7 @@ const ROWS: readonly ToolRow[] = [
   ["read_system_parameters", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_qrfc_queues", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_idoc_status", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["read_user_authorizations", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["get_version_history", "source", DEV, "R", "target-specific", null, null],
   ["preview_source_changes", "source", DEV, "R", "target-specific", null, null],
   ["get_runtime_info", "platform", PL, "R", "local", null, null],

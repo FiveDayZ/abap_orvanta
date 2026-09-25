@@ -63,6 +63,7 @@ import { collectQrfcQueues } from "./qrfc-queues.js"
 import { collectServerFacts } from "./server-facts.js"
 import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
+import { collectUserAuthorizations } from "./user-authorizations.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
@@ -1227,6 +1228,16 @@ interface ObjectUrlInput {
   objectName: string
   objectType?: string | undefined
   connectionId: string
+}
+
+interface UserAuthorizationsInput {
+  connectionId: string
+  userName?: string | undefined
+  roleName?: string | undefined
+  profileName?: string | undefined
+  includeRoleTransactions?: boolean | undefined
+  includeProfiles?: boolean | undefined
+  maxRows?: number | undefined
 }
 
 interface QrfcQueuesInput {
@@ -6899,6 +6910,39 @@ export class ToolService {
       summary += `- Query warnings: ${parameters.queryWarnings.length}\n`
     }
     return `${summary}${JSON.stringify(parameters, null, 2)}`
+  }
+
+  async readUserAuthorizations(input: UserAuthorizationsInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const authorizations = await collectUserAuthorizations(
+      this.backend,
+      connectionId,
+      {
+        userName: input.userName,
+        roleName: input.roleName,
+        profileName: input.profileName,
+        includeRoleTransactions: input.includeRoleTransactions,
+        includeProfiles: input.includeProfiles,
+        maxRows: input.maxRows
+      },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        )
+    )
+    let summary =
+      `User and authorization assignments: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${authorizations.status} (assignment master data, not an authorization check)\n` +
+      `- Role assignments: ${authorizations.counts.roleAssignments}${authorizations.truncated.roleAssignments ? " (truncated)" : ""}; ` +
+      `role transactions: ${authorizations.counts.roleTransactions}${authorizations.truncated.roleTransactions ? " (truncated)" : ""}; ` +
+      `profiles: ${authorizations.counts.profiles}${authorizations.truncated.profiles ? " (truncated)" : ""}\n`
+    if (authorizations.queryWarnings.length) {
+      summary += `- Query warnings: ${authorizations.queryWarnings.length}\n`
+    }
+    return `${summary}${JSON.stringify(authorizations, null, 2)}`
   }
 
   async readQrfcQueues(input: QrfcQueuesInput): Promise<string> {

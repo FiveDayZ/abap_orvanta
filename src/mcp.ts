@@ -742,6 +742,9 @@ export function createMcpServer(
   registerTool("get_sap_system_info", toolContracts.get_sap_system_info, async (input) =>
     invoke("get_sap_system_info", () => tools.getSapSystemInfo(input))
   )
+  registerTool("read_user_authorizations", toolContracts.read_user_authorizations, async (input) =>
+    invoke("read_user_authorizations", () => tools.readUserAuthorizations(input))
+  )
   registerTool("read_qrfc_queues", toolContracts.read_qrfc_queues, async (input) =>
     invoke("read_qrfc_queues", () => tools.readQrfcQueues(input))
   )

@@ -490,6 +490,14 @@ export async function buildCapabilityReport(
       )
     ),
     capability(
+      "authorization-assignments",
+      "target-specific",
+      ["read_user_authorizations"],
+      unknownTargetObservation(
+        "Reads the approved assignment tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. The answer is assignment master data and never an authorization decision. See adt-data-preview for the native verdict."
+      )
+    ),
+    capability(
       "interface-queues",
       "target-specific",
       ["read_qrfc_queues", "read_idoc_status"],
