@@ -4934,21 +4934,22 @@ export function traceHelperProbe(
 }
 
 /**
- * The URI an ADT edit locks.
+ * The URI an ADT edit locks: the object's own URI, the flow every recorded deployment used.
  *
- * A program, class or interface is locked on its own URI: that is the flow every recorded deployment
- * used, and those writes still succeed. A **function module** is different. Its source is the MAIN
- * include of the function group, which is a resource of its own, and on this 7.31 system locking
- * `.../fmodules/<fm>` leaves that include unlocked: SAP grants the lock and then refuses the save with
- * `HTTP 423 Resource MAIN <fm> is not locked (invalid lock handle)`. That refusal is on record for
- * 2026-08-14 11:39, four attempts on 2026-09-18 09:18-10:48 (both 4847 and a fresh 4848 session, three
- * different handles) and again 2026-09-25 01:03 for `ZPMC_FM_TP_STOCK_CALC`. The 2026-08-14 root cause
- * was already "the handle belongs to one ADT resource while the PUT targets another"; SAP names in the
- * 423 the exact resource it refused, so a function module is locked on the resource being written.
+ * A function module source write is **not** an ADT lock problem, and the lock target must not be read as
+ * one. The 2026-09-18 trace (kept in .cache/verify-repo-4848-exports/adt-trace.log) holds 12 function
+ * module source PUTs, all HTTP 423, across four function modules in three function groups - and 97
+ * program source PUTs, all HTTP 200, including transported programs whose PUT carries a corrNr. The
+ * function module runs include locks on both `.../fmodules/<fm>` and `.../fmodules/<fm>/source/main`
+ * (each returns a handle), in one unchanged SAP session, with the handle SAP issued sent straight back
+ * - and the PUT is refused anyway. Lock target, session continuity, handle round-trip, corrNr and
+ * transport assignment are therefore all excluded; ADT on this 7.31 system refuses the function module
+ * source PUT itself. A candidate fix that locked `.../source/main` for function modules was written and
+ * falsified by that same trace on 2026-09-25, which is why the default is unchanged here.
  *
- * ABAP_MCP_LOCK_TARGET still overrides the choice: `fugr` locks the function group (tried 2026-09-18
- * 10:55, SAP still refused), `source` locks the resource being written for every object type, and
- * `object` restores the historical object-URI lock for a function module.
+ * ABAP_MCP_LOCK_TARGET still selects a target for experiments: `source` locks the resource being written
+ * (recorded as refused on 2026-09-18 11:15-11:33, same session, same handle), `fugr` locks the function
+ * group (refused 2026-09-18 10:55), `object` is the default.
  */
 function lockTargetUri(objectUri: string, sourceUri: string, kind?: string): string {
   const mode = process.env.ABAP_MCP_LOCK_TARGET
@@ -4957,8 +4958,7 @@ function lockTargetUri(objectUri: string, sourceUri: string, kind?: string): str
     return group && group !== objectUri ? group : objectUri
   }
   if (mode === "source") return sourceUri || objectUri
-  if (mode === "object") return objectUri
-  if (kind === "function-module") return sourceUri || objectUri
+  void kind
   return objectUri
 }
 

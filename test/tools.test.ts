@@ -6663,7 +6663,7 @@ test("ADT write coordination locks, saves, unlocks, and activates the exact cust
   ])
 })
 
-test("a function module source write locks the MAIN include it writes", async () => {
+test("a function module write locks the object, and ABAP_MCP_LOCK_TARGET moves the lock", async () => {
   const locked: string[] = []
   const unlocked: string[] = []
   let savedSource = "FUNCTION z_fm_demo.\nENDFUNCTION."
@@ -6696,24 +6696,42 @@ test("a function module source write locks the MAIN include it writes", async ()
       return { success: true, messages: [], inactive: [] }
     }
   }
+  const fileUri = "adt://w200/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo"
+  const sourceUri = "/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo/source/main"
+  const previous = process.env.ABAP_MCP_LOCK_TARGET
+  try {
+    // A function module source PUT is refused by ADT on 7.31 whatever is locked: the 2026-09-18 trace
+    // holds 12 attempts with HTTP 423 against 97 program PUTs with HTTP 200, including runs that locked
+    // the source resource in an unchanged session. The default therefore stays on the object URI.
+    const result = await replaceSourceWithClient(
+      client as never,
+      "w200",
+      fileUri,
+      "FUNCTION z_fm_demo.",
+      "FUNCTION z_fm_demo.\n  WRITE 'OK'."
+    )
+    assert.deepEqual(locked, ["/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo"])
+    assert.deepEqual(unlocked, locked)
+    assert.equal(result.activation.success, true)
+    assert.match(savedSource, /WRITE 'OK'/)
 
-  const result = await replaceSourceWithClient(
-    client as never,
-    "w200",
-    "adt://w200/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo",
-    "FUNCTION z_fm_demo.",
-    "FUNCTION z_fm_demo.\n  WRITE 'OK'."
-  )
-
-  // SAP names the resource it refuses as "Resource MAIN <fm>": the function module's own URI is a
-  // different ADT resource from the MAIN include its source is written to, and locking it left the
-  // include unlocked. That refusal is on record for 2026-08-14, 2026-09-18 and 2026-09-25.
-  assert.deepEqual(locked, [
-    "/sap/bc/adt/functions/groups/zfug_demo/fmodules/z_fm_demo/source/main"
-  ])
-  assert.deepEqual(unlocked, locked)
-  assert.equal(result.activation.success, true)
-  assert.match(savedSource, /WRITE 'OK'/)
+    // The experiment knob still moves the lock, and the unlock follows the lock it took.
+    locked.length = 0
+    unlocked.length = 0
+    process.env.ABAP_MCP_LOCK_TARGET = "source"
+    await replaceSourceWithClient(
+      client as never,
+      "w200",
+      fileUri,
+      "FUNCTION z_fm_demo.",
+      "FUNCTION z_fm_demo.\n  WRITE 'AGAIN'."
+    )
+    assert.deepEqual(locked, [sourceUri])
+    assert.deepEqual(unlocked, [sourceUri])
+  } finally {
+    if (previous === undefined) delete process.env.ABAP_MCP_LOCK_TARGET
+    else process.env.ABAP_MCP_LOCK_TARGET = previous
+  }
 })
 
 test("an ADT request trace reaches disk even when the diagnostic flag is off", async () => {
