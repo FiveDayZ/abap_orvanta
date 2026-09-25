@@ -38,7 +38,23 @@
 
 原读器指纹详见 [系统信息说明](system-info.md)。新对齐读器源码199行已从w200完整读取，保留VIEW_AUTHORITY_CHECK；repository接口sourceFingerprint为`e08069939315d594527fe58fc1a52e32e583d0987bc173295ddb816be9051b94`，interfaceFingerprint为`d85d035301f09d00229fa830e7c4cd7c63c8a167055d53bb62ddebb44d17743a`。这不同于ADT渲染源码指纹，不能混用。无需新增 SAP 对象、修改角色或安装通用查询 Helper。原生 ADT 路径可以返回数字和日期；RFC后备的类型限制不推广到原生路径。
 
-`execute_data_query`仅在已知空HTML错误后，将有限语法`SELECT *`或逗号分隔字段、单表、WHERE比较条件（`=`、`<>`、`<`、`<=`、`>`、`>=`，最多8项AND连接，值为单引号字面量或裸数字）交给同一读取器；要求显式maxRows不超过500。可翻译的比较运算符集合与`read_abap_table`完全一致——降级路径不该拒绝它所调用的读取器本就能表达的比较。值超过读取器40字符上界、或运算符不属于该方言（如C式`!=`）时不予翻译，仍返回原生ADT错误。不翻译JOIN、OR、表达式、别名、排序、聚合或任意SQL。返回保留原data结构，并以querySource记录方法、原生错误、字段类型及snapshot=false。不改变既有ZTPMC_BZWL限定helper路径。
+`execute_data_query`仅在已知空HTML错误后，将下述有限语法交给同一读取器；要求显式maxRows不超过500。
+
+```
+SELECT <*|字段列表> FROM <表> [WHERE <析取>] [ORDER BY <键列表>]
+析取   := 合取 (OR 合取)*                       // 最多 8 个分支
+合取   := 比较 (AND 比较)*                      // 每分支最多 8 项
+比较   := 字段 (=|<>|<|<=|>|>=) '字面量' | 裸数字
+键列表 := 字段 [ASC|DESC] (, 字段 [ASC|DESC])*  // 最多 8 个键
+```
+
+- `OR` 逐分支下推：每个分支一次服务端读取，读取器自身的比较语义保持权威（NUMC、日期、PACKED 不在服务端重写）。合并时按行身份去重：`SELECT *` 取得的完整行（含主键字段）即为行身份，同一行被多个分支命中只保留一次并计入 `querySource.deduplicatedRows`；仅投影部分字段时两行可能逐列相同，此时**不丢弃任何行**，只把重复计数写入 `querySource.repeatedProjectedRows` —— 不得把调用方写的 `OR` 私自改写成 `DISTINCT`。两种情况下"成员"都精确：返回的每一行都满足该语句，满足该语句的每一行至少出现一次。
+- 任一分支命中行上界时 `querySource.incompleteBranches` 给出分支序号且 `truncated=true`：此时答案是"匹配行的一页"，不是完整匹配集。
+- `ORDER BY` 是对完整匹配集的断言，因此只在每个分支都读完时执行；任一分支被行上界截断即整体拒绝（`TABLE_QUERY_ORDER_BY_INCOMPLETE`，附分支序号与上界），不允许用样本冒充"排序最前"。排序键必须出现在投影列中，否则在读取之前拒绝（`TABLE_QUERY_ORDER_BY_COLUMN_NOT_SELECTED`）。比较按读取器文本表示做数值感知的字典序，**不等于** SAP 的按类型排序（NUMC/DATS 按文本比较）；需要 SAP 自身排序时应走原生路径。`sortColumns` 仍是对返回页的重新排序，与本语句的 `ORDER BY` 各司其职。
+- 无 `WHERE` 的语句按单分支有界读取，返回一页。
+- 可翻译的比较运算符集合与`read_abap_table`完全一致——降级路径不该拒绝它所调用的读取器本就能表达的比较。值超过读取器40字符上界、或运算符不属于该方言（如C式`!=`）时不予翻译，仍返回原生ADT错误。字面量自身含 `ORDER BY` 的语句因无法确定切分位置而整体拒绝（拒绝，而不是猜读）。
+- 仍不翻译：JOIN、聚合、`GROUP BY`、表达式、别名、子查询、`LIMIT`、分号与注释。聚合与 `GROUP BY` 同属"对完整集合的断言"，未实现前一律拒绝。
+- 返回保留原data结构，并以querySource记录方法、原生错误、字段类型及snapshot=false，另附 `disjuncts`、`deduplicatedRows`、`repeatedProjectedRows`、`incompleteBranches`、`orderByApplied`。不改变既有ZTPMC_BZWL限定helper路径。
 
 ## 输出语义
 

@@ -91,7 +91,12 @@ class TableQueryFailure extends Error {
 }
 /** Upper bound on the projection sample returned with a failure; DDIC tables can exceed 1000 columns. */
 const validColumnSampleLimit = 64
-const nativeEmptyHtml =
+/**
+ * The one native failure that licenses the degraded path: ADT answered the data preview with HTTP
+ * 200 and a zero-byte HTML body, which is this release's way of saying the endpoint is not served.
+ * Exported so the caller and the reader compare against the same string instead of a second copy.
+ */
+export const nativeEmptyHtml =
   "SAP_DATA_QUERY_RESPONSE_INVALID: expected XML data preview; HTTP 200; mediaType=text/html; root=unparsed; bytes=0. No empty result was inferred."
 
 export async function readAbapTable(
@@ -843,35 +848,301 @@ const selectOperators: readonly (readonly [string, SelectFilter["operator"]])[] 
   [">", "GT"]
 ]
 
-export function parseSimpleTableSelect(sql: string) {
+/**
+ * The finite fallback grammar: `SELECT <columns> FROM <table> [WHERE <disjunction>] [ORDER BY <keys>]`,
+ * where the disjunction is `AND`-joined comparisons joined by `OR`, and the ordering is a key list.
+ *
+ * Two bounds are refusals rather than silent adjustments. {@link selectDisjunctLimit} bounds the `OR`
+ * branches, because every branch is one server-side read; {@link selectOrderLimit} bounds the sort
+ * keys, which are evaluated in the service (the reader has no ordering parameter at all).
+ */
+const selectDisjunctLimit = 8
+const selectOrderLimit = 8
+
+export interface GroupedTableSelect {
+  tableName: string
+  columns: string[]
+  /**
+   * Disjunction of conjunctions: a row matches when every conjunct of **one** group matches. Always
+   * at least one group, and every group holds at least one conjunct, so a single-conjunct statement
+   * and its grouped form are the same shape.
+   */
+  groups: SelectFilter[][]
+  orderBy: { column: string; direction: "asc" | "desc" }[]
+}
+
+/**
+ * One comparison plus the separator that follows it. The literal is consumed by this pattern, so an
+ * `AND`/`OR` inside a string value (`STATUS = 'OR'`) is part of the value and never a separator.
+ */
+const conjunctPattern =
+  /^([A-Z][A-Z0-9_]*)\s*(<=|>=|<>|=|<|>)\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?)\s*(AND\s+|OR\s+|$)/i
+
+function parseConjunct(text: string) {
+  const match = text.match(conjunctPattern)
+  if (!match) return undefined
+  const operator = selectOperators.find(([token]) => token === match[2])?.[1]
+  if (!operator) return undefined
+  const literal = match[3]!
+  const value = literal.startsWith("'") ? literal.slice(1, -1).replaceAll("''", "'") : literal
+  // The reader bounds a filter value at 40 characters. Refusing here keeps the caller's reply the
+  // original ADT error instead of a schema rejection about a request they never wrote.
+  if (value.length > 40) return undefined
+  const separator = match[4]!.trim().toUpperCase()
+  return {
+    filter: { column: match[1]!.toUpperCase(), operator, value } as SelectFilter,
+    separator:
+      separator === "AND"
+        ? ("and" as const)
+        : separator === "OR"
+          ? ("or" as const)
+          : ("end" as const),
+    consumed: match[0].length
+  }
+}
+
+function parseOrderBy(text: string): GroupedTableSelect["orderBy"] | undefined {
+  const keys: GroupedTableSelect["orderBy"] = []
+  let rest = text.trim()
+  while (rest) {
+    const key = rest.match(/^([A-Z][A-Z0-9_]*)(?:\s+(ASC|DESC))?\s*(?:,\s*|$)/i)
+    if (!key || keys.length === selectOrderLimit) return undefined
+    keys.push({
+      column: key[1]!.toUpperCase(),
+      direction: key[2]?.toUpperCase() === "DESC" ? "desc" : "asc"
+    })
+    rest = rest.slice(key[0].length).trim()
+  }
+  return keys.length > 0 ? keys : undefined
+}
+
+/**
+ * Parse the degraded-path grammar in full, or return `undefined` so the caller keeps the platform's
+ * own error.
+ *
+ * Nothing here is translated "best effort": a statement this pattern cannot describe exactly is
+ * refused, because the alternative is a query whose meaning in SAP differs from the SQL the caller
+ * wrote. Parentheses are therefore absent on purpose - without them the grouping is unambiguous
+ * (`OR` of `AND`s) and no precedence rule has to be invented.
+ */
+export function parseGroupedTableSelect(sql: string): GroupedTableSelect | undefined {
   // Same finite-grammar approach as scoped-query.ts; never translate arbitrary SQL.
   const match = sql.match(
-    /^\s*SELECT\s+(\*|[A-Z][A-Z0-9_]*(?:\s*,\s*[A-Z][A-Z0-9_]*)*)\s+FROM\s+([A-Z][A-Z0-9_]*)\s+WHERE\s+([\s\S]+?)\s*$/i
+    /^\s*SELECT\s+(\*|[A-Z][A-Z0-9_]*(?:\s*,\s*[A-Z][A-Z0-9_]*)*)\s+FROM\s+([A-Z][A-Z0-9_]*)\s*([\s\S]*?)\s*$/i
   )
   if (!match) return undefined
-  let rest = match[3]!
-  const filters: SelectFilter[] = []
-  while (rest) {
-    const condition = rest.match(
-      /^([A-Z][A-Z0-9_]*)\s*(<=|>=|<>|=|<|>)\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?)\s*(?:AND\s+|$)/i
+  const columns = match[1]!.split(/\s*,\s*/).map((column) => column.toUpperCase())
+  const tableName = match[2]!.toUpperCase()
+  const tail = match[3]!.trim()
+  const groups: SelectFilter[][] = []
+  let orderBy: GroupedTableSelect["orderBy"] = []
+  if (tail) {
+    if (/^WHERE\b/i.test(tail)) {
+      // The optional `ORDER BY` is split off by pattern, not by a tokenizer. A string literal that
+      // itself contains " ORDER BY " therefore splits in the wrong place - and is then refused by
+      // `parseOrderBy`, because a key list cannot end in the literal's closing quote. A refusal is
+      // the intended outcome: this grammar never guesses which reading the caller meant.
+      const where = tail.match(/^WHERE\s+([\s\S]*?)(?:\s+ORDER\s+BY\s+([\s\S]+))?$/i)
+      if (!where) return undefined
+      let rest = where[1]!.trim()
+      if (where[2] !== undefined) {
+        const keys = parseOrderBy(where[2])
+        if (!keys) return undefined
+        orderBy = keys
+      }
+      if (!rest) return undefined
+      for (;;) {
+        if (groups.length === selectDisjunctLimit) return undefined
+        const group: SelectFilter[] = []
+        for (;;) {
+          if (group.length === 8) return undefined
+          const conjunct = parseConjunct(rest)
+          if (!conjunct) return undefined
+          group.push(conjunct.filter)
+          rest = rest.slice(conjunct.consumed).trim()
+          if (conjunct.separator === "and") {
+            // `... AND ` with nothing behind it looks like a truncated statement, not a filter.
+            if (!rest) return undefined
+            continue
+          }
+          if (conjunct.separator === "or" && !rest) return undefined
+          break
+        }
+        groups.push(group)
+        if (!rest) break
+      }
+    } else {
+      const keys = tail.match(/^ORDER\s+BY\s+([\s\S]+)$/i)
+      if (!keys) return undefined
+      const parsed = parseOrderBy(keys[1]!)
+      if (!parsed) return undefined
+      orderBy = parsed
+    }
+  }
+  return { tableName, columns, groups: groups.length > 0 ? groups : [[]], orderBy }
+}
+
+/**
+ * Stable identity of one row within a projection, used to collapse rows that several `OR` branches
+ * returned. Two rows that agree on every projected column are the same answer to the caller: the
+ * reader returns no row identity, and the projected values are all the caller ever sees.
+ */
+export function branchRowKey(row: Record<string, unknown>, columns: string[]): string {
+  // `SELECT *` is expanded by the reader, not by the parser, so the projection here is the row's own
+  // key set. Keying on the literal "*" would collapse every row into one.
+  const names = columns.length === 0 || columns.includes("*") ? Object.keys(row) : columns
+  return JSON.stringify(
+    [...names].sort().map((column) => [column, row[column] === undefined ? null : row[column]])
+  )
+}
+
+/** One disjunct's read, as the caller's reader reports it. */
+export interface GroupedReadBranch {
+  rows: Record<string, unknown>[]
+  /** True when the read hit the reader's row bound: this holds a sample, not the whole match set. */
+  truncated: boolean
+  /** The reader's own detail for this branch, passed through so no evidence is lost in the merge. */
+  detail: Record<string, unknown>
+}
+
+export interface GroupedReadResult {
+  rows: Record<string, unknown>[]
+  /** How many reads the statement needed: one per disjunct. */
+  disjuncts: number
+  /**
+   * Rows dropped because an earlier disjunct had already returned the same row. Non-zero only when
+   * the read returned the whole row - see {@link GroupedReadResult.repeatedProjectedRows}.
+   */
+  deduplicatedRows: number
+  /**
+   * Rows kept whose projected values match an earlier row's.
+   *
+   * A partial projection cannot tell two rows apart - two different rows may agree on every selected
+   * column - so nothing is dropped because of it, and this count reports the ambiguity instead of
+   * quietly turning the caller's `OR` into a `DISTINCT`. Membership is exact either way: every
+   * returned row matches the statement, and every matching row appears at least once.
+   */
+  repeatedProjectedRows: number
+  /** Branch ordinals that hit the row bound and therefore hold a sample. */
+  incompleteBranches: number[]
+  orderByApplied: boolean
+}
+
+/**
+ * Run a grouped statement as one read per disjunct and merge the results.
+ *
+ * Three rules keep the merge from inventing an answer:
+ *
+ * - **Row identity.** Only a read that returned the whole row has one: `SELECT *` includes the key
+ *   fields, so a row returned by two disjuncts is the same row. With a partial projection, identical
+ *   projected values prove nothing, so such rows are counted as repeats and kept.
+ * - **Membership versus ordering.** Without `ORDER BY` the answer is a page of matching rows, and a
+ *   disjunct that hit the row bound is reported through `incompleteBranches`. With `ORDER BY` the
+ *   answer claims to be the top of an ordering, which a sample cannot support, so the statement is
+ *   refused rather than answered with rows that are not the top.
+ */
+export async function readGroupedRows(
+  select: Pick<GroupedTableSelect, "columns" | "groups" | "orderBy">,
+  readBranch: (filters: SelectFilter[]) => Promise<GroupedReadBranch>,
+  rowBound?: number
+): Promise<GroupedReadResult> {
+  // An `ORDER BY` column that is not projected would compare `undefined` with `undefined` for every
+  // row: a sort that reports success while changing nothing is worse than a refusal, and the fix is
+  // one word in the SELECT list. `SELECT *` needs no check - the reader expands it to every column.
+  const unprojected = select.columns.includes("*")
+    ? []
+    : [...new Set(select.orderBy.map((key) => key.column))].filter(
+        (column) => !select.columns.includes(column)
+      )
+  if (unprojected.length > 0) {
+    throw new Error(
+      `TABLE_QUERY_ORDER_BY_COLUMN_NOT_SELECTED: ORDER BY ${unprojected.join(", ")} is not in the ` +
+        `projection, so the rows carry nothing to compare. Add it to the SELECT list (or select *).`
     )
-    if (!condition || filters.length === 8) return undefined
-    const operator = selectOperators.find(([token]) => token === condition[2])?.[1]
-    if (!operator) return undefined
-    const literal = condition[3]!
-    const value = literal.startsWith("'") ? literal.slice(1, -1).replaceAll("''", "'") : literal
-    // The reader bounds a filter value at 40 characters. Refusing here keeps the caller's reply the
-    // original ADT error instead of a schema rejection about a request they never wrote.
-    if (value.length > 40) return undefined
-    filters.push({ column: condition[1]!.toUpperCase(), operator, value })
-    rest = rest.slice(condition[0].length)
-    if (!rest && /\bAND\s+$/i.test(condition[0])) return undefined
+  }
+  const fullRow = select.columns.includes("*")
+  const rows: Record<string, unknown>[] = []
+  const seen = new Set<string>()
+  const incompleteBranches: number[] = []
+  let deduplicatedRows = 0
+  let repeatedProjectedRows = 0
+  for (const [index, group] of select.groups.entries()) {
+    const branch = await readBranch(group)
+    if (branch.truncated) incompleteBranches.push(index)
+    for (const row of branch.rows) {
+      const key = branchRowKey(row, select.columns)
+      if (seen.has(key)) {
+        if (fullRow) {
+          deduplicatedRows++
+          continue
+        }
+        repeatedProjectedRows++
+      } else {
+        seen.add(key)
+      }
+      rows.push(row)
+    }
+  }
+  if (select.orderBy.length > 0) {
+    if (incompleteBranches.length > 0) {
+      const bound = rowBound === undefined ? "the row bound" : `the ${rowBound}-row bound`
+      throw new Error(
+        `TABLE_QUERY_ORDER_BY_INCOMPLETE: ORDER BY describes the whole match set, but ` +
+          `${incompleteBranches.length} of ${select.groups.length} read(s) stopped at ${bound} ` +
+          `(branch${incompleteBranches.length > 1 ? "es" : ""} ${incompleteBranches.join(", ")}). ` +
+          `Narrow the WHERE clause until every read completes, or sort the returned page with ` +
+          `sortColumns. Nothing was ordered.`
+      )
+    }
+    return {
+      rows: sortRowsByColumns(rows, select.orderBy),
+      disjuncts: select.groups.length,
+      deduplicatedRows,
+      repeatedProjectedRows,
+      incompleteBranches,
+      orderByApplied: true
+    }
   }
   return {
-    tableName: match[2]!.toUpperCase(),
-    columns: match[1]!.split(/\s*,\s*/).map((column) => column.toUpperCase()),
-    filters
+    rows,
+    disjuncts: select.groups.length,
+    deduplicatedRows,
+    repeatedProjectedRows,
+    incompleteBranches,
+    orderByApplied: false
   }
+}
+
+/**
+ * Order rows by a key list, using the same comparator as the tool's own `sortColumns` input so the
+ * two ways of asking for an order cannot disagree.
+ *
+ * The comparison is lexical with numeric awareness over the reader's text representation, which is
+ * not SAP's type-aware ordering (`NUMC` and `DATS` sort as characters here, not as numbers or
+ * dates): a caller who needs SAP's ordering must get it from the platform, not from this degraded
+ * path.
+ */
+export function sortRowsByColumns(
+  rows: Record<string, unknown>[],
+  sorts: Array<{ column: string; direction: "asc" | "desc" }>
+): Record<string, unknown>[] {
+  if (!sorts.length) return rows
+  return [...rows].sort((left, right) => {
+    for (const sort of sorts) {
+      const leftValue = left[sort.column]
+      const rightValue = right[sort.column]
+      const comparison = String(leftValue ?? "").localeCompare(
+        String(rightValue ?? ""),
+        undefined,
+        {
+          numeric: true,
+          sensitivity: "base"
+        }
+      )
+      if (comparison) return sort.direction === "asc" ? comparison : -comparison
+    }
+    return 0
+  })
 }
 
 /**

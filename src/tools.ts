@@ -63,9 +63,12 @@ import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
 import {
-  parseSimpleTableSelect,
+  nativeEmptyHtml,
+  parseGroupedTableSelect,
   readAbapTable,
+  readGroupedRows,
   selectedTableNames,
+  sortRowsByColumns,
   tableQuerySchema
 } from "./table-query.js"
 import { assertTableAllowed, TABLE_ALLOWLIST_UNVERIFIABLE } from "./table-allowlist.js"
@@ -7739,37 +7742,67 @@ export class ToolService {
     try {
       rawRows = await this.backend.runQuery(input.connectionId.toLowerCase(), sql, rowCap + 1)
     } catch (error) {
-      const structured = parseSimpleTableSelect(sql)
+      const structured = parseGroupedTableSelect(sql)
       if (
         !(error instanceof Error) ||
-        error.message !==
-          "SAP_DATA_QUERY_RESPONSE_INVALID: expected XML data preview; HTTP 200; mediaType=text/html; root=unparsed; bytes=0. No empty result was inferred." ||
+        error.message !== nativeEmptyHtml ||
         !structured ||
         rowCap > 500
       )
         throw error
-      const result = JSON.parse(
-        await this.readAbapTable(
-          {
-            connectionId: input.connectionId,
-            ...structured,
-            maxRows: rowCap
-          },
-          error
-        )
+      // One server-side read per disjunct. The reader's own comparison stays authoritative, so an
+      // `OR` becomes a union of pushed-down predicates rather than a client-side comparison that
+      // would have to re-implement SAP's type-aware handling of `NUMC`, dates and packed numbers -
+      // the kind of re-implementation that silently answers a different question.
+      const reads: Record<string, unknown>[] = []
+      const grouped = await readGroupedRows(
+        structured,
+        async (filters) => {
+          const result = JSON.parse(
+            await this.readAbapTable(
+              {
+                connectionId: input.connectionId,
+                tableName: structured.tableName,
+                columns: structured.columns,
+                filters,
+                maxRows: rowCap
+              },
+              error
+            )
+          )
+          if (result.status !== "ok") {
+            throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
+          }
+          reads.push({
+            method: result.method,
+            nativeCode: result.nativeCode,
+            representation: result.representation,
+            definitionFingerprint: result.definitionFingerprint,
+            fieldMetadata: result.fieldMetadata
+          })
+          return {
+            rows: result.data as Record<string, unknown>[],
+            truncated: result.truncated === true,
+            detail: {}
+          }
+        },
+        rowCap
       )
-      if (result.status !== "ok") {
-        throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
-      }
-      rawRows = result.data
+      const first = reads[0] ?? {}
+      rawRows = grouped.rows
       fallback = {
-        method: result.method,
-        nativeCode: result.nativeCode,
-        representation: result.representation,
-        definitionFingerprint: result.definitionFingerprint,
-        fieldMetadata: result.fieldMetadata,
+        method: first.method,
+        nativeCode: first.nativeCode,
+        representation: first.representation,
+        definitionFingerprint: first.definitionFingerprint,
+        fieldMetadata: first.fieldMetadata,
         snapshot: false,
-        truncated: result.truncated
+        truncated: grouped.incompleteBranches.length > 0,
+        disjuncts: grouped.disjuncts,
+        deduplicatedRows: grouped.deduplicatedRows,
+        repeatedProjectedRows: grouped.repeatedProjectedRows,
+        incompleteBranches: grouped.incompleteBranches,
+        orderByApplied: grouped.orderByApplied
       }
     }
     const truncated = fallback?.truncated === true || rawRows.length > rowCap
@@ -10581,19 +10614,9 @@ function applyDataOperations(
     const pattern = wildcardToRegex(filter.value)
     result = result.filter((row) => pattern.test(stringValue(row[filter.column])))
   }
-  if (!sorts.length) return result
-  return [...result].sort((left, right) => {
-    for (const sort of sorts) {
-      const leftValue = stringValue(left[sort.column])
-      const rightValue = stringValue(right[sort.column])
-      const comparison = leftValue.localeCompare(rightValue, undefined, {
-        numeric: true,
-        sensitivity: "base"
-      })
-      if (comparison) return sort.direction === "asc" ? comparison : -comparison
-    }
-    return 0
-  })
+  // The comparator lives in `table-query.ts` so that `sortColumns` and a statement's own `ORDER BY`
+  // cannot order rows differently while claiming to be the same ordering.
+  return sortRowsByColumns(result, sorts)
 }
 
 function formatAtcResult(

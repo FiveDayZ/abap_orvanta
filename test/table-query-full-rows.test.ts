@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { parseSimpleTableSelect, readAbapTable, tableQuerySchema } from "../src/table-query.js"
+import { parseGroupedTableSelect, readAbapTable, tableQuerySchema } from "../src/table-query.js"
 import { parseRemoteFunctionResponse } from "../src/adt-backend.js"
 import type { RemoteFunctionRequest } from "../src/backend.js"
 import { ToolService } from "../src/tools.js"
@@ -344,45 +344,60 @@ test("table-reader SOAP preserves WA leading padding while ordinary RFC response
 
 test("finite SELECT fallback accepts escaped literals and rejects unsupported SQL", () => {
   assert.deepEqual(
-    parseSimpleTableSelect("SELECT * FROM TFDIR WHERE KUNNR = 'O''Brien' AND WERKS = '809P'"),
+    parseGroupedTableSelect("SELECT * FROM TFDIR WHERE KUNNR = 'O''Brien' AND WERKS = '809P'"),
     {
       tableName: "TFDIR",
       columns: ["*"],
-      filters: [
-        { column: "KUNNR", operator: "EQ", value: "O'Brien" },
-        { column: "WERKS", operator: "EQ", value: "809P" }
-      ]
+      groups: [
+        [
+          { column: "KUNNR", operator: "EQ", value: "O'Brien" },
+          { column: "WERKS", operator: "EQ", value: "809P" }
+        ]
+      ],
+      orderBy: []
     }
   )
   // The degraded path translates exactly the comparisons read_abap_table can express. Refusing
   // "<" or ">" here would be the service being stricter than the reader it calls.
   assert.deepEqual(
-    parseSimpleTableSelect(
+    parseGroupedTableSelect(
       "SELECT MANDT, BUKRS FROM ZTPMC_BZWL WHERE ZPOSNR >= 100 AND ZPOSNR <= 200 " +
         "AND WERKS <> '809P' AND ZPKGMATNR > '0' AND ZPKGTYPE < 9 AND ZPKGDESC = 'x''y'"
     ),
     {
       tableName: "ZTPMC_BZWL",
       columns: ["MANDT", "BUKRS"],
-      filters: [
-        { column: "ZPOSNR", operator: "GE", value: "100" },
-        { column: "ZPOSNR", operator: "LE", value: "200" },
-        { column: "WERKS", operator: "NE", value: "809P" },
-        { column: "ZPKGMATNR", operator: "GT", value: "0" },
-        { column: "ZPKGTYPE", operator: "LT", value: "9" },
-        { column: "ZPKGDESC", operator: "EQ", value: "x'y" }
-      ]
+      groups: [
+        [
+          { column: "ZPOSNR", operator: "GE", value: "100" },
+          { column: "ZPOSNR", operator: "LE", value: "200" },
+          { column: "WERKS", operator: "NE", value: "809P" },
+          { column: "ZPKGMATNR", operator: "GT", value: "0" },
+          { column: "ZPKGTYPE", operator: "LT", value: "9" },
+          { column: "ZPKGDESC", operator: "EQ", value: "x'y" }
+        ]
+      ],
+      orderBy: []
     }
   )
   // A bare number keeps its sign and decimals; the reader quotes it for SAP.
-  assert.deepEqual(parseSimpleTableSelect("SELECT * FROM TFDIR WHERE N > -12.5")?.filters, [
+  assert.deepEqual(parseGroupedTableSelect("SELECT * FROM TFDIR WHERE N > -12.5")?.groups[0], [
     { column: "N", operator: "GT", value: "-12.5" }
   ])
+  // A statement without a WHERE is one bounded read of the table, and an OR or an ORDER BY is now
+  // part of the dialect rather than a refusal: each is read by the grouped reader.
+  assert.deepEqual(parseGroupedTableSelect("SELECT * FROM TFDIR")?.groups, [[]])
+  assert.equal(
+    parseGroupedTableSelect("SELECT * FROM TFDIR WHERE ID = '1' OR ID = '2'")?.groups.length,
+    2
+  )
+  assert.deepEqual(
+    parseGroupedTableSelect("SELECT * FROM TFDIR WHERE ID = '1' ORDER BY ID")?.orderBy,
+    [{ column: "ID", direction: "asc" }]
+  )
   for (const sql of [
-    "SELECT * FROM TFDIR",
-    "SELECT * FROM TFDIR WHERE ID = '1' OR ID = '2'",
     "SELECT * FROM TFDIR WHERE ID = '1' AND ",
-    "SELECT * FROM TFDIR WHERE ID = '1' ORDER BY ID",
+    "SELECT * FROM TFDIR WHERE ID = '1' OR ",
     "SELECT COUNT(*) FROM TFDIR WHERE ID = '1'",
     "SELECT * FROM TFDIR WHERE ID = '1';DELETE FROM TFDIR",
     // Not the dialect: C-style inequality is not ABAP Open SQL, and a value beyond the reader's
@@ -393,12 +408,15 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
     "SELECT * FROM TFDIR WHERE ID '1'",
     "SELECT * FROM TFDIR WHERE ID >=< '1'"
   ]) {
-    assert.equal(parseSimpleTableSelect(sql), undefined, sql)
+    assert.equal(parseGroupedTableSelect(sql), undefined, sql)
   }
   // Exactly the reader's ceiling: the ninth conjunct is not translated.
   const eight = Array.from({ length: 8 }, (_, index) => `F${index} = '1'`).join(" AND ")
-  assert.equal(parseSimpleTableSelect(`SELECT * FROM TFDIR WHERE ${eight}`)?.filters.length, 8)
-  assert.equal(parseSimpleTableSelect(`SELECT * FROM TFDIR WHERE ${eight} AND F8 = '1'`), undefined)
+  assert.equal(parseGroupedTableSelect(`SELECT * FROM TFDIR WHERE ${eight}`)?.groups[0]?.length, 8)
+  assert.equal(
+    parseGroupedTableSelect(`SELECT * FROM TFDIR WHERE ${eight} AND F8 = '1'`),
+    undefined
+  )
 })
 
 test("execute_data_query routes full rows through the shared reader without repeating native ADT", async () => {
@@ -427,4 +445,87 @@ test("execute_data_query routes full rows through the shared reader without repe
   assert.equal(result.truncated, true)
   assert.deepEqual(result.data, f.rows.slice(0, 5))
   assert.equal(result.querySource.method, "bbp_rfc_read_table")
+})
+
+test("execute_data_query reads each disjunct on the server and merges what comes back", async () => {
+  const f = fixture(6, 6)
+  const backend = Object.assign(new MockBackend(), f.backend)
+  backend.runQuery = async () => {
+    throw nativeError
+  }
+  const tools = new ToolService(backend)
+  tools.readDdicTransparentTable = async () => JSON.stringify(f.definition)
+  tools.readFunctionModuleInterface = async (input) =>
+    JSON.stringify(await f.readReader(input.connectionId, input.functionName))
+  const sql = "SELECT * FROM TFDIR WHERE MANDT = '200' OR WERKS = '809P'"
+  const result = JSON.parse(
+    await tools.executeDataQuery({
+      connectionId: "w200",
+      displayMode: "internal",
+      sql,
+      maxRows: 5,
+      rowRange: { start: 0, end: 5 }
+    })
+  )
+
+  // Two disjuncts are two server-side reads: the `OR` is pushed down as a union of predicates rather
+  // than compared in the service, where `NUMC` and dates would have to be re-typed by hand.
+  const dataReads = f.requests.filter((request) => request.inputParameters.NO_DATA !== "X")
+  assert.equal(dataReads.length, 2)
+  assert.deepEqual(
+    dataReads.map((request) =>
+      (request.inputParameters.OPTIONS as { TEXT: string }[]).map((option) => option.TEXT)
+    ),
+    [["MANDT = '200'"], ["WERKS = '809P'"]]
+  )
+  assert.equal(result.querySource.disjuncts, 2)
+  // The first branch stopped at the five-row bound, so it returned rows 0-4 while the second branch
+  // returned the three `809P` rows - two of which it had already produced. A whole-row read
+  // identifies them, so the union collapses those two instead of handing the caller the same row
+  // twice, and keeps the third `809P` row it had not reached.
+  assert.equal(result.querySource.deduplicatedRows, 2)
+  assert.equal(result.querySource.repeatedProjectedRows, 0)
+  // The first branch hit the five-row bound, so the answer is a page and says so.
+  assert.deepEqual(result.querySource.incompleteBranches, [0])
+  assert.equal(result.truncated, true)
+  assert.equal(result.resultCount, 5)
+})
+
+test("execute_data_query refuses an ordering it cannot compute over the whole match set", async () => {
+  const f = fixture(6, 6)
+  const backend = Object.assign(new MockBackend(), f.backend)
+  backend.runQuery = async () => {
+    throw nativeError
+  }
+  const tools = new ToolService(backend)
+  tools.readDdicTransparentTable = async () => JSON.stringify(f.definition)
+  tools.readFunctionModuleInterface = async (input) =>
+    JSON.stringify(await f.readReader(input.connectionId, input.functionName))
+  const query = (sql: string) =>
+    tools.executeDataQuery({
+      connectionId: "w200",
+      displayMode: "internal",
+      sql,
+      maxRows: 5,
+      rowRange: { start: 0, end: 5 }
+    })
+
+  // Sorting the rows that happened to fit would answer "the top of the ordering" with rows that are
+  // not, so the statement is refused with the branch that was cut.
+  await assert.rejects(
+    query("SELECT * FROM TFDIR WHERE MANDT = '200' OR WERKS = '809P' ORDER BY ZRKJHH"),
+    /TABLE_QUERY_ORDER_BY_INCOMPLETE/
+  )
+  // A narrow enough filter completes every read, and then the ordering is real.
+  const ordered = JSON.parse(
+    await query(
+      "SELECT * FROM TFDIR WHERE WERKS = '809P' AND KUNNR = '0001100059' ORDER BY ZRKJHH DESC"
+    )
+  )
+  assert.equal(ordered.querySource.orderByApplied, true)
+  assert.equal(ordered.querySource.incompleteBranches.length, 0)
+  assert.deepEqual(
+    ordered.data.map((row: Record<string, string>) => row.ZRKJHH),
+    ["00000000000000000002", "00000000000000000001", "00000000000000000000"]
+  )
 })
