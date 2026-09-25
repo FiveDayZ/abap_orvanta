@@ -129,6 +129,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_smartform",
       "read_smartstyle",
       "read_system_logs",
+      "read_system_parameters",
       "read_transaction_code",
       "recover_ddic_table_conversion",
       "release_write_operation_lock",

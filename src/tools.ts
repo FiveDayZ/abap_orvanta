@@ -58,7 +58,9 @@ import type { DebugStepRequest, DebugVariableRequest } from "./debug-manager.js"
 import { writeDiscoveryExport, writeResourceExport } from "./export.js"
 import type { InvocationReceiptStore, InvocationReservation } from "./invocation-receipts.js"
 import { buildCapabilityReport } from "./capabilities.js"
+import { collectServerFacts } from "./server-facts.js"
 import { collectSystemInfo } from "./system-info.js"
+import { collectSystemParameters } from "./system-parameters.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
@@ -1223,6 +1225,14 @@ interface ObjectUrlInput {
   objectName: string
   objectType?: string | undefined
   connectionId: string
+}
+
+interface SystemParametersInput {
+  connectionId: string
+  parameterName?: string | undefined
+  objectName?: string | undefined
+  profileName?: string | undefined
+  maxRows?: number | undefined
 }
 
 interface SystemInfoInput {
@@ -6776,9 +6786,27 @@ export class ToolService {
         await this.readFunctionModuleInterface({ connectionId, functionName: "RFC_READ_TABLE" })
       )
     )
+    const facts = await collectServerFacts(this.backend, connectionId, async () =>
+      JSON.parse(
+        await this.readFunctionModuleInterface({
+          connectionId,
+          functionName: "RFC_SYSTEM_INFO"
+        })
+      )
+    )
     const components = input.includeComponents ? info.softwareComponents : []
     const result = {
       ...info,
+      serverFacts: facts,
+      sources: [...info.sources, ...facts.sources],
+      queryWarnings: [...info.queryWarnings, ...facts.queryWarnings],
+      // The six fixed tables and the kernel's own answer are independent halves of one baseline.
+      status:
+        info.status === "ok" && facts.status === "ok"
+          ? "ok"
+          : info.status === "unavailable" && facts.status === "unavailable"
+            ? "unavailable"
+            : "partial",
       currentClient: info.currentClient
         ? {
             ...info.currentClient,
@@ -6796,7 +6824,9 @@ export class ToolService {
       `SAP System: ${connectionId.toUpperCase()}\n` +
       `- Status: ${result.status}\n` +
       `- Type: ${result.systemType}\n` +
-      `- Release: ${result.sapRelease || "N/A"}\n`
+      `- Release: ${result.sapRelease || "N/A"}\n` +
+      `- Kernel release: ${facts.kernelRelease || "N/A"}; database system: ${facts.databaseSystem || "N/A"}` +
+      `${facts.rfciSource ? "" : ` (RFC_SYSTEM_INFO unavailable: ${facts.queryWarnings.join(", ")})`}\n`
     if (result.currentClient) {
       summary += `- Client: ${result.currentClient.clientNumber} (${result.currentClient.clientName})\n`
       // SCC4 semantics, and the question operations actually asks of a client: can it be changed?
@@ -6820,6 +6850,36 @@ export class ToolService {
       summary += `- Query warnings: ${result.queryWarnings.length}\n`
     }
     return `${summary}${JSON.stringify(result, null, 2)}`
+  }
+
+  async readSystemParameters(input: SystemParametersInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const parameters = await collectSystemParameters(
+      this.backend,
+      connectionId,
+      {
+        parameterName: input.parameterName,
+        objectName: input.objectName,
+        profileName: input.profileName,
+        maxRows: input.maxRows
+      },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        )
+    )
+    let summary =
+      `SAP system parameters: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${parameters.status}\n` +
+      `- Parameters: ${parameters.parameterCount} returned${parameters.parametersTruncated ? " (truncated)" : ""}; ` +
+      `profiles: ${parameters.profileCount} returned${parameters.profilesTruncated ? " (truncated)" : ""}\n`
+    if (parameters.queryWarnings.length) {
+      summary += `- Query warnings: ${parameters.queryWarnings.length}\n`
+    }
+    return `${summary}${JSON.stringify(parameters, null, 2)}`
   }
 
   async getVersionHistory(input: VersionHistoryInput): Promise<string> {

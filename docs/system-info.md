@@ -60,3 +60,20 @@ Remove-Item Env:ABAP_MCP_URL
 ```
 
 脚本先核对服务版本，再检查 w200/client 200 的完整组件与隐藏组件两种调用。输出唯一证据到工作区根 `.doc`，未通过返回退出码 1，不改变当前服务或配置。实际时区还需与原生系统配置核对；脚本不使用电脑时区猜测 SAP 时区。
+
+## 内核半边：RFC_SYSTEM_INFO
+
+六张固定表都没有内核版本，因此工具在内核侧另读一次 `RFC_SYSTEM_INFO`，并把它与表读数分别标注来源：
+
+- 闸门：先只读该函数模块的接口，核对源码指纹与接口指纹（见 `src/server-facts.ts` 的 `reviewedServerInfoDefinition`），
+  不符则不调用；调用后校验返回结构、字段类型与"至少 `RFCSYSID`/`RFCSAPRL` 之一非空"，否则报
+  `SERVER_FACTS_RESPONSE_INVALID`/`_RESPONSE_EMPTY`，不猜测。
+- 解释范围：只取 `RFCSI.RFCKERNRL`（`SYKERNRL`，"内核版本"）与 `RFCSI.RFCDBSYS`（`SYDBSYS`，"中央数据库系统"），
+  另附 `RFCSYSID`/`RFCSAPRL`/`RFCHOST2`/`RFCOPSYS`/`RFCTZONE` 的原值；整个结构在 `rfci` 中原样返回。
+- **不解释** `RFCDATABS`：w200 上它的数据元素是 `SYSYSID`（"SAP 系统名称"），与 `RFCSYSID` 相同，
+  字段名暗示的"数据库版本"没有元数据支持；答案里 `notes` 固定写出这一点。数据库版本仍是待补的读源。
+- 隔离：内核读数失败只写进 `serverFacts.status` 与 `queryWarnings`，外层 `status` 降为 `partial`，
+  六表结果照常返回；成功时 `kernelRelease`/`databaseSystem` 出现在摘要行。
+
+相关工具：`read_system_parameters`（参数与参数文件头，见 `docs/ops-coverage.md` §7.5）与
+`get_sap_system_info` 使用同一个受护读取器，错误码前缀分别是 `SYSTEM_PARAMETERS_` 与 `SYSTEM_INFO_`。

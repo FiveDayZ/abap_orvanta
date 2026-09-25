@@ -1713,10 +1713,21 @@ const toolContractsBase = {
   },
   get_sap_system_info: {
     description:
-      "Read the SAP client with its SCC4 role and cross-client change protection, the component-based system type and release, the standard-time UTC offset, and optionally the component list. Each component carries CVERS.EXTRELEASE verbatim: it is reported as read and deliberately never interpreted as a support-package level, because that mapping needs SPAM data this tool does not read. Reports ok/partial/unavailable, per-table provenance and truncation. Only the observed empty-HTML ADT failure permits fingerprint-verified RFC_READ_TABLE fallback over six fixed system-information tables; no generic query fallback.",
+      "Read the SAP client with its SCC4 role and cross-client change protection, the component-based system type and release, the standard-time UTC offset, and optionally the component list. Each component carries CVERS.EXTRELEASE verbatim: it is reported as read and deliberately never interpreted as a support-package level, because that mapping needs SPAM data this tool does not read. Reports ok/partial/unavailable, per-table provenance and truncation. Only the observed empty-HTML ADT failure permits fingerprint-verified RFC_READ_TABLE fallback over six fixed system-information tables; no generic query fallback. The kernel half of the baseline comes from the kernel's own RFC_SYSTEM_INFO answer, gated on that function module's interface fingerprint: kernelRelease (RFCSI.RFCKERNRL, data element SYKERNRL) and databaseSystem (RFCSI.RFCDBSYS, SYDBSYS) are lifted out, the whole RFCSI structure is returned verbatim, and RFCDATABS is deliberately not read as a database release because its data element on this release is SYSYSID - the same one RFCSYSID uses.",
     inputSchema: {
       connectionId: z.string(),
       includeComponents: z.boolean().default(false).optional()
+    }
+  },
+  read_system_parameters: {
+    description:
+      "Read profile parameters and profile headers from the two tables the operator approved for this purpose on 2026-09-25: TPFYPROPTY (values) and TPFHT (profile headers). Column meanings come from the DDIC data elements of the target system, not from the field names: OBJ_NAME <- SOBJ_NAME (object-directory object name), PARANAME <- PFEPARNAME (profile parameter name), STR <- PFESTR (the stored value text), PFNAME <- PFEPFNAME (profile name), VERSNR <- PFEVERSNR (version). The value is reported exactly as stored in STR and is never interpreted. Filters are exact and case-sensitive: parameterName and objectName select TPFYPROPTY rows, profileName selects TPFHT rows. A filter value is capped at 55 characters because the reviewed reader caps each generated condition at 68; a longer value is refused with SYSTEM_PARAMETERS_SCOPE_INVALID before SAP is touched. Without a filter the read is bounded by maxRows (default 200, hard cap 500) - the answer then lists a prefix and reports parametersTruncated/profilesTruncated rather than claiming a complete list. Read path: native data preview first, then the fingerprint-verified RFC_READ_TABLE implementation only when the platform answers the observed empty HTML document; no generic SQL fallback and no writes. Codes: SYSTEM_PARAMETERS_SCOPE_INVALID, _FALLBACK_UNVERIFIED, _NOT_AUTHORIZED, _RFC_FAILED, _RESPONSE_INVALID, _RESPONSE_SCOPE_MISMATCH, _AMBIGUOUS_RESULT, _QUERY_FAILED, _ROW_LIMIT_INVALID.",
+    inputSchema: {
+      connectionId: z.string(),
+      parameterName: z.string().max(55).optional(),
+      objectName: z.string().max(40).optional(),
+      profileName: z.string().max(30).optional(),
+      maxRows: z.number().int().min(1).max(500).default(200).optional()
     }
   },
   get_version_history: {

@@ -742,6 +742,9 @@ export function createMcpServer(
   registerTool("get_sap_system_info", toolContracts.get_sap_system_info, async (input) =>
     invoke("get_sap_system_info", () => tools.getSapSystemInfo(input))
   )
+  registerTool("read_system_parameters", toolContracts.read_system_parameters, async (input) =>
+    invoke("read_system_parameters", () => tools.readSystemParameters(input))
+  )
   registerTool("get_version_history", toolContracts.get_version_history, async (input) =>
     invoke("get_version_history", () => tools.getVersionHistory(input))
   )

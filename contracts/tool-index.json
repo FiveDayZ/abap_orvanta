@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 143,
-  "readOnlyToolCount": 82,
+  "toolCount": 144,
+  "readOnlyToolCount": 83,
   "profiles": {
-    "readonly": 82,
+    "readonly": 83,
     "platform": 12,
-    "dev": 125,
-    "config": 28,
-    "ops": 37,
-    "full": 143
+    "dev": 126,
+    "config": 29,
+    "ops": 38,
+    "full": 144
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 20,
+    "ops": 21,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1656,6 +1656,23 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_OPS_READ",
+      "minHelperProtocol": null
+    },
+    {
+      "name": "read_system_parameters",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
       "minHelperProtocol": null
     },
     {

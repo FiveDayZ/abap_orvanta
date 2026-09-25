@@ -373,3 +373,30 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
   part of this ruling.
 - **OP2 stays unauthorized.** The controlled-disposal phase (job control, lock/update/spool disposal,
   transport release and import) is not authorized, so the surface remains read-only.
+
+### 7.5 OP1-4 - 系统基线与系统参数（2026-09-25）
+
+服务侧读路径新增两项能力，均已通过本地静态门禁；**运行期未取证**，因为 4848 上运行的服务仍是旧工具面，
+新工具在重启前不可达（重启需用户侧提供 SAP 密码）。
+
+- **`read_system_parameters`（新工具，ops 组，只读）** 读 `TPFYPROPTY`（参数值）与 `TPFHT`（参数文件头），
+  两者都在 D3 的十四张批准表内。列语义取自 w200 的 DDIC 数据元素而不是字段名：`OBJ_NAME`←`SOBJ_NAME`
+  （对象目录中的对象名称）、`PARANAME`←`PFEPARNAME`（描述文件参数名称）、`STR`←`PFESTR`（特殊参数值的字段）、
+  `PFNAME`←`PFEPFNAME`（系统参数化参数文件名）、`VERSNR`←`PFEVERSNR`（版本号）。`STR` 原样返回、不做任何解释，
+  并在每行标注 `valueColumn`。过滤为精确、大小写敏感；过滤值上限 55 字符（评审读取器把每条生成条件限在 68 字符内，
+  超限在触达 SAP 之前就以 `SYSTEM_PARAMETERS_SCOPE_INVALID` 拒绝）；无过滤时按 `maxRows`（缺省 200、硬上限 500）
+  截断，并以 `parametersTruncated`/`profilesTruncated` 明示"这只是前缀"，不冒充完整清单。
+- **`get_sap_system_info` 增加内核半边。** 六张固定表都不含内核版本，改为调用内核自身的
+  `RFC_SYSTEM_INFO`，并以该函数模块的源码指纹（`5c2431d9…0b33e`）与接口指纹（`cfd8b63d…79896`）为闸门；
+  取 `RFCSI.RFCKERNRL`（数据元素 `SYKERNRL`，"内核版本"）与 `RFCSI.RFCDBSYS`（`SYDBSYS`，"中央数据库系统"），
+  整个 `RFCSI` 结构原样返回。失败被隔离在 `serverFacts` 里：六表读数不受影响，外层 `status` 降为 `partial`。
+- **一个被证据推翻的假设（重要）。** 原计划写的是"内核/数据库版本都取 `RFC_SYSTEM_INFO`"。实测
+  `read_ddic_structure(RFCSI)` 显示 `RFCDATABS` 的数据元素是 `SYSYSID`（"SAP 系统名称"），与 `RFCSYSID` 同一个，
+  **它不是数据库版本**。因此该字段只在 `rfci` 中原样返回、绝不当作版本号解释；数据库版本成为 system-info 族
+  唯一的剩余缺口（要么 SA 侧给一个 Basis 读数来源，要么单独批准一张 DB 版本表），不要用字段名猜。
+- 两个新模块共享 `src/reviewed-table-reader.ts`（从 `system-info.ts` 抽出的受护读取器：原生预览失败指纹校验后才走
+  `RFC_READ_TABLE`，无通用 SQL 回退），内部校验码按调用方加前缀（`SYSTEM_INFO_` / `SYSTEM_PARAMETERS_`），
+  所以原有错误契约逐字未变；`table-query.ts` 仍从 `system-info.ts` 取 `reviewedTableReaderDefinition`（现为再导出）。
+- 登记：`read_system_parameters` 以 `unverified` 进 `contracts/verification-registry.json`（144 条 = 工具数，
+  四个未验证字段一个都不声明）；`get_sap_system_info` 保留原 citation，并在 notes 中写明 RFC_SYSTEM_INFO 半边
+  不在那次验收范围内。族状态仍为 `partial`，`criterionMet=false`（已闭环 2/14）。

@@ -37,6 +37,23 @@ function fallbackBackend(
     },
     callRemoteFunction: async (_connection: string, request: RemoteFunctionRequest) => {
       requests.push(request)
+      if (request.functionName === "RFC_SYSTEM_INFO") {
+        // The kernel's own system information. Only the fields the service lifts out are populated,
+        // and RFCDATABS is deliberately absent: it is never read as a database release.
+        return {
+          outputs: {
+            RFCSI_EXPORT: {
+              RFCSYSID: "W20",
+              RFCSAPRL: "731",
+              RFCKERNRL: "721",
+              RFCDBSYS: "ORACLE",
+              RFCHOST: "sapw20",
+              RFCOPSYS: "Linux",
+              RFCTZONE: "10800"
+            }
+          }
+        }
+      }
       assert.equal(request.functionName, "RFC_READ_TABLE")
       const fields = request.inputParameters.FIELDS as { FIELDNAME: string }[]
       const rows = await mock.runQuery(
@@ -291,6 +308,21 @@ test("system information fallback rejects faults, malformed data and scope misma
 
 test("system information tool distinguishes hidden components from unavailable components", async () => {
   const tools = new ToolService(new MockBackend())
+  // The kernel half of the baseline is gated on RFC_SYSTEM_INFO's interface fingerprint, and the
+  // mock stores function-module source rather than a full RFC interface, so the pinned definition
+  // is supplied here. The six-table half still runs against the mock.
+  tools.readFunctionModuleInterface = async (input) =>
+    JSON.stringify(
+      input.functionName === "RFC_SYSTEM_INFO"
+        ? {
+            functionName: "RFC_SYSTEM_INFO",
+            remoteEnabled: true,
+            updateTask: false,
+            sourceFingerprint: "5c2431d92d424a243fd5d283b3dd592ab7b5c00384cf65977e8eb0bd0410b33e",
+            interfaceFingerprint: "cfd8b63dbdb6fa990a83153590dc8195f05dad49f2a6b9fabd68106955579896"
+          }
+        : { functionName: input.functionName }
+    )
   for (const includeComponents of [false, true]) {
     const response = await tools.getSapSystemInfo({ connectionId: "w200", includeComponents })
     const result = JSON.parse(response.slice(response.indexOf("{")))
@@ -356,15 +388,30 @@ test("system information tool integrates native and verified fallback paths with
   const tools = new ToolService(backend)
   let definitions = 0
   tools.readFunctionModuleInterface = async (input) => {
-    assert.deepEqual(input, { connectionId: "w200", functionName: "RFC_READ_TABLE" })
+    assert.equal(input.connectionId, "w200")
     definitions++
+    if (input.functionName === "RFC_SYSTEM_INFO") {
+      return JSON.stringify({
+        functionName: "RFC_SYSTEM_INFO",
+        remoteEnabled: true,
+        updateTask: false,
+        sourceFingerprint: "5c2431d92d424a243fd5d283b3dd592ab7b5c00384cf65977e8eb0bd0410b33e",
+        interfaceFingerprint: "cfd8b63dbdb6fa990a83153590dc8195f05dad49f2a6b9fabd68106955579896"
+      })
+    }
+    assert.equal(input.functionName, "RFC_READ_TABLE")
     return JSON.stringify(definition)
   }
   const text = await tools.getSapSystemInfo({ connectionId: "W200", includeComponents: true })
   const result = JSON.parse(text.slice(text.indexOf("{")))
   assert.equal(result.status, "ok")
-  assert.equal(definitions, 1)
-  assert.equal(fallback.requests.length, 1)
+  // Two reviewed readers were read: RFC_READ_TABLE for the six fixed tables, RFC_SYSTEM_INFO for
+  // the kernel half of the baseline.
+  assert.equal(definitions, 2)
+  assert.deepEqual(fallback.requests.map((request) => request.functionName).sort(), [
+    "RFC_READ_TABLE",
+    "RFC_SYSTEM_INFO"
+  ])
   assert.equal(result.timezone.utcOffset, "UTC-3:30")
   assert.equal(result.timezone.dstRule, "TEST")
   assert.equal(

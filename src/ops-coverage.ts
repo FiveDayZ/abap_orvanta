@@ -91,7 +91,8 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   search_failed_updates: "read-only",
   read_failed_update: "read-only",
   // System baseline
-  get_sap_system_info: "read-only"
+  get_sap_system_info: "read-only",
+  read_system_parameters: "read-only"
 }
 
 /**
@@ -199,9 +200,12 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     actionRequired: false,
     gap:
       "Reported: client role and cross-client change protection (SCC4), system type, release, the " +
-      "standard-time UTC offset, and CVERS.EXTRELEASE per component verbatim. Still absent: kernel and " +
-      "database release, and profile parameters (RZ10/RZ11) - the tool reads exactly six fixed tables " +
-      "and never RFC_SYSTEM_INFO."
+      "standard-time UTC offset, CVERS.EXTRELEASE per component verbatim, the kernel release and the " +
+      "database system from the kernel's own RFC_SYSTEM_INFO answer, and profile parameters and profile " +
+      "headers (RZ10/RZ11) through read_system_parameters. Still absent: the database *release* - " +
+      "RFC_SYSTEM_INFO.RFCDATABS is typed SYSYSID (SAP system name) on this release, the same data " +
+      "element RFCSYSID uses, so it is returned verbatim and never read as a version, and no other " +
+      "source this service can reach reports one."
   },
   {
     id: "query",

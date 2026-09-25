@@ -484,7 +484,7 @@ export async function buildCapabilityReport(
     capability(
       "system-info",
       "native-adt",
-      ["get_sap_system_info"],
+      ["get_sap_system_info", "read_system_parameters"],
       unknownTargetObservation(
         "get_sap_system_info falls back to the scoped query helper when the native data preview service is absent, so its availability is decided by that helper and the caller's authorization rather than by the native endpoint probe. See adt-data-preview for the native verdict."
       )

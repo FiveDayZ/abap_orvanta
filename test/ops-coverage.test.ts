@@ -38,7 +38,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
 }
 
 /** The plan's outstanding tool commitments; adding one to the plan must update this number. */
-const PLANNED_GAP_TOOL_COUNT = 23
+const PLANNED_GAP_TOOL_COUNT = 22
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -47,7 +47,7 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  assert.equal(opsGroupTools.length, 20)
+  assert.equal(opsGroupTools.length, 21)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -147,7 +147,7 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
 
-  assert.equal(block.summary.classifiedToolCount, 20)
+  assert.equal(block.summary.classifiedToolCount, 21)
   assert.equal(block.summary.actionToolCount, 3)
   assert.equal(block.summary.platformBlockedToolCount, 1)
   assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)
@@ -210,13 +210,14 @@ test("the block counts only families with an empty gap as end-to-end", () => {
 
   // The system baseline keeps only the commitment that is still real: the client role, its change
   // protection and CVERS.EXTRELEASE verbatim are already reported by get_sap_system_info, so
-  // treating them as separate future tools would inflate the gap.
+  // treating them as separate future tools would inflate the gap. `read_system_parameters` landed on
+  // 2026-09-25, so nothing planned is missing here any more; what remains is a data gap, not a tool.
   const systemInfo = block.families.find((family) => family.id === "system-info")
   assert.ok(systemInfo)
-  assert.deepEqual(systemInfo.toolNames, ["get_sap_system_info"])
-  assert.deepEqual(systemInfo.missingToolNames, ["read_system_parameters"])
-  assert.match(systemInfo.gap, /kernel and database release/)
-  assert.match(systemInfo.gap, /never RFC_SYSTEM_INFO/)
+  assert.deepEqual(systemInfo.toolNames, ["get_sap_system_info", "read_system_parameters"])
+  assert.deepEqual(systemInfo.missingToolNames, [])
+  assert.match(systemInfo.gap, /the database \*release\*/)
+  assert.match(systemInfo.gap, /RFCDATABS is typed SYSYSID/)
 })
 
 test("the block joins with the evidence dimension without changing it", () => {

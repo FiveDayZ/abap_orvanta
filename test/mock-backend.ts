@@ -2411,6 +2411,23 @@ export class MockBackend implements SapBackend {
   ): Promise<RemoteFunctionResult> {
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     this.remoteFunctionCalls++
+    if (request.functionName === "RFC_SYSTEM_INFO") {
+      // The kernel's own system information. Only the fields the service lifts out are populated,
+      // and RFCDATABS is deliberately absent: it is never read as a database release.
+      return {
+        outputs: {
+          RFCSI_EXPORT: {
+            RFCSYSID: "W20",
+            RFCSAPRL: "731",
+            RFCKERNRL: "721",
+            RFCDBSYS: "ORACLE",
+            RFCHOST: "sapw20",
+            RFCOPSYS: "Linux",
+            RFCTZONE: "10800"
+          }
+        }
+      }
+    }
     if (request.functionName === "ZCMCP_FM_1801") {
       const input = request.inputParameters.IS_REQUEST
       if (!input || typeof input === "string" || Array.isArray(input)) {
