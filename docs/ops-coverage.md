@@ -133,6 +133,79 @@ attestation.
 - Never delete files or SAP objects during diagnosis; report and leave cleanup to the user
   (SE09/SE10 and friends).
 
+### 5.4 Idempotency and retry safety
+
+Retry safety here is not a retry loop, it is an identity. A tool that changes SAP state reserves a
+**write-operation receipt** before SAP is contacted and settles it afterwards:
+
+- The reservation identity is `(connectionId, toolName, operationId, targetKey)`; the caller supplies
+  the unique `operationId` (1-64 characters of `[A-Za-z0-9._:-]`). Reserving an identity that already
+  exists never reaches SAP: the tool answers `duplicate_blocked`, or `request_id_conflict` when the
+  same `operationId` arrives with a different input hash, and returns the existing receipt.
+- Receipt states are `in_progress`, `completed`, `declared_fault` and `outcome_unknown`, with
+  `sapInvocationStarted` and `lockReleased` recorded separately, so "we never sent it" stays
+  distinguishable from "we sent it and never learned the outcome". An `outcome_unknown` receipt is
+  evidence that an attempt reached SAP - which is exactly why the service never retries a write on
+  its own.
+- A per-target lock makes a second concurrent operation on the same object answer `target_busy`
+  instead of interleaving. `protection_failed` means the receipt or lock layer itself could not be
+  established, and the operation is refused rather than sent unprotected.
+- The same state root holds the RFC-level invocation receipts (request-id hash, input hash, output
+  hash, interface and definition fingerprints) and the pre-change evidence captured before a write
+  (existence, active state, version, fingerprint, package, request and task). A receipt written
+  against a different function-module definition is a mismatch, not a cache hit.
+- These receipts prove what _this service_ did on _this machine_ (§5.3). They never prove SAP-side
+  lock ownership, and they are not a substitute for the post-write read-back the tool performs.
+
+`run_abap_program` (development surface, not an ops tool) carries a confirmation gate whose contract
+claims no read-back, because a program's effect is not generally readable. The ops catalogue
+therefore states read-back per tool instead of claiming it globally.
+
+### 5.5 Approval files, and what "cross-machine" means
+
+Three gates are independent: helper deployment (SE38 / F8), interface-fingerprint approval, and a
+**local approval file on the machine that runs the service**. The files live under the service state
+root:
+
+- root: `ABAP_MCP_STATE_DIR` when set, otherwise `%LOCALAPPDATA%\ABAP MCP Standalone\state`, otherwise
+  `~/.abap-mcp-standalone/state`;
+- one document per gated family: `maintenance-diagnostic-approvals.json`,
+  `operational-log-approvals.json`, `application-log-approvals.json`;
+- each entry pins URL, client and user plus the helper's source and interface fingerprints, and the
+  read tools refuse with `APPROVAL_FILE_MISSING` or `CONNECTION_NOT_APPROVED` _before_ SAP is
+  contacted, naming the path they actually read.
+
+The consequence is worth stating plainly: approval is **per machine and per helper fingerprint**.
+Moving the service to another machine, or redeploying a helper with a new fingerprint, reopens the
+gate. The cross-machine scheme is therefore an explicit configuration source rather than a copied
+file - point `ABAP_MCP_STATE_DIR` at wherever the deployment keeps its state (a shared or
+orchestrated configuration location) so approvals are managed where the deployment is managed. Until
+that variable is set deliberately, the default stays machine-local and a second machine must be
+re-approved. The service never writes an approval file itself.
+
+### 5.6 Table and function allowlists are authorization gates, not implementation detail
+
+Two deny-by-default allowlists gate data access and belong to this model:
+
+- **Tables** (`src/table-allowlist.ts`, governing `read_abap_table` and the query dialect): tier A
+  metadata, tier B customizing, tier C business and master data, plus a product-required tier and an
+  indirect-format-read tier. Tier C is registered **per table after approval**;
+  `TABLE_PENDING_APPROVAL` names tables that are evidenced but not yet approved, so a refusal
+  distinguishes "waiting for your approval" from "never considered"; `TABLE_NEVER_ALLOWED` names
+  tables whose readability would itself be a security incident (password hashes, HR personal data,
+  financial document line items) and is used to explain the refusal. A read is bounded to 500 rows and
+  30 seconds.
+- **Remote functions** (`remoteFunctionAllowlist`, per connection): only remote-enabled customer
+  function modules (`Z*` / `Y*`) can be invoked, each one listed explicitly; anything else is refused
+  before any SAP access.
+
+This is why a new family of readers is not only an implementation task: registers such as IDoc
+control records, qRFC queues and SAPoffice send requests carry interface or business data, so they
+have to be classified into a tier and approved table by table before registration. Kernel and
+database release are the mirror case on the function side: they come from `RFC_SYSTEM_INFO`, a
+standard function module that the customer-function allowlist deliberately does not admit, so that
+data needs a deployed helper operation rather than a wider allowlist.
+
 ## 6. Completion criterion for the operations programme
 
 The operations programme is complete when, for at least 95% of the **required** families in
@@ -144,7 +217,7 @@ The operations programme is complete when, for at least 95% of the **required** 
    recorded from the target system - not `unverified`, `failed`, or `platform-unsupported` unless
    the platform limitation is itself the closed finding;
 3. any action the family performs is reachable only through a confirmation gate, verifies its own
-   effect by reading back, and is idempotent or retry-safe;
+   effect by reading back, and is idempotent or retry-safe (§5.4);
 4. the family's behaviour is covered by the regression matrix, and the gate (`npm run verify`)
    passes with the new evidence.
 
