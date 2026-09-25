@@ -49,6 +49,18 @@ if (-not $CandidateSuffix) {
     }
 }
 
+# 版本号三处一致（docs/release-process.md §1）：version.ts 由包内 node 复核，package.json 是产物名与
+# BUILD-INFO.json 的来源，package-lock.json 会被原样复制进 app/。锁文件曾停在 0.50.1 而产品号已到
+# 0.50.15：归档里 app/package.json 与 app/package-lock.json 互相矛盾，而运行时校验只比对前两处，
+# 所以这个问题一路放行到打包为止。判据只有一份，放在这里，且在任何产物目录创建之前。
+$lockJson = Get-Content -Raw (Join-Path $projectRoot "package-lock.json") | ConvertFrom-Json -AsHashtable
+$lockVersions = @($lockJson['version'], $lockJson['packages']['']['version'])
+$lockMismatch = @($lockVersions | Where-Object { $_ -ne $packageJson.version })
+if ($lockMismatch.Count -gt 0) {
+    $lockLabel = (@($lockVersions | Sort-Object -Unique) -join " / ")
+    throw "package-lock.json carries version $lockLabel but package.json is at $($packageJson.version). docs/release-process.md section 1 keeps one version across version.ts, package.json and both package-lock.json fields."
+}
+
 function Remove-ScopedPath([string]$Path, [string]$AllowedRoot) {
     $fullPath = [IO.Path]::GetFullPath($Path)
     $fullRoot = [IO.Path]::GetFullPath($AllowedRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
