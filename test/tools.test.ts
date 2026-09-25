@@ -5778,6 +5778,21 @@ test("read-only migration wave exposes URI, search, metadata and history behavio
   assert.match(programWorkspace, /Type: PROG\/P/)
   assert.match(programWorkspace, /adt:\/\/w200\/sap\/bc\/adt\/programs\/programs\/zreport_demo/)
 
+  // A completed search that matched nothing is a result, not a tool error. The 2026-09-25 15:53
+  // incident saw this path answer isError=true with "not found in connection w200", which reads as
+  // proof of absence and is indistinguishable from a broken helper.
+  const missingWorkspace = await tools.getWorkspaceUri({
+    objectName: "ZCL_NOT_IN_REPOSITORY",
+    objectType: "CLAS",
+    connectionId: "w200"
+  })
+  assert.match(missingWorkspace, /Status: not-found/)
+  assert.match(missingWorkspace, /Resolved: false/)
+  assert.match(missingWorkspace, /Authoritative: false/)
+  assert.match(missingWorkspace, /not proof that the object does not exist/)
+  assert.doesNotMatch(missingWorkspace, /not found in connection/)
+  assert.doesNotMatch(missingWorkspace, /Workspace URI: /)
+
   const url = tools.getObjectUrl({
     objectName: "ZCL_DEMO",
     objectType: "CLAS/OC",

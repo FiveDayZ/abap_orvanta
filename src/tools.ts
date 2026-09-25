@@ -6668,8 +6668,26 @@ export class ToolService {
       )
     })
     if (!exactMatches.length) {
-      throw new Error(
-        `Failed to get workspace URI for ABAP object: Object ${input.objectName} (${input.objectType}) not found in connection ${connectionId}`
+      // A completed search that matched nothing is a result, not a tool failure. The 2026-09-24 20:46
+      // incident established this for the DDIC reads (`readDdicTool`): an authoritative read of a
+      // missing object arriving as isError=true is indistinguishable from a broken helper, and the
+      // caller cannot reconcile it. The 2026-09-25 15:53 incident hit the same shape here, where the
+      // error additionally claimed the object was "not found in connection w200" - an absence this
+      // path cannot prove, because the repository search answers nothing for a type this release
+      // cannot search. Report the lookup as not-found, keep authoritative=false, and never let a
+      // caller read this as "the name is free to create".
+      return (
+        `ABAP Object Workspace URI\n` +
+        `Object: ${input.objectName.toUpperCase()} (${input.objectType})\n` +
+        `Connection: ${connectionId}\n` +
+        `Status: not-found\n` +
+        `Resolved: false\n` +
+        `Authoritative: false\n` +
+        `Reason: The repository search completed and returned no exact match for this name and type. ` +
+        `This is a failed lookup, not a tool failure, and not proof that the object does not exist: ` +
+        `the search answers nothing for an object type this release cannot search.\n` +
+        `Next: verify the exact name and type with search_abap_objects, and treat a creation pre-check, ` +
+        `not this lookup, as the authority on whether the name is free.`
       )
     }
     if (exactMatches.length > 1) {
@@ -7247,7 +7265,16 @@ export class ToolService {
         candidate.name.toUpperCase() === objectName &&
         deletedSourceTypeMatches(input.objectType, candidate.type)
     )
-    if (!object) throw new Error(`ABAP object does not exist: ${input.objectType} ${objectName}`)
+    // A search miss is not proof of absence: the repository search answers nothing for a type this
+    // release cannot search, so report the failed lookup as a lookup instead of asserting that the
+    // object does not exist.
+    if (!object) {
+      throw new Error(
+        `ABAP object not found by repository search: ${input.objectType} ${objectName}. ` +
+          `A search miss is not proof that the object does not exist; verify the exact name and type ` +
+          `with search_abap_objects before retrying.`
+      )
+    }
     if (parentName && !functionGroupChildOwnedBy(object.uri, parentName)) {
       throw new Error(`PARENT_CONFLICT: Object is not owned by ${parentName}`)
     }

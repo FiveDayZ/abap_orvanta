@@ -1756,7 +1756,12 @@ export class AdtBackend implements SapBackend {
     const exact =
       matches.find((item) => item.name.toUpperCase() === source.toUpperCase()) ?? matches[0]
     if (!exact) {
-      throw new Error(`Object ${source}${objectType ? ` (${objectType})` : ""} not found`)
+      // The repository search answers nothing for a type this release cannot search, so this is a
+      // failed lookup, never evidence that the object does not exist.
+      throw new Error(
+        `Object ${source}${objectType ? ` (${objectType})` : ""} not found by repository search; ` +
+          `a search miss is not proof that the object does not exist`
+      )
     }
     return exact
   }

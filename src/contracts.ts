@@ -1676,7 +1676,7 @@ const toolContractsBase = {
   },
   get_abap_object_workspace_uri: {
     description:
-      "Get a deterministic standalone adt:// URI for an exact ABAP object. All params are mandatory. Function modules are supported with type FUGR/FF.",
+      "Get a deterministic standalone adt:// URI for an exact ABAP object. All params are mandatory. Function modules are supported with type FUGR/FF. A completed search that matches nothing is returned as a result carrying Status: not-found, Resolved: false and Authoritative: false instead of a tool error: it is a failed lookup, not proof that the object does not exist, because the repository search answers nothing for a type this release cannot search.",
     inputSchema: {
       objectName: z.string(),
       objectType: z.string(),
