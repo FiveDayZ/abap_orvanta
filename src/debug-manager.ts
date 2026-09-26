@@ -10,6 +10,7 @@ import type {
 } from "abap-adt-api"
 import { fromError, isDebuggee, isDebuggerBreakpoint, isDebugListenerError } from "abap-adt-api"
 import { debugRequestFailure, inspectDebugger, type DebugPrecheck } from "./debug-precheck.js"
+import { LOGON_REJECTION_CATEGORY, isLogonRejection } from "./logon-diagnostic.js"
 
 export type HeadlessDebugState =
   | "idle"
@@ -760,7 +761,10 @@ function debuggerCapabilityFailure(error: unknown): Error {
   const parsedStatus = messageStatus ? Number.parseInt(messageStatus, 10) : 0
   const status = reportedStatus >= 500 && parsedStatus ? parsedStatus : reportedStatus
   let category = "request-failed"
-  if (status === 401 || status === 403) category = "forbidden-or-not-authorized"
+  // A rejected logon fails every debugger call alike and is not an authorization answer about the
+  // debuggee (2026-09-26 10:40); only a 403 says the accepted session may not use this resource.
+  if (isLogonRejection(status, message)) category = LOGON_REJECTION_CATEGORY
+  else if (status === 403) category = "forbidden-or-not-authorized"
   else if (status === 404 || status === 405 || status === 501) category = "unsupported-endpoint"
   return new Error(
     `debugger capability ${category}${status ? ` (HTTP ${status})` : ""}: ${message}`

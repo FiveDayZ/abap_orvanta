@@ -3,6 +3,7 @@ import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NO_GATE_VERDICT } from 
 import type { SapBackend } from "./backend.js"
 import { redactDiagnosticText } from "./runtime-diagnostics.js"
 import { AtcStageError } from "./native-atc.js"
+import { LOGON_REJECTION_CATEGORY } from "./logon-diagnostic.js"
 
 export const qualityCheckFields = {
   fileUris: z.array(z.string().min(1).max(1024)).min(1).max(10),
@@ -45,8 +46,12 @@ function validateUri(value: string, connectionId: string): string {
 
 export function checkFailure(error: unknown) {
   const message = error instanceof Error ? error.message : String(error)
+  // `logon-rejected` is a capability category of its own: a rejected logon is not an authorization
+  // answer about the target, and the category must survive this extraction to stay reportable.
   const category = message.match(
-    /capability (unsupported-endpoint|forbidden-or-not-authorized|parser-or-content-type|request-failed)/
+    new RegExp(
+      `capability (unsupported-endpoint|forbidden-or-not-authorized|${LOGON_REJECTION_CATEGORY}|parser-or-content-type|request-failed)`
+    )
   )?.[1]
   return {
     status: category === "unsupported-endpoint" ? ("unavailable" as const) : ("failed" as const),

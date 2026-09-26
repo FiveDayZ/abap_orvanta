@@ -1435,10 +1435,13 @@ function discoverySummary(
  * tools stayed registered while being permanently unusable with no explanation.
  */
 /**
- * A rejection that proves the endpoint exists: it was reached and answered with an authorization
- * verdict. Discovery silence must not be allowed to overrule that into "not exposed".
+ * A rejection that leaves absence unproven, so discovery silence must not overrule it into "not
+ * exposed". A 403 proves the endpoint was reached and answered with an authorization verdict; a 401
+ * is a rejected logon, which says nothing about this endpoint either way and is equally unusable as
+ * evidence that the platform lacks it (2026-09-26 10:40).
  */
-const AUTHORIZATION_REJECTION = /(?:status code|HTTP)\s*40[13]\b|forbidden|not authorized/i
+const REJECTION_WITHOUT_ABSENCE =
+  /(?:status code|HTTP)\s*40[13]\b|forbidden|not authorized|logon-rejected/i
 
 const PLATFORM_ENDPOINTS = {
   abapUnit: "/sap/bc/adt/abapunit",
@@ -1538,8 +1541,9 @@ function qualityBlock(
  * shows the endpoint is not advertised either, the two measurements together do establish absence,
  * and `unknown` would understate what is actually known.
  *
- * A 401/403 is deliberately excluded: it proves the endpoint was reached and answered, so absence
- * is not the better explanation and the observation keeps its `unknown` verdict. Likewise an
+ * A 401/403 is deliberately excluded: a 403 proves the endpoint was reached and answered, and a 401
+ * is a rejected logon that says nothing about this endpoint either way, so in neither case is
+ * absence the better explanation and the observation keeps its `unknown` verdict. Likewise an
  * available probe, an explicit rejection carrying a status, and an advertised endpoint all stand
  * as measured.
  */
@@ -1550,7 +1554,7 @@ function probeFailureObservation(
   endpoint: string
 ): CapabilityObservation {
   if (advertised || observation.availability !== "unknown") return observation
-  if (AUTHORIZATION_REJECTION.test(observation.evidence.detail)) return observation
+  if (REJECTION_WITHOUT_ABSENCE.test(observation.evidence.detail)) return observation
   return {
     availability: "platform_unsupported",
     reason: `The target did not advertise ${endpoint} in ADT discovery, and the read-only probe failed without a usable result, so this service is not exposed here. ${observation.reason}`,

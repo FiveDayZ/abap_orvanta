@@ -13,6 +13,12 @@
  * build, so the gate compares the artefact fingerprint of this checkout's dist tree (the same recipe
  * `get_runtime_info` uses) and the served tool surface against the source's TOOL_NAMES.
  *
+ * A second gate sits below that one: the read path itself must answer before any tool is called. On
+ * 2026-09-26 SAP's public ICF endpoints returned 200 while every authenticated ADT call returned 401,
+ * and a sweep taken in that window would have filed eight `failed` tool outcomes that described an
+ * authentication outage. Tool outcomes are only evidence about a tool when the path underneath works,
+ * so an unavailable path writes `UNREACHABLE-SAP.json` and exits without recording anything.
+ *
  * Usage:
  *   node scripts/probe-ops-read-sweep.mjs --self-check
  *   node scripts/probe-ops-read-sweep.mjs --label=ops-r22 [--url=http://127.0.0.1:4848/mcp] \
@@ -238,6 +244,45 @@ try {
     process.exit(2)
   }
 
+  // Second gate, one layer below the build check: the sweep is only meaningful when the service can
+  // actually read SAP *right now*. Observed live on 2026-09-26 - SAP's public ICF endpoints answered
+  // 200 while every authenticated ADT call returned 401 and RFC failed, so a sweep taken then would
+  // have written eight `failed` tool outcomes that described an authentication outage rather than the
+  // tools. That is the same attribution error this script exists to prevent, so the read path is
+  // proven before any tool is called, and an unavailable path writes no evidence at all.
+  const reachability = await call("get_sap_system_info", { connectionId })
+  let reachable = {}
+  try {
+    reachable = JSON.parse(reachability.text.slice(reachability.text.indexOf("{")))
+  } catch {
+    reachable = { status: "unparsable" }
+  }
+  if (reachable.status !== "ok") {
+    await writeFile(
+      resolve(outputDirectory, "UNREACHABLE-SAP.json"),
+      JSON.stringify(
+        {
+          verdict: "SAP READ PATH UNAVAILABLE - no evidence written",
+          why:
+            `get_sap_system_info reported status "${reachable.status}" for connection ` +
+            `"${connectionId}"; tool outcomes only mean something once the read path answers`,
+          sources: reachable.sources,
+          queryWarnings: reachable.queryWarnings,
+          observedAt: reachable.queryTimestamp,
+          remedy:
+            "restore the connection (credentials/authorization/ICF), confirm get_sap_system_info " +
+            'returns status "ok", then rerun. Do not record tool failures from an outage.',
+          gate
+        },
+        null,
+        2
+      )
+    )
+    console.error("SAP READ PATH UNAVAILABLE - no evidence written")
+    console.error(JSON.stringify(reachable.queryWarnings ?? [], null, 2))
+    process.exit(4)
+  }
+
   const results = []
   for (const entry of SWEEP) {
     const args = { connectionId, ...entry.args }
@@ -298,6 +343,7 @@ try {
     status: "Partially Verified",
     endpoint: endpoint.origin,
     connectionId,
+    sapReadPath: { status: reachable.status, sapRelease: reachable.sapRelease ?? null },
     directoryListed: directory ?? null,
     gate,
     results,

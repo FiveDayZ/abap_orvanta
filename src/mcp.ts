@@ -19,6 +19,7 @@ import { readReportVariants } from "./report-variants.js"
 import { SmartformService } from "./smartforms.js"
 import { resolveToolProfile, toolProfileSummary } from "./tool-profile.js"
 import { assertTableAllowed } from "./table-allowlist.js"
+import { annotateLogonRejection } from "./logon-diagnostic.js"
 
 export function createMcpServer(
   backend: SapBackend,
@@ -64,7 +65,14 @@ export function createMcpServer(
       contract && typeof contract === "object"
         ? { ...contract, inputSchema: strictInputSchema(contract.inputSchema) }
         : config
-    const registered = registerUnfiltered(name as never, strictConfig as never, callback as never)
+    // Every tool result is composed here, so a rejected SAP logon is explained on the whole tool
+    // surface instead of only where a capability wrapper happened to run (2026-09-26 10:40).
+    const handler = async (input: unknown, extra: unknown) =>
+      withLogonDiagnosis(
+        input,
+        await (callback as (a: unknown, b: unknown) => Promise<unknown>)(input, extra)
+      )
+    const registered = registerUnfiltered(name as never, strictConfig as never, handler as never)
     if (!enabledToolNames.has(name)) registered.disable()
     return registered
   }) as unknown as RegisterTool
@@ -926,6 +934,32 @@ export function createMcpServer(
 
 function textResult(text: string) {
   return { content: [{ type: "text" as const, text }] }
+}
+
+/**
+ * Add the logon diagnosis to a tool result that reports a rejected SAP logon.
+ *
+ * A 401 fails every tool in the same way and no target, name or permission explains it, so the
+ * explanation is composed once for the whole tool surface rather than per handler (incident
+ * 2026-09-26 10:40: an object creation, an ADT source read and a SOAP ping all answered a bare
+ * "Request failed with status code 401"). Only an error result is inspected, and only SAP's own
+ * words in its text decide - never a `status` property, which the ADT library also sets on failures
+ * that never left this process.
+ */
+function withLogonDiagnosis(input: unknown, result: unknown): unknown {
+  const failure = result as { isError?: unknown; content?: unknown } | null
+  if (!failure || failure.isError !== true || !Array.isArray(failure.content)) return result
+  const content = failure.content as unknown[]
+  const requestedConnection = (input as { connectionId?: unknown } | null)?.connectionId
+  const connectionId = typeof requestedConnection === "string" ? requestedConnection : undefined
+  const annotated = content.map((item) => {
+    const part = item as { type?: unknown; text?: unknown } | null
+    if (!part || part.type !== "text" || typeof part.text !== "string") return item
+    const text = annotateLogonRejection(part.text, connectionId)
+    return text === part.text ? item : { ...(item as object), text }
+  })
+  if (annotated.every((item, index) => item === content[index])) return result
+  return { ...(result as object), content: annotated }
 }
 
 async function invokeTool(name: string, action: () => Promise<string>) {

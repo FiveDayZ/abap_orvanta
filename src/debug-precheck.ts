@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import type { ADTClient } from "abap-adt-api"
+import { LOGON_REJECTION_CATEGORY, isLogonRejection } from "./logon-diagnostic.js"
 
 const requiredEndpoints = [
   "/sap/bc/adt/debugger",
@@ -25,7 +26,11 @@ export interface DebugPrecheck {
 }
 
 interface DebugRequestFailure {
-  category: "not-found-ambiguous" | "forbidden-or-not-authorized" | "request-failed"
+  category:
+    | "not-found-ambiguous"
+    | "forbidden-or-not-authorized"
+    | typeof LOGON_REJECTION_CATEGORY
+    | "request-failed"
   httpStatus: number | null
 }
 
@@ -44,12 +49,16 @@ export function debugRequestFailure(error: unknown): DebugRequestFailure {
   const parsed = Number(message.match(/(?:status code|error)\s+([1-5]\d{2})\b/i)?.[1] ?? 0)
   const status = reported || parsed
   return {
+    // A rejected logon blocks the debugger for every target and is not a statement about this
+    // user's authorization for the listener route (2026-09-26 10:40).
     category:
       status === 404
         ? "not-found-ambiguous"
-        : status === 401 || status === 403
-          ? "forbidden-or-not-authorized"
-          : "request-failed",
+        : isLogonRejection(status, message)
+          ? LOGON_REJECTION_CATEGORY
+          : status === 403
+            ? "forbidden-or-not-authorized"
+            : "request-failed",
     httpStatus: status || null
   }
 }

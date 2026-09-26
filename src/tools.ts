@@ -7,6 +7,7 @@ import {
   searchTypeCodes
 } from "./object-types.js"
 import { preSapValidation } from "./pre-sap-validation.js"
+import { describesLogonRejection } from "./logon-diagnostic.js"
 import { findAndReplaceSource } from "./source-edit.js"
 import { isMissing } from "./write-prechange-evidence.js"
 import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
@@ -9966,6 +9967,15 @@ function classifyEnhancementFailure(error: unknown): {
       reason: "The SAP system does not expose a usable enhancement metadata endpoint."
     }
   }
+  // A rejected logon is not this user's authorization answer about the object: the enhancement read
+  // never ran, so it stays "error" with the absence explicitly unestablished (2026-09-26 10:40).
+  if (describesLogonRejection(message)) {
+    return {
+      status: "error",
+      reason:
+        "SAP refused the logon, so the enhancement metadata was not read; absence was not established."
+    }
+  }
   if (/forbidden|not.authorized|HTTP (?:401|403)\b/i.test(message)) {
     return {
       status: "forbidden",
@@ -9996,6 +10006,13 @@ function classifyRepositoryEvidenceFailure(
     return {
       status: "unsupported",
       reason: `The SAP system does not expose a usable ${subject} endpoint.`
+    }
+  }
+  // Same rule as the enhancement classifier: a rejected logon proves nothing about this object.
+  if (describesLogonRejection(message)) {
+    return {
+      status: "error",
+      reason: `SAP refused the logon, so the ${subject} was not read; absence was not established.`
     }
   }
   if (/forbidden|not.authorized|HTTP (?:401|403)\b/i.test(message)) {

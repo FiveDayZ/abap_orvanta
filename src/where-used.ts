@@ -4,6 +4,7 @@ import type { SapBackend, UsageReferenceInfo, UsageSnippetInfo } from "./backend
 import { searchCodeOfAdtType, searchTypeCode } from "./object-types.js"
 import { redactDiagnosticText } from "./runtime-diagnostics.js"
 import { WhereUsedRequestError, type WhereUsedRequestTrace } from "./where-used-request.js"
+import { LOGON_REJECTION_CATEGORY } from "./logon-diagnostic.js"
 
 export const whereUsedSchema = z.object({
   objectName: z
@@ -157,9 +158,13 @@ function position(source: string, input: WhereUsedInput) {
 
 function failure(error: unknown) {
   const message = error instanceof Error ? error.message : String(error)
+  // `logon-rejected` is carried through as its own category: a rejected logon is not an
+  // authorization answer about the object being analysed (2026-09-26 10:40).
   const category =
     message.match(
-      /capability (unsupported-endpoint|forbidden-or-not-authorized|parser-or-content-type|request-failed)/
+      new RegExp(
+        `capability (unsupported-endpoint|forbidden-or-not-authorized|${LOGON_REJECTION_CATEGORY}|parser-or-content-type|request-failed)`
+      )
     )?.[1] ?? "request-failed"
   return { category, message: redactDiagnosticText(message).slice(0, 2000) }
 }

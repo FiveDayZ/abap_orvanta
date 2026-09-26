@@ -23,6 +23,7 @@ import { CUSTOMER_CLIENT, CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 import { assertHelperOperationDeliverable } from "./helper-operation-limits.js"
 import { InactiveInventoryError, readInactiveInventory } from "./inactive-inventory.js"
 import { assertTableAllowed } from "./table-allowlist.js"
+import { LOGON_REJECTION_CATEGORY, isLogonRejection } from "./logon-diagnostic.js"
 import { request as httpRequest } from "node:http"
 import { request as httpsRequest } from "node:https"
 import type { AdtHTTP } from "abap-adt-api/build/AdtHTTP.js"
@@ -5510,7 +5511,7 @@ async function searchObjectsForType(
   })
 }
 
-function classifyObjectSearchFailure(
+export function classifyObjectSearchFailure(
   error: unknown
 ): Pick<ObjectTypeSearchResult, "status" | "reason"> {
   const failure = capabilityFailure("repository object search", error)
@@ -5518,6 +5519,13 @@ function classifyObjectSearchFailure(
     return {
       status: "unsupported",
       reason: "The SAP system does not expose repository search for this object type."
+    }
+  }
+  if (isLogonRejection(reportedHttpStatus(error), failure.message)) {
+    return {
+      status: "error",
+      reason:
+        "SAP refused the logon, so the repository search never ran; absence was not established."
     }
   }
   if (/forbidden-or-not-authorized/i.test(failure.message)) {
@@ -5570,7 +5578,11 @@ export function capabilityFailure(capability: string, error: unknown): Error {
   const message = adtError.message || String(error)
   const status = reportedHttpStatus(error)
   let category = "request-failed"
-  if (status === 401 || status === 403) category = "forbidden-or-not-authorized"
+  // A rejected logon is not an authorization answer about the object: every call fails the same way
+  // and no object, name or permission explains it (2026-09-26 10:40). Only a 403 means the session
+  // itself was accepted and this user may not touch the target.
+  if (isLogonRejection(status, message)) category = LOGON_REJECTION_CATEGORY
+  else if (status === 403) category = "forbidden-or-not-authorized"
   else if (isUnsupportedEndpointStatus(status)) category = "unsupported-endpoint"
   else if (/content handler|content[- ]type|parse|decode|validation/i.test(message)) {
     category = "parser-or-content-type"

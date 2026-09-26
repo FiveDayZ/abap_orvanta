@@ -703,6 +703,13 @@ node scripts/probe-ops-read-sweep.mjs --label=ops-r22 --url=http://127.0.0.1:484
 并给出补救命令（`npm run build` + 从本仓库 `dist` 启动；单纯重启已安装的 release 不会增加工具——工具面与
 表白名单都是**编译期常量**）。
 
+**第二道闸门：读路径必须先应答（2026-09-26 补）**。构建一致只证明"对着的是这棵树"，不证明这棵树现在读得到
+SAP。2026-09-26 10:27–10:40 期间，SAP 的公开 ICF 端点照常应答，而每一条已认证的 ADT 调用都回 `401`
+（SOAP/RFC 通道同样 `401`，错误代码 `ICF-LE-http-c`，即登录数据被拒）；此时扫一遍会把 8 条结论写成 `failed`，
+而它们描述的是登录失效，不是工具——正是本闸门要防的归因错误。所以调用任何工具之前先跑一次
+`get_sap_system_info`：只要 `status` 不是 `"ok"`，就写 `UNREACHABLE-SAP.json`（含失败来源、`queryWarnings`、
+观察时间与补救步骤）、**退出码 4、不写任何证据**。工具结论只有在底层通路可用时才称得上是关于该工具的证据。
+
 **取证内容**：8 个尚无真实调用记录的只读 ops 工具各一次（`read_work_processes`、`read_user_sessions`、
 `read_workload_directory`、`read_system_parameters`、`read_qrfc_queues`、`read_idoc_status`、
 `read_user_authorizations`、`read_file_system_directory`；最后一个需要 `--dir`，未给则该工具记为 `not-run`
