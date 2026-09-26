@@ -6830,6 +6830,19 @@ test("headless export wave writes bounded local artifacts without editor state",
       await readFile(join(target, "CLAS_OC", "ZCL_DEMO", "main.abap"), "utf8"),
       /WRITE 'HEADLESS'/
     )
+    // Re-downloading the same object into the same folder replaces its file, and the receipt says
+    // which file it replaced instead of leaving the caller to guess (w200, 2026-09-26 09:15).
+    const repeated = await tools.downloadResource({
+      source: "ZCL_DEMO",
+      objectType: "CLAS/OC",
+      connectionId: "w200",
+      target,
+      overwrite: true
+    })
+    assert.match(repeated, /Overwritten: 1/)
+    assert.match(repeated, /Overwritten files:[\s\S]*main\.abap/)
+    // Without the flag the same call is refused, and the error names the colliding file rather than
+    // claiming the target folder exists.
     await assert.rejects(
       tools.downloadResource({
         source: "ZCL_DEMO",
@@ -6837,7 +6850,7 @@ test("headless export wave writes bounded local artifacts without editor state",
         connectionId: "w200",
         target
       }),
-      /Target already exists/
+      /would replace: .*main\.abap/
     )
 
     const discovery = await tools.exportAdtDiscovery({ connectionId: "w200" })

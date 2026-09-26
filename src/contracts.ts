@@ -2214,13 +2214,18 @@ const toolContractsBase = {
   },
   abap_download: {
     description:
-      "Download an ABAP resource (package, program, class, function group, folder, or single file) to a local folder. Recursive for folders/packages. Preferred source: full adt:// workspace URI (from get_abap_object_workspace_uri). Also accepts ADT paths (/sap/bc/adt/...) or bare object names with connectionId (+ optional objectType for disambiguation). NOTE: downloading a program does NOT automatically download its includes - includes are separate objects; download them explicitly (or download the parent package to get everything).",
+      "Download an ABAP resource (package, program, class, function group, folder, or single file) to a local folder. Recursive for folders/packages. Preferred source: full adt:// workspace URI (from get_abap_object_workspace_uri). Also accepts ADT paths (/sap/bc/adt/...) or bare object names with connectionId (+ optional objectType for disambiguation). Writing is additive: the export creates the folders it needs and writes its own files, and it neither empties target nor deletes files it did not produce. Target may be an existing folder, including one holding other material; with overwrite=false (the default) it is refused only when a file this export would write is already there, and the error lists those files. NOTE: downloading a program does NOT automatically download its includes - includes are separate objects; download them explicitly (or download the parent package to get everything).",
     inputSchema: {
       source: z.string(),
       target: z.string(),
       connectionId: z.string().optional(),
       objectType: z.string().optional(),
-      overwrite: z.boolean().optional()
+      overwrite: z
+        .boolean()
+        .optional()
+        .describe(
+          "Default false. The download writes into target and keeps every file it does not itself produce; it never empties the folder. With false, the download is refused when target already holds a file at one of the export's relative paths, and the error names those files - a newly created but empty folder, or one holding unrelated files, needs no flag. With true, a file at such a path is replaced by the downloaded bytes. Either way, files the export does not produce are left untouched, and the receipt reports Overwritten plus the replaced paths."
+        )
     }
   },
   adt_discovery_export: {

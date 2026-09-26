@@ -9,21 +9,45 @@ export async function writeResourceExport(
 ): Promise<string> {
   if (!isAbsolute(target)) throw new Error("target must be an absolute local folder path")
   const root = resolve(target)
-  if (!overwrite && (await exists(root))) {
-    throw new Error(`Target already exists: ${root}. Set overwrite=true to replace matching files.`)
-  }
-  await mkdir(root, { recursive: true })
-  for (const file of result.files) {
+  // The guard is about replacing files, not about the folder existing. Refusing merely because the
+  // path exists made the ordinary `mkdir <dir>` then download sequence fail on an empty directory,
+  // and told the caller to pass `overwrite=true` - which reads as "I want to replace files" and
+  // gives no hint that it is also required for a directory that holds nothing to replace
+  // (w200, 2026-09-26 09:15). A directory that exists but holds none of this export's relative
+  // paths has nothing to lose, so it is written into directly.
+  const destinations = result.files.map((file) => {
     const destination = resolve(root, file.relativePath)
     if (!destination.startsWith(`${root}${sep}`)) {
       throw new Error(`Unsafe export path: ${file.relativePath}`)
     }
-    await mkdir(dirname(destination), { recursive: true })
-    await writeFile(destination, file.content, "utf8")
+    return { relativePath: file.relativePath, destination, content: file.content }
+  })
+  // Decide every collision before writing anything, so a refused export leaves the folder untouched
+  // rather than half written.
+  const collisions: string[] = []
+  for (const file of destinations) {
+    if (await exists(file.destination)) collisions.push(file.relativePath)
+  }
+  if (!overwrite && collisions.length) {
+    const shown = collisions.slice(0, 20)
+    throw new Error(
+      `Target already contains ${collisions.length} file(s) this export would replace: ${shown.join(", ")}` +
+        `${collisions.length > shown.length ? `, and ${collisions.length - shown.length} more` : ""}. ` +
+        "Set overwrite=true to replace those files; other files in the folder are kept either way."
+    )
+  }
+  await mkdir(root, { recursive: true })
+  for (const file of destinations) {
+    await mkdir(dirname(file.destination), { recursive: true })
+    await writeFile(file.destination, file.content, "utf8")
   }
   return (
     `Downloaded ${result.source} to ${root}\n` +
     `Files: ${result.files.length}, Folders: ${countFolders(result.files.map((file) => file.relativePath))}, Skipped: 0, Failed: ${result.failures.length}` +
+    `, Overwritten: ${collisions.length}` +
+    // The receipt used to be silent about replacements, so a caller could not tell whether an
+    // existing file had just been replaced - or which one.
+    (collisions.length ? `\nOverwritten files:\n  ${collisions.slice(0, 50).join("\n  ")}` : "") +
     (result.failures.length ? `\nFailures:\n  ${result.failures.slice(0, 50).join("\n  ")}` : "")
   )
 }
