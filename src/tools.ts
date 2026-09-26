@@ -7542,7 +7542,11 @@ export class ToolService {
         `Activation failed for ${input.url}. ${formatActivationFailure(result.messages, result.inactiveObjects)}`
       )
     }
-    return `Activation successful for ${input.url}`
+    // A successful activation can still carry findings the caller must see - an include graph that
+    // was activated alongside the program, or one that could not be verified. Dropping the messages
+    // on the success path made those indistinguishable from a clean, self-contained activation
+    // (w200, 2026-09-26 09:30).
+    return `Activation successful for ${input.url}${formatActivationNotices(result.messages)}`
   }
 
   async createObject(input: CreateObjectInput): Promise<string> {
@@ -11188,6 +11192,17 @@ function parseWorkspaceUri(fileUri: string): URL {
     throw new Error("Invalid URI. Use get_abap_object_workspace_uri to obtain an adt:// URI.")
   }
   return uri
+}
+
+function formatActivationNotices(messages: ActivationMessageInfo[]): string {
+  const notices = messages.filter((message) => message.text)
+  if (!notices.length) return ""
+  return `\n${notices
+    .map((message) => {
+      const location = message.line > 0 ? ` line ${message.line}` : ""
+      return `[${message.type || "INFO"}]${location}: ${message.text}`
+    })
+    .join("\n")}`
 }
 
 function formatActivationFailure(

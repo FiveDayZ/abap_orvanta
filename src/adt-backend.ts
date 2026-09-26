@@ -4363,6 +4363,20 @@ export async function replaceSourceWithClient(
     }
   } catch (error) {
     readbackError = errorText(error)
+    // The active-source read failed, which is not a reason to leave the saved draft unaccounted for:
+    // the caller's next question is whether the save landed, and the draft read answers it. It goes
+    // to the same resource with `version=inactive` rather than through `inspectSourceWithClient`,
+    // which starts by reading the active source that just failed. `preview_source_changes` reaches
+    // the draft over a different path and succeeds while this one reports "socket hang up"
+    // (w200, 2026-09-26 09:30), so leaving `saveSucceeded: true` beside two null fingerprints made
+    // the receipt self-contradictory and the outcome unknown. Best effort: if the draft read fails
+    // too, the receipt keeps `readbackError` and both nulls.
+    try {
+      const draft = await client.getObjectSource(target.sourceUri, { version: "inactive" })
+      inactiveFingerprint = createHash("sha256").update(draft).digest("hex")
+    } catch {
+      // Neither read is available; the receipt keeps the readback error and both nulls.
+    }
     activation.success = false
     activation.messages.push({
       type: "E",
@@ -4742,7 +4756,16 @@ async function activateProgramIncludes(
     })
   let source: string
   try {
-    source = String(await client.getObjectSource(objectUri, { version: "active" }))
+    // The include list lives in the program's *source*, which ADT serves at `<uri>/source/main`.
+    // Reading the bare object URI returns the object's structure document instead: no INCLUDE
+    // statement parses out of it, the referenced set stays empty, and this guard then returns the
+    // activation unchanged while its includes are still inactive - the silent success of 2026-09-26
+    // 09:30, step 7. `optimalSourceUri` is the codebase's one mapping from object URI to source URI.
+    source = String(
+      await client.getObjectSource(optimalSourceUri(detectTypeFromUri(objectUri), objectUri), {
+        version: "active"
+      })
+    )
   } catch (error) {
     warn(`the include list of ${objectName} could not be read (${errorText(error)})`)
     return activation

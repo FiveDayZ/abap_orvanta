@@ -6133,6 +6133,34 @@ test("controlled write wave performs exact replacement and activation through th
   assert.equal(await tools.activateObject({ url: fileUri }), `Activation successful for ${fileUri}`)
 })
 
+test("a successful activation still reports the notices it carries", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const fileUri = "adt://w200/sap/bc/adt/programs/programs/ztest_main"
+  // A program can activate while its includes were activated alongside it, or while that graph could
+  // not be verified at all. Returning a bare "Activation successful" made those cases
+  // indistinguishable from a clean, self-contained activation (w200, 2026-09-26 09:30).
+  backend.activateSource = async () =>
+    ({
+      success: true,
+      messages: [
+        {
+          type: "W",
+          line: 0,
+          text: "INCLUDE_GRAPH_UNVERIFIED: the include list of ZTEST_MAIN could not be read.",
+          href: fileUri
+        }
+      ],
+      inactiveObjects: []
+    }) as never
+
+  const receipt = await tools.activateObject({ url: fileUri })
+
+  assert.match(receipt, /Activation successful for/)
+  assert.match(receipt, /INCLUDE_GRAPH_UNVERIFIED/)
+  assert.match(receipt, /\[W\]/)
+})
+
 test("a function module replacement goes through the SAP side function write, not the ADT PUT", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)

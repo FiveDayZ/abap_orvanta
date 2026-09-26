@@ -101,6 +101,35 @@ function fixture() {
   return { state, client, replace }
 }
 
+test("a failed active readback still accounts for the saved draft", async () => {
+  const { state, client, replace } = fixture()
+  // The active-source read is the one that breaks on this system ("socket hang up"); the draft is
+  // read over a different path and is available, which is how `preview_source_changes` accounts for
+  // it while the save receipt reported `saveSucceeded: true` with both fingerprints null
+  // (w200, 2026-09-26 09:30). Only the read *after* the save fails, which is where the real one did.
+  const realGet = client.getObjectSource
+  const sourceUri = `${objectUri}/source/main`
+  let saved = false
+  const realSet = client.setObjectSource
+  client.setObjectSource = async (uri: string, source: string) => {
+    await realSet(uri, source)
+    saved = true
+  }
+  client.getObjectSource = async (uri: string, options: { version: string }) => {
+    if (saved && options.version === "active" && uri === sourceUri) {
+      throw new Error("socket hang up")
+    }
+    return realGet(uri, options)
+  }
+
+  const result = await replace()
+
+  assert.equal(result.activation.success, false)
+  assert.equal(result.readbackError, "socket hang up")
+  // The draft is named, so the caller can reconcile instead of facing two nulls.
+  assert.equal(result.inactiveFingerprint, hashSource(newSource))
+})
+
 test("Include replacement serializes exactly one contextual target through the installed SDK", async () => {
   const { state, replace } = fixture()
   const result = await replace()
@@ -537,17 +566,24 @@ test("the include list is what the program's own source names", () => {
   )
 })
 
+// ADT serves an object's source at `<objectUri>/source/main`; the bare object URI answers with the
+// object's structure document, which contains no INCLUDE statement. A mock that returns the program
+// source for any URI cannot catch a guard that reads the wrong one - which is how the step-7 silent
+// success of 2026-09-26 09:30 survived its unit tests. These helpers model the real split.
+const programSourceUri = (programUri: string) => `${programUri}/source/main`
+const structureDocument = (name: string) =>
+  `<?xml version="1.0" encoding="UTF-8"?><adtcore:objectStructure xmlns:adtcore="http://www.sap.com/adt/core" adtcore:name="${name}"/>`
+
 test("activating a program activates its include drafts first and the program again after them", async () => {
   const programUri = "/sap/bc/adt/programs/programs/ztest_main"
   const { state, client } = fixture()
   client.mainPrograms = bareUnimplementedMainPrograms
   client.httpClient = inactiveHttp(() => [entry(objectUri)])
-  client.getObjectSource = async (uri: string, options: { version: string }) =>
-    uri === programUri
-      ? "REPORT ztest_main.\nINCLUDE ztest_top."
-      : options.version === "inactive"
-        ? (state.draft ?? state.active)
-        : state.active
+  client.getObjectSource = async (uri: string, options: { version: string }) => {
+    if (uri === programSourceUri(programUri)) return "REPORT ztest_main.\nINCLUDE ztest_top."
+    if (uri === programUri) return structureDocument("ZTEST_MAIN")
+    return options.version === "inactive" ? (state.draft ?? state.active) : state.active
+  }
 
   const result = await activateTarget(client as never, programUri, "ZTEST_MAIN")
 
@@ -563,12 +599,38 @@ test("activating a program activates its include drafts first and the program ag
   assert.match(result.messages.map((message) => message.text).join("\n"), /INCLUDE_GRAPH_ACTIVATED/)
 })
 
+test("the include list is read from the program's source, not from its structure document", async () => {
+  const programUri = "/sap/bc/adt/programs/programs/ztest_main"
+  const requested: string[] = []
+  const { client } = fixture()
+  client.mainPrograms = bareUnimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [entry(objectUri)])
+  client.getObjectSource = async (uri: string, options: { version: string }) => {
+    requested.push(`${uri}|${options?.version ?? ""}`)
+    if (uri === programUri) return structureDocument("ZTEST_MAIN")
+    if (uri === programSourceUri(programUri)) return "REPORT ztest_main.\nINCLUDE ztest_top."
+    return options.version === "inactive" ? "DRAFT" : "ACTIVE"
+  }
+
+  const result = await activateTarget(client as never, programUri, "ZTEST_MAIN")
+
+  // Reading the bare URI would parse no INCLUDE out of the structure document, leave the referenced
+  // set empty and return the activation carrying no message at all - so the graph message is what
+  // proves the guard ran against the source.
+  assert.ok(
+    requested.includes(`${programSourceUri(programUri)}|active`),
+    `expected the program source URI to be read; got ${JSON.stringify(requested)}`
+  )
+  assert.match(result.messages.map((message) => message.text).join("\n"), /INCLUDE_GRAPH_ACTIVATED/)
+})
+
 test("a program whose include draft stays inactive is never reported as activated", async () => {
   const programUri = "/sap/bc/adt/programs/programs/ztest_main"
   const { client } = fixture()
   client.mainPrograms = bareUnimplementedMainPrograms
   client.httpClient = inactiveHttp(() => [entry(objectUri)])
-  client.getObjectSource = async () => "REPORT ztest_main.\nINCLUDE ztest_top."
+  client.getObjectSource = async (uri: string) =>
+    uri === programUri ? structureDocument("ZTEST_MAIN") : "REPORT ztest_main.\nINCLUDE ztest_top."
   client.activate = async (_name: string, uri: string) =>
     ({ success: !uri.includes("/includes/"), messages: [], inactive: [] }) as never
 
