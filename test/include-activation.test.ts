@@ -722,3 +722,98 @@ test("an include that no program references still activates with a bare URI", as
   assert.equal(state.posts.length, 1)
   assert.ok(!state.posts[0]!.includes("context="))
 })
+
+// SAP's include directory is the one source on this release that publishes an include's main
+// program. Neither `/mainprograms` (unimplemented) nor the inactive inventory names it, so without
+// this the activation can only send a bare URI and report SAP's refusal - the state of 0.50.19,
+// where an include that a program referenced could not be activated at all.
+const directoryRow = (includeName: string, master: string) => ({
+  INCLUDE: includeName,
+  MASTER: master
+})
+
+test("the include directory supplies the main program when no other source names it", async () => {
+  const { state, client } = fixture()
+  client.mainPrograms = bareUnimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [entryWithoutContext(objectUri)])
+  const requested: { table: string; filters: unknown }[] = []
+  const readTable = async (
+    _connectionId: string,
+    table: string,
+    _columns: string[],
+    filters: unknown
+  ) => {
+    requested.push({ table, filters })
+    return [directoryRow("ZTEST_TOP", "ZTEST_MAIN")]
+  }
+
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP", {
+    readTable: readTable as never,
+    connectionId: "w200"
+  })
+
+  assert.equal(result.success, true)
+  assert.equal(requested[0]!.table, "D010INC")
+  // The lookup is keyed on the include, and bounded to the one row that decides the context.
+  assert.deepEqual(requested[0]!.filters, [
+    { column: "INCLUDE", operator: "EQ", value: "ZTEST_TOP" }
+  ])
+  assert.equal(state.posts.length, 1)
+  assert.ok(
+    state.posts[0]!.includes(
+      `${objectUri}?context=${encodeURIComponent("/sap/bc/adt/programs/programs/ztest_main")}`
+    ),
+    "the resolved main program must travel as the activation context"
+  )
+})
+
+test("an include with no directory registration still activates on its own", async () => {
+  const { state, client } = fixture()
+  client.mainPrograms = bareUnimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [entryWithoutContext(objectUri)])
+
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP", {
+    readTable: (async () => []) as never,
+    connectionId: "w200"
+  })
+
+  assert.equal(result.success, true)
+  assert.equal(state.posts.length, 1)
+  assert.ok(!state.posts[0]!.includes("context="))
+})
+
+test("an unreadable include directory is named in the unresolved report", async () => {
+  const { client } = fixture()
+  client.mainPrograms = bareUnimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [entryWithoutContext(objectUri)])
+  client.activate = async () => {
+    throw new Error("Main program  is not anymore valid for include ZTEST_TOP")
+  }
+
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP", {
+    readTable: (async () => {
+      throw new Error("TABLE_NOT_ALLOWED: D010INC is not allowlisted")
+    }) as never,
+    connectionId: "w200"
+  })
+
+  assert.equal(result.success, false)
+  assert.match(result.messages[0]!.text, /INCLUDE_MAIN_PROGRAM_UNRESOLVED/)
+  // The actionable part: which source failed, not merely that none answered.
+  assert.match(result.messages[0]!.text, /D010INC could not answer either: .*not allowlisted/)
+})
+
+test("a directory row whose MASTER is not a program name yields no context", async () => {
+  const { state, client } = fixture()
+  client.mainPrograms = bareUnimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [entryWithoutContext(objectUri)])
+
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP", {
+    readTable: (async () => [directoryRow("ZTEST_TOP", "not a program!")]) as never,
+    connectionId: "w200"
+  })
+
+  assert.equal(result.success, true)
+  assert.equal(state.posts.length, 1)
+  assert.ok(!state.posts[0]!.includes("context="), "a malformed name must not become a context")
+})

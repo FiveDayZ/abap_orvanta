@@ -7300,7 +7300,11 @@ export class ToolService {
       input.newString,
       input.transportNumber,
       input.expectedSourceFingerprint,
-      input.recoverInactiveSource
+      input.recoverInactiveSource,
+      // Include activation on this release needs the include's registered main program, and the only
+      // read path that publishes it is SAP's include directory. Without the reviewed reader the
+      // activation can only report the gap (w200, 2026-09-26 09:30).
+      this.readTransportTableRows.bind(this)
     )
     if (!result.activation.success) {
       throw new Error(
@@ -7536,7 +7540,13 @@ export class ToolService {
 
   async activateObject(input: ActivateInput): Promise<string> {
     const uri = parseWorkspaceUri(input.url)
-    const result = await this.backend.activateSource(uri.hostname.toLowerCase(), input.url)
+    const result = await this.backend.activateSource(
+      uri.hostname.toLowerCase(),
+      input.url,
+      // Same reason as replace_string_in_abap_object: an include's main program is resolved from
+      // SAP's include directory through the reviewed table read path.
+      this.readTransportTableRows.bind(this)
+    )
     if (!result.success) {
       throw new Error(
         `Activation failed for ${input.url}. ${formatActivationFailure(result.messages, result.inactiveObjects)}`

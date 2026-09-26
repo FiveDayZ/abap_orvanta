@@ -51,7 +51,23 @@ export const TABLE_TIERS = {
     "DD32P",
     "DD32S",
     "DD33S",
-    "DD33V"
+    "DD33V",
+    /**
+     * D010INC is SAP's include directory: which main program pulls in which include (`MASTER` /
+     * `INCLUDE`, plus `OTYPE`). Registered 2026-09-26 on explicit user authorisation, as the
+     * authoritative replacement for the `/includes/<name>/mainprograms` resource that this release
+     * does not implement (HTTP 501).
+     *
+     * Why it is needed: ADT refuses to activate an include whose registration it cannot match
+     * ("Main program ... is not anymore valid for include ..."), so activating an include that a
+     * program already references requires its main program. Neither the unavailable resource nor the
+     * inactive inventory names it on this release, and no other read path publishes the relation -
+     * the incident of 2026-09-26 09:30 reconfirmed that from an include's own assignment, where
+     * `parentObject` stays empty. It is pure repository metadata (program and include names plus an
+     * object type), carries no business or personal data, and is the same class of A-tier entry as
+     * TADIR and DD02L beside it.
+     */
+    "D010INC"
   ],
   /**
    * B 档：定制 / 组织架构。低敏感。

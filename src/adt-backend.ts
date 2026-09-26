@@ -104,7 +104,7 @@ import {
   type DebugVariableInfo,
   type DebugVariableRequest
 } from "./debug-manager.js"
-import { findAndReplaceSource } from "./source-edit.js"
+import { findAndReplaceSource, sameSourceText } from "./source-edit.js"
 import {
   buildSmartformEnvelope,
   parseSmartformResponse,
@@ -1208,7 +1208,8 @@ export class AdtBackend implements SapBackend {
     newString: string,
     transportNumber?: string,
     expectedSourceFingerprint?: string,
-    recoverInactiveSource?: boolean
+    recoverInactiveSource?: boolean,
+    readTable?: TransportTableReader
   ): Promise<SourceMutationInfo> {
     return this.withStatefulClient(connectionId, (client) =>
       replaceSourceWithClient(
@@ -1219,7 +1220,8 @@ export class AdtBackend implements SapBackend {
         newString,
         transportNumber,
         expectedSourceFingerprint,
-        recoverInactiveSource
+        recoverInactiveSource,
+        readTable
       )
     )
   }
@@ -1228,12 +1230,19 @@ export class AdtBackend implements SapBackend {
     return inspectSourceWithClient(await this.getClient(connectionId), connectionId, fileUri)
   }
 
-  async activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo> {
+  async activateSource(
+    connectionId: string,
+    fileUri: string,
+    readTable?: TransportTableReader
+  ): Promise<ActivationInfo> {
     return this.withStatefulClient(connectionId, async (client) => {
       const target = resolveEditableSourceTarget(fileUri, connectionId)
       const before = await inspectSourceWithClient(client, connectionId, fileUri)
       const expected = before.inactiveSource ?? before.activeSource
-      const activation = await activateTarget(client, target.objectUri, target.objectName)
+      const activation = await activateTarget(client, target.objectUri, target.objectName, {
+        readTable,
+        connectionId
+      })
       if (activation.success) {
         const active = await client.getObjectSource(target.sourceUri, { version: "active" })
         if (active !== expected) {
@@ -4241,7 +4250,8 @@ export async function replaceSourceWithClient(
   newString: string,
   transportNumber?: string,
   expectedSourceFingerprint?: string,
-  recoverInactiveSource = false
+  recoverInactiveSource = false,
+  readTable?: TransportTableReader
 ): Promise<SourceMutationInfo> {
   const target = resolveEditableSourceTarget(fileUri, connectionId)
   if (expectedSourceFingerprint && !/^[a-f0-9]{64}$/i.test(expectedSourceFingerprint)) {
@@ -4276,6 +4286,9 @@ export async function replaceSourceWithClient(
   let selectedTransport = ""
   let sourceFingerprintBefore = ""
   let sourceFingerprintAfter = ""
+  // The exact text this operation asked SAP to store. Kept beside the fingerprint so the read-back
+  // can tell a line-ending difference from a different object.
+  let intendedSource = ""
   try {
     const inspection = await inspectSourceWithClient(client, connectionId, fileUri)
     const inactiveSource = inspection.inactiveSource
@@ -4302,6 +4315,7 @@ export async function replaceSourceWithClient(
       )
     }
     const updatedSource = findAndReplaceSource(currentSource, oldString, newString)
+    intendedSource = updatedSource
     sourceFingerprintAfter = createHash("sha256").update(updatedSource).digest("hex")
     selectedTransport = selectTransport(lock, transportNumber)
     await client.setObjectSource(
@@ -4338,7 +4352,10 @@ export async function replaceSourceWithClient(
   }
   if (operationError) throw operationError
 
-  const activation = await activateTarget(client, target.objectUri, target.objectName)
+  const activation = await activateTarget(client, target.objectUri, target.objectName, {
+    readTable,
+    connectionId
+  })
   let activeFingerprint: string | null = null
   let inactiveFingerprint: string | null = null
   let readbackError: string | undefined
@@ -4353,13 +4370,23 @@ export async function replaceSourceWithClient(
           : createHash("sha256").update(inspection.inactiveSource).digest("hex")
     }
     if (activation.success && activeFingerprint !== sourceFingerprintAfter) {
-      activation.success = false
-      activation.messages.push({
-        type: "E",
-        line: 0,
-        text: "ACTIVE_SOURCE_FINGERPRINT_MISMATCH: active source does not match the saved candidate.",
-        href: target.sourceUri
-      })
+      // The candidate fingerprint is computed before SAP stores the source, so it can differ from
+      // the stored bytes for a reason that is not a failed write: SAP normalizes line endings on
+      // save. Comparing the text as well keeps that apart from a genuinely different object - the
+      // multi-line replacement of 2026-09-26 09:55 was reported as a failure although the write and
+      // the activation had both landed, because the candidate carried the caller's LF while SAP
+      // stores CRLF.
+      if (sameSourceText(activeSource, intendedSource)) {
+        sourceFingerprintAfter = activeFingerprint
+      } else {
+        activation.success = false
+        activation.messages.push({
+          type: "E",
+          line: 0,
+          text: "ACTIVE_SOURCE_FINGERPRINT_MISMATCH: active source does not match the saved candidate.",
+          href: target.sourceUri
+        })
+      }
     }
   } catch (error) {
     readbackError = errorText(error)
@@ -4599,9 +4626,18 @@ async function inactiveObjectForTarget(client: ADTClient, objectUri: string) {
 export async function activateTarget(
   client: ADTClient,
   objectUri: string,
-  objectName: string
+  objectName: string,
+  options: {
+    /** Reads an allowlisted table; used to reach the include directory. */
+    readTable?: TransportTableReader | undefined
+    connectionId?: string | undefined
+  } = {}
 ): Promise<ActivationInfo> {
   let attempted = false
+  // Why the include directory could not supply a context, when it was consulted and failed. Kept for
+  // the unresolved report so the caller learns which source was unavailable rather than only that
+  // none worked.
+  let directoryReason: string | undefined
   try {
     // Where the release implements `/mainprograms`, an include is activated through its main-program
     // context; where it does not (7.31 answers HTTP 501), the include is activated by its own URI and
@@ -4635,14 +4671,27 @@ export async function activateTarget(
           "INCLUDE_MAIN_PROGRAM_AMBIGUOUS: resolve the SAP main-program context before activation."
         )
       }
-    } else if (isIncludeObjectUri(objectUri) && inactive) {
+    } else if (isIncludeObjectUri(objectUri)) {
       // A release that implements `/mainprograms` always answered above; reaching here for an include
       // means the endpoint is unavailable (7.31 answers HTTP 501). SAP's own inactive inventory still
       // names the draft's main program, either as `.../includes/<include>?context=<main program>` or
       // as the entry's parent URI, so use whichever SAP supplied. `inactiveObjectForTarget` refuses
       // duplicate matches, so this is never a first-match guess, and nothing is invented when SAP
       // names no context at all.
-      context = inventoryMainProgramContext(inactive)
+      context = inactive ? inventoryMainProgramContext(inactive) : undefined
+      // Neither source named a context, and this release publishes no reverse lookup for an include.
+      // SAP still holds the registration (`D010INC`), and it refuses an include whose registered
+      // parent it cannot match, so ask the directory directly rather than sending a bare URI and
+      // forwarding whatever SAP says about it (w200, 2026-09-26 09:30 steps 4-6).
+      if (!context) {
+        const directory = await resolveIncludeMainProgram(
+          options.readTable,
+          options.connectionId ?? "",
+          objectUri
+        )
+        if (directory.status === "resolved") context = directory.mainProgramUri
+        else if (directory.status === "unavailable") directoryReason = directory.reason
+      }
     }
     attempted = true
     // The inactive inventory identifies the draft and, for includes, its parent context.
@@ -4657,7 +4706,13 @@ export async function activateTarget(
         // later reader of the report.
         if (isMainProgramContextRejection(error)) {
           throw new Error(
-            includeMainProgramUnresolvedMessage(objectUri, objectName, context, error)
+            includeMainProgramUnresolvedMessage(
+              objectUri,
+              objectName,
+              context,
+              error,
+              directoryReason
+            )
           )
         }
         throw new Error(
@@ -4902,6 +4957,105 @@ async function includeMainProgramContexts(
 }
 
 /**
+ * The include name of a program include URI, or `undefined` for anything else.
+ *
+ * Only `/programs/includes/<name>` is handled: `D010INC.MASTER` names an executable program, and the
+ * URI that addresses it is the program path. A function-group include has a different parent form
+ * (`/functions/groups/<group>/...`), so its main program is deliberately not constructed here rather
+ * than guessed from the same name.
+ */
+export function programIncludeNameFromUri(objectUri: string): string | undefined {
+  const path = objectUri.replace(/[?#].*$/, "")
+  const match = /^\/sap\/bc\/adt\/programs\/includes\/([^/]+)$/i.exec(path)
+  if (!match?.[1]) return undefined
+  let name: string
+  try {
+    name = decodeURIComponent(match[1]).toUpperCase()
+  } catch {
+    return undefined
+  }
+  return /^[A-Z0-9_]{1,40}$/.test(name) ? name : undefined
+}
+
+/**
+ * Turn a `D010INC.MASTER` value into the URI that addresses that program.
+ *
+ * `context` on the activation request carries the main program's own URI, which is the form SAP
+ * itself publishes: the `/mainprograms` resource that this release does not implement answers
+ * `adtcore:uri` values, and the library feeds the same string into `?context=`. The row is only
+ * accepted when it looks like a program name, so an unexpected value produces no context at all
+ * instead of a request SAP will reject for a reason we cannot see.
+ */
+export function mainProgramUriFromDirectoryRow(master: string): string | undefined {
+  const name = String(master ?? "")
+    .trim()
+    .toUpperCase()
+  if (!/^[A-Z0-9_]{1,40}$/.test(name)) return undefined
+  return `/sap/bc/adt/programs/programs/${name.toLowerCase()}`
+}
+
+/** SAP's include directory: which main program pulls in which include. */
+export const INCLUDE_DIRECTORY_TABLE = "D010INC"
+
+/**
+ * The outcome of asking SAP's include directory for an include's main program. The three states are
+ * kept apart because they call for different answers: a registration is a context to send, no
+ * registration means the include activates on its own (which is correct, not a failure), and an
+ * unreadable directory is an unknown that must not be reported as either.
+ */
+export type IncludeMainProgramResolution =
+  | { status: "resolved"; mainProgramUri: string; mainProgramName: string }
+  | { status: "not-registered" }
+  | { status: "unavailable"; reason: string }
+  | { status: "not-a-program-include" }
+
+export async function resolveIncludeMainProgram(
+  readTable: TransportTableReader | undefined,
+  connectionId: string,
+  objectUri: string
+): Promise<IncludeMainProgramResolution> {
+  const includeName = programIncludeNameFromUri(objectUri)
+  if (!includeName) return { status: "not-a-program-include" }
+  if (!readTable) {
+    return {
+      status: "unavailable",
+      reason: "no table read path is available on this connection"
+    }
+  }
+  let rows: Record<string, string>[]
+  try {
+    rows = await readTable(
+      connectionId,
+      INCLUDE_DIRECTORY_TABLE,
+      ["INCLUDE", "MASTER"],
+      [{ column: "INCLUDE", operator: "EQ", value: includeName }],
+      2
+    )
+  } catch (error) {
+    return { status: "unavailable", reason: errorText(error) }
+  }
+  // More than one row would mean the directory itself is ambiguous about the parent, and picking one
+  // would be the guess this whole path exists to avoid.
+  if (rows.length !== 1) {
+    return rows.length > 1
+      ? {
+          status: "unavailable",
+          reason: `${INCLUDE_DIRECTORY_TABLE} returned ${rows.length} rows for ${includeName}`
+        }
+      : { status: "not-registered" }
+  }
+  const master = rows[0]?.MASTER ?? ""
+  const mainProgramUri = mainProgramUriFromDirectoryRow(master)
+  if (!mainProgramUri) {
+    return {
+      status: "unavailable",
+      reason: `${INCLUDE_DIRECTORY_TABLE}.MASTER for ${includeName} is not a program name`
+    }
+  }
+  return { status: "resolved", mainProgramUri, mainProgramName: master.trim().toUpperCase() }
+}
+
+/**
  * SAP's inactive inventory names the main program of an include draft twice: as the `?context=`
  * qualifier on the draft's URI, and as `adtcore:parentUri`. Both are SAP's own answer, so either may
  * be used, and nothing is invented when SAP supplies neither.
@@ -4938,31 +5092,36 @@ function isMainProgramContextRejection(error: unknown): boolean {
  * message: that message names the include but not what the caller must do, and the double space it
  * prints where the program name belongs reads like a formatting defect rather than a missing input.
  *
- * This is deliberately not a silent retry and not a guess. The service has four ways to learn the
- * main program - the release's `/mainprograms` resource (unimplemented on SAP_BASIS 7.31), the
- * context SAP puts on the inactive draft, the parent URI of the same inventory entry, and the
- * include list of a program being activated - and each of them is already consulted before the
- * request is sent. Reaching here means SAP itself knows a registration that none of those sources
- * revealed, so the honest answer is to say so and name the way out (activate the main program, which
- * resolves the include list from the program's own source, or activate the include together with it)
- * rather than to let the caller read a bare SAP string as an unexplained failure.
+ * This is deliberately not a silent retry and not a guess. The service consults, in order, the
+ * release's `/mainprograms` resource (unimplemented on SAP_BASIS 7.31), the context SAP puts on the
+ * inactive draft, the parent URI of the same inventory entry, and SAP's own include directory
+ * (`D010INC`). Reaching here means every one of them came back empty or unavailable, so the honest
+ * answer is to say which, and to name the way out: activating the main program resolves the include
+ * list from the program's own source and activates those drafts with that program as their context.
  */
 function includeMainProgramUnresolvedMessage(
   objectUri: string,
   objectName: string,
   context: string | undefined,
-  error: unknown
+  error: unknown,
+  directoryReason?: string | undefined
 ): string {
   const supplied = context
     ? `the request was sent with main program ${context}, which SAP did not accept`
     : "no main program context could be resolved, so the request carried the include URI alone"
+  // When the directory was consulted and failed, that failure is the actionable part: it says whether
+  // the table is unreachable (a transport, authorization or reader problem the caller can fix) or the
+  // registration genuinely is not there.
+  const directory = directoryReason
+    ? ` SAP's include directory ${INCLUDE_DIRECTORY_TABLE} could not answer either: ${directoryReason}.`
+    : context
+      ? ""
+      : ` SAP's include directory ${INCLUDE_DIRECTORY_TABLE} holds no registration for it.`
   return (
-    `INCLUDE_MAIN_PROGRAM_UNRESOLVED: SAP refused to activate ${objectName} because ${supplied}. ` +
-    "SAP registers an include against the main program that includes it, and this release does not " +
-    "publish that relation for the include (the `/includes/<name>/mainprograms` resource is " +
-    "unimplemented here, and the inactive inventory named no context). Activate the main program " +
-    "instead: its own source is read for its INCLUDE list and the drafts it names are activated " +
-    `with that program as their context. SAP said: ${errorText(error)}`
+    `INCLUDE_MAIN_PROGRAM_UNRESOLVED: SAP refused to activate ${objectName} because ${supplied}.` +
+    directory +
+    " Activate the main program instead: its own source is read for its INCLUDE list and the drafts " +
+    `it names are activated with that program as their context. SAP said: ${errorText(error)}`
   )
 }
 

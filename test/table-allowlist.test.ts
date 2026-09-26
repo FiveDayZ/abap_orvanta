@@ -122,6 +122,22 @@ test("D-6: E07T is neither sensitive nor pending approval", () => {
   assert.equal((TABLE_PENDING_APPROVAL as readonly string[]).includes("E07T"), false)
 })
 
+// D010INC is SAP's include directory. Registered 2026-09-26 with explicit user authorisation to
+// replace the `/includes/<name>/mainprograms` resource this release does not implement, because ADT
+// refuses to activate an include whose registered main program it cannot match. It is the only read
+// path on this release that publishes that relation - the inactive inventory leaves an include's
+// `parentObject` empty (w200, 2026-09-26 09:30). Pinned so a removal is deliberate and visible.
+test("the include directory D010INC is registered as pure repository metadata", () => {
+  assert.equal(isTableAllowed("D010INC"), true)
+  assert.equal(describeAllowlistRejection("D010INC"), null)
+  assert.ok(
+    (TABLE_TIERS.metadata as readonly string[]).includes("D010INC"),
+    "D010INC belongs to the metadata tier"
+  )
+  assert.equal((TABLE_NEVER_ALLOWED as readonly string[]).includes("D010INC"), false)
+  assert.equal((TABLE_PENDING_APPROVAL as readonly string[]).includes("D010INC"), false)
+})
+
 // D7 spec §8.2: the helper already reads the SmartStyle, SAPscript and Adobe format tables inside
 // ABAP. Registering them makes that existing read path auditable instead of invisible; it does not
 // add a capability. The tier is pinned so a later removal is a deliberate, visible change.

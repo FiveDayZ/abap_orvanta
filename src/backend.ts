@@ -935,9 +935,14 @@ export interface SapBackend {
     newString: string,
     transportNumber?: string,
     expectedSourceFingerprint?: string,
-    recoverInactiveSource?: boolean
+    recoverInactiveSource?: boolean,
+    readTable?: TransportTableReader
   ): Promise<SourceMutationInfo>
-  activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo>
+  activateSource(
+    connectionId: string,
+    fileUri: string,
+    readTable?: TransportTableReader
+  ): Promise<ActivationInfo>
   createObject(connectionId: string, request: CreateObjectRequest): Promise<ObjectCreationInfo>
   deleteObject(
     connectionId: string,
