@@ -31,6 +31,21 @@ const entry = (uri = objectUri) => ({
   }
 })
 
+/** A draft whose inventory entry names neither a `?context=` qualifier nor a parent URI - what w200
+ * returns for a PROG/I draft, and the state in which no main program can be resolved locally. */
+const entryWithoutContext = (uri = objectUri) => ({
+  "ioc:object": {
+    "@_ioc:user": "OTHER",
+    "@_ioc:deleted": "false",
+    "ioc:ref": {
+      "@_adtcore:uri": uri,
+      "@_adtcore:name": "ZTEST_TOP",
+      "@_adtcore:type": "PROG/I",
+      "@_adtcore:parentUri": ""
+    }
+  }
+})
+
 function fixture() {
   const state = {
     active: oldSource,
@@ -575,4 +590,73 @@ test("a program whose include graph cannot be read is warned about, not silently
 
   assert.equal(result.success, true)
   assert.match(result.messages[0]!.text, /INCLUDE_GRAPH_UNVERIFIED/)
+})
+
+// SAP registers an include against the main program that pulls it in (D010INC). Once such a
+// registration exists, activating the include with no context is refused with
+// "Main program  is not anymore valid for include <INCLUDE>" - the double space is SAP echoing the
+// value that was never supplied. The same request succeeds while no program references the include,
+// because then there is no registration to validate against. That asymmetry is the w200 defect of
+// 2026-09-26 08:18: the include was writable, the activation simply had no main program to send.
+//
+// This release publishes no way to ask an include for its main program (the `/includes/<name>/
+// mainprograms` resource is unimplemented), so the service must report the gap and the way out
+// instead of forwarding a message that names neither.
+test("SAP's refusal to activate an include without a main program is reported as the resolution gap", async () => {
+  const { client } = fixture()
+  // The release has no `/mainprograms`, and the inventory entry carries no context and no parent
+  // URI, which is what w200 actually returns for a PROG/I draft.
+  client.mainPrograms = bareUnimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [entryWithoutContext(objectUri)])
+  client.activate = async () => {
+    throw new Error(
+      "Request failed with status code 400; Main program  is not anymore valid for include ZTEST_TOP"
+    )
+  }
+
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP")
+
+  assert.equal(result.success, false)
+  assert.equal(result.attempted, true)
+  assert.match(result.messages[0]!.text, /INCLUDE_MAIN_PROGRAM_UNRESOLVED/)
+  // The remedy names the path that works here, and SAP's own wording is preserved as evidence.
+  assert.match(result.messages[0]!.text, /Activate the main program/)
+  assert.match(result.messages[0]!.text, /not anymore valid for include/)
+  // No context was invented for the failed request.
+  assert.doesNotMatch(result.messages[0]!.text, /which SAP did not accept/)
+})
+
+test("a context that SAP rejects is reported together with the context that was sent", async () => {
+  const { state, client } = fixture()
+  // The inventory names a parent URI, so a context is resolvable - and SAP still refuses it.
+  client.mainPrograms = bareUnimplementedMainPrograms
+  client.httpClient = inactiveHttp(() => [entry(objectUri)])
+  client.activate = async () => {
+    throw new Error("Main program  is not anymore valid for include ZTEST_TOP")
+  }
+
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP")
+
+  assert.equal(result.success, false)
+  assert.match(result.messages[0]!.text, /INCLUDE_MAIN_PROGRAM_UNRESOLVED/)
+  assert.match(
+    result.messages[0]!.text,
+    new RegExp(`the request was sent with main program ${mainUri}`)
+  )
+  assert.equal(state.posts.length, 0)
+})
+
+test("an include that no program references still activates with a bare URI", async () => {
+  const { state, client } = fixture()
+  client.mainPrograms = bareUnimplementedMainPrograms
+  // The regression guard for the discriminating control case: ZPMC_TP_PROBE_INC2 in the report had
+  // no main program and activated successfully, and that must keep working.
+  state.draft = newSource
+
+  const result = await activateTarget(client as never, objectUri, "ZTEST_TOP")
+
+  assert.equal(result.success, true)
+  assert.equal(result.attempted, true)
+  assert.equal(state.posts.length, 1)
+  assert.ok(!state.posts[0]!.includes("context="))
 })

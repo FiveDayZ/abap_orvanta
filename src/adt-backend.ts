@@ -4641,6 +4641,11 @@ export async function activateTarget(
         // endpoint, and the library's failure text carries no URI at all, which is why the activation
         // failure of 2026-09-26 06:51 could not be attributed to a request by either the caller or a
         // later reader of the report.
+        if (isMainProgramContextRejection(error)) {
+          throw new Error(
+            includeMainProgramUnresolvedMessage(objectUri, objectName, context, error)
+          )
+        }
         throw new Error(
           `POST /sap/bc/adt/activation for ${objectUri}` +
             `${context ? `?context=${context}` : ""} failed: ${errorText(error)}`
@@ -4887,6 +4892,55 @@ function inventoryMainProgramContext(entry: {
     if (candidate && ADT_RESOURCE_URI.test(candidate)) return candidate
   }
   return undefined
+}
+
+/**
+ * SAP registers an include against the main program that pulls it in (`D010INC`). When such a
+ * registration exists, activating the include with no `?context=` is refused with
+ * "Main program <name> is not anymore valid for include <INCLUDE>" - and when no context was sent,
+ * SAP echoes the missing value, which is why the message shows two spaces between "program" and
+ * "is" (observed on w200, 2026-09-26 08:18). The same request succeeds for an include no program
+ * references yet, because then SAP has no registration to validate against. That asymmetry is the
+ * whole defect: the include is fine, the activation request was simply missing the main program.
+ *
+ * The wording is matched rather than the HTTP status because SAP answers this validation failure
+ * with a plain 400-class error body; the phrase is stable and names the include it applies to.
+ */
+function isMainProgramContextRejection(error: unknown): boolean {
+  return /Main program\s+is not anymore valid for include\b/i.test(errorText(error))
+}
+
+/**
+ * Report an unresolved main-program context as the actionable gap it is, instead of forwarding SAP's
+ * message: that message names the include but not what the caller must do, and the double space it
+ * prints where the program name belongs reads like a formatting defect rather than a missing input.
+ *
+ * This is deliberately not a silent retry and not a guess. The service has four ways to learn the
+ * main program - the release's `/mainprograms` resource (unimplemented on SAP_BASIS 7.31), the
+ * context SAP puts on the inactive draft, the parent URI of the same inventory entry, and the
+ * include list of a program being activated - and each of them is already consulted before the
+ * request is sent. Reaching here means SAP itself knows a registration that none of those sources
+ * revealed, so the honest answer is to say so and name the way out (activate the main program, which
+ * resolves the include list from the program's own source, or activate the include together with it)
+ * rather than to let the caller read a bare SAP string as an unexplained failure.
+ */
+function includeMainProgramUnresolvedMessage(
+  objectUri: string,
+  objectName: string,
+  context: string | undefined,
+  error: unknown
+): string {
+  const supplied = context
+    ? `the request was sent with main program ${context}, which SAP did not accept`
+    : "no main program context could be resolved, so the request carried the include URI alone"
+  return (
+    `INCLUDE_MAIN_PROGRAM_UNRESOLVED: SAP refused to activate ${objectName} because ${supplied}. ` +
+    "SAP registers an include against the main program that includes it, and this release does not " +
+    "publish that relation for the include (the `/includes/<name>/mainprograms` resource is " +
+    "unimplemented here, and the inactive inventory named no context). Activate the main program " +
+    "instead: its own source is read for its INCLUDE list and the drafts it names are activated " +
+    `with that program as their context. SAP said: ${errorText(error)}`
+  )
 }
 
 function sameObjectUri(left: string, right: string): boolean {
