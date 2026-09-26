@@ -4624,20 +4624,29 @@ export async function activateTarget(
     } else if (isIncludeObjectUri(objectUri) && inactive) {
       // A release that implements `/mainprograms` always answered above; reaching here for an include
       // means the endpoint is unavailable (7.31 answers HTTP 501). SAP's own inactive inventory still
-      // names the draft's main program as `.../includes/<include>?context=<main program>`, so use that
-      // value when it is well formed. `inactiveObjectForTarget` refuses duplicate matches, so this is
-      // never a first-match guess, and nothing is invented when SAP supplies no context.
-      const supplied = new URL(inactive["adtcore:uri"], "https://sap.invalid").searchParams.get(
-        "context"
-      )
-      if (supplied && /^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i.test(supplied)) context = supplied
+      // names the draft's main program, either as `.../includes/<include>?context=<main program>` or
+      // as the entry's parent URI, so use whichever SAP supplied. `inactiveObjectForTarget` refuses
+      // duplicate matches, so this is never a first-match guess, and nothing is invented when SAP
+      // names no context at all.
+      context = inventoryMainProgramContext(inactive)
     }
     attempted = true
     // The inactive inventory identifies the draft and, for includes, its parent context.
     // Keep that metadata out of the activation payload: older ECC releases can reject
     // the object-reference overload when it adds type or an empty parent URI.
-    const result = await client.activate(objectName, objectUri, context, true)
-    return {
+    const result = await client
+      .activate(objectName, objectUri, context, true)
+      .catch((error: unknown) => {
+        // Name the request that failed. `client.activate` posts one object reference to one generic
+        // endpoint, and the library's failure text carries no URI at all, which is why the activation
+        // failure of 2026-09-26 06:51 could not be attributed to a request by either the caller or a
+        // later reader of the report.
+        throw new Error(
+          `POST /sap/bc/adt/activation for ${objectUri}` +
+            `${context ? `?context=${context}` : ""} failed: ${errorText(error)}`
+        )
+      })
+    const activation: ActivationInfo = {
       success: result.success,
       attempted,
       messages: result.messages.map((message) => ({
@@ -4650,6 +4659,9 @@ export async function activateTarget(
         .map((record) => record.object?.["adtcore:name"])
         .filter((name): name is string => Boolean(name))
     }
+    return activation.success
+      ? await activateProgramIncludes(client, objectUri, objectName, activation)
+      : activation
   } catch (error) {
     return {
       success: false,
@@ -4673,21 +4685,150 @@ function isIncludeObjectUri(objectUri: string): boolean {
   return INCLUDE_OBJECT_URI.test(objectUri)
 }
 
+const PROGRAM_OBJECT_URI = /\/programs\/programs\/[^/]+$/i
+
 /**
- * SAP_BASIS 7.31 does not implement `/includes/<name>/mainprograms` at all. The request is answered
- * with HTTP 501 and reaches the caller wrapped in a 404 ("ADT GET .../mainprograms returned HTTP
- * 501", observed on w200 2026-09-26 00:53). That is a statement about the release's ADT surface, not
- * about the include: the include is addressed by its own URI, so reading, writing and activating it
- * never need the reverse lookup. An unimplemented endpoint therefore means "the main program cannot
- * be discovered", while every other failure (transport, authorization, SAP error) keeps its meaning.
+ * `INCLUDE <name>.` in a program's own source. `INCLUDE STRUCTURE <ddic>` names a DDIC structure,
+ * not a program include, and a quoted or `*`-prefixed tail is not code.
  */
-function isMainProgramEndpointUnavailable(error: unknown): boolean {
-  const text = errorText(error)
-  if (!/mainprograms/i.test(text)) return false
-  return (
-    isUnsupportedEndpointStatus(reportedHttpStatus(error)) || /\bHTTP (?:404|405|501)\b/.test(text)
-  )
+const INCLUDE_STATEMENT = /^\s*INCLUDE\s+(?!STRUCTURE\b)([A-Za-z_][A-Za-z0-9_]*)/i
+
+export function referencedIncludeNames(source: string): string[] {
+  const names = new Set<string>()
+  for (const rawLine of source.split(/\r?\n/)) {
+    const line = rawLine.replace(/^\s*\*.*$/, "").replace(/".*$/, "")
+    const name = INCLUDE_STATEMENT.exec(line)?.[1]
+    if (name) names.add(name.toUpperCase())
+  }
+  return [...names]
 }
+
+/**
+ * Activating a program does not activate its includes: SAP activates exactly the objects the request
+ * names. A program can therefore report "activated" while its include drafts stay inactive - the
+ * silent inconsistency the 2026-09-26 06:51 probe exposed, where `replace_string_in_abap_object`
+ * returned success and the include's active source was still the empty string, so the assembled
+ * program would have lost the include's logic without reporting anything.
+ *
+ * The includes a program needs are the ones its own source names, and SAP's inactive inventory says
+ * which of them still carry a draft. Those drafts are activated first - each by its own URI with this
+ * program as the context, one object per request, the request shape proven on this release - and the
+ * program is activated again so its load is generated from the include text that is now active. A
+ * draft that still cannot be activated is reported as a failure naming it, and success is never
+ * claimed for a program whose includes were not activated.
+ *
+ * A graph this function cannot read (source or inventory unavailable) does not turn a successful
+ * activation into a failure, but it is never silent either: the caller is warned that whether the
+ * includes are active was not established.
+ */
+async function activateProgramIncludes(
+  client: ADTClient,
+  objectUri: string,
+  objectName: string,
+  activation: ActivationInfo
+): Promise<ActivationInfo> {
+  if (!PROGRAM_OBJECT_URI.test(objectUri)) return activation
+  const warn = (reason: string) =>
+    activation.messages.push({
+      type: "W",
+      line: 0,
+      text: `INCLUDE_GRAPH_UNVERIFIED: ${reason}. ${objectName} itself was activated; whether its includes are active was not established.`,
+      href: objectUri
+    })
+  let source: string
+  try {
+    source = String(await client.getObjectSource(objectUri, { version: "active" }))
+  } catch (error) {
+    warn(`the include list of ${objectName} could not be read (${errorText(error)})`)
+    return activation
+  }
+  const referenced = new Set(referencedIncludeNames(source))
+  let drafts: { name: string; uri: string }[]
+  try {
+    drafts = (await inactiveObjects(client))
+      .map((record) => record.object)
+      .filter((object) => {
+        if (!/^PROG\/I$/i.test(String(object["adtcore:type"] ?? ""))) return false
+        const name = String(object["adtcore:name"] ?? "").toUpperCase()
+        return (
+          (name !== "" && referenced.has(name)) ||
+          sameObjectUri(String(object["adtcore:parentUri"] ?? ""), objectUri)
+        )
+      })
+      .map((object) => ({
+        name: String(object["adtcore:name"] ?? ""),
+        uri: String(object["adtcore:uri"] ?? "").replace(/[?#].*$/, "")
+      }))
+      .filter((draft) => draft.name !== "" && ADT_RESOURCE_URI.test(draft.uri))
+  } catch (error) {
+    warn(`SAP's inactive inventory could not be read (${errorText(error)})`)
+    return activation
+  }
+  if (!drafts.length) return activation
+
+  const stranded: string[] = []
+  for (const draft of drafts) {
+    try {
+      const accepted = await client.activate(draft.name, draft.uri, objectUri, true)
+      if (!accepted.success) stranded.push(draft.name)
+    } catch {
+      stranded.push(draft.name)
+    }
+  }
+  if (stranded.length) {
+    activation.success = false
+    activation.messages.push({
+      type: "E",
+      line: 0,
+      text:
+        `INCLUDE_ACTIVATION_INCOMPLETE: ${objectName} is active, but the draft of ` +
+        `${stranded.join(", ")} could not be activated, so the program runs the previously active ` +
+        "include text. Activate those includes and activate the program again.",
+      href: objectUri
+    })
+    return activation
+  }
+  let reactivated
+  try {
+    reactivated = await client.activate(objectName, objectUri, undefined, true)
+  } catch (error) {
+    activation.success = false
+    activation.messages.push({
+      type: "E",
+      line: 0,
+      text:
+        `INCLUDE_ACTIVATION_INCOMPLETE: the includes ${drafts.map((draft) => draft.name).join(", ")} ` +
+        `were activated, but activating ${objectName} again failed: ${errorText(error)}.`,
+      href: objectUri
+    })
+    return activation
+  }
+  if (!reactivated.success) {
+    activation.success = false
+    activation.messages.push(
+      ...reactivated.messages.map((message) => ({
+        type: message.type,
+        line: message.line,
+        text: `INCLUDE_ACTIVATION_INCOMPLETE after activating its includes: ${message.shortText}`,
+        href: message.href
+      }))
+    )
+    return activation
+  }
+  activation.messages.push({
+    type: "I",
+    line: 0,
+    text:
+      `INCLUDE_GRAPH_ACTIVATED: activated ${drafts.length} include draft(s) ` +
+      `(${drafts.map((draft) => draft.name).join(", ")}) and activated ${objectName} again, so its ` +
+      "load is generated from the include text that is now active.",
+    href: objectUri
+  })
+  return activation
+}
+
+/** A resource URI SAP itself can address, with no scheme, query or trailing slash. */
+const ADT_RESOURCE_URI = /^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i
 
 /**
  * Status codes that mean "this release has no handler for the resource" rather than "the request
@@ -4699,6 +4840,18 @@ function isUnsupportedEndpointStatus(status: number): boolean {
   return status === 404 || status === 405 || status === 501
 }
 
+/**
+ * `/includes/<name>/mainprograms` is a convenience resource - it names the main program an include
+ * belongs to. SAP_BASIS 7.31 does not implement it. The library reports that failure as a bare HTTP
+ * status with no URI in it at all ("Request failed with status code 404", because `HttpClientException`
+ * keeps axios' message while SAP's own text only reaches the trace), so the incident of 2026-09-26
+ * 06:51 could not be diagnosed by reading the message. Classification therefore rests on the request
+ * that was made rather than on what the message happens to say: this function asks exactly one
+ * question of one URI, so an unsupported status identifies the missing endpoint by construction.
+ * An include is addressed by its own URI, so an unavailable reverse lookup decides nothing about
+ * reading, writing or activating it; every other failure (transport, authorization, SAP error) keeps
+ * its meaning and still stops the caller.
+ */
 type MainProgramContexts = { status: "resolved"; contexts: string[] } | { status: "unavailable" }
 
 async function includeMainProgramContexts(
@@ -4710,14 +4863,30 @@ async function includeMainProgramContexts(
   try {
     programs = await client.mainPrograms(objectUri)
   } catch (error) {
-    if (isMainProgramEndpointUnavailable(error)) return { status: "unavailable" }
-    throw error
+    if (isUnsupportedEndpointStatus(reportedHttpStatus(error))) return { status: "unavailable" }
+    throw new Error(`main-program lookup for ${objectUri} failed: ${errorText(error)}`)
   }
   const contexts = [...new Set(programs.map((program) => program["adtcore:uri"]))]
-  if (!contexts.length || contexts.some((uri) => !/^\/sap\/bc\/adt\/[a-z0-9_/-]+$/i.test(uri))) {
+  if (!contexts.length || contexts.some((uri) => !ADT_RESOURCE_URI.test(uri))) {
     throw new Error("INCLUDE_MAIN_PROGRAM_UNAVAILABLE: no valid SAP main-program context.")
   }
   return { status: "resolved", contexts }
+}
+
+/**
+ * SAP's inactive inventory names the main program of an include draft twice: as the `?context=`
+ * qualifier on the draft's URI, and as `adtcore:parentUri`. Both are SAP's own answer, so either may
+ * be used, and nothing is invented when SAP supplies neither.
+ */
+function inventoryMainProgramContext(entry: {
+  "adtcore:uri": string
+  "adtcore:parentUri"?: string
+}): string | undefined {
+  const qualifier = new URL(entry["adtcore:uri"], "https://sap.invalid").searchParams.get("context")
+  for (const candidate of [qualifier, entry["adtcore:parentUri"]]) {
+    if (candidate && ADT_RESOURCE_URI.test(candidate)) return candidate
+  }
+  return undefined
 }
 
 function sameObjectUri(left: string, right: string): boolean {
