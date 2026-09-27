@@ -740,3 +740,50 @@ SAP。2026-09-26 10:27–10:40 期间，SAP 的公开 ICF 端点照常应答，�
    不同的载荷都没能移除条目，工具自身写后复检拒绝报成功 ⇒ 失败是安全的，补救在 SE09/SE10），因此计为
    豁免。第 3 条的"未完成"因此不是欠账，而是**尚未实现的处置能力**：`transport (2)`、`jobs (4)`、
    `locks (1)`、`updates (1)`、`landscape (2)` 共 10 个计划中的处置工具还不存在（对应计划 Q-O1 的裁定）。
+
+### 7.14 三个 runtime-resources 读的失败定性（2026-09-27）
+
+`read_work_processes`、`read_user_sessions`、`read_file_system_directory` 在 2026-09-27 的实机取证
+（`.cache/evidence-ops-n1c/`）中均回 `status: "unavailable"`，**保留 `unverified`**。三者根因**不同**，
+不得合并成一句"平台不支持"：
+
+| 工具                         | 接口执行支持 | 失败码                             | 根因                                                                                                                                                          |
+| ---------------------------- | ------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read_work_processes`        | **false**    | `RUNTIME_RESOURCES_RESPONSE_EMPTY` | `TH_WPINFO` 的三个导入参数无法验证：`WITH_CPU` 的数据元素不是已验证的基本类型，`WITH_MTX_INFO` / `MAX_ELEMS` 的 DDIC 对象不存在 ⇒ 调用前即被 fail-closed 拦下 |
+| `read_user_sessions`         | **false**    | `RUNTIME_RESOURCES_RESPONSE_EMPTY` | `TH_USER_LIST` 的 `LIST` 输出含 `MSHOSTADR`，类型未验证                                                                                                       |
+| `read_file_system_directory` | **true**     | `RUNTIME_RESOURCES_RFC_FAILED`     | 接口与类型均通过验证，故障发生在**运行时 RFC 调用**（内核拒绝），与上两者不同类                                                                               |
+
+复现方式（只读）：
+
+```powershell
+node .cache/mcp-call.mjs read_function_module_interface '{"connectionId":"w200","functionName":"TH_WPINFO","includeExecutionSupport":true}'
+```
+
+**注意**：`read_function_module_interface(includeExecutionSupport=true)` 给出的是**服务端类型验证**结论，
+与工具自身定义守卫（`reviewedWorkProcessDefinition`：`remoteEnabled` + `updateTask` + 双指纹）**不是同一道门**。
+2026-09-27 实测 `TH_WPINFO` 的双指纹与代码中钉死值逐位相同（`cf3be4d6…` / `e5d7078c…`），故工具守卫**通过**，
+失败发生在之后的实际调用——因此**不能**据 `executionSupported=false` 断言"工具定义已过期"。
+
+**零行 ≠ 空答案（设计使然）**：`collectWorkProcesses` / `collectUserSessions` 在 `!rows.length` 时抛
+`_RESPONSE_EMPTY` 并把状态置 `unavailable`，因为运行中的系统**不可能**真的没有工作进程或会话 ⇒ 零行说明
+读取未真正生效，而非"健康但为空"。与此相对，`SWNC_GET_WORKLOAD_DIRECTORY` 允许空目录（采集器目录本可为空），
+故同样 `returnedCount: 0` 时它报 `status: "ok"`。**这一差异是有意的，不是不一致。**
+
+**另需注意的分类器陷阱（已修，见 7.15）**：三者的答复同时含 `queryWarnings` 与（对前两者）
+`_RESPONSE_EMPTY` 字样；按子串判定会把它们误判成"空但健康"，从而把**未发生的读取**提议登记为 `verified`。
+
+### 7.15 取证扫描器按答复自身状态判定（2026-09-27 修复）
+
+`scripts/probe-ops-read-sweep.mjs` 的 `classify()` 原按**错误码子串**判定，两个方向都曾判错：
+
+1. **把成功判成失败**：本 release 的原生数据预览端点必然失败，每次成功读取仍会带上该次失败尝试的
+   `nativeCode: "SAP_DATA_QUERY_RESPONSE_INVALID"`（随后回退 `rfc_read_table` 并正常作答）。子串规则命中了
+   **已恢复的中间步骤**，把 `status:"ok"` / `"partial"` 的答复判为 `failed` —— 首轮 `ops-n1b` 中 4 个工具被误判。
+2. **把未发生判成空答案**（更危险）：`status:"unavailable"` 且带 `RUNTIME_RESOURCES_RESPONSE_EMPTY` 的答复，
+   会被当成"空但健康"，进而提议登记为 `verified`。
+
+**修法**：以答复自身的 `status` 为准 —— `ok`/`partial` → `answered`（`partial` 仅表示行数被截断）、
+`empty` → `empty`、`unavailable` → `failed`；仅当答复**读不到 status** 时才回退错误码，且回退前先剔除
+良性原生码。`isError` 与 `*_NOT_AUTHORIZED` / `TABLE_NOT_ALLOWED` 仍优先判 `refused`。
+
+**验证**：对 `ops-n1b` 已捕获的 8 份原始答复重跑新分类器，8/8 与各自 `status` 一致（旧规则 5/8 错）。
