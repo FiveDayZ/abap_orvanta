@@ -2172,7 +2172,9 @@ function optionalRepositorySelectors(request: SapRepositoryRequest): string {
     ["IV_REQUEST_OWNER", request.requestOwner],
     ["IV_REQUEST_TARGET", request.requestTarget],
     ["IV_REQUEST_ALLOW_DUPLICATE", request.requestAllowDuplicate ? "X" : undefined],
-    ["IV_ADD_REQUEST", request.addRequest]
+    ["IV_ADD_REQUEST", request.addRequest],
+    ["IV_JOBNAME", request.jobName],
+    ["IV_JOBCOUNT", request.jobCount]
   ]
   return selectors
     .filter((selector): selector is readonly [string, string] => selector[1] !== undefined)

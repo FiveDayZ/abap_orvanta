@@ -230,6 +230,11 @@ export function createMcpServer(
       tools.addObjectsToTransport(input)
     )
   )
+  registerTool("release_background_job", toolContracts.release_background_job, async (input) =>
+    invokeWrite("release_background_job", input, backend, writeReceipts, () =>
+      tools.releaseBackgroundJob(input)
+    )
+  )
   registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
     invoke("read_abap_screen", () => tools.readAbapScreen(input))
   )

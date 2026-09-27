@@ -107,6 +107,8 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_background_job_details: "read-only",
   read_background_job_log: "read-only",
   read_background_job_spool: "read-only",
+  // N3 / OP2. The first action tool this family has ever had.
+  release_background_job: "action",
   // System and application logs
   read_system_logs: "read-only",
   discover_application_logs: "read-only",
@@ -182,8 +184,11 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["authorization"],
     actionRequired: true,
     gap:
-      "No job control: create/modify/release/cancel are absent, so a stuck or missing job is " +
-      "reported but never corrected inside the service."
+      "Reported: job search, detail, log and spool text, plus release of one exact scheduled job " +
+      "through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from " +
+      "TBTCO). Still absent: create, modify and cancel, which need their own helper branches and " +
+      "the operator's write authorisation, so a stuck or missing job is still mostly reported " +
+      "rather than corrected inside the service."
   },
   {
     id: "logs",

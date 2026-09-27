@@ -769,6 +769,21 @@ const ROWS: readonly ToolRow[] = [
     "2.8",
     ["ADD_OBJECTS_TO_TRANSPORT"]
   ],
+  // N3 / OP2. Background-job control. BP_JOB_RELEASE is remoteEnabled=false on this release, so the
+  // only route is the shared repository body - which lives in ZORVANTA_MCP_CORE, so this operation
+  // reaches SAP through a carrier program the operator runs in SE38, not through the service. The
+  // operation is named so the capability gate can tell a 2.12 helper (which neither declares
+  // IV_JOBNAME/IV_JOBCOUNT nor serves JOB_RELEASE) from one that can.
+  [
+    "release_background_job",
+    "ops",
+    OPSP,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.13",
+    ["JOB_RELEASE"]
+  ],
   ["abap_download", "source", DEV, "W", "target-specific", null, null],
   ["adt_discovery_export", "platform", PL, "W", "native-adt", null, null]
 ]

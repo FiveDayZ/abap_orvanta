@@ -269,6 +269,10 @@ export type SapRepositoryOperation =
   // operation therefore calls that function module directly with iv_with_dialog = 'D', which the
   // callee turns into ls_g-suppress_dialog = 'X'.
   | "ADD_OBJECTS_TO_TRANSPORT"
+  // N3 / OP2. Background-job control. BP_JOB_RELEASE is remoteEnabled=false on this release, so the
+  // only route is a branch in the shared repository body; it contains no COMMIT WORK of its own, so
+  // the helper owns the LUW and commits once after reading the released status back from TBTCO.
+  | "JOB_RELEASE"
 
 export type SapStructureRow = Record<string, string>
 
@@ -357,6 +361,13 @@ export interface SapRepositoryRequest {
    * `transportObjects` are flat CTS object rows (PGMID/OBJECT/OBJ_NAME/LANG) sent as payload lines.
    */
   addRequest?: string | undefined
+  /**
+   * N3 / OP2. Background-job control. `jobName`/`jobCount` identify one exact job; both are optional
+   * on the wire for the same reason as the D7 selectors above - a helper deployed before the 2.13
+   * interface does not declare them, so an absent value leaves the request unchanged.
+   */
+  jobName?: string | undefined
+  jobCount?: string | undefined
   transportObjects?: SapStructureRow[] | undefined
 }
 

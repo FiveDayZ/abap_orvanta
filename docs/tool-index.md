@@ -1,7 +1,7 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：153
+- 工具总数：154
 - 只读工具：92
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
@@ -14,8 +14,8 @@
 | profile: platform | 12 |
 | profile: dev | 134 |
 | profile: config | 37 |
-| profile: ops | 47 |
-| profile: full | 153 |
+| profile: ops | 48 |
+| profile: full | 154 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 8 |
 | 分组: message | 4 |
-| 分组: ops | 30 |
+| 分组: ops | 31 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -151,6 +151,7 @@
 | `read_work_processes` | ops | dev, config, ops | 只读 | target-specific | — |
 | `read_workload_directory` | ops | dev, config, ops | 只读 | target-specific | — |
 | `recover_ddic_table_conversion` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.7) |
+| `release_background_job` | ops | ops | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.13) |
 | `release_write_operation_lock` | platform | platform | 写 | local | — |
 | `replace_string_in_abap_object` | source | dev | 写 | native-adt | — |
 | `resume_ddic_table_activation` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |

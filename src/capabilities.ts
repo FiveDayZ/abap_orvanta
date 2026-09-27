@@ -148,6 +148,11 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   ["repository-helper-adobe-form", ["read_adobe_form"]],
   ["repository-helper-transport-request", ["create_transport_request"]],
   ["repository-helper-transport-objects", ["add_objects_to_transport"]],
+  // N3 / OP2. A write on the shared repository body, split off the transport groups for the same
+  // reason they are split from each other: BP_JOB_RELEASE is a different callee with its own
+  // preconditions (a TBTCO status check) and its own read-back, and the interface it needs
+  // (IV_JOBNAME/IV_JOBCOUNT) exists only from 2.13.
+  ["repository-helper-job-release", ["release_background_job"]],
   ["repository-helper-gui-definition", ["read_abap_gui_definition", "patch_abap_gui_definition"]],
   ["repository-helper-ecc-fallbacks", ["read_abap_message_class", "create_abap_message_class"]],
   // 2.12: the text element payload carries the entry kind, and the helper writes selection texts

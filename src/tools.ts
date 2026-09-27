@@ -72,6 +72,15 @@ import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
 import { collectUserAuthorizations } from "./user-authorizations.js"
 import { collectAuthTraceStatus } from "./auth-trace-status.js"
+import {
+  JOB_CONFIRMATIONS,
+  jobCount,
+  jobName,
+  jobPayloadRows,
+  jobReleaseResult,
+  releaseBackgroundJobSchema,
+  type ReleaseBackgroundJobInput
+} from "./background-jobs.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
@@ -1667,6 +1676,37 @@ export class ToolService {
 
   async readAbapScreen(input: ReadScreenInput): Promise<string> {
     return JSON.stringify(await this.readScreenDefinition(input), null, 2)
+  }
+
+  /**
+   * Release one scheduled background job (N3 / OP2).
+   *
+   * The confirmation string is checked first, before SAP is touched. The job identity is normalised
+   * with the same rules the read tools use, so a caller cannot release a job whose name it could not
+   * have found. The helper owns the transaction and reads the released status back from TBTCO; this
+   * method never invents a status.
+   */
+  async releaseBackgroundJob(input: ReleaseBackgroundJobInput): Promise<string> {
+    const parsed = releaseBackgroundJobSchema.parse(input)
+    if (parsed.confirmation !== JOB_CONFIRMATIONS.release)
+      throw new Error(`confirmation must be ${JOB_CONFIRMATIONS.release}`)
+    const connectionId = parsed.connectionId.toLowerCase()
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "JOB_RELEASE",
+      jobName: jobName(parsed.jobName),
+      jobCount: jobCount(parsed.jobCount)
+    })
+    const metadata = jobPayloadRows(result.source ?? [])
+    return JSON.stringify(
+      jobReleaseResult(connectionId, {
+        status: result.status,
+        code: result.code,
+        message: result.message,
+        metadata
+      }),
+      null,
+      2
+    )
   }
 
   async upsertAbapScreen(input: UpsertScreenInput): Promise<string> {

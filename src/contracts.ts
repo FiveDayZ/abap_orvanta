@@ -44,6 +44,7 @@ import {
   readFailedUpdateSchema,
   readArchiveStatusSchema
 } from "./maintenance-diagnostics.js"
+import { releaseBackgroundJobSchema } from "./background-jobs.js"
 
 const objectType = z.enum(DEFAULT_OBJECT_TYPES)
 /**
@@ -453,6 +454,12 @@ const toolContractsBase = {
     description:
       "Attach objects to an existing CTS request or task through the shared SAP repository helper, which calls TRINT_OBJECTS_CHECK_AND_INSERT inside SAP with dialog suppression, commits at the top level, and only then reads E071 back. This is the one transport write the service cannot reach natively: the recorded transport of a write the service itself performed is covered elsewhere, but an object the service never wrote needs this call. Each object is a flat CTS entry of PGMID, OBJECT, OBJ_NAME and an optional LANG; table keys, AUTHOR, DEVCLASS and OPERATION are refused rather than guessed, so keyed objects are out of scope. Returns the request number, the task number SAP actually recorded the entries under, the requested and inserted object counts, and the object rows read back from E071. The callee never moves an object that already belongs to another open transport: it reports the container it used instead, so the reply also carries requestedRequestNumber, recordedInRequestedContainer, and a containerMismatch object naming both containers whenever SAP recorded somewhere other than the requested request. A mismatch is reported rather than thrown, because the objects were added - just not where they were asked to go - and a partial insert is refused outright. Requires the ADD_OBJECTS_TO_TRANSPORT confirmation string, which is checked before SAP is contacted. It never creates or releases a request, and never deletes an object entry.",
     inputSchema: addObjectsToTransportSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
+  },
+  release_background_job: {
+    description:
+      "Release one scheduled background job so the batch scheduler will start it, through BP_JOB_RELEASE inside the shared SAP repository helper. This is an operation the service cannot reach natively: the function module reports remoteEnabled=false on this release, so the only route is the helper branch. The job is identified by the exact jobName and jobCount pair, both taken from search_background_jobs. Before releasing, the helper reads TBTCO and refuses a job whose status is neither scheduled nor released, so releasing an already-running or finished job is a named error (JOB_NOT_RELEASABLE) rather than an accidental no-op. After the call it reads TBTCO again and reports SAP's own status; a release that leaves the status unchanged is reported as JOB_STATUS_UNCHANGED and never as success. The helper owns the transaction: BP_JOB_RELEASE contains no COMMIT WORK of its own, so it commits once at the top level after the read-back. Authorization is SAP's own: S_RZL_ADM is checked by the callee for the intercepted-job path and a refusal is reported as JOB_NO_AUTHORITY. Requires the RELEASE_BACKGROUND_JOB confirmation string, which is checked before SAP is contacted. It does not create, modify or delete a job, and it cannot run a job immediately - a released job is started by the scheduler, under the target user's authorizations, not the caller's.",
+    inputSchema: releaseBackgroundJobSchema.shape,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
   },
   read_smartform: {
