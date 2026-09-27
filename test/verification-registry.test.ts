@@ -581,8 +581,19 @@ test("the registry records the honest gap rather than inflating it", () => {
   // exact-or-refuse refusal at the row bound). Both entries name the record and the version, and the
   // same session deliberately left the three tools without a sample unverified.
   // This bound is a tripwire, not a quality bar: raising it again requires the same kind of citation.
+  // Raised from 23 to 28 on 2026-09-27 (N1): a live read-only sweep on 0.50.21 / de1fd73
+  // (.cache/evidence-ops-n1c, written up in .doc/code-update-20260927-084500.md) called eight ops
+  // tools that had no recorded call. Five answered status "ok" or "partial" with rows - so their
+  // replies are the call, and each entry names that record and the sweep behind it:
+  // read_workload_directory (SWNC_GET_WORKLOAD_DIRECTORY), read_system_parameters (TPFYPROPTY +
+  // TPFHT), read_qrfc_queues (TRFCQOUT + TRFCQIN), read_idoc_status (EDIDC + EDIDS) and
+  // read_user_authorizations (AGR_USERS + AGR_TCODES + UST04). The other three answered
+  // "unavailable" (read_work_processes and read_user_sessions on an unverified kernel interface,
+  // read_file_system_directory on a runtime RFC failure) and were deliberately left unverified with
+  // no evidence and no attempt time. None of the five was inferred from a passing test, and no
+  // entry was verified from a plan rather than a call.
   assert.ok(
-    totals.verified <= 23,
+    totals.verified <= 28,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

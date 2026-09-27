@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T00:42:56.072Z",
+  "updatedAt": "2026-09-27T00:54:03.057Z",
   "notes": "2026-09-26 (OP1-1 runtime-resources, third batch): read_workload_directory was added and registered unverified. The batch also settled, with interface-level evidence, why the family's two remaining reads are not service-side work: the workload numbers cannot be read by this service at all (aggregate row structures are refused and the single-record read cannot return its record header), and DB02 is split by database vendor with the platform unreadable from the approved sources. Both are recorded in the runtime-resources gap for the next phase. 2026-09-25 (OP1-1 runtime-resources, second batch): read_file_system_directory was added and registered unverified. The listing is the kernel's own EPS2_GET_DIRECTORY_LISTING call, and the probe evidence that removed the expected helper dependency is recorded in the entry. The workload candidate SWNC_COLLECTOR_GET_AGGREGATES was probed in the same session and turned out not to be usable for this service: the function module is remote-enabled, but its aggregate tables (TASKTYPE, TASKTIMES, TIMES, USERTCODE, DBPROCS and the rest of the workload set) hold structures whose field names or scalar types this service cannot verify, so a workload snapshot cannot be built from it. 2026-09-25 (OP1-1 runtime-resources): read_work_processes and read_user_sessions were added and registered unverified. Both are the kernel's own monitor reads (TH_WPINFO / TH_USER_LIST) called over SOAP-RFC after an interface-fingerprint check; the assessment had expected this family to need the SAP-side helper, and the probe evidence that removed that dependency is recorded in each entry. Verification status is recorded per tool, never inferred from availability or from passing tests.",
   "entries": [
     {
@@ -630,38 +630,38 @@
     {
       "tool": "read_system_parameters",
       "helper": null,
-      "availabilityBasis": "runtime-observed",
-      "verificationTarget": "w200 profile parameters and profile headers (TPFYPROPTY/TPFHT): no authorized call yet",
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 live read via read_system_parameters on 2026-09-27 (sweep .cache/evidence-ops-n1c)",
       "method": "read-only",
       "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
-      "evidence": ".cache/evidence-ops-n1c/read_system_parameters.txt",
-      "notes": "Verified by a live read-only sweep on w200 (2026-09-27, sweep label ops-n1c, build de1fd73 / 0.50.21). read-only call succeeded with rows. Reply status was \"ok\"/\"partial\"; a partial status only means the row limit truncated the result."
+      "lastAttemptAt": "2026-09-27T08:42:00+08:00",
+      "evidence": ".doc/code-update-20260927-084500.md",
+      "notes": "Real read-only call recorded on 0.50.21 (de1fd73) against w200 on 2026-09-27, in the sweep recorded as .cache/evidence-ops-n1c and written up in this entry's evidence record. The reply carried status \"ok\" or \"partial\" with rows; \"partial\" means only that the row limit truncated the result, not that the read failed. The call reached SAP through the rfc_read_table fallback because the native data-preview endpoint is platform-unsupported on this release. Not proven: any behaviour outside the filters this sweep exercised, and no claim about rows beyond the row cap. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "read_qrfc_queues",
       "helper": null,
-      "availabilityBasis": "runtime-observed",
-      "verificationTarget": "w200 qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE): no authorized call yet",
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 live read via read_qrfc_queues on 2026-09-27 (sweep .cache/evidence-ops-n1c)",
       "method": "read-only",
       "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
-      "evidence": ".cache/evidence-ops-n1c/read_qrfc_queues.txt",
-      "notes": "Verified by a live read-only sweep on w200 (2026-09-27, sweep label ops-n1c, build de1fd73 / 0.50.21). read-only call succeeded with rows. Reply status was \"ok\"/\"partial\"; a partial status only means the row limit truncated the result."
+      "lastAttemptAt": "2026-09-27T08:42:00+08:00",
+      "evidence": ".doc/code-update-20260927-084500.md",
+      "notes": "Real read-only call recorded on 0.50.21 (de1fd73) against w200 on 2026-09-27, in the sweep recorded as .cache/evidence-ops-n1c and written up in this entry's evidence record. The reply carried status \"ok\" or \"partial\" with rows; \"partial\" means only that the row limit truncated the result, not that the read failed. The call reached SAP through the rfc_read_table fallback because the native data-preview endpoint is platform-unsupported on this release. Not proven: any behaviour outside the filters this sweep exercised, and no claim about rows beyond the row cap. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "read_idoc_status",
       "helper": null,
-      "availabilityBasis": "runtime-observed",
-      "verificationTarget": "w200 IDoc control and status records (EDIDC/EDIDS): no authorized call yet",
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 live read via read_idoc_status on 2026-09-27 (sweep .cache/evidence-ops-n1c)",
       "method": "read-only",
       "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
-      "evidence": ".cache/evidence-ops-n1c/read_idoc_status.txt",
-      "notes": "Verified by a live read-only sweep on w200 (2026-09-27, sweep label ops-n1c, build de1fd73 / 0.50.21). read-only call succeeded with rows. Reply status was \"ok\"/\"partial\"; a partial status only means the row limit truncated the result."
+      "lastAttemptAt": "2026-09-27T08:42:00+08:00",
+      "evidence": ".doc/code-update-20260927-084500.md",
+      "notes": "Real read-only call recorded on 0.50.21 (de1fd73) against w200 on 2026-09-27, in the sweep recorded as .cache/evidence-ops-n1c and written up in this entry's evidence record. The reply carried status \"ok\" or \"partial\" with rows; \"partial\" means only that the row limit truncated the result, not that the read failed. The call reached SAP through the rfc_read_table fallback because the native data-preview endpoint is platform-unsupported on this release. Not proven: any behaviour outside the filters this sweep exercised, and no claim about rows beyond the row cap. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "read_file_system_directory",
@@ -671,21 +671,21 @@
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
+      "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Read-only sweep on w200 (2026-09-27, sweep label ops-n1c) answered with status \"unavailable\": EPS2_GET_DIRECTORY_LISTING returned RUNTIME_RESOURCES_RFC_FAILED over SOAP-RFC. The call was reachable and the tool failed safely - this is an observed RFC-path failure on this release, not a missing deployment, and it stays `unverified`. Evidence: .cache/evidence-ops-n1c/read_file_system_directory.txt."
+      "notes": "Attempted read-only on w200 on 2026-09-27 (sweep .cache/evidence-ops-n1c); the reply carried status \"unavailable\", so the read did not happen and the row stays unverified rather than claiming a result. It stays unverified rather than failed because the observed outcome is recorded here in prose, not as a verified failure under the registry's failure taxonomy. See the evidence record for the per-tool cause."
     },
     {
       "tool": "read_user_authorizations",
       "helper": null,
-      "availabilityBasis": "runtime-observed",
-      "verificationTarget": "w200 role, transaction and profile assignments (AGR_USERS/AGR_TCODES/UST04): no authorized call yet",
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 live read via read_user_authorizations on 2026-09-27 (sweep .cache/evidence-ops-n1c)",
       "method": "read-only",
       "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
-      "evidence": ".cache/evidence-ops-n1c/read_user_authorizations.txt",
-      "notes": "Verified by a live read-only sweep on w200 (2026-09-27, sweep label ops-n1c, build de1fd73 / 0.50.21). read-only call succeeded with rows. Reply status was \"ok\"/\"partial\"; a partial status only means the row limit truncated the result."
+      "lastAttemptAt": "2026-09-27T08:42:00+08:00",
+      "evidence": ".doc/code-update-20260927-084500.md",
+      "notes": "Real read-only call recorded on 0.50.21 (de1fd73) against w200 on 2026-09-27, in the sweep recorded as .cache/evidence-ops-n1c and written up in this entry's evidence record. The reply carried status \"ok\" or \"partial\" with rows; \"partial\" means only that the row limit truncated the result, not that the read failed. The call reached SAP through the rfc_read_table fallback because the native data-preview endpoint is platform-unsupported on this release. Not proven: any behaviour outside the filters this sweep exercised, and no claim about rows beyond the row cap. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "read_work_processes",
@@ -695,21 +695,21 @@
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
+      "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Read-only sweep on w200 (2026-09-27, sweep label ops-n1c) answered with status \"unavailable\": TH_WPINFO returned RUNTIME_RESOURCES_RESPONSE_EMPTY over SOAP-RFC. The call was reachable and the tool failed safely - this is an observed RFC-path failure on this release, not a missing deployment, and it stays `unverified`. Evidence: .cache/evidence-ops-n1c/read_work_processes.txt."
+      "notes": "Attempted read-only on w200 on 2026-09-27 (sweep .cache/evidence-ops-n1c); the reply carried status \"unavailable\", so the read did not happen and the row stays unverified rather than claiming a result. It stays unverified rather than failed because the observed outcome is recorded here in prose, not as a verified failure under the registry's failure taxonomy. See the evidence record for the per-tool cause."
     },
     {
       "tool": "read_workload_directory",
       "helper": null,
-      "availabilityBasis": "runtime-observed",
-      "verificationTarget": "w200 workload collector directory (SWNC_GET_WORKLOAD_DIRECTORY): no authorized call yet",
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 live read via read_workload_directory on 2026-09-27 (sweep .cache/evidence-ops-n1c)",
       "method": "read-only",
       "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
-      "evidence": ".cache/evidence-ops-n1c/read_workload_directory.txt",
-      "notes": "Verified by a live read-only sweep on w200 (2026-09-27, sweep label ops-n1c, build de1fd73 / 0.50.21). read-only call succeeded with rows. Reply status was \"ok\"/\"partial\"; a partial status only means the row limit truncated the result."
+      "lastAttemptAt": "2026-09-27T08:42:00+08:00",
+      "evidence": ".doc/code-update-20260927-084500.md",
+      "notes": "Real read-only call recorded on 0.50.21 (de1fd73) against w200 on 2026-09-27, in the sweep recorded as .cache/evidence-ops-n1c and written up in this entry's evidence record. The reply carried status \"ok\" or \"partial\" with rows; \"partial\" means only that the row limit truncated the result, not that the read failed. The call reached SAP through the rfc_read_table fallback because the native data-preview endpoint is platform-unsupported on this release. Not proven: any behaviour outside the filters this sweep exercised, and no claim about rows beyond the row cap. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "read_user_sessions",
@@ -719,9 +719,9 @@
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-09-27T00:42:56.072Z",
+      "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Read-only sweep on w200 (2026-09-27, sweep label ops-n1c) answered with status \"unavailable\": TH_USER_LIST returned RUNTIME_RESOURCES_RESPONSE_EMPTY over SOAP-RFC. The call was reachable and the tool failed safely - this is an observed RFC-path failure on this release, not a missing deployment, and it stays `unverified`. Evidence: .cache/evidence-ops-n1c/read_user_sessions.txt."
+      "notes": "Attempted read-only on w200 on 2026-09-27 (sweep .cache/evidence-ops-n1c); the reply carried status \"unavailable\", so the read did not happen and the row stays unverified rather than claiming a result. It stays unverified rather than failed because the observed outcome is recorded here in prose, not as a verified failure under the registry's failure taxonomy. See the evidence record for the per-tool cause."
     },
     {
       "tool": "get_version_history",

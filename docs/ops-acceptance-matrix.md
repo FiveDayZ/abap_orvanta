@@ -202,7 +202,7 @@ Criterion to close: Reported: client role and cross-client change protection (SC
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `get_sap_system_info` | read-only | verified | `.doc/code-update-20260909-084306.md` |
-| `read_system_parameters` | read-only | verified | `.cache/evidence-ops-n1c/read_system_parameters.txt` |
+| `read_system_parameters` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 
 ### `query` - partial
 
@@ -223,10 +223,10 @@ Criterion to close: Reported: the work process list (TH_WPINFO) through read_wor
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_work_processes` | read-only | unverified | unverified (last attempt 2026-09-27T00:42:56.072Z) |
-| `read_user_sessions` | read-only | unverified | unverified (last attempt 2026-09-27T00:42:56.072Z) |
-| `read_file_system_directory` | read-only | unverified | unverified (last attempt 2026-09-27T00:42:56.072Z) |
-| `read_workload_directory` | read-only | verified | `.cache/evidence-ops-n1c/read_workload_directory.txt` |
+| `read_work_processes` | read-only | unverified | unverified |
+| `read_user_sessions` | read-only | unverified | unverified |
+| `read_file_system_directory` | read-only | unverified | unverified |
+| `read_workload_directory` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 
 Not built yet: `read_performance_snapshot`, `read_db_activity`
 
@@ -238,8 +238,8 @@ Criterion to close: Reported: outbound and inbound qRFC/tRFC queue state (TRFCQO
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_qrfc_queues` | read-only | verified | `.cache/evidence-ops-n1c/read_qrfc_queues.txt` |
-| `read_idoc_status` | read-only | verified | `.cache/evidence-ops-n1c/read_idoc_status.txt` |
+| `read_qrfc_queues` | read-only | verified | `.doc/code-update-20260927-084500.md` |
+| `read_idoc_status` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 
 Not built yet: `read_email_queue`
 
@@ -251,7 +251,7 @@ Criterion to close: Reported: the stored role assignments per user (AGR_USERS), 
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_user_authorizations` | read-only | verified | `.cache/evidence-ops-n1c/read_user_authorizations.txt` |
+| `read_user_authorizations` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 
 Not built yet: `read_authorization_trace`
 
