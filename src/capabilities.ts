@@ -492,9 +492,9 @@ export async function buildCapabilityReport(
     capability(
       "authorization-assignments",
       "target-specific",
-      ["read_user_authorizations"],
+      ["read_user_authorizations", "read_authorization_trace"],
       unknownTargetObservation(
-        "Reads the approved assignment tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. The answer is assignment master data and never an authorization decision. See adt-data-preview for the native verdict."
+        "read_user_authorizations reads the approved assignment tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. read_authorization_trace calls AUTH_TRACE_GET_STATUS over SOAP-RFC after pinning both fingerprints, so its availability follows that function module. Both report stored facts: assignment master data and the kernel's trace switch, never an authorization decision. The trace data itself needs the SAP-side helper. See adt-data-preview for the native verdict."
       )
     ),
     capability(

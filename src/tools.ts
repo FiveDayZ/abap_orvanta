@@ -71,6 +71,7 @@ import { collectServerFacts } from "./server-facts.js"
 import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
 import { collectUserAuthorizations } from "./user-authorizations.js"
+import { collectAuthTraceStatus } from "./auth-trace-status.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
@@ -1247,6 +1248,10 @@ interface UserAuthorizationsInput {
   includeRoleTransactions?: boolean | undefined
   includeProfiles?: boolean | undefined
   maxRows?: number | undefined
+}
+
+interface AuthorizationTraceInput {
+  connectionId: string
 }
 
 interface WorkProcessesInput {
@@ -6973,6 +6978,26 @@ export class ToolService {
       summary += `- Query warnings: ${authorizations.queryWarnings.length}\n`
     }
     return `${summary}${JSON.stringify(authorizations, null, 2)}`
+  }
+
+  async readAuthorizationTrace(input: AuthorizationTraceInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const trace = await collectAuthTraceStatus(this.backend, connectionId, async () =>
+      JSON.parse(
+        await this.readFunctionModuleInterface({
+          connectionId,
+          functionName: "AUTH_TRACE_GET_STATUS"
+        })
+      )
+    )
+    let summary =
+      `Authorization trace status: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${trace.status}\n` +
+      `- Trace active: ${trace.traceActive === null ? "unknown" : trace.traceActive}\n`
+    if (trace.queryWarnings.length) {
+      summary += `- Query warnings: ${trace.queryWarnings.length}\n`
+    }
+    return `${summary}${JSON.stringify(trace, null, 2)}`
   }
 
   async readWorkProcesses(input: WorkProcessesInput): Promise<string> {

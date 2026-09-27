@@ -688,6 +688,18 @@
       "notes": "Real read-only call recorded on 0.50.21 (de1fd73) against w200 on 2026-09-27, in the sweep recorded as .cache/evidence-ops-n1c and written up in this entry's evidence record. The reply carried status \"ok\" or \"partial\" with rows; \"partial\" means only that the row limit truncated the result, not that the read failed. The call reached SAP through the rfc_read_table fallback because the native data-preview endpoint is platform-unsupported on this release. Not proven: any behaviour outside the filters this sweep exercised, and no claim about rows beyond the row cap. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
+      "tool": "read_authorization_trace",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "not yet called against w200: implemented in the N3 batch, no runtime evidence recorded",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Implemented on 2026-09-27 (N3). The function module AUTH_TRACE_GET_STATUS was read from w200 and both fingerprints pinned, and its RC polarity was settled from SAP's own callers rather than assumed - see .doc/n3-auth-trace-status-contract-forensics-20260927.md sections 3.5 and 5. The tool itself has not been called against w200 yet, so no reply is claimed. This is the one N3 item that needs no SAP-side helper deployment: the function module is remote-enabled with no imports."
+    },
+    {
       "tool": "read_work_processes",
       "helper": null,
       "availabilityBasis": "target-specific",

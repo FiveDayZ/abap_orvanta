@@ -670,6 +670,9 @@ const ROWS: readonly ToolRow[] = [
   ["read_qrfc_queues", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_idoc_status", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_user_authorizations", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  // N3. Not a helper call: AUTH_TRACE_GET_STATUS is remote-enabled with no input, so this is the one
+  // item of the OP2/OP1 batch that needs no SAP-side deployment at all.
+  ["read_authorization_trace", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_work_processes", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_user_sessions", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_file_system_directory", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],

@@ -129,6 +129,7 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_idoc_status: "read-only",
   // Users and authorizations
   read_user_authorizations: "read-only",
+  read_authorization_trace: "read-only",
   // Runtime resources (SM50/SM66 and SM04)
   read_work_processes: "read-only",
   read_user_sessions: "read-only",
@@ -356,9 +357,12 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     gap:
       "Reported: the stored role assignments per user (AGR_USERS), the transactions of a " +
       "role (AGR_TCODES) and the profile assignments of a user master record (UST04) through " +
-      "read_user_authorizations - assignment master data, never an authorization decision. " +
-      "Still absent: the SU53/ST01 authorization trace (read_authorization_trace), which " +
-      "needs the SAP-side helper, and any role-to-authorization-object resolution, because " +
+      "read_user_authorizations - assignment master data, never an authorization decision - and " +
+      "the kernel's authorization-trace switch through read_authorization_trace " +
+      "(AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). " +
+      "Still absent: the trace data itself (which authorization check failed), because " +
+      "AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the " +
+      "SAP-side helper, and any role-to-authorization-object resolution, because " +
       "AGR_1251/AGR_1252/AGR_PROF/USOB*/UST10* are not on the approved allowlist."
   },
   {

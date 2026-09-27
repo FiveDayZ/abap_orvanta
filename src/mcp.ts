@@ -753,6 +753,9 @@ export function createMcpServer(
   registerTool("read_user_authorizations", toolContracts.read_user_authorizations, async (input) =>
     invoke("read_user_authorizations", () => tools.readUserAuthorizations(input))
   )
+  registerTool("read_authorization_trace", toolContracts.read_authorization_trace, async (input) =>
+    invoke("read_authorization_trace", () => tools.readAuthorizationTrace(input))
+  )
   registerTool("read_work_processes", toolContracts.read_work_processes, async (input) =>
     invoke("read_work_processes", () => tools.readWorkProcesses(input))
   )

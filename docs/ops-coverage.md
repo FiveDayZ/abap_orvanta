@@ -609,6 +609,8 @@ registry 条目数再次等于工具数（149）。
 实现），**缺口集合不变**（仍是 `read_performance_snapshot` 与 `read_db_activity`），族仍为 `partial`。
 工具面 **151 工具 / 90 只读**，ops 组 **28**，registry **151 条 = 工具数**（verified 23 / unverified 121）。
 新工具在服务重启并完成一次真实 w200 调用前保持 `unverified`。
+（**后续更新**：该读数已被 §7.16 取代 —— N3 后为 **152 工具 / 91 只读**，ops 组 **29**，registry **152 条**。
+本行保留为当时快照。）
 
 **更正（2026-09-26，本轮复核）：「平台读不到」不成立。** 上面那句结论只依据**一次** `TPFYPROPTY`
 读取被拒（`TABLE_NOT_ALLOWED`）——而被拒的原因是**当时在跑的构建**的表白名单早于 2026-09-25 的
@@ -787,3 +789,37 @@ node .cache/mcp-call.mjs read_function_module_interface '{"connectionId":"w200",
 良性原生码。`isError` 与 `*_NOT_AUTHORIZED` / `TABLE_NOT_ALLOWED` 仍优先判 `refused`。
 
 **验证**：对 `ops-n1b` 已捕获的 8 份原始答复重跑新分类器，8/8 与各自 `status` 一致（旧规则 5/8 错）。
+
+### 7.16 N3 第一批 - `read_authorization_trace`（2026-09-27）
+
+N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮只落地服务侧那一项**，并纠正计划中的两处错误前提。
+
+**已实现：`read_authorization_trace`（状态半）**。`AUTH_TRACE_GET_STATUS`（FG `SAUTHTRACE`）`remoteEnabled=true`、
+无导入、无表参数、无异常、执行契约 `supported=true`，是本批**唯一不需要 SAP 侧助手部署**的项。工具面
+**151 → 152 工具 / 91 只读**，ops 组 **28 → 29**，registry **152 条 = 工具数**；计划内缺口 **16 → 15**
+（`missingPlannedTools` 相应少一项）。**必需族仍 2/14、`criterionMet=false`** —— `authorizations` 族仍为
+`partial`：还缺追踪**数据**（`AUTH_TRACE_GET_AUTHVAL_DATA` 的 `P_AUTHVALTRC_DATA` 含不可验证类型
+`XUBITVEC16`，需助手）与"角色→权限对象"解析（`AGR_1251/1252/PROF`、`USOB*`、`UST10*` 未获白名单批准）。
+
+**契约：`RC` 的极性由 SAP 调用方确证，非推断。** `AUTH_TRACE_GET_STATUS` 自己的函数体对 `RC` **支持两种
+相反读法**（旧内核分支把 `auth/authorization_trace='Y'` 映射为 `'X'`；新内核分支把 `AUTH_TRACE ACTION='INFO'`
+调用失败也映射为 `'X'`）。定论来自**调用方**：`AUTH_TRACE_RESET` 与 `AUTH_TRACE_INTERN_GET_NAME` 都写
+`IF lv_rc <> 'X'. EXIT. ENDIF.`，后者注释为 *"If the trace is not active, we do not need to do anything"*。
+⇒ **`'X'` = 追踪已激活**。因此本工具**不消费同类工具惯用的 `read_function_module_interface` 返回文本**，
+而是直接把 `RC` 解释为开关，并对非 `'X'`/非空值回 `AUTH_TRACE_STATUS_RESPONSE_INVALID`（**不静默当作关闭**）。
+两个指纹均已钉死（`sourceFingerprint 935db5a6…`、`interfaceFingerprint d603edfe…`）；指纹不符时**在触碰 SAP
+之前**即拒绝。证据：`.doc/n3-auth-trace-status-contract-forensics-20260927.md` §1/§3.5。
+
+**纠正计划的两处错误前提（重要，直接影响后续工期与安全）**：
+
+1. **"所有助手改动都要载体 + 人工 F8"是过度概括。** 自写保护守卫
+   （`scripts/bootstrap-sap-helper.ps1:13246`）**只对字面量 `ZORVANTA_MCP_CORE` 生效**。实测归属：
+   `Z_ORVANTA_OPS_READ`（FG `ZORVANTA_LOG`）、`Z_ORVANTA_MAINT_READ`（FG `ZORVANTA_MAINT`）、
+   `Z_ORVANTA_LOG_READ`、`Z_ORVANTA_SMARTFORM_API` 均**不在**该组 ⇒ 可经 `write_function_module_source`
+   直接写入。N3 的 `jobs`/`locks` 分支目标正是前两者，**"12 个操作码 = 12 次人工 F8"的瓶颈大部分不成立**。
+2. **`delete_sap_lock` 不能建在 `DEQUEUE_ALL` 上。** 该函数导入参数只有 `_SYNCHRON`，**不含任何锁键**，
+   语义是"释放全系统所有锁"，无法表达"删除指定的一把锁"，用它实现该工具**语义错误且极其危险**。
+   精确路径存在：SAP 为每个锁对象生成 `DEQUEUE_<锁对象名>`（实测枚举到该族；抽查 `DEQUEUE_E_TABLE` 为
+   `remoteEnabled=false`）⇒ 仍走助手，但须**按锁对象动态派发**。**待裁定**（Q-N11，见取证 §5.1）。
+
+**未做**：12 个助手分支的实现与部署、操作码表登记、载体生成、指纹重钉。**未执行任何测试**。
