@@ -7,6 +7,7 @@
  * evidence-existence rule, which the mutation test at the bottom proves is not vacuous.
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
   AVAILABILITY_BASES,
@@ -603,6 +604,36 @@ test("the registry records the honest gap rather than inflating it", () => {
       typeof entry.evidence === "string" && entry.evidence.trim() !== "",
       `verified entry ${entry.tool} must name the record it was verified from`
     )
+  }
+
+  // Carrying a path is not the same as the record justifying the claim: an entry can cite a record
+  // that discusses something adjacent and never mentions the tool at all. That is how a hand-written
+  // entry drifts - the 2026-09-27 sweep registration cited raw artifacts rather than a record and
+  // was caught only by the field-shape rules, not by anything reading the record.
+  //
+  // Two entries predate this check and are recorded here rather than silently tightened, because
+  // both records are substantive and describe the work by probe script or capability instead of by
+  // tool name. Rewriting unrelated history to satisfy a new guard would be the wrong repair; naming
+  // them keeps the exception visible and countable so it cannot quietly grow.
+  const UNNAMED_BY_RECORD = ["get_sap_system_info", "read_function_module_interface"]
+  const unnamed: string[] = []
+  for (const entry of registry.entries.filter((candidate) => candidate.status === "verified")) {
+    const path = resolveEvidencePath(entry)
+    if (!path) continue // already covered by the existence guard above
+    if (UNNAMED_BY_RECORD.includes(entry.tool)) continue
+    const record = readFileSync(path, "utf8")
+    if (!record.includes(entry.tool)) unnamed.push(`${entry.tool} -> ${entry.evidence}`)
+  }
+  assert.deepEqual(
+    unnamed,
+    [],
+    "a verified entry must cite a record that names the tool it verified"
+  )
+  // The exception list must not rot: each name in it has to still be a verified entry, or the
+  // allowance is being carried for a tool that no longer needs it.
+  for (const tool of UNNAMED_BY_RECORD) {
+    const entry = registry.entries.find((candidate) => candidate.tool === tool)
+    assert.equal(entry?.status, "verified", `${tool} is exempted but is no longer verified`)
   }
   assert.ok(totals.unverified > totals.verified, "the honest default should dominate")
 })
