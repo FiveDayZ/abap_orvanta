@@ -804,7 +804,7 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 **契约：`RC` 的极性由 SAP 调用方确证，非推断。** `AUTH_TRACE_GET_STATUS` 自己的函数体对 `RC` **支持两种
 相反读法**（旧内核分支把 `auth/authorization_trace='Y'` 映射为 `'X'`；新内核分支把 `AUTH_TRACE ACTION='INFO'`
 调用失败也映射为 `'X'`）。定论来自**调用方**：`AUTH_TRACE_RESET` 与 `AUTH_TRACE_INTERN_GET_NAME` 都写
-`IF lv_rc <> 'X'. EXIT. ENDIF.`，后者注释为 *"If the trace is not active, we do not need to do anything"*。
+`IF lv_rc <> 'X'. EXIT. ENDIF.`，后者注释为 _"If the trace is not active, we do not need to do anything"_。
 ⇒ **`'X'` = 追踪已激活**。因此本工具**不消费同类工具惯用的 `read_function_module_interface` 返回文本**，
 而是直接把 `RC` 解释为开关，并对非 `'X'`/非空值回 `AUTH_TRACE_STATUS_RESPONSE_INVALID`（**不静默当作关闭**）。
 两个指纹均已钉死（`sourceFingerprint 935db5a6…`、`interfaceFingerprint d603edfe…`）；指纹不符时**在触碰 SAP
@@ -812,14 +812,47 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 
 **纠正计划的两处错误前提（重要，直接影响后续工期与安全）**：
 
-1. **"所有助手改动都要载体 + 人工 F8"是过度概括。** 自写保护守卫
-   （`scripts/bootstrap-sap-helper.ps1:13246`）**只对字面量 `ZORVANTA_MCP_CORE` 生效**。实测归属：
-   `Z_ORVANTA_OPS_READ`（FG `ZORVANTA_LOG`）、`Z_ORVANTA_MAINT_READ`（FG `ZORVANTA_MAINT`）、
-   `Z_ORVANTA_LOG_READ`、`Z_ORVANTA_SMARTFORM_API` 均**不在**该组 ⇒ 可经 `write_function_module_source`
-   直接写入。N3 的 `jobs`/`locks` 分支目标正是前两者，**"12 个操作码 = 12 次人工 F8"的瓶颈大部分不成立**。
+1. ~~**"所有助手改动都要载体 + 人工 F8"是过度概括。**~~ —— **【本条结论已于同日撤回，见 §7.17】**
+   自写保护守卫只对 `ZORVANTA_MCP_CORE` 生效这一**事实**成立，但由它推出"F8 瓶颈大部分不成立"是**错的**：
+   `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_MAINT_READ` 虽然是可直写的（不在 CORE），但**契约上只读**
+   （`readOnly = true` 无条件写入响应信封，且服务侧 `z.literal(true)` 硬校验），**不能承载任何处置分支**；
+   而写类 ops 工具（`create_transport_request` / `add_objects_to_transport`）实测路由到
+   `Z_ORVANTA_MCP_DYNPRO_API`，该 FM **在** `ZORVANTA_MCP_CORE` ⇒ **写分支仍然必须走载体 + F8**。
+   精确结论见 §7.17。
 2. **`delete_sap_lock` 不能建在 `DEQUEUE_ALL` 上。** 该函数导入参数只有 `_SYNCHRON`，**不含任何锁键**，
    语义是"释放全系统所有锁"，无法表达"删除指定的一把锁"，用它实现该工具**语义错误且极其危险**。
    精确路径存在：SAP 为每个锁对象生成 `DEQUEUE_<锁对象名>`（实测枚举到该族；抽查 `DEQUEUE_E_TABLE` 为
    `remoteEnabled=false`）⇒ 仍走助手，但须**按锁对象动态派发**。**待裁定**（Q-N11，见取证 §5.1）。
 
 **未做**：12 个助手分支的实现与部署、操作码表登记、载体生成、指纹重钉。**未执行任何测试**。
+
+### 7.17 N3 范围更正 - 写分支仍须载体 + F8（2026-09-27）
+
+§7.16 第 1 条对本批成本模型的判断**是错的**，此处撤回并给出实测依据。正确的划分是：
+
+| 半边        | 分支                                                                                                                                               | 落入哪个助手                                           | 受自写守卫                    | 部署方式                                 |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------- | ---------------------------------------- |
+| **写 6 项** | `create/modify/release/cancel_background_job`、`delete_sap_lock`、`release_transport_task`                                                         | **仓库 body**（`Z_ORVANTA_MCP_EXECUTE`/`_DYNPRO_API`） | ⛔ **在 `ZORVANTA_MCP_CORE`** | **载体 + 用户 SE38/F8 必须**             |
+| **读 6 项** | `read_authorization_trace`(数据半)、`read_archive_status`、`read_ccms_alerts`、`read_email_queue`、`read_performance_snapshot`、`read_db_activity` | `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_MAINT_READ`          | ✅ 不在 CORE                  | 可经 `write_function_module_source` 直写 |
+
+**三条实测依据**（不是推断）：
+
+1. **写类 ops 工具的目标助手在 CORE**：`src/tool-registry.ts:90` `REPOSITORY = "Z_ORVANTA_MCP_DYNPRO_API"`，
+   而 `create_transport_request` / `add_objects_to_transport` 都路由到 `REPOSITORY`；
+   `read_function_module_interface` 实测该 FM 的 `functionGroup = ZORVANTA_MCP_CORE`（`Z_ORVANTA_MCP_EXECUTE` 同）。
+2. **两个可直写助手契约只读**：`scripts/operational-log-source.mjs:321` 与
+   `scripts/maintenance-diagnostic-source.mjs:258` 都在 `CASE iv_action` **之前**无条件
+   `CONCATENATE ... ',"readOnly":true,'`；服务侧 `src/operational-logs.ts:146` 与
+   `src/maintenance-diagnostics.ts:139` 用 `readOnly: z.literal(true)` 硬校验。把处置分支塞进这两个
+   助手会让它们**同时违反 ABAP 侧与 TypeScript 侧两处契约**。
+3. **计划 §4 指定的登记表属于仓库 body**：`.doc/n3-implementation-plan-20260927.md:86` 要求新操作码进
+   `$helperCapabilityOperations`，而该表（`bootstrap-sap-helper.ps1:66-69` 注释 + `:6224` 消费点）是
+   `$repositoryFunctionSource` 的 CAPABILITIES 表，该 body 部署到 EXECUTE/DYNPRO 两者。
+
+**对工期的影响**：写半边（6 项）**仍必须**载体 + F8；好消息是可按 `/doc/release-process.md §7.2` 既有范式
+**合并到 2 个载体**（EXEC 与 DYNPRO 各一），而非 6 次往返。读半边（6 项）确实不需要 F8。
+**故 §7.16 的"瓶颈大部分不成立"应改为"瓶颈只对读半边消失"。**
+
+**教训（写入纪律）**：守卫的适用范围（`SELF_FUNCTION_GROUP_FORBIDDEN` 只认 CORE）与**该助手能不能承载写**
+是两个独立约束。前者是"工具会不会被拒"，后者是"契约允不允许"。由前者为真推出后者为真，属于把
+"技术上可写"当成"设计上该写" —— 与项目反复出现的"把不受支持说成不存在"是同一类**越界外推**。

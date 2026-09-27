@@ -715,6 +715,20 @@ const ROWS: readonly ToolRow[] = [
   ["search_sap_locks", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
   ["search_failed_updates", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
   ["read_failed_update", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
+  // N3. The archive-alerts family had no tool at all; this is its first, and it is read-only, so it
+  // lives in Z_ORVANTA_MAINT_READ rather than the core group that needs a carrier program. The
+  // operation is named so the capability gate can tell an older helper (which has no ARCHIVE_STATUS
+  // branch and would answer nothing) from one that can actually serve this read.
+  [
+    "read_archive_status",
+    "ops",
+    OPSP,
+    "R",
+    "sap-helper-fallback",
+    MAINT,
+    "1.1",
+    ["ARCHIVE_STATUS"]
+  ],
   ["read_report_parameters", "data", DEV_CFG_OPS, "R", "sap-helper-fallback", REPOSITORY, null],
   ["read_report_variants", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_background_job_details", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],

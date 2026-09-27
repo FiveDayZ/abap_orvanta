@@ -41,7 +41,8 @@ import { sourcePreflightSchema } from "./source-preflight.js"
 import {
   searchSapLocksSchema,
   searchFailedUpdatesSchema,
-  readFailedUpdateSchema
+  readFailedUpdateSchema,
+  readArchiveStatusSchema
 } from "./maintenance-diagnostics.js"
 
 const objectType = z.enum(DEFAULT_OBJECT_TYPES)
@@ -2092,6 +2093,12 @@ const toolContractsBase = {
     description:
       "Read one failed SM13 update by exact key/user with at most 200 modules and 200 errors through an approved helper. Repeat bounded reads reject observed drift; not a transaction snapshot. Returns message identifiers and source location, never encoded message parameters or VBDATA. Optional revision guard and non-causal log correlation hints. Never reprocesses or deletes requests.",
     inputSchema: readFailedUpdateSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_archive_status: {
+    description:
+      "List archiving sessions (SARA) through ARCHIVE_ADMIN_SELECT_SESSIONS inside Z_ORVANTA_MAINT_READ, so archiving status can be answered without SAP GUI. Returns per session: document id, archiving object, status code, client, user, system id, creation time, comment and the number of archive files - never the file contents, archive paths or the data that was archived. Requires the separately approved SARA source in the local approval file, in addition to deployment and fingerprint approval. USER_NAME in ADMI_RUN is the user who started the session; the optional username filter is applied inside the helper on that exact value, and an empty result means no session matched rather than that archiving is healthy. OBJECT filters the archiving object (ADMI_RUN-OBJECT); fromSystemTime/toSystemTime bound ADMI_RUN-CREAT_DATE/-, both inclusive and SAP local time with no UTC conversion, limited to one day per call. Every status heading is always requested, because SAP's own selector returns NO sessions when no status is requested - the reply states this so an empty list is not read as 'the filter excluded everything'. At most 100 sessions per call, ordered by document; a longer result is reported as truncated with hasMore. Read-only: it cannot start, cancel, restart or delete an archiving session, and it does not delete or reload archive files.",
+    inputSchema: readArchiveStatusSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },
   read_report_parameters: {

@@ -446,3 +446,126 @@ test("authored maintenance helper preserves read-only source and native permissi
   )
   assert.ok(!/CALL FUNCTION 'DEQUEUE|FROM vbdata\b/i.test(source))
 })
+
+/**
+ * `read_archive_status` (N3). The branch has three properties that would each be invisible if the
+ * helper were replaced by a wrong one: SARA is its own approval source, every status heading must be
+ * requested (SAP's selector EXITs on an empty status range, so an all-blank call returns nothing and
+ * would read as "archiving never ran"), and the reading is bounded and ordered.
+ */
+const archiveRun = {
+  document: "00000000000000000001",
+  object: "FI_DOCUMNT",
+  status: "1",
+  client: "200",
+  username: "DEVELOPER",
+  systemId: "W200",
+  createdSystemTime: "2026-09-10T08:00:00",
+  comments: "monthly run",
+  fileCount: 3
+}
+const archiveReply = () => ({ ...common, action: "ARCHIVE_STATUS", entries: [{ ...archiveRun }] })
+
+test("archive status requires its own SARA approval, distinctly from SM12/SM13", async (t) => {
+  const f = await fixture(t)
+  // The fixture's default approval enables SM12+SM13 only.
+  await f.approve()
+  const refused = JSON.parse(await f.service.readArchiveStatus({ connectionId: "w200" }))
+  assert.equal(refused.status, "unavailable")
+  assert.equal(refused.code, "SOURCE_NOT_APPROVED")
+  assert.equal(refused.reason, "SOURCE_NOT_ENABLED")
+  assert.equal(refused.requestedSource, "SARA")
+  // Refused before SAP is touched, and it names what *is* approved.
+  assert.equal(f.state.calls, 0)
+  assert.deepEqual(refused.approvedSources, ["SM12", "SM13"])
+
+  await f.approve([{ ...f.approval, enabledSources: ["SARA"] }])
+  f.state.reply = JSON.stringify(archiveReply())
+  const ok = JSON.parse(await f.service.readArchiveStatus({ connectionId: "w200" }))
+  assert.equal(ok.status, "ok")
+  assert.equal(ok.entries[0].document, archiveRun.document)
+  assert.equal(ok.entries[0].fileCount, 3)
+})
+
+test("archive status accepts an unfiltered call, because that is the real question", async (t) => {
+  const f = await fixture(t)
+  await f.approve([{ ...f.approval, enabledSources: ["SARA"] }])
+  f.state.reply = JSON.stringify(archiveReply())
+  // No username: "did archiving run at all" is system-wide. The sibling tools demand a user, and
+  // copying that rule here would make the question unanswerable.
+  const result = JSON.parse(await f.service.readArchiveStatus({ connectionId: "w200" }))
+  assert.equal(result.status, "ok")
+  assert.equal(f.state.inputs.IV_USER, "")
+})
+
+test("archive status rejects a client-side scope violation and a duplicate document", async (t) => {
+  const f = await fixture(t)
+  await f.approve([{ ...f.approval, enabledSources: ["SARA"] }])
+  // A username filter the helper failed to apply.
+  f.state.reply = JSON.stringify(archiveReply())
+  await assert.rejects(
+    f.service.readArchiveStatus({ connectionId: "w200", username: "OTHER" }),
+    /SCOPE_MISMATCH/
+  )
+  // Two rows for one archiving session cannot both be true.
+  f.state.reply = JSON.stringify({
+    ...archiveReply(),
+    entries: [{ ...archiveRun }, { ...archiveRun }]
+  })
+  await assert.rejects(f.service.readArchiveStatus({ connectionId: "w200" }), /SCOPE_MISMATCH/)
+  // A creation time outside the requested window.
+  f.state.reply = JSON.stringify(archiveReply())
+  await assert.rejects(
+    f.service.readArchiveStatus({
+      connectionId: "w200",
+      fromSystemTime: "2026-09-11T00:00:00",
+      toSystemTime: "2026-09-11T23:59:59"
+    }),
+    /SCOPE_MISMATCH/
+  )
+})
+
+test("archive status bounds its window and refuses a half-open interval", async (t) => {
+  const f = await fixture(t)
+  await f.approve([{ ...f.approval, enabledSources: ["SARA"] }])
+  f.state.reply = JSON.stringify(archiveReply())
+  await assert.rejects(
+    f.service.readArchiveStatus({
+      connectionId: "w200",
+      fromSystemTime: archiveRun.createdSystemTime
+    }),
+    /INTERVAL_INCOMPLETE/
+  )
+  await assert.rejects(
+    f.service.readArchiveStatus({
+      connectionId: "w200",
+      fromSystemTime: "2026-09-01T00:00:00",
+      toSystemTime: "2026-09-20T00:00:00"
+    }),
+    /INTERVAL|RANGE|WINDOW/i
+  )
+})
+
+test("the archive branch requests every status heading and stays read-only", async () => {
+  const source = await readFile("scripts/maintenance-diagnostic-source.mjs", "utf8")
+  // SAP's selector EXITs when lt_status ends up empty: an all-blank call returns NO sessions, which
+  // would be reported as "nothing archived". Every heading must therefore be asked for explicitly.
+  for (const flag of [
+    "incorrect",
+    "incomplete",
+    "complete",
+    "being_reloaded",
+    "created_by_reload",
+    "replaced",
+    "to_be_archived",
+    "invalid",
+    "interrupted_incomplete",
+    "interrupted_complete"
+  ])
+    assert.match(source, new RegExp(`${flag} = 'X'`), `${flag} must be requested explicitly`)
+  assert.match(source, /ARCHIVE_ADMIN_SELECT_SESSIONS/)
+  assert.match(source, /SORT lt_archive_runs BY document/)
+  // The branch may not delete or restart an archiving session, nor touch archive files.
+  assert.ok(!/CALL FUNCTION 'ARCHIVE_ADMIN_(DELETE|CANCEL|RESTART)/i.test(source))
+  assert.ok(!/ADMI_FILES|ARCHIVE_GET_TABLE/i.test(source))
+})

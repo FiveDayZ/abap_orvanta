@@ -61,6 +61,24 @@ export const readFailedUpdateSchema = z
     expectedRevision: hash.optional()
   })
   .strict()
+/**
+ * Archiving sessions (SARA). `username` is optional here, unlike the sibling tools: "did archiving
+ * run at all" is a system-wide question, and the approved source gate is what authorizes the read.
+ */
+export const readArchiveStatusSchema = z
+  .object({
+    connectionId: diagnosticConnectionId,
+    username: username.optional(),
+    objectName: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9_/]{1,10}$/)
+      .optional(),
+    fromSystemTime: diagnosticTime.optional(),
+    toSystemTime: diagnosticTime.optional(),
+    maxResults: z.number().int().min(1).max(100).default(20)
+  })
+  .strict()
 
 export const maintenanceApprovalsSchema = z
   .object({
@@ -76,9 +94,9 @@ export const maintenanceApprovalsSchema = z
             sourceFingerprint: hash,
             interfaceFingerprint: hash,
             enabledSources: z
-              .array(z.enum(["SM12", "SM13"]))
+              .array(z.enum(["SM12", "SM13", "SARA"]))
               .min(1)
-              .max(2)
+              .max(3)
           })
           .strict()
       )
@@ -155,6 +173,19 @@ const envelope = z
     payload: z.array(z.string()).optional()
   })
   .strict()
+const archiveEntry = z
+  .object({
+    document: z.string().regex(/^[A-Z0-9]{1,20}$/),
+    object: z.string().max(10),
+    status: z.string().min(1).max(1),
+    client: z.string().max(3),
+    username: z.string().max(12),
+    systemId: z.string().max(8),
+    createdSystemTime: diagnosticTime.nullable(),
+    comments: z.string().max(64),
+    fileCount: z.number().int().min(0)
+  })
+  .strict()
 const replySchema = z.discriminatedUnion("action", [
   envelope.extend({ action: z.literal("LOCK_SEARCH"), entries: z.array(lockEntry).max(100) }),
   envelope.extend({ action: z.literal("UPDATE_SEARCH"), entries: z.array(updateEntry).max(100) }),
@@ -163,6 +194,10 @@ const replySchema = z.discriminatedUnion("action", [
     header: updateEntry.nullable(),
     modules: z.array(moduleEntry).max(200),
     errors: z.array(errorEntry).max(200)
+  }),
+  envelope.extend({
+    action: z.literal("ARCHIVE_STATUS"),
+    entries: z.array(archiveEntry).max(100)
   })
 ])
 type Reply = z.infer<typeof replySchema>
@@ -182,8 +217,8 @@ export type MaintenanceApprovalFailure = {
   code: "HELPER_NOT_APPROVED" | "SOURCE_NOT_APPROVED"
   reason: "APPROVAL_FILE_MISSING" | "CONNECTION_NOT_APPROVED" | "SOURCE_NOT_ENABLED"
   expectedApprovalFile: string
-  requestedSource?: "SM12" | "SM13"
-  approvedSources?: readonly ("SM12" | "SM13")[]
+  requestedSource?: "SM12" | "SM13" | "SARA"
+  approvedSources?: readonly ("SM12" | "SM13" | "SARA")[]
 }
 
 export function isFailedUpdate(state: number, returnCode: number) {
@@ -243,7 +278,7 @@ export class MaintenanceDiagnosticService {
       approval.username.toUpperCase() !== connection.username.toUpperCase()
     )
       throw new Error("MAINTENANCE_APPROVAL_CONNECTION_MISMATCH")
-    const source = action === "LOCK_SEARCH" ? "SM12" : "SM13"
+    const source = action === "LOCK_SEARCH" ? "SM12" : action === "ARCHIVE_STATUS" ? "SARA" : "SM13"
     if (!approval.enabledSources.includes(source))
       return {
         failure: {
@@ -321,7 +356,11 @@ export class MaintenanceDiagnosticService {
     return { reply }
   }
 
-  private async context(connectionId: string, source: "SM12" | "SM13", operationId?: string) {
+  private async context(
+    connectionId: string,
+    source: "SM12" | "SM13" | "SARA",
+    operationId?: string
+  ) {
     const connection = this.backend.connectionDetails(connectionId)
     // Local operation protection is evidence about the caller, never a SAP lock identity.
     const receipt =
@@ -512,6 +551,62 @@ export class MaintenanceDiagnosticService {
         causalLinkProven: false,
         note: "Choose an explicit SAP-local time window and exact job name before querying existing tools."
       }
+    })
+  }
+
+  async readArchiveStatus(input: z.input<typeof readArchiveStatusSchema>) {
+    const o = readArchiveStatusSchema.parse(input)
+    if (o.fromSystemTime && o.toSystemTime)
+      validateDiagnosticInterval(o.fromSystemTime, o.toSystemTime, 86400)
+    else if (o.fromSystemTime || o.toSystemTime) throw new Error("MAINTENANCE_INTERVAL_INCOMPLETE")
+    const id = o.connectionId.toLowerCase()
+    const base = await this.context(id, "SARA")
+    const result = await this.execute(id, "ARCHIVE_STATUS", {
+      IV_USER: o.username?.toUpperCase() ?? "",
+      IV_OBJECT: o.objectName?.toUpperCase() ?? "",
+      IV_FROM: o.fromSystemTime ?? "",
+      IV_TO: o.toSystemTime ?? "",
+      IV_LIMIT: String(o.maxResults)
+    })
+    if ("failure" in result)
+      return JSON.stringify({ ...base, status: "unavailable", ...result.failure, entries: null })
+    const r = result.reply
+    if (r.action !== "ARCHIVE_STATUS") throw new Error("MAINTENANCE_RESPONSE_SCOPE_MISMATCH")
+    if (r.entries.length > o.maxResults || (r.hasMore && r.entries.length !== o.maxResults))
+      throw new Error("MAINTENANCE_RESPONSE_LIMIT")
+    const seen = new Set<string>()
+    for (const row of r.entries) {
+      if (
+        seen.has(row.document) ||
+        (o.username && row.username.toUpperCase() !== o.username.toUpperCase()) ||
+        (o.objectName && row.object.toUpperCase() !== o.objectName.toUpperCase()) ||
+        (o.fromSystemTime &&
+          row.createdSystemTime !== null &&
+          row.createdSystemTime < o.fromSystemTime) ||
+        (o.toSystemTime && row.createdSystemTime !== null && row.createdSystemTime > o.toSystemTime)
+      )
+        throw new Error("MAINTENANCE_RESPONSE_SCOPE_MISMATCH")
+      seen.add(row.document)
+    }
+    return JSON.stringify({
+      ...base,
+      status: r.status,
+      code: r.code,
+      entries: r.status === "ok" ? r.entries : null,
+      hasMore: r.hasMore,
+      returnedCount: r.status === "ok" ? r.entries.length : null,
+      selection: {
+        username: o.username?.toUpperCase() ?? null,
+        objectName: o.objectName?.toUpperCase() ?? null,
+        fromSystemTime: o.fromSystemTime ?? null,
+        toSystemTime: o.toSystemTime ?? null
+      },
+      timeSemantics: "ADMI_RUN-CREAT_DATE/CREAT_TIME; SAP local time; no implicit UTC conversion",
+      // Stated because the value is easy to misread: SAP's selector returns nothing at all when no
+      // status heading is requested, so this tool always requests every heading and says so.
+      statusSelection:
+        "all archiving status headings are always requested; an empty result means no session matched, not that the filter excluded everything",
+      fileDetail: "fileCount only - ADMI_FILES contents are not returned by this tool"
     })
   }
 }

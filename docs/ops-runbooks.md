@@ -73,6 +73,11 @@
       "id": "table-query-lookup",
       "families": ["query"],
       "tools": ["read_abap_table", "execute_data_query"]
+    },
+    {
+      "id": "archive-status-check",
+      "families": ["archive-alerts"],
+      "tools": ["read_archive_status"]
     }
   ],
   "uncoveredFamilies": [
@@ -90,11 +95,7 @@
     },
     {
       "id": "authorizations",
-      "reason": "该族 2 个计划工具全部未建（SUIM 只读检索、SU53/ST01 解析）；权限判定需要新的 SAP 侧助手能力，尚未交付。"
-    },
-    {
-      "id": "archive-alerts",
-      "reason": "该族 2 个计划工具全部未建（SARA 归档状态、RZ20 CCMS 告警），属计划内的低优先项。"
+      "reason": "该族 2 个计划工具只建了 1 个（`read_authorization_trace` 只报内核追踪开关）；SU53/ST01 的追踪**数据**与「角色→权限对象」解析仍未建，没有可编排的完整排障剧本。"
     },
     {
       "id": "landscape",
@@ -237,16 +238,31 @@
 
 **结论边界**：能证明"允许列表内这张表的这些行/这些组的计数"。**不能**证明：① 结果的完整性——`maxRows` 达到上限、或 `querySource.incompleteBranches` 非空（某分支只取到一页）即视为截断；聚合在截断时**不给数**，`querySource.aggregated`/`groupCount` 才是"这是聚合结果、共几组"的依据；② 原生数据预览可用——w200 上原生 preview 返回 HTTP 200 但**零字节 HTML**，所以 `execute_data_query` 实际总是走降级路径，遇到"未翻译的语法"报错时应按降级方言改写，或改用步骤 1；③ 行数等于匹配行数——部分字段投影下 `querySource.repeatedProjectedRows` 只表示"逐列相同的行出现了几次"，不表示去重后的业务计数；④ 计数等于业务条数——行身份是"行的取值"，无唯一键的表里两条内容完全相同的行会被当成同一行，且 `MAX`/`MIN` 按读取器文本序（不是 SAP 类型序）取极值；⑤ 表数据等于业务真相（很多状态由程序派生）。证据状态：`read_abap_table` 已登记真实调用；`execute_data_query` 尚无证据登记。
 
+### archive-status-check
+
+**触发**：用户问「归档跑了吗 / 这个归档对象上次是什么时候跑的 / 归档是不是卡住了」。
+
+**目标**：在 SARA 语义下只读列出归档会话，说清"跑了没有、什么状态、多少文件"。
+
+| #   | 调用                  | 关键输入（全部只读）                                                                                          | 判读                                                                                                    |
+| --- | --------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 1   | `read_archive_status` | `objectName`（归档对象，如 `FI_DOCUMNT`）、`fromSystemTime`/`toSystemTime`（≤1 天）、`username`、`maxResults` | 归档会话清单：会话号、归档对象、状态码、用户、创建时间、文件数；`hasMore=true` 是截断而非"没有更多会话" |
+
+**停止条件**：一次调用即止。**取消/重启/删除归档会话、重载或删除归档文件一律不做**（本工具只读；归档管理动作属 SAP 侧人工操作）。
+
+**结论边界**：能证明"当前客户端下这些归档会话存在、状态是什么、各有多少归档文件"。**不能**证明：① 归档**数据**的内容（只给文件计数，不给归档文件路径与内容）；② 空清单等于"从没归档过"——`fromSystemTime`/`toSystemTime` 只匹配 `ADMI_RUN-CREAT_DATE`，不限窗口时才覆盖全部；③ 状态码的含义不由本工具翻译（`status` 是 `ADMI_STRUN` 原值，要标签请查该域，本服务刻意不做映射）。**一个必须在脚本里说清的实现事实**：SAP 的选择函数在没有请求任何状态标题时会**直接返回零条**，所以该工具**始终请求全部状态标题**——否则一次全空的调用会被读成"没归档过"，而真相是"没问"。证据状态：本工具尚无真实调用登记（`unverified`），报结论时应一并说明。
+
 ## 4. 未被剧本覆盖的族
 
-| 族                  | 未覆盖理由（见 §2 机器清单，两处必须一致）                            |
-| ------------------- | --------------------------------------------------------------------- |
-| `traces`            | 平台挡住 + 书面豁免（w200 的 ADT trace 端点 404），无读路径可编排     |
-| `runtime-resources` | SM50/SM66/SM04/ST03/STAD/DB02/AL11 共 5 个计划工具全部未建            |
-| `interfaces`        | SMQ1/2、SM58、WE02/05/BD87、SOST 共 3 个计划工具全部未建              |
-| `authorizations`    | SUIM、SU53/ST01 共 2 个计划工具全部未建                               |
-| `archive-alerts`    | SARA、RZ20 共 2 个计划工具全部未建（计划内低优先）                    |
-| `landscape`         | compare_systems、promote_object 未建，且需先确认是否存在 QAS/PRD 连接 |
+| 族                  | 未覆盖理由（见 §2 机器清单，两处必须一致）                                     |
+| ------------------- | ------------------------------------------------------------------------------ |
+| `traces`            | 平台挡住 + 书面豁免（w200 的 ADT trace 端点 404），无读路径可编排              |
+| `runtime-resources` | SM50/SM66/SM04/ST03/STAD/DB02/AL11 共 5 个计划工具全部未建                     |
+| `interfaces`        | SMQ1/2、SM58、WE02/05/BD87、SOST 共 3 个计划工具全部未建                       |
+| `authorizations`    | `read_authorization_trace` 只报内核追踪开关；追踪数据与角色→权限对象解析仍未建 |
+| `landscape`         | compare_systems、promote_object 未建，且需先确认是否存在 QAS/PRD 连接          |
+
+> `archive-alerts` 已移出本表：SARA 归档状态由 `read_archive_status` 覆盖（剧本 `archive-status-check`）。该族的 RZ20 CCMS 告警（`read_ccms_alerts`）仍未建，因此族本身仍为 `partial`——脚本覆盖不等于族闭环。
 
 一个族只有在工具存在时才可能被剧本覆盖，所以**剧本覆盖率的上限就是工具覆盖率**——它不制造覆盖，只把已经能做的事固化成可重复流程。族的端到端判据仍在 `docs/ops-coverage.md` §6，由 `opsCapability` 块计算。
 

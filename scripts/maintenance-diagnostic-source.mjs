@@ -31,7 +31,13 @@ export const maintenanceHelperDefinition = {
 export const maintenanceDiagnosticOperations = [
   { opcode: "LOCK_SEARCH", since: "1.0", mode: "R" },
   { opcode: "UPDATE_SEARCH", since: "1.0", mode: "R" },
-  { opcode: "UPDATE_DETAIL", since: "1.0", mode: "R" }
+  { opcode: "UPDATE_DETAIL", since: "1.0", mode: "R" },
+  // N3. The archive-alerts family had no tool at all. ARCHIVE_ADMIN_SELECT_SESSIONS is
+  // remote-enabled on this release but its ARCH_T_RUNS export carries ARCH_RUN, whose ADMI_RUN
+  // component is not an RFC scalar, so the service cannot verify the shape and the read has to
+  // happen here. Kept in this helper (not ZORVANTA_MCP_CORE) so it needs no carrier program: the
+  // self-write guard only covers the core group.
+  { opcode: "ARCHIVE_STATUS", since: "1.1", mode: "R" }
 ]
 // <<< ORVANTA-CAPABILITY-TABLE
 if (maintenanceDiagnosticOperations.length === 0) {
@@ -193,6 +199,13 @@ export const maintenanceDiagnosticSource = injectCapabilityHash(
       lv_errors_json TYPE string, lv_more TYPE string,
       lt_capability TYPE STANDARD TABLE OF string,
       lv_capability TYPE string, lv_capabilities TYPE string,
+      lt_archive_runs TYPE arch_t_runs,
+      ls_archive_run TYPE arch_run,
+      lt_rng_date TYPE STANDARD TABLE OF rng_date,
+      ls_rng_date TYPE rng_date,
+      lt_rng_object TYPE STANDARD TABLE OF rng_object,
+      ls_rng_object TYPE rng_object,
+      lv_files TYPE i,
       lv_capability_value TYPE string.
 DEFINE json_field.
   lv_value = &2.
@@ -250,7 +263,8 @@ CLEAR ev_result.
 * run behind the unchanged gate.
 IF iv_action <> 'CAPABILITIES'.
   IF iv_action <> 'LOCK_SEARCH' AND iv_action <> 'UPDATE_SEARCH'
-     AND iv_action <> 'UPDATE_DETAIL'. RETURN. ENDIF.
+     AND iv_action <> 'UPDATE_DETAIL'
+     AND iv_action <> 'ARCHIVE_STATUS'. RETURN. ENDIF.
   lv_json = '{"version":"1"'.
   json_field ',"action":"' iv_action.
   json_field ',"client":"' sy-mandt.
@@ -262,26 +276,38 @@ IF iv_action <> 'CAPABILITIES'.
     lv_tail = '"entries":[]}'.
   ENDIF.
   fail_reply 'unsupported' 'INVALID_INPUT'.
-  IF iv_user IS INITIAL OR strlen( iv_user ) > 12.
-    RETURN.
-  ENDIF.
-  FIND REGEX '[^A-Za-z0-9_.-]' IN iv_user.
-  IF sy-subrc = 0. RETURN. ENDIF.
-  lv_user = iv_user. TRANSLATE lv_user TO UPPER CASE.
-  IF iv_action = 'LOCK_SEARCH'.
-    IF lv_user <> sy-uname.
-      AUTHORITY-CHECK OBJECT 'S_ENQUE'
-        ID 'S_ENQ_ACT' FIELD 'DPFU'.
+  IF iv_action = 'ARCHIVE_STATUS'.
+* The user filter is optional here: an archive overview is a system-wide
+* question, and requiring a user would make "did archiving run at all"
+* unanswerable. A supplied name is validated exactly as elsewhere.
+    IF iv_user IS NOT INITIAL.
+      IF strlen( iv_user ) > 12. RETURN. ENDIF.
+      FIND REGEX '[^A-Za-z0-9_.-]' IN iv_user.
+      IF sy-subrc = 0. RETURN. ENDIF.
+      lv_user = iv_user. TRANSLATE lv_user TO UPPER CASE.
+    ENDIF.
+  ELSE.
+    IF iv_user IS INITIAL OR strlen( iv_user ) > 12.
+      RETURN.
+    ENDIF.
+    FIND REGEX '[^A-Za-z0-9_.-]' IN iv_user.
+    IF sy-subrc = 0. RETURN. ENDIF.
+    lv_user = iv_user. TRANSLATE lv_user TO UPPER CASE.
+    IF iv_action = 'LOCK_SEARCH'.
+      IF lv_user <> sy-uname.
+        AUTHORITY-CHECK OBJECT 'S_ENQUE'
+          ID 'S_ENQ_ACT' FIELD 'DPFU'.
+        IF sy-subrc <> 0.
+          fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
+        ENDIF.
+      ENDIF.
+    ELSE.
+* Deliberately require administration permission even for own updates.
+      AUTHORITY-CHECK OBJECT 'S_ADMI_FCD'
+        ID 'S_ADMI_FCD' FIELD 'UADM'.
       IF sy-subrc <> 0.
         fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
       ENDIF.
-    ENDIF.
-  ELSE.
-* Deliberately require administration permission even for own updates.
-    AUTHORITY-CHECK OBJECT 'S_ADMI_FCD'
-      ID 'S_ADMI_FCD' FIELD 'UADM'.
-    IF sy-subrc <> 0.
-      fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
     ENDIF.
   ENDIF.
   IF iv_action <> 'UPDATE_DETAIL'.
@@ -470,6 +496,96 @@ ${buildMaintenanceCapabilityBranch().join("\n")}
       append_item.
     ENDLOOP.
     lv_errors_json = lv_items.
+  WHEN 'ARCHIVE_STATUS'.
+* Every status heading must be requested explicitly. Verified in this
+* function's own source on w200 (2026-09-27): the status flags are ANDed
+* into one RANGE, and when that range ends up empty SAP does EXIT -
+* i.e. an all-blank call returns NO sessions at all, which would read as
+* "nothing archived". So "show everything" is spelled out flag by flag.
+    CLEAR: lt_archive_runs, lv_items, lv_count.
+    REFRESH: lt_rng_date, lt_rng_object.
+    IF iv_from IS NOT INITIAL AND iv_to IS NOT INITIAL.
+      IF strlen( iv_from ) <> 19 OR strlen( iv_to ) <> 19.
+        RETURN.
+      ENDIF.
+      CONCATENATE iv_from(4) iv_from+5(2) iv_from+8(2) INTO lv_from.
+      CONCATENATE iv_to(4) iv_to+5(2) iv_to+8(2) INTO lv_to.
+      IF lv_from CN '0123456789' OR lv_to CN '0123456789'.
+        RETURN.
+      ENDIF.
+* ADMI_CDATE is the session creation date; both bounds inclusive.
+      CLEAR ls_rng_date.
+      ls_rng_date-sign = 'I'. ls_rng_date-option = 'BT'.
+      ls_rng_date-low = lv_from. ls_rng_date-high = lv_to.
+      APPEND ls_rng_date TO lt_rng_date.
+    ENDIF.
+    IF iv_object IS NOT INITIAL.
+      IF strlen( iv_object ) > 10. RETURN. ENDIF.
+      FIND REGEX '[^A-Za-z0-9_/]' IN iv_object.
+      IF sy-subrc = 0. RETURN. ENDIF.
+      CLEAR ls_rng_object.
+      ls_rng_object-sign = 'I'. ls_rng_object-option = 'EQ'.
+      ls_rng_object-low = iv_object.
+      TRANSLATE ls_rng_object-low TO UPPER CASE.
+      APPEND ls_rng_object TO lt_rng_object.
+    ENDIF.
+    CALL FUNCTION 'ARCHIVE_ADMIN_SELECT_SESSIONS'
+      EXPORTING
+        runs_without_files = 'X'
+        client_dependence = 'X'
+        incorrect = 'X'
+        incomplete = 'X'
+        complete = 'X'
+        being_reloaded = 'X'
+        created_by_reload = 'X'
+        replaced = 'X'
+        to_be_archived = 'X'
+        invalid = 'X'
+        interrupted_incomplete = 'X'
+        interrupted_complete = 'X'
+      IMPORTING
+        archive_runs = lt_archive_runs
+      TABLES
+        date = lt_rng_date
+        object = lt_rng_object
+      EXCEPTIONS
+        object_not_found = 1
+        OTHERS = 2.
+    IF sy-subrc <> 0.
+      fail_reply 'unsupported' 'READ_FAILED'. RETURN.
+    ENDIF.
+    DESCRIBE TABLE lt_archive_runs LINES lv_rows.
+    IF lv_rows > 2000.
+      fail_reply 'unsupported' 'LIMIT_EXCEEDED'. RETURN.
+    ENDIF.
+* Deterministic order: the FM returns whatever the ADK layer produced.
+    SORT lt_archive_runs BY document.
+    LOOP AT lt_archive_runs INTO ls_archive_run.
+      IF lv_user IS NOT INITIAL
+         AND ls_archive_run-user_name <> lv_user.
+        CONTINUE.
+      ENDIF.
+      ADD 1 TO lv_count.
+      IF lv_count > lv_limit. lv_more = 'true'. EXIT. ENDIF.
+      CLEAR lv_json.
+      json_field '{"document":"' ls_archive_run-document.
+      json_field ',"object":"' ls_archive_run-object.
+      json_field ',"status":"' ls_archive_run-status.
+      json_field ',"client":"' ls_archive_run-client.
+      json_field ',"username":"' ls_archive_run-user_name.
+      json_field ',"systemId":"' ls_archive_run-sysid.
+      IF ls_archive_run-creat_date IS INITIAL.
+        CONCATENATE lv_json ',"createdSystemTime":null' INTO lv_json.
+      ELSE.
+        make_time ls_archive_run-creat_date ls_archive_run-creat_time.
+        json_field ',"createdSystemTime":"' lv_time.
+      ENDIF.
+      json_field ',"comments":"' ls_archive_run-comments.
+      DESCRIBE TABLE ls_archive_run-archive_files LINES lv_files.
+      json_number ',"fileCount":' lv_files.
+      CONCATENATE lv_json '}' INTO lv_json.
+      append_item.
+    ENDLOOP.
 ENDCASE.
 IF iv_action = 'UPDATE_DETAIL'.
   CONCATENATE lv_base '"status":"ok","code":"OK",'

@@ -121,6 +121,8 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   search_sap_locks: "read-only",
   search_failed_updates: "read-only",
   read_failed_update: "read-only",
+  // Archive administration (SARA)
+  read_archive_status: "read-only",
   // System baseline
   get_sap_system_info: "read-only",
   read_system_parameters: "read-only",
@@ -384,7 +386,12 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     purpose: "Did archiving run, and is CCMS reporting alerts?",
     closeRoutes: ["helper"],
     actionRequired: false,
-    gap: "No archive-status or CCMS alert tool exists at all."
+    gap:
+      "Reported: archiving sessions (object, status, user, creation time, file count) through " +
+      "read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved " +
+      "maintenance helper - the first tool this family has ever had. " +
+      "Still absent: CCMS alert monitoring (RZ20) through read_ccms_alerts, which needs a helper " +
+      "branch of its own, and any archive-file detail beyond a per-session count."
   },
   {
     id: "landscape",

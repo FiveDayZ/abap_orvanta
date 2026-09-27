@@ -18,7 +18,7 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 2, blocked 1, partial 10, read-only 2, read-and-act 0 |
+| State counts | absent 1, blocked 1, partial 11, read-only 2, read-and-act 0 |
 | End-to-end by state (all families) | 2 (13%) |
 | Required families counted closed | **2 / 14** (14% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
@@ -36,7 +36,7 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 2 / 14 closed (14%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 22 / 31 of the tools the families declare are verified (the `ops` group itself holds 29, of which 20 are verified); not verified: cleanup_transport_entries, read_background_job_spool, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace | **no** |
+| 2. every ops tool verified with real w200 evidence | 22 / 32 of the tools the families declare are verified (the `ops` group itself holds 30, of which 20 are verified); not verified: cleanup_transport_entries, read_background_job_spool, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace, read_archive_status | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 3 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service). Action capability is still planned but unbuilt in: transport (2), jobs (4), locks (1), updates (1), landscape (2) | yes (open items: none) |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
@@ -62,7 +62,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 11 | `interfaces` | Is an outbound or inbound queue stuck, did the IDoc arrive, and is mail piling up? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
 | 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 1/2 verified (pending: read_authorization_trace) | SAP-side helper + F8 + operator approval |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
-| 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 0/0 | - | absent | no tool exists | SAP-side helper + F8 |
+| 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 1/1 | - | partial | 0/1 verified (pending: read_archive_status) | SAP-side helper + F8 |
 | 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 0/0 | - | absent | no tool exists | multi-system configuration (OP3) |
 
 ## What each open family is waiting for
@@ -78,7 +78,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 - **`interfaces`** (partial) - Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through read_idoc_status. Still absent: the email queue - SOST is not on the approved allowlist, so read_email_queue needs a separate approval before it can be implemented.
 - **`authorizations`** (partial) - Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - and the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the SAP-side helper, and any role-to-authorization-object resolution, because AGR_1251/AGR_1252/AGR_PROF/USOB*/UST10* are not on the approved allowlist.
 - **`spool-output`** (partial) - Only rendered text is available: OTF/PDF conversion, printing and original report execution are absent.
-- **`archive-alerts`** (absent) - No archive-status or CCMS alert tool exists at all.
+- **`archive-alerts`** (partial) - Reported: archiving sessions (object, status, user, creation time, file count) through read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved maintenance helper - the first tool this family has ever had. Still absent: CCMS alert monitoring (RZ20) through read_ccms_alerts, which needs a helper branch of its own, and any archive-file detail beyond a per-session count.
 
 ### operator approval
 
@@ -264,13 +264,17 @@ Criterion to close: Only rendered text is available: OTF/PDF conversion, printin
 | ---- | ---- | ------ | -------- |
 | `read_background_job_spool` | read-only | unverified | unverified |
 
-### `archive-alerts` - absent
+### `archive-alerts` - partial
 
 Purpose: Did archiving run, and is CCMS reporting alerts?
 
-Criterion to close: No archive-status or CCMS alert tool exists at all.
+Criterion to close: Reported: archiving sessions (object, status, user, creation time, file count) through read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved maintenance helper - the first tool this family has ever had. Still absent: CCMS alert monitoring (RZ20) through read_ccms_alerts, which needs a helper branch of its own, and any archive-file detail beyond a per-session count.
 
-Planned but unbuilt: `read_archive_status`, `read_ccms_alerts`
+| Tool | Role | Status | Evidence |
+| ---- | ---- | ------ | -------- |
+| `read_archive_status` | read-only | unverified | unverified |
+
+Not built yet: `read_ccms_alerts`
 
 ### `landscape` - absent
 

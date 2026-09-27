@@ -160,7 +160,7 @@ test("the runbooks stay small enough to be read and re-run", () => {
   // A tripwire, not a quality bar: growing this set means the runbooks cover more of the surface,
   // and that should be a deliberate edit rather than a side effect of adding steps somewhere.
   assert.ok(
-    distinct.size <= 18,
+    distinct.size <= 19,
     `runbooks name ${distinct.size} distinct tools; raise this bound deliberately`
   )
   for (const entry of parsed.runbooks) {

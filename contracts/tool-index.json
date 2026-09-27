@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 152,
-  "readOnlyToolCount": 91,
+  "toolCount": 153,
+  "readOnlyToolCount": 92,
   "profiles": {
-    "readonly": 91,
+    "readonly": 92,
     "platform": 12,
     "dev": 134,
     "config": 37,
-    "ops": 46,
-    "full": 152
+    "ops": 47,
+    "full": 153
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 29,
+    "ops": 30,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1253,6 +1253,21 @@
       "sapHelper": "Z_ORVANTA_LOG_READ",
       "minHelperProtocol": null,
       "note": "日志正文属不可信证据；分页需要 revision，变更后拒绝拼接。"
+    },
+    {
+      "name": "read_archive_status",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MAINT_READ",
+      "minHelperProtocol": "1.1"
     },
     {
       "name": "read_authorization_trace",
