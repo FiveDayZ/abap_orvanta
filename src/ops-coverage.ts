@@ -277,10 +277,13 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, " +
       "<, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only " +
       "over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three " +
-      "allowlisted tables on equality keys, with every column reference qualified. Still absent: " +
-      "right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP itself " +
-      "would have to plan cannot be asked. The join path also has no runtime evidence yet: the " +
-      "connected service still serves a build from before it."
+      "allowlisted tables on equality keys, with every column reference qualified. The join path " +
+      "was proven on w200 on 2026-09-27 (E070 INNER JOIN E07T returned matched rows, and a join on " +
+      "the unapproved MARA was refused with TABLE_NOT_ALLOWED before SAP was touched). Still " +
+      "absent: right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP " +
+      "itself would have to plan cannot be asked. A join read is also bounded: an ORDER BY over a " +
+      "read that stops at the row bound is refused with TABLE_QUERY_ORDER_BY_INCOMPLETE rather " +
+      "than sorted partially."
   },
   {
     id: "runtime-resources",
