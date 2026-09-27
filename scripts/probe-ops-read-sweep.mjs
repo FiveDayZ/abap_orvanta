@@ -160,19 +160,50 @@ async function call(name, args) {
 }
 
 /**
+ * The native data-preview endpoint is platform-unsupported on this release, so every read records
+ * `SAP_DATA_QUERY_RESPONSE_INVALID` in the failing native attempt's `nativeCode` before the tool
+ * falls back to `rfc_read_table` and answers. That code is an expected step, not the call's result,
+ * so it must never be read as a failure of the tool.
+ */
+const BENIGN_NATIVE_CODE = "SAP_DATA_QUERY_RESPONSE_INVALID"
+
+/**
  * An answer is evidence only when the service answered. A refusal is a finding about authority or
  * about the platform, and an empty answer is a real observation that must not be dressed up as a
  * positive sample.
+ *
+ * The verdict is taken from the reply's own `status` field. Matching error-code substrings anywhere
+ * in the text was wrong: a successful reply carries `queryWarnings` and per-source `nativeCode`
+ * values that mention failures the tool already recovered from, so the earlier substring rule filed
+ * `status: "ok"` and `status: "partial"` replies as `failed`.
  */
 function classify(callResult) {
   if (callResult.isError) return "refused"
   const text = callResult.text
   if (/_NOT_AUTHORIZED|NOT_AUTHORIZED/.test(text)) return "refused"
-  if (/_FUNCTION_UNVERIFIED|_RFC_FAILED|_RESPONSE_INVALID|_CALL_FAILED|_QUERY_FAILED/.test(text)) {
+  if (/TABLE_NOT_ALLOWED|TABLE_ALLOWLIST_UNVERIFIABLE/.test(text)) return "refused"
+
+  const status = /"status"\s*:\s*"([a-z-]+)"/.exec(text)?.[1]
+  if (status === "empty") return "empty"
+  // A row-limit truncation still proves the call reached the data; it is an answer, not a failure.
+  if (status === "ok" || status === "partial") {
+    if (/_RESPONSE_EMPTY/.test(text)) return "empty"
+    return "answered"
+  }
+  // `unavailable` is the service saying the read did not happen. Some of those replies also carry a
+  // `_RESPONSE_EMPTY` warning (an RFC-backed helper that returned nothing), and treating that
+  // warning as an "empty but healthy" answer would propose an unverified tool as verified.
+  if (status === "unavailable") return "failed"
+  // No readable status: fall back to error codes, but ignore the benign native fallback code.
+  const failureText = text.split(BENIGN_NATIVE_CODE).join("")
+  if (
+    /_FUNCTION_UNVERIFIED|_RFC_FAILED|_RESPONSE_INVALID|_CALL_FAILED|_QUERY_FAILED/.test(
+      failureText
+    )
+  ) {
     return "failed"
   }
-  if (/_RESPONSE_EMPTY|"status"\s*:\s*"empty"/.test(text)) return "empty"
-  if (/TABLE_NOT_ALLOWED|TABLE_ALLOWLIST_UNVERIFIABLE/.test(text)) return "refused"
+  if (/_RESPONSE_EMPTY/.test(text)) return "empty"
   return "answered"
 }
 

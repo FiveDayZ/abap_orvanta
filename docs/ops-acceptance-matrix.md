@@ -36,7 +36,7 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 2 / 14 closed (14%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 17 / 30 of the tools the families declare are verified (the `ops` group itself holds 28, of which 15 are verified); not verified: cleanup_transport_entries, read_background_job_spool, analyze_abap_traces, search_failed_updates, read_failed_update, read_system_parameters, read_work_processes, read_user_sessions, read_file_system_directory, read_workload_directory, read_qrfc_queues, read_idoc_status, read_user_authorizations | **no** |
+| 2. every ops tool verified with real w200 evidence | 22 / 30 of the tools the families declare are verified (the `ops` group itself holds 28, of which 20 are verified); not verified: cleanup_transport_entries, read_background_job_spool, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 3 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service). Action capability is still planned but unbuilt in: transport (2), jobs (4), locks (1), updates (1), landscape (2) | yes (open items: none) |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
@@ -56,11 +56,11 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
 | 6 | `locks` | Who holds the lock that is blocking an object or document right now? | 1/1 | - | partial | 1/1 verified | write authorisation (OP2) |
 | 7 | `updates` | Which update terminated, and what does the failed update contain? | 2/2 | - | partial | 0/2 verified (pending: search_failed_updates, read_failed_update) | write authorisation (OP2) |
-| 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | partial | 1/2 verified (pending: read_system_parameters) | SAP-side helper + F8 |
+| 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 |
 | 9 | `query` | Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI. | 2/2 | - | partial | 2/2 verified | this repository |
-| 10 | `runtime-resources` | Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists? | 4/4 | - | partial | 0/4 verified (pending: read_work_processes, read_user_sessions, read_file_system_directory, read_workload_directory) | SAP-side helper + F8 |
-| 11 | `interfaces` | Is an outbound or inbound queue stuck, did the IDoc arrive, and is mail piling up? | 2/2 | - | partial | 0/2 verified (pending: read_qrfc_queues, read_idoc_status) | SAP-side helper + F8 + operator approval |
-| 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 1/1 | - | partial | 0/1 verified (pending: read_user_authorizations) | SAP-side helper + F8 + operator approval |
+| 10 | `runtime-resources` | Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists? | 4/4 | - | partial | 1/4 verified (pending: read_work_processes, read_user_sessions, read_file_system_directory) | SAP-side helper + F8 |
+| 11 | `interfaces` | Is an outbound or inbound queue stuck, did the IDoc arrive, and is mail piling up? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
+| 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 1/1 | - | partial | 1/1 verified | SAP-side helper + F8 + operator approval |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
 | 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 0/0 | - | absent | no tool exists | SAP-side helper + F8 |
 | 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 0/0 | - | absent | no tool exists | multi-system configuration (OP3) |
@@ -202,7 +202,7 @@ Criterion to close: Reported: client role and cross-client change protection (SC
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `get_sap_system_info` | read-only | verified | `.doc/code-update-20260909-084306.md` |
-| `read_system_parameters` | read-only | unverified | unverified |
+| `read_system_parameters` | read-only | verified | `.cache/evidence-ops-n1c/read_system_parameters.txt` |
 
 ### `query` - partial
 
@@ -223,10 +223,10 @@ Criterion to close: Reported: the work process list (TH_WPINFO) through read_wor
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_work_processes` | read-only | unverified | unverified |
-| `read_user_sessions` | read-only | unverified | unverified |
-| `read_file_system_directory` | read-only | unverified | unverified |
-| `read_workload_directory` | read-only | unverified | unverified |
+| `read_work_processes` | read-only | unverified | unverified (last attempt 2026-09-27T00:42:56.072Z) |
+| `read_user_sessions` | read-only | unverified | unverified (last attempt 2026-09-27T00:42:56.072Z) |
+| `read_file_system_directory` | read-only | unverified | unverified (last attempt 2026-09-27T00:42:56.072Z) |
+| `read_workload_directory` | read-only | verified | `.cache/evidence-ops-n1c/read_workload_directory.txt` |
 
 Not built yet: `read_performance_snapshot`, `read_db_activity`
 
@@ -238,8 +238,8 @@ Criterion to close: Reported: outbound and inbound qRFC/tRFC queue state (TRFCQO
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_qrfc_queues` | read-only | unverified | unverified |
-| `read_idoc_status` | read-only | unverified | unverified |
+| `read_qrfc_queues` | read-only | verified | `.cache/evidence-ops-n1c/read_qrfc_queues.txt` |
+| `read_idoc_status` | read-only | verified | `.cache/evidence-ops-n1c/read_idoc_status.txt` |
 
 Not built yet: `read_email_queue`
 
@@ -251,7 +251,7 @@ Criterion to close: Reported: the stored role assignments per user (AGR_USERS), 
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_user_authorizations` | read-only | unverified | unverified |
+| `read_user_authorizations` | read-only | verified | `.cache/evidence-ops-n1c/read_user_authorizations.txt` |
 
 Not built yet: `read_authorization_trace`
 
