@@ -235,6 +235,11 @@ export function createMcpServer(
       tools.releaseBackgroundJob(input)
     )
   )
+  registerTool("cancel_background_job", toolContracts.cancel_background_job, async (input) =>
+    invokeWrite("cancel_background_job", input, backend, writeReceipts, () =>
+      tools.cancelBackgroundJob(input)
+    )
+  )
   registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
     invoke("read_abap_screen", () => tools.readAbapScreen(input))
   )

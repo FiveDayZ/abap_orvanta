@@ -36,8 +36,8 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 2 / 14 closed (14%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 22 / 33 of the tools the families declare are verified (the `ops` group itself holds 31, of which 20 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace, read_archive_status | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 4 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service); open: release_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (3), locks (1), updates (1), landscape (2) | **no** |
+| 2. every ops tool verified with real w200 evidence | 22 / 34 of the tools the families declare are verified (the `ops` group itself holds 32, of which 20 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace, read_archive_status | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 5 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service); open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), locks (1), updates (1), landscape (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -50,7 +50,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |
 | - | ------ | ------- | --------- | ----------- | ----- | --------------------------- | ----- |
 | 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 1/4 | 3 | partial | 3/4 verified (pending: cleanup_transport_entries) | write authorisation (OP2) + multi-system configuration (OP3) |
-| 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/5 | 1 | partial | 3/5 verified (pending: read_background_job_spool, release_background_job) | write authorisation (OP2) |
+| 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/6 | 2 | partial | 3/6 verified (pending: read_background_job_spool, release_background_job, cancel_background_job) | write authorisation (OP2) |
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
@@ -88,7 +88,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 ### write authorisation (OP2)
 
 - **`transport`** (partial) - Release and import are absent: release_transport_task and import_transport_queue. DEV->QAS->PRD promotion still happens outside the service.
-- **`jobs`** (partial) - Reported: job search, detail, log and spool text, plus release of one exact scheduled job through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO). Still absent: create, modify and cancel, which need their own helper branches and the operator's write authorisation, so a stuck or missing job is still mostly reported rather than corrected inside the service.
+- **`jobs`** (partial) - Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
 - **`locks`** (partial) - Locks can be listed but never released; a blocking lock must be cleared in SAP GUI.
 - **`updates`** (partial) - Failed updates can be read but never reprocessed.
 
@@ -122,7 +122,7 @@ Not built yet: `release_transport_task`, `import_transport_queue`
 
 Purpose: Did the job run, what did it do, and why is a job stuck or missing?
 
-Criterion to close: Reported: job search, detail, log and spool text, plus release of one exact scheduled job through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO). Still absent: create, modify and cancel, which need their own helper branches and the operator's write authorisation, so a stuck or missing job is still mostly reported rather than corrected inside the service.
+Criterion to close: Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
@@ -131,8 +131,9 @@ Criterion to close: Reported: job search, detail, log and spool text, plus relea
 | `read_background_job_log` | read-only | verified | `.doc/code-update-20260908-163230.md` |
 | `read_background_job_spool` | read-only | unverified | unverified |
 | `release_background_job` | action | unverified | unverified |
+| `cancel_background_job` | action | unverified | unverified |
 
-Not built yet: `create_background_job`, `modify_background_job`, `cancel_background_job`
+Not built yet: `create_background_job`, `modify_background_job`
 
 ### `logs` - read-only
 

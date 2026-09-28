@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 154,
+  "toolCount": 155,
   "readOnlyToolCount": 92,
   "profiles": {
     "readonly": 92,
     "platform": 12,
     "dev": 134,
     "config": 37,
-    "ops": 48,
-    "full": 154
+    "ops": 49,
+    "full": 155
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 31,
+    "ops": 32,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -256,6 +256,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
       "minHelperProtocol": "1.17"
+    },
+    {
+      "name": "cancel_background_job",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.14"
     },
     {
       "name": "cleanup_transport_entries",

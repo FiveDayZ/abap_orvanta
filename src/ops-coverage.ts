@@ -109,6 +109,9 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_background_job_spool: "read-only",
   // N3 / OP2. The first action tool this family has ever had.
   release_background_job: "action",
+  // N3 / OP2. The destructive half of job control: the helper proves the outcome by re-reading TBTCO
+  // and finding nothing, so a cancellation that leaves the row behind is a failure.
+  cancel_background_job: "action",
   // System and application logs
   read_system_logs: "read-only",
   discover_application_logs: "read-only",
@@ -184,11 +187,13 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["authorization"],
     actionRequired: true,
     gap:
-      "Reported: job search, detail, log and spool text, plus release of one exact scheduled job " +
-      "through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from " +
-      "TBTCO). Still absent: create, modify and cancel, which need their own helper branches and " +
-      "the operator's write authorisation, so a stuck or missing job is still mostly reported " +
-      "rather than corrected inside the service."
+      "Reported: job search, detail, log and spool text, plus two of the four job-control actions - " +
+      "release through release_background_job (BP_JOB_RELEASE inside the repository helper, read " +
+      "back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same " +
+      "body, proved by the job's absence on read-back). Still absent: create and modify, which need " +
+      "their own helper branches and the operator's write authorisation, so a job that does not yet " +
+      "exist or needs a different schedule still has to be built in SAP GUI rather than inside the " +
+      "service."
   },
   {
     id: "logs",

@@ -364,6 +364,18 @@
       "notes": "Implemented 2026-09-27 (N3 / OP2) and never called. Two gates stand in front of a real call: the SAP-side helper must be at 2.13 with the JOB_RELEASE branch and the IV_JOBNAME/IV_JOBCOUNT interface, which needs a carrier program the operator runs in SE38 (the body lives in ZORVANTA_MCP_CORE, which the self-write guard protects), and the write itself needs the operator's authorisation. Three facts were read from w200 before the branch was written and are recorded in .doc/n3-round3-write-preflight-forensics-20260927.md: BP_JOB_RELEASE is remoteEnabled=false, so the helper route is the only one; it contains no COMMIT WORK of its own, so the helper owns the LUW and commits once after reading TBTCO back; and its only AUTHORITY-CHECK is S_RZL_ADM on the intercepted-job path, so the tool does not invent an authority object. Because no call has been made, this entry claims no reply and carries no evidence - in particular it does not claim that a release was ever observed to change a status."
     },
     {
+      "tool": "cancel_background_job",
+      "helper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": "not yet called: implemented in the N3 batch, and the 2.14 helper carrying the JOB_CANCEL arm is not deployed",
+      "method": "controlled-write",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Implemented 2026-09-28 (N3 / OP2) and never called. Three gates stand in front of a real call: the SAP-side helper must be at 2.14 with the JOB_CANCEL arm, which needs a carrier program the operator runs in SE38 because the shared body lives in ZORVANTA_MCP_CORE and the self-write guard protects it; the write itself needs the operator's authorisation; and cancellation is irreversible, so it must not be exercised on a job anyone still needs. Two properties of BP_JOB_DELETE were read from its source on w200 before the arm was written: COMMITMODE defaults to 'X', so the callee would commit internally and split the LUW unless the helper blanks it and commits once after proving the outcome, and FORCEDMODE is deliberately left blank because forced mode continues past step, job-log and scheduler cleanup errors. Because no call has been made, this entry claims no reply and carries no evidence - in particular it does not claim that a cancellation was ever observed to remove a job."
+    },
+    {
       "tool": "delete_abap_message_class",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",

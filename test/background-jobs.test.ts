@@ -3,6 +3,8 @@ import test from "node:test"
 import {
   JOB_CONFIRMATIONS,
   JOB_CONTROL_CODES,
+  cancelBackgroundJobSchema,
+  jobCancelResult,
   jobControlCode,
   jobCount,
   jobName,
@@ -153,4 +155,110 @@ test("step and start-time validation refuse what SAP would only discover later",
     "2026-09-32T00:00:00"
   ])
     assert.throws(() => jobStartTime(bad), /JOB_START_TIME_INVALID/, bad)
+})
+
+/**
+ * `cancel_background_job` (N3 / OP2) is the destructive half of job control, so the properties worth
+ * pinning are the ones that would turn a wrong answer into a destroyed job or a false success:
+ *
+ *  - the confirmation string must be the cancel one exactly, and the arguments of the release tool
+ *    must not be accepted by it, because the two differ only in what they do to the job;
+ *  - cancellation is proved by absence, so a success reply that still carries a status is refused
+ *    rather than reported as a cancelled job that somehow still has one;
+ *  - a failure never claims absence - the read-back fields stay null, not false.
+ */
+
+test("the cancel confirmation string is required and is not the release one", () => {
+  const base = { connectionId: "w200", jobName: "ZJOB", jobCount: "0000000001" }
+  assert.equal(
+    cancelBackgroundJobSchema.safeParse({ ...base, confirmation: "CANCEL_BACKGROUND_JOB" }).success,
+    true
+  )
+  assert.equal(cancelBackgroundJobSchema.safeParse(base).success, false)
+  assert.equal(
+    cancelBackgroundJobSchema.safeParse({ ...base, confirmation: "RELEASE_BACKGROUND_JOB" })
+      .success,
+    false
+  )
+  assert.equal(
+    cancelBackgroundJobSchema.safeParse({ ...base, confirmation: "cancel_background_job" }).success,
+    false
+  )
+  // Strict, and there is no forced mode to ask for: FORCEDMODE is deliberately left blank in the
+  // helper because forced mode continues past cleanup errors.
+  assert.equal(
+    cancelBackgroundJobSchema.safeParse({
+      ...base,
+      confirmation: "CANCEL_BACKGROUND_JOB",
+      forced: true
+    }).success,
+    false
+  )
+})
+
+test("a successful cancel is proved by the job being gone, not by a status", () => {
+  const ok = jobCancelResult("w200", {
+    status: "S",
+    code: "JOB_CANCELLED",
+    message: "Job cancelled and absence read back",
+    metadata: { JOBNAME: "ZJOB", JOBCOUNT: "0000000001", STATUS_BEFORE: "P" }
+  })
+  assert.equal(ok.status, "ok")
+  assert.equal(ok.action, "cancel")
+  assert.equal(ok.confirmation, JOB_CONFIRMATIONS.cancel)
+  assert.equal(ok.readOnly, false)
+  // There is no status and no step count left to report: the row and its steps are gone.
+  assert.equal(ok.jobStatus, null)
+  assert.equal(ok.stepCount, null)
+  assert.equal(ok.readBack.performed, true)
+  assert.equal(ok.readBack.jobExists, false)
+  assert.equal(ok.readBack.jobStatusAfter, null)
+  // What the job was before the delete survives only in the warning.
+  assert.ok(ok.warnings.some((warning) => warning.includes("P")))
+
+  // Success with no pre-delete status is an invalid reply, not a blank success.
+  assert.throws(
+    () =>
+      jobCancelResult("w200", {
+        status: "S",
+        code: "JOB_CANCELLED",
+        message: "ok",
+        metadata: { JOBNAME: "ZJOB", JOBCOUNT: "0000000001" }
+      }),
+    /JOB_RESPONSE_INVALID/
+  )
+})
+
+test("a failed cancel carries the helper's code and never claims absence", () => {
+  for (const code of ["JOB_NOT_FOUND", "JOB_ALREADY_RUNNING", "JOB_STILL_PRESENT"]) {
+    const failed = jobCancelResult("w200", {
+      status: "E",
+      code,
+      message: "refused",
+      metadata: { JOBNAME: "ZJOB", JOBCOUNT: "0000000001" }
+    })
+    assert.equal(failed.status, "failed", code)
+    assert.equal(failed.code, code)
+    assert.equal(failed.readBack.performed, false)
+    // Absence is unknown on a failure, so it is null rather than false.
+    assert.equal(failed.readBack.jobExists, null)
+    assert.equal(failed.readBack.jobStatusAfter, null)
+  }
+})
+
+test("the cancel arm's codes are contracted, unique, and include its success code", () => {
+  for (const code of [
+    "JOB_IDENTITY_REQUIRED",
+    "JOB_STILL_PRESENT",
+    "JOB_LOCKED",
+    "JOB_COMMIT_FAILED",
+    "JOB_CANCEL_FAILED",
+    "JOB_CANCELLED"
+  ])
+    assert.equal(jobControlCode(code), code)
+  // Both action tools' success codes must be registered, or a success would be reported as a
+  // failure by the shared result builder.
+  assert.ok(JOB_CONTROL_CODES.includes("JOB_CANCELLED"))
+  assert.ok(JOB_CONTROL_CODES.includes("JOB_RELEASED"))
+  assert.ok(JOB_CONTROL_CODES.includes("JOB_NOT_FOUND_AFTER_RELEASE"))
 })

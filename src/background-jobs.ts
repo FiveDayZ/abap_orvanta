@@ -65,7 +65,24 @@ export const JOB_CONTROL_CODES = [
   "JOB_DUPLICATE",
   "JOB_HELPER_UNSUPPORTED",
   "JOB_RESPONSE_INVALID",
-  "JOB_RESPONSE_SCOPE_MISMATCH"
+  "JOB_RESPONSE_SCOPE_MISMATCH",
+  // Added with cancel_background_job. Each one is produced by the JOB_CANCEL branch and checked by a
+  // test, so a caller never receives an unrecognised helper string.
+  "JOB_IDENTITY_REQUIRED",
+  "JOB_NOT_RELEASABLE",
+  "JOB_STATUS_UNCHANGED",
+  "JOB_STILL_PRESENT",
+  "JOB_LOCKED",
+  "JOB_COMMIT_FAILED",
+  "JOB_RELEASE_FAILED",
+  "JOB_CANCEL_FAILED",
+  "JOB_HAVE_NO_STEPS",
+  // Success codes are registered too, not just failures: the result builder maps the helper's code
+  // through the same whitelist, so omitting them would report a successful release or cancellation
+  // as JOB_CONTROL_FAILED.
+  "JOB_RELEASED",
+  "JOB_CANCELLED",
+  "JOB_NOT_FOUND_AFTER_RELEASE"
 ] as const
 export type JobControlCode = (typeof JOB_CONTROL_CODES)[number]
 
@@ -161,6 +178,28 @@ export const releaseBackgroundJobSchema = z
   .strict()
 
 export type ReleaseBackgroundJobInput = z.input<typeof releaseBackgroundJobSchema>
+
+/**
+ * Input for `cancel_background_job`.
+ *
+ * Cancelling is irreversible - the job row and its schedule are gone - so it is a separate tool from
+ * release rather than a mode flag: different confirmation string, different lifecycle, different
+ * reversal story. `confirmation` is checked before SAP is touched.
+ */
+export const cancelBackgroundJobSchema = z
+  .object({
+    connectionId: z.string().min(1).max(32),
+    jobName: z.string().min(1).max(32),
+    jobCount: z.string().min(1).max(8),
+    confirmation: z.literal("CANCEL_BACKGROUND_JOB"),
+    operationId: z
+      .string()
+      .regex(/^[A-Za-z0-9._:-]{1,64}$/)
+      .optional()
+  })
+  .strict()
+
+export type CancelBackgroundJobInput = z.input<typeof cancelBackgroundJobSchema>
 
 /**
  * What the service reports back after a job write. `released` and `steps` come from the helper's own
@@ -260,5 +299,45 @@ export function jobReleaseResult(connectionId: string, reply: JobHelperReply): J
       stepCountAfter: stepCount
     },
     warnings: JOB_CONTROL_WARNINGS
+  }
+}
+
+/**
+ * Turn a helper reply for `JOB_CANCEL` into the caller-visible result.
+ *
+ * Cancelling is proved by absence, not by presence: a successful cancel must report that the job is
+ * gone, so `jobExists` is `false` on success and the status is `null` (there is no status left to
+ * report). A success reply that still carries a status would mean the helper's read-back found the
+ * row, so it is refused as invalid rather than reported as a cancelled job that somehow still has
+ * one.
+ */
+export function jobCancelResult(connectionId: string, reply: JobHelperReply): JobControlResult {
+  const ok = reply.status.toUpperCase() === "S"
+  const statusBefore = (reply.metadata["STATUS_BEFORE"] ?? "").trim()
+  if (ok && statusBefore === "") throw new Error("JOB_RESPONSE_INVALID")
+  return {
+    action: "cancel",
+    connectionId,
+    readOnly: false,
+    status: ok ? "ok" : "failed",
+    code: jobControlCode(reply.code),
+    message: reply.message,
+    jobName: (reply.metadata["JOBNAME"] ?? "").trim(),
+    jobCount: (reply.metadata["JOBCOUNT"] ?? "").trim(),
+    jobStatus: null,
+    stepCount: null,
+    confirmation: JOB_CONFIRMATIONS.cancel,
+    idempotencyKey: null,
+    readBack: {
+      performed: ok,
+      // Absence is the evidence: the helper only answers S after re-reading TBTCO and finding nothing.
+      jobExists: ok ? false : null,
+      jobStatusAfter: null,
+      stepCountAfter: null
+    },
+    warnings: [
+      ...JOB_CONTROL_WARNINGS,
+      `Job status before cancellation: ${statusBefore === "" ? "unknown" : statusBefore}. A cancelled job cannot be restored; its schedule and log entries are removed by SAP.`
+    ]
   }
 }

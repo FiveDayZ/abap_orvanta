@@ -128,7 +128,10 @@ $helperCapabilityOperations = @(
     # N3 / OP2. Background-job control. 2.13 is the next value above the body's current ceiling
     # (2.12): the two job parameters (IV_JOBNAME, IV_JOBCOUNT) were added to the interface, so a
     # 2.12 helper does not declare them and cannot serve this operation.
-    "JOB_RELEASE|2.13|W"
+    "JOB_RELEASE|2.13|W",
+    # 2.14: cancelling uses the same interface (IV_JOBNAME/IV_JOBCOUNT) and the same callee group
+    # but a different callee with a different commit contract, so it takes the next value above 2.13.
+    "JOB_CANCEL|2.14|W"
 )
 # <<< ORVANTA-CAPABILITY-TABLE
 
@@ -6775,6 +6778,8 @@ function New-InstallProgram {
         "  DATA lv_job_status_after TYPE tbtco-status.",
         "  DATA lv_job_subrc TYPE sy-subrc.",
         "  DATA lv_job_ret TYPE i.",
+        "  DATA lv_job_commit TYPE boole-booole.",
+        "  DATA lv_job_forced TYPE sy-batch.",
         "  DATA lv_job_exists_before TYPE c.",
         "  DATA lv_job_exists_after TYPE c.",
         # E071 itself starts with MANDT, so a partial column list selected INTO a table of the
@@ -12296,6 +12301,125 @@ function New-InstallProgram {
         "      ev_code = 'JOB_RELEASED'.",
         "      ev_message = 'Job released and status read back'.",
         "      ev_version = '2.13'.",
+        "      RETURN.",
+        # N3 / OP2. Cancel (delete) one job. BP_JOB_DELETE is remoteEnabled=false, so this arm is the
+        # only route. Two properties of that FM decide the whole shape of this branch, both read from
+        # its source on w200 (2026-09-27):
+        #   * COMMITMODE defaults to 'X', which makes the CALLEE issue COMMIT WORK internally. That
+        #     would split the LUW - the delete would already be durable while this branch still had
+        #     checks to run - so COMMITMODE is passed explicitly blank and the helper commits once,
+        #     after proving the job is gone.
+        #   * FORCEDMODE defaults to SPACE and is deliberately left that way. SAP's own comment says
+        #     forced mode continues past step/joblog/scheduler cleanup errors but that "alle anderen
+        #     Fehler muessen zu einem Abbruch fuehren, da sonst innerhalb der Job-Verwaltung
+        #     Inkonsistenzen auftreten werden" - a cancellation tool must not choose that.
+        "    WHEN 'JOB_CANCEL'.",
+        "      IF iv_jobname IS INITIAL OR iv_jobcount IS INITIAL.",
+        "        ev_status = 'E'.",
+        "        ev_code = 'JOB_IDENTITY_REQUIRED'.",
+        "        ev_message = 'Job name and count are required'.",
+        "        ev_version = '2.14'. RETURN.",
+        "      ENDIF.",
+        "      lv_job_name = iv_jobname.",
+        "      TRANSLATE lv_job_name TO UPPER CASE.",
+        "      lv_job_count = iv_jobcount.",
+        "      CLEAR ls_job_db.",
+        "      SELECT SINGLE * FROM tbtco INTO ls_job_db",
+        "        WHERE jobname = lv_job_name AND jobcount = lv_job_count.",
+        "      IF sy-subrc <> 0.",
+        "        ev_status = 'E'.",
+        "        ev_code = 'JOB_NOT_FOUND'.",
+        "        ev_message = 'Job does not exist'.",
+        "        ev_version = '2.14'. RETURN.",
+        "      ENDIF.",
+        "      lv_job_status_before = ls_job_db-status.",
+        # A running job is refused here by this branch as well as by the callee: the callee raises
+        # JOB_IS_ALREADY_RUNNING, and refusing earlier keeps the two paths' codes identical.
+        "      IF lv_job_status_before = 'R'.",
+        "        ev_status = 'E'.",
+        "        ev_code = 'JOB_ALREADY_RUNNING'.",
+        "        ev_message = 'A running job cannot be cancelled'.",
+        "        ev_version = '2.14'. RETURN.",
+        "      ENDIF.",
+        "      CLEAR: lv_job_commit, lv_job_forced.",
+        "      CALL FUNCTION 'BP_JOB_DELETE'",
+        "        EXPORTING",
+        "          jobcount = lv_job_count",
+        "          jobname = lv_job_name",
+        "          forcedmode = lv_job_forced",
+        "          commitmode = lv_job_commit",
+        "        EXCEPTIONS",
+        "          cant_delete_event_entry = 1",
+        "          cant_delete_job = 2",
+        "          cant_delete_joblog = 3",
+        "          cant_delete_steps = 4",
+        "          cant_delete_time_entry = 5",
+        "          cant_derelease_successor = 6",
+        "          cant_enq_predecessor = 7",
+        "          cant_enq_successor = 8",
+        "          cant_enq_tbtco_entry = 9",
+        "          cant_update_predecessor = 10",
+        "          cant_update_successor = 11",
+        "          commit_failed = 12",
+        "          jobcount_missing = 13",
+        "          jobname_missing = 14",
+        "          job_does_not_exist = 15",
+        "          job_is_already_running = 16",
+        "          no_delete_authority = 17",
+        "          OTHERS = 18.",
+        "      lv_job_subrc = sy-subrc.",
+        "      IF lv_job_subrc <> 0.",
+        "        IF lv_job_subrc = 15.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'JOB_NOT_FOUND'.",
+        "          ev_message = 'Job does not exist'.",
+        "        ELSEIF lv_job_subrc = 16.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'JOB_ALREADY_RUNNING'.",
+        "          ev_message = 'A running job cannot be cancelled'.",
+        "        ELSEIF lv_job_subrc = 17.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'JOB_NO_AUTHORITY'.",
+        "          ev_message = 'No delete authority for this job'.",
+        "        ELSEIF lv_job_subrc = 9.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'JOB_LOCKED'.",
+        "          ev_message = 'The job entry is locked'.",
+        "        ELSEIF lv_job_subrc = 12.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'JOB_COMMIT_FAILED'.",
+        "          ev_message = 'The delete could not be committed'.",
+        "        ELSE.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'JOB_CANCEL_FAILED'.",
+        "          ev_message = 'Job could not be cancelled'.",
+        "        ENDIF.",
+        "        ev_version = '2.14'. RETURN.",
+        "      ENDIF.",
+        # The callee was told commitmode = blank, so nothing is durable yet: commit here, then prove
+        # the job is really gone. A cancel that leaves the row behind is a failure, not a success.
+        "      COMMIT WORK AND WAIT.",
+        "      CLEAR ls_job_db.",
+        "      SELECT SINGLE * FROM tbtco INTO ls_job_db",
+        "        WHERE jobname = lv_job_name AND jobcount = lv_job_count.",
+        "      IF sy-subrc = 0.",
+        "        ev_status = 'E'.",
+        "        ev_code = 'JOB_STILL_PRESENT'.",
+        "        ev_message = 'Job is still present after cancel'.",
+        "        ev_version = '2.14'. RETURN.",
+        "      ENDIF.",
+        "      REFRESH it_source.",
+        "      add_repo_payload 'M' '1' 'JOBNAME' lv_job_name.",
+        "      add_repo_payload 'M' '1' 'JOBCOUNT' lv_job_count.",
+        "      add_repo_payload 'M' '1' 'STATUS_BEFORE'",
+        "        lv_job_status_before.",
+        # No step count is published: the job row and its step table are gone, so any number here
+        # would be invented rather than read. Absence of the job is the evidence of success.
+        "      add_repo_payload 'M' '1' 'CANCELLED' 'X'.",
+        "      ev_status = 'S'.",
+        "      ev_code = 'JOB_CANCELLED'.",
+        "      ev_message = 'Job cancelled and absence read back'.",
+        "      ev_version = '2.14'.",
         "      RETURN.",
         "    WHEN 'READ_TEXT_ELEMENTS' OR 'MERGE_TEXT_ELEMENTS'.",
         "      lv_textpool_program = iv_program.",

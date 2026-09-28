@@ -39,7 +39,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
 }
 
 /** The plan's outstanding tool commitments; adding one to the plan must update this number. */
-const PLANNED_GAP_TOOL_COUNT = 13
+const PLANNED_GAP_TOOL_COUNT = 12
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -48,7 +48,7 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  assert.equal(opsGroupTools.length, 31)
+  assert.equal(opsGroupTools.length, 32)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -229,8 +229,8 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
 
-  assert.equal(block.summary.classifiedToolCount, 31)
-  assert.equal(block.summary.actionToolCount, 4)
+  assert.equal(block.summary.classifiedToolCount, 32)
+  assert.equal(block.summary.actionToolCount, 5)
   assert.equal(block.summary.platformBlockedToolCount, 1)
   assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)
   assert.equal(block.summary.missingPlannedToolCount, block.summary.missingPlannedTools.length)
@@ -264,18 +264,15 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the worklist must never name the exempt family"
   )
 
-  // A monitor-only family never becomes end-to-end just because a reader exists.
+  // A monitor-only family never becomes end-to-end just because a reader exists, and a family that
+  // gained writers is still not closed while its own gap stands: jobs reports release and cancel and
+  // stays partial because create and modify are still missing.
   const jobs = block.families.find((family) => family.id === "jobs")
   assert.ok(jobs)
   assert.equal(jobs.state, "partial")
   assert.equal(jobs.actionRequired, true)
-  assert.deepEqual(jobs.actionTools, [])
-  assert.deepEqual(jobs.missingToolNames, [
-    "create_background_job",
-    "modify_background_job",
-    "release_background_job",
-    "cancel_background_job"
-  ])
+  assert.deepEqual(jobs.actionTools, ["release_background_job", "cancel_background_job"])
+  assert.deepEqual(jobs.missingToolNames, ["create_background_job", "modify_background_job"])
 
   // A platform-stopped family is reported as blocked, which is a different claim from "not built".
   const traces = block.families.find((family) => family.id === "traces")

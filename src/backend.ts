@@ -273,6 +273,10 @@ export type SapRepositoryOperation =
   // only route is a branch in the shared repository body; it contains no COMMIT WORK of its own, so
   // the helper owns the LUW and commits once after reading the released status back from TBTCO.
   | "JOB_RELEASE"
+  // N3 / OP2. Cancellation uses the same two job parameters and the same helper body, but a
+  // different callee (BP_JOB_DELETE) with an opposite commit default: it commits internally unless
+  // COMMITMODE is blanked, so the branch blanks it and owns the LUW itself.
+  | "JOB_CANCEL"
 
 export type SapStructureRow = Record<string, string>
 

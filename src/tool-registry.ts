@@ -784,6 +784,20 @@ const ROWS: readonly ToolRow[] = [
     "2.13",
     ["JOB_RELEASE"]
   ],
+  // N3 / OP2. Cancellation is the destructive half of job control: the job row, its steps and its
+  // schedule are gone and cannot be restored, which is why it is `D` rather than `W` and why it is a
+  // separate tool with its own confirmation string instead of a mode of release. It takes 2.14
+  // because it reuses the 2.13 interface (IV_JOBNAME/IV_JOBCOUNT) but dispatches a different callee.
+  [
+    "cancel_background_job",
+    "ops",
+    OPSP,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.14",
+    ["JOB_CANCEL"]
+  ],
   ["abap_download", "source", DEV, "W", "target-specific", null, null],
   ["adt_discovery_export", "platform", PL, "W", "native-adt", null, null]
 ]

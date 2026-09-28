@@ -44,7 +44,7 @@ import {
   readFailedUpdateSchema,
   readArchiveStatusSchema
 } from "./maintenance-diagnostics.js"
-import { releaseBackgroundJobSchema } from "./background-jobs.js"
+import { cancelBackgroundJobSchema, releaseBackgroundJobSchema } from "./background-jobs.js"
 
 const objectType = z.enum(DEFAULT_OBJECT_TYPES)
 /**
@@ -461,6 +461,12 @@ const toolContractsBase = {
       "Release one scheduled background job so the batch scheduler will start it, through BP_JOB_RELEASE inside the shared SAP repository helper. This is an operation the service cannot reach natively: the function module reports remoteEnabled=false on this release, so the only route is the helper branch. The job is identified by the exact jobName and jobCount pair, both taken from search_background_jobs. Before releasing, the helper reads TBTCO and refuses a job whose status is neither scheduled nor released, so releasing an already-running or finished job is a named error (JOB_NOT_RELEASABLE) rather than an accidental no-op. After the call it reads TBTCO again and reports SAP's own status; a release that leaves the status unchanged is reported as JOB_STATUS_UNCHANGED and never as success. The helper owns the transaction: BP_JOB_RELEASE contains no COMMIT WORK of its own, so it commits once at the top level after the read-back. Authorization is SAP's own: S_RZL_ADM is checked by the callee for the intercepted-job path and a refusal is reported as JOB_NO_AUTHORITY. Requires the RELEASE_BACKGROUND_JOB confirmation string, which is checked before SAP is contacted. It does not create, modify or delete a job, and it cannot run a job immediately - a released job is started by the scheduler, under the target user's authorizations, not the caller's.",
     inputSchema: releaseBackgroundJobSchema.shape,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
+  },
+  cancel_background_job: {
+    description:
+      "Cancel (delete) one background job through BP_JOB_DELETE inside the shared SAP repository helper. This is an operation the service cannot reach natively: the function module reports remoteEnabled=false on this release, so the only route is the helper branch, and that branch requires a 2.14 helper. The job is identified by the exact jobName and jobCount pair, both taken from search_background_jobs. Cancellation is irreversible - SAP removes the TBTCO row together with the job's steps, schedule and log entries - so this is a separate tool with its own confirmation string rather than a mode of release. The helper refuses a job that is not there (JOB_NOT_FOUND) and a job that is already running (JOB_ALREADY_RUNNING) before calling the callee, so the two paths report identical codes. BP_JOB_DELETE defaults COMMITMODE to 'X', which makes the callee commit internally; that would split the LUW, because the delete would already be durable while the helper still had to prove the outcome. The helper therefore passes COMMITMODE explicitly blank and commits once itself, only after proving the row is gone. FORCEDMODE is deliberately left blank: forced mode continues past step, job-log and scheduler cleanup errors, which SAP's own comment says leads to job-management inconsistencies. Success is proved by absence, not by presence: after the commit the helper re-reads TBTCO and a row that is still there is reported as JOB_STILL_PRESENT rather than as a successful cancellation. No step count is returned, because the step table is gone and any number would be invented rather than read. Authorization is SAP's own: a refusal by the callee is reported as JOB_NO_AUTHORITY, a lock on the job entry as JOB_LOCKED, a failed commit as JOB_COMMIT_FAILED. Requires the CANCEL_BACKGROUND_JOB confirmation string, which is checked before SAP is contacted. It does not create, modify or release a job, and it cannot run a job immediately.",
+    inputSchema: cancelBackgroundJobSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }
   },
   read_smartform: {
     description:

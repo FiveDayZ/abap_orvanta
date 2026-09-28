@@ -74,11 +74,14 @@ import { collectUserAuthorizations } from "./user-authorizations.js"
 import { collectAuthTraceStatus } from "./auth-trace-status.js"
 import {
   JOB_CONFIRMATIONS,
+  cancelBackgroundJobSchema,
+  jobCancelResult,
   jobCount,
   jobName,
   jobPayloadRows,
   jobReleaseResult,
   releaseBackgroundJobSchema,
+  type CancelBackgroundJobInput,
   type ReleaseBackgroundJobInput
 } from "./background-jobs.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
@@ -1699,6 +1702,37 @@ export class ToolService {
     const metadata = jobPayloadRows(result.source ?? [])
     return JSON.stringify(
       jobReleaseResult(connectionId, {
+        status: result.status,
+        code: result.code,
+        message: result.message,
+        metadata
+      }),
+      null,
+      2
+    )
+  }
+
+  /**
+   * Cancel (delete) one job (N3 / OP2).
+   *
+   * Irreversible, so it is its own tool with its own confirmation string rather than a mode of
+   * release. The helper was built to prove the outcome by absence: it re-reads TBTCO after the
+   * delete and only answers success when the row is gone, so this method reports that absence rather
+   * than an echo of the request.
+   */
+  async cancelBackgroundJob(input: CancelBackgroundJobInput): Promise<string> {
+    const parsed = cancelBackgroundJobSchema.parse(input)
+    if (parsed.confirmation !== JOB_CONFIRMATIONS.cancel)
+      throw new Error(`confirmation must be ${JOB_CONFIRMATIONS.cancel}`)
+    const connectionId = parsed.connectionId.toLowerCase()
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "JOB_CANCEL",
+      jobName: jobName(parsed.jobName),
+      jobCount: jobCount(parsed.jobCount)
+    })
+    const metadata = jobPayloadRows(result.source ?? [])
+    return JSON.stringify(
+      jobCancelResult(connectionId, {
         status: result.status,
         code: result.code,
         message: result.message,

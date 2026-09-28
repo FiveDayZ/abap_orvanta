@@ -153,6 +153,11 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // preconditions (a TBTCO status check) and its own read-back, and the interface it needs
   // (IV_JOBNAME/IV_JOBCOUNT) exists only from 2.13.
   ["repository-helper-job-release", ["release_background_job"]],
+  // N3 / OP2. Cancellation reuses the 2.13 interface (IV_JOBNAME/IV_JOBCOUNT) but calls a different
+  // callee whose commit default is the opposite one, so it is its own group with its own floor: a
+  // 2.13 helper would run the shared body without the JOB_CANCEL arm at all, and grouping the two
+  // would let one missing branch mark the working release tool unsupported.
+  ["repository-helper-job-cancel", ["cancel_background_job"]],
   ["repository-helper-gui-definition", ["read_abap_gui_definition", "patch_abap_gui_definition"]],
   ["repository-helper-ecc-fallbacks", ["read_abap_message_class", "create_abap_message_class"]],
   // 2.12: the text element payload carries the entry kind, and the helper writes selection texts
