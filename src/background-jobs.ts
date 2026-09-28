@@ -37,7 +37,11 @@ export interface BackgroundJobStep {
 }
 
 const JOB_NAME = /^[A-Za-z0-9_/]{1,32}$/
-const JOB_COUNT = /^[0-9]{1,8}$/
+// TBTCO-JOBCOUNT is BTCJOBCNT/CHAR8 and every one of the 500 rows sampled on w200 was exactly
+// eight digits, so an identity that is not eight digits cannot identify a job SAP holds. The read
+// tools already demand `^\d{8}$`; keeping the write side identical is what stops a caller from
+// being handed a job it could never release.
+const JOB_COUNT = /^[0-9]{8}$/
 const PROGRAM_NAME = /^[A-Za-z0-9_/=%]{1,40}$/
 const VARIANT_NAME = /^[A-Za-z0-9_/]{1,14}$/
 const USER_NAME = /^[A-Za-z0-9_.-]{1,12}$/

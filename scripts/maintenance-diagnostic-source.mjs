@@ -21,12 +21,17 @@ export const maintenanceHelperDefinition = {
 
 // CAPABILITIES self-description (docs/helper-capabilities-protocol.md 3.1/3.2/3.3).
 //
-// `since` is the protocol revision of the reply envelope that the opcode's own CASE branch
-// answers with: every branch reaches the `fail_reply` macro, whose lv_base carries
-// '"version":"1"'. It is written as x.y so PROTOCOL|MIN / PROTOCOL|MAX stay comparable with
-// the other helpers. This table is the ONLY opcode list for Z_ORVANTA_MAINT_READ: the
-// OPERATION rows, PROTOCOL|MIN and PROTOCOL|MAX are derived from it and never written a
-// second time. Parsed offline by test/helper-capabilities-generators.test.ts.
+// `since` is the capability protocol revision at which the opcode became answerable, written as
+// x.y so PROTOCOL|MIN / PROTOCOL|MAX stay comparable with the other helpers. It is NOT the reply
+// envelope version: every branch answers with the same frozen `"version":"1"` envelope (that is
+// what src/maintenance-diagnostics.ts validates), so an opcode added later advances the capability
+// protocol without touching the envelope. The capability gate reads PROTOCOL|MAX, so ARCHIVE_STATUS
+// has to carry 1.1 - read_archive_status's registry floor is minHelperProtocol 1.1 and the gate
+// compares the helper's maximum against it (src/capabilities.ts), meaning a lower `since` would
+// make the tool permanently unreachable instead of merely unreported.
+// This table is the ONLY opcode list for Z_ORVANTA_MAINT_READ: the OPERATION rows, PROTOCOL|MIN
+// and PROTOCOL|MAX are derived from it and never written a second time. Parsed offline by
+// test/helper-capabilities-generators.test.ts.
 // >>> ORVANTA-CAPABILITY-TABLE
 export const maintenanceDiagnosticOperations = [
   { opcode: "LOCK_SEARCH", since: "1.0", mode: "R" },

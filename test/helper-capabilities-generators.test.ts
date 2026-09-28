@@ -340,18 +340,52 @@ test("the table names the helper the service probes", () => {
   assert.equal(opsModule.operationalLogFunctionName, OPERATIONAL_LOG_HELPER)
 })
 
-test("each table sinceVersion is the protocol revision the body reports", () => {
+/**
+ * The capability protocol range a branch publishes. This is a DIFFERENT axis from the reply
+ * envelope: the envelope stays `{"version":"1"}` for every branch because that is what the service
+ * validates, while the capability protocol advances when the opcode set grows. An earlier version
+ * of this test equated the two, which required ARCHIVE_STATUS to claim 1.0 - a claim the capability
+ * gate contradicts, because read_archive_status's registry floor is 1.1 and the gate compares the
+ * helper's PROTOCOL|MAX against it (src/capabilities.ts). `since` is therefore checked against the
+ * range the same branch advertises.
+ */
+const branchProtocolRange = (branch: string[]): { min: string; max: string } => {
+  const rows = literalRows(branch)
+  const read = (prefix: string): string => {
+    const row = rows.find((entry) => entry.startsWith(prefix))
+    assert.ok(row, `the branch must publish ${prefix}`)
+    return row.slice(prefix.length)
+  }
+  return { min: read("PROTOCOL|MIN|"), max: read("PROTOCOL|MAX|") }
+}
+
+const compareProtocol = (left: string, right: string): number => {
+  const [leftMajor = 0, leftMinor = 0] = left.split(".").map(Number)
+  const [rightMajor = 0, rightMinor = 0] = right.split(".").map(Number)
+  return leftMajor - rightMajor || leftMinor - rightMinor
+}
+
+test("each table sinceVersion sits inside the protocol range the body publishes", () => {
   for (const variant of variants) {
-    const version = envelopeProtocol(variant)
+    const range = branchProtocolRange(capabilityBranch(variant))
     const rows = operationRows(capabilityBranch(variant))
     for (const row of rows) {
       assert.match(row.since, /^\d+\.\d+$/, `${variant.label}: ${row.opcode} sinceVersion`)
-      assert.equal(row.since, version, `${variant.label}: ${row.opcode} sinceVersion`)
+      assert.ok(
+        compareProtocol(row.since, range.min) >= 0 && compareProtocol(row.since, range.max) <= 0,
+        `${variant.label}: ${row.opcode} sinceVersion ${row.since} is outside ${range.min}..${range.max}`
+      )
       assert.equal(row.mode, "R", `${variant.label}: these helpers are read-only`)
     }
     for (const entry of variant.file === maintFile ? maintTable : opsTable) {
-      assert.equal(entry.since, version, `${variant.label}: table sinceVersion`)
+      assert.ok(
+        compareProtocol(entry.since, range.min) >= 0 &&
+          compareProtocol(entry.since, range.max) <= 0,
+        `${variant.label}: table sinceVersion ${entry.since} is outside ${range.min}..${range.max}`
+      )
     }
+    // The reply envelope is the other axis and must not drift: the service validates "1".
+    assert.equal(envelopeProtocol(variant), "1.0", `${variant.label}: reply envelope version`)
   }
 })
 
@@ -605,7 +639,7 @@ test("CAPABILITIES is a read-only self-description without negotiation or scope 
     const text = branch.join("\n")
     // The reply reuses this helper's own EV_RESULT envelope with the frozen values the service
     // already validates; no new status/code vocabulary is introduced.
-    assert.equal(literalRows(branch)[1], `PROTOCOL|MIN|${envelopeProtocol(variant)}`)
+    assert.equal(literalRows(branch)[1], `PROTOCOL|MIN|${branchProtocolRange(branch).min}`)
     assert.match(text, /'\{"version":"1","status":"S",'/)
     assert.match(text, /'"code":"CAPABILITIES",'/)
     assert.match(text, /'"message":"ORVANTA helper capabilities",'/)

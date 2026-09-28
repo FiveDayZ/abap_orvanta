@@ -136,6 +136,10 @@ export async function collectCcmsAlerts(
     if (value !== undefined && !datePattern.test(value))
       throw new Error(`CCMS_ALERTS_SCOPE_INVALID: ${name} must be YYYYMMDD`)
   }
+  // MANDT is CLNT/NUMC3, so a client is exactly three digits. A longer value can never match a row
+  // and would come back as an empty result rather than as the malformed request it is.
+  if (options.client !== undefined && !/^\d{3}$/.test(options.client))
+    throw new Error("CCMS_ALERTS_SCOPE_INVALID: client must be three digits")
   const openOnly = options.openOnly ?? false
   // "Still open" and "cleared inside this window" are opposite selections; accepting both would
   // silently answer whichever the caller did not ask for.

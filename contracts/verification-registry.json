@@ -1290,14 +1290,14 @@
     {
       "tool": "read_archive_status",
       "helper": "Z_ORVANTA_MAINT_READ",
-      "availabilityBasis": "protocol-only",
+      "availabilityBasis": "protocol+operations",
       "verificationTarget": "not yet called: implemented in the N3 batch, no runtime evidence recorded",
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Implemented 2026-09-27 (N3). The ARCHIVE_STATUS branch needs helper protocol 1.1, so on a helper below that the tool is not available and says so rather than answering empty. Three facts were read from w200 before the branch was written, recorded in .doc/code-update-20260927-*.md: the function module ARCHIVE_ADMIN_SELECT_SESSIONS is remote-enabled but its ARCH_T_RUNS export carries ARCH_RUN, whose ADMI_RUN component is not RFC scalar, so the read has to happen in the helper; every status heading must be requested explicitly because SAP's selector EXITs when no status is requested (an all-blank call returns no sessions, which would read as 'nothing archived'); and the function module contains no CALL SCREEN or POPUP, so it is dialog-free. The tool itself has not been called against w200 yet, so this entry claims no reply and carries no evidence. It is also gated by the local approval file's SARA source, which is a separate gate from this protocol verdict."
+      "notes": "Implemented 2026-09-27 (N3). Availability is decided by two checks, not one: the helper has to self-describe protocol 1.1 or later AND attest the ARCHIVE_STATUS operation in its own operation list, so a helper below that protocol, or one whose list lacks the opcode, is reported unsupported rather than answering empty. Both gates are pinned in the registry (minHelperProtocol 1.1 with operations [ARCHIVE_STATUS]) because a protocol number is a claim about the highest version implemented and says nothing about which opcodes exist - the DDIC helper's UPSERT_LOCK_OBJECT was advertised as available on exactly that mistake. Three facts were read from w200 before the branch was written, recorded in .doc/code-update-20260927-*.md: the function module ARCHIVE_ADMIN_SELECT_SESSIONS is remote-enabled but its ARCH_T_RUNS export carries ARCH_RUN, whose ADMI_RUN component is not RFC scalar, so the read has to happen in the helper; every status heading must be requested explicitly because SAP's selector EXITs when no status is requested (an all-blank call returns no sessions, which would read as 'nothing archived'); and the function module contains no CALL SCREEN or POPUP, so it is dialog-free. The tool itself has not been called against w200 yet, so this entry claims no reply and carries no evidence. It is also gated by the local approval file's SARA source, which is a separate gate from this capability verdict."
     },
     {
       "tool": "read_function_module_interface",

@@ -182,7 +182,7 @@ export const helperCapabilityTargets = {
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
     deployedNowBodyHash: "f2a1580c9ab7560d882af51d6c9152933248c0d51026ac56024417d540b763be",
-    intendedBodyHash: "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a",
+    intendedBodyHash: "04a9a1aeeab114de290a7b57276c7faeb0d35f8148db4abab01334b381e8c5f8",
     generatorBody: maintenanceDiagnosticSource
   },
   ops: {

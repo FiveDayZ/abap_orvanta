@@ -28,7 +28,7 @@ import {
  */
 
 test("the release confirmation string is required and exact", () => {
-  const base = { connectionId: "w200", jobName: "ZJOB", jobCount: "0000000001" }
+  const base = { connectionId: "w200", jobName: "ZJOB", jobCount: "00000001" }
   assert.equal(
     releaseBackgroundJobSchema.safeParse({ ...base, confirmation: "RELEASE_BACKGROUND_JOB" })
       .success,
@@ -59,10 +59,12 @@ test("the release confirmation string is required and exact", () => {
 
 test("a job identity is normalised the way the read tools normalise it", () => {
   assert.equal(jobName(" zjob "), "ZJOB")
-  assert.equal(jobCount(" 0000000001 "), "0000000001")
+  assert.equal(jobCount(" 00000001 "), "00000001")
   for (const bad of ["", "Z JOB", "Z*JOB", "A".repeat(33)])
     assert.throws(() => jobName(bad), /JOB_NAME_INVALID/, `jobName(${bad})`)
-  for (const bad of ["", "12A", "1".repeat(9)])
+  // TBTCO-JOBCOUNT is CHAR8, so both a short and a long identity are refused: the read tools
+  // demand exactly eight digits and the write tools must not accept what they cannot match.
+  for (const bad of ["", "12A", "1".repeat(7), "1".repeat(9)])
     assert.throws(() => jobCount(bad), /JOB_COUNT_INVALID/)
 })
 
@@ -169,7 +171,7 @@ test("step and start-time validation refuse what SAP would only discover later",
  */
 
 test("the cancel confirmation string is required and is not the release one", () => {
-  const base = { connectionId: "w200", jobName: "ZJOB", jobCount: "0000000001" }
+  const base = { connectionId: "w200", jobName: "ZJOB", jobCount: "00000001" }
   assert.equal(
     cancelBackgroundJobSchema.safeParse({ ...base, confirmation: "CANCEL_BACKGROUND_JOB" }).success,
     true

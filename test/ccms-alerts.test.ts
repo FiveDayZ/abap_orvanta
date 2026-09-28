@@ -272,7 +272,7 @@ test("the answer states the boundaries that keep it from being read as a health 
   // read as "nothing is wrong".
   const refused = stubReader({ status: "unavailable", code: "X", stage: "y", data: null })
   const refusedAnswer = await collectCcmsAlerts(refused.read, "w200", {})
-  assert.equal(refusedAnswer.notes, answer.notes)
+  assert.deepEqual(refusedAnswer.notes, answer.notes)
 })
 
 test("alertCleared accepts only a real eight-digit date", () => {

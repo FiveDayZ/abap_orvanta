@@ -189,12 +189,13 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 | 助手                                | 线上体哈希（部署中）                                               | 升级后体哈希（当前生成器）                                         | 升级后应自述的 `SOURCE\|HASH`                                      |
 | ----------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| `Z_ORVANTA_MAINT_READ`              | `f2a1580c9ab7560d882af51d6c9152933248c0d51026ac56024417d540b763be` | `4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a` | `69f20bb0907f0a508b14efc3609695d959d8c6c4f9f89026f22586733fc2a066` |
+| `Z_ORVANTA_MAINT_READ`              | `f2a1580c9ab7560d882af51d6c9152933248c0d51026ac56024417d540b763be` | `04a9a1aeeab114de290a7b57276c7faeb0d35f8148db4abab01334b381e8c5f8` | `41fbaeae01ed5a67c6c5c4d8814de1c27402480486cfe01d2e98712e94c2e8da` |
 | `Z_ORVANTA_OPS_READ`（report 变体） | `6cd998bf1e80e61e5d3c20ea416997a3310cc20611919134fe779149b95210ea` | `dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c` | `0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1` |
 
 - 体哈希＝生成器导出的体数组按 `\n` 连接后的 SHA-256。线上体自 `DATA:` 起、`ENDFUNCTION.` 前止（尾随空行已去），与生成器数组一致——这一点由上文逐行比对证明。
 - `SOURCE|HASH` 是**自指哈希**：生成器在四个 `ORVANTAHASHSLOT1..4` 占位符仍在体中时取 SHA-256，再把该摘要填回占位符。因此不能用渲染后的文本直接重算，必须先还原占位符（`capabilityBodyDigest`）。
 - 上表末列随生成器演进会变化，部署验证器在运行时重算（`helperCapabilityDigests`）；此处记录的是当前 HEAD 的取值。
+- **2026-09-28**：MAINT 行的"升级后"两列已按当前 HEAD 重算。生成器新增 `ARCHIVE_STATUS`（`since` 1.1）后，体哈希由 `4f373280…` 变为 `04a9a1ae…`、`SOURCE|HASH` 由 `69f20bb0…` 变为 `41fbaeae…`。协议范围随之由 1.0–1.0 变为 **1.0–1.1**：`since` 是**能力协议**修订（操作码何时可被应答），**不是**回复信封版本——信封对所有分支恒为 `{"version":"1"}`，因为服务端校验的就是 `"1"`；能力门比较的是 `PROTOCOL|MAX` 与注册表 `minHelperProtocol`（`src/capabilities.ts`），故 `ARCHIVE_STATUS` 必须 >= 1.1，否则 `read_archive_status` 永远不可达。第 16–23 行表格记录的是**最后一次实测自述**（部署中仍是 1.0 / 3 个操作码 / `69f20bb0…`），两者不一致是"生成器已前进、尚未部署"的正常状态，不是漂移。
 
 **升级部署尝试（2026-09-18，未写入）**：两个目标只读 dry-run 通过后执行 `--apply-approved`，SAP 在写入阶段返回
 `HTTP 423 Resource MAIN Z_ORVANTA_MAINT_READ is not locked (invalid lock handle …)`。服务回执标记

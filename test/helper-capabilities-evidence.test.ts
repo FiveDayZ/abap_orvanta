@@ -253,7 +253,7 @@ test("compareHelperAttestation names every mismatched field without throwing", (
     [
       "protocol range mismatch (MAX)",
       { ...selfDescribed(target), maxProtocol: "2.0" },
-      /maxProtocol: expected "1.0", reported "2.0"/
+      /maxProtocol: expected "1.1", reported "2.0"/
     ],
     [
       "hash mismatch",
@@ -324,7 +324,7 @@ test("the recomputed digest equals the digest both generators embedded", () => {
       `${target.helper}: the restored digest cannot equal the rendered body hash`
     )
   }
-  assert.equal(digests.maint, "69f20bb0907f0a508b14efc3609695d959d8c6c4f9f89026f22586733fc2a066")
+  assert.equal(digests.maint, "41fbaeae01ed5a67c6c5c4d8814de1c27402480486cfe01d2e98712e94c2e8da")
   assert.equal(digests.ops, "0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1")
 })
 
@@ -360,7 +360,7 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
   )
   assert.equal(
     maint.intendedBodyHash,
-    "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a"
+    "04a9a1aeeab114de290a7b57276c7faeb0d35f8148db4abab01334b381e8c5f8"
   )
   assert.equal(
     ops.deployedNowBodyHash,
@@ -371,11 +371,15 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
     "dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c"
   )
   // The verifier's expectation must equal the table the generator exports, including the
-  // feature-gated REPORT_PARAMETERS row that only the report variant compiles in.
+  // feature-gated REPORT_PARAMETERS row that only the report variant compiles in. MAINT carries
+  // ARCHIVE_STATUS at 1.1, which is why its declared maximum is 1.1 and not 1.0: the capability
+  // gate compares that maximum against read_archive_status's registry floor, while the reply
+  // envelope stays "1" for both helpers.
   assert.deepEqual(maint.expectedOperations, [
     "OPERATION|LOCK_SEARCH|1.0|R",
     "OPERATION|UPDATE_SEARCH|1.0|R",
-    "OPERATION|UPDATE_DETAIL|1.0|R"
+    "OPERATION|UPDATE_DETAIL|1.0|R",
+    "OPERATION|ARCHIVE_STATUS|1.1|R"
   ])
   assert.deepEqual(ops.expectedOperations, [
     "OPERATION|JOB_SPOOL|1.0|R",
@@ -385,10 +389,9 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
     "OPERATION|SYSTEM_READ|1.0|R",
     "OPERATION|REPORT_PARAMETERS|1.0|R"
   ])
-  for (const target of [maint, ops]) {
-    assert.equal(target.expectedProtocol.min, "1.0")
-    assert.equal(target.expectedProtocol.max, "1.0")
-  }
+  for (const target of [maint, ops]) assert.equal(target.expectedProtocol.min, "1.0")
+  assert.equal(maint.expectedProtocol.max, "1.1")
+  assert.equal(ops.expectedProtocol.max, "1.0")
 })
 
 test("PROTOCOL|MIN/MAX and the operation list match the generator tables", async () => {
