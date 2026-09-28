@@ -184,6 +184,61 @@ if (!offline) {
 // ------------------------------------------------------------------------------------------------
 // Emit the report.
 // ------------------------------------------------------------------------------------------------
+/**
+ * ABAP ends a statement with a period that is NOT inside a string literal. `WRITE: / 'not found.'`
+ * terminates nothing: the compiler keeps reading and reports the failure at the NEXT statement, so
+ * the message points somewhere else entirely.
+ *
+ * That is how the first version of this carrier failed activation - `WRITE: / 'ERROR: the deployed
+ * include does not declare OPERATION|ARCHIVE_STATUS|1.1|R.'` left the statement open and SAP
+ * answered `[E] line 1: the statement before RETURN is not terminated (period missing)` for a
+ * program whose first line is a perfectly good REPORT statement. Every line looked correct by eye,
+ * so the emitted output is checked here and this shape cannot leave the generator again.
+ */
+function assertStatementsTerminated(lines) {
+  const codeOnly = (line) => {
+    let out = ""
+    let inLiteral = false
+    for (let i = 0; i < line.length; i += 1) {
+      const c = line[i]
+      if (inLiteral) {
+        if (c === "'") {
+          if (line[i + 1] === "'") {
+            i += 1
+            continue
+          }
+          inLiteral = false
+        }
+        continue
+      }
+      if (c === "'") {
+        inLiteral = true
+        continue
+      }
+      if (c === '"') break
+      out += c
+    }
+    return out
+  }
+  // The shapes this generator deliberately continues onto the next line: a comma-separated
+  // CONSTANTS/DATA chain, a split ELSEIF condition, and a split GENERATE REPORT.
+  const continues = [/^AND\b/i, /^OR\b/i, /^ELSEIF\b/i, /^LINE\b/i, /^GENERATE\b/i]
+  const unterminated = []
+  lines.forEach((line, index) => {
+    const trimmed = line.trim()
+    if (trimmed === "" || trimmed.startsWith("*")) return
+    const code = codeOnly(line).trim()
+    if (code === "" || code.endsWith(".") || code.endsWith(",")) return
+    if (continues.some((pattern) => pattern.test(code))) return
+    unterminated.push(`${index + 1}: ${line}`)
+  })
+  assert.deepEqual(
+    unterminated,
+    [],
+    "an emitted statement does not end with a period, which SAP reports at the next statement"
+  )
+}
+
 const payloadDigest = createHash("sha256")
   .update([`FUNCTION ${HELPER}.`, ...body, "ENDFUNCTION."].join("\n"), "utf8")
   .digest("hex")
@@ -199,9 +254,15 @@ report.push(`* Target   : ${HELPER} (${FUNCTION_GROUP})`)
 report.push(`* Transport: ${target.transportRequest} (recorded; never released by this report)`)
 report.push(
   live
-    ? `* Baseline : ${live.length} deployed lines pinned; the report refuses any other include.`
-    : "* Baseline : NOT READ (generated with --offline); the report does not pin a line count."
+    ? `* Baseline : the deployed include measured ${live.length} lines in the ADT view. The count is`
+    : "* Baseline : NOT READ (generated with --offline); the report carries no line count."
 )
+if (live) {
+  report.push(
+    "*            reported, not enforced: that view trims trailing blank lines and READ REPORT does"
+  )
+  report.push("*            not, so a fatal comparison stops a carrier on a formatting difference.")
+}
 report.push(
   `* Deploys  : the CANONICAL generator body - protocol ${target.expectedProtocol.min}..${target.expectedProtocol.max}, ` +
     `${expectedOperations.length} operations, ${body.length} body lines.`
@@ -300,13 +361,31 @@ report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
 if (live) {
-  report.push("* Baseline guard: the body was generated against this exact deployed include.")
+  report.push(
+    `* Baseline: this include measured ${live.length} lines in the ADT view the carrier was generated`
+  )
+  report.push(
+    "* from. That view trims trailing blank lines and READ REPORT does not, so the count is"
+  )
+  report.push(
+    "* reported and NOT enforced: a fatal comparison here stops the carrier on a formatting"
+  )
+  report.push(
+    "* difference, which from outside is indistinguishable from a carrier that did nothing"
+  )
+  report.push(
+    "* (return code 0, unchanged body). What guards the baseline instead: the deployed body"
+  )
+  report.push(
+    "* hash checked before this carrier was generated, the idempotency check above, and the"
+  )
+  report.push(
+    "* interface check below - the interface half is taken from the live include, never rebuilt."
+  )
   report.push("  IF lv_count <> c_lines.")
   report.push(
-    "    WRITE: / 'ERROR: deployed include is not the reviewed baseline:', lv_count, c_lines."
+    "    WRITE: / 'NOTE: include line count differs from the generated baseline:', lv_count, c_lines."
   )
-  report.push("    WRITE: / 'Regenerate the carrier against the live source before applying.'.")
-  report.push("    RETURN.")
   report.push("  ENDIF.")
   report.push("")
 }
@@ -345,6 +424,26 @@ report.push("    WRITE: / 'include, because that would drop the function module 
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  WRITE: / 'Interface   : kept through line', lv_keep, 'of', lv_count.")
+report.push("")
+report.push(
+  "* The interface half comes from the live include, so prove it is the reviewed interface before"
+)
+report.push(
+  "* installing the body that depends on it. This is a content check, not a line count: it is what"
+)
+report.push("* replaces the line-count baseline guard as the fatal precondition.")
+report.push("  CLEAR lv_ops.")
+report.push("  LOOP AT lt_cur INTO ls_cur.")
+report.push("    IF sy-tabix > lv_keep. EXIT. ENDIF.")
+report.push("    IF ls_cur-line CS 'VALUE(IV_ACTION)'. lv_ops = lv_ops + 1. ENDIF.")
+report.push("    IF ls_cur-line CS 'VALUE(EV_RESULT)'. lv_ops = lv_ops + 1. ENDIF.")
+report.push("  ENDLOOP.")
+report.push("  IF lv_ops < 2.")
+report.push(
+  "    WRITE: / 'ERROR: the deployed interface does not declare the reviewed parameters:', lv_ops."
+)
+report.push("    RETURN.")
+report.push("  ENDIF.")
 report.push("")
 report.push("  REFRESH lt_new.")
 report.push("  LOOP AT lt_cur INTO ls_cur.")
@@ -408,7 +507,7 @@ report.push("    ENDIF.")
 report.push("  ENDLOOP.")
 report.push("  WRITE: / 'Operations  :', lv_ops, 'rows in the deployed include.'.")
 report.push("  IF lv_arch_ok <> 'X'.")
-report.push(`    WRITE: / 'ERROR: the deployed include does not declare ${ARCHIVE_ROW}.'`)
+report.push(`    WRITE: / 'ERROR: the deployed include does not declare ${ARCHIVE_ROW}'.`)
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  IF lv_hash_ok <> 'X'.")
@@ -437,6 +536,7 @@ report.push(
 report.push(`  WRITE: / '      and PROTOCOL|MAX|${target.expectedProtocol.max} for ${HELPER}'.`)
 report.push("")
 
+assertStatementsTerminated(report)
 const text = report.join("\n")
 const widest = report.reduce((max, line) => Math.max(max, line.length), 0)
 const payloadWidest = body.reduce((max, line) => Math.max(max, line.length), 0)
