@@ -356,9 +356,16 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     gap:
       "Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) " +
       "through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through " +
-      "read_idoc_status. Still absent: the email queue tool itself. SOST was approved and " +
-      "registered on 2026-09-28 (30 fields, w200-verified), so read_email_queue no longer waits " +
-      "for an approval - it waits to be written."
+      "read_idoc_status. Still absent: a tool that can answer whether mail is piling up. SOST was " +
+      "approved and registered on 2026-09-28 (30 fields) and its read path works, but the same " +
+      "date's read-only forensics (.doc/code-update-20260928-093237.md) show the table carries no " +
+      "live traffic on w200: every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty " +
+      "throughout, and no row is dated later than 2014-12-01. The table therefore holds a frozen " +
+      "internal SAPoffice send-protocol log, not a pending-mail queue, so registering it did not " +
+      "make the declared purpose buildable: what is missing is a source that reports current " +
+      "outbound mail, and whether such a source exists here is undecided. No tool is written " +
+      "against SOST until that is settled - an email-queue tool reading 2013-2014 send logs would " +
+      "report history as the present."
   },
   {
     id: "authorizations",
@@ -404,9 +411,17 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved " +
       "maintenance helper - the first tool this family has ever had. " +
       "Still absent: CCMS alert monitoring (RZ20) through read_ccms_alerts, and any archive-file " +
-      "detail beyond a per-session count. Neither needs a new helper branch any more: ALALERTDB " +
-      "(48 fields) and ADMI_FILES (15 fields) were approved and registered on 2026-09-28 and are " +
-      "w200-verified, so both tools are readable from the service side."
+      "detail beyond a per-session count. Neither needs a new helper branch any more - ALALERTDB " +
+      "(48 fields) and ADMI_FILES (15 fields) were approved and registered on 2026-09-28 and both " +
+      "read successfully on w200. Being readable is not the same as answering the question, " +
+      "though, and the same date's read-only forensics (.doc/code-update-20260928-093237.md) " +
+      "narrow what read_ccms_alerts can honestly claim: w200 holds no alert row with an initial " +
+      "GONEDATE (an exact count of 0), so this table yields recorded alert history and when each " +
+      "alert cleared, never whether CCMS is reporting something right now - RZ20's live monitor " +
+      "reads the in-memory MTE tree, which this table does not contain. Its SEVERITY and STATUS " +
+      "columns are integer-typed as well, so they are refused as filter columns and can only be " +
+      "displayed. ADMI_FILES is empty on w200, so an archive-file detail tool would have a read " +
+      "path but no sample to describe."
   },
   {
     id: "landscape",

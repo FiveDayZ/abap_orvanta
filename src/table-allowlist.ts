@@ -115,17 +115,27 @@ export const TABLE_TIERS = {
    *
    * 2026-09-28（Q-N6 批准：用户裁定「全部立项，包括 N4 多系统 landscape 与 SOST 白名单」）新增
    * 十二张表，把 `interfaces` / `authorizations` / `archive-alerts` 三个族的 gap 从"等批准"推进
-   * 到"可实现"。每张表的存在性、包名、字段数与键**全部由 w200 实测核对**，证据脚本
+   * 到"读得到"。每张表的存在性、包名、字段数与键**全部由 w200 实测核对**，证据脚本
    * `.cache/n2-7-ddic-probe.ps1` 与 `.cache/n2-7-fields-probe.ps1`（2026-09-28，只读）。逐表敏感面
    * 写在这里，以免"已放行"被误读成"无风险"：
    *
-   *   邮件队列 —— SOST（SO 包，30 字段，键为 SAPoffice 对象/收件人标识 + COUNTER）。装载待发邮件的
-   *     **身份与路由**：MSGID/MSGTY/MSGNO 与至多四个 MSGV 变量、CREATOR、SENDER、DIRECTION、
-   *     收发日期。是邮件标识而非渲染后的正文，不含任何凭证；敏感面是主题与发件人。
+   * **同日晚些时候的语义取证纠正了一处措辞，见 `.doc/code-update-20260928-093237.md`：登记放行
+   * 解决的是"读得到"，不自动等于"能实现原计划的那个工具"。SOST 与 ALALERTDB 两项即为此类，
+   * 各自的限制写在条目内。**
+   *
+   *   邮件队列 —— SOST（SO 包，30 字段，键为 SAPoffice 对象/收件人标识 + COUNTER）。字段面是发送
+   *     协议标识而非渲染后的正文：MSGID/MSGTY/MSGNO 与至多四个 MSGV 变量、CREATOR、SENDER、
+   *     DIRECTION、收发日期；不含任何凭证，敏感面是发送者与消息号。**限制（2026-09-28 实测）：该表
+   *     在 w200 上没有活的邮件流量 —— 全表每一行 SNDART='INT'、DIRECTION='S'、STA_ORDER 为空，且
+   *     没有 ENTRY_DATE 晚于 2014-12-01 的行。它只能回答 2013–2014 年的内部发送协议历史，不能回答
+   *     "邮件是否积压"。**
    *   CCMS 告警 —— ALALERTDB（SMOI 包，48 字段，键 ALSYSID/MSEGNAME/ALUNIQNUM/ALINDEX + 告警
-   *     日期时间），含 SEVERITY/STATUS/OBJECTNAME/FIELDNAME/MSGTEXT/USERID/MSCGLID。这是 RZ20
-   *     告警的权威存储表，登记后 `read_ccms_alerts` 可走服务侧 `read_abap_table`，**不必再开助手
-   *     分支**。敏感面是告警文本里可能带的对象名与用户名。
+   *     日期时间），含 SEVERITY/STATUS/OBJECTNAME/FIELDNAME/MSGTEXT/USERID/MSCGLID。读路径确实通
+   *     了，**不必再开助手分支**；但两项限制已实测：①该表在 w200 上没有仍处于打开状态的告警行
+   *     （初始 GONEDATE 精确计数为 0），它给的是**告警历史**而非"此刻是否在报警"，RZ20 的实时监视
+   *     读内存 MTE 树，不能由本表推断；②SEVERITY/STATUS 的 DDIC 类型是 I（整数），作为筛选列会被
+   *     拒（TABLE_QUERY_LEGACY_LAYOUT_UNSUPPORTED），只能展示不能筛选。敏感面是告警文本里可能带的
+   *     对象名与用户名。
    *   归档文件索引 —— ADMI_FILES（SARC 包，15 字段，键 DOCUMENT/ARCHIV_KEY），含 FILENAME 与
    *     PATHINTERN（应用服务器内部路径）、文件大小与状态标志。敏感面是路径与文件名的披露。
    *     同批的 ARCH_STAT 再次核对仍是 INTTAB，**继续不登记**。
