@@ -324,7 +324,7 @@ test("the recomputed digest equals the digest both generators embedded", () => {
       `${target.helper}: the restored digest cannot equal the rendered body hash`
     )
   }
-  assert.equal(digests.maint, "41fbaeae01ed5a67c6c5c4d8814de1c27402480486cfe01d2e98712e94c2e8da")
+  assert.equal(digests.maint, "d2b048a521df7e90ddc8196c3729ba2fd99137fe3cfa7026ef6bd7bf2a336c89")
   assert.equal(digests.ops, "0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1")
 })
 
@@ -364,7 +364,7 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
   )
   assert.equal(
     maint.intendedBodyHash,
-    "04a9a1aeeab114de290a7b57276c7faeb0d35f8148db4abab01334b381e8c5f8"
+    "6cc7eef5f416a8bdcff9111480b687655ed1c88850ed8f479f8cb15f6bab8013"
   )
   assert.equal(
     ops.deployedNowBodyHash,

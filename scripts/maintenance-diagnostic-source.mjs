@@ -178,6 +178,37 @@ const assertGeneratedLineWidth = (lines) => {
   }
 }
 
+// SORT is only permitted on a standard table. A table declared with a DDIC table type (as opposed to
+// STANDARD TABLE OF) cannot be proven a standard table without reading DDIC, and getting it wrong is
+// not caught until SAP generates the include - which is exactly how `SORT lt_archive_runs` reached a
+// carrier run and failed there. Every SORT target therefore has to be declared locally and standard.
+const assertSortTargetsAreStandardTables = (lines) => {
+  const declared = new Map()
+  for (const line of lines) {
+    if (/^\s*\*/.test(line)) continue
+    for (const segment of line.split(",")) {
+      const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s+TYPE\s+(.+?)\.?\s*$/.exec(segment)
+      if (match) declared.set(match[1].toUpperCase(), match[2].toUpperCase())
+    }
+  }
+  const offenders = []
+  lines.forEach((line, index) => {
+    const match = /^\s*SORT\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(line)
+    if (!match) return
+    const table = match[1].toUpperCase()
+    const type = declared.get(table)
+    if (type !== undefined && !/^STANDARD TABLE OF\b/.test(type)) {
+      offenders.push(`line ${index + 1}: SORT ${table} is declared TYPE ${type}`)
+    }
+  })
+  if (offenders.length > 0) {
+    throw new Error(
+      `SORT needs a standard table, but ${offenders.join("; ")}. Declare the table as ` +
+        `STANDARD TABLE OF, or drop the SORT if the DDIC table type is already sorted.`
+    )
+  }
+}
+
 export const maintenanceDiagnosticSource = injectCapabilityHash(
   String.raw`DATA: lt_locks TYPE STANDARD TABLE OF seqg3,
       ls_lock TYPE seqg3,
@@ -563,8 +594,9 @@ ${buildMaintenanceCapabilityBranch().join("\n")}
     IF lv_rows > 2000.
       fail_reply 'unsupported' 'LIMIT_EXCEEDED'. RETURN.
     ENDIF.
-* Deterministic order: the FM returns whatever the ADK layer produced.
-    SORT lt_archive_runs BY document.
+* Deterministic order: ARCH_T_RUNS is a sorted table with a unique
+* key, so the ADK layer delivers rows in key order. SORT is not
+* permitted on a sorted table and would change nothing.
     LOOP AT lt_archive_runs INTO ls_archive_run.
       IF lv_user IS NOT INITIAL
          AND ls_archive_run-user_name <> lv_user.
@@ -608,3 +640,4 @@ ENDTRY.
     .split("\n")
 )
 assertGeneratedLineWidth(maintenanceDiagnosticSource)
+assertSortTargetsAreStandardTables(maintenanceDiagnosticSource)

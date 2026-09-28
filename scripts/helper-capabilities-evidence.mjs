@@ -196,7 +196,7 @@ export const helperCapabilityTargets = {
     // `Resource MAIN Z_ORVANTA_MAINT_READ is not locked (invalid lock handle)`, with no success ever,
     // so the body has to go through a carrier; the ADT write path is a diagnostic only.
     deployedNowBodyHash: "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a",
-    intendedBodyHash: "04a9a1aeeab114de290a7b57276c7faeb0d35f8148db4abab01334b381e8c5f8",
+    intendedBodyHash: "6cc7eef5f416a8bdcff9111480b687655ed1c88850ed8f479f8cb15f6bab8013",
     generatorBody: maintenanceDiagnosticSource
   },
   ops: {
