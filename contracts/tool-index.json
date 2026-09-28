@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 155,
-  "readOnlyToolCount": 92,
+  "toolCount": 156,
+  "readOnlyToolCount": 93,
   "profiles": {
-    "readonly": 92,
+    "readonly": 93,
     "platform": 12,
-    "dev": 134,
-    "config": 37,
-    "ops": 49,
-    "full": 155
+    "dev": 135,
+    "config": 38,
+    "ops": 50,
+    "full": 156
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 32,
+    "ops": 33,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1363,6 +1363,24 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
       "minHelperProtocol": "2.3"
+    },
+    {
+      "name": "read_ccms_alerts",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null,
+      "note": "告警历史（ALALERTDB 持久化记录），不是 RZ20 实时监视；空结果不等于系统健康。行序未指定，非最新若干条；SEVERITY/STATUS/VALUE 为整数型，只展示不可筛选。"
     },
     {
       "name": "read_classic_badi_definition",

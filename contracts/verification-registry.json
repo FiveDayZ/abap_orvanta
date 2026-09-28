@@ -1276,6 +1276,18 @@
       "notes": "No real call has been recorded. The same unexecuted SM13 acceptance entry point covers this tool's updateKey detail read; its record explicitly warns against creating a failed update just to have a sample. Closing it needs one approved existing update key. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry. 2026-09-25 (D1 session, 0.50.15): the same seven approved SM13 windows returned no failed update at all, so there was no updateKey to read and this detail tool still has neither a call nor a sample to cite."
     },
     {
+      "tool": "read_ccms_alerts",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "not yet called: implemented in the N2-4 batch on 2026-09-28, no runtime evidence recorded",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Implemented 2026-09-28 (N2-4). The tool reads ALALERTDB through the same reviewed table path read_abap_table uses, so it needs no helper and this entry deliberately claims no reply: the 4848 instance has to be rebuilt and restarted to expose a new tool, and the operator performs that restart. What IS proven is about the read path beneath it, measured on w200 on 2026-09-28 and recorded in .doc/code-update-20260928-093237.md: the exact 26-column projection this tool sends returned 500 rows unfiltered with status ok, a projection widened with MSGTEXT raised TABLE_QUERY_REQUEST_BUDGET_EXCEEDED at 200 rows, filters on the integer-typed SEVERITY and STATUS columns are refused with TABLE_QUERY_LEGACY_LAYOUT_UNSUPPORTED, and a 500-row unfiltered read mixed clients (200:493, 100:4, 000:1, empty:2). None of that is evidence that this tool's own envelope, summary line and failure mapping behave as designed at runtime, and no such claim is made here. Until a real call is recorded this entry stays unverified and the archive-alerts family stays open."
+    },
+    {
       "tool": "read_archive_status",
       "helper": "Z_ORVANTA_MAINT_READ",
       "availabilityBasis": "protocol-only",

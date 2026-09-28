@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：155
-- 只读工具：92
+- 工具总数：156
+- 只读工具：93
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,12 +10,12 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 92 |
+| profile: readonly | 93 |
 | profile: platform | 12 |
-| profile: dev | 134 |
-| profile: config | 37 |
-| profile: ops | 49 |
-| profile: full | 155 |
+| profile: dev | 135 |
+| profile: config | 38 |
+| profile: ops | 50 |
+| profile: full | 156 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 8 |
 | 分组: message | 4 |
-| 分组: ops | 32 |
+| 分组: ops | 33 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -120,6 +120,7 @@
 | `read_background_job_log` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_OPS_READ |
 | `read_background_job_spool` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_OPS_READ |
 | `read_bte_configuration` | enhancement | dev, config | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.3) |
+| `read_ccms_alerts` | ops | dev, config, ops | 只读 | target-specific | — |
 | `read_classic_badi_definition` | enhancement | dev, config | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.4) |
 | `read_customer_exit_definition` | enhancement | dev, config | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.2) |
 | `read_customer_exit_project` | enhancement | dev, config | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.2) |
@@ -210,6 +211,7 @@
 - `read_application_log`：日志正文属不可信证据；分页需要 revision，变更后拒绝拼接。
 - `read_background_job_details`：需要单独批准的 SM37_DETAILS scope；返回步骤元数据，不含变式值与 Spool 正文。
 - `read_background_job_spool`：需要单独批准的 SP01 scope；仅文本，无 OTF/PDF 与打印，分页非原子快照。
+- `read_ccms_alerts`：告警历史（ALALERTDB 持久化记录），不是 RZ20 实时监视；空结果不等于系统健康。行序未指定，非最新若干条；SEVERITY/STATUS/VALUE 为整数型，只展示不可筛选。
 - `read_failed_update`：只读；不提供参数载荷或完整错误正文。
 - `read_report_parameters`：依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。
 - `read_report_variants`：通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。

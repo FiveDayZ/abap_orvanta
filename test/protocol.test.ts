@@ -107,6 +107,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "read_background_job_log",
       "read_background_job_spool",
       "read_bte_configuration",
+      "read_ccms_alerts",
       "read_classic_badi_definition",
       "read_customer_exit_definition",
       "read_customer_exit_project",

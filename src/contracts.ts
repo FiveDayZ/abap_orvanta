@@ -2114,6 +2114,37 @@ const toolContractsBase = {
     inputSchema: readArchiveStatusSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },
+  read_ccms_alerts: {
+    description:
+      "Read CCMS (RZ20) ALERT HISTORY from ALALERTDB, the persisted alert store the operator approved for this purpose on 2026-09-28: which alerts were recorded, for which monitored object and field, the collected value, severity and status, and when each cleared. This is NOT a live alert monitor and must not be read as one. RZ20 displays the in-memory MTE tree, which ALALERTDB does not contain, so an empty openOnly answer means no alert is stored as open - it is never a statement that the system is healthy right now. severity, status and value are integer fields (DDIC type I): they are returned verbatim and never translated, and they cannot be filtered, because the reader refuses a condition on an integer column with TABLE_QUERY_LEGACY_LAYOUT_UNSUPPORTED; this tool therefore rejects such a request itself as CCMS_ALERTS_SCOPE_INVALID instead of letting a refusal be mistaken for an empty result, and the domain texts live in DD07L. ALALERTDB is not client-isolated (MANDT is not part of its key - a 500-row unfiltered read on w200 returned clients 200, 100, 000 and two rows with an empty client), so client is an explicit opt-in filter and every row carries its own. Filters are exact and case-sensitive: alertSystem (ALSYSID), monitorSet (MSEGNAME), objectName (OBJECTNAME), fieldName (FIELDNAME) and client (MANDT); alertDateFrom/alertDateTo and clearedFrom/clearedTo are inclusive YYYYMMDD bounds on ALERTDATE and GONEDATE. openOnly selects rows that have no clear date and cannot be combined with clearedFrom/clearedTo; malformed dates, a reversed range, more than 8 conditions or a value over 40 characters fail as CCMS_ALERTS_SCOPE_INVALID before SAP is touched. Row order is unspecified - the reader has no ordering parameter - so these are not the newest alerts, and a window should be bounded with the date filters. cleared is derived from GONEDATE alone (a real eight-digit date other than 00000000) and open is its negation; nothing else is inferred. MSGTEXT and MSGARG1-MSGARG4 are deliberately not selected: at 128 bytes each they pushed this read past its data-call budget on w200, while the 26-column projection returned 500 rows unfiltered. maxRows bounds the read (default 200, hard cap 500) and truncated reports whether more rows exist; a read that cannot complete returns the reader's own code and stage verbatim (for example TABLE_QUERY_REQUEST_BUDGET_EXCEEDED or TABLE_QUERY_LEGACY_LAYOUT_UNSUPPORTED) with data null, never a shortened result reported as a total. Read-only.",
+    inputSchema: {
+      connectionId: z.string(),
+      maxRows: z.number().int().min(1).max(500).default(200).optional(),
+      alertDateFrom: z
+        .string()
+        .regex(/^\d{8}$/)
+        .optional(),
+      alertDateTo: z
+        .string()
+        .regex(/^\d{8}$/)
+        .optional(),
+      clearedFrom: z
+        .string()
+        .regex(/^\d{8}$/)
+        .optional(),
+      clearedTo: z
+        .string()
+        .regex(/^\d{8}$/)
+        .optional(),
+      openOnly: z.boolean().default(false).optional(),
+      alertSystem: z.string().max(40).optional(),
+      monitorSet: z.string().max(40).optional(),
+      objectName: z.string().max(40).optional(),
+      fieldName: z.string().max(40).optional(),
+      client: z.string().max(3).optional()
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
   read_report_parameters: {
     description:
       "Read up to 200 P/S parameter definitions from an existing compiled report selection load, through a separately deployed and fingerprint-approved REPORT_PARAMETERS helper scope. No report generation, default values, variant values or execution. Static flags are not runtime screen behavior; metadata is not matched to current source. Deployment and real SAP acceptance are separate from local registration.",

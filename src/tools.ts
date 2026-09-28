@@ -59,6 +59,7 @@ import type { DebugStepRequest, DebugVariableRequest } from "./debug-manager.js"
 import { writeDiscoveryExport, writeResourceExport } from "./export.js"
 import type { InvocationReceiptStore, InvocationReservation } from "./invocation-receipts.js"
 import { buildCapabilityReport } from "./capabilities.js"
+import { collectCcmsAlerts } from "./ccms-alerts.js"
 import { collectIdocStatus } from "./idoc-status.js"
 import { collectQrfcQueues } from "./qrfc-queues.js"
 import {
@@ -1293,6 +1294,21 @@ interface QrfcQueuesInput {
   destination?: string | undefined
   includeLuwStates?: boolean | undefined
   maxRows?: number | undefined
+}
+
+interface CcmsAlertsInput {
+  connectionId: string
+  maxRows?: number | undefined
+  alertDateFrom?: string | undefined
+  alertDateTo?: string | undefined
+  clearedFrom?: string | undefined
+  clearedTo?: string | undefined
+  openOnly?: boolean | undefined
+  alertSystem?: string | undefined
+  monitorSet?: string | undefined
+  objectName?: string | undefined
+  fieldName?: string | undefined
+  client?: string | undefined
 }
 
 interface IdocStatusInput {
@@ -7193,6 +7209,37 @@ export class ToolService {
       `LUW states: ${queues.counts.luwStates}${queues.truncated.luwStates ? " (truncated)" : ""}\n`
     if (queues.queryWarnings.length) summary += `- Query warnings: ${queues.queryWarnings.length}\n`
     return `${summary}${JSON.stringify(queues, null, 2)}`
+  }
+
+  async readCcmsAlerts(input: CcmsAlertsInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const alerts = await collectCcmsAlerts(
+      async (query) => JSON.parse(await this.readAbapTable({ connectionId, ...query })),
+      connectionId,
+      {
+        maxRows: input.maxRows,
+        alertDateFrom: input.alertDateFrom,
+        alertDateTo: input.alertDateTo,
+        clearedFrom: input.clearedFrom,
+        clearedTo: input.clearedTo,
+        openOnly: input.openOnly,
+        alertSystem: input.alertSystem,
+        monitorSet: input.monitorSet,
+        objectName: input.objectName,
+        fieldName: input.fieldName,
+        client: input.client
+      }
+    )
+    let summary = `CCMS alert history: ${connectionId.toUpperCase()}\n`
+    if (alerts.status === "unavailable") {
+      // The reader's own code and stage, verbatim: a refusal must never be summarised as "no alerts".
+      summary += `- Status: unavailable - ${alerts.code} at ${alerts.stage}\n`
+    } else {
+      summary += `- Status: ${alerts.status}${alerts.truncated ? " (truncated)" : ""}\n`
+      summary += `- Returned: ${alerts.returnedCount} of at most ${alerts.rowLimit}\n`
+      if (!alerts.clientFilterApplied) summary += "- No client filter: rows from every client\n"
+    }
+    return `${summary}${JSON.stringify(alerts, null, 2)}`
   }
 
   async readIdocStatus(input: IdocStatusInput): Promise<string> {

@@ -254,15 +254,15 @@
 
 ## 4. 未被剧本覆盖的族
 
-| 族                  | 未覆盖理由（见 §2 机器清单，两处必须一致）                                     |
-| ------------------- | ------------------------------------------------------------------------------ |
-| `traces`            | 平台挡住 + 书面豁免（w200 的 ADT trace 端点 404），无读路径可编排              |
-| `runtime-resources` | SM50/SM66/SM04/ST03/STAD/DB02/AL11 共 5 个计划工具全部未建                     |
-| `interfaces`        | SMQ1/2、SM58、WE02/05/BD87、SOST 共 3 个计划工具全部未建                       |
-| `authorizations`    | `read_authorization_trace` 只报内核追踪开关；追踪数据与角色→权限对象解析仍未建 |
-| `landscape`         | compare_systems、promote_object 未建，且需先确认是否存在 QAS/PRD 连接          |
+| 族                  | 未覆盖理由（见 §2 机器清单，两处必须一致）                                                                                                                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `traces`            | 平台挡住 + 书面豁免（w200 的 ADT trace 端点 404），无读路径可编排                                                                                                                                                           |
+| `runtime-resources` | SM50/SM66/SM04/ST03/STAD/DB02/AL11 共 5 个计划工具全部未建                                                                                                                                                                  |
+| `interfaces`        | SMQ1/SM58/WE02/BD87 等场景已由 read_qrfc_queues 与 read_idoc_status 覆盖，但邮件队列一项经用户裁定撤下（SOST 在 w200 上无活流量、无收件人地址、无 SMTP 类型），能回答"出站邮件是否积压"的替代来源未定，故此族仍无剧本可编排 |
+| `authorizations`    | `read_authorization_trace` 只报内核追踪开关；追踪数据与角色→权限对象解析仍未建                                                                                                                                              |
+| `landscape`         | compare_systems、promote_object 未建，且需先确认是否存在 QAS/PRD 连接                                                                                                                                                       |
 
-> `archive-alerts` 已移出本表：SARA 归档状态由 `read_archive_status` 覆盖（剧本 `archive-status-check`）。该族的 RZ20 CCMS 告警（`read_ccms_alerts`）仍未建，因此族本身仍为 `partial`——脚本覆盖不等于族闭环。
+> `archive-alerts` 已移出本表：SARA 归档状态由 `read_archive_status` 覆盖（剧本 `archive-status-check`）。该族的 RZ20 CCMS 告警（`read_ccms_alerts`）已于 2026-09-28 实现，读的是 `ALALERTDB` 的**告警历史**——哪些告警被记录、针对哪个对象与字段、何时清除——而**不是** RZ20 实时监视：RZ20 看的是内存 MTE 树，本表不含，所以空结果不等于系统健康。该工具目前尚未被任何剧本引用（族的未覆盖理由见 §4）。族本身仍为 `partial`：仍缺归档文件明细，且 `ADMI_FILES` 在 w200 为空，无样本可描述。脚本覆盖不等于族闭环。
 
 一个族只有在工具存在时才可能被剧本覆盖，所以**剧本覆盖率的上限就是工具覆盖率**——它不制造覆盖，只把已经能做的事固化成可重复流程。族的端到端判据仍在 `docs/ops-coverage.md` §6，由 `opsCapability` 块计算。
 

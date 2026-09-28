@@ -729,6 +729,13 @@ const ROWS: readonly ToolRow[] = [
     "1.1",
     ["ARCHIVE_STATUS"]
   ],
+  // N2-4, 2026-09-28. The other half of the archive-alerts family, and unlike read_archive_status it
+  // needs no SAP-side branch at all: ALALERTDB was approved for this read and the service reaches it
+  // through its own reviewed table path, so there is deliberately no helper and no operation list
+  // here (`target-specific` with a null helper is the same shape read_qrfc_queues uses). The tool
+  // answers alert *history* only - see its contract - and the family stays open because archive-file
+  // detail is still absent.
+  ["read_ccms_alerts", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_report_parameters", "data", DEV_CFG_OPS, "R", "sap-helper-fallback", REPOSITORY, null],
   ["read_report_variants", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_background_job_details", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
@@ -831,6 +838,8 @@ const NOTES: Record<string, string> = {
   execute_data_query:
     "w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。原生与后备两条路径都过 D5-2 白名单（默认拒绝），表名无法静态枚举即拒绝。",
   read_abap_table: "最多 500 行、仅字符比较、无联接/聚合/排序；宽表按主键分块并二次复核。",
+  read_ccms_alerts:
+    "告警历史（ALALERTDB 持久化记录），不是 RZ20 实时监视；空结果不等于系统健康。行序未指定，非最新若干条；SEVERITY/STATUS/VALUE 为整数型，只展示不可筛选。",
   run_atc_analysis: "w200 原生 ATC 端点不可用，当前退化为语法报告；不得作为质量门禁通过依据。",
   run_sci_analysis: "非原生 ATC，规则范围固定且依赖指纹匹配的 SCI 助手；timeout 不等于取消。",
   run_unit_tests: "执行现有 ABAP Unit，测试代码可能有副作用；需先取得授权。",

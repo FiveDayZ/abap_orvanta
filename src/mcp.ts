@@ -187,6 +187,9 @@ export function createMcpServer(
   registerTool("read_archive_status", toolContracts.read_archive_status, async (input) =>
     invoke("read_archive_status", () => maintenance.readArchiveStatus(input))
   )
+  registerTool("read_ccms_alerts", toolContracts.read_ccms_alerts, async (input) =>
+    invoke("read_ccms_alerts", () => tools.readCcmsAlerts(input))
+  )
   registerTool("preview_source_changes", toolContracts.preview_source_changes, async (input) =>
     invoke("preview_source_changes", () => tools.previewSourceChanges(input))
   )

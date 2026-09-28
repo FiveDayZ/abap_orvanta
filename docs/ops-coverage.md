@@ -429,9 +429,15 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
   原样返回空，不补写。过滤 `docnum`（精确，同时作用于 `EDIDS`）、`status`、`messageType`，过滤值上限 30 字符；
   `EDIDS` 只在给出 `docnum` 或显式 `includeStatusRecords` 时读取（评审读取器一次只支持一个条件，未过滤的状态
   记录读取过大）；无过滤时按 `maxRows` 截断并用 `idocsTruncated`/`statusRecordsTruncated` 明示。
-- **族缺口收窄。** `interfaces` 族由"完全没有工具"变为 `partial`：qRFC/tRFC 与 IDoc 已实现，
-  剩余缺口只有**邮件队列**——`SOST` 不在批准的允许清单内，`read_email_queue` 需要单独批准后才能实现。
-  两个新工具在重启并完成一次真实 w200 调用前保持 `unverified`（registry 146 条 = 工具数）。
+- **族缺口收窄。** `interfaces` 族由"完全没有工具"变为 `partial`：qRFC/tRFC 与 IDoc 已实现。
+  **【更正，2026-09-28】** 以上原本续写"剩余缺口只有**邮件队列**——`SOST` 不在批准的允许清单内，
+  `read_email_queue` 需要单独批准后才能实现"，两句现均已不成立。其一，`SOST` 已于 2026-09-28 经 Q-N6
+  批准并登记（见 `src/table-allowlist.ts` 的逐表注释）。其二，同日的语义只读取证证明该表在 w200 上**没有活的
+  邮件流量**：全表 `SNDART='INT'`、`DIRECTION='S'`、`STA_ORDER` 恒空，且没有 `ENTRY_DATE` 晚于 `2014-12-01`
+  的行（四组 `NE`/越界筛选各 0 行，均有同形 `EQ` 正对照；证据 `.doc/code-update-20260928-093237.md`）。
+  因此 `read_email_queue` 经用户裁定**从该族撤下**，族的外延随之收窄为 qRFC/tRFC + IDoc。缺口不再是"等批准"，
+  而是"这一族仍缺第三个能力，且能回答"出站邮件是否积压"的替代来源尚未确定"——**撤下一个能力不等于补上一个缺口**，
+  族仍为 `partial`。两个已实现工具于 2026-09-27 的真实 w200 调用后转 `verified`（registry 条数 = 工具数）。
 - 读路径与 7.5 完全一致：共用 `src/reviewed-table-reader.ts`，错误码前缀 `QRFC_QUEUE_` / `IDOC_STATUS_`，
   无通用 SQL 回退、无写操作。
 
@@ -830,10 +836,16 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 
 §7.16 第 1 条对本批成本模型的判断**是错的**，此处撤回并给出实测依据。正确的划分是：
 
-| 半边        | 分支                                                                                                                                               | 落入哪个助手                                           | 受自写守卫                    | 部署方式                                 |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------- | ---------------------------------------- |
-| **写 6 项** | `create/modify/release/cancel_background_job`、`delete_sap_lock`、`release_transport_task`                                                         | **仓库 body**（`Z_ORVANTA_MCP_EXECUTE`/`_DYNPRO_API`） | ⛔ **在 `ZORVANTA_MCP_CORE`** | **载体 + 用户 SE38/F8 必须**             |
-| **读 6 项** | `read_authorization_trace`(数据半)、`read_archive_status`、`read_ccms_alerts`、`read_email_queue`、`read_performance_snapshot`、`read_db_activity` | `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_MAINT_READ`          | ✅ 不在 CORE                  | 可经 `write_function_module_source` 直写 |
+| 半边        | 分支                                                                                                       | 落入哪个助手                                           | 受自写守卫                    | 部署方式                                 |
+| ----------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------- | ---------------------------------------- |
+| **写 6 项** | `create/modify/release/cancel_background_job`、`delete_sap_lock`、`release_transport_task`                 | **仓库 body**（`Z_ORVANTA_MCP_EXECUTE`/`_DYNPRO_API`） | ⛔ **在 `ZORVANTA_MCP_CORE`** | **载体 + 用户 SE38/F8 必须**             |
+| **读 4 项** | `read_authorization_trace`(数据半)、`read_archive_status`、`read_performance_snapshot`、`read_db_activity` | `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_MAINT_READ`          | ✅ 不在 CORE                  | 可经 `write_function_module_source` 直写 |
+
+**【更正，2026-09-28】** 本表原列 6 项读工具，含 `read_email_queue` 与 `read_ccms_alerts`，两项现都已移出：
+前者经用户裁定从 `interfaces` 族**撤下**（理由见 §7.6 的更正：`SOST` 在 w200 上没有活的邮件流量）；
+后者**已实现，且完全不需要助手**——它走服务端已验证的读表通路直接读 `ALALERTDB`（registry 里 `helper: null`、
+`availabilityBasis: target-specific`，与 `read_qrfc_queues` 同形），因此既不属本表的"读助手"清单，也不落在
+`ZORVANTA_MCP_CORE` 的自写守卫范围内，其部署只是重建+重启本仓库本身。本表剩余 4 项。
 
 **三条实测依据**（不是推断）：
 
