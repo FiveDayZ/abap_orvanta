@@ -36,7 +36,7 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 2 / 14 closed (14%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 22 / 35 of the tools the families declare are verified (the `ops` group itself holds 33, of which 20 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace, read_archive_status, read_ccms_alerts | **no** |
+| 2. every ops tool verified with real w200 evidence | 23 / 35 of the tools the families declare are verified (the `ops` group itself holds 33, of which 21 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace, read_archive_status | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 5 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service); open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), locks (1), updates (1), landscape (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
@@ -62,7 +62,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
 | 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 1/2 verified (pending: read_authorization_trace) | SAP-side helper + F8 + operator approval |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
-| 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | partial | 0/2 verified (pending: read_archive_status, read_ccms_alerts) | SAP-side helper + F8 |
+| 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | partial | 1/2 verified (pending: read_archive_status) | SAP-side helper + F8 |
 | 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 0/0 | - | absent | no tool exists | multi-system configuration (OP3) |
 
 ## What each open family is waiting for
@@ -273,7 +273,7 @@ Criterion to close: Reported: archiving sessions (object, status, user, creation
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `read_archive_status` | read-only | unverified | unverified |
-| `read_ccms_alerts` | read-only | unverified | unverified |
+| `read_ccms_alerts` | read-only | verified | `.doc/code-update-20260928-105549.md` |
 
 ### `landscape` - absent
 

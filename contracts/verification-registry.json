@@ -1279,13 +1279,13 @@
       "tool": "read_ccms_alerts",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "not yet called: implemented in the N2-4 batch on 2026-09-28, no runtime evidence recorded",
+      "verificationTarget": "read_ccms_alerts {connectionId:\"w200\", maxRows:5} on the 4848 source instance running 0.50.23, 2026-09-28 10:55:49 +08:00",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "Implemented 2026-09-28 (N2-4). The tool reads ALALERTDB through the same reviewed table path read_abap_table uses, so it needs no helper and this entry deliberately claims no reply: the 4848 instance has to be rebuilt and restarted to expose a new tool, and the operator performs that restart. What IS proven is about the read path beneath it, measured on w200 on 2026-09-28 and recorded in .doc/code-update-20260928-093237.md: the exact 26-column projection this tool sends returned 500 rows unfiltered with status ok, a projection widened with MSGTEXT raised TABLE_QUERY_REQUEST_BUDGET_EXCEEDED at 200 rows, filters on the integer-typed SEVERITY and STATUS columns are refused with TABLE_QUERY_LEGACY_LAYOUT_UNSUPPORTED, and a 500-row unfiltered read mixed clients (200:493, 100:4, 000:1, empty:2). None of that is evidence that this tool's own envelope, summary line and failure mapping behave as designed at runtime, and no such claim is made here. Until a real call is recorded this entry stays unverified and the archive-alerts family stays open."
+      "lastAttemptAt": "2026-09-28T10:55:49+08:00",
+      "evidence": ".doc/code-update-20260928-105549.md",
+      "notes": "Verified 2026-09-28 (N2-4 follow-up). Three real calls against w200 through the 4848 source instance, recorded in .doc/code-update-20260928-105549.md. (1) {maxRows:5}: status partial, returnedCount 5, truncated true, rowLimit 5, clientFilterApplied false, counts {returned 5, clearedOpenState {cleared 5, open 0}}, and all four boundary sentences present in notes (not the RZ20 live monitor, row order unspecified, rows not client-isolated, a count is never a total); the first row decoded into the documented fields (ALALERTDB alertSystem GR2, monitorSet SAP_CCMS_GRAPP2_GR2_00, alertDate 20250603, cleared true, client 200). Truncation and the partial status are the correct reply for a 5-row cap over a larger table, not a failure - an earlier note in this batch wrongly expected ok plus truncated false here. (2) {openOnly:true} returned 0 rows with truncated false and status ok, matching the same day's exact count of 0 rows whose GONEDATE is initial, which is why the reply never claims the system is healthy. (3) A nine-condition request was refused with CCMS_ALERTS_SCOPE_INVALID before any read; that the refusal touches no SAP data rests on the validation preceding the reader call in src/ccms-alerts.ts and on the unit test asserting no call was made, not on a runtime observation - no runtime channel proves a negative. The archive-alerts family stays open regardless: read_archive_status is still unverified pending the MAINT ARCHIVE_STATUS branch deployment, and the family gap still lacks any archive-file detail. No runbook cites this tool."
     },
     {
       "tool": "read_archive_status",

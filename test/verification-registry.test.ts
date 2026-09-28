@@ -593,8 +593,14 @@ test("the registry records the honest gap rather than inflating it", () => {
   // read_file_system_directory on a runtime RFC failure) and were deliberately left unverified with
   // no evidence and no attempt time. None of the five was inferred from a passing test, and no
   // entry was verified from a plan rather than a call.
+  // Raised from 28 to 29 on 2026-09-28 (N2-4 follow-up): the operator rebuilt and restarted the 4848
+  // source instance, and read_ccms_alerts was then called for real against w200 three times -
+  // {maxRows:5} answered partial with five rows and all four boundary sentences, {openOnly:true}
+  // answered ok with zero rows, and a nine-condition request was refused before the read. The entry
+  // names .doc/code-update-20260928-105549.md. Nothing here was inferred from a passing test, and the
+  // tripwire did its job: this one tool had to earn the raise explicitly.
   assert.ok(
-    totals.verified <= 28,
+    totals.verified <= 29,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
