@@ -354,9 +354,13 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
       `${target.helper}: live-shaped source must hash to the intended body hash`
     )
   }
+  // Re-pinned on 2026-09-28 to the body SAP actually holds. The 2026-09-18 value f2a1580c… was true
+  // then (all 19 recorded runs that day read it) and is not what the target stores now, so the guard
+  // in scripts/verify-helper-deployment.mjs could only ever report drift. See
+  // .doc/code-update-20260928-113819.md section 10 for the line-by-line basis of the re-pin.
   assert.equal(
     maint.deployedNowBodyHash,
-    "f2a1580c9ab7560d882af51d6c9152933248c0d51026ac56024417d540b763be"
+    "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a"
   )
   assert.equal(
     maint.intendedBodyHash,
