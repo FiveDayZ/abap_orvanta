@@ -300,17 +300,55 @@ let live = null
 if (!offline) {
   const client = new Client({ name: "repository-carrier-generator", version: "1.0.0" })
   await client.connect(new StreamableHTTPClientTransport(new URL(endpoint)))
-  const read = await client.callTool(
-    {
-      name: "read_function_module_interface",
-      arguments: { connectionId: "w200", functionName: HELPER }
-    },
-    undefined,
-    { timeout: 300000 }
-  )
-  assert.equal(read.isError ?? false, false, "reading the live helper failed")
-  const payload = JSON.parse((read.content ?? []).map((c) => c.text ?? "").join(""))
-  live = payload.source ?? []
+  const call = async (name, toolArguments) => {
+    const result = await client.callTool(
+      { name, arguments: { connectionId: "w200", ...toolArguments } },
+      undefined,
+      { timeout: 300000 }
+    )
+    return {
+      failed: result.isError ?? false,
+      text: (result.content ?? []).map((c) => c.text ?? "").join("")
+    }
+  }
+  // The structured reader runs through the repository helper itself, so it answers with an incomplete
+  // SOAP response exactly when that helper needs repair - the case this script exists for. Fall back to
+  // the native ADT source read, which does not depend on the helper, and skip the checks that need the
+  // structured interface instead of refusing to generate the repair carrier.
+  const read = await call("read_function_module_interface", { functionName: HELPER })
+  const structured = !read.failed
+  if (structured) {
+    live = JSON.parse(read.text).source ?? []
+  } else {
+    const native = await call("get_abap_object_lines", {
+      objectName: HELPER,
+      objectType: "FUGR/FF",
+      startLine: 1,
+      lineCount: 1000000
+    })
+    assert.equal(
+      native.failed,
+      false,
+      `reading the live helper failed through both paths: ${native.text.slice(0, 200)}`
+    )
+    live = fencedSourceLines(native.text)
+    console.error(
+      `WARNING: read_function_module_interface is unavailable (${read.text.slice(0, 140)}); the live body ` +
+        `was read through the native ADT path (${live.length} lines) and the declared-type checks are skipped`
+    )
+  }
+  // An aborted carrier run leaves the module with an interface and no body: phase A rebuilds it with
+  // FUNCTION_CREATE (parameters only) and the body guard then stops phase B. That state carries no
+  // protocol row and no operation to preserve, so the predecessor guards below cannot hold for it -
+  // the repair carrier is the only way back. Detect it from the body itself, not from a flag.
+  const liveJoined = live.join("\n")
+  const bodyLost =
+    !liveJoined.includes("PROTOCOL|MAX|") && live.filter((line) => line.trim() !== "").length < 200
+  if (bodyLost)
+    console.error(
+      `REPAIR: the live helper carries no body (${live.length} lines, no PROTOCOL row). The predecessor ` +
+        `guards are skipped by design; this carrier rebuilds the module from the canonical body.`
+    )
   // The save API is called dynamically, so ABAP type-checks every actual parameter against the
   // formal parameter's DDIC type at runtime and terminates with CALL_FUNCTION_CONFLICT_TYPE on a
   // mismatch - that is how `CORRNUM TYPE C LENGTH 10` failed its F8 run. Compare the declared types
@@ -318,7 +356,7 @@ if (!offline) {
   const passedTypes = {
     FUNCTION_SAVE: [["P_RS38L", "ls_rs38l", "rs38l"]]
   }
-  for (const [api, expectations] of Object.entries(passedTypes)) {
+  for (const [api, expectations] of structured ? Object.entries(passedTypes) : []) {
     const apiRead = await client.callTool(
       {
         name: "read_function_module_interface",
@@ -345,9 +383,16 @@ if (!offline) {
   }
   await client.close()
 
-  assert.equal(live[0].trim(), `FUNCTION ${HELPER}.`, `unexpected live first line: ${live[0]}`)
-  assert.match(String(live.at(-1)).trim(), /^ENDFUNCTION\./i, "unexpected live last line")
-  const liveText = live.join("\n")
+  // The structured reader and the native ADT read disagree about the statement terminator on the
+  // FUNCTION / ENDFUNCTION lines, so only the statement itself is asserted here.
+  assert.equal(
+    String(live[0]).trim().replace(/\.$/, ""),
+    `FUNCTION ${HELPER}`,
+    `unexpected live first line: ${live[0]}`
+  )
+  const lastLiveLine = [...live].reverse().find((line) => String(line).trim() !== "")
+  assert.match(String(lastLiveLine).trim(), /^ENDFUNCTION\.?$/i, "unexpected live last line")
+  const liveText = liveJoined
   // The deployed interface is authoritative for the parameters the carrier does not extend, so the
   // body may reference anything the live helper already names. A name that appears nowhere is a real
   // gap: the deployed body would fail to generate exactly like the first carrier revision did.
@@ -355,7 +400,12 @@ if (!offline) {
   for (const match of liveText.matchAll(/\b((?:IV|EV|ES|ET|CT|IT|IS|CV|CS)_[A-Z0-9_]+)\b/g)) {
     liveNames.add(match[1])
   }
-  const undeclared = referencedCandidates.filter((name) => !liveNames.has(name))
+  const undeclared = bodyLost ? [] : referencedCandidates.filter((name) => !liveNames.has(name))
+  if (bodyLost)
+    console.error(
+      "REPAIR: the parameter-reference check is skipped: with no live body there is nothing to compare " +
+        "against, and the extractor also counts quoted literals such as 'IS_DEFAULT'."
+    )
   assert.deepEqual(
     undeclared,
     [],
@@ -377,21 +427,22 @@ if (!offline) {
       .map(Number)
       .reduce((a, b) => a * 1000 + b, 0)
   const liveProtocols = [...liveText.matchAll(/PROTOCOL\|MAX\|([0-9.]+)/g)].map((match) => match[1])
-  assert.ok(
-    liveProtocols.some(
-      (protocol) =>
-        versionRank(protocol) >= versionRank("2.5") &&
-        versionRank(protocol) <= versionRank(canonical.declaredMaxProtocol)
-    ),
-    `the deployed helper is not at protocol 2.5 through ${canonical.declaredMaxProtocol}: apply the carrier for the newer protocol first`
-  )
+  if (!bodyLost)
+    assert.ok(
+      liveProtocols.some(
+        (protocol) =>
+          versionRank(protocol) >= versionRank("2.5") &&
+          versionRank(protocol) <= versionRank(canonical.declaredMaxProtocol)
+      ),
+      `the deployed helper is not at protocol 2.5 through ${canonical.declaredMaxProtocol}: apply the carrier for the newer protocol first`
+    )
   // Operations already deployed must survive the replacement; operations this carrier introduces
   // cannot exist yet, so requiring them live would make the carrier ungeneratable. The capability
   // table's own sinceVersion decides which is which, instead of a hand-maintained exemption list.
   const introduced = (canonical.declaredOperationRows ?? [])
     .filter((row) => versionRank(row.version) >= versionRank(canonical.declaredMaxProtocol))
     .map((row) => row.opcode)
-  for (const op of REQUIRED_OPERATIONS) {
+  for (const op of bodyLost ? [] : REQUIRED_OPERATIONS) {
     if (introduced.includes(op)) continue
     assert.ok(
       live.some((l) => l.includes(`OPERATION|${op}`)),
@@ -494,7 +545,16 @@ if (!offline) {
     line.includes("'OPERATION|")
   const regressions = []
   const reviewedRenames = []
-  for (const line of new Set(codeOf(live).map(normalize))) {
+  // With no live body there is nothing to protect: the remaining live lines are the interface rows the
+  // aborted carrier created through FUNCTION_CREATE, which render as VALUE(...) and are not SAP-side
+  // fixes. The canonical body is asserted to contain the write operations above, so a repair cannot
+  // regress them.
+  if (bodyLost)
+    console.error(
+      "REPAIR: the live-only-line guard is skipped: the live lines are the interface rows written by " +
+        "the aborted carrier, not SAP-side body fixes."
+    )
+  for (const line of new Set(codeOf(bodyLost ? [] : live).map(normalize))) {
     if (canonicalNormalized.has(line) || benign(line)) continue
     // A line that carries an operation name this carrier renames is an intentional replacement, not
     // a lost live fix.
@@ -1381,6 +1441,15 @@ const REQUIRED_DYNAMIC_PARAMS = {
   DEQUEUE_ESFUNCTION: { importing: [], tables: [] }
 }
 const ALLOWED_MISSING_DYNAMIC_PARAMS = new Set(["RS_INSERT_INTO_WORKING_AREA.DELETED_FLAG"])
+
+// `get_abap_object_lines` returns the source as an abap fence plus a fingerprint trailer, which is the
+// only live read left when the repository helper cannot answer its own structured read. The lines are
+// returned verbatim, trailing blanks included, so the line count equals what the in-SAP reader counts.
+function fencedSourceLines(text) {
+  const match = /```abap\r?\n([\s\S]*?)\r?\n```/.exec(text)
+  assert.ok(match, "the native source read did not return an abap fence")
+  return match[1].split("\n").map((line) => line.replace(/\r$/, ""))
+}
 
 function assertDynamicCallParams(lines) {
   const problems = []
