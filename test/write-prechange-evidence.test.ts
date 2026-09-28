@@ -1,7 +1,9 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import test from "node:test"
+import type { MaintenanceDiagnosticService } from "../src/maintenance-diagnostics.js"
 import { ToolService } from "../src/tools.js"
+import { hashWriteInput } from "../src/write-operation-receipts.js"
 import { isMissing, observeWritePreChange } from "../src/write-prechange-evidence.js"
 import { MockBackend } from "./mock-backend.js"
 
@@ -563,5 +565,69 @@ test("pre-change observation covers CTS request creation and object addition", a
       tools
     ),
     /could not establish whether/
+  )
+})
+
+test("pre-change observation reads the SM12 row a lock release is about to remove", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  // The row shape is the one `search_sap_locks` reported for the EZTESTLOCK01 test lock on w200.
+  const observed = {
+    client: "200",
+    username: "WYS",
+    tableName: "T000",
+    lockObject: "EZTESTLOCK01",
+    argument: "200",
+    mode: "E",
+    ownerSystemTime: "2026-09-28T17:35:13",
+    host: "GRAPP2",
+    transaction: "SE37"
+  }
+  const reader = (entries: unknown[]) =>
+    ({
+      searchLocks: async () => JSON.stringify({ status: "ok", entries })
+    }) as unknown as MaintenanceDiagnosticService
+
+  const found = await observeWritePreChange(
+    "delete_sap_lock",
+    { username: "WYS", tableName: "T000", argument: "200", mode: "E", lockObject: "EZTESTLOCK01" },
+    "w200",
+    "SM12 lock entry",
+    backend,
+    tools,
+    reader([observed])
+  )
+  assert.equal(found.exists, true)
+  assert.deepEqual(found.sources, ["maintenance_lock_search"])
+  assert.equal(found.fingerprint, hashWriteInput(JSON.stringify(observed)))
+
+  // A key that no row matches is recorded as absent, not as a blocker: the helper answers
+  // LOCK_NOT_FOUND and nothing is released.
+  const absent = await observeWritePreChange(
+    "delete_sap_lock",
+    { username: "WYS", tableName: "T000", argument: "999", mode: "E" },
+    "w200",
+    "SM12 lock entry",
+    backend,
+    tools,
+    reader([observed])
+  )
+  assert.equal(absent.exists, false)
+  assert.equal(absent.fingerprint, null)
+  assert.equal(absent.warnings.length, 1)
+  assert.equal(absent.observationStatus, "complete")
+
+  // Without the SM12 reader the release is refused before SAP is touched rather than observed
+  // through the generic source lookup, which cannot see a lock entry at all.
+  await assert.rejects(
+    observeWritePreChange(
+      "delete_sap_lock",
+      { username: "WYS", tableName: "T000", argument: "200", mode: "E" },
+      "w200",
+      "SM12 lock entry",
+      backend,
+      tools
+    ),
+    /maintenance reader/
   )
 })

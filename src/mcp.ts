@@ -139,7 +139,10 @@ export function createMcpServer(
     backend: SapBackend,
     receipts: WriteOperationReceiptStore,
     action: (beforeInvoke: () => Promise<void>) => Promise<string>
-  ) => tracked(() => invokeWriteTool(name, input, backend, receipts, action, readTransportRows))
+  ) =>
+    tracked(() =>
+      invokeWriteTool(name, input, backend, receipts, action, readTransportRows, maintenance)
+    )
 
   registerTool("read_smartform", toolContracts.read_smartform, async (input) =>
     invoke("read_smartform", async () => JSON.stringify(await smartforms.read(input)))
@@ -1012,7 +1015,11 @@ async function invokeWriteTool<T extends object>(
   backend: SapBackend,
   receipts: WriteOperationReceiptStore,
   action: (beforeInvoke: () => Promise<void>) => Promise<string>,
-  readTransportRows: (connectionId: string, container: string) => Promise<Record<string, unknown>[]>
+  readTransportRows: (
+    connectionId: string,
+    container: string
+  ) => Promise<Record<string, unknown>[]>,
+  maintenance: MaintenanceDiagnosticService
 ) {
   const values = input as Record<string, unknown>
   const operationId =
@@ -1087,7 +1094,8 @@ async function invokeWriteTool<T extends object>(
       context.connectionId,
       context.targetSummary,
       backend,
-      new ToolService(backend)
+      new ToolService(backend),
+      maintenance
     )
     await receipts.recordPreChangeEvidence(reservation.reservation, evidence)
     if (
@@ -1357,6 +1365,29 @@ export function writeOperationTarget(
   if (["create_smartform", "save_smartform", "activate_smartform"].includes(name)) {
     const form = String(input.formName).toUpperCase()
     return { key: `SSFO:${form}`, summary: `Smart Form ${form}` }
+  }
+  if (name === "delete_sap_lock") {
+    // The target is one SM12 lock entry. It has no repository object and therefore no ADT URI: before
+    // this branch the identity fell through to the empty URI, so the receipt of every release read
+    // "ADT target " and the pre-change gate refused the write without contacting SAP (2026-09-28).
+    const owner = String(input.username).toUpperCase()
+    const table = String(input.tableName).toUpperCase()
+    const argument = String(input.argument)
+    const mode = String(input.mode).toUpperCase()
+    const lockObject = input.lockObject === undefined ? "" : String(input.lockObject).toUpperCase()
+    return {
+      key: `LOCK:${owner}:${table}:${argument}:${mode}${lockObject === "" ? "" : `:${lockObject}`}`,
+      summary:
+        `SM12 lock entry of ${lockObject === "" ? "the reported key" : lockObject} owned by ${owner} ` +
+        `on table ${table} with argument "${argument}" in mode ${mode}`
+    }
+  }
+  if (name === "release_background_job" || name === "cancel_background_job") {
+    // Same class of target: a TBTCO job row is identified by job name plus eight-digit job count and
+    // has no ADT object either.
+    const job = String(input.jobName).toUpperCase()
+    const count = String(input.jobCount)
+    return { key: `JOB:${job}:${count}`, summary: `background job ${job} with job count ${count}` }
   }
   if (
     [

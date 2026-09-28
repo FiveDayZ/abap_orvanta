@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
 import type { SapBackend, SapDdicOperation } from "./backend.js"
+import type { MaintenanceDiagnosticService } from "./maintenance-diagnostics.js"
 import type { ToolService } from "./tools.js"
 import { hashWriteInput, type SapPreChangeEvidence } from "./write-operation-receipts.js"
 import { SmartformService } from "./smartforms.js"
@@ -13,7 +14,8 @@ export async function observeWritePreChange(
   connectionId: string,
   targetSummary: string,
   backend: SapBackend,
-  tools: ToolService
+  tools: ToolService,
+  maintenance?: MaintenanceDiagnosticService
 ): Promise<SapPreChangeEvidence> {
   const evidence: EvidenceDraft = {
     target: targetSummary,
@@ -342,6 +344,51 @@ export async function observeWritePreChange(
       String(input.objectName),
       DDIC_READ_OPERATION[name]
     )
+  } else if (name === "delete_sap_lock") {
+    // One SM12 lock entry is the target, and it is not a repository object: the generic source
+    // observation below looked the empty ADT URI up and refused every release with "ADT target "
+    // (2026-09-28, before the identity and this branch existed). The same SM12 search a caller uses to
+    // obtain the key is the authoritative pre-change read, so the receipt records the exact row,
+    // including the instance markers that separate two locks sharing one key. A key with no matching
+    // row is recorded as absent rather than as a blocker: the helper re-reads the lock table itself and
+    // answers LOCK_NOT_FOUND, which is its documented contract, and no entry is released.
+    if (!maintenance) throw new Error("SM12 lock observation requires the maintenance reader")
+    const lockReport = parseJson(
+      await maintenance.searchLocks({
+        connectionId,
+        username: String(input.username),
+        tableName: String(input.tableName),
+        argument: String(input.argument),
+        lockObject: input.lockObject === undefined ? undefined : String(input.lockObject)
+      })
+    )
+    const lockRows = Array.isArray(lockReport.entries) ? lockReport.entries : []
+    const lockOwner = String(input.username).toUpperCase()
+    const lockTable = String(input.tableName).toUpperCase()
+    const lockArgument = String(input.argument)
+    const lockMode = String(input.mode).toUpperCase()
+    const lockObject =
+      input.lockObject === undefined ? null : String(input.lockObject).toUpperCase()
+    const observedLock = lockRows.find((row) => {
+      const candidate = (row ?? {}) as Record<string, unknown>
+      return (
+        String(candidate.username).toUpperCase() === lockOwner &&
+        String(candidate.tableName).toUpperCase() === lockTable &&
+        String(candidate.argument) === lockArgument &&
+        String(candidate.mode).toUpperCase() === lockMode &&
+        (lockObject === null || String(candidate.lockObject).toUpperCase() === lockObject)
+      )
+    })
+    evidence.sources.push("maintenance_lock_search")
+    evidence.exists = observedLock !== undefined
+    evidence.active = null
+    evidence.version = null
+    evidence.fingerprint =
+      observedLock === undefined ? null : hashWriteInput(JSON.stringify(observedLock))
+    if (observedLock === undefined)
+      evidence.warnings.push(
+        "no SM12 row matched this exact key in the current client; the helper re-reads the lock table and answers LOCK_NOT_FOUND instead of releasing an entry it did not read"
+      )
   } else if (name === "run_abap_program") {
     // The target of this tool is whatever the program itself changes, and no read can bound that.
     // Treating the program object as the target would attach a green pre-change snapshot to a write
