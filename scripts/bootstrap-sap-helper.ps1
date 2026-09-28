@@ -6783,7 +6783,7 @@ function New-InstallProgram {
         "  DATA lv_job_status_after TYPE tbtco-status.",
         "  DATA lv_job_subrc TYPE sy-subrc.",
         "  DATA lv_job_ret TYPE i.",
-        "  DATA lv_job_commit TYPE boole-booole.",
+        "  DATA lv_job_commit TYPE boole-boole.",
         "  DATA lv_job_forced TYPE sy-batch.",
         "  DATA lv_job_exists_before TYPE c.",
         "  DATA lv_job_exists_after TYPE c.",
