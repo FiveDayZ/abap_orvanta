@@ -18,13 +18,15 @@
 | `Z_ORVANTA_MCP_EXECUTE`（基础助手）    | `self-described`     | 1.1 – **2.7**  | 37       | `fbf26be00f96c60e0bdf583248e0a00ae02bbb6c0482ab09698c940dc00c0433` | `ZABAP` / `GR2K923472` |
 | `Z_ORVANTA_MCP_DYNPRO_API`（仓库助手） | `self-described`     | 1.1 – 2.6      | 36       | `06812bcc8d3e7ccab9b51764b61a079f7c2d44e5132e27ec748ac3a00152e014` | `ZABAP` / `GR2K923472` |
 | `Z_ORVANTA_MCP_DDIC_API`               | `self-described`     | 1.2 – **1.10** | **24**   | `780aa87df7c5da59ed42aca8325ad0d4592a5dbae39bca062bede39f12a67d91` | `ZABAP` / `GR2K923472` |
-| `Z_ORVANTA_MAINT_READ`                 | `self-described`     | 1.0 – 1.0      | 3        | `69f20bb0907f0a508b14efc3609695d959d8c6c4f9f89026f22586733fc2a066` | `ZABAP` / `GR2K923472` |
+| `Z_ORVANTA_MAINT_READ`                 | `self-described`     | 1.0 – **1.1**  | **4**    | `0a3875009e0beb610ca781c76a260509c27ced36d1c5f8229944e707757e696d` | `ZABAP` / `GR2K923472` |
 | `Z_ORVANTA_OPS_READ`                   | `self-described`     | 1.0 – 1.0      | 6        | `0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1` | `ZABAP` / `GR2K923472` |
 | `Z_ORVANTA_LOG_READ`                   | `self-described`     | 1.0 – 1.0      | 5        | `07383ef8df98408752203244607bf2b30b225b0f3b506e958d93ae25cde573ab` | `ZABAP` / `GR2K923472` |
 | `Z_ORVANTA_MCP_SCI_V2`                 | 未自述（载体未部署） | —              | —        | —                                                                  | —                      |
 | `Z_ORVANTA_MCP_SCI_E2`                 | 未自述（载体未部署） | —              | —        | —                                                                  | —                      |
 
 > **2026-09-21 更新**：`Z_ORVANTA_MCP_DDIC_API` 行改为当日只读 `get_capability_report(w200)` 的实测值（1.10 / 24 个操作码，`sourceHash` 未变）。该实测清单含 `READ_LOCK_OBJECT` 与 `RESUME_TRANSPARENT_TABLE_ACTIVATION`，**不含** `UPSERT_LOCK_OBJECT` 与 `DELETE_LOCK_OBJECT` —— 这正是 R-1 缺陷的证据：协议版本满足 1.9／1.10，但两个写操作码从未部署。其余行仍是 2026-09-18 证据文件的值。
+
+> **2026-09-28 更新**：`Z_ORVANTA_MAINT_READ` 行改为当日 `ZORVANTA_MAINT_DEPLOY_R04` 载体部署后的实测值（1.1 / 4 个操作码，`SOURCE|HASH` 由 `69f20bb0…` 变为 `0a387500…`，线上体哈希 `778a7ef4…`）。该部署使 `read_archive_status` 具备运行时可达性，其只读验收与语义差异见 `.doc/code-update-20260928-142711.md`。其余行仍是 2026-09-18／2026-09-21 的值。
 
 **服务侧实现要点**（0.46.0）：
 
@@ -187,17 +189,21 @@ RUNTIME|TIME|<YYYYMMDDhhmmss>|<TZ>
 
 **体哈希与 `SOURCE|HASH` 验收取值（2026-09-18 实测／重算）**：
 
-| 助手                                | 线上体哈希（部署中）                                                                                                 | 升级后体哈希（当前生成器）                                         | 升级后应自述的 `SOURCE\|HASH`                                      |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| `Z_ORVANTA_MAINT_READ`              | `4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a`（2026-09-28 实测；2026-09-18 记录为 `f2a1580c…`） | `6cc7eef5f416a8bdcff9111480b687655ed1c88850ed8f479f8cb15f6bab8013` | `d2b048a521df7e90ddc8196c3729ba2fd99137fe3cfa7026ef6bd7bf2a336c89` |
-| `Z_ORVANTA_OPS_READ`（report 变体） | `6cd998bf1e80e61e5d3c20ea416997a3310cc20611919134fe779149b95210ea`                                                   | `dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c` | `0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1` |
+| 助手                                | 线上体哈希（部署中）                                                                                                                 | 升级后体哈希（当前生成器）                                         | 升级后应自述的 `SOURCE\|HASH`                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `Z_ORVANTA_MAINT_READ`              | `778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf`（2026-09-28 R04 部署后实测；此前依次为 `4f373280…`、`f2a1580c…`） | `778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf` | `0a3875009e0beb610ca781c76a260509c27ced36d1c5f8229944e707757e696d` |
+| `Z_ORVANTA_OPS_READ`（report 变体） | `6cd998bf1e80e61e5d3c20ea416997a3310cc20611919134fe779149b95210ea`                                                                   | `dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c` | `0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1` |
 
 - 体哈希＝生成器导出的体数组按 `\n` 连接后的 SHA-256。线上体自 `DATA:` 起、`ENDFUNCTION.` 前止（尾随空行已去），与生成器数组一致——这一点由上文逐行比对证明。
 - `SOURCE|HASH` 是**自指哈希**：生成器在四个 `ORVANTAHASHSLOT1..4` 占位符仍在体中时取 SHA-256，再把该摘要填回占位符。因此不能用渲染后的文本直接重算，必须先还原占位符（`capabilityBodyDigest`）。
 - 上表末列随生成器演进会变化，部署验证器在运行时重算（`helperCapabilityDigests`）；此处记录的是当前 HEAD 的取值。
-- **2026-09-28**：MAINT 行的"升级后"两列已按当前 HEAD 重算。生成器新增 `ARCHIVE_STATUS`（`since` 1.1）后，体哈希由 `4f373280…` 变为 `04a9a1ae…`、`SOURCE|HASH` 由 `69f20bb0…` 变为 `41fbaeae…`（这两个取值随后因 `SORT` 修复再次重算，见下一条）。协议范围随之由 1.0–1.0 变为 **1.0–1.1**：`since` 是**能力协议**修订（操作码何时可被应答），**不是**回复信封版本——信封对所有分支恒为 `{"version":"1"}`，因为服务端校验的就是 `"1"`；能力门比较的是 `PROTOCOL|MAX` 与注册表 `minHelperProtocol`（`src/capabilities.ts`），故 `ARCHIVE_STATUS` 必须 >= 1.1，否则 `read_archive_status` 永远不可达。第 16–23 行表格记录的是**最后一次实测自述**（部署中仍是 1.0 / 3 个操作码 / `69f20bb0…`），两者不一致是"生成器已前进、尚未部署"的正常状态，不是漂移。
+- **2026-09-28**：MAINT 行的"升级后"两列已按当前 HEAD 重算。生成器新增 `ARCHIVE_STATUS`（`since` 1.1）后，体哈希由 `4f373280…` 变为 `04a9a1ae…`、`SOURCE|HASH` 由 `69f20bb0…` 变为 `41fbaeae…`（这两个取值随后因 `SORT` 修复再次重算，见下一条）。协议范围随之由 1.0–1.0 变为 **1.0–1.1**：`since` 是**能力协议**修订（操作码何时可被应答），**不是**回复信封版本——信封对所有分支恒为 `{"version":"1"}`，因为服务端校验的就是 `"1"`；能力门比较的是 `PROTOCOL|MAX` 与注册表 `minHelperProtocol`（`src/capabilities.ts`），故 `ARCHIVE_STATUS` 必须 >= 1.1，否则 `read_archive_status` 永远不可达。第 16–23 行表格记录的是**最后一次实测自述**：2026-09-28 R04 部署后已更新为 1.1 / 4 个操作码 / `0a387500…`，与生成器一致；在此之前它是 1.0 / 3 个操作码 / `69f20bb0…`，"生成器已前进、尚未部署"曾是该表的正常状态而非漂移。
 
-- **2026-09-28（更晚，`SORT` 修复）**：MAINT 载体在 SAP 内 `GENERATE` 失败于生成程序第 446 行 —— 正文 `SORT lt_archive_runs BY document.` 对 DDIC 表类型 `ARCH_T_RUNS`（`read_ddic_table_type`：`accessMode=S`、`keyKind=U`，即 **sorted + 唯一键**）非法。已删除该语句（sorted 表本身即按键序稳定，此处排序既非法也无必要），并新增离线断言 `assertSortTargetsAreStandardTables`：`SORT` 目标必须由正文自己声明为 `STANDARD TABLE OF`，因为 DDIC 表类型无法离线证明可排序。正文 467 → 468 行，体哈希随之由 `04a9a1ae…` 变为 `6cc7eef5…`、`SOURCE|HASH` 由 `41fbaeae…` 变为 `d2b048a5…`（上表两列已同步）。
+- **2026-09-28（更晚，`SORT` 修复）**：MAINT 载体在 SAP 内 `GENERATE` 失败于生成程序第 446 行 —— 正文 `SORT lt_archive_runs BY document.` 对 DDIC 表类型 `ARCH_T_RUNS`（`read_ddic_table_type`：`accessMode=S`、`keyKind=U`，即 **sorted + 唯一键**）非法。已删除该语句（sorted 表本身即按键序稳定，此处排序既非法也无必要），并新增离线断言 `assertSortTargetsAreStandardTables`：`SORT` 目标必须由正文自己声明为 `STANDARD TABLE OF`，因为 DDIC 表类型无法离线证明可排序。正文 467 → 468 行，体哈希随之由 `04a9a1ae…` 变为 `6cc7eef5…`、`SOURCE|HASH` 由 `41fbaeae…` 变为 `d2b048a5…`。
+
+- **2026-09-28（当日第三轮，数据源改换）**：`SORT` 修复后载体再次在 `GENERATE` 失败，这次是 `数据对象 "LS_ARCHIVE_RUN" 没有名为 "USER_NAME" 的组件`（生成程序第 450 行）。只读取证确认**不是正文缺陷**：w200 上 `ARCH_RUN` 的 DDIC 定义（`DD02L` 活动 `INTTAB`、`DD03L` 39 个活动字段、ADT `read_ddic_structure` 39 字段）与**编译器视图**不一致——编译器只认它的深层组件 `ADMI_RUN`，其余 25 个字段一律报「无组件」，两条独立编译路径（载体 `GENERATE` 与干净探针程序）结论一致；无未激活版本、无同名数据元素/域名/表类型。因此 `read_archive_status` 的数据源改为**透明会话头表 `ADMI_RUN`**（同包 `SARC`，字段齐全，`ADMI_FILES` 按键计数），并新增离线断言 `assertAdkArchiveStructuresAreNotTyped`（正文不得以 `ARCH_RUN`/`ARCH_T_RUNS` 为类型）。正文 468 → 464 行，体哈希由 `6cc7eef5…` 变为 `778a7ef4…`、`SOURCE|HASH` 由 `d2b048a5…` 变为 `0a387500…`（上表两列已同步）。根因证据与只读排除表见 `.doc/code-update-20260928-135359.md`。
+
+- **2026-09-28（当日第四轮，部署与验收）**：`ZORVANTA_MAINT_DEPLOY_R04` 经 RFC 运行 `subrc=0` 且**确实生效**——读回 482 行、体哈希 `778a7ef4…`（== 评审意图）、`PROTOCOL|MAX=1.1`、`SOURCE|HASH=0a387500…`（== 自述摘要）、4 个操作码、接口段保留。随后 3 次只读 `read_archive_status` 验收（`status ok` / `code OK` / `source SARA` / `entries []`），并用白名单内的 `read_abap_table` 独立确认 `ADMI_FILES` 在 w200 为 0 行，从而证明"空结果"是被测目标的属性而非读取失效；**行解码路径仍无样本**。部署后本机批准文件的 `sourceFingerprint` 由 `3f4ee379…` 刷新为 `2e54b4d6…` 并启用 `SARA` 源（经用户逐项裁定）。同一轮发现 `execute_data_query` 在 w200 上拒绝一切 `COUNT` 聚合且报错自相矛盾（白名单内表同样复现）。全部证据见 `.doc/code-update-20260928-142711.md`。
 
 **升级部署尝试（2026-09-18，未写入）**：两个目标只读 dry-run 通过后执行 `--apply-approved`，SAP 在写入阶段返回
 `HTTP 423 Resource MAIN Z_ORVANTA_MAINT_READ is not locked (invalid lock handle …)`。服务回执标记

@@ -324,7 +324,7 @@ test("the recomputed digest equals the digest both generators embedded", () => {
       `${target.helper}: the restored digest cannot equal the rendered body hash`
     )
   }
-  assert.equal(digests.maint, "d2b048a521df7e90ddc8196c3729ba2fd99137fe3cfa7026ef6bd7bf2a336c89")
+  assert.equal(digests.maint, "0a3875009e0beb610ca781c76a260509c27ced36d1c5f8229944e707757e696d")
   assert.equal(digests.ops, "0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1")
 })
 
@@ -354,17 +354,18 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
       `${target.helper}: live-shaped source must hash to the intended body hash`
     )
   }
-  // Re-pinned on 2026-09-28 to the body SAP actually holds. The 2026-09-18 value f2a1580c… was true
-  // then (all 19 recorded runs that day read it) and is not what the target stores now, so the guard
-  // in scripts/verify-helper-deployment.mjs could only ever report drift. See
-  // .doc/code-update-20260928-113819.md section 10 for the line-by-line basis of the re-pin.
+  // Re-pinned on 2026-09-28 to the body SAP actually holds. It read the 1.0 body (f2a1580c…) until the
+  // R04 carrier deployed the ARCHIVE_STATUS body and 4f373280… while the generator had moved on to the
+  // 1.1 intent; after the deployment the live body IS the reviewed intent, so both pins agree and the
+  // drift guard in scripts/verify-helper-deployment.mjs is satisfied by construction. See
+  // .doc/code-update-20260928-113819.md section 10 and .doc/code-update-20260928-142711.md.
   assert.equal(
     maint.deployedNowBodyHash,
-    "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a"
+    "778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf"
   )
   assert.equal(
     maint.intendedBodyHash,
-    "6cc7eef5f416a8bdcff9111480b687655ed1c88850ed8f479f8cb15f6bab8013"
+    "778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf"
   )
   assert.equal(
     ops.deployedNowBodyHash,

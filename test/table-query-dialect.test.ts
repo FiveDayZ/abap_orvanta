@@ -318,6 +318,16 @@ test("the grammar refuses aggregates and groupings it cannot answer exactly", ()
 
   // A function outside the four aggregates is refused by name, with the fix in the message.
   throws("SELECT AVG(NETWR) FROM TBTCO", /TABLE_QUERY_AGGREGATE_UNSUPPORTED: AVG/)
+  // One of the four in a form this dialect does not translate is refused as a form, never as an
+  // unsupported function: answering `SELECT COUNT(*) AS CNT FROM ADMI_RUN` with "COUNT is not
+  // translated. Supported aggregates are COUNT, SUM, MIN, MAX" contradicts itself and points the
+  // caller at the wrong thing (2026-09-28, w200, .doc/code-update-20260928-142711.md section 6).
+  throws("SELECT COUNT(*) AS CNT FROM TBTCO", /TABLE_QUERY_AGGREGATE_FORM_UNSUPPORTED: COUNT/)
+  throws("SELECT SUM(NETWR) AS TOTAL FROM TBTCO", /TABLE_QUERY_AGGREGATE_FORM_UNSUPPORTED: SUM/)
+  throws("SELECT COUNT(*) + 1 FROM TBTCO", /TABLE_QUERY_AGGREGATE_FORM_UNSUPPORTED: COUNT/)
+  // A plain column alias is a different case and stays what it always was: an expression this grammar
+  // cannot describe, so it is left to the platform rather than refused with a made-up reason.
+  assert.equal(parseGroupedTableSelect("SELECT FIELDNAME AS F FROM DD03L"), undefined)
   // Only `COUNT` counts whole rows.
   throws("SELECT SUM(*) FROM TBTCO", /TABLE_QUERY_AGGREGATE_ARGUMENT: SUM\(\*\)/)
   // `*` cannot be combined with, or grouped by way of, an aggregate statement.

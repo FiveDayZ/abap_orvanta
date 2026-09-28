@@ -10,6 +10,9 @@ what is still missing.
 - **Rule**: a 95% claim may only be made when this matrix shows **>= 95%** of the required families
   end-to-end. That needs both points on the same family - the declared gap is empty **and** every
   present tool carries recorded evidence. Read-side breadth never compensates for a missing action.
+- A family's **declared boundaries** are printed with it and are not a gap: a boundary is a limit
+  the platform or the target's own data fixes (no sample to describe, no live state in the table),
+  so it neither opens nor keeps open a family. What is still to be built is the gap.
 - Tool-level standing is always stated per tool in the registry, never as a family-level score; the
   evidence column below is a pointer, not a re-judgement.
 
@@ -18,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 1, blocked 1, partial 11, read-only 2, read-and-act 0 |
-| End-to-end by state (all families) | 2 (13%) |
-| Required families counted closed | **2 / 14** (14% of required) |
+| State counts | absent 1, blocked 1, partial 10, read-only 3, read-and-act 0 |
+| End-to-end by state (all families) | 3 (20%) |
+| Required families counted closed | **3 / 14** (21% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
 | Closed by state but missing evidence | none |
-| Outstanding required families | transport, jobs, locks, updates, system-info, query, runtime-resources, interfaces, authorizations, spool-output, archive-alerts, landscape |
-| Waiting on each route | this repository 1, SAP-side helper + F8 6, operator approval 2, write authorisation (OP2) 4, multi-system configuration (OP3) 2, the platform (exempt) 1, - 2 |
+| Outstanding required families | transport, jobs, locks, updates, system-info, query, runtime-resources, interfaces, authorizations, spool-output, landscape |
+| Waiting on each route | this repository 1, SAP-side helper + F8 5, operator approval 2, write authorisation (OP2) 4, multi-system configuration (OP3) 2, the platform (exempt) 1, - 3 |
 
 ## Definition of done (plan section 8)
 
@@ -35,8 +38,8 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 2 / 14 closed (14%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 23 / 35 of the tools the families declare are verified (the `ops` group itself holds 33, of which 21 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace, read_archive_status | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 3 / 14 closed (21%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 24 / 35 of the tools the families declare are verified (the `ops` group itself holds 33, of which 22 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 5 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service); open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), locks (1), updates (1), landscape (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
@@ -62,7 +65,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
 | 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 1/2 verified (pending: read_authorization_trace) | SAP-side helper + F8 + operator approval |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
-| 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | partial | 1/2 verified (pending: read_archive_status) | SAP-side helper + F8 |
+| 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | read-only | 2/2 verified | - |
 | 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 0/0 | - | absent | no tool exists | multi-system configuration (OP3) |
 
 ## What each open family is waiting for
@@ -78,7 +81,6 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 - **`interfaces`** (partial) - Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through read_idoc_status. read_email_queue was withdrawn from this family on 2026-09-28 by the operator's ruling, and the family was narrowed with it rather than left claiming a capability it cannot reach. The withdrawal is recorded, not hidden, because SOST *was* approved and registered and its read path does work: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show the table carries no live traffic on w200 - every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty throughout, and no row is dated later than 2014-12-01 - so a tool reading it would have reported a frozen 2013-2014 internal SAPoffice send log as the present, which is the misleading-tool failure this project forbids. Still absent: whatever answers whether outbound mail is piling up here. No replacement source has been chosen and none may be registered without an item-by-item approval, so the family stays open on a vacant slot - removing a capability is not a way to empty a gap, and the two remaining tools being verified does not close this family.
 - **`authorizations`** (partial) - Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - and the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the SAP-side helper, and any role-to-authorization-object resolution **as a tool**: AGR_1251/AGR_1252/AGR_PROF, USOBT/USOBT_C/USOBX/USOBX_C and UST10S/UST10C were approved and registered on 2026-09-28 (w200-verified), so that resolution no longer waits for an approval either - read_user_authorizations still deliberately does not perform it.
 - **`spool-output`** (partial) - Only rendered text is available: OTF/PDF conversion, printing and original report execution are absent.
-- **`archive-alerts`** (partial) - Reported: archiving sessions (object, status, user, creation time, file count) through read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved maintenance helper - the first tool this family has ever had - and CCMS alert history through read_ccms_alerts, which reads ALALERTDB on the service side and needs no helper branch. Still absent: any archive-file detail beyond a per-session count, and the answer to whether CCMS is reporting something right now. The second is a boundary, not a missing tool: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show w200 holds no alert row with an initial GONEDATE (an exact count of 0), so ALALERTDB yields recorded alerts and when each cleared and never the live state - RZ20's monitor reads the in-memory MTE tree, which this table does not contain - and the tool is named and described to say so rather than to imply health from an empty result. ADMI_FILES is empty on w200, so an archive-file detail tool would have a read path but no sample to describe.
 
 ### operator approval
 
@@ -264,15 +266,17 @@ Criterion to close: Only rendered text is available: OTF/PDF conversion, printin
 | ---- | ---- | ------ | -------- |
 | `read_background_job_spool` | read-only | unverified | unverified |
 
-### `archive-alerts` - partial
+### `archive-alerts` - read-only
 
 Purpose: Did archiving run, and is CCMS reporting alerts?
 
-Criterion to close: Reported: archiving sessions (object, status, user, creation time, file count) through read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved maintenance helper - the first tool this family has ever had - and CCMS alert history through read_ccms_alerts, which reads ALALERTDB on the service side and needs no helper branch. Still absent: any archive-file detail beyond a per-session count, and the answer to whether CCMS is reporting something right now. The second is a boundary, not a missing tool: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show w200 holds no alert row with an initial GONEDATE (an exact count of 0), so ALALERTDB yields recorded alerts and when each cleared and never the live state - RZ20's monitor reads the in-memory MTE tree, which this table does not contain - and the tool is named and described to say so rather than to imply health from an empty result. ADMI_FILES is empty on w200, so an archive-file detail tool would have a read path but no sample to describe.
+Criterion to close: gap empty and every tool verified
+
+Declared boundaries: Declared limits, none of them a missing tool. (1) No archive-file detail beyond the per-session fileCount: w200 holds no ADMI_FILES row at all (an allowlisted read returned 0 rows on 2026-09-28), so a detail tool would have a read path and no sample to describe or verify against. (2) No answer to whether CCMS is reporting something right now: ALALERTDB stores recorded alerts and their clear dates, while RZ20's monitor reads the in-memory MTE tree, which this table does not contain - w200 holds 0 rows with an initial GONEDATE (.doc/code-update-20260928-093237.md), so the tool is named and described to say so rather than to imply health from an empty result. (3) read_archive_status answered with an empty list on every 2026-09-28 call because this target has no archiving history, so its row-decoding path is exercised nowhere yet; the empty replies are a property of the target, corroborated by the same session's 0-row ADMI_FILES read, and the session read comes from the transparent table ADMI_RUN because the ADK selector's ARCH_T_RUNS export carries ARCH_RUN, which no work area can be typed with on this release (.doc/code-update-20260928-135359.md).
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_archive_status` | read-only | unverified | unverified |
+| `read_archive_status` | read-only | verified | `.doc/code-update-20260928-142711.md` |
 | `read_ccms_alerts` | read-only | verified | `.doc/code-update-20260928-105549.md` |
 
 ### `landscape` - absent

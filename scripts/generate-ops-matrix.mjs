@@ -86,6 +86,13 @@ lines.push(
   "  present tool carries recorded evidence. Read-side breadth never compensates for a missing action."
 )
 lines.push(
+  "- A family's **declared boundaries** are printed with it and are not a gap: a boundary is a limit"
+)
+lines.push(
+  "  the platform or the target's own data fixes (no sample to describe, no live state in the table),"
+)
+lines.push("  so it neither opens nor keeps open a family. What is still to be built is the gap.")
+lines.push(
   "- Tool-level standing is always stated per tool in the registry, never as a family-level score; the"
 )
 lines.push("  evidence column below is a pointer, not a re-judgement.")
@@ -277,6 +284,10 @@ for (const family of block.families) {
   lines.push("")
   lines.push(`Criterion to close: ${cell(family.gap) || "gap empty and every tool verified"}`)
   lines.push("")
+  if (family.boundary.trim() !== "") {
+    lines.push(`Declared boundaries: ${cell(family.boundary)}`)
+    lines.push("")
+  }
   if (family.toolNames.length === 0) {
     lines.push(
       `Planned but unbuilt: ${family.missingToolNames.map((tool) => `\`${tool}\``).join(", ")}`

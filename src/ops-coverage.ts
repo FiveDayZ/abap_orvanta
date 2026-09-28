@@ -80,6 +80,18 @@ export interface OpsFamilyDefinition {
   /** What is still missing before the family can be finished inside the service; empty when closed. */
   gap: string
   /**
+   * What this family deliberately does not answer, because the platform or the target's own data
+   * makes it impossible rather than unbuilt - a live CCMS state ALALERTDB does not hold, a file
+   * detail with no sample left to describe.
+   *
+   * Boundaries belong here and never in {@link gap}: a gap is capability still to be built and counts
+   * against the target, while a boundary is a limit that will not move and would otherwise keep a
+   * finished family open forever. The two are different claims, so they are different fields, and the
+   * matrix prints the boundaries beside the family whether or not it is closed. Empty when the family
+   * declares none.
+   */
+  boundary?: string
+  /**
    * Written basis for excluding this family from the end-to-end requirement, when the platform - not
    * the plan - makes the family impossible on this release.
    *
@@ -407,21 +419,24 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     label: "Archive administration (SARA) and CCMS alerts (RZ20)",
     plannedToolNames: ["read_archive_status", "read_ccms_alerts"],
     purpose: "Did archiving run, and is CCMS reporting alerts?",
-    closeRoutes: ["helper"],
+    closeRoutes: ["none"],
     actionRequired: false,
-    gap:
-      "Reported: archiving sessions (object, status, user, creation time, file count) through " +
-      "read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved " +
-      "maintenance helper - the first tool this family has ever had - and CCMS alert history " +
-      "through read_ccms_alerts, which reads ALALERTDB on the service side and needs no helper " +
-      "branch. Still absent: any archive-file detail beyond a per-session count, and the answer " +
-      "to whether CCMS is reporting something right now. The second is a boundary, not a missing " +
-      "tool: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show w200 " +
-      "holds no alert row with an initial GONEDATE (an exact count of 0), so ALALERTDB yields " +
-      "recorded alerts and when each cleared and never the live state - RZ20's monitor reads the " +
-      "in-memory MTE tree, which this table does not contain - and the tool is named and described " +
-      "to say so rather than to imply health from an empty result. ADMI_FILES is empty on w200, so " +
-      "an archive-file detail tool would have a read path but no sample to describe."
+    gap: "",
+    boundary:
+      "Declared limits, none of them a missing tool. (1) No archive-file detail beyond the " +
+      "per-session fileCount: w200 holds no ADMI_FILES row at all (an allowlisted read returned 0 " +
+      "rows on 2026-09-28), so a detail tool would have a read path and no sample to describe or " +
+      "verify against. (2) No answer to whether CCMS is reporting something right now: ALALERTDB " +
+      "stores recorded alerts and their clear dates, while RZ20's monitor reads the in-memory MTE " +
+      "tree, which this table does not contain - w200 holds 0 rows with an initial GONEDATE " +
+      "(.doc/code-update-20260928-093237.md), so the tool is named and described to say so rather " +
+      "than to imply health from an empty result. (3) read_archive_status answered with an empty " +
+      "list on every 2026-09-28 call because this target has no archiving history, so its " +
+      "row-decoding path is exercised nowhere yet; the empty replies are a property of the target, " +
+      "corroborated by the same session's 0-row ADMI_FILES read, and the session read comes from " +
+      "the transparent table ADMI_RUN because the ADK selector's ARCH_T_RUNS export carries " +
+      "ARCH_RUN, which no work area can be typed with on this release " +
+      "(.doc/code-update-20260928-135359.md)."
   },
   {
     id: "landscape",
@@ -634,6 +649,8 @@ export interface OpsFamilyRollup {
     blockingTools: string[]
   }
   gap: string
+  /** Declared limits of this family, in the family's own words; never a reason to stay open. */
+  boundary: string
 }
 
 export interface OpsCapabilityBlock {
@@ -750,7 +767,8 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
         closed: present.length > 0 && blockingTools.length === 0,
         blockingTools
       },
-      gap: definition.gap
+      gap: definition.gap,
+      boundary: definition.boundary ?? ""
     }
   })
 

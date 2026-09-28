@@ -602,10 +602,10 @@ export class MaintenanceDiagnosticService {
         toSystemTime: o.toSystemTime ?? null
       },
       timeSemantics: "ADMI_RUN-CREAT_DATE/CREAT_TIME; SAP local time; no implicit UTC conversion",
-      // Stated because the value is easy to misread: SAP's selector returns nothing at all when no
-      // status heading is requested, so this tool always requests every heading and says so.
+      // Stated because the value is easy to misread: the helper reads ADMI_RUN without a status
+      // filter, so every recorded status code is eligible and an empty result means nothing matched.
       statusSelection:
-        "all archiving status headings are always requested; an empty result means no session matched, not that the filter excluded everything",
+        "no status filter is applied - every recorded session status is eligible - so an empty result means no session matched the other filters, not that the filter excluded everything",
       fileDetail: "fileCount only - ADMI_FILES contents are not returned by this tool"
     })
   }

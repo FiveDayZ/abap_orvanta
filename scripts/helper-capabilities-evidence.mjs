@@ -181,22 +181,24 @@ export const helperCapabilityTargets = {
     expectedOperations: maintenanceDiagnosticOperations.map((operation) =>
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
-    // Measured on 2026-09-28, replacing the 2026-09-18 value f2a1580c…, which every one of that day's
-    // 19 recorded runs read as the deployed body (the seven dry runs reported dry_run_ready, which
-    // requires this assert to pass) and which is therefore no longer what SAP holds. The refresh was
-    // approved by the user on 2026-09-28 after the body was read back and diffed line by line, so the
-    // replacement is no longer a blind re-pin: the deployed body differs from the generator body only
-    // by the ARCHIVE_STATUS work this pin guards the way for, by the two-line rewrite of the iv_action
-    // guard, and by the protocol marker and SOURCE|HASH digest that the replacement is meant to
-    // update - the authorization checks are present on both sides
-    // (AUTHORITY-CHECK 2/2, S_ADMI_FCD 2/2, S_ENQUE 1/1, S_ENQ_ACT 1/1), so applying the generator
-    // body cannot drop an existing capability. Evidence: .doc/code-update-20260928-113819.md section 10.
-    // This pin cannot deploy anything by itself. 12 of those 19 runs reached the write on 2026-09-18
-    // and all 12 failed with the HTTP 423 class error
-    // `Resource MAIN Z_ORVANTA_MAINT_READ is not locked (invalid lock handle)`, with no success ever,
-    // so the body has to go through a carrier; the ADT write path is a diagnostic only.
-    deployedNowBodyHash: "4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a",
-    intendedBodyHash: "6cc7eef5f416a8bdcff9111480b687655ed1c88850ed8f479f8cb15f6bab8013",
+    // Measured on 2026-09-28, three times that day. It read f2a1580c… (the 1.0 body) until the R04
+    // carrier deployed the ARCHIVE_STATUS body, then 4f373280… while the generator had already moved on
+    // to the 1.1 intent, and now it equals intendedBodyHash: the deployment put the reviewed body into
+    // SAP, so the drift guard in scripts/verify-helper-deployment.mjs is satisfied by construction. The
+    // line-by-line basis for the middle value is .doc/code-update-20260928-113819.md section 10; the
+    // ADMI_RUN re-base and the R04 deployment that produced this one are
+    // .doc/code-update-20260928-142711.md. The ADT write path stays a diagnostic only - 12 of the 19
+    // runs recorded on 2026-09-18 reached the write and all 12 failed with the HTTP 423 class error
+    // `Resource MAIN Z_ORVANTA_MAINT_READ is not locked (invalid lock handle)`, with no success ever -
+    // so a body reaches SAP through a carrier, and this pin cannot deploy anything by itself.
+    deployedNowBodyHash: "778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf",
+    // Re-pinned 2026-09-28 (second time that day): the ARCHIVE_STATUS data source moved from the ADK
+    // selector ARCHIVE_ADMIN_SELECT_SESSIONS to the transparent session table ADMI_RUN, because the
+    // selector's ARCH_T_RUNS export carries ARCH_RUN and this target's compiler resolves ARCH_RUN to
+    // its deep ADMI_RUN component only, so no work area can be typed with it (all 25 session fields
+    // report "no component"; carrier GENERATE and a standalone probe agree). Basis and evidence:
+    // .doc/code-update-20260928-135359.md.
+    intendedBodyHash: "778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf",
     generatorBody: maintenanceDiagnosticSource
   },
   ops: {

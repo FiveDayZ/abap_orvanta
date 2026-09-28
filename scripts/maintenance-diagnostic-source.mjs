@@ -37,10 +37,14 @@ export const maintenanceDiagnosticOperations = [
   { opcode: "LOCK_SEARCH", since: "1.0", mode: "R" },
   { opcode: "UPDATE_SEARCH", since: "1.0", mode: "R" },
   { opcode: "UPDATE_DETAIL", since: "1.0", mode: "R" },
-  // N3. The archive-alerts family had no tool at all. ARCHIVE_ADMIN_SELECT_SESSIONS is
-  // remote-enabled on this release but its ARCH_T_RUNS export carries ARCH_RUN, whose ADMI_RUN
-  // component is not an RFC scalar, so the service cannot verify the shape and the read has to
-  // happen here. Kept in this helper (not ZORVANTA_MCP_CORE) so it needs no carrier program: the
+  // N3. The archive-alerts family had no tool at all. The read happens in this helper because the
+  // reply carries session fields the service cannot shape-check over RFC. The first choice, the ADK
+  // selector ARCHIVE_ADMIN_SELECT_SESSIONS, is unusable on w200: its ARCH_T_RUNS export carries the
+  // structure ARCH_RUN, and the compiler there resolves ARCH_RUN to its deep ADMI_RUN component
+  // alone - all 25 session fields report "no component" - so no work area can be typed with it (two
+  // independent compiles agree: carrier GENERATE and a standalone probe, .doc/code-update-20260928
+  // -135359.md). The transparent session header table ADMI_RUN carries the same fields and
+  // compiles. Kept in this helper (not ZORVANTA_MCP_CORE) so it needs no carrier program: the
   // self-write guard only covers the core group.
   { opcode: "ARCHIVE_STATUS", since: "1.1", mode: "R" }
 ]
@@ -209,6 +213,28 @@ const assertSortTargetsAreStandardTables = (lines) => {
   }
 }
 
+// ARCH_RUN cannot be used as a type on this target. w200's compiler resolves it to its deep ADMI_RUN
+// component only, so every session field reports "no component" and the include fails to generate
+// (2026-09-28, .doc/code-update-20260928-135359.md). The archive read therefore goes to the
+// transparent session header table ADMI_RUN. Typing anything with the ADK structures again
+// reintroduces a failure that only shows up inside SAP, which is what this guard prevents.
+const assertAdkArchiveStructuresAreNotTyped = (lines) => {
+  const offenders = []
+  lines.forEach((line, index) => {
+    if (/^\s*\*/.test(line)) return
+    if (/\b(?:TYPE|LIKE)\s+(?:LINE\s+OF\s+)?ARCH_(?:RUN|T_RUNS)\b/.test(line)) {
+      offenders.push(`line ${index + 1}: ${line.trim()}`)
+    }
+  })
+  if (offenders.length > 0) {
+    throw new Error(
+      `ARCH_RUN/ARCH_T_RUNS cannot be typed on w200 - the compiler there sees only ARCH_RUN's ` +
+        `deep ADMI_RUN component - so the archive session read has to stay on table ADMI_RUN: ` +
+        offenders.join("; ")
+    )
+  }
+}
+
 export const maintenanceDiagnosticSource = injectCapabilityHash(
   String.raw`DATA: lt_locks TYPE STANDARD TABLE OF seqg3,
       ls_lock TYPE seqg3,
@@ -235,12 +261,14 @@ export const maintenanceDiagnosticSource = injectCapabilityHash(
       lv_errors_json TYPE string, lv_more TYPE string,
       lt_capability TYPE STANDARD TABLE OF string,
       lv_capability TYPE string, lv_capabilities TYPE string,
-      lt_archive_runs TYPE arch_t_runs,
-      ls_archive_run TYPE arch_run,
+      lt_archive_runs TYPE STANDARD TABLE OF admi_run,
+      ls_archive_run TYPE admi_run,
       lt_rng_date TYPE STANDARD TABLE OF rng_date,
       ls_rng_date TYPE rng_date,
       lt_rng_object TYPE STANDARD TABLE OF rng_object,
       ls_rng_object TYPE rng_object,
+      lt_rng_user TYPE STANDARD TABLE OF rng_user,
+      ls_rng_user TYPE rng_user,
       lv_files TYPE i,
       lv_capability_value TYPE string.
 DEFINE json_field.
@@ -533,13 +561,16 @@ ${buildMaintenanceCapabilityBranch().join("\n")}
     ENDLOOP.
     lv_errors_json = lv_items.
   WHEN 'ARCHIVE_STATUS'.
-* Every status heading must be requested explicitly. Verified in this
-* function's own source on w200 (2026-09-27): the status flags are ANDed
-* into one RANGE, and when that range ends up empty SAP does EXIT -
-* i.e. an all-blank call returns NO sessions at all, which would read as
-* "nothing archived". So "show everything" is spelled out flag by flag.
+* Sessions come from the transparent table ADMI_RUN. The ADK selector
+* ARCHIVE_ADMIN_SELECT_SESSIONS was the first choice, but its export
+* ARCH_T_RUNS carries the structure ARCH_RUN, and on w200 the compiler
+* resolves ARCH_RUN to its deep ADMI_RUN component only - all 25 session
+* fields report "no component" - so no work area can be typed with it.
+* Two independent compiles agree (carrier GENERATE and a standalone
+* probe); .doc/code-update-20260928-135359.md records the evidence.
+* ADMI_RUN carries the same fields and needs no DDIC change.
     CLEAR: lt_archive_runs, lv_items, lv_count.
-    REFRESH: lt_rng_date, lt_rng_object.
+    REFRESH: lt_rng_object, lt_rng_user.
     IF iv_from IS NOT INITIAL AND iv_to IS NOT INITIAL.
       IF strlen( iv_from ) <> 19 OR strlen( iv_to ) <> 19.
         RETURN.
@@ -549,7 +580,8 @@ ${buildMaintenanceCapabilityBranch().join("\n")}
       IF lv_from CN '0123456789' OR lv_to CN '0123456789'.
         RETURN.
       ENDIF.
-* ADMI_CDATE is the session creation date; both bounds inclusive.
+* ADMI_RUN-CREAT_DATE is the session creation date; both bounds are
+* inclusive, SAP local time, exactly as the selector did before.
       CLEAR ls_rng_date.
       ls_rng_date-sign = 'I'. ls_rng_date-option = 'BT'.
       ls_rng_date-low = lv_from. ls_rng_date-high = lv_to.
@@ -565,43 +597,30 @@ ${buildMaintenanceCapabilityBranch().join("\n")}
       TRANSLATE ls_rng_object-low TO UPPER CASE.
       APPEND ls_rng_object TO lt_rng_object.
     ENDIF.
-    CALL FUNCTION 'ARCHIVE_ADMIN_SELECT_SESSIONS'
-      EXPORTING
-        runs_without_files = 'X'
-        client_dependence = 'X'
-        incorrect = 'X'
-        incomplete = 'X'
-        complete = 'X'
-        being_reloaded = 'X'
-        created_by_reload = 'X'
-        replaced = 'X'
-        to_be_archived = 'X'
-        invalid = 'X'
-        interrupted_incomplete = 'X'
-        interrupted_complete = 'X'
-      IMPORTING
-        archive_runs = lt_archive_runs
-      TABLES
-        date = lt_rng_date
-        object = lt_rng_object
-      EXCEPTIONS
-        object_not_found = 1
-        OTHERS = 2.
-    IF sy-subrc <> 0.
-      fail_reply 'unsupported' 'READ_FAILED'. RETURN.
+* An empty range matches every row, so the object and date conditions
+* stay open when they are not asked for. The user filter has to sit in
+* the SELECT: the row cap is applied by the database, and filtering
+* after the read would return fewer rows than the cap and then report a
+* false hasMore.
+    IF lv_user IS NOT INITIAL.
+      CLEAR ls_rng_user.
+      ls_rng_user-sign = 'I'. ls_rng_user-option = 'EQ'.
+      ls_rng_user-low = lv_user.
+      APPEND ls_rng_user TO lt_rng_user.
     ENDIF.
-    DESCRIBE TABLE lt_archive_runs LINES lv_rows.
-    IF lv_rows > 2000.
-      fail_reply 'unsupported' 'LIMIT_EXCEEDED'. RETURN.
-    ENDIF.
-* Deterministic order: ARCH_T_RUNS is a sorted table with a unique
-* key, so the ADK layer delivers rows in key order. SORT is not
-* permitted on a sorted table and would change nothing.
+    lv_fetch = lv_limit + 1.
+* ADMI_RUN is client independent, so the current client is an explicit
+* condition - that is what CLIENT_DEPENDENCE = 'X' selected before.
+    SELECT document object status client user_name sysid comments
+           creat_date creat_time
+      FROM admi_run INTO CORRESPONDING FIELDS OF TABLE lt_archive_runs
+      UP TO lv_fetch ROWS
+      WHERE client = sy-mandt
+        AND object IN lt_rng_object
+        AND user_name IN lt_rng_user
+        AND creat_date IN lt_rng_date
+      ORDER BY document ASCENDING.
     LOOP AT lt_archive_runs INTO ls_archive_run.
-      IF lv_user IS NOT INITIAL
-         AND ls_archive_run-user_name <> lv_user.
-        CONTINUE.
-      ENDIF.
       ADD 1 TO lv_count.
       IF lv_count > lv_limit. lv_more = 'true'. EXIT. ENDIF.
       CLEAR lv_json.
@@ -618,7 +637,10 @@ ${buildMaintenanceCapabilityBranch().join("\n")}
         json_field ',"createdSystemTime":"' lv_time.
       ENDIF.
       json_field ',"comments":"' ls_archive_run-comments.
-      DESCRIBE TABLE ls_archive_run-archive_files LINES lv_files.
+* One keyed count per returned session: classic Open SQL cannot
+* aggregate over FOR ALL ENTRIES, and lv_limit caps this at 100 rows.
+      SELECT COUNT(*) FROM admi_files INTO lv_files
+        WHERE document = ls_archive_run-document.
       json_number ',"fileCount":' lv_files.
       CONCATENATE lv_json '}' INTO lv_json.
       append_item.
@@ -641,3 +663,4 @@ ENDTRY.
 )
 assertGeneratedLineWidth(maintenanceDiagnosticSource)
 assertSortTargetsAreStandardTables(maintenanceDiagnosticSource)
+assertAdkArchiveStructuresAreNotTyped(maintenanceDiagnosticSource)

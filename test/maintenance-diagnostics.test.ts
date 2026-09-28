@@ -546,26 +546,22 @@ test("archive status bounds its window and refuses a half-open interval", async 
   )
 })
 
-test("the archive branch requests every status heading and stays read-only", async () => {
+test("the archive branch reads ADMI_RUN and stays read-only", async () => {
   const source = await readFile("scripts/maintenance-diagnostic-source.mjs", "utf8")
-  // SAP's selector EXITs when lt_status ends up empty: an all-blank call returns NO sessions, which
-  // would be reported as "nothing archived". Every heading must therefore be asked for explicitly.
-  for (const flag of [
-    "incorrect",
-    "incomplete",
-    "complete",
-    "being_reloaded",
-    "created_by_reload",
-    "replaced",
-    "to_be_archived",
-    "invalid",
-    "interrupted_incomplete",
-    "interrupted_complete"
-  ])
-    assert.match(source, new RegExp(`${flag} = 'X'`), `${flag} must be requested explicitly`)
-  assert.match(source, /ARCHIVE_ADMIN_SELECT_SESSIONS/)
-  assert.match(source, /SORT lt_archive_runs BY document/)
-  // The branch may not delete or restart an archiving session, nor touch archive files.
+  // The ADK selector's ARCH_T_RUNS export carries ARCH_RUN, and w200's compiler resolves ARCH_RUN to
+  // its deep ADMI_RUN component only - all 25 session fields report "no component" - so no work area
+  // can be typed with it and the include fails to generate. The read therefore goes to the
+  // transparent session header table ADMI_RUN. Basis: .doc/code-update-20260928-135359.md.
+  assert.match(source, /FROM admi_run INTO CORRESPONDING FIELDS OF TABLE/)
+  assert.match(source, /WHERE client = sy-mandt/)
+  assert.ok(
+    !/\b(?:TYPE|LIKE)\s+(?:LINE\s+OF\s+)?ARCH_(?:RUN|T_RUNS)\b/.test(source),
+    "the archive read must not type anything with the ADK structures"
+  )
+  assert.ok(!/ARCHIVE_ADMIN_SELECT_SESSIONS/.test(source))
+  // The per-session file count is a keyed COUNT(*): the branch never reads file rows.
+  assert.match(source, /SELECT COUNT\(\*\) FROM admi_files INTO lv_files/)
+  // The branch may not delete or restart an archiving session, nor read archive files.
   assert.ok(!/CALL FUNCTION 'ARCHIVE_ADMIN_(DELETE|CANCEL|RESTART)/i.test(source))
-  assert.ok(!/ADMI_FILES|ARCHIVE_GET_TABLE/i.test(source))
+  assert.ok(!/ARCHIVE_GET_TABLE|FROM admi_files INTO TABLE/i.test(source))
 })

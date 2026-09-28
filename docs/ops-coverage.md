@@ -877,3 +877,24 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 **教训（写入纪律）**：守卫的适用范围（`SELF_FUNCTION_GROUP_FORBIDDEN` 只认 CORE）与**该助手能不能承载写**
 是两个独立约束。前者是"工具会不会被拒"，后者是"契约允不允许"。由前者为真推出后者为真，属于把
 "技术上可写"当成"设计上该写" —— 与项目反复出现的"把不受支持说成不存在"是同一类**越界外推**。
+
+### 7.17 `archive-alerts` 闭环与 COUNT 聚合误诊（2026-09-28）
+
+**`archive-alerts` 进入闭环（必需族 2/14 → 3/14，21%）**。两个声明工具都已 `verified`
+（`read_ccms_alerts` 10:55、`read_archive_status` 14:24:58，部署见 `.doc/code-update-20260928-142711.md`），
+但该族仍被判 `partial`：闭环判据是「`gap` 为空 ∧ 无阻断工具」，而 `gap` 里写着两句"仍缺"，同一段文字
+自己声明这两项是**边界**。字段自身文档已写「gap = 闭环前仍缺什么」，故边界陈述属错位。经用户裁定新增
+`OpsFamilyDefinition.boundary`（可选，汇总为 `OpsFamilyRollup.boundary`），把边界移出 `gap` 并置
+`closeRoutes: ["none"]`（无 gap 的族不得声明等待方，由一致性守卫强制）。**判据本身未改**：仍是「gap 为空 ∧
+全体工具 verified」；改变的是把"不会移动的限制"与"仍缺的能力"分开。矩阵为每个族渲染 `Declared boundaries:`。
+
+**`execute_data_query` 的 COUNT 误诊（已修）**。w200 实测：`SELECT COUNT(*) AS CNT FROM ADMI_RUN` 报
+`TABLE_QUERY_AGGREGATE_UNSUPPORTED: COUNT is not translated. Supported aggregates are COUNT, SUM, MIN, MAX` ——
+一句话同时说 COUNT 不受支持、又把 COUNT 列为受支持。根因在 `src/table-query.ts` 的
+`projectionItemPattern` **不认 `AS 别名`**，带别名的聚合落到 `projectionFunctionPattern` 后按"函数不受支持"
+抛出。COUNT 本身可用（`SELECT COUNT(FIELDNAME) FROM DD03L WHERE TABNAME = 'DD03L'` → `[{"COUNT_FIELDNAME":30}]`）。
+修法是只改诊断：受支持聚合的形式问题抛新码 `TABLE_QUERY_AGGREGATE_FORM_UNSUPPORTED` 并列出可写形式，
+四者之外的名字保持原码；两处调用点（单表与联接路径）同批修正。
+
+**教训**：同一句错误文案在"名字不在受支持集合"与"形式不被翻译"两种情形下被复用，就会产出自我矛盾的
+结论；错误码的分类维度应是**调用方要改什么**，不是抛出点在代码里的位置。

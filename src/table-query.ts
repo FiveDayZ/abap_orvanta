@@ -936,6 +936,32 @@ const projectionItemPattern =
   /^(?:(COUNT|SUM|MIN|MAX)\s*\(\s*(\*|[A-Z][A-Z0-9_]*)\s*\)|([A-Z][A-Z0-9_]*))$/i
 
 /**
+ * The refusal for a projection item that starts like a function call.
+ *
+ * A name outside the four aggregates is refused by name, which is this grammar's whole advantage over
+ * the platform's empty-HTML answer: that one says nothing. A name that IS one of the four must never
+ * be called unsupported. `SELECT COUNT(*) AS CNT FROM ADMI_RUN` used to be answered with "COUNT is not
+ * translated. Supported aggregates are COUNT, SUM, MIN, MAX" - a sentence that contradicts itself and
+ * hides the real cause, which is the alias. The translated forms are named instead, together with the
+ * fact that the answer carries its own column name, because that is what the caller has to write.
+ */
+function projectionFunctionRefusal(item: string, name: string): Error {
+  if ((aggregateFunctions as readonly string[]).includes(name)) {
+    const forms = ["COUNT(*)", ...aggregateFunctions.map((fn) => `${fn}(<column>)`)]
+    return new Error(
+      `TABLE_QUERY_AGGREGATE_FORM_UNSUPPORTED: ${name} is supported, but "${item}" is not a form this ` +
+        `dialect translates. Write ${forms.join(", ")} with no alias, arithmetic or nested call ` +
+        `around it; the answer names its own column, so an alias is not needed.`
+    )
+  }
+  return new Error(
+    `TABLE_QUERY_AGGREGATE_UNSUPPORTED: ${name} is not translated. Supported aggregates are ` +
+      `${aggregateFunctions.join(", ")}; AVG is not among them because it is SUM divided by ` +
+      `COUNT, which this statement can ask for in two columns.`
+  )
+}
+
+/**
  * Read the projection, or refuse.
  *
  * A function name this grammar does not evaluate is refused **by name** - the message can say what to
@@ -964,12 +990,7 @@ function parseProjection(
     if (!match) {
       const call = item.match(projectionFunctionPattern)
       if (call) {
-        const name = call[1]!.toUpperCase()
-        throw new Error(
-          `TABLE_QUERY_AGGREGATE_UNSUPPORTED: ${name} is not translated. Supported aggregates are ` +
-            `${aggregateFunctions.join(", ")}; AVG is not among them because it is SUM divided by ` +
-            `COUNT, which this statement can ask for in two columns.`
-        )
+        throw projectionFunctionRefusal(item, call[1]!.toUpperCase())
       }
       return undefined
     }
@@ -1879,12 +1900,7 @@ function parseJoinProjection(
     }
     const call = item.match(projectionFunctionPattern)
     if (call) {
-      const name = call[1]!.toUpperCase()
-      throw new Error(
-        `TABLE_QUERY_AGGREGATE_UNSUPPORTED: ${name} is not translated. Supported aggregates are ` +
-          `${aggregateFunctions.join(", ")}; AVG is not among them because it is SUM divided by ` +
-          `COUNT, which this statement can ask for in two columns.`
-      )
+      throw projectionFunctionRefusal(item, call[1]!.toUpperCase())
     }
     columns.push(qualify(item, item))
   }
