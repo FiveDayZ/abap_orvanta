@@ -517,20 +517,23 @@ test("the capability report carries the ops block", async () => {
   const summary = report.opsCapability.summary
   assert.equal(summary.registryLoaded, true)
   assert.match(summary.criterionBasis, /verification registry loaded/)
-  assert.equal(summary.closedRequiredFamilyCount, 4)
-  assert.deepEqual(summary.evidenceUnregisteredFamilies, ["interfaces"])
-  assert.equal(summary.remainingRequiredFamilyCount, 10)
-  assert.equal(summary.endToEndPercentOfRequired, 29)
+  assert.equal(summary.closedRequiredFamilyCount, 5)
+  assert.deepEqual(summary.evidenceUnregisteredFamilies, [])
+  assert.equal(summary.remainingRequiredFamilyCount, 9)
+  assert.equal(summary.endToEndPercentOfRequired, 36)
   assert.ok(
     !summary.outstandingRequiredFamilies.includes("logs") &&
       !summary.outstandingRequiredFamilies.includes("dumps") &&
       !summary.outstandingRequiredFamilies.includes("system-info") &&
+      !summary.outstandingRequiredFamilies.includes("interfaces") &&
       !summary.outstandingRequiredFamilies.includes("archive-alerts") &&
       !summary.outstandingRequiredFamilies.includes("traces"),
     "the worklist must name neither the exempt family nor an evidence-closed one"
   )
-  // `interfaces` is closed on its gap and held out of the numerator by exactly one tool: the one
-  // whose call had not been recorded yet when this assertion was written. The moment that call is
-  // registered the family moves into the numerator, so this line is the tripwire for that batch.
-  assert.deepEqual(summary.outstandingRequiredFamilies.includes("interfaces"), true)
+  // `interfaces` was the last family held out of the numerator by exactly one tool: the SM58 tRFC read
+  // whose first real call had not been recorded when this assertion was written. The call landed on
+  // 2026-09-28 16:19 (status ok, 140 entries, evidence .doc/code-update-20260928-162050.md), so the
+  // family is now closed on both readings and this line becomes the tripwire against a silent
+  // regression that would put it back on the worklist.
+  assert.deepEqual(summary.outstandingRequiredFamilies.includes("interfaces"), false)
 })

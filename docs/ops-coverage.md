@@ -451,7 +451,10 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
   而"出站邮件是否积压"**不再按缺口计**：`SOST` 在 w200 上没有活的邮件流量（同上的四组筛选取证），
   因此它是这一族**已声明边界**的一部分（写在族 `boundary` 里），不是待补的能力——撤下一个能力不等于补上一个缺口，
   但**补上第三个能力**才使缺口真正归零。两个既有工具于 2026-09-27 的真实 w200 调用后转 `verified`；
-  `read_trfc_error_entries` 在实例重建并重启之前保持 `unverified`（证据口径因此比状态口径慢一步）。
+  `read_trfc_error_entries` 于 2026-09-28 16:19 取得首次真实调用（实例重启到 16:07:58 构建后，
+  `maxRows:500` 返回 `status=ok` / 140 条 / 无告警，带 `functionModule` 过滤的一次返回 1 条）
+  并随之转 `verified`，**证据口径与状态口径至此一致**——该族是判据分子里的第 5 个必需族
+  （取证 `.doc/code-update-20260928-162050.md`）。
 - 读路径与 7.5 完全一致：共用 `src/reviewed-table-reader.ts`，错误码前缀 `QRFC_QUEUE_` / `IDOC_STATUS_`，
   无通用 SQL 回退、无写操作。
 

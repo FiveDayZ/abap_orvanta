@@ -614,8 +614,15 @@ test("the registry records the honest gap rather than inflating it", () => {
   // its entry already records that the empty window path was proven callable on 2026-09-25 while the
   // status stayed unverified because no window held a real failed update, and a fresh empty window
   // does not change that - the same restraint, not a different rule.
+  // Raised from 31 to 32 on 2026-09-28 (interfaces batch): read_trfc_error_entries - built the same day
+  // as the interfaces family's third capability and left unverified on purpose - was called for real
+  // against w200 after the instance was restarted onto the 16:07:58 build. The full read (maxRows 500)
+  // answered ok with 140 entries and no query warnings, a filtered read answered ok with 1 entry, and
+  // the entry names .doc/code-update-20260928-162050.md while recording what was NOT proven: the
+  // filter-length and row-limit codes are preempted by the inputSchema (MCP error -32602), so they were
+  // never exercised. That promotion is what moves `interfaces` into the criterion's numerator.
   assert.ok(
-    totals.verified <= 31,
+    totals.verified <= 32,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

@@ -23,10 +23,10 @@ what is still missing.
 | Families reported | 15 (14 required + 1 documented exemption) |
 | State counts | absent 1, blocked 1, partial 8, read-only 5, read-and-act 0 |
 | End-to-end by state (all families) | 5 (33%) |
-| Required families counted closed | **4 / 14** (29% of required) |
+| Required families counted closed | **5 / 14** (36% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
-| Closed by state but missing evidence | interfaces |
-| Outstanding required families | transport, jobs, locks, updates, query, runtime-resources, interfaces, authorizations, spool-output, landscape |
+| Closed by state but missing evidence | none |
+| Outstanding required families | transport, jobs, locks, updates, query, runtime-resources, authorizations, spool-output, landscape |
 | Waiting on each route | this repository 1, SAP-side helper + F8 3, operator approval 1, write authorisation (OP2) 4, multi-system configuration (OP3) 2, the platform (exempt) 1, - 5 |
 
 ## Definition of done (plan section 8)
@@ -38,8 +38,8 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 4 / 14 closed (29%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 25 / 36 of the tools the families declare are verified (the `ops` group itself holds 34, of which 23 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_trfc_error_entries | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 5 / 14 closed (36%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 26 / 36 of the tools the families declare are verified (the `ops` group itself holds 34, of which 24 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 4 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), locks (1), updates (1), landscape (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
@@ -62,7 +62,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | read-only | 2/2 verified | - |
 | 9 | `query` | Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI. | 2/2 | - | partial | 2/2 verified | this repository |
 | 10 | `runtime-resources` | Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists? | 4/4 | - | partial | 1/4 verified (pending: read_work_processes, read_user_sessions, read_file_system_directory) | SAP-side helper + F8 |
-| 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 3/3 | - | read-only | 2/3 verified (pending: read_trfc_error_entries) | - |
+| 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 3/3 | - | read-only | 3/3 verified | - |
 | 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
 | 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | read-only | 2/2 verified | - |
@@ -99,10 +99,6 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 ### the platform (exempt)
 
 - **`traces`** (blocked) - evidence only
-
-### -
-
-- **`interfaces`** (read-only) - evidence only
 
 ## Evidence pointers per family
 
@@ -253,7 +249,7 @@ Declared boundaries: The outbound-mail question - is mail piling up here - is no
 | ---- | ---- | ------ | -------- |
 | `read_qrfc_queues` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 | `read_idoc_status` | read-only | verified | `.doc/code-update-20260927-084500.md` |
-| `read_trfc_error_entries` | read-only | unverified | unverified |
+| `read_trfc_error_entries` | read-only | verified | `.doc/code-update-20260928-162050.md` |
 
 ### `authorizations` - partial
 
