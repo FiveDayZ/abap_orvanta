@@ -599,8 +599,15 @@ test("the registry records the honest gap rather than inflating it", () => {
   // answered ok with zero rows, and a nine-condition request was refused before the read. The entry
   // names .doc/code-update-20260928-105549.md. Nothing here was inferred from a passing test, and the
   // tripwire did its job: this one tool had to earn the raise explicitly.
+  // Raised from 29 to 30 on 2026-09-28, in the same batch that promoted read_archive_status: the tool
+  // was called for real against w200 three times, and the restart on 15:21 (instance serving the dist
+  // built 15:14:21) closed the last prose question as well - the reply now carries the checked-in
+  // statusSelection sentence, and the same session showed an aggregate alias refused as a form
+  // (TABLE_QUERY_AGGREGATE_FORM_UNSUPPORTED) instead of being called an unsupported function. The
+  // entry names .doc/code-update-20260928-142711.md; the re-verification is recorded in
+  // .doc/code-update-20260928-152302.md.
   assert.ok(
-    totals.verified <= 29,
+    totals.verified <= 30,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
