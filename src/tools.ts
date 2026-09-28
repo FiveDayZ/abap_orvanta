@@ -9,6 +9,12 @@ import {
 import { preSapValidation } from "./pre-sap-validation.js"
 import { describesLogonRejection } from "./logon-diagnostic.js"
 import { findAndReplaceSource } from "./source-edit.js"
+import {
+  SourceSavedNotActivatedError,
+  sourceWriteOutcome,
+  sourceWriteOutcomePayload,
+  sourceWriteRecoveryGuide
+} from "./source-write-outcome.js"
 import { isMissing } from "./write-prechange-evidence.js"
 import { QUALITY_GATE_NOT_EVALUATED, QUALITY_GATE_REASON_NOT_RUN } from "./quality-gate.js"
 import {
@@ -7454,23 +7460,18 @@ export class ToolService {
       this.readTransportTableRows.bind(this)
     )
     if (!result.activation.success) {
-      throw new Error(
+      // The observation is handed over as data, not only as prose: the write receipt decides
+      // `outcomeMayBeUnknown` from it, and the read-back that returned both fingerprints already
+      // answered that question (2026-09-28 09:59, inactive draft = candidate, active unchanged).
+      const outcome = sourceWriteOutcome(result)
+      const guide = sourceWriteRecoveryGuide(outcome, result.objectName)
+      throw new SourceSavedNotActivatedError(
         `Source was saved to SAP but activation failed or could not be verified for ${result.objectName}. ` +
-          `Do not repeat the same replacement. If the activation message identifies a source error, repair the reviewed draft with recoverInactiveSource=true and its inactiveFingerprint as expectedSourceFingerprint. ` +
-          `For other activation failures, reconcile active/inactive source before using abap_activate on the approved object. ` +
+          `${guide} ` +
           `${formatActivationFailure(result.activation.messages, result.activation.inactiveObjects)}\n` +
-          JSON.stringify({
-            saveSucceeded: result.saveSucceeded ?? true,
-            unlockSucceeded: result.unlockSucceeded ?? true,
-            activationAttempted: result.activationAttempted ?? null,
-            activationSucceeded: result.activationSucceeded ?? false,
-            intendedFingerprint: result.sourceFingerprintAfter ?? null,
-            activeFingerprint: result.activeFingerprint ?? null,
-            inactiveFingerprint: result.inactiveFingerprint ?? null,
-            readbackError: result.readbackError ?? null,
-            automaticRetry: false,
-            automaticRollback: false
-          })
+          JSON.stringify(sourceWriteOutcomePayload(outcome)),
+        outcome,
+        guide
       )
     }
     return (

@@ -3,6 +3,12 @@ import { mkdir, open, readFile, readdir, rename, unlink } from "node:fs/promises
 import { basename, dirname, join, resolve } from "node:path"
 import { z } from "zod"
 import { PreSapValidationError } from "./pre-sap-validation.js"
+import {
+  isSourceSavedNotActivatedError,
+  MAX_READBACK_ERROR,
+  sourceWriteOutcomeIsDetermined,
+  type SourceWriteOutcome
+} from "./source-write-outcome.js"
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/
 const SERVICE_INSTANCE_ID = randomUUID()
@@ -29,6 +35,20 @@ const sapPreChangeEvidenceSchema = z
   })
   .strict()
 
+// Typed by the interface so the stored shape and the decoder cannot drift apart.
+const sourceWriteOutcomeSchema: z.ZodType<SourceWriteOutcome> = z
+  .object({
+    saveSucceeded: z.boolean(),
+    unlockSucceeded: z.boolean(),
+    activationAttempted: z.boolean().nullable(),
+    activationSucceeded: z.boolean(),
+    intendedFingerprint: z.string().regex(HASH_PATTERN).nullable(),
+    activeFingerprint: z.string().regex(HASH_PATTERN).nullable(),
+    inactiveFingerprint: z.string().regex(HASH_PATTERN).nullable(),
+    readbackError: z.string().min(1).max(MAX_READBACK_ERROR).nullable()
+  })
+  .strict()
+
 const receiptSchema = z
   .object({
     version: z.union([z.literal(1), z.literal(2)]),
@@ -41,6 +61,10 @@ const receiptSchema = z
     preChangeSummary: z.string().min(1).max(2000),
     recoveryGuide: z.string().min(1).max(2000),
     sapPreChangeEvidence: sapPreChangeEvidenceSchema.optional(),
+    // Post-change read-back evidence: what SAP held when the write failed after the save landed.
+    // Its presence is not the same as a determined outcome - `sourceWriteOutcomeIsDetermined`
+    // decides that from the data, and a partial observation still belongs in the receipt.
+    postChangeObservation: sourceWriteOutcomeSchema.optional(),
     sapInvocationStarted: z.boolean().optional(),
     resultHash: z.string().regex(HASH_PATTERN).optional(),
     errorHash: z.string().regex(HASH_PATTERN).optional(),
@@ -236,12 +260,21 @@ export class WriteOperationReceiptStore {
     // guard and the DDIC/repository argument checks are the others, so this tests the shared base
     // class rather than the one preflight error that happened to exist first.
     const notDelivered = error instanceof PreSapValidationError
+    // The same rule cuts the other way for a write that did reach SAP and failed: when the tool
+    // hands over a read-back, `outcomeMayBeUnknown` is decided from that evidence instead of from
+    // the fact that an error was thrown (2026-09-28 09:59: the draft fingerprint equalled the
+    // candidate, so "saved, not activated" was measured, not unknown).
+    const observed = isSourceSavedNotActivatedError(error) ? error : null
     return this.finishOwned(reservation, {
       state: "failed",
       errorHash: sha256(String(error)),
       finishedAt: new Date().toISOString(),
       durationMs,
-      ...(notDelivered ? { sapInvocationStarted: false } : {})
+      ...(notDelivered ? { sapInvocationStarted: false } : {}),
+      ...(observed ? { postChangeObservation: observed.outcome } : {}),
+      ...(observed && sourceWriteOutcomeIsDetermined(observed.outcome)
+        ? { recoveryGuide: observed.recoveryGuide }
+        : {})
     })
   }
 
@@ -508,6 +541,9 @@ export class WriteOperationReceiptStore {
       ...(receipt.sapPreChangeEvidence
         ? { sapPreChangeEvidence: receipt.sapPreChangeEvidence }
         : {}),
+      ...(receipt.postChangeObservation
+        ? { postChangeObservation: receipt.postChangeObservation }
+        : {}),
       sapInvocationStarted: receipt.sapInvocationStarted ?? null,
       ...(receipt.resultHash ? { resultHash: receipt.resultHash } : {}),
       ...(receipt.errorHash ? { errorHash: receipt.errorHash } : {}),
@@ -517,8 +553,15 @@ export class WriteOperationReceiptStore {
       receiptHash: sha256(JSON.stringify(receipt)),
       automaticRetry: false,
       automaticRollback: false,
+      // `false` here means "the post-state was measured", not "nothing happened": a determined
+      // failure still changed SAP (an inactive draft exists) and still forbids an automatic retry.
+      // The observation that proves it travels in `postChangeObservation`.
       outcomeMayBeUnknown:
-        receipt.sapInvocationStarted !== false && (interrupted || receipt.state === "failed"),
+        receipt.sapInvocationStarted !== false &&
+        (interrupted ||
+          (receipt.state === "failed" &&
+            (receipt.postChangeObservation === undefined ||
+              !sourceWriteOutcomeIsDetermined(receipt.postChangeObservation)))),
       localLockReleased: lockReleased,
       ...(receipt.manualLockReleaseAt
         ? {

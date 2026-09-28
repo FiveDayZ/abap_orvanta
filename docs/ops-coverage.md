@@ -156,6 +156,15 @@ Retry safety here is not a retry loop, it is an identity. A tool that changes SA
   distinguishable from "we sent it and never learned the outcome". An `outcome_unknown` receipt is
   evidence that an attempt reached SAP - which is exactly why the service never retries a write on
   its own.
+- `outcomeMayBeUnknown` is not a synonym for "the tool failed". A failed write that ended with a
+  post-change read-back reporting what SAP holds - the source write that saved an inactive draft and
+  could not activate it is the case that exists today - answers `outcomeMayBeUnknown: false` and
+  carries the read-back as `postChangeObservation` (save, unlock, activation flags, intended, active
+  and inactive fingerprints, read-back error). That still means SAP changed: the draft is there, the
+  active version is the pre-change one, `automaticRetry` stays `false`, and `manualRecovery` names
+  the repair call (`recoverInactiveSource=true` with the reported draft fingerprint as
+  `expectedSourceFingerprint`). A partial read-back is stored as evidence but leaves the outcome
+  unknown, because a fingerprint that was never read cannot prove anything.
 - A per-target lock makes a second concurrent operation on the same object answer `target_busy`
   instead of interleaving. `protection_failed` means the receipt or lock layer itself could not be
   established, and the operation is refused rather than sent unprotected.

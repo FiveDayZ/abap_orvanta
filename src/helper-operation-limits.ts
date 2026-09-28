@@ -81,7 +81,9 @@ export function helperOperationParameter(helper: string): HelperOperationParamet
  *
  * The receipt builder treats this error as proof that SAP was never contacted, so a rejected
  * operation is reported as `sapInvocationStarted: false` / `outcomeMayBeUnknown: false` instead of
- * leaving the caller unable to tell whether the write reached SAP.
+ * leaving the caller unable to tell whether the write reached SAP. These are the two flags' only
+ * sources on this path: the other way a receipt reports `outcomeMayBeUnknown: false` is a
+ * post-change read-back that determines the outcome, which a rejected operation never has.
  */
 export class HelperOperationNotDeliverableError extends PreSapValidationError {
   readonly helper: string

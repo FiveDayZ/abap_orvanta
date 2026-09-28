@@ -1,12 +1,14 @@
 /**
  * Raised by a local guard that rejects the caller's request before the write reaches SAP.
  *
- * A write receipt reports `sapInvocationStarted`, and `outcomeMayBeUnknown` follows it. That flag
- * existing at all is the point: a caller that cannot tell whether a write reached SAP has to go and
- * reconcile SAP state by hand. Claiming the invocation started when a pure argument check refused
- * the request therefore costs the caller a manual recovery procedure for a state that cannot have
- * changed. Proven live on w200: `upsert_lock_object` refused `EZPMCTPRP` in 50 ms without any SAP
- * call and still answered `sapInvocationStarted: true` / `outcomeMayBeUnknown: true`.
+ * A write receipt reports `sapInvocationStarted`, and `outcomeMayBeUnknown` follows it — plus, since
+ * 2026-09-28, a post-change read-back that determines what SAP now holds (see
+ * `source-write-outcome.ts`). The flag existing at all is the point: a caller that cannot tell
+ * whether a write reached SAP has to go and reconcile SAP state by hand. Claiming the invocation
+ * started when a pure argument check refused the request therefore costs the caller a manual
+ * recovery procedure for a state that cannot have changed. Proven live on w200: `upsert_lock_object`
+ * refused `EZPMCTPRP` in 50 ms without any SAP call and still answered `sapInvocationStarted: true`
+ * / `outcomeMayBeUnknown: true`.
  *
  * Throw this only where both hold: the guard inspects nothing but the caller's own arguments, and it
  * runs before the first backend call of its tool. `preSapValidation` exists so that a guard can make
