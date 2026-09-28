@@ -181,6 +181,19 @@ export const helperCapabilityTargets = {
     expectedOperations: maintenanceDiagnosticOperations.map((operation) =>
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
+    // Historical, not current. This was the deployed body through 2026-09-18 03:33: all 19 recorded
+    // runs that day read it (the seven dry runs reported dry_run_ready, which requires this assert to
+    // pass). On 2026-09-28 the same read returned
+    // 4f373280253d2287193cec1b9a16def6e7f41fdc21c95b3e4790f274533c7a0a, so the deployed body was
+    // rewritten in between by something this repository has no record of. The value is deliberately
+    // left as it is: it keeps the deployment script refusing to replace a body of unknown provenance,
+    // and re-pinning it to whatever happens to be live would turn that guard into a rubber stamp.
+    // The script cannot deploy either way. Its ADT write path is refused on this target - 12 of the 19
+    // runs reached the write on 2026-09-18 and all 12 failed with the HTTP 423 class error
+    // `Resource MAIN Z_ORVANTA_MAINT_READ is not locked (invalid lock handle)`, with no success ever -
+    // so the body has to go through the SAP side WRITE_FUNCTION_SOURCE operation, which needs the
+    // write helper at protocol >= 2.11 while the deployed helpers report 1.0 (base) and 1.2
+    // (repository) as of 2026-09-28.
     deployedNowBodyHash: "f2a1580c9ab7560d882af51d6c9152933248c0d51026ac56024417d540b763be",
     intendedBodyHash: "04a9a1aeeab114de290a7b57276c7faeb0d35f8148db4abab01334b381e8c5f8",
     generatorBody: maintenanceDiagnosticSource
