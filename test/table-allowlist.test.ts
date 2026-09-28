@@ -216,6 +216,28 @@ test("Q-N6: the checked-and-rejected candidates stay out of the allowlist", () =
   assert.equal(isTableAllowed("ARCH_STAT"), false)
 })
 
+// The 2026-09-28 coverage ruling approved three more names item by item: ADMI_RUN (so the service
+// can corroborate the archive-run rows read_archive_status already reads through the MAINT helper),
+// and ARFCSSTATE with ARFCSDATA for the interfaces family's new third capability. Two were
+// registered; one was rejected after its layout was read, and both halves are pinned here.
+test("2026-09-28 ruling: ADMI_RUN and ARFCSSTATE are allowed, ARFCSDATA is not", () => {
+  for (const name of ["ADMI_RUN", "ARFCSSTATE"]) {
+    assert.equal(isTableAllowed(name), true, `${name} must be allowed`)
+    assert.equal(describeAllowlistRejection(name), null)
+    assert.ok(
+      (TABLE_TIERS.business as readonly string[]).includes(name),
+      `${name} belongs to the business tier`
+    )
+    assert.equal((TABLE_NEVER_ALLOWED as readonly string[]).includes(name), false)
+  }
+  // Approved in the same ruling, then deliberately dropped: ARFCSDATA is the tRFC payload container
+  // (ARFCBLCNT RAW(4) plus ARFCDATA01..07 RAW(255), 1785 bytes, no character column at all). The
+  // reader fails closed on byte projections and the legacy path caps a row at 512 characters, so
+  // registering it would advertise a read that can only fail - the same reason ARCH_STAT and
+  // USOBHASH stay out. The payload itself is declared as a boundary, not silently forgotten.
+  assert.equal(isTableAllowed("ARFCSDATA"), false, "ARFCSDATA has no readable layout")
+})
+
 test("Q-N6: the approval widened no existing boundary", () => {
   for (const name of ["USR02", "USR01", "PA0001", "PA0008", "BSEG", "CDHRS", "KNA1", "LFA1"])
     assert.equal(isTableAllowed(name), false, `${name} must stay out`)

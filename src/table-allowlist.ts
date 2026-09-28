@@ -154,6 +154,25 @@ export const TABLE_TIERS = {
    *
    * 本次批准**未放宽任何既有边界**：X 档六张表、W2 排除的 KNA1/LFA1、以及 TABLE_PENDING_APPROVAL
    * 中的业务主数据一律不动，默认拒绝不变。
+   *
+   * 2026-09-28（覆盖率推进裁定，逐表批准）新增两张表：
+   *
+   *   归档运行头 —— ADMI_RUN（SARC 包，归档运行的会话/运行头，含运行标识、起止时间与状态）。
+   *     价值：`read_archive_status` 目前经 MAINT 助手读它，登记后 `read_abap_table` /
+   *     `execute_data_query` 也能独立复核同一批行，符合本文件"登记即门禁声明"的既有语义。敏感面
+   *     同 ADMI_FILES：归档对象名与运行元数据，不含业务明细。
+   *   tRFC 错误队列头 —— ARFCSSTATE（SRFC 包，TRANSP，交付类 L，DDIC 版本 20110901122124、
+   *     定义指纹 25f6c13d200826b3cc9fe3b57bab7ca2b179f1eab9447a77dd3721b7209d168a，18 个实字段：
+   *     键 ARFCIPID/ARFCPID/ARFCTIME/ARFCTIDCNT/ARFCDEST/ARFCLUWCNT，值 ARFCSTATE/ARFCFNAM/
+   *     ARFCRETURN/ARFCUZEIT/ARFCDATUM/ARFCUSER/ARFCRETRYS/ARFCTCODE/ARFCRHOST/ARFCMSG/
+   *     ARFCRESERV/HASH）。价值：`read_trfc_error_entries` 用它回答 SM58 的"哪个出站 tRFC LUW
+   *     卡在错误里"。敏感面：目标名、函数模块、用户名与内核消息变量。
+   *
+   *   **同批批准但故意不登记：ARFCSDATA。** 它是 tRFC 载荷容器（ARFCBLCNT RAW(4) +
+   *   ARFCDATA01..07 各 RAW(255)，共 1785 字节），**没有任何字符列**：字节投影在本读者里 fail
+   *   closed，整行又远超旧读路径 512 字符的上限。登记它等于声明一条走不通的读路径，因此按
+   *   ARCH_STAT（INTTAB）与 USOBHASH（内部散列）的同样处理方式**剔除并记录**，而不是留一个
+   *   "已允许但读不到"的条目。载荷本身属已声明边界，写在 `interfaces` 族的 boundary 里。
    */
   business: [
     SCOPED_QUERY_TABLE,
@@ -180,7 +199,9 @@ export const TABLE_TIERS = {
     "USOBX",
     "USOBX_C",
     "UST10S",
-    "UST10C"
+    "UST10C",
+    "ADMI_RUN",
+    "ARFCSSTATE"
   ],
   /**
    * 产品必需档：由 `src` 调用点清点得出，**不是** D5-2 取证候选表的子集。

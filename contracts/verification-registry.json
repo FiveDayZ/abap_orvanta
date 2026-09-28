@@ -688,6 +688,18 @@
       "notes": "Real read-only call recorded on 0.50.21 (de1fd73) against w200 on 2026-09-27, in the sweep recorded as .cache/evidence-ops-n1c and written up in this entry's evidence record. The reply carried status \"ok\" or \"partial\" with rows; \"partial\" means only that the row limit truncated the result, not that the read failed. The call reached SAP through the rfc_read_table fallback because the native data-preview endpoint is platform-unsupported on this release. Not proven: any behaviour outside the filters this sweep exercised, and no claim about rows beyond the row cap. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
+      "tool": "read_trfc_error_entries",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200 tRFC error queue (ARFCSSTATE): no recorded call yet",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Built on 2026-09-28 as the interfaces family's third capability, after the operator withdrew the mail-queue claim and selected the SM58 tRFC error queue instead. The read target was verified first: read_ddic_transparent_table returned package SRFC, tableClass TRANSP, deliveryClass L, version 20110901122124 and definition fingerprint 25f6c13d200826b3cc9fe3b57bab7ca2b179f1eab9447a77dd3721b7209d168a, and DD03L supplied the 18 field rows the projection is built from. That is evidence about the table, not about the tool: the tool itself has not been called yet, so it stays unverified. The sibling payload table ARFCSDATA was approved for registration in the same ruling and is deliberately not registered, because its layout is RAW-only (ARFCBLCNT RAW(4) plus ARFCDATA01..07 RAW(255)) with no character column and a 1785-byte row, which this reader cannot project."
+    },
+    {
       "tool": "read_file_system_directory",
       "helper": null,
       "availabilityBasis": "target-specific",
@@ -715,13 +727,13 @@
       "tool": "read_authorization_trace",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "not yet called against w200: implemented in the N3 batch, no runtime evidence recorded",
+      "verificationTarget": "w200 live call via read_authorization_trace on 2026-09-28",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "Implemented on 2026-09-27 (N3). The function module AUTH_TRACE_GET_STATUS was read from w200 and both fingerprints pinned, and its RC polarity was settled from SAP's own callers rather than assumed - see .doc/n3-auth-trace-status-contract-forensics-20260927.md sections 3.5 and 5. The tool itself has not been called against w200 yet, so no reply is claimed. This is the one N3 item that needs no SAP-side helper deployment: the function module is remote-enabled with no imports."
+      "lastAttemptAt": "2026-09-28T07:54:29+08:00",
+      "evidence": ".doc/code-update-20260928-155820.md",
+      "notes": "Real read-only call recorded on 0.50.23 against w200 on 2026-09-28, from the read-only evidence batch in this entry's record (.cache/evidence-ops-r23-readonly-b, raw JSON-RPC round trip kept). The reply carried status \"ok\", traceActive false, traceSwitchSource \"AUTH_TRACE_GET_STATUS.RC\", source.method \"rfc_call\", returnedCount 1 and no query warnings - so the pinned function module was called and answered, and the documented code path ran end to end. Not proven: the true polarity was not observed. RC=\"X\" (traceActive true) is the other branch of the same one-line mapping and no live trace was switched on to see it, and nothing here reads a trace record, resolves a role into authorization objects or makes an authorization decision about anyone. Implemented on 2026-09-27 (N3); AUTH_TRACE_GET_STATUS was read from w200 and both fingerprints pinned, and its RC polarity was settled from SAP's own callers rather than assumed - see .doc/n3-auth-trace-status-contract-forensics-20260927.md sections 3.5 and 5. Availability is decided per target rather than by a helper protocol version, and this entry is the record of what a real call did."
     },
     {
       "tool": "read_work_processes",

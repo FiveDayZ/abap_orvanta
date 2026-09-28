@@ -669,6 +669,10 @@ const ROWS: readonly ToolRow[] = [
   ["read_system_parameters", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_qrfc_queues", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_idoc_status", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  // The interfaces family's third capability, selected by the operator on 2026-09-28 after the
+  // mail-queue claim was withdrawn: the SM58 tRFC error queue (ARFCSSTATE), read through the same
+  // reviewed reader as read_qrfc_queues and read_idoc_status.
+  ["read_trfc_error_entries", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_user_authorizations", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   // N3. Not a helper call: AUTH_TRACE_GET_STATUS is remote-enabled with no input, so this is the one
   // item of the OP2/OP1 batch that needs no SAP-side deployment at all.

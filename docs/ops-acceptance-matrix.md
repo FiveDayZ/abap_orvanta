@@ -21,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 1, blocked 1, partial 10, read-only 3, read-and-act 0 |
-| End-to-end by state (all families) | 3 (20%) |
-| Required families counted closed | **3 / 14** (21% of required) |
+| State counts | absent 1, blocked 1, partial 8, read-only 5, read-and-act 0 |
+| End-to-end by state (all families) | 5 (33%) |
+| Required families counted closed | **4 / 14** (29% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
-| Closed by state but missing evidence | none |
-| Outstanding required families | transport, jobs, locks, updates, system-info, query, runtime-resources, interfaces, authorizations, spool-output, landscape |
-| Waiting on each route | this repository 1, SAP-side helper + F8 5, operator approval 2, write authorisation (OP2) 4, multi-system configuration (OP3) 2, the platform (exempt) 1, - 3 |
+| Closed by state but missing evidence | interfaces |
+| Outstanding required families | transport, jobs, locks, updates, query, runtime-resources, interfaces, authorizations, spool-output, landscape |
+| Waiting on each route | this repository 1, SAP-side helper + F8 3, operator approval 1, write authorisation (OP2) 4, multi-system configuration (OP3) 2, the platform (exempt) 1, - 5 |
 
 ## Definition of done (plan section 8)
 
@@ -38,9 +38,9 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 3 / 14 closed (21%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 24 / 35 of the tools the families declare are verified (the `ops` group itself holds 33, of which 22 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_authorization_trace | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 5 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; exempt with a recorded platform ruling: cleanup_transport_entries (fails safely, remedy outside the service); open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), locks (1), updates (1), landscape (2) | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 4 / 14 closed (29%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 25 / 36 of the tools the families declare are verified (the `ops` group itself holds 34, of which 23 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, read_trfc_error_entries | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 4 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), locks (1), updates (1), landscape (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -52,18 +52,18 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |
 | - | ------ | ------- | --------- | ----------- | ----- | --------------------------- | ----- |
-| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 1/4 | 3 | partial | 3/4 verified (pending: cleanup_transport_entries) | write authorisation (OP2) + multi-system configuration (OP3) |
+| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 1/3 | 2 | partial | 3/3 verified | write authorisation (OP2) + multi-system configuration (OP3) |
 | 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/6 | 2 | partial | 3/6 verified (pending: read_background_job_spool, release_background_job, cancel_background_job) | write authorisation (OP2) |
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
 | 6 | `locks` | Who holds the lock that is blocking an object or document right now? | 1/1 | - | partial | 1/1 verified | write authorisation (OP2) |
 | 7 | `updates` | Which update terminated, and what does the failed update contain? | 2/2 | - | partial | 0/2 verified (pending: search_failed_updates, read_failed_update) | write authorisation (OP2) |
-| 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 |
+| 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | read-only | 2/2 verified | - |
 | 9 | `query` | Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI. | 2/2 | - | partial | 2/2 verified | this repository |
 | 10 | `runtime-resources` | Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists? | 4/4 | - | partial | 1/4 verified (pending: read_work_processes, read_user_sessions, read_file_system_directory) | SAP-side helper + F8 |
-| 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
-| 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 1/2 verified (pending: read_authorization_trace) | SAP-side helper + F8 + operator approval |
+| 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 3/3 | - | read-only | 2/3 verified (pending: read_trfc_error_entries) | - |
+| 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
 | 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | read-only | 2/2 verified | - |
 | 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 0/0 | - | absent | no tool exists | multi-system configuration (OP3) |
@@ -72,19 +72,16 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 ### this repository
 
-- **`query`** (partial) - The native data preview endpoint is platform-unsupported on this release, so only the fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, <, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three allowlisted tables on equality keys, with every column reference qualified. The join path was proven on w200 on 2026-09-27 (E070 INNER JOIN E07T returned matched rows, and a join on the unapproved MARA was refused with TABLE_NOT_ALLOWED before SAP was touched). Still absent: right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP itself would have to plan cannot be asked. A join read is also bounded: an ORDER BY over a read that stops at the row bound is refused with TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially.
+- **`query`** (partial) - The native data preview endpoint is platform-unsupported on this release, so only the fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, <, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three allowlisted tables on equality keys, with every column reference qualified. The join *implementation* is in place but the positive path has no evidence: every recorded read-only attempt of E070 INNER JOIN E07T - the 2026-09-27 sweeps .cache/evidence-ops-n1b and .cache/evidence-ops-n1c and the 2026-09-28 sweep .cache/evidence-ops-r23-readonly - ended in a transport-layer `socket hang up` rather than a result, so a claim that the join path was proven on w200 would contradict every artifact this workspace holds; only the negative control is proven (a join on the unapproved MARA is refused with TABLE_NOT_ALLOWED before SAP is touched, in all three runs). This paragraph previously asserted the positive path had been proven on 2026-09-27; that assertion came from prose rather than from a record and was withdrawn on 2026-09-28, with the durable write-up in .doc/code-update-20260928-155820.md. Still absent: right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP itself would have to plan cannot be asked. A join read is also bounded: an ORDER BY over a read that stops at the row bound is refused with TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially.
 
 ### SAP-side helper + F8
 
-- **`system-info`** (partial) - Reported: client role and cross-client change protection (SCC4), system type, release, the standard-time UTC offset, CVERS.EXTRELEASE per component verbatim, the kernel release and the database system from the kernel's own RFC_SYSTEM_INFO answer, and profile parameters and profile headers (RZ10/RZ11) through read_system_parameters. Still absent: the database *release* - RFC_SYSTEM_INFO.RFCDATABS is typed SYSYSID (SAP system name) on this release, the same data element RFCSYSID uses, so it is returned verbatim and never read as a version, and no other source this service can reach reports one.
 - **`runtime-resources`** (partial) - Reported: the work process list (TH_WPINFO) through read_work_processes, the user and session list (TH_USER_LIST) through read_user_sessions, the application-server directory listing (EPS2_GET_DIRECTORY_LISTING) through read_file_system_directory, and the workload collector's own directory of what it holds (SWNC_GET_WORKLOAD_DIRECTORY) through read_workload_directory. Still absent: read_performance_snapshot and read_db_activity, and the 2026-09-26 probe narrowed why. Every remote-enabled read carrying the workload numbers refuses to serialize: SWNC_COLLECTOR_GET_AGGREGATES, SWNC_GET_WORKLOAD_SNAPSHOT, SWNC_GET_WORKLOAD_STATISTIC, SWNC_READ_SNAPSHOT and SAPWLN3_AGGREGATE_SNAPSHOT_GET expose SWNCGL_T_AGG* rows whose field names or scalar types (SWNCTASKTYPERAW) fail verification, and SWNC_STATREC_READ cannot return NORMAL_RECORDS, the record header that gives a subrecord its user and response time. SWNC_COLLECTOR_KERNEL_STAT is fully resolvable but not remote-enabled, so the workload numbers need the in-SAP helper. DB02 is split by database vendor (DB02_ORA_*, DB02_*_DB2, DB6_*), and the platform is readable after all: RFC_SYSTEM_INFO returns RFCDBSYS (data element SYDBSYS, the central database system) through the fingerprint-pinned reader whose kernel and database values get_sap_system_info already publishes as serverFacts - that half has no recorded call yet, but it is a source the service owns, not an approval it waits for. The 2026-09-26 claim that the platform was unreadable rested on a single TPFYPROPTY read refused with TABLE_NOT_ALLOWED by the then-running build, which is a stale allowlist rather than an unavailable source (TPFYPROPTY was approved on 2026-09-25). What is actually missing is a vendor module that reports activity: the storage and statistics modules that probe reached (DB02_ORA_SELECT_SEGMENTS, DB02_ORA_LAST_ANALYZED, DB02_GET_EXTENT_LIST_DB2) are remote-enabled but answer for space and analysis - the Oracle pair reads dba_tab_columns.last_analyzed/sample_size/num_rows, statistics freshness rather than activity - DB02_DB_ACTIVITY was not found by name, and the vendor-neutral DB_AN_DB_KPIS requires a CCMS node handle (MT_TOOL_INFO typed ALTLEXDESC) and raises MESSAGE e001(sada) when it cannot read one, so an external caller can neither supply its context nor survive its failure. read_db_activity therefore needs the helper: the platform is the service's to read, but no module it can reach reports database activity rather than space, statistics or analysis.
-- **`interfaces`** (partial) - Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through read_idoc_status. read_email_queue was withdrawn from this family on 2026-09-28 by the operator's ruling, and the family was narrowed with it rather than left claiming a capability it cannot reach. The withdrawal is recorded, not hidden, because SOST *was* approved and registered and its read path does work: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show the table carries no live traffic on w200 - every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty throughout, and no row is dated later than 2014-12-01 - so a tool reading it would have reported a frozen 2013-2014 internal SAPoffice send log as the present, which is the misleading-tool failure this project forbids. Still absent: whatever answers whether outbound mail is piling up here. No replacement source has been chosen and none may be registered without an item-by-item approval, so the family stays open on a vacant slot - removing a capability is not a way to empty a gap, and the two remaining tools being verified does not close this family.
 - **`authorizations`** (partial) - Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - and the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the SAP-side helper, and any role-to-authorization-object resolution **as a tool**: AGR_1251/AGR_1252/AGR_PROF, USOBT/USOBT_C/USOBX/USOBX_C and UST10S/UST10C were approved and registered on 2026-09-28 (w200-verified), so that resolution no longer waits for an approval either - read_user_authorizations still deliberately does not perform it.
 - **`spool-output`** (partial) - Only rendered text is available: OTF/PDF conversion, printing and original report execution are absent.
 
 ### operator approval
 
-- **`interfaces`** (partial) - Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through read_idoc_status. read_email_queue was withdrawn from this family on 2026-09-28 by the operator's ruling, and the family was narrowed with it rather than left claiming a capability it cannot reach. The withdrawal is recorded, not hidden, because SOST *was* approved and registered and its read path does work: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show the table carries no live traffic on w200 - every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty throughout, and no row is dated later than 2014-12-01 - so a tool reading it would have reported a frozen 2013-2014 internal SAPoffice send log as the present, which is the misleading-tool failure this project forbids. Still absent: whatever answers whether outbound mail is piling up here. No replacement source has been chosen and none may be registered without an item-by-item approval, so the family stays open on a vacant slot - removing a capability is not a way to empty a gap, and the two remaining tools being verified does not close this family.
 - **`authorizations`** (partial) - Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - and the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the SAP-side helper, and any role-to-authorization-object resolution **as a tool**: AGR_1251/AGR_1252/AGR_PROF, USOBT/USOBT_C/USOBX/USOBX_C and UST10S/UST10C were approved and registered on 2026-09-28 (w200-verified), so that resolution no longer waits for an approval either - read_user_authorizations still deliberately does not perform it.
 
 ### write authorisation (OP2)
@@ -103,6 +100,10 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 - **`traces`** (blocked) - evidence only
 
+### -
+
+- **`interfaces`** (read-only) - evidence only
+
 ## Evidence pointers per family
 
 ### `transport` - partial
@@ -111,12 +112,16 @@ Purpose: Which request holds this object, what is in it, and is it ready to hand
 
 Criterion to close: Release and import are absent: release_transport_task and import_transport_queue. DEV->QAS->PRD promotion still happens outside the service.
 
+Declared boundaries: cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still refuses to lie. On 2026-09-24 it located the entry, passed its own pre-checks with two structurally different payloads, saw the PUT answer 2xx, re-read E071 and found the target row still present, and reported CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS instead of success. The native ADT removeobject resource that would be needed is missing from this release, which is why the entry is registered platform-unsupported (D2 ruling, .doc/code-update-20260925-223946.md, forensics in .doc/code-update-20260924-105614.md): a capability the platform cannot deliver, not work still to be done. Leaving it declared as a commitment would have kept this family open permanently, which is what a boundary exists to prevent.
+
+Withdrawn from the plan, still registered and still failing safely: `cleanup_transport_entries`
+  (registry status: platform-unsupported)
+
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `manage_transport_requests` | read-only | verified | `.doc/code-update-20260924-165500.md` |
 | `create_transport_request` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
 | `add_objects_to_transport` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
-| `cleanup_transport_entries` | action | platform-unsupported | platform-unsupported (last attempt 2026-09-24) |
 
 Not built yet: `release_transport_task`, `import_transport_queue`
 
@@ -197,11 +202,13 @@ Criterion to close: Failed updates can be read but never reprocessed.
 
 Not built yet: `reprocess_failed_update`
 
-### `system-info` - partial
+### `system-info` - read-only
 
 Purpose: Which release, kernel, patch level, client settings and profile parameters is this system running?
 
-Criterion to close: Reported: client role and cross-client change protection (SCC4), system type, release, the standard-time UTC offset, CVERS.EXTRELEASE per component verbatim, the kernel release and the database system from the kernel's own RFC_SYSTEM_INFO answer, and profile parameters and profile headers (RZ10/RZ11) through read_system_parameters. Still absent: the database *release* - RFC_SYSTEM_INFO.RFCDATABS is typed SYSYSID (SAP system name) on this release, the same data element RFCSYSID uses, so it is returned verbatim and never read as a version, and no other source this service can reach reports one.
+Criterion to close: gap empty and every tool verified
+
+Declared boundaries: The database *release* is not reported, and no source this service can reach on this target supplies it: RFC_SYSTEM_INFO.RFCDATABS is typed SYSYSID (SAP system name) on this release, the same data element RFCSYSID uses, so it is published verbatim as the database system and never read as a version. Everything else the family's purpose names - client role and cross-client change protection (SCC4), system type, release, the standard-time UTC offset, CVERS.EXTRELEASE per component verbatim, the kernel release, the database system from the kernel's own RFC_SYSTEM_INFO answer, and profile parameters and headers (RZ10/RZ11) through read_system_parameters - is answered today.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
@@ -212,7 +219,7 @@ Criterion to close: Reported: client role and cross-client change protection (SC
 
 Purpose: Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI.
 
-Criterion to close: The native data preview endpoint is platform-unsupported on this release, so only the fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, <, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three allowlisted tables on equality keys, with every column reference qualified. The join path was proven on w200 on 2026-09-27 (E070 INNER JOIN E07T returned matched rows, and a join on the unapproved MARA was refused with TABLE_NOT_ALLOWED before SAP was touched). Still absent: right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP itself would have to plan cannot be asked. A join read is also bounded: an ORDER BY over a read that stops at the row bound is refused with TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially.
+Criterion to close: The native data preview endpoint is platform-unsupported on this release, so only the fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, <, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three allowlisted tables on equality keys, with every column reference qualified. The join *implementation* is in place but the positive path has no evidence: every recorded read-only attempt of E070 INNER JOIN E07T - the 2026-09-27 sweeps .cache/evidence-ops-n1b and .cache/evidence-ops-n1c and the 2026-09-28 sweep .cache/evidence-ops-r23-readonly - ended in a transport-layer `socket hang up` rather than a result, so a claim that the join path was proven on w200 would contradict every artifact this workspace holds; only the negative control is proven (a join on the unapproved MARA is refused with TABLE_NOT_ALLOWED before SAP is touched, in all three runs). This paragraph previously asserted the positive path had been proven on 2026-09-27; that assertion came from prose rather than from a record and was withdrawn on 2026-09-28, with the durable write-up in .doc/code-update-20260928-155820.md. Still absent: right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP itself would have to plan cannot be asked. A join read is also bounded: an ORDER BY over a read that stops at the row bound is refused with TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
@@ -234,16 +241,19 @@ Criterion to close: Reported: the work process list (TH_WPINFO) through read_wor
 
 Not built yet: `read_performance_snapshot`, `read_db_activity`
 
-### `interfaces` - partial
+### `interfaces` - read-only
 
 Purpose: Is an outbound or inbound queue stuck, and did the IDoc arrive?
 
-Criterion to close: Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through read_idoc_status. read_email_queue was withdrawn from this family on 2026-09-28 by the operator's ruling, and the family was narrowed with it rather than left claiming a capability it cannot reach. The withdrawal is recorded, not hidden, because SOST *was* approved and registered and its read path does work: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show the table carries no live traffic on w200 - every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty throughout, and no row is dated later than 2014-12-01 - so a tool reading it would have reported a frozen 2013-2014 internal SAPoffice send log as the present, which is the misleading-tool failure this project forbids. Still absent: whatever answers whether outbound mail is piling up here. No replacement source has been chosen and none may be registered without an item-by-item approval, so the family stays open on a vacant slot - removing a capability is not a way to empty a gap, and the two remaining tools being verified does not close this family.
+Criterion to close: gap empty and every tool verified
+
+Declared boundaries: The outbound-mail question - is mail piling up here - is not answered, and no tool claims to. read_email_queue was withdrawn from this family on 2026-09-28 by the operator's ruling, because SOST *was* approved and registered and its read path does work: the same date's read-only forensics (.doc/code-update-20260928-093237.md) show the table carries no live traffic on w200 - every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty throughout, and no row is dated later than 2014-12-01 - so a tool reading it would have reported a frozen 2013-2014 internal SAPoffice send log as the present, which is the misleading-tool failure this project forbids. The slot was refilled in the same ruling-set not by removing the claim but by naming a capability the approved tables did not already answer: the SM58 tRFC error queue through read_trfc_error_entries, which reads ARFCSSTATE and answers whether an outgoing tRFC LUW is stuck in error. ARFCSSTATE was registered on 2026-09-28; its sibling payload table ARFCSDATA was approved in the same ruling and then deliberately NOT registered, because ARFCBLCNT (RAW 4) plus ARFCDATA01..07 (RAW 255 each) have no character column at all and the joined row is far past the 512-character limit this read path accepts - the tRFC payload is therefore a declared boundary of the read path, not a silently missing row of the allowlist. qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) through read_qrfc_queues and IDoc control and status records (EDIDC/EDIDS) through read_idoc_status were already covered.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `read_qrfc_queues` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 | `read_idoc_status` | read-only | verified | `.doc/code-update-20260927-084500.md` |
+| `read_trfc_error_entries` | read-only | unverified | unverified |
 
 ### `authorizations` - partial
 
@@ -254,7 +264,7 @@ Criterion to close: Reported: the stored role assignments per user (AGR_USERS), 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `read_user_authorizations` | read-only | verified | `.doc/code-update-20260927-084500.md` |
-| `read_authorization_trace` | read-only | unverified | unverified |
+| `read_authorization_trace` | read-only | verified | `.doc/code-update-20260928-155820.md` |
 
 ### `spool-output` - partial
 

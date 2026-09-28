@@ -606,8 +606,16 @@ test("the registry records the honest gap rather than inflating it", () => {
   // (TABLE_QUERY_AGGREGATE_FORM_UNSUPPORTED) instead of being called an unsupported function. The
   // entry names .doc/code-update-20260928-142711.md; the re-verification is recorded in
   // .doc/code-update-20260928-152302.md.
+  // Raised from 30 to 31 on 2026-09-28 (coverage batch): read_authorization_trace was called for real
+  // against w200 for the first time - status ok, traceActive false, traceSwitchSource
+  // "AUTH_TRACE_GET_STATUS.RC", source.method "rfc_call", returnedCount 1, no query warnings. The
+  // entry names .doc/code-update-20260928-155820.md and states what was not proven (RC="X" was never
+  // observed). In the same batch search_failed_updates was called again and deliberately NOT promoted:
+  // its entry already records that the empty window path was proven callable on 2026-09-25 while the
+  // status stayed unverified because no window held a real failed update, and a fresh empty window
+  // does not change that - the same restraint, not a different rule.
   assert.ok(
-    totals.verified <= 30,
+    totals.verified <= 31,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

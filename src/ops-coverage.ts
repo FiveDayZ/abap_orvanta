@@ -75,6 +75,17 @@ export interface OpsFamilyDefinition {
   closeRoutes: readonly OpsCloseRoute[]
   /** Service tool names this family needs; absent entries are the gap, present ones are the surface. */
   plannedToolNames: readonly string[]
+  /**
+   * Names this family once declared and deliberately gave up, with the reason in {@link boundary}.
+   *
+   * A withdrawal has to stay visible: dropping a name from {@link plannedToolNames} alone would take
+   * the tool out of the ops block entirely, and the block refuses to publish a classification that
+   * silently loses a tool. A withdrawn name therefore still counts as filed - it keeps the guard's
+   * "every ops tool serves a scenario" invariant true - while it stops being a commitment, so a tool
+   * the platform will never satisfy cannot keep its family open forever. It is not a way to empty a
+   * gap: a family may only withdraw a name it has stopped claiming, and the boundary has to say why.
+   */
+  withdrawnToolNames?: readonly string[]
   /** Whether finishing this family requires an action that changes SAP state. */
   actionRequired: boolean
   /** What is still missing before the family can be finished inside the service; empty when closed. */
@@ -147,6 +158,8 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   // Interfaces and queues
   read_qrfc_queues: "read-only",
   read_idoc_status: "read-only",
+  // The capability that refilled the interfaces slot on 2026-09-28 (SM58 tRFC error queue).
+  read_trfc_error_entries: "read-only",
   // Users and authorizations
   read_user_authorizations: "read-only",
   read_authorization_trace: "read-only",
@@ -172,16 +185,30 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "manage_transport_requests",
       "create_transport_request",
       "add_objects_to_transport",
-      "cleanup_transport_entries",
       "release_transport_task",
       "import_transport_queue"
     ],
+    // Withdrawn on 2026-09-28 by the operator's ruling (option A), with the platform evidence in the
+    // boundary. It stays listed here so the classification does not lose an ops tool; what changed is
+    // that the family no longer waits for a resource this release does not serve.
+    withdrawnToolNames: ["cleanup_transport_entries"],
     purpose: "Which request holds this object, what is in it, and is it ready to hand over?",
     closeRoutes: ["authorization", "landscape"],
     actionRequired: true,
     gap:
       "Release and import are absent: release_transport_task and import_transport_queue. " +
-      "DEV->QAS->PRD promotion still happens outside the service."
+      "DEV->QAS->PRD promotion still happens outside the service.",
+    boundary:
+      "cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's " +
+      "ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still " +
+      "refuses to lie. On 2026-09-24 it located the entry, passed its own pre-checks with two " +
+      "structurally different payloads, saw the PUT answer 2xx, re-read E071 and found the target " +
+      "row still present, and reported CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS instead of success. The " +
+      "native ADT removeobject resource that would be needed is missing from this release, which is " +
+      "why the entry is registered platform-unsupported (D2 ruling, .doc/code-update-20260925-223946.md, " +
+      "forensics in .doc/code-update-20260924-105614.md): a capability the platform cannot deliver, " +
+      "not work still to be done. Leaving it declared as a commitment would have kept this family " +
+      "open permanently, which is what a boundary exists to prevent."
   },
   {
     id: "jobs",
@@ -280,16 +307,22 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     plannedToolNames: ["get_sap_system_info", "read_system_parameters"],
     purpose:
       "Which release, kernel, patch level, client settings and profile parameters is this system running?",
-    closeRoutes: ["helper"],
+    closeRoutes: ["none"],
     actionRequired: false,
-    gap:
-      "Reported: client role and cross-client change protection (SCC4), system type, release, the " +
-      "standard-time UTC offset, CVERS.EXTRELEASE per component verbatim, the kernel release and the " +
-      "database system from the kernel's own RFC_SYSTEM_INFO answer, and profile parameters and profile " +
-      "headers (RZ10/RZ11) through read_system_parameters. Still absent: the database *release* - " +
-      "RFC_SYSTEM_INFO.RFCDATABS is typed SYSYSID (SAP system name) on this release, the same data " +
-      "element RFCSYSID uses, so it is returned verbatim and never read as a version, and no other " +
-      "source this service can reach reports one."
+    gap: "",
+    // Reclassified from gap to boundary on 2026-09-28 by the operator's ruling: both declared tools
+    // are verified, and what remained was a fixed property of the target rather than capability still
+    // to be built. Nothing here was removed to make a number move - the missing datum is unchanged
+    // and is stated in full.
+    boundary:
+      "The database *release* is not reported, and no source this service can reach on this target " +
+      "supplies it: RFC_SYSTEM_INFO.RFCDATABS is typed SYSYSID (SAP system name) on this release, " +
+      "the same data element RFCSYSID uses, so it is published verbatim as the database system and " +
+      "never read as a version. Everything else the family's purpose names - client role and " +
+      "cross-client change protection (SCC4), system type, release, the standard-time UTC offset, " +
+      "CVERS.EXTRELEASE per component verbatim, the kernel release, the database system from the " +
+      "kernel's own RFC_SYSTEM_INFO answer, and profile parameters and headers (RZ10/RZ11) through " +
+      "read_system_parameters - is answered today."
   },
   {
     id: "query",
@@ -303,13 +336,20 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, " +
       "<, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only " +
       "over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three " +
-      "allowlisted tables on equality keys, with every column reference qualified. The join path " +
-      "was proven on w200 on 2026-09-27 (E070 INNER JOIN E07T returned matched rows, and a join on " +
-      "the unapproved MARA was refused with TABLE_NOT_ALLOWED before SAP was touched). Still " +
-      "absent: right, full and cross joins, expressions, subqueries and LIMIT, so a statement SAP " +
-      "itself would have to plan cannot be asked. A join read is also bounded: an ORDER BY over a " +
-      "read that stops at the row bound is refused with TABLE_QUERY_ORDER_BY_INCOMPLETE rather " +
-      "than sorted partially."
+      "allowlisted tables on equality keys, with every column reference qualified. The join " +
+      "*implementation* is in place but the positive path has no evidence: every recorded read-only " +
+      "attempt of E070 INNER JOIN E07T - the 2026-09-27 sweeps .cache/evidence-ops-n1b and " +
+      ".cache/evidence-ops-n1c and the 2026-09-28 sweep .cache/evidence-ops-r23-readonly - ended in " +
+      "a transport-layer `socket hang up` rather than a result, so a claim that the join path was " +
+      "proven on w200 would contradict every artifact this workspace holds; only the negative " +
+      "control is proven (a join on the unapproved MARA is refused with TABLE_NOT_ALLOWED before " +
+      "SAP is touched, in all three runs). This paragraph previously asserted the positive path had " +
+      "been proven on 2026-09-27; that assertion came from prose rather than from a record and was " +
+      "withdrawn on 2026-09-28, with the durable write-up in .doc/code-update-20260928-155820.md. " +
+      "Still absent: right, full and cross joins, expressions, subqueries " +
+      "and LIMIT, so a statement SAP itself would have to plan cannot be asked. A join read is also " +
+      "bounded: an ORDER BY over a read that stops at the row bound is refused with " +
+      "TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially."
   },
   {
     id: "runtime-resources",
@@ -362,25 +402,35 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
   {
     id: "interfaces",
     label: "Interface and queue monitoring: qRFC/tRFC, IDoc",
-    plannedToolNames: ["read_qrfc_queues", "read_idoc_status"],
+    plannedToolNames: ["read_qrfc_queues", "read_idoc_status", "read_trfc_error_entries"],
     purpose: "Is an outbound or inbound queue stuck, and did the IDoc arrive?",
-    closeRoutes: ["approval", "helper"],
+    closeRoutes: ["none"],
     actionRequired: false,
-    gap:
-      "Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) " +
-      "through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through " +
-      "read_idoc_status. read_email_queue was withdrawn from this family on 2026-09-28 by the " +
-      "operator's ruling, and the family was narrowed with it rather than left claiming a " +
-      "capability it cannot reach. The withdrawal is recorded, not hidden, because SOST *was* " +
-      "approved and registered and its read path does work: the same date's read-only forensics " +
-      "(.doc/code-update-20260928-093237.md) show the table carries no live traffic on w200 - " +
-      "every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty throughout, and no row is " +
-      "dated later than 2014-12-01 - so a tool reading it would have reported a frozen 2013-2014 " +
-      "internal SAPoffice send log as the present, which is the misleading-tool failure this " +
-      "project forbids. Still absent: whatever answers whether outbound mail is piling up here. " +
-      "No replacement source has been chosen and none may be registered without an item-by-item " +
-      "approval, so the family stays open on a vacant slot - removing a capability is not a way " +
-      "to empty a gap, and the two remaining tools being verified does not close this family."
+    gap: "",
+    // Two operator rulings on 2026-09-28, recorded rather than hidden: the mail-queue claim was
+    // withdrawn because the only source can mislead, and the vacant slot was then refilled with a
+    // capability the approved tables genuinely did not already answer. Adding a tool that duplicated
+    // read_qrfc_queues (which already returns TRFCQSTATE per-LUW detail) or read_idoc_status (EDIDC
+    // plus EDIDS) was refused as counting, not coverage.
+    boundary:
+      "The outbound-mail question - is mail piling up here - is not answered, and no tool claims to. " +
+      "read_email_queue was withdrawn from this family on 2026-09-28 by the operator's ruling, " +
+      "because SOST *was* approved and registered and its read path does work: the same date's " +
+      "read-only forensics (.doc/code-update-20260928-093237.md) show the table carries no live " +
+      "traffic on w200 - every row is SNDART='INT' and DIRECTION='S', STA_ORDER is empty " +
+      "throughout, and no row is dated later than 2014-12-01 - so a tool reading it would have " +
+      "reported a frozen 2013-2014 internal SAPoffice send log as the present, which is the " +
+      "misleading-tool failure this project forbids. The slot was refilled in the same ruling-set " +
+      "not by removing the claim but by naming a capability the approved tables did not already " +
+      "answer: the SM58 tRFC error queue through read_trfc_error_entries, which reads ARFCSSTATE " +
+      "and answers whether an outgoing tRFC LUW is stuck in error. ARFCSSTATE was registered on " +
+      "2026-09-28; its sibling payload table ARFCSDATA was approved in the same ruling and then " +
+      "deliberately NOT registered, because ARFCBLCNT (RAW 4) plus ARFCDATA01..07 (RAW 255 each) " +
+      "have no character column at all and the joined row is far past the 512-character limit this " +
+      "read path accepts - the tRFC payload is therefore a declared boundary of the read path, not " +
+      "a silently missing row of the allowlist. " +
+      "qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) through read_qrfc_queues and IDoc control " +
+      "and status records (EDIDC/EDIDS) through read_idoc_status were already covered."
   },
   {
     id: "authorizations",
@@ -548,6 +598,25 @@ export function opsClassificationProblems(
       }
     }
 
+    // A withdrawn name is still filed: the tool keeps serving this scenario, it just stopped being a
+    // commitment. Without this the guard below would fire and the block would refuse to publish,
+    // which is the correct answer to "a tool disappeared from the report".
+    for (const tool of definition.withdrawnToolNames ?? []) {
+      filed.add(tool)
+      if (definition.plannedToolNames.includes(tool)) {
+        problems.push(`family ${definition.id} both plans and withdraws ${tool}`)
+      }
+      if (registryEntry(tool) === undefined) {
+        problems.push(`family ${definition.id} withdraws unregistered tool ${tool}`)
+      }
+      if ((definition.boundary ?? "").trim() === "") {
+        problems.push(
+          `family ${definition.id} withdraws ${tool} without stating why in its boundary: a ` +
+            "withdrawal is a recorded decision, not a silent drop"
+        )
+      }
+    }
+
     const state = opsFamilyState(definition)
     if (definition.exemptReason !== undefined) {
       if (definition.exemptReason.trim() === "") {
@@ -632,6 +701,8 @@ export interface OpsFamilyRollup {
   exempt: boolean
   exemptReason: string
   toolNames: string[]
+  /** Declared capabilities this family gave up, kept visible so a withdrawal is never a silent drop. */
+  withdrawnToolNames: string[]
   missingToolNames: string[]
   readTools: string[]
   actionTools: string[]
@@ -754,6 +825,7 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
       exempt: definition.exemptReason !== undefined,
       exemptReason: definition.exemptReason ?? "",
       toolNames: present,
+      withdrawnToolNames: [...(definition.withdrawnToolNames ?? [])],
       missingToolNames: missingOpsToolNamesForFamily(definition),
       readTools: present.filter((tool) => roles.get(tool) === "read-only"),
       actionTools: present.filter((tool) => roles.get(tool) === "action"),

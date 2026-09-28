@@ -523,9 +523,9 @@ export async function buildCapabilityReport(
     capability(
       "interface-queues",
       "target-specific",
-      ["read_qrfc_queues", "read_idoc_status"],
+      ["read_qrfc_queues", "read_idoc_status", "read_trfc_error_entries"],
       unknownTargetObservation(
-        "Reads the approved queue and IDoc tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. See adt-data-preview for the native verdict."
+        "Reads the approved queue, IDoc and tRFC-error tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. read_trfc_error_entries reads ARFCSSTATE only: its sibling payload table ARFCSDATA is RAW-only and is deliberately not registered. See adt-data-preview for the native verdict."
       )
     ),
     capability(

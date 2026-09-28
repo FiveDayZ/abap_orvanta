@@ -444,9 +444,14 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
   批准并登记（见 `src/table-allowlist.ts` 的逐表注释）。其二，同日的语义只读取证证明该表在 w200 上**没有活的
   邮件流量**：全表 `SNDART='INT'`、`DIRECTION='S'`、`STA_ORDER` 恒空，且没有 `ENTRY_DATE` 晚于 `2014-12-01`
   的行（四组 `NE`/越界筛选各 0 行，均有同形 `EQ` 正对照；证据 `.doc/code-update-20260928-093237.md`）。
-  因此 `read_email_queue` 经用户裁定**从该族撤下**，族的外延随之收窄为 qRFC/tRFC + IDoc。缺口不再是"等批准"，
-  而是"这一族仍缺第三个能力，且能回答"出站邮件是否积压"的替代来源尚未确定"——**撤下一个能力不等于补上一个缺口**，
-  族仍为 `partial`。两个已实现工具于 2026-09-27 的真实 w200 调用后转 `verified`（registry 条数 = 工具数）。
+  因此 `read_email_queue` 经用户裁定**从该族撤下**，族的外延随之收窄为 qRFC/tRFC + IDoc。
+  **【收尾，2026-09-28 晚】** 撤下的位置由用户同日裁定的第三条能力补齐：新增 `read_trfc_error_entries`
+  （SM58 tRFC 错误队列，读 `ARFCSSTATE`；`ARFCSDATA` 同批批准但因其 RAW-only 布局与 1785 字节行宽**故意不登记**，
+  理由写在 `src/table-allowlist.ts` 的逐表注释里）。族 `gap` 随之为空、`closeRoutes` 变为 `["none"]`，
+  而"出站邮件是否积压"**不再按缺口计**：`SOST` 在 w200 上没有活的邮件流量（同上的四组筛选取证），
+  因此它是这一族**已声明边界**的一部分（写在族 `boundary` 里），不是待补的能力——撤下一个能力不等于补上一个缺口，
+  但**补上第三个能力**才使缺口真正归零。两个既有工具于 2026-09-27 的真实 w200 调用后转 `verified`；
+  `read_trfc_error_entries` 在实例重建并重启之前保持 `unverified`（证据口径因此比状态口径慢一步）。
 - 读路径与 7.5 完全一致：共用 `src/reviewed-table-reader.ts`，错误码前缀 `QRFC_QUEUE_` / `IDOC_STATUS_`，
   无通用 SQL 回退、无写操作。
 

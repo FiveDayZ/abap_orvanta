@@ -68,6 +68,7 @@ import { buildCapabilityReport } from "./capabilities.js"
 import { collectCcmsAlerts } from "./ccms-alerts.js"
 import { collectIdocStatus } from "./idoc-status.js"
 import { collectQrfcQueues } from "./qrfc-queues.js"
+import { collectTrfcErrorEntries } from "./trfc-error-entries.js"
 import {
   collectFileSystemDirectory,
   collectUserSessions,
@@ -1299,6 +1300,14 @@ interface QrfcQueuesInput {
   queueName?: string | undefined
   destination?: string | undefined
   includeLuwStates?: boolean | undefined
+  maxRows?: number | undefined
+}
+interface TrfcErrorEntriesInput {
+  connectionId: string
+  destination?: string | undefined
+  functionModule?: string | undefined
+  state?: string | undefined
+  user?: string | undefined
   maxRows?: number | undefined
 }
 
@@ -7215,6 +7224,34 @@ export class ToolService {
       `LUW states: ${queues.counts.luwStates}${queues.truncated.luwStates ? " (truncated)" : ""}\n`
     if (queues.queryWarnings.length) summary += `- Query warnings: ${queues.queryWarnings.length}\n`
     return `${summary}${JSON.stringify(queues, null, 2)}`
+  }
+
+  async readTrfcErrorEntries(input: TrfcErrorEntriesInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const errors = await collectTrfcErrorEntries(
+      this.backend,
+      connectionId,
+      {
+        destination: input.destination,
+        functionModule: input.functionModule,
+        state: input.state,
+        user: input.user,
+        maxRows: input.maxRows
+      },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        )
+    )
+    let summary =
+      `tRFC error queue (SM58): ${connectionId.toUpperCase()}\n` +
+      `- Status: ${errors.status}\n` +
+      `- Entries: ${errors.count}${errors.truncated ? " (truncated)" : ""}\n`
+    if (errors.queryWarnings.length) summary += `- Query warnings: ${errors.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(errors, null, 2)}`
   }
 
   async readCcmsAlerts(input: CcmsAlertsInput): Promise<string> {

@@ -793,6 +793,9 @@ export function createMcpServer(
   registerTool("read_idoc_status", toolContracts.read_idoc_status, async (input) =>
     invoke("read_idoc_status", () => tools.readIdocStatus(input))
   )
+  registerTool("read_trfc_error_entries", toolContracts.read_trfc_error_entries, async (input) =>
+    invoke("read_trfc_error_entries", () => tools.readTrfcErrorEntries(input))
+  )
   registerTool("read_system_parameters", toolContracts.read_system_parameters, async (input) =>
     invoke("read_system_parameters", () => tools.readSystemParameters(input))
   )

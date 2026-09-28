@@ -146,7 +146,15 @@ lines.push(
 )
 lines.push("classification guard that has to pass before this file can be generated at all.")
 lines.push("")
-const opsToolsInFamilies = [...new Set(block.families.flatMap((family) => family.toolNames))]
+// Withdrawn names stay in this inventory on purpose: a family that gives up a declared tool must not
+// make the tool disappear from the matrix, or the withdrawal would read as a silent deletion. They
+// count as "not verified" in clause 2 for the same reason - the registry still says
+// platform-unsupported, and that is a fact about the tool, not about whether its family waits for it.
+const opsToolsInFamilies = [
+  ...new Set(
+    block.families.flatMap((family) => [...family.toolNames, ...family.withdrawnToolNames])
+  )
+]
 const statusOf = (tool) => entries.get(tool)?.status ?? "unregistered"
 const nonVerified = opsToolsInFamilies.filter((tool) => statusOf(tool) !== "verified")
 const actionTools = [...new Set(block.families.flatMap((family) => family.actionTools))]
@@ -220,7 +228,16 @@ if (
 const declaredBlocking = new Set(
   block.families.flatMap((family) => family.verification.blockingTools)
 )
-const unreported = nonVerified.filter((tool) => !declaredBlocking.has(tool))
+// A withdrawn tool is reported too, just not as a blocker: it is printed with its registry status in
+// its family's section, so "not a blocking tool" and "not reported anywhere" stay distinguishable and
+// a family cannot make an inconvenient tool vanish by withdrawing it.
+const withdrawn = new Set(block.families.flatMap((family) => family.withdrawnToolNames))
+for (const tool of withdrawn) {
+  if (declaredBlocking.has(tool)) {
+    throw new Error(`a family both withdraws and is blocked by ${tool}`)
+  }
+}
+const unreported = nonVerified.filter((tool) => !declaredBlocking.has(tool) && !withdrawn.has(tool))
 if (unreported.length > 0) {
   throw new Error(`registry and family rollup disagree about: ${unreported.join(", ")}`)
 }
@@ -286,6 +303,17 @@ for (const family of block.families) {
   lines.push("")
   if (family.boundary.trim() !== "") {
     lines.push(`Declared boundaries: ${cell(family.boundary)}`)
+    lines.push("")
+  }
+  if (family.withdrawnToolNames.length > 0) {
+    lines.push(
+      `Withdrawn from the plan, still registered and still failing safely: ${family.withdrawnToolNames
+        .map((tool) => `\`${tool}\``)
+        .join(", ")}`
+    )
+    lines.push(
+      `  (registry status: ${family.withdrawnToolNames.map((tool) => statusOf(tool)).join(", ")})`
+    )
     lines.push("")
   }
   if (family.toolNames.length === 0) {
