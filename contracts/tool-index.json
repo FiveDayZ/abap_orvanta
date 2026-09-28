@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 157,
+  "toolCount": 158,
   "readOnlyToolCount": 94,
   "profiles": {
     "readonly": 94,
     "platform": 12,
     "dev": 136,
     "config": 39,
-    "ops": 51,
-    "full": 157
+    "ops": 52,
+    "full": 158
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 34,
+    "ops": 35,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -558,6 +558,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
       "minHelperProtocol": "1.1"
+    },
+    {
+      "name": "delete_sap_lock",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.15"
     },
     {
       "name": "delete_transaction_code",

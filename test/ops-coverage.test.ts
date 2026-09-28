@@ -38,8 +38,14 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
   landscape: "absent"
 }
 
-/** The plan's outstanding tool commitments; adding one to the plan must update this number. */
-const PLANNED_GAP_TOOL_COUNT = 10
+/**
+ * The plan's outstanding tool commitments; adding one to the plan must update this number.
+ *
+ * It fell from 10 to 9 on 2026-09-28 when `delete_sap_lock` was built (OP2, the locks family): the
+ * family still carries its gap, because a built tool is not a verified one, but the tool it was
+ * waiting for is no longer missing.
+ */
+const PLANNED_GAP_TOOL_COUNT = 9
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -48,7 +54,9 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  assert.equal(opsGroupTools.length, 34)
+  // 35 from 2026-09-28: `delete_sap_lock` joined the ops group. The count is a tripwire, not a goal -
+  // it exists so a tool cannot leave or join the classified surface unnoticed.
+  assert.equal(opsGroupTools.length, 35)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -235,8 +243,10 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
 
-  assert.equal(block.summary.classifiedToolCount, 34)
-  assert.equal(block.summary.actionToolCount, 5)
+  assert.equal(block.summary.classifiedToolCount, 35)
+  // Six action tools from 2026-09-28: `delete_sap_lock` is a destructive write, so it is classified
+  // as an action like the two transport writes and the two job writes before it.
+  assert.equal(block.summary.actionToolCount, 6)
   assert.equal(block.summary.platformBlockedToolCount, 1)
   assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)
   assert.equal(block.summary.missingPlannedToolCount, block.summary.missingPlannedTools.length)

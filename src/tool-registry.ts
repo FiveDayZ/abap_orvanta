@@ -809,6 +809,11 @@ const ROWS: readonly ToolRow[] = [
     "2.14",
     ["JOB_CANCEL"]
   ],
+  // OP2 / locks. SM12 lock release. ENQUE_DELETE is remoteEnabled=false on this release and takes
+  // its key as a SEQG3 table, so the shared repository body is the only route. It is `D` rather than
+  // `W`: the entry is removed outright and the session that held it loses the lock. 2.15 is the
+  // first helper that declares the five IV_LOCK_* parameters the branch reads.
+  ["delete_sap_lock", "ops", OPSP, "D", "sap-helper-fallback", REPOSITORY, "2.15", ["LOCK_DELETE"]],
   ["abap_download", "source", DEV, "W", "target-specific", null, null],
   ["adt_discovery_export", "platform", PL, "W", "native-adt", null, null]
 ]

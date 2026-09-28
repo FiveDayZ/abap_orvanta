@@ -158,6 +158,11 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // 2.13 helper would run the shared body without the JOB_CANCEL arm at all, and grouping the two
   // would let one missing branch mark the working release tool unsupported.
   ["repository-helper-job-cancel", ["cancel_background_job"]],
+  // OP2 / locks. Releasing an SM12 lock entry is a third callee family on the same shared body:
+  // ENQUE_DELETE is remoteEnabled=false and needs the five IV_LOCK_* parameters, so a 2.14 helper
+  // neither declares the interface nor dispatches LOCK_DELETE. It gets its own group for the same
+  // reason the job pair did: one missing branch must not mark an unrelated tool unsupported.
+  ["repository-helper-lock-delete", ["delete_sap_lock"]],
   ["repository-helper-gui-definition", ["read_abap_gui_definition", "patch_abap_gui_definition"]],
   ["repository-helper-ecc-fallbacks", ["read_abap_message_class", "create_abap_message_class"]],
   // 2.12: the text element payload carries the entry kind, and the helper writes selection texts

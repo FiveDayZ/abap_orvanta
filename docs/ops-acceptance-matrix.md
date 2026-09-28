@@ -39,8 +39,8 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 5 / 14 closed (36%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 26 / 36 of the tools the families declare are verified (the `ops` group itself holds 34, of which 24 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 4 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), locks (1), updates (1), landscape (2) | **no** |
+| 2. every ops tool verified with real w200 evidence | 26 / 37 of the tools the families declare are verified (the `ops` group itself holds 35, of which 24 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, delete_sap_lock, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 5 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; open: release_background_job, cancel_background_job, delete_sap_lock. Action capability is still planned but unbuilt in: transport (2), jobs (2), updates (1), landscape (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -57,7 +57,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
-| 6 | `locks` | Who holds the lock that is blocking an object or document right now? | 1/1 | - | partial | 1/1 verified | write authorisation (OP2) |
+| 6 | `locks` | Who holds the lock that is blocking an object or document right now? | 1/2 | 1 | partial | 1/2 verified (pending: delete_sap_lock) | write authorisation (OP2) |
 | 7 | `updates` | Which update terminated, and what does the failed update contain? | 2/2 | - | partial | 0/2 verified (pending: search_failed_updates, read_failed_update) | write authorisation (OP2) |
 | 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | read-only | 2/2 verified | - |
 | 9 | `query` | Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI. | 2/2 | - | partial | 2/2 verified | this repository |
@@ -182,8 +182,7 @@ Criterion to close: Locks can be listed but never released; a blocking lock must
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `search_sap_locks` | read-only | verified | `.doc/code-update-20260924-125930.md` |
-
-Not built yet: `delete_sap_lock`
+| `delete_sap_lock` | action | unverified | unverified |
 
 ### `updates` - partial
 

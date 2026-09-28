@@ -92,6 +92,13 @@ import {
   type CancelBackgroundJobInput,
   type ReleaseBackgroundJobInput
 } from "./background-jobs.js"
+import {
+  LOCK_DELETE_CONFIRMATION,
+  deleteSapLockSchema,
+  lockDeleteResult,
+  lockPayloadRows,
+  type DeleteSapLockInput
+} from "./lock-delete.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
@@ -1764,6 +1771,42 @@ export class ToolService {
     const metadata = jobPayloadRows(result.source ?? [])
     return JSON.stringify(
       jobCancelResult(connectionId, {
+        status: result.status,
+        code: result.code,
+        message: result.message,
+        metadata
+      }),
+      null,
+      2
+    )
+  }
+
+  /**
+   * Release one SM12 lock (OP2, the `locks` family).
+   *
+   * The confirmation string is checked before SAP is touched, and the key is normalised with the
+   * same rules the read side uses (owner and table upper case, argument untouched because GARG is
+   * case sensitive). Everything else is the helper's: it re-reads the live entry, refuses an
+   * unmatched or ambiguous key, deletes the row it read, and answers success only when the entry is
+   * gone on read-back. This method never invents an outcome and never claims a commit - the lock
+   * table is kernel shared memory, which the warnings state.
+   */
+  async deleteSapLock(input: DeleteSapLockInput): Promise<string> {
+    const parsed = deleteSapLockSchema.parse(input)
+    if (parsed.confirmation !== LOCK_DELETE_CONFIRMATION)
+      throw new Error(`confirmation must be ${LOCK_DELETE_CONFIRMATION}`)
+    const connectionId = parsed.connectionId.toLowerCase()
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "LOCK_DELETE",
+      lockOwner: parsed.username.toUpperCase(),
+      lockTable: parsed.tableName.toUpperCase(),
+      lockArgument: parsed.argument,
+      lockMode: parsed.mode,
+      lockObject: parsed.lockObject?.toUpperCase()
+    })
+    const metadata = lockPayloadRows(result.source ?? [])
+    return JSON.stringify(
+      lockDeleteResult(connectionId, {
         status: result.status,
         code: result.code,
         message: result.message,

@@ -147,6 +147,9 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   analyze_abap_traces: "platform-blocked",
   // Locks and failed updates
   search_sap_locks: "read-only",
+  // OP2 / locks. Built 2026-09-28 with the SM12 release arm; the family closes only when a real
+  // call is recorded against it, so the role is declared here and the gap text stays until then.
+  delete_sap_lock: "action",
   search_failed_updates: "read-only",
   read_failed_update: "read-only",
   // Archive administration (SARA) and CCMS alerts (RZ20)

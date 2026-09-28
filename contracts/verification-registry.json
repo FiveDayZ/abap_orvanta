@@ -1886,6 +1886,18 @@
       "lastAttemptAt": null,
       "evidence": null,
       "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+    },
+    {
+      "tool": "delete_sap_lock",
+      "helper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": "not yet called: implemented in the OP2 locks batch, and the 2.15 helper carrying the LOCK_DELETE arm is not deployed",
+      "method": "controlled-write",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Implemented 2026-09-28 (OP2, the locks family) and never called. Three gates stand in front of a real call: the SAP-side helper must be at 2.15 with the LOCK_DELETE arm, which needs a carrier program the operator runs in SE38 because the shared body lives in ZORVANTA_MCP_CORE and the self-write guard protects it; a lock that is worth releasing has to exist in the target client, held by a session nobody still needs; and the write needs the operator's authorisation. Four properties of the route were read from w200 source before the arm was written: ENQUE_DELETE reports remoteEnabled=false, so the service cannot reach it directly; it performs no AUTHORITY-CHECK of its own, so the helper repeats SM12's own check (object S_ENQUE, field S_ENQ_ACT: DLOU for the caller's own locks, DLFU for another user's, ALL as the full permission); its key is the SEQG3 row itself, so the helper copies the row ENQUEUE_READ returned instead of rebuilding one from caller input; and it exports SUBRC without ever assigning it, so success is never read from that parameter - the helper re-reads the lock table and requires the entry to be absent. No COMMIT WORK is performed or claimed, because the enqueue table is kernel shared memory rather than a database transaction, and the kernel still writes its own SM12/GEO audit entry for the deletion. Because no call has been made, this entry claims no reply and carries no evidence - in particular it does not claim that a lock was ever observed to be released."
     }
   ]
 }

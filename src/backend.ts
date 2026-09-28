@@ -277,6 +277,11 @@ export type SapRepositoryOperation =
   // different callee (BP_JOB_DELETE) with an opposite commit default: it commits internally unless
   // COMMITMODE is blanked, so the branch blanks it and owns the LUW itself.
   | "JOB_CANCEL"
+  // OP2 / locks. SM12 lock release. ENQUE_DELETE is remoteEnabled=false on this release (read on
+  // w200, 2026-09-28) and keys its work by the SEQG3 row itself, so the shared repository body is
+  // the only route. The branch re-reads and matches the live entry before it deletes anything, and
+  // proves the outcome by the entry's absence on read-back.
+  | "LOCK_DELETE"
 
 export type SapStructureRow = Record<string, string>
 
@@ -372,6 +377,16 @@ export interface SapRepositoryRequest {
    */
   jobName?: string | undefined
   jobCount?: string | undefined
+  /**
+   * OP2 / locks. The exact SM12 lock key, taken from `search_sap_locks`. Emitted only when supplied,
+   * like the job pair above: a helper deployed before 2.15 does not declare these parameters, and
+   * the shared body is reached through the same function module for every operation.
+   */
+  lockOwner?: string | undefined
+  lockTable?: string | undefined
+  lockArgument?: string | undefined
+  lockMode?: string | undefined
+  lockObject?: string | undefined
   transportObjects?: SapStructureRow[] | undefined
 }
 

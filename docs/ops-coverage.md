@@ -846,6 +846,9 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
    语义是"释放全系统所有锁"，无法表达"删除指定的一把锁"，用它实现该工具**语义错误且极其危险**。
    精确路径存在：SAP 为每个锁对象生成 `DEQUEUE_<锁对象名>`（实测枚举到该族；抽查 `DEQUEUE_E_TABLE` 为
    `remoteEnabled=false`）⇒ 仍走助手，但须**按锁对象动态派发**。**待裁定**（Q-N11，见取证 §5.1）。
+   **【本条路径判断已于 2026-09-28 更正】**：真正被 SM12 使用的入口是 **`ENQUE_DELETE`**（FG `SENT`，
+   `remoteEnabled=false`，键是整行 `SEQG3`），不是按锁对象派发 `DEQUEUE_<obj>`；依据是 SM12 程序
+   `RSENQRR2` 的 `FORM enqdelete_marked`。精确结论、权限检查与部署状态见 **§7.18**。
 
 **未做**：12 个助手分支的实现与部署、操作码表登记、载体生成、指纹重钉。**未执行任何测试**。
 
@@ -906,3 +909,52 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 
 **教训**：同一句错误文案在"名字不在受支持集合"与"形式不被翻译"两种情形下被复用，就会产出自我矛盾的
 结论；错误码的分类维度应是**调用方要改什么**，不是抛出点在代码里的位置。
+
+### 7.18 OP2 locks - `delete_sap_lock` 的助手分支与服务侧（2026-09-28）
+
+**已实现（服务侧 + 助手分支），未部署、未调用**：`delete_sap_lock` 端到端成形——`src/lock-delete.ts`
+（输入 schema、确认串 `DELETE_SAP_LOCK`、码表白名单、结果构造）、`src/tools.ts` 的 `deleteSapLock`、
+contracts / tool-registry（`D` / `2.15` / `["LOCK_DELETE"]`）/ mcp / capabilities（新能力组
+`repository-helper-lock-delete`）/ backend 联合与字段 / adt-backend 选择性发参；助手侧在共享 body 加
+`LOCK_DELETE|2.15|W` + 五个 `IV_LOCK_*` 入参（类型全部取自 SEQG3 字段，长度随 DDIC 不漂移）+ `WHEN 'LOCK_DELETE'.`
+分支。工具面 157 → **158 工具 / 94 只读**，ops 组 34 → **35**，能力组 32 → **33**，registry **158 条 = 工具数**
+（verified 仍 32）；计划缺口 10 → **9**；**必需族仍 5/14（36%）**、`criterionMet=false`。
+
+**纠正 §7.16 第 2 条的路径判断：SM12 的删除入口是 `ENQUE_DELETE`，不是按锁对象派发 `DEQUEUE_<obj>`。**
+`ENQUE_DELETE`（FG `SENT`，99 行，`remoteEnabled=false`）：导入 `CHECK_UPD_REQUESTS`（默认 0）、
+`SUPPRESS_SYSLOG_ENTRY`（默认 space），导出 `SUBRC`，`TABLES ENQ LIKE SEQG3`；正文对每一行用该行自己的
+`GNAME/GMODE/GARG/GUSR/GUSRVB` 调内核（`CALL 'C_ENQUEUE' ID 'OPCODE' FIELD 'R'`）。**调用方证据**在 SM12 自身
+程序 **`RSENQRR2`**（2703 行）：`FORM enqdelete_marked` 调 `ENQUE_DELETE`（`check_upd_requests = 1`，
+`TABLES enq = del`），随后 `REFRESH del`。按锁对象派发既需要为每个锁对象各生成一个载体，又会让键由调用方
+重建（丢掉 `GUSR/GUSRVB`）——与"用读到的行原文删"相比是更差的表达。
+
+**该 FM 自己不做权限检查，所以分支必须补上 SM12 的检查。** `RSENQRR2` 的 `FORM auth_check_all` /
+`auth_check_dlou` / `auth_check_dlfu` 用对象 `S_ENQUE`、字段 `S_ENQ_ACT`：`DLOU` = 删自己的锁、`DLFU` = 删他人
+的锁、`DPFU`/`DPFC` = 显示他人/他客户端、`ALL` = 全权。分支按"键里的 owner 是否等于 `sy-uname`"选 `DLOU`/`DLFU`，
+两者都不通过时再试 `ALL`，全部失败回 `LOCK_NO_AUTHORITY`。`DPFU` 故意不查：本分支不显示也不返回他人锁的
+细节（回显的是调用方自己给的键）。**跨客户端不提供**：读与删都固定 `gclient = sy-mandt`。
+
+**键 = 读到的整行，而不是调用方给的键。** 分支先用 `ENQUEUE_READ`（`gclient = sy-mandt`、`guname`、`gname`、
+`garg`、`gargnowc = 'X'`）重读，再按 client/owner/table/argument/mode（`lockObject` 给了就再加）逐项计数：
+0 命中 → `LOCK_NOT_FOUND`，>1 → `LOCK_KEY_AMBIGUOUS`（要求调用方用 `lockObject` 收窄，分支不替它猜），恰好 1 →
+把**那一行**交给 `ENQUE_DELETE`。`GARG` 域 `EQDARG`（CHAR 150，lowercase）⇒ 参数**不做大写转换**（大小写敏感），
+owner/table/mode/object 才转换。
+
+**无 `COMMIT WORK`；成功由"读回不存在"证明。** 锁表在内核共享内存而非数据库事务，没有可提交的东西，也就不
+声称提交；`SUPPRESS_SYSLOG_ENTRY` 留默认 space，内核仍写 SM12/GEO 审计条目。`ENQUE_DELETE` 导出 `SUBRC` 但
+正文**从不赋值**（同一次源码读取确认）⇒ 分支保留对该值的防御性检查（调用方必须检查被调 FM 的返回码），但
+**证据是删除后再读一次要求 0 命中**，否则 `LOCK_STILL_PRESENT`。
+
+**部署状态（关键）**：两个载体已按线上基线生成——
+`.doc/deploy-repository-dynpro-2.11-r13.abap`（目标 `ZORVANTA_MCP_DYNPRO_DEPLOY`，payload 7953 行，
+源 hash `ca5b36c1…`，基线 `cd5e341f…`）与 `.doc/deploy-repository-exec-2.11-r13.abap`（目标
+`ZORVANTA_MCP_EXEC_DEPLOY`，源 hash `7f8d25ca…`，基线 `3b12ef54…`）；两者都通过"正文引用的参数都在接口里
+声明""无重名声明""线上代码行全部包含在正文中"三项守卫。**线上 `PROTOCOL|MAX` 实测为 DYNPRO = 2.12、
+EXECUTE = 2.11** ⇒ 2.15 的 `LOCK_DELETE` 分支**尚未部署**，工具**从未被调用**（registry 条目 `unverified`、
+`evidence: null`）。服务侧实际路由到 `Z_ORVANTA_MCP_DYNPRO_API`（`callSapRepository`）⇒ 生效载体是 **DYNPRO 那个**；
+同一个载体还会把此前从未部署的 `JOB_RELEASE`(2.13)/`JOB_CANCEL`(2.14) 分支一并带上去，`F8` 前须按生成的
+"self-description rows" 逐行复核。
+
+**未做**：载体未运行、SAP 侧未改动、工具未被调用（因此 `locks` 族仍 `partial`，gap 文本保留——工具已建不等于
+有真实调用证据）。**未执行任何测试**（人工优先门）。
+

@@ -178,6 +178,12 @@ export function createMcpServer(
   registerTool("search_sap_locks", toolContracts.search_sap_locks, async (input) =>
     invoke("search_sap_locks", () => maintenance.searchLocks(input))
   )
+  // OP2 / locks. The release is a write, so it goes through invokeWrite: the operation ID is
+  // recorded before SAP is touched and a reused ID is refused, which is what keeps a retry from
+  // looking like a second deletion.
+  registerTool("delete_sap_lock", toolContracts.delete_sap_lock, async (input) =>
+    invokeWrite("delete_sap_lock", input, backend, writeReceipts, () => tools.deleteSapLock(input))
+  )
   registerTool("search_failed_updates", toolContracts.search_failed_updates, async (input) =>
     invoke("search_failed_updates", () => maintenance.searchUpdates(input))
   )

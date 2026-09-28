@@ -2150,12 +2150,14 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
 }
 
 /**
- * D7 selectors, emitted only when the request actually carries them.
+ * Selectors, emitted only when the request actually carries them.
  *
  * The shared repository body serves every operation through one function module, so a helper
- * deployed before the 2.8 interface would be handed an element it does not declare even on an
- * unrelated operation such as READ_SCREEN. An absent selector therefore leaves the SOAP request
- * unchanged instead of travelling as an empty element.
+ * deployed before the interface that introduced a selector would be handed an element it does not
+ * declare even on an unrelated operation such as READ_SCREEN. An absent selector therefore leaves the
+ * SOAP request unchanged instead of travelling as an empty element. The job pair arrived with 2.13
+ * and the five lock parameters with 2.15, which is why they are listed here rather than emitted
+ * unconditionally.
  */
 function optionalRepositorySelectors(request: SapRepositoryRequest): string {
   const selectors: ReadonlyArray<readonly [string, string | undefined]> = [
@@ -2174,7 +2176,12 @@ function optionalRepositorySelectors(request: SapRepositoryRequest): string {
     ["IV_REQUEST_ALLOW_DUPLICATE", request.requestAllowDuplicate ? "X" : undefined],
     ["IV_ADD_REQUEST", request.addRequest],
     ["IV_JOBNAME", request.jobName],
-    ["IV_JOBCOUNT", request.jobCount]
+    ["IV_JOBCOUNT", request.jobCount],
+    ["IV_LOCK_OWNER", request.lockOwner],
+    ["IV_LOCK_TABLE", request.lockTable],
+    ["IV_LOCK_ARGUMENT", request.lockArgument],
+    ["IV_LOCK_MODE", request.lockMode],
+    ["IV_LOCK_OBJECT", request.lockObject]
   ]
   return selectors
     .filter((selector): selector is readonly [string, string] => selector[1] !== undefined)
