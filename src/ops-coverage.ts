@@ -356,8 +356,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     gap:
       "Reported: outbound and inbound qRFC/tRFC queue state (TRFCQOUT/TRFCQIN/TRFCQSTATE) " +
       "through read_qrfc_queues, and IDoc control and status records (EDIDC/EDIDS) through " +
-      "read_idoc_status. Still absent: the email queue - SOST is not on the approved allowlist, " +
-      "so read_email_queue needs a separate approval before it can be implemented."
+      "read_idoc_status. Still absent: the email queue tool itself. SOST was approved and " +
+      "registered on 2026-09-28 (30 fields, w200-verified), so read_email_queue no longer waits " +
+      "for an approval - it waits to be written."
   },
   {
     id: "authorizations",
@@ -374,8 +375,10 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "(AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). " +
       "Still absent: the trace data itself (which authorization check failed), because " +
       "AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the " +
-      "SAP-side helper, and any role-to-authorization-object resolution, because " +
-      "AGR_1251/AGR_1252/AGR_PROF/USOB*/UST10* are not on the approved allowlist."
+      "SAP-side helper, and any role-to-authorization-object resolution **as a tool**: " +
+      "AGR_1251/AGR_1252/AGR_PROF, USOBT/USOBT_C/USOBX/USOBX_C and UST10S/UST10C were approved and " +
+      "registered on 2026-09-28 (w200-verified), so that resolution no longer waits for an " +
+      "approval either - read_user_authorizations still deliberately does not perform it."
   },
   {
     id: "spool-output",
@@ -400,8 +403,10 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "Reported: archiving sessions (object, status, user, creation time, file count) through " +
       "read_archive_status, which reads ARCHIVE_ADMIN_SELECT_SESSIONS inside the approved " +
       "maintenance helper - the first tool this family has ever had. " +
-      "Still absent: CCMS alert monitoring (RZ20) through read_ccms_alerts, which needs a helper " +
-      "branch of its own, and any archive-file detail beyond a per-session count."
+      "Still absent: CCMS alert monitoring (RZ20) through read_ccms_alerts, and any archive-file " +
+      "detail beyond a per-session count. Neither needs a new helper branch any more: ALALERTDB " +
+      "(48 fields) and ADMI_FILES (15 fields) were approved and registered on 2026-09-28 and are " +
+      "w200-verified, so both tools are readable from the service side."
   },
   {
     id: "landscape",

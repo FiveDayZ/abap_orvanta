@@ -175,3 +175,54 @@ test("D7 §8.2: registering the format tables does not widen the sensitive tier"
     )
   }
 })
+
+// Q-N6 was approved on 2026-09-28 ("全部立项，包括 N4 多系统 landscape 与 SOST 白名单"), and each table
+// was then verified on w200 with read_ddic_transparent_table before registration - existence, package,
+// field count and keys - because a registered table SAP does not have would advertise a read that can
+// only ever fail. Pinned so a later removal is a deliberate, visible change.
+test("Q-N6: the 2026-09-28 registrations are allowed and are business-tier", () => {
+  const approved = [
+    "SOST",
+    "ALALERTDB",
+    "ADMI_FILES",
+    "AGR_1251",
+    "AGR_1252",
+    "AGR_PROF",
+    "USOBT",
+    "USOBT_C",
+    "USOBX",
+    "USOBX_C",
+    "UST10S",
+    "UST10C"
+  ]
+  for (const name of approved) {
+    assert.equal(isTableAllowed(name), true, `${name} must be allowed`)
+    assert.equal(describeAllowlistRejection(name), null)
+    assert.ok(
+      (TABLE_TIERS.business as readonly string[]).includes(name),
+      `${name} belongs to the business tier`
+    )
+    assert.equal((TABLE_NEVER_ALLOWED as readonly string[]).includes(name), false)
+  }
+})
+
+test("Q-N6: the checked-and-rejected candidates stay out of the allowlist", () => {
+  // UST10 does not exist on w200 - the plan's `UST10*` is really UST10S/UST10C - so registering the
+  // literal name would have advertised a read that can only fail.
+  assert.equal(isTableAllowed("UST10"), false)
+  // USOBHASH exists but is the internal hash of USOBT/USOBX and carries no independent analytic
+  // value; ARCH_STAT was checked again and is still an INTTAB rather than a storage table.
+  assert.equal(isTableAllowed("USOBHASH"), false)
+  assert.equal(isTableAllowed("ARCH_STAT"), false)
+})
+
+test("Q-N6: the approval widened no existing boundary", () => {
+  for (const name of ["USR02", "USR01", "PA0001", "PA0008", "BSEG", "CDHRS", "KNA1", "LFA1"])
+    assert.equal(isTableAllowed(name), false, `${name} must stay out`)
+  for (const name of TABLE_PENDING_APPROVAL)
+    assert.equal(isTableAllowed(name), false, `${name} must still await its own approval`)
+  // A new name must not have quietly replaced an old one: the three tables read by the tool that
+  // documents them are still allowed.
+  for (const name of ["AGR_USERS", "AGR_TCODES", "UST04"])
+    assert.equal(isTableAllowed(name), true, `${name} must still be allowed`)
+})

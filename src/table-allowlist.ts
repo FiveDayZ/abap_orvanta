@@ -112,6 +112,38 @@ export const TABLE_TIERS = {
    *
    * 表的存在性、表类型、字段与键全部由 w200 的 DD02L/DD03L 实测核对（`.doc/code-update-20260925-221900.md`
    * 同批证据）。同批候选里的 ARCH_STAT 经核对是 INTTAB（仅 2 字段，非存储表），因此未登记。
+   *
+   * 2026-09-28（Q-N6 批准：用户裁定「全部立项，包括 N4 多系统 landscape 与 SOST 白名单」）新增
+   * 十二张表，把 `interfaces` / `authorizations` / `archive-alerts` 三个族的 gap 从"等批准"推进
+   * 到"可实现"。每张表的存在性、包名、字段数与键**全部由 w200 实测核对**，证据脚本
+   * `.cache/n2-7-ddic-probe.ps1` 与 `.cache/n2-7-fields-probe.ps1`（2026-09-28，只读）。逐表敏感面
+   * 写在这里，以免"已放行"被误读成"无风险"：
+   *
+   *   邮件队列 —— SOST（SO 包，30 字段，键为 SAPoffice 对象/收件人标识 + COUNTER）。装载待发邮件的
+   *     **身份与路由**：MSGID/MSGTY/MSGNO 与至多四个 MSGV 变量、CREATOR、SENDER、DIRECTION、
+   *     收发日期。是邮件标识而非渲染后的正文，不含任何凭证；敏感面是主题与发件人。
+   *   CCMS 告警 —— ALALERTDB（SMOI 包，48 字段，键 ALSYSID/MSEGNAME/ALUNIQNUM/ALINDEX + 告警
+   *     日期时间），含 SEVERITY/STATUS/OBJECTNAME/FIELDNAME/MSGTEXT/USERID/MSCGLID。这是 RZ20
+   *     告警的权威存储表，登记后 `read_ccms_alerts` 可走服务侧 `read_abap_table`，**不必再开助手
+   *     分支**。敏感面是告警文本里可能带的对象名与用户名。
+   *   归档文件索引 —— ADMI_FILES（SARC 包，15 字段，键 DOCUMENT/ARCHIV_KEY），含 FILENAME 与
+   *     PATHINTERN（应用服务器内部路径）、文件大小与状态标志。敏感面是路径与文件名的披露。
+   *     同批的 ARCH_STAT 再次核对仍是 INTTAB，**继续不登记**。
+   *   角色→权限值 —— AGR_1251（16 字段）与 AGR_1252（7 字段），键均为 MANDT/AGR_NAME/COUNTER。
+   *     前者是角色授予的权限对象/字段/LOW/HIGH，后者是组织级别取值。这是"该角色能做什么"的
+   *     有效权限面，安全相关但不含凭证；与既有 AGR_USERS/AGR_TCODES 同档。
+   *   角色→参数文件 —— AGR_PROF（5 字段，键 MANDT/AGR_NAME/LANGU，含 PROFILE 与 PTEXT）。
+   *   权限对象默认值 —— USOBT/USOBT_C（9/10 字段，键 NAME/TYPE/OBJECT/FIELD/LOW）与
+   *     USOBX/USOBX_C（7/9 字段，键 NAME/TYPE/OBJECT）。是**定制表**：对象与字段的默认值提案及
+   *     检查标识，不含用户数据。USOBHASH 同批核对存在（7 字段），但它是上述表的内部散列、没有
+   *     独立分析价值，**不登记**。
+   *   参数文件展开 —— UST10S（SUSR，5 字段，键 MANDT/PROFN/AKTPS/OBJCT/AUTH）与 UST10C（4 字段，
+   *     键 MANDT/PROFN/AKTPS/SUBPROF），均以参数文件为键；配合既有 UST04（用户→参数文件）才得到
+   *     "用户→权限对象→值"。**计划里写的 `UST10*` 在 w200 上并不存在名为 `UST10` 的表**（实测
+   *     not-found），真实表是这两张 —— 这是本次核对纠正的一处计划错误。
+   *
+   * 本次批准**未放宽任何既有边界**：X 档六张表、W2 排除的 KNA1/LFA1、以及 TABLE_PENDING_APPROVAL
+   * 中的业务主数据一律不动，默认拒绝不变。
    */
   business: [
     SCOPED_QUERY_TABLE,
@@ -126,7 +158,19 @@ export const TABLE_TIERS = {
     "TRFCQSTATE",
     "AGR_USERS",
     "AGR_TCODES",
-    "UST04"
+    "UST04",
+    "SOST",
+    "ALALERTDB",
+    "ADMI_FILES",
+    "AGR_1251",
+    "AGR_1252",
+    "AGR_PROF",
+    "USOBT",
+    "USOBT_C",
+    "USOBX",
+    "USOBX_C",
+    "UST10S",
+    "UST10C"
   ],
   /**
    * 产品必需档：由 `src` 调用点清点得出，**不是** D5-2 取证候选表的子集。
