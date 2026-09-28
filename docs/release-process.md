@@ -91,7 +91,7 @@ git rev-list -n 1 v<version>   # 应与 BUILD-INFO.json 的 standaloneSourceComm
 
 ### 7.1 为什么必须人工
 
-所有 `ZORVANTA_MCP_*` 助手都位于函数组 `ZORVANTA_MCP_CORE` 内，而该函数组带有自写保护：服务不得修改自己的助手（否则一次错误写入就能让服务失去修复自身的能力）。因此每次助手变更都必须由人在 SAP 内执行：
+仓库助手族（`Z_ORVANTA_MCP_EXECUTE` / `Z_ORVANTA_MCP_DYNPRO_API`）位于函数组 `ZORVANTA_MCP_CORE` 内，而该函数组带有自写保护：服务不得修改自己的助手（否则一次错误写入就能让服务失去修复自身的能力）。**该自写保护只覆盖核心组**：`Z_ORVANTA_MAINT_READ`（`ZORVANTA_MAINT`）与 `Z_ORVANTA_OPS_READ`（`ZORVANTA_LOG`）都在组外——服务侧契约对它们仍然只读，且 SAP_BASIS 7.31 上对函数模块自身 `source/main` 的 ADT 写入一律被拒（HTTP 423；2026-09-18 到达写入阶段的 12 次尝试全部失败，无一成功），因此它们同样只能经载体部署。每次助手变更都必须由人在 SAP 内执行：
 
 1. 仓库内用生成器产出**载体程序**（`scripts/generate-*-carrier*.mjs` / `generate-*-deploy-report.mjs`），得到 `.doc/deploy-*.abap` 与逐字**部署报告**。报告必须包含 `SOURCE|HASH`、操作码清单、`PROTOCOL|MIN/MAX`、载体修订号（`rNN`）、正文行数与 digest。
 2. 人工用 SE38 执行该载体程序**并运行（F8）**生成助手主体，回传 `OK: generated and activated.` 级别的回执。
@@ -101,10 +101,11 @@ git rev-list -n 1 v<version>   # 应与 BUILD-INFO.json 的 standaloneSourceComm
 
 ### 7.2 两条不可混淆的刻度
 
-| 助手族                                                             | 协议刻度 | 载体     |
-| ------------------------------------------------------------------ | -------- | -------- |
-| DDIC（`Z_ORVANTA_MCP_DDIC_API`）                                   | `1.x`    | 独立载体 |
-| repository（`Z_ORVANTA_MCP_EXECUTE` / `Z_ORVANTA_MCP_DYNPRO_API`） | `2.x`    | 独立载体 |
+| 助手族                                                             | 协议刻度 | 载体                               |
+| ------------------------------------------------------------------ | -------- | ---------------------------------- |
+| DDIC（`Z_ORVANTA_MCP_DDIC_API`）                                   | `1.x`    | 独立载体                           |
+| repository（`Z_ORVANTA_MCP_EXECUTE` / `Z_ORVANTA_MCP_DYNPRO_API`） | `2.x`    | 独立载体                           |
+| maintenance（`Z_ORVANTA_MAINT_READ`）                              | `1.x`    | 独立载体（仅正文，接口段原样保留） |
 
 两个刻度互相独立，**不得互相换算或混用**。能力报告中的 `helpers` 与 `helperAttestation` 按族分别自述，判断可用性时必须看对应族。
 

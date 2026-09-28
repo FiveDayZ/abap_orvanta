@@ -49,6 +49,27 @@ test("every repository carrier program is the one its generator writes", () => {
   assert.equal(targets.length, 2, "both repository helpers must have their own carrier")
 })
 
+test("the maintenance carrier program is the one its generator writes", () => {
+  const generator = readFileSync(
+    join(repositoryRoot, "scripts", "generate-maintenance-carrier.mjs"),
+    "utf8"
+  )
+  const declared = /const DEFAULT_PROGRAM = "([A-Z0-9_]+)"/.exec(generator)
+  assert.ok(declared, "generate-maintenance-carrier.mjs must declare its DEFAULT_PROGRAM")
+  const program = declared[1]
+  assert.ok(program, "the generator must name a default carrier program")
+  // The maintenance family is not in the self-write-protected core group, so the remedy must name
+  // the body-only carrier instead of the generic "section 7" fallback.
+  assert.equal(HELPER_CARRIER_PROGRAMS["Z_ORVANTA_MAINT_READ"], program)
+  // ABAP program names are capped at 30 characters, so a longer name could not be created at all.
+  assert.ok(program.length <= 30, `carrier program name too long for SE38: ${program}`)
+  assert.match(
+    helperDeploymentRemedy("Z_ORVANTA_MAINT_READ", "1.1"),
+    /ZORVANTA_MAINT_DEPLOY/,
+    "a maintenance shortfall must name the carrier an operator can run"
+  )
+})
+
 test("a repository version shortfall names the repository carrier, not the DDIC one", () => {
   const remedy = helperDeploymentRemedy("Z_ORVANTA_MCP_EXECUTE", "2.8")
   assert.match(remedy, /ZORVANTA_MCP_EXEC_DEPLOY/)

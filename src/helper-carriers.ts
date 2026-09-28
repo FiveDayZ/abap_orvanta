@@ -23,7 +23,17 @@ export const HELPER_CARRIER_PROGRAMS: Readonly<Record<string, string>> = {
   // CAPABILITIES rows, so the 2.8 body needs one carrier per target
   // (scripts/generate-repository-carrier.mjs, docs/release-process.md section 7.2).
   Z_ORVANTA_MCP_EXECUTE: "ZORVANTA_MCP_EXEC_DEPLOY",
-  Z_ORVANTA_MCP_DYNPRO_API: "ZORVANTA_MCP_DYNPRO_DEPLOY"
+  Z_ORVANTA_MCP_DYNPRO_API: "ZORVANTA_MCP_DYNPRO_DEPLOY",
+  // The maintenance helper is NOT in the self-write-protected core group: it lives in
+  // ZORVANTA_MAINT and its body comes from scripts/maintenance-diagnostic-source.mjs, which
+  // scripts/bootstrap-sap-helper.ps1 does not carry (it only knows LOG_READ, the two MCP_*_API
+  // modules, MCP_EXECUTE and OPS_READ). Being outside the guard does not make it writable: on
+  // SAP_BASIS 7.31 the ADT write to a function module's own source/main is refused with HTTP 423
+  // (12 of the 12 attempts on 2026-09-18 that reached the write failed), and the in-SAP
+  // WRITE_FUNCTION_SOURCE path needs a helper protocol the deployment does not have yet. Its
+  // carrier is therefore a body-only report (scripts/generate-maintenance-carrier.mjs) that keeps
+  // the deployed parameter interface and replaces only the implementation body.
+  Z_ORVANTA_MAINT_READ: "ZORVANTA_MAINT_DEPLOY"
 }
 
 /**
