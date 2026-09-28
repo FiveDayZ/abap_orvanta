@@ -22,7 +22,23 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     await client.connect(transport as Parameters<Client["connect"]>[0])
     assert.equal(client.getServerVersion()?.name, "orvanta")
     const list = await client.listTools()
-    assert.deepEqual(list.tools.map((tool) => tool.name).sort(), [
+    // The registry is what the matrices, the coverage block and the capability report read, so a
+    // tool can be added there - with a contract, which `withRegistryAnnotations` requires - and
+    // still never be served, because nothing compared the registry against the surface a client
+    // sees. Every other gate stays green while that happens, and the tool is then counted as
+    // coverage that no client can call.
+    //
+    // Only this direction is reachable. A `registerTool` call for a name the registry does not list
+    // is disabled by the profile gate in `createMcpServer`, whose default profile is drawn from the
+    // registry itself, so the surface can never exceed the registry. Asserted before the frozen list
+    // below so a divergence is reported as the one missing name rather than as a 150-line diff.
+    const exposedToolNames = list.tools.map((tool) => tool.name)
+    assert.deepEqual(
+      [...TOOL_NAMES].filter((name) => !exposedToolNames.includes(name)),
+      [],
+      "tools in src/tool-registry.ts but not served: the matrices count a tool no client can call"
+    )
+    assert.deepEqual(exposedToolNames.slice().sort(), [
       "abap_activate",
       "abap_debug_breakpoint",
       "abap_debug_session",
