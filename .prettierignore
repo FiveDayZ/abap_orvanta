@@ -4,6 +4,11 @@ contracts/tool-index.json
 docs/tool-index.md
 # 生成文件：由 scripts/generate-ops-matrix.mjs 产出，格式以生成器为准
 docs/ops-acceptance-matrix.md
+# 镜像文件：contracts/verification-registry.json 所引证据的逐字副本。
+# 必须与 .doc 原件保持字节一致，格式化会让镜像与所引证据不符，
+# 也会让「证据存在」这道守卫验的是一个被人重排过的文件。刷新用
+# scripts/mirror-workspace-evidence.mjs --copy。
+docs/workspace-evidence/
 dist/
 node_modules/
 release/

@@ -7,6 +7,11 @@ release/
 .cache/
 # MCP 事件日志：按技能要求写入服务根，属本地诊断证据，不入库
 .logs/
+# 例外：镜像里那一条 .logs 记录被 contracts/verification-registry.json 逐字引用为
+# read_ddic_transparent_table 的验证证据，不入库则该条 verified 在 CI 里无法被验证。
+# 只放行镜像中的这一份快照，上面的实时 .logs 仍然不入库。
+!docs/workspace-evidence/.logs/
+!docs/workspace-evidence/.logs/**
 # 交付/传输归档不入库，保留在磁盘
 /*.zip
 # 本地真实 SAP 连接配置不入库，只保留出厂占位符 packaging/windows/default-connections.json
