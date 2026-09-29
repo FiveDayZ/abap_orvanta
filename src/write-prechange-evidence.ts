@@ -389,6 +389,44 @@ export async function observeWritePreChange(
       evidence.warnings.push(
         "no SM12 row matched this exact key in the current client; the helper re-reads the lock table and answers LOCK_NOT_FOUND instead of releasing an entry it did not read"
       )
+  } else if (name === "release_transport_task") {
+    // A CTS request is not a repository object either, and it has no ADT URI: the generic source
+    // observation below would look up an empty URI and refuse the release before SAP is contacted,
+    // exactly as it did for the lock release. The transport organizer read is the authoritative
+    // pre-change read, so the receipt records the request's observed status plus its task and object
+    // inventory - the release carries the tasks with it, so what lives in a task is part of what is
+    // about to be exported. A request the read cannot find is recorded as absent rather than as a
+    // blocker: the helper re-reads E070 itself and answers TRANSPORT_NOT_FOUND, which is its
+    // documented contract, and nothing is exported.
+    try {
+      const request = await backend.transportDetails(
+        connectionId,
+        String(input.transportNumber).toUpperCase()
+      )
+      evidence.sources.push("transport_details")
+      const number = String(request["tm:number"] ?? "")
+        .trim()
+        .toUpperCase()
+      evidence.exists = number === String(input.transportNumber).toUpperCase()
+      evidence.active = null
+      evidence.version = stringValue(request["tm:status"])
+      evidence.fingerprint = transportFingerprint(request)
+      evidence.requestNumber = number === "" ? null : number
+      const entries = transportEntries(request)
+      evidence.warnings.push(
+        `the release carries ${request.tasks.length} task(s) and ${entries.length} object entr(ies); releasing the request releases its tasks`
+      )
+    } catch (error) {
+      if (isMissing(error)) {
+        evidence.sources.push("transport_details")
+        evidence.exists = false
+        evidence.warnings.push(
+          "no transport matched this exact number in the current client; the helper re-reads E070 and answers TRANSPORT_NOT_FOUND instead of releasing a request it did not read"
+        )
+      } else {
+        recordObservationError(evidence, "transport_details", error)
+      }
+    }
   } else if (name === "run_abap_program") {
     // The target of this tool is whatever the program itself changes, and no read can bound that.
     // Treating the program object as the target would attach a green pre-change snapshot to a write

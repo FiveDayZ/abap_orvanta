@@ -2181,7 +2181,12 @@ function optionalRepositorySelectors(request: SapRepositoryRequest): string {
     ["IV_LOCK_TABLE", request.lockTable],
     ["IV_LOCK_ARGUMENT", request.lockArgument],
     ["IV_LOCK_MODE", request.lockMode],
-    ["IV_LOCK_OBJECT", request.lockObject]
+    ["IV_LOCK_OBJECT", request.lockObject],
+    // The transport pair arrived with 2.16 for the same reason as the lock five: a helper deployed
+    // before it does not declare IV_TRKORR/IV_RELEASE_REQUEST, so an absent value leaves the request
+    // unchanged instead of travelling as an element the older interface would reject.
+    ["IV_TRKORR", request.releaseTransport],
+    ["IV_RELEASE_REQUEST", request.releaseRequest]
   ]
   return selectors
     .filter((selector): selector is readonly [string, string] => selector[1] !== undefined)

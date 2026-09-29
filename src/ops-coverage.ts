@@ -150,6 +150,9 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   // OP2 / locks. Built 2026-09-28 with the SM12 release arm and verified 2026-09-29 by a real
   // release on w200 (LOCK_DELETED, absence read back twice), so the family states no gap.
   delete_sap_lock: "action",
+  // OP2 / transport. Release is a state-changing CTS operation and irrational to repeat, so it is
+  // an action; its own `import_transport_queue` counterpart is still absent from the surface.
+  release_transport_task: "action",
   search_failed_updates: "read-only",
   read_failed_update: "read-only",
   // Archive administration (SARA) and CCMS alerts (RZ20)
@@ -183,7 +186,7 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
 export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
   {
     id: "transport",
-    label: "Transport: list, detail, delivery precheck, create, add objects",
+    label: "Transport: list, detail, delivery precheck, create, add objects, release",
     plannedToolNames: [
       "manage_transport_requests",
       "create_transport_request",
@@ -199,8 +202,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["authorization", "landscape"],
     actionRequired: true,
     gap:
-      "Release and import are absent: release_transport_task and import_transport_queue. " +
-      "DEV->QAS->PRD promotion still happens outside the service.",
+      "Import is absent: import_transport_queue. Release is built (release_transport_task, helper " +
+      "2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside " +
+      "the service.",
     boundary:
       "cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's " +
       "ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still " +

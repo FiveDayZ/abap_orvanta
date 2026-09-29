@@ -282,6 +282,10 @@ export type SapRepositoryOperation =
   // the only route. The branch re-reads and matches the live entry before it deletes anything, and
   // proves the outcome by the entry's absence on read-back.
   | "LOCK_DELETE"
+  // OP2 / transport. Release one request. TRINT_RELEASE_REQUEST is remoteEnabled=false on this
+  // release (read on w200, 2026-09-29), so the shared repository body is the only route. The branch
+  // reads E070 before and after and proves the release by the status leaving D/L for R/O.
+  | "RELEASE_TRANSPORT_TASK"
 
 export type SapStructureRow = Record<string, string>
 
@@ -387,6 +391,13 @@ export interface SapRepositoryRequest {
   lockArgument?: string | undefined
   lockMode?: string | undefined
   lockObject?: string | undefined
+  /**
+   * OP2 / transport. The request a release acts on and the same number echoed as the caller's
+   * explicit release intent. Emitted only when supplied, like the selectors above: a helper
+   * deployed before 2.16 does not declare these parameters.
+   */
+  releaseTransport?: string | undefined
+  releaseRequest?: string | undefined
   transportObjects?: SapStructureRow[] | undefined
 }
 

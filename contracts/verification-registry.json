@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T08:40:29.000Z",
+  "updatedAt": "2026-09-29T01:01:52.100Z",
   "notes": "2026-09-26 (OP1-1 runtime-resources, third batch): read_workload_directory was added and registered unverified. The batch also settled, with interface-level evidence, why the family's two remaining reads are not service-side work: the workload numbers cannot be read by this service at all (aggregate row structures are refused and the single-record read cannot return its record header), and DB02 is split by database vendor with the platform unreadable from the approved sources. Both are recorded in the runtime-resources gap for the next phase. 2026-09-25 (OP1-1 runtime-resources, second batch): read_file_system_directory was added and registered unverified. The listing is the kernel's own EPS2_GET_DIRECTORY_LISTING call, and the probe evidence that removed the expected helper dependency is recorded in the entry. The workload candidate SWNC_COLLECTOR_GET_AGGREGATES was probed in the same session and turned out not to be usable for this service: the function module is remote-enabled, but its aggregate tables (TASKTYPE, TASKTIMES, TIMES, USERTCODE, DBPROCS and the rest of the workload set) hold structures whose field names or scalar types this service cannot verify, so a workload snapshot cannot be built from it. 2026-09-25 (OP1-1 runtime-resources): read_work_processes and read_user_sessions were added and registered unverified. Both are the kernel's own monitor reads (TH_WPINFO / TH_USER_LIST) called over SOAP-RFC after an interface-fingerprint check; the assessment had expected this family to need the SAP-side helper, and the probe evidence that removed that dependency is recorded in each entry. Verification status is recorded per tool, never inferred from availability or from passing tests.",
   "entries": [
     {
@@ -1898,6 +1898,18 @@
       "lastAttemptAt": "2026-09-29T08:40:29+08:00",
       "evidence": ".doc/code-update-20260929-084029.md",
       "notes": "First real release on 2026-09-29 08:39-08:40 after the 2.15 helper body 757847e5 was deployed by the operator through the SE38 carrier ZORVANTA_MCP_DYNPRO_DEPLOY. A lock the operator had just created in SE37 (ENQUEUE_EZTESTLOCK01, MANDT 200, _SCOPE 3; ownerSystemTime 2026-09-29T08:39:47) was read by search_sap_locks, released by this tool, and then read back twice: the helper reported readBack.lockPresentAfter=false with LOCK_DELETED and an independent search_sap_locks returned 0 entries, so the disappearance is attributable to this call and not to any other actor. The same key had failed with LOCK_KEY_INVALID an hour earlier on the previous body because the helper guard ran FIND REGEX on the blank-padded CHAR 30 field seqg3-gname, which matched every input; after the fix the identical call returns LOCK_NOT_FOUND instead, which proves the guard no longer self-trips and that the helper refuses a key it did not read. Not proven: the DLFU/ALL authorization branches (only the caller own-lock DLOU path ran), the LOCK_KEY_AMBIGUOUS, LOCK_STILL_PRESENT and LOCK_NO_AUTHORITY branches, and any concurrent re-acquisition of the same key. A first success attempt was voided because the operator manually deleted the entry in SM12; that observation is recorded as unattributed and carries no credit."
+    },
+    {
+      "tool": "release_transport_task",
+      "helper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "availabilityBasis": "protocol+operations",
+      "verificationTarget": "not yet called: implemented in the OP2 transport batch on 2026-09-29, and the 2.16 helper carrying the RELEASE_TRANSPORT_TASK arm is not deployed",
+      "method": "controlled-write",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Implemented 2026-09-29 (OP2, the transport family) and never called. The release route was read from w200 before the arm was written: TRINT_RELEASE_REQUEST reports remoteEnabled=false, so the service cannot reach it directly and the shared repository body is the only route; the CTS ADT surface on this platform is read-only (its only advertised paths are /sap/bc/cts/transports and /sap/bc/cts/transportchecks, with no release or import resource), which removes the native alternative as well. Its only required input is IV_TRKORR, typed E070-TRKORR; every other input is an optional TRBOOLEAN, so nothing structured crosses the boundary. Two of its three exports are TRWBO_REQUEST and TRWBO_T_E070, which read_ddic_structure reports as not-found on w200 because they are not DDIC objects, so the helper neither declares nor reads them and proves the release by re-reading E070 instead - the status must leave D/L for R/O. CTS own authority objects apply (S_CTS_ADMI and S_CTS_ADM with CTS_ADMFCT, where a single-request import needs IMPS and import-all needs IMPA, read from FORM authority_check in LSTPAF01); a refusal is reported as TRANSPORT_NO_AUTHORITY. Because no call has been made, this entry claims no reply and carries no evidence - in particular it does not claim that a transport was ever observed to be released. The operator authorized request GR2K923486 (owner WYS, target GR3, header status D with the single object R3TR PROG ZCMCP_RPT_0831 in task GR2K923487) for the first real release."
     }
   ]
 }

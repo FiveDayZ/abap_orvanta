@@ -814,6 +814,19 @@ const ROWS: readonly ToolRow[] = [
   // `W`: the entry is removed outright and the session that held it loses the lock. 2.15 is the
   // first helper that declares the five IV_LOCK_* parameters the branch reads.
   ["delete_sap_lock", "ops", OPSP, "D", "sap-helper-fallback", REPOSITORY, "2.15", ["LOCK_DELETE"]],
+  // OP2 / transport. Releasing a request exports its objects to the target system and cannot be
+  // undone from the service, so the destructive mark is `D`, not `W`. 2.16 is the first helper that
+  // declares IV_TRKORR/IV_RELEASE_REQUEST.
+  [
+    "release_transport_task",
+    "ops",
+    OPSP,
+    "D",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.16",
+    ["RELEASE_TRANSPORT_TASK"]
+  ],
   ["abap_download", "source", DEV, "W", "target-specific", null, null],
   ["adt_discovery_export", "platform", PL, "W", "native-adt", null, null]
 ]

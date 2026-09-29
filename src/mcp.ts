@@ -187,6 +187,13 @@ export function createMcpServer(
   registerTool("delete_sap_lock", toolContracts.delete_sap_lock, async (input) =>
     invokeWrite("delete_sap_lock", input, backend, writeReceipts, () => tools.deleteSapLock(input))
   )
+  // OP2 / transport. A release is irreversible for the target system, so it takes the same write
+  // path: the operation ID is recorded before SAP is touched and a reused ID is refused.
+  registerTool("release_transport_task", toolContracts.release_transport_task, async (input) =>
+    invokeWrite("release_transport_task", input, backend, writeReceipts, () =>
+      tools.releaseTransportTask(input)
+    )
+  )
   registerTool("search_failed_updates", toolContracts.search_failed_updates, async (input) =>
     invoke("search_failed_updates", () => maintenance.searchUpdates(input))
   )
@@ -1381,6 +1388,13 @@ export function writeOperationTarget(
         `SM12 lock entry of ${lockObject === "" ? "the reported key" : lockObject} owned by ${owner} ` +
         `on table ${table} with argument "${argument}" in mode ${mode}`
     }
+  }
+  if (name === "release_transport_task") {
+    // Same class as the lock release: a CTS request is not a repository object and has no ADT URI,
+    // so without this branch the receipt would read "ADT target " and the pre-change gate would
+    // refuse the write before contacting SAP.
+    const number = String(input.transportNumber).toUpperCase()
+    return { key: `CTS:${number}`, summary: `transport request ${number}` }
   }
   if (name === "release_background_job" || name === "cancel_background_job") {
     // Same class of target: a TBTCO job row is identified by job name plus eight-digit job count and

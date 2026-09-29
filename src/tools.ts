@@ -99,6 +99,13 @@ import {
   lockPayloadRows,
   type DeleteSapLockInput
 } from "./lock-delete.js"
+import {
+  TRANSPORT_RELEASE_CONFIRMATION,
+  releaseTransportTaskSchema,
+  transportPayloadRows,
+  transportReleaseResult,
+  type ReleaseTransportTaskInput
+} from "./transport-release.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
@@ -1811,6 +1818,34 @@ export class ToolService {
         code: result.code,
         message: result.message,
         metadata
+      }),
+      null,
+      2
+    )
+  }
+
+  async releaseTransportTask(input: ReleaseTransportTaskInput): Promise<string> {
+    const parsed = releaseTransportTaskSchema.parse(input)
+    if (parsed.confirmation !== TRANSPORT_RELEASE_CONFIRMATION)
+      throw new Error(`confirmation must be ${TRANSPORT_RELEASE_CONFIRMATION}`)
+    const connectionId = parsed.connectionId.toLowerCase()
+    // The helper compares the two numbers and refuses a mismatch, so a caller that only
+    // pattern-matched the first field cannot release a different request than it named.
+    if (parsed.transportNumber !== parsed.releaseRequest)
+      throw new Error("transportNumber and releaseRequest must name the same transport")
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "RELEASE_TRANSPORT_TASK",
+      releaseTransport: parsed.transportNumber,
+      releaseRequest: parsed.releaseRequest
+    })
+    const parsedRows = transportPayloadRows(result.source ?? [])
+    return JSON.stringify(
+      transportReleaseResult(connectionId, {
+        status: result.status,
+        code: result.code,
+        message: result.message,
+        metadata: parsedRows.metadata,
+        messages: parsedRows.messages
       }),
       null,
       2
