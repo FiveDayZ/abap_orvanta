@@ -256,8 +256,10 @@ export async function compareSystems(
   }
   const objectName = input.objectName.trim().toUpperCase()
   if (!objectName) throw new Error("objectName is required")
-  // Throws for a type token the shared vocabulary does not know, which is how a caller learns the
-  // accepted values instead of receiving an empty comparison for a type that cannot be searched.
+  // Refuses a token containing "/" that is not an ADT path this release can search, because searching
+  // such a path would fabricate a "not found" for an object that may exist. A short code this release
+  // does not list is passed through unchanged on purpose: it is still the caller's statement about the
+  // object, and the search itself decides what it can answer.
   const searchTypes = searchTypeCodes([input.objectType])
 
   const [fromSide, toSide] = await Promise.all([

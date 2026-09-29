@@ -165,12 +165,16 @@ test("dynamic capability report uses only bounded read probes and covers every t
   }
 
   assert.equal(report.productVersion, PRODUCT_VERSION)
+  // `role` is asserted explicitly rather than left out: the capability report publishes a hand-written
+  // whitelist of connection fields, so a field added to the connection and forgotten here would be
+  // silently absent from the report a client reads to find out which system it is talking to.
   assert.deepEqual(report.connection, {
     id: "w200",
     baseUrl: "https://sap.example.invalid",
     client: "200",
     language: "EN",
-    username: "DEVELOPER"
+    username: "DEVELOPER",
+    role: null
   })
   assert.equal(report.readOnly, true)
   assert.deepEqual(report.safety, {

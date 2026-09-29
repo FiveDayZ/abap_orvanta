@@ -32,7 +32,14 @@ interface FakeSystem extends LandscapeSystem {
   sourceFails?: boolean
 }
 
-function fakeBackend(systems: readonly FakeSystem[]): LandscapeReadBackend {
+/**
+ * `searches` records what each side was actually asked to search for, so a test can assert what
+ * reached the backend rather than only what came back from it.
+ */
+function fakeBackend(
+  systems: readonly FakeSystem[],
+  searches: { connectionId: string; types: string[] }[] = []
+): LandscapeReadBackend {
   const byId = new Map(systems.map((system) => [system.connectionId, system]))
   return {
     connectionIds: () => systems.map((system) => system.connectionId),
@@ -48,9 +55,14 @@ function fakeBackend(systems: readonly FakeSystem[]): LandscapeReadBackend {
         remoteFunctionAllowlist: []
       }
     },
-    searchObjects: async (connectionId: string): Promise<AbapObjectInfo[]> => {
+    searchObjects: async (
+      connectionId: string,
+      _pattern: string,
+      types: string[] | undefined
+    ): Promise<AbapObjectInfo[]> => {
       const system = byId.get(connectionId)
       if (!system) throw new Error(`Connection not found: ${connectionId}`)
+      searches.push({ connectionId, types: [...(types ?? [])] })
       if (system.searchFails) throw new Error(`repository search unavailable on ${connectionId}`)
       return (system.names ?? []).map((name) => ({
         name,
@@ -163,7 +175,11 @@ test("a failed search is incomparable, never absence, and a search miss is only 
     ]),
     input
   )
-  assert.equal(missingInTest.verdict, "found-in-to-only")
+  // `from` is the system that has it and `to` is the system that does not, so the verdict names the
+  // side the object was actually found in. The direction is asserted because getting it backwards
+  // would tell an operator the object is missing from development when it is missing from test.
+  assert.equal(missingInTest.verdict, "found-in-from-only")
+  assert.equal(missingInTest.from.status, "found")
   assert.equal(missingInTest.to.status, "not-found")
   assert.ok(
     missingInTest.caveats.some((caveat) => /search miss is not proof/.test(caveat)),
@@ -213,15 +229,37 @@ test("comparing a system with itself, or with nothing to compare against, is ref
   )
 })
 
-test("an object type the shared vocabulary does not know fails before any SAP call", async () => {
-  const backend = fakeBackend([
-    { ...DEV, names: ["ZCL_ORDER"], source: "x" },
-    { ...QAS, names: ["ZCL_ORDER"], source: "x" }
-  ])
+test("an ADT path this release cannot search is refused, an unlisted short code is passed through", async () => {
+  // A token containing "/" is an ADT type path and can never be a search code, so searching it would
+  // fabricate a "not found" for an object that may exist: it is refused before SAP is contacted.
   await assert.rejects(
-    compareSystems(backend, { ...input, objectType: "NOT_A_TYPE" }),
-    /searching it would report "not found" for an object that may exist/
+    compareSystems(
+      fakeBackend([
+        { ...DEV, names: ["ZCL_ORDER"], source: "x" },
+        { ...QAS, names: ["ZCL_ORDER"], source: "x" }
+      ]),
+      { ...input, objectType: "NOT/A_TYPE" }
+    ),
+    /UNSUPPORTED_OBJECT_TYPE: NOT\/A_TYPE is not an object type this service can search/
   )
+
+  // A short code this release does not list is a different case and deliberately not rejected: it is
+  // still the caller's statement about the object, and the search decides what it can answer. This
+  // asserts the pass-through reaches both systems unchanged, which is the documented behaviour.
+  const searches: { connectionId: string; types: string[] }[] = []
+  await compareSystems(
+    fakeBackend(
+      [
+        { ...DEV, names: ["ZCL_ORDER"], source: "x" },
+        { ...QAS, names: ["ZCL_ORDER"], source: "x" }
+      ],
+      searches
+    ),
+    { ...input, objectType: "not_a_type" }
+  )
+  assert.equal(searches.length, 2)
+  for (const search of searches) assert.deepEqual(search.types, ["NOT_A_TYPE"])
+  assert.deepEqual(searches.map((search) => search.connectionId).sort(), ["dev200", "qas300"])
 })
 
 test("the role a connection declares is reported on both sides of the result", async () => {
