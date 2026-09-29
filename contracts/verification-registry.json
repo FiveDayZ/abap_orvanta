@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-29T07:47:00Z",
+  "updatedAt": "2026-09-29T08:04:55Z",
   "notes": "2026-09-29 (OP2 transport, import): import_transport_queue was added and registered unverified. It is read-only and answers whether SAP's own import checks allow a request to be imported into the connection's system: the 2.17 helper arm dispatches TMS_TP_IMPORT in simulation mode, so it never enqueues into the buffer, never runs tp and never applies an object, and the one side effect is the callee's own dequeue of stale TMS locks. A refused check is reported as a verdict (not-allowed, no-authority) under the success code rather than as a tool failure. 2026-09-29 (OP3 landscape, second batch): promote_object was added and registered unverified, by operator ruling as a read-only promotion precheck rather than a cross-system write - it answers whether an object can be promoted, and releasing the request and importing it stay outside the service. The batch also recorded what the check can and cannot read: the request details document carries no target system, so the request's target comes from its owner's transport list, and the target system's own id comes from the fingerprint-gated RFC_SYSTEM_INFO read; an unreadable target is reported as unverified rather than as a mismatch. 2026-09-29 (OP3 landscape, first batch): compare_systems was added and registered unverified. The batch also added the DEV/QAS/PRD role a connection may declare, which is what lets the tool name a system by role instead of by connection id; the landscape family keeps its gap because promotion, the family's action, still does not exist. 2026-09-26 (OP1-1 runtime-resources, third batch): read_workload_directory was added and registered unverified. The batch also settled, with interface-level evidence, why the family's two remaining reads are not service-side work: the workload numbers cannot be read by this service at all (aggregate row structures are refused and the single-record read cannot return its record header), and DB02 is split by database vendor with the platform unreadable from the approved sources. Both are recorded in the runtime-resources gap for the next phase. 2026-09-25 (OP1-1 runtime-resources, second batch): read_file_system_directory was added and registered unverified. The listing is the kernel's own EPS2_GET_DIRECTORY_LISTING call, and the probe evidence that removed the expected helper dependency is recorded in the entry. The workload candidate SWNC_COLLECTOR_GET_AGGREGATES was probed in the same session and turned out not to be usable for this service: the function module is remote-enabled, but its aggregate tables (TASKTYPE, TASKTIMES, TIMES, USERTCODE, DBPROCS and the rest of the workload set) hold structures whose field names or scalar types this service cannot verify, so a workload snapshot cannot be built from it. 2026-09-25 (OP1-1 runtime-resources): read_work_processes and read_user_sessions were added and registered unverified. Both are the kernel's own monitor reads (TH_WPINFO / TH_USER_LIST) called over SOAP-RFC after an interface-fingerprint check; the assessment had expected this family to need the SAP-side helper, and the probe evidence that removed that dependency is recorded in each entry. Verification status is recorded per tool, never inferred from availability or from passing tests.",
   "entries": [
     {
@@ -727,13 +727,13 @@
       "tool": "read_file_system_directory",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "w200 application-server directory listing (EPS2_GET_DIRECTORY_LISTING): no authorized call yet",
+      "verificationTarget": "a real read-only call on 2026-09-29 that names the failing stage: the RFC call itself failed",
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Attempted read-only on w200 on 2026-09-27 (sweep .cache/evidence-ops-n1c); the reply carried status \"unavailable\", so the read did not happen and the row stays unverified rather than claiming a result. It stays unverified rather than failed because the observed outcome is recorded here in prose, not as a verified failure under the registry's failure taxonomy. See the evidence record for the per-tool cause."
+      "notes": "2026-09-29 (read-only, authorized): EPS2_GET_DIRECTORY_LISTING was called over rfc_call for /usr/sap/trans and the reply was status unavailable with code RUNTIME_RESOURCES_RFC_FAILED, which is the failure the service reports when the call faults and the fault is not NOT_AUTHORIZED. The empty listing was therefore not evidence about the directory. Record: .doc/code-update-20260929-160327.md"
     },
     {
       "tool": "read_user_authorizations",
@@ -763,13 +763,13 @@
       "tool": "read_work_processes",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "w200 work process list (TH_WPINFO): no authorized call yet",
+      "verificationTarget": "a real read-only call on 2026-09-29 that names the failing stage: the RFC answers, the table comes back empty",
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Attempted read-only on w200 on 2026-09-27 (sweep .cache/evidence-ops-n1c); the reply carried status \"unavailable\", so the read did not happen and the row stays unverified rather than claiming a result. It stays unverified rather than failed because the observed outcome is recorded here in prose, not as a verified failure under the registry's failure taxonomy. See the evidence record for the per-tool cause."
+      "notes": "2026-09-29 (read-only, authorized): TH_WPINFO was called over rfc_call and the reply was status unavailable with code RUNTIME_RESOURCES_RESPONSE_EMPTY. That code is narrower than 'unavailable': the SOAP-RFC response did carry a WPLIST output (otherwise the service reports RESPONSE_INVALID) and zero rows were decoded from it. This contradicts the 2026-09-25 interface-level finding that the function module is remote-enabled with a fully resolved output row type, so the two observations are recorded as a conflict rather than resolved by guesswork. Record: .doc/code-update-20260929-160327.md"
     },
     {
       "tool": "read_workload_directory",
@@ -787,13 +787,13 @@
       "tool": "read_user_sessions",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "w200 user and session list (TH_USER_LIST): no authorized call yet",
+      "verificationTarget": "a real read-only call on 2026-09-29 that names the failing stage: the RFC answers, USRLIST comes back empty",
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Attempted read-only on w200 on 2026-09-27 (sweep .cache/evidence-ops-n1c); the reply carried status \"unavailable\", so the read did not happen and the row stays unverified rather than claiming a result. It stays unverified rather than failed because the observed outcome is recorded here in prose, not as a verified failure under the registry's failure taxonomy. See the evidence record for the per-tool cause."
+      "notes": "2026-09-29 (read-only, authorized): TH_USER_LIST was called over rfc_call and the reply was status unavailable with code RUNTIME_RESOURCES_RESPONSE_EMPTY - the response carried a USRLIST output and zero rows were decoded. An empty user list is not plausible on a live system, because the RFC session making the call is itself a session, so an undecoded row type is at least as likely as a genuinely empty kernel list. The service reads only USRLIST by design and never the kernel's LIST output. Record: .doc/code-update-20260929-160327.md"
     },
     {
       "tool": "get_version_history",
@@ -1159,13 +1159,13 @@
       "tool": "read_background_job_spool",
       "helper": "Z_ORVANTA_OPS_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "w200 spool read through the Z_ORVANTA_OPS_READ JOB_SPOOL arm: no runtime call yet, but the arm is deployed and syntax-validated",
+      "verificationTarget": "a real read-only call with a spool id that still exists, on 2026-09-29: the arm was reached and the helper dumped",
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No runtime call has been recorded, and that is now the only thing missing. What this entry used to leave open is settled. It said the spool-read design came from RSPOLIST source inspection and that the chosen call combination was never SAP-syntax validated, but the JOB_SPOOL arm is in the active helper: Z_ORVANTA_OPS_READ publishes JOB_SPOOL|1.0|R in its capability table, and the source builder emits that opcode only when the spool branch is included (scripts/operational-log-source.mjs:171), so the branch body is deployed and SAP activated it. Activation is the syntax check: a CALL FUNCTION with a literal name and named parameters resolves the function module together with its parameter and exception names at compile time, so RSPO_OPTION_GET, RSPO_CHECK_JOB_ID_PERMISSION, RSPO_RETURN_ABAP_SPOOLJOB and LIST_FREE_MEMORY all resolve on w200. Its DDIC dependencies were then checked field by field on 2026-09-29 against the DD03L artifacts read from w200 on 2026-09-25 (.cache/evidence-r10): TSP01 RQIDENT/RQCLIENT/RQDOCTYPE/RQCRETIME/RQMODTIME/RQFINAL all present among 47 fields, TBTCP JOBNAME/JOBCOUNT/STEPCOUNT/LISTIDENT all present among 73, TBTCO AUTHCKMAN and JOBGROUP present among 58. The design also refuses before reading anything when the configured alternate spool authorization mode is set (RSPO_OPTION_GET AUTHORIZATION returns non-initial), and it clears saved list memory around the render so a reused RFC session cannot leak the previous list. Closing it needs one runtime call with a real spool id, which is what the operator's approval step is for."
+      "notes": "2026-09-29 (read-only, authorized): the call was finally made with a chain that provably exists - TSP01 holds the LIST spool (RQDOCTYPE=LIST, RQCLIENT=200), TBTCP names the job step whose LISTIDENT equals that spool id, and TBTCO still holds the job header (AUTHCKMAN=200, STATUS=F), e.g. ZTEST/09381400 step 1 spool 12717. The arm was reached - it got past its own not_found gate - and then the helper terminated with an ABAP short dump: HTTP 500, 'The current statement is not supported for STRINGs', termination RABAX_STATE. No page was rendered, so the tool does not work today and the spool-output and jobs families cannot close until the branch is changed. Attribution by elimination, not by isolating experiment: the branch's only statement of its kind is CONCATENATE lv_spool_stamp lv_value ls_spool-rqfinal INTO lv_spool_stamp SEPARATED BY ':' with lv_spool_stamp TYPE string, and the verified sibling arms (JOB_LOG, JOB_DETAILS) use the same json_field macro without SEPARATED BY. An earlier pass returned not_found five times; that was correct behaviour, not a defect - TBTCO has no MANDT field, its client lives in AUTHCKMAN, and those candidates were all AUTHCKMAN=000 jobs. Record: .doc/code-update-20260929-160327.md"
     },
     {
       "tool": "read_bte_configuration",
@@ -1303,13 +1303,13 @@
       "tool": "read_failed_update",
       "helper": "Z_ORVANTA_MAINT_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "an existing failed update whose key could then be read back: no sample has been found in 158 approved one-hour windows",
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No call and no sample, and both for the same reason. 2026-09-25 (D1 session, 0.50.15) and 2026-09-28 (sweep .cache/evidence-ops-r23-readonly-b): the eight approved SM13 windows run so far returned no failed update at all, so there was never an updateKey to read, and this family's record explicitly warns against creating a failed update just to have a sample. Closing it needs one approved existing update key. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
+      "notes": "2026-09-29 (read-only, authorized): still no sample. 158 approved one-hour windows across three rounds have returned zero rows, so the detail read has never had a real key to fetch. The 2026-09-29 sweep covered five users over five days; the family record forbids creating a failed update to manufacture a sample. Closing this tool needs either an allowlist approval for VBHDR (one table read would then locate a failure), an explicit ruling that a sample may be created, or a ruling that the empty-path evidence is enough. Record: .doc/code-update-20260929-160327.md"
     },
     {
       "tool": "read_ccms_alerts",
@@ -1699,13 +1699,13 @@
       "tool": "search_failed_updates",
       "helper": "Z_ORVANTA_MAINT_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": null,
+      "verificationTarget": "an existing failed update in a window the caller may name: 158 approved one-hour windows have now been read, all empty",
       "method": "read-only",
       "status": "unverified",
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "Exercised, but only on the empty path, so the status deliberately stays unverified. 2026-09-25 (D1 session, 0.50.15): the approved SM13 path is proven callable - seven approved one-hour windows across users wys, WF-BATCH and DDIC each returned status=ok, code=OK and returnedCount=0 with coverage retained_failed_update_headers_current_client, and the SM13 scope is approved in maintenance-diagnostic-approvals.json next to the pre-existing SM12 scope. A further window on 2026-09-28 (username wys, 00:00-01:00, sweep .cache/evidence-ops-r23-readonly-b) returned the same: status ok, code OK, returnedCount 0. No window has ever contained a real failed update, and fabricating one is forbidden, so what is unproven is the entry-rendering path rather than the call itself, and no attempt time is claimed here because the empty path is not the outcome this tool exists to produce. Closing it needs either an existing failed update or an explicit decision to accept empty-path evidence. Availability here is decided by the helper protocol version alone, because this registry pins no operation requirement for the tool, so its availability verdict rests on the protocol version alone (the R-20c weakness) and stays visible in this entry."
+      "notes": "2026-09-29 (read-only, authorized): a 150-window sweep across BILL, ZSL, DDIC, WYJ and WB - the names harvested from the readable TBTCO-SDLUNAME and AGR_USERS-UNAME, since USR02 is explicitly refused as sensitive - over five days and six working-hour windows each returned status ok with returnedCount 0. With the 7 windows of 2026-09-25 and the 1 of 2026-09-28 that makes 158 approved one-hour windows with no failed update. The shape of the tool is what makes a wider net impractical rather than laziness: username is required and the window is capped at 3600 seconds, and the 1.0 helper arm applies an exact vbusr = match with the same span limit, so there is no wildcard sweep; VBHDR and VBERROR are not on the read allowlist, so a single table read cannot answer whether any failed update exists. Record: .doc/code-update-20260929-160327.md"
     },
     {
       "tool": "search_sap_locks",
