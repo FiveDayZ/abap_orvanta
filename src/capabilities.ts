@@ -148,6 +148,13 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   ["repository-helper-adobe-form", ["read_adobe_form"]],
   ["repository-helper-transport-request", ["create_transport_request"]],
   ["repository-helper-transport-objects", ["add_objects_to_transport"]],
+  // OP2 / transport. Releasing a request is a third callee family on the shared repository body, and
+  // it cannot share a group with the two above: those are 2.8 branches, while the release branch
+  // reads IV_TRKORR/IV_RELEASE_REQUEST and needs 2.16. The router refuses a capability whose tools
+  // disagree about the floor, so folding it in would throw - and the reason it must not be folded is
+  // the same one that split the job pair: a 2.8 helper has no release branch at all, so grouping it
+  // with the request write would report a working tool as unsupported.
+  ["repository-helper-transport-release", ["release_transport_task"]],
   // N3 / OP2. A write on the shared repository body, split off the transport groups for the same
   // reason they are split from each other: BP_JOB_RELEASE is a different callee with its own
   // preconditions (a TBTCO status check) and its own read-back, and the interface it needs
