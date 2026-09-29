@@ -6830,6 +6830,7 @@ function New-InstallProgram {
         "  DATA lv_tr_release_status_after TYPE e070-trstatus.",
         "  DATA lv_tr_release_rc TYPE sy-subrc.",
         "  DATA lv_tr_release_subrc TYPE sy-subrc.",
+        "  DATA lv_tr_release_rc_text TYPE char4.",
         "  DATA lv_tr_release_error TYPE string.",
         # Only CTSGERRMSG/CTSGERRMSGS are used from the callee's output: they are real DDIC
         # objects (TABL/DS and TTYP/DA, both verified on w200). The other two exports are
@@ -12844,8 +12845,13 @@ function New-InstallProgram {
         "            INTO lv_tr_release_error.",
         "        ENDIF.",
         "        IF lv_tr_release_error IS INITIAL.",
+        # sy-subrc is an integer (INT4), so CONCATENATE refuses it: "LV_TR_RELEASE_SUBRC must be a
+        # character-type data object". It is converted first, the same way the offset diagnostic
+        # above converts its integer.
+        "          WRITE lv_tr_release_subrc TO lv_tr_release_rc_text",
+        "            LEFT-JUSTIFIED.",
         "          CONCATENATE 'Release failed with exception'",
-        "            lv_tr_release_subrc INTO lv_tr_release_error",
+        "            lv_tr_release_rc_text INTO lv_tr_release_error",
         "            SEPARATED BY space.",
         "        ENDIF.",
         "        ev_status = 'E'.",
