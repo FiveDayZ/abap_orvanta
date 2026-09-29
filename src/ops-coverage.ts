@@ -242,12 +242,12 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["authorization"],
     actionRequired: true,
     gap:
-      "Reported: job search, detail and log, plus two of the four job-control actions - " +
+      "Reported: job search, detail, log and spool text, plus two of the four job-control actions - " +
       "release through release_background_job (BP_JOB_RELEASE inside the repository helper, read " +
       "back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same " +
-      "body, proved by the job's absence on read-back). Spool text is built but does not render: " +
-      "read_background_job_spool reaches its helper arm and no longer dumps, and the service still " +
-      "rejects the reply, so the tool is recorded failed/runtime. Still absent: create and modify, " +
+      "body, proved by the job's absence on read-back). Spool text renders since 2026-09-29: " +
+      "read_background_job_spool returns a page of the primary job-step spool and is verified. " +
+      "Still absent: create and modify, " +
       "which need their own helper branches and the operator's write authorisation, so a job that " +
       "does not yet exist or needs a different schedule still has to be built in SAP GUI rather " +
       "than inside the service."
@@ -475,13 +475,17 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     plannedToolNames: ["read_background_job_spool"],
     purpose:
       "What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output?",
-    closeRoutes: ["helper"],
+    closeRoutes: ["none"],
     actionRequired: false,
-    gap:
-      "Rendered text is the only format this family ever planned, and it does not work yet: " +
-      "read_background_job_spool reaches its helper arm and no longer terminates with an ABAP short " +
-      "dump, but the service still rejects the reply (failed/runtime), so no spool page has been " +
-      "rendered. OTF/PDF conversion, printing and original report execution are absent."
+    gap: "",
+    boundary:
+      "Declared limits, none of them a missing tool. (1) Rendered text is the only format this " +
+      "family ever planned, and since 2026-09-29 it works: read_background_job_spool returns the " +
+      "primary job-step spool as text - spool 12717 of ZTEST/09381400 rendered three lines " +
+      "(.doc/code-update-20260929-192300.md) - and is verified. (2) OTF/PDF conversion, printing " +
+      "and original report execution stay absent and will not be added: each needs SAP GUI print " +
+      "or report-execution machinery outside the read-only loop, which this service deliberately " +
+      "does not drive, so a caller that needs the formatted page prints it in SAP GUI."
   },
   {
     id: "archive-alerts",

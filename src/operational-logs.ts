@@ -346,16 +346,33 @@ export class OperationalLogService {
       outputParameters: [{ name: "EV_RESULT", kind: "scalar" }]
     })
     const raw = response.outputs.EV_RESULT
-    if (response.fault || typeof raw !== "string" || Buffer.byteLength(raw) > 1024 * 1024)
-      throw new Error("OPS_LOG_RESPONSE_INVALID")
+    // One code covered a faulted call, a reply that was not JSON and a reply the schema rejects, so
+    // two rounds of diagnosis could not tell them apart. Name the cause, and for a schema failure
+    // name the offending paths, without echoing reply content.
+    if (response.fault)
+      throw new Error(
+        `OPS_LOG_RESPONSE_INVALID: the helper call faulted (${JSON.stringify(response.fault).slice(0, 200)})`
+      )
+    if (typeof raw !== "string")
+      throw new Error(`OPS_LOG_RESPONSE_INVALID: EV_RESULT was ${typeof raw}, not a string`)
+    const bytes = Buffer.byteLength(raw)
+    if (bytes > 1024 * 1024)
+      throw new Error(`OPS_LOG_RESPONSE_INVALID: reply is ${bytes} bytes, over the 1 MiB cap`)
     let decoded: unknown
     try {
       decoded = JSON.parse(raw)
-    } catch {
-      throw new Error("OPS_LOG_RESPONSE_INVALID")
+    } catch (error) {
+      throw new Error(
+        `OPS_LOG_RESPONSE_INVALID: reply is not JSON (${raw.length} chars): ${(error as Error).message}`
+      )
     }
     const result = replySchema.safeParse(decoded)
-    if (!result.success) throw new Error("OPS_LOG_RESPONSE_INVALID")
+    if (!result.success)
+      throw new Error(
+        `OPS_LOG_RESPONSE_INVALID: ${result.error.issues
+          .map((issue) => `${issue.path.join(".") || "<root>"}: ${issue.message}`)
+          .join("; ")}`
+      )
     const reply = result.data
     if (
       reply.reason !== undefined &&

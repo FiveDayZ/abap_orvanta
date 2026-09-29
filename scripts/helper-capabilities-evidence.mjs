@@ -218,8 +218,8 @@ export const helperCapabilityTargets = {
     // RETURN with an empty EV_RESULT now answers through job_stage. The body was written to SAP with
     // write_function_module_source and verified line by line, so the live body IS the reviewed intent
     // and both pins agree again. Evidence: .doc/code-update-20260929-164952.md.
-    deployedNowBodyHash: "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9",
-    intendedBodyHash: "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9",
+    deployedNowBodyHash: "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c",
+    intendedBodyHash: "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c",
     generatorBody: operationalLogReportSource
   }
 }

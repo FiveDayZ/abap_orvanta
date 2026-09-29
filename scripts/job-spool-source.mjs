@@ -182,7 +182,8 @@ IF iv_action = 'JOB_SPOOL'.
   json_field ',"jobCount":"' ls_job-jobcount.
   lv_number = lv_spool_step. CONDENSE lv_number NO-GAPS.
   CONCATENATE lv_json '},"stepNumber":' lv_number INTO lv_json.
-  json_field ',"spoolId":"' ls_spool-rqident.
+  lv_number = ls_spool-rqident. CONDENSE lv_number NO-GAPS.
+  json_field ',"spoolId":"' lv_number.
   lv_number = lv_spool_page. CONDENSE lv_number NO-GAPS.
   CONCATENATE lv_json ',"page":' lv_number INTO lv_json.
   lv_spool_stamp = ls_spool-rqcretime.

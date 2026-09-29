@@ -21,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 0, blocked 1, partial 7, read-only 6, read-and-act 1 |
-| End-to-end by state (all families) | 7 (47%) |
-| Required families counted closed | **7 / 14** (50% of required) |
+| State counts | absent 0, blocked 1, partial 6, read-only 7, read-and-act 1 |
+| End-to-end by state (all families) | 8 (53%) |
+| Required families counted closed | **8 / 14** (57% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
 | Closed by state but missing evidence | none |
-| Outstanding required families | transport, jobs, updates, query, runtime-resources, authorizations, spool-output |
-| Waiting on each route | this repository 1, SAP-side helper + F8 3, operator approval 1, write authorisation (OP2) 3, multi-system configuration (OP3) 1, the platform (exempt) 1, - 7 |
+| Outstanding required families | transport, jobs, updates, query, runtime-resources, authorizations |
+| Waiting on each route | this repository 1, SAP-side helper + F8 2, operator approval 1, write authorisation (OP2) 3, multi-system configuration (OP3) 1, the platform (exempt) 1, - 8 |
 
 ## Definition of done (plan section 8)
 
@@ -38,8 +38,8 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 7 / 14 closed (50%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 30 / 41 of the tools the families declare are verified (the `ops` group itself holds 39, of which 28 are verified); not verified: release_transport_task, cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 8 / 14 closed (57%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 31 / 41 of the tools the families declare are verified (the `ops` group itself holds 39, of which 29 are verified); not verified: release_transport_task, cleanup_transport_entries, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: jobs (2), updates (1) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
@@ -53,7 +53,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |
 | - | ------ | ------- | --------- | ----------- | ----- | --------------------------- | ----- |
 | 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 2/5 | 3 | partial | 4/5 verified (pending: release_transport_task) | write authorisation (OP2) + multi-system configuration (OP3) |
-| 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/6 | 2 | partial | 3/6 verified (pending: read_background_job_spool, release_background_job, cancel_background_job) | write authorisation (OP2) |
+| 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/6 | 2 | partial | 4/6 verified (pending: release_background_job, cancel_background_job) | write authorisation (OP2) |
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
@@ -64,7 +64,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 10 | `runtime-resources` | Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists? | 4/4 | - | partial | 1/4 verified (pending: read_work_processes, read_user_sessions, read_file_system_directory) | SAP-side helper + F8 |
 | 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 3/3 | - | read-only | 3/3 verified | - |
 | 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
-| 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
+| 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | read-only | 1/1 verified | - |
 | 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | read-only | 2/2 verified | - |
 | 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 2/2 | - | read-only | 2/2 verified | - |
 
@@ -78,7 +78,6 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 - **`runtime-resources`** (partial) - Reported: the work process list (TH_WPINFO) through read_work_processes, the user and session list (TH_USER_LIST) through read_user_sessions, the application-server directory listing (EPS2_GET_DIRECTORY_LISTING) through read_file_system_directory, and the workload collector's own directory of what it holds (SWNC_GET_WORKLOAD_DIRECTORY) through read_workload_directory. Still absent: read_performance_snapshot and read_db_activity, and the 2026-09-26 probe narrowed why. Every remote-enabled read carrying the workload numbers refuses to serialize: SWNC_COLLECTOR_GET_AGGREGATES, SWNC_GET_WORKLOAD_SNAPSHOT, SWNC_GET_WORKLOAD_STATISTIC, SWNC_READ_SNAPSHOT and SAPWLN3_AGGREGATE_SNAPSHOT_GET expose SWNCGL_T_AGG* rows whose field names or scalar types (SWNCTASKTYPERAW) fail verification, and SWNC_STATREC_READ cannot return NORMAL_RECORDS, the record header that gives a subrecord its user and response time. SWNC_COLLECTOR_KERNEL_STAT is fully resolvable but not remote-enabled, so the workload numbers need the in-SAP helper. DB02 is split by database vendor (DB02_ORA_*, DB02_*_DB2, DB6_*), and the platform is readable after all: RFC_SYSTEM_INFO returns RFCDBSYS (data element SYDBSYS, the central database system) through the fingerprint-pinned reader whose kernel and database values get_sap_system_info already publishes as serverFacts - that half has no recorded call yet, but it is a source the service owns, not an approval it waits for. The 2026-09-26 claim that the platform was unreadable rested on a single TPFYPROPTY read refused with TABLE_NOT_ALLOWED by the then-running build, which is a stale allowlist rather than an unavailable source (TPFYPROPTY was approved on 2026-09-25). What is actually missing is a vendor module that reports activity: the storage and statistics modules that probe reached (DB02_ORA_SELECT_SEGMENTS, DB02_ORA_LAST_ANALYZED, DB02_GET_EXTENT_LIST_DB2) are remote-enabled but answer for space and analysis - the Oracle pair reads dba_tab_columns.last_analyzed/sample_size/num_rows, statistics freshness rather than activity - DB02_DB_ACTIVITY was not found by name, and the vendor-neutral DB_AN_DB_KPIS requires a CCMS node handle (MT_TOOL_INFO typed ALTLEXDESC) and raises MESSAGE e001(sada) when it cannot read one, so an external caller can neither supply its context nor survive its failure. read_db_activity therefore needs the helper: the platform is the service's to read, but no module it can reach reports database activity rather than space, statistics or analysis.
 - **`authorizations`** (partial) - Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - and the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the SAP-side helper, and any role-to-authorization-object resolution **as a tool**: AGR_1251/AGR_1252/AGR_PROF, USOBT/USOBT_C/USOBX/USOBX_C and UST10S/UST10C were approved and registered on 2026-09-28 (w200-verified), so that resolution no longer waits for an approval either - read_user_authorizations still deliberately does not perform it.
-- **`spool-output`** (partial) - Rendered text is the only format this family ever planned, and it does not work yet: read_background_job_spool reaches its helper arm and no longer terminates with an ABAP short dump, but the service still rejects the reply (failed/runtime), so no spool page has been rendered. OTF/PDF conversion, printing and original report execution are absent.
 
 ### operator approval
 
@@ -87,7 +86,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 ### write authorisation (OP2)
 
 - **`transport`** (partial) - Import is built as a precheck only (import_transport_queue, helper 2.18) and the precheck was exercised on w200 on 2026-09-29. The 2.17 arm was measured wrong: it translated the callee's exception number into a verdict, and nine calls showed a failed tp start labelled as a refusal and a refusal labelled as a failure, with the same request returning two outcomes minutes apart. The 2.18 arm reports the callee's own exception name and the raw sub-return code on every path, and the four requests re-run against it all answered enqueue_failed under TRANSPORT_IMPORT_CHECKED, with the request echoed and the local E070 status correct. An importable verdict is still unobserved - every request tried was refused - so the positive branch is documented, not demonstrated. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
-- **`jobs`** (partial) - Reported: job search, detail and log, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Spool text is built but does not render: read_background_job_spool reaches its helper arm and no longer dumps, and the service still rejects the reply, so the tool is recorded failed/runtime. Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
+- **`jobs`** (partial) - Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Spool text renders since 2026-09-29: read_background_job_spool returns a page of the primary job-step spool and is verified. Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
 - **`updates`** (partial) - Failed updates can be read but never reprocessed.
 
 ### multi-system configuration (OP3)
@@ -123,14 +122,14 @@ Withdrawn from the plan, still registered and still failing safely: `cleanup_tra
 
 Purpose: Did the job run, what did it do, and why is a job stuck or missing?
 
-Criterion to close: Reported: job search, detail and log, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Spool text is built but does not render: read_background_job_spool reaches its helper arm and no longer dumps, and the service still rejects the reply, so the tool is recorded failed/runtime. Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
+Criterion to close: Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Spool text renders since 2026-09-29: read_background_job_spool returns a page of the primary job-step spool and is verified. Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `search_background_jobs` | read-only | verified | `.doc/log-joint-acceptance-20260908-121025.md` |
 | `read_background_job_details` | read-only | verified | `.doc/code-update-20260925-221900.md` |
 | `read_background_job_log` | read-only | verified | `.doc/code-update-20260908-163230.md` |
-| `read_background_job_spool` | read-only | failed | failed (last attempt 2026-09-29T16:47:16+08:00) |
+| `read_background_job_spool` | read-only | verified | `.doc/code-update-20260929-192300.md` |
 | `release_background_job` | action | unverified | unverified |
 | `cancel_background_job` | action | unverified | unverified |
 
@@ -259,15 +258,17 @@ Criterion to close: Reported: the stored role assignments per user (AGR_USERS), 
 | `read_user_authorizations` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 | `read_authorization_trace` | read-only | verified | `.doc/code-update-20260928-155820.md` |
 
-### `spool-output` - partial
+### `spool-output` - read-only
 
 Purpose: What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output?
 
-Criterion to close: Rendered text is the only format this family ever planned, and it does not work yet: read_background_job_spool reaches its helper arm and no longer terminates with an ABAP short dump, but the service still rejects the reply (failed/runtime), so no spool page has been rendered. OTF/PDF conversion, printing and original report execution are absent.
+Criterion to close: gap empty and every tool verified
+
+Declared boundaries: Declared limits, none of them a missing tool. (1) Rendered text is the only format this family ever planned, and since 2026-09-29 it works: read_background_job_spool returns the primary job-step spool as text - spool 12717 of ZTEST/09381400 rendered three lines (.doc/code-update-20260929-192300.md) - and is verified. (2) OTF/PDF conversion, printing and original report execution stay absent and will not be added: each needs SAP GUI print or report-execution machinery outside the read-only loop, which this service deliberately does not drive, so a caller that needs the formatted page prints it in SAP GUI.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `read_background_job_spool` | read-only | failed | failed (last attempt 2026-09-29T16:47:16+08:00) |
+| `read_background_job_spool` | read-only | verified | `.doc/code-update-20260929-192300.md` |
 
 ### `archive-alerts` - read-only
 

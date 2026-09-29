@@ -325,7 +325,7 @@ test("the recomputed digest equals the digest both generators embedded", () => {
     )
   }
   assert.equal(digests.maint, "0a3875009e0beb610ca781c76a260509c27ced36d1c5f8229944e707757e696d")
-  assert.equal(digests.ops, "80ce20b8c09e73fbfd0fabf6dd4d77fa6a14af875e12ef8dee9d4a2db98d4e67")
+  assert.equal(digests.ops, "2ac08284ffb9cc73dfd8f37c83ad522eb3232568f7ac9dadfe6b67fa897ef32f")
 })
 
 test("both generators are pinned to their verified pre- and post-deployment bodies", () => {
@@ -372,11 +372,11 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
   // intent are the same body again. See .doc/code-update-20260929-164952.md.
   assert.equal(
     ops.deployedNowBodyHash,
-    "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9"
+    "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c"
   )
   assert.equal(
     ops.intendedBodyHash,
-    "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9"
+    "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c"
   )
   // The verifier's expectation must equal the table the generator exports, including the
   // feature-gated REPORT_PARAMETERS row that only the report variant compiles in. MAINT carries
