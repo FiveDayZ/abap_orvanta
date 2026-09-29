@@ -68,7 +68,11 @@ export type ImportTransportQueueParsed = z.infer<typeof importTransportQueueSche
  * callee's own exception name, so the answer states which exception SAP raised instead of a meaning
  * this service inferred from the number.
  * `TRANSPORT_NUMBER_REQUIRED` and `TRANSPORT_NUMBER_INVALID` are the arm's own input refusals, which
- * arrive before the callee is called at all.
+ * arrive before the callee is called at all. They are listed because the helper can answer them, not
+ * because this tool returns them: the service's own `transportNumber` schema is the stricter of the
+ * two - it demands the exact 10-character shape - so a caller over MCP is refused by the schema first
+ * (a plain input-validation error) and these two codes stay reachable only for the helper's other
+ * callers.
  */
 export const TRANSPORT_IMPORT_CODES = [
   "TRANSPORT_IMPORT_CHECK_FAILED",

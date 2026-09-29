@@ -637,8 +637,15 @@ test("the registry records the honest gap rather than inflating it", () => {
   // what was NOT proven: incomparable and found-in-both (both need an induced read failure), the
   // sameNameOtherType caveat (no request here held a same-named entry of another type), and the
   // target-side transport read path, because every transport read happened on w200.
+  // Raised from 35 to 36 on 2026-09-29 (OP2 transport import batch): import_transport_queue was
+  // exercised for real on w200 from the repo-dist instance, first as a measured failure and then
+  // again after the 2.18 helper body landed. The entry names .doc/code-update-20260929-152335.md and
+  // leads its notes with what was NOT proven - seven of the nine verdicts the arm can return were
+  // never observed, including the importable answer, because every request tried was refused - so the
+  // promotion rests on the reply being mechanical (the callee's own exception name and raw
+  // sub-return code on every path) rather than on the positive branch having run.
   assert.ok(
-    totals.verified <= 35,
+    totals.verified <= 36,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

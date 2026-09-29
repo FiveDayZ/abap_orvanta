@@ -39,7 +39,7 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 7 / 14 closed (50%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 29 / 41 of the tools the families declare are verified (the `ops` group itself holds 39, of which 27 are verified); not verified: release_transport_task, import_transport_queue, cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
+| 2. every ops tool verified with real w200 evidence | 30 / 41 of the tools the families declare are verified (the `ops` group itself holds 39, of which 28 are verified); not verified: release_transport_task, cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: jobs (2), updates (1) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
@@ -52,7 +52,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |
 | - | ------ | ------- | --------- | ----------- | ----- | --------------------------- | ----- |
-| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 2/5 | 3 | partial | 3/5 verified (pending: release_transport_task, import_transport_queue) | write authorisation (OP2) + multi-system configuration (OP3) |
+| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 2/5 | 3 | partial | 4/5 verified (pending: release_transport_task) | write authorisation (OP2) + multi-system configuration (OP3) |
 | 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/6 | 2 | partial | 3/6 verified (pending: read_background_job_spool, release_background_job, cancel_background_job) | write authorisation (OP2) |
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
@@ -117,7 +117,7 @@ Withdrawn from the plan, still registered and still failing safely: `cleanup_tra
 | `create_transport_request` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
 | `add_objects_to_transport` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
 | `release_transport_task` | action | unverified | unverified |
-| `import_transport_queue` | read-only | failed | failed (last attempt 2026-09-29T14:56:00+08:00) |
+| `import_transport_queue` | read-only | verified | `.doc/code-update-20260929-152335.md` |
 
 ### `jobs` - partial
 
