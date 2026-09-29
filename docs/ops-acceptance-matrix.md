@@ -21,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 1, blocked 1, partial 8, read-only 5, read-and-act 0 |
-| End-to-end by state (all families) | 5 (33%) |
-| Required families counted closed | **5 / 14** (36% of required) |
+| State counts | absent 1, blocked 1, partial 7, read-only 5, read-and-act 1 |
+| End-to-end by state (all families) | 6 (40%) |
+| Required families counted closed | **6 / 14** (43% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
 | Closed by state but missing evidence | none |
-| Outstanding required families | transport, jobs, locks, updates, query, runtime-resources, authorizations, spool-output, landscape |
-| Waiting on each route | this repository 1, SAP-side helper + F8 3, operator approval 1, write authorisation (OP2) 4, multi-system configuration (OP3) 2, the platform (exempt) 1, - 5 |
+| Outstanding required families | transport, jobs, updates, query, runtime-resources, authorizations, spool-output, landscape |
+| Waiting on each route | this repository 1, SAP-side helper + F8 3, operator approval 1, write authorisation (OP2) 3, multi-system configuration (OP3) 2, the platform (exempt) 1, - 6 |
 
 ## Definition of done (plan section 8)
 
@@ -38,9 +38,9 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 5 / 14 closed (36%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 26 / 37 of the tools the families declare are verified (the `ops` group itself holds 35, of which 24 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, delete_sap_lock, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 2 / 5 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport; open: release_background_job, cancel_background_job, delete_sap_lock. Action capability is still planned but unbuilt in: transport (2), jobs (2), updates (1), landscape (2) | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 6 / 14 closed (43%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 27 / 37 of the tools the families declare are verified (the `ops` group itself holds 35, of which 25 are verified); not verified: cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 5 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (2), jobs (2), updates (1), landscape (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -57,7 +57,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
-| 6 | `locks` | Who holds the lock that is blocking an object or document right now? | 1/2 | 1 | partial | 1/2 verified (pending: delete_sap_lock) | write authorisation (OP2) |
+| 6 | `locks` | Who holds the lock that is blocking an object or document right now? | 1/2 | 1 | read-and-act | 2/2 verified | - |
 | 7 | `updates` | Which update terminated, and what does the failed update contain? | 2/2 | - | partial | 0/2 verified (pending: search_failed_updates, read_failed_update) | write authorisation (OP2) |
 | 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | read-only | 2/2 verified | - |
 | 9 | `query` | Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI. | 2/2 | - | partial | 2/2 verified | this repository |
@@ -88,7 +88,6 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 - **`transport`** (partial) - Release and import are absent: release_transport_task and import_transport_queue. DEV->QAS->PRD promotion still happens outside the service.
 - **`jobs`** (partial) - Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
-- **`locks`** (partial) - Locks can be listed but never released; a blocking lock must be cleared in SAP GUI.
 - **`updates`** (partial) - Failed updates can be read but never reprocessed.
 
 ### multi-system configuration (OP3)
@@ -173,16 +172,16 @@ Criterion to close: gap empty and every tool verified
 | ---- | ---- | ------ | -------- |
 | `analyze_abap_traces` | platform-blocked | platform-unsupported | platform-unsupported (last attempt 2026-08-27T17:38:38+08:00) |
 
-### `locks` - partial
+### `locks` - read-and-act
 
 Purpose: Who holds the lock that is blocking an object or document right now?
 
-Criterion to close: Locks can be listed but never released; a blocking lock must be cleared in SAP GUI.
+Criterion to close: gap empty and every tool verified
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `search_sap_locks` | read-only | verified | `.doc/code-update-20260924-125930.md` |
-| `delete_sap_lock` | action | unverified | unverified |
+| `delete_sap_lock` | action | verified | `.doc/code-update-20260929-084029.md` |
 
 ### `updates` - partial
 

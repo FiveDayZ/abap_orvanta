@@ -147,8 +147,8 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   analyze_abap_traces: "platform-blocked",
   // Locks and failed updates
   search_sap_locks: "read-only",
-  // OP2 / locks. Built 2026-09-28 with the SM12 release arm; the family closes only when a real
-  // call is recorded against it, so the role is declared here and the gap text stays until then.
+  // OP2 / locks. Built 2026-09-28 with the SM12 release arm and verified 2026-09-29 by a real
+  // release on w200 (LOCK_DELETED, absence read back twice), so the family states no gap.
   delete_sap_lock: "action",
   search_failed_updates: "read-only",
   read_failed_update: "read-only",
@@ -285,9 +285,9 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     label: "Enqueue locks (SM12): search and release",
     plannedToolNames: ["search_sap_locks", "delete_sap_lock"],
     purpose: "Who holds the lock that is blocking an object or document right now?",
-    closeRoutes: ["authorization"],
+    closeRoutes: ["none"],
     actionRequired: true,
-    gap: "Locks can be listed but never released; a blocking lock must be cleared in SAP GUI."
+    gap: ""
   },
   {
     id: "updates",

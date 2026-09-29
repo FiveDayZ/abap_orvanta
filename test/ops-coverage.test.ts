@@ -26,7 +26,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
   logs: "read-only",
   dumps: "read-only",
   traces: "blocked",
-  locks: "partial",
+  locks: "read-and-act",
   updates: "partial",
   "system-info": "read-only",
   query: "partial",
@@ -42,8 +42,10 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
  * The plan's outstanding tool commitments; adding one to the plan must update this number.
  *
  * It fell from 10 to 9 on 2026-09-28 when `delete_sap_lock` was built (OP2, the locks family): the
- * family still carries its gap, because a built tool is not a verified one, but the tool it was
- * waiting for is no longer missing.
+ * tool the family was waiting for is no longer missing. It stayed at 9 on 2026-09-29 when that tool
+ * was verified by a real release, because this counts tools that do not exist yet - not tools that
+ * have not been exercised. The `locks` family itself closed on the second change: `gap` is empty and
+ * the registry records the call.
  */
 const PLANNED_GAP_TOOL_COUNT = 9
 
@@ -68,7 +70,14 @@ test("family states are derived from the surface, and the plan's gaps stay visib
     .filter(([, state]) => state === "read-only" || state === "read-and-act")
     .map(([id]) => id)
     .sort()
-  assert.deepEqual(closed, ["archive-alerts", "dumps", "interfaces", "logs", "system-info"])
+  assert.deepEqual(closed, [
+    "archive-alerts",
+    "dumps",
+    "interfaces",
+    "locks",
+    "logs",
+    "system-info"
+  ])
 
   // A family may not lose a planned tool without saying so; the guard has to catch that, not just
   // the real tables that currently happen to be consistent.
