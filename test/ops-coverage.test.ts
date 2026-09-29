@@ -36,10 +36,10 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
   "spool-output": "partial",
   "archive-alerts": "read-only",
   // Was "absent" until 2026-09-29, when OP3 added the connection role and `compare_systems`, and the
-  // same day gained the read-only `promote_object` precheck. It is "partial" rather than closed
-  // because the family's action - performing the promotion - does not exist by operator ruling, and
-  // a declared gap outranks the presence of a reader.
-  landscape: "partial"
+  // same day gained the read-only `promote_object` precheck. It closed the same day by the operator's
+  // ruling that this family's end-to-end is exactly that read-only loop: performing the promotion is
+  // recorded as a boundary rather than a gap, so the state is "read-only" and not "read-and-act".
+  landscape: "read-only"
 }
 
 /**
@@ -74,6 +74,8 @@ test("family states are derived from the surface, and the plan's gaps stay visib
   assert.deepEqual(states, EXPECTED_FAMILY_STATES)
 
   // The families that are closed are closed because nothing has to act on SAP on their behalf.
+  // `landscape` is in this list on that exact ground: the operator's 2026-09-29 ruling put the
+  // promotion action outside the family's end-to-end, and that limit is recorded as a boundary.
   const closed = Object.entries(states)
     .filter(([, state]) => state === "read-only" || state === "read-and-act")
     .map(([id]) => id)
@@ -82,6 +84,7 @@ test("family states are derived from the surface, and the plan's gaps stay visib
     "archive-alerts",
     "dumps",
     "interfaces",
+    "landscape",
     "locks",
     "logs",
     "system-info"
@@ -180,15 +183,18 @@ test("every family states a purpose and a route, and the two cannot contradict t
   // (RFC_SYSTEM_INFO.RFCDBSYS), but no module it can reach reports activity rather than space.
   assert.deepEqual(byId["runtime-resources"]!.closeRoutes, ["helper"])
   // Recounted on 2026-09-29 from the real table: `locks` closed on the second change and now
-  // declares the "none" route like the other five closed families, which is what moved `none` from 2
-  // to 6 and pulled `approval` (2->1) and `helper` (6->3) down with it.
-  assert.equal(block.summary.closeRouteCounts.none, 6)
+  // declares the "none" route like the other six closed families, which is what moved `none` from 2
+  // to 6 and pulled `approval` (2->1) and `helper` (6->3) down with it. `landscape` joined the
+  // "none" route the same day by the operator's ruling, which takes `none` to 7 and `landscape` from
+  // 2 to 1: the only family still waiting on the landscape route is `transport`, whose own gap is
+  // about importing and is untouched by that ruling.
+  assert.equal(block.summary.closeRouteCounts.none, 7)
   assert.equal(block.summary.closeRouteCounts.platform, 1)
   assert.equal(block.summary.closeRouteCounts.service, 1)
   assert.equal(block.summary.closeRouteCounts.approval, 1)
   assert.equal(block.summary.closeRouteCounts.helper, 3)
   assert.equal(block.summary.closeRouteCounts.authorization, 3)
-  assert.equal(block.summary.closeRouteCounts.landscape, 2)
+  assert.equal(block.summary.closeRouteCounts.landscape, 1)
   // A claim of unavailability may not survive in the gap text once its source is proven to be ours.
   const runtimeGap = byId["runtime-resources"]!.gap
   assert.match(runtimeGap, /RFCDBSYS/)
@@ -252,22 +258,24 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   assert.deepEqual(block.summary.stateCounts, {
     absent: 0,
     blocked: 1,
-    partial: 8,
-    "read-only": 5,
+    partial: 7,
+    "read-only": 6,
     "read-and-act": 1
   })
-  // `locks` joined the closed families on 2026-09-29, so the gap-only reading is 6 of 15 rather than
-  // 5: the family gained its writer and the writer was exercised.
+  // `locks` joined the closed families on 2026-09-29, and `landscape` followed the same day by the
+  // operator's ruling that its read-only loop is the family's end-to-end, so the gap-only reading is
+  // 7 of 15 rather than 5.
   assert.deepEqual(block.summary.endToEndFamilies, [
     "logs",
     "dumps",
     "locks",
     "system-info",
     "interfaces",
-    "archive-alerts"
+    "archive-alerts",
+    "landscape"
   ])
-  assert.equal(block.summary.endToEndFamilyCount, 6)
-  assert.equal(block.summary.endToEndPercent, 40)
+  assert.equal(block.summary.endToEndFamilyCount, 7)
+  assert.equal(block.summary.endToEndPercent, 47)
   assert.ok(
     block.summary.endToEndPercent < 95,
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
@@ -298,7 +306,7 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   // instead of quietly falling back to the gap-only reading.
   assert.equal(block.summary.registryLoaded, false)
   assert.match(block.summary.criterionBasis, /registry unavailable/)
-  assert.equal(block.summary.stateClosedRequiredFamilyCount, 6)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 7)
   assert.equal(block.summary.closedRequiredFamilyCount, 0)
   assert.deepEqual(block.summary.evidenceUnregisteredFamilies, [
     "logs",
@@ -306,7 +314,8 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "locks",
     "system-info",
     "interfaces",
-    "archive-alerts"
+    "archive-alerts",
+    "landscape"
   ])
   assert.equal(block.summary.remainingRequiredFamilyCount, 14)
   assert.equal(block.summary.criterionMet, false)
@@ -507,25 +516,30 @@ test("a closed gap does not certify a family whose tools were never exercised", 
   assert.deepEqual(dumps.verification.blockingTools, [])
 
   assert.equal(block.summary.registryLoaded, true)
-  assert.equal(block.summary.stateClosedRequiredFamilyCount, 6)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 7)
   assert.equal(block.summary.closedRequiredFamilyCount, 1)
   assert.deepEqual(block.summary.evidenceClosedFamilies, ["dumps"])
+  // `landscape` is in this list for a different reason than the rest: it is structurally closed, and
+  // the fabricated map simply does not carry its two tools, so nothing certifies it here. That is the
+  // point of the list - a closed gap is not evidence, and the family has to be named rather than
+  // quietly counted.
   assert.deepEqual(block.summary.evidenceUnregisteredFamilies, [
     "logs",
     "locks",
     "system-info",
     "interfaces",
-    "archive-alerts"
+    "archive-alerts",
+    "landscape"
   ])
   assert.ok(block.summary.outstandingRequiredFamilies.includes("logs"))
   assert.equal(block.summary.remainingRequiredFamilyCount, 13)
   assert.equal(block.summary.criterionMet, false)
   assert.equal(block.summary.stateCriterionMet, false)
-  // The two readings are deliberately both visible: a gap-only criterion would have said 6. This is
+  // The two readings are deliberately both visible: a gap-only criterion would have said 7. This is
   // the evidence-aware one, and it is the whole point of the test - only `dumps` survives the
-  // fabricated map, so one of the fourteen required families is certified, not six. Rewriting this
-  // to 43 would assert the gap-only number and delete what the test exists to prove.
-  assert.equal(block.summary.endToEndFamilyCount, 6)
+  // fabricated map, so one of the fourteen required families is certified, not seven. Rewriting this
+  // to 50 would assert the gap-only number and delete what the test exists to prove.
+  assert.equal(block.summary.endToEndFamilyCount, 7)
   assert.equal(block.summary.endToEndPercentOfRequired, 7)
 })
 
@@ -551,7 +565,7 @@ test("the capability report carries the ops block", async () => {
 
   assert.ok(report.opsCapability, "the report has no opsCapability block")
   assert.equal(report.opsCapability.summary.familyCount, Object.keys(EXPECTED_FAMILY_STATES).length)
-  assert.equal(report.opsCapability.summary.endToEndPercent, 40)
+  assert.equal(report.opsCapability.summary.endToEndPercent, 47)
   assert.match(
     report.opsCapability.vocabulary.endToEndRule,
     /never\s+compensate for a missing action/
@@ -568,10 +582,10 @@ test("the capability report carries the ops block", async () => {
   const summary = report.opsCapability.summary
   assert.equal(summary.registryLoaded, true)
   assert.match(summary.criterionBasis, /verification registry loaded/)
-  assert.equal(summary.closedRequiredFamilyCount, 6)
+  assert.equal(summary.closedRequiredFamilyCount, 7)
   assert.deepEqual(summary.evidenceUnregisteredFamilies, [])
-  assert.equal(summary.remainingRequiredFamilyCount, 8)
-  assert.equal(summary.endToEndPercentOfRequired, 43)
+  assert.equal(summary.remainingRequiredFamilyCount, 7)
+  assert.equal(summary.endToEndPercentOfRequired, 50)
   assert.ok(
     !summary.outstandingRequiredFamilies.includes("logs") &&
       !summary.outstandingRequiredFamilies.includes("dumps") &&

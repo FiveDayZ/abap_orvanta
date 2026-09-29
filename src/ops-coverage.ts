@@ -174,9 +174,9 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_user_sessions: "read-only",
   read_file_system_directory: "read-only",
   read_workload_directory: "read-only",
-  // OP3 / landscape. Comparison and the promotion precheck are built, read-only and now verified
-  // against two real systems; the family's action (performing the promotion) is deliberately
-  // absent, which is the only reason this family keeps a gap.
+  // OP3 / landscape. Comparison and the promotion precheck are built, read-only and verified against
+  // two real systems; by the operator's ruling of 2026-09-29 this read-only loop is the family's
+  // end-to-end, so the deliberately absent promotion action is a boundary rather than a gap.
   compare_systems: "read-only",
   promote_object: "read-only"
 }
@@ -506,17 +506,23 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     plannedToolNames: ["compare_systems", "promote_object"],
     purpose:
       "How does development compare with test and production, and can an object be promoted?",
-    closeRoutes: ["landscape"],
-    actionRequired: true,
-    gap:
-      "The read-only half is complete: comparison (compare_systems) and the promotion precheck " +
-      "(promote_object) both exist, and the precheck answers whether an object is recorded in a " +
-      "request that is really aimed at the target system. The family's action is still absent by " +
-      "ruling - nothing in this service can put an object into a transport or release one - so the " +
-      "precheck is a readiness answer and the promotion itself stays manual. Both tools have since " +
-      "been run against two real systems (w200 GR2/200 and w300 GR3/300, whose system ids were read " +
-      "separately), and every verdict branch the chain can reach was produced by a real call, so the " +
-      "read side is no longer the open question: the family's action is."
+    closeRoutes: ["none"],
+    actionRequired: false,
+    gap: "",
+    boundary:
+      "By the operator's ruling of 2026-09-29 this family's end-to-end is the read-only loop: " +
+      "compare_systems answers how the two systems differ, and promote_object answers whether an " +
+      "object is recorded in a request that is really aimed at the target system. Performing the " +
+      "promotion is deliberately not part of that loop and is therefore not a gap: nothing in this " +
+      "service puts an object into a transport, releases one or imports one, so a favourable verdict " +
+      "is a readiness answer and the promotion itself still happens in SAP GUI. That limit will not " +
+      "move until an operator authorises a cross-system write, and it is recorded here rather than " +
+      "left as an open gap so that the read side is counted for what it actually is. The read side " +
+      "was verified on two real systems on 2026-09-29 - w200 (GR2, client 200, Development client) " +
+      "and w300 (GR3, client 300, Test client), whose system ids were read separately - producing " +
+      "seven comparison verdicts and eight precheck verdicts, covering every branch each chain can " +
+      "reach, including an identical-source control that shows the comparison moves with content " +
+      "(.doc/code-update-20260929-131440.md)."
   }
 ]
 
