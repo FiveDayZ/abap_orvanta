@@ -41,13 +41,14 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
 /**
  * The plan's outstanding tool commitments; adding one to the plan must update this number.
  *
- * It fell from 10 to 9 on 2026-09-28 when `delete_sap_lock` was built (OP2, the locks family): the
- * tool the family was waiting for is no longer missing. It stayed at 9 on 2026-09-29 when that tool
- * was verified by a real release, because this counts tools that do not exist yet - not tools that
- * have not been exercised. The `locks` family itself closed on the second change: `gap` is empty and
- * the registry records the call.
+ * It fell from 10 to 9 on 2026-09-28 when `delete_sap_lock` was built (OP2, the locks family), and
+ * to 8 once `release_transport_task` was registered (OP2, the transport family): this counts tools
+ * that do not exist yet, not tools that have not been exercised. The remaining eight are the
+ * landscape pair and the six the plan still owes - `compare_systems`, `promote_object`,
+ * `create_background_job`, `modify_background_job`, `reprocess_failed_update`,
+ * `import_transport_queue`, `read_db_activity` and `read_performance_snapshot`.
  */
-const PLANNED_GAP_TOOL_COUNT = 9
+const PLANNED_GAP_TOOL_COUNT = 8
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -56,9 +57,10 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  // 35 from 2026-09-28: `delete_sap_lock` joined the ops group. The count is a tripwire, not a goal -
-  // it exists so a tool cannot leave or join the classified surface unnoticed.
-  assert.equal(opsGroupTools.length, 35)
+  // 36 from 2026-09-29: `delete_sap_lock` joined the ops group on 2026-09-28 and
+  // `release_transport_task` joined it on 2026-09-29. The count is a tripwire, not a goal - it
+  // exists so a tool cannot leave or join the classified surface unnoticed.
+  assert.equal(opsGroupTools.length, 36)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -81,13 +83,18 @@ test("family states are derived from the surface, and the plan's gaps stay visib
 
   // A family may not lose a planned tool without saying so; the guard has to catch that, not just
   // the real tables that currently happen to be consistent.
+  // The probe has to name a tool the registry does not know, because that is what "missing planned
+  // tool" means. It used to name `release_transport_task`, which stopped being missing on
+  // 2026-09-29 - once the tool exists the family is not silently dropping anything, so the guard
+  // correctly says nothing and the probe would assert the opposite of the truth. `create_background_job`
+  // is still only a plan entry, so the branch stays exercised.
   const brokenFamily = [
     {
       id: "transport",
       label: "Transport",
       purpose: "Which request holds this object?",
       closeRoutes: ["none"] as const,
-      plannedToolNames: ["manage_transport_requests", "release_transport_task"],
+      plannedToolNames: ["manage_transport_requests", "create_background_job"],
       actionRequired: true,
       gap: ""
     }
@@ -95,7 +102,7 @@ test("family states are derived from the surface, and the plan's gaps stay visib
   const problems = opsClassificationProblems({ families: brokenFamily })
   assert.ok(
     problems.some((problem) =>
-      /missing planned tool release_transport_task but declares no gap/.test(problem)
+      /missing planned tool create_background_job but declares no gap/.test(problem)
     ),
     `the guard did not report the silent gap: ${problems.join("; ")}`
   )
@@ -166,11 +173,16 @@ test("every family states a purpose and a route, and the two cannot contradict t
   // The DB02 half waits on the helper like the workload half: the platform is the service's to read
   // (RFC_SYSTEM_INFO.RFCDBSYS), but no module it can reach reports activity rather than space.
   assert.deepEqual(byId["runtime-resources"]!.closeRoutes, ["helper"])
-  assert.equal(block.summary.closeRouteCounts.none, 2)
+  // Recounted on 2026-09-29 from the real table: `locks` closed on the second change and now
+  // declares the "none" route like the other five closed families, which is what moved `none` from 2
+  // to 6 and pulled `approval` (2->1) and `helper` (6->3) down with it.
+  assert.equal(block.summary.closeRouteCounts.none, 6)
   assert.equal(block.summary.closeRouteCounts.platform, 1)
   assert.equal(block.summary.closeRouteCounts.service, 1)
-  assert.equal(block.summary.closeRouteCounts.approval, 2)
-  assert.equal(block.summary.closeRouteCounts.helper, 6)
+  assert.equal(block.summary.closeRouteCounts.approval, 1)
+  assert.equal(block.summary.closeRouteCounts.helper, 3)
+  assert.equal(block.summary.closeRouteCounts.authorization, 3)
+  assert.equal(block.summary.closeRouteCounts.landscape, 2)
   // A claim of unavailability may not survive in the gap text once its source is proven to be ours.
   const runtimeGap = byId["runtime-resources"]!.gap
   assert.match(runtimeGap, /RFCDBSYS/)
@@ -234,28 +246,32 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   assert.deepEqual(block.summary.stateCounts, {
     absent: 1,
     blocked: 1,
-    partial: 8,
+    partial: 7,
     "read-only": 5,
-    "read-and-act": 0
+    "read-and-act": 1
   })
+  // `locks` joined the closed families on 2026-09-29, so the gap-only reading is 6 of 15 rather than
+  // 5: the family gained its writer and the writer was exercised.
   assert.deepEqual(block.summary.endToEndFamilies, [
     "logs",
     "dumps",
+    "locks",
     "system-info",
     "interfaces",
     "archive-alerts"
   ])
-  assert.equal(block.summary.endToEndFamilyCount, 5)
-  assert.equal(block.summary.endToEndPercent, 33)
+  assert.equal(block.summary.endToEndFamilyCount, 6)
+  assert.equal(block.summary.endToEndPercent, 40)
   assert.ok(
     block.summary.endToEndPercent < 95,
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
 
-  assert.equal(block.summary.classifiedToolCount, 35)
-  // Six action tools from 2026-09-28: `delete_sap_lock` is a destructive write, so it is classified
-  // as an action like the two transport writes and the two job writes before it.
-  assert.equal(block.summary.actionToolCount, 6)
+  assert.equal(block.summary.classifiedToolCount, 36)
+  // Seven action tools from 2026-09-29: `delete_sap_lock` is a destructive write and
+  // `release_transport_task` releases a transport task, so both are classified as actions like the
+  // two transport writes and the two job writes before them.
+  assert.equal(block.summary.actionToolCount, 7)
   assert.equal(block.summary.platformBlockedToolCount, 1)
   assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)
   assert.equal(block.summary.missingPlannedToolCount, block.summary.missingPlannedTools.length)
@@ -274,11 +290,12 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   // instead of quietly falling back to the gap-only reading.
   assert.equal(block.summary.registryLoaded, false)
   assert.match(block.summary.criterionBasis, /registry unavailable/)
-  assert.equal(block.summary.stateClosedRequiredFamilyCount, 5)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 6)
   assert.equal(block.summary.closedRequiredFamilyCount, 0)
   assert.deepEqual(block.summary.evidenceUnregisteredFamilies, [
     "logs",
     "dumps",
+    "locks",
     "system-info",
     "interfaces",
     "archive-alerts"
@@ -431,7 +448,10 @@ test("the block joins with the evidence dimension without changing it", () => {
   // the tool the evidence point keeps out of the numerator; a withdrawn name is not present at all
   // and therefore cannot appear in either list, which is exactly why the withdrawal is declared
   // separately rather than by deletion.
-  assert.deepEqual(transport.verification.unverified, ["manage_transport_requests"])
+  assert.deepEqual(transport.verification.unverified, [
+    "manage_transport_requests",
+    "release_transport_task"
+  ])
   assert.deepEqual(transport.verification.failing, ["add_objects_to_transport"])
   assert.deepEqual(transport.withdrawnToolNames, ["cleanup_transport_entries"])
   assert.ok(!transport.verification.blockingTools.includes("cleanup_transport_entries"))
@@ -479,11 +499,12 @@ test("a closed gap does not certify a family whose tools were never exercised", 
   assert.deepEqual(dumps.verification.blockingTools, [])
 
   assert.equal(block.summary.registryLoaded, true)
-  assert.equal(block.summary.stateClosedRequiredFamilyCount, 5)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 6)
   assert.equal(block.summary.closedRequiredFamilyCount, 1)
   assert.deepEqual(block.summary.evidenceClosedFamilies, ["dumps"])
   assert.deepEqual(block.summary.evidenceUnregisteredFamilies, [
     "logs",
+    "locks",
     "system-info",
     "interfaces",
     "archive-alerts"
@@ -492,9 +513,9 @@ test("a closed gap does not certify a family whose tools were never exercised", 
   assert.equal(block.summary.remainingRequiredFamilyCount, 13)
   assert.equal(block.summary.criterionMet, false)
   assert.equal(block.summary.stateCriterionMet, false)
-  // The two readings are deliberately both visible: a gap-only criterion would have said 5.
-  assert.equal(block.summary.endToEndFamilyCount, 5)
-  assert.equal(block.summary.endToEndPercentOfRequired, 7)
+  // The two readings are deliberately both visible: a gap-only criterion would have said 6.
+  assert.equal(block.summary.endToEndFamilyCount, 6)
+  assert.equal(block.summary.endToEndPercentOfRequired, 43)
 })
 
 test("the capability report carries the ops block", async () => {
@@ -519,7 +540,7 @@ test("the capability report carries the ops block", async () => {
 
   assert.ok(report.opsCapability, "the report has no opsCapability block")
   assert.equal(report.opsCapability.summary.familyCount, Object.keys(EXPECTED_FAMILY_STATES).length)
-  assert.equal(report.opsCapability.summary.endToEndPercent, 33)
+  assert.equal(report.opsCapability.summary.endToEndPercent, 40)
   assert.match(
     report.opsCapability.vocabulary.endToEndRule,
     /never\s+compensate for a missing action/
@@ -536,10 +557,10 @@ test("the capability report carries the ops block", async () => {
   const summary = report.opsCapability.summary
   assert.equal(summary.registryLoaded, true)
   assert.match(summary.criterionBasis, /verification registry loaded/)
-  assert.equal(summary.closedRequiredFamilyCount, 5)
+  assert.equal(summary.closedRequiredFamilyCount, 6)
   assert.deepEqual(summary.evidenceUnregisteredFamilies, [])
-  assert.equal(summary.remainingRequiredFamilyCount, 9)
-  assert.equal(summary.endToEndPercentOfRequired, 36)
+  assert.equal(summary.remainingRequiredFamilyCount, 8)
+  assert.equal(summary.endToEndPercentOfRequired, 43)
   assert.ok(
     !summary.outstandingRequiredFamilies.includes("logs") &&
       !summary.outstandingRequiredFamilies.includes("dumps") &&
