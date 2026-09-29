@@ -173,7 +173,11 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_work_processes: "read-only",
   read_user_sessions: "read-only",
   read_file_system_directory: "read-only",
-  read_workload_directory: "read-only"
+  read_workload_directory: "read-only",
+  // OP3 / landscape. Comparison is built and read-only; the family's action (promotion) is still
+  // absent, so the family keeps a gap and this tool stays unverified until two real systems are
+  // compared.
+  compare_systems: "read-only"
 }
 
 /**
@@ -504,8 +508,10 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["landscape"],
     actionRequired: true,
     gap:
-      "One connection is pinned as the validated landscape, with no DEV/QAS/PRD roles, so neither " +
-      "system comparison nor promotion exists."
+      "The roles exist and comparison is built (compare_systems), but promotion does not: nothing " +
+      "can put an object into a transport for another system, so the family's action half is still " +
+      "absent. Comparison is also unverified: it has never been run against two real systems, so " +
+      "the verdicts it produces there have not been observed."
   }
 ]
 

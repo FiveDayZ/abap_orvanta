@@ -511,6 +511,16 @@ const toolContractsBase = {
       "List SAP connection IDs configured in this standalone service. Call first if connectionId unknown. No params.",
     inputSchema: {}
   },
+  compare_systems: {
+    description:
+      "Compare one object between two configured SAP systems and report whether their active source is identical. from and to each name a connection id or a declared landscape role (DEV/QAS/PRD); a role matching more than one connection is rejected with the candidates named rather than guessed, and the two references must resolve to different systems. The verdict is decided by the sha256 fingerprint of the active source, never by version numbers, which are per-system counters and would not mean anything across systems. A repository search miss is reported as a miss rather than as absence, and a search that fails makes the verdict incomparable instead of absent, so an unreachable system cannot be mistaken for a system without the object. Read-only on both sides: it performs the same repository search and active-source read a single-system call performs, and never writes, locks, or touches a transport.",
+    inputSchema: {
+      objectType: z.string(),
+      objectName: z.string(),
+      from: z.string(),
+      to: z.string()
+    }
+  },
   get_capability_report: {
     description:
       "Build a read-only capability report for one configured SAP connection. It separates local implementation, verified native ADT access, SAP helper fallback, unsupported endpoints, and unknown target-specific capabilities. It also publishes the independent evidence dimension from contracts/verification-registry.json under verification (per-capability and per-helper rollups plus availabilityWithoutEvidence): availability is inferred from helper protocol and opcode data, verification records what was actually called on SAP, and available plus unverified is the honest normal state rather than a defect. An unreadable registry degrades every entry to unverified instead of claiming evidence. opsCapability reports operations coverage as scenario families: every ops tool carries exactly one role (read-only, action, platform-blocked), each family lists its present and missing tools, and a family counts as end-to-end only when its declared gap is empty, so monitoring reads never stand in for a missing action. A family's declared boundaries - limits the platform or the target's own data fixes, such as a file detail with no sample left to describe - are reported beside it and are never a gap: a boundary neither opens a family nor keeps one open, and the worklist never names it. The block also states what its 95% target is measured over: requiredEndToEndFamilyCount excludes only families that are platform-blocked and carry a written exemption, criterionMet compares the closed required families against 95% of them rounded up, and outstandingRequiredFamilies is the worklist still open. Probes never invoke SAP writes, clear locks, retry writes, or claim RFC rollback.",

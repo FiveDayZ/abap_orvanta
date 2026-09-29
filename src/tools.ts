@@ -99,6 +99,7 @@ import {
   lockPayloadRows,
   type DeleteSapLockInput
 } from "./lock-delete.js"
+import { compareSystems, type CompareSystemsInput } from "./landscape.js"
 import {
   TRANSPORT_RELEASE_CONFIRMATION,
   releaseTransportTaskSchema,
@@ -1567,6 +1568,17 @@ export class ToolService {
       return "No SAP systems are currently connected. User needs to configure a connection first."
     }
     return `Connected SAP systems: ${ids.join(", ")}`
+  }
+
+  /**
+   * Compare one object between two configured systems.
+   *
+   * Read-only on both sides: the comparison is built from the same repository search and
+   * active-source read that a single-system call would make, so it cannot observe anything those
+   * reads cannot.
+   */
+  async compareSystems(input: CompareSystemsInput): Promise<string> {
+    return JSON.stringify(await compareSystems(this.backend, input), null, 2)
   }
 
   async getCapabilityReport(input: { connectionId: string }): Promise<string> {

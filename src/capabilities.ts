@@ -520,6 +520,14 @@ export async function buildCapabilityReport(
       )
     ),
     capability(
+      "landscape-comparison",
+      "target-specific",
+      ["compare_systems"],
+      unknownTargetObservation(
+        "Has no SAP call of its own: it performs the ordinary repository search and active-source read against two configured connections in one call, so its availability is inherited from those two systems and from the caller's authorization on each. It also needs at least two connections configured and, when a reference is a role, exactly one connection carrying that role. A verdict of incomparable means one side's search failed, which is reported rather than resolved into absence."
+      )
+    ),
+    capability(
       "runtime-resources",
       "target-specific",
       [

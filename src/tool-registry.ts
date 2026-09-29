@@ -681,6 +681,10 @@ const ROWS: readonly ToolRow[] = [
   ["read_user_sessions", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_file_system_directory", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_workload_directory", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  // OP3 landscape. `local` because the tool has no SAP route of its own: it performs the ordinary
+  // repository search and active-source read against two configured connections, so both sides are
+  // the reads already registered above rather than a new way of talking to SAP.
+  ["compare_systems", "ops", OPSP, "R", "local", null, null],
   ["get_version_history", "source", DEV, "R", "target-specific", null, null],
   ["preview_source_changes", "source", DEV, "R", "target-specific", null, null],
   ["get_runtime_info", "platform", PL, "R", "local", null, null],

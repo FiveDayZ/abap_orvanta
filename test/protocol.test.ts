@@ -56,6 +56,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "append_ddic_transparent_table_fields",
       "cancel_background_job",
       "cleanup_transport_entries",
+      "compare_systems",
       "correlate_sap_logs",
       "create_abap_message_class",
       "create_ddic_transparent_table",

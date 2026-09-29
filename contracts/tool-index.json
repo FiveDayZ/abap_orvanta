@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 159,
-  "readOnlyToolCount": 94,
+  "toolCount": 160,
+  "readOnlyToolCount": 95,
   "profiles": {
-    "readonly": 94,
+    "readonly": 95,
     "platform": 12,
     "dev": 136,
     "config": 39,
-    "ops": 53,
-    "full": 159
+    "ops": 54,
+    "full": 160
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 36,
+    "ops": 37,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -287,6 +287,21 @@
       "sapHelper": null,
       "minHelperProtocol": null,
       "note": "移除 CTS 任务条目，不删除、不释放传输；w200 写端点尚未验证。"
+    },
+    {
+      "name": "compare_systems",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "local",
+      "sapHelper": null,
+      "minHelperProtocol": null
     },
     {
       "name": "correlate_sap_logs",

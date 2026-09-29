@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：159
-- 只读工具：94
+- 工具总数：160
+- 只读工具：95
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,12 +10,12 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 94 |
+| profile: readonly | 95 |
 | profile: platform | 12 |
 | profile: dev | 136 |
 | profile: config | 39 |
-| profile: ops | 53 |
-| profile: full | 159 |
+| profile: ops | 54 |
+| profile: full | 160 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 8 |
 | 分组: message | 4 |
-| 分组: ops | 36 |
+| 分组: ops | 37 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -50,6 +50,7 @@
 | `append_ddic_transparent_table_fields` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
 | `cancel_background_job` | ops | ops | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.14) |
 | `cleanup_transport_entries` | ops | ops | 破坏性写 | native-adt | — |
+| `compare_systems` | ops | ops | 只读 | local | — |
 | `correlate_sap_logs` | ops | ops | 只读 | target-specific | — |
 | `create_abap_message_class` | message | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.7) |
 | `create_ddic_transparent_table` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
