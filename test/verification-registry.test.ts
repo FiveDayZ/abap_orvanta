@@ -621,8 +621,13 @@ test("the registry records the honest gap rather than inflating it", () => {
   // the entry names .doc/code-update-20260928-162050.md while recording what was NOT proven: the
   // filter-length and row-limit codes are preempted by the inputSchema (MCP error -32602), so they were
   // never exercised. That promotion is what moves `interfaces` into the criterion's numerator.
+  // Raised from 32 to 33 on 2026-09-29 (OP2 locks batch): delete_sap_lock was verified by a real
+  // release against w200 with the four-part evidence the locks family needed - the pre-change read of
+  // the exact SM12 row, the helper's own LOCK_DELETE receipt, the service's read-back, and an
+  // independent re-read. The entry names .doc/code-update-20260929-084029.md. This is the tripwire
+  // that batch missed: the registry moved to 33 while the bound stayed at 32.
   assert.ok(
-    totals.verified <= 32,
+    totals.verified <= 33,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

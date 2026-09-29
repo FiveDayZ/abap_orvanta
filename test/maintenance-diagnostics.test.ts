@@ -558,7 +558,12 @@ test("the archive branch reads ADMI_RUN and stays read-only", async () => {
     !/\b(?:TYPE|LIKE)\s+(?:LINE\s+OF\s+)?ARCH_(?:RUN|T_RUNS)\b/.test(source),
     "the archive read must not type anything with the ADK structures"
   )
-  assert.ok(!/ARCHIVE_ADMIN_SELECT_SESSIONS/.test(source))
+  // The guard bans *calling* the selector, not mentioning it. The generator documents why the
+  // selector is unusable on this release in two comments
+  // (scripts/maintenance-diagnostic-source.mjs:42 and :565), and the original bare-name pattern
+  // therefore failed the moment that rationale was written down - it read a comment as an
+  // invocation. Only DATE_CHECK_PLAUSIBILITY and ENQUEUE_READ are called in that file.
+  assert.ok(!/CALL FUNCTION\s+'ARCHIVE_ADMIN_SELECT_SESSIONS'/i.test(source))
   // The per-session file count is a keyed COUNT(*): the branch never reads file rows.
   assert.match(source, /SELECT COUNT\(\*\) FROM admi_files INTO lv_files/)
   // The branch may not delete or restart an archiving session, nor read archive files.
