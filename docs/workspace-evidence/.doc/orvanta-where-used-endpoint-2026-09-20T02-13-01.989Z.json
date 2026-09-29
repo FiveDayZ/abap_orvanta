@@ -1,0 +1,200 @@
+{
+  "workPackage": "D4-1",
+  "title": "w200 where-used endpoint real state (read-only forensics)",
+  "observedAt": "2026-09-20T02:13:01.988Z",
+  "readOnly": true,
+  "sap": {
+    "connectionId": "w200",
+    "client": "200",
+    "system": "SAP ECC, SAP_BASIS 7.31 SP04"
+  },
+  "service": {
+    "url": "http://127.0.0.1:4848/mcp",
+    "reportedVersion": "0.46.0",
+    "localVersion": "0.46.0"
+  },
+  "conclusion": "needs-configuration",
+  "conclusionDetail": "The platform DOES expose a where-used route: it advertises the legacy RIS triple (whereused, fullnamemapping, metadata) and does NOT advertise the modern usageReferences endpoint. The service therefore routes to the legacy RIS engine, which completes discovery, mapping and metadata with HTTP 200 and then receives a non-XML (0-byte) 2xx response for the final WHERE_USED call. This is not 'not advertised', not 404, not a permission failure and not a timeout: it is a content-handler response the client cannot parse, i.e. a configuration/platform-integration question for the RIS-based where-used service.",
+  "evidence": {
+    "discovery": {
+      "source": ".cache/verify-repo-4848-exports/adt-discovery_w200_2026-09-20-01-40-01/workspaces.md (read-only adt_discovery_export)",
+      "advertisedInformationsystemCollections": [
+        "fullnamemapping",
+        "metadata",
+        "search",
+        "whereused"
+      ],
+      "notAdvertisedEndpoints": [
+        "usageReferences"
+      ],
+      "note": "usageReferences has zero matches in the export; the other four are present.",
+      "engineGate": {
+        "location": "src/adt-backend.ts:592-598",
+        "condition": "!paths.has(\".../usageReferences\") && legacyWhereUsedPaths.every(path => paths.has(path))",
+        "legacyPaths": [
+          "whereused",
+          "fullnamemapping",
+          "metadata"
+        ],
+        "outcome": "ADT_RIS_WHEREUSED",
+        "measuredConfirmation": "the live report returned engine=ADT_RIS_WHEREUSED"
+      }
+    },
+    "supersededPriorEvidence": {
+      "file": ".doc/where-used-acceptance-2026-09-09T02-43-56.078Z.json",
+      "priorEngine": "ADT_WHERE_USED",
+      "priorError": "unsupported-endpoint (HTTP 404)",
+      "whySuperseded": "That run exercised the MODERN endpoint. The current discovery selects the LEGACY RIS engine, so the 09-09 evidence describes a route the service no longer takes and must not be used to describe the current state."
+    },
+    "liveProbe": {
+      "script": "scripts/probe-where-used.mjs",
+      "evidenceFile": "C:\\My\\Workplace\\Coding\\vscode-abap\\.cache\\d4-1-evidence\\where-used-acceptance-2026-09-20T02-09-59.847Z.json",
+      "status": "Failed",
+      "stage": "explicit-uri",
+      "serverVersion": "0.46.0",
+      "report": {
+        "schemaVersion": 1,
+        "engine": "ADT_RIS_WHEREUSED",
+        "readOnly": true,
+        "connectionId": "w200",
+        "objectName": "Z_ORVANTA_MCP_SCI_API",
+        "status": "failed",
+        "stage": "references",
+        "code": "REFERENCES_FAILED",
+        "resolution": "explicit_uri",
+        "target": {
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_mcp_core/fmodules/z_orvanta_mcp_sci_api/source/main",
+          "line": 1,
+          "character": 9
+        },
+        "sourceFingerprint": "a3e5a8312e98fd0eec9bd41cbb0f338aefc00c8a75b0c8efcfeb64a9834cb670",
+        "rawCount": null,
+        "supportedCount": null,
+        "filteredCount": null,
+        "startIndex": 0,
+        "maxResults": 10,
+        "hasMore": null,
+        "references": null,
+        "snippets": [],
+        "warnings": [
+          "Native semantic references only; no text-scan fallback. Output paging is not a snapshot or a bound on SAP internal work."
+        ],
+        "requestTrace": [
+          {
+            "stage": "discovery",
+            "elapsedMs": 68,
+            "timeoutMs": 15000,
+            "outcome": "response",
+            "httpStatus": 200,
+            "responseBytes": 9418
+          },
+          {
+            "stage": "mapping",
+            "elapsedMs": 1301,
+            "timeoutMs": 15000,
+            "outcome": "response",
+            "httpStatus": 200,
+            "responseBytes": 411
+          },
+          {
+            "stage": "metadata",
+            "elapsedMs": 167,
+            "timeoutMs": 15000,
+            "outcome": "response",
+            "httpStatus": 200,
+            "responseBytes": 3481
+          },
+          {
+            "stage": "references",
+            "elapsedMs": 84,
+            "timeoutMs": 15000,
+            "outcome": "response",
+            "httpStatus": 200,
+            "responseBytes": 0
+          }
+        ],
+        "error": {
+          "category": "parser-or-content-type",
+          "message": "where-used capability parser-or-content-type (HTTP 500): Legacy where-used parser-or-content-type: expected XML"
+        }
+      }
+    },
+    "rootCause": {
+      "summary": "The final WHERE_USED POST returns HTTP 200 with a 0-byte body and a non-XML content type, so the parser rejects it before any reference can be read.",
+      "measuredRequestTrace": [
+        {
+          "stage": "discovery",
+          "elapsedMs": 68,
+          "timeoutMs": 15000,
+          "outcome": "response",
+          "httpStatus": 200,
+          "responseBytes": 9418
+        },
+        {
+          "stage": "mapping",
+          "elapsedMs": 1301,
+          "timeoutMs": 15000,
+          "outcome": "response",
+          "httpStatus": 200,
+          "responseBytes": 411
+        },
+        {
+          "stage": "metadata",
+          "elapsedMs": 167,
+          "timeoutMs": 15000,
+          "outcome": "response",
+          "httpStatus": 200,
+          "responseBytes": 3481
+        },
+        {
+          "stage": "references",
+          "elapsedMs": 84,
+          "timeoutMs": 15000,
+          "outcome": "response",
+          "httpStatus": 200,
+          "responseBytes": 0
+        }
+      ],
+      "parsePath": {
+        "location": "src/legacy-where-used.ts:45-58 (xmlRoot)",
+        "whyTheStatusWasInRange": "line 45 throws 'Legacy where-used status code <n>' for any status outside 2xx. The observed message is 'expected XML' from line 50 instead, which is only reachable AFTER the status check passes, so the response status was 2xx. The trace independently records httpStatus 200.",
+        "trigger": "line 49: content-type was not application/xml, text/xml or +xml"
+      }
+    },
+    "reportingDefect": {
+      "severity": "Low",
+      "summary": "The failure message says '(HTTP 500)' but no 500 was measured. fromError() in abap-adt-api hardcodes status 500 when normalizing a message-only Error, so the label is synthetic. A reader diagnosing this would chase a server error that did not occur.",
+      "evidence": {
+        "normalizer": "node_modules/abap-adt-api/build/AdtException.js:150",
+        "behaviour": "hasMessage(error) -> new AdtErrorException(500, {}, \"\", error.message)",
+        "measured": "requestTrace references stage: httpStatus 200, responseBytes 0",
+        "statusRecovery": "src/adt-backend.ts:4444-4446 recovers a real status only when the message contains 'status code <n>' or 'error <n>'; 'expected XML' contains neither, so the synthetic 500 survives."
+      },
+      "recommendation": "Report the measured status from the request trace rather than the normalized error, so parser failures on a 2xx response are not labelled as HTTP 500."
+    },
+    "notEstablished": [
+      "The exact non-XML body content: the response was 0 bytes, so there is no body to inspect.",
+      "Whether the empty response is caused by a missing RIS/ICF configuration, an unsupported relationship type for this object, or a 7.31 SP04 content-handler limitation. This requires Basis-side inspection of the ADT RIS services.",
+      "Whether any object on w200 can currently produce a positive where-used reference. Only one object and one resolution path (explicit-uri) were exercised before the probe aborted; typed-name and the five invalid-input checks never ran.",
+      "Whether the modern usageReferences route would work if it were advertised: it is not advertised, so it was never called."
+    ],
+    "recommendedNextSteps": [
+      "D4-2/D4-3 remain blocked on a platform answer: ask Basis whether the RIS-based where-used content handler is configured for ADT on this system, and whether 'usageReferences' can be exposed.",
+      "Re-run scripts/probe-where-used.mjs after any Basis change, writing evidence to .cache via ABAP_MCP_EVIDENCE_DIR, and only then promote a confirmed conclusion into .doc.",
+      "Consider making the probe continue past the first failing query so typed-name and the invalid-input guards are exercised even when the endpoint is broken; today a single failure hides all remaining checks."
+    ],
+    "compliance": {
+      "sapWrites": "none",
+      "sapObjectsModified": "none",
+      "transportActions": "none",
+      "portsUntouched": [
+        4847
+      ],
+      "transfersUntouched": [
+        "GR2K923472",
+        "GR2K923473"
+      ],
+      "note": "Read-only MCP calls only: adt_discovery_export and find_where_used."
+    }
+  }
+}

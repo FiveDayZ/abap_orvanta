@@ -51,8 +51,24 @@ export const repositoryRoot = resolve(
  * registry therefore keeps the design's literal paths and resolves them against the repository
  * first and the workspace root second, instead of rewriting them into paths the design does not
  * use. Evidence is still required to exist on disk - only the anchor is widened.
+ *
+ * The third root is what keeps that rule falsifiable in a checkout. CI has no workspace beside the
+ * repository, so a `.doc/...` citation had no candidate there at all and the evidence-existence
+ * guard could only have been kept green by weakening it. `docs/workspace-evidence/` mirrors the
+ * cited records with their literal relative paths preserved (see
+ * `scripts/mirror-workspace-evidence.mjs`), so the guard resolves the same paths in CI that it
+ * resolves in the workspace. The `.doc` originals stay authoritative and the mirror is consulted
+ * last, so no local verdict changes; it is a fallback, not a second source of truth.
+ *
+ * `ORVANTA_EVIDENCE_ROOT` is prepended when set, for a workspace that lives somewhere unexpected.
  */
-export const evidenceRoots: readonly string[] = [repositoryRoot, resolve(repositoryRoot, "..")]
+const configuredEvidenceRoot = process.env.ORVANTA_EVIDENCE_ROOT
+export const evidenceRoots: readonly string[] = [
+  ...(configuredEvidenceRoot ? [resolve(configuredEvidenceRoot)] : []),
+  repositoryRoot,
+  resolve(repositoryRoot, ".."),
+  join(repositoryRoot, "docs", "workspace-evidence")
+]
 
 export const VERIFICATION_REGISTRY_PATH = join(
   repositoryRoot,

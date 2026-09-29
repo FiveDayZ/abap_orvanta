@@ -1,0 +1,402 @@
+{
+  "record": "ORVANTA MCP 2.8 exec-helper deployment - D7 and D9 four-stage acceptance",
+  "recordedAt": "2026-09-24T10:33:26+08:00",
+  "system": {
+    "connectionId": "w200",
+    "client": "200",
+    "basis": "SAP ECC / SAP_BASIS 7.31 SP04 (non-production development system)"
+  },
+  "service": {
+    "endpoint": "http://127.0.0.1:4848/mcp",
+    "toolCount": 142,
+    "productVersion": "0.47.3",
+    "nodeVersion": "24.8.0",
+    "runtimeArtifactFingerprint": "8a791236cbf117c685c6e87b0b822ce8e93047214d5fc66d136f90e6453da888",
+    "diskSinceStartup": "match",
+    "restartRequired": false
+  },
+  "helpers": {
+    "Z_ORVANTA_MCP_EXECUTE": {
+      "sourceHash": "f42d58235b5fbd9a1cb677f14b0ef1e0e0db7570d7722c44229b5ca7d88d9576",
+      "maxProtocol": "2.8",
+      "interfaceParameters": 57
+    },
+    "Z_ORVANTA_MCP_DYNPRO_API": {
+      "sourceHash": "53b9f018d39ba277a0e2b39a46252e77470feeb82cf3a4967ddbc04b493b50f4",
+      "maxProtocol": "2.8",
+      "interfaceParameters": 57
+    },
+    "Z_ORVANTA_MCP_DDIC_API": {
+      "sourceHash": "7c7b211990b99f89000ec8773bfd116b9a44f6ba0bdcfc1db85fafe41b312386",
+      "maxProtocol": "1.13",
+      "note": "unchanged by this deployment; value read verbatim from get_capability_report (helperAttestation)"
+    }
+  },
+  "d7": {
+    "verdict": "passed",
+    "rerunNote": "re-executed against the helper build deployed last (dynpro sourceHash 53b9f018...) so the evidence matches the build in SAP",
+    "stages": [
+      {
+        "id": "D7-1a",
+        "tool": "read_sapscript_form",
+        "input": { "formName": "MEDRUCK", "language": "1" },
+        "result": "ok",
+        "observed": {
+          "formLines": 1479,
+          "pages": 2,
+          "pageWindows": 14,
+          "windows": 10,
+          "paragraphs": 31,
+          "strings": 5,
+          "tabs": 91,
+          "sourceStatus": "not-requested",
+          "fingerprint": "222b26641e899d88651b2899c6f8d521cb67403d3cc42864b06056b757c81132"
+        }
+      },
+      {
+        "id": "D7-1b",
+        "tool": "read_sapscript_form",
+        "input": { "formName": "MEDRUCK", "includeSource": true },
+        "result": "ok",
+        "observed": {
+          "sourceStatus": "ok",
+          "sourceLineCount": 104,
+          "fingerprint": "b803dbf880f3f4e9e441cee793223137deebabfaf5de1ee4f8986de51c0a46e6"
+        },
+        "note": "source is read with the definition language taken from the text header (TDOSPRAS), not the display language"
+      },
+      {
+        "id": "D7-1c",
+        "tool": "read_sapscript_form",
+        "input": { "formName": "ZZZZ_NOT_A_FORM" },
+        "result": "rejected",
+        "observed": { "error": "NOT_FOUND: SAPscript form does not exist" }
+      },
+      {
+        "id": "D7-4a",
+        "tool": "read_smartstyle",
+        "input": { "styleName": "SYSTEM", "mode": "S" },
+        "result": "ok",
+        "observed": {
+          "paragraphs": 2,
+          "strings": 4,
+          "tabStops": 0,
+          "variants": 3,
+          "fingerprint": "381859d64bb5f14612d7c8edb928712b14feeb59b9a229af84014439d9ec4aa3"
+        }
+      },
+      {
+        "id": "D7-4b",
+        "tool": "read_smartstyle",
+        "input": { "styleName": "SYSTEM", "includeCss": true },
+        "result": "ok",
+        "observed": {
+          "cssStatus": "ok",
+          "cssMime": "text/css",
+          "cssBodyLength": 754,
+          "fingerprint": "6f5210f2ab36418fc64424e531623b46d0609cd8f8fc95dee32e5e382a664bb4"
+        }
+      },
+      {
+        "id": "D7-4c",
+        "tool": "read_smartstyle",
+        "input": { "styleName": "ZZZZ_NOT_A_STYLE" },
+        "result": "rejected",
+        "observed": { "error": "STYLE_NOT_FOUND: Smart style could not be read" }
+      },
+      {
+        "id": "D7-3a",
+        "tool": "read_adobe_form",
+        "input": { "formName": "FP_TEST_00" },
+        "result": "ok",
+        "observed": {
+          "state": "A",
+          "dirty": true,
+          "xdpLength": 5056,
+          "xdpBytesReturned": 5056,
+          "interfaceAvailable": false,
+          "unsupported": ["interface", "context"],
+          "xdpSha256": "ec51c16463edec8e0608fbc10daf45c2a429715ba81652f5a400ea5fb30d3977"
+        }
+      },
+      {
+        "id": "D7-3b",
+        "tool": "read_adobe_form",
+        "input": { "formName": "DEMO_ADOBE_OFFLINE" },
+        "result": "ok",
+        "observed": {
+          "state": "A",
+          "dirty": true,
+          "xdpLength": 182799,
+          "xdpBytesReturned": 182799,
+          "interfaceAvailable": false,
+          "unsupported": ["interface", "context"],
+          "xdpSha256": "e6edb1f5e59795d5fedd4008b2a20a86d8a655fcdfd14388f4ab3dacc6808960"
+        }
+      },
+      {
+        "id": "D7-3c",
+        "tool": "read_adobe_form",
+        "input": { "formName": "EPM_PO_FORM" },
+        "result": "ok",
+        "observed": {
+          "state": "A",
+          "dirty": false,
+          "xdpLength": 106709,
+          "xdpBytesReturned": 106709,
+          "interfaceAvailable": false,
+          "unsupported": ["interface", "context"],
+          "xdpSha256": "68a2fb996b33303205f3ff4915c341e17449fef6514fc13b47ebec05b3941627"
+        }
+      },
+      {
+        "id": "D7-3z",
+        "tool": "read_adobe_form",
+        "input": { "formName": "ZZZZ_NOT_A_FORM" },
+        "result": "rejected",
+        "observed": { "error": "ADOBE_FORM_NOT_FOUND: Adobe form not found" }
+      }
+    ]
+  },
+  "d9": {
+    "verdict": "partial",
+    "verdictReason": "D9-1 create/read-back/retry and D9-2 add/idempotency are observed working; the cleanup stage fails with a reproducible defect (D-3), and no delete path exists for a created CTS request",
+    "stage1Refusals": [
+      {
+        "id": "R1",
+        "call": "create_transport_request without confirmation",
+        "result": "refused before SAP",
+        "observed": { "code": "invalid_literal", "path": ["confirmation"], "expected": "CREATE_TRANSPORT_REQUEST" }
+      },
+      {
+        "id": "R2",
+        "call": "create_transport_request confirmation=CREATE_TRANSPORT",
+        "result": "refused before SAP",
+        "observed": { "code": "invalid_literal", "path": ["confirmation"] }
+      },
+      {
+        "id": "R3",
+        "call": "create_transport_request requestType=S",
+        "result": "refused before SAP",
+        "observed": { "code": "invalid_enum_value", "path": ["requestType"], "options": ["K", "W"] }
+      },
+      {
+        "id": "R4",
+        "call": "create_transport_request target=ZZZZ",
+        "result": "reached SAP and refused there; no request created",
+        "observed": {
+          "error": "TRANSPORT_REQUEST_INSERT_FAILED: 传输目标的不正确的语法 - 使用 F4 帮助",
+          "sapInvocationStarted": true
+        }
+      },
+      {
+        "id": "R5",
+        "call": "add_objects_to_transport without confirmation",
+        "result": "refused before SAP",
+        "observed": { "code": "invalid_literal", "path": ["confirmation"], "expected": "ADD_OBJECTS_TO_TRANSPORT" }
+      }
+    ],
+    "stage2Create": {
+      "id": "C1",
+      "tool": "create_transport_request",
+      "input": { "requestType": "K", "description": "ORVANTA MCP D9 acceptance r2" },
+      "observed": {
+        "created": true,
+        "requestNumber": "GR2K923488",
+        "requestType": "K",
+        "status": "D",
+        "owner": "WYS",
+        "target": "GR3",
+        "taskNumbers": ["GR2K923489"]
+      }
+    },
+    "stage3ReadBack": [
+      {
+        "id": "V1",
+        "tool": "read_abap_table",
+        "table": "E070",
+        "observed": [
+          {
+            "TRKORR": "GR2K923488",
+            "TRFUNCTION": "K",
+            "TRSTATUS": "D",
+            "TARSYSTEM": "GR3",
+            "AS4USER": "WYS",
+            "AS4DATE": "20260924",
+            "AS4TIME": "102459"
+          }
+        ],
+        "result": "matches the create response"
+      },
+      {
+        "id": "V1b",
+        "tool": "read_abap_table",
+        "table": "E07T",
+        "result": "not readable",
+        "observed": { "error": "TABLE_NOT_ALLOWED: table E07T is not present in the D5-2 allowlist (default deny)" },
+        "note": "the request description therefore cannot be read back through this tool; E070 has no description column"
+      },
+      {
+        "id": "V2",
+        "tool": "manage_transport_requests",
+        "action": "get_user_transports",
+        "result": "does not surface the new request",
+        "observed": { "summary": "0 transport requests for user WYS", "containsGR2K923488": false },
+        "note": "defect D-5; the helper's own retry guard does find it"
+      },
+      {
+        "id": "T1",
+        "call": "create_transport_request repeated with identical description",
+        "result": "retry safe",
+        "observed": { "requestNumber": "GR2K923488", "created": false }
+      }
+    ],
+    "stage4Add": [
+      {
+        "id": "A1",
+        "tool": "add_objects_to_transport",
+        "input": { "requestNumber": "GR2K923488", "objects": [{ "pgmid": "R3TR", "object": "PROG", "objName": "ZCMCP_RPT_0831" }] },
+        "observed": {
+          "requestNumber": "GR2K923486",
+          "taskNumber": "GR2K923487",
+          "objectCount": 1,
+          "insertedCount": 1
+        },
+        "note": "SAP returned the container where the object was already recorded, not the requested GR2K923488; see defect D-4"
+      },
+      {
+        "id": "A2",
+        "tool": "read_abap_table",
+        "table": "E071",
+        "observed": {
+          "GR2K923488": 0,
+          "GR2K923487": 1,
+          "entry": "R3TR PROG ZCMCP_RPT_0831 position 000001",
+          "setDifferenceAdded": ["R3TR|PROG|ZCMCP_RPT_0831@000001"],
+          "setDifferenceRemoved": []
+        }
+      },
+      {
+        "id": "A3/A4",
+        "call": "add_objects_to_transport repeated with the same object",
+        "result": "idempotent",
+        "observed": { "rowsBefore": 1, "rowsAfter": 1, "extraRowsCreated": false }
+      },
+      {
+        "id": "A5",
+        "call": "add_objects_to_transport with R3TR TABL ZORV_MCP_T01",
+        "observed": {
+          "requestNumber": "GR2K923472",
+          "taskNumber": "GR2K923473",
+          "insertedCount": 1
+        },
+        "note": "not a valid refusal probe: the helper refuses table KEYS (payload property OBJECT_TABLES), which the MCP tool schema cannot even express, so a plain TABL object is legitimately accepted. This call recorded R3TR TABL ZORV_MCP_T01 position 000024 into the pre-existing transport task GR2K923473 and must be removed."
+      }
+    ],
+    "stage5Cleanup": {
+      "targetedCall": {
+        "tool": "cleanup_transport_entries",
+        "input": {
+          "parentTransportNumber": "GR2K923472",
+          "taskNumber": "GR2K923473",
+          "entries": [{ "pgmid": "R3TR", "type": "TABL", "name": "ZORV_MCP_T01", "position": "000024" }],
+          "expectedFingerprint": "b639b43259ec19a911294b236fc842dd31101dacc716bfe5e38d88a6ee597a34",
+          "confirmation": "REMOVE_CTS_ENTRIES"
+        },
+        "observed": { "error": "CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS" },
+        "postState": {
+          "table": "E071",
+          "filter": "TRKORR = GR2K923473",
+          "returnedCount": 25,
+          "targetEntryStillPresent": "R3TR TABL ZORV_MCP_T01 position 000024"
+        },
+        "note": "the PUT to /sap/bc/adt/cts/transportrequests/GR2K923473 did not remove the entry; see defect D-3"
+      },
+      "createdRequestsNotRemovable": {
+        "requests": ["GR2K923486", "GR2K923488"],
+        "reason": "manage_transport_requests exposes only get_user_transports, get_transport_details, get_transport_objects, compare_transports and prepare_delivery; no action deletes a CTS request, so both test requests remain empty, modifiable and unreleased"
+      }
+    },
+    "d9_2ScriptStage5Note": "the harness's own cleanup stage could not run because the add landed in a pre-existing container, so the cleanup path was exercised by the targeted call above"
+  },
+  "defects": [
+    {
+      "id": "D-1",
+      "severity": "Critical",
+      "status": "fixed and verified",
+      "title": "create_transport_request and add_objects_to_transport had no pre-change observation branch",
+      "observed": "SAP pre-change observation could not establish whether ... exists: source: observation failed; the write was never dispatched (sapInvocationStarted false) for both tools",
+      "cause": "neither tool had a branch in src/write-prechange-evidence.ts, so the generic ADT source observation threw 'write target has no readable source identity'",
+      "correction": "added observeTransportRequestCreate (listUserTransports) and observeTransportObjectAdd (transportDetails + transportEntries) plus unit coverage",
+      "evidence": ".doc/d9-acceptance-20260924.log (R4, C1, A1 now reach SAP)"
+    },
+    {
+      "id": "D-2",
+      "severity": "Critical",
+      "status": "fixed and verified",
+      "title": "add_objects_to_transport raised a DBIF_RSQL_INVALID_RSQL short dump after the entry had already been recorded",
+      "observed": "HTTP 500 RABAX_STATE, DBIF_RSQL_INVALID_RSQL at LZORVANTA_MCP_COREU03 line 5956, CX_SY_OPEN_SQL_DB; the tool reported failure although E071 already held the entry",
+      "cause": "SELECT trkorr pgmid object obj_name FROM e071 INTO TABLE lt_d9_add_e071 where lt_d9_add_e071 was STANDARD TABLE OF e071; the positional target starts with MANDT (CLNT 3), so trkorr (CHAR 20) was written into a client field",
+      "correction": "declared a flat type ty_d9_add_e071 holding exactly the four selected columns as e071 table-field references and used it for the work area and the table",
+      "evidence": "three dumps at 20260924102123/24/25 before the fix; A1 now returns a completed result with no new dump"
+    },
+    {
+      "id": "D-3",
+      "severity": "High",
+      "status": "open",
+      "title": "cleanup_transport_entries does not remove the entry it reports as removed",
+      "observed": "CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS and the entry is still present in E071",
+      "cause": "the objects were listed directly under tm:request, but the entry belongs to the task container: SAP answered the PUT with 2xx and resolved tm:abap_object against the request, which does not hold a task's entry. The HTTP status could not have revealed this, because the ADT client already rejects 4xx and 5xx",
+      "impact": "CTS entries cannot be cleaned up through this tool, so a mistakenly recorded object cannot be undone through the MCP surface",
+      "evidence": ".doc/d9-acceptance-20260924.log and the targeted cleanup call recorded above",
+    "fix": "buildTransportCleanupRequest now nests tm:abap_object inside tm:task when the task differs from the request; src/adt-backend.ts, covered by test/transport-delivery.test.ts",
+        "fixVerification": "tested on 2026-09-24 against w200 after a service restart (artifactFingerprint 4bab5f8a53be9d8526a9be96150d35394ffd8a8a52209468418b5dd861831d39): the PUT still returned 2xx and the entry R3TR TABL ZORV_MCP_T01 position 000024 was still present in E071, so CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS was raised again. The nesting change is therefore NOT proven to work",
+        "conclusion": "platform limitation rather than an open code defect: the native ADT removeobject action is absent from the bundled abap-adt-api client (no independent evidence it exists), src/capabilities.ts already reports this tool's availability as unknown because it requires successful native ADT removeobject support, docs/tool-compatibility-matrix.md already records the endpoint as unverified on ECC 7.31, and two structurally different payload shapes both returned 2xx while removing nothing. The tool fails safely: its own post-check refuses to report success, so no caller can be misled. The practical remedy is to remove the entry in SE09/SE10"
+    },
+    {
+      "id": "D-4",
+      "severity": "High",
+      "status": "open",
+      "title": "add_objects_to_transport reports success while the object is recorded in a different container",
+      "observed": "requested GR2K923488, SAP returned requestNumber GR2K923486 / taskNumber GR2K923487 with insertedCount 1",
+      "cause": "TRINT_OBJECTS_CHECK_AND_INSERT refuses to record an object that already belongs to another open transport and returns that order/task; the tool relays SAP's numbers but does not flag that they differ from the request",
+      "impact": "a caller reading only status/insertedCount believes the object is in the requested request when it is not",
+      "evidence": ".doc/d9-acceptance-20260924.log (A1, A2, A5)"
+    },
+    {
+      "id": "D-5",
+      "severity": "Medium",
+      "status": "open",
+      "title": "get_user_transports does not list a request that was just created for that user",
+      "observed": "0 transport requests for user WYS immediately after creating GR2K923488, while the helper's retry guard matched it",
+      "evidence": ".doc/d9-acceptance-20260924.log (V2)"
+    },
+    {
+      "id": "D-6",
+      "severity": "Low",
+      "status": "open",
+      "title": "E07T is not in the D5-2 read allowlist",
+      "observed": "TABLE_NOT_ALLOWED for E07T, so a CTS request description cannot be read back through read_abap_table",
+      "evidence": ".doc/d9-acceptance-20260924.log (V1b)"
+    },
+    {
+      "id": "D-7",
+      "severity": "Low",
+      "status": "open",
+      "title": "the create observation can under-report an existing request",
+      "observed": "observeTransportRequestCreate derives existence from listUserTransports, which per D-5 does not surface the request",
+      "impact": "on a retry the pre-change evidence may claim exists=false although an identical request exists",
+      "evidence": "code path in src/write-prechange-evidence.ts combined with V2"
+    }
+  ],
+  "safety": {
+    "sapStandardObjectsModified": false,
+    "transportsReleased": false,
+    "transportsReused": ["GR2K923472", "GR2K923473"],
+    "note": "GR2K923472 and GR2K923473 were never released. One entry was accidentally recorded into task GR2K923473 (defect D-3 blocks its removal) and is reported for manual removal."
+  },
+  "rawEvidence": {
+    "d7Log": { "path": ".doc/d7-acceptance-20260924.log", "sha256": "12c21f9d208cccb47214e1b369c23d171ca6d127e189d50a2e99cef000a8b34c", "note": "trimmed: 3 payload lines longer than 4000 characters were replaced by markers; the untrimmed original had sha256 267d564adff9e456469be49cfa555f4e42d1bcaf32f07416b728021b864b4c4c" },
+    "d9Log": { "path": ".doc/d9-acceptance-20260924.log", "sha256": "8806f414dbce4dca4b7c60212788eeabf97989608b0ace0911a1c9e6fa79a428" }
+  }
+}
