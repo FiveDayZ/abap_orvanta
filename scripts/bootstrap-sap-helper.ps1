@@ -6838,27 +6838,10 @@ function New-InstallProgram {
         "  DATA lt_tr_release_messages TYPE ctsgerrmsgs.",
         "  DATA ls_tr_release_message TYPE ctsgerrmsg.",
         "  DATA lv_tr_release_message_text TYPE string.",
-        "  DATA lv_tr_release_warn_count TYPE i.",
-        "  DATA lv_tr_release_warn_text TYPE char6.",
         "  DATA lv_tr_release_task_count TYPE i.",
         "  DATA lv_tr_release_task_text TYPE char6.",
         "  DATA lv_tr_release_expected TYPE string.",
         "  DATA lv_tr_release_index TYPE i.",
-        "  DATA lv_tr_import_index TYPE i.",
-        "  DATA lv_tr_import_count_text TYPE char6.",
-        "  DATA lv_tr_import_rc TYPE sy-subrc.",
-        "  DATA lv_tr_import_subrc TYPE sy-subrc.",
-        "  DATA lv_tr_import_error TYPE string.",
-        "  DATA lv_tr_import_status TEXT16.",
-        "  DATA lv_tr_import_text TYPE string.",
-        "  DATA lv_tr_import_function TYPE trfunction.",
-        "  DATA lv_tr_import_system TYPE tarsystem.",
-        "  DATA ls_tr_import_e070 TYPE e070.",
-        "  DATA ls_tr_import_step TYPE tmsbuffer.",
-        "  DATA lt_tr_import_steps TYPE STANDARD TABLE OF tmsbuffer.",
-        "  DATA lv_tr_import_auth TYPE sy-subrc.",
-        "  DATA lt_tr_import_requests TYPE STANDARD TABLE OF e070.",
-        "  DATA ls_tr_import_request TYPE e070.",
         # E071 itself starts with MANDT, so a partial column list selected INTO a table of the
         # full E071 structure lands in the wrong fields: trkorr (CHAR 20) was written into the
         # leading MANDT (CLNT 3) and the read raised DBIF_RSQL_INVALID_RSQL. The read-back uses a
@@ -12826,7 +12809,10 @@ function New-InstallProgram {
         "          iv_without_locking = space",
         "          iv_display_export_log = space",
         "          iv_ignore_warnings = space",
-        "        TABLES",
+        # ET_MESSAGES belongs to the same EXPORTING section as the VALUE(...) imports: the
+        # function's own signature on w200 lists ES_REQUEST, ET_DELETED_TASKS and ET_MESSAGES
+        # together under EXPORTING and its TABLES section is empty, so a second EXPORTING section
+        # (or a TABLES section) would not compile.
         "          et_messages = lt_tr_release_messages",
         "        EXCEPTIONS",
         "          cts_initialization_failure = 1",
