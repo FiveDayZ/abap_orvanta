@@ -141,7 +141,11 @@ test("the server binds the check to the table read that works here", async () =>
   assert.match(source, /tools\.readAbapTable\(\{[\s\S]{0,400}?tableName: "E070"/)
   assert.match(
     source,
-    /invokeWriteTool\(name, input, backend, receipts, action, readTransportRows\)/
+    // The tail of the argument list is deliberately not pinned: `maintenance` was appended to this
+    // call after the assertion was written, and pinning the closing parenthesis made the test
+    // assert the call's shape instead of its point. That point is carried by the read_abap_table
+    // match above and the runQuery exclusion below, both of which still hold.
+    /invokeWriteTool\(name, input, backend, receipts, action, readTransportRows[,)]/
   )
   assert.doesNotMatch(source, /backend\.runQuery\(\s*\n?\s*connectionId,\s*`SELECT TRKORR/)
 })
