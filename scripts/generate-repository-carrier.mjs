@@ -692,6 +692,11 @@ report.push("")
 report.push("DATA: lt_new TYPE TABLE OF abaptxt255,")
 report.push("      lt_body TYPE TABLE OF abaptxt255,")
 report.push("      lt_cur TYPE TABLE OF abaptxt255,")
+// Snapshot of the include and of the live parameter interface, both taken *before* the
+// delete-and-recreate branch runs. Without them a failure after the interface rebuild would be
+// unrecoverable: the 2026-09-28 and 2026-09-29 carriers each deleted the module, recreated it with
+// its parameters, committed, and then failed in the body phase - leaving an interface-only shell.
+report.push("      lt_backup TYPE TABLE OF abaptxt255,")
 report.push("      ls_new TYPE abaptxt255,")
 report.push("      ls_cur TYPE abaptxt255,")
 report.push("      lv_name TYPE c LENGTH 30,")
@@ -757,6 +762,24 @@ report.push("      lv_wa_type TYPE sabap_objtype,")
 report.push("      lv_wa_abname TYPE sabap_objname,")
 report.push("      lv_wa_length TYPE i,")
 report.push("      lv_added TYPE i.")
+report.push("")
+report.push(
+  "* The live parameter interface exactly as RPY_FUNCTIONMODULE_READ returned it, kept so the module"
+)
+report.push(
+  "* can be recreated if FUNCTION_CREATE fails after the delete. The merging loop below overwrites"
+)
+report.push(
+  "* lt_fm_* with the canonical set, so the live rows must be copied before that happens."
+)
+report.push("DATA: lt_backup_import TYPE TABLE OF rsimp,")
+report.push("      lt_backup_change TYPE TABLE OF rscha,")
+report.push("      lt_backup_export TYPE TABLE OF rsexp,")
+report.push("      lt_backup_tables TYPE TABLE OF rstbl,")
+report.push("      lt_backup_except TYPE TABLE OF rsexc,")
+report.push("      lt_backup_docu TYPE TABLE OF rsfdo,")
+report.push("      lv_rebuilt TYPE c LENGTH 1,")
+report.push("      lv_restore_failed TYPE c LENGTH 1.")
 report.push("")
 report.push("START-OF-SELECTION.")
 report.push(`  WRITE: / '${MARKER}'.`)
@@ -871,6 +894,22 @@ report.push("* path needs it. The read above already left the tables empty.")
 report.push("    lv_missing_fm = 'X'.")
 report.push("    WRITE: / 'Note        : no live interface to read; the canonical rows are used.'.")
 report.push("  ENDIF.")
+report.push("")
+report.push(
+  "* Snapshot the live interface before the merging loop below augments it, so the restore path"
+)
+report.push(
+  "* can recreate the module with exactly the parameters it had before this carrier touched it."
+)
+report.push("  REFRESH: lt_backup_import, lt_backup_change, lt_backup_export,")
+report.push("    lt_backup_tables, lt_backup_except, lt_backup_docu.")
+report.push("  lt_backup_import = lt_fm_import.")
+report.push("  lt_backup_change = lt_fm_change.")
+report.push("  lt_backup_export = lt_fm_export.")
+report.push("  lt_backup_tables = lt_fm_tables.")
+report.push("  lt_backup_except = lt_fm_except.")
+report.push("  lt_backup_docu = lt_fm_docu.")
+report.push("  CLEAR: lv_rebuilt, lv_restore_failed.")
 report.push("  IF lv_pool IS INITIAL. lv_pool = c_group. ENDIF.")
 report.push("  IF lv_remote IS INITIAL. lv_remote = 'R'. ENDIF.")
 report.push("  IF lv_short IS INITIAL. lv_short = 'ORVANTA MCP controlled entry point'. ENDIF.")
@@ -1010,6 +1049,21 @@ report.push(
 )
 report.push("      CALL FUNCTION 'DEQUEUE_ESFUNCTION' EXPORTING funcname = lv_func.")
 report.push("      IF lv_missing_fm IS INITIAL.")
+report.push(
+  "* FUNCTION_DELETE and the FUNCTION_CREATE below commit separately from the body phase, so an"
+)
+report.push(
+  "* INSERT REPORT or GENERATE failure afterwards would leave the module with an interface and no"
+)
+report.push(
+  "* implementation. Keep the pre-change include and interface so that failure is undone rather"
+)
+report.push(
+  "* than merely reported - the two carriers that hit this each cost the service its helper."
+)
+report.push("      REFRESH lt_backup.")
+report.push("      lt_backup = lt_cur.")
+report.push("      lv_rebuilt = 'X'.")
 report.push("      CALL FUNCTION 'FUNCTION_DELETE'")
 report.push("        EXPORTING")
 report.push("          funcname = lv_func")
@@ -1052,6 +1106,7 @@ report.push("          OTHERS = 7.")
 report.push("      IF sy-subrc <> 0.")
 report.push("        WRITE: / 'ERROR: FUNCTION_CREATE failed', sy-subrc, sy-msgid, sy-msgno.")
 report.push("        ROLLBACK WORK.")
+report.push("        PERFORM restore_previous_state.")
 report.push("        RETURN.")
 report.push("      ENDIF.")
 report.push("      COMMIT WORK AND WAIT.")
@@ -1262,6 +1317,7 @@ report.push("  INSERT REPORT lv_name FROM lt_new.")
 report.push("  IF sy-subrc <> 0.")
 report.push("    WRITE: / 'ERROR: INSERT REPORT failed', sy-subrc.")
 report.push("    ROLLBACK WORK.")
+report.push("    PERFORM restore_previous_state.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("")
@@ -1272,12 +1328,14 @@ report.push("    WRITE: / 'ERROR: GENERATE failed:', lv_msg.")
 report.push("    WRITE: / '  body line:', lv_msg_line, 'word:', lv_msg_word.")
 report.push("    WRITE: / '  the active version is unchanged; nothing was activated.'.")
 report.push("    ROLLBACK WORK.")
+report.push("    PERFORM restore_previous_state.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push(`  UPDATE enlfdir SET generated = 'X' WHERE funcname = '${HELPER}'.`)
 report.push("  IF sy-subrc <> 0.")
 report.push("    WRITE: / 'ERROR: generated flag update failed', sy-subrc.")
 report.push("    ROLLBACK WORK.")
+report.push("    PERFORM restore_previous_state.")
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  COMMIT WORK AND WAIT.")
@@ -1346,6 +1404,106 @@ report.push("  lv_save_msgid = sy-msgid.")
 report.push("  lv_save_msgno = sy-msgno.")
 report.push("  lv_save_v1 = sy-msgv1.")
 report.push("  lv_save_v2 = sy-msgv2.")
+report.push("ENDFORM.")
+report.push("")
+report.push(
+  "* Undo a half-applied interface rebuild. Only the delete-and-recreate branch sets lv_rebuilt, so"
+)
+report.push(
+  "* on the ordinary save path this returns immediately and the carrier behaves exactly as before."
+)
+report.push(
+  "* The state it repairs is the one the 2026-09-28 and 2026-09-29 carriers produced: the module"
+)
+report.push(
+  "* committed with its parameters, then the body phase failed, leaving no implementation at all."
+)
+report.push("FORM restore_previous_state.")
+report.push("  IF lv_rebuilt IS INITIAL.")
+report.push("    WRITE: / 'Restore     : not needed; the interface was never rebuilt.'.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  IF lt_backup IS INITIAL.")
+report.push("    WRITE: / 'Restore     : no snapshot was taken; nothing can be restored.'.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push(
+  "  WRITE: / 'Restore     : the rebuild left the module without a body; restoring the previous one.'."
+)
+report.push("  CLEAR lv_restore_failed.")
+report.push(
+  "* A failed FUNCTION_CREATE removes the module outright rather than emptying it, so recreate it"
+)
+report.push("* from the snapshot interface before writing the snapshot include back.")
+report.push("  CLEAR ls_tfdir.")
+report.push("  SELECT SINGLE * FROM tfdir INTO ls_tfdir WHERE funcname = c_func.")
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'Restore     : the module is absent; recreating it from the snapshot.'.")
+report.push("    CALL FUNCTION 'FUNCTION_CREATE'")
+report.push("      EXPORTING")
+report.push("        funcname = c_func")
+report.push("        function_pool = lv_pool")
+report.push("        remote_call = lv_remote")
+report.push("        short_text = lv_short")
+report.push("        suppress_corr_check = 'X'")
+report.push("        save_active = 'X'")
+report.push("      IMPORTING")
+report.push("        function_include = lv_fm_include")
+report.push("      TABLES")
+report.push("        import_parameter = lt_backup_import")
+report.push("        changing_parameter = lt_backup_change")
+report.push("        export_parameter = lt_backup_export")
+report.push("        tables_parameter = lt_backup_tables")
+report.push("        exception_list = lt_backup_except")
+report.push("        parameter_docu = lt_backup_docu")
+report.push("      EXCEPTIONS")
+report.push("        OTHERS = 1.")
+report.push("    IF sy-subrc <> 0.")
+report.push("      lv_restore_failed = 'X'.")
+report.push(
+  "      WRITE: / 'Restore     : FAILED - FUNCTION_CREATE rc', sy-subrc, sy-msgid, sy-msgno."
+)
+report.push("    ELSE.")
+report.push("      COMMIT WORK AND WAIT.")
+report.push("      CLEAR lv_suffix.")
+report.push("      SELECT SINGLE include FROM tfdir INTO lv_suffix WHERE funcname = c_func.")
+report.push("      IF sy-subrc <> 0 OR lv_suffix IS INITIAL.")
+report.push("        lv_restore_failed = 'X'.")
+report.push("        WRITE: / 'Restore     : FAILED - TFDIR has no include after the create.'.")
+report.push("      ELSE.")
+report.push("        CONCATENATE 'L' c_group 'U' lv_suffix INTO lv_name.")
+report.push("      ENDIF.")
+report.push("    ENDIF.")
+report.push("  ENDIF.")
+report.push("  IF lv_restore_failed = 'X'.")
+report.push(
+  "    WRITE: / 'Restore     : the helper may carry no body now. Run the REPAIR carrier in SE38:'."
+)
+report.push("    WRITE: / 'Restore     : .doc/deploy-repository-dynpro-2.11-r13.abap'.")
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  INSERT REPORT lv_name FROM lt_backup.")
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'Restore     : FAILED - INSERT REPORT rc', sy-subrc.")
+report.push(
+  "    WRITE: / 'Restore     : run the REPAIR carrier in SE38: .doc/deploy-repository-dynpro-2.11-r13.abap'."
+)
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push(
+  `  GENERATE REPORT 'SAPL${FUNCTION_GROUP}' MESSAGE lv_msg LINE lv_msg_line WORD lv_msg_word.`
+)
+report.push("  IF sy-subrc <> 0.")
+report.push("    WRITE: / 'Restore     : FAILED - GENERATE rc', sy-subrc, lv_msg.")
+report.push(
+  "    WRITE: / 'Restore     : run the REPAIR carrier in SE38: .doc/deploy-repository-dynpro-2.11-r13.abap'."
+)
+report.push("    RETURN.")
+report.push("  ENDIF.")
+report.push("  COMMIT WORK AND WAIT.")
+report.push(
+  "  WRITE: / 'Restore     : the pre-change body is back; confirm with get_capability_report.'."
+)
 report.push("ENDFORM.")
 report.push("")
 report.push(
