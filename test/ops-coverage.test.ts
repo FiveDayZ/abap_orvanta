@@ -347,7 +347,7 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   assert.deepEqual(systemInfo.missingToolNames, [])
   assert.equal(systemInfo.gap, "")
   assert.equal(systemInfo.state, "read-only")
-  assert.match(systemInfo.boundary, /the database \*release\*/)
+  assert.match(systemInfo.boundary, /the database \*release\*/i)
   assert.match(systemInfo.boundary, /RFCDATABS is typed SYSYSID/)
 
   // `interfaces` was refilled rather than left open: the third capability is the SM58 tRFC error
@@ -513,9 +513,12 @@ test("a closed gap does not certify a family whose tools were never exercised", 
   assert.equal(block.summary.remainingRequiredFamilyCount, 13)
   assert.equal(block.summary.criterionMet, false)
   assert.equal(block.summary.stateCriterionMet, false)
-  // The two readings are deliberately both visible: a gap-only criterion would have said 6.
+  // The two readings are deliberately both visible: a gap-only criterion would have said 6. This is
+  // the evidence-aware one, and it is the whole point of the test - only `dumps` survives the
+  // fabricated map, so one of the fourteen required families is certified, not six. Rewriting this
+  // to 43 would assert the gap-only number and delete what the test exists to prove.
   assert.equal(block.summary.endToEndFamilyCount, 6)
-  assert.equal(block.summary.endToEndPercentOfRequired, 43)
+  assert.equal(block.summary.endToEndPercentOfRequired, 7)
 })
 
 test("the capability report carries the ops block", async () => {
