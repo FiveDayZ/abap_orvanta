@@ -12901,7 +12901,11 @@ function New-InstallProgram {
         "      LOOP AT lt_tr_release_messages INTO ls_tr_release_message.",
         "        ADD 1 TO lv_tr_release_index.",
         "        CLEAR lv_tr_release_message_text.",
-        "        IF ls_tr_release_message-msgid IS NOT INITIAL.",
+        # Only render a message when the type is one MESSAGE ... INTO accepts. The release has
+        # already happened by this point, so an unusable type must not abort the reply: the row is
+        # reported as text-less instead, and the status/read-back evidence above still stands.
+        "        IF ls_tr_release_message-msgid IS NOT INITIAL",
+        "           AND ls_tr_release_message-msgty CO 'SIWEAX'.",
         "          MESSAGE ID ls_tr_release_message-msgid",
         "            TYPE ls_tr_release_message-msgty",
         "            NUMBER ls_tr_release_message-msgno",
