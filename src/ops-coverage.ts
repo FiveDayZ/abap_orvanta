@@ -153,9 +153,11 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   // OP2 / transport. Release is a state-changing CTS operation and irrational to repeat, so it is
   // an action.
   release_transport_task: "action",
-  // OP2 / transport. The import precheck asks SAP's own checks for a verdict and changes nothing -
-  // the helper runs the callee in simulation mode and returns before the enqueue and before tp - so
-  // it is read-only, which is why the action count does not move when it joins the surface.
+  // OP2 / transport. The import precheck asks SAP's own checks for a label and establishes nothing
+  // about the callee's mode: the helper passes SAP's simulate mode, and the first real calls on w200
+  // (2026-09-29) came back with the callee's own messages about starting tp and about a request's
+  // import having already run, so "returns before tp" is SAP's documented behaviour rather than
+  // something observed here. It stays read-only because it creates, changes and applies nothing.
   import_transport_queue: "read-only",
   search_failed_updates: "read-only",
   read_failed_update: "read-only",
@@ -210,7 +212,7 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     purpose: "Which request holds this object, what is in it, and is it ready to hand over?",
     closeRoutes: ["authorization", "landscape"],
     actionRequired: true,
-    gap: "Import is built as a precheck only (import_transport_queue, helper 2.17): it runs SAP's own authority, project, predecessor and CVERS checks and exits before the buffer enqueue and before tp, so it never imports. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.",
+    gap: "Import is built as a precheck only (import_transport_queue, helper 2.17) and the precheck was exercised on w200 on 2026-09-29: every request tried was refused, an importable verdict was never observed, and the same request returned not-allowed and then TRANSPORT_IMPORT_CHECK_FAILED minutes apart, so the arm's exception-to-verdict mapping is unverified and the tool is registered failed rather than verified. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.",
     boundary:
       "cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's " +
       "ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still " +

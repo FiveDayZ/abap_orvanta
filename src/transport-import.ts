@@ -13,20 +13,23 @@ import { transportPayloadRows } from "./transport-release.js"
  * `INSPECT_TRANSPORT_IMPORT`, protocol 2.17, and it is a read (`R`).
  *
  * The callee is `TMS_TP_IMPORT`, and the arm calls it in SAP's own simulation mode (`SIMULATE_MODE`
- * is the literal `L`): the callee runs its authority, project, predecessor and CVERS checks and then
- * exits before the import buffer enqueue and before the `tp` call. Nothing is enqueued, no object is
- * applied and no `tp` is started. Neither the system name nor the simulate mode crosses the
- * interface, so no caller can ask this arm to import.
+ * is the literal `L`). What that mode does is SAP's behaviour, not something this tool has verified:
+ * the first real calls on w200 (2026-09-29) came back with the callee's own messages about starting
+ * `tp` and about a request's import having already run, so the arm makes no claim that no `tp`
+ * process was started. What the arm does establish structurally is that neither the system name nor
+ * the simulate mode crosses the interface, so no caller can ask it for a real import.
  *
- * A refused check is the answer to the question, not a failure: `VERDICT` is `no-authority` when the
- * SAP user lacks the CTS authority (`S_CTS_ADMI` and `S_CTS_ADM` with `CTS_ADMFCT`) and
- * `not-allowed` when a project, predecessor or CVERS check refused. Both arrive as the success code
- * `TRANSPORT_IMPORT_CHECKED`. Only a malfunction is an error.
+ * `VERDICT` is the callee's own exception mapped to a label, and that mapping is NOT verified:
+ * `no-authority` is exception 1 and `not-allowed` is exception 2, while every other exception
+ * becomes `TRANSPORT_IMPORT_CHECK_FAILED`. On w200 the same request returned `not-allowed` and then
+ * `TRANSPORT_IMPORT_CHECK_FAILED` minutes apart - the callee's message naming `tp` in the first case
+ * and an import that had already run in the second - so the label must be read together with the
+ * callee's own `MESSAGE` and never as an established fact about the request.
  *
- * The one side effect is the callee's own `TMS_TP_IMPORT_DEQUEUE`, which clears stale TMS locks for
- * the system before the checks run. The import buffer is deliberately not read - on this release it
- * is not a table - so the reply reports the request's own `E070` status in this system instead and
- * claims nothing about buffer membership.
+ * The one side effect the arm does disclose is the callee's own `TMS_TP_IMPORT_DEQUEUE`, which
+ * clears stale TMS locks for the system before the checks run. The import buffer is deliberately not
+ * read - on this release it is not a table - so the reply reports the request's own `E070` status in
+ * this system instead and claims nothing about buffer membership.
  */
 
 export const importTransportQueueSchema = z
@@ -77,11 +80,11 @@ export function transportImportCode(value: string): string {
 }
 
 export const TRANSPORT_IMPORT_WARNINGS = [
-  "This is a precheck, not an import. It never puts the request into the import buffer, never runs tp and never applies an object: the helper calls TMS_TP_IMPORT in SAP's own simulation mode, which runs the checks and then exits before the buffer enqueue and before the tp call.",
+  "This is a precheck, not an import. It never puts the request into the import buffer and never applies an object: the helper calls TMS_TP_IMPORT in SAP's own simulation mode, which runs the callee's own checks. That the mode exits before the tp call is SAP's documented behaviour and is NOT verified by this tool - the callee's own messages on the first real calls on w200 named tp - so this reply makes no claim that no tp process was started.",
   "The verdict is a readiness answer, not a promise. It reports that SAP's authority, project, predecessor and CVERS checks raised no objection at the moment of the call; it does not prove the request is in this system's import buffer, and it cannot say the objects will apply cleanly.",
   "The import buffer is deliberately not read. On this release it is not a table, so this tool reports the request's own E070 status in this system as LOCAL_E070_STATUS (or not-found) and makes no claim about buffer membership.",
   "The call is not free of side effects: the callee's own TMS_TP_IMPORT_DEQUEUE clears stale TMS locks for the system before it runs the checks. Nothing is enqueued and no object is changed.",
-  "A refused check is reported as a verdict, not as a failure: VERDICT is no-authority when the SAP user lacks the CTS authority (S_CTS_ADMI and S_CTS_ADM with CTS_ADMFCT), and not-allowed when a project, predecessor or CVERS check refused. Only a malfunction is reported as an error.",
+  "The verdict word is the callee's own exception mapped to a label, and that mapping is not verified: no-authority is exception 1, not-allowed is exception 2, and every other exception is reported as TRANSPORT_IMPORT_CHECK_FAILED. On w200 the same request returned not-allowed and then TRANSPORT_IMPORT_CHECK_FAILED minutes apart, so read VERDICT together with the callee's own MESSAGE and treat it as a label rather than as an established fact about the request. In particular a label of not-allowed does not prove the request was refused on authority or project grounds, and TRANSPORT_IMPORT_CHECK_FAILED does not prove the callee malfunctioned.",
   "The transport number is validated on both sides, and neither side is the looser one: the service accepts only the 10-character shape a request number has in this system (three characters, then K, then six, all A-Z and 0-9), and the helper re-checks the length and rejects any character outside A-Z, a-z, 0-9 and underscore before it calls the callee."
 ] as const
 
