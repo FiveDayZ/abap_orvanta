@@ -1,0 +1,12 @@
+# Normalise every tracked text file to LF in the working tree, on every platform.
+#
+# Why this file exists: `.github/workflows/verify.yml` runs `npm run verify`, whose first step is
+# `prettier --check .`, and Prettier's default `endOfLine` is "lf". Without this file the Windows
+# runner checks the sources out with CRLF (core.autocrlf=true is the runner default there), so
+# Prettier reported all 290 text files as unformatted and the gate died in its first step on every
+# push from 2026-09-28 to 2026-09-29. That was a line-ending artefact, not a code-quality finding,
+# and it meant `npm test` and the other steps had never run in CI at all.
+#
+# `text=auto` leaves Git's own binary detection in charge, so nothing here forces a binary file to
+# be treated as text; `eol=lf` then pins the working-tree line ending for the text files.
+* text=auto eol=lf
