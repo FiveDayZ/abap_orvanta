@@ -458,12 +458,25 @@ export async function observeWritePreChange(
       `SAP pre-change observation could not establish whether ${targetSummary} exists: ${evidence.warnings.join("; ") || "no readable SAP evidence"}`
     )
   }
+  // A confirmed absence is a complete observation. Every absence the read established is exactly
+  // that: the CTS dedupe scan found no matching request, and the lock and transport branches found no
+  // matching row. Those branches also push the warning that explains the absence - the helper answers
+  // LOCK_NOT_FOUND, the release carries its tasks - and requiring `warnings.length === 0` before the
+  // `exists === false` arm could apply made an established absence read as partial, which is what
+  // partial is not for.
+  //
+  // The program-execution branch is the one exception, and it is why the arm is not simply
+  // `exists === false`: there `exists: false` means "no target object was snapshotted", not "the
+  // target is absent". Nothing about the write's real effect was established, so a warning there
+  // still has to leave the observation partial.
+  const absenceEstablished =
+    evidence.exists === false && !evidence.sources.includes("program-execution")
   const complete =
-    evidence.warnings.length === 0 &&
-    (evidence.exists === false ||
-      (evidence.active !== null &&
-        (evidence.version !== null || evidence.fingerprint !== null) &&
-        evidence.packageName !== null))
+    absenceEstablished ||
+    (evidence.warnings.length === 0 &&
+      evidence.active !== null &&
+      (evidence.version !== null || evidence.fingerprint !== null) &&
+      evidence.packageName !== null)
   return {
     ...evidence,
     observedAt: new Date().toISOString(),
