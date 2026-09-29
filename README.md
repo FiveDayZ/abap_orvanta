@@ -25,7 +25,7 @@ npm ci
 Copy-Item connections.example.json connections.json
 ```
 
-Edit `connections.json` for your SAP system. Keep passwords out of this file and provide each password through the environment variable named by `passwordEnv`.
+Edit `connections.json` for your SAP system. Keep passwords out of this file and provide each password through the environment variable named by `passwordEnv`. With more than one system configured, give each connection an optional `role` of `DEV`, `QAS` or `PRD`, so a cross-system read can name the system it means instead of a connection id.
 
 ```powershell
 $env:ABAP_MCP_CONFIG = "$PWD\connections.json"

@@ -263,6 +263,7 @@ export class AdtBackend implements SapBackend {
       client: config.client,
       language: config.language,
       username: config.username,
+      role: config.role ?? null,
       remoteFunctionAllowlist: [...config.remoteFunctionAllowlist]
     }
   }

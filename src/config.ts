@@ -7,11 +7,25 @@ const remoteFunctionName = z
   .regex(/^[ZY][A-Za-z0-9_]{0,29}$/i)
   .transform((value) => value.toUpperCase())
 
+/**
+ * The landscape role a connection plays.
+ *
+ * Optional on purpose: a single-system install keeps working with no role declared, and a role is
+ * only meaningful once more than one system is configured. It is a *role*, not a system type - the
+ * same role may be filled by different systems in different landscapes, so nothing infers behaviour
+ * from it. It exists so a caller can say "compare what is in development with what is in test"
+ * without hard-coding connection ids, and so a tool can refuse to guess when two connections claim
+ * the same role.
+ */
+export const systemRoleSchema = z.enum(["DEV", "QAS", "PRD"])
+export type SystemRole = z.infer<typeof systemRoleSchema>
+
 const connectionSchema = z.object({
   id: z
     .string()
     .min(1)
     .regex(/^[A-Za-z0-9_-]+$/),
+  role: systemRoleSchema.optional(),
   url: z.string().url(),
   client: z.string().default("000"),
   language: z.string().default("EN"),

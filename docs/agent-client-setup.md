@@ -50,7 +50,7 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 }
 ```
 
-需要指定ATC检查变式时，可增加可选字段 `"atcVariant": "变式名称"`；未配置时服务读取SAP系统默认ATC变式。`remoteFunctionAllowlist`仅接受准确的 `Z*`或 `Y*`函数名，不支持通配符，默认空数组会拒绝所有正式RFC调用。
+需要指定ATC检查变式时，可增加可选字段 `"atcVariant": "变式名称"`；未配置时服务读取SAP系统默认ATC变式。`remoteFunctionAllowlist`仅接受准确的 `Z*`或 `Y*`函数名，不支持通配符，默认空数组会拒绝所有正式RFC调用。配置了多个系统时，建议为每个连接增加可选字段 `"role"`，取值仅 `DEV`、`QAS`、`PRD` 之一，表示该连接在系统 landscape 中的角色；`compare_systems` 可用角色名代替连接 `id` 指定要比较的两端。角色同名不被拒绝，但某个角色对应多个连接时跨系统工具会明确报错并要求改用连接 `id`，不会自行挑一个。
 
 修改后重启服务。`id`是Agent调用时使用的 `connectionId`；不同连接必须使用不同的 `id`和 `passwordEnv`。不要在JSON中增加密码字段。
 

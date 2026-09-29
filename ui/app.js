@@ -202,6 +202,7 @@ function fill(connection) {
   if (![...$("language").options].some((item) => item.value === connection.language))
     $("language").add(new Option(connection.language, connection.language))
   $("language").value = connection.language
+  $("role").value = connection.role || ""
   $("atc-variant").value = connection.atcVariant || ""
   $("allowlist").value = connection.remoteFunctionAllowlist.join("\n")
   $("allow-unauthorized").checked = connection.allowUnauthorized
@@ -211,6 +212,7 @@ function fill(connection) {
 }
 function readForm() {
   const variant = $("atc-variant").value.trim()
+  const role = $("role").value
   return {
     id: $("connection-id").value.trim().toLowerCase(),
     url: $("url").value.trim(),
@@ -223,6 +225,7 @@ function readForm() {
       .value.split(/[\n,]/)
       .map((name) => name.trim().toUpperCase())
       .filter(Boolean),
+    ...(role ? { role } : {}),
     ...(variant ? { atcVariant: variant } : {})
   }
 }

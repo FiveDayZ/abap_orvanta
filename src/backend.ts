@@ -1,4 +1,5 @@
 import type { TransportRequest, TransportsOfUser } from "abap-adt-api"
+import type { SystemRole } from "./config.js"
 import type { SmartformRequest, SmartformResponse } from "./smartforms.js"
 import type { WhereUsedRequestTrace } from "./where-used-request.js"
 import type { TextElementIdType } from "./text-elements.js"
@@ -105,6 +106,14 @@ export interface ConnectionDetails {
   client: string
   language: string
   username: string
+  /**
+   * The landscape role this connection declares, or `null` when it declares none.
+   *
+   * Carried here so a service-side tool can resolve "the test system" without a second copy of the
+   * connection config, and so the capability report can state which role it is describing. `null`
+   * is not an error: a single-system install declares no roles and must keep working.
+   */
+  role: SystemRole | null
   remoteFunctionAllowlist: string[]
 }
 

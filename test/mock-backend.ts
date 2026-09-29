@@ -1110,6 +1110,9 @@ export class MockBackend implements SapBackend {
       client: "200",
       language: "EN",
       username: "DEVELOPER",
+      // The mock is a single-system fixture: it declares no landscape role, which is also the state
+      // a real single-system install is in.
+      role: null,
       remoteFunctionAllowlist: ["ZCMCP_FM_1501", "ZCMCP_FM_1801", "ZCMCP_FM_1901"]
     }
   }

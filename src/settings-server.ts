@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path"
 import { z } from "zod"
 import { AdtBackend } from "./adt-backend.js"
 import type { SapBackend } from "./backend.js"
-import { parseConnections, type ConnectionConfig } from "./config.js"
+import { parseConnections, systemRoleSchema, type ConnectionConfig } from "./config.js"
 import { isFetchBlockedPort, startHttpServer, type RunningServer } from "./http.js"
 import { PRODUCT_VERSION } from "./version.js"
 
@@ -21,6 +21,9 @@ class SettingsError extends Error {
 const connectionInput = z
   .object({
     id: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/),
+    // This is a second, stricter copy of the connection field list (`.strict()` below), so a field
+    // added to src/config.ts alone is dropped when the settings UI saves a connection.
+    role: systemRoleSchema.optional(),
     url: z
       .string()
       .max(2048)
@@ -72,6 +75,9 @@ export async function startSettingsServer(options: SettingsOptions) {
   const configPath = resolve(options.configPath)
   const token = randomBytes(32).toString("hex")
   const passwords = new Map<string, { value: string; identity: string }>()
+  // Identity here means "the stored password still belongs to this connection". The landscape role
+  // is deliberately absent: changing which role a system plays does not change its credentials, and
+  // including it would force the password to be re-entered for a label-only edit.
   const identityOf = (config: ConnectionConfig) =>
     JSON.stringify([
       config.id,

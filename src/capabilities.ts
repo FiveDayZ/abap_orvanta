@@ -882,7 +882,8 @@ export async function buildCapabilityReport(
         baseUrl: safeBaseUrl(connection.url),
         client: connection.client,
         language: connection.language,
-        username: connection.username
+        username: connection.username,
+        role: connection.role
       },
       observedAt,
       readOnly: true,

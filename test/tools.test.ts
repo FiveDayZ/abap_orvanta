@@ -3395,6 +3395,7 @@ test("allowlisted customer RFC invocation supports table-type parameters and rec
     client: "200",
     language: "EN",
     username: "DEVELOPER",
+    role: null,
     remoteFunctionAllowlist: []
   })
   await assert.rejects(
