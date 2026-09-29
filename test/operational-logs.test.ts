@@ -1,12 +1,14 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import {
   OperationalLogService,
   OPERATIONAL_LOG_APPROVAL_FILE,
-  OPERATIONAL_LOG_HELPER
+  OPERATIONAL_LOG_HELPER,
+  operationalLogReasons
 } from "../src/operational-logs.js"
 import { MockBackend } from "./mock-backend.js"
 
@@ -522,4 +524,27 @@ test("system log responses preserve incomplete tail coverage and reject scope or
     f.state.reply = JSON.stringify({ ...systemReply(), ...change })
     await assert.rejects(f.service.readSystem(scope))
   }
+})
+
+const GENERATOR_FILES = ["scripts/operational-log-source.mjs", "scripts/job-spool-source.mjs"]
+const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url))
+
+// The helper reports the callee's own declared exception name in `reason` instead of translating it
+// into a semantic label, so the closed enum the reply schema uses and the stages the generators can
+// emit have to agree in both directions: a label the helper reaches but the schema omits fails the
+// whole reply, which surfaces as OPS_LOG_RESPONSE_INVALID and hides the real callee result.
+test("the reply schema accepts exactly the stages the helper generators can report", async () => {
+  const emitted = new Set<string>()
+  for (const file of GENERATOR_FILES) {
+    const text = await readFile(join(REPO_ROOT, file), "utf8")
+    for (const match of text.matchAll(/job_stage\s+'([A-Z0-9_]+)'/g)) emitted.add(match[1]!)
+  }
+
+  assert.ok(emitted.size > 0, "no job_stage labels found: the scan would pass vacuously")
+  const rejected = [...emitted].filter(
+    (label) => !(operationalLogReasons as readonly string[]).includes(label)
+  )
+  assert.deepEqual(rejected.sort(), [], "the helper can report a stage the reply schema rejects")
+  const unreachable = operationalLogReasons.filter((reason) => !emitted.has(reason))
+  assert.deepEqual(unreachable.sort(), [], "the schema accepts a reason no helper stage produces")
 })

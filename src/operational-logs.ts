@@ -138,6 +138,39 @@ export const systemLogEntrySchema = z
     textTruncated: z.boolean()
   })
   .strict()
+/**
+ * Every `reason` the SAP helper may return. One source for both the reply schema and the drift test
+ * that reads the generator scripts: a stage the helper can reach but this closed list omits makes the
+ * whole reply fail to parse, which surfaces as OPS_LOG_RESPONSE_INVALID and hides the real result.
+ */
+export const operationalLogReasons = [
+  "INPUT_VALIDATION",
+  "TEMSE_NAME",
+  "TEMSE_STORAGE",
+  "TEMSE_CODEPAGE",
+  "TEMSE_PATH",
+  "TEMSE_FILE_ATTRIBUTES",
+  "TEMSE_FILE_SIZE",
+  "TEMSE_FILE_READ",
+  "TEMSE_RECORD_LAYOUT",
+  "TEMSE_RECORD_FORMAT",
+  "TEMSE_PARAMETERS",
+  "MESSAGE_RENDERING",
+  "SPOOL_TYPE",
+  "SPOOL_EMPTY",
+  "SPOOL_PAGE_EMPTY",
+  "SPOOL_READ",
+  "SPOOL_AUTH_MODE",
+  // The spool arm reports the callee's own declared exception name instead of translating it into a
+  // semantic label, so every stage it can reach has to be listed here.
+  "SPOOL_NOT_LIST",
+  "SPOOL_PERMISSION_CHECK",
+  "SPOOL_FREE_MEMORY",
+  "SPOOL_EXCEPTION",
+  "SPOOL_ERR_CAN_NOT_ACCESS",
+  "SPOOL_ERR_READ_ERROR",
+  "SPOOL_ERR_OTHER"
+] as const
 const replyBase = z
   .object({
     version: z.literal("1"),
@@ -153,27 +186,7 @@ const replyBase = z
       "LOG_CHANGED",
       "LIMIT_EXCEEDED"
     ]),
-    reason: z
-      .enum([
-        "INPUT_VALIDATION",
-        "TEMSE_NAME",
-        "TEMSE_STORAGE",
-        "TEMSE_CODEPAGE",
-        "TEMSE_PATH",
-        "TEMSE_FILE_ATTRIBUTES",
-        "TEMSE_FILE_SIZE",
-        "TEMSE_FILE_READ",
-        "TEMSE_RECORD_LAYOUT",
-        "TEMSE_RECORD_FORMAT",
-        "TEMSE_PARAMETERS",
-        "MESSAGE_RENDERING",
-        "SPOOL_TYPE",
-        "SPOOL_EMPTY",
-        "SPOOL_PAGE_EMPTY",
-        "SPOOL_READ",
-        "SPOOL_AUTH_MODE"
-      ])
-      .optional(),
+    reason: z.enum(operationalLogReasons).optional(),
     // Present only on the helper's CAPABILITIES self-description, which reuses this JSON
     // envelope but carries its payload rows in this array instead of an `it_source` table. The
     // key stays optional and the object stays `.strict()`: business replies never carry it, and

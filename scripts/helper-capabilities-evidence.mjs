@@ -212,8 +212,14 @@ export const helperCapabilityTargets = {
     expectedOperations: operationalLogOperations.map((operation) =>
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
-    deployedNowBodyHash: "6cd998bf1e80e61e5d3c20ea416997a3310cc20611919134fe779149b95210ea",
-    intendedBodyHash: "dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c",
+    // Re-pinned 2026-09-29: the spool arm was fixed twice in one round - the row type moved from
+    // STANDARD TABLE OF string to char255 with a trailing-pad trim (the STRING row made
+    // LIST_TO_ASCI's DESCRIBE FIELD ... IN CHARACTER MODE dump), and every failure path that used to
+    // RETURN with an empty EV_RESULT now answers through job_stage. The body was written to SAP with
+    // write_function_module_source and verified line by line, so the live body IS the reviewed intent
+    // and both pins agree again. Evidence: .doc/code-update-20260929-164952.md.
+    deployedNowBodyHash: "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9",
+    intendedBodyHash: "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9",
     generatorBody: operationalLogReportSource
   }
 }

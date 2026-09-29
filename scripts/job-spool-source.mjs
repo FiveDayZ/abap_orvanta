@@ -7,7 +7,13 @@ DATA: ls_spool TYPE tsp01, ls_spool_after TYPE tsp01,
       lv_spool_step TYPE tbtcp-stepcount,
       lv_spool_page TYPE i, lv_spool_rc TYPE sy-subrc,
       lv_spool_auth TYPE tspoptions-value,
-      lt_spool_text TYPE STANDARD TABLE OF string,
+* Fixed-length rows, not string: RSPO_RETURN_ABAP_SPOOLJOB forwards this
+* table to LIST_TO_ASCI, which measures a row with DESCRIBE FIELD ...
+* LENGTH ... IN CHARACTER MODE and slices it by offset. A string row
+* type makes that statement fail at runtime (not supported for STRINGs).
+      lt_spool_text TYPE STANDARD TABLE OF char255,
+      lv_spool_raw TYPE char255,
+      lv_spool_length TYPE i, lv_spool_offset TYPE i,
       lv_spool_text TYPE string, lv_spool_stamp TYPE string.
 `.trim()
 
@@ -85,14 +91,16 @@ IF iv_action = 'JOB_SPOOL'.
   CASE sy-subrc.
     WHEN 1. fail_reply 'not_found' 'NOT_FOUND'. RETURN.
     WHEN 2. fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
-    WHEN 3. RETURN.
+    WHEN 3. job_stage 'SPOOL_PERMISSION_CHECK'. RETURN.
   ENDCASE.
   job_stage 'SPOOL_TYPE'.
-  IF ls_spool-rqdoctype <> 'LIST'. RETURN. ENDIF.
+  IF ls_spool-rqdoctype <> 'LIST'.
+    job_stage 'SPOOL_NOT_LIST'. RETURN.
+  ENDIF.
 * Clear saved list memory before rendering, including reused RFC sessions.
   job_stage 'SPOOL_READ'.
   CALL FUNCTION 'LIST_FREE_MEMORY' EXCEPTIONS OTHERS = 1.
-  IF sy-subrc <> 0. RETURN. ENDIF.
+  IF sy-subrc <> 0. job_stage 'SPOOL_FREE_MEMORY'. RETURN. ENDIF.
   TRY.
   CALL FUNCTION 'RSPO_RETURN_ABAP_SPOOLJOB'
     EXPORTING rqident = lv_spool_id
@@ -104,17 +112,19 @@ IF iv_action = 'JOB_SPOOL'.
   lv_spool_rc = sy-subrc.
   CATCH cx_root.
     CALL FUNCTION 'LIST_FREE_MEMORY' EXCEPTIONS OTHERS = 1.
-    RETURN.
+    job_stage 'SPOOL_EXCEPTION'. RETURN.
   ENDTRY.
   CALL FUNCTION 'LIST_FREE_MEMORY' EXCEPTIONS OTHERS = 1.
-  IF sy-subrc <> 0. RETURN. ENDIF.
+  IF sy-subrc <> 0. job_stage 'SPOOL_FREE_MEMORY'. RETURN. ENDIF.
   CASE lv_spool_rc.
     WHEN 1. fail_reply 'not_found' 'NOT_FOUND'. RETURN.
     WHEN 2. job_stage 'SPOOL_TYPE'. RETURN.
     WHEN 3. job_stage 'SPOOL_EMPTY'. RETURN.
     WHEN 4. job_stage 'SPOOL_PAGE_EMPTY'. RETURN.
     WHEN 5. fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
-    WHEN 6 OR 7 OR 8. RETURN.
+    WHEN 6. job_stage 'SPOOL_ERR_CAN_NOT_ACCESS'. RETURN.
+    WHEN 7. job_stage 'SPOOL_ERR_READ_ERROR'. RETURN.
+    WHEN 8. job_stage 'SPOOL_ERR_OTHER'. RETURN.
   ENDCASE.
   DESCRIBE TABLE lt_spool_text LINES lv_rows.
   IF lv_rows = 0. job_stage 'SPOOL_PAGE_EMPTY'. RETURN. ENDIF.
@@ -139,7 +149,22 @@ IF iv_action = 'JOB_SPOOL'.
     fail_reply 'unsupported' 'LOG_CHANGED'. RETURN.
   ENDIF.
   lv_items = '['.
-  LOOP AT lt_spool_text INTO lv_spool_text.
+  LOOP AT lt_spool_text INTO lv_spool_raw.
+    lv_spool_text = lv_spool_raw.
+* Drop the padding LIST_TO_ASCI wrote into the fixed-length row.
+    lv_spool_length = strlen( lv_spool_text ).
+    WHILE lv_spool_length > 0.
+      lv_spool_offset = lv_spool_length - 1.
+      IF lv_spool_text+lv_spool_offset(1) <> space.
+        EXIT.
+      ENDIF.
+      lv_spool_length = lv_spool_length - 1.
+    ENDWHILE.
+    IF lv_spool_length = 0.
+      CLEAR lv_spool_text.
+    ELSE.
+      lv_spool_text = lv_spool_text(lv_spool_length).
+    ENDIF.
     IF strlen( lv_spool_text ) > 4096.
       fail_reply 'unsupported' 'LIMIT_EXCEEDED'. RETURN.
     ENDIF.

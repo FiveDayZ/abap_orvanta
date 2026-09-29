@@ -325,7 +325,7 @@ test("the recomputed digest equals the digest both generators embedded", () => {
     )
   }
   assert.equal(digests.maint, "0a3875009e0beb610ca781c76a260509c27ced36d1c5f8229944e707757e696d")
-  assert.equal(digests.ops, "0781c11ded0de139c633066b1e4774f15e9b782053162aad984b78f0b7877ce1")
+  assert.equal(digests.ops, "80ce20b8c09e73fbfd0fabf6dd4d77fa6a14af875e12ef8dee9d4a2db98d4e67")
 })
 
 test("both generators are pinned to their verified pre- and post-deployment bodies", () => {
@@ -367,13 +367,16 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
     maint.intendedBodyHash,
     "778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf"
   )
+  // Re-pinned on 2026-09-29: the spool arm's row type and its failure-path replies both changed and
+  // the new body was written to SAP and verified line by line, so the live body and the generator
+  // intent are the same body again. See .doc/code-update-20260929-164952.md.
   assert.equal(
     ops.deployedNowBodyHash,
-    "6cd998bf1e80e61e5d3c20ea416997a3310cc20611919134fe779149b95210ea"
+    "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9"
   )
   assert.equal(
     ops.intendedBodyHash,
-    "dd6975b1bdbe5cad935d0490fef21966919604c7435cf00da8639efd36bcaf6c"
+    "1378654f7e1d1538da43aba25a0281aeb18c9f6b20861d2092bf8fe46adb1dc9"
   )
   // The verifier's expectation must equal the table the generator exports, including the
   // feature-gated REPORT_PARAMETERS row that only the report variant compiles in. MAINT carries

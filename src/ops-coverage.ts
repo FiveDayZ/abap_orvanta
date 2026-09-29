@@ -242,13 +242,15 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["authorization"],
     actionRequired: true,
     gap:
-      "Reported: job search, detail, log and spool text, plus two of the four job-control actions - " +
+      "Reported: job search, detail and log, plus two of the four job-control actions - " +
       "release through release_background_job (BP_JOB_RELEASE inside the repository helper, read " +
       "back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same " +
-      "body, proved by the job's absence on read-back). Still absent: create and modify, which need " +
-      "their own helper branches and the operator's write authorisation, so a job that does not yet " +
-      "exist or needs a different schedule still has to be built in SAP GUI rather than inside the " +
-      "service."
+      "body, proved by the job's absence on read-back). Spool text is built but does not render: " +
+      "read_background_job_spool reaches its helper arm and no longer dumps, and the service still " +
+      "rejects the reply, so the tool is recorded failed/runtime. Still absent: create and modify, " +
+      "which need their own helper branches and the operator's write authorisation, so a job that " +
+      "does not yet exist or needs a different schedule still has to be built in SAP GUI rather " +
+      "than inside the service."
   },
   {
     id: "logs",
@@ -476,8 +478,10 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["helper"],
     actionRequired: false,
     gap:
-      "Only rendered text is available: OTF/PDF conversion, printing and original report " +
-      "execution are absent."
+      "Rendered text is the only format this family ever planned, and it does not work yet: " +
+      "read_background_job_spool reaches its helper arm and no longer terminates with an ABAP short " +
+      "dump, but the service still rejects the reply (failed/runtime), so no spool page has been " +
+      "rendered. OTF/PDF conversion, printing and original report execution are absent."
   },
   {
     id: "archive-alerts",
