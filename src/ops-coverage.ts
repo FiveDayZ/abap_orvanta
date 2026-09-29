@@ -151,8 +151,12 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   // release on w200 (LOCK_DELETED, absence read back twice), so the family states no gap.
   delete_sap_lock: "action",
   // OP2 / transport. Release is a state-changing CTS operation and irrational to repeat, so it is
-  // an action; its own `import_transport_queue` counterpart is still absent from the surface.
+  // an action.
   release_transport_task: "action",
+  // OP2 / transport. The import precheck asks SAP's own checks for a verdict and changes nothing -
+  // the helper runs the callee in simulation mode and returns before the enqueue and before tp - so
+  // it is read-only, which is why the action count does not move when it joins the surface.
+  import_transport_queue: "read-only",
   search_failed_updates: "read-only",
   read_failed_update: "read-only",
   // Archive administration (SARA) and CCMS alerts (RZ20)
@@ -206,10 +210,7 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     purpose: "Which request holds this object, what is in it, and is it ready to hand over?",
     closeRoutes: ["authorization", "landscape"],
     actionRequired: true,
-    gap:
-      "Import is absent: import_transport_queue. Release is built (release_transport_task, helper " +
-      "2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside " +
-      "the service.",
+    gap: "Import is built as a precheck only (import_transport_queue, helper 2.17): it runs SAP's own authority, project, predecessor and CVERS checks and exits before the buffer enqueue and before tp, so it never imports. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.",
     boundary:
       "cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's " +
       "ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still " +

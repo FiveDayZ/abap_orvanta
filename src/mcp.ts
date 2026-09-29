@@ -200,6 +200,14 @@ export function createMcpServer(
       tools.releaseTransportTask(input)
     )
   )
+  // OP2 / transport. The import precheck is read-only, so it takes `invoke` and deliberately not
+  // `invokeWrite`: the write path reserves a receipt for an operation that changes nothing here, and
+  // it keys that receipt on an operationId this tool has no reason to demand. The helper branch
+  // cannot import in the first place - it calls the callee in SAP's simulation mode and returns
+  // before the buffer enqueue and before tp.
+  registerTool("import_transport_queue", toolContracts.import_transport_queue, async (input) =>
+    invoke("import_transport_queue", () => tools.importTransportQueue(input))
+  )
   registerTool("search_failed_updates", toolContracts.search_failed_updates, async (input) =>
     invoke("search_failed_updates", () => maintenance.searchUpdates(input))
   )

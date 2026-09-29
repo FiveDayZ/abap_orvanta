@@ -295,6 +295,13 @@ export type SapRepositoryOperation =
   // release (read on w200, 2026-09-29), so the shared repository body is the only route. The branch
   // reads E070 before and after and proves the release by the status leaving D/L for R/O.
   | "RELEASE_TRANSPORT_TASK"
+  // OP2 / transport. Import precheck. TMS_TP_IMPORT reports remoteEnabled=false on this release
+  // (read on w200, 2026-09-29), as does every other TMS entry point checked in the same round, so
+  // the shared repository body is the only route. The branch is a precheck that cannot import: it
+  // hard-codes the simulate mode the callee turns into a check-then-exit before the buffer enqueue
+  // and before the tp call, and it declares no parameter carrying that mode, so no caller can ask
+  // it to import. It reads E070 only to report what this system already knows about the request.
+  | "INSPECT_TRANSPORT_IMPORT"
 
 export type SapStructureRow = Record<string, string>
 
@@ -407,6 +414,13 @@ export interface SapRepositoryRequest {
    */
   releaseTransport?: string | undefined
   releaseRequest?: string | undefined
+  /**
+   * OP2 / transport. The request an import precheck inspects, sent through the same `IV_TRKORR` the
+   * release arm uses. Emitted only when supplied, like the selectors above: a helper deployed before
+   * 2.17 has no arm for the opcode and answers OPERATION_NOT_SUPPORTED, and the shared body is
+   * reached through the same function module for every operation.
+   */
+  inspectTransport?: string | undefined
   transportObjects?: SapStructureRow[] | undefined
 }
 

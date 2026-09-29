@@ -96,6 +96,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "get_sap_system_info",
       "get_version_history",
       "get_write_operation_status",
+      "import_transport_queue",
       "inspect_customer_function_exits",
       "inspect_customer_screen_menu_exits",
       "inspect_enhancement_framework",

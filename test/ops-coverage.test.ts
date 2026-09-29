@@ -49,11 +49,12 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
  * to 8 once `release_transport_task` was registered (OP2, the transport family), and to 7 on
  * 2026-09-29 when `compare_systems` was registered (OP3, the landscape family), and to 6 the same
  * day when `promote_object` was registered (OP3's second batch): this counts tools that do not
- * exist yet, not tools that have not been exercised. The remaining six are
+ * exist yet, not tools that have not been exercised. It fell to 5 later the same day, when
+ * `import_transport_queue` was registered as the transport family's import precheck, leaving
  * `create_background_job`, `modify_background_job`, `reprocess_failed_update`,
- * `import_transport_queue`, `read_db_activity` and `read_performance_snapshot`.
+ * `read_db_activity` and `read_performance_snapshot`.
  */
-const PLANNED_GAP_TOOL_COUNT = 6
+const PLANNED_GAP_TOOL_COUNT = 5
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -62,11 +63,11 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  // 38 from 2026-09-29: `delete_sap_lock` joined the ops group on 2026-09-28, `release_transport_task`
-  // joined it on 2026-09-29, and `compare_systems` and `promote_object` joined it with OP3's two
-  // batches the same day. The count is a tripwire, not a goal - it exists so a tool cannot leave or
-  // join the classified surface unnoticed.
-  assert.equal(opsGroupTools.length, 38)
+  // 39 from 2026-09-29: `delete_sap_lock` joined the ops group on 2026-09-28, `release_transport_task`
+  // joined it on 2026-09-29, and `compare_systems`, `promote_object` and `import_transport_queue`
+  // followed the same day in OP3's two batches and OP2's transport import precheck. The count is a
+  // tripwire, not a goal - it exists so a tool cannot leave or join the classified surface unnoticed.
+  assert.equal(opsGroupTools.length, 39)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -281,9 +282,10 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
 
-  // 38 from 2026-09-29: `compare_systems` and `promote_object` joined the ops group with OP3's two
-  // batches. Both are readers, so the action and platform-blocked counts below do not move.
-  assert.equal(block.summary.classifiedToolCount, 38)
+  // 39 from 2026-09-29: `compare_systems`, `promote_object` and `import_transport_queue` joined the
+  // ops group with OP3's two batches and OP2's transport import precheck. All three are readers, so
+  // the action and platform-blocked counts below do not move.
+  assert.equal(block.summary.classifiedToolCount, 39)
   // Seven action tools from 2026-09-29: `delete_sap_lock` is a destructive write and
   // `release_transport_task` releases a transport task, so both are classified as actions like the
   // two transport writes and the two job writes before them.
@@ -467,7 +469,8 @@ test("the block joins with the evidence dimension without changing it", () => {
   // separately rather than by deletion.
   assert.deepEqual(transport.verification.unverified, [
     "manage_transport_requests",
-    "release_transport_task"
+    "release_transport_task",
+    "import_transport_queue"
   ])
   assert.deepEqual(transport.verification.failing, ["add_objects_to_transport"])
   assert.deepEqual(transport.withdrawnToolNames, ["cleanup_transport_entries"])

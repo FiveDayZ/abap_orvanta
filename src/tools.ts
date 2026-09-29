@@ -113,6 +113,11 @@ import {
   transportReleaseResult,
   type ReleaseTransportTaskInput
 } from "./transport-release.js"
+import {
+  importTransportQueueSchema,
+  transportImportResult,
+  type ImportTransportQueueInput
+} from "./transport-import.js"
 import { previewSourceChanges, sourcePreflightSchema } from "./source-preflight.js"
 import type { z } from "zod"
 import { rfcValueContract, validateRfcValue, type RfcValueContract } from "./rfc-values.js"
@@ -1943,6 +1948,35 @@ export class ToolService {
     const parsedRows = transportPayloadRows(result.source ?? [])
     return JSON.stringify(
       transportReleaseResult(connectionId, {
+        status: result.status,
+        code: result.code,
+        message: result.message,
+        metadata: parsedRows.metadata,
+        messages: parsedRows.messages
+      }),
+      null,
+      2
+    )
+  }
+
+  /**
+   * Ask SAP whether this request may be imported into the connection's system.
+   *
+   * Read-only by construction: the helper dispatches `INSPECT_TRANSPORT_IMPORT`, whose arm calls the
+   * callee in its simulation mode and returns before the buffer enqueue and before `tp`. There is no
+   * confirmation string to check, because there is nothing to confirm - the tool cannot import even
+   * when the verdict is `importable`.
+   */
+  async importTransportQueue(input: ImportTransportQueueInput): Promise<string> {
+    const parsed = importTransportQueueSchema.parse(input)
+    const connectionId = parsed.connectionId.toLowerCase()
+    const result = await this.backend.callSapRepository(connectionId, {
+      operation: "INSPECT_TRANSPORT_IMPORT",
+      inspectTransport: parsed.transportNumber
+    })
+    const parsedRows = transportPayloadRows(result.source ?? [])
+    return JSON.stringify(
+      transportImportResult(connectionId, {
         status: result.status,
         code: result.code,
         message: result.message,

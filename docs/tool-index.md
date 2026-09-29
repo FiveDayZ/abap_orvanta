@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：161
-- 只读工具：96
+- 工具总数：162
+- 只读工具：97
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,12 +10,12 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 96 |
+| profile: readonly | 97 |
 | profile: platform | 12 |
 | profile: dev | 136 |
 | profile: config | 39 |
-| profile: ops | 55 |
-| profile: full | 161 |
+| profile: ops | 56 |
+| profile: full | 162 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 8 |
 | 分组: message | 4 |
-| 分组: ops | 38 |
+| 分组: ops | 39 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -90,6 +90,7 @@
 | `get_sap_system_info` | ops | dev, config, ops | 只读 | target-specific | — |
 | `get_version_history` | source | dev | 只读 | target-specific | — |
 | `get_write_operation_status` | platform | platform | 只读 | local | — |
+| `import_transport_queue` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.17) |
 | `inspect_customer_function_exits` | enhancement | dev | 只读 | target-specific | — |
 | `inspect_customer_screen_menu_exits` | enhancement | dev | 只读 | target-specific | — |
 | `inspect_enhancement_framework` | enhancement | dev | 只读 | target-specific | — |

@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 161,
-  "readOnlyToolCount": 96,
+  "toolCount": 162,
+  "readOnlyToolCount": 97,
   "profiles": {
-    "readonly": 96,
+    "readonly": 97,
     "platform": 12,
     "dev": 136,
     "config": 39,
-    "ops": 55,
-    "full": 161
+    "ops": 56,
+    "full": 162
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 38,
+    "ops": 39,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -897,6 +897,21 @@
       "route": "local",
       "sapHelper": null,
       "minHelperProtocol": null
+    },
+    {
+      "name": "import_transport_queue",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.17"
     },
     {
       "name": "inspect_customer_function_exits",

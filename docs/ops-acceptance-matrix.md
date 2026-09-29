@@ -39,8 +39,8 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 7 / 14 closed (50%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 29 / 40 of the tools the families declare are verified (the `ops` group itself holds 38, of which 27 are verified); not verified: release_transport_task, cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (1), jobs (2), updates (1) | **no** |
+| 2. every ops tool verified with real w200 evidence | 29 / 41 of the tools the families declare are verified (the `ops` group itself holds 39, of which 27 are verified); not verified: release_transport_task, import_transport_queue, cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: jobs (2), updates (1) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -52,7 +52,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |
 | - | ------ | ------- | --------- | ----------- | ----- | --------------------------- | ----- |
-| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 1/4 | 3 | partial | 3/4 verified (pending: release_transport_task) | write authorisation (OP2) + multi-system configuration (OP3) |
+| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 2/5 | 3 | partial | 3/5 verified (pending: release_transport_task, import_transport_queue) | write authorisation (OP2) + multi-system configuration (OP3) |
 | 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/6 | 2 | partial | 3/6 verified (pending: read_background_job_spool, release_background_job, cancel_background_job) | write authorisation (OP2) |
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
@@ -86,13 +86,13 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 ### write authorisation (OP2)
 
-- **`transport`** (partial) - Import is absent: import_transport_queue. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
+- **`transport`** (partial) - Import is built as a precheck only (import_transport_queue, helper 2.17): it runs SAP's own authority, project, predecessor and CVERS checks and exits before the buffer enqueue and before tp, so it never imports. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
 - **`jobs`** (partial) - Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
 - **`updates`** (partial) - Failed updates can be read but never reprocessed.
 
 ### multi-system configuration (OP3)
 
-- **`transport`** (partial) - Import is absent: import_transport_queue. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
+- **`transport`** (partial) - Import is built as a precheck only (import_transport_queue, helper 2.17): it runs SAP's own authority, project, predecessor and CVERS checks and exits before the buffer enqueue and before tp, so it never imports. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
 
 ### the platform (exempt)
 
@@ -104,7 +104,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 Purpose: Which request holds this object, what is in it, and is it ready to hand over?
 
-Criterion to close: Import is absent: import_transport_queue. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
+Criterion to close: Import is built as a precheck only (import_transport_queue, helper 2.17): it runs SAP's own authority, project, predecessor and CVERS checks and exits before the buffer enqueue and before tp, so it never imports. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
 
 Declared boundaries: cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still refuses to lie. On 2026-09-24 it located the entry, passed its own pre-checks with two structurally different payloads, saw the PUT answer 2xx, re-read E071 and found the target row still present, and reported CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS instead of success. The native ADT removeobject resource that would be needed is missing from this release, which is why the entry is registered platform-unsupported (D2 ruling, .doc/code-update-20260925-223946.md, forensics in .doc/code-update-20260924-105614.md): a capability the platform cannot deliver, not work still to be done. Leaving it declared as a commitment would have kept this family open permanently, which is what a boundary exists to prevent.
 
@@ -117,8 +117,7 @@ Withdrawn from the plan, still registered and still failing safely: `cleanup_tra
 | `create_transport_request` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
 | `add_objects_to_transport` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
 | `release_transport_task` | action | unverified | unverified |
-
-Not built yet: `import_transport_queue`
+| `import_transport_queue` | read-only | unverified | unverified |
 
 ### `jobs` - partial
 
