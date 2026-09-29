@@ -157,9 +157,10 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   ["repository-helper-transport-release", ["release_transport_task"]],
   // OP2 / transport. The import precheck shares the repository body with the release, but not its
   // group: the release branch reads IV_TRKORR/IV_RELEASE_REQUEST and needs 2.16, while this one
-  // dispatches INSPECT_TRANSPORT_IMPORT and needs 2.17. The router refuses a capability whose tools
-  // disagree about the floor, and folding them would report whichever branch the deployed helper
-  // lacks as unsupported.
+  // dispatches INSPECT_TRANSPORT_IMPORT and needs the 2.18 reply, whose verdict is the callee's own
+  // exception name and which carries the raw sub-return code on every path. The router refuses a
+  // capability whose tools disagree about the floor, and folding them would report whichever branch
+  // the deployed helper lacks as unsupported.
   ["repository-helper-transport-import", ["import_transport_queue"]],
   // N3 / OP2. A write on the shared repository body, split off the transport groups for the same
   // reason they are split from each other: BP_JOB_RELEASE is a different callee with its own

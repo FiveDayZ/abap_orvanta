@@ -835,10 +835,10 @@ const ROWS: readonly ToolRow[] = [
     ["RELEASE_TRANSPORT_TASK"]
   ],
   // OP2 / transport. The import precheck is `R`, not `D` like the release above: the helper calls
-  // TMS_TP_IMPORT in SAP's own simulation mode, which runs the checks and exits before the import
-  // buffer enqueue and before tp, so nothing is imported and nothing has to be confirmed. 2.17 is
-  // the first helper that serves INSPECT_TRANSPORT_IMPORT; the release branch needs 2.16, so the two
-  // cannot share one capability group.
+  // TMS_TP_IMPORT in SAP's own simulation mode, which runs the callee's checks and applies no
+  // object, so nothing is imported and nothing has to be confirmed. 2.18 is the first helper whose
+  // INSPECT_TRANSPORT_IMPORT reply carries the callee's own exception name and the raw sub-return
+  // code on every path; the release branch needs 2.16, so the two cannot share one capability group.
   [
     "import_transport_queue",
     "ops",
@@ -846,7 +846,7 @@ const ROWS: readonly ToolRow[] = [
     "R",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.17",
+    "2.18",
     ["INSPECT_TRANSPORT_IMPORT"]
   ],
   ["abap_download", "source", DEV, "W", "target-specific", null, null],

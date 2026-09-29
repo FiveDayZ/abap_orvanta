@@ -151,7 +151,7 @@ $helperCapabilityOperations = @(
     # alone: the arm deliberately declares no new interface parameter and hard-codes both the system
     # name and the simulate mode, so no caller can hand it a value that would make it enqueue or run
     # tp. A 2.16 helper has no arm for this opcode and answers OPERATION_NOT_SUPPORTED.
-    "INSPECT_TRANSPORT_IMPORT|2.17|R"
+    "INSPECT_TRANSPORT_IMPORT|2.18|R"
 )
 # <<< ORVANTA-CAPABILITY-TABLE
 
@@ -6862,6 +6862,7 @@ function New-InstallProgram {
         "  DATA lv_tr_import_subrc TYPE sy-subrc.",
         "  DATA lv_tr_import_rc_text TYPE char4.",
         "  DATA lv_tr_import_message TYPE string.",
+        "  DATA lv_tr_import_verdict TYPE string.",
         # E071 itself starts with MANDT, so a partial column list selected INTO a table of the
         # full E071 structure lands in the wrong fields: trkorr (CHAR 20) was written into the
         # leading MANDT (CLNT 3) and the read raised DBIF_RSQL_INVALID_RSQL. The read-back uses a
@@ -12954,20 +12955,26 @@ function New-InstallProgram {
         "      ev_message = 'Transport released and status read back'.",
         "      ev_version = '2.16'.",
         "      RETURN.",
-        # OP2 / transport (2.17). Import precheck. TMS_TP_IMPORT reports remoteEnabled=false on this
+        # OP2 / transport (2.18). Import precheck. TMS_TP_IMPORT reports remoteEnabled=false on this
         # release, so this arm is the only route - and it is a precheck that cannot become anything
         # else. The system name is left blank, which the callee turns into sy-sysid, and the simulate
-        # mode is the CI "log" value hard-coded here: the callee then runs its authority, project,
-        # predecessor and CVERS checks and exits before the buffer enqueue and before the tp call.
-        # No interface parameter carries either value, so a caller cannot ask this arm to import.
-        # The one side effect is the callee's own TMS_TP_IMPORT_DEQUEUE of stale TMS locks; nothing
-        # is enqueued, no object is applied and tp is never started.
+        # mode is the CI "log" value hard-coded here. No interface parameter carries either value,
+        # so a caller cannot ask this arm to import.
+        # What the simulate mode itself does is SAP's behaviour and is not asserted here: the w200
+        # calls of 2026-09-29 came back with the callee's own messages naming tp, so this arm makes no
+        # claim that no tp process was started. The one side effect it does disclose is the callee's
+        # own TMS_TP_IMPORT_DEQUEUE of stale TMS locks.
+        # 2.18 is the fix for what those calls measured. The 2.17 arm turned the callee's exception
+        # number into a meaning (1 into no-authority, 2 into not-allowed) and emitted no payload rows
+        # at all when it reported a failure, so a failed tp start was labelled a refusal, a refusal
+        # was labelled a failure, and the failure reply named no request. The arm now reports the raw
+        # number and the callee's own exception name, and it emits the same rows on every path.
         "    WHEN 'INSPECT_TRANSPORT_IMPORT'.",
         "      IF iv_trkorr IS INITIAL.",
         "        ev_status = 'E'.",
         "        ev_code = 'TRANSPORT_NUMBER_REQUIRED'.",
         "        ev_message = 'A transport number is required'.",
-        "        ev_version = '2.17'. RETURN.",
+        "        ev_version = '2.18'. RETURN.",
         "      ENDIF.",
         "      lv_trkorr = iv_trkorr.",
         "      TRANSLATE lv_trkorr TO UPPER CASE.",
@@ -12979,13 +12986,13 @@ function New-InstallProgram {
         "        ev_status = 'E'.",
         "        ev_code = 'TRANSPORT_NUMBER_INVALID'.",
         "        ev_message = 'Transport number has a bad character'.",
-        "        ev_version = '2.17'. RETURN.",
+        "        ev_version = '2.18'. RETURN.",
         "      ENDIF.",
         "      IF strlen( lv_trkorr_plain ) <> 10.",
         "        ev_status = 'E'.",
         "        ev_code = 'TRANSPORT_NUMBER_INVALID'.",
         "        ev_message = 'A transport number is exactly 10 characters'.",
-        "        ev_version = '2.17'. RETURN.",
+        "        ev_version = '2.18'. RETURN.",
         "      ENDIF.",
         "      lv_trkorr = lv_trkorr_plain.",
         "      CLEAR ls_tr_import_e070.",
@@ -12996,7 +13003,9 @@ function New-InstallProgram {
         "      IF lv_tr_import_e070_rc = 0.",
         "        lv_tr_import_e070_status = ls_tr_import_e070-trstatus.",
         "      ENDIF.",
-        "      CLEAR: lv_tr_import_subrc, lv_tr_import_message.",
+        "      CLEAR lv_tr_import_subrc.",
+        "      CLEAR lv_tr_import_message.",
+        "      CLEAR lv_tr_import_verdict.",
         "      CALL FUNCTION 'TMS_TP_IMPORT'",
         "        EXPORTING",
         "          iv_system_name = space",
@@ -13023,65 +13032,70 @@ function New-InstallProgram {
         "          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4",
         "          INTO lv_tr_import_message.",
         "      ENDIF.",
-        # A refused authority check and a refused project, predecessor or CVERS check are answers to
-        # the question this tool asks, so they are reported as a negative verdict and not as a tool
-        # failure: "not importable, and here is why" is the result the caller wanted. Everything else
-        # is a malfunction and is reported as an error, because it says nothing about importability.
-        "      IF lv_tr_import_subrc = 1 OR lv_tr_import_subrc = 2.",
-        "        REFRESH it_source.",
-        "        add_repo_payload 'M' '1' 'TRKORR' lv_trkorr.",
-        "        add_repo_payload 'M' '1' 'SIMULATE_MODE' 'L'.",
-        "        add_repo_payload 'M' '1' 'IMPORTABLE' space.",
-        "        IF lv_tr_import_subrc = 1.",
-        "          add_repo_payload 'M' '1' 'VERDICT' 'no-authority'.",
-        "        ELSE.",
-        "          add_repo_payload 'M' '1' 'VERDICT' 'not-allowed'.",
-        "        ENDIF.",
-        "        IF lv_tr_import_e070_rc = 0.",
-        "          add_repo_payload 'M' '1' 'LOCAL_E070_STATUS'",
-        "            lv_tr_import_e070_status.",
-        "        ELSE.",
-        "          add_repo_payload 'M' '1' 'LOCAL_E070_STATUS' 'not-found'.",
-        "        ENDIF.",
-        "        add_repo_payload 'M' '1' 'MESSAGE' lv_tr_import_message.",
-        "        ev_status = 'S'.",
-        "        ev_code = 'TRANSPORT_IMPORT_CHECKED'.",
-        "        ev_message = 'Import check answered without importing'.",
-        "        ev_version = '2.17'.",
-        "        RETURN.",
-        "      ENDIF.",
-        "      IF lv_tr_import_subrc <> 0.",
-        "        IF lv_tr_import_message IS INITIAL.",
-        "          WRITE lv_tr_import_subrc TO lv_tr_import_rc_text",
-        "            LEFT-JUSTIFIED.",
-        "          CONCATENATE 'Import check failed with exception'",
-        "            lv_tr_import_rc_text INTO lv_tr_import_message",
-        "            SEPARATED BY space.",
-        "        ENDIF.",
-        "        ev_status = 'E'.",
-        "        ev_code = 'TRANSPORT_IMPORT_CHECK_FAILED'.",
-        "        ev_message = lv_tr_import_message.",
-        "        ev_version = '2.17'. RETURN.",
-        "      ENDIF.",
-        # No exception from a simulate call means every check the callee runs before it would enqueue
-        # raised no objection. That is a readiness answer and nothing more: this arm never ran tp, so
-        # it cannot say the objects will apply cleanly, and it never reads the import buffer, which
-        # is not a table on this release.
+        # The verdict is the callee's own exception name, never an interpretation of it. The 2.17
+        # arm translated 1 and 2 into no-authority and not-allowed, and the w200 calls of 2026-09-29
+        # showed a failed tp start arriving under one of those numbers, so the labels claimed a
+        # meaning the number did not carry.
+        "      CASE lv_tr_import_subrc.",
+        "        WHEN 0.",
+        "          lv_tr_import_verdict = 'importable'.",
+        "        WHEN 1.",
+        "          lv_tr_import_verdict = 'permission_denied'.",
+        "        WHEN 2.",
+        "          lv_tr_import_verdict = 'import_not_allowed'.",
+        "        WHEN 3.",
+        "          lv_tr_import_verdict = 'enqueue_failed'.",
+        "        WHEN 4.",
+        "          lv_tr_import_verdict = 'tp_call_failed'.",
+        "        WHEN 5.",
+        "          lv_tr_import_verdict = 'tp_interface_error'.",
+        "        WHEN 6.",
+        "          lv_tr_import_verdict = 'tp_reported_error'.",
+        "        WHEN 7.",
+        "          lv_tr_import_verdict = 'tp_reported_info'.",
+        "        WHEN OTHERS.",
+        "          lv_tr_import_verdict = 'unknown'.",
+        "      ENDCASE.",
+        "      WRITE lv_tr_import_subrc TO lv_tr_import_rc_text LEFT-JUSTIFIED.",
+        # Every path carries the same rows, including the failure path below: the 2.17 arm dropped
+        # all of them when it reported a failure, so that reply could not be attributed at all.
         "      REFRESH it_source.",
         "      add_repo_payload 'M' '1' 'TRKORR' lv_trkorr.",
         "      add_repo_payload 'M' '1' 'SIMULATE_MODE' 'L'.",
-        "      add_repo_payload 'M' '1' 'IMPORTABLE' 'X'.",
-        "      add_repo_payload 'M' '1' 'VERDICT' 'importable'.",
+        "      add_repo_payload 'M' '1' 'CALLEE_SUBRC' lv_tr_import_rc_text.",
+        "      IF lv_tr_import_subrc = 0.",
+        "        add_repo_payload 'M' '1' 'IMPORTABLE' 'X'.",
+        "      ELSE.",
+        "        add_repo_payload 'M' '1' 'IMPORTABLE' space.",
+        "      ENDIF.",
+        "      add_repo_payload 'M' '1' 'VERDICT' lv_tr_import_verdict.",
         "      IF lv_tr_import_e070_rc = 0.",
         "        add_repo_payload 'M' '1' 'LOCAL_E070_STATUS'",
         "          lv_tr_import_e070_status.",
         "      ELSE.",
         "        add_repo_payload 'M' '1' 'LOCAL_E070_STATUS' 'not-found'.",
         "      ENDIF.",
+        "      add_repo_payload 'M' '1' 'MESSAGE' lv_tr_import_message.",
+        # A declared exception is the callee answering the question, so it travels under the success
+        # code even when the answer is no. Only an undeclared one is a malfunction - and it keeps
+        # the rows above, so the caller can still see which request and which number it was.
+        "      IF lv_tr_import_subrc = 99.",
+        "        IF lv_tr_import_message IS INITIAL.",
+        "          lv_tr_import_message = 'Undeclared exception from the callee'.",
+        "        ENDIF.",
+        "        ev_status = 'E'.",
+        "        ev_code = 'TRANSPORT_IMPORT_CHECK_FAILED'.",
+        "        ev_message = lv_tr_import_message.",
+        "        ev_version = '2.18'. RETURN.",
+        "      ENDIF.",
         "      ev_status = 'S'.",
         "      ev_code = 'TRANSPORT_IMPORT_CHECKED'.",
-        "      ev_message = 'Import check passed without importing'.",
-        "      ev_version = '2.17'.",
+        "      IF lv_tr_import_subrc = 0.",
+        "        ev_message = 'Import check passed without importing'.",
+        "      ELSE.",
+        "        ev_message = 'Import check answered without importing'.",
+        "      ENDIF.",
+        "      ev_version = '2.18'.",
         "      RETURN.",
         "    WHEN 'READ_TEXT_ELEMENTS' OR 'MERGE_TEXT_ELEMENTS'.",
         "      lv_textpool_program = iv_program.",

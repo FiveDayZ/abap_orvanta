@@ -417,8 +417,9 @@ export interface SapRepositoryRequest {
   /**
    * OP2 / transport. The request an import precheck inspects, sent through the same `IV_TRKORR` the
    * release arm uses. Emitted only when supplied, like the selectors above: a helper deployed before
-   * 2.17 has no arm for the opcode and answers OPERATION_NOT_SUPPORTED, and the shared body is
-   * reached through the same function module for every operation.
+   * 2.17 has no arm for the opcode at all, one deployed before 2.18 answers without the sub-return
+   * code this tool requires, and the shared body is reached through the same function module for
+   * every operation.
    */
   inspectTransport?: string | undefined
   transportObjects?: SapStructureRow[] | undefined

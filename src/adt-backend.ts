@@ -2185,7 +2185,7 @@ function optionalRepositorySelectors(request: SapRepositoryRequest): string {
     ["IV_LOCK_OBJECT", request.lockObject],
     // The transport pair arrived with 2.16 for the same reason as the lock five: a helper deployed
     // before it does not declare IV_TRKORR/IV_RELEASE_REQUEST, so an absent value leaves the request
-    // unchanged instead of travelling as an element the older interface would reject. The 2.17 import
+    // unchanged instead of travelling as an element the older interface would reject. The import
     // precheck sends its request through the same IV_TRKORR, so one element carries either value and
     // IV_TRKORR can never be emitted twice.
     ["IV_TRKORR", request.releaseTransport ?? request.inspectTransport],

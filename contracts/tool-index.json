@@ -911,7 +911,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
-      "minHelperProtocol": "2.17"
+      "minHelperProtocol": "2.18"
     },
     {
       "name": "inspect_customer_function_exits",

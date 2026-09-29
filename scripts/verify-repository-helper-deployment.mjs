@@ -8,14 +8,16 @@
  * a carrier reports its own success even when the body write did not survive. The carrier's own
  * closing line names the check that is actually decisive:
  *
- *   maxProtocol 2.17 with CREATE_TRANSPORT_REQUEST, ADD_OBJECTS_TO_TRANSPORT and
+ *   maxProtocol 2.18 with CREATE_TRANSPORT_REQUEST, ADD_OBJECTS_TO_TRANSPORT and
  *   INSPECT_TRANSPORT_IMPORT present
  *
  * The 2.17 deployment of 2026-09-29 was the first one to land a body here since the shell incidents:
  * carrier `ZORVANTA_MCP_DYNPRO_DEPLOY_R14` ran through the RFC runner with SUBRC 0, and the helper
- * then self-described 2.17, which a body-less module cannot do. The pins below move with the helper:
- * they are what the deployment is *supposed* to produce, so a carrier that silently leaves the old
- * body in place fails this check instead of passing on its own printed success.
+ * then self-described 2.17, which a body-less module cannot do. The 2.18 deployment the same day
+ * carried `ZORVANTA_MCP_DYNPRO_DEPLOY_R15` and corrected the INSPECT_TRANSPORT_IMPORT arm. The pins
+ * below move with the helper: they are what the deployment is *supposed* to produce, so a carrier
+ * that silently leaves the old body in place fails this check instead of passing on its own printed
+ * success.
  *
  * The decisive part is `attestation: "self-described"`: those rows are emitted by the generated
  * *body* through its CAPABILITIES action, so a module that still holds only an interface cannot
@@ -56,7 +58,7 @@ const dump = process.argv.includes("--dump")
 
 const EXPECTED_HELPER = "Z_ORVANTA_MCP_DYNPRO_API"
 const EXPECTED_MIN_PROTOCOL = "1.1"
-const EXPECTED_MAX_PROTOCOL = "2.17"
+const EXPECTED_MAX_PROTOCOL = "2.18"
 const EXPECTED_OPERATION_COUNT = 47
 const EXPECTED_OPERATIONS = [
   "CREATE_TRANSPORT_REQUEST",

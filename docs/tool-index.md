@@ -90,7 +90,7 @@
 | `get_sap_system_info` | ops | dev, config, ops | 只读 | target-specific | — |
 | `get_version_history` | source | dev | 只读 | target-specific | — |
 | `get_write_operation_status` | platform | platform | 只读 | local | — |
-| `import_transport_queue` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.17) |
+| `import_transport_queue` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.18) |
 | `inspect_customer_function_exits` | enhancement | dev | 只读 | target-specific | — |
 | `inspect_customer_screen_menu_exits` | enhancement | dev | 只读 | target-specific | — |
 | `inspect_enhancement_framework` | enhancement | dev | 只读 | target-specific | — |
