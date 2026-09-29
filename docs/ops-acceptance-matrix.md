@@ -39,8 +39,8 @@ classification guard that has to pass before this file can be generated at all.
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 6 / 14 closed (43%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 27 / 39 of the tools the families declare are verified (the `ops` group itself holds 37, of which 25 are verified); not verified: release_transport_task, cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, compare_systems | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (1), jobs (2), updates (1), landscape (1) | **no** |
+| 2. every ops tool verified with real w200 evidence | 27 / 40 of the tools the families declare are verified (the `ops` group itself holds 38, of which 25 are verified); not verified: release_transport_task, cleanup_transport_entries, read_background_job_spool, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory, compare_systems, promote_object | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: transport (1), jobs (2), updates (1) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -66,7 +66,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 2/2 | - | partial | 2/2 verified | SAP-side helper + F8 + operator approval |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | partial | 0/1 verified (pending: read_background_job_spool) | SAP-side helper + F8 |
 | 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | read-only | 2/2 verified | - |
-| 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 1/1 | - | partial | 0/1 verified (pending: compare_systems) | multi-system configuration (OP3) |
+| 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 2/2 | - | partial | 0/2 verified (pending: compare_systems, promote_object) | multi-system configuration (OP3) |
 
 ## What each open family is waiting for
 
@@ -93,7 +93,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 ### multi-system configuration (OP3)
 
 - **`transport`** (partial) - Import is absent: import_transport_queue. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
-- **`landscape`** (partial) - The roles exist and comparison is built (compare_systems), but promotion does not: nothing can put an object into a transport for another system, so the family's action half is still absent. Comparison is also unverified: it has never been run against two real systems, so the verdicts it produces there have not been observed.
+- **`landscape`** (partial) - The read-only half is complete: comparison (compare_systems) and the promotion precheck (promote_object) both exist, and the precheck answers whether an object is recorded in a request that is really aimed at the target system. The family's action is still absent by ruling - nothing in this service can put an object into a transport or release one - so the precheck is a readiness answer and the promotion itself stays manual. Nothing in this family has been run against two real systems yet, so the verdicts it produces there are unobserved.
 
 ### the platform (exempt)
 
@@ -288,13 +288,12 @@ Declared boundaries: Declared limits, none of them a missing tool. (1) No archiv
 
 Purpose: How does development compare with test and production, and can an object be promoted?
 
-Criterion to close: The roles exist and comparison is built (compare_systems), but promotion does not: nothing can put an object into a transport for another system, so the family's action half is still absent. Comparison is also unverified: it has never been run against two real systems, so the verdicts it produces there have not been observed.
+Criterion to close: The read-only half is complete: comparison (compare_systems) and the promotion precheck (promote_object) both exist, and the precheck answers whether an object is recorded in a request that is really aimed at the target system. The family's action is still absent by ruling - nothing in this service can put an object into a transport or release one - so the precheck is a readiness answer and the promotion itself stays manual. Nothing in this family has been run against two real systems yet, so the verdicts it produces there are unobserved.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `compare_systems` | read-only | unverified | unverified |
-
-Not built yet: `promote_object`
+| `promote_object` | read-only | unverified | unverified |
 
 ## What this matrix cannot prove
 

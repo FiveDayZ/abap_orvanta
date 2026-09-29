@@ -528,6 +528,14 @@ export async function buildCapabilityReport(
       )
     ),
     capability(
+      "landscape-promotion-precheck",
+      "target-specific",
+      ["promote_object"],
+      unknownTargetObservation(
+        "Read-only readiness check for moving an object to another system. Its comparison half inherits availability from both systems exactly as landscape-comparison does. Its transport half needs the source system's transport organizer (with the CTS table fallback) for the request's owner, status and entries, the owner's transport list for the system the request is queued for - the request details document carries no target system at all - and the fingerprint-gated RFC_SYSTEM_INFO read for the target system's own id. Each of those can fail to answer, and the result reports that as unverified rather than as a mismatch. It never releases a request and never imports one, so a favourable verdict is a readiness answer, not a promotion."
+      )
+    ),
+    capability(
       "runtime-resources",
       "target-specific",
       [

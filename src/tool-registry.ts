@@ -685,6 +685,9 @@ const ROWS: readonly ToolRow[] = [
   // repository search and active-source read against two configured connections, so both sides are
   // the reads already registered above rather than a new way of talking to SAP.
   ["compare_systems", "ops", OPSP, "R", "local", null, null],
+  // Read-only promotion precheck. `local` for the comparison half, and the transport half reads the
+  // request and its owner's transport list through the same routes manage_transport_requests uses.
+  ["promote_object", "ops", OPSP, "R", "local", null, null],
   ["get_version_history", "source", DEV, "R", "target-specific", null, null],
   ["preview_source_changes", "source", DEV, "R", "target-specific", null, null],
   ["get_runtime_info", "platform", PL, "R", "local", null, null],

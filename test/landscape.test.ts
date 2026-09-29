@@ -14,9 +14,12 @@ import test from "node:test"
 import type { AbapObjectInfo, SourceResult } from "../src/backend.js"
 import {
   compareSystems,
+  promoteObject,
   resolveLandscapeSystem,
   type LandscapeReadBackend,
-  type LandscapeSystem
+  type LandscapeSystem,
+  type PromotionReaders,
+  type TransportEntry
 } from "../src/landscape.js"
 
 interface FakeSystem extends LandscapeSystem {
@@ -274,4 +277,248 @@ test("the role a connection declares is reported on both sides of the result", a
   assert.equal(result.to.role, "QAS")
   assert.equal(result.object.name, "ZCL_ORDER")
   assert.deepEqual(result.object.searchTypes, ["CLAS"])
+})
+
+/**
+ * The promotion precheck is the half of the landscape family that could tell an operator their object
+ * is on its way to production when it is queued for somewhere else, so the tests below aim at exactly
+ * that: a request aimed elsewhere must not read as promotable, and an unreadable target must read as
+ * unverified rather than as a match.
+ */
+interface FakeTransport {
+  owner?: string
+  status?: string
+  entries?: TransportEntry[]
+  targetSystem?: string | null
+  /** The request itself cannot be read. */
+  fails?: boolean
+}
+
+function fakeReaders(
+  options: { transport?: FakeTransport; systemIds?: Record<string, string | null> } = {}
+): PromotionReaders {
+  return {
+    transport: async (_connectionId, transportNumber) => {
+      const transport = options.transport
+      if (!transport || transport.fails) {
+        throw new Error(`transport ${transportNumber} unavailable`)
+      }
+      return {
+        owner: transport.owner ?? "DEVELOPER",
+        status: transport.status ?? "D",
+        entries: transport.entries ?? []
+      }
+    },
+    targetSystem: async () => options.transport?.targetSystem ?? null,
+    systemId: async (connectionId) => options.systemIds?.[connectionId] ?? null
+  }
+}
+
+const entry = (overrides: Partial<TransportEntry> = {}): TransportEntry => ({
+  pgmid: "R3TR",
+  type: "CLAS",
+  name: "ZCL_ORDER",
+  container: "main transport",
+  ...overrides
+})
+
+const differingSystems = (): LandscapeReadBackend =>
+  fakeBackend([
+    { ...DEV, names: ["ZCL_ORDER"], source: "development" },
+    { ...QAS, names: ["ZCL_ORDER"], source: "production" }
+  ])
+
+const identicalSystems = (): LandscapeReadBackend =>
+  fakeBackend([
+    { ...DEV, names: ["ZCL_ORDER"], source: "same" },
+    { ...QAS, names: ["ZCL_ORDER"], source: "same" }
+  ])
+
+test("a request aimed at the named target and still modifiable is reported as promotable", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({
+      transport: { entries: [entry()], targetSystem: "QAS" },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "gr2k900001" }
+  )
+  assert.equal(result.verdict, "in-modifiable-request")
+  assert.equal(result.transport?.requested, "GR2K900001")
+  assert.equal(result.transport?.container, "main transport")
+  assert.equal(result.transport?.targetSystem, "QAS")
+  assert.equal(result.transport?.targetIsRequestedSystem, true)
+  assert.equal(result.comparison, "different-source")
+  assert.equal(result.readOnly, true)
+})
+
+test("a request aimed at another system is not promotable to the named one", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({
+      transport: { entries: [entry()], targetSystem: "PRD" },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900002" }
+  )
+  assert.equal(result.verdict, "request-targets-another-system")
+  assert.equal(result.transport?.targetIsRequestedSystem, false)
+  assert.ok(result.caveats.some((caveat) => caveat.includes("aimed at PRD")))
+})
+
+test("an unreadable target system id is reported as unverified, never as a match", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({ transport: { entries: [entry()], targetSystem: "QAS" } }),
+    { ...input, transportNumber: "GR2K900003" }
+  )
+  // The request's own target is known but the target system's id is not, so the two cannot be
+  // compared: the verdict falls back to what the request record alone supports.
+  assert.equal(result.transport?.targetSystem, "QAS")
+  assert.equal(result.transport?.targetIsRequestedSystem, null)
+  assert.equal(result.verdict, "in-modifiable-request")
+  assert.ok(result.caveats.some((caveat) => caveat.includes("could not be read")))
+})
+
+test("a request whose target system cannot be read is unverified too", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({
+      transport: { entries: [entry()], targetSystem: null },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900004" }
+  )
+  assert.equal(result.transport?.targetSystem, null)
+  assert.equal(result.transport?.targetIsRequestedSystem, null)
+  assert.equal(result.verdict, "in-modifiable-request")
+  assert.ok(result.caveats.some((caveat) => caveat.includes("owner's transport list")))
+})
+
+test("a same-named entry of another type is reported rather than counted", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({
+      transport: {
+        entries: [entry({ type: "PROG", container: "task 001234" })],
+        targetSystem: "QAS"
+      },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900005" }
+  )
+  // A program and a class can share a name; counting it would answer "on its way" about another
+  // object.
+  assert.equal(result.verdict, "not-in-request")
+  assert.equal(result.transport?.container, null)
+  assert.ok(result.caveats.some((caveat) => caveat.includes("PROG ZCL_ORDER")))
+})
+
+test("the entry's container is reported when the object sits in a task", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({
+      transport: {
+        entries: [entry({ container: "task 001234" })],
+        targetSystem: "QAS"
+      },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900006" }
+  )
+  assert.equal(result.verdict, "in-modifiable-request")
+  assert.equal(result.transport?.container, "task 001234")
+})
+
+test("a released request is reported as released and no longer able to take objects", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({
+      transport: { entries: [entry()], status: "R", targetSystem: "QAS" },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900007" }
+  )
+  assert.equal(result.verdict, "in-released-request")
+  assert.ok(result.caveats.some((caveat) => caveat.includes("can no longer take objects")))
+})
+
+test("a request that cannot be read is reported as such, with the reason", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({ transport: { fails: true }, systemIds: { qas300: "QAS" } }),
+    { ...input, transportNumber: "GR2K900008" }
+  )
+  assert.equal(result.verdict, "request-not-found")
+  assert.equal(result.transport?.status, null)
+  assert.ok(result.caveats.some((caveat) => caveat.includes("unavailable")))
+})
+
+test("without a request number only the comparison is answered", async () => {
+  const result = await promoteObject(differingSystems(), fakeReaders(), input)
+  assert.equal(result.verdict, "no-transport-named")
+  assert.equal(result.transport, null)
+  assert.equal(result.comparison, "different-source")
+})
+
+test("an object the target already holds identically needs no promotion", async () => {
+  const result = await promoteObject(
+    identicalSystems(),
+    fakeReaders({
+      transport: { entries: [entry()], targetSystem: "QAS" },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900009" }
+  )
+  // Nothing to promote regardless of what the request says, so the comparison decides.
+  assert.equal(result.verdict, "already-identical")
+  assert.equal(result.transport?.container, "main transport")
+})
+
+test("a comparison that could not be made outranks a healthy-looking request record", async () => {
+  const result = await promoteObject(
+    fakeBackend([
+      { ...DEV, names: ["ZCL_ORDER"], source: "x" },
+      { ...QAS, names: ["ZCL_ORDER"], sourceFails: true }
+    ]),
+    fakeReaders({
+      transport: { entries: [entry()], targetSystem: "QAS" },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900010" }
+  )
+  // Half the picture is missing, so the readiness answer must not be favourable.
+  assert.equal(result.comparison, "found-in-both")
+  assert.equal(result.verdict, "incomparable")
+  assert.equal(result.transport?.targetIsRequestedSystem, true)
+})
+
+test("an object the source system does not have cannot be promoted from it", async () => {
+  const result = await promoteObject(
+    fakeBackend([
+      { ...DEV, names: [] },
+      { ...QAS, names: ["ZCL_ORDER"], source: "production" }
+    ]),
+    fakeReaders({
+      transport: { entries: [entry()], targetSystem: "QAS" },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900012" }
+  )
+  assert.equal(result.comparison, "found-in-to-only")
+  assert.equal(result.verdict, "not-in-source-system")
+  assert.ok(result.caveats.some((caveat) => caveat.includes("nothing in that system to promote")))
+})
+
+test("the precheck never claims to have promoted anything", async () => {
+  const result = await promoteObject(
+    differingSystems(),
+    fakeReaders({
+      transport: { entries: [entry()], targetSystem: "QAS" },
+      systemIds: { qas300: "QAS" }
+    }),
+    { ...input, transportNumber: "GR2K900011" }
+  )
+  assert.ok(result.caveats.some((caveat) => caveat.includes("does not release")))
+  assert.equal(result.readOnly, true)
 })

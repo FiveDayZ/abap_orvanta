@@ -35,8 +35,9 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
   authorizations: "partial",
   "spool-output": "partial",
   "archive-alerts": "read-only",
-  // Was "absent" until 2026-09-29, when OP3 added the connection role and `compare_systems`. It is
-  // "partial" rather than closed because the family's action - promotion - does not exist yet, and
+  // Was "absent" until 2026-09-29, when OP3 added the connection role and `compare_systems`, and the
+  // same day gained the read-only `promote_object` precheck. It is "partial" rather than closed
+  // because the family's action - performing the promotion - does not exist by operator ruling, and
   // a declared gap outranks the presence of a reader.
   landscape: "partial"
 }
@@ -46,12 +47,13 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
  *
  * It fell from 10 to 9 on 2026-09-28 when `delete_sap_lock` was built (OP2, the locks family), and
  * to 8 once `release_transport_task` was registered (OP2, the transport family), and to 7 on
- * 2026-09-29 when `compare_systems` was registered (OP3, the landscape family): this counts tools
- * that do not exist yet, not tools that have not been exercised. The remaining seven are
- * `promote_object`, `create_background_job`, `modify_background_job`, `reprocess_failed_update`,
+ * 2026-09-29 when `compare_systems` was registered (OP3, the landscape family), and to 6 the same
+ * day when `promote_object` was registered (OP3's second batch): this counts tools that do not
+ * exist yet, not tools that have not been exercised. The remaining six are
+ * `create_background_job`, `modify_background_job`, `reprocess_failed_update`,
  * `import_transport_queue`, `read_db_activity` and `read_performance_snapshot`.
  */
-const PLANNED_GAP_TOOL_COUNT = 7
+const PLANNED_GAP_TOOL_COUNT = 6
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -60,11 +62,11 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  // 37 from 2026-09-29: `delete_sap_lock` joined the ops group on 2026-09-28, `release_transport_task`
-  // joined it on 2026-09-29, and `compare_systems` joined it with OP3's first batch the same day. The
-  // count is a tripwire, not a goal - it exists so a tool cannot leave or join the classified surface
-  // unnoticed.
-  assert.equal(opsGroupTools.length, 37)
+  // 38 from 2026-09-29: `delete_sap_lock` joined the ops group on 2026-09-28, `release_transport_task`
+  // joined it on 2026-09-29, and `compare_systems` and `promote_object` joined it with OP3's two
+  // batches the same day. The count is a tripwire, not a goal - it exists so a tool cannot leave or
+  // join the classified surface unnoticed.
+  assert.equal(opsGroupTools.length, 38)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -271,9 +273,9 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
 
-  // 37 from 2026-09-29: `compare_systems` joined the ops group with OP3's first batch. It is a
-  // reader, so the action and platform-blocked counts below do not move.
-  assert.equal(block.summary.classifiedToolCount, 37)
+  // 38 from 2026-09-29: `compare_systems` and `promote_object` joined the ops group with OP3's two
+  // batches. Both are readers, so the action and platform-blocked counts below do not move.
+  assert.equal(block.summary.classifiedToolCount, 38)
   // Seven action tools from 2026-09-29: `delete_sap_lock` is a destructive write and
   // `release_transport_task` releases a transport task, so both are classified as actions like the
   // two transport writes and the two job writes before them.

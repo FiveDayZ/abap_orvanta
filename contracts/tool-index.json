@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 160,
-  "readOnlyToolCount": 95,
+  "toolCount": 161,
+  "readOnlyToolCount": 96,
   "profiles": {
-    "readonly": 95,
+    "readonly": 96,
     "platform": 12,
     "dev": 136,
     "config": 39,
-    "ops": 54,
-    "full": 160
+    "ops": 55,
+    "full": 161
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 37,
+    "ops": 38,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1202,6 +1202,21 @@
         "idempotentHint": false
       },
       "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
+    },
+    {
+      "name": "promote_object",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "local",
       "sapHelper": null,
       "minHelperProtocol": null
     },

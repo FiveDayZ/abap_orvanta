@@ -99,7 +99,13 @@ import {
   lockPayloadRows,
   type DeleteSapLockInput
 } from "./lock-delete.js"
-import { compareSystems, type CompareSystemsInput } from "./landscape.js"
+import {
+  compareSystems,
+  promoteObject as buildPromotionReadiness,
+  type CompareSystemsInput,
+  type PromoteObjectInput,
+  type PromotionReaders
+} from "./landscape.js"
 import {
   TRANSPORT_RELEASE_CONFIRMATION,
   releaseTransportTaskSchema,
@@ -1579,6 +1585,90 @@ export class ToolService {
    */
   async compareSystems(input: CompareSystemsInput): Promise<string> {
     return JSON.stringify(await compareSystems(this.backend, input), null, 2)
+  }
+
+  /**
+   * Answer "can this object be promoted to that system?" from reads only.
+   *
+   * Nothing is released and nothing is imported; the three reads below are the ones that are not
+   * plain backend calls, and each is allowed to answer "could not read" rather than guessing.
+   */
+  async promoteObject(input: PromoteObjectInput): Promise<string> {
+    return JSON.stringify(
+      await buildPromotionReadiness(this.backend, this.promotionReaders(), input),
+      null,
+      2
+    )
+  }
+
+  private promotionReaders(): PromotionReaders {
+    type EntryLike = { "tm:pgmid"?: string; "tm:type"?: string; "tm:name"?: string }
+    const entry = (object: EntryLike, container: string) => ({
+      pgmid: String(object["tm:pgmid"] ?? "").trim(),
+      type: String(object["tm:type"] ?? "").trim(),
+      name: String(object["tm:name"] ?? "").trim(),
+      container
+    })
+    return {
+      transport: async (connectionId, transportNumber) => {
+        const transport = await this.backend.transportDetails(connectionId, transportNumber)
+        assertTransportNumber(transport["tm:number"], transportNumber)
+        return {
+          owner: String(transport["tm:owner"] ?? "").trim(),
+          status: String(transport["tm:status"] ?? "").trim(),
+          entries: [
+            ...transport.objects.map((object) => entry(object, "main transport")),
+            ...transport.tasks.flatMap((task) =>
+              task.objects.map((object) => entry(object, `task ${task["tm:number"]}`))
+            )
+          ]
+        }
+      },
+      // The details document carries no target system, so it has to come from the owner's transport
+      // list, which groups requests by the system they are queued for.
+      targetSystem: async (connectionId, transportNumber, owner) => {
+        const transports = await this.backend.listUserTransports(
+          connectionId,
+          owner.toUpperCase(),
+          this.readTransportTableRows.bind(this)
+        )
+        for (const category of ["workbench", "customizing", "transportofcopies"] as const) {
+          const targets = transports[category as keyof typeof transports]
+          if (!Array.isArray(targets)) continue
+          for (const target of targets) {
+            for (const bucket of ["modifiable", "released"] as const) {
+              for (const transport of target[bucket] ?? []) {
+                const number = String(transport["tm:number"] ?? "")
+                  .trim()
+                  .toUpperCase()
+                if (number === transportNumber) {
+                  return String(target["tm:name"] ?? "").trim() || null
+                }
+              }
+            }
+          }
+        }
+        return null
+      },
+      systemId: async (connectionId) => {
+        try {
+          const facts = await collectServerFacts(this.backend, connectionId, async () =>
+            JSON.parse(
+              await this.readFunctionModuleInterface({
+                connectionId,
+                functionName: "RFC_SYSTEM_INFO"
+              })
+            )
+          )
+          const systemId = typeof facts.systemId === "string" ? facts.systemId.trim() : ""
+          return systemId || null
+        } catch {
+          // Null is this reader's "could not be read", and the verdict reports it as unverified
+          // rather than treating an unreadable id as a mismatch.
+          return null
+        }
+      }
+    }
   }
 
   async getCapabilityReport(input: { connectionId: string }): Promise<string> {

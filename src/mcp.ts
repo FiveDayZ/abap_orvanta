@@ -169,6 +169,9 @@ export function createMcpServer(
   registerTool("compare_systems", toolContracts.compare_systems, async (input) =>
     invoke("compare_systems", () => tools.compareSystems(input))
   )
+  registerTool("promote_object", toolContracts.promote_object, async (input) =>
+    invoke("promote_object", () => tools.promoteObject(input))
+  )
   registerTool("get_capability_report", toolContracts.get_capability_report, async (input) =>
     invoke("get_capability_report", () => tools.getCapabilityReport(input))
   )

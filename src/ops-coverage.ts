@@ -174,10 +174,11 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_user_sessions: "read-only",
   read_file_system_directory: "read-only",
   read_workload_directory: "read-only",
-  // OP3 / landscape. Comparison is built and read-only; the family's action (promotion) is still
-  // absent, so the family keeps a gap and this tool stays unverified until two real systems are
-  // compared.
-  compare_systems: "read-only"
+  // OP3 / landscape. Comparison and the promotion precheck are built and read-only; the family's
+  // action (performing the promotion) is deliberately absent, so the family keeps a gap and both
+  // tools stay unverified until two real systems are compared.
+  compare_systems: "read-only",
+  promote_object: "read-only"
 }
 
 /**
@@ -508,10 +509,12 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     closeRoutes: ["landscape"],
     actionRequired: true,
     gap:
-      "The roles exist and comparison is built (compare_systems), but promotion does not: nothing " +
-      "can put an object into a transport for another system, so the family's action half is still " +
-      "absent. Comparison is also unverified: it has never been run against two real systems, so " +
-      "the verdicts it produces there have not been observed."
+      "The read-only half is complete: comparison (compare_systems) and the promotion precheck " +
+      "(promote_object) both exist, and the precheck answers whether an object is recorded in a " +
+      "request that is really aimed at the target system. The family's action is still absent by " +
+      "ruling - nothing in this service can put an object into a transport or release one - so the " +
+      "precheck is a readiness answer and the promotion itself stays manual. Nothing in this family " +
+      "has been run against two real systems yet, so the verdicts it produces there are unobserved."
   }
 ]
 

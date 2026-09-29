@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：160
-- 只读工具：95
+- 工具总数：161
+- 只读工具：96
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,12 +10,12 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 95 |
+| profile: readonly | 96 |
 | profile: platform | 12 |
 | profile: dev | 136 |
 | profile: config | 39 |
-| profile: ops | 54 |
-| profile: full | 160 |
+| profile: ops | 55 |
+| profile: full | 161 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 8 |
 | 分组: message | 4 |
-| 分组: ops | 37 |
+| 分组: ops | 38 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -110,6 +110,7 @@
 | `prepare_enhancement_configuration_workflow` | enhancement | config | 只读 | target-specific | — |
 | `preview_configuration` | data | config | 只读 | target-specific | — |
 | `preview_source_changes` | source | dev | 只读 | target-specific | — |
+| `promote_object` | ops | ops | 只读 | local | — |
 | `read_abap_gui_definition` | ui | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.5) |
 | `read_abap_message_class` | message | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.7) |
 | `read_abap_screen` | ui | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |

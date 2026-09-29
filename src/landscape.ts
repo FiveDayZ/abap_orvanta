@@ -286,3 +286,252 @@ export async function compareSystems(
     caveats
   }
 }
+
+/** One object entry as a transport reports it. */
+export interface TransportEntry {
+  pgmid: string
+  type: string
+  name: string
+  /** Where the entry sits: the request itself, or the task that owns it. */
+  container: string
+}
+
+/** A transport request as the promotion check reads it. */
+export interface TransportFacts {
+  owner: string
+  /** CTS status: D/L are modifiable, R/O are released. */
+  status: string
+  entries: TransportEntry[]
+}
+
+/**
+ * The reads a promotion check needs beyond the object comparison.
+ *
+ * Injected rather than taken from the backend because two of them are not plain backend calls: a
+ * request's target system comes from its owner's transport list (the details document does not carry
+ * it at all), and a connection's system id comes from the fingerprint-gated RFC_SYSTEM_INFO read.
+ * Either can legitimately fail to answer, which the check reports as "not verified" rather than
+ * guessing - the whole point of the check is to not tell someone their object is on its way when it
+ * is queued for a different system.
+ */
+export interface PromotionReaders {
+  transport(connectionId: string, transportNumber: string): Promise<TransportFacts>
+  targetSystem(connectionId: string, transportNumber: string, owner: string): Promise<string | null>
+  systemId(connectionId: string): Promise<string | null>
+}
+
+export interface PromoteObjectInput extends CompareSystemsInput {
+  // `| undefined` because the tool input shape produces the key explicitly, and this repository
+  // compiles with exactOptionalPropertyTypes.
+  transportNumber?: string | undefined
+}
+
+export type PromotionVerdict =
+  | "incomparable"
+  | "already-identical"
+  | "not-in-source-system"
+  | "no-transport-named"
+  | "request-not-found"
+  | "not-in-request"
+  | "request-targets-another-system"
+  | "in-modifiable-request"
+  | "in-released-request"
+
+export interface PromotionReadiness {
+  object: { type: string; name: string; searchTypes: string[] }
+  from: LandscapeSide
+  to: LandscapeSide
+  comparison: LandscapeVerdict
+  transport: {
+    requested: string
+    status: string | null
+    owner: string | null
+    targetSystem: string | null
+    /** true/false once both the request's target and the target system's id are known, else null. */
+    targetIsRequestedSystem: boolean | null
+    /** Where the object sits in the request, or null when it is not recorded there. */
+    container: string | null
+  } | null
+  verdict: PromotionVerdict
+  checkedAt: string
+  readOnly: true
+  caveats: string[]
+}
+
+/** CTS statuses that still accept objects. R and O are released and no longer modifiable. */
+const MODIFIABLE_TRANSPORT_STATUSES = ["D", "L"]
+
+interface ContainerMatch {
+  found: boolean
+  container: string | null
+  /** A same-named entry whose type is not the type asked for, reported rather than counted. */
+  sameNameOtherType: string | null
+}
+
+/**
+ * Where the object sits in the request, if it is there at all.
+ *
+ * The type must match as well as the name: a program and a class can carry the same name, and
+ * counting a same-named entry of another type would answer "it is on its way" about an object that
+ * is not. A same-named entry of a different type is reported so the caller can see why the answer is
+ * "not in this request" instead of having to guess.
+ */
+function findContainer(
+  facts: TransportFacts,
+  objectType: string,
+  objectName: string,
+  searchTypes: readonly string[]
+): ContainerMatch {
+  const acceptedTypes = new Set(
+    [objectType, ...searchTypes].map((type) => type.trim().toUpperCase())
+  )
+  let sameNameOtherType: string | null = null
+  for (const entry of facts.entries) {
+    if (entry.name.trim().toUpperCase() !== objectName) continue
+    if (acceptedTypes.has(entry.type.trim().toUpperCase())) {
+      return { found: true, container: entry.container, sameNameOtherType: null }
+    }
+    sameNameOtherType ??= `${entry.type} ${entry.name}`
+  }
+  return { found: false, container: null, sameNameOtherType }
+}
+
+/**
+ * Answer "can this object be promoted to that system?" from reads only.
+ *
+ * It never promotes: releasing a request and importing it stay outside the service, and the verdict
+ * vocabulary is built so the tool cannot imply otherwise. What it does answer are the three facts
+ * the question turns on - whether the target already holds the same source, whether the object is
+ * recorded in a request, and whether that request is aimed at the system the caller named.
+ */
+export async function promoteObject(
+  backend: LandscapeReadBackend,
+  readers: PromotionReaders,
+  input: PromoteObjectInput
+): Promise<PromotionReadiness> {
+  const comparison = await compareSystems(backend, input)
+  const caveats = [...comparison.caveats]
+  caveats.push(
+    "This is a readiness check only: the service does not release the request and does not import " +
+      "it, so a favourable verdict is not a promotion and is not proof that the target has the object."
+  )
+
+  const requested = (input.transportNumber ?? "").trim().toUpperCase()
+  let facts: TransportFacts | null = null
+  let readError: string | null = null
+  if (requested) {
+    try {
+      facts = await readers.transport(comparison.from.connectionId, requested)
+    } catch (error) {
+      readError = messageOf(error)
+    }
+  }
+
+  const targetSystem =
+    facts && requested
+      ? await readers
+          .targetSystem(comparison.from.connectionId, requested, facts.owner)
+          .catch(() => null)
+      : null
+  const targetSystemId =
+    facts && targetSystem
+      ? await readers.systemId(comparison.to.connectionId).catch(() => null)
+      : null
+  const match = facts
+    ? findContainer(facts, input.objectType, comparison.object.name, comparison.object.searchTypes)
+    : null
+  const targetIsRequestedSystem =
+    targetSystem && targetSystemId
+      ? targetSystem.trim().toUpperCase() === targetSystemId.trim().toUpperCase()
+      : null
+
+  let verdict: PromotionVerdict
+  if (comparison.verdict === "incomparable" || comparison.verdict === "found-in-both") {
+    // Both of these mean the content comparison was not made: a search failed, or one side's active
+    // source could not be read. `already-identical` is one of the answers that cannot be ruled out,
+    // so the readiness question is not answered rather than answered favourably. The `comparison`
+    // field keeps the precise cause, and the transport facts are still reported below.
+    verdict = "incomparable"
+  } else if (comparison.verdict === "identical-source") verdict = "already-identical"
+  else if (
+    comparison.verdict === "not-found-in-either" ||
+    comparison.verdict === "found-in-to-only"
+  ) {
+    // Nothing can be promoted out of a system the search did not find the object in.
+    verdict = "not-in-source-system"
+  } else if (!requested) verdict = "no-transport-named"
+  else if (!facts) verdict = "request-not-found"
+  else if (!match?.found) verdict = "not-in-request"
+  else if (targetIsRequestedSystem === false) verdict = "request-targets-another-system"
+  else if (MODIFIABLE_TRANSPORT_STATUSES.includes((facts.status ?? "").trim().toUpperCase())) {
+    verdict = "in-modifiable-request"
+  } else verdict = "in-released-request"
+
+  if (comparison.verdict === "found-in-both") {
+    caveats.push(
+      "The active source could not be read on at least one side, so the two systems' content was " +
+        "not compared and the readiness question is left unanswered."
+    )
+  }
+  if (verdict === "not-in-source-system") {
+    caveats.push(
+      `The repository search did not find the object on ${comparison.from.connectionId}, so there is ` +
+        "nothing in that system to promote. A search miss is not proof of absence, which is what the " +
+        "comparison above reports."
+    )
+  }
+
+  if (readError) caveats.push(`Request ${requested} could not be read: ${readError}`)
+  if (facts && match?.sameNameOtherType) {
+    caveats.push(
+      `Request ${requested} holds an entry named ${comparison.object.name} of a different type ` +
+        `(${match.sameNameOtherType}); it was not counted as the object asked for.`
+    )
+  }
+  if (facts && !targetSystem) {
+    caveats.push(
+      `The target system of request ${requested} could not be read from its owner's transport list, ` +
+        `so it was not verified against ${comparison.to.connectionId}.`
+    )
+  }
+  if (facts && targetSystem && !targetSystemId) {
+    caveats.push(
+      `The system id of ${comparison.to.connectionId} could not be read, so request ${requested} ` +
+        `could not be verified as aimed at it.`
+    )
+  }
+  if (verdict === "request-targets-another-system") {
+    caveats.push(
+      `Request ${requested} is aimed at ${targetSystem}, not at ${comparison.to.connectionId} ` +
+        `(${targetSystemId}); releasing it would not deliver the object there.`
+    )
+  }
+  if (verdict === "in-released-request") {
+    caveats.push(
+      `Request ${requested} is released (status ${facts?.status}), so its objects have been exported ` +
+        "to its target and it can no longer take objects. Whether the target actually has the object " +
+        "is what the comparison above reports."
+    )
+  }
+
+  return {
+    object: comparison.object,
+    from: comparison.from,
+    to: comparison.to,
+    comparison: comparison.verdict,
+    transport: requested
+      ? {
+          requested,
+          status: facts?.status ?? null,
+          owner: facts?.owner ?? null,
+          targetSystem,
+          targetIsRequestedSystem,
+          container: match?.container ?? null
+        }
+      : null,
+    verdict,
+    checkedAt: new Date().toISOString(),
+    readOnly: true,
+    caveats
+  }
+}

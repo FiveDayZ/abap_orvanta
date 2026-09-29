@@ -116,6 +116,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "prepare_enhancement_configuration_workflow",
       "preview_configuration",
       "preview_source_changes",
+      "promote_object",
       "read_abap_gui_definition",
       "read_abap_message_class",
       "read_abap_screen",
