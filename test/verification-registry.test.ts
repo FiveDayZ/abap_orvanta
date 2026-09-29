@@ -626,8 +626,19 @@ test("the registry records the honest gap rather than inflating it", () => {
   // the exact SM12 row, the helper's own LOCK_DELETE receipt, the service's read-back, and an
   // independent re-read. The entry names .doc/code-update-20260929-084029.md. This is the tripwire
   // that batch missed: the registry moved to 33 while the bound stayed at 32.
+  // Raised from 33 to 35 on 2026-09-29 (OP3 landscape batch): compare_systems and promote_object were
+  // called for real from one instance holding both connections - w200 (GR2/200, Development client) and
+  // w300 (GR3/300, Test client), whose system ids were read separately with get_sap_system_info, so the
+  // pair is two distinct systems and not two clients of one. Seven compare_systems verdicts and eight
+  // promote_object verdicts came from real calls, covering every branch each chain can reach, including
+  // an identical-source control (the same sha256 on both sides) without which a verdict that never moved
+  // could not have been ruled out, and a request that is modifiable yet aimed at LOCAL, which is refused
+  // rather than reported as promotable. Both entries name .doc/code-update-20260929-131440.md and state
+  // what was NOT proven: incomparable and found-in-both (both need an induced read failure), the
+  // sameNameOtherType caveat (no request here held a same-named entry of another type), and the
+  // target-side transport read path, because every transport read happened on w200.
   assert.ok(
-    totals.verified <= 33,
+    totals.verified <= 35,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

@@ -187,25 +187,25 @@
       "tool": "compare_systems",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "two real systems compared for one object: no such pair has been run yet",
+      "verificationTarget": "one object compared across two real systems, with an identical-content control",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "Registered with the tool on 2026-09-29 (OP3, landscape). No real call has been recorded yet. The reason first written here - that the only second system configured declares no ops helper capability and runs older helpers, so comparing it with w200 would exercise two different releases rather than one landscape - was wrong about what this tool needs, and is corrected the same day: compare_systems performs only the ordinary repository search and active-source read, and in this service both are native ADT calls (searchObjectsForType and the ADT source read in adt-backend.ts), with no SAP-side helper involved at all. The ops helper capability the second system lacks belongs to the ops tools, not to this one, so w200 against w300 can exercise the verdict vocabulary on two real systems. What such a run would still not establish is that the two are a declared DEV and QAS of one landscape - they are two real systems on different hosts and clients, and the second runs older SAP-side helpers - so the evidence would be about the vocabulary, not about a named landscape pair. Availability is decided per target and inherited from both sides, because the tool has no SAP route of its own. Until a real pair is compared the verdicts are exercised only by unit tests, and passing tests are not evidence about SAP."
+      "lastAttemptAt": "2026-09-29T13:14:40+08:00",
+      "evidence": ".doc/code-update-20260929-131440.md",
+      "notes": "Real calls recorded 2026-09-29 13:07-13:14 from one service instance holding both connections: w200 (GR2/200, Development client) and w300 (GR3/300, Test client). The two system ids were read separately per connection with get_sap_system_info, so this is a pair of two distinct systems and not two clients of one. Seven verdicts came from real calls: found-in-from-only (CLAS ZBADI_SD_SALES_ITEM, TABL ZTPMC_TPCFG), identical-source (CLAS CL_ABAP_TYPEDESCR, the same sha256 on both sides), not-found-in-either, found-in-to-only (CLAS ZCLS_TEST), and different-source twice (PROG ZCMCP_RPT_0831 at 16 vs 17 lines; FUGR ZCA_BI at 20 vs 21). The identical-source control is what makes the rest evidence rather than coincidence: without one case where the two sides genuinely agree, a verdict that never moves could not be ruled out. Every not-found side carried the caveat that a repository search miss is not proof of absence, and identical-source carried the caveat that equal fingerprints say nothing about configuration or activation. Not proven: incomparable and found-in-both, which need a search failure or an unreadable active source and were therefore not induced. The earlier note on this entry claimed the second system could not serve this tool because it lacks the ops helper - that was wrong about what the tool needs and was corrected before this run. Availability is decided per target and inherited from both sides, because the tool has no SAP route of its own, and this entry is the record of what real calls did."
     },
     {
       "tool": "promote_object",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "one object promoted-checked across two real systems, with a named transport request",
+      "verificationTarget": "one object promotion-checked across two real systems, with named transport requests",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "Registered with the tool on 2026-09-29 (OP3, landscape, read-only promotion precheck by operator ruling). No real call has been recorded. The check needs more than the pair compare_systems needs: a real transport request on the source system, whose target system it reads from the owner's transport list because the request details document carries no target system at all, plus the fingerprint-gated RFC_SYSTEM_INFO read for the target system's own id. Those three reads each have their own availability, so the tool reports an unreadable target as unverified rather than as a mismatch - and that unverified branch is exactly what a real call has to exercise, because it is the branch that decides whether the caller is told the truth about which system the request is aimed at. It never releases and never imports, so no call can promote anything. Until then the verdicts are exercised only by unit tests, and passing tests are not evidence about SAP."
+      "lastAttemptAt": "2026-09-29T13:14:40+08:00",
+      "evidence": ".doc/code-update-20260929-131440.md",
+      "notes": "Real calls recorded 2026-09-29 13:07-13:14 across w200 (GR2/200) and w300 (GR3/300). Eight verdicts came from real calls, and every branch the verdict chain can reach was reached: no-transport-named; in-modifiable-request (PROG ZCMCP_RPT_0831 in GR2K923486, status D, owner WYS, container task GR2K923487, targetSystem GR3 read from the owner's transport list and targetIsRequestedSystem true, where the target id came from the target connection's own RFC_SYSTEM_INFO read); not-in-request; request-not-found (a real source object with an unreadable request); not-in-source-system; already-identical; in-released-request (FUGR ZCA_BI in GR2K918001, status R, container main transport); and request-targets-another-system (TABL ZTPMC_TPCFG in GR2K923420, which is modifiable but aimed at LOCAL, so a request that could take the object is still refused when it would not deliver it to the compared system). The transport facts were re-read through a different action on the same request (get_transport_details GR2K923486) and agreed item for item. One real fallback was observed: get_user_transports answered from cts-tables rather than the ADT transport organizer, so that fallback is proven on the source system. Not proven: incomparable and found-in-both (both need an induced read failure); the sameNameOtherType caveat (no request in this landscape held a same-named entry of another type); and every transport read happened on w200, so the target-side read path was exercised only as the system id. It never releases and never imports, so no call promoted anything - every response carried readOnly true and the readiness-only caveat. Availability is decided per target, and this entry is the record of what real calls did."
     },
     {
       "tool": "correlate_sap_logs",
