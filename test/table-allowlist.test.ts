@@ -248,3 +248,29 @@ test("Q-N6: the approval widened no existing boundary", () => {
   for (const name of ["AGR_USERS", "AGR_TCODES", "UST04"])
     assert.equal(isTableAllowed(name), true, `${name} must still be allowed`)
 })
+
+// 2026-09-30: VBHDR - the update header SM13 reads - was approved table by table so the `updates`
+// family finally gets a service-side read path. It is needed because the approved SM13 helper arm
+// demands an exact username plus a window of at most one hour, and 158 approved windows returned no
+// failed update at all; a plain allowlisted read can sweep a wide VBDATE window instead. The
+// registration is pinned as a deliberate, visible act. Two measured traps are pinned with it: VBHDR
+// carries no MANDT (its client is VBMANDT, so an unfiltered read returns every client), and neither
+// failure-predicate column is character-like (VBSTATE domain INT1, VBRC domain VBRC/INT4), so they
+// can be displayed but never used as filter columns.
+test("2026-09-30: the update header VBHDR is registered in the business tier", () => {
+  assert.equal(isTableAllowed("VBHDR"), true)
+  assert.equal(describeAllowlistRejection("VBHDR"), null)
+  assert.ok(
+    (TABLE_TIERS.business as readonly string[]).includes("VBHDR"),
+    "VBHDR belongs to the business tier"
+  )
+  assert.equal((TABLE_NEVER_ALLOWED as readonly string[]).includes("VBHDR"), false)
+  assert.equal((TABLE_PENDING_APPROVAL as readonly string[]).includes("VBHDR"), false)
+})
+
+test("2026-09-30: registering VBHDR does not admit the update detail tables", () => {
+  // VBMOD (module detail) and VBERROR (error detail) were NOT part of the ruling: the content of a
+  // failed update stays behind read_failed_update's approved helper path.
+  for (const name of ["VBMOD", "VBERROR"])
+    assert.equal(isTableAllowed(name), false, `${name} must stay out`)
+})

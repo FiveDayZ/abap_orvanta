@@ -21,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 0, blocked 1, partial 6, read-only 7, read-and-act 1 |
-| End-to-end by state (all families) | 8 (53%) |
-| Required families counted closed | **8 / 14** (57% of required) |
+| State counts | absent 0, blocked 1, partial 5, read-only 8, read-and-act 1 |
+| End-to-end by state (all families) | 9 (60%) |
+| Required families counted closed | **9 / 14** (64% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
 | Closed by state but missing evidence | none |
-| Outstanding required families | transport, jobs, updates, query, runtime-resources, authorizations |
-| Waiting on each route | this repository 1, SAP-side helper + F8 2, operator approval 1, write authorisation (OP2) 3, multi-system configuration (OP3) 1, the platform (exempt) 1, - 8 |
+| Outstanding required families | transport, jobs, query, runtime-resources, authorizations |
+| Waiting on each route | this repository 1, SAP-side helper + F8 2, operator approval 1, write authorisation (OP2) 2, multi-system configuration (OP3) 1, the platform (exempt) 1, - 9 |
 
 ## Definition of done (plan section 8)
 
@@ -38,9 +38,9 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 8 / 14 closed (57%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 31 / 41 of the tools the families declare are verified (the `ops` group itself holds 39, of which 29 are verified); not verified: release_transport_task, cleanup_transport_entries, release_background_job, cancel_background_job, analyze_abap_traces, search_failed_updates, read_failed_update, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: jobs (2), updates (1) | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 9 / 14 closed (64%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 33 / 41 of the tools the families declare are verified (the `ops` group itself holds 39, of which 31 are verified); not verified: release_transport_task, cleanup_transport_entries, release_background_job, cancel_background_job, analyze_abap_traces, read_work_processes, read_user_sessions, read_file_system_directory | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: jobs (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -58,7 +58,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
 | 6 | `locks` | Who holds the lock that is blocking an object or document right now? | 1/2 | 1 | read-and-act | 2/2 verified | - |
-| 7 | `updates` | Which update terminated, and what does the failed update contain? | 2/2 | - | partial | 0/2 verified (pending: search_failed_updates, read_failed_update) | write authorisation (OP2) |
+| 7 | `updates` | Which update terminated, and what does the failed update contain? | 2/2 | - | read-only | 2/2 verified | - |
 | 8 | `system-info` | Which release, kernel, patch level, client settings and profile parameters is this system running? | 2/2 | - | read-only | 2/2 verified | - |
 | 9 | `query` | Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI. | 2/2 | - | partial | 2/2 verified | this repository |
 | 10 | `runtime-resources` | Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists? | 4/4 | - | partial | 1/4 verified (pending: read_work_processes, read_user_sessions, read_file_system_directory) | SAP-side helper + F8 |
@@ -87,7 +87,6 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 - **`transport`** (partial) - Import is built as a precheck only (import_transport_queue, helper 2.18) and the precheck was exercised on w200 on 2026-09-29. The 2.17 arm was measured wrong: it translated the callee's exception number into a verdict, and nine calls showed a failed tp start labelled as a refusal and a refusal labelled as a failure, with the same request returning two outcomes minutes apart. The 2.18 arm reports the callee's own exception name and the raw sub-return code on every path, and the four requests re-run against it all answered enqueue_failed under TRANSPORT_IMPORT_CHECKED, with the request echoed and the local E070 status correct. An importable verdict is still unobserved - every request tried was refused - so the positive branch is documented, not demonstrated. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
 - **`jobs`** (partial) - Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Spool text renders since 2026-09-29: read_background_job_spool returns a page of the primary job-step spool and is verified. Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
-- **`updates`** (partial) - Failed updates can be read but never reprocessed.
 
 ### multi-system configuration (OP3)
 
@@ -181,18 +180,18 @@ Criterion to close: gap empty and every tool verified
 | `search_sap_locks` | read-only | verified | `.doc/code-update-20260924-125930.md` |
 | `delete_sap_lock` | action | verified | `.doc/code-update-20260929-084029.md` |
 
-### `updates` - partial
+### `updates` - read-only
 
 Purpose: Which update terminated, and what does the failed update contain?
 
-Criterion to close: Failed updates can be read but never reprocessed.
+Criterion to close: gap empty and every tool verified
+
+Declared boundaries: Repeating (reprocessing) a failed update is not offered, because on this target no source this service can reach exposes it to a caller without a SAP GUI. SM13's own restart logic is dialog code inside the module pool RSM13000 (the FORMs behind 'V1-und V2-Nachverbuchung anstarten' and 'Einzelne V2-Nachverbuchung anstarten', the latter read at RSM13000:2735), and it runs on the kernel call CALL 'ThVBCall' (opcodes SELECT_VB_SERVER and START_VB) plus a direct `UPDATE VBHDR SET VBRC = VB_RUN_V2 VBNAME = ...` with `commit work`; those FORMs also terminate on dialog messages, including the type-A message MESSAGE A210 at RSM13000:6645, which aborts an RFC session instead of returning. The only remote-enabled entry point named for a parameterized SM13 call, UPD_CALL_SM13 (function group FBUP, remoteMode R), ends in `CALL TRANSACTION 'SM13'`, and an RFC session cannot run a dialog transaction. TH_START_V2 (function group THFB) is not remote-enabled and starts V2 collectively from selection ranges rather than repeating one request, and TH_REORG_VB deletes old requests rather than repeating them. Name searches for a single-request repeat found nothing in FUNC/FUGR/PROG (*VB*REPEAT*, *UPDATE*RESTART*, *RESTART_VB*, *VB*RESTART*, *NACHVERBUCH*, *UPDATE*REQUEST*, *REPROCESS*, TH_*V2*). Everything the family's purpose names - which update terminated, and what the failed update contains - is served by search_failed_updates and read_failed_update, both verified on 2026-09-30 against the one real failed update on client 200.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
-| `search_failed_updates` | read-only | unverified | unverified |
-| `read_failed_update` | read-only | unverified | unverified |
-
-Not built yet: `reprocess_failed_update`
+| `search_failed_updates` | read-only | verified | `.doc/code-update-20260930-090003.md` |
+| `read_failed_update` | read-only | verified | `.doc/code-update-20260930-090003.md` |
 
 ### `system-info` - read-only
 

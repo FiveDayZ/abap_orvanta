@@ -305,12 +305,37 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
   },
   {
     id: "updates",
-    label: "Failed updates (SM13): search, detail, reprocess",
-    plannedToolNames: ["search_failed_updates", "read_failed_update", "reprocess_failed_update"],
+    label: "Failed updates (SM13): search and detail",
+    plannedToolNames: ["search_failed_updates", "read_failed_update"],
     purpose: "Which update terminated, and what does the failed update contain?",
-    closeRoutes: ["authorization"],
-    actionRequired: true,
-    gap: "Failed updates can be read but never reprocessed."
+    closeRoutes: ["none"],
+    actionRequired: false,
+    gap: "",
+    // Reclassified from gap to boundary on 2026-09-30 by the operator's ruling, on the strength of a
+    // feasibility investigation of `reprocess_failed_update` (docs/ops-coverage.md 7.19, record
+    // .doc/code-update-20260930-091414.md). The investigation measured that the capability has no
+    // caller-usable interface on this target at all, which is a property of the platform rather than
+    // a commitment still to be built - so it belongs in the boundary, where the project keeps fixed
+    // limits. Nothing was removed to make a number move: the missing capability is unchanged and is
+    // stated in full below, and the withdrawn tool name is not claimed as built anywhere.
+    boundary:
+      "Repeating (reprocessing) a failed update is not offered, because on this target no source this " +
+      "service can reach exposes it to a caller without a SAP GUI. SM13's own restart logic is dialog " +
+      "code inside the module pool RSM13000 (the FORMs behind 'V1-und V2-Nachverbuchung anstarten' and " +
+      "'Einzelne V2-Nachverbuchung anstarten', the latter read at RSM13000:2735), and it runs on the " +
+      "kernel call CALL 'ThVBCall' (opcodes SELECT_VB_SERVER and START_VB) plus a direct " +
+      "`UPDATE VBHDR SET VBRC = VB_RUN_V2 VBNAME = ...` with `commit work`; those FORMs also terminate " +
+      "on dialog messages, including the type-A message MESSAGE A210 at RSM13000:6645, which aborts an " +
+      "RFC session instead of returning. The only remote-enabled entry point named for a parameterized " +
+      "SM13 call, UPD_CALL_SM13 (function group FBUP, remoteMode R), ends in " +
+      "`CALL TRANSACTION 'SM13'`, and an RFC session cannot run a dialog transaction. TH_START_V2 " +
+      "(function group THFB) is not remote-enabled and starts V2 collectively from selection ranges " +
+      "rather than repeating one request, and TH_REORG_VB deletes old requests rather than repeating " +
+      "them. Name searches for a single-request repeat found nothing in FUNC/FUGR/PROG " +
+      "(*VB*REPEAT*, *UPDATE*RESTART*, *RESTART_VB*, *VB*RESTART*, *NACHVERBUCH*, *UPDATE*REQUEST*, " +
+      "*REPROCESS*, TH_*V2*). Everything the family's purpose names - which update terminated, and " +
+      "what the failed update contains - is served by search_failed_updates and read_failed_update, " +
+      "both verified on 2026-09-30 against the one real failed update on client 200."
   },
   {
     id: "system-info",

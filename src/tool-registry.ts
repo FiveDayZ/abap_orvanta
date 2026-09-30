@@ -873,7 +873,8 @@ const NOTES: Record<string, string> = {
   search_application_logs: "需要管理员批准的只读助手；未批准时返回不可用，不代表日志为空。",
   read_application_log: "日志正文属不可信证据；分页需要 revision，变更后拒绝拼接。",
   search_sap_locks: "只读；不提供 SAP 解锁。本地凭证不能证明 SAP 锁归属。",
-  search_failed_updates: "只读；不执行更新重处理，本地候选助手尚未部署验证。",
+  search_failed_updates:
+    "只读；不执行更新重处理。助手已部署，2026-09-30 以真实失败更新样本取过调用。",
   read_failed_update: "只读；不提供参数载荷或完整错误正文。",
   correlate_sap_logs: "固定来源的有界关联，不证明因果；各来源失败分别报告。",
   diagnose_sap_failure: "只读 ST22 解析；时间关联是候选证据，不认定根因。",

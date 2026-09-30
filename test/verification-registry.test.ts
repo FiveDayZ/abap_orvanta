@@ -646,8 +646,18 @@ test("the registry records the honest gap rather than inflating it", () => {
   // never observed, including the importable answer, because every request tried was refused - so the
   // promotion rests on the reply being mechanical (the callee's own exception name and raw
   // sub-return code on every path) rather than on the positive branch having run.
+  // Raised from 37 to 39 on 2026-09-30 (updates batch): the sample the updates family could not
+  // produce in three days was found by allowing VBHDR and reading it - client 200 holds exactly one
+  // header row, state 255 with returnCode 9, which lands inside the tool's own failure predicate.
+  // search_failed_updates then answered returnedCount 1, hasMore false for the one-hour window around
+  // 2025-02-11T13:56:40, and read_failed_update read that exact key back (one module, one error, a
+  // recorded revision), both replies agreeing field by field with the table row a different reader had
+  // produced minutes earlier. Two tools earned the raise from one real sample; both entries name
+  // .doc/code-update-20260930-090003.md and both state what was NOT proven (the row bound and hasMore,
+  // a second user, a state-only failure, the revision drift guard, the error text). Nothing here was
+  // inferred from a plan or from a passing test.
   assert.ok(
-    totals.verified <= 37,
+    totals.verified <= 39,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

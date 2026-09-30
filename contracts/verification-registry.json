@@ -1303,13 +1303,13 @@
       "tool": "read_failed_update",
       "helper": "Z_ORVANTA_MAINT_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "an existing failed update whose key could then be read back: no sample has been found in 158 approved one-hour windows",
+      "verificationTarget": "an existing failed update whose key could then be read back - met on 2026-09-30: the single client-200 VBHDR header row (updateKey 67A79999594D1B00E1008000C0A8581A, user HHM) was read back through this tool",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "2026-09-29 (read-only, authorized): still no sample. 158 approved one-hour windows across three rounds have returned zero rows, so the detail read has never had a real key to fetch. The 2026-09-29 sweep covered five users over five days; the family record forbids creating a failed update to manufacture a sample. Closing this tool needs either an allowlist approval for VBHDR (one table read would then locate a failure), an explicit ruling that a sample may be created, or a ruling that the empty-path evidence is enough. Record: .doc/code-update-20260929-160327.md The registry pins no operation requirement for this tool, so nothing in this entry checks the helper's advertised UPDATE operations, and for that unpinned part the availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-30T08:58:01+08:00",
+      "evidence": ".doc/code-update-20260930-090003.md",
+      "notes": "2026-09-30 (read-only, authorized): the key that 158 approved empty windows never produced was located by a plain allowlisted VBHDR read - client 200 holds exactly one header row, state 255 with returnCode 9, which satisfies this tool's own predicate (VBSTATE=253 OR VBRC between 2 and 201) - and the detail call then ran for real against it. read_failed_update(updateKey=67A79999594D1B00E1008000C0A8581A, username=HHM) answered status ok and code OK, with the header identical to what the search returned minutes earlier, one module (number 1, RS_NEW_PROGRAM_INDEX, mode 1, returnCode 9) and one error (number 1, RS_NEW_PROGRAM_INDEX, program CL_ABAP_COMPILER==============CM03S, line 20, messageClass 00, messageNumber 671, textUnavailable true), plus revision b8b6c65e8fbaf16899c45e184405aa3057dddf97b028ad2396d1b7bc08ccd88e. No encoded message parameter and no VBDATA came back, as the contract requires. Not proven: the expectedRevision drift guard (no second call carried a stale revision), any read approaching the 200-module or 200-error bounds, and the error text itself, which the reply marks textUnavailable. The 158 empty windows are not withdrawn - they really held nothing, and an empty window still proves only that window. Record: .doc/code-update-20260930-090003.md The registry pins no operation requirement for this tool, so nothing in this entry checks the helper's advertised UPDATE operations, and for that unpinned part the availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
     },
     {
       "tool": "read_ccms_alerts",
@@ -1699,13 +1699,13 @@
       "tool": "search_failed_updates",
       "helper": "Z_ORVANTA_MAINT_READ",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "an existing failed update in a window the caller may name: 158 approved one-hour windows have now been read, all empty",
+      "verificationTarget": "an existing failed update in a window the caller may name - met on 2026-09-30: the window 2025-02-11T13:56:40-14:56:40 for HHM returned the single client-200 header row",
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "2026-09-29 (read-only, authorized): a 150-window sweep across BILL, ZSL, DDIC, WYJ and WB - the names harvested from the readable TBTCO-SDLUNAME and AGR_USERS-UNAME, since USR02 is explicitly refused as sensitive - over five days and six working-hour windows each returned status ok with returnedCount 0. With the 7 windows of 2026-09-25 and the 1 of 2026-09-28 that makes 158 approved one-hour windows with no failed update. The shape of the tool is what makes a wider net impractical rather than laziness: username is required and the window is capped at 3600 seconds, and the 1.0 helper arm applies an exact vbusr = match with the same span limit, so there is no wildcard sweep; VBHDR and VBERROR are not on the read allowlist, so a single table read cannot answer whether any failed update exists. Record: .doc/code-update-20260929-160327.md The registry pins no operation requirement for this tool, so nothing in this entry checks the helper's advertised UPDATE operations, and for that unpinned part the availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-30T08:57:51+08:00",
+      "evidence": ".doc/code-update-20260930-090003.md",
+      "notes": "2026-09-30 (read-only, authorized): the sample the 158 approved one-hour windows could not produce was located by a plain allowlisted VBHDR read - client 200 holds exactly one header row, state 255 with returnCode 9, which lands inside this tool's own predicate (VBSTATE=253 OR VBRC between 2 and 201) - and the tool was then called for real against it. search_failed_updates(username=HHM, 2025-02-11T13:56:40 to 14:56:40) answered status ok and code OK with returnedCount 1 and hasMore false, returning updateKey 67A79999594D1B00E1008000C0A8581A, client 200, username HHM, systemTime 2025-02-11T13:56:40, program RS_CALL_PROGRAM_INDEX_DELTA, transaction SE93, server GRAPP2_GR2_00, state 255, returnCode 9 - every field agreeing with the VBHDR row a different reader had produced minutes before. The empty-window history stands as written: those windows really held nothing, and an empty window still proves only that window. Not proven: the 100-row bound and hasMore (one row cannot reach either), a second distinct user, and a state-only failure, because VBSTATE=253 with a returnCode outside 2..201 was never observed. Record: .doc/code-update-20260930-090003.md The registry pins no operation requirement for this tool, so nothing in this entry checks the helper's advertised UPDATE operations, and for that unpinned part the availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
     },
     {
       "tool": "search_sap_locks",

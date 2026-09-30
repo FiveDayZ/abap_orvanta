@@ -173,6 +173,31 @@ export const TABLE_TIERS = {
    *   closed，整行又远超旧读路径 512 字符的上限。登记它等于声明一条走不通的读路径，因此按
    *   ARCH_STAT（INTTAB）与 USOBHASH（内部散列）的同样处理方式**剔除并记录**，而不是留一个
    *   "已允许但读不到"的条目。载荷本身属已声明边界，写在 `interfaces` 族的 boundary 里。
+   *
+   * 2026-09-30（覆盖率推进裁定，逐表批准）新增一张表：
+   *
+   *   更新头 —— VBHDR（STSK 包，交付类 L，DDIC 版本 20110901121513、定义指纹
+   *     b1b6fe1648acf992037988e0da5167c67ee5e3b7e519301819cda8b03cec439c，22 个字段，键为单字段
+   *     VBKEY）。价值：这是 `updates` 族的**服务侧**读路径。失败更新的判据写在 `search_failed_updates`
+   *     的描述里（`VBSTATE = 253` 或 `VBRC ∈ 2..201`），而那条通道经已批准的 SAP 助手，形状上要求
+   *     **精确用户名 + ≤1 小时窗口**，158 个已批准窗口因此全部为空；登记 VBHDR 后 `read_abap_table`
+   *     可按 `VBMANDT` 与 `VBDATE`（域 `CHAR14`，日期+时间，字符可比）取一个宽窗口，一次表读即可
+   *     回答"是否存在失败更新"。**登记只提供读路径，不构成为这两个工具背书**——这条保留当日就被
+   *     证明是对的：登记后客户端 200 的 VBHDR 只有一行（`VBSTATE=255`、`VBRC=9`，正落在本工具的失败
+   *     判据内），随后 `search_failed_updates` 与 `read_failed_update` 各自取得一次真实调用，两条登记
+   *     条目才转 `verified`（证据 `.doc/code-update-20260930-090003.md`）。
+   *     **三条实测限制（w200 2026-09-30，证据 `.cache/evidence-vbhdr-20260930/`）**：
+   *     ① **`VBHDR` 没有 `MANDT` 字段**，客户端在 `VBMANDT`（数据元素 `VBMANDT`，域 `MANDT`）——
+   *        与 `TBTCO` 的 `AUTHCKMAN` 同类陷阱：不显式过滤就会返回**所有客户端**的行。
+   *     ② 失败判据两列都是数值型：`VBSTATE` 域 `INT1`、`VBRC` 域 `VBRC` 且 `dataType=INT4`（带符号）。
+   *        与 `ALALERTDB` 的 `SEVERITY`/`STATUS` 同类：**可展示、不可作筛选列**（旧读路径的筛选只接受
+   *        C/N/D/T，实测以 `TABLE_QUERY_LEGACY_LAYOUT_UNSUPPORTED` 拒绝），失败必须取回后按值判断。
+   *     ③ `VBCLIINFO` 的数据元素是 `THRAW1`（域 `THRAW1`，`dataType=RAW`，长度 1），是**字节列**，
+   *        旧读路径对字节投影 fail closed（`X` 不在可投影类型白名单内）；定位失败更新不需要它，
+   *        投影列应只取 `VBMANDT`/`VBKEY`/`VBUSR`/`VBREPORT`/`VBTCODE`/`VBDATE`/`VBSTATE`/`VBRC`。
+   *     敏感面：`VBUSR`（发起更新的用户名）、`VBTCODE`（事务码）、`VBREPORT`（触发程序）与
+   *     `VBNAME`/`VBCLINAME`（VB 服务器名）。**本次只登记 `VBHDR` 一张**：`VBMOD`（模块明细）与
+   *     `VBERROR`（错误明细）**未登记**，失败更新的**内容**仍只经 `read_failed_update` 的已批准助手路径读取。
    */
   business: [
     SCOPED_QUERY_TABLE,
@@ -201,7 +226,8 @@ export const TABLE_TIERS = {
     "UST10S",
     "UST10C",
     "ADMI_RUN",
-    "ARFCSSTATE"
+    "ARFCSSTATE",
+    "VBHDR"
   ],
   /**
    * 产品必需档：由 `src` 调用点清点得出，**不是** D5-2 取证候选表的子集。

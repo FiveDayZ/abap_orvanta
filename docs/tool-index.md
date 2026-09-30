@@ -228,6 +228,6 @@
 - `run_sci_analysis`：非原生 ATC，规则范围固定且依赖指纹匹配的 SCI 助手；timeout 不等于取消。
 - `run_unit_tests`：执行现有 ABAP Unit，测试代码可能有副作用；需先取得授权。
 - `search_application_logs`：需要管理员批准的只读助手；未批准时返回不可用，不代表日志为空。
-- `search_failed_updates`：只读；不执行更新重处理，本地候选助手尚未部署验证。
+- `search_failed_updates`：只读；不执行更新重处理。助手已部署，2026-09-30 以真实失败更新样本取过调用。
 - `search_sap_locks`：只读；不提供 SAP 解锁。本地凭证不能证明 SAP 锁归属。
 - `test_remote_function_module`：执行客户 RFC，可能产生业务副作用；白名单与显式确认必需。

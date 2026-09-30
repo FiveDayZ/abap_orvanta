@@ -2274,7 +2274,7 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MAINT_READ",
       "minHelperProtocol": null,
-      "note": "只读；不执行更新重处理，本地候选助手尚未部署验证。"
+      "note": "只读；不执行更新重处理。助手已部署，2026-09-30 以真实失败更新样本取过调用。"
     },
     {
       "name": "search_sap_locks",

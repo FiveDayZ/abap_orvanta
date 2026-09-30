@@ -289,13 +289,13 @@ was closed by the D1 read-only session on 2026-09-25 (0.50.15), recorded in
 section 6 is therefore no longer the binding constraint for the closed families; the table below
 states each row's standing, including what that session changed and what it could not:
 
-| Tool                          | Status                 | What closing it needs                                                                                 | Standing after the 2026-09-25 D1 session                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ----------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `read_background_job_details` | `verified`             | closed                                                                                                | `read_background_job_details(jobName=SWWDHEX, jobCount=00001200)` returned `status=ok` with one step (program `RSWWDHEX`, execution user `WF-BATCH`) and a revision, so the detail path is proven on live data rather than only deployed. That job reported spool id `0000000000`, so nothing in this call covers spool content.                                                                                                                                                                                                                                                                        |
-| `read_background_job_spool`   | `unverified`           | one approved read with a real `stepNumber`/`spoolId` from a job that produced spool output            | attempted and still blocked by the system rather than by the tool: every step of five `SWWDHEX` job counts (`00001200`, `00031200`, `00061200`, `00121200`, `00151200`) reported spool id `0000000000`, and twelve standard spool-producing job names (`SAP_COLLECTOR_FOR_PERFMONITOR`, `RSBTCDEL2`, `RSPO0041`, `RDDNEWPP`, `SAP_REORG_SPOOL` and others) held no job at all across a three-day window. The approved SM37 window holds only aborted single-step workflow jobs (`SWWDHEX`, `SWWERRE`, `SWWCOND`), so no spool-bearing job exists to read and no sample may be created to close the row. |
-| `search_failed_updates`       | `unverified`           | one approved SM13 window (<= 1 hour) with an explicit username that actually contains a failed update | the approved SM13 path is now proven callable - seven approved one-hour windows across `wys`, `WF-BATCH` and `DDIC` each returned `status=ok`, `code=OK`, `returnedCount=0` with `coverage=retained_failed_update_headers_current_client` - which exercises only the empty path. No window contained a real failed update, and fabricating one is forbidden, so the row stays unverified on a missing sample rather than on an unproven call.                                                                                                                                                           |
-| `read_failed_update`          | `unverified`           | one approved existing `updateKey` (revision optional)                                                 | the same seven windows were empty, so no `updateKey` exists to read; the detail tool has neither a call nor a sample to cite.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `cleanup_transport_entries`   | `platform-unsupported` | closed by the 2026-09-25 D2 ruling                                                                    | two structurally different payloads were PUT against w200 and neither removed the entry, the native ADT `removeobject` action is absent on this release, and the tool's own post-check refuses to report success. The operator ruled the platform boundary to be the closed finding, so the row moved from `failed` to `platform-unsupported`; the remedy is SE09/SE10.                                                                                                                                                                                                                                 |
+| Tool                          | Status                 | What closing it needs              | Standing after the latest recorded call (each cell names its own record; last update 2026-09-30)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------------- | ---------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read_background_job_details` | `verified`             | closed                             | `read_background_job_details(jobName=SWWDHEX, jobCount=00001200)` returned `status=ok` with one step (program `RSWWDHEX`, execution user `WF-BATCH`) and a revision, so the detail path is proven on live data rather than only deployed. That job reported spool id `0000000000`, so nothing in this call covers spool content.                                                                                                                                                                                                                                                            |
+| `read_background_job_spool`   | `verified`             | closed                             | closed on 2026-09-29: the chain TSP01 LIST spool `12717` → TBTCP step 1 of `ZTEST`/`09381400` → TBTCO header with `AUTHCKMAN 200` ended in `status=ok` with `spoolId 12717` and three rendered lines, after the `RSPOID` INT4 normalisation. The blocked attempts recorded in the 2026-09-25 snapshot still explain why no sample could be read before that day. Evidence `.doc/code-update-20260929-192300.md`.                                                                                                                                                                            |
+| `search_failed_updates`       | `verified`             | closed                             | closed on 2026-09-30: an allowlisted `VBHDR` read showed client 200 holds exactly one header row (`state 255`, `returnCode 9` - inside this tool's own predicate), and the window `2025-02-11T13:56:40`-`14:56:40` for `HHM` then answered `status=ok`, `code=OK`, `returnedCount=1`, `hasMore=false` with that exact key. The empty-window history stands: the 158 approved windows really held nothing, and an empty window still proves only that window. Not proven: the 100-row bound, `hasMore`, a second user, a state-only failure. Evidence `.doc/code-update-20260930-090003.md`. |
+| `read_failed_update`          | `verified`             | closed                             | closed on 2026-09-30 with the key the `VBHDR` read produced: `status=ok`, `code=OK`, one module (`RS_NEW_PROGRAM_INDEX`, mode 1, returnCode 9), one error (messageClass `00`, messageNumber `671`, line 20, `textUnavailable=true`) and revision `b8b6c65e…`; no encoded message parameter and no `VBDATA` came back. Not proven: the `expectedRevision` drift guard and the 200-module/error bounds. Evidence `.doc/code-update-20260930-090003.md`.                                                                                                                                       |
+| `cleanup_transport_entries`   | `platform-unsupported` | closed by the 2026-09-25 D2 ruling | two structurally different payloads were PUT against w200 and neither removed the entry, the native ADT `removeobject` action is absent on this release, and the tool's own post-check refuses to report success. The operator ruled the platform boundary to be the closed finding, so the row moved from `failed` to `platform-unsupported`; the remedy is SE09/SE10.                                                                                                                                                                                                                     |
 
 The same session produced two facts about this surface that are not evidence standing at all, both
 recorded in the session's `.doc` record:
@@ -957,3 +957,61 @@ EXECUTE = 2.11** ⇒ 2.15 的 `LOCK_DELETE` 分支**尚未部署**，工具**从
 
 **未做**：载体未运行、SAP 侧未改动、工具未被调用（因此 `locks` 族仍 `partial`，gap 文本保留——工具已建不等于
 有真实调用证据）。**未执行任何测试**（人工优先门）。
+
+### 7.19 OP2 updates - `reprocess_failed_update` 立项结论（2026-09-30，用户授权单独立项）
+
+**立项范围**：只做可行性与设计判定——不写 SAP、不改服务端代码、不新增工具、不动族定义。
+
+**结论（先给结果）**：**在受支持的 SAP 接口范围内，`reprocess_failed_update` 无法实现**。`updates` 族剩余的
+缺口因此不是「一个还没建的工具」，而是「平台不向无 GUI 调用方暴露的能力」。按本项目既有的分列原则（族 `gap`
+只放闭环前仍缺的**能力**，平台或目标固定的限制写进 `boundary`），该族可以以只读口径闭环——但这是需要用户
+裁定的结论，本记录**不自行改动族定义**。
+
+**六条实测事实**（全部只读，w200；产物在 `.cache/evidence-updates-project-20260930/`）：
+
+1. SM13 主程序 `RSM13000`（6979 行，完整源 SHA-256 `04882addede10162440d9794cac5fe776ba20e175d019b62e8c139c86c695917`）
+   把重启逻辑写成**对话框 FORM**：`VB_V2_RESTART_SINGLE_START`（2735 起）、`VB_V2_RESTART_START_START`（2228/2364 调用）、
+   单个 V1/V2 重启（2528/2602/2807）、删除 VB 请求（2184）、Reorg（3024）、Collector 单启（6665）。
+2. 真实机制是**内核 C 调用**：`VB_V2_RESTART_SINGLE_START` 先 `CALL 'ThVBCall' OPCODE=SELECT_VB_SERVER` 选更新服务器，
+   再 `UPDATE VBHDR SET VBRC = VB_RUN_V2 VBNAME = SELECTED_SERVER WHERE VBKEY = ...` + `commit work`，最后
+   `CALL 'ThVBCall' OPCODE=START_VB ID 'VBPARAM' FIELD VBPARAM ID 'VBSERVER' ...`。`ThVBCall` 是内核调用而非已发布 FM，
+   Z 助手用不了。
+3. FORM 里混着**对话框专属构造**：`MESSAGE S205/S221/S225`，以及 `MESSAGE A210`（3934、6645）——A 类消息是**异常终止**，
+   在 RFC 会话里会中断或转储。
+4. 唯一 remote-enabled、且自述为「Call SM13 (for parameterized call of SM13, first screen in background)」的是
+   `UPD_CALL_SM13`（FG `FBUP`，`remoteMode=R`，`CALL_MODE` + `VBKEYS`），但**其末句是 `CALL TRANSACTION 'SM13'`**
+   ⇒ 对话框事务；RFC 会话无 dynpro，不可用。
+5. `TH_START_V2`（FG `THFB`）**非 remote-enabled**，入参是集合式选择范围（`DATANF/ZEITANF/DATEND/ZEITEND/USR/CLIENT/FUNC/MAXFBS/SELALL`）
+   ⇒ 是「集合式 V2 启动」，不是单请求重复。
+6. 命名检索在 `FUNC/FUGR/PROG` 上均无单请求重复的受支持入口：`*VB*REPEAT*`、`*UPDATE*RESTART*`、`*RESTART_VB*`、
+   `*VB*RESTART*`、`*NACHVERBUCH*`、`*VB*START*`（仅两条无关命中）、`*UPDATE*REQUEST*`（仅业务模块）、`*REPROCESS*`（仅业务模块）、
+   `TH_*V2*`（仅 `TH_START_V2`）。`TH_REORG_VB` 是 Reorg（删除旧请求），不是重复。
+
+**三条被否决的路线**：
+
+- **A 调用 `RSM13000` 的 FORM**：模块池 + 屏幕状态 + `MESSAGE A210`，且必须改标准对象。**否决**——把模块池 FORM 原样搬进
+  RFC 正是项目明令禁止的做法。
+- **B 走 `UPD_CALL_SM13`**：末句 `CALL TRANSACTION 'SM13'`，对话框事务。**否决**。
+- **C 助手自行复刻状态迁移**（写 `VBHDR`/`VBMOD`/`VBLOG` 再启动分发器）：要么依赖内核 `ThVBCall`（不可用），要么直接改
+  更新系统的内部状态——未发布接口，且有破坏更新队列的风险。**否决**（即便单独授权，也不是受支持的实现）。
+
+**待裁定（两项，互斥）**：
+
+- **选项 1**：把「无 GUI 调用方无法重复失败更新」记为**平台边界**（写 `boundary`），`updates` 族以只读口径闭环，
+  `plannedToolNames` 去掉 `reprocess_failed_update`。影响：必需族 8/14 → **9/14**，计划缺口 5 → 4。
+- **选项 2**：保留 `gap` 与计划工具，承认该族在当前平台不可闭环，95% 需另找路径。
+
+**未做**：未改任何 SAP 对象、未写 SAP、未改服务端代码与族定义、未部署、未调用任何写工具、未执行任何测试
+（人工优先门）。证据：`.cache/evidence-updates-project-20260930/`（只读产物：3 份检索清单、2 份 FM 接口、4 份源码行范围）。
+
+**裁定与实施（2026-09-30 同日，紧随立项；记录 `.doc/code-update-20260930-092547.md`）**：用户选定**选项 1**。立项轮本身未改任何代码；裁定后才实施：
+`src/ops-coverage.ts` 的 `updates` 族 `plannedToolNames` 去掉 `reprocess_failed_update`、`gap` 置空、
+`closeRoutes` 由 `["authorization"]` 改为 `["none"]`、`actionRequired` 改为 `false`、`label` 去掉 "reprocess"，
+并把上面六条实测事实写进该族 `boundary`。同批修正依赖面：`test/ops-coverage.test.ts`（族状态 `partial`→`read-only`、
+`PLANNED_GAP_TOOL_COUNT` 5→4、状态计数、闭环列表、判据分子与百分比）、`docs/ops-runbooks.md` 的 updates 剧本结论边界；
+`docs/ops-acceptance-matrix.md` 由生成器重出（`15 families, 9/14 required closed`）。
+
+**读数变化（全部取自生成器与 block 输出）**：必需族 **8/14 → 9/14（57% → 64%）**；计划缺口 **5 → 4**
+（余 `create_background_job`、`modify_background_job`、`read_db_activity`、`read_performance_snapshot`）；
+全族端到端 8/15 → **9/15（53% → 60%）**；状态计数 partial 6 → 5、read-only 7 → 8；判据 3 的"计划但未建的动作能力"
+只剩 jobs (2)。**未做**：未改任何 SAP 对象、未写 SAP、未部署、未调用任何写工具、未执行任何测试（人工优先门）。
