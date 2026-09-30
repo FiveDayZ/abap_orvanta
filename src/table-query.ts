@@ -104,6 +104,41 @@ class TableQueryFailure extends Error {
 /** Upper bound on the projection sample returned with a failure; DDIC tables can exceed 1000 columns. */
 const validColumnSampleLimit = 64
 /**
+ * The evidence a refusal may carry beside its code, in the order a message should state it.
+ *
+ * A refusal reaches the caller two ways: `read_abap_table` returns the whole result object, and
+ * `execute_data_query` throws a one-line `SAP_TABLE_QUERY_FAILED: <code>; stage=<stage>`. The second
+ * path used to drop everything but the code - which made the evidence invisible exactly where it was
+ * needed, on the statement the caller actually wrote. This list is the one place that decides what
+ * survives that path, so adding a detail to `TableQueryFailure` means adding it here too.
+ */
+export const tableQueryEvidenceKeys = [
+  "invalidColumns",
+  "validColumns",
+  "validColumnCount",
+  "definitionFieldCount",
+  "overflowColumn",
+  "overflowRawValue",
+  "overflowRowIndex",
+  "overflowRowKey"
+] as const
+
+/**
+ * Render that evidence as a `; key=value` suffix, or an empty string when the refusal carried none.
+ * Values are JSON-encoded so a field's raw text arrives quoted and escaped rather than merged into
+ * the message, and the encoding is bounded by the same limits that produced the value (a column name,
+ * a 512-character record buffer, a row index, a key object).
+ */
+export function tableQueryEvidence(result: Record<string, unknown>): string {
+  const parts: string[] = []
+  for (const key of tableQueryEvidenceKeys) {
+    const value = result[key]
+    if (value === undefined) continue
+    parts.push(`${key}=${JSON.stringify(value)}`)
+  }
+  return parts.join("; ")
+}
+/**
  * The one native failure that licenses the degraded path: ADT answered the data preview with HTTP
  * 200 and a zero-byte HTML body, which is this release's way of saying the endpoint is not served.
  * Exported so the caller and the reader compare against the same string instead of a second copy.

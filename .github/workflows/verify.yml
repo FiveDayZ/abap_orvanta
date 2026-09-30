@@ -11,12 +11,16 @@
 # Actions from this repository, so it is *unverified* — a syntactically valid file
 # is not evidence that the gate passes in CI. Treat the first real run as the
 # verification, and record its outcome before relying on this as a gate.
+#
+# TRIGGER RULING (2026-09-30, operator decision): manual dispatch only. Every push
+# used to start a run that had never passed, so the repository collected failing
+# runs that carried no information — a red check that nobody can act on trains
+# readers to ignore checks. The gate is not withdrawn: `npm run verify` stays the
+# local gate, and the workflow stays available on demand. Restore a `push` trigger
+# only after a dispatched run has actually passed on a runner, and record that run.
 name: verify
 
 on:
-  push:
-    branches: ["main", "master"]
-  pull_request:
   workflow_dispatch:
 
 concurrency:

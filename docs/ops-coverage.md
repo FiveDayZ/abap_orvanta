@@ -1430,3 +1430,65 @@ evidence 指向 `.doc/code-update-20260930-211934.md`）。**首跑 13/14 是脚
 `.cache/r41-probe.mjs`/`r42-probe.mjs`/`r42-verify.mjs`/`r43-falsify.mjs`/`r44-restart-check.mjs` 与三份 `.json` 全部
 保留）；工作树未提交未推送。本批记录：`.doc/code-update-20260930-211417.md`（实现）与
 `.doc/code-update-20260930-211934.md`（真机读数）。
+
+### 7.24 授权追踪**行半边**真机落地、溢出拒绝带证据、transport 真机阻塞点（2026-09-30 第七批）
+
+**A. `read_authorization_trace` 行半边的真机根因与修法**。首跑（`.cache/r75-key-shape.json`）以
+`AUTH_TRACE_DATA_CALL_FAILED` 收场，助手捕获到的传输层原文是 **`SAP SOAP response exceeded 10 MiB`**——
+170 个键一次交给 `AUTH_TRACE_GET_AUTHVAL_DATA` 的答复超过 `src/adt-backend.ts` 的 10 MiB 上限，被 `postSapSoap`
+主动中断。这是**传输层上限**，不是 SAP 侧权限或类型问题。
+
+修法（`src/auth-trace-status.ts`）：键按 **32 个一页**递交；某页失败且该页多于 1 个键、且失败码是
+`AUTH_TRACE_DATA_CALL_FAILED` 时**对半重试**（深度上限 5），直到放得下或确认单键也读不出。行半边源新增
+`pages`/`failedKeys`/`failureMessage`，状态机据此分出 `partial`：`failedKeys === 0` 时按行数给 `ok`/`empty`；
+有失败键时**已读出任何一页**给 `partial`，**一页都没读出**且码以 `_RESPONSE_INVALID` 结尾才给 `invalid`，否则
+`unavailable`。`keysTruncated` 同时覆盖"键表被 200 上限截断"与"行数已达 `maxRows`"两种情况，`sapCount` 是各页
+`P_DBCNT` 之和。单测 `test/auth-trace-status.test.ts` **22 项**（分页 32/32/1、对半重试的尝试序列
+`[8,4,2,2,4,2,2]`、单键也读不出时报 `partial` 并保留原文、定义读不出时报 `unavailable`）。
+
+**真机读数（用户重启 4849 后，`.cache/r90-batch-verify.json`）**：`read_authorization_trace`（无过滤、
+`maxRows: 50`）返回 **`status: "ok"`**，`keysAvailable 170`、`keysSelected 170`、`keysUsed 32`、`pages 1`、
+`failedKeys 0`、`returnedCount 203`、`sapCount 203`、`traceRowsTruncated true`、**零警告**——行半边真的读出了
+`USOB_AUTHVALTRC` 的行。据此 registry 条目把"行半边尚无真机调用"的旧话改写为本次读数，并把
+`lastAttemptAt` 推到 `2026-09-30T17:00:34+08:00`。
+
+**B. 数值溢出拒绝在"抛出"路径上也带证据（裁定 ⑤）**。`execute_data_query` 的拒绝是以异常抛给客户端的，
+`src/tools.ts` 两处抛出点原先只拼了码与阶段，`src/table-query.ts` 新算出的 `overflowColumn` /
+`overflowRawValue` / `overflowRowIndex` / `overflowRowKey` 全被丢掉。现由 `tableQueryEvidence(result)` 统一
+渲染（JSON 编码每个在场字段，`; ` 连接）。真机读数：`execute_data_query SELECT ADDKO FROM T006` →
+`TABLE_QUERY_NUMERIC_OVERFLOW; stage=rfc_query; overflowColumn="ADDKO"; overflowRawValue="*5.372222";
+overflowRowIndex=53`（投影无主键列，故**不**报 `overflowRowKey`）；同一读法经 `read_abap_table` 走结果对象
+路径时带 `overflowRowKey {"MANDT":"200","MSEHI":"FA"}`；对照 `SELECT MSEHI FROM T006` 正常返回 276 行。
+`test/table-query-full-rows.test.ts` 21 项钉住这两条形状。
+
+**C. `release_transport_task` 真机阻塞点（已查实，未闭环）**。用户授权的一次真实释放对专用测试请求
+`GR2K923484` 发起，SAP 侧短转储：`CALL_FUNCTION_PARM_UNKNOWN` / `CX_SY_DYN_CALL_PARAM_NOT_FOUND`，
+助手程序 `SAPLZORVANTA_MCP_CORE`（含 `LZORVANTA_MCP_COREU03`）**第 6631 行**的 `CALL FUNCTION
+'TRINT_RELEASE_REQUEST'`，报 `Function parameter "ET_MESSAGES" is unknown`。**请求毫发无损**：释放前后 E070 均
+`TRSTATUS='D'`，任务 `GR2K923485` 仍 `D`，对象仍 `ZORVANTA_SHLP_T01`。
+
+四份只读取证互相矛盾，且都不支持"我们写错了段"：①被调方**自身源码头行**声明 `EXPORTING ET_MESSAGES TYPE
+CTSGERRMSGS`（`.cache/r85-callee-header.txt`）；②ADT 接口文档同样列出它；③助手正文第 **6643** 行确实把它写在
+`EXPORTING` 段下（`search_abap_object_lines`，全文仅 1 处命中）；④被调方 `get_version_history` 只有
+**1 个版本（2012-12-01，SAP）**，即从未改过接口。运行期却说该参数不存在。据此判定为**应用服务器上加载的接口
+与仓库不一致**（旧加载把该参数放在 `TABLES` 下，正是 2026-09-29 那次 F8 报的错），并据此按裁定执行了
+**内容保持的再激活**（`abap_activate` 成功，`sourceFingerprint` 前后均为 `a8f50761…`）后**重试释放，仍以同一
+转储失败**。故该阻塞点不在本服务可控范围内：需要 SAP 侧刷新该函数组的加载/缓冲区，属标准对象操作，未获授权、
+也不在本服务能力内。另：`GR2K923484` 至今状态 `D`，**没有**发生任何不可逆效果。
+
+**D. `import_transport_queue` 的正分支在当前系统不可观测**。释放前预检（`.cache/r77-precheck-GR2K923484.json`）
+给出 `code TRANSPORT_IMPORT_CHECKED`、`verdict import_not_allowed`、`calleeSubrc 2`、`simulateMode "L"`、
+`localE070Status "D"`、`helperMessage "无法启动传输控制程序 tp"`、`importable false`——SAP 自己的 `TMS_TP_IMPORT`
+在本系统**起不了 tp**（环境/TMS 边界），与请求是否已释放无关。释放成功也改变不了这一点，故
+`importable true` 这一支在本系统上无法取得真机证据。
+
+**E. CI 触发收窄（裁定 ④ 选项①）**：`.github/workflows/verify.yml` 的 `on:` 由 `push` + `pull_request` +
+`workflow_dispatch` 收窄为**仅 `workflow_dispatch`**，文件头写明裁定来源与"要有一次派发运行通过后才恢复 push
+触发"的条件。配置一律不手改产物、不删旧记录。
+
+**族与闸门**：A 使 `authorizations` 族**真闭环**（行半边有真机证据）——`npm run ops:matrix:generate` 输出
+**15 族、必需族闭环 12/14**、`criterionMet` 仍 **false**（未闭环：`jobs`、`transport`）。
+`npm run matrix:generate` → **165 工具 / 100 只读**。
+
+**未做**：未改任何 SAP 标准对象；未创建任何传输；`GR2K923472` 仍 `D`；未删除任何文件（本批 `.cache/r84`–`r93`
+全部保留，含两次失败的释放取证）。本批记录：`.doc/code-update-20261001-012029.md`（在工作区根 `.doc`）。

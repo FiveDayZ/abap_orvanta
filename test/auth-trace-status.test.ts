@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import {
+  AUTH_TRACE_DATA_PAGE,
   AUTH_TRACE_KEY_LIMIT,
   collectAuthTraceRows,
   collectAuthTraceStatus,
@@ -326,8 +327,119 @@ test("more keys than the ceiling are truncated, and the truncation is reported",
   assert.equal(result.traceRowSource.keysAvailable, AUTH_TRACE_KEY_LIMIT + 5)
   assert.equal(result.traceRowSource.keysUsed, AUTH_TRACE_KEY_LIMIT)
   assert.equal(result.traceRowSource.keysTruncated, true)
-  const sent = requests[1]?.inputParameters?.P_AUTHVALTRC_KEY as unknown[]
+  // The ceiling is on how many keys are read, not on how many fit in one call: the read is paged, so
+  // the keys handed over across all data calls are what the ceiling bounds.
+  const sent = requests
+    .filter((request) => request.functionName === "AUTH_TRACE_GET_AUTHVAL_DATA")
+    .flatMap((request) => request.inputParameters?.P_AUTHVALTRC_KEY as unknown[])
   assert.equal(sent.length, AUTH_TRACE_KEY_LIMIT)
+  assert.equal(result.traceRowSource.pages, Math.ceil(AUTH_TRACE_KEY_LIMIT / AUTH_TRACE_DATA_PAGE))
+})
+
+test("keys are handed over in pages, so one oversized reply cannot swallow the read", async () => {
+  // The live failure this pins: all 170 keys in one call made the reply exceed the transport ceiling
+  // ("SAP SOAP response exceeded 10 MiB") and the whole row half collapsed into one opaque code.
+  const keys = Array.from({ length: AUTH_TRACE_DATA_PAGE * 2 + 1 }, (_, index) => ({
+    NAME: `Z_OBJ_${String(index).padStart(4, "0")}`,
+    TYPE: "TR"
+  }))
+  const { backend, requests, readDefinition } = traceDouble({ keys, rows: [] })
+  await collectAuthTraceRows(backend, "w200", readDefinition, { maxRows: 500 })
+  const pages = requests
+    .filter((request) => request.functionName === "AUTH_TRACE_GET_AUTHVAL_DATA")
+    .map((request) => (request.inputParameters?.P_AUTHVALTRC_KEY as unknown[]).length)
+  assert.deepEqual(pages, [AUTH_TRACE_DATA_PAGE, AUTH_TRACE_DATA_PAGE, 1])
+})
+
+test("a page the transport refuses is halved until it fits, and the read still completes", async () => {
+  // Same shape of failure as the live one, but only above a threshold: this is what makes the split
+  // load-bearing rather than decorative. Nothing here is retried blindly - each smaller page is a new
+  // call, and the answer must come back whole.
+  const keys = Array.from({ length: 8 }, (_, index) => ({
+    NAME: `Z_OBJ_${String(index).padStart(4, "0")}`,
+    TYPE: "TR"
+  }))
+  const attempts: number[] = []
+  const backend = {
+    callRemoteFunction: async (_connection: string, request: RemoteFunctionRequest) => {
+      if (request.functionName === "AUTH_TRACE_GET_AUTHVAL_KEY")
+        return { outputs: { P_AUTHVALTRC_KEY: keys } }
+      const size = (request.inputParameters?.P_AUTHVALTRC_KEY as unknown[]).length
+      attempts.push(size)
+      if (size > 2) throw new Error("SAP SOAP response exceeded 10 MiB")
+      return { outputs: { P_AUTHVALTRC_DATA: [traceRow()], P_DBCNT: "1" } }
+    }
+  } as unknown as Pick<SapBackend, "callRemoteFunction">
+  const result = await collectAuthTraceRows(
+    backend,
+    "w200",
+    async (functionName: string) =>
+      functionName === "AUTH_TRACE_GET_AUTHVAL_KEY" ? pinnedKeyDefinition : pinnedDataDefinition,
+    { maxRows: 500 }
+  )
+  assert.equal(result.traceRowSource.status, "ok")
+  assert.equal(result.traceRowSource.failedKeys, 0)
+  assert.equal(result.traceRowSource.keysUsed, 8)
+  // 8 is refused, 4 is refused, 2 answers - four times over.
+  assert.deepEqual(attempts, [8, 4, 2, 2, 4, 2, 2])
+  assert.equal(result.traceRows.length, 4)
+})
+
+test("a key that cannot be read even alone is reported as unread, not as an empty table", async () => {
+  const keys = [
+    { NAME: "Z_OBJ_0000", TYPE: "TR" },
+    { NAME: "Z_OBJ_0001", TYPE: "TR" }
+  ]
+  const backend = {
+    callRemoteFunction: async (_connection: string, request: RemoteFunctionRequest) => {
+      if (request.functionName === "AUTH_TRACE_GET_AUTHVAL_KEY")
+        return { outputs: { P_AUTHVALTRC_KEY: keys } }
+      const sent = request.inputParameters?.P_AUTHVALTRC_KEY as Array<{ NAME: string }>
+      if (sent.some((key) => key.NAME === "Z_OBJ_0001"))
+        throw new Error("SAP SOAP response exceeded 10 MiB")
+      return { outputs: { P_AUTHVALTRC_DATA: [traceRow()], P_DBCNT: "1" } }
+    }
+  } as unknown as Pick<SapBackend, "callRemoteFunction">
+  const result = await collectAuthTraceRows(
+    backend,
+    "w200",
+    async (functionName: string) =>
+      functionName === "AUTH_TRACE_GET_AUTHVAL_KEY" ? pinnedKeyDefinition : pinnedDataDefinition,
+    { maxRows: 500 }
+  )
+  // Rows came back and one key did not: that is `partial`, and it must never read as a complete
+  // answer nor as an empty table.
+  assert.equal(result.traceRowSource.status, "partial")
+  assert.equal(result.traceRowSource.failedKeys, 1)
+  assert.equal(result.traceRowSource.keysUsed, 1)
+  assert.equal(result.traceRowSource.returnedCount, 1)
+  assert.equal(result.traceRowSource.code, "AUTH_TRACE_DATA_CALL_FAILED")
+  assert.equal(result.traceRowSource.failureMessage, "SAP SOAP response exceeded 10 MiB")
+  assert.ok(result.queryWarnings.some((warning) => warning.includes("exceeded 10 MiB")))
+  // The half still answered, so the answer as a whole is not unavailable - the partial state carries
+  // the warning instead of hiding it.
+  assert.equal(result.status, "ok")
+})
+
+test("a definition that cannot be read at all is unavailable, and an unreadable single key is not invalid", async () => {
+  const backend = {
+    callRemoteFunction: async (_connection: string, request: RemoteFunctionRequest) => {
+      if (request.functionName === "AUTH_TRACE_GET_AUTHVAL_KEY")
+        return { outputs: { P_AUTHVALTRC_KEY: [{ NAME: "Z_OBJ_0000", TYPE: "TR" }] } }
+      throw new Error("SAP SOAP response exceeded 10 MiB")
+    }
+  } as unknown as Pick<SapBackend, "callRemoteFunction">
+  const result = await collectAuthTraceRows(
+    backend,
+    "w200",
+    async (functionName: string) =>
+      functionName === "AUTH_TRACE_GET_AUTHVAL_KEY" ? pinnedKeyDefinition : pinnedDataDefinition,
+    { maxRows: 500 }
+  )
+  assert.equal(result.traceRowSource.status, "unavailable")
+  assert.equal(result.traceRowSource.pages, 0)
+  assert.equal(result.traceRowSource.failedKeys, 1)
+  assert.equal(result.status, "unavailable")
 })
 
 test("rows beyond maxRows are cut client-side and reported, never silently dropped", async () => {

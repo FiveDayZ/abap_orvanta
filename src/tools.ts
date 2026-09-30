@@ -137,6 +137,7 @@ import {
   selectedTableNames,
   sortRowsByColumns,
   tableQuerySchema,
+  tableQueryEvidence,
   aggregateColumnName,
   countOperandType,
   type GroupedTableSelect,
@@ -7504,8 +7505,11 @@ export class ToolService {
       `- Switch read: ${trace.status} (trace active: ` +
       `${trace.traceActive === null ? "unknown" : trace.traceActive})\n` +
       `- Trace rows: ${rows.traceRowSource.status}, ${rows.traceRowSource.returnedCount} ` +
-      `row(s) from ${rows.traceRowSource.keysUsed} key(s)` +
-      `${rows.traceRowsTruncated ? " (truncated)" : ""}\n`
+      `row(s) from ${rows.traceRowSource.keysUsed} key(s) in ${rows.traceRowSource.pages} read(s)` +
+      `${rows.traceRowsTruncated ? " (truncated)" : ""}` +
+      // A partial read is the one state a caller must not have to infer from a warning count: the
+      // rows below are real but incomplete, so the missing keys are named on the summary itself.
+      `${rows.traceRowSource.failedKeys > 0 ? `, ${rows.traceRowSource.failedKeys} key(s) unread` : ""}\n`
     if (input.authorizationObject)
       summary += `- Authorization object filter: ${input.authorizationObject}\n`
     const queryWarnings = [...trace.queryWarnings, ...rows.queryWarnings]
@@ -8761,8 +8765,10 @@ export class ToolService {
               )
             )
             if (result.status !== "ok") {
+              const evidence = tableQueryEvidence(result)
               throw new Error(
-                `SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}; table=${tableName}`
+                `SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}; table=${tableName}` +
+                  (evidence ? `; ${evidence}` : "")
               )
             }
             return {
@@ -8851,7 +8857,11 @@ export class ToolService {
             )
           )
           if (result.status !== "ok") {
-            throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
+            const evidence = tableQueryEvidence(result)
+            throw new Error(
+              `SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}` +
+                (evidence ? `; ${evidence}` : "")
+            )
           }
           into.push({
             method: result.method,
