@@ -513,14 +513,18 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "truncated decimal would have been published rather than refused. The refusal is therefore " +
       "correct and stays: a caller who needs the rest of the table excludes those two keys with a " +
       "pushed character comparison, while a whole-row read - SELECT * or an unfiltered aggregate - " +
-      "necessarily includes them. The raw text of those two fields is not observable through this " +
-      "service, because any statement that projects ADDKO and covers them is refused before any " +
-      "output, which is this guard working as designed; which of the guard's two clauses named that " +
-      "refusal - a replacement text carrying an asterisk, or a form the guard does not accept as a " +
-      "plain decimal - is therefore not settled by these readings, and the decision does not depend " +
-      "on it, because the width argument already shows that the value those two rows carry cannot be " +
-      "printed in that field's box at all. A human SE16N read of T006 GC and FA is the one reading " +
-      "that would close that detail. That is also why this family's verify scripts project one " +
+      "necessarily includes them. Since 2026-09-30 that refusal also carries the evidence needed to " +
+      "locate it: TABLE_QUERY_NUMERIC_OVERFLOW names the column that could not be decoded, the " +
+      "untrimmed text the reader took out of that column's box, and the row's primary key as far as " +
+      "the projection carries the table's key columns (a projection that carries none leaves the key " +
+      "absent rather than inventing one). The untrimmed text is the point: the guard fires on the " +
+      "trimmed value, so which of its two clauses named the refusal - replacement text carrying an " +
+      "asterisk, or a form it does not accept as a plain decimal - is readable from the evidence " +
+      "itself, and a whole-row read of T006 GC and FA is the one reading left that still needs a real " +
+      "call to settle it. What no reading changes is the outcome: the width argument already shows " +
+      "that the value those two rows carry cannot be printed in that field's box at all, so no " +
+      "decoded numeric value is withheld - there is none to withhold. That is also why this family's " +
+      "verify scripts project one " +
       "column or filter to a small match set instead of reading that table whole. A join read is also " +
       "bounded: an ORDER BY over a read that stops at the row bound is refused with " +
       "TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially, and LIMIT does not excuse that " +

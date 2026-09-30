@@ -753,23 +753,43 @@ async function readCompleteRows(
         throw new Error("TABLE_QUERY_METADATA_CHANGED")
       offset += Number(field.LENGTH) + 1
     }
-    return response.rows.map((raw) => {
+    return response.rows.map((raw, rowIndex) => {
       const wa = (raw as { WA?: unknown } | null)?.WA
       if (typeof wa !== "string" || wa.length > 512 || wa.slice(offset - 1).trim())
         throw new Error("TABLE_QUERY_RESPONSE_INVALID")
       // SOAP can omit CHAR tail padding. Preserve leading padding and delimiters
       // inside actual field values by decoding the verified fixed offsets.
       const padded = wa.padEnd(offset - 1, " ")
+      // A refusal the caller cannot locate is a refusal it cannot correct: RFC_READ_TABLE answers with
+      // fixed-offset text and carries no row identity of its own, so the key columns the projection
+      // happens to include are read out of the same buffer. A projection that carries none of them
+      // leaves the key absent rather than inventing one - which is stated in the tool contract.
+      const rowKey: Record<string, string> = {}
+      for (const name of keys) {
+        const field = response.fields.find((candidate) => candidate.FIELDNAME === name)
+        if (!field) continue
+        const start = Number(field.OFFSET)
+        rowKey[name] = padded.slice(start, start + Number(field.LENGTH)).trim()
+      }
       return Object.fromEntries(
         response.fields.map((field, index) => {
           const start = Number(field.OFFSET)
           if (index && padded[start - 1] !== "|") throw new Error("TABLE_QUERY_RESPONSE_INVALID")
-          const value = padded.slice(start, start + Number(field.LENGTH)).trim()
+          const text = padded.slice(start, start + Number(field.LENGTH))
+          const value = text.trim()
           if (
             ["P", "I", "F", "b", "s"].includes(field.TYPE) &&
             (!/^[+-]?\d[\d., ]*(?:[Ee][+-]?\d+)?[+-]?$/.test(value) || value.includes("*"))
           )
-            throw new Error("TABLE_QUERY_NUMERIC_OVERFLOW")
+            throw new TableQueryFailure("TABLE_QUERY_NUMERIC_OVERFLOW", {
+              overflowColumn: field.FIELDNAME,
+              // Untrimmed on purpose: the guard fires on the trimmed text, and which clause named it
+              // (replacement asterisks, or a form that is not a plain decimal) is only decidable from
+              // the padded buffer the reader actually decoded.
+              overflowRawValue: text,
+              overflowRowIndex: rowIndex,
+              ...(Object.keys(rowKey).length > 0 ? { overflowRowKey: rowKey } : {})
+            })
           return [field.FIELDNAME, value]
         })
       )

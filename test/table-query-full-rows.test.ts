@@ -374,6 +374,47 @@ test("the numeric decode guard refuses replacement text by name and keeps accept
   assert.equal(refused.data, null)
 })
 
+test("a numeric refusal names the column, the untrimmed text and the row it came from", async () => {
+  // A refusal a caller cannot locate is a refusal it cannot correct. RFC_READ_TABLE answers with
+  // fixed-offset text and no row identity of its own, so the evidence has to be decoded out of the
+  // same buffer the guard read - and the text must stay untrimmed, because the guard fires on the
+  // trimmed value and the padded buffer is what shows which of its two clauses matched.
+  const f = fixture(6, 6)
+  f.rows[3]!.AMOUNT = "****************"
+  const result = await f.read()
+  assert.equal(result.status, "unavailable")
+  assert.equal("code" in result && result.code, "TABLE_QUERY_NUMERIC_OVERFLOW")
+  assert.equal(result.data, null)
+  assert.equal("overflowColumn" in result && result.overflowColumn, "AMOUNT")
+  assert.equal(
+    "overflowRawValue" in result && result.overflowRawValue,
+    " ".repeat(8) + "****************"
+  )
+  assert.equal("overflowRowIndex" in result && result.overflowRowIndex, 3)
+  // The keys travel with the refusal because the projection carries them: MANDT/WERKS/ZRKJHH are
+  // the fixture's key columns, and row 3 is the second 809P row of the fixture.
+  assert.deepEqual("overflowRowKey" in result && result.overflowRowKey, {
+    MANDT: "200",
+    WERKS: "809P",
+    ZRKJHH: "1".padStart(20, "0")
+  })
+})
+
+test("a refusal with no key column in the projection says nothing about the row rather than guessing", async () => {
+  // The other half of the same contract: when the projection carries none of the table's key
+  // columns the row cannot be named, and the field is simply absent. Inventing a key - or labelling
+  // the offending row with the first key of the table - would be worse than saying nothing.
+  const f = fixture(6, 6)
+  f.input.columns = ["AMOUNT"]
+  f.rows[0]!.AMOUNT = "****************"
+  const result = await f.read()
+  assert.equal(result.status, "unavailable")
+  assert.equal("code" in result && result.code, "TABLE_QUERY_NUMERIC_OVERFLOW")
+  assert.equal("overflowRowKey" in result, false)
+  assert.equal("overflowColumn" in result && result.overflowColumn, "AMOUNT")
+  assert.equal("overflowRowIndex" in result && result.overflowRowIndex, 0)
+})
+
 test("request budget rejects large wide fetches before per-key reads", async () => {
   const f = fixture(110, 100)
   f.input.maxRows = 100
