@@ -646,20 +646,32 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "read_authorization_trace"
     ],
     purpose: "Why did this user's transaction fail on authorization, and what is assigned to them?",
-    closeRoutes: ["helper", "approval"],
+    closeRoutes: ["none"],
     actionRequired: false,
-    gap:
+    gap: "",
+    boundary:
       "Reported: the stored role assignments per user (AGR_USERS), the transactions of a " +
       "role (AGR_TCODES) and the profile assignments of a user master record (UST04) through " +
       "read_user_authorizations - assignment master data, never an authorization decision - " +
-      "the kernel's authorization-trace switch through read_authorization_trace " +
-      "(AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed) - and the role itself " +
-      "resolved into the authorization objects, fields and values it stores (AGR_1251/AGR_1252, " +
-      "the profiles it generates from AGR_PROF and the UST10S/UST10C profile path behind a flag) " +
-      "through read_role_authorizations. Still absent: the trace data itself (which authorization " +
-      "check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 " +
-      "and so needs a branch of the SAP-side helper - the one item left on this family's declared " +
-      "helper route, and an SAP-side change this batch does not hold."
+      "the role itself resolved into the authorization objects, fields and values it stores " +
+      "(AGR_1251/AGR_1252, the profiles it generates from AGR_PROF and the UST10S/UST10C profile " +
+      "path behind a flag) through read_role_authorizations, and the kernel's authorization trace " +
+      "through read_authorization_trace: both the switch (AUTH_TRACE_GET_STATUS.RC) and SAP's own " +
+      "trace-result rows from USOB_AUTHVALTRC, reached through the remote-enabled pair " +
+      "AUTH_TRACE_GET_AUTHVAL_KEY / AUTH_TRACE_GET_AUTHVAL_DATA in the same SAUTHTRACE function " +
+      "group. No SAP-side helper and no operator allowlist entry is involved in any of the three: " +
+      "the trace table itself is outside the D5-2 table allowlist, so the two function modules are " +
+      "the route, the same way read_workload_directory reaches its data. Declared limits, none of " +
+      "them a missing tool. (1) The 16-bit FIELDSUSED vector of a trace row (XUBITVEC16, RAW 2) is " +
+      "returned verbatim and is deliberately not decoded into a list of used fields: the " +
+      "bit-to-slot mapping is applied on a path this service cannot read, and SAUTHTRACE contains " +
+      "no decoder - its only two readers select the row and pass it on, and the group's generated " +
+      "RFC wrappers only declare the parameters. The checked values themselves are in FIELD1..FIELD9 " +
+      "and FIELD0 and are returned as stored. (2) A trace that was never switched on leaves the " +
+      "table empty, and w200's switch reads 'not active'; an empty answer therefore means no trace " +
+      "record was stored, never that the capability is missing. (3) Nothing here starts, stops, " +
+      "clears or activates a trace, and no row of the trace is written, changed or deleted - the " +
+      "whole family is read-only, and no tool in it states that a user is or is not authorized."
   },
   {
     id: "spool-output",

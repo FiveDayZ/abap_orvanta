@@ -677,8 +677,10 @@ const ROWS: readonly ToolRow[] = [
   // The role side of the same family: AGR_1251/AGR_1252/AGR_PROF (approved 2026-09-28) resolved into
   // objects, fields and values. No helper: the reviewed reader reaches all five tables.
   ["read_role_authorizations", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
-  // N3. Not a helper call: AUTH_TRACE_GET_STATUS is remote-enabled with no input, so this is the one
-  // item of the OP2/OP1 batch that needs no SAP-side deployment at all.
+  // N3 + the 2026-09-30 authorizations close. No helper call and no allowlist entry: AUTH_TRACE_GET_STATUS
+  // (the switch) and AUTH_TRACE_GET_AUTHVAL_KEY / AUTH_TRACE_GET_AUTHVAL_DATA (SAP's own trace-result
+  // rows from USOB_AUTHVALTRC, which is outside the D5-2 table allowlist) are all remote-enabled, so
+  // this family needs no SAP-side deployment at all.
   ["read_authorization_trace", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   // The five helper-backed runtime reads. Protocol 1.1 is where Z_ORVANTA_OPS_READ gained the five
   // opcodes, so the requirement is pinned to the opcode each tool dispatches to and not to a version

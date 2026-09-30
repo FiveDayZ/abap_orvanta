@@ -1,33 +1,57 @@
 /**
- * Authorization-trace state, read service-side.
+ * Authorization trace, read service-side.
  *
- * Why this is not in the in-SAP helper: `AUTH_TRACE_GET_STATUS` (function group `SAUTHTRACE`) is
- * remote-enabled on this release and its whole interface is one `BOOLE` export with no imports, no
- * table parameters and no declared exceptions, so the service can call it directly over the same
- * SOAP-RFC path `get_sap_system_info` uses for `RFC_SYSTEM_INFO`. The trace *data* is a different
- * matter - `AUTH_TRACE_GET_AUTHVAL_DATA` is remote-enabled too, but its `P_AUTHVALTRC_DATA` row type
- * carries `XUBITVEC16`, which this service cannot verify, so reading the trace itself needs the
- * helper. This module therefore answers only "is the trace on", and says so rather than implying it
- * read any trace.
+ * Two halves, both reached over the same SOAP-RFC path `get_sap_system_info` uses for
+ * `RFC_SYSTEM_INFO` - no in-SAP helper is involved in either.
  *
- * The polarity of `RC` is the whole contract, and the function's own body admits two opposite
- * readings: the old-kernel branch maps `auth/authorization_trace = 'Y'` to `RC = 'X'` (trace on),
- * while the new-kernel branch maps a failing `AUTH_TRACE ACTION='INFO'` call to the same `'X'`. It
- * was settled by reading the callers, not by picking the likelier story - `AUTH_TRACE_RESET` and
- * `AUTH_TRACE_INTERN_GET_NAME` both do `IF lv_rc <> 'X'. EXIT. ENDIF.` under the comment "If the
+ * The SWITCH. `AUTH_TRACE_GET_STATUS` (function group `SAUTHTRACE`) is remote-enabled on this release
+ * and its whole interface is one `BOOLE` export with no imports, no table parameters and no declared
+ * exceptions. The polarity of `RC` is the whole contract, and the function's own body admits two
+ * opposite readings: the old-kernel branch maps `auth/authorization_trace = 'Y'` to `RC = 'X'` (trace
+ * on), while the new-kernel branch maps a failing `AUTH_TRACE ACTION='INFO'` call to the same
+ * `'X'`. It was settled by reading the callers, not by picking the likelier story - `AUTH_TRACE_RESET`
+ * and `AUTH_TRACE_INTERN_GET_NAME` both do `IF lv_rc <> 'X'. EXIT. ENDIF.` under the comment "If the
  * trace is not active, we do not need to do anything", so `'X'` means the trace IS active. Evidence:
  * `.doc/n3-auth-trace-status-contract-forensics-20260927.md` section 3.5.
  *
- * The answer is a snapshot of the kernel's own flag. It is not an authorization verdict about any
- * user, and it cannot start, stop or clear a trace.
+ * The ROWS. The trace results live in `USOB_AUTHVALTRC` ("Authorization Trace Result: Objects and
+ * Values", TRANSP, package `S_PROFGEN`), which this service may not read as a table: it is not in the
+ * D5-2 allowlist, and the allowlist is default-deny rather than a recommendation. SAP's own
+ * `SAUTHTRACE` pair is used instead, and both modules are remote-enabled with a shape the service can
+ * actually carry:
+ *
+ *   - `AUTH_TRACE_GET_AUTHVAL_KEY` takes no input and exports `P_AUTHVALTRC_KEY`
+ *     (`USOB_AUTHVALTRC_KEY_T`) - the distinct NAME/TYPE pairs, CHAR only. Its body is
+ *     `select name type from usob_authvaltrc into corresponding fields of table p_authvaltrc_key
+ *     group by name type`.
+ *   - `AUTH_TRACE_GET_AUTHVAL_DATA` imports `P_AUTHVALTRC_KEY` (`USOB_AUTHVALTRC_KEY_T`) and exports
+ *     `P_AUTHVALTRC_DATA` (`USOB_AUTHVALTRC_T`, row type `USOB_AUTHVALTRC`) plus `P_DBCNT`. Its body
+ *     is `select * from usob_authvaltrc into table p_authvaltrc_data for all entries in
+ *     p_authvaltrc_key where name = p_authvaltrc_key-name and type = p_authvaltrc_key-type`.
+ *
+ * The keys are always read first, and the data read is skipped when that list is empty. This is not
+ * politeness: `FOR ALL ENTRIES` over an EMPTY driver table drops the whole `WHERE` and selects the
+ * entire table, so calling the data module with no keys would silently turn a targeted read into an
+ * unbounded one.
+ *
+ * `FIELDSUSED` is `XUBITVEC16`, RAW(2) - a plain fixed-length type, not an unverifiable one; what is
+ * unverifiable is its MEANING. Which of the sixteen bits marks which of the ten FIELD slots as
+ * checked is applied on a path this service cannot read (the `SAUTHTRACE` group itself contains no
+ * decoder: its only two readers select the row and pass it on, and the group's generated `%_RFC`
+ * wrappers declare the parameters without touching them). The vector is therefore returned verbatim,
+ * exactly as the transport delivered it, and is deliberately NOT interpreted into a field list. The
+ * checked values themselves are in `FIELD1..FIELD9` and `FIELD0` and are returned as stored.
+ *
+ * Nothing here starts, stops, clears or activates a trace, and nothing here is an authorization
+ * decision about any user: the rows are what the kernel recorded, transcribed.
  */
 import { z } from "zod"
 import type { SapBackend } from "./backend.js"
 
 /**
- * The interface this module depends on, read from w200 on 2026-09-27 and pinned, because a function
- * module can be replaced under a running service: a reader that only checked the name would keep
- * answering "trace on/off" from a body that no longer means that.
+ * The interfaces this module depends on, read from w200 on 2026-09-27 (status) and 2026-09-30 (the
+ * key/data pair) and pinned, because a function module can be replaced under a running service: a
+ * reader that only checked the name would keep answering from a body that no longer means that.
  */
 export const reviewedAuthTraceStatusDefinition = z.object({
   functionName: z.literal("AUTH_TRACE_GET_STATUS"),
@@ -39,6 +63,65 @@ export const reviewedAuthTraceStatusDefinition = z.object({
   )
 })
 
+export const reviewedAuthTraceKeyDefinition = z.object({
+  functionName: z.literal("AUTH_TRACE_GET_AUTHVAL_KEY"),
+  remoteEnabled: z.literal(true),
+  updateTask: z.literal(false),
+  sourceFingerprint: z.literal("74b8e04b500939e7db468a223df9aa3d98ac16650a8c6ea05000c997dbc6392c"),
+  interfaceFingerprint: z.literal(
+    "a161259ac6c983af19292556b3f0692e7c1adfe08fe0982671e97a7493b72fb2"
+  )
+})
+
+export const reviewedAuthTraceDataDefinition = z.object({
+  functionName: z.literal("AUTH_TRACE_GET_AUTHVAL_DATA"),
+  remoteEnabled: z.literal(true),
+  updateTask: z.literal(false),
+  sourceFingerprint: z.literal("2ea7593f3ae6867782d2fe8926ff16d5b8dcf948d1ab270302ca1edd102aba1e"),
+  interfaceFingerprint: z.literal(
+    "76c7cc1ff6817726d3a24f144721353c932656b7530d2cd273078ce1edfd1113"
+  )
+})
+
+/** The two CHAR key fields the callee's own `WHERE` actually filters on (`OBJECT`/`HASH` are not). */
+const AUTH_TRACE_KEY_FIELDS = ["NAME", "TYPE"] as const
+
+/**
+ * The projection of `USOB_AUTHVALTRC` this module asks for, in the table's own column order. `MANDT`
+ * and the row's own modification stamps (`MODDATE`/`MODTIME`/`MODIFIER`) are not projected: the first
+ * is the client every other reader in this service already fixes, and the last three record when the
+ * trace table row was last written rather than anything about the check that was traced.
+ */
+export const AUTH_TRACE_ROW_FIELDS = [
+  "NAME",
+  "TYPE",
+  "OBJECT",
+  "HASH",
+  "ABAPPROG",
+  "ABAPLINE",
+  "FIELDSUSED",
+  "FIELD1",
+  "FIELD2",
+  "FIELD3",
+  "FIELD4",
+  "FIELD5",
+  "FIELD6",
+  "FIELD7",
+  "FIELD8",
+  "FIELD9",
+  "FIELD0"
+] as const
+
+/** A row cell is transport text; the widest real cell is `XUVAL` at 40 characters. */
+const remoteCell = z.string().max(512)
+
+/**
+ * Distinct `(NAME, TYPE)` pairs handed to the data read in one call. The callee's `FOR ALL ENTRIES`
+ * turns each key into one more `OR` term on the database, and the whole table is the ceiling, so this
+ * bound is what keeps a troubleshooting read from becoming a bulk export. Truncation is reported.
+ */
+export const AUTH_TRACE_KEY_LIMIT = 200
+
 export type AuthTraceStatusSource = {
   table: "AUTH_TRACE_GET_STATUS"
   status: "ok" | "unavailable" | "invalid"
@@ -46,6 +129,23 @@ export type AuthTraceStatusSource = {
   returnedCount: number
   code?: string
 }
+
+export type AuthTraceRowSource = {
+  table: "USOB_AUTHVALTRC"
+  function: "AUTH_TRACE_GET_AUTHVAL_DATA"
+  keyFunction: "AUTH_TRACE_GET_AUTHVAL_KEY"
+  status: "ok" | "empty" | "unavailable" | "invalid"
+  method: "rfc_call"
+  keysAvailable: number
+  keysSelected: number
+  keysUsed: number
+  keysTruncated: boolean
+  returnedCount: number
+  sapCount: number | null
+  code?: string
+}
+
+export type AuthTraceRow = Record<(typeof AUTH_TRACE_ROW_FIELDS)[number], string>
 
 /**
  * Read whether the kernel's authorization trace is switched on.
@@ -67,11 +167,8 @@ export async function collectAuthTraceStatus(
   }
   const queryWarnings: string[] = []
   const notes = [
-    "This reports the kernel's authorization-trace switch only. It does not read any trace record, " +
-      "does not resolve a user's authorizations, and is not an authorization decision about anyone.",
-    "Reading the trace itself needs the in-SAP helper: AUTH_TRACE_GET_AUTHVAL_DATA is " +
-      "remote-enabled but its P_AUTHVALTRC_DATA row type carries XUBITVEC16, a type this service " +
-      "cannot verify, so it refuses rather than guessing the shape.",
+    "Value is the kernel's own authorization-trace switch (AUTH_TRACE_GET_STATUS.RC). It does not " +
+      "resolve a user's authorizations, and it is not an authorization decision about anyone.",
     "The flag is a snapshot of the moment. Nothing here starts, stops, clears or activates a trace."
   ]
 
@@ -102,7 +199,7 @@ export async function collectAuthTraceStatus(
     source.status = "ok"
     source.returnedCount = 1
   } catch (error) {
-    source.code = authTraceStatusFailure(error)
+    source.code = authTraceFailure(error, "STATUS")
     if (source.code === "AUTH_TRACE_STATUS_RESPONSE_INVALID") source.status = "invalid"
     queryWarnings.push(`AUTH_TRACE_GET_STATUS: ${source.code}`)
   }
@@ -120,15 +217,169 @@ export async function collectAuthTraceStatus(
   }
 }
 
-function authTraceStatusFailure(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error)
-  switch (message) {
-    case "AUTH_TRACE_STATUS_FUNCTION_UNVERIFIED":
-    case "AUTH_TRACE_STATUS_NOT_AUTHORIZED":
-    case "AUTH_TRACE_STATUS_RFC_FAILED":
-    case "AUTH_TRACE_STATUS_RESPONSE_INVALID":
-      return message
-    default:
-      return "AUTH_TRACE_STATUS_CALL_FAILED"
+/**
+ * Read the trace-result rows behind `USOB_AUTHVALTRC`, through SAP's own key/data pair.
+ *
+ * `authorizationObject` narrows the read to one `NAME` before the keys are handed back to SAP. The
+ * comparison is exact and case-sensitive, like every other filter in this family: SAP stores the
+ * object name upper-cased, and a filter this module normalised would hide a caller's typo instead of
+ * answering "no trace row for that name".
+ */
+export async function collectAuthTraceRows(
+  backend: Pick<SapBackend, "callRemoteFunction">,
+  connectionId: string,
+  readDefinition: (functionName: string) => Promise<unknown>,
+  options: { authorizationObject?: string | undefined; maxRows: number }
+) {
+  const source: AuthTraceRowSource = {
+    table: "USOB_AUTHVALTRC",
+    function: "AUTH_TRACE_GET_AUTHVAL_DATA",
+    keyFunction: "AUTH_TRACE_GET_AUTHVAL_KEY",
+    status: "empty",
+    method: "rfc_call",
+    keysAvailable: 0,
+    keysSelected: 0,
+    keysUsed: 0,
+    keysTruncated: false,
+    returnedCount: 0,
+    sapCount: null
   }
+  const queryWarnings: string[] = []
+  const notes = [
+    "The rows are SAP's own trace results from USOB_AUTHVALTRC, read through AUTH_TRACE_GET_AUTHVAL_KEY " +
+      "and AUTH_TRACE_GET_AUTHVAL_DATA. The table itself is outside this service's table allowlist; " +
+      "these two remote-enabled readers are used instead of reading it directly.",
+    "FIELDSUSED is returned verbatim as the transport delivered it, in the encoding SAP's SOAP-RFC " +
+      "layer used. This service does not decode which bit maps to which FIELD slot: that mapping is " +
+      "applied on a path it cannot read, and no decoder exists in the SAUTHTRACE function group, whose " +
+      "only two readers select the row and pass it on. The checked values are in FIELD1..FIELD9 and " +
+      "FIELD0 and are returned as stored.",
+    "A trace row is a record of an authorization check the kernel observed, not a verdict: nothing " +
+      "here states that a user is or is not authorized."
+  ]
+  let rows: AuthTraceRow[] = []
+  // Which half the failure belongs to is tracked here rather than derived from the error text, so a
+  // transport error in the key read cannot be reported as a data-read failure.
+  let stage: "KEY" | "DATA" = "KEY"
+
+  try {
+    if (
+      !reviewedAuthTraceKeyDefinition.safeParse(await readDefinition("AUTH_TRACE_GET_AUTHVAL_KEY"))
+        .success
+    )
+      throw new Error("AUTH_TRACE_KEY_FUNCTION_UNVERIFIED")
+    const keyResult = await backend.callRemoteFunction(connectionId, {
+      functionName: "AUTH_TRACE_GET_AUTHVAL_KEY",
+      inputParameters: {},
+      outputParameters: [
+        { name: "P_AUTHVALTRC_KEY", kind: "table", fields: [...AUTH_TRACE_KEY_FIELDS] }
+      ]
+    })
+    if (keyResult.fault) throw new Error(keyFault(keyResult.fault.name))
+    const keyOutput = keyResult.outputs.P_AUTHVALTRC_KEY
+    if (!Array.isArray(keyOutput)) throw new Error("AUTH_TRACE_KEY_RESPONSE_INVALID")
+    const keySchema = z.object({ NAME: remoteCell, TYPE: remoteCell })
+    const keys: Array<{ NAME: string; TYPE: string }> = []
+    for (const raw of keyOutput) {
+      const parsed = keySchema.safeParse(raw)
+      if (!parsed.success) throw new Error("AUTH_TRACE_KEY_RESPONSE_INVALID")
+      keys.push({ NAME: parsed.data.NAME.trim(), TYPE: parsed.data.TYPE.trim() })
+    }
+    source.keysAvailable = keys.length
+    const selected = options.authorizationObject
+      ? keys.filter((key) => key.NAME === options.authorizationObject)
+      : keys
+    source.keysSelected = selected.length
+    const used = selected.slice(0, AUTH_TRACE_KEY_LIMIT)
+    source.keysUsed = used.length
+    source.keysTruncated = used.length < selected.length
+
+    // See the header: an empty driver table drops the callee's own WHERE, so a targeted read would
+    // become the whole table. The data read is therefore never issued without at least one key.
+    if (used.length === 0) {
+      source.status = "empty"
+    } else {
+      stage = "DATA"
+      if (
+        !reviewedAuthTraceDataDefinition.safeParse(
+          await readDefinition("AUTH_TRACE_GET_AUTHVAL_DATA")
+        ).success
+      )
+        throw new Error("AUTH_TRACE_DATA_FUNCTION_UNVERIFIED")
+      const dataResult = await backend.callRemoteFunction(connectionId, {
+        functionName: "AUTH_TRACE_GET_AUTHVAL_DATA",
+        inputParameters: { P_AUTHVALTRC_KEY: used.map((key) => ({ ...key })) },
+        outputParameters: [
+          { name: "P_AUTHVALTRC_DATA", kind: "table", fields: [...AUTH_TRACE_ROW_FIELDS] },
+          { name: "P_DBCNT", kind: "scalar" }
+        ]
+      })
+      if (dataResult.fault) throw new Error(dataFault(dataResult.fault.name))
+      const dataOutput = dataResult.outputs.P_AUTHVALTRC_DATA
+      if (!Array.isArray(dataOutput)) throw new Error("AUTH_TRACE_DATA_RESPONSE_INVALID")
+      const rowSchema = z.object(
+        Object.fromEntries(AUTH_TRACE_ROW_FIELDS.map((field) => [field, remoteCell]))
+      )
+      rows = dataOutput.map((raw) => {
+        const parsed = rowSchema.safeParse(raw)
+        if (!parsed.success) throw new Error("AUTH_TRACE_DATA_RESPONSE_INVALID")
+        return parsed.data as AuthTraceRow
+      })
+      const sapCount = dataResult.outputs.P_DBCNT
+      source.sapCount =
+        typeof sapCount === "string" && /^\d+$/.test(sapCount.trim())
+          ? Number.parseInt(sapCount.trim(), 10)
+          : null
+      source.status = rows.length === 0 ? "empty" : "ok"
+      source.returnedCount = rows.length
+    }
+  } catch (error) {
+    source.code = authTraceFailure(error, stage)
+    if (source.code.endsWith("_RESPONSE_INVALID")) source.status = "invalid"
+    else source.status = "unavailable"
+    rows = []
+    queryWarnings.push(
+      `${
+        stage === "KEY" ? "AUTH_TRACE_GET_AUTHVAL_KEY" : "AUTH_TRACE_GET_AUTHVAL_DATA"
+      }: ${source.code}`
+    )
+  }
+
+  const traceRowsTruncated = rows.length > options.maxRows
+  return {
+    status: source.status === "unavailable" ? ("unavailable" as const) : ("ok" as const),
+    connectionId,
+    readOnly: true as const,
+    authorizationObjectFilter: options.authorizationObject ?? null,
+    traceRows: rows.slice(0, options.maxRows),
+    traceRowsTruncated,
+    traceRowSource: source,
+    notes,
+    queryTimestamp: new Date().toISOString(),
+    queryWarnings
+  }
+}
+
+/** `NOT_AUTHORIZED` keeps its own code; every other fault is the generic transport failure. */
+function keyFault(name: string): string {
+  return name.trim().toUpperCase() === "NOT_AUTHORIZED"
+    ? "AUTH_TRACE_KEY_NOT_AUTHORIZED"
+    : "AUTH_TRACE_KEY_RFC_FAILED"
+}
+
+function dataFault(name: string): string {
+  return name.trim().toUpperCase() === "NOT_AUTHORIZED"
+    ? "AUTH_TRACE_DATA_NOT_AUTHORIZED"
+    : "AUTH_TRACE_DATA_RFC_FAILED"
+}
+
+function authTraceFailure(error: unknown, scope: "STATUS" | "KEY" | "DATA"): string {
+  const message = error instanceof Error ? error.message : String(error)
+  const known = [
+    `AUTH_TRACE_${scope}_FUNCTION_UNVERIFIED`,
+    `AUTH_TRACE_${scope}_NOT_AUTHORIZED`,
+    `AUTH_TRACE_${scope}_RFC_FAILED`,
+    `AUTH_TRACE_${scope}_RESPONSE_INVALID`
+  ]
+  return known.includes(message) ? message : `AUTH_TRACE_${scope}_CALL_FAILED`
 }

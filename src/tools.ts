@@ -83,7 +83,7 @@ import { collectRoleAuthorizations } from "./role-authorizations.js"
 import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
 import { collectUserAuthorizations } from "./user-authorizations.js"
-import { collectAuthTraceStatus } from "./auth-trace-status.js"
+import { collectAuthTraceRows, collectAuthTraceStatus } from "./auth-trace-status.js"
 import {
   JOB_CONFIRMATIONS,
   cancelBackgroundJobSchema,
@@ -1318,6 +1318,8 @@ interface RoleAuthorizationsInput {
 
 interface AuthorizationTraceInput {
   connectionId: string
+  authorizationObject?: string | undefined
+  maxRows?: number | undefined
 }
 
 interface WorkProcessesInput {
@@ -7485,22 +7487,42 @@ export class ToolService {
 
   async readAuthorizationTrace(input: AuthorizationTraceInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
-    const trace = await collectAuthTraceStatus(this.backend, connectionId, async () =>
-      JSON.parse(
-        await this.readFunctionModuleInterface({
-          connectionId,
-          functionName: "AUTH_TRACE_GET_STATUS"
-        })
-      )
+    const readDefinition = async (functionName: string) =>
+      JSON.parse(await this.readFunctionModuleInterface({ connectionId, functionName }))
+    const trace = await collectAuthTraceStatus(this.backend, connectionId, () =>
+      readDefinition("AUTH_TRACE_GET_STATUS")
     )
+    // A refused or unverified switch read does not cancel the row read: the two halves fail
+    // independently, and an operator asking "what did the trace record" should still get the rows
+    // when the switch cannot be read.
+    const rows = await collectAuthTraceRows(this.backend, connectionId, readDefinition, {
+      authorizationObject: input.authorizationObject,
+      maxRows: input.maxRows ?? 200
+    })
     let summary =
-      `Authorization trace status: ${connectionId.toUpperCase()}\n` +
-      `- Status: ${trace.status}\n` +
-      `- Trace active: ${trace.traceActive === null ? "unknown" : trace.traceActive}\n`
-    if (trace.queryWarnings.length) {
-      summary += `- Query warnings: ${trace.queryWarnings.length}\n`
-    }
-    return `${summary}${JSON.stringify(trace, null, 2)}`
+      `Authorization trace: ${connectionId.toUpperCase()}\n` +
+      `- Switch read: ${trace.status} (trace active: ` +
+      `${trace.traceActive === null ? "unknown" : trace.traceActive})\n` +
+      `- Trace rows: ${rows.traceRowSource.status}, ${rows.traceRowSource.returnedCount} ` +
+      `row(s) from ${rows.traceRowSource.keysUsed} key(s)` +
+      `${rows.traceRowsTruncated ? " (truncated)" : ""}\n`
+    if (input.authorizationObject)
+      summary += `- Authorization object filter: ${input.authorizationObject}\n`
+    const queryWarnings = [...trace.queryWarnings, ...rows.queryWarnings]
+    if (queryWarnings.length) summary += `- Query warnings: ${queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(
+      {
+        ...trace,
+        traceRows: rows.traceRows,
+        traceRowsTruncated: rows.traceRowsTruncated,
+        traceRowSource: rows.traceRowSource,
+        authorizationObjectFilter: rows.authorizationObjectFilter,
+        notes: [...trace.notes, ...rows.notes],
+        queryWarnings
+      },
+      null,
+      2
+    )}`
   }
 
   async readWorkProcesses(input: WorkProcessesInput): Promise<string> {

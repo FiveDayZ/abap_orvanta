@@ -21,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 0, blocked 1, partial 3, read-only 10, read-and-act 1 |
-| End-to-end by state (all families) | 11 (73%) |
-| Required families counted closed | **11 / 14** (79% of required) |
+| State counts | absent 0, blocked 1, partial 2, read-only 11, read-and-act 1 |
+| End-to-end by state (all families) | 12 (80%) |
+| Required families counted closed | **12 / 14** (86% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
 | Closed by state but missing evidence | none |
-| Outstanding required families | transport, jobs, authorizations |
-| Waiting on each route | SAP-side helper + F8 1, operator approval 1, write authorisation (OP2) 2, multi-system configuration (OP3) 1, the platform (exempt) 1, - 11 |
+| Outstanding required families | transport, jobs |
+| Waiting on each route | write authorisation (OP2) 2, multi-system configuration (OP3) 1, the platform (exempt) 1, - 12 |
 
 ## Definition of done (plan section 8)
 
@@ -38,7 +38,7 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 11 / 14 closed (79%) | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 12 / 14 closed (86%) | **no** |
 | 2. every ops tool verified with real w200 evidence | 39 / 44 of the tools the families declare are verified (the `ops` group itself holds 42, of which 37 are verified); not verified: release_transport_task, cleanup_transport_entries, release_background_job, cancel_background_job, analyze_abap_traces | **no** |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: jobs (2) | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
@@ -63,20 +63,12 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | 9 | `query` | Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI. | 2/2 | - | read-only | 2/2 verified | - |
 | 10 | `runtime-resources` | Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists? | 6/6 | - | read-only | 6/6 verified | - |
 | 11 | `interfaces` | Is an outbound or inbound queue stuck, and did the IDoc arrive? | 3/3 | - | read-only | 3/3 verified | - |
-| 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 3/3 | - | partial | 3/3 verified | SAP-side helper + F8 + operator approval |
+| 12 | `authorizations` | Why did this user's transaction fail on authorization, and what is assigned to them? | 3/3 | - | read-only | 3/3 verified | - |
 | 13 | `spool-output` | What is actually in a spool request: the rendered text, the OTF/PDF, or the original report's output? | 1/1 | - | read-only | 1/1 verified | - |
 | 14 | `archive-alerts` | Did archiving run, and is CCMS reporting alerts? | 2/2 | - | read-only | 2/2 verified | - |
 | 15 | `landscape` | How does development compare with test and production, and can an object be promoted? | 2/2 | - | read-only | 2/2 verified | - |
 
 ## What each open family is waiting for
-
-### SAP-side helper + F8
-
-- **`authorizations`** (partial) - Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed) - and the role itself resolved into the authorization objects, fields and values it stores (AGR_1251/AGR_1252, the profiles it generates from AGR_PROF and the UST10S/UST10C profile path behind a flag) through read_role_authorizations. Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs a branch of the SAP-side helper - the one item left on this family's declared helper route, and an SAP-side change this batch does not hold.
-
-### operator approval
-
-- **`authorizations`** (partial) - Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed) - and the role itself resolved into the authorization objects, fields and values it stores (AGR_1251/AGR_1252, the profiles it generates from AGR_PROF and the UST10S/UST10C profile path behind a flag) through read_role_authorizations. Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs a branch of the SAP-side helper - the one item left on this family's declared helper route, and an SAP-side change this batch does not hold.
 
 ### write authorisation (OP2)
 
@@ -245,11 +237,13 @@ Declared boundaries: The outbound-mail question - is mail piling up here - is no
 | `read_idoc_status` | read-only | verified | `.doc/code-update-20260927-084500.md` |
 | `read_trfc_error_entries` | read-only | verified | `.doc/code-update-20260928-162050.md` |
 
-### `authorizations` - partial
+### `authorizations` - read-only
 
 Purpose: Why did this user's transaction fail on authorization, and what is assigned to them?
 
-Criterion to close: Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - the kernel's authorization-trace switch through read_authorization_trace (AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed) - and the role itself resolved into the authorization objects, fields and values it stores (AGR_1251/AGR_1252, the profiles it generates from AGR_PROF and the UST10S/UST10C profile path behind a flag) through read_role_authorizations. Still absent: the trace data itself (which authorization check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs a branch of the SAP-side helper - the one item left on this family's declared helper route, and an SAP-side change this batch does not hold.
+Criterion to close: gap empty and every tool verified
+
+Declared boundaries: Reported: the stored role assignments per user (AGR_USERS), the transactions of a role (AGR_TCODES) and the profile assignments of a user master record (UST04) through read_user_authorizations - assignment master data, never an authorization decision - the role itself resolved into the authorization objects, fields and values it stores (AGR_1251/AGR_1252, the profiles it generates from AGR_PROF and the UST10S/UST10C profile path behind a flag) through read_role_authorizations, and the kernel's authorization trace through read_authorization_trace: both the switch (AUTH_TRACE_GET_STATUS.RC) and SAP's own trace-result rows from USOB_AUTHVALTRC, reached through the remote-enabled pair AUTH_TRACE_GET_AUTHVAL_KEY / AUTH_TRACE_GET_AUTHVAL_DATA in the same SAUTHTRACE function group. No SAP-side helper and no operator allowlist entry is involved in any of the three: the trace table itself is outside the D5-2 table allowlist, so the two function modules are the route, the same way read_workload_directory reaches its data. Declared limits, none of them a missing tool. (1) The 16-bit FIELDSUSED vector of a trace row (XUBITVEC16, RAW 2) is returned verbatim and is deliberately not decoded into a list of used fields: the bit-to-slot mapping is applied on a path this service cannot read, and SAUTHTRACE contains no decoder - its only two readers select the row and pass it on, and the group's generated RFC wrappers only declare the parameters. The checked values themselves are in FIELD1..FIELD9 and FIELD0 and are returned as stored. (2) A trace that was never switched on leaves the table empty, and w200's switch reads 'not active'; an empty answer therefore means no trace record was stored, never that the capability is missing. (3) Nothing here starts, stops, clears or activates a trace, and no row of the trace is written, changed or deleted - the whole family is read-only, and no tool in it states that a user is or is not authorized.
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
