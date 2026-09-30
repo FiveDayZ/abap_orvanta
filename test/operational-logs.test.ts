@@ -526,7 +526,14 @@ test("system log responses preserve incomplete tail coverage and reject scope or
   }
 })
 
-const GENERATOR_FILES = ["scripts/operational-log-source.mjs", "scripts/job-spool-source.mjs"]
+// The runtime read fragment emits stages too, so it belongs in the scan: leaving it out let the
+// schema accept USER_LIST_* labels that nothing appeared to produce, which is the exact drift this
+// test exists to catch.
+const GENERATOR_FILES = [
+  "scripts/operational-log-source.mjs",
+  "scripts/job-spool-source.mjs",
+  "scripts/runtime-read-source.mjs"
+]
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url))
 
 // The helper reports the callee's own declared exception name in `reason` instead of translating it

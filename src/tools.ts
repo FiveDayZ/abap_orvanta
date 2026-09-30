@@ -70,12 +70,16 @@ import { collectIdocStatus } from "./idoc-status.js"
 import { collectQrfcQueues } from "./qrfc-queues.js"
 import { collectTrfcErrorEntries } from "./trfc-error-entries.js"
 import {
+  collectDbActivity,
   collectFileSystemDirectory,
+  collectPerformanceSnapshot,
   collectUserSessions,
   collectWorkProcesses,
-  collectWorkloadDirectory
+  collectWorkloadDirectory,
+  type RuntimeHelperRead
 } from "./runtime-resources.js"
 import { collectServerFacts } from "./server-facts.js"
+import { collectRoleAuthorizations } from "./role-authorizations.js"
 import { collectSystemInfo } from "./system-info.js"
 import { collectSystemParameters } from "./system-parameters.js"
 import { collectUserAuthorizations } from "./user-authorizations.js"
@@ -128,11 +132,20 @@ import {
   parseJoinedTableSelect,
   readAbapTable,
   readGroupedRows,
+  selectEvaluatesTerms,
   readJoinedRows,
   selectedTableNames,
   sortRowsByColumns,
-  tableQuerySchema
+  tableQuerySchema,
+  aggregateColumnName,
+  countOperandType,
+  type GroupedTableSelect,
+  type JoinedTableRef,
+  type ScalarRead,
+  type SelectExpression,
+  type SubqueryRead
 } from "./table-query.js"
+import { arithmeticColumns, calculationTypeOf, type OperandType } from "./table-expression.js"
 import {
   ALLOWLIST_MAX_ROWS,
   assertTableAllowed,
@@ -1296,6 +1309,13 @@ interface UserAuthorizationsInput {
   maxRows?: number | undefined
 }
 
+interface RoleAuthorizationsInput {
+  connectionId: string
+  roleName: string
+  includeProfileObjects?: boolean | undefined
+  maxRows?: number | undefined
+}
+
 interface AuthorizationTraceInput {
   connectionId: string
 }
@@ -1319,6 +1339,16 @@ interface FileSystemDirectoryInput {
 }
 interface WorkloadDirectoryInput {
   connectionId: string
+  maxRows?: number | undefined
+}
+interface DbActivityInput {
+  connectionId: string
+  maxRows?: number | undefined
+}
+interface PerformanceSnapshotInput {
+  connectionId: string
+  periodType?: string | undefined
+  periodStart?: string | undefined
   maxRows?: number | undefined
 }
 interface QrfcQueuesInput {
@@ -1561,6 +1591,14 @@ interface DebugStepInput extends DebugStatusInput {
   targetLine?: number | undefined
 }
 
+/**
+ * The reader a service without one uses. The read then reports an unavailable source named by this
+ * code instead of throwing, so a caller sees which wiring is missing rather than an internal error.
+ */
+const NO_RUNTIME_HELPER_READER: RuntimeHelperRead = async () => ({
+  unavailable: "RUNTIME_RESOURCES_HELPER_READER_MISSING"
+})
+
 export class ToolService {
   private readonly exportRoot: string
 
@@ -1568,7 +1606,17 @@ export class ToolService {
     private readonly backend: SapBackend,
     exportRoot = process.env.ABAP_MCP_EXPORT_ROOT ?? process.cwd(),
     private readonly invocationReceipts?: InvocationReceiptStore | undefined,
-    private readonly disabledToolNames: readonly string[] = []
+    private readonly disabledToolNames: readonly string[] = [],
+    /**
+     * Builds the helper-backed runtime reader for one connection.
+     *
+     * The runtime-resource reads take one reader per connection, because the helper call, its
+     * approval gate and its fingerprint check all belong to a connection rather than to the service.
+     * Left out, those reads report the missing reader as an unavailable source instead of failing
+     * with an exception.
+     */
+    private readonly runtimeRead: (connectionId: string) => RuntimeHelperRead = () =>
+      NO_RUNTIME_HELPER_READER
   ) {
     this.exportRoot = resolve(exportRoot)
   }
@@ -3245,6 +3293,101 @@ export class ToolService {
     requireDdicNotFound(tableType, typeName)
     if (tableParameter) throw new Error(`TABLES line type ${typeName} is not a flat DDIC structure`)
     return this.resolveRemoteScalarType(connectionId, typeName)
+  }
+
+  /**
+   * The SAP type of every field of one transparent table, read from DD03L and cached per process.
+   *
+   * An arithmetic term cannot be computed without it. The reader's own field metadata carries a
+   * one-character type and a length but no `DATATYPE` and no `DECIMALS`, and the one-character type
+   * is not enough: DD03L stores an `INT4` field with `INTTYPE = X`, so `X` alone cannot be told apart
+   * from a byte field. `DD03L` is read through the same reviewed reader as everything else, which is
+   * how the neighbouring data-element lookup already resolves a scalar type.
+   *
+   * A field whose type this layer cannot place is deliberately left out, so a term over it is refused
+   * by name instead of being computed under a guessed calculation rule. Pseudo-fields of an Include
+   * (`.`-prefixed, and typed by nothing) are skipped; a table with more fields than one read returns
+   * simply leaves the unread ones out, with the same consequence.
+   */
+  private readonly columnTypeCache = new Map<string, Map<string, OperandType>>()
+
+  private async resolveTableColumnTypes(
+    connectionId: string,
+    tableName: string
+  ): Promise<Map<string, OperandType>> {
+    const key = `${connectionId.toLowerCase()}\n${tableName}`
+    const cached = this.columnTypeCache.get(key)
+    if (cached) return cached
+    const read = JSON.parse(
+      await this.readAbapTable({
+        connectionId,
+        tableName: "DD03L",
+        columns: ["FIELDNAME", "DATATYPE", "LENG", "DECIMALS"],
+        filters: [
+          { column: "TABNAME", operator: "EQ", value: tableName },
+          { column: "AS4LOCAL", operator: "EQ", value: "A" }
+        ],
+        maxRows: 500
+      })
+    ) as { status?: string; code?: string; stage?: string; data?: Array<Record<string, unknown>> }
+    const types = new Map<string, OperandType>()
+    // A dictionary read that did not complete is not a dictionary that says "no such field". The two
+    // lead to different refusals, and reporting the second when the first happened would state a fact
+    // the read never established.
+    if (read.status !== "ok")
+      throw new Error(
+        `TABLE_QUERY_EXPRESSION_DICTIONARY_UNAVAILABLE: the dictionary read of ${tableName} (DD03L) ` +
+          `did not complete (${read.code ?? "unknown"}; stage=${read.stage ?? "unknown"}), so no ` +
+          "operand of a term over this table can be typed and none can be computed exactly. Retry, " +
+          "or select the columns without a term."
+      )
+    for (const row of read.data ?? []) {
+      const name = String(row.FIELDNAME ?? "")
+        .trim()
+        .toUpperCase()
+      const dataType = String(row.DATATYPE ?? "")
+        .trim()
+        .toUpperCase()
+      if (!name || name.startsWith(".") || !dataType || types.has(name)) continue
+      const calculationType = calculationTypeOf(dataType)
+      if (!calculationType) continue
+      types.set(name, {
+        calculationType,
+        dataType,
+        decimals: Number(String(row.DECIMALS ?? "0").trim()) || 0
+      })
+    }
+    this.columnTypeCache.set(key, types)
+    return types
+  }
+
+  /**
+   * The operand types of a joined statement's terms, keyed by the qualified name the term was
+   * written with.
+   *
+   * A joined statement reads one table per alias, so a term's operand is typed by the dictionary of
+   * the table that alias names. Only the aliases a term actually reads are resolved: a term over `A`
+   * must not become unavailable because the dictionary read of an unrelated `B` failed, and a
+   * statement whose terms read no column of `B` never asks about `B` at all.
+   */
+  private async resolveJoinedColumnTypes(
+    connectionId: string,
+    tables: JoinedTableRef[],
+    expressions: SelectExpression[]
+  ): Promise<(column: string) => OperandType | undefined> {
+    const referenced = new Set<string>()
+    for (const expression of expressions)
+      for (const column of arithmeticColumns(expression.node)) referenced.add(column)
+    const byAlias = new Map<string, Map<string, OperandType>>()
+    for (const table of tables) {
+      if (![...referenced].some((column) => column.startsWith(`${table.alias}.`))) continue
+      byAlias.set(table.alias, await this.resolveTableColumnTypes(connectionId, table.tableName))
+    }
+    return (column) => {
+      const split = column.indexOf(".")
+      if (split <= 0) return undefined
+      return byAlias.get(column.slice(0, split))?.get(column.slice(split + 1))
+    }
   }
 
   private async resolveRemoteFieldContracts(
@@ -7299,6 +7442,47 @@ export class ToolService {
     return `${summary}${JSON.stringify(authorizations, null, 2)}`
   }
 
+  async readRoleAuthorizations(input: RoleAuthorizationsInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const authorizations = await collectRoleAuthorizations(
+      this.backend,
+      connectionId,
+      {
+        roleName: input.roleName,
+        includeProfileObjects: input.includeProfileObjects,
+        maxRows: input.maxRows
+      },
+      async () =>
+        JSON.parse(
+          await this.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        )
+    )
+    let summary =
+      `Role to authorization-object resolution: ${connectionId.toUpperCase()} / ${input.roleName}\n` +
+      `- Status: ${authorizations.status} (stored master data, not an authorization check)\n` +
+      `- Authorization objects: ${authorizations.counts.authorizationObjects} ` +
+      `(${authorizations.counts.authorizationFields} fields, ${authorizations.counts.authorizationValues} values)` +
+      `${authorizations.truncated.authorizationValues ? " (truncated)" : ""}; ` +
+      `organization levels: ${authorizations.counts.organizationLevels}` +
+      `${authorizations.truncated.organizationLevels ? " (truncated)" : ""}; ` +
+      `profiles: ${authorizations.counts.profiles}` +
+      `${authorizations.truncated.profiles ? " (truncated)" : ""}\n`
+    if (authorizations.profileObjects) {
+      summary +=
+        `- Profile path: ${authorizations.counts.profileObjects} authorization object(s) and ` +
+        `${authorizations.counts.profileSubprofiles} subprofile(s) over ` +
+        `${authorizations.profileObjects.length} profile(s)` +
+        `${authorizations.truncated.profileObjects ? " (truncated)" : ""}\n`
+    }
+    if (authorizations.queryWarnings.length) {
+      summary += `- Query warnings: ${authorizations.queryWarnings.length}\n`
+    }
+    return `${summary}${JSON.stringify(authorizations, null, 2)}`
+  }
+
   async readAuthorizationTrace(input: AuthorizationTraceInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const trace = await collectAuthTraceStatus(this.backend, connectionId, async () =>
@@ -7322,7 +7506,7 @@ export class ToolService {
   async readWorkProcesses(input: WorkProcessesInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const workProcesses = await collectWorkProcesses(
-      this.backend,
+      this.runtimeRead(connectionId),
       connectionId,
       { serverName: input.serverName, maxRows: input.maxRows },
       async () =>
@@ -7345,7 +7529,7 @@ export class ToolService {
   async readUserSessions(input: UserSessionsInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const sessions = await collectUserSessions(
-      this.backend,
+      this.runtimeRead(connectionId),
       connectionId,
       { userName: input.userName, maxRows: input.maxRows },
       async () =>
@@ -7368,7 +7552,7 @@ export class ToolService {
   async readFileSystemDirectory(input: FileSystemDirectoryInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const listing = await collectFileSystemDirectory(
-      this.backend,
+      this.runtimeRead(connectionId),
       connectionId,
       { directory: input.directory, fileMask: input.fileMask, maxRows: input.maxRows },
       async () =>
@@ -7387,6 +7571,41 @@ export class ToolService {
     if (listing.queryWarnings.length)
       summary += `- Query warnings: ${listing.queryWarnings.length}\n`
     return `${summary}${JSON.stringify(listing, null, 2)}`
+  }
+  async readDbActivity(input: DbActivityInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const activity = await collectDbActivity(this.runtimeRead(connectionId), connectionId, {
+      maxRows: input.maxRows
+    })
+    let summary =
+      `Database activity: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${activity.status}\n` +
+      `- History rows: ${activity.counts.history}${activity.truncated ? " (truncated)" : ""}; ` +
+      `buffer pool rows: ${activity.counts.bufferPool}\n`
+    if (activity.queryWarnings.length)
+      summary += `- Query warnings: ${activity.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(activity, null, 2)}`
+  }
+  async readPerformanceSnapshot(input: PerformanceSnapshotInput): Promise<string> {
+    const connectionId = input.connectionId.toLowerCase()
+    const snapshot = await collectPerformanceSnapshot(
+      this.runtimeRead(connectionId),
+      connectionId,
+      {
+        periodType: input.periodType,
+        periodStart: input.periodStart,
+        maxRows: input.maxRows
+      }
+    )
+    let summary =
+      `Performance snapshot: ${connectionId.toUpperCase()}\n` +
+      `- Status: ${snapshot.status}\n` +
+      `- Period: ${snapshot.periodType || "(unreported)"} ${snapshot.periodStart || ""}`.trimEnd() +
+      `\n- Rows: ${snapshot.returnedCount}${snapshot.truncated ? " (truncated)" : ""}\n` +
+      `- Time unit: ${snapshot.timeUnit || "(unreported)"} (echoed, no divisor applied)\n`
+    if (snapshot.queryWarnings.length)
+      summary += `- Query warnings: ${snapshot.queryWarnings.length}\n`
+    return `${summary}${JSON.stringify(snapshot, null, 2)}`
   }
   async readWorkloadDirectory(input: WorkloadDirectoryInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
@@ -8494,6 +8713,16 @@ export class ToolService {
         // decides every rule before the first read, so a statement it refuses never reaches SAP.
         const joined = parseJoinedTableSelect(sql)
         if (!joined) throw error
+        // A term in a joined projection is computed here too, so its operands are typed from the
+        // dictionary of the table their alias names - and only for the aliases a term reads.
+        const joinedTypes =
+          joined.expressions.length > 0
+            ? await this.resolveJoinedColumnTypes(
+                input.connectionId,
+                joined.tables,
+                joined.expressions
+              )
+            : undefined
         const joinResult = await readJoinedRows(
           joined,
           async (tableName, columns, filters) => {
@@ -8527,7 +8756,8 @@ export class ToolService {
               }
             }
           },
-          dialectCap
+          dialectCap,
+          joinedTypes
         )
         const firstRead = joinResult.join.reads[0] ?? {}
         rawRows = joinResult.rows
@@ -8548,6 +8778,8 @@ export class ToolService {
           aggregated: joinResult.aggregated,
           groupCount: joinResult.groupCount,
           aggregateColumns: joinResult.aggregateColumns,
+          expressionColumns: joinResult.expressionColumns,
+          limit: joinResult.limit,
           join: joinResult.join
         }
       } else {
@@ -8564,40 +8796,106 @@ export class ToolService {
         // statement reads the whole row: row identity is what keeps a row matched by two overlapping
         // branches from being counted twice.
         const readColumns = groupedReadColumns(structured)
+        // A term in the projection - or in the WHERE clause - is computed by this service, so its
+        // operands have to be typed from the dictionary before the first read: the calculation type
+        // ABAP would use comes from those types, and guessing one would answer a different question.
+        // The dictionary is read only when a term actually needs it.
+        const columnTypes = selectEvaluatesTerms(structured)
+          ? await this.resolveTableColumnTypes(input.connectionId, structured.tableName)
+          : undefined
         const reads: Record<string, unknown>[] = []
+        // The inner statements of `IN (SELECT ...)` tests are read through the same reader, the same
+        // row bound and the same dictionary lookup - the inner statement is a statement of this same
+        // dialect, so it is answered by the same code rather than by a second implementation. Its
+        // reads are recorded separately and appended at the end, so `reads[0]` stays the read of the
+        // statement the caller wrote.
+        const innerReads: Record<string, unknown>[] = []
+        const readTableBranch = async (
+          tableName: string,
+          columns: string[],
+          filters: z.infer<typeof tableQuerySchema>["filters"],
+          into: Record<string, unknown>[]
+        ) => {
+          const result = JSON.parse(
+            await this.readAbapTable(
+              {
+                connectionId: input.connectionId,
+                tableName,
+                columns,
+                filters,
+                maxRows: dialectCap
+              },
+              error
+            )
+          )
+          if (result.status !== "ok") {
+            throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
+          }
+          into.push({
+            method: result.method,
+            nativeCode: result.nativeCode,
+            representation: result.representation,
+            definitionFingerprint: result.definitionFingerprint,
+            fieldMetadata: result.fieldMetadata
+          })
+          return {
+            rows: result.data as Record<string, unknown>[],
+            truncated: result.truncated === true,
+            detail: {}
+          }
+        }
+        const readInner = async (inner: GroupedTableSelect): Promise<SubqueryRead> => {
+          const innerTypes = await this.resolveTableColumnTypes(input.connectionId, inner.tableName)
+          const innerResult = await readGroupedRows(
+            inner,
+            (filters) =>
+              readTableBranch(inner.tableName, groupedReadColumns(inner), filters, innerReads),
+            dialectCap,
+            (column) => innerTypes.get(column),
+            readInner,
+            readScalar
+          )
+          return {
+            values: innerResult.rows.map((row) => String(row[inner.columns[0]!] ?? "")),
+            truncated: innerResult.incompleteBranches.length > 0,
+            type: innerTypes.get(inner.columns[0]!)
+          }
+        }
+        // The scalar comparison's inner statement is answered by the same code as everything else, so
+        // an aggregate arrives already computed. Its own rows are handed back rather than a value:
+        // "exactly one row" is a rule about the statement, and only this layer can state it.
+        const readScalar = async (inner: GroupedTableSelect): Promise<ScalarRead> => {
+          const innerTypes = await this.resolveTableColumnTypes(input.connectionId, inner.tableName)
+          const innerResult = await readGroupedRows(
+            inner,
+            (filters) =>
+              readTableBranch(inner.tableName, groupedReadColumns(inner), filters, innerReads),
+            dialectCap,
+            (column) => innerTypes.get(column),
+            readInner,
+            readScalar
+          )
+          const aggregate = inner.aggregates[0]
+          return {
+            rows: innerResult.rows,
+            truncated: innerResult.incompleteBranches.length > 0,
+            column: aggregate ? aggregateColumnName(aggregate) : inner.columns[0]!,
+            type: aggregate
+              ? aggregate.fn === "COUNT"
+                ? countOperandType
+                : innerTypes.get(aggregate.column!)
+              : innerTypes.get(inner.columns[0]!)
+          }
+        }
         const grouped = await readGroupedRows(
           structured,
-          async (filters) => {
-            const result = JSON.parse(
-              await this.readAbapTable(
-                {
-                  connectionId: input.connectionId,
-                  tableName: structured.tableName,
-                  columns: readColumns,
-                  filters,
-                  maxRows: dialectCap
-                },
-                error
-              )
-            )
-            if (result.status !== "ok") {
-              throw new Error(`SAP_TABLE_QUERY_FAILED: ${result.code}; stage=${result.stage}`)
-            }
-            reads.push({
-              method: result.method,
-              nativeCode: result.nativeCode,
-              representation: result.representation,
-              definitionFingerprint: result.definitionFingerprint,
-              fieldMetadata: result.fieldMetadata
-            })
-            return {
-              rows: result.data as Record<string, unknown>[],
-              truncated: result.truncated === true,
-              detail: {}
-            }
-          },
-          dialectCap
+          (filters) => readTableBranch(structured.tableName, readColumns, filters, reads),
+          dialectCap,
+          columnTypes ? (column) => columnTypes.get(column) : undefined,
+          readInner,
+          readScalar
         )
+        reads.push(...innerReads)
         const first = reads[0] ?? {}
         rawRows = grouped.rows
         fallback = {
@@ -8617,7 +8915,12 @@ export class ToolService {
           // An aggregate answer is exact over the whole match set, so `groupCount` - not `resultCount`
           // after the row range - is what says how many groups the statement produced.
           groupCount: grouped.groupCount,
-          aggregateColumns: grouped.aggregateColumns
+          aggregateColumns: grouped.aggregateColumns,
+          expressionColumns: grouped.expressionColumns,
+          whereExpressions: grouped.whereExpressions,
+          whereSubqueries: grouped.whereSubqueries,
+          whereScalars: grouped.whereScalars,
+          limit: grouped.limit
         }
       }
     }

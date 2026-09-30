@@ -325,7 +325,7 @@ test("the recomputed digest equals the digest both generators embedded", () => {
     )
   }
   assert.equal(digests.maint, "0a3875009e0beb610ca781c76a260509c27ced36d1c5f8229944e707757e696d")
-  assert.equal(digests.ops, "2ac08284ffb9cc73dfd8f37c83ad522eb3232568f7ac9dadfe6b67fa897ef32f")
+  assert.equal(digests.ops, "9805308df3810752066f410541e0eef58426b7aa2604000f62721766779ba3ee")
 })
 
 test("both generators are pinned to their verified pre- and post-deployment bodies", () => {
@@ -367,16 +367,17 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
     maint.intendedBodyHash,
     "778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf"
   )
-  // Re-pinned on 2026-09-29: the spool arm's row type and its failure-path replies both changed and
-  // the new body was written to SAP and verified line by line, so the live body and the generator
-  // intent are the same body again. See .doc/code-update-20260929-164952.md.
+  // Re-pinned on 2026-09-30 (fifth deployment of the day): the USER_LIST branch now supplies the
+  // kernel interface's mandatory LIST (UINFO) table alongside USRLIST, because USRLIST alone made
+  // CALL FUNCTION 'TH_USER_LIST' abort with CX_SY_DYN_CALL_PARAM_MISSING. The interface is untouched.
+  // See .doc/runtime-reads-deploy-1790749923642.json.
   assert.equal(
     ops.deployedNowBodyHash,
-    "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c"
+    "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a"
   )
   assert.equal(
     ops.intendedBodyHash,
-    "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c"
+    "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a"
   )
   // The verifier's expectation must equal the table the generator exports, including the
   // feature-gated REPORT_PARAMETERS row that only the report variant compiles in. MAINT carries
@@ -395,11 +396,16 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
     "OPERATION|JOB_LOG|1.0|R",
     "OPERATION|JOB_SEARCH|1.0|R",
     "OPERATION|SYSTEM_READ|1.0|R",
-    "OPERATION|REPORT_PARAMETERS|1.0|R"
+    "OPERATION|REPORT_PARAMETERS|1.0|R",
+    "OPERATION|WP_LIST|1.1|R",
+    "OPERATION|USER_LIST|1.1|R",
+    "OPERATION|DIR_LIST|1.1|R",
+    "OPERATION|DB_ACTIVITY|1.1|R",
+    "OPERATION|PERF_SNAPSHOT|1.1|R"
   ])
   for (const target of [maint, ops]) assert.equal(target.expectedProtocol.min, "1.0")
   assert.equal(maint.expectedProtocol.max, "1.1")
-  assert.equal(ops.expectedProtocol.max, "1.0")
+  assert.equal(ops.expectedProtocol.max, "1.1")
 })
 
 test("PROTOCOL|MIN/MAX and the operation list match the generator tables", async () => {
@@ -422,31 +428,57 @@ test("PROTOCOL|MIN/MAX and the operation list match the generator tables", async
     ].map((match) => ({
       opcode: String(match[1]),
       since: String(match[2]),
-      mode: String(match[3])
+      mode: String(match[3]),
+      ...(match[4] ? { requires: String(match[4]) } : {})
     }))
   const maintTable = readTable(await readFile(maintFile, "utf8"))
   const opsTable = readTable(await readFile(opsFile, "utf8"))
+  // The ops target tracks the body SAP holds, which is the runtime variant: it enables the spool,
+  // parameter, runtime and metrics branches. The gate is applied here to the table parsed out of the
+  // generator source, so this expectation stays independent of the evidence module it checks.
+  const enabledFeatures: Record<string, boolean> = {
+    spool: true,
+    parameters: true,
+    runtime: true,
+    metrics: true
+  }
+  const gated = (table: typeof opsTable) =>
+    table.filter((entry) => !entry.requires || enabledFeatures[entry.requires] === true)
+  const opsDeployedTable = gated(opsTable)
+  // The runtime variant compiles in every branch the operation table declares, so on this table the
+  // gate keeps the whole table. That is the independent check now: while the deployed body was the
+  // report variant the gate had to drop rows, and a gate that silently stopped dropping them would
+  // have hidden the change.
+  assert.equal(
+    opsDeployedTable.length,
+    opsTable.length,
+    "the runtime variant must compile in every row the operation table declares"
+  )
   const expectedRows = (table: Array<{ opcode: string; since: string; mode: string }>) =>
     table.map((entry) => `OPERATION|${entry.opcode}|${entry.since}|${entry.mode}`)
   assert.deepEqual(targets.maint.expectedOperations, expectedRows(maintTable))
-  assert.deepEqual(targets.ops.expectedOperations, expectedRows(opsTable))
+  assert.deepEqual(targets.ops.expectedOperations, expectedRows(opsDeployedTable))
   for (const [table, expected] of [
     [maintTable, targets.maint.expectedProtocol],
-    [opsTable, targets.ops.expectedProtocol]
+    [opsDeployedTable, targets.ops.expectedProtocol]
   ] as Array<[Array<{ since: string }>, { min: string; max: string }]>) {
     const versions = table.map((entry) => entry.since).sort(compareProtocolVersions)
     assert.equal(expected.min, versions[0])
     assert.equal(expected.max, versions.at(-1))
   }
   // The generator's exported table is the same list the evidence table publishes, so a new opcode
-  // cannot reach SAP while the verifier keeps checking a stale list.
+  // cannot reach SAP while the verifier keeps checking a stale list. For the ops helper both sides
+  // pass through the generator's own gate (scripts/operational-log-source.mjs
+  // operationalLogOperationsFor) instead of a second copy of the `requires` names.
   assert.deepEqual(
     maintModule.maintenanceDiagnosticOperations.map((entry: any) => entry.opcode),
     targets.maint.expectedOperations.map((row: string) => row.split("|")[1])
   )
   assert.deepEqual(
-    opsModule.operationalLogOperations.map((entry: any) => entry.opcode),
-    targets.ops.expectedOperations.map((row: string) => row.split("|")[1])
+    opsModule
+      .operationalLogOperationsFor({ spool: true, parameters: true, runtime: true, metrics: true })
+      .map((entry: any) => entry.opcode),
+    opsDeployedTable.map((entry: { opcode: string }) => entry.opcode)
   )
 })
 

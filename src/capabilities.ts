@@ -521,9 +521,9 @@ export async function buildCapabilityReport(
     capability(
       "authorization-assignments",
       "target-specific",
-      ["read_user_authorizations", "read_authorization_trace"],
+      ["read_user_authorizations", "read_role_authorizations", "read_authorization_trace"],
       unknownTargetObservation(
-        "read_user_authorizations reads the approved assignment tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. read_authorization_trace calls AUTH_TRACE_GET_STATUS over SOAP-RFC after pinning both fingerprints, so its availability follows that function module. Both report stored facts: assignment master data and the kernel's trace switch, never an authorization decision. The trace data itself needs the SAP-side helper. See adt-data-preview for the native verdict."
+        "read_user_authorizations reads the approved assignment tables through the scoped query helper when the native data preview service is absent, so availability follows that helper and the caller's authorization rather than the native endpoint probe. read_role_authorizations reads the approved role-side tables (AGR_1251/AGR_1252/AGR_PROF, plus UST10S/UST10C behind its flag) through the same reader, so its availability follows the same helper. read_authorization_trace calls AUTH_TRACE_GET_STATUS over SOAP-RFC after pinning both fingerprints, so its availability follows that function module. All three report stored facts: assignment master data, the role resolved into its authorization objects and the kernel's trace switch, never an authorization decision. The trace data itself needs the SAP-side helper. See adt-data-preview for the native verdict."
       )
     ),
     capability(
@@ -549,10 +549,12 @@ export async function buildCapabilityReport(
         "read_work_processes",
         "read_user_sessions",
         "read_file_system_directory",
+        "read_db_activity",
+        "read_performance_snapshot",
         "read_workload_directory"
       ],
       unknownTargetObservation(
-        "Calls the kernel's own work process list, session list, application-server directory listing and workload-collector directory over SOAP-RFC (TH_WPINFO / TH_USER_LIST / EPS2_GET_DIRECTORY_LISTING / SWNC_GET_WORKLOAD_DIRECTORY) after verifying each interface by fingerprint, so availability follows those function modules and the caller's authorization rather than an ADT endpoint probe - ADT publishes no endpoint for this data. The workload read is the collector's own directory of what it holds, not the workload numbers, which this service cannot verify. so availability follows those function modules and the caller's authorization rather than an ADT endpoint probe - ADT publishes no endpoint for this data. See adt-data-preview for the native verdict."
+        "Calls the kernel's own work process list (TH_WPINFO), session list (TH_USER_LIST), application-server directory listing (EPS2_GET_DIRECTORY_LISTING) and the workload-collector directory (SWNC_GET_WORKLOAD_DIRECTORY) after verifying each interface by fingerprint. The first three go through the separately approved RUNTIME scope of the in-SAP helper Z_ORVANTA_OPS_READ (protocol 1.1), which makes those kernel calls locally; read_workload_directory still calls its function module directly over SOAP-RFC. read_db_activity reads the DB6 history tables DB6PMHSD/DB6PMHSB with the helper's own Open SQL - they are outside the service-side table allowlist - and read_performance_snapshot has the helper call SWNC_COLLECTOR_GET_SYSTEMLOAD locally, because that function module's row type cannot be serialized to an external RFC caller. Availability therefore follows those function modules, the helper's deployed protocol version and the caller's authorization rather than an ADT endpoint probe: ADT publishes no endpoint for this data. The workload directory is the collector's own index of what it holds, not the workload numbers. See adt-data-preview for the native verdict."
       )
     ),
     capability(

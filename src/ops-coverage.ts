@@ -174,11 +174,17 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   read_trfc_error_entries: "read-only",
   // Users and authorizations
   read_user_authorizations: "read-only",
+  // The role side of the same family: AGR_1251/AGR_1252/AGR_PROF (+ the UST10S/UST10C profile path
+  // behind a flag), which is what makes "what is assigned to them" answerable from the role.
+  read_role_authorizations: "read-only",
   read_authorization_trace: "read-only",
-  // Runtime resources (SM50/SM66 and SM04)
+  // Runtime resources: the work process, session and filesystem reads (SM50/SM66, SM04, AL11), the
+  // two metrics reads (DB02, ST03) and the workload-collector directory.
   read_work_processes: "read-only",
   read_user_sessions: "read-only",
   read_file_system_directory: "read-only",
+  read_db_activity: "read-only",
+  read_performance_snapshot: "read-only",
   read_workload_directory: "read-only",
   // OP3 / landscape. Comparison and the promotion precheck are built, read-only and verified against
   // two real systems; by the operator's ruling of 2026-09-29 this read-only loop is the family's
@@ -371,27 +377,165 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     label: "Ad-hoc troubleshooting queries over allowlisted tables",
     plannedToolNames: ["read_abap_table", "execute_data_query"],
     purpose: "Ask an ad-hoc read-only question across the allowlisted tables without SAP GUI.",
-    closeRoutes: ["service"],
+    closeRoutes: ["none"],
     actionRequired: false,
-    gap:
+    // The last declared capability of this family - an uncorrelated scalar subquery in a comparison -
+    // was built on 2026-09-30, so the family declares no gap. Emptying it is the *result* of that work
+    // and not a way of reaching the criterion: the five capabilities before it (projection terms, a
+    // term on either side of a `WHERE` comparison, a term over a joined projection, the
+    // `IN (SELECT ...)` set test and the joins themselves) were built first, and the four earlier
+    // slices were then read on w200 through read-only verify scripts. What the dialect still does not
+    // answer is stated as a boundary below, together with the evidence behind what it does answer.
+    gap: "",
+    boundary:
       "The native data preview endpoint is platform-unsupported on this release, so only the " +
       "fallback dialect works: up to 8 disjuncts of up to 8 comparisons joined by AND over =, <>, " +
       "<, <=, >, >=; COUNT/SUM/MIN/MAX with GROUP BY over a complete read; ORDER BY applied only " +
-      "over a complete read; and, since 2026-09-26, INNER and LEFT joins over up to three " +
-      "allowlisted tables on equality keys, with every column reference qualified. The join " +
-      "*implementation* is in place but the positive path has no evidence: every recorded read-only " +
-      "attempt of E070 INNER JOIN E07T - the 2026-09-27 sweeps .cache/evidence-ops-n1b and " +
+      "over a complete read; an optional LIMIT, which must be the last clause and bounds the answer " +
+      "after the order rather than the read; and, since 2026-09-26 and extended on 2026-09-30, " +
+      "INNER, LEFT, RIGHT, FULL and CROSS joins over up to three " +
+      "allowlisted tables on equality keys, with every column reference qualified. The positive " +
+      "join path is proven on w200 as of 2026-09-30: SELECT A.TRKORR, B.AS4TEXT FROM E070 A INNER " +
+      "JOIN E07T B ON A.TRKORR = B.TRKORR WHERE A.TRSTATUS = 'R' answered one joined row " +
+      "(GR2K900199 / WF_20121016_workflow function group 03) over the fallback dialect " +
+      "(rfc_read_table, join.joinedRows 1, onKeys B.TRKORR = A.TRKORR), recorded in " +
+      ".cache/join-positive-ok.json and .doc/code-update-20260930-121500.md. The three earlier " +
+      "read-only attempts of the same statement - the 2026-09-27 sweeps .cache/evidence-ops-n1b and " +
       ".cache/evidence-ops-n1c and the 2026-09-28 sweep .cache/evidence-ops-r23-readonly - ended in " +
-      "a transport-layer `socket hang up` rather than a result, so a claim that the join path was " +
-      "proven on w200 would contradict every artifact this workspace holds; only the negative " +
-      "control is proven (a join on the unapproved MARA is refused with TABLE_NOT_ALLOWED before " +
-      "SAP is touched, in all three runs). This paragraph previously asserted the positive path had " +
-      "been proven on 2026-09-27; that assertion came from prose rather than from a record and was " +
-      "withdrawn on 2026-09-28, with the durable write-up in .doc/code-update-20260928-155820.md. " +
-      "Still absent: right, full and cross joins, expressions, subqueries " +
-      "and LIMIT, so a statement SAP itself would have to plan cannot be asked. A join read is also " +
+      "a transport-layer `socket hang up`; that failure was an artifact of a long-running MCP " +
+      "instance and did not reproduce after the 4849 restart at 2026-09-30 12:00:55. The negative " +
+      "control remains proven too (a join on the unapproved MARA is refused with TABLE_NOT_ALLOWED " +
+      "before SAP is touched, in all runs). An earlier version of this paragraph asserted the " +
+      "positive path had been proven on 2026-09-27; that assertion came from prose rather than from " +
+      "a record and was withdrawn on 2026-09-28 (.doc/code-update-20260928-155820.md), and it is " +
+      "not the basis of the claim made here. " +
+      "Right, full and cross joins and LIMIT were added on 2026-09-30 (record " +
+      ".doc/code-update-20260930-154027.md): a right join preserves the side it introduces, a full " +
+      "join preserves both, a cross join takes no ON clause at all, and LIMIT is applied after " +
+      "ORDER BY so the order decides which rows it bounds. An outer join must still be the last " +
+      "join, and a WHERE predicate is refused on whichever side that join does not preserve, " +
+      "because every predicate is pushed into the read of the table it names; a literal in ON is " +
+      "confined to a side the join is free to drop for the same reason (the table it introduces " +
+      "for INNER and LEFT, a table joined before it for RIGHT, neither side for FULL). " +
+      "An arithmetic term in the projection was then taken up under the user's 2026-09-30 ruling " +
+      "(route A: the term is implemented in the service, not reclassified as a platform boundary, " +
+      "because this release offers no channel that evaluates one). A term is + - * / with " +
+      "parentheses and a unary minus, over the table's own columns and integer or packed literals; " +
+      "the operand types are read from DD03L, so the calculation rule is the documented SAP one " +
+      "rather than a guess from the reader's one-character field type; the term publishes a derived " +
+      "column EXPR_1, EXPR_2 ... in projection order, which querySource.expressionColumns lists; and " +
+      "a term that cannot be computed exactly is refused by name instead of approximated " +
+      "(TABLE_QUERY_EXPRESSION_NOT_NUMERIC, _FLOAT, _DECFLOAT, _DIVISION_SCALE, _DIVISION_BY_ZERO, " +
+      "_OVERFLOW, _NOT_INTEGER, _TYPE_UNKNOWN, _TYPE_UNAVAILABLE, _DICTIONARY_UNAVAILABLE, " +
+      "_CONSTANT, _GROUPED). A term on the left side of a WHERE comparison was added next, in the " +
+      "same session: the reader's structured filter takes one column name, so such a comparison " +
+      "cannot be pushed and is decided in the service over the rows of its own disjunct, with the " +
+      "same dictionary-derived types and the same exact-or-refuse rule, compared as exact decimals " +
+      "(TABLE_QUERY_WHERE_EXPRESSION_LITERAL refuses a term compared with something that is not a " +
+      "number); a disjunct that carries one must have been read completely, because the matches of a " +
+      "sample are not the matches of the statement, and a truncated one is refused with " +
+      "TABLE_QUERY_WHERE_EXPRESSION_INCOMPLETE rather than filtered, while a plain comparison stays " +
+      "pushed down so SAP's own comparison remains authoritative. Which disjunct carried which term " +
+      "is published as querySource.whereExpressions. A term over a qualified column in a joined " +
+      "projection was taken up last, in the same session: the term is evaluated on the joined row, " +
+      "each operand is typed from the dictionary of the table its alias names (only the aliases a term " +
+      "actually reads are resolved), the operand columns are read but not published, the derived " +
+      "column joins the published set beside the projected qualified columns, and a term over the " +
+      "optional side of an outer join refuses the unmatched row instead of reading its empty value as " +
+      "a zero. A term is still refused together with an aggregate or a GROUP BY, and ORDER BY cannot " +
+      "name a derived column in the joined dialect because every ordering key there is qualified. All " +
+      "three parts were proven locally first - the suite grew to 1256 tests and thirty-eight mutations " +
+      "of the three wirings and of the set test were falsified - and the four slices behind them were " +
+      "then read on w200 in the same session, after the user restarted 127.0.0.1:4849 onto the build " +
+      "that carries them: the four read-only verify scripts hold 6 + 5 + 5 + 6 = 22 assertions and all " +
+      "22 pass (.cache/r29-verify.json, r31, r33, r35, record " +
+      ".doc/code-update-20260930-193631.md). An earlier run of the same four scripts read 16 of 22 and " +
+      "the six failures turned out to be defects of the acceptance harness, not of the service - an " +
+      "assertion that demanded a JSON payload from a refusal that is text, a sampled value that was " +
+      "legitimately an exact decimal, and an outer row bound below the table's own row count - and both " +
+      "readings are preserved (record .doc/code-update-20260930-192647.md, probe .cache/r36-probe.json) " +
+      "rather than the later one being reported alone. A set test was taken up last, in the same " +
+      "session: " +
+      "<column> IN (SELECT <column> FROM <table> [WHERE ...]) is read as its own statement by this same " +
+      "grammar, its values form the set, and the outer row matches when its own value is in that set - " +
+      "NOT IN is the complement. The reader's structured filter has no set operator, so the test is " +
+      "decided in the service, over a read that completed (TABLE_QUERY_WHERE_SUBQUERY_INCOMPLETE " +
+      "otherwise) and over a set that completed (TABLE_QUERY_SUBQUERY_INCOMPLETE): a row whose value is " +
+      "outside a sample is not a row whose value is outside the set. The two sides are compared as " +
+      "values rather than as text - the dictionary type of both decides the class, character fields " +
+      "compare with trailing blanks ignored and numeric fields as exact decimals - and a pair this " +
+      "layer cannot compare (a floating-point field, a mixed pair, a type in neither class, an empty " +
+      "numeric value) is refused by name (TABLE_QUERY_SUBQUERY_TYPE, _FLOAT, _VALUE, _TYPE_UNKNOWN, " +
+      "_TYPE_UNAVAILABLE) instead of being compared as printed text, and an inner statement that is not " +
+      "one plain column is refused with TABLE_QUERY_SUBQUERY_PROJECTION (a limited or ordered page is " +
+      "not a set). Which disjunct carried which test, on which column, with how many values, is " +
+      "published as querySource.whereSubqueries; the tested column is read but not published when the " +
+      "statement does not select it. A scalar subquery was taken up last, in the same session: " +
+      "<column> <operator> (SELECT ...) is read as its own statement by this same grammar and the outer " +
+      "row matches when the comparison with the one value it answers holds. The inner statement must " +
+      "answer exactly one row - one aggregate over no groups, or one plain column whose read returned " +
+      "one row - and everything else is refused by name rather than answered: several rows " +
+      "(TABLE_QUERY_SCALAR_ROWS; this layer will not pick one of them and answer a different question), " +
+      'no row (the same code: SQL reads that as NULL and answers "unknown", a three-valued rule this ' +
+      "layer does not reproduce), a projection that is neither one aggregate nor one plain column " +
+      "(TABLE_QUERY_SCALAR_PROJECTION), and an ordered or limited page (TABLE_QUERY_SCALAR_PAGE; a page " +
+      "is not a value, and a LIMIT 1 would hide the several rows this layer refuses to choose between). " +
+      "The comparison is the same one the set test makes and follows the same discipline: the class " +
+      "comes from the dictionary type of both sides, character fields compare with trailing blanks " +
+      "ignored and numeric fields as exact decimals, and a pair this layer cannot compare is refused by " +
+      "name (TABLE_QUERY_SCALAR_TYPE, _FLOAT, _VALUE, _TYPE_UNKNOWN, _TYPE_UNAVAILABLE) instead of being " +
+      "compared as printed text; ordering a character value is refused as well " +
+      "(TABLE_QUERY_SCALAR_ORDER), because SAP orders character fields by a collation this layer cannot " +
+      "state, so only = and <> are decided there. The inner statement is typed from its own table's " +
+      "dictionary - COUNT answers the INT4 this layer computes, SUM/MIN/MAX answer the type of the " +
+      "column they aggregate - and the value the inner statement answered is published as " +
+      "querySource.whereScalars: unlike a set, which the mapping counts rather than repeats because it " +
+      "can be arbitrarily large, a scalar is one value. A scalar comparison decided over an outer read " +
+      "that stopped at the row bound is refused with TABLE_QUERY_WHERE_SCALAR_INCOMPLETE rather than " +
+      "filtered, the same rule the term and the set test follow. The slice was then read on w200 too, " +
+      "after the user restarted 127.0.0.1:4849 onto the build that carries it: .cache/r38-verify.mjs " +
+      "holds 13 assertions and all 13 pass (output .cache/r38-verify.json), so every declared " +
+      "capability of this family now has a real-machine reading. That reading settled two facts this " +
+      "text states: an aggregate answers a value without naming a column, so querySource.whereScalars " +
+      "reports valueColumn null for ZAEHL = (SELECT COUNT(*) ...) where a single-column inner " +
+      "statement names the column it read; and a whole-row read of T006 - which is what an unfiltered " +
+      "aggregate over that table performs - is refused by the decode guard with " +
+      "TABLE_QUERY_NUMERIC_OVERFLOW. A read-only follow-up of that refusal " +
+      "(.cache/r39-probe1|3|4|6|7.mjs, 2026-09-30) located its cause in the data and in the field's " +
+      "text width rather than in a guard drawn too narrow: of T006's 276 rows 274 decode (273 carry " +
+      "ADDKO 0.000000 and one 9.000000, every text 8 characters) and exactly two do not - MSEHI GC " +
+      "and FA, the two rows whose DIMID is TEMP, whose ZAEHL/NENNR are 1/1 and 5/9 and whose EXP10, " +
+      "EXPON, DECAN and TEMP_VALUE are all zero, so the additive conversion constant they carry can " +
+      "only live in ADDKO. ADDKO is DEC 9/6 and the reader's own field metadata gives it a " +
+      "9-character text box, while the Celsius and Fahrenheit constants those rows carry need ten " +
+      "characters, so the text cannot be a plain decimal; the guard refuses it by name, and since it " +
+      "accepts every digit-led decimal of that width (the 274 rows read back prove it), a silently " +
+      "truncated decimal would have been published rather than refused. The refusal is therefore " +
+      "correct and stays: a caller who needs the rest of the table excludes those two keys with a " +
+      "pushed character comparison, while a whole-row read - SELECT * or an unfiltered aggregate - " +
+      "necessarily includes them. The raw text of those two fields is not observable through this " +
+      "service, because any statement that projects ADDKO and covers them is refused before any " +
+      "output, which is this guard working as designed; which of the guard's two clauses named that " +
+      "refusal - a replacement text carrying an asterisk, or a form the guard does not accept as a " +
+      "plain decimal - is therefore not settled by these readings, and the decision does not depend " +
+      "on it, because the width argument already shows that the value those two rows carry cannot be " +
+      "printed in that field's box at all. A human SE16N read of T006 GC and FA is the one reading " +
+      "that would close that detail. That is also why this family's verify scripts project one " +
+      "column or filter to a small match set instead of reading that table whole. A join read is also " +
       "bounded: an ORDER BY over a read that stops at the row bound is refused with " +
-      "TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially."
+      "TABLE_QUERY_ORDER_BY_INCOMPLETE rather than sorted partially, and LIMIT does not excuse that " +
+      "refusal - completeness is judged over the whole match set before the limit is applied. " +
+      "A correlated subquery - one whose inner statement refers to the outer row - is outside this " +
+      "layer's method rather than a task still to be done: the method establishes one set (or one " +
+      "value) with one complete read, while a correlated inner statement has to be planned and " +
+      "evaluated per outer row by the database, and this release offers no channel that evaluates one " +
+      "(the native preview endpoint is unsupported, and the reader takes one column, one operator and " +
+      "one literal). Open SQL beyond the finite grammar is bounded for the same reason - HAVING, " +
+      "UNION, DISTINCT, CASE, functions other than COUNT/SUM/MIN/MAX, non-equality join keys, more " +
+      "than three joined tables: the layer reproduces only what the documented rules let it state " +
+      "exactly, and guessing the rest would answer a different question than the one that was written. " +
+      "Such a statement is left to the platform's own error, which on this release is the empty-HTML " +
+      "answer."
   },
   {
     id: "runtime-resources",
@@ -407,39 +551,58 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     ],
     purpose:
       "Which work processes and sessions are live, what is on the application server's filesystem, and what performance data exists?",
-    closeRoutes: ["helper"],
+    // Closed on 2026-09-30. The helper body that carries the five 1.1 opcodes (WP_LIST, USER_LIST,
+    // DIR_LIST, DB_ACTIVITY, PERF_SNAPSHOT) reached w200 and all six tools have since been called for
+    // real, so the gap that used to name the undeployed body is empty and the route is `none`.
+    // `read_user_sessions` was the last one to move: its branch had been calling TH_USER_LIST with
+    // only the optional USRLIST table, while the module's ACTIVE interface declares LIST (UINFO) as a
+    // NON-optional table parameter, so the dynamic call died with CX_SY_DYN_CALL_PARAM_MISSING
+    // (record .doc/code-update-20260930-143501.md). Nothing was removed to make a number move: the
+    // body really is deployed, verified by its own fingerprint, and each of the six tools has a real
+    // w200 reply behind its registry entry.
+    //
+    // The route rationale is kept here as a comment rather than as a gap, because it is why the
+    // helper exists rather than capability still to be built. Five of the six tools are helper-backed
+    // through the separately approved RUNTIME scope of Z_ORVANTA_OPS_READ. The two metrics reads have
+    // no direct path at all: the DB6 tables are outside the service-side table allowlist, and the
+    // system-load row type cannot be serialized to an external RFC caller. The three kernel reads
+    // were moved onto the same helper on 2026-09-30, after all three were measured answering zero
+    // rows through their direct SOAP-RFC path on w200 (.doc/runtime-resources-helper-plan.md
+    // section 1.1, evidence .cache/evidence-ops-runtime-20260930/). Every remote-enabled read
+    // carrying the workload numbers refuses to serialize: SWNC_COLLECTOR_GET_AGGREGATES,
+    // SWNC_GET_WORKLOAD_SNAPSHOT, SWNC_GET_WORKLOAD_STATISTIC, SWNC_READ_SNAPSHOT and
+    // SAPWLN3_AGGREGATE_SNAPSHOT_GET expose SWNCGL_T_AGG* rows whose field names or scalar types
+    // (SWNCTASKTYPERAW) fail verification, and SWNC_STATREC_READ cannot return NORMAL_RECORDS, the
+    // record header that gives a subrecord its user and response time. SWNC_COLLECTOR_KERNEL_STAT is
+    // locally callable but not remote-enabled, and it must not be used in any case because it runs a
+    // collection and commits; the helper branch calls SWNC_COLLECTOR_GET_SYSTEMLOAD instead.
+    // read_workload_directory is the exception: it still calls its function module directly and
+    // answers today.
+    closeRoutes: ["none"],
     actionRequired: false,
-    gap:
-      "Reported: the work process list (TH_WPINFO) through read_work_processes, the user and " +
-      "session list (TH_USER_LIST) through read_user_sessions, the application-server directory " +
-      "listing (EPS2_GET_DIRECTORY_LISTING) through read_file_system_directory, and the workload " +
-      "collector's own directory of what it holds (SWNC_GET_WORKLOAD_DIRECTORY) through " +
-      "read_workload_directory. Still absent: read_performance_snapshot and read_db_activity, and " +
-      "the 2026-09-26 probe narrowed why. Every remote-enabled read carrying the workload numbers " +
-      "refuses to serialize: SWNC_COLLECTOR_GET_AGGREGATES, SWNC_GET_WORKLOAD_SNAPSHOT, " +
-      "SWNC_GET_WORKLOAD_STATISTIC, SWNC_READ_SNAPSHOT and SAPWLN3_AGGREGATE_SNAPSHOT_GET expose " +
-      "SWNCGL_T_AGG* rows whose field names or scalar types (SWNCTASKTYPERAW) fail verification, " +
-      "and SWNC_STATREC_READ cannot return NORMAL_RECORDS, the record header that gives a " +
-      "subrecord its user and response time. SWNC_COLLECTOR_KERNEL_STAT is fully resolvable but " +
-      "not remote-enabled, so the workload numbers need the in-SAP helper. DB02 is split by " +
-      "database vendor (DB02_ORA_*, DB02_*_DB2, DB6_*), and the platform is readable after all: " +
-      "RFC_SYSTEM_INFO returns RFCDBSYS (data element SYDBSYS, the central database system) " +
-      "through the fingerprint-pinned reader whose kernel and database values get_sap_system_info " +
-      "already publishes as serverFacts - that half has no recorded call yet, but it is a source " +
-      "the service owns, not an approval it waits for. The 2026-09-26 claim that the platform was " +
-      "unreadable rested on a single TPFYPROPTY read refused with TABLE_NOT_ALLOWED by the " +
-      "then-running build, which is a stale allowlist rather than an unavailable source " +
-      "(TPFYPROPTY was approved on 2026-09-25). What is actually missing is a vendor module that " +
-      "reports activity: the storage and statistics modules that probe reached " +
-      "(DB02_ORA_SELECT_SEGMENTS, DB02_ORA_LAST_ANALYZED, DB02_GET_EXTENT_LIST_DB2) are " +
-      "remote-enabled but answer for space and analysis - the Oracle pair reads " +
-      "dba_tab_columns.last_analyzed/sample_size/num_rows, statistics freshness rather than " +
-      "activity - DB02_DB_ACTIVITY was not found by name, and the vendor-neutral DB_AN_DB_KPIS " +
-      "requires a CCMS node handle (MT_TOOL_INFO typed ALTLEXDESC) and raises MESSAGE e001(sada) " +
-      "when it cannot read one, so an external caller can neither supply its context nor survive " +
-      "its failure. read_db_activity therefore needs the helper: the platform is the service's to " +
-      "read, but no module it can reach reports database activity rather than space, statistics " +
-      "or analysis."
+    gap: "",
+    // What this family deliberately does not answer, as opposed to what was left unbuilt. The
+    // RFCDBSYS sentence is kept because an earlier gap wrongly claimed the platform was unreadable;
+    // the correction stays visible here rather than in a gap that no longer exists.
+    boundary:
+      "The DB02 half of this family is answered from a vendor-specific source rather than from a " +
+      "vendor-neutral activity module. The platform is readable: RFC_SYSTEM_INFO returns RFCDBSYS " +
+      "(data element SYDBSYS, the central database system) through the fingerprint-pinned reader " +
+      "whose kernel and database values get_sap_system_info already publishes as serverFacts, so " +
+      "nothing here waits on an approval the service cannot grant itself. What is missing is a module " +
+      "that reports activity: the storage and statistics modules that probing reached " +
+      "(DB02_ORA_SELECT_SEGMENTS, DB02_ORA_LAST_ANALYZED, DB02_GET_EXTENT_LIST_DB2) are remote-enabled " +
+      "but answer for space and analysis - the Oracle pair reads " +
+      "dba_tab_columns.last_analyzed/sample_size/num_rows, statistics freshness rather than activity - " +
+      "DB02_DB_ACTIVITY was not found by name, and the vendor-neutral DB_AN_DB_KPIS requires a CCMS " +
+      "node handle (MT_TOOL_INFO typed ALTLEXDESC) and raises MESSAGE e001(sada) when it cannot read " +
+      "one, so an external caller can neither supply its context nor survive its failure. DB02 is " +
+      "split by database vendor (DB02_ORA_*, DB02_*_DB2, DB6_*), so read_db_activity reads the DB6 " +
+      "history tables and this family is answered on a DB6 target. Two further limits are fixed: " +
+      "every helper-backed read here is bounded by the helper's own row cap (200 rows for the " +
+      "work-process, session and directory reads), so a longer result is reported as partial with " +
+      "truncated set rather than returned in full; and read_workload_directory answers with the " +
+      "collector's own index of the aggregates it holds, not with the workload numbers inside them."
   },
   {
     id: "interfaces",
@@ -477,22 +640,26 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
   {
     id: "authorizations",
     label: "User and authorization troubleshooting (SUIM read, ST01/SU53 trace)",
-    plannedToolNames: ["read_user_authorizations", "read_authorization_trace"],
+    plannedToolNames: [
+      "read_user_authorizations",
+      "read_role_authorizations",
+      "read_authorization_trace"
+    ],
     purpose: "Why did this user's transaction fail on authorization, and what is assigned to them?",
     closeRoutes: ["helper", "approval"],
     actionRequired: false,
     gap:
       "Reported: the stored role assignments per user (AGR_USERS), the transactions of a " +
       "role (AGR_TCODES) and the profile assignments of a user master record (UST04) through " +
-      "read_user_authorizations - assignment master data, never an authorization decision - and " +
+      "read_user_authorizations - assignment master data, never an authorization decision - " +
       "the kernel's authorization-trace switch through read_authorization_trace " +
-      "(AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed). " +
-      "Still absent: the trace data itself (which authorization check failed), because " +
-      "AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 and so needs the " +
-      "SAP-side helper, and any role-to-authorization-object resolution **as a tool**: " +
-      "AGR_1251/AGR_1252/AGR_PROF, USOBT/USOBT_C/USOBX/USOBX_C and UST10S/UST10C were approved and " +
-      "registered on 2026-09-28 (w200-verified), so that resolution no longer waits for an " +
-      "approval either - read_user_authorizations still deliberately does not perform it."
+      "(AUTH_TRACE_GET_STATUS, remote-enabled, no SAP-side helper needed) - and the role itself " +
+      "resolved into the authorization objects, fields and values it stores (AGR_1251/AGR_1252, " +
+      "the profiles it generates from AGR_PROF and the UST10S/UST10C profile path behind a flag) " +
+      "through read_role_authorizations. Still absent: the trace data itself (which authorization " +
+      "check failed), because AUTH_TRACE_GET_AUTHVAL_DATA carries the unverifiable type XUBITVEC16 " +
+      "and so needs a branch of the SAP-side helper - the one item left on this family's declared " +
+      "helper route, and an SAP-side change this batch does not hold."
   },
   {
     id: "spool-output",

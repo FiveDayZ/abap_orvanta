@@ -656,8 +656,34 @@ test("the registry records the honest gap rather than inflating it", () => {
   // .doc/code-update-20260930-090003.md and both state what was NOT proven (the row bound and hasMore,
   // a second user, a state-only failure, the revision drift guard, the error text). Nothing here was
   // inferred from a plan or from a passing test.
+  // Raised from 39 to 43 on 2026-09-30 (runtime-resources batch): the runtime helper body finally
+  // reached w200, so the five helper-backed reads in that family could be called for real instead of
+  // being described. Four earned the promotion from live w200 replies on 2026-09-30, all naming
+  // .doc/code-update-20260930-124543.md: read_db_activity (485284 bytes, partial, 400 DB6 rows with
+  // live counters), read_performance_snapshot (25307 bytes, ok, 11 collector rows), read_work_processes
+  // (ok, 16 work processes) and read_file_system_directory (ok, /usr/sap with two real entries). Each
+  // entry states what was NOT proven - read_db_activity is truncated at its row bound and
+  // read_performance_snapshot's record times are the collector's raw seconds. The fifth call,
+  // read_user_sessions, did NOT earn a promotion and was recorded as failed/runtime instead: it still
+  // answers READ_ONLY_UNSUPPORTED, and the entry names the generator lines that bound the cause rather
+  // than asserting one. Nothing here was inferred from a plan or from a passing test.
+  // Raised from 43 to 44 on 2026-09-30 (USER_LIST mandatory-LIST fix): read_user_sessions, the one
+  // entry the previous batch recorded as failed/runtime, was called for real again after the helper
+  // body was redeployed and this time answered status ok with 12 real kernel session rows
+  // (kernelRowCount 12, returnedCount 12, truncated false, sources[0] = TH_USER_LIST / method helper).
+  // The failed count moved 5 -> 4 at the same time. The entry names
+  // .doc/code-update-20260930-143501.md, which names the tool, and it states what was NOT proven:
+  // the row cap above 200, the userName filter path and the truncated branch were not re-exercised.
+  // Nothing here was inferred from a plan or from a passing test.
+  // Raised from 44 to 45 on 2026-09-30: `read_role_authorizations` recorded 14/14 real read-only
+  // checks against w200 (.cache/r42-verify.json, .doc/code-update-20260930-211934.md) - two roles
+  // resolved to their stored authorization objects, fields and values, the profile path read only
+  // behind its flag, and the refusals (empty name, unknown role, bounded read) observed rather than
+  // assumed. Its first script run read 13/14 because the script itself expected one authorization
+  // field too few; the count was the script's error, not the service's, and both the defect and the
+  // corrected reading are stated in that record.
   assert.ok(
-    totals.verified <= 39,
+    totals.verified <= 45,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

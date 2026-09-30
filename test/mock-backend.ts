@@ -2735,6 +2735,26 @@ export class MockBackend implements SapBackend {
         { WERKS: "3000", NAME1: "ALPINE PLANT" }
       ]
     }
+    // One job header for the pre-change observation of the two job writes. It is keyed on the
+    // identity the tests name, and the shape is the one `read_abap_table` returned for
+    // ZTEST0018/16413100 on w200: scheduled and never started, so SDLSTRTDT and SDLSTRTTM are empty.
+    // Every other job name stays absent, which is what the absent case asserts.
+    if (sql.includes("FROM TBTCO")) {
+      if (!sql.includes("'ZTEST0018'") || !sql.includes("'16413100'")) return []
+      return [
+        {
+          JOBNAME: "ZTEST0018",
+          JOBCOUNT: "16413100",
+          STATUS: "P",
+          SDLSTRTDT: "",
+          SDLSTRTTM: "",
+          SDLUNAME: "ZTW",
+          AUTHCKMAN: "200",
+          LASTCHDATE: "20150916",
+          LASTCHTIME: "164131"
+        }
+      ]
+    }
     return []
   }
 

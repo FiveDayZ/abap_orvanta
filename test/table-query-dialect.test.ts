@@ -26,11 +26,13 @@ test("the grammar reads one conjunct, disjuncts and an ordering", () => {
     tableName: "TBTCO",
     columns: ["*"],
     aggregates: [],
+    expressions: [],
     groupBy: [],
     // `SELECT *` is already the whole row, which is the identity a merge needs.
     readWholeRow: true,
     groups: [[{ column: "STATUS", operator: "EQ", value: "F" }]],
-    orderBy: []
+    orderBy: [],
+    limit: undefined
   })
 
   // `OR` of `AND`s: no parentheses, so no precedence rule has to be invented.
@@ -42,6 +44,7 @@ test("the grammar reads one conjunct, disjuncts and an ordering", () => {
       tableName: "TBTCO",
       columns: ["MANDT", "JOBNUM"],
       aggregates: [],
+      expressions: [],
       groupBy: [],
       // A partial projection is not an identity: two rows may agree on both columns.
       readWholeRow: false,
@@ -52,7 +55,8 @@ test("the grammar reads one conjunct, disjuncts and an ordering", () => {
         ],
         [{ column: "STATUS", operator: "EQ", value: "A" }]
       ],
-      orderBy: []
+      orderBy: [],
+      limit: undefined
     }
   )
 
@@ -61,7 +65,7 @@ test("the grammar reads one conjunct, disjuncts and an ordering", () => {
     "SELECT * FROM T WHERE A <= '1' AND B >= '2' AND C <> '3' AND D = '4' AND E < '5' AND F > '6'"
   ).groups[0]!
   assert.deepEqual(
-    operators.map((filter) => filter.operator),
+    operators.map((filter) => ("operator" in filter ? filter.operator : undefined)),
     ["LE", "GE", "NE", "EQ", "LT", "GT"]
   )
 })
@@ -79,18 +83,132 @@ test("the grammar reads ORDER BY with its keys, directions and a missing WHERE",
     tableName: "T000",
     columns: ["MANDT"],
     aggregates: [],
+    expressions: [],
     groupBy: [],
     readWholeRow: false,
     groups: [[]],
-    orderBy: [{ column: "MTEXT", direction: "asc" }]
+    orderBy: [{ column: "MTEXT", direction: "asc" }],
+    limit: undefined
   })
   assert.deepEqual(select("SELECT MANDT FROM T000").groups, [[]])
 })
 
+test("LIMIT is read as the last clause and bounds the answer, never the read", () => {
+  // The whole clause is one number that must be last, and it survives every other clause.
+  assert.equal(select("SELECT MANDT FROM T000 LIMIT 5").limit, 5)
+  assert.equal(select("SELECT MANDT FROM T000 LIMIT 0").limit, 0)
+  assert.equal(select("SELECT MANDT FROM T000 WHERE MANDT = '200' LIMIT 5").limit, 5)
+  assert.equal(
+    select("SELECT MANDT, COUNT(*) FROM T000 GROUP BY MANDT ORDER BY MANDT DESC LIMIT 7").limit,
+    7
+  )
+  // The clause is cut off the tail, so the clauses before it still parse exactly as they did.
+  assert.deepEqual(select("SELECT MANDT FROM T000 WHERE MANDT = '200' LIMIT 5").groups, [
+    [{ column: "MANDT", operator: "EQ", value: "200" }]
+  ])
+  assert.deepEqual(select("SELECT MANDT FROM T000 ORDER BY MTEXT LIMIT 5").orderBy, [
+    { column: "MTEXT", direction: "asc" }
+  ])
+  // A value that looks like the clause is a value: the split runs on the masked text.
+  assert.equal(select("SELECT MANDT FROM T000 WHERE MTEXT = 'X LIMIT 5'").limit, undefined)
+  assert.deepEqual(select("SELECT MANDT FROM T000 WHERE MTEXT = 'X LIMIT 5'").groups, [
+    [{ column: "MTEXT", operator: "EQ", value: "X LIMIT 5" }]
+  ])
+  // Anything else is refused by name rather than dropped: an ignored limit answers a different
+  // question than the one that was asked, and the difference is exactly the row count.
+  const malformed = (sql: string) =>
+    assert.throws(
+      () => parseGroupedTableSelect(sql),
+      (error: Error) => error.message.includes("LIMIT_FORM"),
+      `expected LIMIT_FORM for: ${sql}`
+    )
+  malformed("SELECT MANDT FROM T000 LIMIT")
+  malformed("SELECT MANDT FROM T000 LIMIT -1")
+  malformed("SELECT MANDT FROM T000 LIMIT 1.5")
+  malformed("SELECT MANDT FROM T000 LIMIT 5, 10")
+  malformed("SELECT MANDT FROM T000 LIMIT 5 ORDER BY MTEXT")
+  malformed("SELECT MANDT FROM T000 LIMIT 5 LIMIT 6")
+})
+
+test("LIMIT bounds the answer after the order, and never excuses an incomplete read", async () => {
+  const parsed = select(
+    "SELECT MANDT, JOBNUM FROM TBTCO WHERE STATUS = 'F' ORDER BY JOBNUM DESC LIMIT 2"
+  )
+  const bounded = await readGroupedRows(
+    parsed,
+    async () => ({
+      rows: [
+        { MANDT: "200", JOBNUM: "0009" },
+        { MANDT: "200", JOBNUM: "0011" },
+        { MANDT: "200", JOBNUM: "0010" }
+      ],
+      truncated: false,
+      detail: {}
+    }),
+    500
+  )
+  // The order decides which two rows those are: the answer is the top two, not the first two read.
+  assert.deepEqual(
+    bounded.rows.map((row) => row.JOBNUM),
+    ["0011", "0010"]
+  )
+  assert.equal(bounded.limit, 2)
+  assert.deepEqual(bounded.incompleteBranches, [])
+
+  // A statement without the clause reports its absence rather than an implied bound.
+  const unbounded = await readGroupedRows(
+    select("SELECT MANDT FROM TBTCO WHERE STATUS = 'F'"),
+    async () => ({ rows: [{ MANDT: "200" }], truncated: false, detail: {} })
+  )
+  assert.equal(unbounded.limit, null)
+  assert.equal(unbounded.rows.length, 1)
+
+  // A limit bounds the rows the statement produced, so it cannot make a truncated read complete: the
+  // question "which rows are the top two" has a different answer over a sample than over the table.
+  await assert.rejects(
+    readGroupedRows(
+      select("SELECT MANDT, JOBNUM FROM TBTCO WHERE STATUS = 'F' ORDER BY JOBNUM DESC LIMIT 2"),
+      async () => ({
+        rows: [{ MANDT: "200", JOBNUM: "0009" }],
+        truncated: true,
+        detail: {}
+      }),
+      500
+    ),
+    /TABLE_QUERY_ORDER_BY_INCOMPLETE/
+  )
+
+  // The same holds for groups: a limited group count over a sample is still refused.
+  await assert.rejects(
+    readGroupedRows(
+      select("SELECT MANDT, COUNT(*) FROM TBTCO WHERE STATUS = 'F' GROUP BY MANDT LIMIT 1"),
+      async () => ({ rows: [{ MANDT: "200" }], truncated: true, detail: {} }),
+      500
+    ),
+    /TABLE_QUERY_AGGREGATE_INCOMPLETE/
+  )
+
+  const groups = await readGroupedRows(
+    select("SELECT MANDT, COUNT(*) FROM TBTCO WHERE STATUS = 'F' GROUP BY MANDT LIMIT 1"),
+    async () => ({
+      rows: [
+        { MANDT: "200", JOBNUM: "0001" },
+        { MANDT: "200", JOBNUM: "0002" },
+        { MANDT: "300", JOBNUM: "0003" }
+      ],
+      truncated: false,
+      detail: {}
+    })
+  )
+  assert.equal(groups.aggregated, true)
+  assert.equal(groups.groupCount, 1)
+  assert.equal(groups.limit, 1)
+})
+
 test("the grammar refuses what it cannot describe exactly", () => {
-  // Joins, expressions and subqueries stay out: a wrong reading of any of them is a wrong answer, and
-  // this path exists to avoid exactly that. Aggregates and `GROUP BY` are read now (they have their
-  // own tests below), including their refusal to combine with `*`.
+  // A join, an expression and a subquery stay out of this single-table grammar: a wrong reading of
+  // any of them is a wrong answer, and this path exists to avoid exactly that. Joins have their own
+  // grammar and their own tests (`table-join.test.ts`); aggregates and `GROUP BY` are read here.
   refuse("SELECT * FROM TBTCO INNER JOIN TBTCO2 ON 1 = 1")
   refuse("SELECT * FROM TBTCO LEFT OUTER JOIN TBTCO2 ON 1 = 1")
   refuse("SELECT * FROM TBTCO WHERE LENGTH(STATUS) = 1")
@@ -99,7 +217,6 @@ test("the grammar refuses what it cannot describe exactly", () => {
   refuse("SELECT * FROM TBTCO WHERE STATUS = 'F' AND ")
   refuse("SELECT * FROM TBTCO WHERE STATUS = 'F' OR ")
   refuse("SELECT * FROM TBTCO WHERE STATUS LIKE 'F%'")
-  refuse("SELECT * FROM TBTCO WHERE STATUS = 'F' LIMIT 10")
   refuse("SELECT * FROM TBTCO WHERE UNTERMINATED = 'F")
 })
 

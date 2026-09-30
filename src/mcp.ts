@@ -10,6 +10,11 @@ import { hashWriteInput, type WriteOperationReceiptStore } from "./write-operati
 import { PRODUCT_VERSION } from "./version.js"
 import { ApplicationLogService } from "./application-logs.js"
 import { OperationalLogService } from "./operational-logs.js"
+import type {
+  RuntimeHelperOutcome,
+  RuntimeHelperRead,
+  RuntimeHelperReply
+} from "./runtime-resources.js"
 import { LogCorrelationService } from "./log-correlation.js"
 import { defaultInvocationStateRoot } from "./invocation-receipts.js"
 import { RuntimeIdentity } from "./runtime-info.js"
@@ -20,6 +25,100 @@ import { SmartformService } from "./smartforms.js"
 import { resolveToolProfile, toolProfileSummary } from "./tool-profile.js"
 import { assertTableAllowed } from "./table-allowlist.js"
 import { annotateLogonRejection } from "./logon-diagnostic.js"
+
+/**
+ * The envelope fields every runtime reply carries: the helper's own status and code, plus the
+ * callee's raw sub-return code and declared exception name when the failed call carried them.
+ */
+function runtimeEnvelope(reply: {
+  status: RuntimeHelperReply["status"]
+  code: string
+  reason?: string | undefined
+  calleeSubrc?: string | undefined
+  calleeException?: string | undefined
+}) {
+  return {
+    status: reply.status,
+    code: reply.code,
+    reason: reply.reason,
+    calleeSubrc: reply.calleeSubrc,
+    calleeException: reply.calleeException
+  }
+}
+
+/**
+ * The helper's reply as the runtime-resource collectors see it.
+ *
+ * `src/operational-logs.ts` owns the call, the approval gate and the reply schema; the collectors own
+ * what the rows mean, so only the fields the answered action carries are passed on. `readRuntimeRead`
+ * is typed over the whole opcode set, so an action no runtime-resource read uses is refused here
+ * rather than adapted into a shape it does not have.
+ */
+function runtimeHelperOutcome(
+  result: Awaited<ReturnType<OperationalLogService["readRuntimeRead"]>>
+): RuntimeHelperOutcome {
+  if (!("reply" in result)) return { unavailable: result.unavailable, reason: result.reason }
+  const reply = result.reply
+  switch (reply.action) {
+    case "WP_LIST":
+      return {
+        reply: {
+          ...runtimeEnvelope(reply),
+          action: reply.action,
+          server: reply.server,
+          rows: reply.rows,
+          truncated: reply.truncated
+        }
+      }
+    case "USER_LIST":
+      return {
+        reply: {
+          ...runtimeEnvelope(reply),
+          action: reply.action,
+          kernelRowCount: reply.kernelRowCount,
+          rows: reply.rows,
+          truncated: reply.truncated
+        }
+      }
+    case "DIR_LIST":
+      return {
+        reply: {
+          ...runtimeEnvelope(reply),
+          action: reply.action,
+          directory: reply.directory,
+          fileCounter: reply.fileCounter,
+          errorCounter: reply.errorCounter,
+          rows: reply.rows,
+          truncated: reply.truncated
+        }
+      }
+    case "DB_ACTIVITY":
+      return {
+        reply: {
+          ...runtimeEnvelope(reply),
+          action: reply.action,
+          systemId: reply.systemId,
+          historyRows: reply.historyRows,
+          bufferPoolRows: reply.bufferPoolRows,
+          truncated: reply.truncated
+        }
+      }
+    case "PERF_SNAPSHOT":
+      return {
+        reply: {
+          ...runtimeEnvelope(reply),
+          action: reply.action,
+          periodType: reply.periodType,
+          periodStart: reply.periodStart,
+          timeUnit: reply.timeUnit,
+          rows: reply.rows,
+          truncated: reply.truncated
+        }
+      }
+    default:
+      throw new Error(`RUNTIME_HELPER_ACTION_UNSUPPORTED: ${reply.action}`)
+  }
+}
 
 export function createMcpServer(
   backend: SapBackend,
@@ -76,7 +175,20 @@ export function createMcpServer(
     if (!enabledToolNames.has(name)) registered.disable()
     return registered
   }) as unknown as RegisterTool
-  const tools = new ToolService(backend, undefined, invocationReceipts, toolProfile.disabled)
+  // The runtime-resource reads take one reader per connection: the helper call, its approval gate
+  // and its fingerprint check all belong to a connection. `operationalLogs` is constructed below and
+  // is only reached from a tool handler, so the closure is still unbound while it is passed in.
+  const runtimeRead =
+    (connectionId: string): RuntimeHelperRead =>
+    async (action, parameters) =>
+      runtimeHelperOutcome(await operationalLogs.readRuntimeRead(connectionId, action, parameters))
+  const tools = new ToolService(
+    backend,
+    undefined,
+    invocationReceipts,
+    toolProfile.disabled,
+    runtimeRead
+  )
   const smartforms = new SmartformService(backend, stateRoot)
   const applicationLogs = new ApplicationLogService(
     backend,
@@ -799,6 +911,9 @@ export function createMcpServer(
   registerTool("read_user_authorizations", toolContracts.read_user_authorizations, async (input) =>
     invoke("read_user_authorizations", () => tools.readUserAuthorizations(input))
   )
+  registerTool("read_role_authorizations", toolContracts.read_role_authorizations, async (input) =>
+    invoke("read_role_authorizations", () => tools.readRoleAuthorizations(input))
+  )
   registerTool("read_authorization_trace", toolContracts.read_authorization_trace, async (input) =>
     invoke("read_authorization_trace", () => tools.readAuthorizationTrace(input))
   )
@@ -816,6 +931,14 @@ export function createMcpServer(
   )
   registerTool("read_workload_directory", toolContracts.read_workload_directory, async (input) =>
     invoke("read_workload_directory", () => tools.readWorkloadDirectory(input))
+  )
+  registerTool("read_db_activity", toolContracts.read_db_activity, async (input) =>
+    invoke("read_db_activity", () => tools.readDbActivity(input))
+  )
+  registerTool(
+    "read_performance_snapshot",
+    toolContracts.read_performance_snapshot,
+    async (input) => invoke("read_performance_snapshot", () => tools.readPerformanceSnapshot(input))
   )
   registerTool("read_qrfc_queues", toolContracts.read_qrfc_queues, async (input) =>
     invoke("read_qrfc_queues", () => tools.readQrfcQueues(input))

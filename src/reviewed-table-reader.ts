@@ -12,6 +12,12 @@ import type { SapBackend } from "./backend.js"
  *
  * The reader owns provenance: the caller passes a source record in and the reader fills it in, so a
  * failed table is reported as a status with a code instead of aborting the whole tool.
+ *
+ * The reader also owns the vocabulary of a refused RFC call: the callee's fault name is reported
+ * under the caller's own code prefix (`<PREFIX>NOT_AUTHORIZED` / `<PREFIX>RFC_FAILED`), so the codes
+ * every tool documents stay reachable. Reporting the bare fault name here would collapse all of them
+ * into the generic `<PREFIX>QUERY_FAILED` in each caller's mapper, which is a defect no single
+ * caller could see.
  */
 
 export type ReviewedReaderStatus = "ok" | "empty" | "unavailable" | "truncated" | "invalid"
@@ -122,8 +128,10 @@ export function createReviewedTableReader(
             { name: "DATA", kind: "table", fields: ["WA"] }
           ]
         })
+        // Namespaced with the caller's prefix: the bare fault name would only ever reach the
+        // default branch of every caller's mapper and lose the documented code.
         if (result.fault) {
-          throw new Error(result.fault.name === "NOT_AUTHORIZED" ? "NOT_AUTHORIZED" : "RFC_FAILED")
+          throw fail(result.fault.name === "NOT_AUTHORIZED" ? "NOT_AUTHORIZED" : "RFC_FAILED")
         }
         const metadata = result.outputs.FIELDS
         const data = result.outputs.DATA

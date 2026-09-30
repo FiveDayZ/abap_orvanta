@@ -674,13 +674,40 @@ const ROWS: readonly ToolRow[] = [
   // reviewed reader as read_qrfc_queues and read_idoc_status.
   ["read_trfc_error_entries", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_user_authorizations", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  // The role side of the same family: AGR_1251/AGR_1252/AGR_PROF (approved 2026-09-28) resolved into
+  // objects, fields and values. No helper: the reviewed reader reaches all five tables.
+  ["read_role_authorizations", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
   // N3. Not a helper call: AUTH_TRACE_GET_STATUS is remote-enabled with no input, so this is the one
   // item of the OP2/OP1 batch that needs no SAP-side deployment at all.
   ["read_authorization_trace", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
-  ["read_work_processes", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
-  ["read_user_sessions", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
-  ["read_file_system_directory", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  // The five helper-backed runtime reads. Protocol 1.1 is where Z_ORVANTA_OPS_READ gained the five
+  // opcodes, so the requirement is pinned to the opcode each tool dispatches to and not to a version
+  // alone: the three kernel reads were direct SOAP-RFC calls until 2026-09-30, when all three were
+  // measured answering zero rows on w200 and were moved behind the same helper.
+  ["read_work_processes", "ops", DEV_CFG_OPS, "R", "target-specific", OPS, "1.1", ["WP_LIST"]],
+  ["read_user_sessions", "ops", DEV_CFG_OPS, "R", "target-specific", OPS, "1.1", ["USER_LIST"]],
+  [
+    "read_file_system_directory",
+    "ops",
+    DEV_CFG_OPS,
+    "R",
+    "target-specific",
+    OPS,
+    "1.1",
+    ["DIR_LIST"]
+  ],
   ["read_workload_directory", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
+  ["read_db_activity", "ops", DEV_CFG_OPS, "R", "target-specific", OPS, "1.1", ["DB_ACTIVITY"]],
+  [
+    "read_performance_snapshot",
+    "ops",
+    DEV_CFG_OPS,
+    "R",
+    "target-specific",
+    OPS,
+    "1.1",
+    ["PERF_SNAPSHOT"]
+  ],
   // OP3 landscape. `local` because the tool has no SAP route of its own: it performs the ordinary
   // repository search and active-source read against two configured connections, so both sides are
   // the reads already registered above rather than a new way of talking to SAP.

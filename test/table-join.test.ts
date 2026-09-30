@@ -45,9 +45,11 @@ test("an inner join reads both tables, qualifies every column and keeps the ON k
       ],
       columns: ["A.TRKORR", "B.AS4TEXT"],
       aggregates: [],
+      expressions: [],
       groupBy: [],
       where: [{ alias: "A", column: "TRSTATUS", operator: "EQ", value: "R" }],
-      orderBy: [{ column: "B.AS4TEXT", direction: "desc" }]
+      orderBy: [{ column: "B.AS4TEXT", direction: "desc" }],
+      limit: undefined
     }
   )
 })
@@ -101,14 +103,10 @@ test("statements this grammar will not answer are refused by name", () => {
     "SELECT A.TRKORR FROM E070 A JOIN E07T B ON A.TRKORR = B.TRKORR WHERE C.X = '1'",
     "ALIAS_UNKNOWN"
   )
-  throws(
-    "SELECT A.TRKORR FROM E070 A RIGHT JOIN E07T B ON A.TRKORR = B.TRKORR",
-    "JOIN_TYPE_UNSUPPORTED"
-  )
-  throws(
-    "SELECT A.TRKORR FROM E070 A CROSS JOIN E07T B ON A.TRKORR = B.TRKORR",
-    "JOIN_TYPE_UNSUPPORTED"
-  )
+  // A cross join is the one join that must NOT carry a key: it pairs everything with everything, so
+  // an `ON` clause there is a contradiction rather than a missing condition. Everything else that
+  // this grammar reads but cannot answer is refused by name rather than guessed at.
+  throws("SELECT A.TRKORR FROM E070 A CROSS JOIN E07T B ON A.TRKORR = B.TRKORR", "JOIN_CROSS_ON")
   throws("SELECT A.TRKORR FROM E070 A JOIN E07T B", "JOIN_ON_MISSING")
   throws("SELECT A.TRKORR FROM E070 A JOIN E07T B ON A.TRKORR > B.TRKORR", "JOIN_ON_OPERATOR")
   throws("SELECT A.TRKORR FROM E070 A JOIN E07T B ON A.TRKORR = C.TRKORR", "JOIN_ON_ALIAS")
@@ -253,6 +251,259 @@ test("a left join keeps the unmatched row and leaves the optional side empty", a
     { "A.TRKORR": "K2", "B.AS4TEXT": "" },
     { "A.TRKORR": "K3", "B.AS4TEXT": "three" }
   ])
+})
+
+test("a right join keeps the unmatched row of the table it introduces", async () => {
+  const scripted = readerFor({
+    E070: { columns: ["TRKORR"], rows: [["K1"], ["K2"]] },
+    E07T: {
+      columns: ["TRKORR", "AS4TEXT"],
+      rows: [
+        ["K1", "one"],
+        ["K3", "three"]
+      ]
+    }
+  })
+  const result = await completed(
+    parse(
+      "SELECT A.TRKORR, B.TRKORR, B.AS4TEXT FROM E070 A RIGHT JOIN E07T B ON A.TRKORR = B.TRKORR"
+    ),
+    scripted
+  )
+  // The preserved side is the table the join introduces, so its unmatched row survives and the
+  // accumulated side is the one written with the reader's own empty value.
+  assert.deepEqual(result.rows, [
+    { "A.TRKORR": "K1", "B.TRKORR": "K1", "B.AS4TEXT": "one" },
+    { "A.TRKORR": "", "B.TRKORR": "K3", "B.AS4TEXT": "three" }
+  ])
+  assert.equal(result.join.tables[1]!.joinType, "right")
+})
+
+test("a full join keeps the unmatched rows of both sides", async () => {
+  const scripted = readerFor({
+    E070: { columns: ["TRKORR"], rows: [["K1"], ["K2"]] },
+    E07T: {
+      columns: ["TRKORR", "AS4TEXT"],
+      rows: [
+        ["K1", "one"],
+        ["K3", "three"]
+      ]
+    }
+  })
+  const result = await completed(
+    parse(
+      "SELECT A.TRKORR, B.TRKORR, B.AS4TEXT FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR"
+    ),
+    scripted
+  )
+  assert.deepEqual(result.rows, [
+    { "A.TRKORR": "K1", "B.TRKORR": "K1", "B.AS4TEXT": "one" },
+    { "A.TRKORR": "K2", "B.TRKORR": "", "B.AS4TEXT": "" },
+    { "A.TRKORR": "", "B.TRKORR": "K3", "B.AS4TEXT": "three" }
+  ])
+})
+
+test("a cross join pairs every row with every row and carries no key", async () => {
+  const scripted = readerFor({
+    E070: { columns: ["TRKORR"], rows: [["K1"], ["K2"]] },
+    E07T: {
+      columns: ["TRKORR", "AS4TEXT"],
+      rows: [
+        ["K1", "one"],
+        ["K3", "three"]
+      ]
+    }
+  })
+  const select = parse("SELECT A.TRKORR, B.TRKORR FROM E070 A CROSS JOIN E07T B")
+  assert.deepEqual(select.tables[1]!.on, [])
+  assert.equal(select.tables[1]!.joinType, "cross")
+  const result = await completed(select, scripted)
+  assert.deepEqual(result.rows, [
+    { "A.TRKORR": "K1", "B.TRKORR": "K1" },
+    { "A.TRKORR": "K1", "B.TRKORR": "K3" },
+    { "A.TRKORR": "K2", "B.TRKORR": "K1" },
+    { "A.TRKORR": "K2", "B.TRKORR": "K3" }
+  ])
+})
+
+test("LIMIT bounds a joined answer after the order decides which rows those are", async () => {
+  const scripted = readerFor({
+    E070: { columns: ["TRKORR"], rows: [["K1"], ["K2"], ["K3"]] },
+    E07T: {
+      columns: ["TRKORR", "AS4TEXT"],
+      rows: [
+        ["K1", "alpha"],
+        ["K2", "beta"],
+        ["K3", "gamma"]
+      ]
+    }
+  })
+  const ordered = await completed(
+    parse(
+      "SELECT A.TRKORR, B.AS4TEXT FROM E070 A INNER JOIN E07T B ON A.TRKORR = B.TRKORR " +
+        "ORDER BY B.AS4TEXT DESC LIMIT 1"
+    ),
+    scripted
+  )
+  assert.deepEqual(ordered.rows, [{ "A.TRKORR": "K3", "B.AS4TEXT": "gamma" }])
+  assert.equal(ordered.limit, 1)
+  assert.equal(ordered.truncated, false)
+
+  const page = await completed(
+    parse(
+      "SELECT A.TRKORR FROM E070 A INNER JOIN E07T B ON A.TRKORR = B.TRKORR ORDER BY A.TRKORR LIMIT 2"
+    ),
+    scripted
+  )
+  assert.deepEqual(page.rows, [{ "A.TRKORR": "K1" }, { "A.TRKORR": "K2" }])
+  assert.equal(page.limit, 2)
+
+  const none = await completed(
+    parse("SELECT A.TRKORR FROM E070 A INNER JOIN E07T B ON A.TRKORR = B.TRKORR LIMIT 0"),
+    scripted
+  )
+  assert.deepEqual(none.rows, [])
+  assert.equal(none.limit, 0)
+})
+
+test("an outer join decides which side a WHERE predicate may still be pushed into", () => {
+  // The preserved side of a RIGHT JOIN is the table it introduces, so a predicate there keeps its
+  // meaning: it removes rows of that table, and those rows produce no answer row either way.
+  const kept = parse(
+    "SELECT A.TRKORR, B.TRKORR FROM E070 A RIGHT JOIN E07T B ON A.TRKORR = B.TRKORR " +
+      "WHERE B.AS4LANGU = 'E'"
+  )
+  assert.deepEqual(kept.where, [{ alias: "B", column: "AS4LANGU", operator: "EQ", value: "E" }])
+  // The optional side is the other one, and a predicate pushed there would take the rows it removes
+  // out of the answer along with the partners they never got to keep.
+  throws(
+    "SELECT A.TRKORR FROM E070 A RIGHT JOIN E07T B ON A.TRKORR = B.TRKORR WHERE A.TRSTATUS = 'R'",
+    "JOIN_WHERE_OUTER_COLUMN"
+  )
+  // A FULL JOIN preserves both sides, so neither side is safe.
+  throws(
+    "SELECT A.TRKORR FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR WHERE B.AS4LANGU = 'E'",
+    "JOIN_WHERE_OUTER_COLUMN"
+  )
+  throws(
+    "SELECT A.TRKORR FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR WHERE A.TRSTATUS = 'R'",
+    "JOIN_WHERE_OUTER_COLUMN"
+  )
+  // The "outer join last" rule counts every outer kind, not just LEFT.
+  throws(
+    "SELECT A.TRKORR FROM E070 A RIGHT JOIN E07T B ON A.TRKORR = B.TRKORR " +
+      "JOIN E071 C ON B.TRKORR = C.TRKORR",
+    "JOIN_OUTER_NOT_LAST"
+  )
+  throws(
+    "SELECT A.TRKORR FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR " +
+      "JOIN E071 C ON B.TRKORR = C.TRKORR",
+    "JOIN_OUTER_NOT_LAST"
+  )
+})
+
+test("a literal in ON may only reach a read the join is free to drop", async () => {
+  // A literal in ON says a pair must satisfy it, so it can only be applied to the read of a table
+  // whose rows this join may drop. For INNER and LEFT that is the table the join introduces; a
+  // predicate on an earlier table belongs in WHERE, which is legal there.
+  throws(
+    "SELECT A.TRKORR FROM E070 A JOIN E07T B ON A.TRKORR = B.TRKORR AND A.TRKORR = 'K1'",
+    "JOIN_ON_ALIAS"
+  )
+  throws(
+    "SELECT A.TRKORR FROM E070 A LEFT JOIN E07T B ON A.TRKORR = B.TRKORR AND A.TRKORR = 'K1'",
+    "JOIN_ON_ALIAS"
+  )
+  // A RIGHT JOIN drops the tables joined before it and keeps the one it introduces, so the sides
+  // swap: a literal on the new table would delete the rows the join exists to keep, and the honest
+  // side is the earlier one - which WHERE may not carry there.
+  throws(
+    "SELECT A.TRKORR FROM E070 A RIGHT JOIN E07T B ON A.TRKORR = B.TRKORR AND B.TRKORR = 'K1'",
+    "JOIN_ON_ALIAS"
+  )
+  // A FULL JOIN keeps both sides, so neither read may be filtered - and no WHERE can express it.
+  throws(
+    "SELECT A.TRKORR FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR AND A.TRKORR = 'K1'",
+    "JOIN_ON_ALIAS"
+  )
+  throws(
+    "SELECT A.TRKORR FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR AND B.TRKORR = 'K1'",
+    "JOIN_ON_ALIAS"
+  )
+
+  const scripted = readerFor({
+    E070: { columns: ["TRKORR"], rows: [["K1"], ["K2"]] },
+    E07T: { columns: ["TRKORR"], rows: [["K1"], ["K3"]] }
+  })
+  const result = await completed(
+    parse(
+      "SELECT A.TRKORR, B.TRKORR FROM E070 A RIGHT JOIN E07T B ON A.TRKORR = B.TRKORR " +
+        "AND A.TRKORR = 'K1'"
+    ),
+    scripted
+  )
+  // The condition reached the read of A, the side this join may drop - never B's.
+  assert.deepEqual(scripted.calls[0]!.filters, [{ column: "TRKORR", operator: "EQ", value: "K1" }])
+  assert.deepEqual(scripted.calls[1]!.filters, [])
+  // K3 has no partner in A even so, and a RIGHT JOIN keeps it with the dropped side left empty.
+  assert.deepEqual(result.rows, [
+    { "A.TRKORR": "K1", "B.TRKORR": "K1" },
+    { "A.TRKORR": "", "B.TRKORR": "K3" }
+  ])
+  assert.equal(result.truncated, false)
+})
+
+test("a full join is refused any pushed-down predicate, and says so differently", () => {
+  // The advice has to stay actionable: for LEFT and RIGHT there is an ON clause that can carry the
+  // predicate, for FULL there is not, so pointing the caller at ON there would be a dead end.
+  assert.throws(
+    () =>
+      parse(
+        "SELECT A.TRKORR FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR " +
+          "WHERE A.TRSTATUS = 'R'"
+      ),
+    (error: Error) =>
+      error.message.includes("TABLE_QUERY_JOIN_WHERE_OUTER_COLUMN") &&
+      error.message.includes("no ON clause can carry it either")
+  )
+  assert.throws(
+    () =>
+      parse(
+        "SELECT A.TRKORR FROM E070 A LEFT JOIN E07T B ON A.TRKORR = B.TRKORR " +
+          "WHERE B.AS4TEXT = 'x'"
+      ),
+    (error: Error) =>
+      error.message.includes("TABLE_QUERY_JOIN_WHERE_OUTER_COLUMN") &&
+      error.message.includes("move it into the ON clause")
+  )
+})
+
+test("a full join appends no unmatched row when the join itself stopped at the row bound", async () => {
+  // A key that was never probed looks exactly like a key with no partner, so a join that stopped
+  // early must not append rows it never established. The guard is observable in the published
+  // joinedRows: without it K3 would be appended after the bound was already exceeded.
+  const scripted = readerFor({
+    E070: { columns: ["TRKORR"], rows: [["K1"], ["K2"]] },
+    E07T: {
+      columns: ["TRKORR", "AS4TEXT"],
+      rows: [
+        ["K1", "one"],
+        ["K1", "uno"],
+        ["K3", "three"]
+      ]
+    }
+  })
+  const result = await readJoinedRows(
+    parse(
+      "SELECT A.TRKORR, B.TRKORR, B.AS4TEXT FROM E070 A FULL JOIN E07T B ON A.TRKORR = B.TRKORR"
+    ),
+    scripted.read,
+    2
+  )
+  assert.equal(result.truncated, true)
+  // K1's two partners fill the bound, K2 is the unmatched row that tips it over, and K3 is not
+  // appended because the loop had already stopped when its key would have been probed.
+  assert.equal(result.join.joinedRows, 3)
 })
 
 test("an ON literal is pushed to the optional read, not used as a probe key", async () => {

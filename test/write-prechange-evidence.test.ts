@@ -631,3 +631,57 @@ test("pre-change observation reads the SM12 row a lock release is about to remov
     /maintenance reader/
   )
 })
+
+test("pre-change observation reads the TBTCO row a job write is about to move", async () => {
+  // Both job writes had been refused before SAP was contacted for every input, because a job row
+  // has no ADT URI and the generic source observation could not give it an identity: the receipt
+  // read `source: observation failed (92234395...)` on w200 for both tools, twice, unchanged across
+  // a restart. The job's own TBTCO row is the authoritative pre-change read - its STATUS is the
+  // field the write changes - and it is read through the reviewed table reader rather than through
+  // the SM37 job tools, which abort on a job whose SDLSTRTDT is empty and so would refuse exactly
+  // the scheduled, never started job a release exists for.
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const observedRow = {
+    JOBNAME: "ZTEST0018",
+    JOBCOUNT: "16413100",
+    STATUS: "P",
+    SDLSTRTDT: "",
+    SDLSTRTTM: "",
+    SDLUNAME: "ZTW",
+    AUTHCKMAN: "200",
+    LASTCHDATE: "20150916",
+    LASTCHTIME: "164131"
+  }
+
+  for (const name of ["release_background_job", "cancel_background_job"]) {
+    const found = await observeWritePreChange(
+      name,
+      { jobName: "ZTEST0018", jobCount: "16413100" },
+      "w200",
+      "background job ZTEST0018 with job count 16413100",
+      backend,
+      tools
+    )
+    assert.equal(found.exists, true, `${name} did not observe the job row`)
+    assert.deepEqual(found.sources, ["tbtco"])
+    assert.equal(found.version, "P")
+    assert.equal(found.fingerprint, hashWriteInput(JSON.stringify(observedRow)))
+    // The row is read as text, so every value is the trimmed string the reader validated.
+    assert.deepEqual(found.warnings, [])
+
+    // A job whose row is not there is recorded as absent, not as a blocker: the helper re-reads the
+    // header and answers JOB_NOT_FOUND, and nothing is moved.
+    const absent = await observeWritePreChange(
+      name,
+      { jobName: "ZTEST0018", jobCount: "16413499" },
+      "w200",
+      "background job ZTEST0018 with job count 16413499",
+      backend,
+      tools
+    )
+    assert.equal(absent.exists, false)
+    assert.equal(absent.fingerprint, null)
+    assert.equal(absent.observationStatus, "complete")
+  }
+})

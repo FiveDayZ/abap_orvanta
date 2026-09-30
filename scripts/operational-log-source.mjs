@@ -2,6 +2,9 @@
 import { createHash } from "node:crypto"
 import { jobSpoolBranch, jobSpoolDeclarations } from "./job-spool-source.mjs"
 import { reportParameterBranch, reportParameterDeclarations } from "./report-parameters-source.mjs"
+import { runtimeReadBranch, runtimeReadDeclarations } from "./runtime-read-source.mjs"
+import { dbPerfBranchFor, dbPerfDeclarations } from "./db-perf-source.mjs"
+import { jsonNumMacro } from "./abap-json-num.mjs"
 
 // Function module every variant of this body is generated for: Z_ORVANTA_OPS_READ in function
 // group ZORVANTA_LOG (src/operational-logs.ts OPERATIONAL_LOG_HELPER, scripts/deploy-job-spool.mjs
@@ -26,9 +29,45 @@ export const operationalLogOperations = [
   { opcode: "JOB_LOG", since: "1.0", mode: "R" },
   { opcode: "JOB_SEARCH", since: "1.0", mode: "R" },
   { opcode: "SYSTEM_READ", since: "1.0", mode: "R" },
-  { opcode: "REPORT_PARAMETERS", since: "1.0", mode: "R", requires: "parameters" }
+  { opcode: "REPORT_PARAMETERS", since: "1.0", mode: "R", requires: "parameters" },
+  // Protocol 1.1 adds the three kernel runtime reads. Each one answers with the same envelope
+  // shape 1.0 established, plus a "calleeSubrc"/"calleeException" pair on a failed call: the
+  // branch transcribes the raw sub-return code and the callee's own declared exception name
+  // instead of translating either into a semantic label.
+  { opcode: "WP_LIST", since: "1.1", mode: "R", requires: "runtime" },
+  { opcode: "USER_LIST", since: "1.1", mode: "R", requires: "runtime" },
+  { opcode: "DIR_LIST", since: "1.1", mode: "R", requires: "runtime" },
+  // The two metrics reads. DB_ACTIVITY reads the DB6 history tables with helper-internal Open SQL
+  // (they are outside the service-side table allowlist); PERF_SNAPSHOT calls
+  // SWNC_COLLECTOR_GET_SYSTEMLOAD locally, because its export table type cannot be serialized
+  // over the external RFC path. Neither branch may collect: SWNC_COLLECTOR_KERNEL_STAT writes.
+  { opcode: "DB_ACTIVITY", since: "1.1", mode: "R", requires: "metrics" },
+  { opcode: "PERF_SNAPSHOT", since: "1.1", mode: "R", requires: "metrics" }
 ]
 // <<< ORVANTA-CAPABILITY-TABLE
+
+// The rows of the table above that one generated variant actually compiles in: an operation with no
+// `requires` always applies, and one that names a feature applies only when that feature is enabled
+// for the variant. This is the ONLY feature gate of this helper - buildOperationalLogSource() below
+// and the offline drift tests (test/helper-capabilities-generators.test.ts,
+// test/helper-capabilities-evidence.test.ts) and scripts/helper-capabilities-evidence.mjs all call
+// it, so a variant's advertised opcode list cannot drift from the branch it renders.
+//
+// @param {{spool?: boolean, parameters?: boolean, runtime?: boolean, metrics?: boolean}} features
+export const operationalLogOperationsFor = ({
+  spool = false,
+  parameters = false,
+  runtime = false,
+  metrics = false
+} = {}) =>
+  operationalLogOperations.filter(
+    (operation) =>
+      (operation.requires !== "spool" || spool) &&
+      (operation.requires !== "parameters" || parameters) &&
+      (operation.requires !== "runtime" || runtime) &&
+      (operation.requires !== "metrics" || metrics)
+  )
+
 const compareProtocolVersions = (left, right) => {
   const [leftMajor = 0, leftMinor = 0] = left.split(".").map(Number)
   const [rightMajor = 0, rightMinor = 0] = right.split(".").map(Number)
@@ -165,12 +204,18 @@ const assertGeneratedLineWidth = (lines) => {
   }
 }
 
-function buildOperationalLogSource(includeSpool, includeParameters = false) {
-  const operations = operationalLogOperations.filter(
-    (operation) =>
-      (operation.requires !== "spool" || includeSpool) &&
-      (operation.requires !== "parameters" || includeParameters)
-  )
+function buildOperationalLogSource(
+  includeSpool,
+  includeParameters = false,
+  includeRuntime = false,
+  includeMetrics = false
+) {
+  const operations = operationalLogOperationsFor({
+    spool: includeSpool,
+    parameters: includeParameters,
+    runtime: includeRuntime,
+    metrics: includeMetrics
+  })
   const lines = injectCapabilityHash(
     String.raw`
 DATA: lt_jobs TYPE STANDARD TABLE OF tbtco,
@@ -231,7 +276,7 @@ DATA: lt_jobs TYPE STANDARD TABLE OF tbtco,
       lt_capability TYPE STANDARD TABLE OF string,
       lv_capability TYPE string, lv_capabilities TYPE string,
       lv_capability_value TYPE string.
-${includeParameters ? reportParameterDeclarations + "\n" : ""}${includeSpool ? jobSpoolDeclarations + "\n" : ""}RANGES: lr_user FOR ls_job-sdluname,
+${includeParameters ? reportParameterDeclarations + "\n" : ""}${includeSpool ? jobSpoolDeclarations + "\n" : ""}${includeRuntime ? runtimeReadDeclarations + "\n" : ""}${includeMetrics ? dbPerfDeclarations + "\n" : ""}${includeRuntime || includeMetrics ? jsonNumMacro + "\n" : ""}RANGES: lr_user FOR ls_job-sdluname,
         lr_status FOR ls_job-status.
 FIELD-SYMBOLS: <job_param> TYPE btcltext,
                <job_length> TYPE btcint4.
@@ -241,6 +286,16 @@ DEFINE json_field.
     format = cl_abap_format=>e_json_string ).
   CONCATENATE lv_json &1 lv_value '"' INTO lv_json.
 END-OF-DEFINITION.
+DEFINE job_stage.
+  IF lv_body_check = 'X'. ev_result = &1. ENDIF.
+  IF lv_diagnostic = 'X'.
+    CONCATENATE lv_base
+      '"status":"unsupported","code":"READ_ONLY_UNSUPPORTED",'
+      '"reason":"' &1 '",' lv_tail INTO ev_result.
+  ENDIF.
+END-OF-DEFINITION.
+* make_time aborts, so it needs job_stage. Macros must be defined
+* before use, hence the stage macro sits above it.
 DEFINE make_time.
   lv_date = &1. lv_clock = &2.
   CALL FUNCTION 'DATE_CHECK_PLAUSIBILITY'
@@ -248,6 +303,12 @@ DEFINE make_time.
   IF sy-subrc <> 0 OR lv_date(4) = '0000'
      OR lv_clock(2) > '23' OR lv_clock+2(2) > '59'
      OR lv_clock+4(2) > '59'.
+* Unrepresentable timestamp. Name the stage, then abort:
+* returning silently made this look like every other guard.
+* scheduledSystemTime is NOT defaulted to null - the schema makes
+* it non-nullable and compares it against the window, so a null
+* would break the replies that currently succeed.
+    job_stage 'JOB_TIMESTAMP'.
     RETURN.
   ENDIF.
   CONCATENATE lv_date(4) '-' lv_date+4(2) '-' lv_date+6(2)
@@ -286,14 +347,6 @@ DEFINE fail_reply.
       '",' lv_tail INTO ev_result.
   ENDIF.
 END-OF-DEFINITION.
-DEFINE job_stage.
-  IF lv_body_check = 'X'. ev_result = &1. ENDIF.
-  IF lv_diagnostic = 'X'.
-    CONCATENATE lv_base
-      '"status":"unsupported","code":"READ_ONLY_UNSUPPORTED",'
-      '"reason":"' &1 '",' lv_tail INTO ev_result.
-  ENDIF.
-END-OF-DEFINITION.
 CLEAR ev_result.
 ${includeParameters ? reportParameterBranch + "\n" : ""}IF iv_action = 'JOB_BODY_CHECK'.
   lv_body_check = 'X'.
@@ -306,12 +359,12 @@ IF iv_action = 'JOB_LOG_DIAGNOSTIC'.
   lv_diagnostic = 'X'.
   iv_action = 'JOB_LOG'.
 ENDIF.
-* CAPABILITIES answers before the read validation: the first WHEN of
+${includeRuntime ? "IF iv_action = 'USER_LIST_DIAGNOSTIC'.\n  lv_diagnostic = 'X'.\n  iv_action = 'USER_LIST'.\nENDIF.\n" : ""}* CAPABILITIES answers before the read validation: the first WHEN of
 * the CASE below returns the self-description, not business logic.
 IF iv_action <> 'CAPABILITIES'
    AND iv_action <> 'JOB_SEARCH' AND iv_action <> 'JOB_LOG'
    AND iv_action <> 'JOB_DETAILS'
-${includeSpool ? "   AND iv_action <> 'JOB_SPOOL'\n" : ""}   AND iv_action <> 'SYSTEM_READ'.
+${includeSpool ? "   AND iv_action <> 'JOB_SPOOL'\n" : ""}${includeRuntime ? "   AND iv_action <> 'WP_LIST' AND iv_action <> 'USER_LIST'\n   AND iv_action <> 'DIR_LIST'\n" : ""}${includeMetrics ? "   AND iv_action <> 'DB_ACTIVITY'\n   AND iv_action <> 'PERF_SNAPSHOT'\n" : ""}   AND iv_action <> 'SYSTEM_READ'.
   RETURN.
 ENDIF.
 lv_json = '{"version":"1"'.
@@ -327,14 +380,36 @@ lv_json = ''.
 CASE iv_action.
 ${buildOperationalCapabilityBranch(operations).join("\n")}
 ${
-  includeSpool
-    ? String.raw`  WHEN 'JOB_SPOOL'.
+  includeRuntime
+    ? String.raw`  WHEN 'WP_LIST'.
+    lv_tail = '"server":"","rows":[],"truncated":false}'.
+  WHEN 'USER_LIST'.
+    lv_tail = '"kernelRowCount":"0","rows":[],"truncated":false}'.
+  WHEN 'DIR_LIST'.
+    CONCATENATE '"directory":"","fileCounter":"0","errorCounter":"0",'
+      '"rows":[],"truncated":false}' INTO lv_tail.
+`
+    : ""
+}${
+      includeMetrics
+        ? String.raw`  WHEN 'DB_ACTIVITY'.
+    CONCATENATE '"systemId":"' sy-sysid '","historyRows":[],'
+      '"bufferPoolRows":[],"truncated":false}' INTO lv_tail.
+  WHEN 'PERF_SNAPSHOT'.
+    CONCATENATE '"periodType":"","periodStart":"",'
+      '"timeUnit":"swnc-raw","rows":[],"truncated":false}'
+      INTO lv_tail.
+`
+        : ""
+    }${
+      includeSpool
+        ? String.raw`  WHEN 'JOB_SPOOL'.
     lv_tail = '"job":null,"stepNumber":null,"spoolId":null,'.
     CONCATENATE lv_tail '"page":null,"spoolStamp":null,"lines":[]}'
       INTO lv_tail.
 `
-    : ""
-}  WHEN 'JOB_DETAILS'.
+        : ""
+    }  WHEN 'JOB_DETAILS'.
     lv_tail = '"job":null,"steps":[],"complete":true}'.
   WHEN 'JOB_LOG'.
     lv_tail = '"job":null,"messages":[],"complete":true}'.
@@ -356,7 +431,7 @@ IF strlen( iv_user ) > 12 OR iv_user CA '*+%?'
    OR strlen( iv_program ) > 40 OR iv_program CA '*+%?'.
   RETURN.
 ENDIF.
-IF iv_action <> 'JOB_LOG' AND iv_action <> 'JOB_DETAILS'${includeSpool ? "\n   AND iv_action <> 'JOB_SPOOL'" : ""}.
+IF iv_action <> 'JOB_LOG' AND iv_action <> 'JOB_DETAILS'${includeSpool ? "\n   AND iv_action <> 'JOB_SPOOL'" : ""}${includeRuntime ? "\n   AND iv_action <> 'WP_LIST' AND iv_action <> 'USER_LIST'\n   AND iv_action <> 'DIR_LIST'" : ""}${includeMetrics ? "\n   AND iv_action <> 'DB_ACTIVITY'\n   AND iv_action <> 'PERF_SNAPSHOT'" : ""}.
   FIND REGEX
     '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'
     IN iv_from.
@@ -386,12 +461,14 @@ IF iv_action <> 'JOB_LOG' AND iv_action <> 'JOB_DETAILS'${includeSpool ? "\n   A
   IF lv_limit < 1 OR lv_limit > 200. RETURN. ENDIF.
 ENDIF.
 TRY.
-${includeSpool ? jobSpoolBranch + "\n" : ""}IF iv_action = 'JOB_SEARCH' OR iv_action = 'JOB_LOG'
+${includeSpool ? jobSpoolBranch + "\n" : ""}${includeRuntime ? runtimeReadBranch + "\n" : ""}${includeMetrics ? dbPerfBranchFor(includeRuntime) + "\n" : ""}IF iv_action = 'JOB_SEARCH' OR iv_action = 'JOB_LOG'
    OR iv_action = 'JOB_DETAILS'.
+  job_stage 'JOB_SCOPE'.
   IF iv_jobname IS INITIAL OR strlen( iv_jobname ) > 32
      OR iv_jobname CA '*+%?' OR iv_program IS NOT INITIAL.
     RETURN.
   ENDIF.
+  job_stage 'JOB_NAME_VALIDATION'.
   IF iv_action = 'JOB_SEARCH'.
     IF lv_limit > 50 OR iv_jobcount IS NOT INITIAL
        OR strlen( iv_status ) > 1.
@@ -436,10 +513,12 @@ ${includeSpool ? jobSpoolBranch + "\n" : ""}IF iv_action = 'JOB_SEARCH' OR iv_ac
        OR iv_after_job IS NOT INITIAL.
       RETURN.
     ENDIF.
+    job_stage 'JOB_SINGLE_VALIDATION'.
     IF ( iv_action = 'JOB_LOG' AND iv_limit <> '1000' )
        OR ( iv_action = 'JOB_DETAILS' AND iv_limit <> '100' ).
       RETURN.
     ENDIF.
+    job_stage 'JOB_LIMIT_VALIDATION'.
     SELECT SINGLE * FROM tbtco INTO ls_job
       WHERE jobname = iv_jobname AND jobcount = iv_jobcount
         AND authckman = sy-mandt.
@@ -448,6 +527,7 @@ ${includeSpool ? jobSpoolBranch + "\n" : ""}IF iv_action = 'JOB_SEARCH' OR iv_ac
       RETURN.
     ENDIF.
     APPEND ls_job TO lt_jobs.
+    job_stage 'JOB_HEADER_READ'.
   ENDIF.
   LOOP AT lt_jobs INTO ls_job.
     AUTHORITY-CHECK OBJECT 'S_BTCH_JOB'
@@ -456,6 +536,7 @@ ${includeSpool ? jobSpoolBranch + "\n" : ""}IF iv_action = 'JOB_SEARCH' OR iv_ac
       fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
     ENDIF.
   ENDLOOP.
+  job_stage 'JOB_SHOW_AUTHORITY'.
   IF iv_action = 'JOB_SEARCH'.
     DESCRIBE TABLE lt_jobs LINES lv_rows.
     lv_more = 'false'.
@@ -532,6 +613,7 @@ ${includeSpool ? "* Exact current-client job and SHOW permission checked above.\
   IF sy-subrc <> 0.
     fail_reply 'forbidden' 'NO_AUTHORITY'. RETURN.
   ENDIF.
+  job_stage 'JOB_PROT_AUTHORITY'.
   make_job.
   lv_header = lv_json.
   job_stage 'TEMSE_NAME'.
@@ -539,6 +621,7 @@ ${includeSpool ? "* Exact current-client job and SHOW permission checked above.\
      OR ls_job-joblog CN 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.
     RETURN.
   ENDIF.
+  job_stage 'JOB_LOG_NAME'.
   job_stage 'TEMSE_STORAGE'.
   SELECT SINGLE * FROM tst01 CLIENT SPECIFIED INTO ls_temse
     WHERE dclient = sy-mandt AND dname = ls_job-joblog.
@@ -961,6 +1044,18 @@ CONCATENATE lv_json ',"entries":' lv_items
   lv_number ',"truncated":true}' INTO lv_tail.
 fail_reply 'ok' 'OK'.
 CATCH cx_root.
+* Terminal handler of the SYSTEM_READ branch. It used to return
+* without touching ev_result, so an escaped exception was
+* indistinguishable from a guard RETURN and from an unapproved
+* source. The exception text is NOT appended: a method call inside
+* a CATCH can itself raise, and this handler must not be able to
+* turn a diagnosable failure into an empty reply.
+  job_stage 'SYSTEM_READ_EXCEPTION'.
+  IF lv_diagnostic IS INITIAL AND lv_body_check IS INITIAL.
+    CONCATENATE lv_base
+      '"status":"unsupported","code":"READ_ONLY_UNSUPPORTED",'
+      '"reason":"SYSTEM_READ_EXCEPTION",' lv_tail INTO ev_result.
+  ENDIF.
   RETURN.
 ENDTRY.
 `
@@ -974,3 +1069,13 @@ ENDTRY.
 export const operationalLogSource = buildOperationalLogSource(false)
 export const operationalLogSpoolSource = buildOperationalLogSource(true)
 export const operationalLogReportSource = buildOperationalLogSource(true, true)
+// The variant that carries every optional feature, including the protocol 1.1 runtime reads. This
+// is the body scripts/deploy-runtime-reads.mjs deploys; the three exports above stay byte-identical
+// so the historical bodies they reproduce remain reproducible.
+export const operationalLogRuntimeSource = buildOperationalLogSource(true, true, true, true)
+// Report + the two metrics reads, without the runtime reads. The metrics branches read only
+// IV_PERIOD out of the four imports the runtime variant adds, so this variant needs exactly one new
+// interface parameter (IV_PERIOD) instead of four - it can be deployed on a release whose interface
+// cannot be extended by tool, as long as that one parameter is added in SE37. It carries the same
+// spool and report features as the currently deployed body, so those opcodes do not regress.
+export const operationalLogMetricsSource = buildOperationalLogSource(true, true, false, true)

@@ -12,7 +12,7 @@ import { OPERATIONAL_LOG_HELPER } from "../src/operational-logs.js"
 // test/helper-capabilities-payload.test.ts):
 //
 //   scripts/maintenance-diagnostic-source.mjs -> Z_ORVANTA_MAINT_READ (3 CASE branches)
-//   scripts/operational-log-source.mjs        -> Z_ORVANTA_OPS_READ    (up to 5 CASE branches)
+//   scripts/operational-log-source.mjs        -> Z_ORVANTA_OPS_READ    (5 rendered variants)
 //
 // Only the generator text is parsed and the generated ABAP is rendered in memory: no
 // PowerShell, no deploy script and no SAP system is executed or contacted.
@@ -34,7 +34,8 @@ interface GeneratedVariant {
   file: string
   helper: string
   lines: string[]
-  features: { spool: boolean; parameters: boolean }
+  /** The optional generator features this rendered variant compiles in. */
+  features: { spool: boolean; parameters: boolean; runtime: boolean; metrics: boolean }
   /** Actions the body answers before `CASE iv_action` and therefore outside the CASE. */
   preCaseOpcodes: string[]
   packageName: string
@@ -54,7 +55,7 @@ const variants: GeneratedVariant[] = [
     file: maintFile,
     helper: MAINTENANCE_HELPER,
     lines: maintModule.maintenanceDiagnosticSource as string[],
-    features: { spool: false, parameters: false },
+    features: { spool: false, parameters: false, runtime: false, metrics: false },
     preCaseOpcodes: [],
     packageName: "ZABAP",
     transport: "GR2K923472|GR2K923473"
@@ -64,7 +65,7 @@ const variants: GeneratedVariant[] = [
     file: opsFile,
     helper: OPERATIONAL_LOG_HELPER,
     lines: opsModule.operationalLogSource as string[],
-    features: { spool: false, parameters: false },
+    features: { spool: false, parameters: false, runtime: false, metrics: false },
     preCaseOpcodes: [],
     packageName: "ZABAP",
     transport: "GR2K923472|GR2K923473"
@@ -74,7 +75,7 @@ const variants: GeneratedVariant[] = [
     file: opsFile,
     helper: OPERATIONAL_LOG_HELPER,
     lines: opsModule.operationalLogSpoolSource as string[],
-    features: { spool: true, parameters: false },
+    features: { spool: true, parameters: false, runtime: false, metrics: false },
     preCaseOpcodes: [],
     packageName: "ZABAP",
     transport: "GR2K923472|GR2K923473"
@@ -84,7 +85,35 @@ const variants: GeneratedVariant[] = [
     file: opsFile,
     helper: OPERATIONAL_LOG_HELPER,
     lines: opsModule.operationalLogReportSource as string[],
-    features: { spool: true, parameters: true },
+    features: { spool: true, parameters: true, runtime: false, metrics: false },
+    preCaseOpcodes: ["REPORT_PARAMETERS"],
+    packageName: "ZABAP",
+    transport: "GR2K923472|GR2K923473"
+  },
+  {
+    // The body scripts/deploy-runtime-reads.mjs deploys: the only rendered variant that compiles the
+    // protocol 1.1 kernel reads and the two metrics reads in, so the gate is also exercised on rows
+    // whose `requires` feature the other variants leave off.
+    label: `${OPERATIONAL_LOG_HELPER} (runtime and metrics)`,
+    file: opsFile,
+    helper: OPERATIONAL_LOG_HELPER,
+    lines: opsModule.operationalLogRuntimeSource as string[],
+    features: { spool: true, parameters: true, runtime: true, metrics: true },
+    preCaseOpcodes: ["REPORT_PARAMETERS"],
+    packageName: "ZABAP",
+    transport: "GR2K923472|GR2K923473"
+  },
+  {
+    // Report + the two metrics reads, without the runtime reads. Of the four imports the runtime
+    // variant adds, the metrics branches read only IV_PERIOD; IV_SERVER / IV_DIR / IV_MASK appear in
+    // their guards alone, so this body compiles against the interface the report variant already
+    // has plus that one parameter. It is the deployable variant on a release whose interface cannot
+    // be extended by tool, where the runtime variant would not activate.
+    label: `${OPERATIONAL_LOG_HELPER} (metrics only)`,
+    file: opsFile,
+    helper: OPERATIONAL_LOG_HELPER,
+    lines: opsModule.operationalLogMetricsSource as string[],
+    features: { spool: true, parameters: true, runtime: false, metrics: true },
     preCaseOpcodes: ["REPORT_PARAMETERS"],
     packageName: "ZABAP",
     transport: "GR2K923472|GR2K923473"
@@ -131,6 +160,29 @@ const readTable = (source: string, file: string): Operation[] => {
 
 const maintTable = readTable(maintSource, maintFile)
 const opsTable = readTable(opsSource, opsFile)
+
+/**
+ * A table entry in the shape the parser produces, so a module export and the table parsed out of the
+ * generator source can be compared field for field (including an absent `requires`).
+ */
+const asParsed = (entries: readonly Operation[]): Operation[] =>
+  entries.map((entry) => ({
+    opcode: entry.opcode,
+    since: entry.since,
+    mode: entry.mode,
+    ...(entry.requires ? { requires: entry.requires } : {})
+  }))
+
+/**
+ * The operations one rendered variant actually compiles in. The table module owns the gate
+ * (`operationalLogOperationsFor`), so the suite asks the generator which rows a variant with these
+ * features renders instead of repeating the `requires` names a second time - which is exactly how
+ * the two drifted apart before. The maintenance helper's table declares no gate and is taken whole.
+ */
+const tableFor = (variant: GeneratedVariant): Operation[] =>
+  variant.file === opsFile
+    ? asParsed(opsModule.operationalLogOperationsFor(variant.features) as Operation[])
+    : maintTable
 
 /** The first WHEN..next WHEN slice of the CASE iv_action dispatcher for one generated body. */
 const capabilityBranch = (variant: GeneratedVariant): string[] => {
@@ -254,17 +306,21 @@ test("CAPABILITIES is reachable without caller input, validation or business aut
 })
 
 test("the opcode table is the only opcode list for its dispatcher", () => {
-  const tables = new Map([
-    [maintFile, maintTable],
-    [opsFile, opsTable]
-  ])
+  // The table parsed out of the generator source is the table the generator exports, `requires`
+  // included: the gate below is applied to that same list, so an export that stopped matching the
+  // marked block cannot be checked against a different list than the one the parser reads.
+  assert.deepEqual(
+    opsTable,
+    asParsed(opsModule.operationalLogOperations as Operation[]),
+    `${opsFile}: the parsed table is the exported table`
+  )
+  assert.deepEqual(
+    maintTable,
+    asParsed(maintModule.maintenanceDiagnosticOperations as Operation[]),
+    `${maintFile}: the parsed table is the exported table`
+  )
   for (const variant of variants) {
-    const table = tables.get(variant.file) ?? []
-    const expectedRows = table.filter(
-      (entry) =>
-        (entry.requires !== "spool" || variant.features.spool) &&
-        (entry.requires !== "parameters" || variant.features.parameters)
-    )
+    const expectedRows = tableFor(variant)
     const rows = operationRows(capabilityBranch(variant))
     assert.deepEqual(
       rows,
@@ -377,7 +433,7 @@ test("each table sinceVersion sits inside the protocol range the body publishes"
       )
       assert.equal(row.mode, "R", `${variant.label}: these helpers are read-only`)
     }
-    for (const entry of variant.file === maintFile ? maintTable : opsTable) {
+    for (const entry of tableFor(variant)) {
       assert.ok(
         compareProtocol(entry.since, range.min) >= 0 &&
           compareProtocol(entry.since, range.max) <= 0,

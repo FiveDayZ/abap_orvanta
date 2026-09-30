@@ -21,7 +21,10 @@ import {
   maintenanceDiagnosticOperations,
   maintenanceDiagnosticSource
 } from "./maintenance-diagnostic-source.mjs"
-import { operationalLogOperations, operationalLogReportSource } from "./operational-log-source.mjs"
+import {
+  operationalLogOperationsFor,
+  operationalLogRuntimeSource
+} from "./operational-log-source.mjs"
 
 const HASH_SLOTS = ["ORVANTAHASHSLOT1", "ORVANTAHASHSLOT2", "ORVANTAHASHSLOT3", "ORVANTAHASHSLOT4"]
 
@@ -169,6 +172,13 @@ const range = (operations) => {
 
 const operationRow = (opcode, since, mode) => `OPERATION|${opcode}|${since}|${mode}`
 
+// The variant whose body SAP holds for Z_ORVANTA_OPS_READ: the runtime variant
+// (scripts/deploy-runtime-reads.mjs --variant=runtime), deployed 2026-09-30. The expected state is
+// derived with the generator's own feature gate rather than from the whole operation table, so a
+// target can never demand that a deployed helper advertise an opcode its body cannot answer.
+const opsRuntimeFeatures = { spool: true, parameters: true, runtime: true, metrics: true }
+const opsRuntimeOperations = operationalLogOperationsFor(opsRuntimeFeatures)
+
 export const helperCapabilityTargets = {
   maint: {
     target: "maint",
@@ -208,19 +218,20 @@ export const helperCapabilityTargets = {
     packageName: "ZABAP",
     transportRequest: "GR2K923472",
     transportTask: "GR2K923473",
-    expectedProtocol: range(operationalLogOperations),
-    expectedOperations: operationalLogOperations.map((operation) =>
+    expectedProtocol: range(opsRuntimeOperations),
+    expectedOperations: opsRuntimeOperations.map((operation) =>
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
-    // Re-pinned 2026-09-29: the spool arm was fixed twice in one round - the row type moved from
-    // STANDARD TABLE OF string to char255 with a trailing-pad trim (the STRING row made
-    // LIST_TO_ASCI's DESCRIBE FIELD ... IN CHARACTER MODE dump), and every failure path that used to
-    // RETURN with an empty EV_RESULT now answers through job_stage. The body was written to SAP with
-    // write_function_module_source and verified line by line, so the live body IS the reviewed intent
-    // and both pins agree again. Evidence: .doc/code-update-20260929-164952.md.
-    deployedNowBodyHash: "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c",
-    intendedBodyHash: "440842c179fdb71e80b94cb46e23ce058c7d9ae13d3d0c9a6bc6e876cc29200c",
-    generatorBody: operationalLogReportSource
+    // Re-pinned 2026-09-30 (fifth deployment of the day): the USER_LIST branch now supplies the
+    // kernel interface's mandatory LIST (UINFO) table as well as USRLIST, because passing USRLIST
+    // alone made CALL FUNCTION 'TH_USER_LIST' abort with CX_SY_DYN_CALL_PARAM_MISSING - the class
+    // name the terminal CATCH of the previous deployment started reporting. Only USRLIST is read.
+    // The interface is untouched, so the approval file's interfaceFingerprint stands; only the
+    // source fingerprint moved. Both pins agree again.
+    // Evidence: .doc/runtime-reads-deploy-1790749923642.json.
+    deployedNowBodyHash: "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a",
+    intendedBodyHash: "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a",
+    generatorBody: operationalLogRuntimeSource
   }
 }
 

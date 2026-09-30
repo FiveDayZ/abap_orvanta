@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 162,
-  "readOnlyToolCount": 97,
+  "toolCount": 165,
+  "readOnlyToolCount": 100,
   "profiles": {
-    "readonly": 97,
+    "readonly": 100,
     "platform": 12,
-    "dev": 136,
-    "config": 39,
-    "ops": 56,
-    "full": 162
+    "dev": 139,
+    "config": 42,
+    "ops": 59,
+    "full": 165
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 39,
+    "ops": 42,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -1491,6 +1491,23 @@
       "minHelperProtocol": "2.2"
     },
     {
+      "name": "read_db_activity",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": "Z_ORVANTA_OPS_READ",
+      "minHelperProtocol": "1.1"
+    },
+    {
       "name": "read_ddic_data_element",
       "group": "ddic",
       "profiles": [
@@ -1626,8 +1643,8 @@
         "idempotentHint": false
       },
       "route": "target-specific",
-      "sapHelper": null,
-      "minHelperProtocol": null
+      "sapHelper": "Z_ORVANTA_OPS_READ",
+      "minHelperProtocol": "1.1"
     },
     {
       "name": "read_function_module_interface",
@@ -1707,6 +1724,23 @@
       "minHelperProtocol": "1.11"
     },
     {
+      "name": "read_performance_snapshot",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": "Z_ORVANTA_OPS_READ",
+      "minHelperProtocol": "1.1"
+    },
+    {
       "name": "read_qrfc_queues",
       "group": "ops",
       "profiles": [
@@ -1758,6 +1792,23 @@
       "sapHelper": null,
       "minHelperProtocol": null,
       "note": "通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。"
+    },
+    {
+      "name": "read_role_authorizations",
+      "group": "ops",
+      "profiles": [
+        "dev",
+        "config",
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
     },
     {
       "name": "read_sapscript_form",
@@ -1914,8 +1965,8 @@
         "idempotentHint": false
       },
       "route": "target-specific",
-      "sapHelper": null,
-      "minHelperProtocol": null
+      "sapHelper": "Z_ORVANTA_OPS_READ",
+      "minHelperProtocol": "1.1"
     },
     {
       "name": "read_work_processes",
@@ -1931,8 +1982,8 @@
         "idempotentHint": false
       },
       "route": "target-specific",
-      "sapHelper": null,
-      "minHelperProtocol": null
+      "sapHelper": "Z_ORVANTA_OPS_READ",
+      "minHelperProtocol": "1.1"
     },
     {
       "name": "read_workload_directory",

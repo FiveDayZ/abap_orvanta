@@ -13,9 +13,10 @@ import {
  *
  * This tool reports stored master data. It is **not** an authorization check: it never says that a
  * user is or is not authorized for something, and it does not resolve a role into its authorization
- * objects, even though `AGR_1251`, `AGR_1252`, `AGR_PROF`, `USOBT`/`USOBT_C`/`USOBX`/`USOBX_C` and
- * `UST10S`/`UST10C` became readable on 2026-09-28: that resolution is a separate tool's job, not
- * this one's. An actual trace (SU53 / ST01) is the SAP-side helper's job. The stored flags
+ * objects even though `AGR_1251`, `AGR_1252`, `AGR_PROF`, `USOBT`/`USOBT_C`/`USOBX`/`USOBX_C` and
+ * `UST10S`/`UST10C` became readable on 2026-09-28: that resolution is what `read_role_authorizations`
+ * does, deliberately as its own tool rather than as a mode of this one. An actual trace (SU53 / ST01)
+ * is the SAP-side helper's job. The stored flags
  * (`EXCLUDE`, `ORG_FLAG`, `COL_FLAG`, `DIRECT`, `INHERITED`) and the validity window
  * (`FROM_DAT` / `TO_DAT`) are returned verbatim; the tool never decides whether an assignment is
  * active today.
@@ -206,9 +207,8 @@ export async function collectUserAuthorizations(
     notes: [
       "this is assignment master data, not an authorization check: the tool never states that a user " +
         "is or is not authorized, and it does not resolve a role into its authorization objects " +
-        "(AGR_1251/AGR_1252/AGR_PROF, USOBT/USOBT_C/USOBX/USOBX_C and UST10S/UST10C have been " +
-        "readable since 2026-09-28, but resolving them is a separate tool's job, not this one's; an " +
-        "actual trace is the SU53/ST01 path on the SAP-side helper).",
+        "(read_role_authorizations does that from AGR_1251/AGR_1252/AGR_PROF and the UST10S/UST10C " +
+        "profile path; an actual trace is the SU53/ST01 path on the SAP-side helper).",
       "EXCLUDE, ORG_FLAG, COL_FLAG, DIRECT and INHERITED are stored flags reported verbatim, and " +
         "TYPE is the stored node type; none of them is interpreted here.",
       "FROM_DAT and TO_DAT are the validity window stored in AGR_USERS, returned as stored - the " +

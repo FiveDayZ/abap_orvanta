@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import type { SapBackend, SapDdicOperation } from "./backend.js"
 import type { MaintenanceDiagnosticService } from "./maintenance-diagnostics.js"
+import { createReviewedTableReader, type ReviewedReaderSource } from "./reviewed-table-reader.js"
 import type { ToolService } from "./tools.js"
 import { hashWriteInput, type SapPreChangeEvidence } from "./write-operation-receipts.js"
 import { SmartformService } from "./smartforms.js"
@@ -426,6 +427,77 @@ export async function observeWritePreChange(
       } else {
         recordObservationError(evidence, "transport_details", error)
       }
+    }
+  } else if (name === "release_background_job" || name === "cancel_background_job") {
+    // A background job is a TBTCO row, so like a lock entry or a CTS request it is not a repository
+    // object and it has no ADT URI: the generic source observation below looked up an empty URI and
+    // refused every attempt before SAP was contacted, which is what both tools did until this branch
+    // existed (2026-09-30: `source: observation failed (92234395...)`, identical for both tools and
+    // unchanged across an instance restart). The job's own row is the authoritative pre-change read,
+    // because its STATUS is the field the write is about to change.
+    //
+    // The row is read through the shared reviewed table reader rather than through the SM37 job
+    // tools, and that is deliberate. The helper's job-details branch aborts on a job whose SDLSTRTDT
+    // is empty - `make_time` RETURNs out of the whole function module - and that is exactly the
+    // "scheduled, never started" job a release exists for, so using it here would refuse every job
+    // these two tools were built to move. The reader is fingerprint-gated and TBTCO is on the
+    // deliverable allowlist with JOBNAME/JOBCOUNT as its key, so this is the same reviewed path the
+    // read-only table tools use. A row that is not there is recorded as absent rather than as a
+    // blocker: the helper re-reads the job header and answers JOB_NOT_FOUND, which is its documented
+    // contract, and nothing is moved.
+    const observedJobName = String(input.jobName).toUpperCase()
+    const observedJobCount = String(input.jobCount)
+    const jobSources: ReviewedReaderSource[] = []
+    const readJobHeader = createReviewedTableReader(
+      backend,
+      connectionId,
+      async () =>
+        JSON.parse(
+          await tools.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        ),
+      jobSources,
+      evidence.warnings
+    )
+    const jobRows = await readJobHeader({
+      table: "TBTCO",
+      fields: [
+        "JOBNAME",
+        "JOBCOUNT",
+        "STATUS",
+        "SDLSTRTDT",
+        "SDLSTRTTM",
+        "SDLUNAME",
+        "AUTHCKMAN",
+        "LASTCHDATE",
+        "LASTCHTIME"
+      ],
+      filters: { JOBNAME: observedJobName, JOBCOUNT: observedJobCount },
+      maximum: 1,
+      codePrefix: "JOB_OBSERVATION_",
+      mapError: () => "JOB_OBSERVATION_FAILED"
+    })
+    evidence.sources.push("tbtco")
+    const observedJob = (jobRows ?? [])[0]
+    evidence.active = null
+    evidence.version = observedJob === undefined ? null : stringValue(observedJob.STATUS)
+    evidence.fingerprint =
+      observedJob === undefined ? null : hashWriteInput(JSON.stringify(observedJob))
+    if (observedJob !== undefined) {
+      evidence.exists = true
+    } else if (jobSources[0]?.status === "empty") {
+      evidence.exists = false
+      evidence.warnings.push(
+        "no TBTCO row matched this exact job name and job count in the current client; the helper re-reads the job header and answers JOB_NOT_FOUND instead of moving a job it did not read"
+      )
+    } else {
+      // The read itself failed rather than returning no row. That is not an established absence, so
+      // `exists` stays null and the gate refuses the write instead of reporting the job as gone.
+      evidence.warnings.push(
+        `the TBTCO row could not be read (${jobSources[0]?.code ?? "JOB_OBSERVATION_FAILED"}); the job's current status is unknown, so nothing was moved`
+      )
     }
   } else if (name === "run_abap_program") {
     // The target of this tool is whatever the program itself changes, and no read can bound that.

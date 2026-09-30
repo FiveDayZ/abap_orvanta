@@ -321,7 +321,57 @@ test("numeric overflow, duplicate keys, deleted rows and edits never return part
     const result = await f.read()
     assert.equal(result.status, "unavailable", mode)
     assert.equal(result.data, null, mode)
+    if (mode === "overflow")
+      assert.equal("code" in result && result.code, "TABLE_QUERY_NUMERIC_OVERFLOW", mode)
   }
+})
+
+test("the numeric decode guard refuses replacement text by name and keeps accepted decimal forms verbatim", async () => {
+  // A numeric value is printed into the field's own character width, and a value that does not fit comes
+  // back as replacement text rather than as a number. That is not hypothetical on w200: T006.GC and
+  // T006.FA (DEC 9/6, a 9-character box) carry the Celsius and Fahrenheit conversion constants, whose
+  // decimal text needs ten characters, and every whole-row read of that table is refused on exactly
+  // those two rows (read-only probes .cache/r39-probe1|3|4|6|7.mjs). The guard must keep refusing text
+  // it cannot read as a number - and must not be widened into guessing one from it - while every form
+  // the reader really returns stays byte-identical in the answer.
+  for (const text of ["****************", ".500000", ""]) {
+    const f = fixture()
+    f.rows[0]!.AMOUNT = text
+    const result = await f.read()
+    assert.equal(result.status, "unavailable", JSON.stringify(text))
+    assert.equal(
+      "code" in result && result.code,
+      "TABLE_QUERY_NUMERIC_OVERFLOW",
+      JSON.stringify(text)
+    )
+    assert.equal(result.data, null, JSON.stringify(text))
+  }
+  // 0.000000 is what 273 of T006's rows carry, 9.000000 is its one non-zero value, 273.15000 is a
+  // decimal that exactly fills the same 9-character box, the trailing sign is the packed form the
+  // wide-row test uses, and the scientific form is what this reader returns for a float column.
+  for (const text of [
+    "0.000000",
+    "9.000000",
+    "273.15000",
+    "9007199254740993.123-",
+    "0.000000000E+00"
+  ]) {
+    const f = fixture()
+    f.rows[0]!.AMOUNT = text
+    const result = await f.read()
+    assert.equal(result.status, "ok", text)
+    assert.equal(result.data![0]!.AMOUNT, text, text)
+  }
+  // The same guard and the same accepted scientific form apply to a float column.
+  const f = fixture()
+  f.layout[4]!.TYPE = "F"
+  f.rows[0]!.AMOUNT = "0.000000000E+00"
+  assert.equal((await f.read()).data![0]!.AMOUNT, "0.000000000E+00")
+  f.rows[0]!.AMOUNT = "****************"
+  const refused = await f.read()
+  assert.equal(refused.status, "unavailable")
+  assert.equal("code" in refused && refused.code, "TABLE_QUERY_NUMERIC_OVERFLOW")
+  assert.equal(refused.data, null)
 })
 
 test("request budget rejects large wide fetches before per-key reads", async () => {
@@ -349,6 +399,7 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
       tableName: "TFDIR",
       columns: ["*"],
       aggregates: [],
+      expressions: [],
       groupBy: [],
       readWholeRow: true,
       groups: [
@@ -357,7 +408,8 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
           { column: "WERKS", operator: "EQ", value: "809P" }
         ]
       ],
-      orderBy: []
+      orderBy: [],
+      limit: undefined
     }
   )
   // The degraded path translates exactly the comparisons read_abap_table can express. Refusing
@@ -371,6 +423,7 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
       tableName: "ZTPMC_BZWL",
       columns: ["MANDT", "BUKRS"],
       aggregates: [],
+      expressions: [],
       groupBy: [],
       readWholeRow: false,
       groups: [
@@ -383,7 +436,8 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
           { column: "ZPKGDESC", operator: "EQ", value: "x'y" }
         ]
       ],
-      orderBy: []
+      orderBy: [],
+      limit: undefined
     }
   )
   // A bare number keeps its sign and decimals; the reader quotes it for SAP.
@@ -404,9 +458,10 @@ test("finite SELECT fallback accepts escaped literals and rejects unsupported SQ
   for (const sql of [
     "SELECT * FROM TFDIR WHERE ID = '1' AND ",
     "SELECT * FROM TFDIR WHERE ID = '1' OR ",
-    // Aggregates and GROUP BY moved into the dialect (see the aggregate test below); an expression
-    // that is not one of the four aggregates is still not translated.
-    "SELECT ID + 1 FROM TFDIR WHERE ID = '1'",
+    // Aggregates and GROUP BY moved into the dialect (see the aggregate test below), and an
+    // arithmetic term moved in with them (see the expression-projection test). A projection this
+    // grammar still cannot describe - here an alias - keeps the platform's own error.
+    "SELECT ID AS I FROM TFDIR WHERE ID = '1'",
     "SELECT * FROM TFDIR WHERE ID = '1';DELETE FROM TFDIR",
     // Not the dialect: C-style inequality is not ABAP Open SQL, and a value beyond the reader's
     // 40-character bound is refused here rather than rejected later as a malformed request.
