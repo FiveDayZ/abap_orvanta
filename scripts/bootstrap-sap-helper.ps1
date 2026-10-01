@@ -14104,10 +14104,20 @@ function New-InstallProgram {
         "          iv_without_locking = space",
         "          iv_display_export_log = space",
         "          iv_ignore_warnings = space",
-        # ET_MESSAGES belongs to the same EXPORTING section as the VALUE(...) imports: the
-        # function's own signature on w200 lists ES_REQUEST, ET_DELETED_TASKS and ET_MESSAGES
-        # together under EXPORTING and its TABLES section is empty, so a second EXPORTING section
-        # (or a TABLES section) would not compile.
+        # ET_MESSAGES is declared in the CALLEE's EXPORTING section, so the caller receives it under
+        # IMPORTING - caller EXPORTING maps to callee IMPORTING, and only a callee EXPORTING/CALL BY
+        # VALUE result maps back into the caller's IMPORTING. Passing it under EXPORTING was wrong and
+        # is what the target answered with the short dump CALL_FUNCTION_PARM_UNKNOWN: the runtime
+        # looked for ET_MESSAGES among the callee's IMPORTING parameters, did not find it, and aborted
+        # before any release logic ran. That is why the short dump appeared at the call itself rather
+        # than as one of the callee's own exceptions, and why a content-preserving re-activation could
+        # never clear it. SAP's own callers use IMPORTING for exactly this kind of parameter:
+        # TRINT_RELEASE_REQUEST passes et_messages to TRINT_RELEASE_WITHOUT_TRANSP under IMPORTING,
+        # and BAPI_CTREQUEST_RELEASE passes RETURN to BALW_BAPIRETURN_GET2 the same way.
+        # Only ET_MESSAGES is received here: the callee's other two exports are TRWBO_REQUEST and
+        # TRWBO_T_E070, and neither is a DDIC object on this release (checked in DDIC, see the
+        # declaration comment above), so a work area for them would not compile.
+        "        IMPORTING",
         "          et_messages = lt_tr_release_messages",
         "        EXCEPTIONS",
         "          cts_initialization_failure = 1",
