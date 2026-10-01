@@ -73,6 +73,10 @@ export const TRANSPORT_RELEASE_CODES = [
   "TRANSPORT_NO_AUTHORITY",
   "TRANSPORT_ALREADY_RELEASED",
   "TRANSPORT_OBJECT_CHECK_FAILED",
+  // A request whose tasks are still modifiable cannot be released: CTS answers
+  // "参照任务 <task> 还没有释放". The helper therefore releases the tasks first and reports this code,
+  // naming the task, when one of them fails - so the request is never advanced on a half-done release.
+  "TRANSPORT_TASK_RELEASE_FAILED",
   "TRANSPORT_EXPORT_FAILED",
   "TRANSPORT_READBACK_FAILED",
   "TRANSPORT_STILL_MODIFIABLE",

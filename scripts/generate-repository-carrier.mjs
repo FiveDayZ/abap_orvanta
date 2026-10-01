@@ -121,7 +121,14 @@ const SUPERSEDED_OPERATIONS = {
 // project and on one outside it, which is what ruled the project checks out as the cause. SAP's own
 // callers (RSWBO011, BAPI_CTREQUEST_RELEASE) leave the flag at its default.
 // Evidence: .doc/code-update-20261001-151456.md, .cache/r331-read-exec-mode.mjs.
-const REVIEWED_REMOVED_LINES = ["iv_as_background_job = 'X'"]
+//
+// `ls_d9_request_task-trkorr.` (removed 2026-10-01, same batch): the create arm's task list is now read
+// back from E070 (`SELECT trkorr ... WHERE strkorr = <request>`) instead of being echoed from the
+// callee's ET_TASK_HEADERS. The echo had published task numbers that E070 did not contain at all, and
+// a request with no task row cannot have objects added to it - ADD_OBJECTS_TO_TRANSPORT answers "no
+// matching task for request", so the request stays empty and its release dies in the physical export.
+// Evidence: .cache/r365-task-check.mjs (E070 has no row for the reported task numbers), .cache/r364.
+const REVIEWED_REMOVED_LINES = ["iv_as_background_job = 'X'", "ls_d9_request_task-trkorr."]
 
 // ------------------------------------------------------------------------------------------------
 // Canonical body: the exact source the bootstrap script would install, exported by the PowerShell

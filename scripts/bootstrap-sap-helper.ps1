@@ -6841,6 +6841,10 @@ function New-InstallProgram {
         "  DATA lv_d9_request_subrc TYPE sysubrc.",
         "  DATA lv_d9_request_index TYPE i.",
         "  DATA lv_d9_request_tasks TYPE i.",
+        # The task numbers published to the caller are read back from E070 (STRKORR = the request),
+        # not taken from the callee's ET_TASK_HEADERS echo - see the note at the read-back below.
+        "  DATA lt_d9_request_tasks_db TYPE STANDARD TABLE OF e070-trkorr.",
+        "  DATA lv_d9_request_task_db TYPE e070-trkorr.",
         "  DATA lv_d9_request_count_text TYPE c LENGTH 10.",
         "  DATA lv_d9_request_error_text TYPE string.",
         "  DATA ls_d9_request_header TYPE trwbo_request_header.",
@@ -6857,6 +6861,11 @@ function New-InstallProgram {
         # (package SCTS_OBJ) and carry the flat object list; SCTSA_S_API_CALL is deliberately not
         # used, because iv_with_dialog = 'D' already sets ls_g-suppress_dialog inside the callee.
         "  DATA lv_d9_add_order_in TYPE trkorr.",
+        # The caller's request number is resolved to its task before TRINT_OBJECTS_CHECK_AND_INSERT,
+        # which needs a task in IV_ORDER (see the note at the resolution below).
+        "  DATA lt_d9_add_tasks TYPE STANDARD TABLE OF e070-trkorr.",
+        "  DATA lv_d9_add_task_count TYPE i.",
+        "  DATA ls_d9_add_header TYPE e070.",
         "  DATA lv_d9_add_order TYPE trkorr.",
         "  DATA lv_d9_add_task TYPE trkorr.",
         "  DATA lv_d9_add_subrc TYPE sysubrc.",
@@ -6995,6 +7004,14 @@ function New-InstallProgram {
         # TRWBO_REQUEST and TRWBO_T_E070, which are not DDIC objects at all, so this arm does not
         # declare them and never reads them - success is taken from E070 after the call instead.
         "  DATA lt_tr_release_messages TYPE ctsgerrmsgs.",
+        # A request that owns tasks is refused by CTS unless its tasks were released first
+        # ("参照任务 <task> 还没有释放"), so the tasks are read from E070 and released in order.
+        "  DATA lt_tr_release_tasks TYPE STANDARD TABLE OF e070-trkorr.",
+        "  DATA lv_tr_release_task TYPE e070-trkorr.",
+        "  DATA ls_tr_release_task_e070 TYPE e070.",
+        "  DATA lv_tr_release_task_subrc TYPE sysubrc.",
+        "  DATA lv_tr_release_task_error TYPE string.",
+        "  DATA lt_tr_release_task_messages TYPE ctsgerrmsgs.",
         "  DATA ls_tr_release_message TYPE ctsgerrmsg.",
         "  DATA lv_tr_release_message_text TYPE string.",
         "  DATA lv_tr_release_task_count TYPE i.",
@@ -12150,6 +12167,27 @@ function New-InstallProgram {
         "      ENDIF.",
         "      CLEAR: ls_d9_request_user, lt_d9_request_users.",
         "      ls_d9_request_user-user = lv_d9_request_owner.",
+        # The task type is set EXPLICITLY, because the value the callee would derive cannot carry objects.
+        # TR_INSERT_REQUEST_WITH_TASKS types the task itself for a K request:
+        #   IF iv_type CA project_type.
+        #     IF iv_type = tcor. ls_user-type = tcut. ELSE. ls_user-type = tuco.
+        #       MODIFY it_users FROM ls_user TRANSPORTING type WHERE NOT type CA wbtasktype. ENDIF.
+        # and RDDKORRI defines tuco = 'X' (Unclassified task) with wbtasktype = 'RSX'. So a K request gets
+        # an 'X' task by default. But the editing task a request must own is defined by
+        # TRINT_GET_REQUEST_TYPE, whose own header states the only possible values:
+        #   ev_task_type  S  Workbench task (correction)
+        #                 R  Workbench task (repair)
+        #                 Q  Customizing task
+        # 'X' is NOT among them, so an 'X' task can never match what that FM computes for an object, and
+        # TRINT_OBJECTS_CHECK_AND_INSERT then refuses with "不能决定编辑对象的任务" (cannot determine the
+        # editing task). The request stays empty and its release dies in the physical export. On this
+        # system no 'X' task has ever been released (E070 TRFUNCTION='X' AND TRSTATUS='R' -> 0 rows)
+        # while 'S' tasks are the norm. So: a workbench task type for K, a customizing task for W.
+        "      IF lv_d9_request_type = 'W'.",
+        "        ls_d9_request_user-type = 'Q'.",
+        "      ELSE.",
+        "        ls_d9_request_user-type = 'S'.",
+        "      ENDIF.",
         "      APPEND ls_d9_request_user TO lt_d9_request_users.",
         "      CLEAR: ls_d9_request_header,",
         "             lt_d9_request_tasks.",
@@ -12212,7 +12250,20 @@ function New-InstallProgram {
         "        ev_message = 'Request was not found after commit'.",
         "        ev_version = '2.8'. RETURN.",
         "      ENDIF.",
-        "      DESCRIBE TABLE lt_d9_request_tasks",
+        # The task list is re-read from E070 rather than trusted from ET_TASK_HEADERS. The callee
+        # returns headers for the tasks it created, but this service reported task numbers that E070
+        # did not contain at all: a created request whose task rows are absent cannot have objects
+        # added to it (ADD_OBJECTS_TO_TRANSPORT then answers "no matching task for request"), so the
+        # request stays empty and its release fails in the physical export with tp's message - which
+        # is how four earlier attempts at that family were misdiagnosed. E070 is the authority on
+        # whether a task exists, so a request that carries none is reported as such instead of being
+        # described by the callee's echo.
+        "      REFRESH lt_d9_request_tasks_db.",
+        "      SELECT trkorr FROM e070 INTO TABLE lt_d9_request_tasks_db",
+        "        WHERE strkorr = lv_d9_request_trkorr.",
+        "      SORT lt_d9_request_tasks_db.",
+        "      DELETE ADJACENT DUPLICATES FROM lt_d9_request_tasks_db.",
+        "      DESCRIBE TABLE lt_d9_request_tasks_db",
         "        LINES lv_d9_request_tasks.",
         "      lv_d9_request_count_text = lv_d9_request_tasks.",
         "      CONDENSE lv_d9_request_count_text.",
@@ -12233,10 +12284,10 @@ function New-InstallProgram {
         "      add_repo_payload 'M' '1' 'TASK_COUNT'",
         "        lv_d9_request_count_text.",
         "      CLEAR lv_d9_request_index.",
-        "      LOOP AT lt_d9_request_tasks INTO ls_d9_request_task.",
+        "      LOOP AT lt_d9_request_tasks_db INTO lv_d9_request_task_db.",
         "        ADD 1 TO lv_d9_request_index.",
         "        add_repo_payload 'T' lv_d9_request_index 'TRKORR'",
-        "          ls_d9_request_task-trkorr.",
+        "          lv_d9_request_task_db.",
         "      ENDLOOP.",
         "      ev_status = 'S'.",
         "      ev_code = 'TRANSPORT_REQUEST_CREATED'.",
@@ -12256,6 +12307,43 @@ function New-InstallProgram {
         "        ev_version = '2.8'. RETURN.",
         "      ENDIF.",
         "      lv_d9_add_order_in = iv_add_request.",
+        # IV_ORDER is the object the entries are filed under, and TRINT_OBJECTS_CHECK_AND_INSERT expects
+        # a TASK there: it reports the task it used back through EV_TASK. Passing the REQUEST number
+        # instead makes the callee hunt for the request's editing task by itself, which fails with
+        # "不能决定编辑对象的任务" (cannot determine the editing task) whenever the only task present is an
+        # unclassified one - and an unclassified task ('X', constant tuco) is exactly what
+        # TR_INSERT_REQUEST_WITH_TASKS creates for a K request here. On this system NO 'X' task has ever
+        # been released, while 'S' (tcol, Development/correction) tasks are the norm. So the caller's
+        # request number is resolved to its single task before the call, and an ambiguous or missing task
+        # is reported as such instead of being guessed.
+        "      CLEAR lt_d9_add_tasks.",
+        "      SELECT trkorr FROM e070 INTO TABLE lt_d9_add_tasks",
+        "        WHERE strkorr = iv_add_request.",
+        "      SORT lt_d9_add_tasks.",
+        "      DESCRIBE TABLE lt_d9_add_tasks LINES lv_d9_add_task_count.",
+        "      IF lv_d9_add_task_count = 1.",
+        "        READ TABLE lt_d9_add_tasks INTO lv_d9_add_order_in INDEX 1.",
+        "      ELSEIF lv_d9_add_task_count = 0.",
+        # The caller may legitimately have passed a task number itself; only a request with no task at
+        # all is an error, and it is named as one rather than forwarded.
+        "        CLEAR ls_d9_add_header.",
+        "        SELECT SINGLE trkorr FROM e070 INTO ls_d9_add_header-trkorr",
+        "          WHERE trkorr = iv_add_request AND strkorr = space.",
+        "        IF sy-subrc <> 0.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'TRANSPORT_OBJECT_NO_TASK'.",
+        "          ev_message =",
+        "            'The request has no task to receive the objects'.",
+        "          ev_version = '2.8'. RETURN.",
+        "        ENDIF.",
+        "        lv_d9_add_order_in = iv_add_request.",
+        "      ELSE.",
+        "        ev_status = 'E'.",
+        "        ev_code = 'TRANSPORT_OBJECT_TASK_AMBIGUOUS'.",
+        "        ev_message =",
+        "          'The request has more than one task; name the task instead'.",
+        "        ev_version = '2.8'. RETURN.",
+        "      ENDIF.",
         "      REFRESH lt_d9_add_objects.",
         "      LOOP AT it_source INTO ls_source.",
         "        CLEAR: lv_payload_kind, lv_payload_index_text,",
@@ -14089,6 +14177,66 @@ function New-InstallProgram {
         "          ev_version = '2.16'. RETURN.",
         "        ENDIF.",
         "      ENDIF.",
+        "      CLEAR: lv_tr_release_subrc, lv_tr_release_error,",
+        "        lv_tr_release_message_text.",
+        "      REFRESH lt_tr_release_messages.",
+        # A request that owns tasks must have them released FIRST: releasing the request while a task is
+        # still modifiable is refused by CTS with "参照任务 <task> 还没有释放" (referenced task <n> is not
+        # released yet). Since this arm only performs one call, the tasks are released here in order, and
+        # a task failure aborts before the request so the state never advances halfway silently.
+        "      CLEAR lt_tr_release_tasks.",
+        "      SELECT trkorr FROM e070 INTO TABLE lt_tr_release_tasks",
+        "        WHERE strkorr = lv_trkorr.",
+        "      SORT lt_tr_release_tasks.",
+        "      LOOP AT lt_tr_release_tasks INTO lv_tr_release_task.",
+        "        CLEAR ls_tr_release_task_e070.",
+        "        SELECT SINGLE * FROM e070 INTO ls_tr_release_task_e070",
+        "          WHERE trkorr = lv_tr_release_task.",
+        "        IF sy-subrc <> 0.",
+        "          CONTINUE.",
+        "        ENDIF.",
+        "        IF ls_tr_release_task_e070-trstatus = 'R'",
+        "           OR ls_tr_release_task_e070-trstatus = 'O'.",
+        "          CONTINUE.",
+        "        ENDIF.",
+        "        CLEAR: lv_tr_release_task_subrc,",
+        "          lv_tr_release_task_error.",
+        "        CALL FUNCTION 'TRINT_RELEASE_REQUEST'",
+        "          EXPORTING",
+        "            iv_trkorr = lv_tr_release_task",
+        "            iv_dialog = space",
+        "            iv_success_message = space",
+        "            iv_without_objects_check = space",
+        "            iv_called_by_perforce = space",
+        "            iv_without_docu = space",
+        "            iv_without_locking = space",
+        "            iv_display_export_log = space",
+        "            iv_ignore_warnings = space",
+        "          IMPORTING",
+        "            et_messages = lt_tr_release_task_messages",
+        "          EXCEPTIONS",
+        "            OTHERS = 1.",
+        "        lv_tr_release_task_subrc = sy-subrc.",
+        "        IF lv_tr_release_task_subrc <> 0.",
+        "          CLEAR lv_tr_release_task_error.",
+        "          IF sy-msgid IS NOT INITIAL.",
+        "            MESSAGE ID sy-msgid TYPE sy-msgty",
+        "              NUMBER sy-msgno",
+        "              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4",
+        "              INTO lv_tr_release_task_error.",
+        "          ENDIF.",
+        "          IF lv_tr_release_task_error IS INITIAL.",
+        "            lv_tr_release_task_error =",
+        "              'The task could not be released'.",
+        "          ENDIF.",
+        "          ev_status = 'E'.",
+        "          ev_code = 'TRANSPORT_TASK_RELEASE_FAILED'.",
+        "          CONCATENATE 'Task' lv_tr_release_task",
+        "            lv_tr_release_task_error INTO ev_message",
+        "            SEPARATED BY space.",
+        "          ev_version = '2.16'. RETURN.",
+        "        ENDIF.",
+        "      ENDLOOP.",
         "      CLEAR: lv_tr_release_subrc, lv_tr_release_error,",
         "        lv_tr_release_message_text.",
         "      REFRESH lt_tr_release_messages.",
