@@ -682,8 +682,18 @@ test("the registry records the honest gap rather than inflating it", () => {
   // assumed. Its first script run read 13/14 because the script itself expected one authorization
   // field too few; the count was the script's error, not the service's, and both the defect and the
   // corrected reading are stated in that record.
+  // Raised from 45 to 49 on 2026-10-01 (jobs batch): the four job-control tools were exercised for
+  // real in one run on w200 (.cache/r100-jobs-acceptance.json, 11/11, failures 0) and each earned its
+  // promotion from the tool's own reply - create_background_job (JOB_CREATED with SAP's assigned job
+  // count, status P, and a second create refused as JOB_DUPLICATE), modify_background_job (both arms
+  // JOB_MODIFIED, read back still scheduled, and a released job refused as JOB_NOT_MODIFIABLE),
+  // release_background_job (JOB_RELEASED, read back status S) and cancel_background_job
+  // (JOB_CANCELLED, absence proven on read-back). release_background_job's earlier failed/runtime
+  // verdict is superseded rather than deleted: its cause was target data, not a tool fault. All four
+  // name .doc/code-update-20261001-135303.md and state what was NOT proven. Nothing here was inferred
+  // from a plan or from a passing test.
   assert.ok(
-    totals.verified <= 45,
+    totals.verified <= 49,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

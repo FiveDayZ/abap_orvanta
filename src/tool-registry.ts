@@ -845,6 +845,37 @@ const ROWS: readonly ToolRow[] = [
     "2.14",
     ["JOB_CANCEL"]
   ],
+  // N3 / OP2. The other half of job control: creating a job the scheduler will later start. It takes
+  // 2.19, the first helper that carries the JOB_CREATE arm. It reuses the 2.13 job-name parameter but
+  // deliberately takes no job count - SAP assigns one when the job is opened - and sends its schedule
+  // and steps as IT_SOURCE payload rows, so the operation name, not the parameter set, is what tells
+  // a 2.18 helper from one that can serve this tool.
+  [
+    "create_background_job",
+    "ops",
+    OPSP,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.19",
+    ["JOB_CREATE"]
+  ],
+  // N3 / OP2. Modification is `W`, not `D`: it rewrites the stored header or step list of a job SAP
+  // still holds as scheduled and destroys nothing, which is also why it is not folded into cancel. Its
+  // floor is 2.21, the higher of the two arms it dispatches, because both arms live in one deployed
+  // helper body: the tool is usable only where the step arm is. The operation list beside the floor
+  // names both - JOB_MODIFY_HEADER (2.20) and JOB_MODIFY_STEP (2.21) - so the capability report can
+  // state which arm a deployed helper actually carries instead of leaving that to the version alone.
+  [
+    "modify_background_job",
+    "ops",
+    OPSP,
+    "W",
+    "sap-helper-fallback",
+    REPOSITORY,
+    "2.21",
+    ["JOB_MODIFY_HEADER", "JOB_MODIFY_STEP"]
+  ],
   // OP2 / locks. SM12 lock release. ENQUE_DELETE is remoteEnabled=false on this release and takes
   // its key as a SEQG3 table, so the shared repository body is the only route. It is `D` rather than
   // `W`: the entry is removed outright and the session that held it loses the lock. 2.15 is the

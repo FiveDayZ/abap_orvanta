@@ -21,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 0, blocked 1, partial 2, read-only 11, read-and-act 1 |
-| End-to-end by state (all families) | 12 (80%) |
-| Required families counted closed | **12 / 14** (86% of required) |
+| State counts | absent 0, blocked 1, partial 1, read-only 11, read-and-act 2 |
+| End-to-end by state (all families) | 13 (87%) |
+| Required families counted closed | **13 / 14** (93% of required) |
 | Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
 | Closed by state but missing evidence | none |
-| Outstanding required families | transport, jobs |
-| Waiting on each route | write authorisation (OP2) 2, multi-system configuration (OP3) 1, the platform (exempt) 1, - 12 |
+| Outstanding required families | transport |
+| Waiting on each route | write authorisation (OP2) 1, multi-system configuration (OP3) 1, the platform (exempt) 1, - 13 |
 
 ## Definition of done (plan section 8)
 
@@ -38,9 +38,9 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 12 / 14 closed (86%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 39 / 44 of the tools the families declare are verified (the `ops` group itself holds 42, of which 37 are verified); not verified: release_transport_task, cleanup_transport_entries, release_background_job, cancel_background_job, analyze_abap_traces | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 3 / 6 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, delete_sap_lock; open: release_transport_task, release_background_job, cancel_background_job. Action capability is still planned but unbuilt in: jobs (2) | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 13 / 14 closed (93%) | **no** |
+| 2. every ops tool verified with real w200 evidence | 43 / 46 of the tools the families declare are verified (the `ops` group itself holds 44, of which 41 are verified); not verified: release_transport_task, cleanup_transport_entries, analyze_abap_traces | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 7 / 8 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, create_background_job, modify_background_job, release_background_job, cancel_background_job, delete_sap_lock; open: release_transport_task | **no** |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -53,7 +53,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |
 | - | ------ | ------- | --------- | ----------- | ----- | --------------------------- | ----- |
 | 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 2/5 | 3 | partial | 4/5 verified (pending: release_transport_task) | write authorisation (OP2) + multi-system configuration (OP3) |
-| 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/6 | 2 | partial | 4/6 verified (pending: release_background_job, cancel_background_job) | write authorisation (OP2) |
+| 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/8 | 4 | read-and-act | 8/8 verified | - |
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
 | 5 | `traces` *(exempt)* | What did one execution actually do, statement by statement? | 0/1 | - | blocked | 0/1 verified (platform-blocked: analyze_abap_traces) | the platform (exempt) |
@@ -73,7 +73,6 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 ### write authorisation (OP2)
 
 - **`transport`** (partial) - Import is built as a precheck only (import_transport_queue, helper 2.18) and the precheck was exercised on w200 on 2026-09-29. The 2.17 arm was measured wrong: it translated the callee's exception number into a verdict, and nine calls showed a failed tp start labelled as a refusal and a refusal labelled as a failure, with the same request returning two outcomes minutes apart. The 2.18 arm reports the callee's own exception name and the raw sub-return code on every path, and the four requests re-run against it all answered enqueue_failed under TRANSPORT_IMPORT_CHECKED, with the request echoed and the local E070 status correct. An importable verdict is still unobserved - every request tried was refused - so the positive branch is documented, not demonstrated. Release is built (release_transport_task, helper 2.16) but not yet verified by a real release. DEV->QAS->PRD promotion still happens outside the service.
-- **`jobs`** (partial) - Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Spool text renders since 2026-09-29: read_background_job_spool returns a page of the primary job-step spool and is verified. Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
 
 ### multi-system configuration (OP3)
 
@@ -104,11 +103,11 @@ Withdrawn from the plan, still registered and still failing safely: `cleanup_tra
 | `release_transport_task` | action | unverified | unverified |
 | `import_transport_queue` | read-only | verified | `.doc/code-update-20260929-152335.md` |
 
-### `jobs` - partial
+### `jobs` - read-and-act
 
 Purpose: Did the job run, what did it do, and why is a job stuck or missing?
 
-Criterion to close: Reported: job search, detail, log and spool text, plus two of the four job-control actions - release through release_background_job (BP_JOB_RELEASE inside the repository helper, read back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same body, proved by the job's absence on read-back). Spool text renders since 2026-09-29: read_background_job_spool returns a page of the primary job-step spool and is verified. Still absent: create and modify, which need their own helper branches and the operator's write authorisation, so a job that does not yet exist or needs a different schedule still has to be built in SAP GUI rather than inside the service.
+Criterion to close: gap empty and every tool verified
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
@@ -116,10 +115,10 @@ Criterion to close: Reported: job search, detail, log and spool text, plus two o
 | `read_background_job_details` | read-only | verified | `.doc/code-update-20260925-221900.md` |
 | `read_background_job_log` | read-only | verified | `.doc/code-update-20260908-163230.md` |
 | `read_background_job_spool` | read-only | verified | `.doc/code-update-20260929-192300.md` |
-| `release_background_job` | action | failed | failed (last attempt 2026-09-30T15:15:15+08:00) |
-| `cancel_background_job` | action | unverified | unverified |
-
-Not built yet: `create_background_job`, `modify_background_job`
+| `create_background_job` | action | verified | `.doc/code-update-20261001-135303.md` |
+| `modify_background_job` | action | verified | `.doc/code-update-20261001-135303.md` |
+| `release_background_job` | action | verified | `.doc/code-update-20261001-135303.md` |
+| `cancel_background_job` | action | verified | `.doc/code-update-20261001-135303.md` |
 
 ### `logs` - read-only
 

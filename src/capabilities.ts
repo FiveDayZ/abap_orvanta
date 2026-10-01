@@ -172,6 +172,19 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // 2.13 helper would run the shared body without the JOB_CANCEL arm at all, and grouping the two
   // would let one missing branch mark the working release tool unsupported.
   ["repository-helper-job-cancel", ["cancel_background_job"]],
+  // N3 / OP2. Creating a job is a third callee family on the shared repository body: JOB_OPEN /
+  // JOB_SUBMIT / JOB_CLOSE are a different sequence from the release the 2.13 group pins, they need
+  // their own 2.19 arm, and they carry the schedule and the step list as payload rows rather than as
+  // the IV_JOBNAME/IV_JOBCOUNT pair. It is its own group for the same reason the release and cancel
+  // groups are separate: folding it in would make a helper that lacks this arm decide the verdict for
+  // a tool whose own arm is present.
+  ["repository-helper-job-create", ["create_background_job"]],
+  // N3 / OP2. Modification is a fourth callee family and it spans two arms: the header change
+  // (JOB_MODIFY_HEADER, 2.20) and the step replacement (JOB_MODIFY_STEP, 2.21). Its floor is the
+  // higher of the two because one deployed helper body serves both, and the two operations are pinned
+  // in tool-registry.ts so the capability report names the arms rather than inferring them from a
+  // version number.
+  ["repository-helper-job-modify", ["modify_background_job"]],
   // OP2 / locks. Releasing an SM12 lock entry is a third callee family on the same shared body:
   // ENQUE_DELETE is remoteEnabled=false and needs the five IV_LOCK_* parameters, so a 2.14 helper
   // neither declares the interface nor dispatches LOCK_DELETE. It gets its own group for the same

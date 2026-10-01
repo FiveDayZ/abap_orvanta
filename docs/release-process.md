@@ -140,12 +140,43 @@ git rev-list -n 1 v<version>   # 应与 BUILD-INFO.json 的 standaloneSourceComm
 
 §7.1 的"人工 F8"是**默认**通道，不是唯一通道：判断一个载体能否由服务侧自己跑起来，看的是**载体要生成的目标函数模块位于哪个函数组**，与该助手的工具是读还是写无关。
 
-| 载体目标                                                                                                                                                                                        | 通道                                                     | 依据                                                                                                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 目标函数模块在 `ZORVANTA_MCP_CORE` 之外的助手（如只读助手 `Z_ORVANTA_MAINT_READ`，函数组 `ZORVANTA_MAINT`）                                                                                     | **可经 RFC 运行载体**（服务侧自行执行，无需操作员按 F8） | `Z_ORVANTA_RUN_PROGRAM` 位于**独立函数组**，因此能运行目标在他组的程序；2026-09-28 实测以此通道完成 `Z_ORVANTA_MAINT_READ` 正文部署（载体 `ZORVANTA_MAINT_DEPLOY_R02` / `R04`） |
-| 目标函数模块与 `ZORVANTA_RUN_PROGRAM` 同组的助手（仓库族 `Z_ORVANTA_MCP_EXECUTE` / `Z_ORVANTA_MCP_DYNPRO_API`，函数组 `ZORVANTA_MCP_CORE`），以及写类 ops 工具所经的 `Z_ORVANTA_MCP_DYNPRO_API` | **人工 SE38 + F8**                                       | 该函数组带自写保护（§7.1）；此组内的载体**尚未经 RFC 通道验证**，不得假定可跑                                                                                                   |
+| 载体目标                                                                                                    | 通道                                                     | 依据                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 目标函数模块在 `ZORVANTA_MCP_CORE` 之外的助手（如只读助手 `Z_ORVANTA_MAINT_READ`，函数组 `ZORVANTA_MAINT`） | **可经 RFC 运行载体**（服务侧自行执行，无需操作员按 F8） | `Z_ORVANTA_RUN_PROGRAM` 位于**独立函数组**，因此能运行目标在他组的程序；2026-09-28 实测以此通道完成 `Z_ORVANTA_MAINT_READ` 正文部署（载体 `ZORVANTA_MAINT_DEPLOY_R02` / `R04`） |
+| 仓库族助手（ `Z_ORVANTA_MCP_EXECUTE` / `Z_ORVANTA_MCP_DYNPRO_API`，函数组 `ZORVANTA_MCP_CORE`）             | **人工 SE38 + F8**                                       | 该函数组带自写保护（§7.1）；2026-10-01 实测确认了本行结论（见下表后的「RFC 通道对仓库族的实测结果」），故此组仍走 F8                                                            |
 
 两条通道的后续步骤相同：部署后用 `get_capability_report` 复核 `PROTOCOL|MAX` 与操作码清单，并按要求更新 `contracts/verification-registry.json`。**通道选择不改变验收标准**——无论谁按下运行键，`verified` 仍需一次真实调用与一份耐久 `.doc` 证据。
+
+#### RFC 通道对仓库族的实测结果（2026-10-01）
+
+对仓库族又试过一次 RFC 通道，结论与上表一致，且这次留下了读数而不是推断：
+
+- 载体 `ZORVANTA_MCP_DYN221` 由 `create_object_programmatically` 创建成功（10514 行、非活动/活动均无语法诊断），经 `test_remote_function_module(IV_PROGRAM=ZORVANTA_MCP_DYN221)` 运行后返回 `status=passed`、`outputs.EV_SUBRC="0"`。
+- 但助手**没有变化**：`PROTOCOL|MAX|2.18` 仍是活动源码中的唯一刻度行，`'JOB_CREATE'` / `'JOB_MODIFY_HEADER'` / `'JOB_MODIFY_STEP'` / `'PROTOCOL|MAX|2.21'` 全部零命中，`get_version_history` 没有今天的新版本，载体的自述行 `PROTOCOL|MAX` 与线上仍是 `2.18`。
+- 该载体自己的守卫不可能造成这次空转：payload 追加语句 9461 条，与守卫 `IF lv_count <> 9461` 逐字相等；线上 include 行数 8373 与基线守卫 `c_lines` 相等；线上正文既不含 2.21 的 marker 也不含 `fdd287...` 哈希前缀，幂等守卫不会提前返回。
+- **根因判据**：`Z_ORVANTA_RUN_PROGRAM` 的实现是 `SUBMIT (lv_program) EXPORTING LIST TO MEMORY AND RETURN.` 后取 `sy-subrc`。因此 `EV_SUBRC = 0` 只说明「报告正常结束」，**不说明它写入了任何东西**；报告的 `WRITE` 列表留在 ABAP 内存里不回流，任何早期 `RETURN` 或 `INSERT REPORT`/`GENERATE REPORT` 的失败都对外完全不可见。这也解释了为什么本族的部署证据必须来自活动源码复读（`sourceHash` / `PROTOCOL|MAX` / 操作码命中），而不能来自载体回执。
+- 附带更正一处事实：运行器 `Z_ORVANTA_RUN_PROGRAM` 位于**独立函数组 `ZORVANTA_RUNNER`**，与本族助手所在的 `ZORVANTA_MCP_CORE` 并不同组（依据：`/sap/bc/adt/functions/groups/zorvanta_runner/fmodules/z_orvanta_run_program/source/main`）。所以本族必须走 F8 的原因不是「同组」，而是该函数组的自写保护与上述不可见失败面——**不得**据此把运行器改成支撑仓库族。
+
+#### 人工 F8 首次失败的根因：`CHANGING` 段不能与 `TABLES` 段同用（2026-10-01）
+
+2.21 载体 `ZORVANTA_MCP_DYN221` 首次人工 F8 返回 `GENERATE failed: 无法解释 "JOB_READ_STEPLIST"`。定位、根因与修法如下，均取自同系统实测而非推断：
+
+- **定位**：载体用 `GENERATE REPORT ... MESSAGE lv_msg LINE lv_msg_line WORD lv_msg_word` 取 SAP 自己的语法诊断，因此行号与词都是编译器的输出。include 行 7060 − 保留接口 73 行 − 1 空行 = payload 第 6986 行，即 `TABLES` / `job_read_steplist = lt_job_read_steps`。FM 接口的两份独立读数都确认该参数存在（`JOB_READ_STEPLIST STRUCTURE TBTCSTEP OPTIONAL`，与 `SPOOL_ATTRIBUTES` 同段），参数名、参数类别、内部表声明（`TYPE STANDARD TABLE OF tbtcstep`，与既有可用调用同形）均无误。
+- **根因**：本批新增的 4 处调用是全文**仅有**同时给出 `CHANGING` 与 `TABLES` 的调用（两处 `BP_JOB_READ`、两处 `BP_JOB_MODIFY`）；其余 8 处 `TABLES` 调用以及 SAP 自带调用（`LBTCHFXX` 第 4491 行起）都只有 `EXPORTING / IMPORTING / TABLES / EXCEPTIONS`。**本版本 ABAP 不接受「`CHANGING` 段 + `TABLES` 段」的组合**：编译器把 `TABLES` 视为 `CHANGING` 段的续接，于是报出紧随其后的参数名而非 `TABLES` 本身，消息的「拼写错误或逗号错误」提示具有误导性。
+- **编译仲裁（可复用）**：用 `create_object_programmatically` 建一个 31 行的临时报表，只放这段 `CALL FUNCTION`：带 `CHANGING` 时同一句报同样的 `无法解释 "JOB_READ_STEPLIST"`；去掉 `CHANGING` 后回执为 `Saved, unlocked, and activated`。该工具返回 SAP 自己的激活/语法裁定，可作为**部署前的编译预言机**，不必每次都占用操作员的 F8。
+- **修法**：这 4 处调用的 `ret` 全程只写不读（`CLEAR` 之后从未被引用），故删除 `CHANGING` 段与 `lv_job_read_ret` 声明；正文由 9461 行降到 9452 行，sha256 变为 `e2f1913b4e6c52169e28ca2ad10974627b773be4969d8ef03d1a18323d6208f1`，`maxProtocol` 仍为 **2.21**（本次只改正文，不动协议刻度）。SAP 自带调用同样不传 `ret`。
+- **载体**：修复后的 2.21 载体 `ZORVANTA_MCP_DYN223`（payload 9452 行、digest `893140fb141cc1be`、基线守卫 `c_lines 8373`、幂等 marker `ORVANTA REPO DYNPR 2.21 E2F1913B`）已在包 `ZABAP` / 传输 `GR2K923472` 创建并激活。**F8 是否成功一律以活动源码复读为准**（`sourceHash` / `PROTOCOL|MAX` / 操作码命中），不以载体自述或列表回执为准。
+
+#### 类型 `T` 字段的 `IS INITIAL` 把「午夜」判成「没给」（2026-10-01 真机验收暴露）
+
+部署成功不等于行为正确：2.21 落库后真机 `create_background_job`（`startTime = 2030-01-01T00:00:00`）返回 `JOB_START_TIME_INVALID` / “Start date and time are required”，而请求行里 `H|1|START_DATE|20300101` 与 `H|1|START_TIME|000000` 两条都在。
+
+- **根因**：`JOB_CREATE` 臂用 `lv_job_start_time IS INITIAL` 判断调用方有没有给开始时间，而该变量是 `TYPE tbtcjob-sdlstrttm`——`TBTCO-SDLSTRTTM` 在 DDIC 里是**报表类型 `T`**（`read_abap_table` 的 `fieldMetadata` 读数：`SDLSTRTTM TYPE=T LEN=000006`，同表的 `SDLSTRTDT TYPE=D`）。类型 `T` 的初始值就是 `'000000'`，于是**午夜与「未提供」在字段内容上完全同形**，合法的午夜排程被守卫拒绝。`JOB_MODIFY_HEADER` 臂同病：配对守卫与「是否应用新排程」的判定同样用 `IS INITIAL`，会把 `00:00:00` 读成「只给了日期」。
+- **判据**：对类型 `D`/`T`/`NUMC`/`INT`/`DEC` 这类字段，**不得用 `IS INITIAL` 判断「调用方是否提供」**——`00000000` / `000000` / `0` 都是合法值。提供与否要另存标志位（本次为 `lv_job_start_date_given` / `lv_job_start_time_given TYPE c`），值本身继续走原有的数值校验（`CN '0123456789'`）。
+- **扫描面**：全文按「数值/日期/时间类型变量的 `IS INITIAL` 测试」扫描后，其余命中都属于查找结果或计数器（`lv_enh_extid`、`lv_fm_body_start`、`lv_fm_verify_mismatch`），其 0 值确实等于「未找到」，无同类缺陷。
+- **修法**：生成器 `scripts/bootstrap-sap-helper.ps1` 增加两个存在标志；create 臂 1 处守卫、modify-header 臂 3 处判据（配对守卫、应用排程、读回比对）全部改用标志；正文由 9452 行增到 **9460 行**，sha256 `4f3d94e2080df5a1beb9b8e59db4ed9d9b02c0accc0f8eb9f6c6f2c735e0b2a3`，`maxProtocol` 仍为 **2.21**（只改正文）。
+- **服务侧同批钉住**：新增回归测试断言 `jobStartTime("2030-01-01T00:00:00") === {date:"20300101", time:"000000"}` 且 `jobSourceRows` 原样发出 `H|1|START_TIME|000000`，即服务不得把午夜归一化成「缺省」。
+- **载体**：修复后的载体 `ZORVANTA_MCP_DYN224`（payload 9462 行、digest `28432a0d18caf399`、包 `ZABAP` / 传输 `GR2K923472`）已创建并激活。
 
 ## 8. 禁止事项
 

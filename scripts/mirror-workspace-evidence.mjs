@@ -20,7 +20,7 @@
  *
  * Refresh the mirror whenever an entry gains a new evidence record, or CI will reject the citation.
  */
-import { copyFileSync, existsSync, mkdirSync } from "node:fs"
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import {
   evidenceRoots,
@@ -63,6 +63,15 @@ for (const rel of paths) {
   const source = resolveEvidencePath({ evidence: rel })
   const target = join(mirrorRoot, rel)
   const mirrored = existsSync(target)
+  // A mirror entry that exists but no longer matches its original is worse than a missing one: the
+  // existence guard passes either way, so CI would validate whatever text was copied the first time
+  // while the workspace holds something else. Records do get revised in place (this batch appended a
+  // per-tool evidence section to its own record), so comparing content is what keeps the mirror a
+  // snapshot of the original instead of a stale first copy.
+  const stale =
+    mirrored &&
+    source !== undefined &&
+    readFileSync(source, "utf8") !== readFileSync(target, "utf8")
   if (mirrored) inMirror += 1
   // A record already inside the repository needs no mirror to survive a checkout.
   if (existsSync(join(repositoryRoot, rel))) repoInternalOnly += 1
@@ -72,14 +81,18 @@ for (const rel of paths) {
     console.log(`NOT RESOLVABLE  ${rel}`)
     continue
   }
-  if (!mirrored) {
+  if (!mirrored || stale) {
     if (copy) {
       mkdirSync(dirname(target), { recursive: true })
       copyFileSync(source, target)
       copied += 1
-      console.log(`copied   ${rel}  <- ${relative(repositoryRoot, source)}`)
+      console.log(
+        `${stale ? "refreshed" : "copied   "} ${rel}  <- ${relative(repositoryRoot, source)}`
+      )
     } else if (!verify) {
-      console.log(`would copy ${rel}  <- ${relative(repositoryRoot, source)}`)
+      console.log(
+        `${stale ? "would refresh" : "would copy"} ${rel}  <- ${relative(repositoryRoot, source)}`
+      )
     }
   } else if (!verify) {
     console.log(`present  ${rel}`)

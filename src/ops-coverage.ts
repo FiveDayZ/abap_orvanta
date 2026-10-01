@@ -135,6 +135,13 @@ export const OPS_TOOL_ROLES: Readonly<Record<string, OpsToolRole>> = {
   // N3 / OP2. The destructive half of job control: the helper proves the outcome by re-reading TBTCO
   // and finding nothing, so a cancellation that leaves the row behind is a failure.
   cancel_background_job: "action",
+  // N3 / OP2. Creating a job changes the batch scheduler: it adds a row SAP will later execute, which
+  // is a state change even though it destroys nothing.
+  create_background_job: "action",
+  // N3 / OP2. Modification rewrites the schedule, the target user or the step list of a scheduled job,
+  // so it changes SAP state without being destructive - which is why it is `W` and not `D` in the
+  // registry.
+  modify_background_job: "action",
   // System and application logs
   read_system_logs: "read-only",
   discover_application_logs: "read-only",
@@ -245,18 +252,26 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
       "cancel_background_job"
     ],
     purpose: "Did the job run, what did it do, and why is a job stuck or missing?",
-    closeRoutes: ["authorization"],
+    // Nothing is outstanding, so there is no route left to wait on: the "authorization" route this
+    // family used to declare was the operator's standing authorization for the two job writes, and it
+    // was granted and exercised. The validator enforces exactly that - an empty gap may not keep a
+    // closure route, because a family with nothing missing has nobody left to wait for.
+    closeRoutes: ["none"],
     actionRequired: true,
-    gap:
-      "Reported: job search, detail, log and spool text, plus two of the four job-control actions - " +
-      "release through release_background_job (BP_JOB_RELEASE inside the repository helper, read " +
-      "back from TBTCO) and cancellation through cancel_background_job (BP_JOB_DELETE on the same " +
-      "body, proved by the job's absence on read-back). Spool text renders since 2026-09-29: " +
-      "read_background_job_spool returns a page of the primary job-step spool and is verified. " +
-      "Still absent: create and modify, " +
-      "which need their own helper branches and the operator's write authorisation, so a job that " +
-      "does not yet exist or needs a different schedule still has to be built in SAP GUI rather " +
-      "than inside the service."
+    // Closed 2026-10-01 by the eighth batch. The gap that stood here listed two commitments - the
+    // helper arms were not deployed and the write gate had no branch for create or modify - and both
+    // are settled rather than removed from the text: the arms are live (Z_ORVANTA_MCP_DYNPRO_API
+    // self-describes 2.21 with JOB_CREATE/JOB_MODIFY_HEADER/JOB_MODIFY_STEP in its capability table,
+    // and its sourceHash matches the exported body), the write gate covers create and modify
+    // (src/write-prechange-evidence.ts), and the eight tools in this family are all verified against
+    // one real-machine run: create, both modify arms, release and cancel through
+    // .cache/r100-jobs-acceptance.mjs (11/11, failures 0), and the four reads. Two defects in the
+    // operational helper had to be fixed first and were fixed in the same batch: make_time aborted
+    // the whole function module from inside a macro, which made every job that had not finished
+    // unreadable, and the JOB_LOG arm answered an empty job log with the same unsupported default. A
+    // gap that is empty is the result of that work, not a claim made in its place: the evidence is
+    // .doc/code-update-20261001-135303.md and docs/ops-coverage.md section 7.25.
+    gap: ""
   },
   {
     id: "logs",

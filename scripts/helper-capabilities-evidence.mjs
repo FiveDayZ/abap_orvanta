@@ -222,15 +222,19 @@ export const helperCapabilityTargets = {
     expectedOperations: opsRuntimeOperations.map((operation) =>
       operationRow(operation.opcode, operation.since, operation.mode)
     ),
-    // Re-pinned 2026-09-30 (fifth deployment of the day): the USER_LIST branch now supplies the
-    // kernel interface's mandatory LIST (UINFO) table as well as USRLIST, because passing USRLIST
-    // alone made CALL FUNCTION 'TH_USER_LIST' abort with CX_SY_DYN_CALL_PARAM_MISSING - the class
-    // name the terminal CATCH of the previous deployment started reporting. Only USRLIST is read.
-    // The interface is untouched, so the approval file's interfaceFingerprint stands; only the
-    // source fingerprint moved. Both pins agree again.
-    // Evidence: .doc/runtime-reads-deploy-1790749923642.json.
-    deployedNowBodyHash: "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a",
-    intendedBodyHash: "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a",
+    // Re-pinned 2026-10-01 (jobs batch). Two defects in this helper were fixed in one batch:
+    //   1. make_time aborted the whole function module. Its macro contained RETURN, and a macro's
+    //      RETURN ends the surrounding processing block, so every job that had not finished (an
+    //      empty TBTCO-ENDDATE) answered a bare READ_ONLY_UNSUPPORTED; a 25-row sample pinned the
+    //      abort to the empty ENDDATE. It now only sets lv_time_valid and make_job renders null.
+    //   2. The JOB_LOG arm answered an empty TBTCO-JOBLOG with the same unsupported default, telling
+    //      the caller the system cannot read job logs at all. It now answers ok with the header and
+    //      zero messages; a job that has a log is unchanged.
+    // Both pins move together because the deployment and this re-pin are one change: the service
+    // refuses every ops read while the approval's sourceFingerprint differs from the live helper.
+    // Evidence: .cache/r283-empty-joblog-verification.json, .cache/r273-truth-table.json.
+    deployedNowBodyHash: "d75fae87e309971eb2878010855b54365fe4dc393332a573d1e6df9a0f23829a",
+    intendedBodyHash: "d75fae87e309971eb2878010855b54365fe4dc393332a573d1e6df9a0f23829a",
     generatorBody: operationalLogRuntimeSource
   }
 }

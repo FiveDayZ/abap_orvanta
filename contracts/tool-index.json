@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 165,
+  "toolCount": 167,
   "readOnlyToolCount": 100,
   "profiles": {
     "readonly": 100,
     "platform": 12,
     "dev": 139,
     "config": 42,
-    "ops": 59,
-    "full": 165
+    "ops": 61,
+    "full": 167
   },
   "groups": {
     "data": 5,
@@ -18,7 +18,7 @@
     "form": 7,
     "function": 8,
     "message": 4,
-    "ops": 42,
+    "ops": 44,
     "platform": 12,
     "quality": 4,
     "source": 17,
@@ -333,6 +333,21 @@
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
       "minHelperProtocol": "1.7"
+    },
+    {
+      "name": "create_background_job",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.19"
     },
     {
       "name": "create_ddic_transparent_table",
@@ -1098,6 +1113,21 @@
       "sapHelper": null,
       "minHelperProtocol": null,
       "note": "只读：不创建、不释放、不导入传输。"
+    },
+    {
+      "name": "modify_background_job",
+      "group": "ops",
+      "profiles": [
+        "ops"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "route": "sap-helper-fallback",
+      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "minHelperProtocol": "2.21"
     },
     {
       "name": "patch_abap_gui_definition",

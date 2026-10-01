@@ -325,7 +325,10 @@ test("the recomputed digest equals the digest both generators embedded", () => {
     )
   }
   assert.equal(digests.maint, "0a3875009e0beb610ca781c76a260509c27ced36d1c5f8229944e707757e696d")
-  assert.equal(digests.ops, "9805308df3810752066f410541e0eef58426b7aa2604000f62721766779ba3ee")
+  // Re-pinned 2026-10-01 with the ops body: this is the self-referential SOURCE|HASH digest the
+  // rendered body carries in its four slots, which is deliberately NOT the body hash the deploy
+  // scripts pin (asserted just above). It moved because the body changed.
+  assert.equal(digests.ops, "953c8e00c94d9ec3fc1facfca3f6321480e8e8a69fa0102d8489731a32991019")
 })
 
 test("both generators are pinned to their verified pre- and post-deployment bodies", () => {
@@ -367,17 +370,19 @@ test("both generators are pinned to their verified pre- and post-deployment bodi
     maint.intendedBodyHash,
     "778a7ef442ea5d8443f6ec4d126ea57e0abf80fc784576c7963f818d9dd17baf"
   )
-  // Re-pinned on 2026-09-30 (fifth deployment of the day): the USER_LIST branch now supplies the
-  // kernel interface's mandatory LIST (UINFO) table alongside USRLIST, because USRLIST alone made
-  // CALL FUNCTION 'TH_USER_LIST' abort with CX_SY_DYN_CALL_PARAM_MISSING. The interface is untouched.
-  // See .doc/runtime-reads-deploy-1790749923642.json.
+  // Re-pinned on 2026-10-01 (jobs batch): make_time no longer aborts the function module on an
+  // unrenderable timestamp, so a job that has not finished (empty ENDDATE) is readable instead of
+  // answering a bare READ_ONLY_UNSUPPORTED, and the JOB_LOG arm now answers an empty TBTCO-JOBLOG
+  // with the job header and zero messages instead of the same unsupported default. The interface is
+  // untouched; only the source fingerprint moved, and scheduledSystemTime became nullable with it.
+  // See .cache/r283-empty-joblog-verification.json and .cache/r273-truth-table.json.
   assert.equal(
     ops.deployedNowBodyHash,
-    "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a"
+    "d75fae87e309971eb2878010855b54365fe4dc393332a573d1e6df9a0f23829a"
   )
   assert.equal(
     ops.intendedBodyHash,
-    "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a"
+    "d75fae87e309971eb2878010855b54365fe4dc393332a573d1e6df9a0f23829a"
   )
   // The verifier's expectation must equal the table the generator exports, including the
   // feature-gated REPORT_PARAMETERS row that only the report variant compiles in. MAINT carries

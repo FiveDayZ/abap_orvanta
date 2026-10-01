@@ -171,8 +171,18 @@ for (let index = 0; index < statements.length; index++) {
     // against a body whose compilation is already proven).
     if (word === "SELECT") {
       const upper = code.toUpperCase()
+      // An aggregate `SELECT COUNT(*) ... INTO <field>` is a single statement too, closed by its own
+      // period: there is no ENDSELECT for it. It was missing from this test until 2026-09-30, when
+      // the two job arms added one and the audit reported three structural problems that all traced
+      // back to a single site - the unclosed "SELECT" then mis-nested every following block, so the
+      // cascade pointed at a CASE 5,000 lines away. Worse, the first run of that audit had passed
+      // because the canonical file it defaulted to was still the previous body: a false pass and a
+      // cascade are the two failure modes of a heuristic like this, and both were observed here.
       const singleRow =
-        /\bSINGLE\b/.test(upper) || /\bINTO\s+TABLE\b/.test(upper) || /\bAPPENDING\b/.test(upper)
+        /\bSINGLE\b/.test(upper) ||
+        /\bINTO\s+TABLE\b/.test(upper) ||
+        /\bAPPENDING\b/.test(upper) ||
+        /\b(COUNT|SUM|MAX|MIN|AVG)\s*\(/.test(upper)
       if (singleRow) continue
     }
     stack.push({ word, line: lineNo })

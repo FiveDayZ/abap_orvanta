@@ -246,6 +246,7 @@ DATA: lt_jobs TYPE STANDARD TABLE OF tbtco,
       lv_tail TYPE string, lv_items TYPE string,
       lv_header TYPE string, lv_value TYPE string,
       lv_time TYPE string, lv_more TYPE string,
+      lv_time_valid TYPE c,
       lv_date TYPE d, lv_clock TYPE t,
       lv_from_d TYPE d, lv_from_t TYPE t,
       lv_to_d TYPE d, lv_to_t TYPE t,
@@ -294,26 +295,36 @@ DEFINE job_stage.
       '"reason":"' &1 '",' lv_tail INTO ev_result.
   ENDIF.
 END-OF-DEFINITION.
-* make_time aborts, so it needs job_stage. Macros must be defined
-* before use, hence the stage macro sits above it.
+* make_time reports validity in lv_time_valid and holds no
+* RETURN, CHECK or EXIT: inside a macro each of those ends
+* the surrounding processing block, which here is the whole
+* function module, so one unrenderable field threw away the
+* entire request. The old form aborted on RETURN and every
+* job that had not finished (empty ENDDATE) answered a bare
+* READ_ONLY_UNSUPPORTED, which JOB_DETAILS could not even
+* name because only the JOB_LOG alias sets the diagnostic
+* bit. Everything is a positive condition now and the callers
+* decide what invalid means: make_job renders null, the
+* window and TemSe call sites refuse, the system-log loop
+* skips the one entry.
+* The time is tested with CO '0123456789' rather than
+* IS INITIAL: a type T midnight is '000000', which
+* IS INITIAL reports as initial, so that test would call
+* every midnight job's timestamp unrepresentable.
 DEFINE make_time.
+  CLEAR lv_time_valid.
   lv_date = &1. lv_clock = &2.
   CALL FUNCTION 'DATE_CHECK_PLAUSIBILITY'
     EXPORTING date = lv_date EXCEPTIONS OTHERS = 1.
-  IF sy-subrc <> 0 OR lv_date(4) = '0000'
-     OR lv_clock(2) > '23' OR lv_clock+2(2) > '59'
-     OR lv_clock+4(2) > '59'.
-* Unrepresentable timestamp. Name the stage, then abort:
-* returning silently made this look like every other guard.
-* scheduledSystemTime is NOT defaulted to null - the schema makes
-* it non-nullable and compares it against the window, so a null
-* would break the replies that currently succeed.
-    job_stage 'JOB_TIMESTAMP'.
-    RETURN.
+  IF sy-subrc = 0 AND lv_date(4) <> '0000'
+     AND lv_clock CO '0123456789'
+     AND lv_clock(2) <= '23' AND lv_clock+2(2) <= '59'
+     AND lv_clock+4(2) <= '59'.
+    CONCATENATE lv_date(4) '-' lv_date+4(2) '-' lv_date+6(2)
+      'T' lv_clock(2) ':' lv_clock+2(2) ':' lv_clock+4(2)
+      INTO lv_time.
+    lv_time_valid = 'X'.
   ENDIF.
-  CONCATENATE lv_date(4) '-' lv_date+4(2) '-' lv_date+6(2)
-    'T' lv_clock(2) ':' lv_clock+2(2) ':' lv_clock+4(2)
-    INTO lv_time.
 END-OF-DEFINITION.
 DEFINE make_job.
   lv_json = ''.
@@ -324,18 +335,37 @@ DEFINE make_job.
   json_field ',"executionUser":"' ls_job-authcknam.
   json_field ',"server":"' ls_job-execserver.
   make_time ls_job-sdlstrtdt ls_job-sdlstrttm.
-  json_field ',"scheduledSystemTime":"' lv_time.
+  IF lv_time_valid IS INITIAL.
+    CONCATENATE lv_json ',"scheduledSystemTime":null' INTO lv_json.
+  ELSE.
+    json_field ',"scheduledSystemTime":"' lv_time.
+  ENDIF.
+* Both guards keep their shape, and every call now also checks the
+* validity flag, so the outcome no longer depends on how an unwritten
+* date compares to IS INITIAL: a row whose start or end is unusable
+* renders null instead of ending the request. The observed defect was
+* that ambiguity - 25 sampled TBTCO rows showed the abort tracking an
+* empty ENDDATE (a STATUS=S row whose SDLSTRTDT held a valid 20261001
+* aborted too), so the guard alone was not deciding it.
   IF ls_job-strtdate IS INITIAL.
     CONCATENATE lv_json ',"startSystemTime":null' INTO lv_json.
   ELSE.
     make_time ls_job-strtdate ls_job-strttime.
-    json_field ',"startSystemTime":"' lv_time.
+    IF lv_time_valid IS INITIAL.
+      CONCATENATE lv_json ',"startSystemTime":null' INTO lv_json.
+    ELSE.
+      json_field ',"startSystemTime":"' lv_time.
+    ENDIF.
   ENDIF.
   IF ls_job-enddate IS INITIAL.
     CONCATENATE lv_json ',"endSystemTime":null' INTO lv_json.
   ELSE.
     make_time ls_job-enddate ls_job-endtime.
-    json_field ',"endSystemTime":"' lv_time.
+    IF lv_time_valid IS INITIAL.
+      CONCATENATE lv_json ',"endSystemTime":null' INTO lv_json.
+    ELSE.
+      json_field ',"endSystemTime":"' lv_time.
+    ENDIF.
   ENDIF.
   CONCATENATE lv_json '}' INTO lv_json.
 END-OF-DEFINITION.
@@ -446,7 +476,9 @@ IF iv_action <> 'JOB_LOG' AND iv_action <> 'JOB_DETAILS'${includeSpool ? "\n   A
   CONCATENATE iv_to(4) iv_to+5(2) iv_to+8(2) INTO lv_to_d.
   CONCATENATE iv_to+11(2) iv_to+14(2) iv_to+17(2) INTO lv_to_t.
   make_time lv_from_d lv_from_t.
+  IF lv_time_valid IS INITIAL. RETURN. ENDIF.
   make_time lv_to_d lv_to_t.
+  IF lv_time_valid IS INITIAL. RETURN. ENDIF.
   lv_days = lv_to_d - lv_from_d.
   IF lv_days < 0 OR lv_days > 1. RETURN. ENDIF.
   lv_span = lv_days * 86400 + lv_to_t - lv_from_t.
@@ -617,6 +649,21 @@ ${includeSpool ? "* Exact current-client job and SHOW permission checked above.\
   make_job.
   lv_header = lv_json.
   job_stage 'TEMSE_NAME'.
+* A job that has produced no log yet carries an empty
+* TBTCO-JOBLOG (a CHAR 20 field). The job exists and the
+* capability exists - its messages are simply not written -
+* so this answers ok with the header and an empty list. It
+* used to fall through to the unsupported default, which
+* told the caller this system cannot read job logs at all.
+* Observed 2026-10-01: every P/S/Y/Z job on w200 has a
+* blank JOBLOG and every F job has a JOBLGX name, so blank
+* is the reliable discriminator.
+  IF ls_job-joblog IS INITIAL.
+    CONCATENATE '"job":' lv_header ',"messages":[],"complete":true}'
+      INTO lv_tail.
+    fail_reply 'ok' 'OK'.
+    RETURN.
+  ENDIF.
   IF ls_job-joblog(6) <> 'JOBLGX'
      OR ls_job-joblog CN 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.
     RETURN.
@@ -756,6 +803,14 @@ ${includeSpool ? "* Exact current-client job and SHOW permission checked above.\
     ENDWHILE.
     lv_text = lv_rendered.
     make_time ls_plain-enterdate ls_plain-entertime.
+* A message record's systemTime is schema-required,
+* so a record whose timestamp cannot be rendered still
+* refuses the request - but at this call site, not from
+* inside the macro.
+    IF lv_time_valid IS INITIAL.
+      job_stage 'JOB_TIMESTAMP'.
+      RETURN.
+    ENDIF.
     ADD 1 TO lv_index.
     lv_number = lv_index. CONDENSE lv_number NO-GAPS.
     CONCATENATE '{"number":' lv_number INTO lv_json.
@@ -837,6 +892,8 @@ DO 2000 TIMES.
   lv_date = ls_entry-slgdattim(8).
   lv_clock = ls_entry-slgdattim+8(6).
   make_time lv_date lv_clock.
+* A single unrenderable entry must not abort the whole system log.
+  IF lv_time_valid IS INITIAL. CONTINUE. ENDIF.
   IF lv_time < iv_from OR lv_time > iv_to. CONTINUE. ENDIF.
   IF lv_index >= lv_limit. CONTINUE. ENDIF.
   CONCATENATE ls_type-area ls_type-subid INTO lv_message_id.

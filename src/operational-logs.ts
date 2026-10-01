@@ -107,7 +107,11 @@ export const backgroundJobSchema = jobKey.extend({
   username: z.string().max(12),
   executionUser: z.string().max(12),
   server: z.string().max(64),
-  scheduledSystemTime: diagnosticTime,
+  // Nullable because a job that has not been scheduled yet has no planned start to report: an
+  // unwritten TBTCO-SDLSTRTDT arrives as blanks, which the helper must render as null rather than
+  // abort the request. It is NOT null for a row that carries a start, and the JOB_SEARCH window
+  // check below still refuses a null there - a job the search returned must be inside the window.
+  scheduledSystemTime: diagnosticTime.nullable(),
   startSystemTime: diagnosticTime.nullable(),
   endSystemTime: diagnosticTime.nullable()
 })
@@ -169,10 +173,11 @@ export const operationalLogReasons = [
   "JOB_SHOW_AUTHORITY",
   "JOB_PROT_AUTHORITY",
   "JOB_LOG_NAME",
-  // make_time aborts when a timestamp cannot be represented. It used to RETURN silently, which made
-  // it indistinguishable from every other guard; it now names this stage first. scheduledSystemTime
-  // is deliberately not defaulted to null - the reply schema makes it non-nullable and compares it
-  // against the requested window, so a null would break the replies that currently succeed.
+  // make_time reports an unrepresentable timestamp instead of aborting, so this stage now belongs to
+  // the one call site that still has to refuse: a job-log message record whose systemTime is
+  // schema-required. The job header path renders null on the same condition, which is why a job that
+  // has not run yet is readable at all - it used to answer a bare READ_ONLY_UNSUPPORTED, because a
+  // macro RETURN ends the whole function module.
   "JOB_TIMESTAMP",
   // The terminal CATCH cx_root of the SYSTEM_READ branch used to return without writing a reply, so
   // an escaped exception looked exactly like a guard RETURN and like an unapproved source.
@@ -723,6 +728,9 @@ export class OperationalLogService {
         job.jobCount <= previous ||
         (options.username && job.username.toUpperCase() !== options.username.toUpperCase()) ||
         (options.status && job.status !== options.status) ||
+        // The search window filters on the stored start, so a row the helper returned always has
+        // one; null here means the two sides disagree about which rows the query selected.
+        job.scheduledSystemTime === null ||
         job.scheduledSystemTime < options.fromSystemTime ||
         job.scheduledSystemTime > options.toSystemTime
       )

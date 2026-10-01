@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { z } from "zod"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import type { SapBackend } from "./backend.js"
+import type { SapBackend, SapRepositoryOperation } from "./backend.js"
 import { toolContracts } from "./contracts.js"
 import type { InvocationReceiptStore } from "./invocation-receipts.js"
 import { ToolService } from "./tools.js"
@@ -25,6 +25,11 @@ import { SmartformService } from "./smartforms.js"
 import { resolveToolProfile, toolProfileSummary } from "./tool-profile.js"
 import { assertTableAllowed } from "./table-allowlist.js"
 import { annotateLogonRejection } from "./logon-diagnostic.js"
+import {
+  createBackgroundJob,
+  modifyBackgroundJob,
+  type JobRepositoryChannel
+} from "./background-jobs.js"
 
 /**
  * The envelope fields every runtime reply carries: the helper's own status and code, plus the
@@ -255,6 +260,25 @@ export function createMcpServer(
     tracked(() =>
       invokeWriteTool(name, input, backend, receipts, action, readTransportRows, maintenance)
     )
+  /**
+   * The repository channel `create_background_job` and `modify_background_job` dispatch through.
+   *
+   * Both tools name their own three opcodes in `JOB_REPOSITORY_OPERATIONS` and pin the helper version
+   * that carries each arm, because the arms are a separate deployable unit from the 2.13/2.14 job pair.
+   * `SapRepositoryOperation` in `src/backend.ts` - the closed union of helper operations the repository
+   * transport accepts - lists those three names, so the channel is a narrowing shim rather than a
+   * cast: it drops `jobCount` when the caller (create) has none to send, because the helper assigns a
+   * new job's count itself and a request that carried one would be answered JOB_COUNT_INVALID.
+   */
+  const jobRepository: JobRepositoryChannel = {
+    callSapRepository: (connectionId, request) =>
+      backend.callSapRepository(connectionId, {
+        operation: request.operation,
+        jobName: request.jobName,
+        ...(request.jobCount === undefined ? {} : { jobCount: request.jobCount }),
+        source: request.source
+      })
+  }
 
   registerTool("read_smartform", toolContracts.read_smartform, async (input) =>
     invoke("read_smartform", async () => JSON.stringify(await smartforms.read(input)))
@@ -383,6 +407,19 @@ export function createMcpServer(
   registerTool("cancel_background_job", toolContracts.cancel_background_job, async (input) =>
     invokeWrite("cancel_background_job", input, backend, writeReceipts, () =>
       tools.cancelBackgroundJob(input)
+    )
+  )
+  // OP2 / jobs. Both are writes on the same helper body as the pair above and take the same path: the
+  // operation ID is recorded before SAP is touched, a reused ID is refused, and the pre-change
+  // observation has to establish the target's state before the helper is called.
+  registerTool("create_background_job", toolContracts.create_background_job, async (input) =>
+    invokeWrite("create_background_job", input, backend, writeReceipts, () =>
+      createBackgroundJob(jobRepository, input)
+    )
+  )
+  registerTool("modify_background_job", toolContracts.modify_background_job, async (input) =>
+    invokeWrite("modify_background_job", input, backend, writeReceipts, () =>
+      modifyBackgroundJob(jobRepository, input)
     )
   )
   registerTool("read_abap_screen", toolContracts.read_abap_screen, async (input) =>
@@ -1533,9 +1570,19 @@ export function writeOperationTarget(
     const number = String(input.transportNumber).toUpperCase()
     return { key: `CTS:${number}`, summary: `transport request ${number}` }
   }
-  if (name === "release_background_job" || name === "cancel_background_job") {
+  if (name === "create_background_job") {
+    // A create has no job count to name: SAP assigns it when the job is opened, so the key says the
+    // job is the new one rather than deriving an identity from a value the caller never supplied.
+    const job = String(input.jobName).toUpperCase()
+    return { key: `JOB:${job}:NEW`, summary: `new background job ${job}` }
+  }
+  if (
+    name === "modify_background_job" ||
+    name === "release_background_job" ||
+    name === "cancel_background_job"
+  ) {
     // Same class of target: a TBTCO job row is identified by job name plus eight-digit job count and
-    // has no ADT object either.
+    // has no ADT object either. All three take the count as an input, so the key is the same pair.
     const job = String(input.jobName).toUpperCase()
     const count = String(input.jobCount)
     return { key: `JOB:${job}:${count}`, summary: `background job ${job} with job count ${count}` }

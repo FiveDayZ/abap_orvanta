@@ -90,7 +90,7 @@ import {
   jobCancelResult,
   jobCount,
   jobName,
-  jobPayloadRows,
+  jobReplyMetadata,
   jobReleaseResult,
   releaseBackgroundJobSchema,
   type CancelBackgroundJobInput,
@@ -1902,7 +1902,7 @@ export class ToolService {
       jobName: jobName(parsed.jobName),
       jobCount: jobCount(parsed.jobCount)
     })
-    const metadata = jobPayloadRows(result.source ?? [])
+    const metadata = jobReplyMetadata(result)
     return JSON.stringify(
       jobReleaseResult(connectionId, {
         status: result.status,
@@ -1933,7 +1933,7 @@ export class ToolService {
       jobName: jobName(parsed.jobName),
       jobCount: jobCount(parsed.jobCount)
     })
-    const metadata = jobPayloadRows(result.source ?? [])
+    const metadata = jobReplyMetadata(result)
     return JSON.stringify(
       jobCancelResult(connectionId, {
         status: result.status,

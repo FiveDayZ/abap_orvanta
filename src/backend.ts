@@ -286,6 +286,19 @@ export type SapRepositoryOperation =
   // different callee (BP_JOB_DELETE) with an opposite commit default: it commits internally unless
   // COMMITMODE is blanked, so the branch blanks it and owns the LUW itself.
   | "JOB_CANCEL"
+  // N3 / OP2. Creation. JOB_OPEN, JOB_SUBMIT and JOB_CLOSE all report remoteEnabled=false on this
+  // release, so the branch in the shared repository body is the only route to a new job. The
+  // schedule, the target user and the step list reach it through IT_SOURCE, the one table parameter
+  // the interface already declares (SAP_BASIS 7.31 cannot be given a new interface parameter
+  // programmatically), and the job count SAP assigns is read back from TBTCO before the branch
+  // reports success.
+  | "JOB_CREATE"
+  // N3 / OP2. Modification is split by target, not by a flag on one arm: the header (schedule and
+  // target user) and the step list have different preconditions and different read-back proofs, and
+  // project memory records the same split for the write path this helper has to model. Both arms
+  // accept only a job whose status still allows modification and both re-read the row they changed.
+  | "JOB_MODIFY_HEADER"
+  | "JOB_MODIFY_STEP"
   // OP2 / locks. SM12 lock release. ENQUE_DELETE is remoteEnabled=false on this release (read on
   // w200, 2026-09-28) and keys its work by the SEQG3 row itself, so the shared repository body is
   // the only route. The branch re-reads and matches the live entry before it deletes anything, and

@@ -44,7 +44,13 @@ import {
   readFailedUpdateSchema,
   readArchiveStatusSchema
 } from "./maintenance-diagnostics.js"
-import { cancelBackgroundJobSchema, releaseBackgroundJobSchema } from "./background-jobs.js"
+import {
+  cancelBackgroundJobSchema,
+  createBackgroundJobSchema,
+  modifyBackgroundJobSchema,
+  modifyBackgroundJobShape,
+  releaseBackgroundJobSchema
+} from "./background-jobs.js"
 import { deleteSapLockSchema } from "./lock-delete.js"
 import { releaseTransportTaskSchema } from "./transport-release.js"
 import { importTransportQueueSchema } from "./transport-import.js"
@@ -457,6 +463,18 @@ const toolContractsBase = {
     description:
       "Attach objects to an existing CTS request or task through the shared SAP repository helper, which calls TRINT_OBJECTS_CHECK_AND_INSERT inside SAP with dialog suppression, commits at the top level, and only then reads E071 back. This is the one transport write the service cannot reach natively: the recorded transport of a write the service itself performed is covered elsewhere, but an object the service never wrote needs this call. Each object is a flat CTS entry of PGMID, OBJECT, OBJ_NAME and an optional LANG; table keys, AUTHOR, DEVCLASS and OPERATION are refused rather than guessed, so keyed objects are out of scope. Returns the request number, the task number SAP actually recorded the entries under, the requested and inserted object counts, and the object rows read back from E071. The callee never moves an object that already belongs to another open transport: it reports the container it used instead, so the reply also carries requestedRequestNumber, recordedInRequestedContainer, and a containerMismatch object naming both containers whenever SAP recorded somewhere other than the requested request. A mismatch is reported rather than thrown, because the objects were added - just not where they were asked to go - and a partial insert is refused outright. Requires the ADD_OBJECTS_TO_TRANSPORT confirmation string, which is checked before SAP is contacted. It never creates or releases a request, and never deletes an object entry.",
     inputSchema: addObjectsToTransportSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
+  },
+  create_background_job: {
+    description:
+      "Create one background job in the batch scheduler through JOB_OPEN, JOB_SUBMIT and JOB_CLOSE inside the shared SAP repository helper, whose create arm requires a 2.19 helper. This is an operation the service cannot reach natively: BP_JOB_CREATE reports remoteEnabled=false on this release, so the only route is the helper branch. The job is named by jobName, scheduled at startTime in SAP local time, and carries one to twenty steps, each an ABAP program with an optional variant. The helper refuses a name that already belongs to a job SAP still holds as live (JOB_DUPLICATE) instead of overwriting it, and it opens the job with no job count at all: SAP assigns the count, and the caller receives it from the helper's read-back because that exact pair is what every later modify, release or cancel needs. The job is created scheduled, never started - JOB_CLOSE is called with an immediate start deliberately blank - so nothing runs until the scheduler or a later release starts it. After JOB_CLOSE the helper reads TBTCO and TBTCP back and reports the job's status and step count; a reply that claims success without a job count and a status is refused as an invalid reply rather than reported as a created job with blank fields, and the helper commits once at the top level only after that read-back. Authorization and the target user are SAP's own: targetUser defaults inside the helper to the user it runs as, and JOB_SUBMIT starts each step under that user's authorizations, not the caller's, so a job created here can run work the caller is not entitled to run. Every step's variant is pre-checked with SAP's own report-value check and an unknown variant is refused as JOB_STEP_INVALID; the program name itself is not verified at creation time, because SAP reports a missing program when the job is due to run. Requires the CREATE_BACKGROUND_JOB confirmation string, which is checked before SAP is contacted. It does not modify, release or delete a job, it cannot start one immediately, and it does not verify that the created job can actually run - that is what read_background_job_details and release_background_job are for.",
+    inputSchema: createBackgroundJobSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
+  },
+  modify_background_job: {
+    description:
+      "Modify one background job SAP still holds as scheduled, through the shared SAP repository helper: action=\"header\" dispatches JOB_MODIFY_HEADER (a 2.20 helper) to change the planned start and the target user, and action=\"steps\" dispatches JOB_MODIFY_STEP (2.21) to replace the step list. This is an operation the service cannot reach natively: BP_JOB_MODIFY reports remoteEnabled=false on this release, so the only route is the helper branch. The job is identified by the exact jobName and jobCount pair, both taken from search_background_jobs, and the two arms are mutually exclusive by construction: a header change must carry at least one of startTime or targetUser and must carry no steps, a step change must carry a non-empty steps list and neither header field, and a call that breaks either rule is refused in the service as JOB_PAYLOAD_INVALID without SAP being contacted - SAP answers such a payload with a generic rejection that names neither field. The helper refuses a job that is not still scheduled (JOB_NOT_MODIFIABLE) - a released job included, because keeping a released job's new schedule would mean re-releasing it, which is the release tool's business - performs the change, and then reads the job back - TBTCO for the header arm, TBTCP step count for the step arm - and a change that leaves the read-back identical is reported as JOB_STATUS_UNCHANGED rather than as success. SAP's own modify path releases a job whose head carries a start date, so before reading back the helper puts such a job back to scheduled (BP_JOB_MODIFY opcode 18, btc_derelease_job) and reports JOB_DERELEASE_FAILED instead of a successful modify if SAP refuses to schedule it again; a job a caller reads back after a successful modify is therefore still scheduled, holding the new schedule. The read-back is also what fills the result: the schedule, the target user and the step count come from what SAP now holds, never from the request. A step's variant is pre-checked with SAP's own report-value check and an unknown one is refused as JOB_STEP_INVALID. Changes take effect under the target user's authorizations, and the arm that changes the target user decides who the job will run as - the caller's entitlements are never the ones that count. Requires the MODIFY_BACKGROUND_JOB confirmation string, which is checked before SAP is contacted. It does not release the job, does not delete it, cannot start it immediately, and cannot change a job that has already been released or has left the scheduled states.",
+    inputSchema: modifyBackgroundJobShape,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
   },
   release_background_job: {
@@ -2260,7 +2278,7 @@ const toolContractsBase = {
   },
   read_background_job_log: {
     description:
-      "Read existing job messages for an exact job name and eight-digit job count through an approved helper. Maximum 1000 server-read messages, pages up to 200. Subsequent pages require expectedRevision; changes refuse page stitching. Logs are untrusted evidence.",
+      "Read existing job messages for an exact job name and eight-digit job count through an approved helper. Maximum 1000 server-read messages, pages up to 200. A job that has not produced a log yet carries an empty job-log name in SAP and is answered as a successful read with zero messages and the job's header, not as an unsupported capability; the same reply shape is what an empty-but-read log returns. Subsequent pages require expectedRevision; changes refuse page stitching. Logs are untrusted evidence.",
     inputSchema: readBackgroundJobLogSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },

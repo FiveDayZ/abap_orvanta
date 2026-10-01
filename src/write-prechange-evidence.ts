@@ -428,7 +428,61 @@ export async function observeWritePreChange(
         recordObservationError(evidence, "transport_details", error)
       }
     }
-  } else if (name === "release_background_job" || name === "cancel_background_job") {
+  } else if (name === "create_background_job") {
+    // Create has no pre-existing row, so there is nothing of its own to snapshot: the write is what
+    // brings the job into being. What can be established beforehand is what the *name* currently
+    // resolves to, and that is worth recording because the helper refuses a name a pending or running
+    // job still holds (JOB_DUPLICATE) - so a name that is already taken is the one pre-change fact
+    // this tool has. `exists` is false either way: no job exists at the identity being written, which
+    // is exactly what "no target object was snapshotted" means for a create (same shape as
+    // run_abap_program below), and the gate must not read it as "the job is gone".
+    const createdJobName = String(input.jobName).toUpperCase()
+    const createSources: ReviewedReaderSource[] = []
+    const readExistingJobNames = createReviewedTableReader(
+      backend,
+      connectionId,
+      async () =>
+        JSON.parse(
+          await tools.readFunctionModuleInterface({
+            connectionId,
+            functionName: "RFC_READ_TABLE"
+          })
+        ),
+      createSources,
+      evidence.warnings
+    )
+    const nameRows = await readExistingJobNames({
+      table: "TBTCO",
+      fields: ["JOBNAME", "JOBCOUNT", "STATUS", "SDLSTRTDT", "SDLSTRTTM", "SDLUNAME"],
+      filters: { JOBNAME: createdJobName },
+      maximum: 1,
+      codePrefix: "JOB_OBSERVATION_",
+      mapError: () => "JOB_OBSERVATION_FAILED"
+    })
+    evidence.sources.push("tbtco")
+    evidence.active = null
+    evidence.version = null
+    evidence.fingerprint = null
+    evidence.exists = false
+    const heldBy = (nameRows ?? [])[0]
+    if (heldBy !== undefined) {
+      evidence.warnings.push(
+        `the name ${createdJobName} is already held by job ${stringValue(heldBy.JOBCOUNT)} with status ${stringValue(heldBy.STATUS)}; the helper refuses a duplicate name while a pending or running job holds it and answers JOB_DUPLICATE, so this create either adds a differently numbered job or is refused`
+      )
+    } else if (createSources[0]?.status === "empty") {
+      evidence.warnings.push(
+        `no TBTCO row carries the job name ${createdJobName} in the current client; the create is expected to add one, so there is no pre-existing row to snapshot`
+      )
+    } else {
+      evidence.warnings.push(
+        `whether the job name ${createdJobName} is already taken could not be read (${createSources[0]?.code ?? "JOB_OBSERVATION_FAILED"}); the helper re-reads TBTCO name by name and answers JOB_DUPLICATE rather than creating a second job under a held name`
+      )
+    }
+  } else if (
+    name === "release_background_job" ||
+    name === "cancel_background_job" ||
+    name === "modify_background_job"
+  ) {
     // A background job is a TBTCO row, so like a lock entry or a CTS request it is not a repository
     // object and it has no ADT URI: the generic source observation below looked up an empty URI and
     // refused every attempt before SAP was contacted, which is what both tools did until this branch

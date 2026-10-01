@@ -1,7 +1,7 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：165
+- 工具总数：167
 - 只读工具：100
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
@@ -14,8 +14,8 @@
 | profile: platform | 12 |
 | profile: dev | 139 |
 | profile: config | 42 |
-| profile: ops | 59 |
-| profile: full | 165 |
+| profile: ops | 61 |
+| profile: full | 167 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -23,7 +23,7 @@
 | 分组: form | 7 |
 | 分组: function | 8 |
 | 分组: message | 4 |
-| 分组: ops | 42 |
+| 分组: ops | 44 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
 | 分组: source | 17 |
@@ -53,6 +53,7 @@
 | `compare_systems` | ops | ops | 只读 | local | — |
 | `correlate_sap_logs` | ops | ops | 只读 | target-specific | — |
 | `create_abap_message_class` | message | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.7) |
+| `create_background_job` | ops | ops | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.19) |
 | `create_ddic_transparent_table` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
 | `create_enhancement_hook_implementation` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `create_function_module_with_interface` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.3) |
@@ -103,6 +104,7 @@
 | `manage_enhancement_implementation_state` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.6) |
 | `manage_text_elements` | source | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.12) |
 | `manage_transport_requests` | ops | dev, config, ops | 只读 | target-specific | — |
+| `modify_background_job` | ops | ops | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.21) |
 | `patch_abap_gui_definition` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.5) |
 | `patch_abap_screen` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.4) |
 | `patch_ddic_transparent_table_fields` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |

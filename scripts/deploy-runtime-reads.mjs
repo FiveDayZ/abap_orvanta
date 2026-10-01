@@ -73,16 +73,17 @@ const hash = (text) => createHash("sha256").update(text).digest("hex")
 // compare SAP against a body nobody ever deployed. It pins the hash of what SAP actually holds and
 // takes the replacement anchor from the live source instead. Re-pin this only together with a
 // deployment, and only to the body the deployment just wrote - otherwise the preflight stops, which
-// is exactly what it did when this still named the report variant. The value below is the fifth
-// deployment (USER_LIST supplies the mandatory LIST table), which is what SAP holds right now.
-const DEPLOYED_REPORT_BODY_HASH = "be11081eb3f3646d0147ee7b43d66bde4e8180c659a346d0931ff34447c05a2a"
+// is exactly what it did when this still named the report variant. The value below is the 2026-10-01
+// deployment (make_time reports validity instead of aborting, and an empty job log answers ok), which
+// is what SAP holds right now.
+const DEPLOYED_REPORT_BODY_HASH = "d75fae87e309971eb2878010855b54365fe4dc393332a573d1e6df9a0f23829a"
 // The live values the ops approval file holds for w200, so the preflight can prove it is looking
 // at the body and the interface the approval was granted for. These were stale (they still named
 // the pre-2026-09-30 interface), which silently disarmed the guard on the interface-patch path;
 // they now name what the approval file actually holds. The source fingerprint must be re-pinned in
 // the same batch as the approval file, because a body change always moves it.
 const EXPECTED_SOURCE_FINGERPRINT =
-  "56176ac6bd98bae560531a5da3add5adf3cbab3c09528b8b60b063bd8eac2ca0"
+  "3a8f3b08b013cbe2b526a6cee7a9394cb173ac4db77073dc34f813d4171b8b8e"
 const EXPECTED_INTERFACE_FINGERPRINT =
   "621a136206d005634363036e6beb7a73da3e9dc21ee9fd6fe9e5a8d64d33d784"
 // Only the imports this variant's branches actually reference. IV_PERIOD is read by both variants

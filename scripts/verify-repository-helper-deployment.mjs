@@ -8,16 +8,19 @@
  * a carrier reports its own success even when the body write did not survive. The carrier's own
  * closing line names the check that is actually decisive:
  *
- *   maxProtocol 2.18 with CREATE_TRANSPORT_REQUEST, ADD_OBJECTS_TO_TRANSPORT and
- *   INSPECT_TRANSPORT_IMPORT present
+ *   maxProtocol 2.21 with CREATE_TRANSPORT_REQUEST, ADD_OBJECTS_TO_TRANSPORT,
+ *   INSPECT_TRANSPORT_IMPORT, JOB_CREATE, JOB_MODIFY_HEADER and JOB_MODIFY_STEP present
  *
  * The 2.17 deployment of 2026-09-29 was the first one to land a body here since the shell incidents:
  * carrier `ZORVANTA_MCP_DYNPRO_DEPLOY_R14` ran through the RFC runner with SUBRC 0, and the helper
  * then self-described 2.17, which a body-less module cannot do. The 2.18 deployment the same day
- * carried `ZORVANTA_MCP_DYNPRO_DEPLOY_R15` and corrected the INSPECT_TRANSPORT_IMPORT arm. The pins
- * below move with the helper: they are what the deployment is *supposed* to produce, so a carrier
- * that silently leaves the old body in place fails this check instead of passing on its own printed
- * success.
+ * carried `ZORVANTA_MCP_DYNPRO_DEPLOY_R15` and corrected the INSPECT_TRANSPORT_IMPORT arm. The 2.21
+ * deployment carries the three job arms - creation and the two modification targets - which have to
+ * arrive together: the service pins create at 2.19 and modify at 2.21, so a body that landed one of
+ * them without the others would leave its tools answering the capability gate instead of the
+ * scheduler. The pins below move with the helper: they are what the deployment is *supposed* to
+ * produce, so a carrier that silently leaves the old body in place fails this check instead of
+ * passing on its own printed success.
  *
  * The decisive part is `attestation: "self-described"`: those rows are emitted by the generated
  * *body* through its CAPABILITIES action, so a module that still holds only an interface cannot
@@ -58,12 +61,15 @@ const dump = process.argv.includes("--dump")
 
 const EXPECTED_HELPER = "Z_ORVANTA_MCP_DYNPRO_API"
 const EXPECTED_MIN_PROTOCOL = "1.1"
-const EXPECTED_MAX_PROTOCOL = "2.18"
-const EXPECTED_OPERATION_COUNT = 47
+const EXPECTED_MAX_PROTOCOL = "2.21"
+const EXPECTED_OPERATION_COUNT = 50
 const EXPECTED_OPERATIONS = [
   "CREATE_TRANSPORT_REQUEST",
   "ADD_OBJECTS_TO_TRANSPORT",
-  "INSPECT_TRANSPORT_IMPORT"
+  "INSPECT_TRANSPORT_IMPORT",
+  "JOB_CREATE",
+  "JOB_MODIFY_HEADER",
+  "JOB_MODIFY_STEP"
 ]
 
 const client = new Client({ name: "repository-helper-deployment-check", version: "1.0.0" })

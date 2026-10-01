@@ -1488,7 +1488,72 @@ CTSGERRMSGS`（`.cache/r85-callee-header.txt`）；②ADT 接口文档同样列�
 
 **族与闸门**：A 使 `authorizations` 族**真闭环**（行半边有真机证据）——`npm run ops:matrix:generate` 输出
 **15 族、必需族闭环 12/14**、`criterionMet` 仍 **false**（未闭环：`jobs`、`transport`）。
-`npm run matrix:generate` → **165 工具 / 100 只读**。
+`npm run matrix:generate` → **165 工具 / 100 只读**。（**该读数已被 §7.25 取代**：jobs 族于 2026-10-01 真机闭环，
+此后为 **13/14**、`criterionMet` 仍 false，未闭环只剩 `transport`。）
 
 **未做**：未改任何 SAP 标准对象；未创建任何传输；`GR2K923472` 仍 `D`；未删除任何文件（本批 `.cache/r84`–`r93`
 全部保留，含两次失败的释放取证）。本批记录：`.doc/code-update-20261001-012029.md`（在工作区根 `.doc`）。
+
+### 7.25 jobs 族写侧真机闭环与运维助手两处同族缺陷（2026-10-01 第八批）
+
+本批把 jobs 族从"已实现、未调用"推到**真机 11/11 全绿**，并在过程中修掉运维助手里两处**同类**缺陷。三处
+改动分属两个助手，一次收口。
+
+**A. 缺陷六：`modify_background_job` 把已排定作业改成已释放（仓库助手
+`Z_ORVANTA_MCP_DYNPRO_API`，载体 `ZORVANTA_MCP_DYN227`）**。真机读数：`create` 后 `STATUS='P'`，一次 header
+modify 把它变成 `'S'`，随后 `release` 回 `JOB_RELEASE_FAILED`（SAP `subrc 4`）。根因读 SAP 标准源码定案，
+不是推断：`BP_JOB_MODIFY` 在 `dont_release='X'` 之下先置 `release_privilege_given = btc_no`（第 408 行），但
+`dialog='N'` 的 opcode-16 分支走 `BP_JOB_EDITOR`（`job_editor_opcode = btc_check_only`，第 538 行），后者第
+179 行调 `PERFORM check_release_privilege`（FORM 在 `LBTCHF12:707`，重查 `S_BTCH_JOB/JOBACTION='RELE'`），把
+该全局改回 `btc_yes`，于是第 647 行 `new_status = btc_released`，由 `update_modified_jobdata`
+（`LBTCHF13:356+`）落库。**`dont_release` 对该路径结构性无效**——这修正了 2026-09-30 未闭环时对
+`dont_release` 的期望。修法：两个分支在读回 `TBTCO` 之后，若改动前为 `'P'`/`'Z'` 而读回为 `'S'`，显式再调
+`BP_JOB_MODIFY`、`opcode = 18`（`btc_derelease_job`）改回 `btc_scheduled`；SAP 拒绝或以 `'S'` 收场则回
+`JOB_DERELEASE_FAILED` 并附 `subrc`，**不当作成功**。同时把闸门由 `<> 'P' AND <> 'S' AND <> 'Z'` 收紧为
+`<> 'P' AND <> 'Z'`：已释放作业一律 `JOB_NOT_MODIFIABLE`。依据：从未运行的作业不可能持有 `'S'`；且
+`reset_release_info_in_db`（`LBTCHFXX:2063`）只删 `TBTCS`/`BTCEVTJOB` 的开始条件行、**不触碰 `TBTCO`**，
+`SDLSTRTDT/SDLSTRTTM` 会留存，允许改已释放作业就需要一次静默再释放。opcode 18 路径的可行性逐点读过线上源：
+`check_job_modify_privilege`（`LBTCHF13:144`）接受 `{btc_scheduled, btc_released, btc_put_active}` 且其非法
+状态过滤只作用于 `opcode EQ btc_modify_whole_job`；`BP_JOB_MODIFY:450-454` 对 opcode 18 直接赋
+`new_status = btc_scheduled` 而不重算权限。部署经人工 SE38+F8（仓库族通道），回执
+`DONE: helper regenerated; 50 capability rows written`，`get_capability_report` 复核
+`sourceHash = 74cc22fe…`，与导出正文 sha256 逐位一致。
+
+**B. 缺陷七：`make_time` 宏内的 `RETURN` 中止整个函数模块（运维助手 `Z_ORVANTA_OPS_READ`）**。现象：
+`read_background_job_details` 对一切**尚未跑完**的作业只回裸 `READ_ONLY_UNSUPPORTED`。根因由 **25 行真值表
+取样**定案（`.cache/r273-truth-table.json`）：唯一判据是 `TBTCO-ENDDATE` 是否为空——`STATUS='S'` 的
+`ZWMS_8050/14141600` 其 `SDLSTRTDT=20261001` 合法却同样中止，排除了"时间不可表示"这一解释。机制：`make_job`
+宏对空的 `STRTDATE`/`ENDDATE` 仍调用 `make_time`，而 **ABAP 宏体内的 `RETURN` 退出的是外层处理块，即整个函数
+模块**，于是请求在构造作业头时中止，`ev_result` 停在分派前无条件写入的兜底值。为什么此前无法归因：只有
+`JOB_LOG` 走 `JOB_LOG_DIAGNOSTIC` 别名置诊断位，`JOB_DETAILS` 是裸动作，而 `job_stage` 在正常模式下是空操作，
+所以详情路径连阶段名都拿不到；用 `read_background_job_log` 取得助手自报 `reason: "JOB_TIMESTAMP"` 才定位。
+修法按用户裁定 ①（只改生成器 `scripts/operational-log-source.mjs`）：`make_time` **不再含任何
+`RETURN`/`CHECK`/`EXIT`**，改为纯正向条件把有效性写入新变量 `lv_time_valid`；时间判空用 `CO '0123456789'`
+而非 `IS INITIAL`（`TYPE T` 的午夜 `'000000'` 的 `IS INITIAL` 为真，正是 DYN224 的老坑）。`make_job` 三个
+调用点各自判该标志：无效则渲染 `null`。窗口校验与 TemSe 消息记录两处**保留拒绝**，但改为在调用点显式
+`RETURN`；系统日志循环改为跳过该单条记录。服务端同批适配：`backgroundJobSchema.scheduledSystemTime` 由非空改为
+`.nullable()`，`JOB_SEARCH` 窗口比对把 `null` 作为具名不一致拒绝。
+**教训（本批最重要的操作结论）**：首版修法去掉了 `job_stage` 但**保留了 `RETURN`**，真机回执于是从
+`JOB_TIMESTAMP` 变成 `JOB_PROT_AUTHORITY`——中止点只是后移了一层。**宏内必须彻底无早退；`RETURN` 本身才是
+缺陷。**
+
+**C. 缺陷八：`read_background_job_log` 对无日志作业回兜底码（同族，用户当场授权顺手修）**。`TBTCO-JOBLOG`
+是 CHAR 20，未跑完的作业为**空白**、跑完的为 `JOBLGX…`（全状态取样见 `.cache/r281-joblog-values.json`）。原守卫
+`IF ls_job-joblog(6) <> 'JOBLGX' … RETURN` 直接落到兜底码，调用方会误读成"本系统不支持读作业日志"。修法：
+`JOBLOG` 为空时回 `ok` + 作业头 + 空消息列表（作业存在、能力存在，只是尚无日志），`JOBLGX` 路径不变。
+
+**D. 真机验收与回归**。`.cache/r100-jobs-acceptance.mjs` **11/11 全部 PASS、`failures: 0`**：create
+（`JOB_CREATED`，SAP 分配 `jobCount`，`status=P`）→ 重复 create（`JOB_DUPLICATE`）→ 读存在 → modify header
+（`JOB_MODIFIED`，`status=P`）→ SAP 显示新计划 → modify steps（`JOB_MODIFIED`，`stepCount=1`）→ release
+（`JOB_RELEASED`，`status=S`）→ 对已释放作业 modify（`JOB_NOT_MODIFIABLE`）→ cancel（`JOB_CANCELLED`）→
+读回消失（`NOT_FOUND`）。修复后形态复核（`.cache/r283`）：`S`/`Y`/新建 `P` 的详情与日志全 `ok`（日志
+`totalMessages 0`），`F` 回归对照仍 `ok` 且 6 条消息。正文一致性：`.cache/verify-ops-read-body.mjs
+--variant=runtime` 回 `deployed_source_verified`，接口指纹 `621a1362…` 三次部署**始终未动**，只重钉批准文件的
+`sourceFingerprint`（`56176ac6…` → `527bbaa2…` → `3a8f3b08…`）且 `enabledSources` 逐项保留。
+
+**族与闸门**：jobs 族八个工具**全部 `verified`**，族 `gap` 清空 → `npm run ops:matrix:generate` 输出
+**15 族、必需族闭环 13/14**、`criterionMet` 仍 **false**（未闭环：`transport`）。
+`npm run matrix:generate` → **167 工具 / 100 只读**。
+
+**未做**：未改任何 SAP 标准对象；未创建传输；`GR2K923472` 保持 E070 状态 `D` **未释放**；未删除任何文件或
+SAP 对象（载体 `ZORVANTA_MCP_DYN222`–`DYN227` 全部保留）。本批记录：`.doc/code-update-20261001-135303.md`。

@@ -22,7 +22,11 @@ import { MockBackend } from "./mock-backend.js"
 
 const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
   transport: "partial",
-  jobs: "partial",
+  // Was "partial" until 2026-10-01, when both job writes were exercised against the deployed helper
+  // on the real machine: create, both modify arms, release and cancel all ran and were read back
+  // (11/11, .cache/r100-jobs-acceptance.mjs). The helper arms had been deployed a day earlier; what
+  // was missing was exactly the exercise, which is why registering the tools did not move this state.
+  jobs: "read-and-act",
   logs: "read-only",
   dumps: "read-only",
   traces: "blocked",
@@ -74,10 +78,13 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
  * `reprocess_failed_update` left the plan because no caller-usable interface for it exists on this
  * target (docs/ops-coverage.md 7.19), not because it was built. It fell to 2 on 2026-09-30 with the
  * runtime-resources batch, which registered the two metrics readers the plan still listed,
- * `read_db_activity` and `read_performance_snapshot`. The two that remain are the jobs family's
- * `create_background_job` and `modify_background_job`.
+ * `read_db_activity` and `read_performance_snapshot`. It reached 0 on 2026-09-30 with the jobs
+ * batch: `create_background_job` and `modify_background_job` were registered, so the plan lists no
+ * tool that the registry does not carry. That is a statement about the surface, not about the
+ * family's gap - `jobs` still declares one, because neither new tool has been exercised against a
+ * helper that carries its arm, and a planned tool that exists is not a planned tool that is done.
  */
-const PLANNED_GAP_TOOL_COUNT = 2
+const PLANNED_GAP_TOOL_COUNT = 0
 
 test("every ops tool has exactly one role and agrees with the registry annotation", () => {
   assert.deepEqual(opsClassificationProblems(), [])
@@ -86,13 +93,15 @@ test("every ops tool has exactly one role and agrees with the registry annotatio
     .map((entry) => entry.name)
     .sort()
   assert.deepEqual(Object.keys(OPS_TOOL_ROLES).sort(), opsGroupTools)
-  // 42 from 2026-09-30: `read_role_authorizations` joined the ops group with the authorizations
-  // family's second half. 41 was reached the same day (`read_db_activity` and
-  // `read_performance_snapshot` with the runtime-resources batch). 39 was reached on 2026-09-29
-  // (`delete_sap_lock` on 2026-09-28, then `release_transport_task`, `compare_systems`,
-  // `promote_object` and `import_transport_queue`). The count is a tripwire, not a goal - it exists
-  // so a tool cannot leave or join the classified surface unnoticed.
-  assert.equal(opsGroupTools.length, 42)
+  // 44 from 2026-09-30: `create_background_job` and `modify_background_job` completed the jobs
+  // family's four job-control actions, which is also the batch that took the plan's outstanding
+  // commitments to zero. 42 was reached the same day when `read_role_authorizations` joined the ops
+  // group with the authorizations family's second half. 41 was reached the same day
+  // (`read_db_activity` and `read_performance_snapshot` with the runtime-resources batch). 39 was
+  // reached on 2026-09-29 (`delete_sap_lock` on 2026-09-28, then `release_transport_task`,
+  // `compare_systems`, `promote_object` and `import_transport_queue`). The count is a tripwire, not a
+  // goal - it exists so a tool cannot leave or join the classified surface unnoticed.
+  assert.equal(opsGroupTools.length, 44)
 })
 
 test("family states are derived from the surface, and the plan's gaps stay visible", () => {
@@ -103,7 +112,9 @@ test("family states are derived from the surface, and the plan's gaps stay visib
   // `landscape` is in this list on that exact ground: the operator's 2026-09-29 ruling put the
   // promotion action outside the family's end-to-end, and that limit is recorded as a boundary.
   // `runtime-resources` joined on 2026-09-30, when its helper body reached w200 and all six of its
-  // tools - all reads - had a real reply behind them.
+  // tools - all reads - had a real reply behind them. `jobs` joined on 2026-10-01: it is the one
+  // family here that acts on SAP and still counts as closed, because its own write tools were
+  // exercised for real, which is what "read-and-act" means.
   const closed = Object.entries(states)
     .filter(([, state]) => state === "read-only" || state === "read-and-act")
     .map(([id]) => id)
@@ -113,6 +124,7 @@ test("family states are derived from the surface, and the plan's gaps stay visib
     "authorizations",
     "dumps",
     "interfaces",
+    "jobs",
     "landscape",
     "locks",
     "logs",
@@ -126,17 +138,18 @@ test("family states are derived from the surface, and the plan's gaps stay visib
   // A family may not lose a planned tool without saying so; the guard has to catch that, not just
   // the real tables that currently happen to be consistent.
   // The probe has to name a tool the registry does not know, because that is what "missing planned
-  // tool" means. It used to name `release_transport_task`, which stopped being missing on
-  // 2026-09-29 - once the tool exists the family is not silently dropping anything, so the guard
-  // correctly says nothing and the probe would assert the opposite of the truth. `create_background_job`
-  // is still only a plan entry, so the branch stays exercised.
+  // tool" means. It used to name `create_background_job`, which stopped being missing on 2026-09-30
+  // when the jobs batch registered it - and with it the plan's last outstanding commitment, so no
+  // real family can exercise this branch any more. The probe therefore names a tool the plan does not
+  // contain: the guard is about the shape of the declaration, not about which commitment happens to
+  // be open today.
   const brokenFamily = [
     {
       id: "transport",
       label: "Transport",
       purpose: "Which request holds this object?",
       closeRoutes: ["none"] as const,
-      plannedToolNames: ["manage_transport_requests", "create_background_job"],
+      plannedToolNames: ["manage_transport_requests", "no_such_ops_tool"],
       actionRequired: true,
       gap: ""
     }
@@ -144,7 +157,7 @@ test("family states are derived from the surface, and the plan's gaps stay visib
   const problems = opsClassificationProblems({ families: brokenFamily })
   assert.ok(
     problems.some((problem) =>
-      /missing planned tool create_background_job but declares no gap/.test(problem)
+      /missing planned tool no_such_ops_tool but declares no gap/.test(problem)
     ),
     `the guard did not report the silent gap: ${problems.join("; ")}`
   )
@@ -219,21 +232,18 @@ test("every family states a purpose and a route, and the two cannot contradict t
   // Recounted on 2026-09-30 from the real table. `locks` and `spool-output` moved to the "none" route
   // on 2026-09-29, `landscape` followed the same day by the operator's ruling, and `updates` joined on
   // 2026-09-30 by the same kind of ruling (its repeat capability is a platform boundary, so it stops
-  // waiting on `authorization`); `runtime-resources` joined the same day once its helper was deployed
-  // and verified, and `query` joined on 2026-09-30 once its last declared capability was built, so
-  // `service` fell 1 -> 0: no family is waiting on this repository any more. `authorizations` closed on
-  // 2026-09-30 without any SAP-side change, so it left both of its routes at once: `helper` fell 1 -> 0
-  // (no family needs a new helper arm now - `jobs` is the last one that will) and `approval` fell 1 -> 0
-  // (the trace table stays outside the D5-2 allowlist and is reached through the remote-enabled pair
-  // instead), which moved `none` 11 -> 12. `authorization` fell 3 -> 2 and `landscape`/`platform` are
-  // unchanged. The only family still waiting on the landscape route is `transport`, whose own gap is
+  // `jobs` closed on 2026-10-01 (eighth batch) once both job writes were exercised on the real
+  // machine, so its `authorization` route - the operator's standing authorization for those writes -
+  // left with it: `authorization` fell 2 -> 1 and `none` rose 12 -> 13. A family with an empty gap may
+  // not keep a closure route at all, which is what moved the count rather than trimming the route out
+  // of the text. The only family still waiting on the landscape route is `transport`, whose own gap is
   // about importing and is untouched by the landscape ruling.
-  assert.equal(block.summary.closeRouteCounts.none, 12)
+  assert.equal(block.summary.closeRouteCounts.none, 13)
   assert.equal(block.summary.closeRouteCounts.platform, 1)
   assert.equal(block.summary.closeRouteCounts.service, 0)
   assert.equal(block.summary.closeRouteCounts.approval, 0)
   assert.equal(block.summary.closeRouteCounts.helper, 0)
-  assert.equal(block.summary.closeRouteCounts.authorization, 2)
+  assert.equal(block.summary.closeRouteCounts.authorization, 1)
   assert.equal(block.summary.closeRouteCounts.landscape, 1)
   // Closing the family must move the correction into the boundary, not delete it: a claim of
   // unavailability may not survive once its source is proven to be ours, and the family still has to
@@ -305,11 +315,14 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     // missing repeat capability is a platform boundary, `runtime-resources` followed the same day
     // once its helper body reached w200 and every one of its six tools had answered, and `query`
     // followed once its last declared capability was built, and `authorizations` followed once the
-    // trace-data half was reached through the remote-enabled pair - so the two counts move together in
-    // opposite directions.
-    partial: 2,
+    // trace-data half was reached through the remote-enabled pair. `jobs` was the last to move: it
+    // stayed partial on 2026-09-30 even though it had gained both of the tools it was missing,
+    // because neither write had been exercised against a helper that carries its arm - registering a
+    // tool is not the same claim as proving one. It closed on 2026-10-01 once both writes ran on the
+    // real machine (11/11 acceptance).
+    partial: 1,
     "read-only": 11,
-    "read-and-act": 1
+    "read-and-act": 2
   })
   // `locks` joined the closed families on 2026-09-29, and `landscape` followed the same day by the
   // operator's ruling that its read-only loop is the family's end-to-end, and `spool-output` closed
@@ -317,8 +330,10 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   // same kind of ruling - its repeat capability is a platform boundary, not a gap - and
   // `runtime-resources` closed the same day once its helper was deployed and verified, and `query`
   // closed once its last declared capability was built, and `authorizations` closed once its trace-data
-  // half was reached, so the gap-only reading is 12 of 15.
+  // half was reached, and `jobs` closed on 2026-10-01 once both job writes were exercised on the real
+  // machine, so the gap-only reading is 13 of 15.
   assert.deepEqual(block.summary.endToEndFamilies, [
+    "jobs",
     "logs",
     "dumps",
     "locks",
@@ -332,23 +347,25 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "archive-alerts",
     "landscape"
   ])
-  assert.equal(block.summary.endToEndFamilyCount, 12)
-  assert.equal(block.summary.endToEndPercent, 80)
+  assert.equal(block.summary.endToEndFamilyCount, 13)
+  assert.equal(block.summary.endToEndPercent, 87)
   assert.ok(
     block.summary.endToEndPercent < 95,
     "the ops surface must not be reported as a 95% coverage milestone while the plan is open"
   )
-
-  // 42 from 2026-09-30: `read_role_authorizations` joined the ops group with the authorizations
-  // family's second half. 41 was reached the same day: `compare_systems`, `promote_object` and
+  // 44 from 2026-09-30: `create_background_job` and `modify_background_job` joined with the jobs
+  // batch, which is also what took the plan's outstanding commitments to zero. 42 was reached the
+  // same day: `read_role_authorizations` joined the ops group with the authorizations family's second
+  // half. 41 was reached the same day: `compare_systems`, `promote_object` and
   // `import_transport_queue` joined with OP3's two batches and OP2's transport import precheck, and
-  // the runtime-resources batch added `read_db_activity` and `read_performance_snapshot`. All six are
-  // readers, so the action and platform-blocked counts below do not move.
-  assert.equal(block.summary.classifiedToolCount, 42)
-  // Seven action tools from 2026-09-29: `delete_sap_lock` is a destructive write and
+  // the runtime-resources batch added `read_db_activity` and `read_performance_snapshot`.
+  assert.equal(block.summary.classifiedToolCount, 44)
+  // Nine action tools from 2026-09-30: `delete_sap_lock` is a destructive write and
   // `release_transport_task` releases a transport task, so both are classified as actions like the
-  // two transport writes and the two job writes before them.
-  assert.equal(block.summary.actionToolCount, 7)
+  // two transport writes and the two job writes before them - and the jobs batch added the family's
+  // other two writes, `create_background_job` and `modify_background_job`, which change what the
+  // scheduler holds without destroying anything.
+  assert.equal(block.summary.actionToolCount, 9)
   assert.equal(block.summary.platformBlockedToolCount, 1)
   assert.equal(block.summary.missingPlannedToolCount, PLANNED_GAP_TOOL_COUNT)
   assert.equal(block.summary.missingPlannedToolCount, block.summary.missingPlannedTools.length)
@@ -367,9 +384,10 @@ test("the block counts only families with an empty gap as end-to-end", () => {
   // instead of quietly falling back to the gap-only reading.
   assert.equal(block.summary.registryLoaded, false)
   assert.match(block.summary.criterionBasis, /registry unavailable/)
-  assert.equal(block.summary.stateClosedRequiredFamilyCount, 12)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 13)
   assert.equal(block.summary.closedRequiredFamilyCount, 0)
   assert.deepEqual(block.summary.evidenceUnregisteredFamilies, [
+    "jobs",
     "logs",
     "dumps",
     "locks",
@@ -384,7 +402,7 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "landscape"
   ])
   // The worklist is the evidence-aware one, so with no registry every required family is outstanding
-  // even though twelve of them are structurally closed - the count does not follow the state count.
+  // even though thirteen of them are structurally closed - the count does not follow the state count.
   assert.equal(block.summary.remainingRequiredFamilyCount, 14)
   assert.equal(block.summary.criterionMet, false)
   assert.equal(block.summary.stateCriterionMet, false)
@@ -397,15 +415,26 @@ test("the block counts only families with an empty gap as end-to-end", () => {
     "the worklist must never name the exempt family"
   )
 
-  // A monitor-only family never becomes end-to-end just because a reader exists, and a family that
-  // gained writers is still not closed while its own gap stands: jobs reports release and cancel and
-  // stays partial because create and modify are still missing.
+  // A monitor-only family never becomes end-to-end just because a reader exists, but a family that
+  // gained writers and had them exercised does: jobs carries all four job-control actions and closed
+  // on 2026-10-01, when create and both modify arms ran against the deployed helper on the real
+  // machine alongside release and cancel (11/11). Its state is derived from the empty gap, so this
+  // asserts the derivation rather than a label someone set.
   const jobs = block.families.find((family) => family.id === "jobs")
   assert.ok(jobs)
-  assert.equal(jobs.state, "partial")
+  assert.equal(jobs.state, "read-and-act")
   assert.equal(jobs.actionRequired, true)
-  assert.deepEqual(jobs.actionTools, ["release_background_job", "cancel_background_job"])
-  assert.deepEqual(jobs.missingToolNames, ["create_background_job", "modify_background_job"])
+  assert.deepEqual(jobs.actionTools, [
+    "create_background_job",
+    "modify_background_job",
+    "release_background_job",
+    "cancel_background_job"
+  ])
+  // Nothing the plan promised this family is missing from the registry, and the gap that used to
+  // record the two unexercised writes is empty because they were exercised - not because it was
+  // cleared.
+  assert.deepEqual(jobs.missingToolNames, [])
+  assert.equal(jobs.gap, "")
 
   // A platform-stopped family is reported as blocked, which is a different claim from "not built".
   const traces = block.families.find((family) => family.id === "traces")
@@ -585,14 +614,15 @@ test("a closed gap does not certify a family whose tools were never exercised", 
   assert.deepEqual(dumps.verification.blockingTools, [])
 
   assert.equal(block.summary.registryLoaded, true)
-  assert.equal(block.summary.stateClosedRequiredFamilyCount, 12)
+  assert.equal(block.summary.stateClosedRequiredFamilyCount, 13)
   assert.equal(block.summary.closedRequiredFamilyCount, 1)
   assert.deepEqual(block.summary.evidenceClosedFamilies, ["dumps"])
   // `landscape` and `runtime-resources` are in this list for a different reason than the rest: they
   // are structurally closed, and the fabricated map simply does not carry their tools, so nothing
   // certifies them here. That is the point of the list - a closed gap is not evidence, and the family
-  // has to be named rather than quietly counted.
+  // has to be named rather than quietly counted. `jobs` is the newest member for that same reason.
   assert.deepEqual(block.summary.evidenceUnregisteredFamilies, [
+    "jobs",
     "logs",
     "locks",
     "updates",
@@ -607,16 +637,16 @@ test("a closed gap does not certify a family whose tools were never exercised", 
   ])
   assert.ok(block.summary.outstandingRequiredFamilies.includes("logs"))
   // Only `dumps` is certified by the fabricated map, so thirteen of the fourteen required families
-  // are still on the worklist even though eleven are structurally closed.
+  // are still on the worklist even though twelve are structurally closed.
   assert.equal(block.summary.remainingRequiredFamilyCount, 13)
   assert.equal(block.summary.criterionMet, false)
   assert.equal(block.summary.stateCriterionMet, false)
-  // The two readings are deliberately both visible: the gap-only criterion would have closed 12 of
+  // The two readings are deliberately both visible: the gap-only criterion would have closed 13 of
   // the 15 families. This is the evidence-aware one, and it is the whole point of the test - only
   // `dumps` survives the fabricated map, so one of the fourteen required families is certified, not
-  // twelve. Rewriting this to 50 would assert the gap-only number and delete what the test exists to
+  // thirteen. Rewriting this to 93 would assert the gap-only number and delete what the test exists to
   // prove.
-  assert.equal(block.summary.endToEndFamilyCount, 12)
+  assert.equal(block.summary.endToEndFamilyCount, 13)
   assert.equal(block.summary.endToEndPercentOfRequired, 7)
 })
 
@@ -642,7 +672,7 @@ test("the capability report carries the ops block", async () => {
 
   assert.ok(report.opsCapability, "the report has no opsCapability block")
   assert.equal(report.opsCapability.summary.familyCount, Object.keys(EXPECTED_FAMILY_STATES).length)
-  assert.equal(report.opsCapability.summary.endToEndPercent, 80)
+  assert.equal(report.opsCapability.summary.endToEndPercent, 87)
   assert.match(
     report.opsCapability.vocabulary.endToEndRule,
     /never\s+compensate for a missing action/
@@ -660,15 +690,16 @@ test("the capability report carries the ops block", async () => {
   // for real, and its gap became empty; `query` joined it the same day once its last declared
   // capability was built and its gap was emptied as the result of that work; `authorizations` joined it
   // the same day once its trace-data half was reached through the already-remote-enabled pair and its
-  // gap was emptied as the result of that work, so twelve of the fourteen required families are
-  // certified and two are outstanding.
+  // gap was emptied as the result of that work; `jobs` joined it on 2026-10-01 once both job writes
+  // were exercised on the real machine and every one of its eight tools carried evidence, so thirteen
+  // of the fourteen required families are certified and one is outstanding.
   const summary = report.opsCapability.summary
   assert.equal(summary.registryLoaded, true)
   assert.match(summary.criterionBasis, /verification registry loaded/)
-  assert.equal(summary.closedRequiredFamilyCount, 12)
+  assert.equal(summary.closedRequiredFamilyCount, 13)
   assert.deepEqual(summary.evidenceUnregisteredFamilies, [])
-  assert.equal(summary.remainingRequiredFamilyCount, 2)
-  assert.equal(summary.endToEndPercentOfRequired, 86)
+  assert.equal(summary.remainingRequiredFamilyCount, 1)
+  assert.equal(summary.endToEndPercentOfRequired, 93)
   assert.ok(
     !summary.outstandingRequiredFamilies.includes("logs") &&
       !summary.outstandingRequiredFamilies.includes("dumps") &&
