@@ -14096,7 +14096,17 @@ function New-InstallProgram {
         "        EXPORTING",
         "          iv_trkorr = lv_trkorr",
         "          iv_dialog = space",
-        "          iv_as_background_job = 'X'",
+        # iv_as_background_job stays at its default ' ' deliberately. Setting it to 'X' does NOT mean
+        # "release without a GUI"; it means "run the pre-checks and then hand the release back to a
+        # caller that schedules it as a background job". FORM choose_execution_mode opens with
+        # `IF pv_as_background_job = 'X'. PERFORM project_release_1st_step ... MESSAGE e653(tk)
+        # RAISING release_in_bg_mode. ENDIF.` (LSCTS_RELEASEF13:848), so the callee stops there and
+        # raises release_in_bg_mode instead of releasing - the dialog transaction TR_RELEASE_REQUEST
+        # is the wrapper that would schedule the job, and an RFC caller has no such wrapper. That is
+        # what every real call of this arm returned (TRANSPORT_RELEASE_FAILED carrying e653(tk)'s
+        # text), on both a request that belongs to a CTS project and one that does not, which rules
+        # the project checks out as the cause. SAP's own callers leave the flag alone: RSWBO011 and
+        # BAPI_CTREQUEST_RELEASE both pass iv_dialog = space/space and never set this one.
         "          iv_success_message = space",
         "          iv_without_objects_check = space",
         "          iv_called_by_perforce = space",

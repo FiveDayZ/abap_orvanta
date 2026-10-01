@@ -105,6 +105,24 @@ const SUPERSEDED_OPERATIONS = {
   MANAGE_CLASSIC_BADI_IMPL: "MANAGE_CLASSIC_BADI_IMPLEMENTATION" // 34 chars -> truncated
 }
 
+// Live lines this carrier intentionally DELETES, recorded rather than waved through with
+// --accept-live-differences. The guard below exists to stop a full-body rebuild from silently
+// dropping a fix that was applied in SAP and never back-ported, so an intentional removal has to be
+// named here with its reason - otherwise the guard cannot tell the two apart.
+//
+// `iv_as_background_job = 'X'` (removed 2026-10-01): the release arm set this on
+// TRINT_RELEASE_REQUEST, where it does not mean "release without a GUI" but "run the pre-checks and
+// then hand the release to a caller that schedules it as a background job". FORM
+// choose_execution_mode (LSCTS_RELEASEF13:848) opens with `IF pv_as_background_job = 'X'. PERFORM
+// project_release_1st_step ... MESSAGE e653(tk) RAISING release_in_bg_mode. ENDIF.`, so the callee
+// stopped there and raised release_in_bg_mode instead of releasing - the dialog transaction
+// TR_RELEASE_REQUEST is the wrapper that would schedule that job, and an RFC caller has none. Every
+// real call returned e653(tk)'s text under TRANSPORT_RELEASE_FAILED, on a request inside a CTS
+// project and on one outside it, which is what ruled the project checks out as the cause. SAP's own
+// callers (RSWBO011, BAPI_CTREQUEST_RELEASE) leave the flag at its default.
+// Evidence: .doc/code-update-20261001-151456.md, .cache/r331-read-exec-mode.mjs.
+const REVIEWED_REMOVED_LINES = ["iv_as_background_job = 'X'"]
+
 // ------------------------------------------------------------------------------------------------
 // Canonical body: the exact source the bootstrap script would install, exported by the PowerShell
 // extractor (which is the only thing that knows how the script's own state shapes the body).
@@ -561,6 +579,12 @@ if (!offline) {
     const rename = Object.entries(SUPERSEDED_OPERATIONS).find(([, old]) => line.includes(old))
     if (rename) {
       reviewedRenames.push(`  ${line}  [renamed: ${rename[1]} -> ${rename[0]}]`)
+      continue
+    }
+    // A line this carrier deliberately deletes is a reviewed removal, not a lost live fix.
+    const removal = REVIEWED_REMOVED_LINES.find((removed) => line.includes(removed))
+    if (removal) {
+      reviewedRenames.push(`  ${line}  [intentionally removed: ${removal}]`)
       continue
     }
     const missing = tokens(line).filter((t) => !canonicalText.includes(t))
