@@ -21,13 +21,13 @@ what is still missing.
 | Reading | Value |
 | ------- | ----- |
 | Families reported | 15 (14 required + 1 documented exemption) |
-| State counts | absent 0, blocked 1, partial 1, read-only 11, read-and-act 2 |
-| End-to-end by state (all families) | 13 (87%) |
-| Required families counted closed | **13 / 14** (93% of required) |
-| Criterion (>= 95% of required) | **not met** - gap empty + every tool verified (verification registry loaded) |
+| State counts | absent 0, blocked 1, partial 0, read-only 11, read-and-act 3 |
+| End-to-end by state (all families) | 14 (93%) |
+| Required families counted closed | **14 / 14** (100% of required) |
+| Criterion (>= 95% of required) | met - gap empty + every tool verified (verification registry loaded) |
 | Closed by state but missing evidence | none |
-| Outstanding required families | transport |
-| Waiting on each route | write authorisation (OP2) 1, multi-system configuration (OP3) 1, the platform (exempt) 1, - 13 |
+| Outstanding required families | none |
+| Waiting on each route | the platform (exempt) 1, - 14 |
 
 ## Definition of done (plan section 8)
 
@@ -38,9 +38,9 @@ classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
-| 1. at least 95% of the 14 scenario families end-to-end | 13 / 14 closed (93%) | **no** |
-| 2. every ops tool verified with real w200 evidence | 43 / 46 of the tools the families declare are verified (the `ops` group itself holds 44, of which 41 are verified); not verified: release_transport_task, cleanup_transport_entries, analyze_abap_traces | **no** |
-| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 7 / 8 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, create_background_job, modify_background_job, release_background_job, cancel_background_job, delete_sap_lock; open: release_transport_task | **no** |
+| 1. at least 95% of the 14 scenario families end-to-end | 14 / 14 closed (100%) | yes |
+| 2. every ops tool verified with real w200 evidence | 43 / 46 of the tools the families declare are verified (the `ops` group itself holds 44, of which 41 are verified); not verified: cleanup_transport_entries, release_transport_task, analyze_abap_traces | **no** |
+| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 7 / 7 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, create_background_job, modify_background_job, release_background_job, cancel_background_job, delete_sap_lock | yes (open items: none) |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
 **Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
@@ -52,7 +52,7 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 | # | Family | Purpose | Read side | Action side | State | Evidence (verified/present) | Route |
 | - | ------ | ------- | --------- | ----------- | ----- | --------------------------- | ----- |
-| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 2/5 | 3 | partial | 4/5 verified (pending: release_transport_task) | write authorisation (OP2) + multi-system configuration (OP3) |
+| 1 | `transport` | Which request holds this object, what is in it, and is it ready to hand over? | 2/4 | 2 | read-and-act | 4/4 verified | - |
 | 2 | `jobs` | Did the job run, what did it do, and why is a job stuck or missing? | 4/8 | 4 | read-and-act | 8/8 verified | - |
 | 3 | `logs` | What does the system log or an application log say about a reported failure? | 5/5 | - | read-only | 5/5 verified | - |
 | 4 | `dumps` | Why did the program dump, and what failed first? | 2/2 | - | read-only | 2/2 verified | - |
@@ -70,37 +70,28 @@ binding number - and that ruling decides whether a 92.9% reading may be presente
 
 ## What each open family is waiting for
 
-### write authorisation (OP2)
-
-- **`transport`** (partial) - Release was built (release_transport_task, helper 2.16) and has been called for real three times without succeeding, and the cause is now located link by link in SAP's own code rather than inferred. Two of our own call-site defects were found, fixed, deployed and proven on the machine: ET_MESSAGES is a by-reference export of TRINT_RELEASE_REQUEST and was passed under EXPORTING instead of IMPORTING (the short dump CALL_FUNCTION_PARM_UNKNOWN, raised before any release logic), and iv_as_background_job = 'X' told the callee to hand the release back to a caller that schedules it as a background job - choose_execution_mode (LSCTS_RELEASEF13:848) raises release_in_bg_mode there and never releases. With both fixed the failure moved forward to the physical export, and the remaining chain reads: helper -> TRINT_RELEASE_REQUEST:123-133 -> TRINT_TRANSPORT_REQUEST:76-92 -> TRINT_EXPORT_ON_OS_LEVEL:42 -> LSCTS_RELEASEF02 release_by_tp -> tp_interface 'EXPWBO'. The refusal text is the callee's own, so what is missing is the OS-level transport control program tp, which is the same boundary already recorded for the sibling import tool (7.24 D). Four alternative explanations were falsified by evidence first: no short dump accompanies this refusal, neither request carries a CORR/PERF row so the Perforce changelist branch cannot fire, a request created outside any CTS project fails identically, and the no-export branch for a request without a target is unreachable because TRINT_TRANSPORT_REQUEST refuses tarsystem = space while creating with target omitted still produced TARSYSTEM = GR3. Every attempt was a safe failure: E070 stayed D and nothing was released. Import remains a precheck only (import_transport_queue, helper 2.18) and its positive branch is unobservable for the same reason; the 2.17 arm was measured wrong and the 2.18 arm reports the callee's own exception name and raw sub-return code on every path. What could not be established is which part of the tp environment is missing, because TCESYST and TMSCSYS are not on the D5-2 allowlist. Reaching full closure therefore needs either the tp environment repaired on the SAP side, or an operator ruling that this is the family's platform boundary - a criterion decision that is deliberately not taken here. DEV->QAS->PRD promotion still happens outside the service.
-
-### multi-system configuration (OP3)
-
-- **`transport`** (partial) - Release was built (release_transport_task, helper 2.16) and has been called for real three times without succeeding, and the cause is now located link by link in SAP's own code rather than inferred. Two of our own call-site defects were found, fixed, deployed and proven on the machine: ET_MESSAGES is a by-reference export of TRINT_RELEASE_REQUEST and was passed under EXPORTING instead of IMPORTING (the short dump CALL_FUNCTION_PARM_UNKNOWN, raised before any release logic), and iv_as_background_job = 'X' told the callee to hand the release back to a caller that schedules it as a background job - choose_execution_mode (LSCTS_RELEASEF13:848) raises release_in_bg_mode there and never releases. With both fixed the failure moved forward to the physical export, and the remaining chain reads: helper -> TRINT_RELEASE_REQUEST:123-133 -> TRINT_TRANSPORT_REQUEST:76-92 -> TRINT_EXPORT_ON_OS_LEVEL:42 -> LSCTS_RELEASEF02 release_by_tp -> tp_interface 'EXPWBO'. The refusal text is the callee's own, so what is missing is the OS-level transport control program tp, which is the same boundary already recorded for the sibling import tool (7.24 D). Four alternative explanations were falsified by evidence first: no short dump accompanies this refusal, neither request carries a CORR/PERF row so the Perforce changelist branch cannot fire, a request created outside any CTS project fails identically, and the no-export branch for a request without a target is unreachable because TRINT_TRANSPORT_REQUEST refuses tarsystem = space while creating with target omitted still produced TARSYSTEM = GR3. Every attempt was a safe failure: E070 stayed D and nothing was released. Import remains a precheck only (import_transport_queue, helper 2.18) and its positive branch is unobservable for the same reason; the 2.17 arm was measured wrong and the 2.18 arm reports the callee's own exception name and raw sub-return code on every path. What could not be established is which part of the tp environment is missing, because TCESYST and TMSCSYS are not on the D5-2 allowlist. Reaching full closure therefore needs either the tp environment repaired on the SAP side, or an operator ruling that this is the family's platform boundary - a criterion decision that is deliberately not taken here. DEV->QAS->PRD promotion still happens outside the service.
-
 ### the platform (exempt)
 
 - **`traces`** (blocked) - evidence only
 
 ## Evidence pointers per family
 
-### `transport` - partial
+### `transport` - read-and-act
 
 Purpose: Which request holds this object, what is in it, and is it ready to hand over?
 
-Criterion to close: Release was built (release_transport_task, helper 2.16) and has been called for real three times without succeeding, and the cause is now located link by link in SAP's own code rather than inferred. Two of our own call-site defects were found, fixed, deployed and proven on the machine: ET_MESSAGES is a by-reference export of TRINT_RELEASE_REQUEST and was passed under EXPORTING instead of IMPORTING (the short dump CALL_FUNCTION_PARM_UNKNOWN, raised before any release logic), and iv_as_background_job = 'X' told the callee to hand the release back to a caller that schedules it as a background job - choose_execution_mode (LSCTS_RELEASEF13:848) raises release_in_bg_mode there and never releases. With both fixed the failure moved forward to the physical export, and the remaining chain reads: helper -> TRINT_RELEASE_REQUEST:123-133 -> TRINT_TRANSPORT_REQUEST:76-92 -> TRINT_EXPORT_ON_OS_LEVEL:42 -> LSCTS_RELEASEF02 release_by_tp -> tp_interface 'EXPWBO'. The refusal text is the callee's own, so what is missing is the OS-level transport control program tp, which is the same boundary already recorded for the sibling import tool (7.24 D). Four alternative explanations were falsified by evidence first: no short dump accompanies this refusal, neither request carries a CORR/PERF row so the Perforce changelist branch cannot fire, a request created outside any CTS project fails identically, and the no-export branch for a request without a target is unreachable because TRINT_TRANSPORT_REQUEST refuses tarsystem = space while creating with target omitted still produced TARSYSTEM = GR3. Every attempt was a safe failure: E070 stayed D and nothing was released. Import remains a precheck only (import_transport_queue, helper 2.18) and its positive branch is unobservable for the same reason; the 2.17 arm was measured wrong and the 2.18 arm reports the callee's own exception name and raw sub-return code on every path. What could not be established is which part of the tp environment is missing, because TCESYST and TMSCSYS are not on the D5-2 allowlist. Reaching full closure therefore needs either the tp environment repaired on the SAP side, or an operator ruling that this is the family's platform boundary - a criterion decision that is deliberately not taken here. DEV->QAS->PRD promotion still happens outside the service.
+Criterion to close: gap empty and every tool verified
 
-Declared boundaries: cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still refuses to lie. On 2026-09-24 it located the entry, passed its own pre-checks with two structurally different payloads, saw the PUT answer 2xx, re-read E071 and found the target row still present, and reported CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS instead of success. The native ADT removeobject resource that would be needed is missing from this release, which is why the entry is registered platform-unsupported (D2 ruling, .doc/code-update-20260925-223946.md, forensics in .doc/code-update-20260924-105614.md): a capability the platform cannot deliver, not work still to be done. Leaving it declared as a commitment would have kept this family open permanently, which is what a boundary exists to prevent.
+Declared boundaries: cleanup_transport_entries was withdrawn from this family on 2026-09-28 by the operator's ruling, and the withdrawal is recorded rather than hidden: the tool still exists and still refuses to lie. On 2026-09-24 it located the entry, passed its own pre-checks with two structurally different payloads, saw the PUT answer 2xx, re-read E071 and found the target row still present, and reported CTS_CLEANUP_POSTCHECK_ENTRY_REMAINS instead of success. The native ADT removeobject resource that would be needed is missing from this release, which is why the entry is registered platform-unsupported (D2 ruling, .doc/code-update-20260925-223946.md, forensics in .doc/code-update-20260924-105614.md): a capability the platform cannot deliver, not work still to be done. Leaving it declared as a commitment would have kept this family open permanently, which is what a boundary exists to prevent. release_transport_task was withdrawn from this family on 2026-10-01 by the operator's ruling, and the withdrawal is recorded rather than hidden. Four of the five tools the family declared are verified and keep serving the scenario; what is ruled out of reach is one link in the fifth, established by reading the source of SAP itself rather than by inference. A release of the requests this service creates cannot avoid a physical export: TRINT_RELEASE_REQUEST (137 lines, sha256 931d02ad...) branches only on trfunction and on whether a target system is present, so a workbench request WITH a target always falls into the ELSE branch that calls TRINT_TRANSPORT_REQUEST, which calls TRINT_EXPORT_ON_OS_LEVEL unconditionally, and that function accepts no input that suppresses the export. An earlier belief of this project, that the SE09 dialog reaches a released status through a branch that skips the export, is wrong and has been withdrawn: the dialog runs the same export. That export runs the OS-level transport control program tp, which is an operating-system program rather than a SAP object, and tp is out of reach in this environment. It exists as an AIX executable at /usr/sap/GR2/SYS/exe/run/tp belonging to an intact 2014-05-12 kernel set, and the TMS domain configuration is present, but no transport log has been written since 2014-02-02, and a genuine release performed by the operator on 2026-10-01 moved GR2K923527 to TRSTATUS = R without writing any SLOG/ALOG and without producing any R*/K* file, so E070 status alone never proved that tp ran. Repairing this needs root or gr2adm on the AIX application server and S_CTS_ADMI in STMS, and the operator is not a Basis administrator and has no operating-system access. The tool is registered platform-unsupported with the full reasoning and its evidence in contracts/verification-registry.json: a capability this environment cannot deliver, not work still to be done. It is kept and still refuses honestly, answering an already-released request with TRANSPORT_NOT_MODIFIABLE and otherwise reporting the callee's own TRANSPORT_EXPORT_FAILED; the entry is re-promoted if the tp environment is ever repaired. What the family does deliver and has proven on the machine is unchanged: the task-level arm releases for real (task GR2K923528 reached TRSTATUS = R) and add_objects_to_transport writes for real (insertedCount = 1).
 
-Withdrawn from the plan, still registered and still failing safely: `cleanup_transport_entries`
-  (registry status: platform-unsupported)
+Withdrawn from the plan, still registered and still failing safely: `cleanup_transport_entries`, `release_transport_task`
+  (registry status: platform-unsupported, platform-unsupported)
 
 | Tool | Role | Status | Evidence |
 | ---- | ---- | ------ | -------- |
 | `manage_transport_requests` | read-only | verified | `.doc/code-update-20260924-165500.md` |
 | `create_transport_request` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
 | `add_objects_to_transport` | action | verified | `.doc/d7-d9-acceptance-20260924.json` |
-| `release_transport_task` | action | failed | failed (last attempt 2026-10-01T16:20:00+08:00) |
 | `import_transport_queue` | read-only | verified | `.doc/code-update-20260929-152335.md` |
 
 ### `jobs` - read-and-act
