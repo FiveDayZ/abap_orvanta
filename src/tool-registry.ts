@@ -586,7 +586,7 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6",
+    "2.22",
     ["MANAGE_CLASSIC_BADI_IMPL"]
   ],
   [
@@ -646,7 +646,7 @@ const ROWS: readonly ToolRow[] = [
     "D",
     "sap-helper-fallback",
     REPOSITORY,
-    "2.6",
+    "2.22",
     ["MANAGE_ENHANCEMENT_STATE"]
   ],
   [

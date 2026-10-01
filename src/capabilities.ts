@@ -210,8 +210,20 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
       "create_new_badi_implementation",
       "update_enhancement_hook_implementation",
       "update_new_badi_implementation",
+      "delete_enhancement_implementation"
+    ]
+  ],
+  // 2.22: these two actions travel in IV_OBJECT_TYPE, which was declared TADIR-OBJECT (CHAR 4) up to
+  // 2.21, so every action token (CREATE/ACTIVATE/DEACTIVATE/DELETE, DISCARD_INACTIVE) was truncated
+  // to four characters and both guards comparing against those tokens were unsatisfiable - neither
+  // arm could run for any input. 2.22 widens the parameter to TADIR-OBJ_NAME (CHAR 40). The rest of
+  // the enhancement lifecycle is unaffected and keeps working on 2.6, so it stays in the group above:
+  // a capability may not mix protocol minimums, and raising those six would report a working read as
+  // unsupported - the same false claim this registry exists to prevent.
+  [
+    "repository-helper-enhancement-action-parameter",
+    [
       "manage_enhancement_implementation_state",
-      "delete_enhancement_implementation",
       "manage_classic_badi_implementation"
     ]
   ],

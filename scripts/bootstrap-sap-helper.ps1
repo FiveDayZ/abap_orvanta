@@ -87,9 +87,18 @@ $helperCapabilityOperations = @(
     "ADD_OBJECTS_TO_TRANSPORT|2.8|W",
         "WRITE_FUNCTION_SOURCE|2.11|W",
     "READ_ENHANCEMENT_IMPL|2.6|R",
-    "MANAGE_ENHANCEMENT_STATE|2.6|W",
+    # 2.22: MANAGE_ENHANCEMENT_STATE's guard compares iv_object_type against ACTIVATE (8 chars) and
+    # DISCARD_INACTIVE (16), but the parameter was declared TADIR-OBJECT, i.e. CHAR 4, so every value
+    # was truncated and the guard was unsatisfiable - the arm could never run for any input. 2.22
+    # widens the parameter to TADIR-OBJ_NAME (CHAR 40). A 2.21 helper still truncates, so it cannot
+    # serve this operation and the minimum moves above the previous ceiling (2.21).
+    "MANAGE_ENHANCEMENT_STATE|2.22|W",
     "DELETE_ENHANCEMENT_IMPL|2.5|W",
-    "MANAGE_CLASSIC_BADI_IMPL|2.5|W",
+    # 2.22 for the same reason as MANAGE_ENHANCEMENT_STATE: this guard compares iv_object_type
+    # against CREATE (6), ACTIVATE (8), DEACTIVATE (10) and DELETE (6), none of which survived a
+    # CHAR 4 parameter. The service also carries the action in the IT_SOURCE payload as ACTION, so
+    # once the widening lands the guard and the payload agree.
+    "MANAGE_CLASSIC_BADI_IMPL|2.22|W",
     "READ_CLASSIC_BADI_DEFINITION|2.4|R",
     "READ_BTE_CONFIGURATION|2.3|R",
     "READ_CUSTOMER_EXIT_DEFINITION|2.2|R",
@@ -14543,7 +14552,12 @@ function New-InstallProgram {
         "      lv_textpool_program = iv_program.",
         "      lv_tadir_name = iv_program.",
         "      CASE iv_object_type.",
-        "        WHEN 'PROG' OR space.",
+        "* 2.22: IV_OBJECT_TYPE widened from TADIR-OBJECT (CHAR 4) to",
+        "* TADIR-OBJ_NAME (CHAR 40), so the service's historical value",
+        "* 'PROGRAM' now arrives intact instead of truncating to 'PROG'.",
+        "* Accept both: 'PROG' is the TADIR code the service sends now, and",
+        "* 'PROGRAM' keeps an older service build working against this helper.",
+        "        WHEN 'PROG' OR 'PROGRAM' OR space.",
         "          lv_tadir_type = 'PROG'.",
         "        WHEN 'CLAS'.",
         "          lv_tadir_type = 'CLAS'.",
@@ -16439,8 +16453,13 @@ function New-InstallProgram {
         "ls_import-dbfield = '$operationDbField'.",
         "APPEND ls_import TO lt_import.",
         "CLEAR ls_import.",
+        # 2.22: IV_OBJECT_TYPE carries either a TADIR object type (CLAS/INTF/FGRP/FUNC/PROG/TRAN,
+        # all 4 characters) or an action token (CREATE/ACTIVATE/DEACTIVATE/DELETE, DISCARD_INACTIVE,
+        # up to 16 characters). TADIR-OBJECT is CHAR 4, so every action token was silently truncated
+        # and the two guards comparing against those tokens could never be satisfied. TADIR-OBJ_NAME
+        # is CHAR 40: it keeps the parameter inside TADIR and gives the longest token room.
         "ls_import-parameter = 'IV_OBJECT_TYPE'.",
-        "ls_import-dbfield = 'TADIR-OBJECT'.",
+        "ls_import-dbfield = 'TADIR-OBJ_NAME'.",
         "ls_import-optional = 'X'.",
         "APPEND ls_import TO lt_import.",
         "CLEAR ls_import.",

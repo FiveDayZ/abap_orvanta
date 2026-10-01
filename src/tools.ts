@@ -8412,7 +8412,7 @@ export class ToolService {
     const requested = write ? normalizeTextElements(input.textElements!) : []
     const result = await this.backend.callSapRepository(connectionId, {
       operation: write ? "MERGE_TEXT_ELEMENTS" : "READ_TEXT_ELEMENTS",
-      objectType: "PROGRAM",
+      objectType: "PROG",
       program: objectName,
       source: write
         ? serializeRepositoryRows(
