@@ -4218,7 +4218,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header: {
         DATATYPE: input.dataType,
@@ -4270,7 +4270,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header,
       selectionMethods,
@@ -4315,7 +4315,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header,
       lockTables,
@@ -4350,7 +4350,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: numberRangeObjectVersion(input.expectedVersion),
       header: properties,
       numberRangeTexts: texts
@@ -4384,7 +4384,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header,
       baseTables,
@@ -4531,7 +4531,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header: {
         DOMNAME: ddicName(input.domainName, "domainName"),
@@ -4582,7 +4582,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       fields
     })
@@ -4620,7 +4620,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       header: {
         CONTFLAG: input.deliveryClass,
         MAINFLAG: maintenanceFlag,
@@ -4710,7 +4710,7 @@ export class ToolService {
       objectName,
       description: current.header.DDTEXT ?? "",
       packageName,
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion,
       fields: appendedFields
     })
@@ -4790,7 +4790,7 @@ export class ToolService {
       objectName,
       description: String(currentDefinition.description ?? ""),
       packageName,
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion,
       fields: serializeDdicTableFields(fields)
     })
@@ -4841,7 +4841,7 @@ export class ToolService {
       connectionId,
       objectName,
       packageName,
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       settings: input.settings,
       expectedVersion: requiredVersionToken(input.expectedVersion),
       expectedFingerprint: requiredDdicFingerprint(input.expectedFingerprint)
@@ -4973,7 +4973,6 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const objectName = customerDdicTableName(input.objectName)
     const packageName = ddicPackageName(input.packageName)
-    requireTransportableDdicPackage(packageName)
     const before = JSON.parse(
       await this.readDdicTableConversionStatus({ connectionId, objectName })
     ) as {
@@ -4991,7 +4990,7 @@ export class ToolService {
       objectName,
       description: "Native table conversion recovery",
       packageName,
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       fields: before.entries
     })
     requireDdicSuccess(result)
@@ -5039,7 +5038,6 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const objectName = customerDdicTableName(input.objectName)
     const packageName = ddicPackageName(input.packageName)
-    requireTransportableDdicPackage(packageName)
     const readStored = () =>
       this.backend.callSapDdic(connectionId, { operation: "READ_TRANSPARENT_TABLE", objectName })
     const stored = await readStored()
@@ -5134,7 +5132,7 @@ export class ToolService {
         connectionId,
         objectName,
         packageName,
-        transportNumber: ddicTransport(input.packageName, input.transportNumber),
+        transportNumber: ddicTransport(input.transportNumber),
         settings,
         expectedVersion: requiredVersionToken(stored.objectVersion),
         expectedFingerprint: storedFingerprint
@@ -5166,7 +5164,7 @@ export class ToolService {
       objectName,
       description: "Resume inactive transparent table activation",
       packageName,
-      transportNumber: ddicTransport(input.packageName, input.transportNumber)
+      transportNumber: ddicTransport(input.transportNumber)
       // No expectedVersion: the helper's iv_expected_version is the ACTIVE version's timestamp token
       // (AS4DATE + AS4TIME, 14 characters) used by the create/patch paths. A resume has no active
       // version to tokenise and this service holds a content fingerprint (64 hex characters), so the
@@ -5244,7 +5242,7 @@ export class ToolService {
       objectName,
       description: input.description,
       packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion: versionToken(input.expectedVersion),
       header: { ROWTYPE: ddicName(input.rowType, "rowType") }
     })
@@ -5290,7 +5288,7 @@ export class ToolService {
       operation,
       objectName,
       packageName: expectedPackage,
-      transportNumber: ddicTransport(input.packageName, input.transportNumber),
+      transportNumber: ddicTransport(input.transportNumber),
       expectedVersion:
         input.objectType === "NROB"
           ? requiredNumberRangeObjectVersion(input.expectedVersion)
@@ -13573,47 +13571,45 @@ function ddicFieldName(value: string): string {
 }
 
 function ddicPackageName(value: string): string {
-  // $TMP is accepted deliberately for the DDIC write tools. It is the correct home for throwaway
-  // test objects, and it leaves no transport entry behind: test DDIC objects created in a
-  // transportable package have already left TADIR residue in this system that needed manual SE03
-  // cleanup. Objects here stay local to this system and are never promoted, which is what a test
-  // object should be. Every other package name is still validated as before.
+  // Every DDIC write needs a transportable package, so `$TMP` is refused here for all of them.
   //
-  // Accepting the name is not a promise that every write can run there: the deployed helper's shared
-  // write guard answers WRITE_INPUT_REQUIRED ("Description package and request required") when the
-  // request is empty, and a $TMP object belongs to no request. Measured on 2026-10-02 for the
-  // conversion recovery (see requireTransportableDdicPackage); the write operations that already
-  // require an existing request refuse $TMP locally for that reason.
-  if (value.trim().toUpperCase() === "$TMP") return "$TMP"
+  // The deployed helper's shared write guard rejects a write whose package is `$TMP` before it
+  // dispatches any operation (WRITE_INPUT_REQUIRED, "Description package and request required"), and a
+  // local object belongs to no request. Measured on 2026-10-02: the `$TMP` table ZXF_TEST3 held the
+  // system's only pending TBATG entry, and recover_ddic_table_conversion was refused by that guard
+  // before the conversion ran, after the caller had already committed an operationId to it.
+  //
+  // This reverses the earlier rule, which accepted `$TMP` as the home for throwaway DDIC test objects
+  // so that no transport entry was left behind. That acceptance was never usable - no `$TMP` DDIC
+  // write could succeed - so it only bought a SAP-side refusal. A test object now needs a
+  // transportable package, and requireTransportableDdicPackage names the SAP GUI fallback (SE11/SE14)
+  // for a caller who wants a purely local object.
+  if (value.trim().toUpperCase() === "$TMP") requireTransportableDdicPackage("$TMP")
   const normalized = ddicName(value, "packageName")
   return normalized
 }
 
 /**
- * DDIC writes in $TMP send no transport at all, exactly like the source-object case already
- * handled by deletableSourcePackage. Without this, allowing $TMP in ddicPackageName would be
- * inert: every $TMP write was still refused by the mandatory 10-character transport check, so
- * no caller could actually use the local package. Non-$TMP packages keep the original rule.
- *
- * This keeps the request field empty for a local object; it does not make the write succeed. The
- * deployed helper refuses a write whose request is empty (WRITE_INPUT_REQUIRED), which is what
- * requireTransportableDdicPackage guards for the operations that need an existing request.
+ * Validates the request a DDIC write carries. There is no `$TMP` case any more: ddicPackageName
+ * refuses a local package for every DDIC write, because the helper's shared guard answers
+ * WRITE_INPUT_REQUIRED for it and a local object belongs to no request. Non-local packages keep the
+ * original rule - the caller's request must be a real one.
  */
-function ddicTransport(packageName: string, value: string): string {
-  return ddicPackageName(packageName) === "$TMP" ? "" : transportNumber(value)
+function ddicTransport(value: string): string {
+  return transportNumber(value)
 }
 
 /**
- * The two DDIC writes that resume or recover an existing object's state need the request the object
- * already belongs to, and the deployed helper's shared write guard refuses a write without one
- * (WRITE_INPUT_REQUIRED, "Description package and request required"). ddicTransport deliberately
- * sends an empty request for `$TMP`, because a local object has none - so those two calls could only
- * ever be refused by SAP after the caller had already committed an operationId to them.
+ * The shared DDIC package rule: a write needs the request the object belongs to, and the deployed
+ * helper's write guard refuses a write whose package is `$TMP` (WRITE_INPUT_REQUIRED, "Description
+ * package and request required") before any operation is dispatched. A local object belongs to no
+ * request, so no `$TMP` DDIC write can ever succeed.
  *
- * Measured on 2026-10-02 against the live helper: recover_ddic_table_conversion for the $TMP table
+ * Measured on 2026-10-02 against the live helper: recover_ddic_table_conversion for the `$TMP` table
  * ZXF_TEST3 (one pending TBATG entry, read from TBATG first) was refused with exactly that code
- * before the conversion ran, and the worklist fingerprint was unchanged afterwards. Refuse here,
- * naming the cause, so the caller learns the precondition instead of a SAP-side rejection.
+ * before the conversion ran, and the worklist fingerprint was unchanged afterwards. ddicPackageName
+ * calls this for every DDIC write, so the caller learns the precondition instead of spending an
+ * operationId on a SAP-side rejection.
  */
 function requireTransportableDdicPackage(packageName: string): void {
   if (packageName !== "$TMP") return

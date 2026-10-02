@@ -1028,16 +1028,18 @@ test("an inactive resume refuses a stored definition with no field rows", async 
 })
 
 /**
- * Guard for the 2026-10-02 conversion-recovery acceptance.
+ * Guard for the 2026-10-02 conversion-recovery acceptance and the 2026-10-03 ruling that followed it.
  *
- * `recover_ddic_table_conversion` accepted `$TMP` (ddicPackageName allows it) and then sent an empty
- * request, which the deployed helper's shared write guard always refuses with WRITE_INPUT_REQUIRED.
- * The live call proved it: the $TMP table ZXF_TEST3 held the system's only pending TBATG entry and was
- * refused by the helper before the conversion ran - after the caller had already committed an
- * operationId to it. The refusal belongs here, it must name the precondition, and it must reach no SAP
- * call at all. `resume_ddic_table_activation` shares the guard and the same empty-request path.
+ * `$TMP` used to be accepted for DDIC writes on the reasoning that a local object leaves no transport
+ * entry behind, but the deployed helper's shared write guard refuses a write whose package is `$TMP`
+ * before dispatching anything (WRITE_INPUT_REQUIRED). The live call proved it: the `$TMP` table
+ * ZXF_TEST3 held the system's only pending TBATG entry and was refused by the helper before the
+ * conversion ran - after the caller had already committed an operationId to it. The rule now lives in
+ * `ddicPackageName`, so every DDIC write refuses `$TMP` locally, names the precondition, and reaches
+ * no SAP call at all. This test pins that at three call sites rather than only the two that were
+ * patched first.
  */
-test("a $TMP table is refused locally by the conversion recovery and the activation resume", async () => {
+test("a $TMP package is refused locally by every DDIC write", async () => {
   const backend = new MockBackend()
   const operations: string[] = []
   const original = backend.callSapDdic.bind(backend)
@@ -1046,6 +1048,12 @@ test("a $TMP table is refused locally by the conversion recovery and the activat
     return original(connectionId, request)
   }
   const tools = new ToolService(backend)
+  const refused = (error: Error) => {
+    assert.match(error.message, /TRANSPORTABLE_PACKAGE_REQUIRED/)
+    assert.match(error.message, /WRITE_INPUT_REQUIRED/)
+    assert.match(error.message, /No SAP call was made/)
+    return true
+  }
   await assert.rejects(
     () =>
       tools.recoverDdicTableConversion({
@@ -1057,12 +1065,7 @@ test("a $TMP table is refused locally by the conversion recovery and the activat
         acknowledgePotentialDataLoss: true,
         connectionId: "w200"
       }),
-    (error: Error) => {
-      assert.match(error.message, /TRANSPORTABLE_PACKAGE_REQUIRED/)
-      assert.match(error.message, /WRITE_INPUT_REQUIRED/)
-      assert.match(error.message, /No SAP call was made/)
-      return true
-    }
+    refused
   )
   await assert.rejects(
     () =>
@@ -1074,12 +1077,25 @@ test("a $TMP table is refused locally by the conversion recovery and the activat
         confirmation: "RESUME_INACTIVE_ACTIVATION",
         connectionId: "w200"
       }),
-    (error: Error) => {
-      assert.match(error.message, /TRANSPORTABLE_PACKAGE_REQUIRED/)
-      return true
-    }
+    refused
   )
-  // The precondition is refused before the worklist or the stored definition is read, so neither call
+  // A plain DDIC write shares the validator, so the refusal is not a property of those two tools.
+  await assert.rejects(
+    () =>
+      tools.patchDdicTransparentTableFields({
+        objectName: "ZCMCP_TAB_REF",
+        expectedVersion: "20260101000000",
+        expectedFingerprint: "e".repeat(64),
+        changes: [{ action: "rename", fieldName: "TXT", newName: "TXT2" }],
+        packageName: "$TMP",
+        transportNumber: "",
+        confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
+        acknowledgeDataLoss: true,
+        connectionId: "w200"
+      }),
+    refused
+  )
+  // The precondition is refused before the worklist or the stored definition is read, so no call
   // spends an operationId or a SAP-side rejection on a request the helper can only refuse.
   assert.deepEqual(operations, [])
 })
