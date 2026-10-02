@@ -4973,6 +4973,7 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const objectName = customerDdicTableName(input.objectName)
     const packageName = ddicPackageName(input.packageName)
+    requireTransportableDdicPackage(packageName)
     const before = JSON.parse(
       await this.readDdicTableConversionStatus({ connectionId, objectName })
     ) as {
@@ -5038,6 +5039,7 @@ export class ToolService {
     const connectionId = input.connectionId.toLowerCase()
     const objectName = customerDdicTableName(input.objectName)
     const packageName = ddicPackageName(input.packageName)
+    requireTransportableDdicPackage(packageName)
     const readStored = () =>
       this.backend.callSapDdic(connectionId, { operation: "READ_TRANSPARENT_TABLE", objectName })
     const stored = await readStored()
@@ -13571,24 +13573,56 @@ function ddicFieldName(value: string): string {
 }
 
 function ddicPackageName(value: string): string {
-  // $TMP is accepted deliberately. It is the correct home for throwaway test objects, and it
-  // leaves no transport entry behind: test DDIC objects created in a transportable package have
-  // already left TADIR residue in this system that needed manual SE03 cleanup. Objects here stay
-  // local to this system and are never promoted, which is what a test object should be. Every
-  // other package name is still validated as before.
+  // $TMP is accepted deliberately for the DDIC write tools. It is the correct home for throwaway
+  // test objects, and it leaves no transport entry behind: test DDIC objects created in a
+  // transportable package have already left TADIR residue in this system that needed manual SE03
+  // cleanup. Objects here stay local to this system and are never promoted, which is what a test
+  // object should be. Every other package name is still validated as before.
+  //
+  // Accepting the name is not a promise that every write can run there: the deployed helper's shared
+  // write guard answers WRITE_INPUT_REQUIRED ("Description package and request required") when the
+  // request is empty, and a $TMP object belongs to no request. Measured on 2026-10-02 for the
+  // conversion recovery (see requireTransportableDdicPackage); the write operations that already
+  // require an existing request refuse $TMP locally for that reason.
   if (value.trim().toUpperCase() === "$TMP") return "$TMP"
   const normalized = ddicName(value, "packageName")
   return normalized
 }
 
 /**
- * DDIC writes in $TMP need no transport at all, exactly like the source-object case already
+ * DDIC writes in $TMP send no transport at all, exactly like the source-object case already
  * handled by deletableSourcePackage. Without this, allowing $TMP in ddicPackageName would be
  * inert: every $TMP write was still refused by the mandatory 10-character transport check, so
  * no caller could actually use the local package. Non-$TMP packages keep the original rule.
+ *
+ * This keeps the request field empty for a local object; it does not make the write succeed. The
+ * deployed helper refuses a write whose request is empty (WRITE_INPUT_REQUIRED), which is what
+ * requireTransportableDdicPackage guards for the operations that need an existing request.
  */
 function ddicTransport(packageName: string, value: string): string {
   return ddicPackageName(packageName) === "$TMP" ? "" : transportNumber(value)
+}
+
+/**
+ * The two DDIC writes that resume or recover an existing object's state need the request the object
+ * already belongs to, and the deployed helper's shared write guard refuses a write without one
+ * (WRITE_INPUT_REQUIRED, "Description package and request required"). ddicTransport deliberately
+ * sends an empty request for `$TMP`, because a local object has none - so those two calls could only
+ * ever be refused by SAP after the caller had already committed an operationId to them.
+ *
+ * Measured on 2026-10-02 against the live helper: recover_ddic_table_conversion for the $TMP table
+ * ZXF_TEST3 (one pending TBATG entry, read from TBATG first) was refused with exactly that code
+ * before the conversion ran, and the worklist fingerprint was unchanged afterwards. Refuse here,
+ * naming the cause, so the caller learns the precondition instead of a SAP-side rejection.
+ */
+function requireTransportableDdicPackage(packageName: string): void {
+  if (packageName !== "$TMP") return
+  throw new Error(
+    "TRANSPORTABLE_PACKAGE_REQUIRED: the installed DDIC helper refuses a write whose request is empty " +
+      "(WRITE_INPUT_REQUIRED: Description package and request required), and a $TMP object belongs to no " +
+      "request. Assign the table to a transportable package with an existing request, or perform the step " +
+      "in SAP GUI (SE14 for a table conversion, SE11 for an activation). No SAP call was made."
+  )
 }
 
 function versionToken(value?: string): string | undefined {

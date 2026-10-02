@@ -1027,6 +1027,63 @@ test("an inactive resume refuses a stored definition with no field rows", async 
   assert.deepEqual(operations, ["READ_TRANSPARENT_TABLE"])
 })
 
+/**
+ * Guard for the 2026-10-02 conversion-recovery acceptance.
+ *
+ * `recover_ddic_table_conversion` accepted `$TMP` (ddicPackageName allows it) and then sent an empty
+ * request, which the deployed helper's shared write guard always refuses with WRITE_INPUT_REQUIRED.
+ * The live call proved it: the $TMP table ZXF_TEST3 held the system's only pending TBATG entry and was
+ * refused by the helper before the conversion ran - after the caller had already committed an
+ * operationId to it. The refusal belongs here, it must name the precondition, and it must reach no SAP
+ * call at all. `resume_ddic_table_activation` shares the guard and the same empty-request path.
+ */
+test("a $TMP table is refused locally by the conversion recovery and the activation resume", async () => {
+  const backend = new MockBackend()
+  const operations: string[] = []
+  const original = backend.callSapDdic.bind(backend)
+  backend.callSapDdic = async (connectionId, request) => {
+    operations.push(request.operation)
+    return original(connectionId, request)
+  }
+  const tools = new ToolService(backend)
+  await assert.rejects(
+    () =>
+      tools.recoverDdicTableConversion({
+        objectName: "ZXF_TEST3",
+        expectedWorklistFingerprint: "c".repeat(64),
+        packageName: "$TMP",
+        transportNumber: "",
+        confirmation: "RECOVER_NATIVE_TABLE_CONVERSION",
+        acknowledgePotentialDataLoss: true,
+        connectionId: "w200"
+      }),
+    (error: Error) => {
+      assert.match(error.message, /TRANSPORTABLE_PACKAGE_REQUIRED/)
+      assert.match(error.message, /WRITE_INPUT_REQUIRED/)
+      assert.match(error.message, /No SAP call was made/)
+      return true
+    }
+  )
+  await assert.rejects(
+    () =>
+      tools.resumeDdicTableActivation({
+        objectName: "ZXF_TEST3",
+        expectedInactiveFingerprint: "d".repeat(64),
+        packageName: "$tmp",
+        transportNumber: "",
+        confirmation: "RESUME_INACTIVE_ACTIVATION",
+        connectionId: "w200"
+      }),
+    (error: Error) => {
+      assert.match(error.message, /TRANSPORTABLE_PACKAGE_REQUIRED/)
+      return true
+    }
+  )
+  // The precondition is refused before the worklist or the stored definition is read, so neither call
+  // spends an operationId or a SAP-side rejection on a request the helper can only refuse.
+  assert.deepEqual(operations, [])
+})
+
 test("table field writes carry the DD03P reference pair, and an unpaired half is refused", async () => {
   // A quantity or currency field names the table and field holding its unit. DDIC activation refuses
   // such a field without them ("specify reference table and reference field"), verified live on
