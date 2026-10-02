@@ -2125,6 +2125,10 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
     `<n1:Z_ORVANTA_MCP_DYNPRO_API xmlns:n1="urn:sap-com:document:sap:rfc:functions">` +
     xmlElement("IV_OPERATION", request.operation) +
     xmlElement("IV_OBJECT_TYPE", request.objectType ?? "") +
+    // 2.23: the action token no longer rides in IV_OBJECT_TYPE, which is CHAR 4. Emitted only when a
+    // caller supplies it, so every other operation of this shared envelope sends exactly what it
+    // sent before and an older helper never sees an undeclared element.
+    (request.action === undefined ? "" : xmlElement("IV_ACTION", request.action)) +
     xmlElement("IV_OBJECT_NAME", request.objectName ?? "") +
     xmlElement("IV_PROGRAM", request.program ?? "") +
     xmlElement("IV_SCREEN", request.screen ?? "") +

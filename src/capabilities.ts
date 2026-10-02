@@ -213,10 +213,13 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
       "delete_enhancement_implementation"
     ]
   ],
-  // 2.22: these two actions travel in IV_OBJECT_TYPE, which was declared TADIR-OBJECT (CHAR 4) up to
-  // 2.21, so every action token (CREATE/ACTIVATE/DEACTIVATE/DELETE, DISCARD_INACTIVE) was truncated
-  // to four characters and both guards comparing against those tokens were unsatisfiable - neither
-  // arm could run for any input. 2.22 widens the parameter to TADIR-OBJ_NAME (CHAR 40). The rest of
+  // 2.23: these two actions used to travel in IV_OBJECT_TYPE, declared TADIR-OBJECT (CHAR 4), so
+  // every token (CREATE/ACTIVATE/DEACTIVATE/DELETE, DISCARD_INACTIVE) was truncated to four
+  // characters and both guards comparing against those tokens were unsatisfiable - neither arm could
+  // run for any input. Widening that parameter is not deliverable: the function body passes it into
+  // ZCL_ORVANTA_MCP_CORE=>EXECUTE, whose formal parameter is TROBJTYPE (CHAR 4), so SE37 rejects the
+  // type change and that class is not part of the repository carrier. 2.23 therefore leaves
+  // IV_OBJECT_TYPE at its TADIR meaning and moves the action into its own IV_ACTION parameter. The rest of
   // the enhancement lifecycle is unaffected and keeps working on 2.6, so it stays in the group above:
   // a capability may not mix protocol minimums, and raising those six would report a working read as
   // unsupported - the same false claim this registry exists to prevent.

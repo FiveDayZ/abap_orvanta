@@ -346,6 +346,13 @@ export interface SapGuiDefinitionPayload {
 export interface SapRepositoryRequest {
   operation: SapRepositoryOperation
   objectType?: string | undefined
+  /**
+   * 2.23 action token for the two enhancement operations that used to overload `objectType` with it
+   * (CREATE/ACTIVATE/DEACTIVATE/DELETE, DISCARD_INACTIVE). `objectType` keeps its TADIR meaning and
+   * the token travels in its own IMPORTING parameter, so neither side depends on widening a CHAR 4
+   * field. Emitted only when a caller supplies it, so a pre-2.23 helper is untouched elsewhere.
+   */
+  action?: string | undefined
   objectName?: string | undefined
   program?: string | undefined
   screen?: string | undefined

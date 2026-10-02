@@ -87,18 +87,20 @@ $helperCapabilityOperations = @(
     "ADD_OBJECTS_TO_TRANSPORT|2.8|W",
         "WRITE_FUNCTION_SOURCE|2.11|W",
     "READ_ENHANCEMENT_IMPL|2.6|R",
-    # 2.22: MANAGE_ENHANCEMENT_STATE's guard compares iv_object_type against ACTIVATE (8 chars) and
-    # DISCARD_INACTIVE (16), but the parameter was declared TADIR-OBJECT, i.e. CHAR 4, so every value
-    # was truncated and the guard was unsatisfiable - the arm could never run for any input. 2.22
-    # widens the parameter to TADIR-OBJ_NAME (CHAR 40). A 2.21 helper still truncates, so it cannot
-    # serve this operation and the minimum moves above the previous ceiling (2.21).
-    "MANAGE_ENHANCEMENT_STATE|2.22|W",
+    # 2.23: MANAGE_ENHANCEMENT_STATE's guard compares the action against ACTIVATE (8 chars) and
+    # DISCARD_INACTIVE (16). It used to read iv_object_type, declared TADIR-OBJECT (CHAR 4), so every
+    # value was truncated and the guard was unsatisfiable - the arm could never run for any input.
+    # Widening that parameter is not deliverable: the body passes it into
+    # ZCL_ORVANTA_MCP_CORE=>EXECUTE, whose formal parameter is TROBJTYPE (CHAR 4), so SE37 refuses the
+    # type change. 2.23 reads the token from its own IV_ACTION parameter instead. A 2.22 helper has no
+    # IV_ACTION, so it cannot serve this operation and the minimum moves above the previous ceiling.
+    "MANAGE_ENHANCEMENT_STATE|2.23|W",
     "DELETE_ENHANCEMENT_IMPL|2.5|W",
-    # 2.22 for the same reason as MANAGE_ENHANCEMENT_STATE: this guard compares iv_object_type
-    # against CREATE (6), ACTIVATE (8), DEACTIVATE (10) and DELETE (6), none of which survived a
-    # CHAR 4 parameter. The service also carries the action in the IT_SOURCE payload as ACTION, so
-    # once the widening lands the guard and the payload agree.
-    "MANAGE_CLASSIC_BADI_IMPL|2.22|W",
+    # 2.23 for the same reason as MANAGE_ENHANCEMENT_STATE: this guard compares the action against
+    # CREATE (6), ACTIVATE (8), DEACTIVATE (10) and DELETE (6), none of which survived a CHAR 4
+    # parameter. The service also carries the action in the IT_SOURCE payload as ACTION, so the guard
+    # and the payload agree. IV_OBJECT_TYPE keeps its TADIR meaning and now carries SXCI.
+    "MANAGE_CLASSIC_BADI_IMPL|2.23|W",
     "READ_CLASSIC_BADI_DEFINITION|2.4|R",
     "READ_BTE_CONFIGURATION|2.3|R",
     "READ_CUSTOMER_EXIT_DEFINITION|2.2|R",
@@ -8300,8 +8302,8 @@ function New-InstallProgram {
         "      IF iv_object_name IS INITIAL",
         "         OR ( iv_object_name(1) <> 'Z'",
         "           AND iv_object_name(1) <> 'Y' )",
-        "         OR ( iv_object_type <> 'ACTIVATE'",
-        "           AND iv_object_type <> 'DISCARD_INACTIVE' ).",
+        "         OR ( iv_action <> 'ACTIVATE'",
+        "           AND iv_action <> 'DISCARD_INACTIVE' ).",
         "        ev_status = 'E'. ev_code = 'ENH_STATE_INPUT_INVALID'.",
         "        ev_message = 'Customer enhancement and action required'.",
         "        ev_version = '2.6'. RETURN.",
@@ -8332,7 +8334,7 @@ function New-InstallProgram {
         "            li_enh_object->has_inactive_version( ).",
         "          IF lv_enh_inactive IS INITIAL.",
         "            li_enh_object->unlock( ).",
-        "            IF iv_object_type = 'ACTIVATE'.",
+        "            IF iv_action = 'ACTIVATE'.",
         "              ev_status = 'S'. ev_code = 'ENHANCEMENT_ALREADY_ACTIVE'.",
         "              ev_message = 'No inactive version to activate'.",
         "            ELSE.",
@@ -8342,7 +8344,7 @@ function New-InstallProgram {
         "            ENDIF.",
         "            ev_version = '2.6'. RETURN.",
         "          ENDIF.",
-        "          IF iv_object_type = 'ACTIVATE'.",
+        "          IF iv_action = 'ACTIVATE'.",
         "            li_enh_object->activate(",
         "              EXPORTING run_dark = 'X'",
         "              CHANGING devclass = lv_enh_devclass",
@@ -8367,7 +8369,7 @@ function New-InstallProgram {
         "          ev_version = '2.6'. RETURN.",
         "      ENDTRY.",
         "      ev_status = 'S'.",
-        "      IF iv_object_type = 'ACTIVATE'.",
+        "      IF iv_action = 'ACTIVATE'.",
         "        ev_code = 'ENHANCEMENT_IMPLEMENTATION_ACTIVATED'.",
         "        ev_message = 'Enhancement implementation activated'.",
         "      ELSE.",
@@ -8442,10 +8444,10 @@ function New-InstallProgram {
         "      IF iv_object_name IS INITIAL",
         "         OR ( iv_object_name(1) <> 'Z'",
         "           AND iv_object_name(1) <> 'Y' )",
-        "         OR ( iv_object_type <> 'CREATE'",
-        "           AND iv_object_type <> 'ACTIVATE'",
-        "           AND iv_object_type <> 'DEACTIVATE'",
-        "           AND iv_object_type <> 'DELETE' ).",
+        "         OR ( iv_action <> 'CREATE'",
+        "           AND iv_action <> 'ACTIVATE'",
+        "           AND iv_action <> 'DEACTIVATE'",
+        "           AND iv_action <> 'DELETE' ).",
         "        ev_status = 'E'. ev_code = 'CLASSIC_BADI_INPUT_INVALID'.",
         "        ev_message = 'Customer implementation and action required'.",
         "        ev_version = '2.5'. RETURN.",
@@ -8557,7 +8559,7 @@ function New-InstallProgram {
         "            ev_version = '2.5'. RETURN.",
         "        ENDCASE.",
         "      ENDLOOP.",
-        "      IF lv_classic_action <> iv_object_type.",
+        "      IF lv_classic_action <> iv_action.",
         "        ev_status = 'E'. ev_code = 'ACTION_CONFLICT'.",
         "        ev_message = 'Classic BAdI action payload conflicts'.",
         "        ev_version = '2.5'. RETURN.",
@@ -8567,7 +8569,7 @@ function New-InstallProgram {
         "      SELECT SINGLE * FROM tadir INTO ls_tadir",
         "        WHERE pgmid = 'R3TR' AND object = 'SXCI'",
         "          AND obj_name = iv_object_name.",
-        "      IF iv_object_type = 'CREATE'.",
+        "      IF iv_action = 'CREATE'.",
         "        IF sy-subrc = 0.",
         "          ev_status = 'E'.",
         "          ev_code = 'CLASSIC_BADI_IMPLEMENTATION_EXISTS'.",
@@ -8596,7 +8598,7 @@ function New-InstallProgram {
         "        ENDIF.",
         "      ENDIF.",
         "      lv_classic_language = sy-langu.",
-        "      IF iv_object_type = 'CREATE'.",
+        "      IF iv_action = 'CREATE'.",
         "        CALL FUNCTION 'SXO_IMPL_CREATE'",
         "          EXPORTING impl = ls_classic_impl active = 'X'",
         "          CHANGING mast_langu = lv_classic_language",
@@ -8605,12 +8607,12 @@ function New-InstallProgram {
         "            devclass = lv_enh_devclass",
         "            method_implements = lt_classic_methods",
         "          EXCEPTIONS OTHERS = 1.",
-        "      ELSEIF iv_object_type = 'ACTIVATE'.",
+        "      ELSEIF iv_action = 'ACTIVATE'.",
         "        CALL FUNCTION 'SXO_IMPL_ACTIVE'",
         "          EXPORTING imp_name = iv_object_name no_dialog = 'X'",
         "          CHANGING protocol = lt_classic_protocol",
         "          EXCEPTIONS OTHERS = 1.",
-        "      ELSEIF iv_object_type = 'DEACTIVATE'.",
+        "      ELSEIF iv_action = 'DEACTIVATE'.",
         "        CALL FUNCTION 'SXO_IMPL_DACTVE'",
         "          EXPORTING imp_name = iv_object_name no_dialog = 'X'",
         "          CHANGING protocol = lt_classic_protocol",
@@ -14552,11 +14554,11 @@ function New-InstallProgram {
         "      lv_textpool_program = iv_program.",
         "      lv_tadir_name = iv_program.",
         "      CASE iv_object_type.",
-        "* 2.22: IV_OBJECT_TYPE widened from TADIR-OBJECT (CHAR 4) to",
-        "* TADIR-OBJ_NAME (CHAR 40), so the service's historical value",
-        "* 'PROGRAM' now arrives intact instead of truncating to 'PROG'.",
-        "* Accept both: 'PROG' is the TADIR code the service sends now, and",
-        "* 'PROGRAM' keeps an older service build working against this helper.",
+        "* 2.23: IV_OBJECT_TYPE is TADIR-OBJECT (CHAR 4) again, so a",
+        "* seven-character 'PROGRAM' could never arrive intact. The",
+        "* service sends the four-character 'PROG', which is the branch",
+        "* that actually runs; the 'PROGRAM' alternative is retained as",
+        "* documentation of the truncation the rejected widening targeted.",
         "        WHEN 'PROG' OR 'PROGRAM' OR space.",
         "          lv_tadir_type = 'PROG'.",
         "        WHEN 'CLAS'.",
@@ -16453,12 +16455,20 @@ function New-InstallProgram {
         "ls_import-dbfield = '$operationDbField'.",
         "APPEND ls_import TO lt_import.",
         "CLEAR ls_import.",
-        # 2.22: IV_OBJECT_TYPE carries either a TADIR object type (CLAS/INTF/FGRP/FUNC/PROG/TRAN,
-        # all 4 characters) or an action token (CREATE/ACTIVATE/DEACTIVATE/DELETE, DISCARD_INACTIVE,
-        # up to 16 characters). TADIR-OBJECT is CHAR 4, so every action token was silently truncated
-        # and the two guards comparing against those tokens could never be satisfied. TADIR-OBJ_NAME
-        # is CHAR 40: it keeps the parameter inside TADIR and gives the longest token room.
+        # 2.23: IV_OBJECT_TYPE goes back to TADIR-OBJECT (CHAR 4), its TADIR object-type meaning. It
+        # used to also carry an action token (CREATE/ACTIVATE/DEACTIVATE/DELETE, DISCARD_INACTIVE),
+        # which a CHAR 4 field truncated. Widening it was attempted and is not deliverable: the body
+        # passes it into ZCL_ORVANTA_MCP_CORE=>EXECUTE, whose formal parameter is TROBJTYPE (CHAR 4),
+        # so SE37 refuses the type change with a type-compatibility error. The action now travels in
+        # its own optional IV_ACTION parameter, typed TADIR-OBJ_NAME (CHAR 40) so the longest token
+        # fits. An older service that still sends the action in IV_OBJECT_TYPE is rejected by the
+        # action guard instead of being silently truncated.
         "ls_import-parameter = 'IV_OBJECT_TYPE'.",
+        "ls_import-dbfield = 'TADIR-OBJECT'.",
+        "ls_import-optional = 'X'.",
+        "APPEND ls_import TO lt_import.",
+        "CLEAR ls_import.",
+        "ls_import-parameter = 'IV_ACTION'.",
         "ls_import-dbfield = 'TADIR-OBJ_NAME'.",
         "ls_import-optional = 'X'.",
         "APPEND ls_import TO lt_import.",

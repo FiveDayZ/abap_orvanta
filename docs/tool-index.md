@@ -100,8 +100,8 @@
 | `inspect_source_enhancements` | enhancement | dev | 只读 | target-specific | — |
 | `invoke_customer_function_module` | function | dev | 写 | target-specific | — |
 | `list_write_recovery_operations` | platform | platform | 只读 | local | — |
-| `manage_classic_badi_implementation` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.22) |
-| `manage_enhancement_implementation_state` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.22) |
+| `manage_classic_badi_implementation` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.23) |
+| `manage_enhancement_implementation_state` | enhancement | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.23) |
 | `manage_text_elements` | source | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.12) |
 | `manage_transport_requests` | ops | dev, config, ops | 只读 | target-specific | — |
 | `modify_background_job` | ops | ops | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.21) |

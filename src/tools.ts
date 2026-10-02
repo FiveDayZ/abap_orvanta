@@ -6733,7 +6733,10 @@ export class ToolService {
     const result = await this.backend.callSapRepository(connectionId, {
       operation: "MANAGE_CLASSIC_BADI_IMPL",
       objectName: implementationName,
-      objectType: input.action.toUpperCase(),
+      // 2.23: SXCI is the TADIR object of a Classic BAdI implementation. The action travels in its
+      // own parameter because IV_OBJECT_TYPE is CHAR 4 and truncated CREATE/DELETE to CREA/DELE.
+      objectType: "SXCI",
+      action: input.action.toUpperCase(),
       packageName: input.packageName.toUpperCase(),
       transportNumber: transportNumber(input.transportNumber),
       expectedVersion: input.expectedFingerprint,
@@ -6924,7 +6927,10 @@ export class ToolService {
     const result = await this.backend.callSapRepository(connectionId, {
       operation: "MANAGE_ENHANCEMENT_STATE",
       objectName: enhancementName,
-      objectType: input.action === "activate" ? "ACTIVATE" : "DISCARD_INACTIVE",
+      // 2.23: ENHO is the TADIR object of an enhancement implementation. The action travels in its
+      // own parameter because IV_OBJECT_TYPE is CHAR 4 and truncated the token.
+      objectType: "ENHO",
+      action: input.action === "activate" ? "ACTIVATE" : "DISCARD_INACTIVE",
       packageName: input.packageName.toUpperCase(),
       transportNumber: transportNumber(input.transportNumber),
       expectedVersion: input.expectedFingerprint.toLowerCase()
