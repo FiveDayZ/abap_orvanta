@@ -21,6 +21,8 @@ const identity = {
   recoveryGuide: "Read back program ZMODULE_POOL before retrying."
 }
 
+const sha256Hex = (value: string) => createHash("sha256").update(value, "utf8").digest("hex")
+
 test("write receipts serialize one target, retain hashes, and release the lock", async () => {
   const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
   try {
@@ -523,6 +525,98 @@ test("a preflight rejection is not reported as an unknown outcome", async () => 
     assert.equal(argumentStatus.status, "failed")
     assert.equal(argumentStatus.sapInvocationStarted, false)
     assert.equal(argumentStatus.outcomeMayBeUnknown, false)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a local protection failure names the errno that refused the lock create", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+  try {
+    class RefusingLockStore extends WriteOperationReceiptStore {
+      protected override async createExclusive(path: string, value: unknown): Promise<void> {
+        if (path.includes("write-locks")) {
+          throw Object.assign(new Error("EPERM: operation not permitted, open '<state path>'"), {
+            code: "EPERM"
+          })
+        }
+        return super.createExclusive(path, value)
+      }
+    }
+    const store = new RefusingLockStore(root, "write-instance")
+    const result = await store.reserve(identity)
+    assert.equal(result.status, "protection_failed")
+    if (result.status !== "protection_failed") throw new Error("Expected protection failure")
+    // The receipt used to carry `errorHash` alone, so this outcome could not be attributed at all:
+    // the errno is what separates a transient OS refusal from a real defect in the guard.
+    assert.equal(result.receipt.errorCode, "EPERM")
+    assert.equal(result.receipt.errorName, "Error")
+    assert.match(String(result.receipt.errorHash), /^[a-f0-9]{64}$/)
+    assert.equal(result.receipt.status, "failed")
+    assert.equal(result.receipt.localLockReleased, true)
+    assert.equal(result.receipt.sapInvocationStarted, false)
+    assert.equal(result.receipt.automaticRetry, false)
+    // A Node message embeds the absolute state path, so the message itself is still never stored.
+    assert.equal(JSON.stringify(result.receipt).includes("operation not permitted"), false)
+
+    const stored = JSON.parse(
+      await readFile(
+        join(root, "write-receipts", sha256Hex("w200"), `${sha256Hex(identity.operationId)}.json`),
+        "utf8"
+      )
+    )
+    assert.equal(stored.errorCode, "EPERM")
+    assert.equal(stored.errorName, "Error")
+    assert.equal(stored.state, "failed")
+    assert.equal(stored.lockReleased, true)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a local protection failure without an errno still records the error class", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+  try {
+    class RefusingLockStore extends WriteOperationReceiptStore {
+      protected override async createExclusive(path: string, value: unknown): Promise<void> {
+        if (path.includes("write-locks")) throw new TypeError("injected lock create failure")
+        return super.createExclusive(path, value)
+      }
+    }
+    const store = new RefusingLockStore(root, "write-instance")
+    const result = await store.reserve(identity)
+    assert.equal(result.status, "protection_failed")
+    if (result.status !== "protection_failed") throw new Error("Expected protection failure")
+    assert.equal(result.receipt.errorName, "TypeError")
+    assert.equal("errorCode" in result.receipt, false)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a failed receipt create propagates instead of pretending a reservation exists", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+  try {
+    class RefusingReceiptStore extends WriteOperationReceiptStore {
+      protected override async createExclusive(path: string, value: unknown): Promise<void> {
+        if (path.includes("write-receipts")) {
+          throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" })
+        }
+        return super.createExclusive(path, value)
+      }
+    }
+    const store = new RefusingReceiptStore(root, "write-instance")
+    await assert.rejects(store.reserve(identity), /ENOSPC/)
+    // Fail closed: without a receipt there is no operation identity to deduplicate against, so
+    // nothing may be left behind that a later caller could read as a reservation.
+    await assert.rejects(
+      access(
+        join(root, "write-receipts", sha256Hex("w200"), `${sha256Hex(identity.operationId)}.json`)
+      )
+    )
+    await assert.rejects(
+      access(join(root, "write-locks", sha256Hex("w200"), `${sha256Hex(identity.targetKey)}.json`))
+    )
   } finally {
     await rm(root, { recursive: true, force: true })
   }

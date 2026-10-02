@@ -68,6 +68,15 @@ const receiptSchema = z
     sapInvocationStarted: z.boolean().optional(),
     resultHash: z.string().regex(HASH_PATTERN).optional(),
     errorHash: z.string().regex(HASH_PATTERN).optional(),
+    // Machine-readable identity of a **local** protection error, stored beside `errorHash` rather
+    // than instead of it. The receipt keeps hashes instead of raw text because a Node message
+    // embeds the absolute state path, but a hash alone made the `protection_failed` outcome
+    // unattributable: the 2026-09-29 CI occurrence of `failure-process.test.ts` "M3 simultaneous
+    // duplicate requests across processes dispatch at most once" ended with twelve results and no
+    // completed dispatch, and the receipt could not say which errno refused the lock create. Only
+    // the errno code and the error class are kept, both bounded.
+    errorCode: z.string().min(1).max(40).optional(),
+    errorName: z.string().min(1).max(40).optional(),
     startedAt: z.string().datetime(),
     finishedAt: z.string().datetime().optional(),
     durationMs: z.number().int().nonnegative().optional(),
@@ -128,6 +137,15 @@ export class WriteOperationReceiptStore {
     this.lockRoot = resolve(root, "write-locks")
   }
 
+  /**
+   * The exclusive-create primitive the reservation path depends on. Production behaviour is exactly
+   * `createExclusiveJson`; the seam exists because `protection_failed` is the one outcome a caller
+   * cannot reproduce on demand, and an untested branch is how it stayed unattributable.
+   */
+  protected async createExclusive(path: string, value: unknown): Promise<void> {
+    return createExclusiveJson(path, value)
+  }
+
   async reserve(identity: WriteOperationIdentity): Promise<WriteOperationReservationResult> {
     const operationIdHash = sha256(identity.operationId)
     const targetKeyHash = sha256(identity.targetKey)
@@ -153,7 +171,7 @@ export class WriteOperationReceiptStore {
     }
 
     try {
-      await createExclusiveJson(receiptPath, receipt)
+      await this.createExclusive(receiptPath, receipt)
     } catch (error) {
       if (!isNodeError(error, "EEXIST")) throw error
       const existing = await this.readReceiptRequired(receiptPath)
@@ -168,7 +186,7 @@ export class WriteOperationReceiptStore {
     }
 
     try {
-      await createExclusiveJson(lockPath, {
+      await this.createExclusive(lockPath, {
         version: 1,
         operationIdHash,
         serviceInstanceId: this.serviceInstanceId,
@@ -182,6 +200,7 @@ export class WriteOperationReceiptStore {
           ...receipt,
           state: "failed",
           errorHash: sha256(String(error)),
+          ...localErrorIdentity(error),
           finishedAt: new Date().toISOString(),
           durationMs: 0,
           lockReleased: true
@@ -547,6 +566,8 @@ export class WriteOperationReceiptStore {
       sapInvocationStarted: receipt.sapInvocationStarted ?? null,
       ...(receipt.resultHash ? { resultHash: receipt.resultHash } : {}),
       ...(receipt.errorHash ? { errorHash: receipt.errorHash } : {}),
+      ...(receipt.errorCode ? { errorCode: receipt.errorCode } : {}),
+      ...(receipt.errorName ? { errorName: receipt.errorName } : {}),
       startedAt: receipt.startedAt,
       ...(receipt.finishedAt ? { finishedAt: receipt.finishedAt } : {}),
       ...(receipt.durationMs !== undefined ? { durationMs: receipt.durationMs } : {}),
@@ -614,6 +635,19 @@ async function replaceJson(path: string, value: unknown): Promise<void> {
 
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex")
+}
+
+/**
+ * The bounded, path-free identity of a caught error, for receipts that must stay attributable
+ * without storing raw messages. A thrown non-Error still records that fact rather than nothing.
+ */
+function localErrorIdentity(error: unknown): { errorName: string; errorCode?: string } {
+  const name = error instanceof Error && error.name ? error.name : "NonError"
+  const code = error instanceof Error ? (error as NodeJS.ErrnoException).code : undefined
+  return {
+    errorName: name.slice(0, 40),
+    ...(typeof code === "string" && code ? { errorCode: code.slice(0, 40) } : {})
+  }
 }
 
 function isNodeError(error: unknown, code: string): error is NodeJS.ErrnoException {
