@@ -593,9 +593,22 @@ export async function buildCapabilityReport(
     capability(
       "structured-table-query",
       "target-specific",
-      ["read_abap_table", "preview_configuration", "read_ddic_table_conversion_status"],
+      [
+        "read_abap_table",
+        "preview_configuration",
+        "describe_configuration_object",
+        "read_ddic_table_conversion_status"
+      ],
       unknownTargetObservation(
         "Requires live table metadata and a successful query; the legacy alternative additionally requires the reviewed RFC reader and a supported full-row layout."
+      )
+    ),
+    capability(
+      "configuration-img-read",
+      "target-specific",
+      ["find_configuration_activities"],
+      unknownTargetObservation(
+        "Requires the reviewed standard RFC wrapper, dependency and IMG header layout. Optional maintenance-object resolution is scoped to w200/200 T006/T006A with pinned OBJS and transaction metadata readers (TSTC, CUS_ACTOBJ, CUS_IMGACH). No IMG call is made by this capability report."
       )
     ),
     capability("adt-transport-read", "native-adt", ["manage_transport_requests"], transports),

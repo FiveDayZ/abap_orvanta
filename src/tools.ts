@@ -1,5 +1,12 @@
 import { resolve } from "node:path"
 import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
+import { configurationObjectSchema, describeConfigurationObject } from "./configuration-object.js"
+import {
+  configurationActivitiesSchema,
+  findConfigurationActivities,
+  resolveConfigurationMaintenanceObjects,
+  readConfigurationTransactionActivities
+} from "./configuration-img.js"
 import {
   isFunctionModuleType,
   searchCodeOfAdtType,
@@ -8845,6 +8852,84 @@ export class ToolService {
             await this.readDdicDomain({
               connectionId: CUSTOMER_CONNECTION_ID,
               objectName: CONFIGURATION_MODE_DOMAIN
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async findConfigurationActivities(raw: unknown): Promise<string> {
+    const input = configurationActivitiesSchema.parse(raw)
+    const client = this.backend.connectionDetails(input.connectionId).client
+    if (input.resolveMaintenanceObjects && client !== "200")
+      throw new Error("CONFIGURATION_IMG_MAPPING_SCOPE_UNSUPPORTED")
+    const readFunction = async (functionName: string) =>
+      JSON.parse(
+        await this.readFunctionModuleInterface({ connectionId: input.connectionId, functionName })
+      )
+    const readTable = async (objectName: string) =>
+      JSON.parse(
+        await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+      )
+    return JSON.stringify(
+      await findConfigurationActivities(
+        input,
+        this.backend,
+        readFunction,
+        readTable,
+        (objectName) =>
+          resolveConfigurationMaintenanceObjects(
+            input.connectionId,
+            objectName,
+            client,
+            this.backend,
+            readTable,
+            readFunction
+          ),
+        (transactionName) =>
+          readConfigurationTransactionActivities(
+            input.connectionId,
+            input.objectName,
+            client,
+            transactionName,
+            this.backend,
+            readTable,
+            readFunction
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async describeConfigurationObject(raw: unknown): Promise<string> {
+    const input = configurationObjectSchema.parse(raw)
+    return JSON.stringify(
+      await describeConfigurationObject(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({
+              connectionId: input.connectionId,
+              objectName
+            })
+          ),
+        async (query) => JSON.parse(await this.readAbapTable(query)),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicDataElement({
+              connectionId: input.connectionId,
+              objectName
+            })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicDomain({
+              connectionId: input.connectionId,
+              objectName
             })
           )
       ),

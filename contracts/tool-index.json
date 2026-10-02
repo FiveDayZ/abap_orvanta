@@ -1,17 +1,17 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 170,
-  "readOnlyToolCount": 103,
+  "toolCount": 172,
+  "readOnlyToolCount": 105,
   "profiles": {
-    "readonly": 103,
+    "readonly": 105,
     "platform": 12,
     "dev": 136,
-    "config": 42,
+    "config": 44,
     "ops": 61,
-    "full": 170
+    "full": 172
   },
   "groups": {
-    "data": 5,
+    "data": 7,
     "ddic": 26,
     "debug": 6,
     "enhancement": 22,
@@ -614,6 +614,22 @@
       "minHelperProtocol": "1.1"
     },
     {
+      "name": "describe_configuration_object",
+      "group": "data",
+      "profiles": [
+        "config"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null,
+      "note": "CFG-01 首阶段：仅现有 customizing 白名单内的至多 64 字段平面透明表元数据；未知 IMG/API/CTS 明示 partial，无配置值读取或写入。"
+    },
+    {
       "name": "diagnose_sap_failure",
       "group": "ops",
       "profiles": [
@@ -678,6 +694,22 @@
       "sapHelper": null,
       "minHelperProtocol": null,
       "note": "w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。原生与后备两条路径都过 D5-2 白名单（默认拒绝），表名无法静态枚举即拒绝。"
+    },
+    {
+      "name": "find_configuration_activities",
+      "group": "data",
+      "profiles": [
+        "config"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null,
+      "note": "CFG-05：默认保留精确 S 类型查找；resolveMaintenanceObjects 仅为 w200/200 T006/T006A 读取至多 16 个 OBJS 关联，T 类型经 TSTC、CUS_ACTOBJ.TCODE 与 CUS_IMGACH.C_ACTIVITY 导航，其他类型使用已审阅 RFC。通用白名单不扩展。标题、路径和业务维护 API 未知，无写入。"
     },
     {
       "name": "find_where_used",

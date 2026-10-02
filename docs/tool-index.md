@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：170
-- 只读工具：103
+- 工具总数：172
+- 只读工具：105
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,13 +10,13 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 103 |
+| profile: readonly | 105 |
 | profile: platform | 12 |
 | profile: dev | 136 |
-| profile: config | 42 |
+| profile: config | 44 |
 | profile: ops | 61 |
-| profile: full | 170 |
-| 分组: data | 5 |
+| profile: full | 172 |
+| 分组: data | 7 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
 | 分组: enhancement | 22 |
@@ -83,10 +83,12 @@
 | `delete_module_pool` | ui | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
 | `delete_sap_lock` | ops | ops | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.15) |
 | `delete_transaction_code` | ui | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
+| `describe_configuration_object` | data | config | 只读 | target-specific | — |
 | `diagnose_sap_failure` | ops | dev, ops | 只读 | native-adt | — |
 | `discover_application_logs` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_LOG_READ |
 | `evaluate_refactoring` | source | dev | 只读 | native-adt | — |
 | `execute_data_query` | data | dev, config, ops | 只读 | target-specific | — |
+| `find_configuration_activities` | data | config | 只读 | target-specific | — |
 | `find_where_used` | source | dev | 只读 | target-specific | — |
 | `format_abap_source` | source | dev | 只读 | native-adt | — |
 | `get_abap_diagnostics` | quality | dev | 只读 | native-adt | — |
@@ -225,9 +227,11 @@
 - `analyze_abap_traces`：w200 上 ADT trace 端点返回 HTTP 404（能力报告判定 unsupported）；注册不等于可用。
 - `cleanup_transport_entries`：移除 CTS 任务条目，不删除、不释放传输；w200 写端点尚未验证。
 - `correlate_sap_logs`：固定来源的有界关联，不证明因果；各来源失败分别报告。
+- `describe_configuration_object`：CFG-01 首阶段：仅现有 customizing 白名单内的至多 64 字段平面透明表元数据；未知 IMG/API/CTS 明示 partial，无配置值读取或写入。
 - `diagnose_sap_failure`：只读 ST22 解析；时间关联是候选证据，不认定根因。
 - `discover_application_logs`：需要管理员批准的只读助手；返回有界样本，不是完整日志清单。
 - `execute_data_query`：w200 原生数据预览端点返回非 XML 响应；当前依赖受限只读后备。原生与后备两条路径都过 D5-2 白名单（默认拒绝），表名无法静态枚举即拒绝。
+- `find_configuration_activities`：CFG-05：默认保留精确 S 类型查找；resolveMaintenanceObjects 仅为 w200/200 T006/T006A 读取至多 16 个 OBJS 关联，T 类型经 TSTC、CUS_ACTOBJ.TCODE 与 CUS_IMGACH.C_ACTIVITY 导航，其他类型使用已审阅 RFC。通用白名单不扩展。标题、路径和业务维护 API 未知，无写入。
 - `find_where_used`：w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。ECC 7.31 无 usageReferences 端点，只走 legacy RIS 通路，该通路覆盖函数模块、类、接口、程序的声明位置（0.50.5 起），不含片段检索。
 - `invoke_customer_function_module`：正式白名单调用，非只读；需一次性请求凭证与副作用确认。
 - `manage_transport_requests`：只读：不创建、不释放、不导入传输。

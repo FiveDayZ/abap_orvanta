@@ -796,6 +796,8 @@ const ROWS: readonly ToolRow[] = [
   ["run_atc_analysis", "quality", DEV, "W", "target-specific", null, null],
   ["run_sci_analysis", "quality", DEV, "W", "sap-helper-fallback", SCI, "1.0"],
   ["preview_configuration", "data", CFG, "R", "target-specific", null, null],
+  ["describe_configuration_object", "data", CFG, "R", "target-specific", null, null],
+  ["find_configuration_activities", "data", CFG, "R", "target-specific", null, null],
   ["run_unit_tests", "quality", DEV, "W", "native-adt", null, null],
   ["search_background_jobs", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
   ["search_sap_locks", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
@@ -967,6 +969,10 @@ const NOTES: Record<string, string> = {
     "w200 上 ADT trace 端点返回 HTTP 404（能力报告判定 unsupported）；注册不等于可用。",
   preview_configuration:
     "仅服务 w200/200 的 ZTPMC_TPCFG 工厂行预览，属客户项目对象固化在通用服务中的待整改项。",
+  describe_configuration_object:
+    "CFG-01 首阶段：仅现有 customizing 白名单内的至多 64 字段平面透明表元数据；未知 IMG/API/CTS 明示 partial，无配置值读取或写入。",
+  find_configuration_activities:
+    "CFG-05：默认保留精确 S 类型查找；resolveMaintenanceObjects 仅为 w200/200 T006/T006A 读取至多 16 个 OBJS 关联，T 类型经 TSTC、CUS_ACTOBJ.TCODE 与 CUS_IMGACH.C_ACTIVITY 导航，其他类型使用已审阅 RFC。通用白名单不扩展。标题、路径和业务维护 API 未知，无写入。",
   read_report_parameters:
     "依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。",
   read_report_variants:

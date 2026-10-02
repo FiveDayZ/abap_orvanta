@@ -1080,6 +1080,18 @@ export function createMcpServer(
   registerTool("preview_configuration", toolContracts.preview_configuration, async (input) =>
     invoke("preview_configuration", () => tools.previewConfiguration(input))
   )
+  registerTool(
+    "describe_configuration_object",
+    toolContracts.describe_configuration_object,
+    async (input) =>
+      invoke("describe_configuration_object", () => tools.describeConfigurationObject(input))
+  )
+  registerTool(
+    "find_configuration_activities",
+    toolContracts.find_configuration_activities,
+    async (input) =>
+      invoke("find_configuration_activities", () => tools.findConfigurationActivities(input))
+  )
   registerTool("search_background_jobs", toolContracts.search_background_jobs, async (input) =>
     invoke("search_background_jobs", () => operationalLogs.searchJobs(input))
   )

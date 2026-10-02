@@ -784,7 +784,12 @@ test("the registry records the honest gap rather than inflating it", () => {
   // table", so that limit is documented in both the registry entry and the tool description instead
   // of being presented as a clean zero.
   assert.ok(
-    totals.verified <= 102,
+    // CFG-01: one actual describe_configuration_object MCP call for T006A succeeded on
+    // 2026-10-02; .cache/configuration-units-isolated-recheck-20261002.json records the
+    // seven-field partial descriptor. This attests metadata only, not IMG/API/CTS or writes.
+    // CFG-05: resolved T006/T006A mode returned 9/5 IMG headers in actual named MCP calls;
+    // .doc/orvanta-configuration-units-img-acceptance-20261002-231344.json retains raw receipts.
+    totals.verified <= 104,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

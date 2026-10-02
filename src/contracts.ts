@@ -13,6 +13,8 @@ import {
   transportNumberSchema
 } from "./transport-delivery.js"
 import { configurationPreviewSchema } from "./configuration-preview.js"
+import { configurationObjectSchema } from "./configuration-object.js"
+import { configurationActivitiesSchema } from "./configuration-img.js"
 import { withRegistryAnnotations } from "./tool-registry.js"
 import { DEFAULT_OBJECT_TYPES } from "./backend.js"
 import { SEARCHABLE_OBJECT_TYPE_TOKENS } from "./object-types.js"
@@ -2215,6 +2217,18 @@ const toolContractsBase = {
     description:
       "Read one exact w200/200 ZTPMC_TPCFG plant row and preview changes after pinned type and TPMODE fixed-domain-value checks. No save. Keys, version and audit fields cannot be changed. Full business validation is not attested; no SM30 replacement.",
     inputSchema: configurationPreviewSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  find_configuration_activities: {
+    description:
+      "Find IMG activities for one approved customizing-tier transparent table. Default preserves exact S table-object lookup. resolveMaintenanceObjects=true is restricted to w200/200 T006/T006A: reads at most 16 OBJS registrations through a dedicated pinned metadata scope and rechecks the mapping. Actual T transaction objects use the pinned TSTC and CUS_ACTOBJ.TCODE -> CUS_IMGACH.C_ACTIVITY metadata join; other object types use the reviewed SCOUT_IMG_ACTIVITY_GET_W_OBJ wrapper. Does not expand the generic table allowlist. Returns activity/header transaction/documentation identifiers with per-object provenance; per-object faults remain unavailable, not proof of absence. maxActivities caps output only, not IMG retrieval. Titles, hierarchy paths, documentation content, official maintenance API, business rules and CTS policy remain unknown; read-only, no configuration writes.",
+    inputSchema: configurationActivitiesSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  describe_configuration_object: {
+    description:
+      "Describe one active flat transparent table in the existing approved customizing tier (maximum 64 fields). Reads actual DDIC keys, scalar types, data elements/domains, client and language keys, delivery class and maintenance permission; rechecks the table definition. Returns partial with unknown foreign keys, IMG relationships, official maintenance API, business rules and CTS policy. Does not read configuration values, classify request types, encode E071K, save or authorize writes. No scope or allowlist expansion; existing preview_configuration remains unchanged.",
+    inputSchema: configurationObjectSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },
   run_unit_tests: {

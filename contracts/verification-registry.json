@@ -1,8 +1,32 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T19:05:00+08:00",
+  "updatedAt": "2026-10-02T15:14:24.841Z",
   "notes": "2026-10-02 (development batch R2): the development-side evidence backfill. 50 tools that already had a real recorded live acceptance in this workspace were entered as `verified`, each citing a record that was opened and whose quoted values were read out of it, and each path checked to exist on disk and to name its own tool. The candidate list offered 57 and 7 were refused on the design's own rule that `verified` means a call that SUCCEEDED: upsert_lock_object (ten receipts, all failed), create_smartform (SMARTFORM_STORE_FAILED), create_enhancement_hook_implementation (HTTP 500 RABAX_STATE), append_ddic_transparent_table_fields, preview_source_changes (blocked, 404), get_version_history (object not found) and abap_debug_status (whose only artifact is a repo-side acceptance-harness log rather than a tool reply, and whose endpoint the capability report measures as platform_unsupported). format_abap_source was added in the same batch as the D-9 formatter, unverified because it has not been called yet. The tools that remain unverified are listed, grouped and with their acceptance steps, in .doc/orvanta-mcp-development-pending-acceptance-20261002.md. See .doc/code-update-20261002-183312.md. 2026-10-02 (R3/D-9): format_abap_source passed a real read-only call against w200 and moved to verified; the formatted output differed from the input, which is what distinguishes a formatter run from an echo. 2026-10-02 (R3/B7-4, read half): read_ddic_table_conversion_status passed a real read-only call against w200 and moved to verified; the entry records that entryCount 0 cannot distinguish 'no pending conversion' from 'no such table', which is why it is documented rather than fixed.",
   "entries": [
+    {
+      "tool": "find_configuration_activities",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200/200 T006 and T006A with resolveMaintenanceObjects=true through isolated readonly MCP; shared deployment not attested",
+      "method": "read-only",
+      "status": "verified",
+      "failureBasis": null,
+      "lastAttemptAt": "2026-10-02T15:12:25.858Z",
+      "evidence": ".doc/orvanta-configuration-units-img-acceptance-20261002-231344.json",
+      "notes": "Actual named MCP calls succeeded: T006 has 3 T registrations (CUNI, OPCF, OPJO) and 9 IMG headers; T006A has CUNI and 5 headers. T objects follow the reviewed TCODE -> ACT_ID -> C_ACTIVITY relationship through pinned TSTC/CUS_ACTOBJ/CUS_IMGACH metadata and the fingerprint-reviewed RFC_READ_TABLE fallback. Each query is bounded; OBJS and definitions are rechecked. T005 resolved mode was refused. readOnly=true, saveAvailable=false, status=partial. This verifies only the selected unit-domain resolved mode; default exact S lookup still has the earlier recorded fault, and the initial T object-name route yielded no headers. Both earlier outcomes remain in evidence. Titles, paths, documentation content, maintenance API and CTS are unknown; no configuration writes or shared-service restart."
+    },
+    {
+      "tool": "describe_configuration_object",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200/200 T006A through isolated loopback readonly MCP instance; shared service deployment not attested",
+      "method": "read-only",
+      "status": "verified",
+      "failureBasis": null,
+      "lastAttemptAt": "2026-10-02T14:25:14.232Z",
+      "evidence": ".doc/orvanta-configuration-units-readonly-acceptance-20261002-222723.json",
+      "notes": "Actual named MCP call succeeded: partial descriptor, 7 fields, primary key MANDT/SPRAS/MSEHI, language key SPRAS, readOnly=true and saveAvailable=false. Verification covers this metadata contract and this target only; IMG, maintenance API, business rules and CTS remain unknown. This attests the isolated instance only; shared-service deployment is not attested."
+    },
     {
       "tool": "abap_activate",
       "helper": null,
