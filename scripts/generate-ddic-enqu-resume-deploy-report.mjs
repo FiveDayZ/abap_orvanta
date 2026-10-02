@@ -10,8 +10,12 @@
 //
 // Why a report and not a direct write: Z_ORVANTA_MCP_DDIC_API lives in ZORVANTA_MCP_CORE, where the
 // native ADT write path is blocked (HTTP 423 for a function-module include) and the helper-backed path
-// is blocked by SELF_FUNCTION_GROUP_FORBIDDEN. The in-SAP report route (D2-3, D6-1) is the only path
-// that has actually been shown to work.
+// is refused by SELF_FUNCTION_GROUP_FORBIDDEN unless the submitted body carries the
+// ORVANTA_SELF_WRITE_APPROVED marker (guard relaxed 2026-10-02, carrier cf0df7d68d77962e). The marker
+// path has since been exercised for BODY rewrites of CORE helpers (2026-10-02 15:25, content-preserving:
+// sourceHash unchanged, interface fingerprint unchanged; .doc/code-update-20261002-152500.md). The in-SAP
+// report route (D2-3, D6-1) is still the path this generator emits, because it deploys whole report
+// programs rather than the body of an existing helper.
 //
 // Anchors are DERIVED from the live source and then asserted, rather than hard-coded: the deployed
 // helper is already at 1.8 (1996 lines) while the D6-1 generator anchored to a 1787-line 1.7

@@ -121,9 +121,17 @@ export interface SapHelperRequest {
   /** PING, VALIDATE_TARGET and CAPABILITIES are probes. WRITE_FUNCTION_SOURCE and
    *  PATCH_FUNCTION_INTERFACE are the two write operations the base helper
    *  Z_ORVANTA_MCP_EXECUTE serves directly, because the native ADT lock/save path fails on this
-   *  platform with HTTP 423 "invalid lock handle". On SAP_BASIS 7.31 PATCH_FUNCTION_INTERFACE
-   *  reaches only the parameter documentation tables; it has no interface-parameter write path
-   *  because RPY_FUNCTIONMODULE_UPDATE does not exist on that release. */
+   *  platform with HTTP 423 "invalid lock handle". Up to 2.23 PATCH_FUNCTION_INTERFACE reached only
+   *  the parameter documentation tables. 2.24 wrote the interface through the FUNCTION_SAVE
+   *  wrapper, which declares P_RS38L and never uses it - it forwards the global RS38L of SAPLSUNI
+   *  instead - so the interface the opcode built never reached the save. 2.25 and 2.27 called
+   *  SAPMS38L's fu_save_function_ext directly, and that route necessarily ends in fu_save_function,
+   *  which deletes the implementation include and rebuilds only a bare frame. Protocol 2.28 uses
+   *  SAP's own create API RPY_FUNCTIONMODULE_INSERT instead: it writes the parameter tables, the
+   *  TFDIR binding and the implementation include in one operation and never enters
+   *  fu_save_function, so nothing is torn down and no RFC session is terminated. It refuses while a
+   *  live TFDIR row exists, so the helper retires the row first by setting FREEDATE.
+   *  The service therefore requires a 2.28 helper before it will send this opcode at all. */
   operation:
     | "PING"
     | "VALIDATE_TARGET"
@@ -673,6 +681,82 @@ export interface DiagnosticInfo {
   text: string
 }
 
+/**
+ * Both halves of one pretty-printer call.
+ *
+ * The backend reports only what was exchanged - the active source it read and the text the printer
+ * returned - and deliberately does not judge whether that is a change. The comparison belongs to the
+ * caller-facing tool, so the "did it actually reformat anything" answer is produced from the two
+ * texts at the point where it is reported, rather than being asserted by the transport layer.
+ */
+export interface SourceFormatInfo {
+  connectionId: string
+  fileUri: string
+  sourceUri: string
+  originalSource: string
+  formattedSource: string
+}
+
+/**
+ * One quick-fix proposal the ADT quick-fix evaluator returned for a source position.
+ *
+ * The evaluator only answers what COULD be fixed at that spot; it applies nothing. The proposal
+ * carries the SAP-side handler URI the caller would have to POST to in order to turn the proposal
+ * into edits, which is exactly why this read does not do it: that second call is the write, and it is
+ * deliberately not part of this capability.
+ */
+export interface QuickFixProposalInfo {
+  connectionId: string
+  fileUri: string
+  sourceUri: string
+  line: number
+  column: number
+  proposalCount: number
+  proposals: Array<{
+    type: string
+    name: string
+    description: string
+    handlerUri: string
+    userContent: string
+  }>
+}
+
+/**
+ * What a refactoring EVALUATION answered for a source range.
+ *
+ * Evaluation is the read-only half of the refactoring resource: it reports what the refactoring
+ * would change (`affectedObjects` with their text deltas) without touching anything. The `preview`
+ * and `execute` steps are the write half and are deliberately not part of this type or this tool.
+ *
+ * `kind` records which relation was evaluated, because rename and extract-method answer with
+ * different shapes and a caller must know which one it asked for.
+ */
+export interface RefactoringEvaluationInfo {
+  connectionId: string
+  fileUri: string
+  kind: "rename" | "extract-method"
+  /** The position or range that was evaluated, echoed so the answer can be tied to the request. */
+  range: { start: { line: number; column: number }; end: { line: number; column: number } }
+  /** For rename: the identifier found at the position. Empty for extract-method. */
+  oldName: string
+  /** Free-form titles and notes the service returned, kept verbatim. */
+  title: string
+  userContent: string
+  affectedObjectCount: number
+  affectedObjects: Array<{
+    uri: string
+    type: string
+    name: string
+    /** How many text replacements this refactoring would make in that object. */
+    deltaCount: number
+    deltas: Array<{
+      range: { start: { line: number; column: number }; end: { line: number; column: number } }
+      contentOld: string
+      contentNew: string
+    }>
+  }>
+}
+
 export interface AtcFindingInfo {
   objectName: string
   objectType: string
@@ -1009,6 +1093,40 @@ export interface SapBackend {
   ): Promise<ExportResourceInfo>
   discoverySnapshot(connectionId: string): Promise<DiscoverySnapshotInfo>
   diagnostics(connectionId: string, fileUri: string): Promise<DiagnosticInfo[]>
+  /**
+   * Format an object's active source with the SAP pretty printer and return both texts.
+   *
+   * Read-only by construction: it reads the active source and POSTs it to the formatter. It takes no
+   * lock, saves nothing, activates nothing, and leaves the result in memory for the caller.
+   */
+  formatSource(connectionId: string, fileUri: string): Promise<SourceFormatInfo>
+  /**
+   * Ask the ADT quick-fix evaluator what could be fixed at one source position.
+   *
+   * Read-only: the evaluator reads the supplied source and answers with proposals. The request is a
+   * POST because that is how the ADT resource is shaped, not because it changes anything - no lock is
+   * taken, nothing is saved or activated, and the handler URI inside each proposal is returned rather
+   * than followed. Following it is the separate write this capability does not perform.
+   */
+  quickFixProposals(
+    connectionId: string,
+    fileUri: string,
+    line: number,
+    column: number
+  ): Promise<QuickFixProposalInfo>
+  /**
+   * Evaluate a refactoring over a source range and report what it would change.
+   *
+   * Read-only: this is the `evaluate` step of the ADT refactoring resource, which computes the
+   * affected objects and their text deltas. The `preview` and `execute` steps - the ones that assign
+   * a transport and rewrite other objects - are NOT called, so nothing is locked, saved or activated.
+   */
+  evaluateRefactoring(
+    connectionId: string,
+    fileUri: string,
+    kind: "rename" | "extract-method",
+    range: { startLine: number; startColumn: number; endLine: number; endColumn: number }
+  ): Promise<RefactoringEvaluationInfo>
   runAtc(connectionId: string, objectUri: string): Promise<AtcResultInfo>
   inspectAtc(connectionId: string): Promise<import("./native-atc.js").AtcPrecheckInfo>
   atcDocumentation(connectionId: string, docUri: string): Promise<string>

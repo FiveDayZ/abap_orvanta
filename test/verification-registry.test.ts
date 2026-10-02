@@ -131,15 +131,45 @@ test("a runtime failure is an observation and a static failure is a proof", () =
     }
   }
 
-  // The two kinds must both be present and stay counted apart: merging them would repeat the very
-  // error of treating an inference as an observation.
+  // The two kinds stay counted apart: merging them would repeat the very error of treating an
+  // inference as an observation.
   const totals = verificationTotals(registry)
   assert.equal(totals.failed, totals.failedRuntime + totals.failedStatic)
   assert.ok(totals.failedRuntime > 0, "expected a runtime failure backed by a real call")
-  assert.ok(totals.failedStatic > 0, "expected a never-called but provably impossible failure")
+
+  // As of 2026-10-02 the shipped registry carries NO static failure, and that is a measured fact
+  // rather than a gap in the data: both R-20 length defects were refuted by real calls. The
+  // 33-character DELETE_ENHANCEMENT_IMPLEMENTATION became DELETE_ENHANCEMENT_IMPL (23) and was
+  // dispatched, and the 34-character MANAGE_CLASSIC_BADI_IMPLEMENTATION became
+  // MANAGE_CLASSIC_BADI_IMPL (24) and reached SAP, which refused it - so the honest kind for that
+  // one is the observation (`runtime`), not the proof. Demanding a static entry here would force a
+  // false claim back into the registry, so the count is asserted to be zero *and* the metric is
+  // still proven to have teeth against a constructed registry. Dropping the assertion entirely is
+  // what would let the split rot.
+  assert.equal(
+    totals.failedStatic,
+    0,
+    "no operation is currently proven impossible without ever being called"
+  )
+
+  const synthetic = verificationTotals({
+    ...registry,
+    entries: [
+      { ...failed[0]!, tool: "synthetic_runtime", failureBasis: "runtime" as const },
+      {
+        ...failed[0]!,
+        tool: "synthetic_static",
+        failureBasis: "static" as const,
+        lastAttemptAt: null
+      }
+    ]
+  })
+  assert.equal(synthetic.failedRuntime, 1, "a runtime failure must be counted as runtime")
+  assert.equal(synthetic.failedStatic, 1, "a static failure must be counted as static")
+  assert.equal(synthetic.failed, 2, "both kinds stay in the failed total")
 })
 
-test("R-20's four tools stay recorded with the failure kind their evidence supports", () => {
+test("R-20's four tools stay recorded with the state their evidence supports", () => {
   const expect = (tool: string, status: string, failureBasis: string | null) => {
     const entry = findVerificationEntry(registry, tool)
     assert.ok(entry, `${tool} is missing from the registry`)
@@ -147,36 +177,42 @@ test("R-20's four tools stay recorded with the failure kind their evidence suppo
     assert.equal(entry!.failureBasis, failureBasis, `${tool}: failureBasis`)
   }
 
-  // Actually called and rejected by the helper: an observation.
+  // Actually called and rejected by SAP: an observation, so it keeps the time it happened.
   expect("resume_ddic_table_activation", "failed", "runtime")
-  expect("read_enhancement_implementation", "failed", "runtime")
-  // Never called, but the opcode exceeded IV_OPERATION: a proof, and no invented attempt time.
-  expect("delete_enhancement_implementation", "failed", "static")
-  expect("manage_classic_badi_implementation", "failed", "static")
+  expect("manage_classic_badi_implementation", "failed", "runtime")
+
+  // Renamed and then really called - and that call SUCCEEDED. This one is no longer a failure at
+  // all.
+  expect("read_enhancement_implementation", "verified", null)
+
+  // Renamed, and the renamed opcode really was dispatched - but SAP was never reached, because a
+  // deliberately wrong fingerprint was refused before invocation. Nothing about this tool was
+  // observed failing, so it is not a failure either: it is unverified, with no borrowed timestamp.
+  expect("delete_enhancement_implementation", "unverified", null)
 })
 
-test("a static failure is not upgraded to verified by fixing the underlying length", () => {
-  // The opcodes were renamed to fit, which proves they are now *deliverable* - it is not evidence
-  // that they ever succeeded. A static entry must still demand a real call.
-  const entry = findVerificationEntry(registry, "delete_enhancement_implementation")!
-  assert.equal(entry.status, "failed")
-  assert.equal(entry.failureBasis, "static")
+test("a length fix alone never counts as evidence of success", () => {
+  // Renaming an opcode proves deliverability, not an outcome. This is the mistake the four R-20 rows
+  // exist to prevent, asserted against the tool whose call really did land: the opcode fits, the
+  // call was made, and SAP refused it - so the row may NOT read as `verified`, and its kind is the
+  // observation (`runtime`), carrying the time the call actually happened.
+  const entry = findVerificationEntry(registry, "manage_classic_badi_implementation")!
+  assert.equal(entry.status, "failed", "a refused call is not a success")
+  assert.equal(entry.failureBasis, "runtime", "a call that reached SAP is an observation")
+  assert.notEqual(entry.lastAttemptAt, null, "an observation carries the time it was made")
 
-  // Renaming the opcode alone must not satisfy the guard for a verified claim: keep the static
-  // failure's real evidence but relabel it verified *and* strip that evidence. A verified claim
-  // must stand on a record of an actual call, so it is still refused - the length fix proved
-  // deliverability, not success.
+  // Stripping the evidence from such a claim must be refused even when the status says verified.
   const doctored: VerificationEntry = { ...entry, status: "verified", evidence: null }
   const violations = validateEntry(doctored)
   assert.ok(
     violations.some((violation) => violation.field === "evidence"),
-    "a static failure relabelled verified must still be refused without evidence"
+    "a failed entry relabelled verified must still be refused without evidence"
   )
-  assert.equal(
-    doctored.lastAttemptAt,
-    null,
-    "the static failure still claims no attempt time, so the relabel invents no observation"
-  )
+
+  // The other half of the same rule, on the same tool: producing a working interface (the separate
+  // IV_ACTION parameter) is also only deliverability. Until a call passes the guard, the row must
+  // not read as verified.
+  assert.notEqual(entry.status, "verified", "an upgraded interface is not a successful call")
 })
 
 test("controlled writes must name the object they were written to", () => {
@@ -521,7 +557,20 @@ test("MUTATION: an unverified entry claiming an attempt time is rejected", () =>
 
 test("MUTATION: a static failure claiming an attempt time is rejected", () => {
   // The inverse of the runtime rule, so the two failure kinds cannot silently converge.
-  const staticFailure = registry.entries.find((entry) => entry.failureBasis === "static")!
+  //
+  // The shipped registry carries no static failure as of 2026-10-02 - both R-20 length defects were
+  // refuted by real calls - so the sample is CONSTRUCTED from a real failed entry rather than looked
+  // up. A lookup would have returned undefined and let this mutation "pass" without ever reaching
+  // the rule it exists to prove.
+  const sample = registry.entries.find((entry) => entry.status === "failed")!
+  const staticFailure: VerificationEntry = {
+    ...sample,
+    status: "failed",
+    failureBasis: "static",
+    lastAttemptAt: null
+  }
+  assert.deepEqual(validateEntry(staticFailure), [], "the constructed static sample must be valid")
+
   const violations = validateEntry({ ...staticFailure, lastAttemptAt: "2026-09-22T12:00:00+08:00" })
   assert.ok(
     violations.some((violation) => violation.field === "lastAttemptAt"),
@@ -692,8 +741,50 @@ test("the registry records the honest gap rather than inflating it", () => {
   // verdict is superseded rather than deleted: its cause was target data, not a tool fault. All four
   // name .doc/code-update-20261001-135303.md and state what was NOT proven. Nothing here was inferred
   // from a plan or from a passing test.
+  // Raised from 49 to 50 on 2026-10-02 (R1): `read_enhancement_implementation` earned its promotion
+  // from a real read-only call at 23:01:05 +08:00 on 2026-10-01, recorded at
+  // .doc/orvanta-enhancement-read-enhancement-implementation-2026-10-01T15-01-05-986Z.json - the
+  // reply carries the definition (activeRaw X, hasInactiveVersion false, one hook implementation,
+  // a fingerprint) instead of the pre-rename OPERATION_NOT_ALLOWED, and the renamed
+  // READ_ENHANCEMENT_IMPL is self-described by the live helper. In the same batch the `failed` count
+  // moved 4 -> 2 rather than to 0: two of the four rows turned out to rest on a length rule that a
+  // real call refuted, so one became `verified` and one `unverified`; the other two stayed `failed`,
+  // with manage_classic_badi_implementation re-attributed from `static` to `runtime` because its
+  // call did reach SAP and was refused there.
+  // Raised from 50 to 100 on 2026-10-02 (R2): the development-side backfill entered 50 tools that
+  // already had a real recorded live acceptance sitting in this workspace but had never been
+  // registered. Every one was adjudicated by hand against the design's rule that `verified` points
+  // at a record of a call that SUCCEEDED, and the design's own evidence clause - which admits
+  // `.doc/code-update-*.md`, incident logs and forensics JSON - is why several entries cite
+  // `.logs/mcp-incident-*.md` and `.cache/runtime-regression/*` receipts. The candidate list
+  // offered 57 and 7 were rejected on that rule: `upsert_lock_object` (ten receipts, all
+  // status=failed), `create_smartform` (SMARTFORM_STORE_FAILED),
+  // `create_enhancement_hook_implementation` (HTTP 500 RABAX_STATE),
+  // `append_ddic_transparent_table_fields` (verification did not return the requested definition),
+  // `preview_source_changes` (blocked, httpStatus 404), `get_version_history` (object not found),
+  // and `abap_debug_status` - whose only artifact is a repo-side acceptance-harness log rather than
+  // a tool reply, and which could not be promoted in any case while the capability report measures
+  // `debuggerCapability=platform_unsupported` and the six abap_debug_* tools are withheld from the
+  // dev/config/ops profiles for that reason. Each promoted entry cites a record that was opened and
+  // whose quoted observed values were read out of it, and each path was checked to exist on disk
+  // and to name its own tool before it was written.
+  // Raised from 100 to 101 on 2026-10-02 (R3/D-9): `format_abap_source` earned its promotion from a
+  // real read-only call at 19:20:57 +08:00, recorded at
+  // .doc/orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json. The reply formatted w200 class
+  // CL_SATC_ADT_RES_APP: changed true, 53 lines in and 63 out, readOnly true and wroteToSap false. The
+  // promotion is grounded on the output DIFFERING from the input - the formatter expanded a chained
+  // METHODS declaration and re-wrapped an IF condition, which an echo could not produce. A second call
+  // in the same session against a non-source URI returned one blank line and is recorded in that entry
+  // as what a URI carrying no ABAP source answers, so it is not mistaken for a formatting result.
+  // Raised from 101 to 102 on 2026-10-02 (R3/B7-4): `read_ddic_table_conversion_status` earned its
+  // promotion from a real read-only call at 19:39:12 +08:00 against w200 table ZCEKKO, recorded at
+  // .doc/orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json - pending false,
+  // entryCount 0, readOnly true. Its entry also carries what the four calls of that round taught: a
+  // filtered read of the system-wide TBATG worklist cannot tell "nothing pending" from "no such
+  // table", so that limit is documented in both the registry entry and the tool description instead
+  // of being presented as a clean zero.
   assert.ok(
-    totals.verified <= 49,
+    totals.verified <= 102,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
@@ -734,5 +825,26 @@ test("the registry records the honest gap rather than inflating it", () => {
     const entry = registry.entries.find((candidate) => candidate.tool === tool)
     assert.equal(entry?.status, "verified", `${tool} is exempted but is no longer verified`)
   }
-  assert.ok(totals.unverified > totals.verified, "the honest default should dominate")
+  // This used to read `totals.unverified > totals.verified` under the sentence "the honest default
+  // should dominate". That was a description of the registry's state before 2026-10-02, not a rule:
+  // it held while only the ops tools had been verified (111 unverified against 50 verified), and the
+  // R2 backfill then legitimately inverted it by entering 50 development-side tools that already had
+  // real recorded acceptances. Keeping it would have forced the data to stay unregistered to satisfy
+  // a sentence, which is the wrong direction to resolve a conflict.
+  //
+  // What replaces it keeps the tripwire's actual intent - that `verified` may only ever grow by
+  // naming a record, never by padding - and drops the claim about which side is larger:
+  //   * the honest gap must still be represented and non-empty, so `unverified` can never be
+  //     emptied out to make the registry look finished;
+  //   * the count is bounded below (see the raise history above), so it cannot grow silently;
+  //   * and the two assertions immediately above are the real teeth - every verified entry must cite
+  //     a record that exists AND that names its own tool.
+  assert.ok(
+    totals.unverified > 0,
+    "the honest gap must stay represented: a registry with nothing unverified has stopped telling the truth"
+  )
+  assert.ok(
+    totals.verified < totals.total,
+    "no registry may claim that every tool has been verified"
+  )
 })

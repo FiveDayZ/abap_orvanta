@@ -1,8 +1,8 @@
 # ORVANTA 工具索引（生成文件，请勿手工编辑）
 
 - 矩阵版本：2026-09-17
-- 工具总数：167
-- 只读工具：100
+- 工具总数：170
+- 只读工具：103
 - 数据来源：`src/tool-registry.ts`（单一事实源）+ `src/contracts.ts`
 - 重新生成：`npm run matrix:generate`；一致性校验：`npm run matrix:check`
 
@@ -10,12 +10,12 @@
 
 | 维度 | 值 |
 | --- | --- |
-| profile: readonly | 100 |
+| profile: readonly | 103 |
 | profile: platform | 12 |
-| profile: dev | 139 |
+| profile: dev | 136 |
 | profile: config | 42 |
 | profile: ops | 61 |
-| profile: full | 167 |
+| profile: full | 170 |
 | 分组: data | 5 |
 | 分组: ddic | 26 |
 | 分组: debug | 6 |
@@ -26,20 +26,31 @@
 | 分组: ops | 44 |
 | 分组: platform | 12 |
 | 分组: quality | 4 |
-| 分组: source | 17 |
+| 分组: source | 20 |
 | 分组: ui | 12 |
+
+## 平台边界：默认隐藏的工具
+
+| 工具 | 原因 |
+| --- | --- |
+| `abap_debug_breakpoint` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
+| `abap_debug_session` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
+| `abap_debug_stack` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
+| `abap_debug_status` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
+| `abap_debug_step` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
+| `abap_debug_variable` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
 
 ## 工具清单
 
 | 工具 | 分组 | profile | 风险 | 路由 | SAP 助手（最低协议） |
 | --- | --- | --- | --- | --- | --- |
 | `abap_activate` | source | dev | 写 | native-adt | — |
-| `abap_debug_breakpoint` | debug | dev | 写 | native-adt | — |
-| `abap_debug_session` | debug | dev | 写 | native-adt | — |
-| `abap_debug_stack` | debug | dev | 只读 | native-adt | — |
-| `abap_debug_status` | debug | dev | 只读 | native-adt | — |
-| `abap_debug_step` | debug | dev | 写 | native-adt | — |
-| `abap_debug_variable` | debug | dev | 只读 | native-adt | — |
+| `abap_debug_breakpoint` | debug |  | 写 | native-adt | — |
+| `abap_debug_session` | debug |  | 写 | native-adt | — |
+| `abap_debug_stack` | debug |  | 只读 | native-adt | — |
+| `abap_debug_status` | debug |  | 只读 | native-adt | — |
+| `abap_debug_step` | debug |  | 写 | native-adt | — |
+| `abap_debug_variable` | debug |  | 只读 | native-adt | — |
 | `abap_download` | source | dev | 写 | target-specific | — |
 | `activate_smartform` | form | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_SMARTFORM_API |
 | `add_objects_to_transport` | ops | ops | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.8) |
@@ -74,8 +85,10 @@
 | `delete_transaction_code` | ui | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.1) |
 | `diagnose_sap_failure` | ops | dev, ops | 只读 | native-adt | — |
 | `discover_application_logs` | ops | ops | 只读 | sap-helper-fallback | Z_ORVANTA_LOG_READ |
+| `evaluate_refactoring` | source | dev | 只读 | native-adt | — |
 | `execute_data_query` | data | dev, config, ops | 只读 | target-specific | — |
 | `find_where_used` | source | dev | 只读 | target-specific | — |
+| `format_abap_source` | source | dev | 只读 | native-adt | — |
 | `get_abap_diagnostics` | quality | dev | 只读 | native-adt | — |
 | `get_abap_object_info` | source | dev | 只读 | target-specific | — |
 | `get_abap_object_lines` | source | dev | 只读 | target-specific | — |
@@ -87,6 +100,7 @@
 | `get_connected_systems` | platform | platform | 只读 | local | — |
 | `get_customer_function_call_status` | platform | platform | 只读 | local | — |
 | `get_object_by_uri` | source | dev | 只读 | target-specific | — |
+| `get_quick_fix_proposals` | source | dev | 只读 | native-adt | — |
 | `get_runtime_info` | platform | platform | 只读 | local | — |
 | `get_sap_system_info` | ops | dev, config, ops | 只读 | target-specific | — |
 | `get_version_history` | source | dev | 只读 | target-specific | — |
@@ -109,7 +123,7 @@
 | `patch_abap_screen` | ui | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥1.4) |
 | `patch_ddic_transparent_table_fields` | ddic | dev | 破坏性写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.17) |
 | `patch_ddic_transparent_table_settings` | ddic | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.16) |
-| `patch_function_module_interface` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥2.0) |
+| `patch_function_module_interface` | function | dev | 写 | sap-helper-fallback | Z_ORVANTA_MCP_EXECUTE (≥2.28) |
 | `prepare_enhancement_configuration_workflow` | enhancement | config | 只读 | target-specific | — |
 | `preview_configuration` | data | config | 只读 | target-specific | — |
 | `preview_source_changes` | source | dev | 只读 | target-specific | — |

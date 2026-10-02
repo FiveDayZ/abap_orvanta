@@ -86,11 +86,18 @@ generated from this module and the registry - `npm run ops:matrix:generate`, che
 acceptance table, and the guard refuses a family that declares a gap without naming a route to
 removing it.
 
-At product version 0.50.9 the block reports **2 of 15 families end-to-end (13%)**, which is **2 of the
-14 required families (14%)**, with 23 planned tools still unbuilt and `criterionMet: false`. The
-earlier assessment put end-to-end closure near 40%; that figure counted read-side breadth across
-families, not family purposes. This document's rule is the stricter one, and it is the one the
-completion criterion uses. Both readings agree the 95% target is far from met.
+**Historical snapshot - superseded, kept for the record.** At product version 0.50.9 the block reported
+**2 of 15 families end-to-end (13%)**, which is **2 of the 14 required families (14%)**, with 23 planned
+tools still unbuilt and `criterionMet: false`. The earlier assessment put end-to-end closure near 40%;
+that figure counted read-side breadth across families, not family purposes. This document's rule is the
+stricter one, and it is the one the completion criterion uses. Both readings agreed the 95% target was
+far from met at that time.
+
+**Current reading (2026-10-02, version 0.50.23): all 14 required families are closed -
+`criterionMet: true`** - so the paragraph above records where this work started, not where it stands.
+Read live numbers from `docs/ops-acceptance-matrix.md`, which is generated from `src/ops-coverage.ts`
+and guarded by `npm run ops:matrix:check`. Do not read a closure figure out of this prose section: it is
+narrative and is not regenerated.
 
 ## 4. Reading the evidence dimension
 
@@ -1101,6 +1108,11 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 **教训（写入纪律）**：守卫的适用范围（`SELF_FUNCTION_GROUP_FORBIDDEN` 只认 CORE）与**该助手能不能承载写**
 是两个独立约束。前者是"工具会不会被拒"，后者是"契约允不允许"。由前者为真推出后者为真，属于把
 "技术上可写"当成"设计上该写" —— 与项目反复出现的"把不受支持说成不存在"是同一类**越界外推**。
+
+> **2026-10-02 追记**：该守卫已由硬拒绝改为**标记门控** —— 提交正文含 `ORVANTA_SELF_WRITE_APPROVED` 时放行，
+> 否则仍回 `SELF_FUNCTION_GROUP_FORBIDDEN`。载具 `cf0df7d68d77962e`（source hash `a23c4781…f1c6`）待用户 SE38+F8。
+> 上面「只认 CORE」的适用范围与整段结论**仍然成立**；变化的是 CORE 组多了一条**需显式批准**的 MCP 自助写入
+> 路径，且该路径**尚未实测**（未部署、未调用）。
 
 ### 7.17 `archive-alerts` 闭环与 COUNT 聚合误诊（2026-09-28）
 

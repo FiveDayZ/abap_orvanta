@@ -29,6 +29,9 @@ import type {
   SapRepositoryRequest,
   SapRepositoryResult,
   SapBackend,
+  SourceFormatInfo,
+  QuickFixProposalInfo,
+  RefactoringEvaluationInfo,
   SourceResult,
   SourceMutationInfo,
   SourceInspectionInfo,
@@ -815,6 +818,17 @@ export class MockBackend implements SapBackend {
           },
           "ZABAP"
         ),
+        // The append write now reads the structure first and returns that read as the caller's rollback
+        // payload, so this fixture has to carry what the real read carries. Both tokens come from the
+        // envelope rather than the field list: `version` is result.objectVersion and `guardToken` is
+        // metadata.FINGERPRINT (the helper's SHA-1 over the active field rows). Without them the backup
+        // gate refuses the write before any SAP call - the intended behaviour, not something to work
+        // around in the fixture.
+        objectVersion: "20260901000000",
+        metadata: {
+          ...mockDdicResult("structure", {}, "ZABAP").metadata,
+          FINGERPRINT: "0123456789ABCDEF0123456789ABCDEF01234567"
+        },
         fields: [{ FIELDNAME: "APPQTY", POSITION: "1", ROLLNAME: "MENGE_D", DDTEXT: "Quantity" }]
       }
     ],
@@ -1506,9 +1520,12 @@ export class MockBackend implements SapBackend {
     }
     if (request.operation === "MANAGE_CLASSIC_BADI_IMPL") {
       const objectName = request.objectName ?? ""
-      if (request.objectType === "CREATE") {
+      // 2.23: the action token travels in its own IV_ACTION parameter ("CREATE"/"DELETE") while
+      // objectType keeps its TADIR meaning ("SXCI", the object of a Classic BAdI implementation).
+      // Dispatching on objectType here made every create a no-op, so the read-back found nothing.
+      if (request.action === "CREATE") {
         this.classicBadiImplementations.add(objectName)
-      } else if (request.objectType === "DELETE") {
+      } else if (request.action === "DELETE") {
         this.classicBadiImplementations.delete(objectName)
       }
       return this.repositoryResult("CLASSIC_BADI_IMPLEMENTATION_CHANGED", request, [])
@@ -1677,7 +1694,8 @@ export class MockBackend implements SapBackend {
         ...current.filter((line) => !line.startsWith("M|"))
       ])
       return this.repositoryResult(
-        request.objectType === "ACTIVATE"
+        // 2.23: the state token travels in IV_ACTION; objectType carries the TADIR object ("ENHO").
+        request.action === "ACTIVATE"
           ? "ENHANCEMENT_IMPLEMENTATION_ACTIVATED"
           : "ENHANCEMENT_INACTIVE_VERSION_DISCARDED",
         request,
@@ -2856,6 +2874,111 @@ export class MockBackend implements SapBackend {
     ]
   }
 
+  /**
+   * The pretty printer as this double models it: a pure text function over the active source.
+   *
+   * The default returns the source verbatim, which is the "formatter changed nothing" case a caller
+   * must be able to tell apart from a successful reformat. `formatSourceOverride` models a printer
+   * that rewrote the text and `formatSourceFailure` models a target that does not serve the resource.
+   * Every call is counted so a test can show the tool reached this path exactly once.
+   */
+  formatSourceOverride: string | null = null
+  formatSourceFailure: Error | null = null
+  formatSourceCalls = 0
+  /**
+   * The quick-fix evaluator's answer, and the failure that models a target which does not serve the
+   * resource. The default is an empty list, which is the "evaluator ran and found nothing" case a
+   * caller must be able to tell apart from a missing endpoint.
+   */
+  quickFixProposalsOverride: QuickFixProposalInfo["proposals"] | null = null
+  quickFixFailure: Error | null = null
+  quickFixCalls = 0
+  /**
+   * The refactoring evaluation's answer, and the failure that models a target without the resource.
+   * The default changes nothing - an affected-object list of length zero - which a caller must be
+   * able to tell apart from a missing endpoint.
+   */
+  refactoringOverride: RefactoringEvaluationInfo["affectedObjects"] | null = null
+  refactoringOldName = ""
+  refactoringFailure: Error | null = null
+  refactoringCalls = 0
+  /**
+   * Every SAP-mutating call this double received, in order.
+   *
+   * A read-only tool has to be provable as read-only, and the proof is that no write path was
+   * entered at all. The mock records that itself rather than relying on a test to wrap each method,
+   * so any future mutation method added here is covered by declaring it through `recordMutation`.
+   */
+  readonly mutationCalls: string[] = []
+
+  recordMutation(name: string): void {
+    this.mutationCalls.push(name)
+  }
+
+  async formatSource(_connectionId: string, fileUri: string): Promise<SourceFormatInfo> {
+    this.formatSourceCalls++
+    if (this.formatSourceFailure) throw this.formatSourceFailure
+    const source = await this.readSourceByUri(_connectionId, fileUri)
+    return {
+      connectionId: _connectionId,
+      fileUri,
+      sourceUri: source.uriUsed,
+      originalSource: source.source,
+      formattedSource: this.formatSourceOverride ?? source.source
+    }
+  }
+
+  async quickFixProposals(
+    connectionId: string,
+    fileUri: string,
+    line: number,
+    column: number
+  ): Promise<QuickFixProposalInfo> {
+    this.quickFixCalls++
+    if (this.quickFixFailure) throw this.quickFixFailure
+    // Reads the source the same way the real backend does, so a test cannot pass with a fixture that
+    // the evaluator would never have seen.
+    const source = await this.readSourceByUri(connectionId, fileUri)
+    const proposals = this.quickFixProposalsOverride ?? []
+    return {
+      connectionId,
+      fileUri,
+      sourceUri: source.uriUsed,
+      line,
+      column,
+      proposalCount: proposals.length,
+      proposals
+    }
+  }
+
+  async evaluateRefactoring(
+    connectionId: string,
+    fileUri: string,
+    kind: "rename" | "extract-method",
+    range: { startLine: number; startColumn: number; endLine: number; endColumn: number }
+  ): Promise<RefactoringEvaluationInfo> {
+    this.refactoringCalls++
+    if (this.refactoringFailure) throw this.refactoringFailure
+    // Reads the source the same way the real backend does, so a test cannot pass with a fixture the
+    // evaluation would never have seen.
+    await this.readSourceByUri(connectionId, fileUri)
+    const affectedObjects = this.refactoringOverride ?? []
+    return {
+      connectionId,
+      fileUri,
+      kind,
+      range: {
+        start: { line: range.startLine, column: range.startColumn },
+        end: { line: range.endLine, column: range.endColumn }
+      },
+      oldName: this.refactoringOldName,
+      title: "",
+      userContent: "",
+      affectedObjectCount: affectedObjects.length,
+      affectedObjects
+    }
+  }
+
   async runAtc(): Promise<AtcResultInfo> {
     return {
       variant: "DEFAULT",
@@ -2930,6 +3053,7 @@ export class MockBackend implements SapBackend {
     expectedSourceFingerprint?: string,
     _recoverInactiveSource?: boolean
   ): Promise<SourceMutationInfo> {
+    this.recordMutation("replaceSource")
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     if (this.adtSourceWriteRefused) {
       throw new Error("ADT source write refused by the test double")
@@ -2985,6 +3109,7 @@ export class MockBackend implements SapBackend {
   }
 
   async activateSource(connectionId: string, fileUri: string): Promise<ActivationInfo> {
+    this.recordMutation("activateSource")
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     if (!fileUri.toLowerCase().includes("/z")) {
       throw new Error("Only Z* or Y* customer objects are allowed")
@@ -2996,6 +3121,7 @@ export class MockBackend implements SapBackend {
     connectionId: string,
     request: CreateObjectRequest
   ): Promise<ObjectCreationInfo> {
+    this.recordMutation("createObject")
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     const name = request.name.trim().toUpperCase()
     if (!/^[ZY]/.test(name)) throw new Error("Only Z* or Y* customer objects are allowed")
@@ -3026,6 +3152,7 @@ export class MockBackend implements SapBackend {
     _transportNumber: string,
     expectedFingerprint: string
   ): Promise<string> {
+    this.recordMutation("deleteObject")
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     const source = await this.readSource(connectionId, object)
     const fingerprint = createHash("sha256").update(source.source).digest("hex")
@@ -3067,6 +3194,7 @@ export class MockBackend implements SapBackend {
     packageName: string,
     transportNumber: string
   ): Promise<MessageClassCreationInfo> {
+    this.recordMutation("createMessageClass")
     const normalized = messageClass.toUpperCase()
     if (this.messageClasses.has(normalized)) {
       throw new Error("MESSAGE_CLASS_EXISTS: Existing message classes cannot be replaced")
@@ -3087,6 +3215,7 @@ export class MockBackend implements SapBackend {
     packageName: string,
     transportNumber: string
   ): Promise<MessageClassMutationInfo> {
+    this.recordMutation("updateMessageClass")
     const normalized = messageClass.toUpperCase()
     const existing = this.messageClasses.get(normalized)
     if (!existing) throw new Error("MESSAGE_CLASS_NOT_FOUND: Message class does not exist")
@@ -3111,6 +3240,7 @@ export class MockBackend implements SapBackend {
     packageName: string,
     transportNumber: string
   ): Promise<MessageClassDeletionInfo> {
+    this.recordMutation("deleteMessageClass")
     const normalized = messageClass.toUpperCase()
     const existing = this.messageClasses.get(normalized)
     if (!existing) throw new Error("MESSAGE_CLASS_NOT_FOUND: Message class does not exist")
@@ -3128,6 +3258,7 @@ export class MockBackend implements SapBackend {
     connectionId: string,
     className: string
   ): Promise<TestIncludeCreationInfo> {
+    this.recordMutation("createTestInclude")
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     const normalized = className.toUpperCase()
     if (!/^[ZY]/.test(normalized)) throw new Error("Only Z* or Y* customer objects are allowed")
@@ -3164,6 +3295,7 @@ export class MockBackend implements SapBackend {
     action: "create" | "update",
     textElements: TextElementInfo[]
   ): Promise<TextElementMutationInfo> {
+    this.recordMutation("writeTextElements")
     if (connectionId !== "w200") throw new Error(`Connection not found: ${connectionId}`)
     const normalized = objectName.toUpperCase()
     if (!/^[ZY]/.test(normalized)) throw new Error("Only Z* or Y* customer objects are allowed")

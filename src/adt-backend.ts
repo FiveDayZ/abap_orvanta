@@ -35,8 +35,16 @@ import { objectEnhancements as requestObjectEnhancements } from "abap-adt-api/bu
 import { getObjectSource as requestObjectSource } from "abap-adt-api/build/api/objectcontents.js"
 import {
   syntaxCheck as requestSyntaxCheck,
-  usageReferences as requestUsageReferences
+  usageReferences as requestUsageReferences,
+  prettyPrinter as requestPrettyPrinter
 } from "abap-adt-api/build/api/syntax.js"
+// The quick-fix evaluator lives in `refactor.js`, not `syntax.js`; it is the same library and the same
+// HTTP client, so this adds no new transport and no hand-rolled request.
+import { fixProposals as requestFixProposals } from "abap-adt-api/build/api/refactor.js"
+import {
+  renameEvaluate as requestRenameEvaluate,
+  extractMethodEvaluate as requestExtractMethodEvaluate
+} from "abap-adt-api/build/api/refactor.js"
 import { parse } from "abap-adt-api/build/utilities.js"
 import { legacyWhereUsed, legacyWhereUsedPaths } from "./legacy-where-used.js"
 import { whereUsedHttp, WhereUsedRequestError } from "./where-used-request.js"
@@ -76,6 +84,9 @@ import {
   type ObjectCreationInfo,
   type SourceReadOptions,
   type SourceResult,
+  type SourceFormatInfo,
+  type QuickFixProposalInfo,
+  type RefactoringEvaluationInfo,
   type SourceMutationInfo,
   type SourceInspectionInfo,
   type TestIncludeCreationInfo,
@@ -128,6 +139,69 @@ import {
 const SOURCE_READ_TIMEOUT_MS = 30_000
 const SYNTAX_CHECK_TIMEOUT_MS = 10_000
 const ENHANCEMENT_READ_TIMEOUT_MS = 3_000
+/**
+ * Budget for one pretty-printer call.
+ *
+ * Same order as the syntax check beside it: both POST the whole source to an ADT service and both
+ * are bounded so a stalled formatter cannot hold the request open indefinitely.
+ */
+const PRETTY_PRINTER_TIMEOUT_MS = 10_000
+
+/**
+ * Budget for one quick-fix evaluation.
+ *
+ * The same shape as the two calls beside it: it POSTs the whole source to an ADT evaluator and is
+ * bounded so a stalled evaluator cannot hold the request open indefinitely.
+ */
+const QUICK_FIX_TIMEOUT_MS = 10_000
+
+/**
+ * Budget for one refactoring evaluation.
+ *
+ * Same shape as the calls beside it, with a longer bound: a refactoring evaluation walks the affected
+ * objects and their text deltas, so it does more work than a quick-fix lookup, but it still must not
+ * hold the request open indefinitely.
+ */
+const REFACTORING_TIMEOUT_MS = 20_000
+
+/** The `rangeFragment` an ADT refactoring reports, as the library's own `Range` type shapes it. */
+interface RefactoringRangeFragment {
+  start?: { line?: number; column?: number }
+  end?: { line?: number; column?: number }
+}
+
+/** One affected object as either relation's parser shapes it. */
+interface AffectedObjectShape {
+  uri?: string
+  type?: string
+  name?: string
+  textReplaceDeltas?: Array<{
+    rangeFragment?: RefactoringRangeFragment
+    contentOld?: string
+    contentNew?: string
+  }>
+}
+
+/**
+ * Normalise a reported range fragment into the same `{start,end}` shape used everywhere else here.
+ *
+ * A missing or partial fragment becomes zeros rather than throwing: the deltas are diagnostic text for
+ * a human deciding whether to refactor, and failing the whole call over an absent coordinate would
+ * lose the affected-object list that is the point of the evaluation. The substitution is visible - the
+ * zeros are in the reply - rather than silent.
+ */
+function normalizeRangeFragment(fragment: RefactoringRangeFragment | undefined): {
+  start: { line: number; column: number }
+  end: { line: number; column: number }
+} {
+  return {
+    start: {
+      line: Number(fragment?.start?.line ?? 0),
+      column: Number(fragment?.start?.column ?? 0)
+    },
+    end: { line: Number(fragment?.end?.line ?? 0), column: Number(fragment?.end?.column ?? 0) }
+  }
+}
 
 /**
  * E07T request-text reads for a transport listing.
@@ -1138,6 +1212,222 @@ export class AdtBackend implements SapBackend {
     } catch (error) {
       if (error instanceof AdtRequestTimeoutError) throw error
       throw capabilityFailure("syntax-diagnostics", error)
+    }
+  }
+
+  /**
+   * Run the ABAP pretty printer over an object's active source.
+   *
+   * Read-only in the strongest available sense: the formatter is a pure text transformation on the
+   * service side. Nothing is locked, saved, activated or transported, and the formatted text is
+   * returned to the caller instead of being written back - the service has no code path from here to
+   * a write, which is why the tool can be advertised as `readOnlyHint`.
+   *
+   * The source is read through the same `readSourceByUri` the syntax check uses, so both tools agree
+   * on which URI carries the object's text.
+   */
+  async formatSource(connectionId: string, fileUri: string): Promise<SourceFormatInfo> {
+    const client = await this.getClient(connectionId)
+    try {
+      const source = await this.readSourceByUri(connectionId, fileUri)
+      const formattedSource = await withAdtStageTimeout(
+        "PRETTY_PRINTER_TIMEOUT",
+        "pretty printer",
+        source.uriUsed,
+        PRETTY_PRINTER_TIMEOUT_MS,
+        () =>
+          requestPrettyPrinter(
+            boundedAdtHttp(client.httpClient, PRETTY_PRINTER_TIMEOUT_MS),
+            source.source
+          )
+      )
+      return {
+        connectionId,
+        fileUri,
+        sourceUri: source.uriUsed,
+        originalSource: source.source,
+        formattedSource
+      }
+    } catch (error) {
+      if (error instanceof AdtRequestTimeoutError) throw error
+      // A target without the pretty printer resource answers 404/405/501, which
+      // `capabilityFailure` already names as `unsupported-endpoint`. Reporting the input as
+      // "already formatted" in that case would claim a transformation that never ran, so the
+      // failure is propagated instead of being absorbed.
+      throw capabilityFailure("pretty-printer", error)
+    }
+  }
+
+  /**
+   * Ask the ADT quick-fix evaluator what could be fixed at one source position.
+   *
+   * Read-only by construction: the evaluator is given the source text and answers with proposals. The
+   * second half of the upstream API - `fixEdits`, which turns one proposal into text edits - is NOT
+   * called, and neither is the proposal's own handler URI. Those are where a real modification would
+   * happen, so leaving them out is what makes this path safe to advertise as `readOnlyHint`; the
+   * handler URI is returned to the caller precisely so a human can decide whether to use it.
+   *
+   * The request contract is not inferred: upstream `AdtClient.fixProposals(url, source, line, column)`
+   * passes the source as the request body, and its own test calls it that way
+   * (`abap-adt-api/src/test/main.test.ts`, "fix proposals": `c.fixProposals(include, source, 4, 10)`).
+   * The source is read through the same `readSourceByUri` the syntax check and pretty printer use, so
+   * all three agree on which URI carries the object's text.
+   */
+  async quickFixProposals(
+    connectionId: string,
+    fileUri: string,
+    line: number,
+    column: number
+  ): Promise<QuickFixProposalInfo> {
+    const client = await this.getClient(connectionId)
+    try {
+      const source = await this.readSourceByUri(connectionId, fileUri)
+      const proposals = await withAdtStageTimeout(
+        "QUICK_FIX_TIMEOUT",
+        "quick-fix evaluator",
+        source.uriUsed,
+        QUICK_FIX_TIMEOUT_MS,
+        () =>
+          requestFixProposals(
+            boundedAdtHttp(client.httpClient, QUICK_FIX_TIMEOUT_MS),
+            source.uriUsed,
+            source.source,
+            line,
+            column
+          )
+      )
+      return {
+        connectionId,
+        fileUri,
+        sourceUri: source.uriUsed,
+        line,
+        column,
+        proposalCount: proposals.length,
+        proposals: proposals.map((proposal) => ({
+          type: proposal["adtcore:type"] ?? "",
+          name: proposal["adtcore:name"] ?? "",
+          description: proposal["adtcore:description"] ?? "",
+          handlerUri: proposal["adtcore:uri"] ?? "",
+          userContent: proposal.userContent ?? ""
+        }))
+      }
+    } catch (error) {
+      if (error instanceof AdtRequestTimeoutError) throw error
+      // A target without the quick-fix resource answers 404/405/501, which `capabilityFailure` names
+      // as `unsupported-endpoint`. Returning an empty proposal list instead would claim the evaluator
+      // ran and found nothing, which is a different statement from "the endpoint is not there".
+      throw capabilityFailure("quick-fixes", error)
+    }
+  }
+
+  /**
+   * Evaluate a refactoring over a source range and report what it would change.
+   *
+   * Read-only by construction: this calls the library's `renameEvaluate` / `extractMethodEvaluate`,
+   * which are the `evaluate` step - `POST /sap/bc/adt/refactorings` with the relation and the range,
+   * NO body, and an answer describing the affected objects and their text deltas. The `preview` and
+   * `execute` steps are separate library functions and are NOT called here; upstream's own test gates
+   * only `renameExecute` behind a write permission and restores the source afterwards, which is the
+   * same split this backend keeps. Nothing is locked, saved, activated or transported.
+   *
+   * The contract is not inferred: upstream `renameEvaluate(h, uri, line, startColumn, endColumn)` and
+   * `extractMethodEvaluate(h, uri, range)` in the workspace's own `abap-adt-api/src/api/refactor.ts`,
+   * with `rangeToString` giving `#start=l,c;end=l,c` and the tests calling them that way.
+   */
+  async evaluateRefactoring(
+    connectionId: string,
+    fileUri: string,
+    kind: "rename" | "extract-method",
+    range: { startLine: number; startColumn: number; endLine: number; endColumn: number }
+  ): Promise<RefactoringEvaluationInfo> {
+    const client = await this.getClient(connectionId)
+    const echo = {
+      start: { line: range.startLine, column: range.startColumn },
+      end: { line: range.endLine, column: range.endColumn }
+    }
+    try {
+      const source = await this.readSourceByUri(connectionId, fileUri)
+      // The two relations are called in their own branches rather than through one conditional
+      // expression: they return different proposal types, and a single generic call site would force
+      // the union through `withAdtStageTimeout`'s inferred type parameter.
+      const http = boundedAdtHttp(client.httpClient, REFACTORING_TIMEOUT_MS)
+      const evaluated =
+        kind === "rename"
+          ? await withAdtStageTimeout(
+              "REFACTORING_TIMEOUT",
+              "refactoring evaluation",
+              source.uriUsed,
+              REFACTORING_TIMEOUT_MS,
+              () =>
+                requestRenameEvaluate(
+                  http,
+                  source.uriUsed,
+                  range.startLine,
+                  range.startColumn,
+                  range.endColumn
+                )
+            )
+          : await withAdtStageTimeout(
+              "REFACTORING_TIMEOUT",
+              "refactoring evaluation",
+              source.uriUsed,
+              REFACTORING_TIMEOUT_MS,
+              () =>
+                requestExtractMethodEvaluate(http, source.uriUsed, {
+                  start: { line: range.startLine, column: range.startColumn },
+                  end: { line: range.endLine, column: range.endColumn }
+                })
+            )
+      // The two relations carry the affected objects at DIFFERENT depths, which is a property of the
+      // library's parsers rather than of this code: `parseRenameRefactoring` reads them off the
+      // `renameRefactoring` root, while `parseExtractMethodEval` returns `genericRefactoring.affectedObjects`
+      // (see `abap-adt-api/src/api/refactor.ts`). Reading only the top level silently produced an empty
+      // list for every extract-method call, so both places are checked and `oldName` is taken from
+      // whichever root the relation used.
+      const raw = evaluated as unknown as {
+        oldName?: string
+        title?: string
+        userContent?: string
+        affectedObjects?: AffectedObjectShape[]
+        genericRefactoring?: {
+          title?: string
+          userContent?: string
+          affectedObjects?: AffectedObjectShape[]
+        }
+      }
+      const affected = raw.genericRefactoring?.affectedObjects ?? raw.affectedObjects ?? []
+      const title = raw.title ?? raw.genericRefactoring?.title ?? ""
+      const userContent = raw.userContent ?? raw.genericRefactoring?.userContent ?? ""
+      return {
+        connectionId,
+        fileUri,
+        kind,
+        range: echo,
+        oldName: String(raw.oldName ?? ""),
+        title: String(title),
+        userContent: String(userContent),
+        affectedObjectCount: affected.length,
+        affectedObjects: affected.map((object) => {
+          const deltas = object.textReplaceDeltas ?? []
+          return {
+            uri: String(object.uri ?? ""),
+            type: String(object.type ?? ""),
+            name: String(object.name ?? ""),
+            deltaCount: deltas.length,
+            deltas: deltas.map((delta) => ({
+              range: normalizeRangeFragment(delta.rangeFragment),
+              contentOld: String(delta.contentOld ?? ""),
+              contentNew: String(delta.contentNew ?? "")
+            }))
+          }
+        })
+      }
+    } catch (error) {
+      if (error instanceof AdtRequestTimeoutError) throw error
+      // A target without the refactoring resource answers 404/405/501, which `capabilityFailure`
+      // names as `unsupported-endpoint`. Reporting an empty result instead would claim the evaluation
+      // ran and found nothing, which is a different statement from "the endpoint is not there".
+      throw capabilityFailure("refactorings", error)
     }
   }
 

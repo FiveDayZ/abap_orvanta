@@ -10,8 +10,13 @@
  * Why this carrier exists: the repository family (Z_ORVANTA_MCP_EXECUTE / Z_ORVANTA_MCP_DYNPRO_API)
  * lives in ZORVANTA_MCP_CORE, which is self-write protected - the MCP service must not rewrite its own
  * helper, because one bad write would cost the service the ability to repair itself. Native ADT write
- * answers HTTP 423 and the helper's own write path answers SELF_FUNCTION_GROUP_FORBIDDEN, so the only
- * path that works is a report program a human runs with F8 (docs/release-process.md section 7.2 lists
+ * answers HTTP 423 and the helper's own write path answers SELF_FUNCTION_GROUP_FORBIDDEN unless the
+ * submitted body carries the ORVANTA_SELF_WRITE_APPROVED marker (guard relaxed 2026-10-02). That marker
+ * path has since been exercised for rewriting the BODY of an existing CORE helper (2026-10-02 15:25,
+ * content-preserving: sourceHash unchanged, interface fingerprint unchanged;
+ * .doc/code-update-20261002-152500.md). What this generator emits is a different case - whole report
+ * programs - so the path used here is still a report program a human runs with F8
+ * (docs/release-process.md section 7.2 lists
  * the repository family as "independent carrier", exactly like the DDIC family).
  *
  * The body it deploys carries protocol 2.11: the D7 form reads (SAPscript / SmartStyles / Adobe), the
@@ -69,6 +74,10 @@ const outFile = value(
   "--out",
   `C:/My/Workplace/Coding/vscode-abap/.doc/deploy-repository-${target.slug}-2.11-r13.abap`
 )
+// The repair hint printed by the report must name THIS carrier. A hard-coded name points the operator
+// at a different helper's carrier exactly when a restore has just failed, which is a false
+// instruction inside the artifact the operator is reading at that moment.
+const restoreName = outFile.replace(/\\/g, "/").split("/").pop()
 
 // Content-derived, and reassigned once the canonical body is loaded (see below). It must NOT be a
 // fixed string: the emitted report refuses to apply itself when the marker is already present in the
@@ -377,9 +386,18 @@ if (!offline) {
   // The save API is called dynamically, so ABAP type-checks every actual parameter against the
   // formal parameter's DDIC type at runtime and terminates with CALL_FUNCTION_CONFLICT_TYPE on a
   // mismatch - that is how `CORRNUM TYPE C LENGTH 10` failed its F8 run. Compare the declared types
-  // of the carrier's own variables against SAP's interface here.
+  // of the carrier's own variables against SAP's interface here. Table parameters are checked too:
+  // the source has to be RSSOURCE, not the abaptxt255 the include is read into, and a mismatch
+  // there fails the same way at runtime.
   const passedTypes = {
-    FUNCTION_SAVE: [["P_RS38L", "ls_rs38l", "rs38l"]]
+    RPY_FUNCTIONMODULE_INSERT: [
+      ["importing", "FUNCNAME", "lv_func", "rs38l-name"],
+      ["importing", "FUNCTION_POOL", "lv_pool", "rs38l-area"],
+      ["importing", "REMOTE_CALL", "lv_remote", "rs38l-remote"],
+      ["importing", "SHORT_TEXT", "lv_short", "tftit-stext"],
+      ["importing", "CORRNUM", "c_request", "e071-trkorr"],
+      ["tables", "SOURCE", "lt_insert_source", "rssource"]
+    ]
   }
   for (const [api, expectations] of structured ? Object.entries(passedTypes) : []) {
     const apiRead = await client.callTool(
@@ -395,14 +413,19 @@ if (!offline) {
     const apiTypes = new Map(
       (apiInterface.importParameters ?? []).map((p) => [p.name, String(p.typeName).toLowerCase()])
     )
-    for (const [formal, actual, declared] of expectations) {
-      // An empty type name means SAP did not report one (SHORT_TEXT is like that), so only what the
-      // live interface actually states can be asserted; the rest stays a runtime risk.
-      if (!apiTypes.get(formal)) continue
+    const apiTableTypes = new Map(
+      (apiInterface.tableParameters ?? []).map((p) => [p.name, String(p.typeName).toLowerCase()])
+    )
+    for (const [kind, formal, actual, declared] of expectations) {
+      const liveType = (kind === "tables" ? apiTableTypes : apiTypes).get(formal)
+      // An empty type name means SAP did not report one (SHORT_TEXT is like that on some releases),
+      // so only what the live interface actually states can be asserted; the rest stays a runtime
+      // risk.
+      if (!liveType) continue
       assert.equal(
-        apiTypes.get(formal),
+        liveType,
         declared,
-        `${api} ${formal} is ${apiTypes.get(formal)} in SAP but the carrier passes ${actual} TYPE ${declared}`
+        `${api} ${formal} is ${liveType} in SAP but the carrier passes ${actual} TYPE ${declared}`
       )
     }
   }
@@ -768,6 +791,12 @@ report.push("      lt_fm_change TYPE TABLE OF rscha,")
 report.push("      lt_fm_except TYPE TABLE OF rsexc,")
 report.push("      lt_fm_docu TYPE TABLE OF rsfdo,")
 report.push("      lt_fm_source TYPE TABLE OF rssource,")
+// RPY_FUNCTIONMODULE_INSERT takes its source as RSSOURCE, not as the abaptxt255 the include is
+// read into, and it takes the bare statement body: the interface header is generated from the
+// parameter tables. The carrier's own lt_body is abaptxt255, so it is copied across.
+report.push("      lt_insert_source TYPE TABLE OF rssource,")
+report.push("      ls_insert TYPE rssource,")
+report.push("      ls_body TYPE abaptxt255,")
 report.push("      lv_func TYPE rs38l-name,")
 report.push("      lv_missing_fm TYPE c LENGTH 1,")
 report.push("      lv_pool TYPE rs38l-area,")
@@ -778,7 +807,6 @@ report.push("      lv_update TYPE rs38l-utask,")
 report.push("      lv_present TYPE c LENGTH 1,")
 report.push("      lv_missing TYPE i,")
 report.push("      lv_missing_new TYPE i,")
-report.push("      ls_rs38l TYPE rs38l,")
 report.push("      ls_tfdir TYPE tfdir,")
 report.push("      lv_fm_include TYPE rs38l-include,")
 report.push("      lv_fm_lock_mode TYPE enqmode VALUE 'X',")
@@ -1044,34 +1072,40 @@ report.push("  ENDLOOP.")
 report.push("")
 report.push("  IF lv_added > 0 OR lv_retyped > 0.")
 report.push(
-  "* RPY_FUNCTIONMODULE_INSERT and FUNCTION_CREATE are both create-only - the first stops with"
+  "* RPY_FUNCTIONMODULE_INSERT is SAP's own create API and the only headless entry that writes the"
 )
 report.push(
-  "* FL 050 '& already exists', the second raises FUNCTION_ALREADY_EXISTS (FL 800) - so the existing"
+  "* parameter tables, the TFDIR binding and the implementation source in one operation. It refuses"
 )
 report.push(
-  "* function module is updated through FUNCTION_SAVE. That call is SE37's save path - a 28 line"
+  "* while a live TFDIR row exists, so the row is retired first the way SAP itself retires it - by"
 )
 report.push(
-  "* wrapper around PERFORM FU_SAVE_FUNCTION_EXT(SAPMS38L) - and it reports FL 230 ('& is being"
+  "* setting FREEDATE - and only if that is refused is the row deleted. This replaced the earlier"
 )
 report.push(
-  "* edited by user &') while the module is in an editing state. Try the plain save first, exactly"
+  "* FUNCTION_SAVE attempt, which could never work: that wrapper declares P_RS38L and never reads"
 )
 report.push(
-  "* as SE37 does it, then repeat it after registering the module in the workbench working area"
+  "* it, because its body is PERFORM FU_SAVE_FUNCTION_EXT(SAPMS38L) ... USING SHORT_TEXT RS38L and"
 )
-report.push("* the same way FUNCTION_CREATE does before its own save.")
+report.push(
+  "* the USING operand resolves inside SAPLSUNI, so the caller's structure is silently discarded."
+)
+report.push(
+  "* Measured on w200 2026-10-02: the interface landed but the module lost its source and its TFDIR"
+)
+report.push(
+  "* row, and the RFC session was terminated (TH_RES_FREE). The create API avoids all three."
+)
 report.push("    CALL FUNCTION 'DEQUEUE_ESFUNCTION'")
 report.push("      EXPORTING")
 report.push("        funcname = lv_func.")
 report.push("    SET PARAMETER ID 'EUA' FIELD c_request.")
 report.push(
-  "* The interface row and the include suffix only exist for an existing module; both are inputs"
+  "* The module must exist before its interface can be rewritten, and the create API refuses a live"
 )
-report.push(
-  "* to the save path, which is skipped when the module is absent, so they are read only then."
-)
+report.push("* TFDIR row, so this read doubles as proof that there is a row to retire.")
 report.push("    IF lv_missing_fm IS INITIAL.")
 report.push("    CLEAR ls_tfdir.")
 report.push("    SELECT SINGLE * FROM tfdir INTO ls_tfdir")
@@ -1080,22 +1114,6 @@ report.push("    IF sy-subrc <> 0.")
 report.push("      WRITE: / 'ERROR: TFDIR has no entry for', lv_func.")
 report.push("      RETURN.")
 report.push("    ENDIF.")
-report.push(
-  "* TFDIR-INCLUDE holds the two digit include suffix; RS38L-INCLUDE and the workbench entries"
-)
-report.push(
-  "* use the three character form U<nn>, whose first character is the V / $ variant switch."
-)
-report.push("    CONCATENATE 'U' lv_suffix INTO lv_fm_include.")
-report.push("    CLEAR ls_rs38l.")
-report.push("    ls_rs38l-name = lv_func.")
-report.push("    ls_rs38l-area = lv_pool.")
-report.push("    ls_rs38l-global = lv_global.")
-report.push("    ls_rs38l-remote = lv_remote.")
-report.push("    ls_rs38l-utask = lv_update.")
-report.push("    ls_rs38l-include = lv_fm_include.")
-report.push("    ls_rs38l-active = 'A'.")
-report.push("    ls_rs38l-generated = 'X'.")
 report.push("    PERFORM save_interface.")
 report.push("    IF lv_save_rc <> 0.")
 report.push("      WRITE: / 'Attempt 1   : plain save failed rc', lv_save_rc, 'id', lv_save_msgid,")
@@ -1118,12 +1136,12 @@ report.push("      lv_save_rc = 4.")
 report.push("      WRITE: / 'Attempt 1/2 : skipped, the function module does not exist yet.'.")
 report.push("    ENDIF.")
 report.push(
-  "* Both save paths refuse: the update interface of an existing module cannot be written"
+  "* Last resort, and only reached when the create API refused twice: rebuild the module from"
 )
 report.push(
-  "* here (FL 230 - the SE37 save path wants the module in an editing state). Rebuild the"
+  "* scratch with the complete interface. This is destructive - the module loses its version"
 )
-report.push("* module from scratch with the complete interface; the create path is proven.")
+report.push("* history - so it stays behind the two non-destructive attempts above.")
 report.push("    IF lv_save_rc <> 0.")
 report.push(
   "      WRITE: / 'Attempt 3   : delete and recreate', lv_func, 'with the merged interface.'."
@@ -1500,16 +1518,51 @@ report.push(
   "* ---- local forms -----------------------------------------------------------------------"
 )
 report.push(
-  "* FUNCTION_SAVE is a dynamic call as well, so keep it in one place and capture the message"
+  "* The interface is written through SAP's own create API. Keep it in one place: the TFDIR row has"
 )
 report.push(
-  "* variables: they name the user whose editing state blocks the save (FL 230 / FL 231)."
+  "* to be retired first, the body has to be converted to the RSSOURCE the call expects, and the"
 )
+report.push("* message variables have to be captured on both attempts.")
 report.push("FORM save_interface.")
-report.push("  CALL FUNCTION 'FUNCTION_SAVE'")
+report.push("  CLEAR lv_save_rc.")
+report.push("  UPDATE tfdir SET freedate = sy-datum WHERE funcname = lv_func.")
+report.push("  COMMIT WORK AND WAIT.")
+report.push("  PERFORM insert_function.")
+report.push("  IF lv_save_rc <> 0.")
+report.push(
+  "* The retire is only refused while the row is still locked, and that is the one case where the"
+)
+report.push(
+  "* delete - which is what SAP's own insert does before it re-inserts - is the fallback."
+)
+report.push("    DELETE FROM tfdir WHERE funcname = lv_func.")
+report.push("    COMMIT WORK AND WAIT.")
+report.push("    PERFORM insert_function.")
+report.push("  ENDIF.")
+report.push("ENDFORM.")
+report.push("")
+report.push("FORM insert_function.")
+report.push(
+  "* The create API generates the interface header itself, so it must receive the bare statement"
+)
+report.push(
+  "* body. Handing it the whole include would leave two FUNCTION headers and two ENDFUNCTION"
+)
+report.push("* statements in the include - measured on w200 2026-10-02.")
+report.push("  REFRESH lt_insert_source.")
+report.push("  LOOP AT lt_body INTO ls_body.")
+report.push("    CLEAR ls_insert.")
+report.push("    ls_insert-line = ls_body-line.")
+report.push("    APPEND ls_insert TO lt_insert_source.")
+report.push("  ENDLOOP.")
+report.push("  CALL FUNCTION 'RPY_FUNCTIONMODULE_INSERT'")
 report.push("    EXPORTING")
+report.push("      funcname = lv_func")
+report.push("      function_pool = lv_pool")
+report.push("      remote_call = lv_remote")
 report.push("      short_text = lv_short")
-report.push("      p_rs38l = ls_rs38l")
+report.push("      corrnum = c_request")
 report.push("    TABLES")
 report.push("      import_parameter = lt_fm_import")
 report.push("      changing_parameter = lt_fm_change")
@@ -1517,9 +1570,9 @@ report.push("      export_parameter = lt_fm_export")
 report.push("      tables_parameter = lt_fm_tables")
 report.push("      exception_list = lt_fm_except")
 report.push("      parameter_docu = lt_fm_docu")
+report.push("      source = lt_insert_source")
 report.push("    EXCEPTIONS")
-report.push("      error_message = 1")
-report.push("      OTHERS = 2.")
+report.push("      OTHERS = 1.")
 report.push("  lv_save_rc = sy-subrc.")
 report.push("  lv_save_msgid = sy-msgid.")
 report.push("  lv_save_msgno = sy-msgno.")
@@ -1600,15 +1653,13 @@ report.push("  IF lv_restore_failed = 'X'.")
 report.push(
   "    WRITE: / 'Restore     : the helper may carry no body now. Run the REPAIR carrier in SE38:'."
 )
-report.push("    WRITE: / 'Restore     : .doc/deploy-repository-dynpro-2.11-r13.abap'.")
+report.push(`    WRITE: / 'Restore     : .doc/${restoreName}'.`)
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  INSERT REPORT lv_name FROM lt_backup.")
 report.push("  IF sy-subrc <> 0.")
 report.push("    WRITE: / 'Restore     : FAILED - INSERT REPORT rc', sy-subrc.")
-report.push(
-  "    WRITE: / 'Restore     : run the REPAIR carrier in SE38: .doc/deploy-repository-dynpro-2.11-r13.abap'."
-)
+report.push(`    WRITE: / 'Restore     : run the REPAIR carrier in SE38: .doc/${restoreName}'.`)
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push(
@@ -1616,9 +1667,7 @@ report.push(
 )
 report.push("  IF sy-subrc <> 0.")
 report.push("    WRITE: / 'Restore     : FAILED - GENERATE rc', sy-subrc, lv_msg.")
-report.push(
-  "    WRITE: / 'Restore     : run the REPAIR carrier in SE38: .doc/deploy-repository-dynpro-2.11-r13.abap'."
-)
+report.push(`    WRITE: / 'Restore     : run the REPAIR carrier in SE38: .doc/${restoreName}'.`)
 report.push("    RETURN.")
 report.push("  ENDIF.")
 report.push("  COMMIT WORK AND WAIT.")
@@ -1694,13 +1743,15 @@ report.push("")
 const REQUIRED_DYNAMIC_PARAMS = {
   RPY_FUNCTIONMODULE_READ: { importing: ["FUNCTIONNAME"], tables: [] },
   RPY_FUNCTIONMODULE_READ_NEW: { importing: ["FUNCTIONNAME"], tables: [] },
-  FUNCTION_SAVE: {
-    importing: ["SHORT_TEXT", "P_RS38L"],
+  RPY_FUNCTIONMODULE_INSERT: {
+    importing: ["FUNCNAME", "FUNCTION_POOL", "SHORT_TEXT"],
     tables: [
+      "CHANGING_PARAMETER",
       "EXCEPTION_LIST",
       "EXPORT_PARAMETER",
       "IMPORT_PARAMETER",
       "PARAMETER_DOCU",
+      "SOURCE",
       "TABLES_PARAMETER"
     ]
   },

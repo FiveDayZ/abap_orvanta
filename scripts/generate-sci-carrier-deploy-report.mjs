@@ -3,8 +3,12 @@
 // Why a report instead of an MCP write: both automated write paths are unavailable for objects in
 // ZORVANTA_MCP_CORE - the native ADT path is a recorded platform limitation (HTTP 423 "is not locked
 // (invalid lock handle)" for a function module include, src/tools.ts:2641) and the helper-backed path
-// is refused by the hardcoded self-protection guard (SELF_FUNCTION_GROUP_FORBIDDEN,
-// scripts/bootstrap-sap-helper.ps1:8451). Writing from *inside* SAP, which is how this function group
+// is refused by the self-protection guard (SELF_FUNCTION_GROUP_FORBIDDEN,
+// scripts/bootstrap-sap-helper.ps1:15801) unless the submitted body carries the
+// ORVANTA_SELF_WRITE_APPROVED marker (guard relaxed 2026-10-02, carrier cf0df7d68d77962e; the marker
+// path has since been exercised for BODY rewrites of CORE helpers on 2026-10-02 15:25, content-preserving
+// with sourceHash and interface fingerprint unchanged). Writing from *inside* SAP, which is how this
+// function group
 // was originally populated (bootstrap-sap-helper.ps1:9125-9142), violates neither.
 //
 // The report embeds the complete post-deployment function module source, so the interface section is
@@ -132,7 +136,10 @@ const report = `REPORT ${programName.toLowerCase()}.
 * Deploys the ORVANTA CAPABILITIES carrier body into the two SCI helpers in the function
 * group ${functionGroup}. Both automated MCP write paths are unavailable for this group:
 * the native ADT path is a recorded platform limitation and the helper-backed path is refused by
-* the self-protection guard SELF_FUNCTION_GROUP_FORBIDDEN. Running this report inside SAP is the
+* the self-protection guard SELF_FUNCTION_GROUP_FORBIDDEN unless the body carries the ORVANTA_SELF_WRITE_APPROVED marker
+ * (guard relaxed 2026-10-02, carrier cf0df7d68d77962e; the marker path has since been exercised for
+* BODY rewrites of CORE helpers on 2026-10-02 15:25, content-preserving).
+ * Running this report inside SAP is the
 * same mechanism that originally populated the group.
 *
 * The complete post-deployment source of each function module is embedded below, so the interface

@@ -8,7 +8,7 @@ import {
 } from "./object-types.js"
 import { preSapValidation } from "./pre-sap-validation.js"
 import { describesLogonRejection } from "./logon-diagnostic.js"
-import { findAndReplaceSource } from "./source-edit.js"
+import { findAndReplaceSource, sameSourceText } from "./source-edit.js"
 import {
   SourceSavedNotActivatedError,
   sourceWriteOutcome,
@@ -864,6 +864,25 @@ interface UpsertAppendStructureFieldsInput {
   connectionId: string
 }
 
+/**
+ * The append structure's field list as read immediately before a write, plus the tokens that identify
+ * the revision it was read at.
+ *
+ * This is the "backup" half of the capability standard's "backup + gate + rollback notes": it is
+ * returned to the caller in the tool result so that a write can be undone without re-deriving the
+ * previous state from memory. `fields` is deliberately the same shape `restoreAppendStructureFields`
+ * documents, so the restore is a copy of the array rather than a translation.
+ */
+interface AppendStructureBackup {
+  baseTable: string
+  tableClass: "APPEND"
+  /** 14-digit version token at read time. */
+  version: string
+  /** SHA-1 over the active field rows; the token that actually detects a lost update. */
+  guardToken: string
+  fields: Array<{ name: string; dataElement: string } & DdicTableFieldReference>
+}
+
 interface UpsertSearchHelpInput extends UpsertDdicInput {
   header?: Record<string, string> | undefined
   selectionMethods?: Array<Record<string, string>> | undefined
@@ -1417,6 +1436,37 @@ interface VersionHistoryInput extends ObjectInput {
 
 interface DiagnosticsInput {
   fileUri: string
+}
+
+interface FormatSourceInput {
+  fileUri: string
+  connectionId: string
+}
+
+/**
+ * Position-addressed quick-fix query. `line` is 1-based and `column` 0-based because that is how ADT
+ * addresses a source position; the caller takes both from the diagnostic it is reacting to.
+ */
+interface QuickFixProposalsInput {
+  fileUri: string
+  connectionId: string
+  line: number
+  column: number
+}
+
+/**
+ * A refactoring range to evaluate. Rename addresses the identifier between two columns on one line,
+ * so its start and end lines are normally equal; extract-method addresses the statement range to pull
+ * out. Both are carried explicitly rather than inferred, so the reply can be tied to what was asked.
+ */
+interface EvaluateRefactoringInput {
+  fileUri: string
+  connectionId: string
+  kind: "rename" | "extract-method"
+  startLine: number
+  startColumn: number
+  endLine: number
+  endColumn: number
 }
 
 interface ReplaceSourceInput {
@@ -3704,18 +3754,30 @@ export class ToolService {
       throw new Error(`Function module is not assigned to transport ${requestedTransport}`)
     }
 
-    // PLATFORM LIMIT -- this call does NOT write interface parameters on SAP_BASIS 7.31.
-    // The helper opcode PATCH_FUNCTION_INTERFACE has no parameter write path on this release:
-    // RPY_FUNCTIONMODULE_UPDATE, the write-back API this method was originally built around, does
-    // not exist here (verified: FUNCTION_READ_FAILED), and its wide-line alternatives
-    // (RPY_FUNCTIONMODULE_READ_NEW / RPY_FUNCTIONMODULE_INSERT) expose NEW_SOURCE: RSFB_SOURCE,
-    // which is a function-group-local type of SIFP that no external caller can declare. The
-    // branch's only CALL FUNCTIONs are ENQUEUE_ESFUNCTION / RPY_FUNCTIONMODULE_READ /
-    // DEQUEUE_ESFUNCTION and its only PERFORMs are SAPMS38L's fu_modification_globals_init /
-    // do_read_docu_r3_new / do_update_docu_r3_new -- that is, it writes parameter DOCUMENTATION
-    // only. The fingerprint checks and the read-back comparison below therefore prove that the
-    // implementation source was left alone; they do NOT prove the parameters were applied. Apply
-    // interface changes manually in SE37. See .logs/20260920-160422-...-missing-rpy-update.md.
+    // INTERFACE WRITE -- this call writes the interface through SAP's own create API.
+    // The earlier conclusion that SAP_BASIS 7.31 has no interface-parameter write path was wrong.
+    // RPY_FUNCTIONMODULE_UPDATE indeed does not exist here (verified: FUNCTION_READ_FAILED), and its
+    // wide-line alternatives (RPY_FUNCTIONMODULE_READ_NEW / RPY_FUNCTIONMODULE_INSERT) do expose
+    // NEW_SOURCE: RSFB_SOURCE, a function-group-local type of SIFP that no external caller can
+    // declare -- but RPY_FUNCTIONMODULE_INSERT's own SOURCE parameter is RSSOURCE, a DDIC table type
+    // any caller can declare, and its six TABLES parameters ARE the interface parameter tables
+    // (RSIMP / RSEXP / RSCHA / RSTBL / RSEXC / RSFDO). The helper opcode calls it with the interface
+    // tables, the attributes and the implementation body, and it writes the parameter tables, the
+    // TFDIR binding and the include in one operation. It refuses while a live TFDIR row exists, so
+    // the helper retires the row first the way SAP itself does, by setting FREEDATE, and falls back
+    // to DELETE FROM tfdir only if that is refused. The create API generates the interface header
+    // from the tables itself, so the body handed to it is the bare statement body - passing the
+    // pre-patch include would leave two FUNCTION headers and two ENDFUNCTION statements.
+    // Critically it never enters fu_save_function, which is what made every earlier route
+    // destructive: that FORM deletes the implementation include with DELETE REPORT ... STATE 'A'
+    // and rebuilds only a bare frame through ed_generate_frame. So there is no body to splice back
+    // and no GENERATE REPORT step here; the helper's own post-save re-read
+    // (FUNCTION_PATCH_SAVE_NOT_OBSERVED plus a per-table difference report) is what proves the
+    // parameters landed, and the fingerprint checks below still prove the source was left alone.
+    // Helper protocol 2.28 is required; 2.27 and 2.25 called fu_save_function_ext and therefore
+    // destroyed the module, 2.26 called the interface routines without the globals they read so
+    // nothing was written, 2.24 called FUNCTION_SAVE which discards the structure passed as
+    // P_RS38L, and 2.23 and earlier write documentation only.
     const result = await this.backend.callSapHelper(connectionId, {
       operation: "PATCH_FUNCTION_INTERFACE",
       objectName: functionName,
@@ -3786,17 +3848,17 @@ export class ToolService {
         helperMessage: result.message,
         helperVersion: result.version,
         helperVerification:
-          "the helper compared its own read-back of the documentation tables; it cannot verify interface parameters on this platform",
+          "the helper compared its own read-back of the interface parameter tables against what it sent; it answers FUNCTION_PATCH_SAVE_NOT_OBSERVED with a per-table difference list when SAP did not store the change",
         status: result.code,
         packageName: input.packageName.trim().toUpperCase(),
         recordedRequest: input.transportNumber.trim().toUpperCase(),
-        // False: the helper opcode writes parameter documentation only on SAP_BASIS 7.31. Reporting
-        // true here would be a false success for the parameter changes the caller asked for.
-        interfaceWritePerformed: false,
-        interfaceWriteSupported: false,
+        // The helper enters the SE37 save path and re-reads every table before it
+        // answers, so the success code is the evidence that the parameter changes landed.
+        interfaceWritePerformed: result.code === "FUNCTION_INTERFACE_PATCHED",
+        interfaceWriteSupported: true,
         interfaceWriteLimit:
-          "SAP_BASIS 7.31 has no headless interface-parameter write API: RPY_FUNCTIONMODULE_UPDATE does not exist and RSFB_SOURCE is a function-group-local type. Parameter additions, renames, and removals must be applied manually in SE37.",
-        parameterChangesApplied: false,
+          "The interface is written through the interface-writing part of SAP's own SE37 save path (SAPMS38L's ed_generate_interface, ed_insert_interface and pa_insert_parameter, which store the generated local-interface header include and refill FUPARAREF) and activated with GENERATE REPORT, from helper protocol 2.28. The helper never calls fu_save_function, because that FORM deletes the implementation include and rebuilds only a bare frame: measured on w200, helper 2.25 changed the interface but left the module with no source, no TFDIR pool/include and no TADIR row. 2.25 entered that save through fu_save_function, 2.24 called the wrapper FUNCTION_SAVE, which declares P_RS38L and never uses it, and 2.23 and earlier write parameter documentation only, so the tool registry refuses all of them. If SAP does not store what was sent, the helper answers FUNCTION_PATCH_SAVE_NOT_OBSERVED with a per-table difference list, and FUNCTION_PATCH_SAVE_REJECTED if the write path tears the module down instead.",
+        parameterChangesApplied: result.code === "FUNCTION_INTERFACE_PATCHED",
         sourceMutation: null,
         sourceWritePerformed: false,
         destructiveChangeConfirmed: input.confirmation === "DESTRUCTIVE_INTERFACE_CHANGE",
@@ -4346,13 +4408,105 @@ export class ToolService {
         ...tableFieldReference(field)
       }
     })
+    // B7 backup gate. The capability standard asks for "backup + gate + rollback notes" and this tool
+    // only had the gate: the helper keeps the pre-call field set for its own compensation but never
+    // sends it back - `COMPENSATED X/N` says whether a restore worked, not what to restore to - so a
+    // caller had no way to undo a write that succeeded. Reading the structure first closes that: the
+    // read publishes every field with its data element and its REFTABLE/REFFIELD pair, plus the version
+    // and the guard token, which together are a replayable restore request.
+    //
+    // It doubles as a gate, deliberately rather than incidentally: the read is what proves the object
+    // really is an APPEND structure (a base table is refused below), so a write can no longer start
+    // against an object the caller mis-identified. A read failure therefore aborts the write - the
+    // operation must not proceed without its backup, because a write whose undo is unknown is exactly
+    // the case this requirement exists to prevent.
+    const backup = await this.readAppendStructureSnapshot(input.connectionId, objectName)
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation: "UPSERT_APPEND_STRUCTURE_FIELDS",
       objectName,
       expectedVersion: appendVersionToken(input.expectedVersion),
       appendFields: fields
     })
-    return savedAppendStructureFieldsResult(result, objectName, input.connectionId, fields)
+    return savedAppendStructureFieldsResult(result, objectName, input.connectionId, fields, backup)
+  }
+
+  /**
+   * Read the append structure's current field list so that a write can be undone.
+   *
+   * Reuses READ_STRUCTURE rather than a new helper operation, so this needs no SAP-side deployment and
+   * no protocol bump. What is checked here is the content, not the transport: the answer must be an
+   * active APPEND structure with a base table and fully described fields, or the caller is about to
+   * write to something other than the append structure it named - or to restore a structure that would
+   * not come back the same.
+   */
+  private async readAppendStructureSnapshot(
+    connectionId: string,
+    objectName: string
+  ): Promise<AppendStructureBackup> {
+    const raw = await this.readDdicStructure({ objectName, connectionId })
+    const read = JSON.parse(raw) as {
+      objectKind?: string
+      status?: string
+      version?: string | null
+      guardToken?: string | null
+      definition?: {
+        tableClass?: string
+        baseTable?: string
+        fields?: Array<{
+          name?: string
+          dataElement?: string
+          referenceTable?: string
+          referenceField?: string
+        }>
+      }
+    }
+    const definition = read.definition
+    // A successful DDIC read answers with `objectKind` and a `definition`; the absent case answers with
+    // `status: "not-found"` and no definition. Checking the definition rather than a status string is
+    // deliberate: there is no `status: "ok"` on this envelope, so a check for one would refuse every
+    // real read.
+    if (read.objectKind !== "structure" || !definition) {
+      throw new Error(
+        `APPEND_STRUCTURE_BACKUP_FAILED: ${objectName} could not be read as a structure before writing, so the write ` +
+          `was not attempted. A write whose restore request is unknown must not start. The read answered ` +
+          `objectKind ${read.objectKind ?? "none"} with status ${read.status ?? "none"}.`
+      )
+    }
+    const baseTable = String(definition.baseTable ?? "").trim()
+    if (definition.tableClass !== "APPEND" || !baseTable) {
+      throw new Error(
+        `NOT_AN_APPEND_STRUCTURE: ${objectName} is tableClass ${definition.tableClass ?? "unknown"} with base table ` +
+          `"${baseTable}", not an APPEND structure. Refusing to write: DD_TBFD_PUT replaces an object's whole field ` +
+          `row set, so writing anything else here would destroy its definition.`
+      )
+    }
+    // DD_TBFD_PUT keys each row on ROLLNAME, so a field without a data element could not be written back
+    // and the "restore" would quietly produce a different structure. Refuse rather than write.
+    const rows = definition.fields ?? []
+    for (const field of rows) {
+      if (!String(field.name ?? "").trim() || !String(field.dataElement ?? "").trim()) {
+        throw new Error(
+          `APPEND_STRUCTURE_BACKUP_FAILED: ${objectName} reported a field without a name or data element, so a ` +
+            `faithful restore request cannot be built. The write was not attempted.`
+        )
+      }
+    }
+    return {
+      baseTable,
+      tableClass: "APPEND",
+      version: String(read.version ?? ""),
+      guardToken: String(read.guardToken ?? ""),
+      fields: rows.map((field) => ({
+        name: String(field.name).trim(),
+        dataElement: String(field.dataElement).trim(),
+        ...(field.referenceTable && field.referenceField
+          ? {
+              referenceTable: String(field.referenceTable).trim(),
+              referenceField: String(field.referenceField).trim()
+            }
+          : {})
+      }))
+    }
   }
 
   async readDdicDataElement(input: ReadDdicInput): Promise<string> {
@@ -7931,6 +8085,209 @@ export class ToolService {
             `${diagnosticSeverity(item.severity)} Line ${item.line + 1}, Col ${item.offset + 1}: ${item.text}`
         )
         .join("\n")
+    )
+  }
+
+  /**
+   * Format an object's active source and return the text without writing anything back.
+   *
+   * The declared `connectionId` is checked against the URI's host rather than trusted, because the
+   * two travel in one request: a mismatch would otherwise read another system's source under the
+   * connection the caller named. The result is judged here rather than in the backend, so the
+   * "unchanged" answer is a statement about the two texts the caller can also see.
+   */
+  async formatAbapSource(input: FormatSourceInput): Promise<string> {
+    let uri: URL
+    try {
+      uri = new URL(input.fileUri)
+    } catch {
+      throw new Error("Invalid fileUri. Use get_abap_object_workspace_uri to obtain an adt:// URI.")
+    }
+    if (uri.protocol !== "adt:" || !uri.hostname) {
+      throw new Error("Invalid fileUri. Use get_abap_object_workspace_uri to obtain an adt:// URI.")
+    }
+    const connectionId = uri.hostname.toLowerCase()
+    if (input.connectionId.toLowerCase() !== connectionId) {
+      throw new Error(
+        `connectionId ${input.connectionId} does not match the adt:// URI host ${connectionId}. Obtain the URI with get_abap_object_workspace_uri for the connection you mean.`
+      )
+    }
+    const result = await this.backend.formatSource(connectionId, input.fileUri)
+    const originalLineCount = sourceLineCount(result.originalSource)
+    const formattedLineCount = sourceLineCount(result.formattedSource)
+    // Line endings are a storage convention, not a formatting result: SAP stores CRLF while the
+    // formatter answers with the separators it was given, so comparing raw bytes would report a
+    // change for a source that is textually identical. See `sameSourceText`.
+    const changed = !sameSourceText(result.originalSource, result.formattedSource)
+    return JSON.stringify(
+      {
+        connectionId: result.connectionId,
+        fileUri: result.fileUri,
+        sourceUri: result.sourceUri,
+        changed,
+        originalLineCount,
+        formattedLineCount,
+        lineCountDelta: formattedLineCount - originalLineCount,
+        summary: changed
+          ? `The pretty printer returned different text: ${originalLineCount} line(s) in, ${formattedLineCount} line(s) out. Nothing was written back to SAP; apply the formatted source with an explicitly authorised write.`
+          : `The pretty printer returned the source unchanged (${originalLineCount} line(s)); there is nothing to apply. This is not a failure - the source is already in the formatter's output shape.`,
+        formattedSource: result.formattedSource,
+        readOnly: true,
+        wroteToSap: false
+      },
+      null,
+      2
+    )
+  }
+
+  /**
+   * Ask the ADT quick-fix evaluator what could be fixed at one position in an object's source.
+   *
+   * Read-only: the evaluator is given the source and answers with proposals. The second call that
+   * would turn a proposal into text edits is deliberately not made, and neither is the handler URI
+   * each proposal carries - those are the modification, so this tool stops before them and reports
+   * the handler so a caller can see exactly what it chose not to invoke.
+   */
+  async quickFixProposals(input: QuickFixProposalsInput): Promise<string> {
+    let uri: URL
+    try {
+      uri = new URL(input.fileUri)
+    } catch {
+      throw new Error("Invalid fileUri. Use get_abap_object_workspace_uri to obtain an adt:// URI.")
+    }
+    if (uri.protocol !== "adt:" || !uri.hostname) {
+      throw new Error("Invalid fileUri. Use get_abap_object_workspace_uri to obtain an adt:// URI.")
+    }
+    const connectionId = uri.hostname.toLowerCase()
+    // The same agreement rule as the formatter beside it: the caller names a connection and the URI
+    // names a host, and silently reading one system's source under the other's name is the failure
+    // this refuses. Checked before any SAP access.
+    if (input.connectionId.toLowerCase() !== connectionId) {
+      throw new Error(
+        `connectionId ${input.connectionId} does not match the adt:// URI host ${connectionId}. Obtain the URI with get_abap_object_workspace_uri for this connection.`
+      )
+    }
+    if (!Number.isInteger(input.line) || input.line < 1) {
+      throw new Error("line must be a positive integer: ADT addresses a position as line,column.")
+    }
+    if (!Number.isInteger(input.column) || input.column < 0) {
+      throw new Error(
+        "column must be a non-negative integer: ADT addresses a position as line,column."
+      )
+    }
+    const result = await this.backend.quickFixProposals(
+      connectionId,
+      input.fileUri,
+      input.line,
+      input.column
+    )
+    return JSON.stringify(
+      {
+        connectionId: result.connectionId,
+        fileUri: result.fileUri,
+        sourceUri: result.sourceUri,
+        line: result.line,
+        column: result.column,
+        proposalCount: result.proposalCount,
+        proposals: result.proposals,
+        summary:
+          result.proposalCount === 0
+            ? `The quick-fix evaluator returned no proposal for line ${result.line}, column ${result.column}. ` +
+              "That is a definite answer for this position, not a failure and not a missing endpoint: " +
+              "a target without the evaluator would have raised unsupported-endpoint instead."
+            : `The quick-fix evaluator returned ${result.proposalCount} proposal(s) for line ${result.line}, ` +
+              `column ${result.column}. Nothing was applied: each proposal's handlerUri is reported so a ` +
+              "caller can see what invoking it would touch, and applying one is a separate, explicitly " +
+              "authorised write that this tool does not perform.",
+        readOnly: true,
+        wroteToSap: false
+      },
+      null,
+      2
+    )
+  }
+
+  /**
+   * Evaluate a refactoring over a source range and report what it would change.
+   *
+   * Read-only: this asks the `evaluate` step what a rename or an extract-method WOULD touch and
+   * returns that plan. The `preview` and `execute` steps - the ones that assign a transport and
+   * rewrite the affected objects - are deliberately not made, so no parameter turns this into a
+   * change. The affected objects and their text deltas are reported verbatim, because a caller
+   * deciding whether to refactor needs to see exactly which other objects would move.
+   */
+  async evaluateRefactoring(input: EvaluateRefactoringInput): Promise<string> {
+    let uri: URL
+    try {
+      uri = new URL(input.fileUri)
+    } catch {
+      throw new Error("Invalid fileUri. Use get_abap_object_workspace_uri to obtain an adt:// URI.")
+    }
+    if (uri.protocol !== "adt:" || !uri.hostname) {
+      throw new Error("Invalid fileUri. Use get_abap_object_workspace_uri to obtain an adt:// URI.")
+    }
+    const connectionId = uri.hostname.toLowerCase()
+    if (input.connectionId.toLowerCase() !== connectionId) {
+      throw new Error(
+        `connectionId ${input.connectionId} does not match the adt:// URI host ${connectionId}. Obtain the URI with get_abap_object_workspace_uri for this connection.`
+      )
+    }
+    // The same addressability rules as the quick-fix query beside it. Refusing locally keeps a
+    // nonsense range from being sent and, more importantly, keeps an empty answer from meaning
+    // "we asked wrongly".
+    for (const [name, value, minimum] of [
+      ["startLine", input.startLine, 1],
+      ["startColumn", input.startColumn, 0],
+      ["endLine", input.endLine, 1],
+      ["endColumn", input.endColumn, 0]
+    ] as const) {
+      if (!Number.isInteger(value) || value < minimum) {
+        throw new Error(
+          `${name} must be an integer >= ${minimum}: ADT addresses a range as line,column pairs.`
+        )
+      }
+    }
+    if (input.endLine < input.startLine) {
+      throw new Error("endLine must not precede startLine.")
+    }
+    if (input.endLine === input.startLine && input.endColumn < input.startColumn) {
+      throw new Error("on a single line, endColumn must not precede startColumn.")
+    }
+    const result = await this.backend.evaluateRefactoring(connectionId, input.fileUri, input.kind, {
+      startLine: input.startLine,
+      startColumn: input.startColumn,
+      endLine: input.endLine,
+      endColumn: input.endColumn
+    })
+    const totalDeltas = result.affectedObjects.reduce((sum, object) => sum + object.deltaCount, 0)
+    return JSON.stringify(
+      {
+        connectionId: result.connectionId,
+        fileUri: result.fileUri,
+        kind: result.kind,
+        range: result.range,
+        oldName: result.oldName,
+        title: result.title,
+        userContent: result.userContent,
+        affectedObjectCount: result.affectedObjectCount,
+        totalDeltaCount: totalDeltas,
+        affectedObjects: result.affectedObjects,
+        summary:
+          result.affectedObjectCount === 0
+            ? `The ${result.kind} evaluation reported no affected object for ` +
+              `line ${result.range.start.line}, column ${result.range.start.column}. That is a definite ` +
+              "answer for this position, not a failure and not a missing endpoint: a target without the " +
+              "refactoring resource would have raised unsupported-endpoint instead. A refactoring that " +
+              "touches nothing is usually a position that does not hold a refactorable identifier."
+            : `The ${result.kind} evaluation would affect ${result.affectedObjectCount} object(s) with ` +
+              `${totalDeltas} text replacement(s) in total. NOTHING was changed: this is the evaluate ` +
+              "step only, and applying a refactoring needs the preview and execute steps, which this " +
+              "tool does not perform because they rewrite objects and require a transport.",
+        readOnly: true,
+        wroteToSap: false
+      },
+      null,
+      2
     )
   }
 
@@ -11960,6 +12317,16 @@ function parseWorkspaceUri(fileUri: string): URL {
   return uri
 }
 
+/**
+ * Line count of a source text, tolerating both line-ending conventions.
+ *
+ * Empty text is zero lines, not one: a blank source has no line to report, and the same rule is used
+ * for the replaced-string counts in the write receipts.
+ */
+function sourceLineCount(value: string): number {
+  return value.length ? value.split(/\r?\n/).length : 0
+}
+
 function formatActivationNotices(messages: ActivationMessageInfo[]): string {
   const notices = messages.filter((message) => message.text)
   if (!notices.length) return ""
@@ -12366,12 +12733,20 @@ function savedAppendStructureFieldsResult(
   result: SapDdicResult,
   objectName: string,
   connectionId: string,
-  fields: SapStructureRow[]
+  fields: SapStructureRow[],
+  backup: AppendStructureBackup
 ): string {
   requireDdicSuccess(result)
   const baseTable = String(result.metadata.BASE_TABLE ?? "").trim()
   if (!baseTable) {
     throw new Error("SAP DDIC verification did not return the append structure base table")
+  }
+  if (baseTable !== backup.baseTable) {
+    // The pre-write read and the post-write verification named different base tables, so one of them
+    // described another object. Reporting the write as success would hide that.
+    throw new Error(
+      `SAP DDIC verification returned base table ${baseTable} but the pre-write read reported ${backup.baseTable}`
+    )
   }
   const fieldCount = numberValue(result.metadata.FIELD_COUNT)
   if (fieldCount !== fields.length) {
@@ -12388,7 +12763,29 @@ function savedAppendStructureFieldsResult(
       changed: result.metadata.CHANGED === "X",
       fieldCount,
       baseFieldCount: numberValue(result.metadata.BASE_FIELD_COUNT),
-      fields: fields.map((field) => field.FIELDNAME ?? "")
+      fields: fields.map((field) => field.FIELDNAME ?? ""),
+      // The rollback half. `COMPENSATED` in the helper's own reply only says whether its internal
+      // restore worked; this is what lets the caller undo the write itself, so it ships with every
+      // answer rather than only on failure.
+      backup: {
+        takenAt: "before-write",
+        version: backup.version,
+        guardToken: backup.guardToken,
+        baseTable: backup.baseTable,
+        fieldCount: backup.fields.length,
+        fields: backup.fields
+      },
+      rollback: {
+        tool: "upsert_append_structure_fields",
+        note:
+          "To undo this write, call upsert_append_structure_fields again with objectName, the backup.fields " +
+          "array verbatim as `fields`, and backup.version as `expectedVersion` (or backup.guardToken, which " +
+          "detects a lost update that the 14-digit version cannot). A field can never be REMOVED through " +
+          "this tool - APPEND_FIELD_REMOVAL_NOT_SUPPORTED is refused before any write, because deleting an " +
+          "append field row does not propagate to the base table on this system - so restoring a shorter " +
+          "field list is not a supported way back: the backup exists to restore a previous COMPLETE field " +
+          "set over a longer one, which the helper does support."
+      }
     },
     null,
     2
@@ -13755,6 +14152,16 @@ function functionModuleDefinition(input: CreateFunctionModuleInput): FunctionMod
   if (input.tableParameters.some((value) => value.passByValue)) {
     throw new Error("table parameters cannot be passed by value")
   }
+  // SAP's SE37 does not offer an OPTIONAL flag on EXPORTING parameters, so a request of
+  // optional=true there is not representable and the save normalises it to false. Accepting it
+  // and only noticing in the post-write comparison turned a well-formed request into a reported
+  // failure after the function module had already been created, which is how this was found
+  // (see .doc/code-update-20261002-094000.md). Refuse it before SAP is touched.
+  if (input.exportParameters.some((value) => value.optional)) {
+    throw new Error(
+      "export parameters cannot be optional: SAP has no OPTIONAL flag on EXPORTING parameters"
+    )
+  }
   const exceptions = input.exceptions.map((value) => {
     const name = functionComponentName(value.name, "exception")
     if (names.has(name)) throw new Error(`Duplicate function interface name: ${name}`)
@@ -13994,9 +14401,17 @@ function functionDefinitionFromResult(
  *
  * Describes the payload shape the helper's `PATCH_FUNCTION_INTERFACE` guard parses: it rebuilds the
  * whole interface from the payload rows and compares it against its own `RPY_FUNCTIONMODULE_READ`
- * read of the active function module. NOTE: that guard validates and documents the interface; on
- * SAP_BASIS 7.31 the branch has no interface-parameter write path (see patchFunctionModuleInterface),
- * so these rows describe the *expected* snapshot, not a write that this platform performs.
+ * read of the active function module. From helper protocol 2.28 that same branch writes the
+ * interface through SAP's own create API, `RPY_FUNCTIONMODULE_INSERT`, which receives the six
+ * parameter tables, the attributes and the implementation body and writes the parameter tables, the
+ * TFDIR binding and the include in one operation, so these rows are both the expected snapshot the
+ * pre-write guard compares and the parameter set that call receives. It never enters
+ * `fu_save_function`, which is what made the earlier routes destructive - that FORM deletes the
+ * implementation include and rebuilds only a bare frame. 2.27 and 2.25 called
+ * `fu_save_function_ext`, which necessarily ends in that FORM, 2.26 called only the interface
+ * routines and left the interface untouched because they read module-pool globals that only
+ * `fu_save_function_ext` fills, and 2.24 handed the tables to the wrapper `FUNCTION_SAVE`, which
+ * declares `P_RS38L` and never uses it.
  * Its own emitter writes a fixed property set per direction, and the comparison
  * runs over the complete `RSIMP`/`RSEXP`/`RSCHA`/`RSTBL` row, so a property the payload never
  * mentions keeps whatever value the surrounding row carries. Passing the repository read back
@@ -14006,9 +14421,14 @@ function functionDefinitionFromResult(
  * deterministic: every direction emits exactly the properties the helper's own emitter writes,
  * in the same order, so a property cannot silently disappear with the shape of one read.
  *
- * `OPTIONAL` is skipped for `E` because `RSEXP` has no such component and `LIKEFIELD`(DBFIELD),
- * `TYPES`, `CLASS`, `REF_CLASS`, `LINE_OF` and `TABLE_OF` carry no value through this interface,
- * so both sides leave them initial. `TEXT` is emitted only where the helper's own emitter writes
+ * `OPTIONAL` is skipped for `E` because `RSEXP` has no such component. `DBFIELD` (`DBSTRUCT` for
+ * `T`) is not derived from the parsed interface - that interface folds the LIKE reference into
+ * `typeName` - so it is taken from the read payload's own row by `functionSnapshotFields`. The
+ * helper's live emitter writes that row from the same interface, so a LIKE-typed parameter cannot
+ * make the pre-write guard mismatch; the two sides can only differ when the interface really
+ * changed, which is the staleness the guard exists to catch. The other LIKEFIELD-family properties
+ * (`TYPES`, `CLASS`, `REF_CLASS`, `LINE_OF`, `TABLE_OF`) are outside the canonical property set
+ * below and are therefore never sent. `TEXT` is emitted only where the helper's own emitter writes
  * it: from the parameter documentation, i.e. never for an empty description.
  */
 const functionSnapshotProperties: Record<
@@ -14127,6 +14547,17 @@ function patchFunctionModuleDefinition(
     export: result.exportParameters,
     changing: result.changingParameters,
     table: result.tableParameters
+  }
+  // Same rule as the create path in functionModuleDefinition: SAP's SE37 has no OPTIONAL flag on
+  // EXPORTING parameters, so asking for one is not representable. Caught here, before SAP is
+  // touched, rather than in the post-save comparison.
+  for (const operation of parameterOperations) {
+    if (operation.operation !== "add" && operation.operation !== "update") continue
+    if (operation.direction === "export" && operation.optional) {
+      throw new Error(
+        "export parameters cannot be optional: SAP has no OPTIONAL flag on EXPORTING parameters"
+      )
+    }
   }
   for (const operation of parameterOperations) {
     const parameters = rows[operation.direction]

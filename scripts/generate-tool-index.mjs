@@ -172,6 +172,7 @@ const index = {
     route: entry.route,
     sapHelper: entry.sapHelper,
     minHelperProtocol: entry.minHelperProtocol,
+    ...(entry.withheldReason ? { withheldReason: entry.withheldReason } : {}),
     ...(entry.note ? { note: entry.note } : {})
   }))
 }
@@ -203,6 +204,18 @@ for (const [group, count] of [...groupCounts.entries()].sort(([a], [b]) => a.loc
   lines.push(`| 分组: ${group} | ${count} |`)
 }
 lines.push("")
+// G1-7: a tool withheld because the platform does not offer its endpoint must be visible as such.
+// Without this section the only trace of it would be an empty profile column, which reads as an
+// oversight rather than as a measured boundary.
+const withheld = sorted.filter((entry) => entry.withheldReason)
+if (withheld.length > 0) {
+  lines.push("## 平台边界：默认隐藏的工具")
+  lines.push("")
+  lines.push("| 工具 | 原因 |")
+  lines.push("| --- | --- |")
+  for (const entry of withheld) lines.push(`| \`${entry.name}\` | ${entry.withheldReason} |`)
+  lines.push("")
+}
 lines.push("## 工具清单")
 lines.push("")
 lines.push("| 工具 | 分组 | profile | 风险 | 路由 | SAP 助手（最低协议） |")

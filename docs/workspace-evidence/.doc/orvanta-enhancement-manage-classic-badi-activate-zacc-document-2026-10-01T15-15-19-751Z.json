@@ -1,0 +1,21 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": false,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "manage_classic_badi_implementation",
+  "arguments": {
+    "connectionId": "w200",
+    "action": "activate",
+    "implementationName": "ZACC_DOCUMENT",
+    "definitionName": "ACC_DOCUMENT",
+    "packageName": "ZOA",
+    "transportNumber": "GR2K923484",
+    "expectedFingerprint": "9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0",
+    "confirmation": "CLASSIC_BADI_IMPLEMENTATION_CHANGE"
+  },
+  "startedAt": "2026-10-01T15:15:19.802Z",
+  "finishedAt": "2026-10-01T15:15:20.538Z",
+  "isError": true,
+  "transportFailure": null,
+  "responseText": "Error invoking manage_classic_badi_implementation: Error: SAP repository helper rejected the operation: CLASSIC_BADI_INPUT_INVALID: Customer implementation and action required\n\nOperation Receipt\n{\n  \"operationId\": \"edf0803b-ba2e-4dfe-94dd-fad8f6c6dae0\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"manage_classic_badi_implementation\",\n  \"operationIdHash\": \"7d861d9112b6a601237e6a102ee2388f8c86d99d7d137389f9763be94b885172\",\n  \"targetKeyHash\": \"3595c02309c48db4bba461498e9f30a53cada1ea3efed57666c34e124a728118\",\n  \"inputHash\": \"8c03c4b62adf8c11ed690476632dccf97bad30b68a030fddb2396fe0c5f8a4b3\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"Classic BAdI implementation ZACC_DOCUMENT\\\",\\\"requestedOperation\\\":\\\"manage_classic_badi_implementation\\\",\\\"concurrencyGuard\\\":\\\"fingerprint 9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0\\\",\\\"transportNumber\\\":\\\"GR2K923484\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-01T15:15:20.405Z\",\n    \"target\": \"Classic BAdI implementation ZACC_DOCUMENT\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0\",\n    \"packageName\": \"ZOA\",\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_classic_badi_definition\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"a66c5e1268c7bd0e6e6b4353d368b0890cec7a3f433e86bc02a76ab10253341f\",\n  \"startedAt\": \"2026-10-01T15:15:20.271Z\",\n  \"finishedAt\": \"2026-10-01T15:15:20.528Z\",\n  \"durationMs\": 254,\n  \"receiptHash\": \"736903ca749d35cf8da64f6f4d0940f31ba030f1648d8f398a8279d29054f502\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back Classic BAdI implementation ZACC_DOCUMENT from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+}

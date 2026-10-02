@@ -1,19 +1,19 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T00:22:45+08:00",
-  "notes": "2026-10-01 (development batch R1): the four failed entries were re-attempted against w200 after the opcode renames, and every one of the four old root causes (opcode longer than the helper's operation field) is now refuted by the live helpers' own self-descriptions. read_enhancement_implementation passed a real call and is verified. The other three stay short of verified for three NEW and different reasons, each recorded in its own entry: manage_classic_badi_implementation is undeliverable because IV_OBJECT_TYPE is TADIR-OBJECT (CHAR 4) while the service passes CREATE/ACTIVATE/DEACTIVATE/DELETE through it; resume_ddic_table_activation reaches its arm but the activation does not take effect (rc=8, object still inactive, and $TMP is refused outright by the helper); delete_enhancement_implementation could not exercise its success path because the throwaway object's creation dumped with RABAX_STATE, and it is recorded as unverified rather than failed because nothing about this tool was observed failing. See .doc/code-update-20261001-232000.md, .doc/code-update-20261001-235500.md, .doc/code-update-20261002-000321.md and .doc/code-update-20261002-002245.md.",
+  "updatedAt": "2026-10-02T19:05:00+08:00",
+  "notes": "2026-10-02 (development batch R2): the development-side evidence backfill. 50 tools that already had a real recorded live acceptance in this workspace were entered as `verified`, each citing a record that was opened and whose quoted values were read out of it, and each path checked to exist on disk and to name its own tool. The candidate list offered 57 and 7 were refused on the design's own rule that `verified` means a call that SUCCEEDED: upsert_lock_object (ten receipts, all failed), create_smartform (SMARTFORM_STORE_FAILED), create_enhancement_hook_implementation (HTTP 500 RABAX_STATE), append_ddic_transparent_table_fields, preview_source_changes (blocked, 404), get_version_history (object not found) and abap_debug_status (whose only artifact is a repo-side acceptance-harness log rather than a tool reply, and whose endpoint the capability report measures as platform_unsupported). format_abap_source was added in the same batch as the D-9 formatter, unverified because it has not been called yet. The tools that remain unverified are listed, grouped and with their acceptance steps, in .doc/orvanta-mcp-development-pending-acceptance-20261002.md. See .doc/code-update-20261002-183312.md. 2026-10-02 (R3/D-9): format_abap_source passed a real read-only call against w200 and moved to verified; the formatted output differed from the input, which is what distinguishes a formatter run from an echo. 2026-10-02 (R3/B7-4, read half): read_ddic_table_conversion_status passed a real read-only call against w200 and moved to verified; the entry records that entryCount 0 cannot distinguish 'no pending conversion' from 'no such table', which is why it is documented rather than fixed.",
   "entries": [
     {
       "tool": "abap_activate",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 program ZORVANTA_MCP_DDIC_LOCK_DEPLOY (activation only; no source change)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-22T07:41:21Z",
+      "evidence": ".cache/runtime-regression/r11-activate-receipt.txt",
+      "notes": "status \"completed\" and \"Activation successful for adt://w200/sap/bc/adt/programs/programs/zorvanta_mcp_ddic_lock_deploy\". Not proven: activation of any object other than this one. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "abap_debug_breakpoint",
@@ -91,37 +91,37 @@
       "tool": "abap_download",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 ABAP objects exported to local files (ZPMC_TP_API among 25 files); the write is to the local filesystem, not to SAP",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-26T09:15:00+08:00",
+      "evidence": ".logs/mcp-incident-20260926-091500-007-abap-download-overwrite.md",
+      "notes": "\"Downloaded ZPMC_TP_API ... Files: 25, Folders: 3, Skipped: 0, Failed: 0\". Not proven: the overwrite path described in that same incident record, and any object other than the exported set. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "activate_smartform",
       "helper": "Z_ORVANTA_SMARTFORM_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 Smart Form ZORVANTA_SF_TEST (package ZABAP)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-14T05:49:27Z",
+      "evidence": ".doc/sf-final-activate-20260914.json",
+      "notes": "version \"active\", active true, inactive false, fingerprint 12e4a364667cc917a4fec5a7dbd91ef4a7510858389f2fd3bb14914ea5bf273a. Not proven: activation failure paths and other form names. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "adt_discovery_export",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 ADT discovery tree exported to local markdown files",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-02T10:36:03Z",
+      "evidence": ".doc/orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json",
+      "notes": "isError false; \"Files created: README.md ... workspaces.md - All 21 discovery workspaces with 39 collections and 0 template links\". Not proven: any assertion about collections the target does not advertise. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "analyze_abap_dumps",
@@ -235,13 +235,13 @@
       "tool": "create_ddic_transparent_table",
       "helper": "Z_ORVANTA_MCP_DDIC_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 DDIC transparent table ZORV_MCP_T01 (package ZABAP)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (CREATE_TRANSPARENT_TABLE), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-22T07:46:14Z",
+      "evidence": ".cache/runtime-regression/24-create-table-retry.out.json",
+      "notes": "status \"DDIC_OBJECT_SAVED\", objectName ZORV_MCP_T01, fingerprint 5486d2b9f97b24806d78358ea9b86ac88b1641a6c0cf71c1af39b2a6ff6c8499. Not proven: creation with another delivery class or field shape. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "create_enhancement_hook_implementation",
@@ -259,13 +259,13 @@
       "tool": "create_function_module_with_interface",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 function module ZCMCP_FM_0350 in function group ZCMCP_FG_0350 (transport GR2K923421)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-07T03:15:13Z",
+      "evidence": ".doc/m2-daily-development-20260907-111512.json",
+      "notes": "functionName ZCMCP_FM_0350, remoteEnabled true, import parameter IV_INPUT typed CHAR20. Not proven: interface shapes other than a single CHAR20 import. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "create_module_pool",
@@ -295,13 +295,13 @@
       "tool": "create_object_programmatically",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 function group ZCMCP_FG_0350 (transport GR2K923421)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-07T03:15:12Z",
+      "evidence": ".doc/m2-daily-development-20260907-111512.json",
+      "notes": "\"Name: ZCMCP_FG_0350 ... Transport: GR2K923421 ... Status: created and activated\". Not proven: object types other than the one created. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "create_report_transaction",
@@ -439,25 +439,25 @@
       "tool": "delete_abap_source_object",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 function module ZCMCP_FM_0350 in ZCMCP_FG_0350",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-07T02:53:44Z",
+      "evidence": ".doc/m1-function-interface-20260907-105329.json",
+      "notes": "status \"completed\", sapInvocationStarted true, target \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\". Not proven: refusal paths for a protected or still-used object. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "delete_ddic_object",
       "helper": "Z_ORVANTA_MCP_DDIC_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 DDIC transparent table ZORV_MCP_T01 (package ZABAP)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (DELETE_DOMAIN, DELETE_DATA_ELEMENT, DELETE_STRUCTURE, DELETE_TRANSPARENT_TABLE, DELETE_TABLE_TYPE, DELETE_SEARCH_HELP, DELETE_LOCK_OBJECT, DELETE_NUMBER_RANGE_OBJECT), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-22T07:44:10Z",
+      "evidence": ".cache/runtime-regression/21-delete-table.out.json",
+      "notes": "status \"DDIC_OBJECT_DELETED\", absenceVerified true, objectName ZORV_MCP_T01. Not proven: deletion of an object whose absence cannot be read back. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "delete_enhancement_implementation",
@@ -467,9 +467,9 @@
       "method": "controlled-write",
       "status": "unverified",
       "failureBasis": null,
-      "lastAttemptAt": "2026-10-01T23:17:22+08:00",
-      "evidence": ".doc/orvanta-enhancement-delete-rejection-path-2026-10-01T15-17-22-402Z.json",
-      "notes": "The old 'never dispatched because the 33-character opcode exceeded RS38L-NAME' basis is refuted: the opcode is now DELETE_ENHANCEMENT_IMPL (23) and the live helper Z_ORVANTA_MCP_DYNPRO_API self-describes it (protocol 1.1..2.21, sourceHash ddb2cce9472699c65b4f22b138b220aae304fc0ae82fb5b5ce3fc2ae4dbdf293). What a real call did at 23:17:22 +08:00 on 2026-10-01: passing a zeroed 64-hex expectedFingerprint for ZABAPFILESYSTEM_HTTP_STATUS was refused with ENHANCEMENT_IMPLEMENTATION_STALE_FINGERPRINT and the receipt records sapInvocationStarted=false, outcomeMayBeUnknown=false - the guard held and nothing was written. The success path is therefore still unexercised, and it could not be exercised this round: the throwaway ENHO that would have been created for it (ZORVANTA_R1_DELPROBE, package ZABAP, transport GR2K923484) never came into existence because create_enhancement_hook_implementation aborted with 'SAP SOAP request returned HTTP 500: ERROR: Screen output without connection to user. (termination: RABAX_STATE)' (.doc/orvanta-enhancement-create-delprobe-enho-2026-10-01T15-16-50-707Z.json), and the read-back afterwards answered ENHANCEMENT_IMPLEMENTATION_NOT_FOUND (.doc/orvanta-enhancement-readback-delprobe-after-create-dump-2026-10-01T15-16-58-860Z.json), so no residue exists. This entry is NOT failed: nothing about this tool was observed failing. It is unverified because DELETE_ENHANCEMENT_IMPL has not yet been seen to delete anything."
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "The old 'never dispatched because the 33-character opcode exceeded RS38L-NAME' basis is refuted: the opcode is now DELETE_ENHANCEMENT_IMPL (23) and the live helper Z_ORVANTA_MCP_DYNPRO_API self-describes it (protocol 1.1..2.21, sourceHash ddb2cce9472699c65b4f22b138b220aae304fc0ae82fb5b5ce3fc2ae4dbdf293). What a real call did at 23:17:22 +08:00 on 2026-10-01: passing a zeroed 64-hex expectedFingerprint for ZABAPFILESYSTEM_HTTP_STATUS was refused with ENHANCEMENT_IMPLEMENTATION_STALE_FINGERPRINT and the receipt records sapInvocationStarted=false, outcomeMayBeUnknown=false - the guard held and nothing was written. The success path is therefore still unexercised, and it could not be exercised this round: the throwaway ENHO that would have been created for it (ZORVANTA_R1_DELPROBE, package ZABAP, transport GR2K923484) never came into existence because create_enhancement_hook_implementation aborted with 'SAP SOAP request returned HTTP 500: ERROR: Screen output without connection to user. (termination: RABAX_STATE)' (.doc/orvanta-enhancement-create-delprobe-enho-2026-10-01T15-16-50-707Z.json), and the read-back afterwards answered ENHANCEMENT_IMPLEMENTATION_NOT_FOUND (.doc/orvanta-enhancement-readback-delprobe-after-create-dump-2026-10-01T15-16-58-860Z.json), so no residue exists. This entry is NOT failed: nothing about this tool was observed failing. It is unverified because DELETE_ENHANCEMENT_IMPL has not yet been seen to delete anything. Registry-convention note (2026-10-02): `lastAttemptAt` and `evidence` were cleared to null because test/verification-registry.test.ts:100-108 requires every `unverified` entry to claim neither, and an entry that keeps them fails the gate. The observation they carried is not lost - it is the 23:17:22 +08:00 refusal recorded above, with its own record at .doc/orvanta-enhancement-delete-rejection-path-2026-10-01T15-17-22-402Z.json. RULED 2026-10-02: the registry follows the guard as written. A call refused before SAP was invoked observed nothing about whether the tool can succeed, so it may not borrow a timestamp; the observation itself is preserved verbatim in this note and its record path is named below, which is what keeps the evidence from being lost."
     },
     {
       "tool": "delete_module_pool",
@@ -532,6 +532,42 @@
       "notes": "Real calls recorded on 0.50.15 against w200. The platform does not serve the native ADT preview endpoint (the known empty-HTML answer), so every call ran the finite fallback dialect over RFC_READ_TABLE: SELECT * FROM ZTPMC_BZWL returned data with querySource.method=rfc_read_table, nativeCode=SAP_DATA_QUERY_RESPONSE_INVALID and six real field definitions; SELECT COUNT(*) returned the exact aggregate {COUNT: 70} with aggregateColumns [{expression: 'COUNT(*)', column: 'COUNT'}]; SELECT WERKS, COUNT(*) ... GROUP BY WERKS returned two groups, {WERKS: 8020, COUNT: 3} and {WERKS: 809P, COUNT: 67}, whose sum matches the ungrouped count; and the same COUNT(*) with maxRows=50 was refused with TABLE_QUERY_AGGREGATE_INCOMPLETE rather than reporting a count of the sample, which is the exact-or-refuse contract observed rather than asserted. Two limits found by the same session and recorded in the evidence file: the dialect path is only reached when maxRows <= 500 (src/tools.ts throws the platform's own error above that, and the tool description does not state the cap), and read_ddic_structure rejects tables with OBJECT_TYPE_MISMATCH, so a table's field list has to come from read_abap_table or from the query's own fieldMetadata. What this does not prove: the native preview path stays unavailable on this release, and only one allowlisted table (the customer scope table) was exercised, so the dialect is verified against that table's types, not against every allowlisted type. 2026-09-30 (query family, slices 1-4): the four fallback-dialect capabilities added after that first session were read on w200 through the same allowlisted path, by read-only probes that only read (T000, T001, T006, TBTCO and the client's own tables): projection arithmetic .cache/r29-verify.mjs 6/6 (old-build baseline 1/6), WHERE arithmetic term .cache/r31-verify.mjs 5/5 (0/5), joined projection term .cache/r33-verify.mjs 5/5 (1/5), and the IN (SELECT ...) set test .cache/r35-verify.mjs 6/6 (0/6) - 22/22 in total, outputs in .cache/r29|r31|r33|r35-verify.json, dispositions in .doc/code-update-20260930-193631.md. An earlier run of the same four scripts reported 16/22; all six failures were acceptance-harness defects rather than service defects (one self-contradictory assertion, one sample value that is legitimately an exact decimal, and four cases where the probe's outer row bound was below the table's real row count so the set test was refused by design), diagnosed in .doc/code-update-20260930-192647.md with probe output .cache/r36-probe.json. 2026-09-30 (query family, slice 5): the scalar-subquery slice built the same day was then read on w200 as well, after the user restarted 127.0.0.1:4849 onto the build that carries it: .cache/r38-verify.mjs holds 13 assertions and all 13 pass (output .cache/r38-verify.json), so all five declared capabilities of this family now have a real-machine reading (22/22 for slices 1-4, 13/13 for slice 5, 35/35 in total). The reading settled two facts the contract now states: querySource.whereScalars reports valueColumn null when the inner statement is an aggregate (an aggregate answers a value without naming a column) and names the column when it is a single plain column; and a whole-row read of T006 - what an unfiltered aggregate over that table performs - is refused by the decode guard with SAP_TABLE_QUERY_FAILED: TABLE_QUERY_NUMERIC_OVERFLOW (stage=rfc_query), so the script's inner statements project one column or filter to a small match set rather than reading the table whole. A read-only follow-up of that refusal (.cache/r39-probe1|3|4|6|7.mjs, 2026-09-30) settled its cause as the data and the field's text width rather than a guard drawn too narrow: 274 of that table's 276 rows decode (273 carrying ADDKO 0.000000 and one 9.000000, every text 8 characters) and exactly two do not - MSEHI GC and FA, the two rows whose DIMID is TEMP, whose ZAEHL/NENNR are 1/1 and 5/9 and whose EXP10, EXPON, DECAN and TEMP_VALUE are all zero, so the additive conversion constant they carry can only live in ADDKO. ADDKO is DEC 9/6 and the reader's own field metadata gives it a 9-character text box, while the Celsius and Fahrenheit constants those rows carry need ten characters, so the refused text cannot be a plain decimal; the guard accepts every digit-led decimal of that width (the 274 rows read back prove it), so a silently truncated decimal would have been published rather than refused. The refusal is therefore correct, by name and not a misread, and it is why this boundary is stated rather than a guard widened; the raw text of those two fields is not observable through this service, because any statement that projects ADDKO and covers them is refused before any output, so the asterisk fill or the unrecognised form behind the refusal is not settled by these readings and the decision does not depend on it, because the width argument already shows that the value those two rows carry cannot be printed in that field's box at all; the raw text of those two fields is not observable through this service, because any statement that projects ADDKO and covers them is refused before any output, so a human SE16N read of T006 GC/FA is the one reading that would close that detail. What this does not prove: every reading above covers the tables named (T000, T001, T006, TBTCO and the client's own tables), not every allowlisted type."
     },
     {
+      "tool": "format_abap_source",
+      "helper": null,
+      "availabilityBasis": "native-adt",
+      "verificationTarget": null,
+      "method": "read-only",
+      "status": "verified",
+      "failureBasis": null,
+      "lastAttemptAt": "2026-10-02T19:20:57+08:00",
+      "evidence": ".doc/orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json",
+      "notes": "A real read-only call at 19:20:57 +08:00 on 2026-10-02 formatted the active source of w200 class CL_SATC_ADT_RES_APP through the native ADT pretty-printer resource. Observed values from that reply: sourceUri \"/sap/bc/adt/oo/classes/cl_satc_adt_res_app/source/main\", changed true, originalLineCount 53, formattedLineCount 63, lineCountDelta 10, readOnly true and wroteToSap false - the component declared no write path and the reply itself states that nothing was written back. The formatted text is real formatter output, not the input echoed back: it expands the chained METHODS declaration into separate lines and re-wraps the IF condition onto a continuation line, which the 53-line input does not contain. The request contract was taken from this workspace's own ADT client dependency (abap-adt-api 8.4.3, prettyPrinter in build/api/syntax.js: POST /sap/bc/adt/abapsource/prettyprinter, Content-Type and Accept text/plain, body = source) rather than inferred. An earlier call in the same session against a non-source URI (adt://w200/sap/bc/adt/structures/zcekko/source/main) returned 0 lines in and 1 blank line out; that is the formatter answering for a resource that carries no ABAP source, and it is recorded here so the reading is not mistaken for a formatting result. Not proven: the endpoint-missing path (404/405/501 -> unsupported-endpoint) was never reached on this target because w200 does advertise the resource, and no object other than this one was formatted."
+    },
+    {
+      "tool": "get_quick_fix_proposals",
+      "helper": null,
+      "availabilityBasis": "native-adt",
+      "verificationTarget": null,
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "No real call has been recorded yet. The quick-fix half of D-9, and deliberately only its read-only half: it reads an object's active source by URI and POSTs that text to the ADT quick-fix evaluator (/sap/bc/adt/quickfixes/evaluation, with the position as `uri#start=line,column`), returning the proposals SAP offers at that spot. Applying a proposal is NOT part of this tool - the edit-producing call is not made and the handler URI each proposal carries is returned rather than followed, so there is no lock, save, activate or transport on this path. An empty proposal list is reported as a definite answer for that position, and a target without the evaluator fails with a named endpoint status rather than an empty list. PROVENANCE: the request contract was taken from this workspace's own ADT client dependency, abap-adt-api 8.4.3 - refactor.ts fixProposals (POST /sap/bc/adt/quickfixes/evaluation, Content-Type and Accept application/*, body = the source text) and its AdtClient wrapper fixProposals(url, source, line, column), whose own test calls it as c.fixProposals(include, source, 4, 10) in src/test/main.test.ts. It was not inferred. On w200 the resource is advertised by ADT discovery under the 'Quickfixes' collection. NOT YET DONE: no live call has been made, so nothing is claimed about what the evaluator returns for any position, and the endpoint-missing path has never been reached on this target. Refactoring (rename, extract-method, change-package) is a separate resource with its own write semantics and is not covered by this entry."
+    },
+    {
+      "tool": "evaluate_refactoring",
+      "helper": null,
+      "availabilityBasis": "native-adt",
+      "verificationTarget": null,
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "No real call has been recorded yet. The refactoring half of D-9, and only its read-only evaluate step: it asks the ADT refactoring service what a rename or an extract-method WOULD change over a source range (POST /sap/bc/adt/refactorings with the relation as `rel`, the range as `uri=<source>#start=l,c;end=l,c`, step=evaluate, and NO body) and returns the affected objects with the text replacements each would receive. The preview and execute steps are NOT called: those assign a transport and rewrite other objects, so they are the write half and are not part of this tool. Nothing is locked, saved, activated or transported. affectedObjectCount 0 is reported as a definite answer for that range, and a target without the resource fails with a named endpoint status rather than an empty list. PROVENANCE: the request contract was taken from this workspace's own ADT client dependency, abap-adt-api 8.4.3 - refactor.ts renameEvaluate(h, uri, line, startColumn, endColumn) and extractMethodEvaluate(h, uri, range), with rangeToString producing `#start=l,c;end=l,c`; the library's own tests call both. It was not inferred. Upstream gates only `renameExecute` behind a write permission and restores the source afterwards (src/test/disruptive.test.ts, \"rename\"), which is the same evaluate-is-read / execute-is-write split this backend keeps. On w200 the resource is advertised by ADT discovery under 'Refactorings'. NOT YET DONE: no live call has been made, so nothing is claimed about what the service returns for any range, and the endpoint-missing path was never reached on this target. changePackage is deliberately NOT exposed: it moves an object between packages, which is a write by nature and has no read-only evaluation worth a separate tool here."
+    },
+    {
       "tool": "find_where_used",
       "helper": null,
       "availabilityBasis": "target-specific",
@@ -549,11 +585,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-09T09:40:22Z",
+      "evidence": ".doc/sci-e2-readback-2026-09-09T09-40-22-034Z.json",
+      "notes": "\"No diagnostics found for adt://w200/sap/bc/adt/programs/programs/z_codex_mcp_sci_e2. The active SAP source has no syntax errors or warnings.\". Not proven: the path where diagnostics ARE returned (this record is the clean case). Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_abap_object_info",
@@ -561,11 +597,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-07T03:15:12Z",
+      "evidence": ".doc/m2-daily-development-20260907-111512.json",
+      "notes": "\"Object Type: DTEL/DE\", \"Total Lines: 1\", URI /sap/bc/adt/vit/wb/object_type/dtelde/object_name/CHAR20. Not proven: object types other than a data element. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_abap_object_lines",
@@ -573,11 +609,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-09T07:41:09Z",
+      "evidence": ".doc/atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json",
+      "notes": "\"Source from CL_SATC_ADT_RES_APP (lines 1-53 of 53, 53 lines retrieved)\". Not proven: reading a line window that starts past the object end. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_abap_object_url",
@@ -596,24 +632,24 @@
       "helper": null,
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
-      "method": "none",
-      "status": "unverified",
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "lastAttemptAt": "2026-09-30T04:23:00Z",
+      "evidence": ".doc/runtime-reads-deploy-1790742189882.json",
+      "notes": "\"Workspace URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_log/fmodules/z_orvanta_ops_read\". Not proven: resolution for every object type. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_abap_sql_syntax",
       "helper": null,
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
-      "method": "none",
-      "status": "unverified",
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "lastAttemptAt": "2026-09-30T01:47:15Z",
+      "evidence": ".cache/evidence-runtime-resources-20260930/perf-31-sql-syntax-contract.txt",
+      "notes": "\"# isError: false\"; the reply states \"the service enforces a maximum fetch cap of 1000 rows\". Not proven: nothing beyond the contract text this tool returns. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_batch_lines",
@@ -633,35 +669,35 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-30T06:31:51Z",
+      "evidence": ".doc/runtime-reads-deploy-1790749923642.json",
+      "notes": "productVersion \"0.50.23\", connection.baseUrl \"http://192.168.88.26:8000\", client \"200\". Not proven: verdicts on connections other than the one reported. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_connected_systems",
       "helper": null,
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
-      "method": "none",
-      "status": "unverified",
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "lastAttemptAt": "2026-09-09T07:47:21Z",
+      "evidence": ".doc/atc-remote-readiness-2026-09-09T07-47-21.555Z.json",
+      "notes": "\"Connected SAP systems: w200\". Not proven: discovery of a system not configured in this deployment. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_customer_function_call_status",
       "helper": null,
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
-      "method": "none",
-      "status": "unverified",
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "lastAttemptAt": "2026-09-10T05:53:43Z",
+      "evidence": ".doc/m7-existing-detail-result-1789019622375.json",
+      "notes": "functionName ZPMC_TZ_RK_GET_DETAIL, status \"completed\", durationMs 35. Not proven: status of a call that is still running. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_object_by_uri",
@@ -669,23 +705,23 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-30T04:41:49Z",
+      "evidence": ".doc/runtime-reads-deploy-1790743322822.json",
+      "notes": "\"Direct URI Access Successful ... Lines: 0-1734 of 1734 (1734 retrieved)\". Not proven: URIs whose host does not match the declared connection. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_runtime_info",
       "helper": null,
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
-      "method": "none",
-      "status": "unverified",
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "lastAttemptAt": "2026-09-29T09:15:09+08:00",
+      "evidence": ".cache/evidence-ops-r75/get_runtime_info.json",
+      "notes": "server version \"0.50.23\", nodeVersion \"24.8.0\", status \"observed\". Not proven: the kernel and database values this tool does not read. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "get_sap_system_info",
@@ -872,12 +908,12 @@
       "helper": null,
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
-      "method": "none",
-      "status": "unverified",
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "lastAttemptAt": "2026-09-07T03:15:21Z",
+      "evidence": ".doc/m2-daily-development-20260907-111512.json",
+      "notes": "status \"completed\" with toolName \"test_remote_function_module\". Not proven: querying an operation this service did not start. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "inspect_customer_function_exits",
@@ -933,11 +969,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-07T00:00:00+08:00",
+      "evidence": ".doc/ddic-compatibility-0363-deploy-20260907.json",
+      "notes": "objectName Z_CODEX_MCP_DDIC_API, parentObject ZCODEX_MCP_CORE, requestNumber GR2K923421. Not proven: an object that is not assigned to any function group. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "inspect_source_enhancements",
@@ -955,13 +991,13 @@
       "tool": "invoke_customer_function_module",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 customer RFC ZCMCP_FM_0350 (whitelisted call; the module itself decides its side effects)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-07T03:36:55Z",
+      "evidence": ".doc/m3-live-rfc-20260907-113636.json",
+      "notes": "status \"completed\", functionName ZCMCP_FM_0350, EV_OUTPUT \"M3-LIVE\". Not proven: side effects inside the callee, which this service does not model. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "run_abap_program",
@@ -994,10 +1030,10 @@
       "verificationTarget": "w200 Classic BAdI implementation ZACC_DOCUMENT (definition ACC_DOCUMENT, package ZOA)",
       "method": "controlled-write",
       "status": "failed",
-      "failureBasis": "static",
+      "failureBasis": "runtime",
       "lastAttemptAt": "2026-10-01T23:15:19+08:00",
       "evidence": ".doc/orvanta-enhancement-manage-classic-badi-activate-zacc-document-2026-10-01T15-15-19-751Z.json",
-      "notes": "The old 'never dispatched because the 34-character opcode exceeded RS38L-NAME' basis is refuted - MANAGE_CLASSIC_BADI_IMPL (25) is self-described by the live helper - and a real call did reach SAP at 23:15:19 +08:00 on 2026-10-01 with the client gates satisfied (receipt sapPreChangeEvidence: exists=true, active=true, fingerprint=9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0, observationStatus=complete). SAP then rejected it: CLASSIC_BADI_INPUT_INVALID 'Customer implementation and action required'. The new root cause is a parameter-length defect, not the opcode: the helper's guard (scripts/bootstrap-sap-helper.ps1:8433-8443) accepts only iv_object_type in {CREATE, ACTIVATE, DEACTIVATE, DELETE}, while the live interface of Z_ORVANTA_MCP_DYNPRO_API declares IV_OBJECT_TYPE as TADIR-OBJECT, i.e. CHAR 4 - read from SAP, not inferred (.doc/orvanta-function-read-dynpro-helper-interface-2026-10-01T15-16-21-851Z.json, interfaceFingerprint c4de942e15943c98fa3a9ba884983714a6ac90330b77eec61f3ea387ce1ba412). The service passes the action into that field (src/tools.ts:6736 objectType=input.action.toUpperCase()), so CREATE (6), ACTIVATE (8), DEACTIVATE (10) and DELETE (6) are all truncated to 4 characters and the guard cannot be satisfied for any action. The tool is undeliverable for every action until either the field or the action encoding changes; the helper side is the repository family and needs a human SE38 + F8 deployment. Not proven: whether a corrected field would then complete an activation, since no action ever passed the guard. A fix for this parameter-length defect is prepared and NOT yet deployed: the helper body was widened at scripts/bootstrap-sap-helper.ps1 (IV_OBJECT_TYPE dbfield TADIR-OBJECT -> TADIR-OBJ_NAME, CHAR 4 -> CHAR 40), the capability table moved this operation to protocol 2.22, and the 2.22 carrier was generated at .doc/deploy-repository-dynpro-2.22.abap (body sha256 42002641797541afa168aab20c5e0f89515b0a1c29faa97210695f26872ade76, payload digest 5b5af9128d75deee). The repository family is self-write protected, so manage_classic_badi_implementation stays short of verified until BOTH live read-backs agree. The body half is already done - F8 on 2026-10-02 deployed the 2.22 body (get_capability_report sourceHash 42002641797541afa168aab20c5e0f89515b0a1c29faa97210695f26872ade76, PROTOCOL|MAX| 2.22) - but the interface half was NOT applied: read_function_module_interface still reports IV_OBJECT_TYPE with typeName TADIR-OBJECT (CHAR 4) and interfaceFingerprint c4de942e15943c98fa3a9ba884983714a6ac90330b77eec61f3ea387ce1ba412, byte-identical to the pre-deployment read. The carrier is append-only by parameter name (scripts/generate-repository-carrier.mjs:949,971,995), so it cannot change the type of a parameter that already exists, and its line 'verified 66 canonical parameter(s) in SAP' verifies presence by name, not by type. Replaying the live call after the deployment returned CLASSIC_BADI_INPUT_INVALID again with every client gate passing, which proves the truncation is still in force: PROTOCOL|MAX| 2.22 alone does NOT mean this is fixed, and until the interface is widened the version gate reports the capability as available while the tool cannot succeed.  The manual SE37 route is not available either: on 2026-10-02 the user changed IV_OBJECT_TYPE to TADIR-OBJ_NAME in SE37 and SAP refused it with a type-compatibility message (IV_OBJECT_TYPE is not type-compatible with formal parameter IV_OBJECT_TYPE). The live read taken afterwards still reports typeName TADIR-OBJECT, so the attempt left no half-applied state. The carrier is therefore the only channel, and its interface phase was changed from append-only to append-or-retype: scripts/generate-repository-carrier.mjs now updates the dbfield/dbstruct of an existing parameter and reports 'Interface ~ : NAME old -> new', and its verification compares the type instead of the name alone and fails the run on a stale type. The regenerated carrier is .doc/deploy-repository-dynpro-2.22-r2.abap. Verification requires typeName <> 'TADIR-OBJECT' for IV_OBJECT_TYPE plus a successful live call. See .doc/code-update-20261002-002245.md. See .doc/code-update-20261002-000321.md."
+      "notes": "The old 'never dispatched because the 34-character opcode exceeded RS38L-NAME' basis is refuted - MANAGE_CLASSIC_BADI_IMPL (25) is self-described by the live helper - and a real call did reach SAP at 23:15:19 +08:00 on 2026-10-01 with the client gates satisfied (receipt sapPreChangeEvidence: exists=true, active=true, fingerprint=9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0, observationStatus=complete). SAP then rejected it: CLASSIC_BADI_INPUT_INVALID 'Customer implementation and action required'. The new root cause is a parameter-length defect, not the opcode: the helper's guard (scripts/bootstrap-sap-helper.ps1:8433-8443) accepts only iv_object_type in {CREATE, ACTIVATE, DEACTIVATE, DELETE}, while the live interface of Z_ORVANTA_MCP_DYNPRO_API declares IV_OBJECT_TYPE as TADIR-OBJECT, i.e. CHAR 4 - read from SAP, not inferred (.doc/orvanta-function-read-dynpro-helper-interface-2026-10-01T15-16-21-851Z.json, interfaceFingerprint c4de942e15943c98fa3a9ba884983714a6ac90330b77eec61f3ea387ce1ba412). The service passes the action into that field (src/tools.ts:6736 objectType=input.action.toUpperCase()), so CREATE (6), ACTIVATE (8), DEACTIVATE (10) and DELETE (6) are all truncated to 4 characters and the guard cannot be satisfied for any action. The tool is undeliverable for every action until either the field or the action encoding changes; the helper side is the repository family and needs a human SE38 + F8 deployment. Not proven: whether a corrected field would then complete an activation, since no action ever passed the guard. The fix that landed is NOT the one this entry first recorded. HEAD 0190fc2 chose to keep IV_OBJECT_TYPE at its TADIR meaning and carry the action in its own IV_ACTION parameter (TADIR-OBJ_NAME, CHAR 40) instead of widening the CHAR 4 field, so the acceptance criterion recorded here earlier - typeName <> 'TADIR-OBJECT' for IV_OBJECT_TYPE - is withdrawn: under the shipped design that field is SUPPOSED to stay TADIR-OBJECT, and a check against it would fail a correct system. Read live on w200 2026-10-02: IV_OBJECT_TYPE is still TADIR-OBJECT (optional) and IV_ACTION exists with typeName TADIR-OBJ_NAME, and the deployed body carries the matching guard (IF lv_classic_action <> iv_action.). The current acceptance criterion is therefore: IV_ACTION present and typed TADIR-OBJ_NAME, PLUS one real call whose action actually passes the guard and reaches SAP. That call has not happened. See .doc/code-update-20261002-180000.md."
     },
     {
       "tool": "manage_enhancement_implementation_state",
@@ -1015,13 +1051,13 @@
       "tool": "manage_text_elements",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 text elements of program CL_CI_TEST_SELECT_NESTED",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-09T09:27:34Z",
+      "evidence": ".doc/sci-e2-dependencies-2026-09-09T09-27-34-795Z.json",
+      "notes": "Text Elements for CL_CI_TEST_SELECT_NESTED, Total: 4, entry 000 \"循环中的 SELECT\" (max: 20). Not proven: selection texts and the merge path for an object with pre-existing symbols. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "manage_transport_requests",
@@ -1087,13 +1123,13 @@
       "tool": "patch_function_module_interface",
       "helper": "Z_ORVANTA_MCP_EXECUTE",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 function module ZORVANTA_MCP_IFPROBE in function group ZORVANTA_MCP_PROBE (transport GR2K923472)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T17:38:27+08:00",
+      "evidence": ".doc/code-update-20261002-173827.md",
+      "notes": "the 2.28 acceptance run recorded there: receipt FUNCTION_INTERFACE_PATCHED, interface fingerprint 22c93694... -> 9d05e5c7..., IV_INPUT.optional true -> false, sourceFingerprint unchanged at 00672313.... Not proven: any interface change beyond the parameter shapes exercised. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "prepare_enhancement_configuration_workflow",
@@ -1113,11 +1149,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-11T01:31:39Z",
+      "evidence": ".doc/mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a/result.json",
+      "notes": "tableName ZTPMC_TPCFG, plant 809P, status \"preview\", DATBI 20261208 -> 20261209. Not proven: any configuration table other than the one approved here. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "preview_source_changes",
@@ -1149,11 +1185,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T07:45:57Z",
+      "evidence": ".doc/orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json",
+      "notes": "messageClass TK, packageName SCTS_REQ, message 001 \"请求 &2 中对象已锁定，但不能使用请求\". Not proven: a message class with no messages. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "read_abap_screen",
@@ -1245,11 +1281,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-01T15:03:36Z",
+      "evidence": ".doc/orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json",
+      "notes": "name ACC_DOCUMENT, interfaces [IF_EX_ACC_DOCUMENT], exampleClass CL_EXM_IM_ACC_DOCUMENT. Not proven: a definition with no active example implementation. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "read_customer_exit_definition",
@@ -1281,11 +1317,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_DATA_ELEMENT), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-10T01:33:05Z",
+      "evidence": ".doc/m64-cap-preflight-2026-09-10T01-33-05-459Z.json",
+      "notes": "objectName CHAR1, domainName CHAR1, fingerprint 3b2a0efbbbc2513f90436a085f2c13b622e7a289cdcce64a18ecd66ff71b4ace. Not proven: element/domain type mismatches. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_ddic_domain",
@@ -1293,11 +1329,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_DOMAIN), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-10-02T04:35:20Z",
+      "evidence": ".doc/orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json",
+      "notes": "objectName EXITIMP, length 20, packageName SECE. Not proven: a domain whose fixed values are not maintained. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_ddic_structure",
@@ -1305,11 +1341,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_STRUCTURE), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-09T08:05:57Z",
+      "evidence": ".doc/sci-schema-review-2026-09-09T08-05-57.106Z.json",
+      "notes": "objectName SCIR_OBJS, version 20110901121214, description \"Code Inspector: Structure for Objects\". Not proven: structures with include or append nesting. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_ddic_table_conversion_status",
@@ -1317,11 +1353,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T19:39:12+08:00",
+      "evidence": ".doc/orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json",
+      "notes": "A real read-only call at 19:39:12 +08:00 on 2026-10-02 answered for w200 transparent table ZCEKKO: pending false, entryCount 0, readOnly true, entries [] and worklistFingerprint 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945. Three further calls in the same round (ZDEL_EKES, T000 and a deliberately non-existent name) gave the same shape, which is the reading this entry records rather than hides: the tool reads the system-wide conversion worklist TBATG and filters it to one object, so an object with no pending conversion and an object that does not exist are INDISTINGUISHABLE here - both answer entryCount 0. That is a property of the interface, not a defect this entry can fix: a filtered read of a worklist cannot report the existence of a row that is not in it, and inventing an existence check would be a separate tool. It is recorded because the difference matters to a caller: entryCount 0 means \"no conversion is pending for this name\", never \"this table exists\". Confirmed positively on the same table family: TBATG itself is readable and holds one historic entry (OBJECT TABL, TABNAME ZXF_TEST3, FCT CNV, GDATE 20160427), so the zero above is a real filtered read and not an empty-source fallback. Not proven: the pending=true path was never reached, because no object on this system currently has a waiting conversion entry."
     },
     {
       "tool": "read_ddic_table_type",
@@ -1329,11 +1365,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_TABLE_TYPE), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-10-02T04:41:06Z",
+      "evidence": ".doc/orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json",
+      "notes": "objectName IMPL_DATA, status \"not-found\", authoritative true. Not proven: reading a table type that does exist (this record is the absent case, and it shows the refusal is authoritative rather than an empty success). Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_ddic_transparent_table",
@@ -1413,11 +1449,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_LOCK_OBJECT), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-28T17:33:36+08:00",
+      "evidence": ".cache/evidence-ops-r42/read_lock_object.json",
+      "notes": "objectName EZTESTLOCK01, rootTable T000, version 20260928173307. Not proven: lock objects whose tables are not allowlisted. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_maintenance_view",
@@ -1425,11 +1461,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_MAINTENANCE_VIEW), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-22T17:22:30+08:00",
+      "evidence": ".cache/runtime-regression/107b-read-view.out.json",
+      "notes": "DDIC_OBJECT_NOT_FOUND: Maintenance view does not exist (helper rejection, surfaced verbatim). Not proven: reading a maintenance view that does exist (only the absent case is recorded). Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_number_range_object",
@@ -1437,11 +1473,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_NUMBER_RANGE_OBJECT), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-22T16:32:23+08:00",
+      "evidence": ".cache/runtime-regression/58-read-nrob-notfound.out.json",
+      "notes": "DDIC_OBJECT_NOT_FOUND: Number range object does not exist (helper rejection, surfaced verbatim). Not proven: reading a number range object that does exist. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_report_parameters",
@@ -1509,11 +1545,11 @@
       "availabilityBasis": "protocol+operations",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (READ_SEARCH_HELP), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-22T11:01:42+08:00",
+      "evidence": ".cache/d6-probe4.txt",
+      "notes": "read_search_help: ERROR: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND. Not proven: reading a search help that does exist. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "read_smartform",
@@ -1521,11 +1557,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-14T05:46:38Z",
+      "evidence": ".doc/sf-draft-isolation-20260914.json",
+      "notes": "formName ZORVANTA_SF_TEST, version \"active\", fingerprint 4cfae613aaa312dbfc8093463a68458988bca36c8c00ba32ece55a769442f8da. Not proven: reading the inactive version when both exist. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "read_system_logs",
@@ -1579,13 +1615,13 @@
       "tool": "replace_string_in_abap_object",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 program Z_ORVANTA_OPS_READ (package ZABAP)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-30T06:31:51Z",
+      "evidence": ".doc/runtime-reads-deploy-1790749923642.json",
+      "notes": "\"Successfully replaced 670 line(s) with 678 line(s) ... Saved and activated Z_ORVANTA_OPS_READ in SAP\". Not proven: the ambiguity refusal (when the needle matches more than once). Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "resume_ddic_table_activation",
@@ -1596,7 +1632,7 @@
       "status": "failed",
       "failureBasis": "runtime",
       "lastAttemptAt": "2026-10-01T23:13:56+08:00",
-      "evidence": ".doc/orvanta-ddic-resume-table-activation-ztpayment-2026-10-01T15-13-56-721Z.json; .doc/orvanta-ddic-resume-table-activation-zthz-import-2026-10-01T15-45-25-641Z.json",
+      "evidence": ".doc/orvanta-ddic-resume-table-activation-ztpayment-2026-10-01T15-13-56-721Z.json",
       "notes": "The old 'OPERATION_NOT_SUPPORTED because the 35-character opcode exceeded BAPIRET2-PARAMETER (32)' basis is refuted: RESUME_TABLE_ACTIVATION (23) is self-described by the live DDIC helper (protocol 1.2..1.17, sourceHash 0abc4cbd4c4d4f7a15486d8d4e890ac4f3c14829703aead70c43908ed626e777) and the operation reached its own arm. What real calls did on 2026-10-01: (1) at 23:06:51 +08:00, ZWMS_TZRC_H1 (package $TMP) was refused by SAP with WRITE_INPUT_REQUIRED 'Description package and request required'; the helper refuses iv_package = '$TMP' outright at scripts/bootstrap-sap-helper.ps1:3932, which also means the service's deliberate $TMP allowance in ddicPackageName() (src/tools.ts:13000) is inert for every DDIC write against this helper. (2) at 23:13:56 +08:00, ZTPAYMENT (package Z001, transport GR2K923484) passed all four client gates (status=inactive, dataClass=APPL1, sizeCategory=6, 11 fields, inactive fingerprint d5d31edfe760d98b03dae715860e42869ac64d327262311574769ff444ee33cc verified equal) and SAP answered VERIFY_FAILED 'Activated DDIC object could not be read ( subrc 0 rc 8 actres_rows 0 )' with details ACT_RC=8, ACT_SUBRC=0, ACT_ROWS=0, RESUME=X, PHASE=verify_failed - payload only this arm emits. ACT_ROWS=0 is expected on the 1.14+ path because DDIF_TABL_ACTIVATE does not return ACT_RES_TAB (scripts/bootstrap-sap-helper.ps1:5581), so the failing signal is rc=8 plus the object not becoming active. Read-back at 23:14:05 +08:00 shows ZTPAYMENT still status=inactive, gotState='N', same fingerprint: no state change, safe failure (.doc/orvanta-ddic-readback-ztpayment-after-resume-2026-10-01T15-14-05-342Z.json). Attribution stops here: whether rc=8 is an authorization refusal (DDIF_TABL_ACTIVATE is called with auth_chk='X') or a Dictionary activation error is not established, because the helper writes that reason to the DDIC activation log (ACTTABL<NAME>) and read_abap_table refuses ACTTABL as outside the D5-2 allowlist. Not proven: any successful resume on any object. A second attempt at 23:45:25 +08:00 on 2026-10-01 used a different transportable table, ZTHZ_IMPORT (package ZCC, inactive fingerprint b18440e3143f860299e4beddc6358188a95201a220e8384057a164804759302c), to test whether the rc=8 failure is object-independent, and it did NOT reach the activation step: SAP answered TRANSPORT_RECORD_FAILED 'changes in GR2K923484 could not be recorded. lock conflict.' [ TK / 070 ] at the transport-recording step (.doc/orvanta-ddic-resume-table-activation-zthz-import-2026-10-01T15-45-25-641Z.json). So the systemicity question stays open. This is a different code from the 2026-09-24 incident at the same step, which was TK / 886 (request type not allowed), and the two must not be merged. search_sap_locks returned no entries for E070/E071 in three directions - user DEVELOPER with and without the GR2K923484 argument, and user WYS (the transport owner) with the argument - and the tool's own coverage is 'exact_user_current_client_native_selection', so the lock holder is outside this service's view rather than proven absent; attribution stops there. Read-back at 23:45:32 +08:00 shows ZTHZ_IMPORT still status=inactive, so no state changed. A transport fact worth recording alongside this entry: GR2K923484 (owner WYS, status D, not released) lists two object entries, ZORVANTA_SHLP_T01 (SHLD) and ZTPAYMENT (TABD), and ZTPAYMENT is still inactive - the transport carries a TABD entry for a definition that never took effect. Whether that entry predates this session cannot be decided from the object list, which carries no timestamps. See .doc/code-update-20261001-235500.md."
     },
     {
@@ -1615,25 +1651,25 @@
       "tool": "run_sci_analysis",
       "helper": "Z_ORVANTA_MCP_SCI_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
-      "method": "controlled-write",
-      "status": "unverified",
+      "verificationTarget": null,
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-09T09:14:44Z",
+      "evidence": ".doc/sci-e1-live-tool-2026-09-09T09-14-44-188Z.json",
+      "notes": "engine \"SCI\", execution \"returned\", helper Z_CODEX_MCP_SCI_V2. Not proven: any claim of native ATC coverage; this is SCI, and the capability report records atcCapability as sci_only. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "run_unit_tests",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
-      "method": "controlled-write",
-      "status": "unverified",
+      "verificationTarget": null,
+      "method": "read-only",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-11T01:43:51Z",
+      "evidence": ".doc/mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07/result.json",
+      "notes": "engine \"ABAP Unit\", total 2, passed 1, failed 1. Not proven: the all-green case, and any object other than the one tested. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "sap_helper_status",
@@ -1641,23 +1677,23 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-29T09:15:46+08:00",
+      "evidence": ".cache/evidence-ops-r78/sap_helper_status.json",
+      "notes": "\"Connection: w200 Status: S Code: READY Message: ORVANTA MCP SAP helper is ready Version: 1.0\". Not proven: any helper other than the one probed. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "save_smartform",
       "helper": "Z_ORVANTA_SMARTFORM_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 Smart Form ZORVANTA_SF_TEST (package ZABAP)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-09-14T05:46:38Z",
+      "evidence": ".doc/sf-draft-isolation-20260914.json",
+      "notes": "version \"saved\", active true, inactive true, fingerprint d99658ebe3a6b58331821863a53024e8f2bd447dd5b4e8b7a0f0237efb1c5f6d. Not proven: the conflict path when the inactive draft was changed by someone else. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "search_abap_object_lines",
@@ -1665,11 +1701,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-02T04:08:06Z",
+      "evidence": ".doc/orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json",
+      "notes": "Found 1 matches for \"Duplicate or unknown parameter text\" in Z_ORVANTA_MCP_EXECUTE: Base: 1 | Enhancement: 0. Not proven: searching an object whose sources cannot be read. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "search_abap_objects",
@@ -1677,11 +1713,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-09-09T07:47:21Z",
+      "evidence": ".doc/atc-remote-readiness-2026-09-09T07-47-21.555Z.json",
+      "notes": "\"No ABAP objects found matching pattern: SABP_COMP_PROCS_E\". Not proven: a pattern that returns hits (only the no-match case is recorded here). Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "search_application_logs",
@@ -1713,11 +1749,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-01T15:01:49Z",
+      "evidence": ".doc/orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json",
+      "notes": "requestedType \"SXCI/XI\", repositoryKind \"classic_badi_implementation\", count 20. Not proven: result sets larger than the bound. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "search_bte_dispatchers",
@@ -1749,11 +1785,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-01T15:00:57Z",
+      "evidence": ".doc/orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json",
+      "notes": "requestedType \"ENHO\", count 20, including name ZABAPFILESYSTEM_HTTP_STATUS. Not proven: result sets larger than the bound. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "search_failed_updates",
@@ -1783,13 +1819,13 @@
       "tool": "test_remote_function_module",
       "helper": null,
       "availabilityBasis": "target-specific",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 customer RFC Z_CODEX_MCP_SCI_E2 (whitelisted test call; side effects belong to the callee)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-09-09T09:46:34Z",
+      "evidence": ".doc/sci-e2-acceptance-2026-09-09T09-46-34-294Z.json",
+      "notes": "status \"passed\", functionName Z_CODEX_MCP_SCI_E2, EV_CODE \"FINDINGS_LIMITED\". Not proven: side effects inside the callee. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "update_abap_message_class",
@@ -1915,37 +1951,37 @@
       "tool": "upsert_maintenance_view",
       "helper": "Z_ORVANTA_MCP_DDIC_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 maintenance view ZORV_MCP_V01 over root table ZORV_MCP_T01",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (UPSERT_MAINTENANCE_VIEW), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-22T09:22:19Z",
+      "evidence": ".cache/runtime-regression/105-view-upsert-e4-retest.out.json",
+      "notes": "status \"MAINTENANCE_VIEW_SAVED\", objectName ZORV_MCP_V01, rootTable ZORV_MCP_T01. Not proven: the refusal path when the root table is not active. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "upsert_number_range_object",
       "helper": "Z_ORVANTA_MCP_DDIC_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 number range object ZORVMCPNR1",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (UPSERT_NUMBER_RANGE_OBJECT), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-22T09:22:51Z",
+      "evidence": ".cache/runtime-regression/109-nrob-create-g-retest.out.json",
+      "notes": "status \"NUMBER_RANGE_OBJECT_SAVED\", objectName ZORVMCPNR1, DOMLEN \"NUMC10\". Not proven: intervals beyond the one created. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "upsert_search_help",
       "helper": "Z_ORVANTA_MCP_DDIC_API",
       "availabilityBasis": "protocol+operations",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 search help ZORVANTA_MCP_DESC_TEST (transport GR2K923472)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (UPSERT_SEARCH_HELP), which is still a static inference and not an observation."
+      "lastAttemptAt": "2026-09-20T00:00:00+08:00",
+      "evidence": ".cache/r119-runtime-verify.txt",
+      "notes": "objectName ZORVANTA_MCP_DESC_TEST, status \"DDIC_OBJECT_SAVED\", recordedRequest GR2K923472. Not proven: the delta-write path against a pre-existing search help. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
     },
     {
       "tool": "validate_dynpro_application",
@@ -1963,13 +1999,13 @@
       "tool": "write_function_module_source",
       "helper": "Z_ORVANTA_MCP_EXECUTE",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 function module ZORVANTA_MCP_IFPROBE in function group ZORVANTA_MCP_PROBE (transport GR2K923472)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T06:53:32Z",
+      "evidence": ".doc/orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json",
+      "notes": "isError false; the reply echoes the module's interface back with IV_INPUT typed TROBJTYPE and EV_OUTPUT SOBJ_NAME. Not proven: the interface-section refusal, and writes to a function group other than the approved one. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool. Its availability verdict rests on the protocol version alone, because the registry pins no operation requirement for this route."
     },
     {
       "tool": "delete_sap_lock",

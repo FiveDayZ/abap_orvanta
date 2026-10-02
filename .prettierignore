@@ -9,6 +9,12 @@ docs/ops-acceptance-matrix.md
 # 也会让「证据存在」这道守卫验的是一个被人重排过的文件。刷新用
 # scripts/mirror-workspace-evidence.mjs --copy。
 docs/workspace-evidence/
+# 生成文件：`adt_discovery_export` 每次调用产出一个带时间戳的目录（README.md /
+# workspaces.md / core-discovery.md / res-app-classes.md），内容由 SAP 的 discovery 响应
+# 决定。它是运行取证快照，不是手写文档：格式以生成器为准，且每次调用换新目录，若纳入
+# 检查就会让「刚导出过 discovery」本身把 format:check 弄红 —— 这是工具的副作用，不是
+# 代码风格问题。与 docs/tool-index.md 同属「生成物不参与格式门」这一类。
+adt-discovery_*/
 dist/
 node_modules/
 release/

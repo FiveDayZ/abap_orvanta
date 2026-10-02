@@ -1,0 +1,15 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "read_enhancement_implementation",
+  "arguments": {
+    "connectionId": "w200",
+    "enhancementName": "ZABAPFILESYSTEM_HTTP_STATUS"
+  },
+  "startedAt": "2026-10-01T15:01:06.033Z",
+  "finishedAt": "2026-10-01T15:01:06.191Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"enhancement_implementation\",\n  \"enhancementName\": \"ZABAPFILESYSTEM_HTTP_STATUS\",\n  \"packageName\": \"ZABAP\",\n  \"definition\": {\n    \"name\": \"ZABAPFILESYSTEM_HTTP_STATUS\",\n    \"tool\": \"HOOK_IMPL\",\n    \"shortText\": \"Guard legacy ADT HTTP status mapping\",\n    \"activeRaw\": \"X\",\n    \"active\": true,\n    \"inactiveRaw\": \"\",\n    \"hasInactiveVersion\": false,\n    \"savedInactiveRaw\": \"\",\n    \"hasSavedInactiveVersion\": false,\n    \"unsavedInactiveRaw\": \"\",\n    \"hasUnsavedInactiveVersion\": false,\n    \"originalObjectType\": \"CLAS\",\n    \"originalObjectName\": \"CL_REST_HTTP_RESPONSE\",\n    \"mainObjectType\": \"CLAS\",\n    \"mainObjectName\": \"CL_REST_HTTP_RESPONSE\",\n    \"programName\": \"CL_REST_HTTP_RESPONSE=========CP\",\n    \"hookImplementations\": [\n      {\n        \"spotName\": \"\",\n        \"programName\": \"CL_REST_HTTP_RESPONSE=========CP\",\n        \"extId\": \"1\",\n        \"id\": \"1\",\n        \"overwriteRaw\": \"\",\n        \"replacement\": false,\n        \"methodRaw\": \"\",\n        \"method\": false,\n        \"mode\": \"D\",\n        \"fullName\": \"\\\\TY:CL_REST_HTTP_RESPONSE\\\\IN:IF_REST_RESPONSE\\\\ME:SET_STATUS\\\\SE:BEGIN\\\\EI\",\n        \"parentFullName\": \"\",\n        \"sourceCount\": 13,\n        \"source\": [\n          \"  DATA __abapfs_reason_name TYPE string.\",\n          \"  FIELD-SYMBOLS <__abapfs_reason> TYPE string.\",\n          \"\",\n          \"  __abapfs_reason_name = |REASON_{ iv_status }|.\",\n          \"  ASSIGN if_http_status=>(__abapfs_reason_name)\",\n          \"    TO <__abapfs_reason>.\",\n          \"  IF <__abapfs_reason> IS NOT ASSIGNED.\",\n          \"    mo_response->set_status(\",\n          \"      EXPORTING\",\n          \"        code = iv_status\",\n          \"        reason = 'ADT Error' ).\",\n          \"    RETURN.\",\n          \"  ENDIF.\"\n        ]\n      }\n    ],\n    \"badiImplementations\": [],\n    \"filters\": []\n  },\n  \"fingerprint\": \"1a1a24d795427a84eeb0793997cb297f61d8be7e886f99049b986ec3d04613ee\"\n}"
+}

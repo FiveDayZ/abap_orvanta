@@ -55,15 +55,18 @@ for (const direction of ["import", "export", "changing", "table"] as const) {
         })
       )
       assert.equal(current.sourceFingerprint, initial.sourceFingerprint)
-      // The helper-backed patch never writes ADT source, and on SAP_BASIS 7.31 it cannot write
-      // interface parameters either: the branch reaches only the parameter documentation tables
-      // (RPY_FUNCTIONMODULE_UPDATE does not exist on this release). The response must therefore
-      // report the limit instead of claiming a parameter write that did not happen.
+      // The helper-backed patch never writes ADT source. It does write the interface: from helper
+      // protocol 2.24 the opcode calls SAP's own interface routines (from 2.28 through SAPMS38L's
+      // ed_generate_interface, ed_insert_interface and pa_insert_parameter, which store the
+      // generated local-interface header include and refill FUPARAREF) after setting the two
+      // SAPMS38L module-pool globals, activates the function group with GENERATE REPORT, and
+      // re-reads every table before it answers. The mock answers FUNCTION_INTERFACE_PATCHED, so the
+      // response must report the parameter write as performed.
       assert.equal(sourceWrites - writesBefore, 0)
       assert.equal(current.sourceWritePerformed, false)
-      assert.equal(current.interfaceWritePerformed, false)
-      assert.equal(current.interfaceWriteSupported, false)
-      assert.equal(current.parameterChangesApplied, false)
+      assert.equal(current.interfaceWritePerformed, true)
+      assert.equal(current.interfaceWriteSupported, true)
+      assert.equal(current.parameterChangesApplied, true)
       assert.equal(current.sourceMutation, null)
       assert.deepEqual(current.source, initial.source)
       for (const key of Object.values(keys).filter((key) => key !== keys[direction])) {
@@ -116,9 +119,10 @@ test("classic exception lifecycle preserves all parameters and implementation", 
     )
     assert.equal(sourceWrites - writesBefore, 0)
     assert.equal(current.sourceWritePerformed, false)
-    // See the direction loop above: no interface-parameter write path exists on SAP_BASIS 7.31.
-    assert.equal(current.interfaceWritePerformed, false)
-    assert.equal(current.parameterChangesApplied, false)
+    // An exception-only patch writes RSEXC, which is part of the interface, so the write flags stay
+    // true while the four parameter tables and the implementation source must remain untouched.
+    assert.equal(current.interfaceWritePerformed, true)
+    assert.equal(current.parameterChangesApplied, true)
     assert.equal(current.sourceMutation, null)
     for (const key of [
       "importParameters",

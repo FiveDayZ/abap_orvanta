@@ -73,15 +73,39 @@ export interface ToolRegistryEntry {
    */
   requiredHelperOperations: readonly string[]
   annotations: ToolAnnotations
+  /**
+   * Set when the tool is withheld from every profile by default because the target platform does not
+   * offer the endpoint it needs. The reason is machine-readable here and rendered into the generated
+   * tool index, so a reader sees WHY a registered tool is not reachable instead of finding a silent
+   * hole. Profile membership is removed at the same time - two switches would drift.
+   */
+  withheldReason?: string
   note?: string
 }
 
 /** Annotation codes used in the compact table below. */
-type AnnotationCode = "R" | "RI" | "W" | "D"
+type AnnotationCode = "R" | "W" | "D"
 
+/**
+ * The risk codes, and what each hint means.
+ *
+ * `idempotentHint` answers the MCP question "does calling this again with the same arguments produce
+ * no additional side effect". It is a property of the CODE, not a measurement, so it is derived from
+ * the operation class rather than guessed per tool:
+ *
+ * - A read (`R`) modifies nothing, so repeating it cannot accumulate anything: it IS idempotent.
+ *   Keeping `R` and `RI` apart would have asserted the opposite for 99 of the 100 read-only tools
+ *   while the one hand-marked exception meant nothing different - two codes with one meaning. There
+ *   is therefore a single read-only code, and `R` means read-only AND idempotent.
+ * - A write is NOT assumed idempotent. Neither `W` (non-destructive) nor `D` (destructive) claims
+ *   it, because convergence is a per-operation property that would have to be proven for each one:
+ *   `upsert_*` converges, but `replace_string_in_abap_object` fails on the second identical call
+ *   because the needle is gone, and `create_*` fails because the object exists. A false `true` here
+ *   invites a caller to retry a write that is not safe to retry, which is worse than saying nothing.
+ *   A write that later proves to converge can be marked individually.
+ */
 const ANNOTATIONS: Record<AnnotationCode, ToolAnnotations> = {
-  R: { readOnlyHint: true, destructiveHint: false, idempotentHint: false },
-  RI: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+  R: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
   W: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
   D: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }
 }
@@ -217,8 +241,18 @@ const ROWS: readonly ToolRow[] = [
     // (since protocol 2.0). The native ADT lock/save path is what fails on w200 with HTTP 423
     // "invalid lock handle", so the service sends this opcode to the base helper
     // Z_ORVANTA_MCP_EXECUTE, exactly like write_function_module_source below.
+    // Revision 2.24 wrote the interface through the FUNCTION_SAVE wrapper, which declares P_RS38L
+    // and never uses it - it forwards the global RS38L of SAPLSUNI instead - so the structure the
+    // opcode built never reached the save. Up to 2.23 the opcode wrote parameter documentation only,
+    // so an interface change reported as applied was never written to SAP. Revisions 2.25 and 2.27
+    // called SAPMS38L's fu_save_function_ext, and that route necessarily ends in fu_save_function,
+    // which deletes the implementation include and rebuilds only a bare frame. Revision 2.28 uses
+    // SAP's own create API RPY_FUNCTIONMODULE_INSERT: it writes the parameter tables, the TFDIR
+    // binding and the implementation include in one operation and never enters fu_save_function, so
+    // the module stays whole and no RFC session is terminated. It refuses while a live TFDIR row
+    // exists, so the helper retires that row first by setting FREEDATE.
     EXECUTE,
-    "2.0"
+    "2.28"
   ],
   [
     "write_function_module_source",
@@ -744,6 +778,18 @@ const ROWS: readonly ToolRow[] = [
     ["READ_TEXT_ELEMENTS", "MERGE_TEXT_ELEMENTS"]
   ],
   ["get_abap_diagnostics", "quality", DEV, "R", "native-adt", null, null],
+  // D-9 formatter half. Read-only and idempotent: the pretty printer is a pure text transformation
+  // on the service side, so repeating the call cannot accumulate a side effect. The tool returns the
+  // formatted text and never writes it back - there is no lock, save or activate on this path.
+  ["format_abap_source", "source", DEV, "R", "native-adt", null, null],
+  // D-9 quick-fix half (the read-only half of it). The evaluator is asked what it would fix and
+  // answers with proposals; the edit-producing call and the proposal handler URI are never used, so
+  // repeating this cannot accumulate a side effect and there is no lock, save or activate on the path.
+  ["get_quick_fix_proposals", "source", DEV, "R", "native-adt", null, null],
+  // D-9 refactoring half (again the read-only half). Only the `evaluate` step is exposed: it reports
+  // which objects a rename or extract-method would touch. `preview` and `execute` are the writes -
+  // they assign a transport and rewrite other objects - and are never called from here.
+  ["evaluate_refactoring", "source", DEV, "R", "native-adt", null, null],
   ["get_abap_sql_syntax", "platform", PL, "R", "local", null, null],
   ["execute_data_query", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_abap_table", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
@@ -786,7 +832,7 @@ const ROWS: readonly ToolRow[] = [
   ["discover_application_logs", "ops", OPSP, "R", "sap-helper-fallback", LOG, null],
   ["search_application_logs", "ops", OPSP, "R", "sap-helper-fallback", LOG, null],
   ["read_application_log", "ops", OPSP, "R", "sap-helper-fallback", LOG, null],
-  ["diagnose_sap_failure", "ops", DEV_OPS, "RI", "native-adt", null, null],
+  ["diagnose_sap_failure", "ops", DEV_OPS, "R", "native-adt", null, null],
   ["analyze_abap_dumps", "ops", DEV_OPS, "R", "native-adt", null, null],
   ["analyze_abap_traces", "ops", OPSP, "R", "native-adt", null, null],
   ["manage_transport_requests", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
@@ -967,6 +1013,16 @@ export const TOOL_MATRIX_VERSION = "2026-09-17"
 export const PROFILE_NAMES = ["readonly", "platform", "dev", "config", "ops", "full"] as const
 export type ProfileName = (typeof PROFILE_NAMES)[number]
 
+// G1-7: the ADT debugger endpoint is not advertised on w200 (discovery reports three empty
+// workspaces and no debugger collection), so the capability report verdict is
+// `debuggerCapability: platform_unsupported`. The six tools stay REGISTERED - they are still
+// callable through the `full` profile, and they are not deleted - but they are withheld from
+// `dev`/`config`/`ops` by default, because a tool that is permanently unreachable on this target
+// should not appear in a profile as if it worked. The reason travels with the tool so the generated
+// index names the boundary instead of leaving a silent hole.
+const WITHHELD_DEBUGGER =
+  "Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted."
+
 export const TOOL_REGISTRY: readonly ToolRegistryEntry[] = ROWS.map(
   ([
     name,
@@ -980,12 +1036,13 @@ export const TOOL_REGISTRY: readonly ToolRegistryEntry[] = ROWS.map(
   ]) => ({
     name,
     group,
-    profiles,
+    profiles: group === "debug" ? ([] as readonly ToolProfile[]) : profiles,
     route,
     sapHelper,
     minHelperProtocol,
     requiredHelperOperations: requiredOperations ?? [],
     annotations: { ...ANNOTATIONS[annotation] },
+    ...(group === "debug" ? { withheldReason: WITHHELD_DEBUGGER } : {}),
     ...(NOTES[name] ? { note: NOTES[name] } : {})
   })
 )

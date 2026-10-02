@@ -13,7 +13,12 @@ import {
   TOOL_DENY_ENV,
   TOOL_PROFILE_ENV
 } from "../src/tool-profile.js"
-import { PROFILE_NAMES, TOOL_COUNT, toolNamesForProfile } from "../src/tool-registry.js"
+import {
+  PROFILE_NAMES,
+  TOOL_COUNT,
+  TOOL_REGISTRY,
+  toolNamesForProfile
+} from "../src/tool-registry.js"
 import { MockBackend } from "./mock-backend.js"
 
 test("tool profile defaults to the full surface", () => {
@@ -71,6 +76,60 @@ test("deny list parsing ignores separators, blanks and duplicates", () => {
   assert.deepEqual(parseToolDenyList(undefined), [])
   assert.deepEqual(parseToolDenyList("   "), [])
   assert.deepEqual(parseToolDenyList(" a , b,,a;c "), ["a", "b", "c"])
+})
+
+test("a tool withheld by a platform boundary is out of every non-full profile and names why", () => {
+  // G1-7: the ADT debugger endpoint is not advertised on this target, so the six abap_debug_* tools
+  // are registered but withheld. All three halves matter. Keeping the profiles while the capability
+  // report says `platform_unsupported` would advertise six tools that cannot succeed; dropping the
+  // reason would turn the empty profile column into a silent hole that reads as an oversight; and
+  // removing the tools entirely would erase the fact that the boundary is the PLATFORM's, not a
+  // missing implementation.
+  const withheld = TOOL_REGISTRY.filter((entry) => entry.withheldReason)
+  assert.ok(withheld.length > 0, "expected at least one platform-withheld tool")
+
+  for (const entry of withheld) {
+    assert.equal(entry.profiles.length, 0, `${entry.name}: a withheld tool must be in no profile`)
+    for (const profile of ["dev", "config", "ops"] as const) {
+      assert.ok(
+        !toolNamesForProfile(profile).includes(entry.name),
+        `${entry.name} must be withheld from the ${profile} profile`
+      )
+    }
+    // `full` still reaches it, so "withheld by default" does not quietly mean "deleted".
+    assert.ok(
+      toolNamesForProfile("full").includes(entry.name),
+      `${entry.name} must stay reachable through the full profile`
+    )
+    // The reason has to name the MEASURED boundary, not merely say the tool is unavailable.
+    assert.match(entry.withheldReason!, /platform_unsupported/)
+  }
+
+  // The family this rule was written for, named explicitly so that silently dropping the reason
+  // fails here rather than passing as "no withheld tools".
+  for (const name of [
+    "abap_debug_breakpoint",
+    "abap_debug_session",
+    "abap_debug_stack",
+    "abap_debug_status",
+    "abap_debug_step",
+    "abap_debug_variable"
+  ]) {
+    const entry = TOOL_REGISTRY.find((item) => item.name === name)
+    assert.ok(entry, `${name} is missing from the registry`)
+    assert.ok(entry!.withheldReason, `${name} must carry its withholding reason`)
+    assert.ok(!entry!.profiles.includes("dev"), `${name} must not be in the dev profile`)
+  }
+
+  // A withheld tool keeps its own risk annotation: the boundary removes an endpoint, it does not
+  // change what the tool would do if the endpoint existed. `abap_debug_status`, `abap_debug_stack`
+  // and `abap_debug_variable` are read-only yet still withheld, which is the case that shows the
+  // rule is about reachability and not about risk.
+  const readOnlyWithheld = withheld.filter((entry) => entry.annotations.readOnlyHint === true)
+  assert.ok(
+    readOnlyWithheld.length > 0,
+    "a read-only tool can be unreachable too: the debugger family mixes reads and writes"
+  )
 })
 
 test("readonly profile withholds write tools from tools/list and refuses tools/call", async () => {

@@ -232,19 +232,26 @@ try {
     // Only meaningful while the interface is untouched: that is the state the approval describes.
     assert.equal(before.sourceFingerprint, EXPECTED_SOURCE_FINGERPRINT)
     assert.equal(before.interfaceFingerprint, EXPECTED_INTERFACE_FINGERPRINT)
-    // The interface cannot be changed from here on this release. patch_function_module_interface's
-    // own contract states the platform limit: on SAP_BASIS 7.31 the helper opcode
-    // PATCH_FUNCTION_INTERFACE has no interface-parameter write path - RPY_FUNCTIONMODULE_UPDATE
-    // does not exist on this release, and the wide-line alternatives expose RSFB_SOURCE, a
-    // function-group-local type no external caller can declare - so the helper only writes
-    // parameter documentation and "interface parameters reported as changed must be applied
-    // manually in SE37". A measured call on 2026-09-30 returned
-    // FUNCTION_READ_FAILED: Locked function could not be read and left SAP byte-identical
-    // (.doc/runtime-reads-deploy-1790737794359.json). These imports are therefore a manual SE37
-    // step, and the body must not be written before them: its branches reference them, so the
-    // function would not activate.
+    // The interface CAN be changed from here, but only with a helper that carries the 2.28 body.
+    // The earlier "no interface-parameter write path" reading was wrong: SAP's own SE37 save
+    // path fills FUPARAREF and the generated local-interface header include, and from 2.28 the
+    // helper enters it through SAPMS38L's fu_save_function_ext form - the only entry that copies
+    // the six RS38L parameter tables into the module-pool globals - with the two SAPMS38L globals
+    // set (modification_activate via fu_modification_globals_init, action = 'UPDA' via
+    // fu_set_action) before running GENERATE REPORT, and then regenerates the implementation
+    // include that form deletes. 2.26 called only the interface routines and left the interface
+    // untouched; 2.25 reached them without restoring the body; 2.24 called the wrapper FUNCTION_SAVE,
+    // which declares P_RS38L and never uses it, so the structure was discarded; helpers up to
+    // 2.23 wrote parameter documentation only. The tool registry refuses all of them, so such a
+    // helper turns this into a
+    // manual SE37 step. The measured
+    // 2026-09-30 call returned FUNCTION_READ_FAILED: Locked function could not be read and left SAP
+    // byte-identical (.doc/runtime-reads-deploy-1790737794359.json). The body must not be written
+    // before the imports either way: its branches reference them, so the function would not
+    // activate.
     evidence.manualInterfaceStep = {
-      platformLimit: "SAP_BASIS 7.31 exposes no interface-parameter write path",
+      platformLimit:
+        "SAP_BASIS 7.31 has no RPY_FUNCTIONMODULE_UPDATE, but SAP's own interface routines do write the interface parameter tables and need helper protocol 2.28",
       variant,
       parameters: NEW_IMPORTS.map((name) => ({
         name,

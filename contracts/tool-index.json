@@ -1,14 +1,14 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 167,
-  "readOnlyToolCount": 100,
+  "toolCount": 170,
+  "readOnlyToolCount": 103,
   "profiles": {
-    "readonly": 100,
+    "readonly": 103,
     "platform": 12,
-    "dev": 139,
+    "dev": 136,
     "config": 42,
     "ops": 61,
-    "full": 167
+    "full": 170
   },
   "groups": {
     "data": 5,
@@ -21,7 +21,7 @@
     "ops": 44,
     "platform": 12,
     "quality": 4,
-    "source": 17,
+    "source": 20,
     "ui": 12
   },
   "tools": [
@@ -43,9 +43,7 @@
     {
       "name": "abap_debug_breakpoint",
       "group": "debug",
-      "profiles": [
-        "dev"
-      ],
+      "profiles": [],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": false,
@@ -54,14 +52,13 @@
       "route": "native-adt",
       "sapHelper": null,
       "minHelperProtocol": null,
+      "withheldReason": "Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted.",
       "note": "仅允许 Z/Y 源码断点；真实调试链路未验收。"
     },
     {
       "name": "abap_debug_session",
       "group": "debug",
-      "profiles": [
-        "dev"
-      ],
+      "profiles": [],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": false,
@@ -70,44 +67,41 @@
       "route": "native-adt",
       "sapHelper": null,
       "minHelperProtocol": null,
+      "withheldReason": "Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted.",
       "note": "w200 调试端点曾返回 404；仅 Mock 验证，真实会话未验收。"
     },
     {
       "name": "abap_debug_stack",
       "group": "debug",
-      "profiles": [
-        "dev"
-      ],
+      "profiles": [],
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
-      "minHelperProtocol": null
+      "minHelperProtocol": null,
+      "withheldReason": "Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted."
     },
     {
       "name": "abap_debug_status",
       "group": "debug",
-      "profiles": [
-        "dev"
-      ],
+      "profiles": [],
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
-      "minHelperProtocol": null
+      "minHelperProtocol": null,
+      "withheldReason": "Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted."
     },
     {
       "name": "abap_debug_step",
       "group": "debug",
-      "profiles": [
-        "dev"
-      ],
+      "profiles": [],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": false,
@@ -116,22 +110,22 @@
       "route": "native-adt",
       "sapHelper": null,
       "minHelperProtocol": null,
+      "withheldReason": "Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted.",
       "note": "单步/继续会驱动被调试程序执行，可能存在业务副作用。"
     },
     {
       "name": "abap_debug_variable",
       "group": "debug",
-      "profiles": [
-        "dev"
-      ],
+      "profiles": [],
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
-      "minHelperProtocol": null
+      "minHelperProtocol": null,
+      "withheldReason": "Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted."
     },
     {
       "name": "abap_download",
@@ -205,7 +199,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -220,7 +214,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -236,7 +230,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -297,7 +291,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -312,7 +306,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -645,12 +639,27 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_LOG_READ",
       "minHelperProtocol": null,
       "note": "需要管理员批准的只读助手；返回有界样本，不是完整日志清单。"
+    },
+    {
+      "name": "evaluate_refactoring",
+      "group": "source",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "native-adt",
+      "sapHelper": null,
+      "minHelperProtocol": null
     },
     {
       "name": "execute_data_query",
@@ -663,7 +672,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -679,12 +688,27 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
       "note": "w200 上原生引用映射曾超时并伴随 RIS 故障；失败不得解释为零引用。ECC 7.31 无 usageReferences 端点，只走 legacy RIS 通路，该通路覆盖函数模块、类、接口、程序的声明位置（0.50.5 起），不含片段检索。"
+    },
+    {
+      "name": "format_abap_source",
+      "group": "source",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "native-adt",
+      "sapHelper": null,
+      "minHelperProtocol": null
     },
     {
       "name": "get_abap_diagnostics",
@@ -695,7 +719,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -710,7 +734,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -725,7 +749,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -740,7 +764,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -755,7 +779,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -770,7 +794,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -785,7 +809,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -800,7 +824,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -815,7 +839,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -830,7 +854,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -845,9 +869,24 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null
+    },
+    {
+      "name": "get_quick_fix_proposals",
+      "group": "source",
+      "profiles": [
+        "dev"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "native-adt",
       "sapHelper": null,
       "minHelperProtocol": null
     },
@@ -860,7 +899,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -877,7 +916,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -892,7 +931,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -907,7 +946,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -922,7 +961,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -937,7 +976,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -952,7 +991,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -967,7 +1006,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -983,7 +1022,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -999,7 +1038,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1014,7 +1053,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1045,7 +1084,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -1107,7 +1146,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1202,7 +1241,7 @@
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_EXECUTE",
-      "minHelperProtocol": "2.0"
+      "minHelperProtocol": "2.28"
     },
     {
       "name": "prepare_enhancement_configuration_workflow",
@@ -1213,7 +1252,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1228,7 +1267,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1244,7 +1283,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1259,7 +1298,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "local",
       "sapHelper": null,
@@ -1274,7 +1313,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1289,7 +1328,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1304,7 +1343,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1321,7 +1360,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1337,7 +1376,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1352,7 +1391,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_LOG_READ",
@@ -1368,7 +1407,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MAINT_READ",
@@ -1385,7 +1424,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1400,7 +1439,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -1416,7 +1455,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -1431,7 +1470,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -1448,7 +1487,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1465,7 +1504,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1482,7 +1521,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1498,7 +1537,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1514,7 +1553,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1531,7 +1570,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -1546,7 +1585,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1561,7 +1600,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1576,7 +1615,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1592,7 +1631,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1607,7 +1646,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1622,7 +1661,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1637,7 +1676,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1652,7 +1691,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MAINT_READ",
@@ -1670,7 +1709,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -1685,7 +1724,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1702,7 +1741,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1717,7 +1756,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1732,7 +1771,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1747,7 +1786,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1764,7 +1803,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -1781,7 +1820,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1798,7 +1837,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1816,7 +1855,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1834,7 +1873,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1849,7 +1888,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1864,7 +1903,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DDIC_API",
@@ -1879,7 +1918,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_SMARTFORM_API",
@@ -1894,7 +1933,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1909,7 +1948,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -1926,7 +1965,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1941,7 +1980,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
@@ -1958,7 +1997,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1975,7 +2014,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -1992,7 +2031,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -2009,7 +2048,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -2026,7 +2065,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "target-specific",
       "sapHelper": null,
@@ -2197,7 +2236,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_EXECUTE",
@@ -2227,7 +2266,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -2242,7 +2281,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -2257,7 +2296,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_LOG_READ",
@@ -2273,7 +2312,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_OPS_READ",
@@ -2288,7 +2327,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -2304,7 +2343,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -2320,7 +2359,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -2335,7 +2374,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "native-adt",
       "sapHelper": null,
@@ -2350,7 +2389,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MAINT_READ",
@@ -2366,7 +2405,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MAINT_READ",
@@ -2593,7 +2632,7 @@
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
-        "idempotentHint": false
+        "idempotentHint": true
       },
       "route": "sap-helper-fallback",
       "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",

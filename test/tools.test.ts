@@ -1092,20 +1092,52 @@ test("structure and append-structure writes carry the same reference pair, and t
   const appendVersion = JSON.parse(
     await tools.readDdicStructure({ objectName: "ZCMCP_APPEND_REF", connectionId: "w200" })
   ) as { version: string }
-  await tools.upsertAppendStructureFields({
-    objectName: "ZCMCP_APPEND_REF",
-    fields: [
-      { name: "APPQTY", dataElement: "MENGE_D", referenceTable: "MARA", referenceField: "MEINS" }
-    ],
-    expectedVersion: appendVersion.version,
-    connectionId: "w200"
-  })
+  const appendWrite = JSON.parse(
+    await tools.upsertAppendStructureFields({
+      objectName: "ZCMCP_APPEND_REF",
+      fields: [
+        { name: "APPQTY", dataElement: "MENGE_D", referenceTable: "MARA", referenceField: "MEINS" }
+      ],
+      expectedVersion: appendVersion.version,
+      connectionId: "w200"
+    })
+  ) as {
+    baseTable: string
+    backup: { version: string; guardToken: string; baseTable: string; fields: unknown[] }
+    rollback: { tool: string; note: string }
+  }
   const appended = requests.find(
     (request) => request.operation === "UPSERT_APPEND_STRUCTURE_FIELDS"
   )
   assert.ok(appended, "the append structure write must reach the DDIC helper")
   assert.equal(appended.appendFields?.[0]?.REFTABLE, "MARA")
   assert.equal(appended.appendFields?.[0]?.REFFIELD, "MEINS")
+
+  // B7 asks for "backup + gate + rollback notes", and a backup has to be usable rather than merely
+  // present: it must describe the state the write replaced, carry the revision it was read at, and
+  // name how to put it back. Asserting the field list and the tokens - not just their existence - is
+  // the point: a backup missing a data element or a version could not be replayed, and the caller
+  // would discover that only after the write that needed undoing.
+  assert.equal(appendWrite.backup.baseTable, appendWrite.baseTable)
+  assert.equal(appendWrite.backup.version, appendVersion.version)
+  assert.match(appendWrite.backup.guardToken, /^[A-F0-9]{40}$/)
+  assert.equal(
+    appendWrite.backup.fields.length,
+    1,
+    "the backup must describe the pre-write field list"
+  )
+  assert.equal(appendWrite.rollback.tool, "upsert_append_structure_fields")
+  assert.match(appendWrite.rollback.note, /APPEND_FIELD_REMOVAL_NOT_SUPPORTED/)
+  // The backup must be a real read that happens before the write, or it is not a backup.
+  assert.ok(
+    requests.some((request) => request.operation === "READ_STRUCTURE"),
+    "the backup must come from an actual structure read, not a synthesized value"
+  )
+  assert.equal(
+    requests[requests.length - 1]?.operation,
+    "UPSERT_APPEND_STRUCTURE_FIELDS",
+    "the backup read must precede the write"
+  )
 
   // A lone half stays a caller error for both structure writers, refused before any SAP call.
   requests.length = 0
@@ -2649,14 +2681,14 @@ test("function interface patch applies controlled operations and preserves imple
   assert.equal(patched.helperCode, "FUNCTION_INTERFACE_PATCHED")
   assert.equal(
     patched.helperVerification,
-    "the helper compared its own read-back of the documentation tables; it cannot verify interface parameters on this platform"
+    "the helper compared its own read-back of the interface parameter tables against what it sent; it answers FUNCTION_PATCH_SAVE_NOT_OBSERVED with a per-table difference list when SAP did not store the change"
   )
   assert.equal(patched.sourceWritePerformed, false)
-  // The helper branch writes parameter documentation only on SAP_BASIS 7.31, so the response must
-  // report the platform limit rather than a parameter write that never happened.
-  assert.equal(patched.interfaceWritePerformed, false)
-  assert.equal(patched.interfaceWriteSupported, false)
-  assert.equal(patched.parameterChangesApplied, false)
+  // The helper answers FUNCTION_INTERFACE_PATCHED, which is its own read-back evidence that the
+  // parameter tables were stored, so all three flags report a performed interface write.
+  assert.equal(patched.interfaceWritePerformed, true)
+  assert.equal(patched.interfaceWriteSupported, true)
+  assert.equal(patched.parameterChangesApplied, true)
   assert.equal(backend.lastHelperRequest?.operation, "PATCH_FUNCTION_INTERFACE")
   assert.equal(backend.lastHelperRequest?.objectName, "ZCMCP_FM_1501")
   assert.equal(backend.lastHelperRequest?.program, "ZCMCP_FG_1501")

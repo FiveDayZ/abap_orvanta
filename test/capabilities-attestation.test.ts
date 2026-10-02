@@ -275,10 +275,15 @@ test("a capability follows the helper the registry routes its tool to, not a sta
   // in both include layouts since that revision), while the repository helper must stay at 2.6. A
   // capability spec that still named the repository helper judged the tool against 2.6 and
   // reported a deployed capability as unsupported.
+  //
+  // The interface patch shares that helper but NOT its floor: since 2026-10-02 it requires 2.28, the
+  // release that replaced the dialog-coupled SE37 save path with RPY_FUNCTIONMODULE_INSERT. Two
+  // routes on one helper therefore have two different minimums, and this test is where that is
+  // pinned - a single shared literal would report one of them wrongly.
   const backend = new MockBackend()
   backend.helperCapabilities.set(
     BASE_HELPER,
-    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.11" })
+    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.28" })
   )
   backend.helperCapabilities.set(REPOSITORY_HELPER, selfDescription({ maxProtocol: "2.6" }))
   const report = await buildReport(backend)
@@ -287,16 +292,21 @@ test("a capability follows the helper the registry routes its tool to, not a sta
   assert.equal(sourceWrite.availability, "available")
   assert.match(
     sourceWrite.reason,
-    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.11`)
+    new RegExp(
+      `The ${BASE_HELPER} helper self-described protocol 2\\.28, which satisfies minimum 2\\.11`
+    )
   )
 
   // The interface patch moved to the same base helper for the same reason (the native ADT lock
-  // path fails on w200), so it must resolve against the base helper's self-description too.
+  // path fails on w200), so it must resolve against the base helper's self-description too - at its
+  // own, higher floor.
   const interfacePatch = capabilityObservation(report, "repository-helper-function-interface-patch")
   assert.equal(interfacePatch.availability, "available")
   assert.match(
     interfacePatch.reason,
-    new RegExp(`The ${BASE_HELPER} helper self-described protocol`)
+    new RegExp(
+      `The ${BASE_HELPER} helper self-described protocol 2\\.28, which satisfies minimum 2\\.28`
+    )
   )
 
   // The capabilities that really do run on the repository helper keep following that helper.
@@ -311,10 +321,28 @@ test("a capability follows the helper the registry routes its tool to, not a sta
   const after = await buildReport(backend)
   assert.match(
     capabilityObservation(after, "repository-helper-function-source-write").reason,
-    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.11`)
+    new RegExp(`The ${BASE_HELPER} helper self-described protocol 2\\.28`)
   )
 
-  // And a base helper below the minimum still reports unsupported, not a silent pass. 2.8 is the
+  // A base helper BETWEEN the two floors is what proves they are two floors and not one: at 2.27 the
+  // source write is above its minimum and stays available, while the interface patch is below its
+  // own and must report unsupported. Reading one self-description, the two rows cannot share a
+  // literal.
+  backend.helperCapabilities.set(
+    BASE_HELPER,
+    selfDescription({ helper: BASE_HELPER, maxProtocol: "2.27" })
+  )
+  const separated = await buildReport(backend)
+  assert.equal(
+    capabilityObservation(separated, "repository-helper-function-source-write").availability,
+    "available"
+  )
+  assert.equal(
+    capabilityObservation(separated, "repository-helper-function-interface-patch").availability,
+    "unsupported"
+  )
+
+  // And a base helper below both minimums still reports unsupported, not a silent pass. 2.8 is the
   // revision that only knew the interface skeleton form, so it must stay below the minimum.
   backend.helperCapabilities.set(
     BASE_HELPER,

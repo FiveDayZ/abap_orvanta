@@ -395,10 +395,36 @@ export async function startSettingsServer(options: SettingsOptions) {
     }
   })
   server.requestTimeout = 20_000
-  await new Promise<void>((done, reject) => {
-    server.once("error", reject)
-    server.listen(options.port ?? 4851, "127.0.0.1", done)
-  })
+  // The same rule `startHttpServer` applies: an ephemeral port may land inside undici's blocked-port
+  // list, and every `fetch` against the settings origin would then fail with "bad port" through no
+  // fault of the caller. The MCP server already redraws the port in that case; without the same
+  // loop here the settings UI is simply unreachable on those draws, which shows up as an
+  // intermittent test failure that looks like a settings defect.
+  const requestedPort = options.port ?? 4851
+  if (requestedPort !== 0 && isFetchBlockedPort(requestedPort)) {
+    throw new Error("SETTINGS_PORT_BLOCKED")
+  }
+  if (requestedPort === 0) {
+    let address: string | import("node:net").AddressInfo | null = null
+    do {
+      await new Promise<void>((done, reject) => {
+        server.once("error", reject)
+        server.listen(0, "127.0.0.1", done)
+      })
+      address = server.address()
+      if (address && typeof address !== "string" && isFetchBlockedPort(address.port)) {
+        await new Promise<void>((done, reject) =>
+          server.close((error) => (error ? reject(error) : done()))
+        )
+        address = null
+      }
+    } while (!address)
+  } else {
+    await new Promise<void>((done, reject) => {
+      server.once("error", reject)
+      server.listen(requestedPort, "127.0.0.1", done)
+    })
+  }
   const address = server.address()
   if (!address || typeof address === "string") throw new Error("Settings address unavailable")
   origin = `http://127.0.0.1:${address.port}`

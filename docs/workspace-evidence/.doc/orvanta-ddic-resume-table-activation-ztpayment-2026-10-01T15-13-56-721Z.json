@@ -1,0 +1,19 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": false,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "resume_ddic_table_activation",
+  "arguments": {
+    "connectionId": "w200",
+    "objectName": "ZTPAYMENT",
+    "expectedInactiveFingerprint": "d5d31edfe760d98b03dae715860e42869ac64d327262311574769ff444ee33cc",
+    "packageName": "Z001",
+    "transportNumber": "GR2K923484",
+    "confirmation": "RESUME_INACTIVE_ACTIVATION"
+  },
+  "startedAt": "2026-10-01T15:13:56.762Z",
+  "finishedAt": "2026-10-01T15:13:57.600Z",
+  "isError": true,
+  "transportFailure": null,
+  "responseText": "Error invoking resume_ddic_table_activation: Error: SAP DDIC helper rejected the operation: VERIFY_FAILED: Activated DDIC object could not be read ( subrc         0 rc         8 actres_rows         0 ); details={\"ACT_RC\":\"8\",\"ACT_SUBRC\":\"0\",\"ACT_ROWS\":\"0\",\"RESUME\":\"X\",\"PHASE\":\"verify_failed\"}\n\nOperation Receipt\n{\n  \"operationId\": \"33f4b726-3844-4a61-94ab-8343632ed9e0\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"resume_ddic_table_activation\",\n  \"operationIdHash\": \"5913e7b71a94789bbe3a0cd837ed2577e6e31ed40238b880036fbb418b0a584e\",\n  \"targetKeyHash\": \"67d357d0097a27c3cf50bb46a23152afa4ca91516230fe20176079e766eabf7a\",\n  \"inputHash\": \"51423b7319e073876fc31e14738db645b817adc1eb761e27b4369f9f5b40ae6a\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"tabl object ZTPAYMENT\\\",\\\"requestedOperation\\\":\\\"resume_ddic_table_activation\\\",\\\"concurrencyGuard\\\":\\\"tool-specific SAP readback and lock checks\\\",\\\"transportNumber\\\":\\\"GR2K923484\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-01T15:13:57.259Z\",\n    \"target\": \"tabl object ZTPAYMENT\",\n    \"exists\": true,\n    \"active\": false,\n    \"version\": null,\n    \"fingerprint\": null,\n    \"packageName\": null,\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"partial\",\n    \"sources\": [\n      \"read_ddic_transparent_table\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"0b9036376a1603956920a00d01040d2bbe2fa9cd7a20257304e4738f27a586cc\",\n  \"startedAt\": \"2026-10-01T15:13:57.192Z\",\n  \"finishedAt\": \"2026-10-01T15:13:57.592Z\",\n  \"durationMs\": 397,\n  \"receiptHash\": \"a3045eff6447cf79a58a0e7db883d8e5b437647d540ce9f244ea45bce5436e28\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back tabl object ZTPAYMENT from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+}

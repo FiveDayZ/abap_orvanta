@@ -16,9 +16,16 @@
  *
  * Read-only against SAP: the live read only derives the baseline and the pre-flight assertions.
  * This script never writes, activates or transports anything in SAP. The generated report is run by
- * a human with F8 inside SAP, which is the only path that works for OBJECTS in ZORVANTA_MCP_CORE
- * (native ADT write returns HTTP 423; the helper write path is blocked by
- * SELF_FUNCTION_GROUP_FORBIDDEN).
+ * a human with F8 inside SAP, which is the only path that has actually been shown to work for OBJECTS
+ * in ZORVANTA_MCP_CORE (native ADT write returns HTTP 423; the helper write path is refused by
+ * SELF_FUNCTION_GROUP_FORBIDDEN unless the body carries ORVANTA_SELF_WRITE_APPROVED - guard relaxed
+ * 2026-10-02, carrier cf0df7d68d77962e).
+ *
+ * The marker path itself is no longer untested: rewriting the BODY of an existing CORE helper with
+ * `write_function_module_source` + the marker succeeded on 2026-10-02 15:25 (content-preserving
+ * rewrite: sourceHash unchanged before/after, interface fingerprint unchanged;
+ * .doc/code-update-20261002-152500.md). What this generator emits is a different case - it deploys
+ * whole report programs, so the F8 route stays the one used here.
  */
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"

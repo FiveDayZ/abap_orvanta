@@ -1034,6 +1034,15 @@ export function createMcpServer(
   registerTool("get_abap_diagnostics", toolContracts.get_abap_diagnostics, async (input) =>
     invoke("get_abap_diagnostics", () => tools.getDiagnostics(input))
   )
+  registerTool("format_abap_source", toolContracts.format_abap_source, async (input) =>
+    invoke("format_abap_source", () => tools.formatAbapSource(input))
+  )
+  registerTool("get_quick_fix_proposals", toolContracts.get_quick_fix_proposals, async (input) =>
+    invoke("get_quick_fix_proposals", () => tools.quickFixProposals(input))
+  )
+  registerTool("evaluate_refactoring", toolContracts.evaluate_refactoring, async (input) =>
+    invoke("evaluate_refactoring", () => tools.evaluateRefactoring(input))
+  )
   registerTool("get_abap_sql_syntax", toolContracts.get_abap_sql_syntax, async () =>
     textResult(tools.getAbapSqlSyntax())
   )

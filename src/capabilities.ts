@@ -225,10 +225,7 @@ export const HELPER_CAPABILITY_TOOLS: ReadonlyArray<readonly [string, readonly s
   // unsupported - the same false claim this registry exists to prevent.
   [
     "repository-helper-enhancement-action-parameter",
-    [
-      "manage_enhancement_implementation_state",
-      "manage_classic_badi_implementation"
-    ]
+    ["manage_enhancement_implementation_state", "manage_classic_badi_implementation"]
   ],
   ["repository-helper-function-source-write", ["write_function_module_source"]],
   [
@@ -602,6 +599,48 @@ export async function buildCapabilityReport(
       )
     ),
     capability("adt-transport-read", "native-adt", ["manage_transport_requests"], transports),
+    // The pretty printer is a separate ADT resource from the syntax check, so it gets its own
+    // verdict rather than being folded into a neighbouring capability: a target can serve one and
+    // not the other. Its observation is deliberately `unknown` - the capability report performs no
+    // formatting of its own, because that would need a real source object, and no probe here can
+    // establish that the endpoint exists without one. It is **not** a platform boundary: discovery
+    // silence about `/prettyprinter` proves nothing for a resource served under the abapsource
+    // collection, and claiming a boundary without evidence is the mistake the trace verdict made.
+    capability(
+      "adt-pretty-printer",
+      "native-adt",
+      ["format_abap_source"],
+      unknownTargetObservation(
+        "Formatting requires one real, readable source object whose active text can be sent to the ADT pretty-printer resource; registration and discovery alone are not proof. The service never writes the result back, so there is no write or activation to verify. A target that does not serve the resource answers with a named endpoint status instead of returning the input as if it had been formatted."
+      )
+    ),
+    // The quick-fix evaluator is its own resource under `quickfixes`, not part of the syntax check or
+    // the pretty printer, so a target can serve one and not the others and they get separate
+    // verdicts. Its observation is `unknown` for the same reason as the printer's: answering it needs
+    // a real source object with a fixable position, which no probe here can manufacture. It is **not**
+    // a platform boundary - discovery silence about `/quickfixes/evaluation` would prove nothing, and
+    // w200 does advertise it.
+    capability(
+      "adt-quick-fixes",
+      "native-adt",
+      ["get_quick_fix_proposals"],
+      unknownTargetObservation(
+        "Answering requires one real, readable source object and a position in it that the evaluator recognises; registration and discovery alone are not proof. Only the evaluation half is exposed, so there is no edit and no activation to verify. A target that does not serve the resource answers with a named endpoint status instead of an empty proposal list."
+      )
+    ),
+    // The refactoring resource is separate again from the quick fixes and the printer: it answers on
+    // `/sap/bc/adt/refactorings` for a relation selected by the request, so a target can serve one
+    // kind and not another and it gets its own verdict. Its observation is `unknown` for the same
+    // reason - answering needs a real object and a range that holds a refactorable position, which no
+    // probe here can manufacture. It is **not** a platform boundary: w200 advertises the resource.
+    capability(
+      "adt-refactorings",
+      "native-adt",
+      ["evaluate_refactoring"],
+      unknownTargetObservation(
+        "Answering requires one real, readable source object and a range in it that holds a refactorable position; registration and discovery alone are not proof. Only the evaluate step is exposed, so there is no preview, no transport and no object rewrite to verify. A target that does not serve the resource answers with a named endpoint status instead of an empty affected-object list."
+      )
+    ),
     capability(
       "adt-transport-entry-cleanup",
       "target-specific",

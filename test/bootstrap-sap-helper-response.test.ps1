@@ -595,9 +595,9 @@ foreach ($marker in @(
         "ENQUEUE_ESFUNCTION",
         "lv_fm_lock_mode TYPE enqmode VALUE 'X'",
         "EXPORTING funcname = lv_function_name",
-        "fu_modification_globals_init(SAPMS38L)",
-        "do_read_docu_r3_new(SAPMS38L)",
-        "do_update_docu_r3_new(SAPMS38L)",
+        "CALL FUNCTION 'RPY_FUNCTIONMODULE_INSERT'",
+        "UPDATE tfdir SET freedate = sy-datum",
+        "source = lt_fm_body_rssrc",
         "FUNCTION_PATCH_SAVE_NOT_OBSERVED",
         "INSPECT_REPOSITORY_ASSIGNMENT",
         "lv_transport_object = 'CLAS'",
@@ -787,15 +787,18 @@ if ($scriptText -match "RS_WORKING_OBJECT_ACTIVATE") {
 }
 $patchCase = $scriptText.IndexOf("WHEN 'PATCH_FUNCTION_INTERFACE'")
 $patchObserved = $scriptText.IndexOf("FUNCTION_ADT_PATCH_NOT_OBSERVED", $patchCase)
-$patchDocRead = $scriptText.IndexOf("do_read_docu_r3_new(SAPMS38L)", $patchObserved)
-$patchDocUpdate = $scriptText.IndexOf("do_update_docu_r3_new(SAPMS38L)", $patchDocRead)
-$patchCommit = $scriptText.IndexOf("COMMIT WORK AND WAIT", $patchDocUpdate)
+# 2.28 writes the interface through SAP's create API instead of the SE37 save FORMs, so the
+# documentation now travels in the parameter_docu table of that call rather than through
+# do_read_docu_r3_new / do_update_docu_r3_new.
+$patchInsert = $scriptText.IndexOf("CALL FUNCTION 'RPY_FUNCTIONMODULE_INSERT'", $patchObserved)
+$patchDocuTable = $scriptText.IndexOf("parameter_docu = lt_fm_documentation", $patchInsert)
+$patchCommit = $scriptText.IndexOf("COMMIT WORK AND WAIT", $patchDocuTable)
 $patchReadback = $scriptText.IndexOf("CALL FUNCTION 'RPY_FUNCTIONMODULE_READ'", $patchCommit)
-if ($patchCase -lt 0 -or $patchObserved -lt 0 -or $patchDocRead -lt 0 -or
-    $patchDocUpdate -lt 0 -or $patchCommit -lt 0 -or $patchReadback -lt 0 -or
-    $patchObserved -gt $patchDocRead -or $patchDocRead -gt $patchDocUpdate -or
-    $patchDocUpdate -gt $patchCommit -or $patchCommit -gt $patchReadback) {
-    throw "Function patch must verify ADT structure, update documentation, commit, then re-read"
+if ($patchCase -lt 0 -or $patchObserved -lt 0 -or $patchInsert -lt 0 -or
+    $patchDocuTable -lt 0 -or $patchCommit -lt 0 -or $patchReadback -lt 0 -or
+    $patchObserved -gt $patchInsert -or $patchInsert -gt $patchDocuTable -or
+    $patchDocuTable -gt $patchCommit -or $patchCommit -gt $patchReadback) {
+    throw "Function patch must verify ADT structure, rebuild through the create API, commit, then re-read"
 }
 $patchBody = $scriptText.Substring($patchCase, $patchReadback - $patchCase)
 $nativeDocMerge = $patchBody.IndexOf("lt_fm_requested_documentation[] = lt_fm_documentation[].")
@@ -810,7 +813,12 @@ foreach ($marker in @(
     "kind = <ls_fm_documentation>-kind.",
     "DELETE lt_fm_requested_documentation INDEX sy-tabix.",
     "<ls_fm_documentation>-stext = ls_fm_documentation-stext.",
-    "IF lt_fm_requested_documentation IS NOT INITIAL.",
+    "LOOP AT lt_fm_requested_documentation",
+    "CLEAR lv_fm_guard_found.",
+    "IF ls_fm_documentation-kind = 'X'.",
+    "IF lv_fm_guard_found IS INITIAL.",
+    "CLEAR lv_fm_docu_count.",
+    "IF lv_fm_docu_count > 0.",
     "FUNCTION_PATCH_DOCUMENTATION_MISMATCH"
 )) {
     if (-not $nativeDocBody.Contains($marker)) {
@@ -827,8 +835,33 @@ if ($patchBody -notmatch [regex]::Escape("lt_fm_source[] = lt_fm_current_source[
 if ($patchBody -match [regex]::Escape("APPEND ls_fm_source TO lt_fm_source.")) {
     throw "Function patch must not rebuild active source from the pre-ADT snapshot payload"
 }
-if ($scriptText -match "CALL FUNCTION 'FUNCTION_SAVE'") {
-    throw "Function patch must not invoke the dialog-coupled FUNCTION_SAVE API"
+# 2.24 writes the interface itself. The earlier "dialog-coupled" reading was wrong: the write runs
+# headlessly (verified on w200 2026-10-02), and what decides create vs update is the pair of
+# SAPMS38L module-pool globals. Require them together - without them an insert branch is taken and
+# an existing module is refused with FL 230, which is exactly what the repository carrier hits.
+# 2.28 must write the interface through SAP's own create API RPY_FUNCTIONMODULE_INSERT. That call
+# is the only headless entry that writes the parameter tables, the TFDIR binding and the
+# implementation source in one operation, and it never enters fu_save_function, so the RFC session
+# is not terminated and nothing is torn down. It refuses while a live TFDIR row exists, so the row
+# is retired first by setting FREEDATE, and it must receive the implementation body only - handing
+# it the pre-patch include would leave two FUNCTION headers in the include. All four halves are
+# required.
+if ($scriptText.Contains("CALL FUNCTION 'FUNCTION_SAVE'")) {
+    throw "Function patch must not call the wrapper FUNCTION_SAVE: it ignores its own P_RS38L import"
+}
+if ($scriptText.Contains("PERFORM fu_save_function_ext(SAPMS38L)")) {
+    throw "Function patch must not enter fu_save_function_ext: it ends in fu_save_function, which deletes the implementation include and tears down TFDIR"
+}
+foreach ($required in @(
+    "CALL FUNCTION 'RPY_FUNCTIONMODULE_INSERT'",
+    "UPDATE tfdir SET freedate = sy-datum",
+    "source = lt_fm_body_rssrc",
+    "lt_fm_body_after[] <> lt_fm_body_rssrc[]",
+    "emit_fm_difference 'SOURCE' lt_fm_body_rssrc"
+)) {
+    if (-not $scriptText.Contains($required)) {
+        throw "Function patch must write the interface and preserve the implementation source; missing: $required"
+    }
 }
 foreach ($section in @('IMPORT', 'EXPORT', 'CHANGING', 'TABLES', 'EXCEPTIONS', 'DOCUMENTATION', 'SOURCE')) {
     if (-not $scriptText.Contains("emit_fm_difference '$section'")) {
@@ -841,7 +874,7 @@ foreach ($marker in @(
     "'EXPECTED_ROWS'", "'ACTUAL_ROWS'", "'ROW'", "'FIELD'", "'EXPECTED'", "'ACTUAL'",
     "IF lt_fm_current_import[] <> lt_fm_import[]",
     "OR lt_fm_current_documentation[]",
-    "OR lt_fm_current_source[] <> lt_fm_source[]"
+    "OR lt_fm_body_after[] <> lt_fm_body_rssrc[]"
 )) {
     if (-not $scriptText.Contains($marker)) {
         throw "Function patch must retain strict readback checks and bounded evidence: $marker"
