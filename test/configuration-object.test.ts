@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { describeConfigurationObject } from "../src/configuration-object.js"
+import { configurationImgReaders, findConfigurationActivities } from "../src/configuration-img.js"
 import { toolNamesForProfile } from "../src/tool-registry.js"
 import { toolContracts } from "../src/contracts.js"
 import { ToolService } from "../src/tools.js"
@@ -81,6 +82,85 @@ const describe = (
   elements: (name: string) => Promise<unknown> = async (name) => element(name),
   domains: (name: string) => Promise<unknown> = async (name) => domain(name)
 ) => describeConfigurationObject(raw, "200", definition, types, elements, domains)
+
+test("descriptor IMG attachment is opt-in, scoped, fingerprinted and cannot grant maintenance", async () => {
+  const unit = { ...input, objectName: "T006" }
+  const unitTable = async () => ({ ...table(), ...unit })
+  const unitMetadata = async () => ({
+    ...metadata(),
+    data: metadata().data.map((v) => ({ ...v, TABNAME: "T006" }))
+  })
+  const img = await findConfigurationActivities(
+    unit,
+    {
+      callRemoteFunction: async () => ({ outputs: { ACTIVITIES_FOUND: [] } })
+    },
+    async (name) => ({
+      ...configurationImgReaders.find((v) => v.functionName === name),
+      connectionId: "w200",
+      updateTask: false
+    }),
+    async (name) =>
+      name === "CUS_IMGACH"
+        ? {
+            ...(await unitTable()),
+            objectName: name,
+            fingerprint: "66dc39d4bb427dcd68ec903287450f811dcd71eee8933a11e322e14783b6af6a"
+          }
+        : await unitTable()
+  )
+  let calls = 0
+  const attach = async () => {
+    calls++
+    return img
+  }
+  const base = await describeConfigurationObject(
+    unit,
+    "200",
+    unitTable,
+    unitMetadata,
+    async (name) => element(name),
+    async (name) => domain(name),
+    attach
+  )
+  assert.equal(calls, 0)
+  const linked = await describeConfigurationObject(
+    { ...unit, includeImg: true },
+    "200",
+    unitTable,
+    unitMetadata,
+    async (name) => element(name),
+    async (name) => domain(name),
+    attach
+  )
+  assert.equal(calls, 1)
+  assert.equal(linked.img, img)
+  assert.notEqual(linked.descriptorFingerprint, base.descriptorFingerprint)
+  assert.equal(linked.saveAvailable, false)
+  assert.equal(linked.capabilities.apply, false)
+  assert.ok(linked.evidence.missing.includes("complete_img_paths"))
+  await assert.rejects(
+    describeConfigurationObject(
+      { ...unit, includeImg: true },
+      "200",
+      unitTable,
+      unitMetadata,
+      async (name) => element(name),
+      async (name) => domain(name),
+      async () => ({ ...img, definitionFingerprint: "b".repeat(64) })
+    ),
+    /IMG_EVIDENCE_MISMATCH/
+  )
+  const never = async () => assert.fail("invalid options must not read SAP")
+  for (const raw of [
+    { ...input, includeImg: true },
+    { ...unit, language: "EN" }
+  ])
+    await assert.rejects(
+      describeConfigurationObject(raw, "200", never, never, never, never),
+      /IMG_(SCOPE_UNSUPPORTED|OPTIONS_INVALID)/
+    )
+})
 
 test("configuration descriptor uses observed keys/types, deduplicates domain reads and never grants writes", async () => {
   const seen: string[] = []

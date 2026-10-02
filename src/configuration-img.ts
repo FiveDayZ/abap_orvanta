@@ -3,11 +3,17 @@ import { createHash } from "node:crypto"
 import type { SapBackend } from "./backend.js"
 import { createReviewedTableReader, type ReviewedReaderSource } from "./reviewed-table-reader.js"
 import { configurationObjectSchema } from "./configuration-object.js"
+import {
+  configurationImgDetailLanguage,
+  type readConfigurationImgDetails
+} from "./configuration-img-details.js"
 import { assertTableAllowed, TABLE_TIERS } from "./table-allowlist.js"
 
 export const configurationActivitiesSchema = configurationObjectSchema.extend({
   maxActivities: z.number().int().min(1).max(100).default(20),
-  resolveMaintenanceObjects: z.boolean().default(false)
+  resolveMaintenanceObjects: z.boolean().default(false),
+  includeDetails: z.boolean().default(false),
+  language: configurationImgDetailLanguage.optional()
 })
 
 const mappingFields = [
@@ -256,9 +262,18 @@ export async function findConfigurationActivities(
   ) => Promise<Awaited<ReturnType<typeof resolveConfigurationMaintenanceObjects>>>,
   readTransaction?: (
     transactionName: string
-  ) => Promise<Awaited<ReturnType<typeof readConfigurationTransactionActivities>>>
+  ) => Promise<Awaited<ReturnType<typeof readConfigurationTransactionActivities>>>,
+  readDetails?: (
+    headers: { ACTIVITY: string; DOCU_ID: string }[],
+    language?: string
+  ) => Promise<Awaited<ReturnType<typeof readConfigurationImgDetails>>>
 ) {
   const input = configurationActivitiesSchema.parse(raw)
+  if (
+    (input.language && !input.includeDetails) ||
+    (input.includeDetails && !input.resolveMaintenanceObjects)
+  )
+    throw new Error("CONFIGURATION_IMG_DETAIL_OPTIONS_INVALID")
   if (
     input.resolveMaintenanceObjects &&
     (input.connectionId !== "w200" || !["T006", "T006A"].includes(input.objectName))
@@ -387,6 +402,25 @@ export async function findConfigurationActivities(
     throw new Error("CONFIGURATION_IMG_DEFINITION_CHANGED")
   // ponytail: SAP bounds the predicate to one object, not the row count; this caps output only.
   const ordered = [...activities.values()].sort((a, b) => a.ACTIVITY.localeCompare(b.ACTIVITY))
+  if (input.includeDetails && !readDetails) throw new Error("CONFIGURATION_IMG_DETAIL_UNAVAILABLE")
+  const details = input.includeDetails
+    ? await readDetails!(ordered.slice(0, input.maxActivities), input.language)
+    : null
+  // Details add reads after the original recheck; protect the object/mapping over the full request.
+  if (details) {
+    if ((await resolveObjects!(input.objectName)).fingerprint !== mapping!.fingerprint)
+      throw new Error("CONFIGURATION_IMG_MAPPING_CHANGED")
+    const finalDefinition = definition.parse(await readTable(input.objectName))
+    if (
+      finalDefinition.fingerprint !== table.fingerprint ||
+      finalDefinition.version !== table.version
+    )
+      throw new Error("CONFIGURATION_IMG_DEFINITION_CHANGED")
+  }
+  const detailById = new Map(details?.activities.map((detail) => [detail.activityId, detail]))
+  const detailEvidence = details
+    ? Object.fromEntries(Object.entries(details).filter(([name]) => name !== "activities"))
+    : null
   return {
     connectionId: input.connectionId,
     objectName: input.objectName,
@@ -419,22 +453,32 @@ export async function findConfigurationActivities(
       attributeId: row.ATTRIBUTES,
       headerTransaction: row.TCODE,
       maintenanceObjects: [...routes.get(row.ACTIVITY)!].sort(),
-      title: { status: "unknown" },
-      path: { status: "unknown" }
+      title: detailById.get(row.ACTIVITY)?.title ?? { status: "unknown" },
+      path: detailById.get(row.ACTIVITY)?.path ?? { status: "unknown" },
+      ...(details
+        ? { documentation: detailById.get(row.ACTIVITY)?.documentation ?? { status: "unknown" } }
+        : {})
     })),
     returnedCount: Math.min(ordered.length, input.maxActivities),
     observedCount: ordered.length,
     truncated: ordered.length > input.maxActivities,
-    evidence: { readers: configurationImgReaders, definitionsRechecked: true, snapshot: false },
+    evidence: {
+      readers: configurationImgReaders,
+      definitionsRechecked: true,
+      snapshot: false,
+      ...(detailEvidence ? { details: detailEvidence } : {})
+    },
     warnings: [
       mapping
         ? "Only the selected unit table's registered OBJS objects were searched; registration does not authorize maintenance or access to other tables."
         : "Exact table-object lookup only; use resolveMaintenanceObjects for the reviewed unit-domain mapping.",
-      "Per-object faults remain unavailable, never proof of absence; titles and hierarchy paths remain unknown.",
+      "Per-object faults remain unavailable, never proof of absence.",
       "An empty result does not prove the object has no IMG activity through another maintenance object.",
       "headerTransaction is the activity header transaction, not a verified maintenance API or unique route.",
       "maxActivities limits returned output, not SAP retrieval; sequential reads are not an atomic snapshot.",
-      "Titles, hierarchy paths, documentation content, business validation and CTS policy were not read."
+      details
+        ? "Paths cover only the reviewed physical structures, not complete SPRO visibility; documentation content, business validation and CTS policy remain unknown."
+        : "Titles, hierarchy paths, documentation content, business validation and CTS policy were not read."
     ]
   }
 }

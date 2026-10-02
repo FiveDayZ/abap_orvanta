@@ -1,6 +1,10 @@
 import { resolve } from "node:path"
 import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
-import { configurationObjectSchema, describeConfigurationObject } from "./configuration-object.js"
+import {
+  configurationDescriptorSchema,
+  describeConfigurationObject
+} from "./configuration-object.js"
+import { readConfigurationImgDetails } from "./configuration-img-details.js"
 import {
   configurationActivitiesSchema,
   findConfigurationActivities,
@@ -8897,7 +8901,8 @@ export class ToolService {
 
   async findConfigurationActivities(raw: unknown): Promise<string> {
     const input = configurationActivitiesSchema.parse(raw)
-    const client = this.backend.connectionDetails(input.connectionId).client
+    const connection = this.backend.connectionDetails(input.connectionId)
+    const client = connection.client
     if (input.resolveMaintenanceObjects && client !== "200")
       throw new Error("CONFIGURATION_IMG_MAPPING_SCOPE_UNSUPPORTED")
     const readFunction = async (functionName: string) =>
@@ -8932,6 +8937,17 @@ export class ToolService {
             this.backend,
             readTable,
             readFunction
+          ),
+        (headers, language) =>
+          readConfigurationImgDetails(
+            input.connectionId,
+            input.objectName,
+            client,
+            language ?? connection.language,
+            headers,
+            this.backend,
+            readTable,
+            readFunction
           )
       ),
       null,
@@ -8940,7 +8956,7 @@ export class ToolService {
   }
 
   async describeConfigurationObject(raw: unknown): Promise<string> {
-    const input = configurationObjectSchema.parse(raw)
+    const input = configurationDescriptorSchema.parse(raw)
     return JSON.stringify(
       await describeConfigurationObject(
         input,
@@ -8965,6 +8981,17 @@ export class ToolService {
             await this.readDdicDomain({
               connectionId: input.connectionId,
               objectName
+            })
+          ),
+        async () =>
+          JSON.parse(
+            await this.findConfigurationActivities({
+              connectionId: input.connectionId,
+              objectName: input.objectName,
+              expectedDefinitionFingerprint: input.expectedDefinitionFingerprint,
+              resolveMaintenanceObjects: true,
+              includeDetails: true,
+              language: input.language
             })
           )
       ),

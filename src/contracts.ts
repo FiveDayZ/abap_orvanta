@@ -13,7 +13,7 @@ import {
   transportNumberSchema
 } from "./transport-delivery.js"
 import { configurationPreviewSchema } from "./configuration-preview.js"
-import { configurationObjectSchema } from "./configuration-object.js"
+import { configurationDescriptorSchema } from "./configuration-object.js"
 import { configurationActivitiesSchema } from "./configuration-img.js"
 import { withRegistryAnnotations } from "./tool-registry.js"
 import { DEFAULT_OBJECT_TYPES } from "./backend.js"
@@ -2221,14 +2221,14 @@ const toolContractsBase = {
   },
   find_configuration_activities: {
     description:
-      "Find IMG activities for one approved customizing-tier transparent table. Default preserves exact S table-object lookup. resolveMaintenanceObjects=true is restricted to w200/200 T006/T006A: reads at most 16 OBJS registrations through a dedicated pinned metadata scope and rechecks the mapping. Actual T transaction objects use the pinned TSTC and CUS_ACTOBJ.TCODE -> CUS_IMGACH.C_ACTIVITY metadata join; other object types use the reviewed SCOUT_IMG_ACTIVITY_GET_W_OBJ wrapper. Does not expand the generic table allowlist. Returns activity/header transaction/documentation identifiers with per-object provenance; per-object faults remain unavailable, not proof of absence. maxActivities caps output only, not IMG retrieval. Titles, hierarchy paths, documentation content, official maintenance API, business rules and CTS policy remain unknown; read-only, no configuration writes.",
+      "Find IMG activities for one approved customizing-tier transparent table. Default preserves exact S table-object lookup. resolveMaintenanceObjects=true is restricted to w200/200 T006/T006A: reads at most 16 pinned OBJS registrations and rechecks the mapping. T transaction objects use the pinned TSTC and CUS_ACTOBJ.TCODE -> CUS_IMGACH.C_ACTIVITY join; other types use the reviewed SCOUT_IMG_ACTIVITY_GET_W_OBJ wrapper. includeDetails=true requires resolved mode and reads titles plus local physical node paths for returned activities only: ISO language defaults to the connection language, maps through T002, no translation fallback. Pinned CUS_IMGACT, TTREE/TTREETYPE and TNODEIMG/01/02 readers allow at most 96 exact table reads, 16 references per activity/table, depth 32; failures and limits remain explicit. Paths are partial, not full SPRO visibility; documentation identifiers do not prove content readability. maxActivities caps output, not initial IMG retrieval. No generic allowlist expansion, configuration writes, official maintenance API or CTS attestation.",
     inputSchema: configurationActivitiesSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },
   describe_configuration_object: {
     description:
-      "Describe one active flat transparent table in the existing approved customizing tier (maximum 64 fields). Reads actual DDIC keys, scalar types, data elements/domains, client and language keys, delivery class and maintenance permission; rechecks the table definition. Returns partial with unknown foreign keys, IMG relationships, official maintenance API, business rules and CTS policy. Does not read configuration values, classify request types, encode E071K, save or authorize writes. No scope or allowlist expansion; existing preview_configuration remains unchanged.",
-    inputSchema: configurationObjectSchema,
+      "Describe one active flat transparent table in the existing approved customizing tier (maximum 64 fields). Reads actual DDIC keys, scalar types, data elements/domains, client and language keys, delivery class and maintenance permission; rechecks the table definition. Optional includeImg=true is restricted to w200/200 T006/T006A and reuses find_configuration_activities with resolved objects and details; optional ISO language, otherwise connection language. Default adds no IMG reads. Returns partial: complete SPRO paths, documentation readability/content, foreign keys, official maintenance API, business rules and CTS policy remain unverified. Does not read configuration values, classify request types, encode E071K, save or authorize writes. No generic allowlist expansion; existing preview_configuration remains unchanged.",
+    inputSchema: configurationDescriptorSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },
   run_unit_tests: {

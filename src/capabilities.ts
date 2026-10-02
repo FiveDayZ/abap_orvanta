@@ -608,7 +608,7 @@ export async function buildCapabilityReport(
       "target-specific",
       ["find_configuration_activities"],
       unknownTargetObservation(
-        "Requires the reviewed standard RFC wrapper, dependency and IMG header layout. Optional maintenance-object resolution is scoped to w200/200 T006/T006A with pinned OBJS and transaction metadata readers (TSTC, CUS_ACTOBJ, CUS_IMGACH). No IMG call is made by this capability report."
+        "Requires the reviewed standard RFC wrapper, dependency and IMG header layout. Optional object resolution and details are scoped to w200/200 T006/T006A with pinned metadata readers, ISO language mapping and bounded local physical paths. Complete SPRO visibility and documentation content remain unverified. No IMG call is made by this capability report."
       )
     ),
     capability("adt-transport-read", "native-adt", ["manage_transport_requests"], transports),

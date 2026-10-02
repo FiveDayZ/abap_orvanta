@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto"
 import { z } from "zod"
 import { assertTableAllowed, TABLE_TIERS } from "./table-allowlist.js"
+import { configurationImgDetailLanguage } from "./configuration-img-details.js"
+import type { findConfigurationActivities } from "./configuration-img.js"
 
 const identifier = z
   .string()
@@ -18,6 +20,11 @@ export const configurationObjectSchema = z
     expectedDefinitionFingerprint: fingerprint.optional()
   })
   .strict()
+
+export const configurationDescriptorSchema = configurationObjectSchema.extend({
+  includeImg: z.boolean().default(false),
+  language: configurationImgDetailLanguage.optional()
+})
 
 const objectEvidence = z.object({
   connectionId: z.string(),
@@ -115,9 +122,19 @@ export async function describeConfigurationObject(
   readDefinition: (name: string) => Promise<unknown>,
   readMetadata: (query: unknown) => Promise<unknown>,
   readElement: (name: string) => Promise<unknown>,
-  readDomain: (name: string) => Promise<unknown>
+  readDomain: (name: string) => Promise<unknown>,
+  readImg?: () => Promise<Awaited<ReturnType<typeof findConfigurationActivities>>>
 ) {
-  const input = configurationObjectSchema.parse(raw)
+  const input = configurationDescriptorSchema.parse(raw)
+  if (input.language && !input.includeImg)
+    throw new Error("CONFIGURATION_OBJECT_IMG_OPTIONS_INVALID")
+  if (
+    input.includeImg &&
+    (input.connectionId !== "w200" ||
+      client !== "200" ||
+      !["T006", "T006A"].includes(input.objectName))
+  )
+    throw new Error("CONFIGURATION_OBJECT_IMG_SCOPE_UNSUPPORTED")
   assertTableAllowed(input.objectName)
   if (!(TABLE_TIERS.customizing as readonly string[]).includes(input.objectName))
     throw new Error("CONFIGURATION_OBJECT_SCOPE_UNSUPPORTED: only the approved customizing tier")
@@ -228,6 +245,17 @@ export async function describeConfigurationObject(
       foreignKey: { status: "unknown", reason: "DDIC foreign-key relationship was not read" }
     }
   })
+  if (input.includeImg && !readImg) throw new Error("CONFIGURATION_OBJECT_IMG_UNAVAILABLE")
+  const img = input.includeImg ? await readImg!() : null
+  if (
+    img &&
+    (img.connectionId !== input.connectionId ||
+      img.objectName !== input.objectName ||
+      img.definitionFingerprint !== table.fingerprint ||
+      !img.readOnly ||
+      img.saveAvailable)
+  )
+    throw new Error("CONFIGURATION_OBJECT_IMG_EVIDENCE_MISMATCH")
   const confirmation = await readTable()
   if (confirmation.fingerprint !== table.fingerprint || confirmation.version !== table.version)
     throw new Error("CONFIGURATION_OBJECT_DEFINITION_CHANGED")
@@ -272,9 +300,11 @@ export async function describeConfigurationObject(
     domains: [...domains.values()],
     maintenanceRoute: {
       status: "unknown",
-      reason: "No official maintenance API or maintenance-object mapping was established"
+      reason: img
+        ? "IMG mapping was read; no official maintenance API was established"
+        : "No official maintenance API or maintenance-object mapping was established"
     },
-    img: {
+    img: img ?? {
       status: "unknown",
       reason: "IMG activities, paths, transactions and documentation were not read"
     },
@@ -310,7 +340,7 @@ export async function describeConfigurationObject(
         "foreign_keys",
         "business_semantics",
         "maintenance_route",
-        "img_mapping",
+        ...(img ? ["complete_img_paths", "documentation_content"] : ["img_mapping"]),
         "cts_policy"
       ]
     },

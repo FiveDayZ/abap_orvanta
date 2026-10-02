@@ -8,6 +8,7 @@ import {
   readConfigurationTransactionActivities
 } from "../src/configuration-img.js"
 import { NATIVE_PREVIEW_EMPTY_HTML } from "../src/reviewed-table-reader.js"
+import { readConfigurationImgDetails } from "../src/configuration-img-details.js"
 import { ToolService } from "../src/tools.js"
 import { toolContracts } from "../src/contracts.js"
 import { toolNamesForProfile } from "../src/tool-registry.js"
@@ -212,6 +213,68 @@ const rfcReader = async () => ({
   updateTask: false,
   sourceFingerprint: "7b9a603493673d26f75e555616b24d150e407ce03eff57e9c68f0b30b1ba0c2d",
   interfaceFingerprint: "d06cc5c1ce05960bde526ecf27e38606134146474cc8da19f93ac2abd3e48074"
+})
+
+test("IMG details are opt-in, capped to returned headers, and failure retains verified associations", async () => {
+  const rows = [row("TEST_B"), row("TEST_A")]
+  let calls = 0
+  const details: NonNullable<Parameters<typeof findConfigurationActivities>[6]> = async (
+    headers,
+    language
+  ) => {
+    calls++
+    assert.deepEqual(
+      headers.map((v) => v.ACTIVITY),
+      ["TEST_A"]
+    )
+    assert.equal(language, "ZH")
+    return readConfigurationImgDetails(
+      "w200",
+      "T006",
+      "200",
+      "ZH",
+      headers,
+      {
+        runQuery: async () => {
+          throw new Error("HTTP 403")
+        },
+        callRemoteFunction: async () => assert.fail("permission failure must not fall back")
+      },
+      async () => assert.fail("layout deliberately unavailable"),
+      reader
+    )
+  }
+  const lookup = (includeDetails: boolean) =>
+    findConfigurationActivities(
+      {
+        ...mappedInput,
+        maxActivities: 1,
+        includeDetails,
+        ...(includeDetails ? { language: "ZH" } : {})
+      },
+      { callRemoteFunction: async () => ({ outputs: { ACTIVITIES_FOUND: rows } }) },
+      reader,
+      async (name) => table(name),
+      async () => mapping(),
+      undefined,
+      details
+    )
+  const old = await lookup(false)
+  assert.equal(calls, 0)
+  assert.equal(old.activities[0]!.title.status, "unknown")
+  const result = await lookup(true)
+  assert.equal(calls, 1)
+  assert.equal(result.observedCount, 2)
+  assert.equal(result.activities[0]!.activityId, "TEST_A")
+  assert.equal(result.activities[0]!.title.status, "unknown")
+  assert.equal(result.evidence.details!.status, "unavailable")
+  assert.ok(!("activities" in result.evidence.details!))
+  assert.equal(result.saveAvailable, false)
+  for (const invalid of [
+    { ...mappedInput, language: "EN" },
+    { ...input, includeDetails: true }
+  ])
+    await assert.rejects(run(invalid), /DETAIL_OPTIONS_INVALID/)
 })
 
 test("unit mapping reads only exact OBJS metadata with a sentinel bound and rechecks layout", async () => {
