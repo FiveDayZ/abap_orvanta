@@ -1872,9 +1872,9 @@
         "idempotentHint": true
       },
       "route": "sap-helper-fallback",
-      "sapHelper": "Z_ORVANTA_MCP_DYNPRO_API",
+      "sapHelper": "Z_ORVANTA_OPS_READ",
       "minHelperProtocol": null,
-      "note": "依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。"
+      "note": "依赖 Z_ORVANTA_OPS_READ 的 REPORT_PARAMETERS scope（须在批准文件中对该连接单独启用）；仅读取已编译 SSCR 元数据，不生成、不读变式内容。"
     },
     {
       "name": "read_report_variants",

@@ -824,7 +824,7 @@ const ROWS: readonly ToolRow[] = [
   // answers alert *history* only - see its contract - and the family stays open because archive-file
   // detail is still absent.
   ["read_ccms_alerts", "ops", DEV_CFG_OPS, "R", "target-specific", null, null],
-  ["read_report_parameters", "data", DEV_CFG_OPS, "R", "sap-helper-fallback", REPOSITORY, null],
+  ["read_report_parameters", "data", DEV_CFG_OPS, "R", "sap-helper-fallback", OPS, null],
   ["read_report_variants", "data", DEV_CFG_OPS, "R", "target-specific", null, null],
   ["read_background_job_details", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
   ["read_background_job_spool", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
@@ -974,7 +974,7 @@ const NOTES: Record<string, string> = {
   find_configuration_activities:
     "CFG-05：默认保留精确 S 类型查找；resolveMaintenanceObjects 仅为 w200/200 T006/T006A 读取至多 16 个 OBJS 关联，T 类型经 TSTC、CUS_ACTOBJ.TCODE 与 CUS_IMGACH.C_ACTIVITY 导航，其他类型使用已审阅 RFC。通用白名单不扩展。标题、路径和业务维护 API 未知，无写入。",
   read_report_parameters:
-    "依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。",
+    "依赖 Z_ORVANTA_OPS_READ 的 REPORT_PARAMETERS scope（须在批准文件中对该连接单独启用）；仅读取已编译 SSCR 元数据，不生成、不读变式内容。",
   read_report_variants:
     "通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。",
   read_background_job_details:

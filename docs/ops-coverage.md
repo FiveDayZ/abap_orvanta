@@ -347,10 +347,16 @@ is the procedure. Both families below read the file on every call and refuse the
 missing, when the connection is absent from it, or when the deployed helper's fingerprints no longer
 match the ones the file pins:
 
-| File                                    | Family                  | Approved sources               | Refusal when not satisfied                      |
-| --------------------------------------- | ----------------------- | ------------------------------ | ----------------------------------------------- |
-| `operational-log-approvals.json`        | `logs` (SM37/SM21/SP01) | `SM37`, `SM37_DETAILS`, `SP01` | `HELPER_NOT_APPROVED` / `APPROVAL_FILE_MISSING` |
-| `maintenance-diagnostic-approvals.json` | `locks`, `updates`      | `SM12`, `SM13`                 | `HELPER_NOT_APPROVED` / `APPROVAL_FILE_MISSING` |
+| File                                    | Family                                                        | Approved sources                                                       | Refusal when not satisfied                                              |
+| --------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `operational-log-approvals.json`        | `logs` (SM37/SM21/SP01) + report parameters + runtime metrics | `SM37`, `SM37_DETAILS`, `SM21`, `SP01`, `RUNTIME`, `REPORT_PARAMETERS` | `HELPER_NOT_APPROVED` / `APPROVAL_FILE_MISSING` / `SOURCE_NOT_APPROVED` |
+| `maintenance-diagnostic-approvals.json` | `locks`, `updates`                                            | `SM12`, `SM13`                                                         | `HELPER_NOT_APPROVED` / `APPROVAL_FILE_MISSING`                         |
+
+The operational-log file is also the only gate on `read_report_parameters`: that tool has a single route
+(`src/mcp.ts:1052-1053` → `OperationalLogService.readReportParameters`), which calls
+`Z_ORVANTA_OPS_READ`, so the source must be listed for the connection before the tool can reach SAP at
+all. Its per-source refusal is `SOURCE_NOT_APPROVED` with `isError: false`, returned before any SAP
+call.
 
 Both files pin `connectionId`, `url`, `client`, `username`, the helper's `sourceFingerprint` and
 `interfaceFingerprint`, and the enabled sources. Because the fingerprints describe the **deployed**

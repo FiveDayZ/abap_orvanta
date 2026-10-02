@@ -163,7 +163,7 @@
 | `read_number_range_object` | ddic | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DDIC_API (≥1.11) |
 | `read_performance_snapshot` | ops | dev, config, ops | 只读 | target-specific | Z_ORVANTA_OPS_READ (≥1.1) |
 | `read_qrfc_queues` | ops | dev, config, ops | 只读 | target-specific | — |
-| `read_report_parameters` | data | dev, config, ops | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API |
+| `read_report_parameters` | data | dev, config, ops | 只读 | sap-helper-fallback | Z_ORVANTA_OPS_READ |
 | `read_report_variants` | data | dev, config, ops | 只读 | target-specific | — |
 | `read_role_authorizations` | ops | dev, config, ops | 只读 | target-specific | — |
 | `read_sapscript_form` | form | dev | 只读 | sap-helper-fallback | Z_ORVANTA_MCP_DYNPRO_API (≥2.8) |
@@ -242,7 +242,7 @@
 - `read_background_job_spool`：需要单独批准的 SP01 scope；仅文本，无 OTF/PDF 与打印，分页非原子快照。
 - `read_ccms_alerts`：告警历史（ALALERTDB 持久化记录），不是 RZ20 实时监视；空结果不等于系统健康。行序未指定，非最新若干条；SEVERITY/STATUS/VALUE 为整数型，只展示不可筛选。
 - `read_failed_update`：只读；不提供参数载荷或完整错误正文。
-- `read_report_parameters`：依赖仓库助手的 REPORT_PARAMETERS scope；仅读取已编译 SSCR 元数据，不生成、不读变式内容。
+- `read_report_parameters`：依赖 Z_ORVANTA_OPS_READ 的 REPORT_PARAMETERS scope（须在批准文件中对该连接单独启用）；仅读取已编译 SSCR 元数据，不生成、不读变式内容。
 - `read_report_variants`：通过受限单表读取当前 client 的 VARID 目录元数据；不读参数值，不合并 client 000。
 - `release_write_operation_lock`：仅解除本地目标锁，不触碰 SAP 锁；需人工确认与最新凭证哈希。
 - `replace_string_in_abap_object`：函数模块改由仓库助手写入（SAP_BASIS 7.31 上 ADT 源码 PUT 一律 HTTP 423，2026-09-18 追踪 12/12），因此该目标额外依赖助手操作码 WRITE_FUNCTION_SOURCE（仓库助手协议 ≥2.9：该修订同时接受「接口骨架」与「接口留在函数模块参数表、正文紧随 FUNCTION 语句」两种 include 布局，旧助手对第二种报 SOURCE_MARKER_ERROR）；程序、类、接口等仍是原生 ADT。函数模块只能替换实现正文，接口段改动被拒绝并指向 patch_function_module_interface 或 SE37。

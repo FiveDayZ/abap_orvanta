@@ -19,7 +19,10 @@ export const reportParameterFields = {
           number: z.string().regex(/^\d{1,10}$/),
           kind: z.enum(["P", "S"]),
           typeCode: z.string().max(1),
-          dictionaryType: z.string().max(1),
+          // RSSCR-DTYP is CHAR 4 (domain SYCHAR04, read from w200 on 2026-10-03) and the helper emits
+          // it raw, so CHAR/NUMC/DATS/INT4 and a short type padded to four characters are all valid.
+          // A max(1) here rejected every real reply; the local approval gate had hidden that.
+          dictionaryType: z.string().max(4),
           referenceField: z.string().max(132),
           obligatory: z.boolean(),
           noDisplay: z.boolean()

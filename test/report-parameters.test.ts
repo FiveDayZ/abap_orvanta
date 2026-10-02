@@ -72,3 +72,18 @@ test("an existing empty selection load remains distinct from unreadable metadata
   assert.equal(formatReportParameters(input, { ...reply, parameters: [] }).returnedCount, 0)
   assert.throws(() => formatReportParameters(input, { ...reply, report: null, parameters: [] }))
 })
+
+test("the dictionary type accepts the full four-character RSSCR-DTYP field and nothing longer", () => {
+  // RSSCR-DTYP is CHAR 4 (domain SYCHAR04, read from w200 on 2026-10-03) and the helper emits it raw.
+  // The schema's earlier max(1) rejected every real w200 reply with OPS_LOG_RESPONSE_INVALID; this
+  // test would have caught that, so it pins both ends of the field.
+  const fourCharacter = { ...parameter, dictionaryType: "CHAR" }
+  const formatted = formatReportParameters(input, { ...reply, parameters: [fourCharacter] })
+  assert.equal(formatted.parameters[0]!.dictionaryType, "CHAR")
+  assert.throws(() =>
+    formatReportParameters(input, {
+      ...reply,
+      parameters: [{ ...parameter, dictionaryType: "CHARX" }]
+    })
+  )
+})

@@ -822,7 +822,7 @@ export async function buildCapabilityReport(
       "target-specific",
       ["read_report_parameters"],
       unknownTargetObservation(
-        "w200 helper branch deployed with syntax, activation and full source readback evidence; no runtime acceptance. REPORT_PARAMETERS scope is approved but awaits enablement under the new service. Existing compiled SSCR metadata only: no GENERATE, defaults, variant contents, runtime events or source/load consistency proof."
+        "w200 branch of Z_ORVANTA_OPS_READ deployed with syntax, activation and full source readback evidence, and the REPORT_PARAMETERS scope is enabled for w200 and accepted by real read-only calls: report ZFIR001 returned 14 P/S parameters and a control report returned 151, each with its dictionary type and reference field. The first real reply also exposed a schema defect that was fixed in the same batch - the CHAR 4 RSSCR-DTYP dictionary type was capped at one character, which had rejected every real reply. Existing compiled SSCR metadata only: no GENERATE, defaults, variant contents, runtime events or source/load consistency proof."
       )
     ),
     capability(

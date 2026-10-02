@@ -826,7 +826,11 @@ test("the registry records the honest gap rather than inflating it", () => {
     // recover_ddic_table_conversion did NOT move: its third authorized attempt (the same key-flag
     // change, the last structural lever on a table with no rows) again produced no TBATG worklist
     // entry, so its recovery path remains unexercised.
-    totals.verified <= 126,
+    // Raised from 126 to 127 on 2026-10-03 (R7-D): read_report_parameters moved off `unverified` on
+    // the first real w200 success, after the operator approved the REPORT_PARAMETERS source and the
+    // real reply exposed two defects the local gate had hidden - the entry named the wrong helper and
+    // the reply schema capped the CHAR 4 RSSCR-DTYP dictionary type at one character.
+    totals.verified <= 127,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
