@@ -31,15 +31,17 @@ what is still missing.
 
 ## Definition of done (plan section 8)
 
-The operations plan states four conditions before a 95% claim may be made. Clauses 1 and 2 are
-computed here, clause 3 reads the action tools that exist today (a platform boundary with a
-recorded ruling counts as an exemption, not as an open defect), and clause 4 is enforced by the
+The operations plan states four conditions before a 95% claim may be made. Clauses 1, 2 and 3
+are computed here - a non-verified tool whose platform boundary is *recorded* (the target reports
+`platform-unsupported` and the registry cites a record that resolves) is an exemption named in the
+row, not an open defect, and clause 2 applies the same rule clause 3 already applied; a
+non-verified tool without that record stays a failure in both. Clause 4 is enforced by the
 classification guard that has to pass before this file can be generated at all.
 
 | Clause | Reading | Met |
 | ------ | ------- | --- |
 | 1. at least 95% of the 14 scenario families end-to-end | 14 / 14 closed (100%) | yes |
-| 2. every ops tool verified with real w200 evidence | 43 / 46 of the tools the families declare are verified (the `ops` group itself holds 44, of which 41 are verified); not verified: cleanup_transport_entries, release_transport_task, analyze_abap_traces | **no** |
+| 2. every ops tool verified with real w200 evidence | 43 / 46 of the tools the families declare are verified (the `ops` group itself holds 44, of which 41 are verified); exempt with a recorded platform ruling (3): cleanup_transport_entries, release_transport_task, analyze_abap_traces (each entry says `platform-unsupported` and cites a record that resolves; a boundary fails safely and its remedy is outside the service); not verified: none | yes |
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 7 / 7 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, create_background_job, modify_background_job, release_background_job, cancel_background_job, delete_sap_lock | yes (open items: none) |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 

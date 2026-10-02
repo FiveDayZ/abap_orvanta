@@ -711,6 +711,22 @@ export interface QuickFixProposalInfo {
   sourceUri: string
   line: number
   column: number
+  /**
+   * The request media type the evaluator accepted, and every media type that was offered before it.
+   *
+   * The media type is part of the answer, not an implementation detail: a system that refuses one type
+   * and accepts another is exactly the case this records, and a refusal lists what was tried so the
+   * caller is not left guessing which header SAP rejected (2026-10-02: w200 refused the library's
+   * `application/*` with an ADT error document).
+   */
+  mediaTypeUsed: string
+  acceptUsed: string
+  mediaTypeAttempts: Array<{
+    contentType: string
+    accept: string
+    outcome: string
+    proposalCount: number | null
+  }>
   proposalCount: number
   proposals: Array<{
     type: string
@@ -742,6 +758,17 @@ export interface RefactoringEvaluationInfo {
   /** Free-form titles and notes the service returned, kept verbatim. */
   title: string
   userContent: string
+  /**
+   * Whether the answer carried an object list at all.
+   *
+   * `false` with `affectedObjectCount: 0` is NOT "nothing would change": the service answered about the
+   * position without listing objects, which on this release happens because the object list comes from
+   * the `preview` step this read-only tool does not call. The two readings are kept apart in the reply
+   * and in its summary, because a caller deciding whether a refactoring is safe needs the difference.
+   */
+  objectListReported: boolean
+  /** The element/attribute names the answer carried, so an empty result is attributable to the answer. */
+  answerElements: string[]
   affectedObjectCount: number
   affectedObjects: Array<{
     uri: string

@@ -2946,6 +2946,18 @@ export class MockBackend implements SapBackend {
       sourceUri: source.uriUsed,
       line,
       column,
+      // The mock answers under the media type that needs no negotiation, which is what the real
+      // backend reports when the first candidate is accepted.
+      mediaTypeUsed: "text/plain",
+      acceptUsed: "application/*",
+      mediaTypeAttempts: [
+        {
+          contentType: "text/plain",
+          accept: "application/*",
+          outcome: "HTTP 200",
+          proposalCount: proposals.length
+        }
+      ],
       proposalCount: proposals.length,
       proposals
     }
@@ -2974,6 +2986,11 @@ export class MockBackend implements SapBackend {
       oldName: this.refactoringOldName,
       title: "",
       userContent: "",
+      // The double answers with a list, so an empty list here is the service's own empty list - the
+      // reading the reply must call a definite answer. A position-only answer is the other case, and it
+      // is covered against the real backend with a recording HTTP client.
+      objectListReported: true,
+      answerElements: ["renameRefactoring", "affectedObjects"],
       affectedObjectCount: affectedObjects.length,
       affectedObjects
     }

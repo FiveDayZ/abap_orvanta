@@ -1,4 +1,6 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import test from "node:test"
 import { buildCapabilityReport } from "../src/capabilities.js"
 import {
@@ -7,9 +9,11 @@ import {
   opsCapabilityBlock,
   opsClassificationProblems,
   opsFamilyState,
+  splitNotVerifiedByRecordedRuling,
   type OpsFamilyDefinition
 } from "../src/ops-coverage.js"
 import { TOOL_REGISTRY } from "../src/tool-registry.js"
+import { resolveEvidencePath, type VerificationEntry } from "../src/verification-registry.js"
 import { MockBackend } from "./mock-backend.js"
 
 /**
@@ -767,4 +771,88 @@ test("the capability report carries the ops block", async () => {
   // family is now closed on both readings and this line becomes the tripwire against a silent
   // regression that would put it back on the worklist.
   assert.deepEqual(summary.outstandingRequiredFamilies.includes("interfaces"), false)
+})
+
+/**
+ * The 2026-10-02 operator ruling (work package A1) made clause 2 read a not-verified tool the way
+ * clause 3 already did: a recorded platform boundary is an exemption, not an open defect. An
+ * exemption is the one verdict here whose failure mode is inflating a number, so the negative half
+ * of this test is the point of it - every shape that is *not* a recorded boundary has to stay open,
+ * including the tempting one (a record that is named but cannot be opened).
+ */
+test("clause 2 exempts only a platform boundary whose record resolves", () => {
+  const tools = [
+    "recorded_boundary",
+    "named_but_unreadable",
+    "still_unverified",
+    "failed_runtime",
+    "boundary_without_record",
+    "unregistered_tool"
+  ]
+  const entries = new Map([
+    [
+      "recorded_boundary",
+      { status: "platform-unsupported" as const, failureBasis: null, evidence: ".doc/recorded.md" }
+    ],
+    [
+      "named_but_unreadable",
+      { status: "platform-unsupported" as const, failureBasis: null, evidence: ".doc/missing.md" }
+    ],
+    ["still_unverified", { status: "unverified" as const, failureBasis: null, evidence: null }],
+    [
+      "failed_runtime",
+      { status: "failed" as const, failureBasis: "runtime" as const, evidence: ".doc/recorded.md" }
+    ],
+    [
+      "boundary_without_record",
+      { status: "platform-unsupported" as const, failureBasis: null, evidence: null }
+    ]
+  ])
+  const split = splitNotVerifiedByRecordedRuling(tools, {
+    entries,
+    evidenceResolvable: (tool) => entries.get(tool)?.evidence === ".doc/recorded.md"
+  })
+
+  assert.deepEqual(split.exempt, ["recorded_boundary"])
+  assert.deepEqual(split.open, [
+    "named_but_unreadable",
+    "still_unverified",
+    "failed_runtime",
+    "boundary_without_record",
+    "unregistered_tool"
+  ])
+
+  // Without a resolver the caller cannot tell a cited record from an openable one, so the rule falls
+  // back to "a path was cited" - which is why the generator supplies the resolver.
+  const withoutResolver = splitNotVerifiedByRecordedRuling(tools, { entries })
+  assert.deepEqual(withoutResolver.exempt, ["recorded_boundary", "named_but_unreadable"])
+
+  // The registry the matrix is generated from must satisfy the strict form: every exemption the real
+  // document prints names a record this checkout can open.
+  const registry = JSON.parse(
+    readFileSync(resolve("contracts", "verification-registry.json"), "utf8")
+  ) as { entries: VerificationEntry[] }
+  const realEntries = new Map(registry.entries.map((entry) => [entry.tool, entry]))
+  const realSplit = splitNotVerifiedByRecordedRuling(
+    registry.entries.filter((entry) => entry.status !== "verified").map((entry) => entry.tool),
+    {
+      entries: realEntries,
+      evidenceResolvable: (tool) => {
+        const entry = realEntries.get(tool)
+        return entry !== undefined && resolveEvidencePath(entry) !== undefined
+      }
+    }
+  )
+  assert.ok(realSplit.exempt.length > 0, "the document exempts tools, so this loop must run")
+  for (const tool of realSplit.exempt) {
+    const entry = realEntries.get(tool)
+    assert.equal(entry?.status, "platform-unsupported")
+    assert.equal(entry?.failureBasis, null)
+    assert.notEqual(entry?.evidence, null)
+    assert.ok(
+      entry !== undefined && resolveEvidencePath(entry),
+      `${tool} is exempted but its record cannot be opened`
+    )
+    assert.ok(!realSplit.open.includes(tool), `${tool} must be exempt or open, never both`)
+  }
 })

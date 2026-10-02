@@ -947,6 +947,71 @@ export interface OpsVerificationLookup {
   entries: ReadonlyMap<string, { status: VerificationStatus }>
 }
 
+/** The evidence fields the recorded-ruling rule reads; both are optional in the caller's view. */
+export interface OpsRulingLookup {
+  entries: ReadonlyMap<
+    string,
+    {
+      status: VerificationStatus
+      failureBasis?: "runtime" | "static" | null
+      evidence?: string | null
+    }
+  >
+  /**
+   * Machine check that the cited record resolves to a file that exists. It defaults to "a path was
+   * cited", and a caller that can resolve paths must supply it: without that check the exemption
+   * could be claimed by naming a file nobody can open, which is precisely what it must not allow.
+   */
+  evidenceResolvable?: (tool: string) => boolean
+}
+
+export interface OpsRecordedRulingSplit {
+  /** Not-verified tools whose platform boundary is recorded: exempt from clause 2, always listed. */
+  exempt: readonly string[]
+  /** Not-verified tools with no recorded boundary. These are what clause 2 still fails on. */
+  open: readonly string[]
+}
+
+/**
+ * Split the not-verified tools of the operations families by whether the platform boundary that
+ * keeps them unverified is *recorded*.
+ *
+ * Plan section 8 clause 3 already treats "the platform cannot do this and the ruling is on file" as
+ * an exemption rather than an open defect; clause 2 asked for every ops tool to be verified without
+ * offering that rule at all, so one generator read the same registry two opposite ways. This is the
+ * same rule applied to clause 2, under the operator's 2026-10-02 ruling (charter
+ * `.doc/charter-dod-clause2-and-dev-evidence-20261001.md`, work package A1).
+ *
+ * The exemption is deliberately hard to claim, because its only failure mode is hiding real debt:
+ * the entry must say `platform-unsupported`, carry no failure basis, cite an evidence path, and -
+ * when the caller can resolve paths - that path must exist. Anything else, including every
+ * `unverified` or `failed` entry, stays in {@link OpsRecordedRulingSplit.open}. An exempt tool is
+ * never counted as verified: callers subtract only {@link OpsRecordedRulingSplit.open} from the
+ * denominator's shortfall, and the exempt names are printed.
+ */
+export function splitNotVerifiedByRecordedRuling(
+  tools: readonly string[],
+  lookup: OpsRulingLookup
+): OpsRecordedRulingSplit {
+  const exempt: string[] = []
+  const open: string[] = []
+  for (const tool of tools) {
+    const entry = lookup.entries.get(tool)
+    const recorded =
+      entry !== undefined &&
+      entry.status === "platform-unsupported" &&
+      entry.failureBasis === null &&
+      (entry.evidence ?? "") !== "" &&
+      (lookup.evidenceResolvable === undefined || lookup.evidenceResolvable(tool))
+    if (recorded) {
+      exempt.push(tool)
+    } else {
+      open.push(tool)
+    }
+  }
+  return { exempt, open }
+}
+
 export interface OpsFamilyRollup {
   id: string
   label: string

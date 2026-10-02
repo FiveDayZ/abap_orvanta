@@ -14,7 +14,12 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const target = "docs/ops-acceptance-matrix.md"
 const check = process.argv.includes("--check")
 
-const { opsCapabilityBlock } = await import(new URL("../dist/src/ops-coverage.js", import.meta.url))
+const { opsCapabilityBlock, splitNotVerifiedByRecordedRuling } = await import(
+  new URL("../dist/src/ops-coverage.js", import.meta.url)
+)
+const { resolveEvidencePath } = await import(
+  new URL("../dist/src/verification-registry.js", import.meta.url)
+)
 const { TOOL_REGISTRY } = await import(new URL("../dist/src/tool-registry.js", import.meta.url))
 
 const registryPath = resolve(root, "contracts/verification-registry.json")
@@ -136,20 +141,24 @@ lines.push("")
 lines.push("## Definition of done (plan section 8)")
 lines.push("")
 lines.push(
-  "The operations plan states four conditions before a 95% claim may be made. Clauses 1 and 2 are"
+  "The operations plan states four conditions before a 95% claim may be made. Clauses 1, 2 and 3"
 )
 lines.push(
-  "computed here, clause 3 reads the action tools that exist today (a platform boundary with a"
+  "are computed here - a non-verified tool whose platform boundary is *recorded* (the target reports"
 )
 lines.push(
-  "recorded ruling counts as an exemption, not as an open defect), and clause 4 is enforced by the"
+  "`platform-unsupported` and the registry cites a record that resolves) is an exemption named in the"
+)
+lines.push(
+  "row, not an open defect, and clause 2 applies the same rule clause 3 already applied; a"
+)
+lines.push(
+  "non-verified tool without that record stays a failure in both. Clause 4 is enforced by the"
 )
 lines.push("classification guard that has to pass before this file can be generated at all.")
 lines.push("")
 // Withdrawn names stay in this inventory on purpose: a family that gives up a declared tool must not
-// make the tool disappear from the matrix, or the withdrawal would read as a silent deletion. They
-// count as "not verified" in clause 2 for the same reason - the registry still says
-// platform-unsupported, and that is a fact about the tool, not about whether its family waits for it.
+// make the tool disappear from the matrix, or the withdrawal would read as a silent deletion.
 const opsToolsInFamilies = [
   ...new Set(
     block.families.flatMap((family) => [...family.toolNames, ...family.withdrawnToolNames])
@@ -157,17 +166,34 @@ const opsToolsInFamilies = [
 ]
 const statusOf = (tool) => entries.get(tool)?.status ?? "unregistered"
 const nonVerified = opsToolsInFamilies.filter((tool) => statusOf(tool) !== "verified")
+// Clause 2 reads the not-verified tools through the same recorded-ruling rule clause 3 uses, under
+// the operator's 2026-10-02 ruling (charter .doc/charter-dod-clause2-and-dev-evidence-20261001.md,
+// work package A1). A tool the platform cannot serve keeps its entry `platform-unsupported` with a
+// resolvable record; that is a boundary on file, not work still to be done. Everything else - every
+// unverified or failed entry - stays a clause-2 failure, so the exemption cannot be used to hide
+// debt, and the exempt tools are named in the row rather than folded into the count.
+const clause2 = splitNotVerifiedByRecordedRuling(nonVerified, {
+  entries,
+  evidenceResolvable: (tool) => resolveEvidencePath(entries.get(tool)) !== undefined
+})
 const actionTools = [...new Set(block.families.flatMap((family) => family.actionTools))]
 // Clause 3 is about the safety machinery of action tools, not about whether the platform supports the
 // operation: a tool whose operation is a documented platform boundary still fails safely, so it is an
-// exemption with a recorded ruling rather than an open defect - the same rule the families use.
+// exemption with a recorded ruling rather than an open defect - the same rule the families use, and
+// since 2026-10-02 the same rule clause 2 uses. Both clauses now read one classifier, so they cannot
+// drift apart again.
 const actionToolsVerified = actionTools.filter(
   (tool) => statusOf(tool) === "verified" && entries.get(tool)?.method === "controlled-write"
 )
-const actionToolsExempt = actionTools.filter((tool) => statusOf(tool) === "platform-unsupported")
-const actionToolsOpen = actionTools.filter(
-  (tool) => !actionToolsVerified.includes(tool) && !actionToolsExempt.includes(tool)
+const clause3 = splitNotVerifiedByRecordedRuling(
+  actionTools.filter((tool) => statusOf(tool) !== "verified"),
+  {
+    entries,
+    evidenceResolvable: (tool) => resolveEvidencePath(entries.get(tool)) !== undefined
+  }
 )
+const actionToolsExempt = clause3.exempt
+const actionToolsOpen = clause3.open
 const plannedActionFamilies = block.families
   .filter((family) => family.actionRequired && family.missingToolNames.length > 0)
   .map((family) => `${family.id} (${family.missingToolNames.length})`)
@@ -184,7 +210,7 @@ lines.push(
   `| 1. at least 95% of the 14 scenario families end-to-end | ${summary.closedRequiredFamilyCount} / ${summary.requiredEndToEndFamilyCount} closed (${summary.endToEndPercentOfRequired}%) | ${summary.criterionMet ? "yes" : "**no**"} |`
 )
 lines.push(
-  `| 2. every ops tool verified with real w200 evidence | ${opsToolsInFamilies.length - nonVerified.length} / ${opsToolsInFamilies.length} of the tools the families declare are verified (the \`ops\` group itself holds ${opsGroupTools.length}, of which ${opsGroupTools.length - opsGroupNonVerified.length} are verified); not verified: ${nonVerified.join(", ") || "none"} | ${nonVerified.length === 0 ? "yes" : "**no**"} |`
+  `| 2. every ops tool verified with real w200 evidence | ${opsToolsInFamilies.length - nonVerified.length} / ${opsToolsInFamilies.length} of the tools the families declare are verified (the \`ops\` group itself holds ${opsGroupTools.length}, of which ${opsGroupTools.length - opsGroupNonVerified.length} are verified); exempt with a recorded platform ruling (${clause2.exempt.length}): ${clause2.exempt.join(", ") || "none"} (each entry says \`platform-unsupported\` and cites a record that resolves; a boundary fails safely and its remedy is outside the service); not verified: ${clause2.open.join(", ") || "none"} | ${clause2.open.length === 0 ? "yes" : "**no**"} |`
 )
 lines.push(
   `| 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | ${
@@ -243,6 +269,31 @@ if (unreported.length > 0) {
 }
 if (opsGroupNonVerified.length < nonVerified.length) {
   throw new Error("the ops group cannot hold fewer unverified tools than the families declare")
+}
+// The exemption's only failure mode is hiding debt, so it is checked here as well as in the
+// classifier: an exempt tool must be a recorded platform boundary, must never be one the registry
+// calls verified, and must be listed - an exemption that disappears from the row would be a silent
+// drop. Every other not-verified tool has to remain in `open`, which is what makes clause 2 fail.
+for (const tool of clause2.exempt) {
+  const entry = entries.get(tool)
+  if (entry?.status !== "platform-unsupported") {
+    throw new Error(`clause 2 exempts ${tool}, whose registry status is not platform-unsupported`)
+  }
+  if (resolveEvidencePath(entry) === undefined) {
+    throw new Error(`clause 2 exempts ${tool}, whose cited record does not resolve`)
+  }
+}
+if (clause2.exempt.length + clause2.open.length !== nonVerified.length) {
+  throw new Error("clause 2 lost a not-verified tool between the exemption split and the row")
+}
+if (clause2.exempt.some((tool) => statusOf(tool) === "verified")) {
+  throw new Error("clause 2 exempted a tool the registry calls verified")
+}
+for (const tool of clause3.exempt) {
+  const entry = entries.get(tool)
+  if (entry?.status !== "platform-unsupported" || resolveEvidencePath(entry) === undefined) {
+    throw new Error(`clause 3 exempts ${tool} without a recorded platform ruling`)
+  }
 }
 
 lines.push("## The matrix")

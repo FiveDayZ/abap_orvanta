@@ -4795,6 +4795,24 @@ export class ToolService {
       fields: serializeDdicTableFields(fields)
     })
     const expectedResult = { ...current, fields }
+    const expectedDefinition = ddicDefinition(expectedResult, "transparentTable")
+    // A field's description is SAP's text for its data element. Re-pointing a field at another data
+    // element therefore changes a value this request never supplied, and keeping the previous data
+    // element's text in the expectation failed a patch that SAP had already applied and activated
+    // (w200 2026-10-02 R7-E: SAP stored `自然数` for the new data element INT4 while the expectation
+    // still held `字符字段长度 = 10`). Those descriptions are dropped from the assertion and the stored
+    // ones are returned in the receipt; every other field, and the description of every field whose
+    // data element was not re-pointed, is still asserted exactly.
+    const repointedFields = new Set(
+      input.changes.flatMap((change) =>
+        change.action === "update" && change.dataElement !== undefined
+          ? [ddicFieldName(change.fieldName)]
+          : []
+      )
+    )
+    for (const field of expectedDefinition.fields as Array<Record<string, unknown>>) {
+      if (repointedFields.has(String(field.name))) delete field.description
+    }
     return savedDdicResult(
       result,
       "transparentTable",
@@ -4802,7 +4820,7 @@ export class ToolService {
       packageName,
       connectionId,
       {
-        ...ddicDefinition(expectedResult, "transparentTable")
+        ...expectedDefinition
       },
       // The components that were preserved byte-for-byte are declared explicitly, so a caller never
       // has to infer from the row set which parts of the layout it was not allowed to touch.
@@ -5682,7 +5700,7 @@ export class ToolService {
       }
       return (
         `Source from ${input.objectName} (lines ${startLine}-${endIndex} of ${lines.length}, ${selected.length} lines retrieved):\n\n` +
-        `\`\`\`abap\n${selected.join("\n").trim()}\n\`\`\`\n\n` +
+        `\`\`\`abap\n${joinSourceLines(selected)}\n\`\`\`\n\n` +
         `Full Source SHA-256: ${sourceFingerprint}\n` +
         `URI: ${uriUsed}` +
         (endIndex < lines.length ? "\n(more lines available, request next range)" : "") +
@@ -5707,7 +5725,7 @@ export class ToolService {
           const selected = lines.slice(startLine, Math.min(startLine + lineCount, lines.length))
           return (
             `### ${request.objectName} (${selected.length} lines)\n` +
-            `\`\`\`abap\n${selected.join("\n").trim()}\n\`\`\`\n`
+            `\`\`\`abap\n${joinSourceLines(selected)}\n\`\`\`\n`
           )
         } catch (error) {
           return `### ${request.objectName}\nError accessing ${request.objectName}: ${String(error)}\n`
@@ -5738,7 +5756,7 @@ export class ToolService {
         `Original URI: ${input.uri}\n` +
         `URI Used: ${uriUsed}\n` +
         `Lines: ${startLine}-${endLine} of ${lines.length} (${selected.length} retrieved)\n\n` +
-        `\`\`\`abap\n${selected.join("\n").trim()}\n\`\`\``
+        `\`\`\`abap\n${joinSourceLines(selected)}\n\`\`\``
       )
     } catch (error) {
       throw new Error(`Failed to access object by URI: ${String(error)}`)
@@ -8197,15 +8215,23 @@ export class ToolService {
         column: result.column,
         proposalCount: result.proposalCount,
         proposals: result.proposals,
+        mediaTypeUsed: result.mediaTypeUsed,
+        acceptUsed: result.acceptUsed,
+        mediaTypeAttempts: result.mediaTypeAttempts,
         summary:
-          result.proposalCount === 0
+          (result.proposalCount === 0
             ? `The quick-fix evaluator returned no proposal for line ${result.line}, column ${result.column}. ` +
               "That is a definite answer for this position, not a failure and not a missing endpoint: " +
               "a target without the evaluator would have raised unsupported-endpoint instead."
             : `The quick-fix evaluator returned ${result.proposalCount} proposal(s) for line ${result.line}, ` +
               `column ${result.column}. Nothing was applied: each proposal's handlerUri is reported so a ` +
               "caller can see what invoking it would touch, and applying one is a separate, explicitly " +
-              "authorised write that this tool does not perform.",
+              "authorised write that this tool does not perform.") +
+          ` The evaluator answered request media type ${result.mediaTypeUsed}.` +
+          (result.mediaTypeAttempts.length > 1
+            ? ` ${result.mediaTypeAttempts.length - 1} refused type(s) were tried first - see ` +
+              "mediaTypeAttempts for what SAP answered to each."
+            : ""),
         readOnly: true,
         wroteToSap: false
       },
@@ -8278,14 +8304,23 @@ export class ToolService {
         userContent: result.userContent,
         affectedObjectCount: result.affectedObjectCount,
         totalDeltaCount: totalDeltas,
+        objectListReported: result.objectListReported,
+        answerElements: result.answerElements,
         affectedObjects: result.affectedObjects,
         summary:
           result.affectedObjectCount === 0
-            ? `The ${result.kind} evaluation reported no affected object for ` +
-              `line ${result.range.start.line}, column ${result.range.start.column}. That is a definite ` +
-              "answer for this position, not a failure and not a missing endpoint: a target without the " +
-              "refactoring resource would have raised unsupported-endpoint instead. A refactoring that " +
-              "touches nothing is usually a position that does not hold a refactorable identifier."
+            ? result.objectListReported
+              ? `The ${result.kind} evaluation reported an EMPTY affected-object list for ` +
+                `line ${result.range.start.line}, column ${result.range.start.column}. That is a definite ` +
+                "answer for this position, not a failure and not a missing endpoint: a target without the " +
+                "refactoring resource would have raised unsupported-endpoint instead. A refactoring that " +
+                "touches nothing is usually a position that does not hold a refactorable identifier."
+              : `The ${result.kind} evaluation answered about the position (line ${result.range.start.line}, ` +
+                `column ${result.range.start.column}) WITHOUT an affected-object list, so this reply does ` +
+                "NOT say that nothing would change - only that this answer carried no objects. On this " +
+                "release the object list comes from the preview step, which this read-only tool does not " +
+                `call. The answer's own elements are reported in answerElements (${result.answerElements.join(", ") || "none"}) ` +
+                "so the shape can be judged rather than assumed."
             : `The ${result.kind} evaluation would affect ${result.affectedObjectCount} object(s) with ` +
               `${totalDeltas} text replacement(s) in total. NOTHING was changed: this is the evaluate ` +
               "step only, and applying a refactoring needs the preview and execute steps, which this " +
@@ -10585,6 +10620,24 @@ function canonicalJson(value: unknown): unknown {
   return value
 }
 
+/**
+ * Assemble selected source lines for a reply without altering them.
+ *
+ * These replies used `selected.join("\n").trim()`, and `.trim()` does not stop at the enclosing
+ * newlines: it strips the leading whitespace of the FIRST selected line and the trailing whitespace of
+ * the last. A single-line read therefore came back with its indentation removed, and in a multi-line
+ * read the first line was silently re-indented to column 0 - which is exactly the column a caller
+ * computes a quick-fix or refactoring position from. Measured on 2026-10-02 against w200: reading
+ * ZORVANTA_MAINT_DEPLOY_R04 line 30 as one line returned `lv_name TYPE c LENGTH 30,` while the source
+ * line indents the declaration by six spaces, and the same read's second line kept its indentation.
+ *
+ * CRLF files arrive here as `split("\n")` remnants, so a trailing `\r` is dropped per line: that keeps
+ * every line consistent instead of only the interior ones, which is what the old `.trim()` produced.
+ */
+function joinSourceLines(lines: string[]): string {
+  return lines.map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line)).join("\n")
+}
+
 function screenFieldName(field: Record<string, string>): string | undefined {
   const value = field.NAME ?? field.FNAM
   return value ? value.trim().toUpperCase() : undefined
@@ -12703,8 +12756,15 @@ function savedDdicResult(
   const definition = ddicDefinition(result, kind)
   const mismatches = definitionMismatches(definition, expectedDefinition)
   if (mismatches.length) {
+    // The identity, package, active version and recorded request have already been verified above, so a
+    // mismatch here means SAP stored *something* under this name: the write landed and was not rolled
+    // back. Naming that surviving object is what lets a caller inspect or keep it instead of retrying a
+    // create that already exists (R7-E 2026-10-02: a created table survived a failure receipt that said
+    // nothing about it).
     throw new Error(
-      `SAP DDIC verification did not return the requested active definition: ${formatMismatches(mismatches)}`
+      `SAP DDIC verification did not return the requested active definition: ${formatMismatches(mismatches)}. ` +
+        `SAP did return active version ${result.objectVersion} in package ${result.packageName} with recorded request ${result.recordedRequest}, ` +
+        `so ${objectName} exists on the target and was not rolled back; read it back with the matching read tool before retrying.`
     )
   }
   return JSON.stringify(
@@ -13040,9 +13100,34 @@ function definitionMismatches(actual: unknown, expected: unknown, path = ""): st
       definitionMismatches((actual as Record<string, unknown>)[key], value, `${where}.${key}`)
     )
   }
+  if (
+    isSapOwnedDdicText(where) &&
+    typeof actual === "string" &&
+    typeof expected === "string" &&
+    actual.length > 0 &&
+    expected.startsWith(actual)
+  ) {
+    return []
+  }
   return actual === expected
     ? []
     : [`${where}: SAP stored ${describeValue(actual)} instead of ${describeValue(expected)}`]
+}
+
+/**
+ * Two DDIC text values are SAP's own, not the caller's copy: a table's short text is stored inside the
+ * Dictionary text field's width (measured on w200 2026-10-02: a 61-character description came back as
+ * the 36-character prefix `ORVANTA R7 temporary table-conversio`), and a field description is derived
+ * from the field's data element rather than from the request. Asserting equality on them turned
+ * completed creates and patches into failure receipts (R7-E evidence
+ * `.cache/r7e-state/01-E1b-create-tmp-table-create_ddic_transparent_table-2026-10-02T15-24-10-780Z.json`
+ * and `01-E2-patch-payload-int4-...json`), so SAP's value is accepted when it is a non-empty prefix of
+ * the requested one, and the stored value is reported back to the caller. Every other scalar, and a
+ * field description on a field the caller did not re-point at another data element, is still asserted
+ * exactly.
+ */
+function isSapOwnedDdicText(path: string): boolean {
+  return /^definition\.(description|fields\[\d+\]\.description)$/.test(path)
 }
 
 function matchesSubset(actual: unknown, expected: unknown): boolean {

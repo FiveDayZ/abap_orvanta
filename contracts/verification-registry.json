@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T15:14:24.841Z",
-  "notes": "2026-10-02 (development batch R2): the development-side evidence backfill. 50 tools that already had a real recorded live acceptance in this workspace were entered as `verified`, each citing a record that was opened and whose quoted values were read out of it, and each path checked to exist on disk and to name its own tool. The candidate list offered 57 and 7 were refused on the design's own rule that `verified` means a call that SUCCEEDED: upsert_lock_object (ten receipts, all failed), create_smartform (SMARTFORM_STORE_FAILED), create_enhancement_hook_implementation (HTTP 500 RABAX_STATE), append_ddic_transparent_table_fields, preview_source_changes (blocked, 404), get_version_history (object not found) and abap_debug_status (whose only artifact is a repo-side acceptance-harness log rather than a tool reply, and whose endpoint the capability report measures as platform_unsupported). format_abap_source was added in the same batch as the D-9 formatter, unverified because it has not been called yet. The tools that remain unverified are listed, grouped and with their acceptance steps, in .doc/orvanta-mcp-development-pending-acceptance-20261002.md. See .doc/code-update-20261002-183312.md. 2026-10-02 (R3/D-9): format_abap_source passed a real read-only call against w200 and moved to verified; the formatted output differed from the input, which is what distinguishes a formatter run from an echo. 2026-10-02 (R3/B7-4, read half): read_ddic_table_conversion_status passed a real read-only call against w200 and moved to verified; the entry records that entryCount 0 cannot distinguish 'no pending conversion' from 'no such table', which is why it is documented rather than fixed.",
+  "updatedAt": "2026-10-02T15:42:45.360Z",
+  "notes": "2026-10-02 (development batch R2): the development-side evidence backfill. 50 tools that already had a real recorded live acceptance in this workspace were entered as `verified`, each citing a record that was opened and whose quoted values were read out of it, and each path checked to exist on disk and to name its own tool. The candidate list offered 57 and 7 were refused on the design's own rule that `verified` means a call that SUCCEEDED: upsert_lock_object (ten receipts, all failed), create_smartform (SMARTFORM_STORE_FAILED), create_enhancement_hook_implementation (HTTP 500 RABAX_STATE), append_ddic_transparent_table_fields, preview_source_changes (blocked, 404), get_version_history (object not found) and abap_debug_status (whose only artifact is a repo-side acceptance-harness log rather than a tool reply, and whose endpoint the capability report measures as platform_unsupported). format_abap_source was added in the same batch as the D-9 formatter, unverified because it has not been called yet. The tools that remain unverified are listed, grouped and with their acceptance steps, in .doc/orvanta-mcp-development-pending-acceptance-20261002.md. See .doc/code-update-20261002-183312.md. 2026-10-02 (R3/D-9): format_abap_source passed a real read-only call against w200 and moved to verified; the formatted output differed from the input, which is what distinguishes a formatter run from an echo. 2026-10-02 (R3/B7-4, read half): read_ddic_table_conversion_status passed a real read-only call against w200 and moved to verified; the entry records that entryCount 0 cannot distinguish 'no pending conversion' from 'no such table', which is why it is documented rather than fixed. 2026-10-02 (R7-A, the two D-9 read-only tools): get_quick_fix_proposals passed a real read-only acceptance and moved to verified, with the media-type defect it exposed fixed in the same batch (the library's application/* pair is refused by w200; text/plain is accepted). evaluate_refactoring moved to platform-unsupported after six live calls established that w200's refactoring evaluate step answers a rename with an empty document and refuses extract-method selections, and that this is the service's answer rather than a wrong request: at the same positions get_quick_fix_proposals names the identifier. Both entries cite raw tool replies copied into .doc. See .doc/code-update-20261002-225717.md.\n\n2026-10-02 (development batch R7-B / R7-E): the read-only acceptance sweep. 17 tools that had no real call on record were promoted to \"verified\" from raw receipts produced by real calls against w200 in this batch (source 4, platform 2, enhancement 11) - each receipt was opened, its tool name and arguments checked against the claim, and the observed values quoted in the entry. Three read-only debugger tools (abap_debug_status/stack/variable) were recorded \"platform-unsupported\" from the batch's own capability report, whose ADT discovery evidence shows no /sap/bc/adt/debugger collection on this target, each with its reversal condition; the three write-side debugger tools were deliberately left alone because calling them would change state. Two DDIC write verifications were found to reject writes SAP had applied (a truncated table short text and a field description derived from the new data element); both were fixed with guard tests and the create entry's note records it, while patch_ddic_transparent_table_fields and recover_ddic_table_conversion stay \"unverified\" with the exact reason written down. 2026-10-02 (R7-B, ui/data round): five more tools earned \"verified\" from real w200 calls recorded under .cache/r7b-state-uidata (read_abap_screen, read_abap_gui_definition, read_transaction_code, validate_dynpro_application, read_report_variants), each receipt opened and its observed values quoted in the entry; read_report_parameters stayed \"unverified\" because its own local approval gate refused the call before SAP was contacted, and that refusal is what the entry now records.",
   "entries": [
     {
       "tool": "find_configuration_activities",
@@ -67,25 +67,25 @@
       "tool": "abap_debug_stack",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": null,
+      "verificationTarget": "w200 (SAP_BASIS 7.31 SP04) ADT discovery: no /sap/bc/adt/debugger collection is advertised, so no debug session (and therefore no stack) can exist on this system",
       "method": "read-only",
-      "status": "unverified",
+      "status": "platform-unsupported",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-srcplat/09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json",
+      "notes": "A real call on 2026-10-02 was refused with `No active debug session for connection w200`. That text alone is a session precondition answered locally and does NOT by itself prove the endpoint is absent - the boundary is established by the same batch's capability report (`.cache/r7b-state-srcplat/11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json`): `debuggerCapability` `platform_unsupported`, `adt-debugger` observation.availability `platform_unsupported`, evidence `debugger absent from the ADT discovery response`. Attribution is kept explicit so the refusal is not mistaken for the proof. REVERSAL CONDITION: Basis enables the debugger endpoint and an authorized session exists."
     },
     {
       "tool": "abap_debug_status",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": null,
+      "verificationTarget": "w200 (SAP_BASIS 7.31 SP04) ADT discovery: the target advertises 39 collections over three empty workspace titles (ABAP Profiler, ABAP Test Cockpit, Debugger) and no /sap/bc/adt/debugger collection, so no debug session can exist on this system",
       "method": "read-only",
-      "status": "unverified",
+      "status": "platform-unsupported",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-srcplat/11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json",
+      "notes": "RULED A PLATFORM BOUNDARY on 2026-10-02 from the capability report's own discovery evidence: `quality.debuggerCapability.value` is `platform_unsupported` with the reason that the platform did not advertise any debugger collection in ADT discovery, and the `adt-debugger` capability entry carries observation.availability `platform_unsupported` with evidence `debugger absent from the ADT discovery response`. The tool itself answered a real call with local service state (`state idle`, `mode user`, `debugUser WYS`, `breakpointCount 0`) - that is this service's own bookkeeping and NOT evidence of a working debugger, which is why it is not `verified`. It is not deleted and does not pretend to work: it reports the local state and the family stays hidden from the dev/config/ops profiles. REVERSAL CONDITION: if Basis enables /sap/bc/adt/debugger, re-test with an authorized session and promote the whole family from the fresh receipts."
     },
     {
       "tool": "abap_debug_step",
@@ -103,13 +103,13 @@
       "tool": "abap_debug_variable",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": null,
+      "verificationTarget": "w200 (SAP_BASIS 7.31 SP04) ADT discovery: no /sap/bc/adt/debugger collection is advertised, so no debug session (and therefore no frame variable) can exist on this system",
       "method": "read-only",
-      "status": "unverified",
+      "status": "platform-unsupported",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-srcplat/10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json",
+      "notes": "A real call on 2026-10-02 was refused with `No active debug session for connection w200`. As with abap_debug_stack, that is a locally answered session precondition, and the platform boundary comes from the batch's capability report (`debuggerCapability` `platform_unsupported`; `adt-debugger` observation.availability `platform_unsupported`, evidence `debugger absent from the ADT discovery response`), recorded at `.cache/r7b-state-srcplat/11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json`. The write-side siblings (abap_debug_session/breakpoint/step) were deliberately not called, because they would change state. REVERSAL CONDITION: Basis enables the debugger endpoint and an authorized session exists."
     },
     {
       "tool": "abap_download",
@@ -177,11 +177,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-srcplat/02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) analysed class ZCL_PMC_TP_WM and answered status `partial` with real content: engine ADT_RIS_WHEREUSED, code LEGACY_REFERENCES_RETURNED, rawCount 9 / supported 9 / filtered 4, four semantic references (ZPMCZC01_PAI, ZPMC_FM_UMLAGERN_CONFIRM, ZPMC_FM_UMLAGERN_QUERY, ZPMC_FM_STOCK_TRANSFER), a text channel that searched 2 of 2 sources with matchedLines 5 and scopeComplete true. This tool is NOT a safety verdict: safeToChange stayed `not_determined`, repositoryComplete false, transitiveDependencies not_analyzed, dynamicCalls not_resolved, snippets empty because the legacy RIS endpoint has no snippet contract, and the 19 relationship types that answered with an empty body are unverified rather than proven absent. When objectUri is supplied, objectType is ignored."
     },
     {
       "tool": "append_ddic_transparent_table_fields",
@@ -265,7 +265,7 @@
       "failureBasis": null,
       "lastAttemptAt": "2026-09-22T07:46:14Z",
       "evidence": ".cache/runtime-regression/24-create-table-retry.out.json",
-      "notes": "status \"DDIC_OBJECT_SAVED\", objectName ZORV_MCP_T01, fingerprint 5486d2b9f97b24806d78358ea9b86ac88b1641a6c0cf71c1af39b2a6ff6c8499. Not proven: creation with another delivery class or field shape. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool."
+      "notes": "status \"DDIC_OBJECT_SAVED\", objectName ZORV_MCP_T01, fingerprint 5486d2b9f97b24806d78358ea9b86ac88b1641a6c0cf71c1af39b2a6ff6c8499. Not proven: creation with another delivery class or field shape. Verified 2026-10-02 (R2 evidence backfill): the artifact was opened and the quoted values read out of it, and the record names this tool.\n\nR7-E 2026-10-02 (live w200, real write): this tool created ZORVANTA_R7C_TMP and reported a FAILED verification, because SAP stored the requested 61-character short text as its 36-character prefix `ORVANTA R7 temporary table-conversio` while the expectation held the full request. The table existed and was active (read back: version 20261002232409, package ZABAP, three fields). The comparison now accepts SAP's value when it is a non-empty prefix of the requested text and returns the stored text in the receipt, and a mismatch error now names the surviving object (active version, package, recorded request) instead of only failing. Guard tests: test/ddic-write-verification-fidelity.test.ts. Evidence: .cache/r7e-state/01-E1b-create-tmp-table-create_ddic_transparent_table-2026-10-02T15-24-10-780Z.json and 01-E1c-readback-table-...json."
     },
     {
       "tool": "create_enhancement_hook_implementation",
@@ -573,23 +573,23 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. The quick-fix half of D-9, and deliberately only its read-only half: it reads an object's active source by URI and POSTs that text to the ADT quick-fix evaluator (/sap/bc/adt/quickfixes/evaluation, with the position as `uri#start=line,column`), returning the proposals SAP offers at that spot. Applying a proposal is NOT part of this tool - the edit-producing call is not made and the handler URI each proposal carries is returned rather than followed, so there is no lock, save, activate or transport on this path. An empty proposal list is reported as a definite answer for that position, and a target without the evaluator fails with a named endpoint status rather than an empty list. PROVENANCE: the request contract was taken from this workspace's own ADT client dependency, abap-adt-api 8.4.3 - refactor.ts fixProposals (POST /sap/bc/adt/quickfixes/evaluation, Content-Type and Accept application/*, body = the source text) and its AdtClient wrapper fixProposals(url, source, line, column), whose own test calls it as c.fixProposals(include, source, 4, 10) in src/test/main.test.ts. It was not inferred. On w200 the resource is advertised by ADT discovery under the 'Quickfixes' collection. NOT YET DONE: no live call has been made, so nothing is claimed about what the evaluator returns for any position, and the endpoint-missing path has never been reached on this target. Refactoring (rename, extract-method, change-package) is a separate resource with its own write semantics and is not covered by this entry."
+      "lastAttemptAt": "2026-10-02T22:43:41+08:00",
+      "evidence": ".doc/orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json",
+      "notes": "A real read-only call answered on w200. PROVENANCE (unchanged): the request contract was taken from this workspace's own ADT client dependency, abap-adt-api 8.4.3 - refactor.ts fixProposals (POST /sap/bc/adt/quickfixes/evaluation, body = the source text) and its AdtClient wrapper fixProposals(url, source, line, column), whose own test calls it as c.fixProposals(include, source, 4, 10). It was not inferred. On w200 the resource is advertised by ADT discovery under the 'Quickfixes' collection. MEASURED 2026-10-02 22:43:41 +08:00, program ZORVANTA_MAINT_DEPLOY_R04 line 30 column 6 - the position search_abap_object_lines reports as the declaration of lv_name - returned proposalCount 2, mediaTypeUsed 'text/plain', acceptUsed 'application/*', and mediaTypeAttempts [{contentType 'text/plain', accept 'application/*', outcome 'HTTP 200'}]: the FIRST candidate was accepted, so the negotiation ladder never escalated. The two proposals are \"Rename 'lv_name'\" and \"Rename 'lv_name' in source unit\" with handlerUri .../quickfixes/providers/refactoring/quickfixes/qf_command_rename and .../qf_rename. A sweep of eight positions over the same program at 22:37 answered 2 proposals each over the same media type, and the line base was pinned against search_abap_object_lines rather than assumed: the authoritative 1-based line 30 holds the lv_name declaration and the evaluator named lv_name there, line 29 named ls_cur and line 31 named lv_head. type and description come back EMPTY, which is what the library's own caller sees too (it never populated adtcore:type on these proposals) - this entry does not claim otherwise. DEFECT FOUND AND FIXED IN THE SAME BATCH: the library's Content-Type/Accept pair 'application/*' is REFUSED by w200 with \"No content handler found for content type 'application/*'\", so the tool now tries text/plain first, then a vendor-typed candidate, then the library's pair, reports mediaTypeUsed/acceptUsed/ mediaTypeAttempts, and when EVERY candidate is refused it names each candidate and its outcome instead of claiming a definite empty answer. Nothing was applied on any call: no handler URI was followed, so no lock, save, activate or transport was entered and the reply reports readOnly true and wroteToSap false. EVIDENCE: .doc/orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json (the line-30 call, raw tool reply), .doc/orvanta-get-quick-fix-proposals-sweep-last-2026-10-02T14-52-47-000Z.json (the last call of the eight-position sweep) and .cache/r7a-state/r7e-01-search_abap_object_lines.json (the authoritative line number the position was taken from). See .doc/code-update-20261002-225717.md."
     },
     {
       "tool": "evaluate_refactoring",
       "helper": null,
       "availabilityBasis": "native-adt",
-      "verificationTarget": null,
+      "verificationTarget": "w200 (SAP_BASIS 7.31 SP04) /sap/bc/adt/refactorings?step=evaluate: rename answers HTTP 200 with an EMPTY document for an exact identifier range, and extract-method answers HTTP 500 for selections SAP calls invalid",
       "method": "read-only",
-      "status": "unverified",
+      "status": "platform-unsupported",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. The refactoring half of D-9, and only its read-only evaluate step: it asks the ADT refactoring service what a rename or an extract-method WOULD change over a source range (POST /sap/bc/adt/refactorings with the relation as `rel`, the range as `uri=<source>#start=l,c;end=l,c`, step=evaluate, and NO body) and returns the affected objects with the text replacements each would receive. The preview and execute steps are NOT called: those assign a transport and rewrite other objects, so they are the write half and are not part of this tool. Nothing is locked, saved, activated or transported. affectedObjectCount 0 is reported as a definite answer for that range, and a target without the resource fails with a named endpoint status rather than an empty list. PROVENANCE: the request contract was taken from this workspace's own ADT client dependency, abap-adt-api 8.4.3 - refactor.ts renameEvaluate(h, uri, line, startColumn, endColumn) and extractMethodEvaluate(h, uri, range), with rangeToString producing `#start=l,c;end=l,c`; the library's own tests call both. It was not inferred. Upstream gates only `renameExecute` behind a write permission and restores the source afterwards (src/test/disruptive.test.ts, \"rename\"), which is the same evaluate-is-read / execute-is-write split this backend keeps. On w200 the resource is advertised by ADT discovery under 'Refactorings'. NOT YET DONE: no live call has been made, so nothing is claimed about what the service returns for any range, and the endpoint-missing path was never reached on this target. changePackage is deliberately NOT exposed: it moves an object between packages, which is a write by nature and has no read-only evaluation worth a separate tool here."
+      "lastAttemptAt": "2026-10-02T22:51:00+08:00",
+      "evidence": ".doc/orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json",
+      "notes": "A real call was made, and it established a platform boundary rather than a working capability. WHAT WAS MEASURED 2026-10-02: (1) rename at the exact identifier range of class ZCL_PMC_TP_WM line 97 column 9-25 (ls_legacy_target) returned HTTP 200 with an EMPTY body - affectedObjectCount 0, totalDeltaCount 0, oldName '', objectListReported false and answerElements [] - and the identical result came from program ZORVANTA_MAINT_DEPLOY_R04 line 30 column 6-13 (lv_name) and from three earlier ranges on the same two objects, so the answer is not an artefact of one malformed range; (2) extract-method on a complete statement inside a class method (ZCL_PMC_TP_WM line 97, whole statement) returned HTTP 500 \"Selection contains incomplete ABAP statements\", and on a program line HTTP 500 \"Selection is not within a valid ABAP method implementation\" - SAP's own messages, surfaced with their status by this tool. WHY THE EMPTY ANSWER IS THE SERVICE'S, NOT THIS TOOL'S: at the same line/column get_quick_fix_proposals answered proposalCount 2 and named exactly ls_legacy_target / lv_name, which proves the line base (1-based) and the position this tool sends are the ones this release expects; the request is the one the library itself issues (POST /sap/bc/adt/refactorings with rel, step=evaluate, the range as uri=<source>#start=l,c;end=l,c and no body), and the resource is advertised by w200 ADT discovery under 'Refactorings', so the endpoint is present and accepts the call - it simply delivers no document for the evaluate step. The pre-fix crash of the library's own parser on this answer (\"Cannot destructure property 'ignoreSyntaxErrorsAllowed' of 'generic' as it is undefined\") is the upstream side of the same finding. CONSEQUENCE FOR CALLERS, and the reason this entry is recorded rather than hidden: affectedObjectCount 0 must NEVER be read as \"this refactoring changes nothing\" on this release - the object list comes from the preview step, which this read-only tool does not call - so the reply now reports objectListReported and an answerElements census of the answer it actually received, and an empty oldName is not evidence that the position holds no identifier (get_quick_fix_proposals answers that question instead). WHAT WOULD LIFT THIS BOUNDARY: a Basis release whose refactoring evaluate step returns a document (any element census other than []), or a successful extract-method answer; either would be re-tested against this same evidence path and the entry raised to verified. UNTESTED: no successful evaluate answer was ever obtained, so the tool's delta parsing is proven only against recorded XML (test/evaluate-refactoring.test.ts) and not against a live answer. Read-only throughout: preview and execute were never called, nothing was locked, saved, activated or transported, and the reply reports readOnly true and wroteToSap false. EVIDENCE: .doc/orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json (one run holding all three calls - rename 200 empty, quick-fix naming the identifier, extract-method 500 - with their arguments and raw replies). See .doc/code-update-20261002-225717.md."
     },
     {
       "tool": "find_where_used",
@@ -649,7 +649,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "notes": "A real local call (2026-10-02) generated the SE38 GUI URL for ZORVANTA_MAINT_DEPLOY_R04 against host 192.168.88.26:8000 with sap-client=200 and sap-language=ZH. NOT ESTABLISHED: the URL was never opened, logged into or checked in a browser, so this is a construction result and not proof that the link launches the intended transaction.\n\nR7-B 2026-10-02 (live, local tool - NOT verified by design): a real call generated the SE38 GUI URL for ZORVANTA_MAINT_DEPLOY_R04 (host 192.168.88.26:8000, sap-client=200, sap-language=ZH). This tool never contacts SAP (method `none`), and in this registry `verified` attests a SAP-side acceptance, so it stays `unverified` with no evidence path. NOT ESTABLISHED: the URL was never opened, logged into or checked in a browser, so it is a construction result and not proof that the link launches the intended transaction. Receipt: .cache/r7b-state-srcplat/05-url-prog-get_abap_object_url-2026-10-02T15-27-06-095Z.json.\n\nR7-B 2026-10-02 (live, local tool - NOT verified by design): a real call generated the SE38 GUI URL for ZORVANTA_MAINT_DEPLOY_R04 (host 192.168.88.26:8000, sap-client=200, sap-language=ZH). This tool never contacts SAP (method `none`), and in this registry `verified` attests a SAP-side acceptance, so it stays `unverified` with no evidence path. NOT ESTABLISHED: the URL was never opened, logged into or checked in a browser, so it is a construction result and not proof that the link launches the intended transaction. Receipt: .cache/r7b-state-srcplat/05-url-prog-get_abap_object_url-2026-10-02T15-27-06-095Z.json."
     },
     {
       "tool": "get_abap_object_workspace_uri",
@@ -681,11 +681,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-srcplat/01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read TWO objects in one call - program ZORVANTA_MAINT_DEPLOY_R04 and class ZCL_PMC_TP_WM, 12 lines each - and each block was headed by its own `### <name> (<n> lines)` and carried its own body (the program's `* ORVANTA-MAINT-BODY-CARRIER` and `* Transport: GR2K923472`, the class's `public` / `tt_stock TYPE STANDARD TABLE OF zpmcszcitm`), so the per-object answer is not one object's text echoed twice. The same three readers that share the line-joining path were re-tested on w200 after the R7-A fidelity fix: `get_object_by_uri`, `get_abap_object_lines` and this tool all returned line 30 of that program with its six leading spaces intact and no carriage return. NOT ESTABLISHED: a window that starts past the end of an object, and objects outside the caller's display authorization."
     },
     {
       "tool": "get_capability_report",
@@ -921,11 +921,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-srcplat/03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) returned the version list of ZORVANTA_MAINT_DEPLOY_R04 (PROG/P): `Total Versions: 1`, the single row `Sep 28, 2026, 02:16 PM | WYS | GR2K923492 | ZABAP_ORVANTA_MCP_WYS_20260917_01`, i.e. a normal version table and not one of the VERSION_HISTORY_* unavailable states. This reverses the R2 rejection of this tool, whose only earlier artifact was a call that failed with an object name this system does not hold (`ZPMC_FM_TP_STOCK_CALC`). NOT ESTABLISHED: multi-version behaviour, version comparison and version-source reads, and whether the reported list is complete for a object with a longer history."
     },
     {
       "tool": "get_write_operation_status",
@@ -945,11 +945,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) inspected SAPMF02K with a complete source graph (93 units) and found 2 call sites (`CALL CUSTOMER-FUNCTION '001'` at MF02KFEX lines 83 and 114), the exit EXIT_SAPMF02K_001 and the customer include ZXF05U01. NOT ESTABLISHED: the same completeness for SAPMV45A/SAPMV50A, whose graphs truncate at the reader's 128-include limit (complete false, callSiteCount 0), so the absence of CALL CUSTOMER-FUNCTION there is NOT established."
     },
     {
       "tool": "inspect_customer_screen_menu_exits",
@@ -957,11 +957,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) inspected SAPMV45A screens 0100/4001/8309/4900: 4001, 8309 (`Verkaufsbeleg Kopf Userexit Header`) and 4900 were available, screen 0100 answered `The screen definition could not be read; content was not established.`, customerSubscreenHookCount was 0 and the GUI definitions reported 0 menu exits. NOT ESTABLISHED: a positive customer subscreen or menu exit on this system - the three readable screens simply carry none, and the unreadable screen is reported as unread rather than as empty."
     },
     {
       "tool": "inspect_enhancement_framework",
@@ -969,11 +969,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) inspected program SAPMV45A and found 9 explicit anchors (first: `ENHANCEMENT-POINT SAPMV45A_03 SPOTS ES_SAPMV45A STATIC` at line 7), 0 enhancement implementations and 2 implicit candidates; the same call against class ZCL_PMC_TP_WM reported 14 implicit candidates and 0 explicit anchors. NOT ESTABLISHED: whether an implicit candidate is a usable hook, and the anchor set of objects whose include graph is truncated at the reader's limit."
     },
     {
       "tool": "inspect_fico_rule_exit_program",
@@ -981,11 +981,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read the rule-exit program RGGBR000: routine catalog at lines 47-97, matchedExitCount 3 with 0 unmatched, and U100/US001/UM001 all implementationFound true; a second call read RGGBS000 with U100/U101/U200 all implemented. NOT ESTABLISHED: whether a caller-supplied routine outside the catalog would be reported as missing or as unparsed, and the behaviour for a program that is not a rule-exit program."
     },
     {
       "tool": "inspect_repository_assignment",
@@ -1005,11 +1005,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) reported sourceStatus `available` with 9 source markers for SAPMV45A, and metadata.status `unsupported` with the reason `The SAP system does not expose a usable enhancement metadata endpoint.` The source-marker half works on this ECC 7.31; the ADT enhancement-metadata half is a measured platform boundary on the target, not a service defect. NOT ESTABLISHED: any enhancement metadata (spot/implementation objects) for this release."
     },
     {
       "tool": "invoke_customer_function_module",
@@ -1045,7 +1045,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "notes": "A real local call (2026-10-02) returned `{\"count\":0,\"truncated\":false,\"automaticCleanup\":false,\"operations\":[]}`. This is a read of the service's own write-recovery registry and never invokes SAP, so `count 0` does not establish the absence of SAP-side locks or of operations recorded by another service instance.\n\nR7-B 2026-10-02 (live, local tool - NOT verified by design): a real call returned `{\"count\":0,\"truncated\":false,\"automaticCleanup\":false,\"operations\":[]}`. This tool reads the service's own write-recovery registry and never contacts SAP (method `none`), and in this registry `verified` attests a SAP-side acceptance, so it stays `unverified` with no evidence path. `count 0` therefore does not establish the absence of SAP-side locks or of operations recorded by another service instance. Receipt: .cache/r7b-state-srcplat/06-writeops-list_write_recovery_operations-2026-10-02T15-27-07-490Z.json.\n\nR7-B 2026-10-02 (live, local tool - NOT verified by design): a real call returned `{\"count\":0,\"truncated\":false,\"automaticCleanup\":false,\"operations\":[]}`. This tool reads the service's own write-recovery registry and never contacts SAP (method `none`), and in this registry `verified` attests a SAP-side acceptance, so it stays `unverified` with no evidence path. `count 0` therefore does not establish the absence of SAP-side locks or of operations recorded by another service instance. Receipt: .cache/r7b-state-srcplat/06-writeops-list_write_recovery_operations-2026-10-02T15-27-07-490Z.json."
     },
     {
       "tool": "manage_classic_badi_implementation",
@@ -1129,7 +1129,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (PATCH_TRANSPARENT_TABLE_FIELDS), which is still a static inference and not an observation."
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (PATCH_TRANSPARENT_TABLE_FIELDS), which is still a static inference and not an observation.\n\nR7-E 2026-10-02 (live w200, real writes, NOT yet accepted as verified): two patches on the temporary table ZORVANTA_R7C_TMP were applied and activated by SAP (PAYLOAD CHAR10 -> INT4, then INT4 -> NUMC10; versions 20261002232454 and 20261002232600 read back) while both receipts reported a failed verification, because a re-pointed field's description is SAP's text for the NEW data element (`自然数`) and the expectation still held the previous one (`字符字段长度 = 10`). The expectation no longer asserts the description of a field the caller re-pointed, and the stored value is returned; guard tests in test/ddic-write-verification-fidelity.test.ts. NOT ESTABLISHED: no call has yet returned a SUCCESS receipt for this tool - the fix was built after the live writes and the running service has not loaded it, so this entry stays `unverified` until a post-fix live patch answers successfully. Evidence: .cache/r7e-state/01-E2-patch-payload-int4-...json, 01-E3-patch-payload-numc10-...json and the read-backs 01-E2b-/02-E3b-readback-*.json."
     },
     {
       "tool": "patch_ddic_transparent_table_settings",
@@ -1161,11 +1161,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) planned the cmod_project workflow for ZVENDOR: transaction CMOD, readiness `requires_input`, missingInputs [transportNumber], 8 steps, and controls sapWritePerformed false / guiOpened false / transportReleased false; fi_validation for RGGBR000 answered transaction `GGB0 / OB28` with 7 steps and 4 missing inputs, and fibf_event 00001020 answered transaction FIBF with missing [transportNumber, productName, functionModule]. NOT ESTABLISHED: the ready path (a fully specified input set with a real transport), the fibf_process kind, and the desiredState values create_or_update / inactive / removed - none of which was called, and no step of any returned plan was executed."
     },
     {
       "tool": "preview_configuration",
@@ -1185,11 +1185,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-srcplat/04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json",
+      "notes": "A real call on w200 (2026-10-02) previewed one exact replacement in program ZORVANTA_MAINT_DEPLOY_R04 and answered status `ready_for_review` with readOnly true, atomic false, executionAuthorized false, sapLocksAcquired false and blockers [] - it accepted nothing, saved nothing and activated nothing. The receipt carried both fingerprints (active 3827485f24d75459eb5918301b862664c27eab8d22b762342c69f17852b2716e, proposed 9ee7a6297888fdfb765dfff586e86181e3ee7b5ddec6dcf0e42e59ad042a29a0), the diff at startLine 4 with one line removed and one added, and the assignment (package ZABAP, request GR2K923472, task GR2K923492, transportStatus D, originalSystem GR2). This reverses the R2 rejection, whose only artifact was a 404 on an include-write case. NOT ESTABLISHED: the save and activation chain, include/function-module/interface URIs, multi-object change sets, and the new-transport case."
     },
     {
       "tool": "read_abap_gui_definition",
@@ -1197,11 +1197,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T23:36:00+08:00",
+      "evidence": ".cache/r7b-state-uidata/02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read the GUI definition of ZPMCPC01: versionToken 20260612133832, metadata PACKAGE ZPMC / AUTHOR WYS / DATE 20210128 / CDATE 20260612 / LANGUAGE 1, plus its CUA status and function-code sections. Both an empty-CUA and a CUA-bearing program were observed. NOT ESTABLISHED: modal dialog states, context menus and button assignments (0 in this sample), and the stale-fingerprint / version-token-conflict path, which was not triggered.\n\nAvailability basis: this entry rests on the protocol version alone - the tool's availability is decided by the helper protocol version and its declared operation codes, and the live call above does not change that basis."
     },
     {
       "tool": "read_abap_message_class",
@@ -1221,11 +1221,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T23:36:00+08:00",
+      "evidence": ".cache/r7b-state-uidata/01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read screen 0100 of ZCODEX_MCP_DYNPRO: description `ABAP MCP Dynpro verification`, header PROG/DNUM matching the request, and a fingerprint identical to the one validate_dynpro_application computed for the same screen in the same batch. A negative control in the same batch (screen 0100 of ZPMCPC01, which does not exist) failed as expected. NOT ESTABLISHED: whether the single all-empty D023S parameter row means the screen has no parameters or the reader did not fetch them, and the layout of subscreens, table controls and tabstrips - only two screens were read.\n\nAvailability basis: this entry rests on the protocol version alone - the tool's availability is decided by the helper protocol version and its declared operation codes, and the live call above does not change that basis."
     },
     {
       "tool": "read_abap_table",
@@ -1293,11 +1293,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read BTE process 00001020 (`催款: 读取后优先打印`): one SAP handler `RE` / REEX_CALLBACK_DUNNING_00001020 with applicationActiveRaw `X`, customerHandlerCount 0; a second call read event 00001010 (`过帐凭证: 检查客户行项目`) with 0 handlers. NOT ESTABLISHED: any customer handler for either - both reads returned 0, and a `Z*` dispatcher search returned 0 of each kind.\n\nAvailability basis: this entry rests on the protocol version alone - the tool's availability is decided by the helper protocol version and its declared operation codes, and the live call above does not change that basis."
     },
     {
       "tool": "read_classic_badi_definition",
@@ -1317,11 +1317,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read enhancement MM06E005 (`在采购凭证中的客户字段`): 19 components, 10 function exits and 6 screen exits, including EXIT_SAPMM06E_006-018 and SAPMM06E0101_CUSTSCR1_SAPLXM060101. NOT ESTABLISHED: whether each listed exit is implemented in this system, and the include that carries each implementation.\n\nAvailability basis: this entry rests on the protocol version alone - the tool's availability is decided by the helper protocol version and its declared operation codes, and the live call above does not change that basis."
     },
     {
       "tool": "read_customer_exit_project",
@@ -1329,11 +1329,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read CMOD project ZVENDOR: package Z001, rawStatus `A`, changed by LEE on 20121114, assignments `[\"\", \"SAPMF02K\"]` and a definition fingerprint. NOT ESTABLISHED: whether the project is transportable in this system's current state, and the semantics of the empty assignment entry.\n\nAvailability basis: this entry rests on the protocol version alone - the tool's availability is decided by the helper protocol version and its declared operation codes, and the live call above does not change that basis."
     },
     {
       "tool": "read_ddic_data_element",
@@ -1513,7 +1513,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible.\n\nR7-B 2026-10-02 (live w200, NOT accepted): a real call for report ZFIR001 did NOT reach SAP. The tool's local approval gate answered a structured refusal (source REPORT_PARAMETERS, readOnly true, qualityGate ...) with isError false, so what this batch established is that the gate refuses in a structured way under the current approval configuration - not that the P/S parameter metadata can be read. This entry stays `unverified`; the gate's own text is the record. Evidence: .cache/r7b-state-uidata/05-rptparm-read_report_parameters-2026-10-02T15-30-54-969Z.json."
     },
     {
       "tool": "read_report_variants",
@@ -1521,11 +1521,11 @@
       "availabilityBasis": "target-specific",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version."
+      "lastAttemptAt": "2026-10-02T23:36:00+08:00",
+      "evidence": ".cache/r7b-state-uidata/06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) listed the variants of report ZFIR001: status ok, client 200, returnedCount 3, truncated false, selectionComplete true; a second call for the exact variant ZTEST returned returnedCount 1 with its definitionFingerprint. The directory entries were cross-checked against a read of table VARID. NOT ESTABLISHED: any variant CONTENT - the receipt itself reports parameterValuesAvailable false and warns that it reads no values, selection defaults, dynamic variables, client-000 system variants or report execution."
     },
     {
       "tool": "read_sapscript_form",
@@ -1605,11 +1605,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T23:36:00+08:00",
+      "evidence": ".cache/r7b-state-uidata/03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) read customer transaction ZCODEX_MCP_UI: packageName ZABAP, TCODE/PGMNA/DYPNO = ZCODEX_MCP_UI / ZCODEX_MCP_DYNPRO / 0100; a second call read standard SE38 (package SEDT, PGMNA RSABAPPROGRAM, DYPNO 1000) with its guiAttributes row. NOT ESTABLISHED: the refusal shape for a transaction that does not exist, whether the remaining guiAttributes fields are populated on this system, and parameter-variant or authorization-object behaviour.\n\nAvailability basis: this entry rests on the protocol version alone - the tool's availability is decided by the helper protocol version and its declared operation codes, and the live call above does not change that basis."
     },
     {
       "tool": "recover_ddic_table_conversion",
@@ -1621,7 +1621,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (RECOVER_TABLE_CONVERSION), which is still a static inference and not an observation."
+      "notes": "No real call has been recorded yet. Availability is decided by protocol version plus the pinned opcodes (RECOVER_TABLE_CONVERSION), which is still a static inference and not an observation.\n\nR7-E 2026-10-02 (live w200, authorized temporary Z* acceptance, NOT accepted): the precondition could not be reached with the authorized steps. A temporary table ZORVANTA_R7C_TMP was created in package ZABAP (transport GR2K923472, never released) and its PAYLOAD field was re-pointed twice through conversion-relevant data elements (CHAR10 -> INT4 -> NUMC10); after each activation `read_ddic_table_conversion_status` still answered pending false / entryCount 0, i.e. this system performs the alter inline and creates no native TBATG worklist entry for a table with no data. The tool was then called for real and refused honestly with `No native TBATG conversion worklist exists for this table` (recorded at .cache/r7e-state/01-E4-recover-refusal-recover_ddic_table_conversion-2026-10-02T15-26-41-936Z.json), so the guard path is evidenced and the recovery path is not. WHAT WOULD CLOSE IT: a table that actually carries rows when a conversion-relevant change is activated (a data write, which this session was not authorized for), or a system-generated pending TBATG entry on a project table. The temporary table is deliberately left in place and the transport is left at status D."
     },
     {
       "tool": "release_write_operation_lock",
@@ -1633,7 +1633,7 @@
       "failureBasis": null,
       "lastAttemptAt": null,
       "evidence": null,
-      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP."
+      "notes": "No real call has been recorded yet. This is decided locally and never contacts SAP.\n\nR7-B 2026-10-02 (live, directed refusal): called with a deliberately non-existent operationId (\"r7b-nonexistent-probe-20261002-2331\") because the recovery list was empty, and it refused with \"Write receipt disappeared; operation protection remains fail closed\". The success path was therefore NOT exercised and this entry stays \"unverified\". Evidence: .cache/r7b-state-srcplat/07-release-probe-release_write_operation_lock-2026-10-02T15-27-07-752Z.json."
     },
     {
       "tool": "replace_string_in_abap_object",
@@ -1785,11 +1785,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) searched `*` over event and process dispatchers and returned 20 event entries (OPEN_FI_PERFORM_00000000_E ... 00001085_E), 20 process entries (... _P), exactDispatcherCount 40 and unavailableKindCount 0; a second call with `Z*` returned 0 available of each kind. The pattern search is cap-bounded. NOT ESTABLISHED: that `Z*` returning 0 means no customer dispatcher exists."
     },
     {
       "tool": "search_customer_exit_objects",
@@ -1797,11 +1797,11 @@
       "availabilityBasis": "native-adt",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. This routes through native ADT with no SAP helper involved."
+      "lastAttemptAt": "2026-10-02T23:30:00+08:00",
+      "evidence": ".cache/r7b-state-enh/01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) searched `V45A*` over SMOD/CMOD and returned 4 available SMOD definitions (V45A0001-V45A0004) with 0 CMOD projects; a second call with `Z*` returned 0 SMOD definitions and 20 customer CMOD projects (ZAISTIM1 ... ZWMS). Both are capped searches. NOT ESTABLISHED: the absence of a customer SMOD definition - `Z*` returning available/count 0 is a completed search with no match, and ZCA01 (found in the same batch) is assigned to the standard definition V45A0003. The repository index keeps stale entries for deleted objects, so no hit was independently re-verified for existence."
     },
     {
       "tool": "search_enhancement_objects",
@@ -2013,11 +2013,11 @@
       "availabilityBasis": "protocol-only",
       "verificationTarget": null,
       "method": "read-only",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-02T23:36:00+08:00",
+      "evidence": ".cache/r7b-state-uidata/04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json",
+      "notes": "A real read-only call on w200 (2026-10-02) validated ZCODEX_MCP_DYNPRO screen 0100 as `status valid` (fieldCount 5, flowLineCount 4, moduleDefinitions, and the same fingerprint read_abap_screen returned); a second sample (ZPMCPC01 screen 9000) answered `status invalid` with 129 fields, 99 flow lines, 22 module definitions and 54 errors. NOT ESTABLISHED: that the 54 findings are all true defects - the batch did not read ZPMCPC01's screen definition and source back to confirm each one, so the validator is shown to report findings and reach a verdict, not to be free of false positives.\n\nAvailability basis: this entry rests on the protocol version alone - the tool's availability is decided by the helper protocol version and its declared operation codes, and the live call above does not change that basis."
     },
     {
       "tool": "write_function_module_source",

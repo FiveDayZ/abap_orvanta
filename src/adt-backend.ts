@@ -38,14 +38,14 @@ import {
   usageReferences as requestUsageReferences,
   prettyPrinter as requestPrettyPrinter
 } from "abap-adt-api/build/api/syntax.js"
-// The quick-fix evaluator lives in `refactor.js`, not `syntax.js`; it is the same library and the same
-// HTTP client, so this adds no new transport and no hand-rolled request.
-import { fixProposals as requestFixProposals } from "abap-adt-api/build/api/refactor.js"
-import {
-  renameEvaluate as requestRenameEvaluate,
-  extractMethodEvaluate as requestExtractMethodEvaluate
-} from "abap-adt-api/build/api/refactor.js"
+// The quick-fix evaluator and the refactoring resource both live behind `/sap/bc/adt/quickfixes` and
+// `/sap/bc/adt/refactorings`. The library's own helpers for them are NOT used: its parsers read one
+// exact document shape and crash (`parseGeneric(undefined)`) on any other, and it hard-codes
+// `Content-Type: application/*`, which SAP answers with an ADT error document. Both services are
+// called through the same `AdtHTTP` client and parsed here, so the request media type can be
+// negotiated and the answer read tolerantly; the call itself stays the library's transport.
 import { parse } from "abap-adt-api/build/utilities.js"
+import { fullParse, xmlNodeAttr } from "abap-adt-api/build/utilities.js"
 import { legacyWhereUsed, legacyWhereUsedPaths } from "./legacy-where-used.js"
 import { whereUsedHttp, WhereUsedRequestError } from "./where-used-request.js"
 import type { LegacyUsageReferences, TransportTableReader } from "./backend.js"
@@ -200,6 +200,290 @@ function normalizeRangeFragment(fragment: RefactoringRangeFragment | undefined):
       column: Number(fragment?.start?.column ?? 0)
     },
     end: { line: Number(fragment?.end?.line ?? 0), column: Number(fragment?.end?.column ?? 0) }
+  }
+}
+
+/** One request media type the quick-fix evaluator is asked with. */
+interface QuickFixMediaCandidate {
+  contentType: string
+  accept: string
+}
+
+/** What one media type answered, kept so a refusal names the exact header that was refused. */
+interface QuickFixMediaAttempt extends QuickFixMediaCandidate {
+  outcome: string
+  proposalCount: number | null
+}
+
+/**
+ * The media types the quick-fix evaluation is offered, in the order they are tried.
+ *
+ * The order is evidence, not preference. On w200 the library's own pair (`application/*` for both
+ * headers) is refused by THIS endpoint with an ADT error document, while the two source-text POSTs this
+ * server already runs - the pretty printer and the type hierarchy - work with `text/plain` as their
+ * request type. So `text/plain` is offered first, paired with the Accept the working type hierarchy
+ * sends; the explicit vendor type is second; the library's pair is kept last, because on a release that
+ * answers it the behaviour is exactly what it was before this negotiation existed. Each candidate is
+ * tried only until one is accepted, and the request is read-only, so re-sending it under another header
+ * cannot change anything.
+ */
+const QUICK_FIX_MEDIA_CANDIDATES: QuickFixMediaCandidate[] = [
+  { contentType: "text/plain", accept: "application/*" },
+  {
+    contentType: "text/plain; charset=utf-8",
+    accept: "application/vnd.sap.adt.quickfixes.evaluation.v1+xml, application/xml;q=0.9, */*;q=0.1"
+  },
+  { contentType: "application/*", accept: "application/*" }
+]
+
+/**
+ * The shape upstream's `fixProposals` produces for one proposal, so the reply mapping is unchanged.
+ *
+ * It is reproduced here rather than imported because the request is no longer the library's: only the
+ * reply contract (`adtcore:*` attributes plus `userContent`) has to stay identical.
+ */
+interface QuickFixProposalShape {
+  "adtcore:type"?: string
+  "adtcore:name"?: string
+  "adtcore:description"?: string
+  "adtcore:uri"?: string
+  userContent?: string
+}
+
+/** The parts of a refactoring answer this backend reports, wherever they sit in the document. */
+interface ParsedRefactoringEvaluation {
+  oldName: string
+  title: string
+  userContent: string
+  affectedObjects: AffectedObjectShape[]
+  /**
+   * Whether the answer carried an object list AT ALL.
+   *
+   * It is not the same as an empty list. `false` means the service answered about the position without
+   * listing objects, so an empty `affectedObjects` must not be described as "nothing would change":
+   * on this release the object list is produced by the `preview` step, which this read-only tool does
+   * not call (2026-10-02: a rename evaluation of a program's local variable answered with no object
+   * list and no oldName, which is a position-only answer).
+   */
+  objectListReported: boolean
+  /** The element names the answer actually carried, so an empty result is attributable to it. */
+  answerElements: string[]
+}
+
+const MAX_XML_WALK_DEPTH = 8
+
+/** Every node stored under `name` at any depth. fast-xml-parser yields one object for a single child. */
+function collectNodesNamed(node: unknown, name: string, depth = 0): Record<string, unknown>[] {
+  if (depth > MAX_XML_WALK_DEPTH || node === null || typeof node !== "object") return []
+  if (Array.isArray(node)) return node.flatMap((item) => collectNodesNamed(item, name, depth + 1))
+  const record = node as Record<string, unknown>
+  const found: Record<string, unknown>[] = []
+  for (const [key, value] of Object.entries(record)) {
+    if (key === name) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item !== null && typeof item === "object") found.push(item as Record<string, unknown>)
+        }
+      } else if (value !== null && typeof value === "object") {
+        found.push(value as Record<string, unknown>)
+      }
+    }
+    found.push(...collectNodesNamed(value, name, depth + 1))
+  }
+  return found
+}
+
+/** The first value stored under `name` at any depth, or undefined. */
+function findNodeNamed(node: unknown, name: string, depth = 0): unknown {
+  if (depth > MAX_XML_WALK_DEPTH || node === null || typeof node !== "object") return undefined
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const hit = findNodeNamed(item, name, depth + 1)
+      if (hit !== undefined) return hit
+    }
+    return undefined
+  }
+  const record = node as Record<string, unknown>
+  if (name in record) return record[name]
+  for (const value of Object.entries(record)) {
+    const hit = findNodeNamed(value[1], name, depth + 1)
+    if (hit !== undefined) return hit
+  }
+  return undefined
+}
+
+/** The text of a parsed leaf, whether fast-xml-parser produced a string or a `#text` node. */
+function nodeText(value: unknown): string {
+  if (typeof value === "string" || typeof value === "number") return String(value)
+  if (value !== null && typeof value === "object") {
+    const text = (value as Record<string, unknown>)["#text"]
+    if (typeof text === "string" || typeof text === "number") return String(text)
+  }
+  return ""
+}
+
+/**
+ * The names of the elements and attributes a parsed answer carries, at most `limit` of them.
+ *
+ * This is the answer's own shape, reported instead of assumed: SAP's refactoring answers vary by
+ * relation and release (child elements vs attributes, with and without the `genericRefactoring`
+ * wrapper), and a census is what lets a human tell "the service reported nothing" apart from "this
+ * parser looked in the wrong place".
+ */
+function xmlShapeCensus(node: unknown, limit = 24, depth = 0, found: string[] = []): string[] {
+  if (depth > MAX_XML_WALK_DEPTH || found.length >= limit) return found
+  if (node === null || typeof node !== "object") return found
+  if (Array.isArray(node)) {
+    for (const item of node) xmlShapeCensus(item, limit, depth + 1, found)
+    return found
+  }
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (found.length >= limit) break
+    if (key.startsWith("?")) continue
+    if (key.startsWith("@_")) {
+      const attribute = `@${key.slice(2)}`
+      if (!found.includes(attribute)) found.push(attribute)
+      continue
+    }
+    if (!found.includes(key)) found.push(key)
+    xmlShapeCensus(value, limit, depth + 1, found)
+  }
+  return found
+}
+
+/** The value of a `name` attribute (as fast-xml-parser stores it) anywhere in a node. */
+function attributeNamed(node: unknown, name: string): string {
+  const direct = findNodeNamed(node, `@_${name}`)
+  return nodeText(direct)
+}
+
+/** A short, single-line excerpt of an answer, for a failure message a human can act on. */
+function answerExcerpt(body: string, limit = 400): string {
+  const flattened = (body ?? "").replace(/\s+/g, " ").trim()
+  return flattened.length > limit ? `${flattened.slice(0, limit)}...` : flattened
+}
+
+/**
+ * Read a quick-fix evaluation answer.
+ *
+ * An answer without any `evaluationResult` is a definite "the evaluator proposed nothing here" - that
+ * is the documented reading, and the caller can tell it apart from a refusal because a refusal is an
+ * error document (HTTP >= 400) that never reaches this function.
+ */
+function parseQuickFixEvaluations(body: string): QuickFixProposalShape[] {
+  if (!body || !body.trim()) return []
+  const raw = fullParse(body, { removeNSPrefix: true, processEntities: false })
+  return collectNodesNamed(raw, "evaluationResult").map((result) => {
+    const reference = findNodeNamed(result, "objectReference")
+    const attributes =
+      reference !== null && typeof reference === "object"
+        ? (xmlNodeAttr(reference) as Record<string, unknown>)
+        : {}
+    return {
+      "adtcore:type": nodeText(attributes["type"]),
+      "adtcore:name": nodeText(attributes["name"]),
+      "adtcore:description": nodeText(attributes["description"]),
+      "adtcore:uri": nodeText(attributes["uri"]),
+      userContent: nodeText(findNodeNamed(result, "userContent"))
+    }
+  })
+}
+
+/**
+ * Read a refactoring evaluation answer.
+ *
+ * The affected objects are located by name rather than by path: the relations and releases do not agree
+ * on whether they sit under `genericRefactoring` or directly on the relation's root, and upstream's
+ * own parser assumes the first, which is what crashed on w200's answer. An empty body is the service's
+ * "nothing to do" answer; a body that carries neither an affected object nor any refactoring element is
+ * not an answer this code can read, so it fails with the document's own excerpt instead of being
+ * reported as "nothing affected"; and an answer that carries a relation element but NO object list is
+ * reported as position-only rather than as an empty list.
+ */
+function parseRefactoringEvaluation(
+  body: string,
+  uri: string,
+  kind: "rename" | "extract-method"
+): ParsedRefactoringEvaluation {
+  const trimmed = (body ?? "").trim()
+  if (!trimmed) {
+    return {
+      oldName: "",
+      title: "",
+      userContent: "",
+      affectedObjects: [],
+      objectListReported: false,
+      answerElements: []
+    }
+  }
+  const raw = fullParse(trimmed, { removeNSPrefix: true, processEntities: false })
+  const affectedNodes = collectNodesNamed(raw, "affectedObject")
+  const generic = findNodeNamed(raw, "genericRefactoring")
+  const relationRoot = findNodeNamed(
+    raw,
+    kind === "rename" ? "renameRefactoring" : "extractMethodRefactoring"
+  )
+  if (affectedNodes.length === 0 && generic === undefined && relationRoot === undefined) {
+    throw new Error(
+      `the refactoring service answered ${trimmed.length} bytes for ${uri} that carry neither ` +
+        `genericRefactoring nor a ${kind} refactoring element, so the answer cannot be read: ` +
+        answerExcerpt(trimmed)
+    )
+  }
+  const scopes = [generic, relationRoot, raw].filter(
+    (scope): scope is Record<string, unknown> => scope !== null && typeof scope === "object"
+  )
+  const textIn = (name: string): string => {
+    for (const scope of scopes) {
+      const text = nodeText(findNodeNamed(scope, name))
+      if (text !== "") return text
+      // The relations put some of these on the element (a child) and some on the attribute: upstream's
+      // parser reads `oldName` as a child, and a release that sends it as `rename:oldName="..."` would
+      // otherwise be reported as an unnamed target.
+      const fromAttribute = attributeNamed(scope, name)
+      if (fromAttribute !== "") return fromAttribute
+    }
+    return ""
+  }
+  return {
+    oldName: textIn("oldName"),
+    title: textIn("title"),
+    userContent: textIn("userContent"),
+    // An explicit `affectedObjects` element is the service saying "here is the list; it may be empty".
+    // Its absence is a different statement, and the two are kept apart.
+    objectListReported:
+      findNodeNamed(raw, "affectedObjects") !== undefined || affectedNodes.length > 0,
+    answerElements: xmlShapeCensus(raw),
+    affectedObjects: affectedNodes.map((object) => {
+      const attributes = xmlNodeAttr(object) as Record<string, unknown>
+      const deltas = collectNodesNamed(object, "textReplaceDelta")
+      return {
+        uri: nodeText(attributes["uri"]),
+        type: nodeText(attributes["type"]),
+        name: nodeText(attributes["name"]),
+        textReplaceDeltas: deltas.map((delta) => ({
+          rangeFragment: parseRangeFragmentText(nodeText(findNodeNamed(delta, "rangeFragment"))),
+          contentOld: nodeText(findNodeNamed(delta, "contentOld")),
+          contentNew: nodeText(findNodeNamed(delta, "contentNew"))
+        }))
+      }
+    })
+  }
+}
+
+/** A reported `rangeFragment` is a URI carrying `#start=l,c;end=l,c`, not a pair of child elements. */
+function parseRangeFragmentText(fragment: string): RefactoringRangeFragment {
+  const match = fragment.match(/#start=(\d+),(\d+);end=(\d+),(\d+)/)
+  if (match === null) return {}
+  return {
+    start: {
+      line: Number.parseInt(match[1] ?? "0", 10),
+      column: Number.parseInt(match[2] ?? "0", 10)
+    },
+    end: {
+      line: Number.parseInt(match[3] ?? "0", 10),
+      column: Number.parseInt(match[4] ?? "0", 10)
+    }
   }
 }
 
@@ -1267,11 +1551,14 @@ export class AdtBackend implements SapBackend {
    * happen, so leaving them out is what makes this path safe to advertise as `readOnlyHint`; the
    * handler URI is returned to the caller precisely so a human can decide whether to use it.
    *
-   * The request contract is not inferred: upstream `AdtClient.fixProposals(url, source, line, column)`
-   * passes the source as the request body, and its own test calls it that way
-   * (`abap-adt-api/src/test/main.test.ts`, "fix proposals": `c.fixProposals(include, source, 4, 10)`).
-   * The source is read through the same `readSourceByUri` the syntax check and pretty printer use, so
-   * all three agree on which URI carries the object's text.
+   * The source travels as the request body, as upstream `AdtClient.fixProposals` does
+   * (`abap-adt-api/src/test/main.test.ts`, "fix proposals": `c.fixProposals(include, source, 4, 10)`),
+   * and is read through the same `readSourceByUri` the syntax check and pretty printer use, so all
+   * three agree on which URI carries the object's text. What is NOT taken from upstream is the media
+   * type: the library hard-codes `application/*` for both `Content-Type` and `Accept`, and w200
+   * answers that with an ADT error document ("No content handler found for content type
+   * 'application/*'", measured 2026-10-02), so the request negotiates the media type instead and
+   * reports which one the evaluator accepted.
    */
   async quickFixProposals(
     connectionId: string,
@@ -1282,28 +1569,66 @@ export class AdtBackend implements SapBackend {
     const client = await this.getClient(connectionId)
     try {
       const source = await this.readSourceByUri(connectionId, fileUri)
-      const proposals = await withAdtStageTimeout(
-        "QUICK_FIX_TIMEOUT",
-        "quick-fix evaluator",
-        source.uriUsed,
-        QUICK_FIX_TIMEOUT_MS,
-        () =>
-          requestFixProposals(
-            boundedAdtHttp(client.httpClient, QUICK_FIX_TIMEOUT_MS),
+      const http = boundedAdtHttp(client.httpClient, QUICK_FIX_TIMEOUT_MS)
+      const attempts: QuickFixMediaAttempt[] = []
+      let accepted: {
+        candidate: QuickFixMediaCandidate
+        proposals: QuickFixProposalShape[]
+      } | null = null
+      for (const candidate of QUICK_FIX_MEDIA_CANDIDATES) {
+        try {
+          const response = await withAdtStageTimeout(
+            "QUICK_FIX_TIMEOUT",
+            "quick-fix evaluator",
             source.uriUsed,
-            source.source,
-            line,
-            column
+            QUICK_FIX_TIMEOUT_MS,
+            () =>
+              http.request("/sap/bc/adt/quickfixes/evaluation", {
+                method: "POST",
+                qs: { uri: `${source.uriUsed}#start=${line},${column}` },
+                headers: { "Content-Type": candidate.contentType, Accept: candidate.accept },
+                body: source.source
+              })
           )
-      )
+          const proposals = parseQuickFixEvaluations(response.body)
+          attempts.push({
+            ...candidate,
+            outcome: `HTTP ${response.status}`,
+            proposalCount: proposals.length
+          })
+          accepted = { candidate, proposals }
+          break
+        } catch (error) {
+          // A refused media type is not a failed call yet: the next candidate is the same read-only
+          // request under a media type the service may accept. A timeout is different - it leaves the
+          // exchange unresolved, so it is never retried under another header.
+          if (error instanceof AdtRequestTimeoutError) throw error
+          attempts.push({
+            ...candidate,
+            outcome: errorText(error).slice(0, 240),
+            proposalCount: null
+          })
+        }
+      }
+      if (accepted === null) {
+        throw new Error(
+          `the quick-fix evaluator accepted none of the ${attempts.length} request media types tried ` +
+            `for ${source.uriUsed}: ${attempts
+              .map((attempt) => `${attempt.contentType} -> ${attempt.outcome}`)
+              .join(" | ")}`
+        )
+      }
       return {
         connectionId,
         fileUri,
         sourceUri: source.uriUsed,
         line,
         column,
-        proposalCount: proposals.length,
-        proposals: proposals.map((proposal) => ({
+        mediaTypeUsed: accepted.candidate.contentType,
+        acceptUsed: accepted.candidate.accept,
+        mediaTypeAttempts: attempts,
+        proposalCount: accepted.proposals.length,
+        proposals: accepted.proposals.map((proposal) => ({
           type: proposal["adtcore:type"] ?? "",
           name: proposal["adtcore:name"] ?? "",
           description: proposal["adtcore:description"] ?? "",
@@ -1323,16 +1648,19 @@ export class AdtBackend implements SapBackend {
   /**
    * Evaluate a refactoring over a source range and report what it would change.
    *
-   * Read-only by construction: this calls the library's `renameEvaluate` / `extractMethodEvaluate`,
-   * which are the `evaluate` step - `POST /sap/bc/adt/refactorings` with the relation and the range,
-   * NO body, and an answer describing the affected objects and their text deltas. The `preview` and
-   * `execute` steps are separate library functions and are NOT called here; upstream's own test gates
-   * only `renameExecute` behind a write permission and restores the source afterwards, which is the
-   * same split this backend keeps. Nothing is locked, saved, activated or transported.
+   * Read-only by construction: this sends the `evaluate` step - `POST /sap/bc/adt/refactorings` with the
+   * relation and the range, NO body, and an answer describing the affected objects and their text
+   * deltas. The `preview` and `execute` steps are different requests and are NOT sent here; upstream's
+   * own test gates only `renameExecute` behind a write permission and restores the source afterwards,
+   * which is the same split this backend keeps. Nothing is locked, saved, activated or transported.
    *
-   * The contract is not inferred: upstream `renameEvaluate(h, uri, line, startColumn, endColumn)` and
-   * `extractMethodEvaluate(h, uri, range)` in the workspace's own `abap-adt-api/src/api/refactor.ts`,
-   * with `rangeToString` giving `#start=l,c;end=l,c` and the tests calling them that way.
+   * The wire contract is upstream's (`renameEvaluate(h, uri, line, startColumn, endColumn)` /
+   * `extractMethodEvaluate(h, uri, range)` in `abap-adt-api/src/api/refactor.ts`, with the range
+   * `#start=l,c;end=l,c` in the `uri` query parameter). The ANSWER is not read through upstream's
+   * parsers: `parseRenameRefactoring` destructures `genericRefactoring` without checking it exists, so
+   * w200's answer - which does not nest the affected objects under that element - crashed the call with
+   * `Cannot destructure property 'ignoreSyntaxErrorsAllowed' of 'generic' as it is undefined`
+   * (measured 2026-10-02). The answer is therefore read here, wherever the elements sit.
    */
   async evaluateRefactoring(
     connectionId: string,
@@ -1347,65 +1675,43 @@ export class AdtBackend implements SapBackend {
     }
     try {
       const source = await this.readSourceByUri(connectionId, fileUri)
-      // The two relations are called in their own branches rather than through one conditional
-      // expression: they return different proposal types, and a single generic call site would force
-      // the union through `withAdtStageTimeout`'s inferred type parameter.
       const http = boundedAdtHttp(client.httpClient, REFACTORING_TIMEOUT_MS)
-      const evaluated =
+      const relation =
         kind === "rename"
-          ? await withAdtStageTimeout(
-              "REFACTORING_TIMEOUT",
-              "refactoring evaluation",
-              source.uriUsed,
-              REFACTORING_TIMEOUT_MS,
-              () =>
-                requestRenameEvaluate(
-                  http,
-                  source.uriUsed,
-                  range.startLine,
-                  range.startColumn,
-                  range.endColumn
-                )
-            )
-          : await withAdtStageTimeout(
-              "REFACTORING_TIMEOUT",
-              "refactoring evaluation",
-              source.uriUsed,
-              REFACTORING_TIMEOUT_MS,
-              () =>
-                requestExtractMethodEvaluate(http, source.uriUsed, {
-                  start: { line: range.startLine, column: range.startColumn },
-                  end: { line: range.endLine, column: range.endColumn }
-                })
-            )
-      // The two relations carry the affected objects at DIFFERENT depths, which is a property of the
-      // library's parsers rather than of this code: `parseRenameRefactoring` reads them off the
-      // `renameRefactoring` root, while `parseExtractMethodEval` returns `genericRefactoring.affectedObjects`
-      // (see `abap-adt-api/src/api/refactor.ts`). Reading only the top level silently produced an empty
-      // list for every extract-method call, so both places are checked and `oldName` is taken from
-      // whichever root the relation used.
-      const raw = evaluated as unknown as {
-        oldName?: string
-        title?: string
-        userContent?: string
-        affectedObjects?: AffectedObjectShape[]
-        genericRefactoring?: {
-          title?: string
-          userContent?: string
-          affectedObjects?: AffectedObjectShape[]
-        }
-      }
-      const affected = raw.genericRefactoring?.affectedObjects ?? raw.affectedObjects ?? []
-      const title = raw.title ?? raw.genericRefactoring?.title ?? ""
-      const userContent = raw.userContent ?? raw.genericRefactoring?.userContent ?? ""
+          ? "http://www.sap.com/adt/relations/refactoring/rename"
+          : "http://www.sap.com/adt/relations/refactoring/extractmethod"
+      const rangeFragment =
+        kind === "rename"
+          ? `${source.uriUsed}#start=${range.startLine},${range.startColumn};end=${range.startLine},${range.endColumn}`
+          : `${source.uriUsed}#start=${range.startLine},${range.startColumn};end=${range.endLine},${range.endColumn}`
+      const httpResponse = await withAdtStageTimeout(
+        "REFACTORING_TIMEOUT",
+        "refactoring evaluation",
+        source.uriUsed,
+        REFACTORING_TIMEOUT_MS,
+        () =>
+          http.request("/sap/bc/adt/refactorings", {
+            method: "POST",
+            qs: { step: "evaluate", rel: relation, uri: rangeFragment },
+            headers: { "Content-Type": "application/*", Accept: "application/*" }
+          })
+      )
+      // Reading the source was a precondition, not a side effect: it proves the object has an active
+      // source to evaluate. The reply below describes only what the service said it WOULD do.
+      const evaluated = parseRefactoringEvaluation(httpResponse.body, source.uriUsed, kind)
+      const affected = evaluated.affectedObjects
+      const title = evaluated.title
+      const userContent = evaluated.userContent
       return {
         connectionId,
         fileUri,
         kind,
         range: echo,
-        oldName: String(raw.oldName ?? ""),
+        oldName: evaluated.oldName,
         title: String(title),
         userContent: String(userContent),
+        objectListReported: evaluated.objectListReported,
+        answerElements: evaluated.answerElements,
         affectedObjectCount: affected.length,
         affectedObjects: affected.map((object) => {
           const deltas = object.textReplaceDeltas ?? []
@@ -5869,6 +6175,20 @@ function reportedHttpStatus(error: unknown): number {
   if (isHttpError(error)) {
     const fromExchange = Number((error as { status?: unknown }).status ?? 0)
     if (fromExchange) return fromExchange
+  }
+  // An ADT error document - `<exc:exception>` with a message SAP composed - is NOT an `isHttpError`:
+  // that predicate matches the HTTP-exception type only. Such an error still carries the exchange's
+  // status, and without it a server-side refusal reads like a local parse crash: the measured
+  // 2026-10-02 quick-fix refusal ("No content handler found for content type 'application/*'") arrived
+  // with no status and was classified purely by its text. The status is taken from the exception's own
+  // field, never from `fromError`, whose 500 default for unknown failures is the thing this function
+  // exists to avoid; a local crash is excluded by type.
+  if (!(error instanceof TypeError) && !(error instanceof RangeError)) {
+    const carrier = error as { err?: unknown; response?: { status?: unknown } }
+    const fromAdtDocument = Number(carrier.err ?? carrier.response?.status ?? 0)
+    if (Number.isInteger(fromAdtDocument) && fromAdtDocument >= 100 && fromAdtDocument < 600) {
+      return fromAdtDocument
+    }
   }
   const named = errorText(error).match(/(?:status code|error)\s+(\d{3})/i)?.[1]
   return named ? Number.parseInt(named, 10) : 0

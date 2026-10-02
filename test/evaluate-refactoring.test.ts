@@ -5,7 +5,10 @@
  * honouring it:
  *
  *   1. the affected objects and their text deltas reach the caller, so a decision can be made;
- *   2. an empty answer is a definite answer for that range - never a failure, never a missing endpoint;
+ *   2. an answer that carries no object list is reported as exactly that, while an answer that carries
+ *      an empty list is reported as the definite "this range touches nothing" (measured on 2026-10-02:
+ *      w200 answers this resource with an empty document for a rename, so the two readings must not be
+ *      collapsed into each other);
  *   3. a target without the refactoring resource fails with a named endpoint status, not an empty list;
  *   4. the tool is read-only: no lock, save, activate, create or delete path is entered, and the
  *      preview/execute half of the upstream API is never called;
@@ -43,6 +46,8 @@ interface RefactoringReply {
   kind: string
   range: { start: { line: number; column: number }; end: { line: number; column: number } }
   oldName: string
+  objectListReported: boolean
+  answerElements: string[]
   affectedObjectCount: number
   totalDeltaCount: number
   affectedObjects: Array<{
@@ -132,9 +137,10 @@ test("an empty evaluation reads as a definite answer, not as a failure or a miss
   assert.equal(reply.readOnly, true)
   assert.equal(reply.wroteToSap, false)
   // The three readings a caller must tell apart: nothing to refactor here / the call failed / the
-  // target has no refactoring service. This is the first.
-  assert.match(reply.summary, /no affected object/)
-  assert.match(reply.summary, /definite answer/)
+  // target has no refactoring service. This is the first, and it is the service's own empty list.
+  assert.equal(reply.objectListReported, true)
+  assert.match(reply.summary, /EMPTY affected-object list/)
+  assert.match(reply.summary, /definite/)
   assert.match(reply.summary, /not a failure/)
   assert.match(reply.summary, /unsupported-endpoint/)
 })
@@ -229,6 +235,102 @@ test("extract-method asks for its own relation over the full range", async () =>
   assert.equal(parsed.affectedObjects[0]?.deltas[0]?.contentNew, "lv_renamed")
 })
 
+test("the answer is read wherever the affected objects sit, prefixed or not", async () => {
+  // The measured w200 answer for a rename does NOT nest the objects under `genericRefactoring`, and
+  // upstream's parser destructures that element unconditionally - which crashed the live call with
+  // "Cannot destructure property 'ignoreSyntaxErrorsAllowed' of 'generic' as it is undefined". This
+  // fixture is that answer's shape (objects directly on the relation root, namespace-prefixed), so the
+  // guard fails if the parser ever assumes the wrapper again.
+  const { backend } = backendWithRecordingHttp({ relation: RENAME_REL, shape: "w200" })
+
+  const reply = (await new ToolService(backend).evaluateRefactoring(
+    RENAME_BASE
+  )) as unknown as string
+  const parsed = JSON.parse(reply) as RefactoringReply
+
+  assert.equal(parsed.oldName, "lv_demo")
+  assert.equal(parsed.affectedObjectCount, 1)
+  assert.equal(parsed.totalDeltaCount, 1)
+  assert.equal(parsed.affectedObjects[0]?.name, "ZCL_DEMO")
+  assert.equal(parsed.affectedObjects[0]?.deltas[0]?.contentOld, "lv_demo")
+  assert.equal(parsed.affectedObjects[0]?.deltas[0]?.contentNew, "lv_renamed")
+})
+
+test("an answer with no refactoring element fails with its own excerpt, not as 'nothing affected'", async () => {
+  // A 200 answer this code cannot read is NOT the same statement as "the refactoring would touch
+  // nothing". Reporting zero affected objects here would tell a caller the refactoring is safe when
+  // nothing is known about it, so the answer's own text is carried into the failure instead.
+  const { backend } = backendWithRecordingHttp({
+    relation: RENAME_REL,
+    rawBody: "<html><body><h1>Service not available</h1></body></html>"
+  })
+
+  await assert.rejects(
+    () => new ToolService(backend).evaluateRefactoring(RENAME_BASE),
+    (error: Error) => {
+      assert.match(error.message, /refactorings capability/)
+      assert.match(error.message, /Service not available/)
+      assert.match(error.message, /rename refactoring element/)
+      assert.doesNotMatch(error.message, /no affected object/)
+      return true
+    }
+  )
+})
+
+test("an empty answer body is reported as 'no object list', never as 'nothing would change'", async () => {
+  // A body with no relation element at all tells this code nothing about what the refactoring would
+  // touch. Reporting it as "0 affected objects, a definite answer" would assert something the service
+  // never said, so the reply states what it actually knows: the answer carried no object list.
+  const { backend } = backendWithRecordingHttp({ relation: RENAME_REL, rawBody: "" })
+
+  const parsed = JSON.parse(
+    (await new ToolService(backend).evaluateRefactoring(RENAME_BASE)) as unknown as string
+  ) as RefactoringReply
+
+  assert.equal(parsed.affectedObjectCount, 0)
+  assert.deepEqual(parsed.affectedObjects, [])
+  assert.equal(parsed.objectListReported, false)
+  assert.match(parsed.summary, /WITHOUT an affected-object list/)
+  assert.match(
+    parsed.summary,
+    /does\s+NOT say that nothing would change|NOT say that nothing would change/
+  )
+  assert.doesNotMatch(parsed.summary, /definite answer/)
+})
+
+test("an explicit empty object list IS a definite 'nothing affected'", async () => {
+  // The other half of the distinction: when the service sends `<affectedObjects/>`, it is saying "the
+  // list is empty", and that is a definite answer this reply must report as one.
+  const { backend } = backendWithRecordingHttp({ relation: RENAME_REL, shape: "empty-list" })
+
+  const parsed = JSON.parse(
+    (await new ToolService(backend).evaluateRefactoring(RENAME_BASE)) as unknown as string
+  ) as RefactoringReply
+
+  assert.equal(parsed.affectedObjectCount, 0)
+  assert.equal(parsed.objectListReported, true)
+  assert.match(parsed.summary, /EMPTY affected-object list/)
+  assert.match(parsed.summary, /definite/)
+})
+
+test("a position-only answer is not reported as an empty list", async () => {
+  // The measured w200 answer for a rename on a program: the relation element arrives, no object list
+  // does. This is the case that would otherwise be rendered as "the refactoring touches nothing".
+  const { backend } = backendWithRecordingHttp({ relation: RENAME_REL, shape: "position-only" })
+
+  const parsed = JSON.parse(
+    (await new ToolService(backend).evaluateRefactoring(RENAME_BASE)) as unknown as string
+  ) as RefactoringReply
+
+  assert.equal(parsed.objectListReported, false)
+  assert.equal(parsed.affectedObjectCount, 0)
+  assert.equal(parsed.oldName, "lv_demo")
+  // The answer's own element census is what makes the empty result attributable to the answer.
+  assert.ok(parsed.answerElements.includes("renameRefactoring"))
+  assert.match(parsed.summary, /WITHOUT an affected-object list/)
+  assert.match(parsed.summary, /preview step/)
+})
+
 test("an unaddressable range is refused before any SAP access", async () => {
   const backend = new MockBackend()
   const bad = [
@@ -305,7 +407,20 @@ test("the tool is registered read-only in both the registry and the contract", a
  * A real `AdtBackend` whose client is a recording fake, so the URL, method, query and absence of a
  * body are the ones the shipped code sends rather than the ones a stub would accept.
  */
-function backendWithRecordingHttp(response: { relation: string }): {
+/**
+ * How the recording fake answers the refactoring resource - the only call under test.
+ *
+ * `shape: "w200"` reproduces the answer measured on w200 (objects directly on the relation root,
+ * namespace-prefixed, no `genericRefactoring` wrapper); the default is the shape upstream's own parser
+ * expects. `rawBody` answers with arbitrary text, which is how "an unreadable answer" is tested.
+ */
+interface RefactoringHttpSpec {
+  relation: string
+  shape?: "upstream" | "w200" | "position-only" | "empty-list"
+  rawBody?: string
+}
+
+function backendWithRecordingHttp(spec: RefactoringHttpSpec): {
   backend: AdtBackend
   requests: ObservedRequest[]
 } {
@@ -332,12 +447,16 @@ function backendWithRecordingHttp(response: { relation: string }): {
           qs: (options.qs ?? {}) as Record<string, unknown>
         })
         if (url.includes("refactorings")) {
-          return {
-            body: refactoringResponseXml(response.relation),
-            status: 200,
-            statusText: "OK",
-            headers: {}
-          }
+          const body =
+            spec.rawBody ??
+            (spec.shape === "w200"
+              ? w200RefactoringResponseXml()
+              : spec.shape === "position-only"
+                ? positionOnlyRefactoringResponseXml()
+                : spec.shape === "empty-list"
+                  ? `${upstreamRoot(spec.relation, "<affectedObjects/>")}`
+                  : refactoringResponseXml(spec.relation))
+          return { body, status: 200, statusText: "OK", headers: {} }
         }
         // Everything else is the source read that precedes the evaluation.
         return { body: ZCL_DEMO_SOURCE, status: 200, statusText: "OK", headers: {} }
@@ -352,16 +471,42 @@ function backendWithRecordingHttp(response: { relation: string }): {
 }
 
 /**
- * The refactoring service's own XML answer, shaped for the library's real parsers.
+ * The answer w200 actually sends, as far as it could be read: the relation element is namespace
+ * prefixed, `oldName` sits beside it, and the affected objects hang off the relation element with no
+ * `genericRefactoring` wrapper around them (measured 2026-10-02 - the wrapped shape is what upstream's
+ * parser assumes, and the live call crashed on the difference).
+ */
+function w200RefactoringResponseXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+    <ns:renameRefactoring xmlns:ns="http://www.sap.com/adt/refactorings"
+      xmlns:adtcore="http://www.sap.com/adt/core">
+      <ns:oldName>lv_demo</ns:oldName>
+      <ns:newName>lv_renamed</ns:newName>
+      <ns:affectedObjects>
+        <ns:affectedObject adtcore:uri="${SOURCE_PATH}" adtcore:type="CLAS/OC"
+          adtcore:name="ZCL_DEMO">
+          <ns:textReplaceDeltas>
+            <ns:textReplaceDelta>
+              <ns:rangeFragment>${SOURCE_PATH}#start=3,11;end=3,18</ns:rangeFragment>
+              <ns:contentOld>lv_demo</ns:contentOld>
+              <ns:contentNew>lv_renamed</ns:contentNew>
+            </ns:textReplaceDelta>
+          </ns:textReplaceDeltas>
+        </ns:affectedObject>
+      </ns:affectedObjects>
+    </ns:renameRefactoring>`
+}
+
+/**
+ * The refactoring service's own XML answer, shaped the way upstream's parsers expect it.
  *
- * Two differences from a naive guess matter, and both were read out of `abap-adt-api/src/api/refactor.ts`
- * rather than assumed:
+ * Two details were read out of `abap-adt-api/src/api/refactor.ts` rather than assumed:
  *   - the parsers call `fullParse(body, { removeNSPrefix: true })`, so the element is `renameRefactoring`
  *     / `extractMethodRefactoring` with attribute names bare (`uri`, not `adtcore:uri`);
  *   - `rangeFragment` is a URI STRING parsed by `parseUri` (`#start=l,c;end=l,c`), not a pair of
- *     `<start/>`/`<end/>` child elements;
- *   - extract-method nests the affected objects under `genericRefactoring` while rename has them
- *     directly on the root, which is why the two relations need different fixtures.
+ *     `<start/>`/`<end/>` child elements.
+ * It is kept as the shape upstream EXPECTS, so the tests that use it still fail if the wrapper reading
+ * breaks; the answer w200 really sends is the separate `w200` shape above.
  */
 function refactoringResponseXml(relation: string): string {
   const affectedObjects = `<affectedObjects>
@@ -375,6 +520,26 @@ function refactoringResponseXml(relation: string): string {
         </textReplaceDeltas>
       </affectedObject>
     </affectedObjects>`
+  return upstreamRoot(relation, affectedObjects)
+}
+
+/**
+ * A `renameRefactoring` answer that carries NO object list - the shape w200 measured on 2026-10-02.
+ *
+ * The service answered about the position (it accepted the relation and the range) but listed no
+ * affected objects at all, so the reply must not read as "nothing would change": on this release the
+ * object list comes from the `preview` step, which this read-only tool does not call.
+ */
+function positionOnlyRefactoringResponseXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+    <renameRefactoring>
+      <oldName>lv_demo</oldName>
+      <ignoreSyntaxErrorsAllowed>true</ignoreSyntaxErrorsAllowed>
+    </renameRefactoring>`
+}
+
+/** One of the two relation roots, with `affectedObjects` supplied by the caller. */
+function upstreamRoot(relation: string, affectedObjects: string): string {
   if (relation.includes("extractmethod")) {
     return `<?xml version="1.0" encoding="UTF-8"?>
       <extractMethodRefactoring>

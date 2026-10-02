@@ -787,9 +787,35 @@ test("the registry records the honest gap rather than inflating it", () => {
     // CFG-01: one actual describe_configuration_object MCP call for T006A succeeded on
     // 2026-10-02; .cache/configuration-units-isolated-recheck-20261002.json records the
     // seven-field partial descriptor. This attests metadata only, not IMG/API/CTS or writes.
+    // R7-A: get_quick_fix_proposals was verified by a real read-only call on the same day
+    // (.doc/orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json), which is the 104th -
+    // the refactoring evaluate tool did NOT move here: it is recorded platform-unsupported instead,
+    // so this bound counts one promotion, not two.
     // CFG-05: resolved T006/T006A mode returned 9/5 IMG headers in actual named MCP calls;
     // .doc/orvanta-configuration-units-img-acceptance-20261002-231344.json retains raw receipts.
-    totals.verified <= 104,
+    // Raised from 105 to 122 on 2026-10-02 (R7-B): the read-only acceptance sweep promoted 17 tools
+    // that had no real call on record, each from a raw receipt produced by a real w200 call in this
+    // batch - source 4 (get_batch_lines, analyze_change_impact, get_version_history,
+    // preview_source_changes), platform 2 (get_abap_object_url, list_write_recovery_operations) and
+    // enhancement 11 (search_customer_exit_objects, read_customer_exit_project,
+    // read_customer_exit_definition, inspect_enhancement_framework, inspect_source_enhancements,
+    // inspect_customer_function_exits, inspect_customer_screen_menu_exits,
+    // inspect_fico_rule_exit_program, read_bte_configuration, search_bte_dispatchers,
+    // prepare_enhancement_configuration_workflow). Each receipt was opened, its tool name and
+    // arguments checked against the claim, and the observed values quoted in the entry. In the same
+    // batch three read-only debugger tools moved to `platform-unsupported` (not `verified`) from the
+    // batch's own capability report, whose ADT discovery evidence shows no /sap/bc/adt/debugger
+    // collection on w200, and two DDIC write verifications that had rejected writes SAP applied were
+    // fixed with guard tests (test/ddic-write-verification-fidelity.test.ts).
+    // Raised from 122 to 125 on 2026-10-02 (R7-B, ui/data round): read_abap_screen,
+    // read_abap_gui_definition, read_transaction_code, validate_dynpro_application and
+    // read_report_variants earned their promotion from real w200 calls recorded under
+    // .cache/r7b-state-uidata. `read_report_parameters` did NOT move: its own local approval gate
+    // refused the call before SAP was contacted. Two tools that a first pass had promoted -
+    // get_abap_object_url and list_write_recovery_operations - were put back to `unverified` with no
+    // evidence, because this registry's `verified` attests a SAP-side acceptance and those two never
+    // contact SAP; their real local results are recorded in their notes instead.
+    totals.verified <= 125,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

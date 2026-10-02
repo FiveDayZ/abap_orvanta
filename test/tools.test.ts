@@ -128,6 +128,61 @@ test("five headless tool paths preserve representative output behavior", async (
   assert.match(batch, /REPORT zreport_demo\./)
 })
 
+test("a source read keeps the requested lines verbatim, first line's indentation included", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+
+  // Measured against w200 on 2026-10-02: a one-line read of ZORVANTA_MAINT_DEPLOY_R04 line 30 came back
+  // as `lv_name TYPE c LENGTH 30,` although the source indents that declaration by six spaces, because
+  // all three reply builders ended with `.trim()` on the JOINED block - which strips the leading
+  // whitespace of the FIRST selected line. A caller computing a quick-fix/refactoring column from that
+  // text was therefore handed a position shifted left by the indentation. All three callers are pinned
+  // here so the shared helper cannot be dropped from any of them.
+  const single = await tools.getObjectByUri({
+    connectionId: "w200",
+    uri: "adt://w200/sap/bc/adt/oo/classes/zcl_demo/source/main",
+    startLine: 1,
+    lineCount: 1
+  })
+  assert.match(single, /```abap\n {2}METHOD run\.\n```/)
+
+  const lines = await tools.getObjectLines({
+    objectName: "ZCL_DEMO",
+    objectType: "CLAS",
+    startLine: 2,
+    lineCount: 1,
+    connectionId: "w200"
+  })
+  assert.match(lines, /```abap\n {2}METHOD run\.\n```/)
+
+  const batch = await tools.getBatchLines({
+    connectionId: "w200",
+    requests: [{ objectName: "ZCL_DEMO", startLine: 1, lineCount: 1 }]
+  })
+  assert.match(batch, /```abap\n {2}METHOD run\.\n```/)
+})
+
+test("a source read normalises CRLF instead of dropping only the block's last carriage return", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  backend.functionAdtSourceCrlf = true
+  backend.seedFunctionModuleWithoutInterfaceSkeleton("ZCMCP_FM_R7CRLF", [
+    "  CONCATENATE 'R7' iv_input INTO ev_output."
+  ])
+
+  const read = await tools.getObjectByUri({
+    connectionId: "w200",
+    uri: "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_r7crlf/fmodules/zcmcp_fm_r7crlf/source/main",
+    startLine: 1,
+    lineCount: 2
+  })
+
+  // The old `.trim()` also removed the trailing `\r` of the LAST line only, so a CRLF read mixed
+  // terminated and unterminated lines in one block; every line is normalised now.
+  assert.match(read, /```abap\n {2}IMPORTING\n {4}VALUE\(IV_INPUT\) TYPE CHAR20\n```/)
+  assert.ok(!read.includes("\r"), "the reply must not carry carriage returns")
+})
+
 test("dynamic capability report uses only bounded read probes and covers every tool", async () => {
   const backend = new MockBackend()
   const connectionDetails = backend.connectionDetails.bind(backend)

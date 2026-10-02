@@ -45,6 +45,14 @@ interface QuickFixReply {
   sourceUri: string
   line: number
   column: number
+  mediaTypeUsed: string
+  acceptUsed: string
+  mediaTypeAttempts: Array<{
+    contentType: string
+    accept: string
+    outcome: string
+    proposalCount: number | null
+  }>
   proposalCount: number
   proposals: Array<{
     type: string
@@ -194,13 +202,135 @@ test("the wire shape is the evaluator's: POST to the quick-fix resource with the
   // The body is the source text itself - not XML, not a JSON envelope. That is the contract taken
   // from the library, and it is the part a hand-rolled request would most easily get wrong.
   assert.equal(call.body, ZCL_DEMO_SOURCE)
-  assert.match(String(call.headers["Content-Type"] ?? ""), /application/)
+  // The media type is the first candidate and NOT the library's `application/*` for both headers:
+  // w200 refuses that pair with an ADT error document, while `text/plain` is what this server's two
+  // working source-text POSTs (pretty printer, type hierarchy) already send. The accepted type is
+  // asserted where it matters - in the reply, below.
+  assert.equal(call.headers["Content-Type"], "text/plain")
+  assert.equal(call.headers["Accept"], "application/*")
   // The write half of the upstream API must not be reachable from here.
   assert.equal(
     requests.some((request) => request.url.includes("proposalRequest")),
     false,
     "the edit-producing call must never be made by a proposal query"
   )
+})
+
+test("a refused media type is retried with the next one, and the reply names the one that worked", async () => {
+  // The measured w200 behaviour: the media type the library hard-codes is answered with an ADT error
+  // document. The first candidate is refused here and the second accepted, so the retry path and the
+  // reported media type are both exercised end to end.
+  const { backend, requests } = backendWithRecordingHttp({
+    proposals: [PROPOSAL],
+    refuseContentTypes: ["text/plain"]
+  })
+
+  const reply = (await new ToolService(backend).quickFixProposals({
+    fileUri: CLASS_URI,
+    connectionId: "w200",
+    line: 3,
+    column: 10
+  })) as unknown as string
+  const parsed = JSON.parse(reply) as QuickFixReply
+
+  assert.equal(parsed.proposalCount, 1)
+  assert.equal(parsed.proposals[0]?.handlerUri, PROPOSAL.handlerUri)
+  assert.equal(parsed.mediaTypeUsed, "text/plain; charset=utf-8")
+  // The attempts are the evidence: a caller must be able to see which header SAP refused, because
+  // that is what tells a human whether the endpoint or the request contract is at fault.
+  assert.deepEqual(
+    parsed.mediaTypeAttempts.map((attempt) => [attempt.contentType, attempt.proposalCount]),
+    [
+      ["text/plain", null],
+      ["text/plain; charset=utf-8", 1]
+    ]
+  )
+  assert.match(parsed.mediaTypeAttempts[0]?.outcome ?? "", /content handler/)
+  // Two requests reach the evaluator, one per media type, and the source read happens once.
+  assert.equal(
+    requests.filter((request) => request.url.includes(QUICKFIX_URL)).length,
+    2,
+    "each media type is tried exactly once"
+  )
+  assert.match(parsed.summary, /text\/plain; charset=utf-8/)
+  assert.match(parsed.summary, /refused type/)
+})
+
+test("every refused media type is reported instead of being answered as zero proposals", async () => {
+  const { backend } = backendWithRecordingHttp({
+    proposals: [PROPOSAL],
+    refuseContentTypes: ["text/plain", "text/plain; charset=utf-8", "application/*"]
+  })
+
+  await assert.rejects(
+    () =>
+      new ToolService(backend).quickFixProposals({
+        fileUri: CLASS_URI,
+        connectionId: "w200",
+        line: 3,
+        column: 10
+      }),
+    (error: Error) => {
+      // The refusal is the answer, and it must name every header that was refused.
+      assert.match(error.message, /quick-fixes capability/)
+      assert.match(error.message, /text\/plain/)
+      assert.match(error.message, /application\/\*/)
+      assert.match(error.message, /content handler/)
+      // "No proposals here" is a different statement from "the evaluator refused the request", and a
+      // caller reading the second as the first would conclude the code has nothing to fix.
+      assert.doesNotMatch(error.message, /definite answer/)
+      return true
+    }
+  )
+})
+
+test("an evaluation answer is read wherever the result elements sit and however they are prefixed", async () => {
+  // The parser must not depend on the answer's exact nesting: a single `evaluationResult` is an object
+  // rather than an array in the parsed tree, and the namespace prefix is not guaranteed. Reading only
+  // one shape is what crashed the refactoring call for real on w200.
+  const { backend } = backendWithRecordingHttp({
+    rawBody: `<?xml version="1.0" encoding="UTF-8"?>
+      <qf:evaluationResults xmlns:qf="http://www.sap.com/adt/quickfixes"
+        xmlns:adtcore="http://www.sap.com/adt/core">
+        <qf:evaluationResult>
+          <adtcore:objectReference adtcore:uri="/sap/bc/adt/quickfixes/one"
+            adtcore:type="one" adtcore:name="one" adtcore:description="One" />
+          <userContent>One fix</userContent>
+        </qf:evaluationResult>
+      </qf:evaluationResults>`
+  })
+
+  const parsed = JSON.parse(
+    await new ToolService(backend).quickFixProposals({
+      fileUri: CLASS_URI,
+      connectionId: "w200",
+      line: 3,
+      column: 10
+    })
+  ) as QuickFixReply
+
+  assert.equal(parsed.proposalCount, 1)
+  assert.equal(parsed.proposals[0]?.name, "one")
+  assert.equal(parsed.proposals[0]?.handlerUri, "/sap/bc/adt/quickfixes/one")
+  assert.equal(parsed.proposals[0]?.userContent, "One fix")
+})
+
+test("an empty evaluator answer is a definite answer, not a parse failure", async () => {
+  const { backend } = backendWithRecordingHttp({ rawBody: "" })
+
+  const parsed = JSON.parse(
+    await new ToolService(backend).quickFixProposals({
+      fileUri: CLASS_URI,
+      connectionId: "w200",
+      line: 3,
+      column: 10
+    })
+  ) as QuickFixReply
+
+  assert.equal(parsed.proposalCount, 0)
+  assert.deepEqual(parsed.proposals, [])
+  assert.equal(parsed.mediaTypeUsed, "text/plain")
+  assert.match(parsed.summary, /no proposal/)
 })
 
 test("a position the evaluator cannot address is refused before any SAP access", async () => {
@@ -298,10 +428,27 @@ test("the tool is registered read-only in both the registry and the contract", a
  * the request is part of the contract. This harness drives the shipped code down to the HTTP
  * boundary, so the wire shape and the error classification are real.
  */
-function backendWithRecordingHttp(
-  response: { proposals: Array<Record<string, string>> } | { status: number; statusText: string }
-): { backend: AdtBackend; requests: ObservedRequest[] } {
+/**
+ * How the recording fake answers the quick-fix evaluation, which is the only call under test.
+ *
+ * `refuseContentTypes` reproduces the measured w200 behaviour: SAP answers that media type with an ADT
+ * error document whose message is "No content handler found for content type '<type>'", which the
+ * library surfaces as a thrown error. Naming the refused types per test is what makes the negotiation
+ * assertions real rather than a restatement of the candidate list.
+ */
+interface RecordingHttpSpec {
+  proposals?: Array<Record<string, string>>
+  refuseContentTypes?: string[]
+  /** Answer with this raw body instead of a generated evaluation document. */
+  rawBody?: string
+}
+
+function backendWithRecordingHttp(spec: RecordingHttpSpec): {
+  backend: AdtBackend
+  requests: ObservedRequest[]
+} {
   const requests: ObservedRequest[] = []
+  const refused = new Set(spec.refuseContentTypes ?? [])
   const backend = new AdtBackend([
     {
       id: "w200",
@@ -316,24 +463,22 @@ function backendWithRecordingHttp(
   const client = {
     httpClient: {
       async request(url: string, options: Record<string, unknown> = {}) {
+        const headers = (options.headers ?? {}) as Record<string, string>
         requests.push({
           url,
           method: String(options.method ?? "GET"),
-          headers: (options.headers ?? {}) as Record<string, string>,
+          headers,
           body: options.body as string | undefined,
           qs: (options.qs ?? {}) as Record<string, unknown>
         })
         if (url.includes("quickfixes/evaluation")) {
-          if ("status" in response) {
-            const error = new Error(
-              `Request failed with status code ${response.status}`
-            ) as Error & { status: number; statusText: string }
-            error.status = response.status
-            error.statusText = response.statusText
-            throw error
+          const contentType = String(headers["Content-Type"] ?? "")
+          if (refused.has(contentType)) {
+            // The ADT error document's own text, as `errorText` sees it through the library.
+            throw new Error(`No content handler found for content type '${contentType}'`)
           }
           return {
-            body: quickFixResponseXml(response.proposals),
+            body: spec.rawBody ?? quickFixResponseXml(spec.proposals ?? []),
             status: 200,
             statusText: "OK",
             headers: {}
@@ -351,7 +496,7 @@ function backendWithRecordingHttp(
   return { backend, requests }
 }
 
-/** The evaluator's own XML answer, so the library's parser is exercised rather than bypassed. */
+/** The evaluator's own XML answer, so the reply parser is exercised rather than bypassed. */
 function quickFixResponseXml(proposals: Array<Record<string, string>>): string {
   const results = proposals
     .map(
