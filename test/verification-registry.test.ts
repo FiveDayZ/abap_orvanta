@@ -815,7 +815,18 @@ test("the registry records the honest gap rather than inflating it", () => {
     // get_abap_object_url and list_write_recovery_operations - were put back to `unverified` with no
     // evidence, because this registry's `verified` attests a SAP-side acceptance and those two never
     // contact SAP; their real local results are recorded in their notes instead.
-    totals.verified <= 125,
+    // Raised from 125 to 126 on 2026-10-03 (R7-E3): patch_ddic_transparent_table_fields moved off
+    // `unverified` on a real w200 success, not on a code change. R7-E had recorded two patches that
+    // SAP applied while the receipt reported a failed verification, and the entry was deliberately
+    // left unverified because no call had ever answered successfully. This call did: a key-flag patch
+    // on the authorized temporary table ZORVANTA_R7C_TMP returned `status: completed` with
+    // outcomeMayBeUnknown false, and an independent read-back confirmed PAYLOAD key=false -> true,
+    // version 20261003001713. The entry names that receipt and states which change class it covers
+    // (key/nullability/rename) and which one is still only guard-tested (data-element re-point).
+    // recover_ddic_table_conversion did NOT move: its third authorized attempt (the same key-flag
+    // change, the last structural lever on a table with no rows) again produced no TBATG worklist
+    // entry, so its recovery path remains unexercised.
+    totals.verified <= 126,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
