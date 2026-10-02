@@ -141,9 +141,12 @@ test("a runtime failure is an observation and a static failure is a proof", () =
   // rather than a gap in the data: both R-20 length defects were refuted by real calls. The
   // 33-character DELETE_ENHANCEMENT_IMPLEMENTATION became DELETE_ENHANCEMENT_IMPL (23) and was
   // dispatched, and the 34-character MANAGE_CLASSIC_BADI_IMPLEMENTATION became
-  // MANAGE_CLASSIC_BADI_IMPL (24) and reached SAP, which refused it - so the honest kind for that
-  // one is the observation (`runtime`), not the proof. Demanding a static entry here would force a
-  // false claim back into the registry, so the count is asserted to be zero *and* the metric is
+  // MANAGE_CLASSIC_BADI_IMPL (24) and reached SAP, which refused it at the time - so the honest kind
+  // for that call was the observation (`runtime`), not the proof. That tool has since been called
+  // successfully and is now `verified`, and the surviving runtime failure is
+  // resume_ddic_table_activation; the count of static failures is still zero, because no operation is
+  // currently proven impossible without ever being called. Demanding a static entry here would force
+  // a false claim back into the registry, so the count is asserted to be zero *and* the metric is
   // still proven to have teeth against a constructed registry. Dropping the assertion entirely is
   // what would let the split rot.
   assert.equal(
@@ -179,7 +182,13 @@ test("R-20's four tools stay recorded with the state their evidence supports", (
 
   // Actually called and rejected by SAP: an observation, so it keeps the time it happened.
   expect("resume_ddic_table_activation", "failed", "runtime")
-  expect("manage_classic_badi_implementation", "failed", "runtime")
+
+  // The fourth R-20 row was refused when it was called in 2026-10-01, and that refusal is why it
+  // entered as `failed`. It was called again on 2026-10-03 with the one action that can pass the
+  // guard on an implementation that already exists (activate), SAP answered
+  // CLASSIC_BADI_IMPLEMENTATION_CHANGED, and the row is now a success rather than a refusal. The
+  // earlier refusal stays in its notes as history; the status follows the latest observation.
+  expect("manage_classic_badi_implementation", "verified", null)
 
   // Renamed and then really called - and that call SUCCEEDED. This one is no longer a failure at
   // all.
@@ -192,11 +201,17 @@ test("R-20's four tools stay recorded with the state their evidence supports", (
 })
 
 test("a length fix alone never counts as evidence of success", () => {
-  // Renaming an opcode proves deliverability, not an outcome. This is the mistake the four R-20 rows
-  // exist to prevent, asserted against the tool whose call really did land: the opcode fits, the
-  // call was made, and SAP refused it - so the row may NOT read as `verified`, and its kind is the
-  // observation (`runtime`), carrying the time the call actually happened.
-  const entry = findVerificationEntry(registry, "manage_classic_badi_implementation")!
+  // Renaming an opcode proves deliverability, not an outcome. This is the mistake the R-20 rows
+  // exist to prevent, asserted against a tool whose call really did land: RESUME_TABLE_ACTIVATION
+  // (23 characters) fits and reached its own arm, the call was made, and SAP refused it with rc 8 -
+  // so the row may NOT read as `verified`, and its kind is the observation (`runtime`), carrying the
+  // time the call actually happened.
+  //
+  // This used to be asserted against manage_classic_badi_implementation, whose 2026-10-01 call was
+  // refused. That tool has since been called successfully (R8 2026-10-03) and moved to `verified`,
+  // so the exemplar had to move to the row that is still a refusal; keeping the old subject would
+  // have turned this guard into an assertion about a success.
+  const entry = findVerificationEntry(registry, "resume_ddic_table_activation")!
   assert.equal(entry.status, "failed", "a refused call is not a success")
   assert.equal(entry.failureBasis, "runtime", "a call that reached SAP is an observation")
   assert.notEqual(entry.lastAttemptAt, null, "an observation carries the time it was made")
@@ -209,10 +224,10 @@ test("a length fix alone never counts as evidence of success", () => {
     "a failed entry relabelled verified must still be refused without evidence"
   )
 
-  // The other half of the same rule, on the same tool: producing a working interface (the separate
-  // IV_ACTION parameter) is also only deliverability. Until a call passes the guard, the row must
-  // not read as verified.
-  assert.notEqual(entry.status, "verified", "an upgraded interface is not a successful call")
+  // The other half of the same rule, on the same tool: dispatching the renamed opcode into its own
+  // arm is also only deliverability. Until the rc 8 reason is attributed, the row must not read as
+  // verified.
+  assert.notEqual(entry.status, "verified", "a dispatched call is not a successful call")
 })
 
 test("controlled writes must name the object they were written to", () => {
@@ -830,7 +845,11 @@ test("the registry records the honest gap rather than inflating it", () => {
     // the first real w200 success, after the operator approved the REPORT_PARAMETERS source and the
     // real reply exposed two defects the local gate had hidden - the entry named the wrong helper and
     // the reply schema capped the CHAR 4 RSSCR-DTYP dictionary type at one character.
-    totals.verified <= 127,
+    // Raised from 127 to 128 on 2026-10-03 (R8): manage_classic_badi_implementation moved off
+    // `failed` on a real activate call whose receipt completed, and patch_ddic_transparent_table_fields
+    // stayed verified while its last open class (data-element re-point) was closed by a live patch -
+    // so the count moved by exactly the one row whose status changed, not by the two rows touched.
+    totals.verified <= 128,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
