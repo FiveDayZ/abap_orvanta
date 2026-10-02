@@ -8,8 +8,9 @@
  * a carrier reports its own success even when the body write did not survive. The carrier's own
  * closing line names the check that is actually decisive:
  *
- *   maxProtocol 2.21 with CREATE_TRANSPORT_REQUEST, ADD_OBJECTS_TO_TRANSPORT,
- *   INSPECT_TRANSPORT_IMPORT, JOB_CREATE, JOB_MODIFY_HEADER and JOB_MODIFY_STEP present
+ *   maxProtocol 2.28 with PATCH_FUNCTION_INTERFACE, CREATE_TRANSPORT_REQUEST,
+ *   ADD_OBJECTS_TO_TRANSPORT, INSPECT_TRANSPORT_IMPORT, JOB_CREATE, JOB_MODIFY_HEADER and
+ *   JOB_MODIFY_STEP present
  *
  * The 2.17 deployment of 2026-09-29 was the first one to land a body here since the shell incidents:
  * carrier `ZORVANTA_MCP_DYNPRO_DEPLOY_R14` ran through the RFC runner with SUBRC 0, and the helper
@@ -18,7 +19,21 @@
  * deployment carries the three job arms - creation and the two modification targets - which have to
  * arrive together: the service pins create at 2.19 and modify at 2.21, so a body that landed one of
  * them without the others would leave its tools answering the capability gate instead of the
- * scheduler. The pins below move with the helper: they are what the deployment is *supposed* to
+ * scheduler. The 2.28 deployment of 2026-10-02 added PATCH_FUNCTION_INTERFACE, the arm the FM
+ * interface-write route needs; that opcode is pinned below because a 2.21 body satisfies every other
+ * check in this file.
+ *
+ * Live readings of 2026-10-03 00:48-00:59 +08:00, both read-only: `get_capability_report` shows the
+ * helper self-describing maxProtocol 2.28 with sourceHash
+ * 0da4771e8025457dc4c516269ca5271d6d3b00bb9eb1326ac235222909f21514, byte-identical to the canonical
+ * export `.cache/repository-z_orvanta_mcp_dynpro_api-canonical.json` (9,890 lines), while
+ * `read_function_module_interface` reads the deployed body back as 9,966 lines with sourceFingerprint
+ * ad7e7bcdea9c4f26decc64d6df9dc72d7bf23d9bc249bc81870f4851a5ea7daa. Those are two measurements of
+ * the same deployment - canonical export file versus the source read back from SAP - and both are
+ * current, so a check must quote the one it actually reads rather than treat the other as stale.
+ * The pins here come from the live attestation above.
+ *
+ * The pins below move with the helper: they are what the deployment is *supposed* to
  * produce, so a carrier that silently leaves the old body in place fails this check instead of
  * passing on its own printed success.
  *
@@ -61,9 +76,10 @@ const dump = process.argv.includes("--dump")
 
 const EXPECTED_HELPER = "Z_ORVANTA_MCP_DYNPRO_API"
 const EXPECTED_MIN_PROTOCOL = "1.1"
-const EXPECTED_MAX_PROTOCOL = "2.21"
+const EXPECTED_MAX_PROTOCOL = "2.28"
 const EXPECTED_OPERATION_COUNT = 50
 const EXPECTED_OPERATIONS = [
+  "PATCH_FUNCTION_INTERFACE",
   "CREATE_TRANSPORT_REQUEST",
   "ADD_OBJECTS_TO_TRANSPORT",
   "INSPECT_TRANSPORT_IMPORT",
