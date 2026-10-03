@@ -97,10 +97,13 @@ export const DESCRIPTION_PARAMETER_TYPE_LENGTHS: Readonly<Record<string, number>
  *
  * The helpers assign that value to `DD01V`/`DD04V`/`DD02V`/`DD30V`/`DD25V`/`DD40V-DDTEXT` and
  * `TNROT-TXT`, which are all 60 wide, so the parameter is no longer the binding limit: a description
- * of up to 60 characters reaches the target field intact. A longer value is still truncated by the
- * RFC layer before the helper body runs and the write still succeeds with the truncated text, which
- * is why the limit is declared on the `description` input rather than enforced: rejecting a longer
- * value would narrow an accepted value, a contract change that needs an explicit ruling.
+ * of up to 60 characters reaches the target field intact. That is measured rather than inferred — a
+ * 2026-10-03 replacement of `ZORVANTA_R12_STR01` sent a 50-character description and an independent
+ * `read_ddic_structure` read back all 50 characters, where the value it replaced had been stored as
+ * exactly 36. A longer value is still truncated by the RFC layer before the helper body runs and the
+ * write still succeeds with the truncated text, which is why the limit is declared on the
+ * `description` input rather than enforced: rejecting a longer value would narrow an accepted value,
+ * a contract change that needs an explicit ruling.
  *
  * `length` must equal `DESCRIPTION_PARAMETER_TYPE_LENGTHS[ddicType]`, and
  * `test/helper-operation-limits.test.ts` checks that, the generator's declaration and the tool
