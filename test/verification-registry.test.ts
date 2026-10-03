@@ -859,7 +859,15 @@ test("the registry records the honest gap rather than inflating it", () => {
     // values and a data element pointing at it), each independently read back with the same version
     // and fingerprint and each leaving exactly one new transport entry. Both rows had said no real
     // call had been recorded, which this batch falsified.
-    totals.verified <= 131,
+    // Raised from 131 to 133 on 2026-10-03 (R12): upsert_ddic_structure and upsert_ddic_table_type
+    // moved off `unverified` on two real create calls in package ZABAP (a three-field structure whose
+    // components reference data elements, and a standard table type whose row type is that structure),
+    // each independently read back with the same version, fingerprint and definition and each leaving
+    // exactly one new transport entry. Both rows had said no real call had been recorded, which this
+    // batch falsified. That batch also observed that the ddic helper's read probe advertises protocol
+    // 1.7 while both tools declare a 1.16/1.17 floor, and the writes succeeded anyway, so the
+    // read-probe protocol number does not gate the write path.
+    totals.verified <= 133,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
