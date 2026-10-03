@@ -854,7 +854,12 @@ test("the registry records the honest gap rather than inflating it", () => {
     // before/after fingerprint and hook source are identical (the helper's activate() arm ran, the net
     // content did not change). The same batch recorded the reason the first attempt was refused: the
     // enhancement framework compares the session language with the object's original language.
-    totals.verified <= 129,
+    // Raised from 129 to 131 on 2026-10-03 (R11): upsert_ddic_domain and upsert_ddic_data_element
+    // moved off `unverified` on two real create calls in package ZABAP (a CHAR domain with fixed
+    // values and a data element pointing at it), each independently read back with the same version
+    // and fingerprint and each leaving exactly one new transport entry. Both rows had said no real
+    // call had been recorded, which this batch falsified.
+    totals.verified <= 131,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
