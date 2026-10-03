@@ -179,6 +179,12 @@ Retry safety here is not a retry loop, it is an identity. A tool that changes SA
   without the raw message, which would embed the absolute state path), so a refusal by the operating
   system can be told apart from a defect in the guard; the message itself stays out of the receipt
   and only `errorHash` is kept.
+- A sibling request that is reading the same receipt or lock does not break the owner's update. On
+  Windows a file cannot be replaced or deleted while another handle holds it open for reading, which
+  is exactly the state a duplicate check creates, so the atomic replace and the lock removal retry
+  that sharing violation a bounded number of times before giving up; a violation that persists is
+  still reported and still fails closed, and the receipt is never written in place, so no reader can
+  observe a half-written receipt.
 - The same state root holds the RFC-level invocation receipts (request-id hash, input hash, output
   hash, interface and definition fingerprints) and the pre-change evidence captured before a write
   (existence, active state, version, fingerprint, package, request and task). A receipt written

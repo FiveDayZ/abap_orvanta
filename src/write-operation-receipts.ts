@@ -1,7 +1,12 @@
 import { createHash, randomUUID } from "node:crypto"
-import { mkdir, open, readFile, readdir, rename, unlink } from "node:fs/promises"
-import { basename, dirname, join, resolve } from "node:path"
+import { mkdir, open, readFile, readdir, unlink } from "node:fs/promises"
+import { join, dirname, resolve } from "node:path"
 import { z } from "zod"
+import {
+  createExclusiveJsonFile,
+  replaceJsonFile,
+  unlinkFileWithRetry
+} from "./durable-json-file.js"
 import { PreSapValidationError } from "./pre-sap-validation.js"
 import {
   isSourceSavedNotActivatedError,
@@ -139,11 +144,11 @@ export class WriteOperationReceiptStore {
 
   /**
    * The exclusive-create primitive the reservation path depends on. Production behaviour is exactly
-   * `createExclusiveJson`; the seam exists because `protection_failed` is the one outcome a caller
-   * cannot reproduce on demand, and an untested branch is how it stayed unattributable.
+   * `createExclusiveJsonFile`; the seam exists because `protection_failed` is the one outcome a
+   * caller cannot reproduce on demand, and an untested branch is how it stayed unattributable.
    */
   protected async createExclusive(path: string, value: unknown): Promise<void> {
-    return createExclusiveJson(path, value)
+    return createExclusiveJsonFile(path, value)
   }
 
   async reserve(identity: WriteOperationIdentity): Promise<WriteOperationReservationResult> {
@@ -411,7 +416,7 @@ export class WriteOperationReceiptStore {
     if (lock.operationIdHash !== receipt.operationIdHash || resolve(lock.receiptPath) !== path) {
       throw new Error("The local lock does not belong to the confirmed operation")
     }
-    await unlink(lockPath)
+    await unlinkFileWithRetry(lockPath)
     const released = await this.finishReceipt(path, {
       ...receipt,
       lockReleased: true,
@@ -486,7 +491,7 @@ export class WriteOperationReceiptStore {
     path: string,
     receipt: WriteOperationReceipt
   ): Promise<WriteOperationReceipt> {
-    await replaceJson(path, receipt)
+    await replaceJsonFile(path, receipt)
     return receipt
   }
 
@@ -498,7 +503,7 @@ export class WriteOperationReceiptStore {
     ) {
       throw new Error("Write target lock ownership changed; inspect the SAP target manually")
     }
-    await unlink(path)
+    await unlinkFileWithRetry(path)
   }
 
   private receiptPath(connectionId: string, operationIdHash: string): string {
@@ -612,27 +617,15 @@ function sortValue(value: unknown): unknown {
   return value
 }
 
-async function createExclusiveJson(path: string, value: unknown): Promise<void> {
-  const handle = await open(path, "wx", 0o600)
-  try {
-    await handle.writeFile(`${JSON.stringify(value)}\n`, "utf8")
-    await handle.sync()
-  } finally {
-    await handle.close()
-  }
-}
-
-async function replaceJson(path: string, value: unknown): Promise<void> {
-  const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`)
-  try {
-    await createExclusiveJson(temporary, value)
-    await rename(temporary, path)
-  } catch (error) {
-    await unlink(temporary).catch(() => undefined)
-    throw error
-  }
-}
-
+/**
+ * Windows refuses to replace or delete a file while another handle holds it open for reading
+ * (`EPERM: operation not permitted, rename/unlink ...`). A receipt and its lock are read by sibling
+ * requests - the duplicate check of a second call reads the very file its owner is updating - so the
+ * owner's own update failed inside its pre-change observation: on 2026-10-03 twelve simultaneous
+ * duplicate requests produced eleven `duplicate_blocked` results and one owner that never
+ * dispatched, and on 2026-09-29 the same test lost its single dispatch. `durable-json-file.ts` owns
+ * the bounded retry for that window; this store must not write receipts any other way.
+ */
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex")
 }

@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from "node:crypto"
-import { mkdir, open, readFile, rename, unlink } from "node:fs/promises"
+import { mkdir, readFile } from "node:fs/promises"
 import { homedir } from "node:os"
-import { basename, dirname, join, resolve } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { z } from "zod"
+import { createExclusiveJsonFile, replaceJsonFile } from "./durable-json-file.js"
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/
 const SERVICE_INSTANCE_ID = randomUUID()
@@ -96,7 +97,7 @@ export class InvocationReceiptStore {
     }
 
     try {
-      await createExclusiveReceipt(path, receipt)
+      await createExclusiveJsonFile(path, receipt)
       activeReceipts.set(path, this.serviceInstanceId)
       return { status: "reserved", reservation: { path, receipt } }
     } catch (error) {
@@ -140,7 +141,7 @@ export class InvocationReceiptStore {
       durationMs: result.durationMs
     }
     try {
-      await replaceReceipt(reservation.path, receipt)
+      await replaceJsonFile(reservation.path, receipt)
       return this.toPublic(receipt, reservation.path)
     } finally {
       activeReceipts.delete(reservation.path)
@@ -156,7 +157,7 @@ export class InvocationReceiptStore {
       durationMs
     }
     try {
-      await replaceReceipt(reservation.path, receipt)
+      await replaceJsonFile(reservation.path, receipt)
     } finally {
       activeReceipts.delete(reservation.path)
     }
@@ -240,27 +241,6 @@ function sameInterfaceFingerprint(
   return existing.definitionFingerprint
     ? existing.interfaceFingerprint === identity.interfaceFingerprint
     : existing.interfaceFingerprint === identity.definitionFingerprint
-}
-
-async function createExclusiveReceipt(path: string, receipt: InvocationReceipt): Promise<void> {
-  const handle = await open(path, "wx", 0o600)
-  try {
-    await handle.writeFile(`${JSON.stringify(receipt)}\n`, "utf8")
-    await handle.sync()
-  } finally {
-    await handle.close()
-  }
-}
-
-async function replaceReceipt(path: string, receipt: InvocationReceipt): Promise<void> {
-  const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`)
-  try {
-    await createExclusiveReceipt(temporary, receipt)
-    await rename(temporary, path)
-  } catch (error) {
-    await unlink(temporary).catch(() => undefined)
-    throw error
-  }
 }
 
 function sha256(value: string): string {
