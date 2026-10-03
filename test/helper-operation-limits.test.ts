@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
+  DESCRIPTION_PARAMETER_TYPE_LENGTHS,
+  HELPER_DESCRIPTION_PARAMETER,
   HELPER_OPERATION_PARAMETERS,
   HELPER_OPERATIONS_BLOCKED_BY_PARAMETER_LENGTH,
   HelperOperationNotDeliverableError,
@@ -9,6 +11,7 @@ import {
   assertHelperOperationDeliverable,
   helperOperationParameter
 } from "../src/helper-operation-limits.js"
+import { toolContracts } from "../src/contracts.js"
 import { TOOL_REGISTRY } from "../src/tool-registry.js"
 
 /**
@@ -324,6 +327,72 @@ test("the installer generates no operation that its own parameter would truncate
     assert.ok(
       operation.length <= ddicParameter.length,
       `${DDIC_HELPER}: dispatched ${operation} (${operation.length}) exceeds ${ddicParameter.ddicType} (CHAR ${ddicParameter.length})`
+    )
+  }
+})
+
+/**
+ * `IV_DESCRIPTION` is the other fixed-length helper parameter, and the one whose over-long value
+ * used to fail SILENTLY. The helpers assign it to `DD01V`/`DD04V`/`DD02V`/`DD30V`/`DD25V`/`DD40V-DDTEXT`
+ * and `TNROT-TXT`, which are all 60 wide, so four tool contracts claimed a 60-character description
+ * while the RFC layer truncated every value at 36 — measured on w200 2026-10-03, a 50-character
+ * description was stored, echoed by the write reply and read back as its first 36 characters, with
+ * no rejection.
+ *
+ * The expectation is not the local constant alone: the DDIC type is read back from the generator, so
+ * a wrong type or length in `HELPER_DESCRIPTION_PARAMETER` fails here, and every DDIC write tool
+ * that accepts a description must declare the same limit on its own input.
+ */
+test("IV_DESCRIPTION is declared as TSTCT-TTEXT by the shared interface builder, and every DDIC write tool declares its CHAR 36 limit", () => {
+  const declaration =
+    /"ls_import-parameter = 'IV_DESCRIPTION'\.",\s*"ls_import-dbfield = '([A-Z0-9-]+)'\."/.exec(
+      script
+    )
+  assert.ok(
+    declaration,
+    "the generator must declare IV_DESCRIPTION in the shared interface builder"
+  )
+  assert.equal(
+    declaration[1],
+    HELPER_DESCRIPTION_PARAMETER.ddicType,
+    "the generator's IV_DESCRIPTION type and HELPER_DESCRIPTION_PARAMETER must agree"
+  )
+  assert.equal(
+    HELPER_DESCRIPTION_PARAMETER.length,
+    DESCRIPTION_PARAMETER_TYPE_LENGTHS[HELPER_DESCRIPTION_PARAMETER.ddicType],
+    `${HELPER_DESCRIPTION_PARAMETER.ddicType} is CHAR ${DESCRIPTION_PARAMETER_TYPE_LENGTHS[HELPER_DESCRIPTION_PARAMETER.ddicType]}`
+  )
+
+  const contracts = toolContracts as unknown as Record<
+    string,
+    { description: string; inputSchema: { description?: { description?: string } } }
+  >
+  /** Every tool whose `description` travels to the DDIC helper as IV_DESCRIPTION. */
+  const descriptionTools = [
+    "upsert_ddic_domain",
+    "upsert_search_help",
+    "upsert_lock_object",
+    "upsert_number_range_object",
+    "upsert_maintenance_view",
+    "upsert_ddic_data_element",
+    "upsert_ddic_structure",
+    "create_ddic_transparent_table",
+    "upsert_ddic_table_type"
+  ]
+  const limit = new RegExp(`CHAR ${HELPER_DESCRIPTION_PARAMETER.length}\\b`)
+  for (const tool of descriptionTools) {
+    const contract = contracts[tool]
+    assert.ok(contract, `${tool}: contract must exist`)
+    const declared = contract.inputSchema.description?.description
+    assert.ok(declared, `${tool}: the description input must declare the helper's limit`)
+    assert.match(
+      declared,
+      limit,
+      `${tool}: the description input must name the CHAR ${HELPER_DESCRIPTION_PARAMETER.length} limit`
+    )
+    assert.ok(
+      !contract.description.includes("limited to 60 characters"),
+      `${tool}: the superseded 60-character claim must not come back`
     )
   }
 })

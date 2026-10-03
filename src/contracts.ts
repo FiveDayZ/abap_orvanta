@@ -16,6 +16,7 @@ import { configurationPreviewSchema } from "./configuration-preview.js"
 import { configurationDescriptorSchema } from "./configuration-object.js"
 import { configurationActivitiesSchema } from "./configuration-img.js"
 import { withRegistryAnnotations } from "./tool-registry.js"
+import { HELPER_DESCRIPTION_PARAMETER } from "./helper-operation-limits.js"
 import { DEFAULT_OBJECT_TYPES } from "./backend.js"
 import { SEARCHABLE_OBJECT_TYPE_TOKENS } from "./object-types.js"
 import { runtimeDiagnosticSchema } from "./runtime-diagnostics.js"
@@ -280,6 +281,17 @@ const writeOperationInput = {
     )
     .optional()
 }
+
+// The helper parameter that carries every DDIC write description. Its width, its DDIC type and the
+// evidence for both live in HELPER_DESCRIPTION_PARAMETER, and test/helper-operation-limits.test.ts
+// checks the generator's declaration and every tool below against it, so the number has one home.
+// The limit is DECLARED here rather than enforced: rejecting an over-long description would narrow
+// an accepted value, which is a contract change that needs an explicit ruling.
+const ddicHelperDescription = z
+  .string()
+  .describe(
+    `Description text. The installed helper declares IV_DESCRIPTION as ${HELPER_DESCRIPTION_PARAMETER.ddicType} (CHAR ${HELPER_DESCRIPTION_PARAMETER.length}), so a longer description is truncated to its first ${HELPER_DESCRIPTION_PARAMETER.length} characters before the helper runs; the write still succeeds and both the reply and a read-back report the truncated text. Send at most ${HELPER_DESCRIPTION_PARAMETER.length} characters.`
+  )
 const screenComponentOperation = z.object({
   operation: z.enum(["add", "update", "remove"]),
   name: z.string(),
@@ -1003,7 +1015,7 @@ const toolContractsBase = {
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       packageName: z.string(),
       transportNumber: z.string(),
       expectedVersion: z.string().optional(),
@@ -1025,11 +1037,11 @@ const toolContractsBase = {
   },
   upsert_search_help: {
     description:
-      "Create or fully replace one Z* or Y* search help through the installed DDIC helper. description is limited to 60 characters, the same as every other DDIC object. Existing objects require the version returned by read_search_help. Header properties (SELMETHOD, SELMTYPE, ISSIMPLE, DIALOGTYPE, TEXTTAB, SELMEXIT, HOTKEY) are read ONLY from the header object, never from a top-level argument: there is no top-level selectionMethod, and passing one is silently discarded rather than rejected, so a search help created that way comes back with no selection method. read_search_help reports the same values at definition level under different names, so map them when writing back what you read - definition.selectionMethod to header.SELMETHOD, definition.selectionMethodType to header.SELMTYPE, definition.issimple true to header.ISSIMPLE 'X', definition.dialogType to header.DIALOGTYPE. selectionMethods, parameters and fieldAssignments are replaced as complete sets: rows omitted from the request are deleted, so send every row that must survive, including DD32P parameter rows on an elementary search help. Passing empty arrays therefore strips an existing definition down to its header. SAP-derived or server-controlled header properties (SHLPNAME, ACTFLAG, AS4USER, AS4DATE, AS4TIME, ATTACHEXI, ELEMEXI, NOFIELDS, DDLANGUAGE) are rejected. Requires a helper that publishes UPSERT_SEARCH_HELP (protocol 1.8 or later) AND a helper whose request parser accepts the two-character S1/S2/S3 row kinds; a helper declaring 1.8 whose parser still uses a one-character row kind rejects any request carrying child rows with PAYLOAD_INVALID.",
+      "Create or fully replace one Z* or Y* search help through the installed DDIC helper. description is DD30V-DDTEXT, 60 characters wide, but the installed helper caps it at 36: it declares IV_DESCRIPTION as TSTCT-TTEXT (CHAR 36), so a longer description is truncated to its first 36 characters at the RFC boundary before the helper runs, and the write succeeds with the truncated text rather than rejecting it (measured on w200 2026-10-03: a 50-character description was stored, echoed and read back as its first 36 characters). Send at most 36. Existing objects require the version returned by read_search_help. Header properties (SELMETHOD, SELMTYPE, ISSIMPLE, DIALOGTYPE, TEXTTAB, SELMEXIT, HOTKEY) are read ONLY from the header object, never from a top-level argument: there is no top-level selectionMethod, and passing one is silently discarded rather than rejected, so a search help created that way comes back with no selection method. read_search_help reports the same values at definition level under different names, so map them when writing back what you read - definition.selectionMethod to header.SELMETHOD, definition.selectionMethodType to header.SELMTYPE, definition.issimple true to header.ISSIMPLE 'X', definition.dialogType to header.DIALOGTYPE. selectionMethods, parameters and fieldAssignments are replaced as complete sets: rows omitted from the request are deleted, so send every row that must survive, including DD32P parameter rows on an elementary search help. Passing empty arrays therefore strips an existing definition down to its header. SAP-derived or server-controlled header properties (SHLPNAME, ACTFLAG, AS4USER, AS4DATE, AS4TIME, ATTACHEXI, ELEMEXI, NOFIELDS, DDLANGUAGE) are rejected. Requires a helper that publishes UPSERT_SEARCH_HELP (protocol 1.8 or later) AND a helper whose request parser accepts the two-character S1/S2/S3 row kinds; a helper declaring 1.8 whose parser still uses a one-character row kind rejects any request carrying child rows with PAYLOAD_INVALID.",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       packageName: z.string(),
       transportNumber: z.string(),
       expectedVersion: z.string().optional(),
@@ -1047,11 +1059,11 @@ const toolContractsBase = {
   },
   upsert_lock_object: {
     description:
-      "Create or fully replace one Z* or Y* lock object through the installed DDIC helper. objectName may also carry the E prefix SAP's ENQU convention uses, so EZPMCTP and ZPMCTP are both accepted while a standard lock object such as EMARA is not: the customer test applies to the character after the optional E. This defines a lock object in the ABAP Dictionary; it does not lock anything at runtime. description is limited to 60 characters, the same as every other DDIC object. Existing objects require the version returned by read_lock_object. lockTables and lockFields are replaced as complete sets: rows omitted from the request are deleted, so send every row that must survive. Passing empty arrays therefore strips an existing definition down to its header. SAP-derived or server-controlled header properties (VIEWNAME, LOCKOBJECT, ACTFLAG, AS4USER, AS4DATE, AS4TIME, DDLANGUAGE) are rejected. header carries the DD25V properties a caller controls, currently AGGTYPE (the aggregation type) and ROOTTAB (the root table); neither is required, because the ENQU activation derives both when the request omits them, so an omitted property is not verified against an empty value - live w200 evidence 2026-09-24: creating EZPMCTPRP with no ROOTTAB in the header stored ROOTTAB = ZTPMC_TPRPH, the locked table. A property the caller does send is verified, and a verification that does not match names the field and both values. The response reports the DD25V values SAP actually stored, not an echo of the request. Generating the ENQUEUE_*/DEQUEUE_* function modules is a separate, higher-risk step and is not performed by this tool. Requires a helper that publishes UPSERT_LOCK_OBJECT (protocol 1.9 or later).",
+      "Create or fully replace one Z* or Y* lock object through the installed DDIC helper. objectName may also carry the E prefix SAP's ENQU convention uses, so EZPMCTP and ZPMCTP are both accepted while a standard lock object such as EMARA is not: the customer test applies to the character after the optional E. This defines a lock object in the ABAP Dictionary; it does not lock anything at runtime. description is DD25V-DDTEXT, 60 characters wide, but the installed helper caps it at 36: it declares IV_DESCRIPTION as TSTCT-TTEXT (CHAR 36), so a longer description is truncated to its first 36 characters at the RFC boundary before the helper runs, and the write succeeds with the truncated text rather than rejecting it (measured on w200 2026-10-03: a 50-character description was stored, echoed and read back as its first 36 characters). Send at most 36. Existing objects require the version returned by read_lock_object. lockTables and lockFields are replaced as complete sets: rows omitted from the request are deleted, so send every row that must survive. Passing empty arrays therefore strips an existing definition down to its header. SAP-derived or server-controlled header properties (VIEWNAME, LOCKOBJECT, ACTFLAG, AS4USER, AS4DATE, AS4TIME, DDLANGUAGE) are rejected. header carries the DD25V properties a caller controls, currently AGGTYPE (the aggregation type) and ROOTTAB (the root table); neither is required, because the ENQU activation derives both when the request omits them, so an omitted property is not verified against an empty value - live w200 evidence 2026-09-24: creating EZPMCTPRP with no ROOTTAB in the header stored ROOTTAB = ZTPMC_TPRPH, the locked table. A property the caller does send is verified, and a verification that does not match names the field and both values. The response reports the DD25V values SAP actually stored, not an echo of the request. Generating the ENQUEUE_*/DEQUEUE_* function modules is a separate, higher-risk step and is not performed by this tool. Requires a helper that publishes UPSERT_LOCK_OBJECT (protocol 1.9 or later).",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       packageName: z.string(),
       transportNumber: z.string(),
       expectedVersion: z.string().optional(),
@@ -1068,11 +1080,11 @@ const toolContractsBase = {
   },
   upsert_number_range_object: {
     description:
-      "Create or update one Z* or Y* number range object DEFINITION through the installed DDIC helper. objectName is the TNRO OBJECT key (data element NROBJ, CHAR 10, characters A-Z 0-9 _ only). This tool never creates, changes or deletes a number range INTERVAL (NRIV), so it does not by itself make number assignment available. description is the long text of the helper logon language (TNROT-TXT, 60 characters). An existing object requires the version returned by read_number_range_object: a 40-character SHA-1 definition digest, NOT a 14-digit DDIC timestamp, never numeric, and rejected if the stored definition changed since the read. properties is a partial patch keyed by TNRO field name - omitted fields keep the value already stored, so an update never clears an attribute the caller did not mention and never deletes a row it did not send. A create starts from an empty TNRO row; SAP's own check_object then reports any attribute it still needs in the error message. TNRO fields are DTELSOBJ, NRTAB, NRINTFLD, NREXTFLD, NRFLD, NRSOBJFLD, NRELEFLD, YEARIND, DOMLEN (a domain name, not a length), PERCENTAGE, CODE, TEXTIND, NRELTXTTAB, NRELTXTSOB, NRELTXTELE, NRELTXTTXT, NRELTXTLNG, BUFFER, NOIVBUFFER, NONRSWAP, RFCDEST, NRCHECKASCII; any other key, including OBJECT, is rejected before SAP is called. texts carries TNROT rows (language, text, shortText up to 60 and 20 characters). The helper logon language must be among them and is written first; every other language follows as a text update, and a text in a language the caller did not send is preserved. The write is one atomic LUW: TNRO/TNROT, the R3TR/NROB transport registration and a single COMMIT WORK AND WAIT. It fails closed with NUMBER_RANGE_TADIR_FAILED or NUMBER_RANGE_TRANSPORT_RECORD_FAILED when the object cannot be recorded in the package's request, so an unrecorded definition never survives as success. Requires a helper that publishes UPSERT_NUMBER_RANGE_OBJECT (protocol 1.11 or later).",
+      "Create or update one Z* or Y* number range object DEFINITION through the installed DDIC helper. objectName is the TNRO OBJECT key (data element NROBJ, CHAR 10, characters A-Z 0-9 _ only). This tool never creates, changes or deletes a number range INTERVAL (NRIV), so it does not by itself make number assignment available. description is the long text of the helper logon language (TNROT-TXT, 60 characters wide), capped at 36 by the installed helper: it declares IV_DESCRIPTION as TSTCT-TTEXT (CHAR 36), so a longer description is truncated to its first 36 characters at the RFC boundary before the helper runs and the write succeeds with the truncated text rather than rejecting it (measured on w200 2026-10-03: a 50-character description was stored, echoed and read back as its first 36 characters). Send at most 36. An existing object requires the version returned by read_number_range_object: a 40-character SHA-1 definition digest, NOT a 14-digit DDIC timestamp, never numeric, and rejected if the stored definition changed since the read. properties is a partial patch keyed by TNRO field name - omitted fields keep the value already stored, so an update never clears an attribute the caller did not mention and never deletes a row it did not send. A create starts from an empty TNRO row; SAP's own check_object then reports any attribute it still needs in the error message. TNRO fields are DTELSOBJ, NRTAB, NRINTFLD, NREXTFLD, NRFLD, NRSOBJFLD, NRELEFLD, YEARIND, DOMLEN (a domain name, not a length), PERCENTAGE, CODE, TEXTIND, NRELTXTTAB, NRELTXTSOB, NRELTXTELE, NRELTXTTXT, NRELTXTLNG, BUFFER, NOIVBUFFER, NONRSWAP, RFCDEST, NRCHECKASCII; any other key, including OBJECT, is rejected before SAP is called. texts carries TNROT rows (language, text, shortText up to 60 and 20 characters). The helper logon language must be among them and is written first; every other language follows as a text update, and a text in a language the caller did not send is preserved. The write is one atomic LUW: TNRO/TNROT, the R3TR/NROB transport registration and a single COMMIT WORK AND WAIT. It fails closed with NUMBER_RANGE_TADIR_FAILED or NUMBER_RANGE_TRANSPORT_RECORD_FAILED when the object cannot be recorded in the package's request, so an unrecorded definition never survives as success. Requires a helper that publishes UPSERT_NUMBER_RANGE_OBJECT (protocol 1.11 or later).",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       packageName: z.string(),
       transportNumber: z.string(),
       expectedVersion: z.string().optional(),
@@ -1088,11 +1100,11 @@ const toolContractsBase = {
   },
   upsert_maintenance_view: {
     description:
-      "Create or update one Z* or Y* maintenance view (VIEWCLASS='C') through the installed DDIC helper. The helper writes the revised version (PUT_STATE='N'), activates it with ACT_MODE=11 (the Online activation path, which does not commit internally), registers the object in TADIR and in the transport request, and commits once with COMMIT WORK AND WAIT; every failure path rolls the whole LUW back, so the definition, the activation and the transport entry are all-or-nothing. baseTables (DD26V: tableName plus the optional join foreignTable/foreignField/foreignDirection) and viewFields (DD27P: tableName/fieldName plus the optional viewField alias) are COMPLETE REPLACEMENTS: SAP deletes the stored rows of the written version before inserting these, so an omitted row is deleted. Only those columns travel; the helper sets VIEWNAME, TABPOS/OBJPOS and DDLANGUAGE itself, and every other DD27P attribute is derived by the activation. header carries the DD25V properties a caller may control: rootTable (defaults to the first base table; the activation consumes it but never derives it), viewGrant (R/U/M), customAuth (A/C/L/G/E/S/W) and globalFlag (N/X). VIEWNAME, VIEWCLASS, AGGTYPE, DDLANGUAGE, MASTERLANG, DDTEXT and every AS4* field are helper- or SAP-owned. description is DD25V-DDTEXT (60 characters). An existing view requires the 14-digit version returned by read_maintenance_view; a view of another class (database, projection, help, append) is rejected with VIEW_CLASS_NOT_SUPPORTED rather than converted. The response echoes the activation controls actually used (actMode, getState, authCheck, dbAct, rc, putState, ctrlViewPut), where ctrlViewPut is the positional DD_VIEW_PUT switch 'XXX  ': the header, the base tables and the view fields are written and the selection conditions and technical settings are deliberately skipped. Requires a helper that publishes UPSERT_MAINTENANCE_VIEW (protocol 1.11 or later).",
+      "Create or update one Z* or Y* maintenance view (VIEWCLASS='C') through the installed DDIC helper. The helper writes the revised version (PUT_STATE='N'), activates it with ACT_MODE=11 (the Online activation path, which does not commit internally), registers the object in TADIR and in the transport request, and commits once with COMMIT WORK AND WAIT; every failure path rolls the whole LUW back, so the definition, the activation and the transport entry are all-or-nothing. baseTables (DD26V: tableName plus the optional join foreignTable/foreignField/foreignDirection) and viewFields (DD27P: tableName/fieldName plus the optional viewField alias) are COMPLETE REPLACEMENTS: SAP deletes the stored rows of the written version before inserting these, so an omitted row is deleted. Only those columns travel; the helper sets VIEWNAME, TABPOS/OBJPOS and DDLANGUAGE itself, and every other DD27P attribute is derived by the activation. header carries the DD25V properties a caller may control: rootTable (defaults to the first base table; the activation consumes it but never derives it), viewGrant (R/U/M), customAuth (A/C/L/G/E/S/W) and globalFlag (N/X). VIEWNAME, VIEWCLASS, AGGTYPE, DDLANGUAGE, MASTERLANG, DDTEXT and every AS4* field are helper- or SAP-owned. description is DD25V-DDTEXT, 60 characters wide, capped at 36 by the installed helper: it declares IV_DESCRIPTION as TSTCT-TTEXT (CHAR 36), so a longer description is truncated to its first 36 characters at the RFC boundary before the helper runs and the write succeeds with the truncated text rather than rejecting it (measured on w200 2026-10-03: a 50-character description was stored, echoed and read back as its first 36 characters). Send at most 36. An existing view requires the 14-digit version returned by read_maintenance_view; a view of another class (database, projection, help, append) is rejected with VIEW_CLASS_NOT_SUPPORTED rather than converted. The response echoes the activation controls actually used (actMode, getState, authCheck, dbAct, rc, putState, ctrlViewPut), where ctrlViewPut is the positional DD_VIEW_PUT switch 'XXX  ': the header, the base tables and the view fields are written and the selection conditions and technical settings are deliberately skipped. Requires a helper that publishes UPSERT_MAINTENANCE_VIEW (protocol 1.11 or later).",
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       packageName: z.string(),
       transportNumber: z.string(),
       expectedVersion: z.string().optional(),
@@ -1124,7 +1136,7 @@ const toolContractsBase = {
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       domainName: z.string(),
       heading: z.string(),
       short: z.string(),
@@ -1147,7 +1159,7 @@ const toolContractsBase = {
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       fields: z.array(ddicStructureField).min(1),
       packageName: z.string(),
       transportNumber: z.string(),
@@ -1166,7 +1178,7 @@ const toolContractsBase = {
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       deliveryClass: z.enum(["A", "C", "L", "G", "E", "S", "W"]),
       dataClass: z.enum(["APPL0", "APPL1", "APPL2"]),
       dataBrowserMaintenance: z.enum(["allowed", "restricted", "notAllowed"]),
@@ -1268,7 +1280,7 @@ const toolContractsBase = {
     inputSchema: {
       ...writeOperationInput,
       objectName: z.string(),
-      description: z.string(),
+      description: ddicHelperDescription,
       rowType: z.string(),
       packageName: z.string(),
       transportNumber: z.string(),

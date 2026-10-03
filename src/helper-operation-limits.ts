@@ -58,6 +58,55 @@ export const HELPER_OPERATION_PARAMETERS: Readonly<Record<string, HelperOperatio
 }
 
 /**
+ * `IV_DESCRIPTION` is the second fixed-length helper parameter that carries caller text. Unlike
+ * `IV_OPERATION` it is declared once for EVERY helper, because the shared interface builder in
+ * `scripts/bootstrap-sap-helper.ps1` emits `ls_import-parameter = 'IV_DESCRIPTION'` immediately
+ * followed by `ls_import-dbfield = 'TSTCT-TTEXT'` outside the per-helper `$operationDbField`
+ * branch, so this limit is global rather than per helper. `TSTCT-TTEXT` is CHAR 36.
+ *
+ * Read-only evidence, w200 client 200 on 2026-10-03: `read_function_module_interface` on
+ * `Z_ORVANTA_MCP_DDIC_API` with `includeExecutionSupport` reports `maxCharacters: 36` and
+ * `valueContract: { dataType: "CHAR", length: 36 }` for `IV_DESCRIPTION`.
+ *
+ * The helpers assign that value to `DD01V`/`DD04V`/`DD02V`/`DD30V`/`DD25V`/`DD40V-DDTEXT` and
+ * `TNROT-TXT`, which are all 60 wide, so the PARAMETER is the binding limit and not the target
+ * field. A longer description is truncated by the RFC layer before the helper body runs and the
+ * write still succeeds with the truncated text: measured on w200 2026-10-03, a 50-character
+ * description was stored, echoed by the write reply and read back as its first 36 characters. This
+ * is why four tool contracts that claimed a 60-character description were wrong.
+ *
+ * The service DECLARES this limit on the `description` input of every DDIC write tool instead of
+ * rejecting a longer value, because narrowing an accepted value is a contract change that needs an
+ * explicit ruling. `test/helper-operation-limits.test.ts` checks the generator's declaration and
+ * the tool contracts against this constant, so the three cannot drift apart silently.
+ */
+/**
+ * Character length of each DDIC type that carries a helper's `IV_DESCRIPTION`.
+ *
+ * Read-only evidence, w200 client 200 on 2026-10-03: `read_function_module_interface` on
+ * `Z_ORVANTA_MCP_DDIC_API` with `includeExecutionSupport` reports, for `IV_DESCRIPTION`,
+ * `typeName: "TSTCT-TTEXT"`, `maxCharacters: 36` and `valueContract: { dataType: "CHAR",
+ * length: 36 }`. `HELPER_DESCRIPTION_PARAMETER` carries the same number, and
+ * `test/helper-operation-limits.test.ts` checks the two against each other and the type against the
+ * generator's declaration, so a wrong length fails there instead of silently authorising a
+ * truncated description.
+ */
+export const DESCRIPTION_PARAMETER_TYPE_LENGTHS: Readonly<Record<string, number>> = {
+  "TSTCT-TTEXT": 36
+}
+
+/**
+ * The `IV_DESCRIPTION` parameter every helper declares, and the limit it imposes on a description.
+ *
+ * `length` must equal `DESCRIPTION_PARAMETER_TYPE_LENGTHS[ddicType]`; the test asserts that, and
+ * asserts `ddicType` against the generator, so neither half can drift alone.
+ */
+export const HELPER_DESCRIPTION_PARAMETER: HelperOperationParameter = {
+  ddicType: "TSTCT-TTEXT",
+  length: 36
+}
+
+/**
  * Operations that exceed their helper's `IV_OPERATION` length and are therefore not deliverable.
  *
  * It must stay EMPTY, and it is deliberately still exported: an over-long operation is a defect to
