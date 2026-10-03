@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZBADI_ACC_DOCUMENT",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:33:54.871Z",
+ "finishedAt": "2026-10-03T12:33:54.952Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"enhancement_implementation\",\n  \"enhancementName\": \"ZBADI_ACC_DOCUMENT\",\n  \"packageName\": \"Z001\",\n  \"definition\": {\n    \"name\": \"ZBADI_ACC_DOCUMENT\",\n    \"tool\": \"BADI_IMPL\",\n    \"shortText\": \"计算机名代替用户名\",\n    \"activeRaw\": \"X\",\n    \"active\": true,\n    \"inactiveRaw\": \"X\",\n    \"hasInactiveVersion\": true,\n    \"savedInactiveRaw\": \"X\",\n    \"hasSavedInactiveVersion\": true,\n    \"unsavedInactiveRaw\": \"\",\n    \"hasUnsavedInactiveVersion\": false,\n    \"originalObjectType\": \"\",\n    \"originalObjectName\": \"\",\n    \"mainObjectType\": \"\",\n    \"mainObjectName\": \"\",\n    \"programName\": \"\",\n    \"hookImplementations\": [],\n    \"badiImplementations\": [],\n    \"filters\": []\n  },\n  \"fingerprint\": \"fe06569a9fa2118bc1aa25402d48d6a04883fe1fe6fbbe3abae4f933572386f2\"\n}"
+}

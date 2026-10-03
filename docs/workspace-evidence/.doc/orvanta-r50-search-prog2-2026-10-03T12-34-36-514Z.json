@@ -1,0 +1,16 @@
+{
+ "probe": "r47-call",
+ "tool": "search_abap_objects",
+ "arguments": {
+  "pattern": "ZCODEX*",
+  "types": [
+   "PROG"
+  ],
+  "maxResults": 50,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:34:36.564Z",
+ "finishedAt": "2026-10-03T12:34:36.661Z",
+ "isError": false,
+ "responseText": "Found 5 ABAP objects matching \"ZCODEX*\":\n\n• ZCODEX_FS_SYNC_0807 (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/zcodex_fs_sync_0807\n  ADT: adt://w200/sap/bc/adt/programs/programs/zcodex_fs_sync_0807\n\n• ZCODEX_MCP_DYNPRO (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/zcodex_mcp_dynpro\n  ADT: adt://w200/sap/bc/adt/programs/programs/zcodex_mcp_dynpro\n\n• ZCODEX_MCP_I_0828 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/zcodex_mcp_i_0828\n  ADT: adt://w200/sap/bc/adt/programs/includes/zcodex_mcp_i_0828\n\n• ZCODEX_MCP_PRG_0828 (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/zcodex_mcp_prg_0828\n  ADT: adt://w200/sap/bc/adt/programs/programs/zcodex_mcp_prg_0828\n\n• ZCODEX_MVP3_UNIT (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/zcodex_mvp3_unit\n  ADT: adt://w200/sap/bc/adt/programs/programs/zcodex_mvp3_unit"
+}
