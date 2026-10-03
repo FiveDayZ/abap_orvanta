@@ -897,7 +897,21 @@ test("the registry records the honest gap rather than inflating it", () => {
     // *availability* is decided, and this batch pinned no operation requirement. Moving the label
     // without pinning operations would be an unverified claim, which is the exact class of error the
     // registry exists to prevent.
-    totals.verified <= 138,
+    // Raised from 138 to 139 on 2026-10-03 (R17). Only one of the three enhancement-family write
+    // tools earned the promotion, and the two that did not are the point of this paragraph.
+    // create_enhancement_hook_implementation created a hook implementation on an explicit enhancement
+    // point in SAPLV60B and answered HOOK_ENHANCEMENT_CREATED, with an independent read confirming
+    // the fingerprint, package and source, and the base program's sourceFingerprint unchanged.
+    // update_enhancement_hook_implementation could not reach its success path at all: three real
+    // calls were refused by the deployed helper with ENHANCEMENT_INACTIVE_VERSION_EXISTS while every
+    // read of the same object reported no inactive version, so it stays unverified with the measured
+    // evidence in its note rather than a borrowed timestamp. delete_enhancement_implementation
+    // dispatched, removed the framework data, and then reported ENHANCEMENT_DELETE_PARTIAL because
+    // its own TADIR re-read found the entry still present; it also stays unverified, and the surviving
+    // TADIR row and transport entry are named in its note as residue rather than cleaned.
+    // A tripwire that only ever rises by the number of tools a batch touched would have forced two
+    // false promotions here. It rises by one because one is what was observed.
+    totals.verified <= 139,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
