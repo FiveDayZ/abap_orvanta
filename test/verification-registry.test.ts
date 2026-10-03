@@ -849,7 +849,12 @@ test("the registry records the honest gap rather than inflating it", () => {
     // `failed` on a real activate call whose receipt completed, and patch_ddic_transparent_table_fields
     // stayed verified while its last open class (data-element re-point) was closed by a live patch -
     // so the count moved by exactly the one row whose status changed, not by the two rows touched.
-    totals.verified <= 128,
+    // Raised from 128 to 129 on 2026-10-03 (R10): manage_enhancement_implementation_state moved off
+    // `unverified` on a real activate call against ZCHANGEBKTXT whose receipt completed and whose
+    // before/after fingerprint and hook source are identical (the helper's activate() arm ran, the net
+    // content did not change). The same batch recorded the reason the first attempt was refused: the
+    // enhancement framework compares the session language with the object's original language.
+    totals.verified <= 129,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

@@ -1713,7 +1713,7 @@ const toolContractsBase = {
   },
   manage_enhancement_implementation_state: {
     description:
-      "Activate the current inactive version of one Z* or Y* ENHO, or discard it by resetting to the active version. SAP ECC 7.31 exposes no confirmed public headless ENHO deactivate API, so deactivate is intentionally not offered. Requires the current fingerprint, exact package, existing transport, and explicit confirmation.",
+      "Activate the current inactive version of one Z* or Y* ENHO, or discard it by resetting to the active version. SAP ECC 7.31 exposes no confirmed public headless ENHO deactivate API, so deactivate is intentionally not offered. Requires the current fingerprint, exact package, existing transport, and explicit confirmation. The connection's logon language must match the enhancement's original language: the framework refuses to load the enhancement otherwise, so an English-mastered enhancement cannot be activated through a connection configured for another language.",
     inputSchema: {
       ...writeOperationInput,
       action: z.enum(["activate", "discard_inactive"]),
