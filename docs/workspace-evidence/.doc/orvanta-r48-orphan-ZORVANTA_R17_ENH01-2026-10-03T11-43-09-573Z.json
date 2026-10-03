@@ -1,0 +1,15 @@
+{
+ "probe": "r47-call",
+ "tool": "delete_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZORVANTA_R17_ENH01",
+  "packageName": "ZABAP",
+  "transportNumber": "GR2K923472",
+  "confirmation": "DELETE_ORPHANED_REGISTRATION",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T11:43:09.619Z",
+ "finishedAt": "2026-10-03T11:43:10.125Z",
+ "isError": false,
+ "responseText": "{\n  \"status\": \"ENHANCEMENT_IMPLEMENTATION_DELETED\",\n  \"connectionId\": \"w200\",\n  \"enhancementName\": \"ZORVANTA_R17_ENH01\",\n  \"previousFingerprint\": null,\n  \"transportNumber\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"c3af3dba-60bc-400b-80ef-75eb06db471b\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"delete_enhancement_implementation\",\n    \"operationIdHash\": \"d21cc8e5cd51ed2db26cdf1ef3f64e52fb299f580a1644f8394a10a069abe4bc\",\n    \"targetKeyHash\": \"b86034d54ab82f3d0eb1e7fa907c4d377f0eff55af03f8a7a920724dc2aef440\",\n    \"inputHash\": \"c54aa1b28e121c21044c984b2e10802201fe7053d20863a2a969d9900f11a423\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"enhancement implementation ZORVANTA_R17_ENH01\\\",\\\"requestedOperation\\\":\\\"delete_enhancement_implementation\\\",\\\"concurrencyGuard\\\":\\\"target identity and repository assignment must match\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T11:43:10.030Z\",\n      \"target\": \"enhancement implementation ZORVANTA_R17_ENH01\",\n      \"exists\": false,\n      \"active\": null,\n      \"version\": null,\n      \"fingerprint\": null,\n      \"packageName\": null,\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"enhancement_implementation_unreadable\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"e6c2f73f903186c24274699c2e3ead3b8cdd71d00dd4611e259bd20ad9b29040\",\n    \"startedAt\": \"2026-10-03T11:43:09.991Z\",\n    \"finishedAt\": \"2026-10-03T11:43:10.115Z\",\n    \"durationMs\": 121,\n    \"receiptHash\": \"940019ed7e3961b52af70ed41131b567d1c9a30c75435a3b2dd525c689003fff\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back enhancement implementation ZORVANTA_R17_ENH01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

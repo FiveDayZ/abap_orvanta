@@ -1,0 +1,33 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_table",
+ "arguments": {
+  "tableName": "E071",
+  "columns": [
+   "TRKORR",
+   "PGMID",
+   "OBJECT",
+   "OBJ_NAME",
+   "AS4POS",
+   "LOCKFLAG"
+  ],
+  "filters": [
+   {
+    "column": "OBJ_NAME",
+    "operator": "GE",
+    "value": "ZORVANTA_R"
+   },
+   {
+    "column": "OBJ_NAME",
+    "operator": "LE",
+    "value": "ZORVANTA_RZZZ"
+   }
+  ],
+  "maxRows": 60,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T11:42:49.929Z",
+ "finishedAt": "2026-10-03T11:42:52.078Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"tableName\": \"E071\",\n  \"columns\": [\n    \"TRKORR\",\n    \"PGMID\",\n    \"OBJECT\",\n    \"OBJ_NAME\",\n    \"AS4POS\",\n    \"LOCKFLAG\"\n  ],\n  \"maxRows\": 60,\n  \"readOnly\": true,\n  \"order\": \"unspecified\",\n  \"clientHandling\": \"sap_session_default\",\n  \"snapshot\": false,\n  \"status\": \"ok\",\n  \"method\": \"rfc_read_table\",\n  \"definitionSource\": \"adt_ddic\",\n  \"tableClassVerified\": true,\n  \"definitionFingerprint\": \"8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1\",\n  \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\",\n  \"representation\": \"sap_text_trimmed\",\n  \"fieldMetadata\": [\n    {\n      \"FIELDNAME\": \"TRKORR\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000020\",\n      \"OFFSET\": \"000000\"\n    },\n    {\n      \"FIELDNAME\": \"PGMID\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000004\",\n      \"OFFSET\": \"000021\"\n    },\n    {\n      \"FIELDNAME\": \"OBJECT\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000004\",\n      \"OFFSET\": \"000026\"\n    },\n    {\n      \"FIELDNAME\": \"OBJ_NAME\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000120\",\n      \"OFFSET\": \"000031\"\n    },\n    {\n      \"FIELDNAME\": \"AS4POS\",\n      \"TYPE\": \"N\",\n      \"LENGTH\": \"000006\",\n      \"OFFSET\": \"000152\"\n    },\n    {\n      \"FIELDNAME\": \"LOCKFLAG\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000001\",\n      \"OFFSET\": \"000159\"\n    }\n  ],\n  \"returnedCount\": 8,\n  \"truncated\": false,\n  \"data\": [\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"PGMID\": \"LIMU\",\n      \"OBJECT\": \"DOMD\",\n      \"OBJ_NAME\": \"ZORVANTA_R11_DOM01\",\n      \"AS4POS\": \"000018\",\n      \"LOCKFLAG\": \"X\"\n    },\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"PGMID\": \"LIMU\",\n      \"OBJECT\": \"DTED\",\n      \"OBJ_NAME\": \"ZORVANTA_R11_DE01\",\n      \"AS4POS\": \"000019\",\n      \"LOCKFLAG\": \"X\"\n    },\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"PGMID\": \"LIMU\",\n      \"OBJECT\": \"TABD\",\n      \"OBJ_NAME\": \"ZORVANTA_R12_STR01\",\n      \"AS4POS\": \"000020\",\n      \"LOCKFLAG\": \"X\"\n    },\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"PGMID\": \"LIMU\",\n      \"OBJECT\": \"TABD\",\n      \"OBJ_NAME\": \"ZORVANTA_R7C_TMP\",\n      \"AS4POS\": \"000017\",\n      \"LOCKFLAG\": \"X\"\n    },\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"PGMID\": \"LIMU\",\n      \"OBJECT\": \"TTYD\",\n      \"OBJ_NAME\": \"ZORVANTA_R12_TT01\",\n      \"AS4POS\": \"000021\",\n      \"LOCKFLAG\": \"X\"\n    },\n    {\n      \"TRKORR\": \"GR2K923492\",\n      \"PGMID\": \"R3TR\",\n      \"OBJECT\": \"FUGR\",\n      \"OBJ_NAME\": \"ZORVANTA_RUNNER\",\n      \"AS4POS\": \"000001\",\n      \"LOCKFLAG\": \"X\"\n    },\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"PGMID\": \"R3TR\",\n      \"OBJECT\": \"MSAG\",\n      \"OBJ_NAME\": \"ZORVANTA_R16_DEL\",\n      \"AS4POS\": \"000023\",\n      \"LOCKFLAG\": \"X\"\n    },\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"PGMID\": \"R3TR\",\n      \"OBJECT\": \"MSAG\",\n      \"OBJ_NAME\": \"ZORVANTA_R16_MSG\",\n      \"AS4POS\": \"000022\",\n      \"LOCKFLAG\": \"X\"\n    }\n  ]\n}"
+}

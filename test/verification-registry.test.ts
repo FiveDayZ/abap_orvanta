@@ -194,10 +194,13 @@ test("R-20's four tools stay recorded with the state their evidence supports", (
   // all.
   expect("read_enhancement_implementation", "verified", null)
 
-  // Renamed, and the renamed opcode really was dispatched - but SAP was never reached, because a
-  // deliberately wrong fingerprint was refused before invocation. Nothing about this tool was
-  // observed failing, so it is not a failure either: it is unverified, with no borrowed timestamp.
-  expect("delete_enhancement_implementation", "unverified", null)
+  // Renamed, and the renamed opcode really was dispatched. It then spent two rounds unverified for a
+  // reason that was never a defect in the tool: the framework delete worked, but the TADIR
+  // registration could not be removed while the object sat in an open transport task. R48 cleared
+  // that precondition on the operator side and the tool finished the job - four orphan-registration
+  // calls answered ENHANCEMENT_IMPLEMENTATION_DELETED and an independent TADIR read confirmed every
+  // leftover row was gone. The row is verified; what it does NOT claim is recorded in its notes.
+  expect("delete_enhancement_implementation", "verified", null)
 })
 
 test("a length fix alone never counts as evidence of success", () => {
@@ -908,8 +911,10 @@ test("the registry records the honest gap rather than inflating it", () => {
     // measured evidence in its note rather than a borrowed timestamp. R46 then proved the cause and
     // promoted it; see the paragraph below. delete_enhancement_implementation
     // dispatched, removed the framework data, and then reported ENHANCEMENT_DELETE_PARTIAL because
-    // its own TADIR re-read found the entry still present; it also stays unverified, and the surviving
-    // TADIR row and transport entry are named in its note as residue rather than cleaned.
+    // its own TADIR re-read found the entry still present, so R17 left it unverified too and named
+    // the surviving TADIR row and transport entry in its note as residue rather than cleaning them.
+    // R46 measured why they could not be cleaned and R48 promoted the row once the operator cleared
+    // that precondition; both are covered below.
     // A tripwire that only ever rises by the number of tools a batch touched would have forced two
     // false promotions here. It rises by one because one is what was observed.
     // Raised from 139 to 140 on 2026-10-03 (R46). update_enhancement_hook_implementation reached the
@@ -920,9 +925,20 @@ test("the registry records the honest gap rather than inflating it", () => {
     // this batch did not earn a promotion and are not covered by this rise: the create path was
     // already verified, and delete_enhancement_implementation still cannot complete, because its
     // TADIR cleanup is refused with OBJECT_LOCKED_FOR_ORDER while the object sits in an open
-    // transport task - a precondition the operator controls, not a missing capability, so the row
-    // stays unverified with the measurement in its note.
-    totals.verified <= 140,
+    // transport task - a precondition the operator controls, not a missing capability, so R46 left
+    // the row unverified with the measurement in its note. R48 then cleared that precondition and
+    // promoted it; see the paragraph below.
+    // Raised from 140 to 141 on 2026-10-03 (R48). delete_enhancement_implementation finally reached
+    // its success exit, and it is worth being exact about which arm earned the promotion, because the
+    // obvious reading is the wrong one. The operator removed the four leftover ENHO objects from the
+    // open task GR2K923492 in SE09/SE10, and four DELETE_ORPHANED_REGISTRATION calls then answered
+    // ENHANCEMENT_IMPLEMENTATION_DELETED; an independent TADIR read - not the receipts - showed the
+    // ENHO rows go from 4 to 0. No single PERMANENT_DELETE call has ever been observed to remove both
+    // the framework data and the TADIR row, and that is not an accident of this batch: every object
+    // created through this tooling joins an open task, so its own TADIR cleanup is refused with
+    // OBJECT_LOCKED_FOR_ORDER until the object leaves the task. The row's notes say so rather than
+    // letting the promotion imply a one-call delete that no measurement supports.
+    totals.verified <= 141,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
