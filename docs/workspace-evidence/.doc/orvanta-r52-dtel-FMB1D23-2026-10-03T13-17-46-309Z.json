@@ -1,0 +1,13 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_info",
+ "arguments": {
+  "objectName": "FMB1D23",
+  "objectType": "DTEL",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T13:17:46.363Z",
+ "finishedAt": "2026-10-03T13:17:46.461Z",
+ "isError": false,
+ "responseText": "Could not find ABAP object: FMB1D23. The object may not exist or may not be accessible."
+}

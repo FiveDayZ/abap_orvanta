@@ -1,0 +1,15 @@
+{
+ "probe": "r47-call",
+ "tool": "search_abap_object_lines",
+ "arguments": {
+  "objectName": "SAPLSIFP",
+  "searchTerm": "R_ASSIGN_FIELD_BIT_TO_FIELD",
+  "isRegexp": false,
+  "contextLines": 2,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T13:13:22.076Z",
+ "finishedAt": "2026-10-03T13:13:22.746Z",
+ "isError": false,
+ "responseText": "No base-source matches for \"R_ASSIGN_FIELD_BIT_TO_FIELD\". Enhancement metadata was unavailable for 1 object(s)."
+}

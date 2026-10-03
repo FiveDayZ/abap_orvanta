@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1450
+ },
+ "startedAt": "2026-10-03T13:17:31.082Z",
+ "finishedAt": "2026-10-03T13:17:31.593Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 1450-1499 of 1636, 50 lines retrieved):\n\n```abap\n        EXT_T_PART-COLUMN = EXT_B_PART-COLUMN.\n      ENDIF.\n\n*     Button-Feld aus dem gemeinsamen (Text)Feld fuellen und dann das\n*     ueberfluessig gewordene Textfeld entfernen\n      if ext_b_index = 0 or ext_t_index = 0.\n*       interner Fehler: Typ nicht bestimmbar\n*       (Text- und Buttonteil nicht korrekt verkettet (AUTH-Fehler\n*        oder Ausgabeattributefehler)\n        message e404(37) with ext_t_part-name\n          raising not_executed.\n      endif.\n      MODIFY P_DYNP_FIELD_LIST INDEX EXT_B_INDEX FROM EXT_T_PART.\n      DELETE P_DYNP_FIELD_LIST INDEX EXT_T_INDEX.\n    ELSE.                     \"es gibt kein zugehöriges Textfeld\n*     6. Attribute des Button-Feldes korrigieren\n      if ext_b_index = 0.\n*       interner Fehler: Typ nicht bestimmbar\n*       (Text- und Buttonteil nicht korrekt verkettet (AUTH-Fehler\n*        oder Ausgabeattributefehler)\n        message e404(37) with ext_b_part-name\n          raising not_executed.\n      endif.\n     EXT_B_PART-TEXT       = ' '.\n*     EXT_B_PART-OUTPUT_FLD = ' '.    \"vjb 12.08.03\n*     EXT_B_PART-FIXED_FONT = ' '.    \"\n     MODIFY P_DYNP_FIELD_LIST INDEX EXT_B_INDEX FROM EXT_B_PART.\n    ENDIF.\n  ENDLOOP.\nENDFORM.                    \" R_MODIFY_BUTTONS_OUT\n\n*&---------------------------------------------------------------------*\n*&      Form  R_PARAMS_PARA\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Paramemeter-Info aus dem internen Format in die\n*       externer Darstellung wandeln\n*       Attributzuordnungen Feld -> Feld\n*       Behandelt werden nur solche Parameter-Typen, die extern\n*       Bestandteil von PARAMS sind\n*----------------------------------------------------------------------*\n*      -->P_PARAM_INT    Parameter-Info (intern)                       *\n*      <--P_DYNP_PARAM   Parameter-Info (extern)                       *\n*----------------------------------------------------------------------*\nFORM R_PARAMS_PARA\n               tables     P_PARAM_INT   structure d023s\n                          P_DYNP_PARAM  structure RPY_DYPARA.\nDATA: L_CLASS_INFO LIKE D023S_C.\n\n  loop at p_param_int.\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

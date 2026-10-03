@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 950
+ },
+ "startedAt": "2026-10-03T13:16:47.664Z",
+ "finishedAt": "2026-10-03T13:16:48.147Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 950-999 of 1636, 50 lines retrieved):\n\n```abap\n        IF P_FIELD_INT-FLG1 O FLG1EDT.\n          P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-PUSH_TEMPLATE.\n        ELSE.\n          P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-PUSH.\n        ENDIF.\n      endif.\n    WHEN 'R'.                            \"Rahmen\n      IF P_FIELD_INT-FLG1 O FLG1EDT.\n        P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-FRAME_TEMPLATE.\n      ELSE.\n        P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-FRAME.\n      ENDIF.\n  ENDCASE.\nENDFORM.                    \" R_TYPE_OUT\n\n*&---------------------------------------------------------------------*\n*&      Form  R_TEXT_AND_ICON_OUT\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Verarbeiten der internen Angaben zum Text                      *\n*       Aufbau der externen Attribute zu Text und Ikonen               *\n*----------------------------------------------------------------------*\n*      -->P_FIELD_INT    Dynprofeld intern                             *\n*      <--P_DYNP_FIELD   Dynprofeld extern                             *\n*----------------------------------------------------------------------*\nFORM R_TEXT_AND_ICON_OUT\n             USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n             CHANGING P_DYNP_FIELD       TYPE RPYTY_DYNP_FIELD.\n\n  PERFORM STXT_ICON_SPLIT(SAPLSEUS)\n                     USING     P_FIELD_INT-STXT\n                     CHANGING  ICON_ID\n                               ICON_NAME\n                               ICON_LENG\n                               ICON_QUICK\n                               P_DYNP_FIELD-TEXT.\n\n  if icon_leng = 0.\n    p_dynp_field-with_icon = ' '.\n  else.\n    P_DYNP_FIELD-WITH_ICON = 'X'.\n  endif.\n  IF P_FIELD_INT-FLG1 O FLG1EDT.   \"Schablonenfeld\n    P_DYNP_FIELD-ICON_NAME  = ' '.\n    P_DYNP_FIELD-ICON_QINFO = ' '.\n    P_DYNP_FIELD-ICON_QSPEC = ' '.\n  ELSE.                            \"Textfeld\n    P_DYNP_FIELD-ICON_NAME  = ICON_NAME.\n    if p_field_int-stxt(1) = '@'.\n    \"'IF' is needed for special two byte symbols in MDMP systems\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

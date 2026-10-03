@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 350
+ },
+ "startedAt": "2026-10-03T13:16:18.466Z",
+ "finishedAt": "2026-10-03T13:16:19.001Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 350-399 of 1636, 50 lines retrieved):\n\n```abap\n  CASE P_CONT_ATTR-TYPE.\n    WHEN RPYTY_DYNP_CTYPE-ROOT.        \"Universalcontainer\n                                       \"nothing to do\n\n    WHEN RPYTY_DYNP_CTYPE-DYNPRO.      \"Universalcontainer\n                                       \"nothing to do\n\n    WHEN RPYTY_DYNP_CTYPE-SCREEN.      \"Universalcontainer\n                                       \"nothing to do\n\n    WHEN RPYTY_DYNP_CTYPE-LOOP.        \"Loop:\n      \" Position und Größe; Loopblock-Info\n      P_CONT_ATTR-LINE   = 0.\n      P_CONT_ATTR-COLUMN = 0.\n      P_CONT_ATTR-LENGTH = 0.\n      P_CONT_ATTR-HEIGHT = 0.\n*     kleinstmögliches Quadrat bestimmen, das alle Loop-Felder umfaßt.\n*     LOOP-Felder können entweder direkt dem Loop-Container zugeordnet\n*     sein oder indirekt einem Auswahlknopfcontainer zugeordnet sein,\n*     der in einem LOOP steckt.\n*     Deshalb die in Frage kommenden Container sammeln:\n*     a) direkter Loop-Container\n      REFRESH S_CONT_LIST.\n      S_CONT_LIST-NAME = P_CONT_ATTR-NAME.\n      S_CONT_LIST-TYPE = P_CONT_ATTR-TYPE.\n      APPEND S_CONT_LIST.\n*     b) Auswahlknopfcontainer zu diesem Loop\n      LOOP AT P_DYNP_CONTAINERS.\n*        S_CONT_A = P_DYNP_CONTAINERS-CONT.\n        S_CONT_A = P_DYNP_CONTAINERS.\n        CHECK S_CONT_A-TYPE = RPYTY_DYNP_CTYPE-RADIOGROUP.\n        CHECK S_CONT_A-ELEMENT_OF = P_CONT_ATTR-NAME.\n        S_CONT_LIST-NAME = S_CONT_A-NAME.\n        S_CONT_LIST-TYPE = S_CONT_A-TYPE.\n        APPEND S_CONT_LIST.\n      ENDLOOP.\n*     Nun sind die in Frage kommenden Container gesammelt.\n*     Die in ihnen enthaltenen Felder können ausgewertet werden.\n      LOOP AT P_FIELDLIST_INT_EXTEND.\n        OK = ' '.\n        LOOP AT S_CONT_LIST\n             WHERE NAME = P_FIELDLIST_INT_EXTEND-CONT_NAME\n             AND   TYPE = P_FIELDLIST_INT_EXTEND-CONT_TYPE.\n          OK = 'X'.\n          EXIT.\n        ENDLOOP.\n        IF OK = ' '.\n          CONTINUE.\n        ENDIF.\n        FIELD_INT = P_FIELDLIST_INT_EXTEND-FIELD.\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

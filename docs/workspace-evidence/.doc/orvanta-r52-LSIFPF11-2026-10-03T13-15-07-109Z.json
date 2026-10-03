@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF11",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1
+ },
+ "startedAt": "2026-10-03T13:15:07.164Z",
+ "finishedAt": "2026-10-03T13:15:07.655Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF11 (lines 1-50 of 2689, 50 lines retrieved):\n\n```abap\n*----------------------------------------------------------------------*\n*   INCLUDE LSIFPF11                                                   *\n*----------------------------------------------------------------------*\n*   Forms/Macros für die Dynproschnittstelle zu RPY_DYNPRO_INSERT\n*----------------------------------------------------------------------*\n\n* Macros:\n\n* Einzelfeld: Bit ins Einzelfeld (intern) aus Feld (extern) füllen\ndefine i_f_field_to_field.\n  if  dynp_field_attr-&1 <> rpyty_off.\n    field_int-&2       = dynp_field_attr-&1.\n  endif.\nend-of-definition.\n\n* Einzelfeld: Bit ins Einzelfeld (intern) aus Feld (extern) füllen\n*    in Abh. von RPYTY_ON/OFF\ndefine i_f_field_to_bit.\n  if dynp_field_attr-&1 = rpyty_off.\n    perform flag_reset using field_int-&2 &3.\n  else.\n    perform flag_set   using field_int-&2 &3.\n  endif.\nend-of-definition.\n\n* Einzelfeld: Bit ins Einzelfeld (intern) aus Feld (extern) füllen,\n*    in Abh. von RPYTY_FORCE_OFF\ndefine i_f_field_to_bit_fo.\n  if dynp_field_attr-&1 = rpyty_force_off.  \"rücksetzen, falls gewollt\n*  OR FIELD_INT-FLG1 Z FLG1EDT.             \"oder falls Textfeld\n    perform flag_reset using field_int-&2 &3.\n*  ELSE.\n*    PERFORM FLAG_SET   USING FIELD_INT-&2 &3.\n  endif.\nend-of-definition.\n\n*&---------------------------------------------------------------------*\n*&      Form  I_TEXT_AND_ICON_IN\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_INSERT:                                             *\n*       Verarbeiten der externen Dynprofeldangaben zu Text und Ikonen  *\n*       und Aufbau der internen Felder zu Text (und ggf. zu def.Länge) *\n*----------------------------------------------------------------------*\n*  <->  DYN_FIELD_ATTR    Feldattribute  (extern) eines Dynprofeldes\n*  <->  FIELD_INT         Feldattribute  (intern) eines Dynprofeldes\n*----------------------------------------------------------------------*\nform i_text_and_icon_in  using  dyn_field_attr type rpyty_dynp_field\n                                value(suppress_dict_support) type c\n                                field_int  type dynpro_field.\n\n```\n\nFull Source SHA-256: 2b13cbf836d8bc20a4d0bbf2556f1a5e2d938c396c0c822fa929aedd0ec60ccf\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf11/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

@@ -1,0 +1,13 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_info",
+ "arguments": {
+  "objectName": "FLG2STR",
+  "objectType": "DTEL",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T13:17:44.377Z",
+ "finishedAt": "2026-10-03T13:17:44.484Z",
+ "isError": false,
+ "responseText": "Could not find ABAP object: FLG2STR. The object may not exist or may not be accessible."
+}

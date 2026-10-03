@@ -1,0 +1,15 @@
+{
+ "probe": "r47-call",
+ "tool": "search_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "searchTerm": "R_ASSIGN_FIELD_BIT_TO_FIELD",
+  "isRegexp": false,
+  "contextLines": 0,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T13:16:32.365Z",
+ "finishedAt": "2026-10-03T13:16:33.120Z",
+ "isError": false,
+ "responseText": "Found 3 matches for \"R_ASSIGN_FIELD_BIT_TO_FIELD\" in LSIFPF12:\nBase: 3 | Enhancement: 0\n\n\n## LSIFPF12 (FUGR/I)\n\nBase Source Matches (3):\n\nLine 853:\n```abap\n> *&      Form  R_ASSIGN_FIELD_BIT_TO_FIELD\r\n```\n\nLine 863:\n```abap\n> FORM R_ASSIGN_FIELD_BIT_TO_FIELD\r\n```\n\nLine 905:\n```abap\n> ENDFORM.                    \" R_ASSIGN_FIELD_BIT_TO_FIELD\r\n```\n\nEnhancement Metadata: Unavailable (unsupported)\n\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main (1636 lines total)\n\n"
+}

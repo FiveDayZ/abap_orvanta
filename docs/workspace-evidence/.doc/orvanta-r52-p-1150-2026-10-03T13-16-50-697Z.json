@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1150
+ },
+ "startedAt": "2026-10-03T13:16:50.750Z",
+ "finishedAt": "2026-10-03T13:16:51.249Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 1150-1199 of 1636, 50 lines retrieved):\n\n```abap\n*      -->P_FIELD_INT    Dynprofeld intern                             *\n*      <--P_DYNP_FIELD   Dynprofeld extern                             *\n*----------------------------------------------------------------------*\nFORM R_POSS_ENTRY_OUT\n             USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n             CHANGING P_DYNP_FIELD       TYPE RPYTY_DYNP_FIELD.\n\n  IF  P_FIELD_INT-FMB2 Z FMB2CMU\n  AND P_FIELD_INT-FMB2 Z FMB2CMI.\n    P_DYNP_FIELD-POSS_ENTRY = ' '.  \"temp. WHTaste bei Bedarf\n  ELSEIF P_FIELD_INT-FMB2 O FMB2CMB.\n    IF     P_FIELD_INT-FMB2 O FMB2CMU\n       AND P_FIELD_INT-FMB2 O FMB2CMI.\n      P_DYNP_FIELD-POSS_ENTRY = '0'.  \"WHTaste abgeschaltet\n    ELSEIF P_FIELD_INT-FMB2 O FMB2CMU\n       AND P_FIELD_INT-FMB2 Z FMB2CMI.\n      P_DYNP_FIELD-POSS_ENTRY = '1'.  \"temp. WHTaste verlangt\n    ELSEIF P_FIELD_INT-FMB2 Z FMB2CMU\n       AND P_FIELD_INT-FMB2 O FMB2CMI.\n      P_DYNP_FIELD-POSS_ENTRY = '2'.  \"perm. WHTaste verlangt\n    ENDIF.\n  ELSE.\n    P_DYNP_FIELD-POSS_ENTRY = ' '.  \"temp. WHTaste bei Bedarf\n  ENDIF.\nENDFORM.                    \" R_POSS_ENTRY_OUT\n\n*&---------------------------------------------------------------------*\n*&      Form  R_RES1_OUT\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Verarbeiten der internen Angaben in RES1                       *\n*       Aufbau der externen Attribute  dazu                            *\n*----------------------------------------------------------------------*\n*      -->P_FIELD_INT    Dynprofeld intern                             *\n*      <--P_DYNP_FIELD   Dynprofeld extern                             *\n*----------------------------------------------------------------------*\nFORM R_RES1_OUT\n             USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n             CHANGING P_DYNP_FIELD       TYPE RPYTY_DYNP_FIELD.\n\nDATA: F_RES1 LIKE D021S_RES1.\n\n  F_RES1 = P_FIELD_INT-RES1.\n\n* Dropdown Box (Listbox, Listbox mit Schlüssel)\n  IF F_RES1-DROPDOWN = ' '.\n    P_DYNP_FIELD-DROPDOWN = ' '.\n  ELSE.\n    if f_res1-dropstyle = 'K'.\n      p_dynp_field-dropdown = f_res1-dropstyle. \"Lbox m. Key\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1200
+ },
+ "startedAt": "2026-10-03T13:17:27.141Z",
+ "finishedAt": "2026-10-03T13:17:27.696Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 1200-1249 of 1636, 50 lines retrieved):\n\n```abap\n    else.\n      P_DYNP_FIELD-DROPDOWN = F_RES1-DROPTYP.   \"Lbox\n    endif.\n  ENDIF.\n\n* Quelle der Wertebeschafffung\n  IF F_RES1-DROPDOWN = ' '.\n    P_DYNP_FIELD-DROPFROM = ' '.\n  ELSE.\n    P_DYNP_FIELD-DROPFROM = F_RES1-DROPVAL.\n  ENDIF.\n\n* Bezeichner links\n  p_dynp_field-labelleft = f_res1-labelleft.\n\n* Bezeichner rechts\n  p_dynp_field-labelright = f_res1-labelright.\n\n* Doppelclick-sensitiv\n  p_dynp_field-dblclick = f_res1-dblclick.\n\n* LTR Grundrichtung\n  p_dynp_field-ltr = f_res1-ltr.\n\n* BIDI Filter\n  p_dynp_field-bidictrl = f_res1-bidictrl.\n\n* Kontextmenübeziehungen\n  if f_res1-ctmenuflg = ' '.\n*   dynamisches Kontextmenü\n    P_DYNP_FIELD-CXT_MENON = f_res1-ctmenustat.\n  endif.\n\n* Switch Framework\n  p_dynp_field-sfw_switchid = f_res1-switchid.\n  p_dynp_field-sfw_showhide = f_res1-showhide.\n\nENDFORM.                    \" R_RES1_OUT\n\n*&---------------------------------------------------------------------*\n*&      Form  R_PROPERTIES_OUT\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Verarbeiten der internen Angaben in Properties                 *\n*       Aufbau der externen Attribute  dazu                            *\n*----------------------------------------------------------------------*\n*      -->P_FIELD_INT    Dynprofeld intern                             *\n*      <--P_DYNP_FIELD   Dynprofeld extern                             *\n*----------------------------------------------------------------------*\nFORM R_PROPERTIES_OUT\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

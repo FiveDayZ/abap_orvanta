@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "SAPLSIFP",
+  "objectType": "PROG/P",
+  "connectionId": "w200",
+  "startLine": 1
+ },
+ "startedAt": "2026-10-03T13:14:58.490Z",
+ "finishedAt": "2026-10-03T13:14:58.927Z",
+ "isError": false,
+ "responseText": "Source from SAPLSIFP (lines 1-13 of 13, 13 lines retrieved):\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LSIFPTOP.      \" Global Data\n  INCLUDE LSIFPUXX.      \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n  INCLUDE LSIFPF10.      \" Dynproschnittstelle: allg. Forms\n  INCLUDE LSIFPF11.      \" Dynproschnittstelle: Forms für INSERT\n  INCLUDE LSIFPF12.      \" Dynproschnittstelle: Forms für READ\n\n```\n\nFull Source SHA-256: 62b6417378e64f047d37ef43bd8aec34003d2c827928e08af7e84f97c5d2d4da\nURI: /sap/bc/adt/functions/groups/sifp/source/main\n\nEnhancement metadata unavailable (unsupported)."
+}

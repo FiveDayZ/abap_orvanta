@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 600
+ },
+ "startedAt": "2026-10-03T13:16:29.941Z",
+ "finishedAt": "2026-10-03T13:16:30.420Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 600-649 of 1636, 50 lines retrieved):\n\n```abap\n             FLG2 FLG2VAH    C_RESIZE_H.                  \" Resiz.hor.\n        EXIT.\n      ENDLOOP.\n\n    WHEN RPYTY_DYNP_CTYPE-CUSTOM_CONTROL. \"Custom Control:\n                                         \" Pos. und Größe; alle Ctrl-Att\n      LOOP AT P_FIELDLIST_INT_EXTEND\n             WHERE CONT_NAME = P_CONT_ATTR-NAME\n             AND   CONT_TYPE = P_CONT_ATTR-TYPE\n             AND   FIELD-FILL = c_type_custom.\n        FIELD_INT = P_FIELDLIST_INT_EXTEND-FIELD.\n        P_CONT_ATTR-LINE   = FIELD_INT-LINE.\n        P_CONT_ATTR-COLUMN = FIELD_INT-COLN - 1.\n        P_CONT_ATTR-LENGTH = FIELD_INT-LENG.\n        P_CONT_ATTR-HEIGHT = FIELD_INT-DIDX.\n        P_CONT_ATTR-C_LINE_MIN = FIELD_INT-AGLT.\n        P_CONT_ATTR-C_COLN_MIN = FIELD_INT-ADEZ.\n\n        R_C_BIT_TO_FIELD                                  \"C_RESIZE_V:\n             FLG2 FLG2VAV    C_RESIZE_V.                  \" Resiz.vert.\n        R_C_BIT_TO_FIELD                                  \"C_RESIZE_H:\n             FLG2 FLG2VAH    C_RESIZE_H.                  \" Resiz.hor.\n\n*       Control Composite aus dem PARAMS_INT\n        loop at p_params_int where type = c_parinf_type_cntcmp.\n          s_params_x = p_params_int-content.\n          s_params_xh = s_params_x-cccont.\n          if s_params_xh-cccustom = p_cont_attr-name.\n            p_cont_attr-cu_cc_name = s_params_xh-ccname.\n            exit.\n          endif.\n        endloop.\n        CALL METHOD r_cntcmp->get_ccname\n          EXPORTING\n            cuco_name  = p_cont_attr-name\n          IMPORTING\n            CC_NAME    = p_cont_attr-cu_cc_name\n          EXCEPTIONS\n            NOT_EXISTS = 1\n            others     = 2.\n        IF sy-subrc <> 0.\n          clear p_cont_attr-cu_cc_name.\n        ENDIF.\n        EXIT.\n      ENDLOOP.\n  ENDCASE.\n\n\n* Properties am Container\n  CASE P_CONT_ATTR-TYPE.\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

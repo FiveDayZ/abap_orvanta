@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1050
+ },
+ "startedAt": "2026-10-03T13:16:49.177Z",
+ "finishedAt": "2026-10-03T13:16:49.679Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 1050-1099 of 1636, 50 lines retrieved):\n\n```abap\n      P_DYNP_FIELD-PUSH_FTYPE =  FUNC_NEW-TYPE.      \"Typ der Funktion\n    ELSE.\n      P_DYNP_FIELD-PUSH_FCODE =  F_RES1-FUNCCODE.    \"FCode aus F-RES1\n      P_DYNP_FIELD-PUSH_FTYPE =  F_RES1-FUNCTYPE.    \"Typ der Funktion\n    ENDIF.\n  ENDIF.\n\nENDFORM.                    \" R_FUNC_OUT\n\n*&---------------------------------------------------------------------*\n*&      Form  R_MODIFIC_OUT\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Verarbeiten der internen Angaben zu DDIC-Modifikation          *\n*       Aufbau der externen Attribute dazu                             *\n*----------------------------------------------------------------------*\n*      -->P_FIELD_INT    Dynprofeld intern                             *\n*      <--P_DYNP_FIELD   Dynprofeld extern                             *\n*----------------------------------------------------------------------*\nFORM R_MODIFIC_OUT\n             USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n             CHANGING P_DYNP_FIELD       TYPE RPYTY_DYNP_FIELD.\n\n  P_DYNP_FIELD-MODIFIC = ' '.\n  IF P_FIELD_INT-FLG1 O FLG1EDT.               \"Schablone\n    IF P_FIELD_INT-FLG1 O FLG1DDF.             \"Dictfeld\n      IF P_FIELD_INT-FLG1 O FLG1DDM.           \"modifiziert\n        P_DYNP_FIELD-MODIFIC = 'X'.\n      ELSE.\n        P_DYNP_FIELD-MODIFIC = ' '.\n      ENDIF.\n    ENDIF.\n  ELSE.                              \"Schluesselwort\n    IF P_FIELD_INT-FLG1 O FLG1DDF.             \"Dictfeld\n      IF P_FIELD_INT-ITYP = '4'.\n        P_DYNP_FIELD-MODIFIC = '4'.\n      ELSE.\n        IF P_FIELD_INT-ITYP = '1'\n        OR P_FIELD_INT-ITYP = '2'\n        OR P_FIELD_INT-ITYP = '3'.\n          IF P_FIELD_INT-FLG1 O FLG1DDM.       \"Fix bei Schluesselwort\n            P_DYNP_FIELD-MODIFIC = P_FIELD_INT-ITYP.\n          ELSE.\n            P_DYNP_FIELD-MODIFIC = 'V'.   \"variabel\n          ENDIF.\n        ELSEIF P_FIELD_INT-ITYP = '0'.                    \"Erg. Rel 2.2\n          IF P_FIELD_INT-FLG1 O FLG1DDM.\n            P_DYNP_FIELD-MODIFIC = 'F'.    \"fix\n          ELSE.                             \"darf ab 3.0B nicht mehr\n            P_DYNP_FIELD-MODIFIC = 'V'.     \"passieren, da durch\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

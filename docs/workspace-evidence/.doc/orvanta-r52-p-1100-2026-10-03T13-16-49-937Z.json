@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1100
+ },
+ "startedAt": "2026-10-03T13:16:49.991Z",
+ "finishedAt": "2026-10-03T13:16:50.440Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 1100-1149 of 1636, 50 lines retrieved):\n\n```abap\n          ENDIF.                            \"UPGRADE_DYNPRO umgestellt\n        ELSE.\n          P_DYNP_FIELD-MODIFIC = '4'.\n        ENDIF.\n      ENDIF.\n    ENDIF.\n  ENDIF.\nENDFORM.                    \" R_MODIFIC_OUT\n\n*&---------------------------------------------------------------------*\n*&      Form  R_INPUT_FIELD_OUT\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Verarbeiten der internen Angaben zu \"Eingabefeld\" und \"Eingabe\n*       Aufbau des externen Attributes dazu                            *\n*----------------------------------------------------------------------*\n*      -->P_FIELD_INT    Dynprofeld intern                             *\n*      <--P_DYNP_FIELD   Dynprofeld extern                             *\n*----------------------------------------------------------------------*\nFORM R_INPUT_FIELD_OUT\n             USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n             CHANGING P_DYNP_FIELD       TYPE RPYTY_DYNP_FIELD.\nDATA: F_RES1 LIKE D021S_RES1.\n\n F_RES1 = P_FIELD_INT-RES1.\n\n if p_field_int-flg3 o flg3obl.   \" Muss-Feld:\n   P_DYNP_FIELD-INPUT_FLD = 'X'.  \"  Eingabe: ja\n   p_dynp_field-requ_entry = 'O'. \"  obligatorisch\n elseif f_res1-recentry <> space. \" Soll-Feld:\n   P_DYNP_FIELD-INPUT_FLD = 'X'.  \"  Eingabe: ja\n   p_dynp_field-requ_entry = 'R'. \"  recommended\n elseif  P_FIELD_INT-FMB1 Z FMB1GES\n     AND P_FIELD_INT-FMB1 Z FMB1NUM.\n   P_DYNP_FIELD-INPUT_FLD = 'X'.  \"  Eingabe: ja\n   p_dynp_field-requ_entry = ' '. \"  möglich\n else.\n   P_DYNP_FIELD-INPUT_FLD = ' '.  \"  Eingabe: nein\n   p_dynp_field-requ_entry = 'N'. \"  nicht möglich\n endif.\n\nENDFORM.                    \" R_INPUT_FIELD_OUT\n\n*&---------------------------------------------------------------------*\n*&      Form  R_POSS_ENTRY_OUT\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Verarbeiten der internen Angaben zu Werthilfetaste             *\n*       Aufbau des externen Attributes dazu                            *\n*----------------------------------------------------------------------*\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}
