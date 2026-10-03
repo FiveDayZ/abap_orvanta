@@ -885,7 +885,19 @@ test("the registry records the honest gap rather than inflating it", () => {
     // reported as a mismatch. The same batch also recorded that the duplicate-refusal path is NOT a
     // zero-SAP-call refusal: its receipt says sapInvocationStarted true, so the evidence of no state
     // change is the byte-identical read-back, not the error text.
-    totals.verified <= 135,
+    // Raised from 135 to 138 on 2026-10-03 (R16): the three message-class write tools were accepted
+    // together against live w200. create_abap_message_class built ZORVANTA_R16_MSG in ZABAP with
+    // three messages and answered MESSAGE_CLASS_CREATED; update_abap_message_class then applied
+    // add/update/remove at the read version and left the one message it never mentioned untouched;
+    // delete_abap_message_class removed a throwaway class created for that purpose under a one-off
+    // user authorization (the permanent class was deliberately kept). Each verdict rests on an
+    // independent read that is not the write echo, and all three carry an evidence path.
+    // Note what this batch did NOT do: it did not relabel these three rows' availabilityBasis. A
+    // verified row may still be `protocol-only` - 32 already were - because that field describes how
+    // *availability* is decided, and this batch pinned no operation requirement. Moving the label
+    // without pinning operations would be an unverified claim, which is the exact class of error the
+    // registry exists to prevent.
+    totals.verified <= 138,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

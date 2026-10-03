@@ -247,13 +247,13 @@
       "tool": "create_abap_message_class",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 message class ZORVANTA_R16_MSG in ZABAP at version 20261003165805",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-03T16:57:56+08:00",
+      "evidence": ".doc/orvanta-w200-r44-create-2026-10-03T08-57-56-856Z.json",
+      "notes": "R16 2026-10-03 (live w200, real write): this tool created message class ZORVANTA_R16_MSG in package ZABAP over transport GR2K923472 and returned status \"MESSAGE_CLASS_CREATED\" with version 20261003165755 and fingerprint d14ef471d2c44a67d40d2ea4113f810eac9cd17417dabde1ed259ec27c68aad2 for three initial messages (001/002/003). The receipt reported outcomeMayBeUnknown false and sapPreChangeEvidence exists=false, so the pre-change observation confirmed the target was absent rather than merely failing to read it; a baseline read_abap_message_class before the write had returned MESSAGE_CLASS_NOT_FOUND. An independent read_abap_message_class call (not the write echo) returned the same version, fingerprint, package and all three texts. Zero residue: SM12 entries [], list_write_recovery_operations count 0, and the main transport gained exactly one entry (R3TR MSAG ZORVANTA_R16_MSG at position 000022). Not proven: the MESSAGE_CLASS_EXISTS refusal path (no second create of the same name was attempted), description and message-text length boundaries, and the activation-failure branch. Evidence: .doc/orvanta-w200-r44-create-2026-10-03T08-57-56-856Z.json (receipt), .doc/orvanta-w200-r44-readback1-2026-10-03T08-58-02-600Z.json (independent read). Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
     },
     {
       "tool": "create_ddic_transparent_table",
@@ -451,13 +451,13 @@
       "tool": "delete_abap_message_class",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 message class ZORVANTA_R16_DEL in ZABAP at version 20261003165812 (created for this acceptance, then deleted)",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-03T16:58:18+08:00",
+      "evidence": ".doc/orvanta-w200-r44-delete-2026-10-03T08-58-18-757Z.json",
+      "notes": "R16 2026-10-03 (live w200, real write): this tool deleted message class ZORVANTA_R16_DEL at expectedVersion 20261003165812 and returned status \"MESSAGE_CLASS_DELETED\" with previousVersion 20261003165812 and previousFingerprint 974916a8e3e1aabe4ca8c30f218aaa78aba1b4e18fc3da7b39b6f8c3cbaab0b5. The receipt reported outcomeMayBeUnknown false, and its sapPreChangeEvidence (exists true, version 20261003165812, fingerprint 974916a8...) matched the create receipt byte for byte, so the version guard was checked against the real object. The tool's own post-delete verification and a separate independent read_abap_message_class both returned MESSAGE_CLASS_NOT_FOUND, so absence is proven by a read that is not the delete echo. A control read of ZORVANTA_R16_MSG immediately afterwards still returned its full definition, so the deletion was scoped to the named class and did not disturb a sibling. Zero residue: SM12 entries [], list_write_recovery_operations count 0. Named residue, reported rather than cleaned: the main transport still lists R3TR MSAG ZORVANTA_R16_DEL at position 000023 after the object itself was deleted, so the transport entry outlives the object. Its cleanup entry point is SE09/SE10 (or SE01), and per the standing no-delete rule nothing was removed here. The target was a throwaway class created for this acceptance under a one-off user authorization (2026-10-03); the permanent ZORVANTA_R16_MSG was deliberately not deleted. Not proven: the VERSION_CONFLICT and PACKAGE_CONFLICT refusals, the confirmation guard, and the MESSAGE_CLASS_DELETE_VERIFY_FAILED branch. Evidence: .doc/orvanta-w200-r44-delete-2026-10-03T08-58-18-757Z.json (receipt), .doc/orvanta-w200-r44-absence-2026-10-03T08-58-26-164Z.json (independent absence proof). Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
     },
     {
       "tool": "delete_abap_source_object",
@@ -1855,13 +1855,13 @@
       "tool": "update_abap_message_class",
       "helper": "Z_ORVANTA_MCP_DYNPRO_API",
       "availabilityBasis": "protocol-only",
-      "verificationTarget": "no SAP object yet: no authorized write has been attempted",
+      "verificationTarget": "w200 message class ZORVANTA_R16_MSG in ZABAP at version 20261003165805",
       "method": "controlled-write",
-      "status": "unverified",
+      "status": "verified",
       "failureBasis": null,
-      "lastAttemptAt": null,
-      "evidence": null,
-      "notes": "No real call has been recorded yet. Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
+      "lastAttemptAt": "2026-10-03T16:58:07+08:00",
+      "evidence": ".doc/orvanta-w200-r44-update-2026-10-03T08-58-07-313Z.json",
+      "notes": "R16 2026-10-03 (live w200, real write): this tool applied add/update/remove to ZORVANTA_R16_MSG at expectedVersion 20261003165755 and returned status \"MESSAGE_CLASS_UPDATED\" with version 20261003165805 and fingerprint 825ac7446ab4aed65991d30c77910b77354a1aa830167bd9ad62a49dffab0dce. The result held exactly the three requested messages - 001 rewritten, 004 added, 002 removed - and 003, which the request never mentioned, survived unchanged. The receipt reported outcomeMayBeUnknown false and its sapPreChangeEvidence (exists true, version 20261003165755, fingerprint d14ef471d2c44a67d40d2ea4113f810eac9cd17417dabde1ed259ec27c68aad2) matched the preceding independent read byte for byte, so this was a true replace and not a silent create. An independent read_abap_message_class returned the same version, fingerprint and message list. Zero residue: SM12 entries [], list_write_recovery_operations count 0, and the main transport gained no entry at all for this update. Observed and worth knowing for callers: recordedRequest came back as GR2K923492 (the task) for this update and for the delete, while the create reported GR2K923472 (the main transport). Both are the same request tree; do not read recordedRequest as \"the main transport\". Not proven: the VERSION_CONFLICT and PACKAGE_CONFLICT refusals, MESSAGE_ALREADY_EXISTS / MESSAGE_NOT_FOUND, the MESSAGE_CLASS_EMPTY guard, and the 100-operation cap. Evidence: .doc/orvanta-w200-r44-update-2026-10-03T08-58-07-313Z.json (receipt), .doc/orvanta-w200-r44-readback2-2026-10-03T08-58-13-437Z.json (independent read). Availability is decided per target rather than by a helper protocol version. The registry pins no operation requirement for this tool, so its availability verdict rests on the protocol version alone (the R-20c weakness); this entry is where that weakness stays visible."
     },
     {
       "tool": "update_enhancement_hook_implementation",
