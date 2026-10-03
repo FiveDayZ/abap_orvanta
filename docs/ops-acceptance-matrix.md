@@ -45,10 +45,12 @@ classification guard that has to pass before this file can be generated at all.
 | 3. every action tool has a confirmation string, an idempotency key, a post-write re-read and a negative control | 7 / 7 declared action tool(s) carry a verified controlled-write record: create_transport_request, add_objects_to_transport, create_background_job, modify_background_job, release_background_job, cancel_background_job, delete_sap_lock | yes (open items: none) |
 | 4. the capability block agrees with reality and platform blocks are explicit | enforced: generation stops when `opsClassificationProblems` is non-empty; 1 platform-blocked tool(s) recorded (analyze_abap_traces) | yes |
 
-**Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*
-families *(>= 95%)*. Thirteen of fourteen is 92.9%, so the two halves of that sentence disagree.
-This service therefore requires **14 of 14** unless the operator rules that the plan's *13* is the
-binding number - and that ruling decides whether a 92.9% reading may be presented as 95%.
+**Operator ruling, 2026-10-03: the binding number is 14 of 14, not 13.** Plan section 8 clause 1
+asked for *at least 13* families *(>= 95%)*; thirteen of fourteen is 92.9%, so the two halves of
+that sentence disagreed. The operator ruled the code's stricter reading binding: `criterionMet` is
+`closedRequiredFamilies >= ceil(14 * 0.95)` = **14**, so a 92.9% reading is never presented as 95%.
+The plan's *13* is superseded as a target. The clause-1 row above reads 14 / 14 today, so the
+ruling settles the wording, not the outcome.
 
 ## The matrix
 

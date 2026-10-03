@@ -2,7 +2,7 @@
 
 本文件是**运维剧本**：把"某个运维问题出现时，按什么顺序调用哪些工具、看到什么算正常、什么时候必须停下、结论不能推出什么"写成可照着执行的步骤。持续文档（非时间戳记录），改动随每次交付更新。
 
-计划出处：`.doc/orvanta-mcp-ops-coverage-assessment-and-next-phase-plan-20260925.md` OP4-2「运维 profile 与 E3 运维剧本的技能化（每套剧本只启用对应 profile）」，验收判据「运维剧本可在 `ops` 档内独立运行」。
+计划出处：`.doc/orvanta-mcp-ops-coverage-assessment-and-next-phase-plan-20260925.md` OP4-2「运维 profile 与 E3 运维剧本的技能化（每套剧本只启用对应 profile）」，验收判据「运维剧本可在 `ops` 档内独立运行」。**当前状态以 `.doc/ops-current-baseline.md`（2026-10-03 起的基线）为准**——三份早期计划（09-25/09-26/09-28）的缺口清单职能已被它取代。
 
 ## 1. 为什么剧本必须能被机器核对
 
@@ -14,7 +14,7 @@
   3. **双向同步**：剧本清单里列的工具必须真的出现在该剧本正文里，正文里出现的工具也必须列进清单——任一侧漏掉都会失败；
   4. **族覆盖无遗漏**：15 个运维场景族必须**要么**由至少一套剧本覆盖、**要么**在 §4 里逐族写明未覆盖理由；两集合不相交且并集等于全部 15 族。
 - 与逐工具契约的关系：参数的完整语义、边界与错误码仍在各工具自己的文档里（`docs/diagnostic-suite.md`、`docs/application-logs.md`、`docs/runtime-diagnostics.md`、`docs/maintenance-diagnostics.md`、`docs/transport-delivery.md`、`docs/system-info.md`、`docs/table-query.md`）。剧本不复制这些细节，只规定**顺序、判读与边界**。
-- 证据状态以 `contracts/verification-registry.json` 为准（2026-09-25 / 0.50.11：ops 组 20 个工具中 `verified` 14、`platform-unsupported` 1、`failed` 1、`unverified` 4）。下面的步骤表逐行标注证据状态；**未登记证据的工具不代表不可用**，而是"这个工具的成功结果尚未被任何记录证明过"，读到它的结果时应把这点一起报出去。
+- 证据状态以 `contracts/verification-registry.json` 为准；下面的步骤表逐行标注证据状态；**未登记证据的工具不代表不可用**，而是"这个工具的成功结果尚未被任何记录证明过"，读到它的结果时应把这点一起报出去。**已作废的历史快照（勿据此判断现状）**：本文曾写"2026-09-25 / 0.50.11：ops 组 20 个工具中 `verified` 14、`platform-unsupported` 1、`failed` 1、`unverified` 4"——那是当时的读数，`ops` 组其后已扩到 44 个工具并全部收口（`verified` 41 / `platform-unsupported` 3 / `failed` 0 / `unverified` 0）。**计数不在此手写**：以生成物 `docs/ops-acceptance-matrix.md` 与 `get_capability_report` 的 `opsCapability` 块为准。
 
 ## 2. 剧本清单（机器核对）
 
@@ -67,7 +67,7 @@
     {
       "id": "system-baseline-snapshot",
       "families": ["system-info"],
-      "tools": ["get_sap_system_info"]
+      "tools": ["get_sap_system_info", "read_system_parameters"]
     },
     {
       "id": "table-query-lookup",
@@ -78,28 +78,40 @@
       "id": "archive-status-check",
       "families": ["archive-alerts"],
       "tools": ["read_archive_status"]
+    },
+    {
+      "id": "runtime-resource-check",
+      "families": ["runtime-resources"],
+      "tools": [
+        "read_work_processes",
+        "read_user_sessions",
+        "read_performance_snapshot",
+        "read_db_activity",
+        "read_file_system_directory",
+        "read_workload_directory"
+      ]
+    },
+    {
+      "id": "interface-queue-check",
+      "families": ["interfaces"],
+      "tools": ["read_qrfc_queues", "read_trfc_error_entries", "read_idoc_status"]
+    },
+    {
+      "id": "authorization-assignment-lookup",
+      "families": ["authorizations"],
+      "tools": ["read_user_authorizations", "read_role_authorizations", "read_authorization_trace"]
+    },
+    {
+      "id": "landscape-compare-check",
+      "families": ["landscape"],
+      "tools": ["compare_systems", "promote_object"]
     }
   ],
   "uncoveredFamilies": [
     {
       "id": "traces",
+      "reasonKind": "platform-blocked",
       "reason": "平台挡住：analyze_abap_traces 在 w200 的 ADT 端点返回 HTTP 404，没有可编排的读路径，该族带书面豁免（证据 .doc/code-update-20260827-173838.md）。"
-    },
-    {
-      "id": "runtime-resources",
-      "reason": "该族 5 个计划工具全部未建（SM50/SM66、SM04、ST03/STAD、DB02、AL11），没有工具可以编排成剧本。"
-    },
-    {
-      "id": "interfaces",
-      "reason": "该族 3 个计划工具全部未建（SMQ1/SMQ2/SM58、WE02/WE05/BD87、SOST），且重处理属于写动作、不在只读剧本范围内。"
-    },
-    {
-      "id": "authorizations",
-      "reason": "该族 2 个计划工具只建了 1 个（`read_authorization_trace` 只报内核追踪开关）；SU53/ST01 的追踪**数据**与「角色→权限对象」解析仍未建，没有可编排的完整排障剧本。"
-    },
-    {
-      "id": "landscape",
-      "reason": "该族 2 个计划工具全部未建（compare_systems、promote_object），且前提是用户先确认是否存在 QAS/PRD 连接（单 landscape 时长下换环境等于部署变更）。"
     }
   ]
 }
@@ -126,7 +138,7 @@
 
 **停止条件**：步骤 1–4 都做完就停。任何"重跑作业、改作业、取消作业、删 Spool"的要求都**不在本剧本内**——把它们交回用户（SE37/SM37 或另立 OP2 受权动作），不要在诊断过程中顺手动状态。
 
-**结论边界**：本剧本能证明"作业存在、状态如何、日志与输出是什么"。它**不能**证明：作业为什么失败（日志里没有的原因不要推）、作业是否还会再跑（要看 SM36 计划，本服务没有该工具）、以及**空结果的含义**——2026-09-08 的验收里两次猜测的作业名都返回空，而 `SWWDHEX`/`SWWERRE` 实际有作业，所以"某个名字查不到"只说明**这个名字**没查到，不说明系统里没有作业。证据状态：`search_background_jobs`、`read_background_job_log` 已登记真实调用；`read_background_job_details`、`read_background_job_spool` 尚无证据登记（见 `docs/ops-coverage.md` §7.1），报结论时应一并说明。
+**结论边界**：本剧本能证明"作业存在、状态如何、日志与输出是什么"。它**不能**证明：作业为什么失败（日志里没有的原因不要推）、作业是否还会再跑（要看 SM36 计划，本服务没有该工具）、以及**空结果的含义**——2026-09-08 的验收里两次猜测的作业名都返回空，而 `SWWDHEX`/`SWWERRE` 实际有作业，所以"某个名字查不到"只说明**这个名字**没查到，不说明系统里没有作业。证据状态：本剧本引用的 4 个工具**均已登记真实调用**（`search_background_jobs`、`read_background_job_log`、`read_background_job_details`、`read_background_job_spool`，后者于 2026-09-29 以 spool 12717 取得三条渲染文本）。
 
 ### dump-triage
 
@@ -190,7 +202,7 @@
 
 **停止条件**：三项读完即止。**删锁、重处理更新、删 Spool 都是写动作，本剧本一律不做**（OP2-2 需要逐项独立授权）。锁通常会随会话结束自行消失；请用户确认会话状态，不要在诊断流程里替 SAP 解锁。
 
-**结论边界**：能证明"此刻有哪些锁、某窗口内有哪些更新失败、失败的具体条目"。**不能**证明锁归谁持有（本服务只报快照，不判断 SAP 侧锁的会话归属）、也不能证明"没有锁 = 不会再被锁"。证据状态：`search_sap_locks` 已登记真实调用（2026-09-24，`entries: []`）；`search_failed_updates`、`read_failed_update` 已于 2026-09-30 各登记一次真实调用——样本不是造出来的，而是先经白名单读 `VBHDR` 定位到客户端 200 唯一那条失败头（`VBSTATE=255`、`VBRC=9`），再以该键走本剧本读取（证据 `.doc/code-update-20260930-090003.md`）。**重处理更新依然不做，而且不是"还没建"**：2026-09-30 的立项可行性判定（`docs/ops-coverage.md` §7.19）实测本目标上不存在对无 GUI 调用方可用的重复接口——SM13 的重启是模块池 `RSM13000` 里的对话框 FORM，跑在内核调用 `CALL 'ThVBCall'` 加直接 `UPDATE VBHDR` 上，唯一 remote-enabled 的入口 `UPD_CALL_SM13` 末句是 `CALL TRANSACTION 'SM13'`——因此该能力按平台边界记入族定义（`updates` 族以只读口径闭环），`reprocess_failed_update` 已从计划中移除。
+**结论边界**：能证明"此刻有哪些锁、某窗口内有哪些更新失败、失败的具体条目"。**不能**证明锁归谁持有（本服务只报快照，不判断 SAP 侧锁的会话归属）、也不能证明"没有锁 = 不会再被锁"。证据状态：`search_sap_locks` 已登记真实调用（2026-09-24，`entries: []`）；`search_failed_updates`、`read_failed_update` 已于 2026-09-30 各登记一次真实调用——样本不是造出来的，而是先经白名单读 `VBHDR` 定位到客户端 200 唯一那条失败头（`VBSTATE=255`、`VBRC=9`），再以该键走本剧本读取（证据 `.doc/code-update-20260930-090003.md`）。**重处理更新依然不做，而且不是"还没建"**：2026-09-30 的立项可行性判定（`docs/ops-coverage.md` §7.24）实测本目标上不存在对无 GUI 调用方可用的重复接口——SM13 的重启是模块池 `RSM13000` 里的对话框 FORM，跑在内核调用 `CALL 'ThVBCall'` 加直接 `UPDATE VBHDR` 上，唯一 remote-enabled 的入口 `UPD_CALL_SM13` 末句是 `CALL TRANSACTION 'SM13'`——因此该能力按平台边界记入族定义（`updates` 族以只读口径闭环），`reprocess_failed_update` 已从计划中移除。
 
 ### transport-state-check
 
@@ -205,7 +217,7 @@
 | 3   | `manage_transport_requests` | `action: "get_transport_objects"`、`transportNumber`                                  | 对象清单（与 E071 对齐）                                                                             |
 | 4   | `manage_transport_requests` | `action: "prepare_delivery"`、`transportNumber`、`expectedObjects`、`inactiveTargets` | 交付前的范围核对：期望对象 vs 请求内实际对象、重复项、未激活目标；**只比对，不释放、不导入、不部署** |
 
-**停止条件**：步骤 3 或 4 之后即止。**释放请求、导入队列、删除条目一律不做**（释放与导入属 OP2-3，需要独立授权；清理传输条目目前在 w200 上呈 `failed`，见 `docs/ops-coverage.md` §7.1）。
+**停止条件**：步骤 3 或 4 之后即止。**释放请求、导入队列、删除条目一律不做**（释放与导入属 OP2-3，需要独立授权；清理传输条目已裁定为**平台边界** `platform-unsupported`，见 `docs/ops-coverage.md` §7.1）。
 
 **结论边界**：能证明"请求存在、状态、对象清单、交付范围是否吻合"。**不能**证明"没有别的请求"：`get_user_transports` 落到 E070 时读取上限是 **500 行**，清单答到 500 条必须当成"可能被截断"。另外这段里有真实的历史教训：2026-09-24 上午同一动作曾对 `WYS` 返回 **0 条**，而 `GR2K923488` 刚从 E070 读回 `AS4USER=WYS`——那个 0 是假阴性，由 CTS 表后备修复。所以**空清单必须配合 `Source:` 行与第二来源核对再下结论**。证据状态：`manage_transport_requests` 已登记真实调用（0.47.12，500/500 带描述）。
 
@@ -215,13 +227,14 @@
 
 **目标**：一次只读调用拿到可核对的系统基线。
 
-| #   | 调用                  | 关键输入（全部只读）          | 判读                                                                              |
-| --- | --------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
-| 1   | `get_sap_system_info` | `includeComponents`（默认含） | 版本、组件清单（`componentsComplete` 表示是否读全）、客户端角色与跨客户端变更保护 |
+| #   | 调用                     | 关键输入（全部只读）                                                | 判读                                                                                                                      |
+| --- | ------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `get_sap_system_info`    | `includeComponents`（默认含）                                       | 版本、组件清单（`componentsComplete` 表示是否读全）、客户端角色与跨客户端变更保护；内核版本与数据库系统名在 `serverFacts` |
+| 2   | `read_system_parameters` | `parameterName`、`objectName`、`profileName`、`maxRows`（可选筛选） | RZ10/RZ11 语义的**配置文件参数与头**；空筛选即读全部，参数名可按前缀收窄                                                  |
 
-**停止条件**：一次调用即止。需要更细的表级事实时改走 `table-query-lookup`，不要把基线剧本扩成任意查询。
+**停止条件**：两次调用即止。需要更细的表级事实时改走 `table-query-lookup`，不要把基线剧本扩成任意查询。
 
-**结论边界**：能证明"读到的组件/版本/客户端类别"。**不能**证明：① 内核与数据库版本（本工具不读 RFC_SYSTEM_INFO，属 OP1-4 未交付部分）；② `EXTRELEASE` 对应的支持包级别——项目刻意**不换算**该字段（`docs/system-info.md` 输出契约第 12 条），所以不要把它读成 "SPxx"；③ 客户端角色不等于账户权限。证据状态：已登记真实调用（0.36.17 探针，两种组件模式 `Passed`、114 个组件完整读取）。
+**结论边界**：能证明"读到的组件/版本/客户端类别，以及配置参数与配置头"。**不能**证明：① `EXTRELEASE` 对应的支持包级别——项目刻意**不换算**该字段（`docs/system-info.md` 输出契约第 12 条），所以不要把它读成 "SPxx"；② 客户端角色不等于账户权限；③ 数据库**版本**（`RFCDBSYS` 是数据元素 `SYDBSYS`，本服务按数据库**系统名**原样发布，从不当作版本读）；④ 参数值等于**当前生效值**——读到的是配置文件里的条目，运行期覆盖与内核参数不在其中。证据状态：`get_sap_system_info` 已登记真实调用（0.36.17 探针，两种组件模式 `Passed`、114 个组件完整读取）；`read_system_parameters` 亦已登记真实调用。
 
 ### table-query-lookup
 
@@ -236,7 +249,7 @@
 
 **停止条件**：拿到行即止。越界语句（JOIN、表达式、子查询、非白名单表、无法静态枚举的表名）在**触碰 SAP 之前**就被拒绝——这是正确行为，**不要**为了让它通过而改写语义或换近似查询后把结果当同一结论。`OR`、聚合与 `ORDER BY` **在方言内**：`OR` 每个分支各读一次并在合并时按整行身份去重；`ORDER BY` 是"对整个匹配集"的断言，任一分支触及行上界即整体拒绝（`TABLE_QUERY_ORDER_BY_INCOMPLETE`）；聚合同样是"对整个匹配集"的断言，任一分支被截断即拒绝（`TABLE_QUERY_AGGREGATE_INCOMPLETE`）——**此时不要拿样本的计数当答案，也不要手工把返回页加起来**，正确做法是收窄 `WHERE` 再问一次。
 
-**结论边界**：能证明"允许列表内这张表的这些行/这些组的计数"。**不能**证明：① 结果的完整性——`maxRows` 达到上限、或 `querySource.incompleteBranches` 非空（某分支只取到一页）即视为截断；聚合在截断时**不给数**，`querySource.aggregated`/`groupCount` 才是"这是聚合结果、共几组"的依据；② 原生数据预览可用——w200 上原生 preview 返回 HTTP 200 但**零字节 HTML**，所以 `execute_data_query` 实际总是走降级路径，遇到"未翻译的语法"报错时应按降级方言改写，或改用步骤 1；③ 行数等于匹配行数——部分字段投影下 `querySource.repeatedProjectedRows` 只表示"逐列相同的行出现了几次"，不表示去重后的业务计数；④ 计数等于业务条数——行身份是"行的取值"，无唯一键的表里两条内容完全相同的行会被当成同一行，且 `MAX`/`MIN` 按读取器文本序（不是 SAP 类型序）取极值；⑤ 表数据等于业务真相（很多状态由程序派生）。证据状态：`read_abap_table` 已登记真实调用；`execute_data_query` 尚无证据登记。
+**结论边界**：能证明"允许列表内这张表的这些行/这些组的计数"。**不能**证明：① 结果的完整性——`maxRows` 达到上限、或 `querySource.incompleteBranches` 非空（某分支只取到一页）即视为截断；聚合在截断时**不给数**，`querySource.aggregated`/`groupCount` 才是"这是聚合结果、共几组"的依据；② 原生数据预览可用——w200 上原生 preview 返回 HTTP 200 但**零字节 HTML**，所以 `execute_data_query` 实际总是走降级路径，遇到"未翻译的语法"报错时应按降级方言改写，或改用步骤 1；③ 行数等于匹配行数——部分字段投影下 `querySource.repeatedProjectedRows` 只表示"逐列相同的行出现了几次"，不表示去重后的业务计数；④ 计数等于业务条数——行身份是"行的取值"，无唯一键的表里两条内容完全相同的行会被当成同一行，且 `MAX`/`MIN` 按读取器文本序（不是 SAP 类型序）取极值；⑤ 表数据等于业务真相（很多状态由程序派生）。证据状态：`read_abap_table` 与 `execute_data_query` **均已登记真实调用**（后者见 `docs/ops-coverage.md` §7.1 的 D1 只读会话）。
 
 ### archive-status-check
 
@@ -250,25 +263,91 @@
 
 **停止条件**：一次调用即止。**取消/重启/删除归档会话、重载或删除归档文件一律不做**（本工具只读；归档管理动作属 SAP 侧人工操作）。
 
-**结论边界**：能证明"当前客户端下这些归档会话存在、状态是什么、各有多少归档文件"。**不能**证明：① 归档**数据**的内容（只给文件计数，不给归档文件路径与内容）；② 空清单等于"从没归档过"——`fromSystemTime`/`toSystemTime` 只匹配 `ADMI_RUN-CREAT_DATE`，不限窗口时才覆盖全部；③ 状态码的含义不由本工具翻译（`status` 是 `ADMI_STRUN` 原值，要标签请查该域，本服务刻意不做映射）。**一个必须在脚本里说清的实现事实**：SAP 的选择函数在没有请求任何状态标题时会**直接返回零条**，所以该工具**始终请求全部状态标题**——否则一次全空的调用会被读成"没归档过"，而真相是"没问"。证据状态：本工具尚无真实调用登记（`unverified`），报结论时应一并说明。
+**结论边界**：能证明"当前客户端下这些归档会话存在、状态是什么、各有多少归档文件"。**不能**证明：① 归档**数据**的内容（只给文件计数，不给归档文件路径与内容）；② 空清单等于"从没归档过"——`fromSystemTime`/`toSystemTime` 只匹配 `ADMI_RUN-CREAT_DATE`，不限窗口时才覆盖全部；③ 状态码的含义不由本工具翻译（`status` 是 `ADMI_STRUN` 原值，要标签请查该域，本服务刻意不做映射）。**一个必须在脚本里说清的实现事实**：SAP 的选择函数在没有请求任何状态标题时会**直接返回零条**，所以该工具**始终请求全部状态标题**——否则一次全空的调用会被读成"没归档过"，而真相是"没问"。证据状态：本工具已登记真实调用（`verified`，2026-09-28）；但 w200 无归档历史，返回恒为空清单，**该空是目标数据的性质，不是能力缺失**。
+
+### runtime-resource-check
+
+**触发**：用户报「系统变慢 / 某个进程卡住 / 会话数异常 / 磁盘满 / 性能数据在哪」。
+
+**目标**：只读回答「哪些工作进程与会话是活的、应用服务器文件系统上有什么、有哪些性能与 DB 活动数据」。
+
+| #   | 调用                         | 关键输入（全部只读）                                      | 判读                                                                                                    |
+| --- | ---------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 1   | `read_work_processes`        | `serverName`（可选，缺省当前实例）、`maxRows`（上限 500） | 工作进程清单：类型、状态、当前用户与报表；**被 200 行上限截断时报 partial**，不要把它读成"总共就这么多" |
+| 2   | `read_user_sessions`         | `userName`（可选）、`maxRows`（上限 500）                 | 登录会话：用户、终端、事务、登录时间；同样受 200 行上限约束                                             |
+| 3   | `read_performance_snapshot`  | `periodType`、`periodStart`、`maxRows`（上限 500）        | 性能快照；这是**聚合读数**，不是逐条明细                                                                |
+| 4   | `read_db_activity`           | `maxRows`（上限 500）                                     | DB 活动：在 **DB6** 目标上读厂商历史表；非 DB6 目标上该问题由厂商特有来源回答，见 §结论边界             |
+| 5   | `read_file_system_directory` | `directory`（必填）、`fileMask`、`maxRows`（上限 500）    | AL11 语义的目录清单；**目录必须由调用方给出**，本服务不猜路径                                           |
+| 6   | `read_workload_directory`    | `maxRows`（上限 500）                                     | 负载目录：回答的是**收集器自己的聚合索引**，不是聚合里的数值                                            |
+
+**停止条件**：六项读完即止。**本剧本全为只读，不重启进程、不断会话、不删文件、不触发收集器**——`SWNC_COLLECTOR_KERNEL_STAT` 这类会**执行收集并提交**的模块被刻意排除在实现之外。
+
+**结论边界**：能证明「此刻的工作进程/会话快照、指定目录的文件清单、存在的性能与 DB 活动数据」。**不能**证明：① 每项都读全了——helper 支撑的读有 **200 行上限**（`maxRows` 上限 500 是工具侧上限，两者不同），更长结果以 partial + truncated 报告而不是全量返回；② `read_workload_directory` 给的是**索引**而非数值；③ DB 活动是**厂商特有**来源（DB02 按数据库厂商分裂，本实现读 DB6 历史表），换目标要重新核对；④ 快照是**瞬时**的，不构成趋势。证据状态：六个工具**均已登记真实调用**（2026-09-27 至 09-30）。
+
+### interface-queue-check
+
+**触发**：用户报「接口没过去 / IDoc 没到 / qRFC 卡住 / tRFC 报错」。
+
+**目标**：只读判定「出站或入站队列是否卡住、IDoc 是否到达」。
+
+| #   | 调用                      | 关键输入（全部只读）                                                             | 判读                                                                   |
+| --- | ------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 1   | `read_qrfc_queues`        | `queueName`、`destination`、`includeLuwStates`（取 LUW 明细）、`maxRows`（≤500） | qRFC 队列状态（`TRFCQOUT`/`TRFCQIN`/`TRFCQSTATE`）；LUW 明细需显式打开 |
+| 2   | `read_trfc_error_entries` | `destination`、`functionModule`、`state`、`user`、`maxRows`（≤500）              | SM58 的 tRFC 错误队列（`ARFCSSTATE`）：出站 tRFC LUW 是否卡在错误状态  |
+| 3   | `read_idoc_status`        | `docnum`、`status`、`messageType`、`includeStatusRecords`、`maxRows`（≤500）     | IDoc 控制记录与状态记录（`EDIDC`/`EDIDS`）；状态明细需显式打开         |
+
+**停止条件**：三项读完即止。**重处理、重启队列、删除 LUW、重发 IDoc 一律不做**（写动作，需逐项独立授权）。
+
+**结论边界**：能证明「此刻队列里有什么、哪些 LUW/IDoc 处于错误或等待状态」。**不能**证明：① **邮件队列**的情况——该能力经用户裁定**撤下**（`SOST` 在 w200 上无活流量、无收件人地址、无 SMTP 类型），读它会报一个 2013–2014 的冻结日志当作现状，本服务刻意不提供；② tRFC **载荷**内容——`ARFCSDATA`（`ARFCBLCNT` + `ARFCDATA01..07` 全为 RAW）在 512 字符读取上限下无法成行，已作为读取路径的**声明边界**，不是漏配的允许列表项；③ 空队列等于"从没出过错"——只说明当前没有处于该状态的行。证据状态：三个工具**均已登记真实调用**（2026-09-27 与 09-28）。
+
+### authorization-assignment-lookup
+
+**触发**：用户报「某人做不了某事务 / 权限不够 / 这个角色到底给了什么」。
+
+**目标**：只读报告**分配了什么**与**追踪到了什么**——本剧本**从不**回答「某人是否有权」。
+
+| #   | 调用                       | 关键输入（全部只读）                                                                           | 判读                                                                                                                 |
+| --- | -------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | `read_user_authorizations` | `userName`、`roleName`、`profileName`、`includeRoleTransactions`、`includeProfiles`、`maxRows` | 用户的角色分配（`AGR_USERS`）、角色的事务（`AGR_TCODES`）、用户主记录的角色配置（`UST04`）——**主数据，不是授权判定** |
+| 2   | `read_role_authorizations` | `roleName`（必填）、`includeProfileObjects`、`maxRows`（≤500）                                 | 角色展开成它存储的授权对象/字段/值（`AGR_1251`/`AGR_1252`、`AGR_PROF` 及其生成的配置）                               |
+| 3   | `read_authorization_trace` | `authorizationObject`、`maxRows`（≤500）                                                       | 内核授权追踪：**开关状态**（`AUTH_TRACE_GET_STATUS.RC`）与 SAP 自己存的追踪结果行（`USOB_AUTHVALTRC`）               |
+
+**停止条件**：三项读完即止。**本剧本不启动、不停止、不清除、不激活追踪，也不写任何追踪行**——整族只读。**尤其不要**用这些结果去断言"某人有权/无权"。
+
+**结论边界**：能证明「存储的角色与配置分配、角色→授权对象的展开、追踪开关状态与已存追踪行」。**不能**证明：① **是否授权**——这是授权判定的问题，本族明确不回答，分配存在 ≠ 权限生效（组织级别、`S_TCODE`、用户比较值都可能否决）；② 追踪**行的字段级使用**——`FIELDSUSED` 是 16 位向量（`XUBITVEC16`，RAW 2），按原值返回而**刻意不解码**（位到槽的映射在服务读不到的路径上，`SAUTHTRACE` 里也没有解码器）；③ 空追踪等于"权限没问题"——追踪未开启时表本就是空的，w200 的开关读回 "not active"，**空结果只说明没存到追踪记录**。证据状态：三个工具**均已登记真实调用**（2026-09-27 至 09-30）。
+
+### landscape-compare-check
+
+**触发**：用户问「DEV 和 QAS 差在哪 / 这个对象能不能提升过去」。
+
+**目标**：只读**比较两套系统**并对**提升就绪性**给出裁定；**执行提升**不在本服务内。
+
+| #   | 调用              | 关键输入（全部只读）                                                | 判读                                                                    |
+| --- | ----------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 1   | `compare_systems` | `objectType`、`objectName`、`from`、`to`（两侧连接）                | 两套系统的差异裁定；**同源对照**会随内容变化，可用来确认比较确实在动    |
+| 2   | `promote_object`  | `objectType`、`objectName`、`from`、`to`、`transportNumber`（可选） | 该对象是否记录在一个**确实指向目标系统**的请求里 ⇒ **只回答"就绪与否"** |
+
+**停止条件**：两次调用即止。**把对象放进请求、释放请求、导入请求一律不做**——本服务不执行提升，跨界写需另行授权。
+
+**结论边界**：能证明「两系统在所指对象上的差异、以及该对象是否已记录在指向目标系统的请求中」。**不能**证明：① **提升已被执行**——有利裁定只是就绪性回答，真正的提升仍在 SAP GUI 里发生；② 对象**内容**的语义等价——比较是对记录与内容的核对，不是"两边行为一致"的断言；③ 目标系统的**运行状态**（导入了是否成功、是否已激活）——本读侧不回答。证据状态：两个工具**均已登记真实调用**，只读环路已在 **w200（GR2 / client 200 / Development）与 w300（GR3 / client 300 / Test）** 两套真实系统上验收，覆盖每条链可到分支与一个同源对照（2026-09-29）。
 
 ## 4. 未被剧本覆盖的族
 
-| 族                  | 未覆盖理由（见 §2 机器清单，两处必须一致）                                                                                                                                                                                                                                                                                                |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `traces`            | 平台挡住 + 书面豁免（w200 的 ADT trace 端点 404），无读路径可编排                                                                                                                                                                                                                                                                         |
-| `runtime-resources` | SM50/SM66/SM04/ST03/STAD/DB02/AL11 共 5 个计划工具全部未建                                                                                                                                                                                                                                                                                |
-| `interfaces`        | SMQ1/SM58/WE02/BD87 等场景已由 read_qrfc_queues 与 read_idoc_status 覆盖；邮件队列一项经用户裁定撤下（SOST 在 w200 上无活流量、无收件人地址、无 SMTP 类型），替代能力已于 2026-09-28 补齐为 SM58 tRFC 错误队列 `read_trfc_error_entries`（族 `gap` 随之为空）。但本表列的是**有无剧本**：尚无任何剧本引用这三个工具，故此族仍无剧本可编排 |
-| `authorizations`    | `read_authorization_trace` 只报内核追踪开关；追踪数据与角色→权限对象解析仍未建                                                                                                                                                                                                                                                            |
-| `landscape`         | compare_systems、promote_object 未建，且需先确认是否存在 QAS/PRD 连接                                                                                                                                                                                                                                                                     |
+本表只回答一件事：**有没有剧本引用这个族的工具**。它**不是**"这些族的能力缺失"清单——工具是否建成是 `contracts/verification-registry.json` 的事实，两件事不可混写。§2 的机器清单里每个条目带 `reasonKind`，`test/ops-runbooks.test.ts` 会拿它去核对登记表：只有 `platform-blocked` 才允许说"工具不可用"，`runbook-not-written` 的族必须其计划工具**全部 `verified`**。
 
-> `archive-alerts` 已移出本表：SARA 归档状态由 `read_archive_status` 覆盖（剧本 `archive-status-check`）。该族的 RZ20 CCMS 告警（`read_ccms_alerts`）已于 2026-09-28 实现，读的是 `ALALERTDB` 的**告警历史**——哪些告警被记录、针对哪个对象与字段、何时清除——而**不是** RZ20 实时监视：RZ20 看的是内存 MTE 树，本表不含，所以空结果不等于系统健康。该工具目前尚未被任何剧本引用（族的未覆盖理由见 §4）。族本身仍为 `partial`：仍缺归档文件明细，且 `ADMI_FILES` 在 w200 为空，无样本可描述。脚本覆盖不等于族闭环。
+| 族       | 未覆盖理由（见 §2 机器清单，两处必须一致）                                                |
+| -------- | ----------------------------------------------------------------------------------------- |
+| `traces` | **`platform-blocked`**：平台挡住 + 书面豁免（w200 的 ADT trace 端点 404），无读路径可编排 |
+
+**15 族中 14 族已有剧本**（2026-10-03 起）：`archive-alerts`、`dumps`、`jobs`、`locks`、`logs`、`query`、`spool-output`、`system-info`、`transport`、`updates`、`runtime-resources`、`interfaces`、`authorizations`、`landscape`。唯一无剧本的 `traces` 是**平台豁免**，不是待补项。
+
+> `archive-alerts` 由 `read_archive_status` 覆盖（剧本 `archive-status-check`）。该族的 RZ20 CCMS 告警（`read_ccms_alerts`）读的是 `ALALERTDB` 的**告警历史**——哪些告警被记录、针对哪个对象与字段、何时清除——而**不是** RZ20 实时监视：RZ20 看的是内存 MTE 树，本表不含，所以空结果不等于系统健康。**族本身已闭环**：`ADMI_FILES` 在 w200 为空是**目标数据**造成的披露边界（无样本可描述），已作为 `archive-alerts` 的 `boundary` 记录，不是缺口。脚本覆盖不等于族闭环，族的端到端判据仍由 `opsCapability` 块计算。
 
 一个族只有在工具存在时才可能被剧本覆盖，所以**剧本覆盖率的上限就是工具覆盖率**——它不制造覆盖，只把已经能做的事固化成可重复流程。族的端到端判据仍在 `docs/ops-coverage.md` §6，由 `opsCapability` 块计算。
 
 ## 5. 本文件不做的事
 
-- 不写入 SAP：全部 18 个被引用的工具在工具登记表里都是 `readOnlyHint: true`，`test/ops-runbooks.test.ts` 会拒绝任何非只读工具进入剧本。
+- 不写入 SAP：剧本引用的每个工具在工具登记表里都是 `readOnlyHint: true`，`test/ops-runbooks.test.ts` 会拒绝任何非只读工具进入剧本。**具体个数不在此手写**——§2 的机器清单是唯一出处（手写数字会与清单漂移）。
 - 不创建数据来服务剧本：没有真实失败更新就不做"制造一个失败更新"来验收 `search_failed_updates`；没有真锁就不造锁。
 - 不代替逐工具契约文档：参数取值范围、错误码、字段含义以 §1 列出的各工具文档为准。
 - 不声明覆盖率：剧本存在 ≠ 能力达标；达标与否只能由 `opsCapability.summary.criterionMet` 回答。

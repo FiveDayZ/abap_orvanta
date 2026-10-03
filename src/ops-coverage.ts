@@ -269,7 +269,7 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     // the whole function module from inside a macro, which made every job that had not finished
     // unreadable, and the JOB_LOG arm answered an empty job log with the same unsupported default. A
     // gap that is empty is the result of that work, not a claim made in its place: the evidence is
-    // .doc/code-update-20261001-135303.md and docs/ops-coverage.md section 7.25.
+    // .doc/code-update-20261001-135303.md and docs/ops-coverage.md section 7.29.
     gap: ""
   },
   {
@@ -332,7 +332,7 @@ export const OPS_FAMILIES: readonly OpsFamilyDefinition[] = [
     actionRequired: false,
     gap: "",
     // Reclassified from gap to boundary on 2026-09-30 by the operator's ruling, on the strength of a
-    // feasibility investigation of `reprocess_failed_update` (docs/ops-coverage.md 7.19, record
+    // feasibility investigation of `reprocess_failed_update` (docs/ops-coverage.md 7.24, record
     // .doc/code-update-20260930-091414.md). The investigation measured that the capability has no
     // caller-usable interface on this target at all, which is a property of the platform rather than
     // a commitment still to be built - so it belongs in the boundary, where the project keeps fixed

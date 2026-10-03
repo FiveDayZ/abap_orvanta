@@ -18,10 +18,12 @@
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import test from "node:test"
 import { OPS_FAMILIES } from "../src/ops-coverage.js"
 import { TOOL_NAMES, registryAnnotations, toolNamesForProfile } from "../src/tool-registry.js"
 import { resolveToolProfile } from "../src/tool-profile.js"
+import type { VerificationEntry } from "../src/verification-registry.js"
 
 const DOCUMENT = "docs/ops-runbooks.md"
 const MANIFEST_START = "<!-- ops-runbooks:manifest:start -->"
@@ -33,10 +35,23 @@ interface RunbookEntry {
   tools: string[]
 }
 
+/**
+ * Why a family has no runbook. The distinction is the whole point: "the tools are missing" and "no
+ * runbook cites the tools" are different facts, and the doc used to conflate them - it kept calling
+ * four families' tools "not built" long after every one of them was verified. The kind is checked
+ * against the registry below, so the sentence can no longer drift away from the evidence.
+ */
+type UncoveredReasonKind = "platform-blocked" | "runbook-not-written"
+
+const UNCOVERED_REASON_KINDS: readonly UncoveredReasonKind[] = [
+  "platform-blocked",
+  "runbook-not-written"
+]
+
 interface RunbookManifest {
   profile: string
   runbooks: RunbookEntry[]
-  uncoveredFamilies: { id: string; reason: string }[]
+  uncoveredFamilies: { id: string; reasonKind: UncoveredReasonKind; reason: string }[]
 }
 
 const text = readFileSync(DOCUMENT, "utf8")
@@ -159,8 +174,11 @@ test("the runbooks stay small enough to be read and re-run", () => {
   const distinct = new Set(parsed.runbooks.flatMap((entry) => entry.tools))
   // A tripwire, not a quality bar: growing this set means the runbooks cover more of the surface,
   // and that should be a deliberate edit rather than a side effect of adding steps somewhere.
+  // Raised from 19 to 34 deliberately on 2026-10-03, when the four remaining runnable families
+  // (runtime-resources, interfaces, authorizations, landscape) were given runbooks - 14 families
+  // now carry one and only `traces` stays uncovered as a platform exemption.
   assert.ok(
-    distinct.size <= 19,
+    distinct.size <= 34,
     `runbooks name ${distinct.size} distinct tools; raise this bound deliberately`
   )
   for (const entry of parsed.runbooks) {
@@ -187,4 +205,139 @@ test("all fifteen ops families are either covered or explicitly uncovered", () =
     assert.ok(familyIds.includes(entry.id), `uncovered entry ${entry.id} is not a family`)
     assert.ok(entry.reason.trim().length > 40, `uncovered family ${entry.id} needs a real reason`)
   }
+})
+
+/**
+ * A written reason must agree with the evidence registry, not merely be long enough.
+ *
+ * The old assertion here was `reason.trim().length > 40`, which four false sentences satisfied while
+ * claiming that families whose tools were all `verified` had "not been built". Length is not the
+ * property that matters; the property is whether the sentence matches the registry. So the check is
+ * split by the declared kind and each kind is held to the fact it asserts:
+ *
+ *   - `platform-blocked`      - no planned tool may be `verified` (the platform cannot both block it
+ *                               and let it work);
+ *   - `runbook-not-written`   - every planned tool must be `verified`, because that is exactly what
+ *                               the sentence claims: the tools exist, only the runbook is missing.
+ *
+ * The registry is the outside truth and the document is the thing under test, so a wrong sentence
+ * fails. `uncoveredReasonProblems` is separated out so the rule can be falsified below.
+ */
+function uncoveredReasonProblems(
+  manifest: RunbookManifest,
+  entries: ReadonlyMap<string, VerificationEntry>
+): string[] {
+  const problems: string[] = []
+  for (const entry of manifest.uncoveredFamilies) {
+    if (!UNCOVERED_REASON_KINDS.includes(entry.reasonKind)) {
+      problems.push(`${entry.id}: unknown reasonKind ${JSON.stringify(entry.reasonKind)}`)
+      continue
+    }
+    const family = OPS_FAMILIES.find((candidate) => candidate.id === entry.id)
+    if (!family) {
+      problems.push(`${entry.id}: not a declared ops family`)
+      continue
+    }
+    const planned = family.plannedToolNames
+    const missing = planned.filter((tool) => entries.get(tool) === undefined)
+    if (missing.length > 0) {
+      problems.push(`${entry.id}: planned tool(s) absent from the registry: ${missing.join(", ")}`)
+      continue
+    }
+    const verified = planned.filter((tool) => entries.get(tool)?.status === "verified")
+    if (entry.reasonKind === "platform-blocked" && verified.length > 0) {
+      problems.push(
+        `${entry.id}: declared platform-blocked, but ${verified.join(", ")} is verified - ` +
+          `the platform is not blocking it`
+      )
+    }
+    if (entry.reasonKind === "runbook-not-written" && verified.length !== planned.length) {
+      const notVerified = planned.filter((tool) => entries.get(tool)?.status !== "verified")
+      problems.push(
+        `${entry.id}: declared runbook-not-written (tools exist), but ${notVerified.join(", ")} ` +
+          `is not verified`
+      )
+    }
+  }
+  return problems
+}
+
+const verificationRegistry = (): Map<string, VerificationEntry> => {
+  const registry = JSON.parse(
+    readFileSync(resolve("contracts", "verification-registry.json"), "utf8")
+  ) as { entries: VerificationEntry[] }
+  return new Map(registry.entries.map((entry) => [entry.tool, entry]))
+}
+
+test("every uncovered family's reason agrees with the evidence registry", () => {
+  const problems = uncoveredReasonProblems(parsed, verificationRegistry())
+  assert.deepEqual(
+    problems,
+    [],
+    `uncovered family reasons contradict the registry:\n${problems.join("\n")}`
+  )
+})
+
+test("the reason check can actually fail", () => {
+  // Without this the assertion above could be vacuous - e.g. if a typo made every entry skip, or if
+  // the registry lookup silently returned "verified" for everything. Both branches of the rule are
+  // driven into the failure state with entries the registry cannot have produced.
+  const registry = verificationRegistry()
+  const family = OPS_FAMILIES.find((candidate) => candidate.id === "landscape")
+  assert.ok(family, "landscape must be a declared family for this control to mean anything")
+  const [firstTool] = family.plannedToolNames
+  assert.ok(firstTool, "landscape must declare at least one planned tool")
+
+  // A verified tool described as platform-blocked is refused.
+  const verifiedButBlocked = uncoveredReasonProblems(
+    {
+      profile: "ops",
+      runbooks: [],
+      uncoveredFamilies: [
+        { id: "landscape", reasonKind: "platform-blocked", reason: "x".repeat(41) }
+      ]
+    },
+    registry
+  )
+  assert.ok(
+    verifiedButBlocked.some((problem) => problem.includes("platform is not blocking it")),
+    `expected the platform-blocked branch to fail on a verified family, got ${JSON.stringify(verifiedButBlocked)}`
+  )
+
+  // A tool that is not verified described as "tools exist, only the runbook is missing" is refused.
+  const downgraded = new Map(registry)
+  downgraded.set(firstTool, {
+    ...(registry.get(firstTool) as VerificationEntry),
+    status: "unverified"
+  })
+  const notBuiltButCalled = uncoveredReasonProblems(
+    {
+      profile: "ops",
+      runbooks: [],
+      uncoveredFamilies: [
+        { id: "landscape", reasonKind: "runbook-not-written", reason: "x".repeat(41) }
+      ]
+    },
+    downgraded
+  )
+  assert.ok(
+    notBuiltButCalled.some((problem) => problem.includes("is not verified")),
+    `expected the runbook-not-written branch to fail on an unverified tool, got ${JSON.stringify(notBuiltButCalled)}`
+  )
+
+  // And an unknown kind is refused rather than ignored.
+  const unknownKind = uncoveredReasonProblems(
+    {
+      profile: "ops",
+      runbooks: [],
+      uncoveredFamilies: [
+        { id: "landscape", reasonKind: "made-up" as UncoveredReasonKind, reason: "x".repeat(41) }
+      ]
+    },
+    registry
+  )
+  assert.ok(
+    unknownKind.some((problem) => problem.includes("unknown reasonKind")),
+    `expected an unknown reasonKind to be refused, got ${JSON.stringify(unknownKind)}`
+  )
 })

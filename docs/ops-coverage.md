@@ -53,13 +53,12 @@ an exemption on a family the platform does not block), so the check is known to 
 > A family counts as end-to-end only when its declared `gap` is empty. Monitoring reads never
 > compensate for a missing action.
 
-Two consequences worth stating explicitly, because both were previously easy to overstate:
+Two consequences worth stating explicitly, because both were previously easy to overstate. **Both are now historical illustrations, superseded by later deliveries - kept because they show why the rule bites, not as a statement about today:**
 
-- The **jobs** family does not become `read-and-act` because job details and spool text can be read.
-  Job control is absent, so the family stays `partial` and the gap names the missing control.
-- The **transport** family has both readers and writers (create, add objects, cleanup) and is still
-  `partial`, because release and import - the operations that actually move an object forward - are
-  absent.
+- ~~The **jobs** family does not become `read-and-act` because job details and spool text can be read. Job control is absent, so the family stays `partial` and the gap names the missing control.~~ **Superseded:** the four job-control actions (create/modify/release/cancel) were delivered and verified on 2026-10-01, so `jobs` is `read-and-act` with an empty gap (`docs/ops-acceptance-matrix.md` §`jobs`).
+- ~~The **transport** family has both readers and writers (create, add objects, cleanup) and is still `partial`, because release and import - the operations that actually move an object forward - are absent.~~ **Superseded:** `import_transport_queue` is verified, and `release_transport_task` was withdrawn by an operator ruling as a recorded platform boundary rather than an open gap, so `transport` is `read-and-act` with an empty gap.
+
+The rule itself has not changed, and today **no family declares a non-empty gap**; read the live values from `opsCapability`, never from these paragraphs.
 
 ### 3.1 Family count, and the one exemption
 
@@ -252,6 +251,13 @@ declare success with a required family still open. The block computes exactly th
 `closedRequiredFamilies >= ceil(requiredEndToEndFamilyCount * 0.95)` - so the criterion is checked in
 code, not in prose.
 
+**Operator ruling, 2026-10-03: 14 of 14 is binding, not 13.** The 2026-09-25 plan's section 8 clause 1
+asked for _at least 13_ families _(>= 95%)_, and thirteen of fourteen is 92.9%, so the plan's own two
+halves disagreed. The operator ruled this section's stricter reading binding. The plan's _13_ is
+therefore superseded as a target, 92.9% is never presented as 95%, and the generated matrix states the
+ruling instead of carrying an open conflict (`scripts/generate-ops-matrix.mjs`). The current reading is
+14 / 14, so the ruling settles the wording rather than the outcome.
+
 Points 1 and 2 are the same conjunction in the code, not two independent readings: a required family
 enters the criterion's numerator (`closedRequiredFamilyCount`) only when its declared gap is empty
 **and** every present tool is `verified`. A family whose gap is empty while a tool is `failed`,
@@ -284,7 +290,9 @@ whose tools carry no recorded call is not complete.
 
 ### 7.1 Evidence standing and the OP0-2 worklist (2026-09-25; table at 0.50.11, D1 session at 0.50.15)
 
-Of the 20 `ops` tools, `contracts/verification-registry.json` now records `verified` 15,
+> **Historical snapshot - superseded, kept for the record.** Everything below is the 2026-09-25/0.50.11 reading of a **20-tool** `ops` group. That group has since grown to **44** tools and closed out completely (`verified` 41 / `platform-unsupported` 3 / `failed` 0 / `unverified` 0); the OP0-2 worklist it describes was finished. Do not read today's standing from this section - it is narrative and is not regenerated. The live per-tool values are in `contracts/verification-registry.json` and `docs/ops-acceptance-matrix.md`.
+
+Of the 20 `ops` tools _as of that date_, `contracts/verification-registry.json` recorded `verified` 15,
 `platform-unsupported` 1 (`analyze_abap_traces`), `failed` 1 (`cleanup_transport_entries`) and
 `unverified` 3. The first fourteen verified entries were registered from runtime records this
 workspace already held (2026-08-27 to 2026-09-25, versions 0.3.x to 0.50.4) - see
@@ -320,7 +328,7 @@ with `APPROVAL_FILE_MISSING`, and `maintenance-diagnostic-approvals.json` approv
 Section 7.3 records how both are re-issued.
 
 One counting note so the numbers above cannot be misread: the twenty tools of the `ops` **group** are
-what the table above covers, and the `query` family additionally holds two tools from the `data` group
+what the table above covers as of 2026-09-25 - the group has since grown to 44 - and the `query` family additionally holds two tools from the `data` group
 that are exposed in the `ops` **profile** (`read_abap_table`, verified; `execute_data_query`, verified
 by the D1 session). Evidence standing is therefore stated per tool in
 `contracts/verification-registry.json`, never as a single family-level score.
@@ -650,7 +658,7 @@ registry 条目数再次等于工具数（149）。
 实现），**缺口集合不变**（仍是 `read_performance_snapshot` 与 `read_db_activity`），族仍为 `partial`。
 工具面 **151 工具 / 90 只读**，ops 组 **28**，registry **151 条 = 工具数**（verified 23 / unverified 121）。
 新工具在服务重启并完成一次真实 w200 调用前保持 `unverified`。
-（**后续更新**：该读数已被 §7.16 取代 —— N3 后为 **152 工具 / 91 只读**，ops 组 **29**，registry **152 条**。
+（**后续更新**：该读数已被 §7.20 取代 —— N3 后为 **152 工具 / 91 只读**，ops 组 **29**，registry **152 条**。
 本行保留为当时快照。）
 
 **更正（2026-09-26，本轮复核）：「平台读不到」不成立。** 上面那句结论只依据**一次** `TPFYPROPTY`
@@ -729,7 +737,7 @@ SELECT A.TRKORR, B.AS4TEXT
 未在真实系统上跑过，闭环主张就不成立。其中"联接路径无运行期证据"一条已于 2026-09-30 12:15 由真机正向
 证据解除；"右/全/交叉联接与 `LIMIT` 不翻译"一条已于同日由 7.13 解除。
 
-### 7.13 右/全/交叉联接与 `LIMIT` 落地（2026-09-30）
+### 7.12 右/全/交叉联接与 `LIMIT` 落地（2026-09-30）
 
 **本批只做"能被精确表达"的那一半。** 缺口句原本列了五项（右联接、全联接、交叉联接、表达式、子查询、
 `LIMIT`）。其中右/全/交叉联接与 `LIMIT` 可以在**不引入第二套类型语义**的前提下精确实现：联接依旧是
@@ -792,7 +800,7 @@ A.TRKORR = '<不存在的键>' WHERE B.TRKORR = '<存在的键>'` 返回**恰好
 写明的那张表"（在旧规则的每一种合法写法下二者相同，故不含行为回归）。拒绝文案里的建议也按联接类型分叉：
 指向 `ON` 的旧建议对 `FULL` 是死路，改为"在 `ON` 里比较两列，或者交给 SAP"。
 
-### 7.14 投影算术项：按官方计算规则在服务端复刻（2026-09-30，路线 A）
+### 7.13 投影算术项：按官方计算规则在服务端复刻（2026-09-30，路线 A）
 
 **裁定**：7.13 末尾把"表达式与子查询怎么处理"交回用户，用户 2026-09-30 裁定**路线 A**——不把表达式认定为
 平台边界，而是**在服务端实现一个能精确复刻 SAP 类型语义的层**。理由链是：平台确实没有求值通道（原生数据预览
@@ -848,7 +856,7 @@ A.TRKORR = '<不存在的键>' WHERE B.TRKORR = '<存在的键>'` 返回**恰好
 `EXPR_1` 且整型除法按商业舍入、`querySource.expressionColumns` 有映射、字典读取确为 `DD03L`、以及不带算术项的
 语句**不**读字典）。
 
-### 7.15 WHERE 里的算术项：同一层，判定在服务端（2026-09-30 第二批）
+### 7.14 WHERE 里的算术项：同一层，判定在服务端（2026-09-30 第二批）
 
 **7.14 把 `WHERE` 中的算术项明确留给了后续批次**，理由写得也对：它会改变**过滤**语义，而本方言的立身之本
 恰恰是"普通比较一律下推给 SAP，不在服务端重写 SAP 的类型语义"。第二批的做法不是推翻这条理由，而是把它
@@ -893,7 +901,15 @@ A.TRKORR = '<不存在的键>' WHERE B.TRKORR = '<存在的键>'` 返回**恰好
 `querySource.whereExpressions` 有映射"、"项匹配不到就返回零行"、"**没有可下推条件时按行上界截断即拒绝**"、
 "普通比较仍照旧工作且不报任何服务端判定的项"）取真机只读证据；联接投影项的真机脚本尚待补。
 
-### 7.20 联接投影里的算术项：同一层，类型按别名各自表解析（2026-09-30 第三批）
+> **【已被取代 · 2026-10-04 标注】勿据本段判断现状。** 本段两处现在时结论——「族状态仍 `partial`、必需族闭环仍
+> **10/14**、`criterionMet` 仍 `false`」与「联接投影项的真机脚本尚待补」——是**当时（2026-09-30 第二批）**的读数，
+> 均已被**同日后续批次**取代：§7.15 落地联接投影项、§7.25 落地集合测试、§7.26 落地标量子查询并**清空 `query` 族
+> 缺口**（`gap` 置空、`closeRoutes` 改为 `["none"]`）；五切片真机只读读数合计 **35/35**
+> （`.cache/r29|r31|r33|r35|r38-verify.json`，2026-09-30 19:24–20:34，用户重启 4849 之后取得）。
+> 原文保留不改，依「不可变历史记录」与「不删除」两条约定。现状以 `docs/ops-acceptance-matrix.md` 与
+> `get_capability_report` 的 `opsCapability` 块为准。
+
+### 7.15 联接投影里的算术项：同一层，类型按别名各自表解析（2026-09-30 第三批）
 
 **前两批都把这一项点名留给后续**（7.14 与 7.15 的"仍不翻译"里都写着"联接投影里限定列上的算术项"），本批把它做掉，
 做法与单表路径**同源**而非重写：表达式引擎、计算类型规则、拒绝码全集、`EXPR_n` 命名与 `expressionColumns` 映射全部复用。
@@ -928,7 +944,7 @@ A.TRKORR = '<不存在的键>' WHERE B.TRKORR = '<存在的键>'` 返回**恰好
 `partial`，必需族闭环仍 **10/14**、`criterionMet` 仍 `false`。与前两批相同，本能力**目前只有本地证据**：
 `127.0.0.1:4849` 上运行的是旧构建（服务端改动需重启才生效），因此三个切片在 w200 上**都没有读数**。
 
-### 7.12 OP0-2 取证扫描器 - 构建陈旧必须先被拦下（2026-09-26）
+### 7.16 OP0-2 取证扫描器 - 构建陈旧必须先被拦下（2026-09-26）
 
 **为什么要有这个闸门**：2026-09-25 那次 DB02 结论出错，根因不是判断力，而是**证据的来源没有被标识**：
 在跑的构建与源码**版本号相同、工具面不同**（143 vs 151），而当时的探针只比对了版本号，于是"旧构建的一次
@@ -974,7 +990,7 @@ SAP。2026-09-26 10:27–10:40 期间，SAP 的公开 ICF 端点照常应答，�
 联接正例被 `parseJoinedTableSelect` 解析为 `E070, E07T` 且两者 `isTableAllowed=true`；负例语法合法但
 `MARA` 被判 `TABLE_NOT_ALLOWED`（`assertTableAllowed` 抛出）。
 
-### 7.13 验收口径的两处硬读法（2026-09-26）
+### 7.17 验收口径的两处硬读法（2026-09-26）
 
 验收矩阵新增 **DoD 读数块**（计划 §8 四条逐条计算，见 `docs/ops-acceptance-matrix.md` 的
 "Definition of done"）。两处必须写死的读法：
@@ -989,7 +1005,7 @@ SAP。2026-09-26 10:27–10:40 期间，SAP 的公开 ICF 端点照常应答，�
    豁免。第 3 条的"未完成"因此不是欠账，而是**尚未实现的处置能力**：`transport (2)`、`jobs (4)`、
    `locks (1)`、`updates (1)`、`landscape (2)` 共 10 个计划中的处置工具还不存在（对应计划 Q-O1 的裁定）。
 
-### 7.14 三个 runtime-resources 读的失败定性（2026-09-27）
+### 7.18 三个 runtime-resources 读的失败定性（2026-09-27）
 
 `read_work_processes`、`read_user_sessions`、`read_file_system_directory` 在 2026-09-27 的实机取证
 （`.cache/evidence-ops-n1c/`）中均回 `status: "unavailable"`，**保留 `unverified`**。三者根因**不同**，
@@ -1020,7 +1036,7 @@ node .cache/mcp-call.mjs read_function_module_interface '{"connectionId":"w200",
 **另需注意的分类器陷阱（已修，见 7.15）**：三者的答复同时含 `queryWarnings` 与（对前两者）
 `_RESPONSE_EMPTY` 字样；按子串判定会把它们误判成"空但健康"，从而把**未发生的读取**提议登记为 `verified`。
 
-### 7.15 取证扫描器按答复自身状态判定（2026-09-27 修复）
+### 7.19 取证扫描器按答复自身状态判定（2026-09-27 修复）
 
 `scripts/probe-ops-read-sweep.mjs` 的 `classify()` 原按**错误码子串**判定，两个方向都曾判错：
 
@@ -1036,7 +1052,7 @@ node .cache/mcp-call.mjs read_function_module_interface '{"connectionId":"w200",
 
 **验证**：对 `ops-n1b` 已捕获的 8 份原始答复重跑新分类器，8/8 与各自 `status` 一致（旧规则 5/8 错）。
 
-### 7.16 N3 第一批 - `read_authorization_trace`（2026-09-27）
+### 7.20 N3 第一批 - `read_authorization_trace`（2026-09-27）
 
 N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮只落地服务侧那一项**，并纠正计划中的两处错误前提。
 
@@ -1061,26 +1077,26 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 
 **纠正计划的两处错误前提（重要，直接影响后续工期与安全）**：
 
-1. ~~**"所有助手改动都要载体 + 人工 F8"是过度概括。**~~ —— **【本条结论已于同日撤回，见 §7.17】**
+1. ~~**"所有助手改动都要载体 + 人工 F8"是过度概括。**~~ —— **【本条结论已于同日撤回，见 §7.21】**
    自写保护守卫只对 `ZORVANTA_MCP_CORE` 生效这一**事实**成立，但由它推出"F8 瓶颈大部分不成立"是**错的**：
    `Z_ORVANTA_OPS_READ` / `Z_ORVANTA_MAINT_READ` 虽然是可直写的（不在 CORE），但**契约上只读**
    （`readOnly = true` 无条件写入响应信封，且服务侧 `z.literal(true)` 硬校验），**不能承载任何处置分支**；
    而写类 ops 工具（`create_transport_request` / `add_objects_to_transport`）实测路由到
    `Z_ORVANTA_MCP_DYNPRO_API`，该 FM **在** `ZORVANTA_MCP_CORE` ⇒ **写分支仍然必须走载体 + F8**。
-   精确结论见 §7.17。
+   精确结论见 §7.21。
 2. **`delete_sap_lock` 不能建在 `DEQUEUE_ALL` 上。** 该函数导入参数只有 `_SYNCHRON`，**不含任何锁键**，
    语义是"释放全系统所有锁"，无法表达"删除指定的一把锁"，用它实现该工具**语义错误且极其危险**。
    精确路径存在：SAP 为每个锁对象生成 `DEQUEUE_<锁对象名>`（实测枚举到该族；抽查 `DEQUEUE_E_TABLE` 为
    `remoteEnabled=false`）⇒ 仍走助手，但须**按锁对象动态派发**。**待裁定**（Q-N11，见取证 §5.1）。
    **【本条路径判断已于 2026-09-28 更正】**：真正被 SM12 使用的入口是 **`ENQUE_DELETE`**（FG `SENT`，
    `remoteEnabled=false`，键是整行 `SEQG3`），不是按锁对象派发 `DEQUEUE_<obj>`；依据是 SM12 程序
-   `RSENQRR2` 的 `FORM enqdelete_marked`。精确结论、权限检查与部署状态见 **§7.18**。
+   `RSENQRR2` 的 `FORM enqdelete_marked`。精确结论、权限检查与部署状态见 **§7.23**。
 
 **未做**：12 个助手分支的实现与部署、操作码表登记、载体生成、指纹重钉。**未执行任何测试**。
 
-### 7.17 N3 范围更正 - 写分支仍须载体 + F8（2026-09-27）
+### 7.21 N3 范围更正 - 写分支仍须载体 + F8（2026-09-27）
 
-§7.16 第 1 条对本批成本模型的判断**是错的**，此处撤回并给出实测依据。正确的划分是：
+§7.20 第 1 条对本批成本模型的判断**是错的**，此处撤回并给出实测依据。正确的划分是：
 
 | 半边        | 分支                                                                                                       | 落入哪个助手                                           | 受自写守卫                    | 部署方式                                 |
 | ----------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------- | ---------------------------------------- |
@@ -1107,9 +1123,9 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
    `$helperCapabilityOperations`，而该表（`bootstrap-sap-helper.ps1:66-69` 注释 + `:6224` 消费点）是
    `$repositoryFunctionSource` 的 CAPABILITIES 表，该 body 部署到 EXECUTE/DYNPRO 两者。
 
-**对工期的影响**：写半边（6 项）**仍必须**载体 + F8；好消息是可按 `/doc/release-process.md §7.2` 既有范式
+**对工期的影响**：写半边（6 项）**仍必须**载体 + F8；好消息是可按 `docs/release-process.md §7.2` 既有范式
 **合并到 2 个载体**（EXEC 与 DYNPRO 各一），而非 6 次往返。读半边（6 项）确实不需要 F8。
-**故 §7.16 的"瓶颈大部分不成立"应改为"瓶颈只对读半边消失"。**
+**故 §7.20 的"瓶颈大部分不成立"应改为"瓶颈只对读半边消失"。**
 
 **教训（写入纪律）**：守卫的适用范围（`SELF_FUNCTION_GROUP_FORBIDDEN` 只认 CORE）与**该助手能不能承载写**
 是两个独立约束。前者是"工具会不会被拒"，后者是"契约允不允许"。由前者为真推出后者为真，属于把
@@ -1120,7 +1136,7 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 > 上面「只认 CORE」的适用范围与整段结论**仍然成立**；变化的是 CORE 组多了一条**需显式批准**的 MCP 自助写入
 > 路径，且该路径**尚未实测**（未部署、未调用）。
 
-### 7.17 `archive-alerts` 闭环与 COUNT 聚合误诊（2026-09-28）
+### 7.22 `archive-alerts` 闭环与 COUNT 聚合误诊（2026-09-28）
 
 **`archive-alerts` 进入闭环（必需族 2/14 → 3/14，21%）**。两个声明工具都已 `verified`
 （`read_ccms_alerts` 10:55、`read_archive_status` 14:24:58，部署见 `.doc/code-update-20260928-142711.md`），
@@ -1141,7 +1157,7 @@ N3 方案 A 共 13 项（12 个助手分支 + 1 个服务侧工具）。**本轮
 **教训**：同一句错误文案在"名字不在受支持集合"与"形式不被翻译"两种情形下被复用，就会产出自我矛盾的
 结论；错误码的分类维度应是**调用方要改什么**，不是抛出点在代码里的位置。
 
-### 7.18 OP2 locks - `delete_sap_lock` 的助手分支与服务侧（2026-09-28）
+### 7.23 OP2 locks - `delete_sap_lock` 的助手分支与服务侧（2026-09-28）
 
 **已实现（服务侧 + 助手分支），未部署、未调用**：`delete_sap_lock` 端到端成形——`src/lock-delete.ts`
 （输入 schema、确认串 `DELETE_SAP_LOCK`、码表白名单、结果构造）、`src/tools.ts` 的 `deleteSapLock`、
@@ -1151,7 +1167,7 @@ contracts / tool-registry（`D` / `2.15` / `["LOCK_DELETE"]`）/ mcp / capabilit
 分支。工具面 157 → **158 工具 / 94 只读**，ops 组 34 → **35**，能力组 32 → **33**，registry **158 条 = 工具数**
 （verified 仍 32）；计划缺口 10 → **9**；**必需族仍 5/14（36%）**、`criterionMet=false`。
 
-**纠正 §7.16 第 2 条的路径判断：SM12 的删除入口是 `ENQUE_DELETE`，不是按锁对象派发 `DEQUEUE_<obj>`。**
+**纠正 §7.20 第 2 条的路径判断：SM12 的删除入口是 `ENQUE_DELETE`，不是按锁对象派发 `DEQUEUE_<obj>`。**
 `ENQUE_DELETE`（FG `SENT`，99 行，`remoteEnabled=false`）：导入 `CHECK_UPD_REQUESTS`（默认 0）、
 `SUPPRESS_SYSLOG_ENTRY`（默认 space），导出 `SUBRC`，`TABLES ENQ LIKE SEQG3`；正文对每一行用该行自己的
 `GNAME/GMODE/GARG/GUSR/GUSRVB` 调内核（`CALL 'C_ENQUEUE' ID 'OPCODE' FIELD 'R'`）。**调用方证据**在 SM12 自身
@@ -1189,7 +1205,7 @@ EXECUTE = 2.11** ⇒ 2.15 的 `LOCK_DELETE` 分支**尚未部署**，工具**从
 **未做**：载体未运行、SAP 侧未改动、工具未被调用（因此 `locks` 族仍 `partial`，gap 文本保留——工具已建不等于
 有真实调用证据）。**未执行任何测试**（人工优先门）。
 
-### 7.19 OP2 updates - `reprocess_failed_update` 立项结论（2026-09-30，用户授权单独立项）
+### 7.24 OP2 updates - `reprocess_failed_update` 立项结论（2026-09-30，用户授权单独立项）
 
 **立项范围**：只做可行性与设计判定——不写 SAP、不改服务端代码、不新增工具、不动族定义。
 
@@ -1247,7 +1263,7 @@ EXECUTE = 2.11** ⇒ 2.15 的 `LOCK_DELETE` 分支**尚未部署**，工具**从
 全族端到端 8/15 → **9/15（53% → 60%）**；状态计数 partial 6 → 5、read-only 7 → 8；判据 3 的"计划但未建的动作能力"
 只剩 jobs (2)。**未做**：未改任何 SAP 对象、未写 SAP、未部署、未调用任何写工具、未执行任何测试（人工优先门）。
 
-### 7.21 集合测试 `IN (SELECT ...)`：同一层，比较的是值而不是文本（2026-09-30 第四批）
+### 7.25 集合测试 `IN (SELECT ...)`：同一层，比较的是值而不是文本（2026-09-30 第四批）
 
 **本批交付**：`WHERE <列> IN (SELECT <列> FROM <表> [WHERE ...])` 与 `NOT IN`。内层语句由**同一套文法**
 解析（恰好一列、可选 `WHERE`），读取时走**同一个读取器与同一读取上界**；内层是聚合、算术项、`*`、`GROUP BY`、
@@ -1301,7 +1317,7 @@ GREEN——类别不识别仍比较、被测列不读——已补断言后转红
 **未做**：未改任何 SAP 对象、未写 SAP、未创建或释放传输（`GR2K923472` 仍 `D`）、未删除任何文件、未执行任何
 真实系统写入；工作树未提交未推送。记录 `.doc/code-update-20260930-181505.md`。
 
-### 7.22 标量子查询落地与 `query` 族缺口清空（2026-09-30 第五批）
+### 7.26 标量子查询落地与 `query` 族缺口清空（2026-09-30 第五批）
 
 **本批交付**：`WHERE <列> <运算符> (SELECT ...)`，六种比较运算符都收，内层语句由**同一套方言**解析。内层必须
 **恰好答出一行**：无 `GROUP BY` 的单个聚合（`COUNT`/`SUM`/`MIN`/`MAX`），或单个普通列而其读取恰好返回一行。
@@ -1381,7 +1397,7 @@ DDIC 33 派发对 33 声明（两项读数与上一批一致，因为本批只�
 **未做**：未改任何 SAP 对象、未写 SAP、未创建或释放传输（`GR2K923472` 仍 `D`）、未删除任何文件；工作树未提交
 未推送。记录 `.doc/code-update-20260930-200604.md`、`.doc/code-update-20260930-203830.md` 与本次记录。
 
-### 7.23 `authorizations` 族后半：角色→权限对象解析（2026-09-30 第六批）
+### 7.27 `authorizations` 族后半：角色→权限对象解析（2026-09-30 第六批）
 
 **本批交付**：新工具 `read_role_authorizations`（ops 组、只读、`target-specific`、无助手依赖），把一个角色解析为它
 **存储**的权限对象/字段/取值，全部走共享评审读取器：
@@ -1420,7 +1436,7 @@ headless 2 trees）。同批因新增工具而更新的**依赖测试与文案**
 `src/capabilities.ts` 的 `authorization-assignments` 能力工具表与观察文本、`src/user-authorizations.ts` 的头注释与
 答案 `notes`、`src/contracts.ts` 的 `read_user_authorizations` 描述（三处从"解析是另一个工具的事/未获批准"改为
 **点名 `read_role_authorizations`**）、`src/ops-coverage.ts` 的族定义（`plannedToolNames` + `gap` + `OPS_TOOL_ROLES`）、
-`docs/ops-coverage.md` 7.7 与 7.16 两处历史段落的**更正指针**，以及两个矩阵产物（`docs/tool-index.md` /
+`docs/ops-coverage.md` 7.7 与 7.20 两处历史段落的**更正指针**，以及两个矩阵产物（`docs/tool-index.md` /
 `contracts/tool-index.json` / `docs/ops-acceptance-matrix.md`）。
 
 **证伪**：`.cache/r43-falsify.mjs` **5/5 FALSIFIED**，复原后全绿——① 参数文件通路按**语言行**而不是按参数文件重复
@@ -1449,7 +1465,7 @@ evidence 指向 `.doc/code-update-20260930-211934.md`）。**首跑 13/14 是脚
 保留）；工作树未提交未推送。本批记录：`.doc/code-update-20260930-211417.md`（实现）与
 `.doc/code-update-20260930-211934.md`（真机读数）。
 
-### 7.24 授权追踪**行半边**真机落地、溢出拒绝带证据、transport 真机阻塞点（2026-09-30 第七批）
+### 7.28 授权追踪**行半边**真机落地、溢出拒绝带证据、transport 真机阻塞点（2026-09-30 第七批）
 
 **A. `read_authorization_trace` 行半边的真机根因与修法**。首跑（`.cache/r75-key-shape.json`）以
 `AUTH_TRACE_DATA_CALL_FAILED` 收场，助手捕获到的传输层原文是 **`SAP SOAP response exceeded 10 MiB`**——
@@ -1506,13 +1522,13 @@ CTSGERRMSGS`（`.cache/r85-callee-header.txt`）；②ADT 接口文档同样列�
 
 **族与闸门**：A 使 `authorizations` 族**真闭环**（行半边有真机证据）——`npm run ops:matrix:generate` 输出
 **15 族、必需族闭环 12/14**、`criterionMet` 仍 **false**（未闭环：`jobs`、`transport`）。
-`npm run matrix:generate` → **165 工具 / 100 只读**。（**该读数已被 §7.25 取代**：jobs 族于 2026-10-01 真机闭环，
+`npm run matrix:generate` → **165 工具 / 100 只读**。（**该读数已被 §7.29 取代**：jobs 族于 2026-10-01 真机闭环，
 此后为 **13/14**、`criterionMet` 仍 false，未闭环只剩 `transport`。）
 
 **未做**：未改任何 SAP 标准对象；未创建任何传输；`GR2K923472` 仍 `D`；未删除任何文件（本批 `.cache/r84`–`r93`
 全部保留，含两次失败的释放取证）。本批记录：`.doc/code-update-20261001-012029.md`（在工作区根 `.doc`）。
 
-### 7.25 jobs 族写侧真机闭环与运维助手两处同族缺陷（2026-10-01 第八批）
+### 7.29 jobs 族写侧真机闭环与运维助手两处同族缺陷（2026-10-01 第八批）
 
 本批把 jobs 族从"已实现、未调用"推到**真机 11/11 全绿**，并在过程中修掉运维助手里两处**同类**缺陷。三处
 改动分属两个助手，一次收口。
@@ -1575,3 +1591,47 @@ modify 把它变成 `'S'`，随后 `release` 回 `JOB_RELEASE_FAILED`（SAP `sub
 
 **未做**：未改任何 SAP 标准对象；未创建传输；`GR2K923472` 保持 E070 状态 `D` **未释放**；未删除任何文件或
 SAP 对象（载体 `ZORVANTA_MCP_DYN222`–`DYN227` 全部保留）。本批记录：`.doc/code-update-20261001-135303.md`。
+
+### 7.30 Section renumbering map (2026-10-03)
+
+This document's §7.x subsections had accumulated duplicate numbers (two §7.13, two §7.14, two
+§7.15 and two §7.17, with §7.12 sitting after §7.20), so a citation such as "§7.13" was ambiguous.
+The subsections were renumbered **sequentially in physical order** on 2026-10-03. Nothing was
+deleted, merged or reordered - only the numbers changed.
+
+Records under `.doc/code-update-*.md` are immutable historical documents: they keep citing the
+numbers as they stood when they were written, and this table is how those citations are resolved.
+Citations inside this document and in the repository's live documents were updated in the same
+change.
+
+| Old  | New  | Subsection                                                                                     |
+| ---- | ---- | ---------------------------------------------------------------------------------------------- |
+| 7.1  | 7.1  | Evidence standing and the OP0-2 worklist (2026-09-25; table at 0.50.11, D1 session at 0.50.15) |
+| 7.2  | 7.2  | Ops runbooks (OP4-2)                                                                           |
+| 7.3  | 7.3  | Re-issuing the approval files (helper-bound approvals)                                         |
+| 7.4  | 7.4  | Allowlist additions and the platform boundary (2026-09-25 rulings)                             |
+| 7.5  | 7.5  | OP1-4 - 系统基线与系统参数（2026-09-25）                                                       |
+| 7.6  | 7.6  | OP1-2 - 接口与队列（2026-09-25）                                                               |
+| 7.7  | 7.7  | OP1-3 - 用户与权限分配（2026-09-25）                                                           |
+| 7.8  | 7.8  | OP1-1 - 运行时资源：工作进程与会话（2026-09-25）                                               |
+| 7.9  | 7.9  | OP1-1 第二批 - 应用服务器目录列表（2026-09-26）                                                |
+| 7.10 | 7.10 | OP1-1 第三批 - 负载目录与性能通路的取证结论（2026-09-26）                                      |
+| 7.11 | 7.11 | OP1-7 收口 - 受控只读查询的联接支持（2026-09-26）                                              |
+| 7.13 | 7.12 | 右/全/交叉联接与 `LIMIT` 落地（2026-09-30）                                                    |
+| 7.14 | 7.13 | 投影算术项：按官方计算规则在服务端复刻（2026-09-30，路线 A）                                   |
+| 7.15 | 7.14 | WHERE 里的算术项：同一层，判定在服务端（2026-09-30 第二批）                                    |
+| 7.20 | 7.15 | 联接投影里的算术项：同一层，类型按别名各自表解析（2026-09-30 第三批）                          |
+| 7.12 | 7.16 | OP0-2 取证扫描器 - 构建陈旧必须先被拦下（2026-09-26）                                          |
+| 7.13 | 7.17 | 验收口径的两处硬读法（2026-09-26）                                                             |
+| 7.14 | 7.18 | 三个 runtime-resources 读的失败定性（2026-09-27）                                              |
+| 7.15 | 7.19 | 取证扫描器按答复自身状态判定（2026-09-27 修复）                                                |
+| 7.16 | 7.20 | N3 第一批 - `read_authorization_trace`（2026-09-27）                                           |
+| 7.17 | 7.21 | N3 范围更正 - 写分支仍须载体 + F8（2026-09-27）                                                |
+| 7.17 | 7.22 | `archive-alerts` 闭环与 COUNT 聚合误诊（2026-09-28）                                           |
+| 7.18 | 7.23 | OP2 locks - `delete_sap_lock` 的助手分支与服务侧（2026-09-28）                                 |
+| 7.19 | 7.24 | OP2 updates - `reprocess_failed_update` 立项结论（2026-09-30，用户授权单独立项）               |
+| 7.21 | 7.25 | 集合测试 `IN (SELECT ...)`：同一层，比较的是值而不是文本（2026-09-30 第四批）                  |
+| 7.22 | 7.26 | 标量子查询落地与 `query` 族缺口清空（2026-09-30 第五批）                                       |
+| 7.23 | 7.27 | `authorizations` 族后半：角色→权限对象解析（2026-09-30 第六批）                                |
+| 7.24 | 7.28 | 授权追踪**行半边**真机落地、溢出拒绝带证据、transport 真机阻塞点（2026-09-30 第七批）          |
+| 7.25 | 7.29 | jobs 族写侧真机闭环与运维助手两处同族缺陷（2026-10-01 第八批）                                 |

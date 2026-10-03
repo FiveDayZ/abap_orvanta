@@ -231,17 +231,21 @@ lines.push(
 )
 lines.push("")
 lines.push(
-  "**Recorded conflict, needing an operator ruling.** Plan section 8 clause 1 asks for *at least 13*"
+  "**Operator ruling, 2026-10-03: the binding number is 14 of 14, not 13.** Plan section 8 clause 1"
 )
 lines.push(
-  "families *(>= 95%)*. Thirteen of fourteen is 92.9%, so the two halves of that sentence disagree."
+  "asked for *at least 13* families *(>= 95%)*; thirteen of fourteen is 92.9%, so the two halves of"
 )
 lines.push(
-  "This service therefore requires **14 of 14** unless the operator rules that the plan's *13* is the"
+  "that sentence disagreed. The operator ruled the code's stricter reading binding: `criterionMet` is"
 )
 lines.push(
-  "binding number - and that ruling decides whether a 92.9% reading may be presented as 95%."
+  "`closedRequiredFamilies >= ceil(14 * 0.95)` = **14**, so a 92.9% reading is never presented as 95%."
 )
+lines.push(
+  "The plan's *13* is superseded as a target. The clause-1 row above reads 14 / 14 today, so the"
+)
+lines.push("ruling settles the wording, not the outcome.")
 lines.push("")
 
 // A generated view may not contradict its own inputs.

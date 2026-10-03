@@ -42,7 +42,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
   locks: "read-and-act",
   // Was "partial" until 2026-09-30, when the operator ruled the missing repeat capability a platform
   // boundary rather than a gap: the feasibility investigation of `reprocess_failed_update` measured
-  // that no caller-usable interface for it exists on this target (docs/ops-coverage.md 7.19), so the
+  // that no caller-usable interface for it exists on this target (docs/ops-coverage.md 7.24), so the
   // family declares no gap and needs no action.
   updates: "read-only",
   "system-info": "read-only",
@@ -85,7 +85,7 @@ const EXPECTED_FAMILY_STATES: Readonly<Record<string, string>> = {
  * `import_transport_queue` was registered as the transport family's import precheck, and to 4 on
  * 2026-09-30, when the operator ruled the updates family's repeat capability a platform boundary:
  * `reprocess_failed_update` left the plan because no caller-usable interface for it exists on this
- * target (docs/ops-coverage.md 7.19), not because it was built. It fell to 2 on 2026-09-30 with the
+ * target (docs/ops-coverage.md 7.24), not because it was built. It fell to 2 on 2026-09-30 with the
  * runtime-resources batch, which registered the two metrics readers the plan still listed,
  * `read_db_activity` and `read_performance_snapshot`. It reached 0 on 2026-09-30 with the jobs
  * batch: `create_background_job` and `modify_background_job` were registered, so the plan lists no
@@ -854,5 +854,52 @@ test("clause 2 exempts only a platform boundary whose record resolves", () => {
       `${tool} is exempted but its record cannot be opened`
     )
     assert.ok(!realSplit.open.includes(tool), `${tool} must be exempt or open, never both`)
+  }
+})
+
+/**
+ * `docs/ops-coverage.md` section numbers must be unique and sequential.
+ *
+ * This defect was found and re-reported across at least four earlier batches (records
+ * .doc/code-update-20260930-181505.md, -20261003-134949.md, -20261003-135904.md,
+ * -20261003-131702.md) and each time deferred as "reported, not fixed" - because nothing could fail
+ * on it. Two subsections shared §7.13, §7.14, §7.15 and §7.17, and §7.12 sat after §7.20, so a
+ * citation like "§7.13" was ambiguous and §7.12 was simply in the wrong place.
+ *
+ * The scan is over the real document, and it is a property of the numbering - not of any list kept
+ * in this test - so it fails whenever the file drifts again.
+ */
+test("the ops coverage document's section numbers are unique and in order", () => {
+  const lines = readFileSync(resolve("docs", "ops-coverage.md"), "utf8").split(/\r?\n/)
+
+  const seen = new Map<string, number[]>()
+  const ordered: { num: string; line: number }[] = []
+  for (const [index, line] of lines.entries()) {
+    // Only §7.x subsections: the renumbering map is itself a §7.x heading and is included on
+    // purpose, because it must take its place in the same sequence.
+    const match = /^### (7\.\d+)\s/.exec(line)
+    if (!match) continue
+    const num = match[1] as string
+    if (!seen.has(num)) seen.set(num, [])
+    seen.get(num)?.push(index + 1)
+    ordered.push({ num, line: index + 1 })
+  }
+
+  assert.ok(ordered.length > 20, `expected the documented subsections, found ${ordered.length}`)
+
+  const duplicates = [...seen].filter(([, at]) => at.length > 1)
+  assert.deepEqual(
+    duplicates.map(([num, at]) => `§${num} at lines ${at.join(", ")}`),
+    [],
+    "section numbers must be unique: a duplicated number makes every citation to it ambiguous"
+  )
+
+  const numbers = ordered.map((entry) => Number.parseInt(entry.num.slice(2), 10))
+  for (let i = 1; i < numbers.length; i++) {
+    assert.equal(
+      numbers[i],
+      (numbers[i - 1] as number) + 1,
+      `§7.x must ascend by one: line ${ordered[i]?.line} has §${ordered[i]?.num} after §${ordered[i - 1]?.num}`
+    )
   }
 })
