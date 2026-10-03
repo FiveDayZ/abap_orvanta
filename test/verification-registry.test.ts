@@ -867,7 +867,15 @@ test("the registry records the honest gap rather than inflating it", () => {
     // batch falsified. That batch also observed that the ddic helper's read probe advertises protocol
     // 1.7 while both tools declare a 1.16/1.17 floor, and the writes succeeded anyway, so the
     // read-probe protocol number does not gate the write path.
-    totals.verified <= 133,
+    // Raised from 133 to 134 on 2026-10-03 (R40): patch_ddic_transparent_table_settings moved off
+    // `unverified` on one real call that changed four DD09V settings of ZORVANTA_R7C_TMP in package
+    // ZABAP at once (data class, size category, buffering mode, change logging), independently read
+    // back with the same version and fingerprint and with all five field rows unchanged. That row had
+    // said no real call had been recorded, which this batch falsified. The same batch deliberately did
+    // NOT raise the bound for append_ddic_transparent_table_fields: its live call wrote and activated
+    // both appended fields, but the receipt was a false negative from a verification defect this batch
+    // fixed, so it stays `unverified` until a call on the fixed build returns a clean receipt.
+    totals.verified <= 134,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

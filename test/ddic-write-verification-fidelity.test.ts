@@ -14,6 +14,13 @@ import { MockBackend } from "./mock-backend.js"
  * 2. A field description is SAP's text for the field's data element. The live patch re-pointed PAYLOAD
  *    from CHAR10 to INT4 and SAP stored `自然数`; the expectation still held the previous data element's
  *    `字符字段长度 = 10`, so an applied and activated patch was reported as failed.
+ * 3. An appended field's description is the same SAP-owned text, and an append request never supplies
+ *    one at all: appendTransparentTableRawFields splices in rows that carry no DDTEXT, so the
+ *    expectation asserted "" against the text SAP derives from the data element. Measured on w200
+ *    2026-10-03 against ZORVANTA_R7C_TMP: R15TEXT (CHAR10) and R15DATE (DATS) were written and
+ *    activated, and the verification failed the completed write with `fields[3].description: SAP stored
+ *    "字符字段长度 = 10" instead of ""`. Evidence `.doc/orvanta-ddic-r40-append-fields-2026-10-03T08-04-56-639Z.json`
+ *    and the read-back that shows version 20261003160455 with both fields present.
  *
  * Evidence: `.cache/r7e-state/01-E1b-create-tmp-table-create_ddic_transparent_table-2026-10-02T15-24-10-780Z.json`,
  * `01-E2-patch-payload-int4-patch_ddic_transparent_table_fields-2026-10-02T15-24-54-799Z.json` and the
@@ -21,7 +28,7 @@ import { MockBackend } from "./mock-backend.js"
  *
  * These tests are the drift guard in both directions: the two SAP-owned texts must not fail a write
  * that landed, and every other divergence - including a field description on a field the caller did
- * NOT re-point - must still fail.
+ * NOT re-point, and an appended field whose data element SAP stored differently - must still fail.
  */
 
 const connectionId = "w200"
@@ -87,6 +94,32 @@ class DerivedFieldTextBackend extends MockBackend {
   }
 }
 
+/**
+ * SAP derives every appended field's description from the field's data element, and the append request
+ * never carries one. `divergingField` additionally makes SAP store another data element for one
+ * appended field, which is a real divergence the verification must still refuse.
+ */
+class DerivedAppendedFieldTextBackend extends MockBackend {
+  constructor(private readonly divergingField?: string) {
+    super()
+  }
+
+  override async callSapDdic(
+    connectionId: string,
+    request: Parameters<MockBackend["callSapDdic"]>[1]
+  ) {
+    const result = await super.callSapDdic(connectionId, request)
+    if (request.operation !== "APPEND_TRANSPARENT_TABLE_FIELDS") return result
+    const appended = new Set((request.fields ?? []).map((field) => field.FIELDNAME))
+    for (const field of result.fields ?? []) {
+      if (!appended.has(field.FIELDNAME ?? "")) continue
+      field.DDTEXT = `Derived text for ${field.ROLLNAME}`
+      if (this.divergingField === field.FIELDNAME) field.ROLLNAME = "CHAR40"
+    }
+    return result
+  }
+}
+
 function createInput(overrides: Record<string, unknown> = {}) {
   return {
     connectionId,
@@ -121,6 +154,24 @@ async function patchInput(service: ToolService, changes: unknown[]) {
     transportNumber: "GR2K923472",
     confirmation: "DESTRUCTIVE_SCHEMA_CHANGE",
     acknowledgeDataLoss: true
+  } as never
+}
+
+async function appendInput(service: ToolService) {
+  const read = JSON.parse(
+    await service.readDdicTransparentTable({ connectionId, objectName: "ZCMCP_COMPLEX" })
+  ) as { version: string; fingerprint: string }
+  return {
+    connectionId,
+    objectName: "ZCMCP_COMPLEX",
+    expectedVersion: read.version,
+    expectedFingerprint: read.fingerprint,
+    fields: [
+      { name: "R15TEXT", dataElement: "CHAR20" },
+      { name: "R15DATE", dataElement: "CHAR40" }
+    ],
+    packageName: "ZABAP",
+    transportNumber: "GR2K923472"
   } as never
 }
 
@@ -170,5 +221,32 @@ test("a field description the caller did not re-point is still verified exactly"
       ])
     ),
     /definition\.fields\[0\]\.description/
+  )
+})
+
+test("an append whose fields get SAP-derived descriptions is not reported as a failed verification", async () => {
+  const service = new ToolService(new DerivedAppendedFieldTextBackend())
+  const result = JSON.parse(
+    await service.appendDdicTransparentTableFields(await appendInput(service))
+  ) as { definition: { fields: Array<{ name: string; dataElement: string; description: string }> } }
+  const appended = result.definition.fields.filter((field) =>
+    ["R15TEXT", "R15DATE"].includes(field.name)
+  )
+  assert.equal(appended.length, 2)
+  // The receipt still reports the text SAP derived, so the caller sees the real stored value.
+  assert.deepEqual(
+    appended.map((field) => [field.name, field.dataElement, field.description]),
+    [
+      ["R15TEXT", "CHAR20", "Derived text for CHAR20"],
+      ["R15DATE", "CHAR40", "Derived text for CHAR40"]
+    ]
+  )
+})
+
+test("an appended field whose data element SAP stored differently still fails", async () => {
+  const service = new ToolService(new DerivedAppendedFieldTextBackend("R15TEXT"))
+  await assert.rejects(
+    service.appendDdicTransparentTableFields(await appendInput(service)),
+    /definition\.fields\[\d+\]\.dataElement: SAP stored "CHAR40" instead of "CHAR20"/
   )
 })

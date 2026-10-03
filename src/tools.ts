@@ -4722,6 +4722,19 @@ export class ToolService {
       ...current,
       fields: appendTransparentTableRawFields(current.fields, appendedFields)
     }
+    const expectedDefinition = ddicDefinition(expectedResult, "transparentTable")
+    // A field's description is SAP's text for its data element, and this request never supplies one:
+    // appendTransparentTableRawFields splices in rows that carry no DDTEXT, so the expectation would
+    // assert "" against whatever SAP derives from the data element. Measured on w200 2026-10-03: two
+    // appended fields (CHAR10, DATS) were written and activated, and the verification then failed the
+    // completed write with `fields[3].description: SAP stored "字符字段长度 = 10" instead of ""`. The
+    // sibling patch tool drops the same description for a field it re-pointed, and
+    // create_ddic_transparent_table never asserts one at all, so dropping it here matches both. Every
+    // other property of every appended field, and the whole preserved layout, is still asserted exactly.
+    const appendedNames = new Set(appendedFields.map((field) => field.FIELDNAME))
+    for (const field of expectedDefinition.fields as Array<Record<string, unknown>>) {
+      if (appendedNames.has(String(field.name))) delete field.description
+    }
     const layoutComponents = transparentTableComponents(current.fields).map(
       (component) => component.name
     )
@@ -4732,7 +4745,7 @@ export class ToolService {
       packageName,
       connectionId,
       {
-        ...ddicDefinition(expectedResult, "transparentTable")
+        ...expectedDefinition
       },
       // New direct fields are inserted before the first Append marker, so every component of the
       // existing layout survives untouched; the caller gets that list back instead of inferring it.
