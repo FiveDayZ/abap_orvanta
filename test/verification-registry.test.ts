@@ -875,7 +875,17 @@ test("the registry records the honest gap rather than inflating it", () => {
     // NOT raise the bound for append_ddic_transparent_table_fields: its live call wrote and activated
     // both appended fields, but the receipt was a false negative from a verification defect this batch
     // fixed, so it stays `unverified` until a call on the fixed build returns a clean receipt.
-    totals.verified <= 134,
+    // Raised from 134 to 135 on 2026-10-03 (R42): that deferred receipt arrived. After the operator
+    // restarted the service, and after build identity was confirmed rather than assumed (PID 56104 on
+    // 4849, parent start-4849-verified.ps1 pointing at .wt-r21, whose dist carries the new identifier
+    // appendedNames while the shared worktree's dist does not), the same tool appended R15NOTE to
+    // ZORVANTA_R7C_TMP and answered DDIC_OBJECT_SAVED with a completed receipt and
+    // outcomeMayBeUnknown false; an independent read-back returned the same version and fingerprint
+    // with all six fields, R15NOTE carrying exactly the SAP-derived description the pre-fix build had
+    // reported as a mismatch. The same batch also recorded that the duplicate-refusal path is NOT a
+    // zero-SAP-call refusal: its receipt says sapInvocationStarted true, so the evidence of no state
+    // change is the byte-identical read-back, not the error text.
+    totals.verified <= 135,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
