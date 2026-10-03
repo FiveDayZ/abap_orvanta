@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZABAPFILESYSTEM_SESSION",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:04:12.220Z",
+ "finishedAt": "2026-10-03T12:04:12.318Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"enhancement_implementation\",\n  \"enhancementName\": \"ZABAPFILESYSTEM_SESSION\",\n  \"packageName\": \"ZABAP\",\n  \"definition\": {\n    \"name\": \"ZABAPFILESYSTEM_SESSION\",\n    \"tool\": \"HOOK_IMPL\",\n    \"shortText\": \"persist sessions/locks for abap filesystem extension\",\n    \"activeRaw\": \"X\",\n    \"active\": true,\n    \"inactiveRaw\": \"\",\n    \"hasInactiveVersion\": false,\n    \"savedInactiveRaw\": \"\",\n    \"hasSavedInactiveVersion\": false,\n    \"unsavedInactiveRaw\": \"\",\n    \"hasUnsavedInactiveVersion\": false,\n    \"originalObjectType\": \"CLAS\",\n    \"originalObjectName\": \"CL_REST_HTTP_HANDLER\",\n    \"mainObjectType\": \"CLAS\",\n    \"mainObjectName\": \"CL_REST_HTTP_HANDLER\",\n    \"programName\": \"CL_REST_HTTP_HANDLER==========CP\",\n    \"hookImplementations\": [\n      {\n        \"spotName\": \"\",\n        \"programName\": \"CL_REST_HTTP_HANDLER==========CP\",\n        \"extId\": \"1\",\n        \"id\": \"1\",\n        \"overwriteRaw\": \"\",\n        \"replacement\": false,\n        \"methodRaw\": \"\",\n        \"method\": false,\n        \"mode\": \"D\",\n        \"fullName\": \"\\\\TY:CL_REST_HTTP_HANDLER\\\\IN:IF_HTTP_EXTENSION\\\\ME:HANDLE_REQUEST\\\\SE:BEGIN\\\\EI\",\n        \"parentFullName\": \"\",\n        \"sourceCount\": 10,\n        \"source\": [\n          \"  \\\"Stateful mode support (compatible with implementation in 7.51)\",\n          \"  \\\"required for write support in visual studio code extension\",\n          \"\",\n          \"  data:__abapfs_stateful type string.\",\n          \"  __abapfs_stateful = server->request->get_header_field( 'X-sap-adt-sessiontype' ).\",\n          \"  if __abapfs_stateful = 'stateful'.\",\n          \"    gv_stateful = abap_true.\",\n          \"  elseif __abapfs_stateful = 'stateless'.\",\n          \"    gv_stateful = abap_false.\",\n          \"  endif.\"\n        ]\n      }\n    ],\n    \"badiImplementations\": [],\n    \"filters\": []\n  },\n  \"fingerprint\": \"911b4b2c16862feb530d9951f46dedde8733dfadb12abba22a557c3fc4f74288\"\n}"
+}

@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZBADI_SD_REF_DOC_CUST",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:05:19.951Z",
+ "finishedAt": "2026-10-03T12:05:20.013Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"enhancement_implementation\",\n  \"enhancementName\": \"ZBADI_SD_REF_DOC_CUST\",\n  \"packageName\": \"$TMP\",\n  \"definition\": {\n    \"name\": \"ZBADI_SD_REF_DOC_CUST\",\n    \"tool\": \"BADI_IMPL\",\n    \"shortText\": \"BAdI BADI_SD_REF_DOC_CUST\",\n    \"activeRaw\": \"X\",\n    \"active\": true,\n    \"inactiveRaw\": \"X\",\n    \"hasInactiveVersion\": true,\n    \"savedInactiveRaw\": \"X\",\n    \"hasSavedInactiveVersion\": true,\n    \"unsavedInactiveRaw\": \"\",\n    \"hasUnsavedInactiveVersion\": false,\n    \"originalObjectType\": \"\",\n    \"originalObjectName\": \"\",\n    \"mainObjectType\": \"\",\n    \"mainObjectName\": \"\",\n    \"programName\": \"\",\n    \"hookImplementations\": [],\n    \"badiImplementations\": [],\n    \"filters\": []\n  },\n  \"fingerprint\": \"1bcb5680192e836c7ac3aba3ed98ee4ceaebfcebd9b26d68791ab04dc0d7d4a2\"\n}"
+}

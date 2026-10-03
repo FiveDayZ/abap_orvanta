@@ -914,7 +914,9 @@ test("the registry records the honest gap rather than inflating it", () => {
     // its own TADIR re-read found the entry still present, so R17 left it unverified too and named
     // the surviving TADIR row and transport entry in its note as residue rather than cleaning them.
     // R46 measured why they could not be cleaned and R48 promoted the row once the operator cleared
-    // that precondition; both are covered below.
+    // that precondition; both are covered below. R17's three tools were not the whole enhancement
+    // family: the New BAdI write pair shares the same helper WHEN block, and R49 promoted its update
+    // arm for the same reason R46 promoted the hook update - see the last paragraph.
     // A tripwire that only ever rises by the number of tools a batch touched would have forced two
     // false promotions here. It rises by one because one is what was observed.
     // Raised from 139 to 140 on 2026-10-03 (R46). update_enhancement_hook_implementation reached the
@@ -938,7 +940,15 @@ test("the registry records the honest gap rather than inflating it", () => {
     // created through this tooling joins an open task, so its own TADIR cleanup is refused with
     // OBJECT_LOCKED_FOR_ORDER until the object leaves the task. The row's notes say so rather than
     // letting the promotion imply a one-call delete that no measurement supports.
-    totals.verified <= 141,
+    // Raised from 141 to 142 on 2026-10-03 (R49). update_new_badi_implementation is the other arm of the
+    // same WHEN block R46 repaired, so it inherited that fix; R49 confirmed it by measurement rather than
+    // by reading the source, calling it on a real standing Z* New BAdI implementation and getting
+    // BADI_ENHANCEMENT_UPDATED. Note what the promotion does not claim: the target was a standing customer
+    // object, not a throwaway, so the payload was built as a semantic no-op and the fingerprint is
+    // identical before and after. The success path therefore demonstrably runs and reads back; that a
+    // changed value lands is still unmeasured, and the row's notes say so. create_new_badi_implementation
+    // stays unverified because it needs a new object and no such authorization was given.
+    totals.verified <= 142,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

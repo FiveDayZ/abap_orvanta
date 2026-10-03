@@ -1,0 +1,17 @@
+{
+ "probe": "r47-call",
+ "tool": "search_enhancement_objects",
+ "arguments": {
+  "pattern": "Z*",
+  "types": [
+   "BADII",
+   "BADI"
+  ],
+  "maxResultsPerType": 50,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:04:47.581Z",
+ "finishedAt": "2026-10-03T12:04:47.805Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"pattern\": \"Z*\",\n  \"results\": [\n    {\n      \"requestedType\": \"BADII\",\n      \"repositoryKind\": \"badi_implementation\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    },\n    {\n      \"requestedType\": \"BADI\",\n      \"repositoryKind\": \"badi_definition\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    }\n  ],\n  \"summary\": {\n    \"requestedTypeCount\": 2,\n    \"availableTypeCount\": 2,\n    \"unavailableTypeCount\": 0,\n    \"objectCount\": 0\n  },\n  \"coverage\": {\n    \"repositorySearchOnly\": true,\n    \"classicVersusNewBadiDetermined\": false,\n    \"activationOrConfigurationInspected\": false\n  }\n}"
+}

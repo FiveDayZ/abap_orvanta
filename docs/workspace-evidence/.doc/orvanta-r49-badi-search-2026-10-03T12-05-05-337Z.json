@@ -1,0 +1,19 @@
+{
+ "probe": "r47-call",
+ "tool": "search_badi_objects",
+ "arguments": {
+  "pattern": "Z*",
+  "types": [
+   "ENHO",
+   "ENHS",
+   "SXSD",
+   "SXCI"
+  ],
+  "maxResultsPerType": 50,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:05:05.380Z",
+ "finishedAt": "2026-10-03T12:05:05.388Z",
+ "isError": true,
+ "responseText": "MCP error -32602: Input validation error: Invalid arguments for tool search_badi_objects: [\n  {\n    \"received\": \"ENHO\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"SXSD/XD\",\n      \"SXCI/XI\",\n      \"ENHS/XS\",\n      \"ENHO/XHB\"\n    ],\n    \"path\": [\n      \"types\",\n      0\n    ],\n    \"message\": \"Expected one of SXSD/XD, SXCI/XI, ENHS/XS, or ENHO/XHB\"\n  },\n  {\n    \"received\": \"ENHS\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"SXSD/XD\",\n      \"SXCI/XI\",\n      \"ENHS/XS\",\n      \"ENHO/XHB\"\n    ],\n    \"path\": [\n      \"types\",\n      1\n    ],\n    \"message\": \"Expected one of SXSD/XD, SXCI/XI, ENHS/XS, or ENHO/XHB\"\n  },\n  {\n    \"received\": \"SXSD\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"SXSD/XD\",\n      \"SXCI/XI\",\n      \"ENHS/XS\",\n      \"ENHO/XHB\"\n    ],\n    \"path\": [\n      \"types\",\n      2\n    ],\n    \"message\": \"Expected one of SXSD/XD, SXCI/XI, ENHS/XS, or ENHO/XHB\"\n  },\n  {\n    \"received\": \"SXCI\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"SXSD/XD\",\n      \"SXCI/XI\",\n      \"ENHS/XS\",\n      \"ENHO/XHB\"\n    ],\n    \"path\": [\n      \"types\",\n      3\n    ],\n    \"message\": \"Expected one of SXSD/XD, SXCI/XI, ENHS/XS, or ENHO/XHB\"\n  }\n]"
+}

@@ -1,0 +1,35 @@
+{
+ "probe": "r47-call",
+ "tool": "update_new_badi_implementation",
+ "arguments": {
+  "enhancementName": "ZACC_DOCUMENT",
+  "expectedFingerprint": "6ca2344a51d68a0ecdc8180adabd9d7e97ba720720fdaddcaef1b32a0a702f34",
+  "implementationName": "ZACC_DOCUMENT",
+  "implementationClass": "ZCL_IM_ACC_DOCUMENT",
+  "active": true,
+  "defaultImplementation": false,
+  "filters": [
+   {
+    "COMPARE": "=",
+    "CONJ_IDX": "1",
+    "DISJ_IDX": "1",
+    "FILTER_CHAR_VALUE1": "BKPFF",
+    "FILTER_INT_VALUE1": "0",
+    "FILTER_INT_VALUE2": "0",
+    "FILTER_NAME": "AWTYP",
+    "FILTER_NUMERIC_VALUE1": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "FILTER_NUMERIC_VALUE2": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "FILTER_TYPE": "C"
+   }
+  ],
+  "description": "F-02 OA 付款",
+  "packageName": "ZOA",
+  "transportNumber": "GR2K923472",
+  "confirmation": "UPDATE_ENHANCEMENT_IMPLEMENTATION",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:06:38.471Z",
+ "finishedAt": "2026-10-03T12:06:39.331Z",
+ "isError": false,
+ "responseText": "{\n  \"status\": \"BADI_ENHANCEMENT_UPDATED\",\n  \"previousFingerprint\": \"6ca2344a51d68a0ecdc8180adabd9d7e97ba720720fdaddcaef1b32a0a702f34\",\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"enhancement_implementation\",\n  \"enhancementName\": \"ZACC_DOCUMENT\",\n  \"packageName\": \"ZOA\",\n  \"definition\": {\n    \"name\": \"ZACC_DOCUMENT\",\n    \"tool\": \"BADI_IMPL\",\n    \"shortText\": \"F-02 OA 付款\",\n    \"activeRaw\": \"X\",\n    \"active\": true,\n    \"inactiveRaw\": \"\",\n    \"hasInactiveVersion\": false,\n    \"savedInactiveRaw\": \"\",\n    \"hasSavedInactiveVersion\": false,\n    \"unsavedInactiveRaw\": \"\",\n    \"hasUnsavedInactiveVersion\": false,\n    \"originalObjectType\": \"\",\n    \"originalObjectName\": \"\",\n    \"mainObjectType\": \"\",\n    \"mainObjectName\": \"\",\n    \"programName\": \"\",\n    \"hookImplementations\": [],\n    \"badiImplementations\": [\n      {\n        \"spotName\": \"BADI_ACC_DOCUMENT\",\n        \"badiName\": \"BADI_ACC_DOCUMENT\",\n        \"implementationName\": \"ZACC_DOCUMENT\",\n        \"implementationClass\": \"ZCL_IM_ACC_DOCUMENT\",\n        \"activeRaw\": \"X\",\n        \"active\": true,\n        \"defaultRaw\": \"\",\n        \"defaultImplementation\": false,\n        \"shortText\": \"F-02 OA 付款\",\n        \"filters\": [\n          {\n            \"COMPARE\": \"=\",\n            \"CONJ_IDX\": \"1\",\n            \"DISJ_IDX\": \"1\",\n            \"FILTER_CHAR_VALUE1\": \"BKPFF\",\n            \"FILTER_INT_VALUE1\": \"0\",\n            \"FILTER_INT_VALUE2\": \"0\",\n            \"FILTER_NAME\": \"AWTYP\",\n            \"FILTER_NUMERIC_VALUE1\": \"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\n            \"FILTER_NUMERIC_VALUE2\": \"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\n            \"FILTER_TYPE\": \"C\"\n          }\n        ]\n      }\n    ],\n    \"filters\": [\n      {\n        \"IMPLEMENTATION_NAME\": \"ZACC_DOCUMENT\",\n        \"DISJ_IDX\": \"1\",\n        \"CONJ_IDX\": \"1\",\n        \"FILTER_NAME\": \"AWTYP\",\n        \"FILTER_TYPE\": \"C\",\n        \"COMPARE\": \"=\",\n        \"FILTER_CHAR_VALUE1\": \"BKPFF\",\n        \"FILTER_CHAR_VALUE2\": \"\",\n        \"FILTER_INT_VALUE1\": \"0\",\n        \"FILTER_INT_VALUE2\": \"0\",\n        \"FILTER_NUMERIC_VALUE1\": \"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\n        \"FILTER_NUMERIC_VALUE2\": \"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\n        \"FILTER_STRING_VALUE1\": \"\",\n        \"FILTER_STRING_VALUE2\": \"\"\n      }\n    ]\n  },\n  \"fingerprint\": \"6ca2344a51d68a0ecdc8180adabd9d7e97ba720720fdaddcaef1b32a0a702f34\",\n  \"transportNumber\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"11853ed7-a910-4121-a899-a636c883c12c\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"update_new_badi_implementation\",\n    \"operationIdHash\": \"16d1fb212df482af765463cfe6467534bf5963daecfa19de01ae30a483712d01\",\n    \"targetKeyHash\": \"56ad9dffd1b3bb7612eebcb1208425cefad2fb04ba969ac8e2631536b2f4612e\",\n    \"inputHash\": \"5c553272a8a463fa166f612bb6f90926ed58c5e043863043da13b5fab728801e\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"enhancement implementation ZACC_DOCUMENT\\\",\\\"requestedOperation\\\":\\\"update_new_badi_implementation\\\",\\\"concurrencyGuard\\\":\\\"fingerprint 6ca2344a51d68a0ecdc8180adabd9d7e97ba720720fdaddcaef1b32a0a702f34\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T12:06:38.824Z\",\n      \"target\": \"enhancement implementation ZACC_DOCUMENT\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"6ca2344a51d68a0ecdc8180adabd9d7e97ba720720fdaddcaef1b32a0a702f34\",\n      \"packageName\": \"ZOA\",\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_enhancement_implementation\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"45901aa8c66852615154216f4c427d96d7a7b3a7fafad93f078bed2118aa40ed\",\n    \"startedAt\": \"2026-10-03T12:06:38.775Z\",\n    \"finishedAt\": \"2026-10-03T12:06:39.320Z\",\n    \"durationMs\": 541,\n    \"receiptHash\": \"ccbff4500463b2b844cccaff6ff3527f7c75bb351dd3da6bcf194f8b2996f3dd\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back enhancement implementation ZACC_DOCUMENT from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}
