@@ -16736,7 +16736,7 @@ function New-InstallProgram {
         "APPEND ls_import TO lt_import.",
         "CLEAR ls_import.",
         "ls_import-parameter = 'IV_DESCRIPTION'.",
-        "ls_import-dbfield = 'TSTCT-TTEXT'.",
+        "ls_import-dbfield = 'DD04T-DDTEXT'.",
         "ls_import-optional = 'X'.",
         "APPEND ls_import TO lt_import.",
         "CLEAR ls_import.",

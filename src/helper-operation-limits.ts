@@ -66,7 +66,7 @@ export const HELPER_OPERATION_PARAMETERS: Readonly<Record<string, HelperOperatio
  * truncated description.
  */
 export const DESCRIPTION_PARAMETER_TYPE_LENGTHS: Readonly<Record<string, number>> = {
-  "TSTCT-TTEXT": 36
+  "DD04T-DDTEXT": 60
 }
 
 /**
@@ -74,32 +74,41 @@ export const DESCRIPTION_PARAMETER_TYPE_LENGTHS: Readonly<Record<string, number>
  *
  * Unlike `IV_OPERATION` it is declared once for EVERY helper, because the shared interface builder
  * in `scripts/bootstrap-sap-helper.ps1` emits `ls_import-parameter = 'IV_DESCRIPTION'` immediately
- * followed by `ls_import-dbfield = 'TSTCT-TTEXT'` outside the per-helper `$operationDbField`
- * branch. `TSTCT-TTEXT` is CHAR 36.
+ * followed by `ls_import-dbfield = 'DD04T-DDTEXT'` outside the per-helper `$operationDbField`
+ * branch. `DD04T-DDTEXT` is the data element `AS4TEXT`, CHAR 60.
+ *
+ * The same defect was found twice, and the reason is worth keeping. The builder declared
+ * `TSTCT-TTEXT` (CHAR 36) until 2026-10-03, so every description longer than 36 characters was
+ * truncated silently: measured on w200 2026-10-03, a 50-character description was stored, echoed by
+ * the write reply and read back as its first 36 characters, with no rejection. The parameter was
+ * widened to CHAR 60 in the GENERATOR — the true ownership point — and deployed with the
+ * `RepairDdicApi` carrier on 2026-10-03. An earlier manual SE37 fix (2026-09-20) had been reverted
+ * by a later carrier run precisely because the generator still declared the 36-wide type, which is
+ * why a fix applied only on the live system does not count as fixed.
  *
  * Read-only evidence, w200 client 200 on 2026-10-03 — `read_function_module_interface` with
- * `includeExecutionSupport` reports `typeName: "TSTCT-TTEXT"`, `maxCharacters: 36` and
- * `valueContract: { dataType: "CHAR", length: 36 }` for `IV_DESCRIPTION` of all three helpers:
- * `Z_ORVANTA_MCP_DDIC_API` (R13), `Z_ORVANTA_MCP_DYNPRO_API` (interface fingerprint `e1d92afe…`)
- * and `Z_ORVANTA_MCP_EXECUTE` (`e069c16d…`). The global claim is measured, not inferred from the
- * generator alone.
+ * `includeExecutionSupport` reports `typeName: "DD04T-DDTEXT"`, `maxCharacters: 60` and
+ * `valueContract: { dataType: "CHAR", length: 60 }` for `IV_DESCRIPTION` of
+ * `Z_ORVANTA_MCP_DDIC_API`, whose interface fingerprint moved from `c5ba11aa…` to `58290c8a…` when
+ * the carrier ran while its `sourceFingerprint` (`d709ad7e…`) stayed unchanged. The same call
+ * measured `Z_ORVANTA_MCP_DYNPRO_API` (`e1d92afe…`) and `Z_ORVANTA_MCP_EXECUTE` (`e069c16d…`) at
+ * `TSTCT-TTEXT` / CHAR 36; the shared builder already declares the 60-wide type for them, so they
+ * are widened whenever their own carrier next runs, and no tool sends either one a description.
  *
  * The helpers assign that value to `DD01V`/`DD04V`/`DD02V`/`DD30V`/`DD25V`/`DD40V-DDTEXT` and
- * `TNROT-TXT`, which are all 60 wide, so the PARAMETER is the binding limit and not the target
- * field. A longer description is truncated by the RFC layer before the helper body runs and the
- * write still succeeds with the truncated text: measured on w200 2026-10-03, a 50-character
- * description was stored, echoed by the write reply and read back as its first 36 characters. This
- * is why four tool contracts that claimed a 60-character description were wrong.
+ * `TNROT-TXT`, which are all 60 wide, so the parameter is no longer the binding limit: a description
+ * of up to 60 characters reaches the target field intact. A longer value is still truncated by the
+ * RFC layer before the helper body runs and the write still succeeds with the truncated text, which
+ * is why the limit is declared on the `description` input rather than enforced: rejecting a longer
+ * value would narrow an accepted value, a contract change that needs an explicit ruling.
  *
- * The service DECLARES this limit on the `description` input of every DDIC write tool instead of
- * rejecting a longer value, because narrowing an accepted value is a contract change that needs an
- * explicit ruling. `length` must equal `DESCRIPTION_PARAMETER_TYPE_LENGTHS[ddicType]`, and
+ * `length` must equal `DESCRIPTION_PARAMETER_TYPE_LENGTHS[ddicType]`, and
  * `test/helper-operation-limits.test.ts` checks that, the generator's declaration and the tool
  * contracts, so the four cannot drift apart silently.
  */
 export const HELPER_DESCRIPTION_PARAMETER: HelperOperationParameter = {
-  ddicType: "TSTCT-TTEXT",
-  length: 36
+  ddicType: "DD04T-DDTEXT",
+  length: 60
 }
 
 /**

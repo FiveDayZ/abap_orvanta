@@ -334,16 +334,18 @@ test("the installer generates no operation that its own parameter would truncate
 /**
  * `IV_DESCRIPTION` is the other fixed-length helper parameter, and the one whose over-long value
  * used to fail SILENTLY. The helpers assign it to `DD01V`/`DD04V`/`DD02V`/`DD30V`/`DD25V`/`DD40V-DDTEXT`
- * and `TNROT-TXT`, which are all 60 wide, so four tool contracts claimed a 60-character description
- * while the RFC layer truncated every value at 36 — measured on w200 2026-10-03, a 50-character
- * description was stored, echoed by the write reply and read back as its first 36 characters, with
- * no rejection.
+ * and `TNROT-TXT`, which are all 60 wide. The shared interface builder declared `TSTCT-TTEXT`
+ * (CHAR 36) until 2026-10-03, so four tool contracts claimed a 60-character description while the
+ * RFC layer truncated every value at 36 — measured on w200 2026-10-03, a 50-character description
+ * was stored, echoed by the write reply and read back as its first 36 characters, with no rejection.
+ * The parameter was widened to CHAR 60 in the generator and deployed with the `RepairDdicApi` carrier
+ * on 2026-10-03.
  *
  * The expectation is not the local constant alone: the DDIC type is read back from the generator, so
  * a wrong type or length in `HELPER_DESCRIPTION_PARAMETER` fails here, and every DDIC write tool
  * that accepts a description must declare the same limit on its own input.
  */
-test("IV_DESCRIPTION is declared as TSTCT-TTEXT by the shared interface builder, and every DDIC write tool declares its CHAR 36 limit", () => {
+test("IV_DESCRIPTION is declared as DD04T-DDTEXT by the shared interface builder, and every DDIC write tool declares its CHAR 60 limit", () => {
   const declaration =
     /"ls_import-parameter = 'IV_DESCRIPTION'\.",\s*"ls_import-dbfield = '([A-Z0-9-]+)'\."/.exec(
       script
@@ -393,6 +395,12 @@ test("IV_DESCRIPTION is declared as TSTCT-TTEXT by the shared interface builder,
     assert.ok(
       !contract.description.includes("limited to 60 characters"),
       `${tool}: the superseded 60-character claim must not come back`
+    )
+    // The CHAR 36 claim was correct about the target field and wrong about the helper parameter, so
+    // it survived review twice. Guard the two markers that made it identifiable.
+    assert.ok(
+      !/TSTCT-TTEXT|at most 36\b/.test(contract.description),
+      `${tool}: the superseded CHAR 36 helper-parameter claim must not come back`
     )
   }
 })
