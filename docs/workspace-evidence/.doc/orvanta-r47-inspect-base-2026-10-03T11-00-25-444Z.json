@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "inspect_enhancement_framework",
+ "arguments": {
+  "objectName": "SAPLV60B",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T11:00:25.496Z",
+ "finishedAt": "2026-10-03T11:00:25.999Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"object\": {\n    \"name\": \"V60B\",\n    \"type\": \"FUGR/I\",\n    \"package\": \"\",\n    \"systemType\": \"STANDARD\",\n    \"uri\": \"/sap/bc/adt/functions/groups/v60b/source/main\",\n    \"sourceUri\": \"/sap/bc/adt/functions/groups/v60b/source/main\",\n    \"sourceFingerprint\": \"a943bb860a5f546da610ba5cb4a6252a990fa3609d83a2a24475346db6fd4ec1\"\n  },\n  \"explicitAnchors\": [\n    {\n      \"kind\": \"point\",\n      \"name\": \"SAPLV60B_02\",\n      \"spots\": [\n        \"ES_SAPLV60B\"\n      ],\n      \"line\": 16,\n      \"statement\": \"ENHANCEMENT-POINT SAPLV60B_02 SPOTS ES_SAPLV60B STATIC.\"\n    },\n    {\n      \"kind\": \"point\",\n      \"name\": \"SAPLV60B_01\",\n      \"spots\": [\n        \"ES_SAPLV60B\"\n      ],\n      \"line\": 19,\n      \"statement\": \"ENHANCEMENT-POINT SAPLV60B_01 SPOTS ES_SAPLV60B STATIC.\"\n    }\n  ],\n  \"enhancementImplementations\": [],\n  \"implicitCandidates\": [\n    {\n      \"kind\": \"source_start\",\n      \"line\": 4,\n      \"position\": \"before_line\"\n    },\n    {\n      \"kind\": \"source_end\",\n      \"line\": 23,\n      \"position\": \"after_line\"\n    }\n  ],\n  \"summary\": {\n    \"explicitAnchorCount\": 2,\n    \"enhancementImplementationCount\": 0,\n    \"routineCount\": 0,\n    \"implicitCandidateCount\": 2\n  },\n  \"coverage\": {\n    \"activeSourceOnly\": true,\n    \"implicitCandidatesAreSourceDerived\": true,\n    \"sapEnhancementEditorConfirmationRequired\": true,\n    \"activationOrConfigurationInspected\": false,\n    \"switchStateInspected\": false,\n    \"runtimeInspected\": false,\n    \"standardRefactoringMayInvalidateCandidates\": true\n  }\n}"
+}

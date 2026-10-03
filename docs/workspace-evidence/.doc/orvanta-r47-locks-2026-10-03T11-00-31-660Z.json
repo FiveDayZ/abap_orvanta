@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "search_sap_locks",
+ "arguments": {
+  "connectionId": "w200",
+  "user": ""
+ },
+ "startedAt": "2026-10-03T11:00:31.707Z",
+ "finishedAt": "2026-10-03T11:00:31.715Z",
+ "isError": true,
+ "responseText": "MCP error -32602: Input validation error: Invalid arguments for tool search_sap_locks: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"username\"\n    ],\n    \"message\": \"Required\"\n  },\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"user\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'user'\"\n  }\n]"
+}

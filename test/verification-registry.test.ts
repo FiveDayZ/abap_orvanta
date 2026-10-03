@@ -904,14 +904,25 @@ test("the registry records the honest gap rather than inflating it", () => {
     // the fingerprint, package and source, and the base program's sourceFingerprint unchanged.
     // update_enhancement_hook_implementation could not reach its success path at all: three real
     // calls were refused by the deployed helper with ENHANCEMENT_INACTIVE_VERSION_EXISTS while every
-    // read of the same object reported no inactive version, so it stays unverified with the measured
-    // evidence in its note rather than a borrowed timestamp. delete_enhancement_implementation
+    // read of the same object reported no inactive version, so R17 left it unverified with the
+    // measured evidence in its note rather than a borrowed timestamp. R46 then proved the cause and
+    // promoted it; see the paragraph below. delete_enhancement_implementation
     // dispatched, removed the framework data, and then reported ENHANCEMENT_DELETE_PARTIAL because
     // its own TADIR re-read found the entry still present; it also stays unverified, and the surviving
     // TADIR row and transport entry are named in its note as residue rather than cleaned.
     // A tripwire that only ever rises by the number of tools a batch touched would have forced two
     // false promotions here. It rises by one because one is what was observed.
-    totals.verified <= 139,
+    // Raised from 139 to 140 on 2026-10-03 (R46). update_enhancement_hook_implementation reached the
+    // success path it had never reached: the guard-order defect R17 could only describe is now
+    // structurally proven and fixed in the generator, and a real call against a freshly created
+    // throwaway hook implementation answered HOOK_ENHANCEMENT_UPDATED with the source it was given,
+    // confirmed by an independent read whose fingerprint matched the receipt. The other two tools in
+    // this batch did not earn a promotion and are not covered by this rise: the create path was
+    // already verified, and delete_enhancement_implementation still cannot complete, because its
+    // TADIR cleanup is refused with OBJECT_LOCKED_FOR_ORDER while the object sits in an open
+    // transport task - a precondition the operator controls, not a missing capability, so the row
+    // stays unverified with the measurement in its note.
+    totals.verified <= 140,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

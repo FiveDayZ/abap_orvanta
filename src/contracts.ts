@@ -1742,14 +1742,20 @@ const toolContractsBase = {
   },
   delete_enhancement_implementation: {
     description:
-      "Permanently delete one exact Z* or Y* ENHO implementation through IF_ENH_OBJECT->DELETE. Requires the current read fingerprint, exact package, existing transport, explicit permanent-delete confirmation, operation receipt protection, and a post-delete not-found readback. It never deletes the enhanced base object.",
+      "Permanently delete one exact Z* or Y* ENHO implementation through IF_ENH_OBJECT->DELETE, then remove the TADIR registration the framework leaves behind. Requires the current read fingerprint, exact package, existing transport, explicit permanent-delete confirmation, operation receipt protection, and a post-delete not-found readback. With confirmation DELETE_ORPHANED_REGISTRATION and no fingerprint it instead removes the leftover TADIR registration of an implementation whose framework object is already gone; the helper independently refuses that mode while the object can still be loaded. It never deletes the enhanced base object.",
     inputSchema: {
       ...writeOperationInput,
       enhancementName,
-      expectedFingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
+      expectedFingerprint: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/i)
+        .optional(),
       packageName: z.string().trim().min(1).max(30),
       transportNumber: transportNumberSchema,
-      confirmation: z.literal("PERMANENT_DELETE"),
+      confirmation: z.union([
+        z.literal("PERMANENT_DELETE"),
+        z.literal("DELETE_ORPHANED_REGISTRATION")
+      ]),
       connectionId: z.string()
     },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }

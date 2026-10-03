@@ -1,0 +1,28 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_table",
+ "arguments": {
+  "tableName": "TFDIR",
+  "columns": [
+   "FUNCNAME"
+  ],
+  "filters": [
+   {
+    "column": "FUNCNAME",
+    "operator": "GE",
+    "value": "TR_OBJECT"
+   },
+   {
+    "column": "FUNCNAME",
+    "operator": "LE",
+    "value": "TR_OBJECTZZZ"
+   }
+  ],
+  "maxRows": 200,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:33:56.061Z",
+ "finishedAt": "2026-10-03T10:33:56.348Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"tableName\": \"TFDIR\",\n  \"columns\": [\n    \"FUNCNAME\"\n  ],\n  \"maxRows\": 200,\n  \"readOnly\": true,\n  \"order\": \"unspecified\",\n  \"clientHandling\": \"sap_session_default\",\n  \"snapshot\": false,\n  \"status\": \"ok\",\n  \"method\": \"rfc_read_table\",\n  \"definitionSource\": \"adt_ddic\",\n  \"tableClassVerified\": true,\n  \"definitionFingerprint\": \"b8edfa4b6f669a53d098d02bcd434431c8125355c4bfa05058f85c1f6a8ae49c\",\n  \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\",\n  \"representation\": \"sap_text_trimmed\",\n  \"fieldMetadata\": [\n    {\n      \"FIELDNAME\": \"FUNCNAME\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000030\",\n      \"OFFSET\": \"000000\"\n    }\n  ],\n  \"returnedCount\": 3,\n  \"truncated\": false,\n  \"data\": [\n    {\n      \"FUNCNAME\": \"TR_OBJECTS_CHECK\"\n    },\n    {\n      \"FUNCNAME\": \"TR_OBJECTS_INSERT\"\n    },\n    {\n      \"FUNCNAME\": \"TR_OBJECTS_OF_REQ_AN_TASKS_RFC\"\n    }\n  ]\n}"
+}

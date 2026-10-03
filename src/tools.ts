@@ -1274,10 +1274,10 @@ interface ManageEnhancementImplementationStateInput extends ReadEnhancementImple
 }
 
 interface DeleteEnhancementImplementationInput extends ReadEnhancementImplementationInput {
-  expectedFingerprint: string
+  expectedFingerprint?: string | undefined
   packageName: string
   transportNumber: string
-  confirmation: "PERMANENT_DELETE"
+  confirmation: "PERMANENT_DELETE" | "DELETE_ORPHANED_REGISTRATION"
 }
 
 interface EnhancementFrameworkInspectionInput extends ObjectInput {}
@@ -7160,21 +7160,36 @@ export class ToolService {
   ): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const enhancementName = customerEnhancementName(input.enhancementName, "enhancementName")
-    const current = JSON.parse(
-      await this.readEnhancementImplementation({ enhancementName, connectionId })
-    ) as { fingerprint: string; packageName: string }
-    if (current.fingerprint !== input.expectedFingerprint.toLowerCase()) {
-      throw new Error("ENHANCEMENT_IMPLEMENTATION_STALE_FINGERPRINT")
-    }
-    if (current.packageName.toUpperCase() !== input.packageName.toUpperCase()) {
-      throw new Error("ENHANCEMENT_IMPLEMENTATION_PACKAGE_MISMATCH")
+    const orphanRepair = input.confirmation === "DELETE_ORPHANED_REGISTRATION"
+    let previousFingerprint: string | null = null
+    if (orphanRepair) {
+      // An orphaned registration has no readable object, so there is nothing to fingerprint. The
+      // helper independently refuses this mode while the implementation can still be loaded.
+      if (input.expectedFingerprint !== undefined) {
+        throw new Error("ENHANCEMENT_ORPHAN_FINGERPRINT_NOT_APPLICABLE")
+      }
+    } else {
+      if (input.expectedFingerprint === undefined) {
+        throw new Error("ENHANCEMENT_IMPLEMENTATION_FINGERPRINT_REQUIRED")
+      }
+      const current = JSON.parse(
+        await this.readEnhancementImplementation({ enhancementName, connectionId })
+      ) as { fingerprint: string; packageName: string }
+      if (current.fingerprint !== input.expectedFingerprint.toLowerCase()) {
+        throw new Error("ENHANCEMENT_IMPLEMENTATION_STALE_FINGERPRINT")
+      }
+      if (current.packageName.toUpperCase() !== input.packageName.toUpperCase()) {
+        throw new Error("ENHANCEMENT_IMPLEMENTATION_PACKAGE_MISMATCH")
+      }
+      previousFingerprint = current.fingerprint
     }
     const result = await this.backend.callSapRepository(connectionId, {
       operation: "DELETE_ENHANCEMENT_IMPL",
+      action: orphanRepair ? "ORPHAN" : undefined,
       objectName: enhancementName,
       packageName: input.packageName.toUpperCase(),
       transportNumber: transportNumber(input.transportNumber),
-      expectedVersion: input.expectedFingerprint.toLowerCase()
+      expectedVersion: input.expectedFingerprint?.toLowerCase() ?? ""
     })
     requireRepositorySuccess(result.status, result.code, result.message)
     try {
@@ -7188,7 +7203,7 @@ export class ToolService {
         status: "ENHANCEMENT_IMPLEMENTATION_DELETED",
         connectionId,
         enhancementName,
-        previousFingerprint: current.fingerprint,
+        previousFingerprint,
         transportNumber: input.transportNumber.toUpperCase()
       },
       null,

@@ -1,0 +1,25 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_table",
+ "arguments": {
+  "tableName": "TFDIR",
+  "columns": [
+   "FUNCNAME",
+   "PNAME",
+   "INCLUDE"
+  ],
+  "filters": [
+   {
+    "column": "FUNCNAME",
+    "operator": "LIKE",
+    "value": "TR%OBJECT%"
+   }
+  ],
+  "maxRows": 60,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:33:41.593Z",
+ "finishedAt": "2026-10-03T10:33:41.600Z",
+ "isError": true,
+ "responseText": "MCP error -32602: Input validation error: Invalid arguments for tool read_abap_table: [\n  {\n    \"received\": \"LIKE\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"EQ\",\n      \"NE\",\n      \"LT\",\n      \"LE\",\n      \"GT\",\n      \"GE\"\n    ],\n    \"path\": [\n      \"filters\",\n      0,\n      \"operator\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE', received 'LIKE'\"\n  }\n]"
+}

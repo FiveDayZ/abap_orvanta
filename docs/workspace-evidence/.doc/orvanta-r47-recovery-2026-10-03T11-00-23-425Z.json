@@ -1,0 +1,11 @@
+{
+ "probe": "r47-call",
+ "tool": "list_write_recovery_operations",
+ "arguments": {
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T11:00:23.475Z",
+ "finishedAt": "2026-10-03T11:00:25.192Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"count\": 0,\n  \"truncated\": false,\n  \"automaticCleanup\": false,\n  \"operations\": []\n}"
+}
