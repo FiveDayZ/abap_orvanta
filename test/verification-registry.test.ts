@@ -830,7 +830,18 @@ test("the registry records the honest gap rather than inflating it", () => {
     // the first real w200 success, after the operator approved the REPORT_PARAMETERS source and the
     // real reply exposed two defects the local gate had hidden - the entry named the wrong helper and
     // the reply schema capped the CHAR 4 RSSCR-DTYP dictionary type at one character.
-    totals.verified <= 127,
+    // Raised from 127 to 129 on 2026-10-04 (R57d): patch_abap_screen and upsert_abap_screen moved off
+    // `unverified` on real w200 writes, not on code changes. patch_abap_screen changed one native D021S
+    // row (BTN_CLEAR.STXT) and put it back - the independent read showed only that key moved, and the
+    // revert matched the baseline in every field, flow-logic and params entry - while
+    // upsert_abap_screen replaced screen 0100 with its own five native rows and restored the two RES1
+    // function codes at the byte offset the untouched control screen ZPMCPC01/9000 exhibits. Each entry
+    // names its own receipt; the stale arm of the fingerprint guard (SCREEN_FINGERPRINT_CONFLICT with
+    // zero SAP writes) was measured in the same batch. Both writes used transport GR2K923472, which was
+    // not released. What remains unestablished - whether the restored function codes fire at runtime,
+    // and whether omitting `header` should have defaulted instead of zeroing D020S - is recorded in each
+    // entry's notes rather than absorbed into this bound.
+    totals.verified <= 129,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
