@@ -1892,7 +1892,6 @@ test("Dynpro application tools validate customer scope and preserve structured r
     }),
     /mixes the D021S and RPY_DYFATC vocabularies/
   )
-
 })
 
 test("GUI definition tools preserve untouched native rows and reject stale fingerprints", async () => {

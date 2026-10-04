@@ -2914,7 +2914,11 @@ export function parseSapRepositoryResponse(body: string): SapRepositoryResult {
   // A trimmed function code therefore lands on byte 1, and the next read erases it. That is how a
   // read -> write round trip used to drop the function code of every pushbutton it touched. Read the
   // two fixed-width tables without trimming so the byte offsets survive the round trip unchanged.
-  const paddedDocument = parse(body, { parseTagValue: false, trimValues: false, htmlEntities: true })
+  const paddedDocument = parse(body, {
+    parseTagValue: false,
+    trimValues: false,
+    htmlEntities: true
+  })
   const fault = findXmlValue(document, "faultstring")
   if (fault) throw new Error(`SAP SOAP fault: ${fault}`)
   const result: SapRepositoryResult = {
