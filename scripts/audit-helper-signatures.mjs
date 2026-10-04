@@ -44,10 +44,28 @@ import { readFileSync, readdirSync } from "node:fs"
  *   - a difference that involves a built-in type (`C`, `C LENGTH 20`, `TABLE OF x`, `REF TO y`) is
  *     reported as a review line instead: those are converted rather than rejected, and calling them
  *     failures would bury the real ones;
- *   - `--ddic <file>` supplies the length evidence - `{"DYNPROTEXT":{"type":"C","length":60}}` - and
- *     clears a dictionary pair that resolves to the same type and length. Without an entry for a
- *     differing dictionary pair the audit keeps reporting it, deliberately: an unproven pair is the
- *     state the runtime rejected, and assuming compatibility is how the defect reached production.
+ *   - `--ddic <file>` supplies the evidence - `{"DYNPROTEXT":{"type":"C","length":60}}` - and clears
+ *     a dictionary pair that resolves to the same type and length. Without an entry for a differing
+ *     dictionary pair the audit keeps reporting it, deliberately: an unproven pair is the state the
+ *     runtime rejected, and assuming compatibility is how the defect reached production.
+ *
+ * FOUR CORRECTIONS THE REAL CANONICAL FORCED (2026-10-04, after CHECK 2 first ran on it). Each one is
+ * kept as a falsifying fixture under .cache/r57c-staticgate-fixture, and each one had made the gate
+ * either report noise or miss the very pair it exists to catch:
+ *   - a section keyword may share its line with the first parameter (`EXPORTING corrnum = iv_request`,
+ *     `EXCEPTIONS cancelled = 1`). Requiring the keyword alone silently skipped the entire
+ *     RPY_DYNPRO_INSERT_NATIVE block - the one that carries the DYNPROTEXT pair - and coverage went
+ *     from 208 to 541 parameters once the remainder of such a line is parsed too;
+ *   - system fields (`SY-LANGU`, `SY-REPID`, `SY-TABIX`) match the data-element shape but carry a
+ *     built-in type, so they are not dictionary references and belong in the review list;
+ *   - a TABLES parameter is declared by its ROW type (`TABLES E_PARAGRAPHS LIKE SSFPARAS`), and both
+ *     sides may instead name a table type (`DYN_FLOWLIST` is a table of D022S), so each side is
+ *     reduced to its row type through the evidence map before comparing;
+ *   - two spellings that resolve to the SAME data element are the same type: `ITCTA-TDFORM` and
+ *     `TDFORM` both carry data element TDFORM. The structure read supplies that link as evidence, so
+ *     `--ddic` entries may also be `{"ITCTA-TDFORM":{"dataElement":"TDFORM"}}`.
+ * With those corrections and the evidence map built from live DDIC reads, the real canonical reports
+ * problems: 0 with 6 review lines (system fields and built-ins), against 14 problems before.
  *
  * Usage:
  *   node scripts/audit-helper-signatures.mjs --signatures <dir> [--canonical <file>] [--ddic <file>]
@@ -82,8 +100,7 @@ const declaredType = (line) => {
   const m = line.match(/\b(?:TYPE|LIKE|STRUCTURE)\s+(.+)$/i)
   if (!m) return undefined
   const text = m[1]
-    .replace(/\bDEFAULT\b[\s\S]*$/i, "")
-    .replace(/\bOPTIONAL\b[\s\S]*$/i, "")
+    .replace(/\b(?:DEFAULT|OPTIONAL|VALUE|READ-ONLY)\b[\s\S]*$/i, "")
     .replace(/[.,]\s*$/, "")
     .trim()
   return text === "" ? undefined : text
@@ -93,12 +110,29 @@ const declaredType = (line) => {
  * A dictionary reference is a data element (`DYNPROTEXT`) or a table field (`TSTCT-TTEXT`). Built-in
  * type names and constructed types are not references, and a difference involving them is a review
  * line rather than a failure.
+ *
+ * System fields are excluded deliberately (2026-10-04, found on the real canonical): `SY-LANGU` and
+ * `SY-REPID` match the data-element / table-field shape, so passing a system field into a parameter
+ * declared `LIKE SY-LANGU` or `LIKE RALDB-REPORT` was reported as two disagreeing dictionary types. A
+ * system field carries a built-in type, not a dictionary type, and calling those failures buries the
+ * real ones - the same reasoning as the built-in arm below.
  */
 const isDictionaryReference = (text) =>
   /^[A-Z][A-Z0-9_]*(-[A-Z][A-Z0-9_]*)?$/i.test(text) &&
+  !/^(SY|SYST)-/i.test(text) &&
   !/^(ANY|C|D|F|I|N|P|T|X|STRING|XSTRING|NUMERIC|DATA|OBJECT|SIMPLE|TABLE|INDEX|STANDARD|SORTED|HASHED|LINE|REF|STRUCTURE|TYPE|LIKE)$/i.test(
     text
   )
+
+/**
+ * The row type of a table-typed actual: written out (`TABLE OF tline`) or resolved through the
+ * evidence map (`{"TSFPARAS":{"rowType":"SSFPARAS"}}`).
+ */
+const rowTypeOf = (text) => {
+  const written = /(?:STANDARD |SORTED |HASHED |INDEX |ANY )?TABLE OF\s+(.+)$/i.exec(text)
+  if (written) return written[1].trim()
+  return ddic.get(text.toUpperCase())?.rowType
+}
 
 /** Table-like, reference-like and generic formals are not compared: the kernel converts them. */
 const isComparableType = (text) =>
@@ -183,6 +217,12 @@ const ownerName =
   (canonicalPath.match(/repository-([A-Za-z0-9_]+)-canonical\.json$/) ?? [])[1]?.toUpperCase()
 const ownerSig = ownerName ? callee.get(ownerName) : undefined
 const ownerTypes = new Map()
+// The owner's TABLES parameters are tables with header line, so their declared text is a ROW type.
+// Passing one straight through to a callee's TABLES parameter therefore compares table against
+// table, not structure against table - without this the DYN_FLOWLIST / D022S pair read as a
+// mismatch (2026-10-04, found on the real canonical once the shared-line section fix widened
+// coverage from 208 to 541 parameters).
+const ownerTableParams = new Set(ownerSig?.TABLES ?? [])
 if (ownerSig) {
   for (const group of ["IMPORTING", "EXPORTING", "CHANGING", "TABLES"]) {
     for (const [param, text] of ownerSig.types[group]) {
@@ -241,12 +281,20 @@ for (let i = 0; i < lines.length; i++) {
   }
   let section = ""
   for (const raw of block.slice(1)) {
-    const l = raw.trim()
-    if (/^(IMPORTING|EXPORTING|CHANGING|TABLES)$/.test(l)) {
-      section = l
-      continue
+    let l = raw.trim()
+    // A section keyword may share its line with the first parameter - `EXPORTING corrnum = iv_request`
+    // and `EXCEPTIONS cancelled = 1 already_exists = 2` are both ordinary ABAP - so the keyword is
+    // stripped and the remainder is still parsed as a parameter. Requiring the keyword alone on its
+    // line silently skipped the whole RPY_DYNPRO_INSERT_NATIVE block, which is exactly where the
+    // 2026-10-04 type conflict lived: the gate reported "problems: 0" while the pair it exists to
+    // catch was never read (found 2026-10-04 on the real canonical).
+    const sectionKeyword = l.match(/^(IMPORTING|EXPORTING|CHANGING|TABLES)\b\s*(.*)$/)
+    if (sectionKeyword) {
+      section = sectionKeyword[1]
+      l = sectionKeyword[2].trim()
+      if (l === "") continue
     }
-    if (/^EXCEPTIONS$/.test(l)) {
+    if (/^EXCEPTIONS\b/.test(l)) {
       section = "EXCEPTIONS"
       continue
     }
@@ -295,13 +343,41 @@ for (let i = 0; i < lines.length; i++) {
     const formal = formalType(sig, section, param)
     if (!formal || !isComparableType(formal)) continue
     const actualName = actual.toUpperCase()
-    const actualType = ownerTypes.get(actualName) ?? bodyTypes.get(actualName)
+    let actualType = ownerTypes.get(actualName) ?? bodyTypes.get(actualName)
+    // An owner TABLES parameter is a table with header line, but its declared text may already name a
+    // table type (`TYPE TSFPARAS`). Wrapping that would read as a table of a table type, so the wrap
+    // applies only when the evidence map does not already say the text is a table.
+    if (
+      actualType &&
+      ownerTableParams.has(actualName) &&
+      !/TABLE OF/i.test(actualType) &&
+      !ddic.get(actualType.toUpperCase())?.rowType
+    ) {
+      actualType = `TABLE OF ${actualType}`
+    }
     if (!actualType) {
       typeUnresolved++
       continue
     }
     typeChecked++
     if (actualType.toUpperCase() === formal.toUpperCase()) continue
+    // A TABLES parameter is declared by its ROW type - `TABLES E_PARAGRAPHS LIKE SSFPARAS` builds a
+    // table with header line over that structure - so the actual must be compared as a table of the
+    // same row type, not by its table type name. Without this the three SSF_READ_STYLE tables read as
+    // structure-versus-table mismatches (2026-10-04, found on the real canonical).
+    if (section === "TABLES") {
+      // Both sides may name a table type instead of writing the row out (`DYN_FLOWLIST` is a table of
+      // D022S), so each side is reduced to its row type through the evidence map before comparing.
+      const formalRow = rowTypeOf(formal) ?? formal
+      const actualRow = rowTypeOf(actualType)
+      if (actualRow) {
+        if (actualRow.toUpperCase() === formalRow.toUpperCase()) continue
+        reviews.push(
+          `body line ${i + 1}: ${name}: ${param} declared row type ${formalRow}, actual ${actual} is a table of ${actualRow} - row types differ, check by hand`
+        )
+        continue
+      }
+    }
     if (!isDictionaryReference(formal) || !isDictionaryReference(actualType)) {
       reviews.push(
         `body line ${i + 1}: ${name}: ${param} declared ${formal}, actual ${actual} declared ${actualType} - not both dictionary types, check by hand`
@@ -311,11 +387,26 @@ for (let i = 0; i < lines.length; i++) {
     const f = ddic.get(formal.toUpperCase())
     const a = ddic.get(actualType.toUpperCase())
     if (f && a) {
-      if (f.type !== a.type || f.length !== a.length) {
-        problems.push(
-          `body line ${i + 1}: ${name}: ${param} declared ${formal} (${f.type} ${f.length}), actual ${actual} declared ${actualType} (${a.type} ${a.length}) - CALL_FUNCTION_CONFLICT_TYPE`
-        )
+      // Two spellings that resolve to the SAME data element are the same type: `ITCTA-TDFORM` and
+      // `TDFORM` both carry data element TDFORM, which is what the kernel compares. The structure
+      // read supplies that link as evidence, so it is not an assumption.
+      if (
+        f.dataElement &&
+        a.dataElement &&
+        f.dataElement.toUpperCase() === a.dataElement.toUpperCase()
+      )
+        continue
+      if (f.type !== undefined && a.type !== undefined) {
+        if (f.type !== a.type || f.length !== a.length) {
+          problems.push(
+            `body line ${i + 1}: ${name}: ${param} declared ${formal} (${f.type} ${f.length}), actual ${actual} declared ${actualType} (${a.type} ${a.length}) - CALL_FUNCTION_CONFLICT_TYPE`
+          )
+        }
+        continue
       }
+      problems.push(
+        `body line ${i + 1}: ${name}: ${param} declared ${formal}, actual ${actual} declared ${actualType} - the evidence entries carry no comparable type, check by hand`
+      )
       continue
     }
     problems.push(
