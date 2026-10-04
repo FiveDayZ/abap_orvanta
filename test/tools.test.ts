@@ -1493,125 +1493,6 @@ test("Dynpro application tools validate customer scope and preserve structured r
     ]
   )
 
-  // The read result must feed straight back into the write tool. This is the round trip that
-  // failed on 2026-10-03: `read_abap_screen` answers D021S rows while `upsert_abap_screen` used to
-  // parse only RPY_DYFATC rows, and the two structures share just `LINE` and `TYPE`, so every
-  // genuine read result was refused with SCREEN_PROPERTY_INVALID. The helper now routes a native
-  // field list through CT_FIELDS into RPY_DYNPRO_INSERT_NATIVE, so the same objects must be accepted
-  // unchanged - no key renaming, no re-encoding.
-  const roundTripped = await tools.upsertAbapScreen({
-    programName: "ZMODULE_POOL",
-    screenNumber: "0100",
-    description: "Round trip",
-    transportNumber: "W20K900001",
-    fields: screen.fields,
-    flowLogic: ["PROCESS BEFORE OUTPUT.", "MODULE status_0100."],
-    connectionId: "w200"
-  })
-  assert.match(roundTripped, /ABAP screen saved and verified/)
-
-  const afterRoundTrip = JSON.parse(
-    await tools.readAbapScreen({
-      programName: "ZMODULE_POOL",
-      screenNumber: "0100",
-      connectionId: "w200"
-    })
-  ) as { fields: Array<Record<string, string>>; flowLogic: string[] }
-  assert.equal(
-    afterRoundTrip.fields[0]?.FNAM,
-    "GV_NAME",
-    "the native field list must survive the round trip unchanged"
-  )
-  assert.deepEqual(afterRoundTrip.flowLogic, ["PROCESS BEFORE OUTPUT.", "MODULE status_0100."])
-
-  // The rule above can fail: a row mixing both dialects has no single correct interpretation, and a
-  // row with no distinguishing key cannot be routed at all. Both must be refused rather than guessed,
-  // because guessing wrong writes a screen with silently wrong coordinates.
-  await assert.rejects(
-    tools.upsertAbapScreen({
-      programName: "ZMODULE_POOL",
-      screenNumber: "0100",
-      description: "Mixed",
-      transportNumber: "W20K900001",
-      fields: [{ FNAM: "GV_NAME", NAME: "GV_NAME", TYPE: "CHAR", LINE: "1", COLN: "1" }],
-      flowLogic: ["PROCESS BEFORE OUTPUT."],
-      connectionId: "w200"
-    }),
-    /mixes the D021S and RPY_DYFATC vocabularies/
-  )
-  await assert.rejects(
-    tools.upsertAbapScreen({
-      programName: "ZMODULE_POOL",
-      screenNumber: "0100",
-      description: "Undecidable",
-      transportNumber: "W20K900001",
-      fields: [{ LINE: "1", TYPE: "CHAR" }],
-      flowLogic: ["PROCESS BEFORE OUTPUT."],
-      connectionId: "w200"
-    }),
-    /carries no distinguishing property/
-  )
-
-  // patch_abap_screen has the same obligation, and it must be met from the native side too: the rows
-  // it reads back are D021S, so a native definition is merged straight into that list and written
-  // through the native route. Nothing is translated between the two structures, which is what makes
-  // this honest - the read side's converter could not be reproduced.
-  const patchRead = JSON.parse(
-    await tools.readAbapScreen({
-      programName: "ZMODULE_POOL",
-      screenNumber: "0100",
-      connectionId: "w200"
-    })
-  ) as { fingerprint: string; fields: Array<Record<string, string>> }
-  const nativePatch = JSON.parse(
-    await tools.patchAbapScreen({
-      programName: "ZMODULE_POOL",
-      screenNumber: "0100",
-      expectedFingerprint: patchRead.fingerprint,
-      transportNumber: "W20K900001",
-      componentOperations: [
-        {
-          operation: "add",
-          name: "BTN_SECOND",
-          definition: { FNAM: "BTN_SECOND", TYPE: "CHAR", STXT: "Second" }
-        }
-      ],
-      connectionId: "w200"
-    })
-  ) as { status: string; fields: Array<Record<string, string>> }
-  assert.equal(nativePatch.status, "SCREEN_PATCHED")
-  assert.ok(
-    nativePatch.fields.some((field) => field.FNAM === "BTN_SECOND"),
-    "the natively added component must be present after the patch"
-  )
-  assert.ok(
-    nativePatch.fields.some((field) => field.FNAM === "BTN_EXIT"),
-    "a native patch must preserve the components it did not touch"
-  )
-
-  // A definition carrying markers of both dialects is refused rather than guessed: the two
-  // structures disagree about what coordinates mean, so a mixed row has no single interpretation.
-  const afterNativePatch = JSON.parse(
-    await tools.readAbapScreen({
-      programName: "ZMODULE_POOL",
-      screenNumber: "0100",
-      connectionId: "w200"
-    })
-  ) as { fingerprint: string }
-  await assert.rejects(
-    tools.patchAbapScreen({
-      programName: "ZMODULE_POOL",
-      screenNumber: "0100",
-      expectedFingerprint: afterNativePatch.fingerprint,
-      transportNumber: "W20K900001",
-      componentOperations: [
-        { operation: "update", name: "GV_NAME", definition: { FNAM: "GV_NAME", NAME: "GV_NAME" } }
-      ],
-      connectionId: "w200"
-    }),
-    /mixes the D021S and RPY_DYFATC vocabularies/
-  )
-
   const validation = JSON.parse(
     await tools.validateDynproApplication({
       programName: "ZMODULE_POOL",
@@ -1892,6 +1773,126 @@ test("Dynpro application tools validate customer scope and preserve structured r
     }),
     /Z\* or Y\*/
   )
+
+  // The read result must feed straight back into the write tool. This is the round trip that
+  // failed on 2026-10-03: `read_abap_screen` answers D021S rows while `upsert_abap_screen` used to
+  // parse only RPY_DYFATC rows, and the two structures share just `LINE` and `TYPE`, so every
+  // genuine read result was refused with SCREEN_PROPERTY_INVALID. The helper now routes a native
+  // field list through CT_FIELDS into RPY_DYNPRO_INSERT_NATIVE, so the same objects must be accepted
+  // unchanged - no key renaming, no re-encoding.
+  const roundTripped = await tools.upsertAbapScreen({
+    programName: "ZMODULE_POOL",
+    screenNumber: "0100",
+    description: "Round trip",
+    transportNumber: "W20K900001",
+    fields: screen.fields,
+    flowLogic: ["PROCESS BEFORE OUTPUT.", "MODULE status_0100."],
+    connectionId: "w200"
+  })
+  assert.match(roundTripped, /ABAP screen saved and verified/)
+
+  const afterRoundTrip = JSON.parse(
+    await tools.readAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      connectionId: "w200"
+    })
+  ) as { fields: Array<Record<string, string>>; flowLogic: string[] }
+  assert.equal(
+    afterRoundTrip.fields[0]?.FNAM,
+    "GV_NAME",
+    "the native field list must survive the round trip unchanged"
+  )
+  assert.deepEqual(afterRoundTrip.flowLogic, ["PROCESS BEFORE OUTPUT.", "MODULE status_0100."])
+
+  // The rule above can fail: a row mixing both dialects has no single correct interpretation, and a
+  // row with no distinguishing key cannot be routed at all. Both must be refused rather than guessed,
+  // because guessing wrong writes a screen with silently wrong coordinates.
+  await assert.rejects(
+    tools.upsertAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      description: "Mixed",
+      transportNumber: "W20K900001",
+      fields: [{ FNAM: "GV_NAME", NAME: "GV_NAME", TYPE: "CHAR", LINE: "1", COLN: "1" }],
+      flowLogic: ["PROCESS BEFORE OUTPUT."],
+      connectionId: "w200"
+    }),
+    /mixes the D021S and RPY_DYFATC vocabularies/
+  )
+  await assert.rejects(
+    tools.upsertAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      description: "Undecidable",
+      transportNumber: "W20K900001",
+      fields: [{ LINE: "1", TYPE: "CHAR" }],
+      flowLogic: ["PROCESS BEFORE OUTPUT."],
+      connectionId: "w200"
+    }),
+    /carries no distinguishing property/
+  )
+
+  // patch_abap_screen has the same obligation, and it must be met from the native side too: the rows
+  // it reads back are D021S, so a native definition is merged straight into that list and written
+  // through the native route. Nothing is translated between the two structures, which is what makes
+  // this honest - the read side's converter could not be reproduced.
+  const patchRead = JSON.parse(
+    await tools.readAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string; fields: Array<Record<string, string>> }
+  const nativePatch = JSON.parse(
+    await tools.patchAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      expectedFingerprint: patchRead.fingerprint,
+      transportNumber: "W20K900001",
+      componentOperations: [
+        {
+          operation: "add",
+          name: "BTN_SECOND",
+          definition: { FNAM: "BTN_SECOND", TYPE: "CHAR", STXT: "Second" }
+        }
+      ],
+      connectionId: "w200"
+    })
+  ) as { status: string; fields: Array<Record<string, string>> }
+  assert.equal(nativePatch.status, "SCREEN_PATCHED")
+  assert.ok(
+    nativePatch.fields.some((field) => field.FNAM === "BTN_SECOND"),
+    "the natively added component must be present after the patch"
+  )
+  assert.ok(
+    nativePatch.fields.some((field) => field.FNAM === "BTN_EXIT"),
+    "a native patch must preserve the components it did not touch"
+  )
+
+  // A definition carrying markers of both dialects is refused rather than guessed: the two
+  // structures disagree about what coordinates mean, so a mixed row has no single interpretation.
+  const afterNativePatch = JSON.parse(
+    await tools.readAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string }
+  await assert.rejects(
+    tools.patchAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      expectedFingerprint: afterNativePatch.fingerprint,
+      transportNumber: "W20K900001",
+      componentOperations: [
+        { operation: "update", name: "GV_NAME", definition: { FNAM: "GV_NAME", NAME: "GV_NAME" } }
+      ],
+      connectionId: "w200"
+    }),
+    /mixes the D021S and RPY_DYFATC vocabularies/
+  )
+
 })
 
 test("GUI definition tools preserve untouched native rows and reject stale fingerprints", async () => {
