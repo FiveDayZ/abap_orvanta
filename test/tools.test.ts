@@ -1572,8 +1572,8 @@ test("Dynpro application tools validate customer scope and preserve structured r
       componentOperations: [
         {
           operation: "add",
-          name: "GV_SECOND",
-          definition: { FNAM: "GV_SECOND", TYPE: "CHAR", STXT: "Second" }
+          name: "BTN_SECOND",
+          definition: { FNAM: "BTN_SECOND", TYPE: "CHAR", STXT: "Second" }
         }
       ],
       connectionId: "w200"
@@ -1581,7 +1581,7 @@ test("Dynpro application tools validate customer scope and preserve structured r
   ) as { status: string; fields: Array<Record<string, string>> }
   assert.equal(nativePatch.status, "SCREEN_PATCHED")
   assert.ok(
-    nativePatch.fields.some((field) => field.FNAM === "GV_SECOND"),
+    nativePatch.fields.some((field) => field.FNAM === "BTN_SECOND"),
     "the natively added component must be present after the patch"
   )
   assert.ok(
