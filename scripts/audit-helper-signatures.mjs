@@ -8,7 +8,7 @@ import { readFileSync, readdirSync } from "node:fs"
  * `read_function_module_interface` is itself served by the helper, so it is unusable exactly when the
  * helper is broken - and a broken helper is when this audit matters most.
  *
- * The rule ABAP enforces inside CALL FUNCTION:
+ * CHECK 1 - parameter category. The rule ABAP enforces inside CALL FUNCTION:
  *   caller EXPORTING  -> callee IMPORTING only
  *   caller IMPORTING  -> callee EXPORTING (this is how an output parameter is received)
  *   caller CHANGING   -> callee CHANGING
@@ -28,10 +28,34 @@ import { readFileSync, readdirSync } from "node:fs"
  * BAPI_CTREQUEST_RELEASE -> BALW_BAPIRETURN_GET2 RETURN). The check below therefore requires a
  * callee EXPORTING parameter used under the caller's EXPORTING to be declared VALUE(...).
  *
+ * CHECK 2 - actual-argument type and length (2026-10-04). A category-correct assignment can still be
+ * rejected by the kernel: Z_ORVANTA_MCP_DYNPRO_API passed its own IV_DESCRIPTION, declared
+ * TSTCT-TTEXT (AS4TEXT is CHAR 60, but TTEXT is CHAR 36), into a callee parameter declared TYPE
+ * DYNPROTEXT (D020T-DTXT, CHAR 60). Every call site was category-correct, so CHECK 1 was green, and
+ * the runtime then raised CALL_FUNCTION_CONFLICT_TYPE / the short dump CALL_FUNCTION_CONFLICT_TYPE
+ * for the whole helper - which is what a wrong formal type costs: not one tool, every tool.
+ *
+ * CHECK 2 compares the two sides by their declared type text:
+ *   - the formal's text comes from the callee's signature (`VALUE(X) TYPE DYNPROTEXT`);
+ *   - the actual's text comes from the owner's own interface (a parameter of the helper) or from a
+ *     DATA/TYPES declaration in the body;
+ *   - equal text passes; two different dictionary references are a problem, because that is the pair
+ *     that produced the runtime conflict above;
+ *   - a difference that involves a built-in type (`C`, `C LENGTH 20`, `TABLE OF x`, `REF TO y`) is
+ *     reported as a review line instead: those are converted rather than rejected, and calling them
+ *     failures would bury the real ones;
+ *   - `--ddic <file>` supplies the length evidence - `{"DYNPROTEXT":{"type":"C","length":60}}` - and
+ *     clears a dictionary pair that resolves to the same type and length. Without an entry for a
+ *     differing dictionary pair the audit keeps reporting it, deliberately: an unproven pair is the
+ *     state the runtime rejected, and assuming compatibility is how the defect reached production.
+ *
  * Usage:
- *   node scripts/audit-helper-signatures.mjs --signatures <dir>
- * where <dir> holds one get_abap_object_lines .txt per function module (native ADT reads).
- * The caller can produce that directory with the MCP batch runner; this script only reads it.
+ *   node scripts/audit-helper-signatures.mjs --signatures <dir> [--canonical <file>] [--ddic <file>]
+ * where <dir> holds one get_abap_object_lines .txt per function module (native ADT reads), and the
+ * owner interface is read from the signature of the function module named by <file> itself
+ * (`repository-z_orvanta_mcp_dynpro_api-canonical.json` -> Z_ORVANTA_MCP_DYNPRO_API), overridable
+ * with --owner. The caller can produce that directory with the MCP batch runner; this script only
+ * reads it.
  */
 const argValue = (flag, fallback) => {
   const at = process.argv.indexOf(flag)
@@ -42,7 +66,7 @@ const argValue = (flag, fallback) => {
 const signatureDir = argValue("--signatures", undefined)
 if (!signatureDir) {
   console.error(
-    "usage: node scripts/audit-helper-signatures.mjs --signatures <dir> [--canonical <file>]"
+    "usage: node scripts/audit-helper-signatures.mjs --signatures <dir> [--canonical <file>] [--ddic <file>] [--owner <FM>]"
   )
   process.exit(2)
 }
@@ -50,6 +74,35 @@ const canonicalPath = argValue(
   "--canonical",
   ".cache/repository-z_orvanta_mcp_dynpro_api-canonical.json"
 )
+const ddicPath = argValue("--ddic", undefined)
+const ownerArg = argValue("--owner", undefined)
+
+/** The declared type text of one parameter line, e.g. `DYNPROTEXT`, `D020T-DTXT`, `C LENGTH 20`. */
+const declaredType = (line) => {
+  const m = line.match(/\b(?:TYPE|LIKE|STRUCTURE)\s+(.+)$/i)
+  if (!m) return undefined
+  const text = m[1]
+    .replace(/\bDEFAULT\b[\s\S]*$/i, "")
+    .replace(/\bOPTIONAL\b[\s\S]*$/i, "")
+    .replace(/[.,]\s*$/, "")
+    .trim()
+  return text === "" ? undefined : text
+}
+
+/**
+ * A dictionary reference is a data element (`DYNPROTEXT`) or a table field (`TSTCT-TTEXT`). Built-in
+ * type names and constructed types are not references, and a difference involving them is a review
+ * line rather than a failure.
+ */
+const isDictionaryReference = (text) =>
+  /^[A-Z][A-Z0-9_]*(-[A-Z][A-Z0-9_]*)?$/i.test(text) &&
+  !/^(ANY|C|D|F|I|N|P|T|X|STRING|XSTRING|NUMERIC|DATA|OBJECT|SIMPLE|TABLE|INDEX|STANDARD|SORTED|HASHED|LINE|REF|STRUCTURE|TYPE|LIKE)$/i.test(
+    text
+  )
+
+/** Table-like, reference-like and generic formals are not compared: the kernel converts them. */
+const isComparableType = (text) =>
+  !/TABLE OF|INDEX TABLE|REF TO|LINE OF|STRUCTURE|^ANY$|^DATA$|^OBJECT$/i.test(text)
 
 const canonical = JSON.parse(readFileSync(canonicalPath, "utf8"))
 const lines = canonical.lines
@@ -61,6 +114,12 @@ for (const file of readdirSync(signatureDir).filter((f) => f.endsWith(".txt"))) 
   if (!nameMatch) continue
   const body = text.slice(text.indexOf("```abap"))
   const groups = { IMPORTING: [], EXPORTING: [], CHANGING: [], TABLES: [], VALUE_EXPORTING: [] }
+  const types = {
+    IMPORTING: new Map(),
+    EXPORTING: new Map(),
+    CHANGING: new Map(),
+    TABLES: new Map()
+  }
   let current = null
   // These signature files are a page of the function's source, not a clean interface dump: the body
   // below the interface contains the callee's own CALL FUNCTION statements, whose parameter
@@ -91,14 +150,79 @@ for (const file of readdirSync(signatureDir).filter((f) => f.endsWith(".txt"))) 
       // A by-value EXPORTING parameter may be supplied in the caller's EXPORTING section; a
       // by-reference one may not, which is the distinction this audit now enforces.
       if (current === "EXPORTING" && p[1] !== undefined) groups.VALUE_EXPORTING.push(param)
+      const declared = declaredType(l)
+      if (declared) types[current].set(param, declared)
     }
   }
-  callee.set(nameMatch[1], groups)
+  callee.set(nameMatch[1], { ...groups, types })
+}
+
+/** The callee's declared type for one parameter, looked up in the group the caller writes into. */
+const formalType = (sig, section, param) => {
+  const order =
+    section === "EXPORTING"
+      ? ["IMPORTING", "EXPORTING"]
+      : section === "IMPORTING"
+        ? ["EXPORTING", "CHANGING"]
+        : section === "CHANGING"
+          ? ["CHANGING"]
+          : section === "TABLES"
+            ? ["TABLES"]
+            : []
+  for (const group of order) {
+    const text = sig.types[group]?.get(param)
+    if (text) return text
+  }
+  return undefined
+}
+
+// The owner is the function module the canonical body belongs to. Its own parameters carry the type
+// of every actual argument that is passed straight through, which is the pair that failed above.
+const ownerName =
+  ownerArg ??
+  (canonicalPath.match(/repository-([A-Za-z0-9_]+)-canonical\.json$/) ?? [])[1]?.toUpperCase()
+const ownerSig = ownerName ? callee.get(ownerName) : undefined
+const ownerTypes = new Map()
+if (ownerSig) {
+  for (const group of ["IMPORTING", "EXPORTING", "CHANGING", "TABLES"]) {
+    for (const [param, text] of ownerSig.types[group]) {
+      if (!ownerTypes.has(param)) ownerTypes.set(param, text)
+    }
+  }
+}
+
+// Local declarations, so an actual that is not an owner parameter still has a declared type.
+const bodyTypes = new Map()
+for (const raw of lines) {
+  const l = raw.trim()
+  const decl = l.match(/^(?:DATA|TYPES|STATICS|CLASS-DATA|FIELD-SYMBOLS)\b:?\s*(.+)$/i)
+  if (!decl) continue
+  for (const fragment of decl[1].split(",")) {
+    const f = fragment.trim()
+    if (/^(BEGIN|END)\s+OF\b/i.test(f)) continue
+    const m = f.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+(?:TYPE|LIKE)\s+(.+?)[.,]?$/i)
+    if (!m) continue
+    const name = m[1].toUpperCase()
+    const text = declaredType(`X TYPE ${m[2]}`)
+    if (text && !bodyTypes.has(name)) bodyTypes.set(name, text)
+  }
+}
+
+// Length evidence for dictionary types, supplied by the caller. Absent evidence is not treated as
+// agreement: the runtime rejected the unproven pair, so this audit keeps reporting it.
+const ddic = new Map()
+if (ddicPath) {
+  for (const [key, value] of Object.entries(JSON.parse(readFileSync(ddicPath, "utf8")))) {
+    ddic.set(key.toUpperCase(), value)
+  }
 }
 
 const problems = []
+const reviews = []
 let sites = 0
 let checked = 0
+let typeChecked = 0
+let typeUnresolved = 0
 for (let i = 0; i < lines.length; i++) {
   const m = lines[i].match(/^\s*CALL FUNCTION\s+'([A-Z0-9_]+)'/)
   if (!m) continue
@@ -126,7 +250,7 @@ for (let i = 0; i < lines.length; i++) {
       section = "EXCEPTIONS"
       continue
     }
-    const p = l.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/)
+    const p = l.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)[.,]?$/)
     if (!p || section === "EXCEPTIONS" || section === "") continue
     const param = p[1].toUpperCase()
     checked++
@@ -164,10 +288,52 @@ for (let i = 0; i < lines.length; i++) {
           `body line ${i + 1}: ${name}: ${param} under CHANGING, signature has it in ${where.join("/") || "no group"}`
         )
     }
+
+    // CHECK 2: the actual's declared type against the formal's.
+    const actual = p[2]?.trim()
+    if (!actual || /[()+]/.test(actual) || /^'/.test(actual)) continue
+    const formal = formalType(sig, section, param)
+    if (!formal || !isComparableType(formal)) continue
+    const actualName = actual.toUpperCase()
+    const actualType = ownerTypes.get(actualName) ?? bodyTypes.get(actualName)
+    if (!actualType) {
+      typeUnresolved++
+      continue
+    }
+    typeChecked++
+    if (actualType.toUpperCase() === formal.toUpperCase()) continue
+    if (!isDictionaryReference(formal) || !isDictionaryReference(actualType)) {
+      reviews.push(
+        `body line ${i + 1}: ${name}: ${param} declared ${formal}, actual ${actual} declared ${actualType} - not both dictionary types, check by hand`
+      )
+      continue
+    }
+    const f = ddic.get(formal.toUpperCase())
+    const a = ddic.get(actualType.toUpperCase())
+    if (f && a) {
+      if (f.type !== a.type || f.length !== a.length) {
+        problems.push(
+          `body line ${i + 1}: ${name}: ${param} declared ${formal} (${f.type} ${f.length}), actual ${actual} declared ${actualType} (${a.type} ${a.length}) - CALL_FUNCTION_CONFLICT_TYPE`
+        )
+      }
+      continue
+    }
+    problems.push(
+      `body line ${i + 1}: ${name}: ${param} declared ${formal}, actual ${actual} declared ${actualType} - two dictionary types, no --ddic entry proves they agree`
+    )
   }
 }
 
-console.log(`call sites: ${sites} | parameters checked: ${checked} | callees: ${callee.size}`)
+console.log(
+  `call sites: ${sites} | parameters checked: ${checked} | callees: ${callee.size} | type checks: ${typeChecked} | actuals without a declared type: ${typeUnresolved}`
+)
+if (ownerName) {
+  console.log(
+    `owner interface: ${ownerName}${ownerSig ? "" : " (no signature read - type checks skipped)"}`
+  )
+}
 console.log(`problems: ${problems.length}`)
 for (const p of problems) console.log("  " + p)
+console.log(`reviews: ${reviews.length}`)
+for (const r of reviews) console.log("  " + r)
 process.exit(problems.length === 0 ? 0 : 1)
