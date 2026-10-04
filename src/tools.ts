@@ -2218,14 +2218,20 @@ export class ToolService {
         throw new Error(`definition is not valid for ${operation.operation} operations: ${name}`)
       }
       const definition = operation.definition ? uppercaseRecord(operation.definition) : undefined
+      let vocabulary: "native" | "external" | "mixed" = "external"
       if (definition) {
+        // Classify the caller's definition before adding anything to it. NAME is an RPY_DYFATC
+        // property, so writing it into a native D021S definition would give that row a marker of
+        // each dialect and make the check below refuse a definition the caller sent cleanly. A
+        // native row carries its component name in FNAM, which the native merge fills in.
+        vocabulary = patchDefinitionVocabulary(definition)
         const definedName = definition.NAME ? screenComponentName(definition.NAME) : name
         if (definedName !== name) {
           throw new Error(
             `Component definition name ${definedName} does not match operation name ${name}`
           )
         }
-        definition.NAME = name
+        if (vocabulary !== "native") definition.NAME = name
         validatePublicScreenField(definition)
       }
       if (operation.operation === "add") currentNames.add(name)
@@ -2233,14 +2239,13 @@ export class ToolService {
       return {
         operation: operation.operation.toUpperCase() as "ADD" | "UPDATE" | "REMOVE",
         name,
+        vocabulary,
         ...(definition ? { definition } : {})
       }
     })
     if (!currentNames.size) throw new Error("A Dynpro screen must retain at least one component")
 
-    const definitionVocabularies = componentOperations.map((entry) =>
-      entry.definition ? patchDefinitionVocabulary(entry.definition) : "external"
-    )
+    const definitionVocabularies = componentOperations.map((entry) => entry.vocabulary)
     if (definitionVocabularies.includes("mixed")) {
       throw new Error(
         "a componentOperations definition mixes the D021S and RPY_DYFATC vocabularies; send one dialect"
