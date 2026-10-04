@@ -1894,6 +1894,72 @@ test("Dynpro application tools validate customer scope and preserve structured r
   )
 })
 
+test("an upsert that omits the header keeps the screen's own D020S instead of rebuilding it", async () => {
+  const backend = new MockBackend()
+  const tools = new ToolService(backend)
+  const sent: Array<Parameters<AdtBackend["callSapRepository"]>[1]> = []
+  const callSapRepository = backend.callSapRepository.bind(backend)
+  backend.callSapRepository = async (connectionId, request) => {
+    if (request.operation === "UPSERT_SCREEN") sent.push(request)
+    return callSapRepository(connectionId, request)
+  }
+
+  const read = async () =>
+    JSON.parse(
+      await tools.readAbapScreen({
+        programName: "ZMODULE_POOL",
+        screenNumber: "0100",
+        connectionId: "w200"
+      })
+    ) as {
+      fingerprint: string
+      header: Record<string, string>
+      fields: Array<Record<string, string>>
+    }
+
+  const screen = await read()
+  // The helper writes HEADER wholesale, so these are the values an omitted header destroys. They come
+  // from the screen itself, not from the code under test, so this cannot pass by echoing the fix.
+  assert.equal(screen.header.FNUM, "0002")
+  assert.equal(screen.header.NOLI, "0020")
+  assert.equal(screen.header.SPRA, "E")
+
+  await tools.upsertAbapScreen({
+    programName: "ZMODULE_POOL",
+    screenNumber: "0100",
+    description: "Header kept",
+    transportNumber: "W20K900001",
+    expectedFingerprint: screen.fingerprint,
+    fields: screen.fields,
+    flowLogic: ["PROCESS BEFORE OUTPUT."],
+    connectionId: "w200"
+  })
+  assert.deepEqual(
+    sent[0]?.header,
+    screen.header,
+    "an omitted header must carry the screen's own D020S; undefined rebuilds it from defaults"
+  )
+
+  const afterFirst = await read()
+  await tools.upsertAbapScreen({
+    programName: "ZMODULE_POOL",
+    screenNumber: "0100",
+    description: "Header overridden",
+    transportNumber: "W20K900001",
+    expectedFingerprint: afterFirst.fingerprint,
+    header: { ...afterFirst.header, FNUM: "0009" },
+    fields: afterFirst.fields,
+    flowLogic: ["PROCESS BEFORE OUTPUT."],
+    connectionId: "w200"
+  })
+  assert.equal(sent[1]?.header?.FNUM, "0009", "an explicit header still wins over the readback")
+  assert.equal(
+    sent[1]?.header?.NOLI,
+    "0020",
+    "keys the caller did not name stay at the screen's value"
+  )
+})
+
 test("GUI definition tools preserve untouched native rows and reject stale fingerprints", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)

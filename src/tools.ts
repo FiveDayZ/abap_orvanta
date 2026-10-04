@@ -2126,6 +2126,13 @@ export class ToolService {
         "expectedFingerprint must be the 64-character fingerprint returned by read_abap_screen"
       )
     }
+    // RPY_DYNPRO_INSERT_NATIVE writes HEADER wholesale, so an omitted header is not "leave it as it
+    // is" - it rebuilds D020S from defaults and silently drops FNUM, BZMX, BZBR, NOLI, NOCO, CUAN and
+    // SPRA. Measured on 2026-10-04: an upsert of screen 0100 with no header zeroed all seven and moved
+    // the readback of LBL_MESSAGE. The fingerprint guard below already reads the screen, so an existing
+    // screen keeps its own header from that read unless the caller overrides it. A create has no
+    // fingerprint to guard with and no header to keep, so it still passes through what the caller sent.
+    let currentHeader: Record<string, string> | undefined
     if (expectedFingerprint) {
       const current = await this.readScreenDefinition({
         connectionId: input.connectionId,
@@ -2137,6 +2144,7 @@ export class ToolService {
           `SCREEN_FINGERPRINT_CONFLICT: expected ${expectedFingerprint}, current ${current.fingerprint}`
         )
       }
+      currentHeader = current.header
     }
     const result = await this.backend.callSapRepository(input.connectionId.toLowerCase(), {
       operation: "UPSERT_SCREEN",
@@ -2144,7 +2152,7 @@ export class ToolService {
       screen: screenNumber,
       description: input.description,
       transportNumber: transportNumber(input.transportNumber),
-      header: input.header,
+      header: input.header ?? currentHeader,
       ...(nativeRoute
         ? {
             nativeFields: native,
