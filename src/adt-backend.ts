@@ -2735,9 +2735,9 @@ export function buildSapRepositoryEnvelope(request: SapRepositoryRequest): strin
     xmlElement("IV_EXPECTED_VERSION", request.expectedVersion ?? "") +
     optionalRepositorySelectors(request) +
     xmlRecord("IS_HEADER", request.header ?? {}) +
-    `<CT_FIELDS></CT_FIELDS>` +
-    `<CT_FLOWLOGIC></CT_FLOWLOGIC>` +
-    `<CT_PARAMS></CT_PARAMS>` +
+    xmlTable("CT_FIELDS", request.nativeFields ?? []) +
+    xmlTable("CT_FLOWLOGIC", request.nativeFlowLogic ?? []) +
+    xmlTable("CT_PARAMS", request.nativeParams ?? []) +
     xmlTable(
       "IT_SOURCE",
       source.map((LINE) => ({ LINE }))
@@ -2903,6 +2903,18 @@ function serializeScreenPatchPayload(request: SapRepositoryRequest): string[] {
 
 export function parseSapRepositoryResponse(body: string): SapRepositoryResult {
   const document = parse(body, { parseTagValue: false, trimValues: true, htmlEntities: true })
+  // D021S and D023S rows are fixed-width records, and parts of them are packed byte areas rather than
+  // free text: D021S-RES1/RES2 overlay the D021S_RES1/D021S_RES2 structures, and a pushbutton's
+  // function code sits at D021S_RES1-FUNCCODE, at a byte offset inside that area. Measured on w200
+  // (ZPMCPC01/9000, 10 pushbuttons, 2026-10-04): the code starts at byte 169, so bytes 1-168 are the
+  // flags and reserved space ahead of it. Trimming left-aligns the value and loses
+  // that offset, and the loss is destructive rather than cosmetic: the read side upgrades what it
+  // imported (RPY_DYNPRO_READ_NATIVE calls RS_SCRP_UPGRADE_DYNPRO), whose cleanup wipes the entire
+  // RES1/RES2 area as soon as RES1-F4AVAILABL - byte 1 - holds anything other than blank, x or X.
+  // A trimmed function code therefore lands on byte 1, and the next read erases it. That is how a
+  // read -> write round trip used to drop the function code of every pushbutton it touched. Read the
+  // two fixed-width tables without trimming so the byte offsets survive the round trip unchanged.
+  const paddedDocument = parse(body, { parseTagValue: false, trimValues: false, htmlEntities: true })
   const fault = findXmlValue(document, "faultstring")
   if (fault) throw new Error(`SAP SOAP fault: ${fault}`)
   const result: SapRepositoryResult = {
@@ -2912,9 +2924,9 @@ export function parseSapRepositoryResponse(body: string): SapRepositoryResult {
     version: findXmlValue(document, "EV_VERSION") ?? "",
     header: findXmlRecord(document, "ES_HEADER"),
     dynproText: findXmlValue(document, "EV_DYNPROTEXT") ?? "",
-    fields: findXmlRows(document, "CT_FIELDS"),
+    fields: findXmlRows(paddedDocument, "CT_FIELDS"),
     flowLogic: findXmlRows(document, "CT_FLOWLOGIC"),
-    params: findXmlRows(document, "CT_PARAMS"),
+    params: findXmlRows(paddedDocument, "CT_PARAMS"),
     transactions: findXmlRows(document, "ET_TCODES"),
     guiAttributes: findXmlRows(document, "ET_GUI_ATTRIBUTES"),
     source: findXmlRows(document, "IT_SOURCE").map((row) => row.LINE ?? "")

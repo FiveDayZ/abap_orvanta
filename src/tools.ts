@@ -210,6 +210,7 @@ interface ReadScreenInput {
 interface UpsertScreenInput extends ReadScreenInput {
   description: string
   transportNumber: string
+  expectedFingerprint?: string | undefined
   header?: Record<string, string> | undefined
   fields: Array<Record<string, string>>
   flowLogic: string[]
@@ -2105,6 +2106,38 @@ export class ToolService {
     const screenNumber = dynproNumber(input.screenNumber)
     if (!input.fields.length) throw new Error("fields must contain at least one RPY_DYFATC row")
     if (!input.flowLogic.length) throw new Error("flowLogic must contain at least one D022S line")
+    // Both dialects are accepted; the dialect picks the helper's route. Native rows reuse the
+    // `CT_FIELDS` channel the read side already answers from, so a read result round-trips unchanged.
+    const { native, external } = partitionScreenFields(input.fields)
+    if (native.length && external.length) {
+      throw new Error(
+        "fields must not mix the D021S and RPY_DYFATC vocabularies in one call; send one dialect"
+      )
+    }
+    const nativeRoute = native.length > 0
+    // Whole-screen replacement with no guard silently rebuilds a screen the caller may not have
+    // read. When the caller supplies the fingerprint from read_abap_screen, prove the screen is
+    // still that version before dispatching anything: the read happens first, so a stale caller
+    // costs one read and zero SAP writes. It stays optional because upsert also creates a screen
+    // that does not exist yet, and that case has no fingerprint to supply.
+    const expectedFingerprint = input.expectedFingerprint?.trim().toLowerCase()
+    if (expectedFingerprint !== undefined && !/^[a-f0-9]{64}$/.test(expectedFingerprint)) {
+      throw new Error(
+        "expectedFingerprint must be the 64-character fingerprint returned by read_abap_screen"
+      )
+    }
+    if (expectedFingerprint) {
+      const current = await this.readScreenDefinition({
+        connectionId: input.connectionId,
+        programName,
+        screenNumber
+      })
+      if (current.fingerprint !== expectedFingerprint) {
+        throw new Error(
+          `SCREEN_FINGERPRINT_CONFLICT: expected ${expectedFingerprint}, current ${current.fingerprint}`
+        )
+      }
+    }
     const result = await this.backend.callSapRepository(input.connectionId.toLowerCase(), {
       operation: "UPSERT_SCREEN",
       program: programName,
@@ -2112,9 +2145,17 @@ export class ToolService {
       description: input.description,
       transportNumber: transportNumber(input.transportNumber),
       header: input.header,
-      fields: input.fields.map(uppercaseRecord),
-      flowLogic: input.flowLogic.map((LINE) => ({ LINE })),
-      params: input.params?.map(uppercaseRecord)
+      ...(nativeRoute
+        ? {
+            nativeFields: native,
+            nativeFlowLogic: input.flowLogic.map((LINE) => ({ LINE })),
+            ...(input.params ? { nativeParams: input.params } : {})
+          }
+        : {
+            fields: external.map(uppercaseRecord),
+            flowLogic: input.flowLogic.map((LINE) => ({ LINE })),
+            ...(input.params ? { params: input.params.map(uppercaseRecord) } : {})
+          })
     })
     requireRepositorySuccess(result.status, result.code, result.message)
     return (
@@ -2197,16 +2238,53 @@ export class ToolService {
     })
     if (!currentNames.size) throw new Error("A Dynpro screen must retain at least one component")
 
+    const definitionVocabularies = componentOperations.map((entry) =>
+      entry.definition ? patchDefinitionVocabulary(entry.definition) : "external"
+    )
+    if (definitionVocabularies.includes("mixed")) {
+      throw new Error(
+        "a componentOperations definition mixes the D021S and RPY_DYFATC vocabularies; send one dialect"
+      )
+    }
+    // When any definition is native, the whole screen is written through the native channel: the
+    // current rows read back as D021S, and RPY_DYNPRO_INSERT_NATIVE writes a complete field list, so
+    // merging in TS and sending that list needs no cross-vocabulary translation at all.
+    const nativeWrite = definitionVocabularies.includes("native")
+    const mergedFields = nativeWrite
+      ? mergeNativeScreenFields(current.fields, componentOperations)
+      : []
+    // RPY_DYNPRO_INSERT_NATIVE writes HEADER wholesale, so a native patch must carry the screen's
+    // existing D020S values or it would reset dimensions it was not asked to change. The read result
+    // supplies them; an explicit header patch still wins.
+    const nativePatchHeader = nativeWrite ? { ...current.header, ...(header ?? {}) } : undefined
+
     const result = await this.backend.callSapRepository(connectionId, {
       operation: "PATCH_SCREEN",
       program: current.programName,
       screen: current.screenNumber,
       transportNumber: transportNumber(input.transportNumber),
-      componentOperations,
+      ...(nativeWrite
+        ? {
+            nativeFields: mergedFields,
+            nativeFlowLogic: (input.flowLogic ? input.flowLogic : current.flowLogic).map(
+              (LINE) => ({
+                LINE
+              })
+            ),
+            ...(input.params
+              ? { nativeParams: input.params }
+              : current.params?.length
+                ? { nativeParams: current.params }
+                : {}),
+            ...(nativePatchHeader ? { header: nativePatchHeader } : {})
+          }
+        : { componentOperations }),
       ...(input.description !== undefined ? { description: input.description } : {}),
-      ...(header ? { header } : {}),
-      ...(input.flowLogic ? { flowLogic: input.flowLogic.map((LINE) => ({ LINE })) } : {}),
-      ...(input.params ? { params: input.params.map(uppercaseRecord) } : {})
+      ...(!nativeWrite && header ? { header } : {}),
+      ...(!nativeWrite && input.flowLogic
+        ? { flowLogic: input.flowLogic.map((LINE) => ({ LINE })) }
+        : {}),
+      ...(!nativeWrite && input.params ? { params: input.params.map(uppercaseRecord) } : {})
     })
     requireRepositorySuccess(result.status, result.code, result.message)
     const saved = screenDefinition(connectionId, current.programName, current.screenNumber, result)
@@ -10668,6 +10746,225 @@ function joinSourceLines(lines: string[]): string {
 function screenFieldName(field: Record<string, string>): string | undefined {
   const value = field.NAME ?? field.FNAM
   return value ? value.trim().toUpperCase() : undefined
+}
+
+/**
+ * Which dialect a screen field row is written in.
+ *
+ * `read_abap_screen` answers D021S (native) rows, while `upsert_abap_screen`/`patch_abap_screen`
+ * historically accepted RPY_DYFATC (external) rows. The two share only `LINE` and `TYPE`, so a read
+ * result fed straight back used to be rejected with SCREEN_PROPERTY_INVALID. Both dialects are
+ * accepted now, and the dialect decides which helper path the row travels: native rows go through
+ * `CT_FIELDS` into `RPY_DYNPRO_INSERT_NATIVE`, external rows keep the `RPY_DYFATC` route.
+ *
+ * The discriminator is a key that exists in exactly one of the two structures, so it cannot be
+ * guessed from a value: `FNAM` and `DIDX` are D021S-only, and `CONT_TYPE`/`NAME` are RPY_DYFATC-only.
+ * A row carrying both markers, or neither, is refused rather than assumed - a wrong guess would write
+ * a screen with silently wrong coordinates.
+ */
+type ScreenVocabulary = "native" | "external"
+
+/**
+ * The two field structures, as measured on w200 (DD03L for D021S, read_ddic_structure for
+ * RPY_DYFATC), each minus the two components they share (`TYPE`, `LINE`).
+ *
+ * These are the COMPLETE component sets rather than a hand-picked sample, because a caller may
+ * legitimately send any of them: a patch definition that moves a field by sending only `COLUMN` and
+ * `LENGTH` is a real RPY_DYFATC row even though it carries neither `NAME` nor `CONT_TYPE`. A partial
+ * list would classify such a row as undecidable and reject a request that used to work.
+ */
+const NATIVE_ONLY_SCREEN_KEYS = [
+  "FNAM",
+  "DIDX",
+  "FLG1",
+  "FLG2",
+  "FLG3",
+  "FILL",
+  "FMB1",
+  "FMB2",
+  "COLR",
+  "LENG",
+  "COLN",
+  "LTYP",
+  "LANF",
+  "LBLK",
+  "LREP",
+  "FMKY",
+  "PAID",
+  "UCNV",
+  "AUTH",
+  "WNAM",
+  "DMAC",
+  "GRP1",
+  "GRP2",
+  "GRP3",
+  "GRP4",
+  "ITYP",
+  "AGLT",
+  "ADEZ",
+  "STXT",
+  "RES1",
+  "RES2"
+] as const
+const EXTERNAL_ONLY_SCREEN_KEYS = [
+  "CONT_TYPE",
+  "CONT_NAME",
+  "NAME",
+  "TEXT",
+  "DROPDOWN",
+  "ICON_NAME",
+  "ICON_QINFO",
+  "ICON_QSPEC",
+  "WITH_ICON",
+  "ROLLING",
+  "COLUMN",
+  "LENGTH",
+  "VISLENGTH",
+  "HEIGHT",
+  "GROUP1",
+  "GROUP2",
+  "GROUP3",
+  "GROUP4",
+  "PUSH_FCODE",
+  "PUSH_FTYPE",
+  "CXT_MENON",
+  "FORMAT",
+  "FROM_DICT",
+  "MODIFIC",
+  "CONV_EXIT",
+  "PARAM_ID",
+  "SET_PARAM",
+  "GET_PARAM",
+  "UP_LOWER",
+  "NO_TEMPL",
+  "FOREIGNKEY",
+  "INPUT_FLD",
+  "OUTPUT_FLD",
+  "OUTPUTONLY",
+  "REQU_ENTRY",
+  "POSS_ENTRY",
+  "DROPFROM",
+  "RIGHT_JUST",
+  "LEAD_ZEROS",
+  "NO_RESET",
+  "FIXED_FONT",
+  "BRIGHT",
+  "INVISIBLE",
+  "2_DIMENS",
+  "LABELLEFT",
+  "LABELRIGHT",
+  "LTR",
+  "BIDICTRL",
+  "DBLCLICK",
+  "MATCHCODE",
+  "REF_FIELD",
+  "TC_TITLE",
+  "TC_HEADING",
+  "TC_SELCOL",
+  "BUTT_RIGHT",
+  "DICT_I_FKY",
+  "DICT_I_FKD",
+  "DICT_I_SGN",
+  "DICT_I_VAL",
+  "SFW_SWITCHID",
+  "SFW_SHOWHIDE",
+  "PROPERTIES"
+] as const
+
+function screenVocabulary(field: Record<string, string>): ScreenVocabulary | undefined {
+  const hasNative = NATIVE_ONLY_SCREEN_KEYS.some((key) => field[key] !== undefined)
+  const hasExternal = EXTERNAL_ONLY_SCREEN_KEYS.some((key) => field[key] !== undefined)
+  if (hasNative && hasExternal) return undefined
+  if (hasNative) return "native"
+  if (hasExternal) return "external"
+  return undefined
+}
+
+/**
+ * Split a screen field list into the two dialects, refusing an ambiguous or undecidable row.
+ *
+ * A row with neither marker cannot be routed, and one with both markers means the caller mixed the
+ * dialects inside one row (for example a read result it also edited with external properties), which
+ * has no single correct interpretation. Both are reported by index so the caller can fix that row.
+ */
+function partitionScreenFields(fields: Array<Record<string, string>>): {
+  native: Array<Record<string, string>>
+  external: Array<Record<string, string>>
+} {
+  const native: Array<Record<string, string>> = []
+  const external: Array<Record<string, string>> = []
+  fields.forEach((field, index) => {
+    const vocabulary = screenVocabulary(field)
+    if (vocabulary === "native") native.push(field)
+    else if (vocabulary === "external") external.push(field)
+    else {
+      const hasNative = NATIVE_ONLY_SCREEN_KEYS.some((key) => field[key] !== undefined)
+      const hasExternal = EXTERNAL_ONLY_SCREEN_KEYS.some((key) => field[key] !== undefined)
+      throw new Error(
+        `fields[${index}] mixes the D021S and RPY_DYFATC vocabularies` +
+          (hasNative || hasExternal
+            ? " (it carries markers of both)"
+            : " (it carries no distinguishing property; supply either D021S or RPY_DYFATC rows)") +
+          `. read_abap_screen returns D021S rows; use those unchanged, or send RPY_DYFATC rows.`
+      )
+    }
+  })
+  return { native, external }
+}
+
+/**
+ * Vocabulary of one `patch_abap_screen` component definition.
+ *
+ * This deliberately differs from `partitionScreenFields`, which refuses an unlabelled row. A patch
+ * definition may legitimately omit the component name because `operation.name` supplies it, and every
+ * patch caller before native support sent RPY_DYFATC definitions. So an unlabelled definition keeps
+ * its historical external meaning instead of being rejected; only a row carrying markers of BOTH
+ * dialects is ambiguous. `mixed` is returned so the caller can refuse it explicitly.
+ */
+function patchDefinitionVocabulary(
+  definition: Record<string, string>
+): "native" | "external" | "mixed" {
+  const hasNative = NATIVE_ONLY_SCREEN_KEYS.some((key) => definition[key] !== undefined)
+  const hasExternal = EXTERNAL_ONLY_SCREEN_KEYS.some((key) => definition[key] !== undefined)
+  if (hasNative && hasExternal) return "mixed"
+  return hasNative ? "native" : "external"
+}
+
+/**
+ * Apply patch operations to a native D021S field list, staying inside the native vocabulary.
+ *
+ * No key renaming and no value re-encoding happen here, so this needs none of the D021S <-> RPY_DYFATC
+ * conversion that the read side could not honestly reproduce. `current` is already what
+ * `read_abap_screen` answered, and a native definition carries the same keys, so merging whole rows
+ * is sufficient. The result is the COMPLETE field list, which is what RPY_DYNPRO_INSERT_NATIVE
+ * writes.
+ */
+function mergeNativeScreenFields(
+  current: Array<Record<string, string>>,
+  operations: Array<{
+    operation: "ADD" | "UPDATE" | "REMOVE"
+    name: string
+    definition?: Record<string, string> | undefined
+  }>
+): Array<Record<string, string>> {
+  const fields = structuredClone(current)
+  for (const entry of operations) {
+    const index = fields.findIndex((field) => screenFieldName(field) === entry.name)
+    if (entry.operation === "REMOVE") {
+      fields.splice(index, 1)
+      continue
+    }
+    const row: Record<string, string> = { ...(entry.definition ?? {}) }
+    if (row.FNAM !== undefined && screenFieldName(row) !== entry.name) {
+      throw new Error(
+        `Component definition name ${screenFieldName(row)} does not match operation name ${entry.name}`
+      )
+    }
+    row.FNAM = entry.name
+    if (entry.operation === "ADD") fields.push(row)
+    else fields[index] = { ...fields[index], ...row }
+  }
+  return fields
 }
 
 function screenComponentName(value: string): string {

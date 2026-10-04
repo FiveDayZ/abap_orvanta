@@ -464,6 +464,18 @@ export interface SapBackend {
 - 助手生成脚本（`scripts/bootstrap-sap-helper.ps1`）改动：① 文本载荷 `CASE` 新增 `WHEN 'TYPE'`；② 写入循环按类型选 `lv_text_pool_id`、按类型校验 KEY、查找与 `MODIFY` 不再硬编码 `'I'`；③ 读取循环发布 `TYPE`。读取-再整表写回（`INSERT TEXTPOOL`）的结构保持不变，未触碰的条目仍被保留。守卫：`test/text-element-selection.test.ts` 直接读该脚本断言这三点与能力表行同注册表下限一致。
 - **助手尚未部署到 `w200`**（线上仍是旧协议），因此报告里该工具为 version-check `unsupported`——待部署状态，不是缺陷；部署后应转为 `available`，并以 `SOURCE|HASH` 与生成器一致性核对（见 §5 A4-2）。
 
+**2026-10-04 工作树增量（仓库助手协议仍为 2.28 —— 屏幕读/写词汇表贯通，助手已部署）**
+
+- **问题**：`read_abap_screen` 按 `D021S`（原生）回读，而 `upsert_abap_screen`／`patch_abap_screen` 只解析 `RPY_DYFATC`（外部）。两套结构的**交集只有 `LINE` 与 `TYPE` 两个键**（`D021S` 33 键、`RPY_DYFATC` 66 键，均按 w200 实测），因此把一次真实读结果原样回填**必然被拒**——2026-10-03 R51 实测报 `SCREEN_PROPERTY_INVALID: Unknown screen payload property`，该缺陷使"读回来、改一改、写回去"这条最基本的链路不可用。
+- **修法**：助手侧新增**原生写路径**。调用方把原生行放进 `CT_FIELDS`／`CT_FLOWLOGIC`／`CT_PARAMS`（接口早已声明为 `D021S`／`D022S`／`D023S`，读取侧本就从这三个表解析），助手在 `ct_fields[] IS NOT INITIAL` 时直接以它们作 `FIELDLIST` 调 `RPY_DYNPRO_INSERT_NATIVE`，否则走既有 `RPY_DYFATC` → `RPY_DYNPRO_INSERT` 路径。**无需载具、无需改接口**（纯正文路线）：`HEADER` 用 `IS_HEADER`（声明即 `D020S`），`DYNPROTEXT` 用 `IV_DESCRIPTION`。
+- **为什么不需要处理 base64**：原生读输出里非字符分量是**原始字节的 base64**（`LINE="Aw=="`=3、`LENG="DA=="`=12），这不是助手逻辑，而是 SAP 对 `RAW` 分量的标准序列化——`CT_FIELDS` 声明为 `D021S`，所以 RAW→base64、CHAR→明文由 SAP 在**读写两侧自行完成**。走该通道即让 SAP 承担双向转换，故 ABAP 侧无 base64 代码、无按类型分支。
+- **不采用的方向（R52 已证不可诚实完成，勿重走）**：在 TypeScript 侧复刻 SAP 的 `RPY_DYNPRO_CVT_INTO_EXTFORMAT`（263 行 / 19 FORM），其首步 `RS_SCRP_UPGRADE_DYNPRO` 做 release 归一化，且约 15–20 个位常量（`FLG1SCR`／`FLG1DDF`／`FLG3OUT`／`FMB1OUT`／`FLG2GKS` 等）在 DTEL 中查不到。**写侧对齐读侧不需要任何转换**，这才是可行解。
+- **词汇判定**：两套词汇的判别键**取自实测的完整分量集**（`D021S` 与 `RPY_DYFATC` 各自减掉共享的 `TYPE`／`LINE`），**不是手挑样本**——`patch_abap_screen` 的 update 定义常常只带 `COLUMN`／`LENGTH` 而不带 `NAME`／`CONT_TYPE`，用残缺清单会把这种合法请求判成"无法识别"而拒绝。同一行同时带两套标记即**拒绝**（歧义无法解释，猜错会静默写错坐标），而不是猜测性处理；`patch` 的 update/remove 定义允许不带判别键（名称由 `operation.name` 提供），此时按历史的 `RPY_DYFATC` 语义解释，以保既有调用方不变。
+- **能力表 2 行抬到 `sinceVersion = 2.28`**：`UPSERT_SCREEN`（原 `1.1`）、`PATCH_SCREEN`（原 `1.4`）。**为什么是 2.28 而不是 1.5**：与 2.12 同一条理由——协议是单一单调刻度，闸门比较 `PROTOCOL|MAX` 这一个标量；旧正文收到原生行会报 `SCREEN_PROPERTY_INVALID`，只有高于此前最大值才能把新正文与旧正文区分开。`PROTOCOL|MAX` 由表推导仍为 **2.28**（`PROTOCOL|MIN` 仍 `1.1`），与本次部署前的标量相同，因此**判定表对这两个工具的版本结论不变**，变的是"新正文必须被装载才可用"。
+- **另一处真实缺陷**：原生分支回读前只 `REFRESH` 了两个表、漏了 `ct_fields`，而调用方数据仍在其中，再读会向非空表追加——已补齐为 `REFRESH: ct_fields, ct_flowlogic, ct_params.`（与 `READ_SCREEN` 一致）。守卫：`test/tools.test.ts` 的往返用例（读结果原样回填必须成功、回读指纹不变）与两类拒绝用例（混合词汇、无判别键），`test/mock-backend.ts` 同步实现原生通道，否则该守卫在 mock 上无齿。
+- **部署状态**：**已部署到 `w200`**（正文路线，`write_function_module_source` + `ORVANTA_SELF_WRITE_APPROVED`）。`sourceFingerprint` `f103a253…`→`a040cb59…`，**接口指纹未变** `60cfd3b3…`（即无载具/F8），回读正文逐字命中，能力自述 `UPSERT_SCREEN`／`PATCH_SCREEN` 均为 `2.28`、`sourceHash` `b549a729…` 与导出一致。**真机往返验收待执行**：运行中的 4849 服务装载的是本次改动之前的构建（`get_runtime_info` 报 `diskSinceStartup: mismatch`），须重启该服务后才会生效。
+- **§0 上表该行（`Z_ORVANTA_MCP_DYNPRO_API`，`1.1 – 2.6` / 36 操作码 / `06812bcc…`）是 2026-09-18 的快照，早已过时，按本文件惯例不回改**：该助手现在是 `1.1 – 2.28`、**50** 个操作码、`sourceHash` `b549a729…`（`READ_SCREEN@1.1`／`UPSERT_SCREEN@2.28`／`PATCH_SCREEN@2.28`）。此处为准。
+
 ---
 
 ## 5. 验收标准（部署后由人工执行）

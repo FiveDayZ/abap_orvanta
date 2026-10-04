@@ -649,13 +649,17 @@ const toolContractsBase = {
   },
   upsert_abap_screen: {
     description:
-      "Create or replace one classic Dynpro screen for an existing Z* or Y* program. Accepts public RPY_DYFATC field rows, RPY_DYFLOW flow-logic lines, and optional D020S sizing/RPY_DYPARA values. Requires an explicit existing transport and re-reads the saved screen in native D020S/D021S/D022S/D023S form. It never releases transports.",
+      "Create or replace one classic Dynpro screen for an existing Z* or Y* program. Accepts field rows in EITHER vocabulary: the native D021S rows that read_abap_screen returns (send them back unchanged - they travel through CT_FIELDS and the helper routes them to RPY_DYNPRO_INSERT_NATIVE), or public RPY_DYFATC rows. The two are told apart by keys present in only one structure, so one call must not mix them, and a row carrying neither or both is refused rather than guessed. Flow logic is D022S lines either way, with optional D020S sizing and D023S params. Because this replaces the whole screen, pass the expectedFingerprint that read_abap_screen returned: it is then re-read first and a stale caller is refused with SCREEN_FINGERPRINT_CONFLICT after zero SAP writes. It stays optional only because creating a screen that does not exist yet has no fingerprint to supply. Requires an explicit existing transport and re-reads the saved screen in native D020S/D021S/D022S/D023S form. It never releases transports.",
     inputSchema: {
       ...writeOperationInput,
       programName: z.string(),
       screenNumber: z.string(),
       description: z.string(),
       transportNumber: z.string(),
+      expectedFingerprint: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/i)
+        .optional(),
       header: z.record(z.string()).optional(),
       fields: z.array(z.record(z.string())).min(1),
       flowLogic: z.array(z.string()).min(1),
@@ -665,7 +669,7 @@ const toolContractsBase = {
   },
   patch_abap_screen: {
     description:
-      "Apply explicit add, update, or remove operations to components of one existing Z* or Y* classic Dynpro screen while preserving untouched public RPY_DYFATC fields. Component coordinates are moved through update definitions. Requires the current fingerprint returned by read_abap_screen, an existing transport, and SAP repository helper 1.4. Optional header, flowLogic, params, and description values replace only the supplied sections. The tool re-reads the native screen and never releases transports.",
+      "Apply explicit add, update, or remove operations to components of one existing Z* or Y* classic Dynpro screen while preserving untouched fields. Component names are matched against the native D021S screen that read_abap_screen answers, so the fingerprint from that read is what the guard expects. Add/update definitions carry public RPY_DYFATC properties. Component coordinates are moved through update definitions. Requires the current fingerprint returned by read_abap_screen, an existing transport, and SAP repository helper 1.4. Optional header, flowLogic, params, and description values replace only the supplied sections. The tool re-reads the native screen and never releases transports.",
     inputSchema: {
       ...writeOperationInput,
       programName: z.string(),

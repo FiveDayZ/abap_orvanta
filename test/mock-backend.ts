@@ -1985,16 +1985,48 @@ export class MockBackend implements SapBackend {
       return this.screenResult("SCREEN_READ")
     }
     if (request.operation === "UPSERT_SCREEN") {
-      this.screen = {
-        description: request.description ?? "",
-        header: { ...this.screen.header, ...(request.header ?? {}) },
-        fields: (request.fields ?? []).map(mockNativeScreenField),
-        flowLogic: structuredClone(request.flowLogic ?? []),
-        params: structuredClone(request.params ?? [])
-      }
+      // The helper routes a non-empty CT_FIELDS to RPY_DYNPRO_INSERT_NATIVE and keeps the
+      // RPY_DYFATC path for everything else, so the mock must do the same or the read -> write
+      // round trip would pass here while failing on SAP.
+      const native = request.nativeFields && request.nativeFields.length > 0
+      this.screen = native
+        ? {
+            description: request.description ?? "",
+            header: { ...this.screen.header, ...(request.header ?? {}) },
+            fields: structuredClone(request.nativeFields ?? []),
+            flowLogic: structuredClone(request.nativeFlowLogic ?? []),
+            params: structuredClone(request.nativeParams ?? [])
+          }
+        : {
+            description: request.description ?? "",
+            header: { ...this.screen.header, ...(request.header ?? {}) },
+            fields: (request.fields ?? []).map(mockNativeScreenField),
+            flowLogic: structuredClone(request.flowLogic ?? []),
+            params: structuredClone(request.params ?? [])
+          }
       return this.screenResult("SCREEN_SAVED")
     }
     if (request.operation === "PATCH_SCREEN") {
+      // The helper routes a non-empty CT_FIELDS to RPY_DYNPRO_INSERT_NATIVE, which replaces the whole
+      // screen with the field list it is given. The mock must mirror that, otherwise a native patch
+      // that dropped a field would still look correct here.
+      if (request.nativeFields && request.nativeFields.length > 0) {
+        this.screen = {
+          description:
+            request.description === undefined ? this.screen.description : request.description,
+          header: { ...this.screen.header, ...(request.header ?? {}) },
+          fields: structuredClone(request.nativeFields),
+          flowLogic:
+            request.nativeFlowLogic === undefined
+              ? this.screen.flowLogic
+              : structuredClone(request.nativeFlowLogic),
+          params:
+            request.nativeParams === undefined
+              ? this.screen.params
+              : structuredClone(request.nativeParams)
+        }
+        return this.screenResult("SCREEN_PATCHED")
+      }
       const fields = structuredClone(this.screen.fields)
       for (const operation of request.componentOperations ?? []) {
         const index = fields.findIndex((field) => field.FNAM === operation.name)

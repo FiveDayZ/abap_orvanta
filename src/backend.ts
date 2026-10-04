@@ -372,6 +372,18 @@ export interface SapRepositoryRequest {
   fields?: SapStructureRow[] | undefined
   flowLogic?: SapStructureRow[] | undefined
   params?: SapStructureRow[] | undefined
+  /**
+   * Native-vocabulary (D021S/D022S/D023S) screen rows for UPSERT_SCREEN / PATCH_SCREEN.
+   *
+   * `read_abap_screen` answers exactly these structures, so a caller can feed a read result straight
+   * back. They travel in the `CT_FIELDS`/`CT_FLOWLOGIC`/`CT_PARAMS` tables, which the helper's
+   * interface has always declared as D021S/D022S/D023S, and the helper routes a non-empty
+   * `CT_FIELDS` to `RPY_DYNPRO_INSERT_NATIVE` instead of the `RPY_DYFATC` path. Emitted only when a
+   * caller supplies them, so the `RPY_DYFATC` path and every other operation are unchanged.
+   */
+  nativeFields?: SapStructureRow[] | undefined
+  nativeFlowLogic?: SapStructureRow[] | undefined
+  nativeParams?: SapStructureRow[] | undefined
   componentOperations?: SapScreenComponentOperation[] | undefined
   guiDefinition?: SapGuiDefinitionPayload | undefined
   source?: string[] | undefined

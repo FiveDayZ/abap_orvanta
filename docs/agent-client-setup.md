@@ -294,7 +294,7 @@ DDIC调用示例（写入前仍需批准准确对象名）：
 使用 orvanta MCP，在 w200 只操作已批准的 Z* 或 Y* 客户对象。先创建模块池，再创建或更新屏幕，最后创建事务码；packageName 使用 ZABAP，transportNumber 使用 GR2K923421。完成后回读屏幕和事务，并验证激活与诊断。不要创建或释放传输请求。
 ```
 
-增量维护屏幕时先调用 `read_abap_screen`取得最新 `fingerprint`，再调用 `patch_abap_screen`并显式列出每个 `add`、`update`或 `remove`；移动组件时使用 `update`修改 `LINE`和 `COLUMN`。修改Flow Logic后调用 `validate_dynpro_application`核对PBO/PAI模块方向和定义；然后通过精确源码编辑工具维护对应MODULE源码并激活。指纹陈旧时必须重新读取和人工合并，不要直接整屏覆盖。
+增量维护屏幕时先调用 `read_abap_screen`取得最新 `fingerprint`，再调用 `patch_abap_screen`并显式列出每个 `add`、`update`或 `remove`；移动组件时使用 `update`修改坐标。坐标有**两套词汇且不可混用**：`read_abap_screen`返回的是原生 `D021S`行（坐标键为 `LINE`／`COLN`，数值是原始字节的 base64，如 `Aw==` 即十进制的 3），公共 `RPY_DYFATC`行用 `LINE`／`COLUMN`且数值是十进制。最省事的做法是**把 `read_abap_screen`返回的行原样传回**——不改键名也不改值，工具会走原生 `RPY_DYNPRO_INSERT_NATIVE`路径；若要手写坐标则用 `RPY_DYFATC`词汇。**同一行同时带两套标记会被拒绝**（歧义无法解释，猜错会静默写错坐标），而不是被猜测性处理。修改Flow Logic后调用 `validate_dynpro_application`核对PBO/PAI模块方向和定义；然后通过精确源码编辑工具维护对应MODULE源码并激活。指纹陈旧时必须重新读取和人工合并，不要直接整屏覆盖。
 
 维护GUI Status或Titlebar时先调用 `read_abap_gui_definition`，保存返回的 `fingerprint`并检查11个原生CUA分区。调用 `patch_abap_gui_definition`时只提交明确的行级 `add`、`update`或 `remove`，复合键字段必须完整；不要猜测内部编号或同时对同一行执行多个操作。补丁成功后再次调用 `validate_dynpro_application`，确认源码中的静态 `SET PF-STATUS`和 `SET TITLEBAR`均存在。指纹或SAP版本冲突时重新读取并人工合并，禁止自动覆盖。
 

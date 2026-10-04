@@ -724,6 +724,40 @@ test("repository helper SOAP separates public write rows from native read rows",
   assert.deepEqual(result.flowLogic, [{ LINE: "PROCESS BEFORE OUTPUT." }])
 })
 
+test("repository helper keeps the fixed-width Dynpro tables untrimmed", () => {
+  // D021S-RES1 overlays the D021S_RES1 structure, whose FUNCCODE - the pushbutton function code -
+  // starts at a byte offset inside it. Measured on w200 (ZPMCPC01/9000, 10 pushbuttons, 2026-10-04):
+  // byte 169, so bytes 1-168 are flags and reserved space. The read side upgrades what it imported,
+  // and that upgrade wipes the whole RES1/RES2 area once byte 1 (RES1-F4AVAILABL) holds anything but
+  // blank, x or X. So a value trimmed down to the bare function code left-aligns it onto byte 1 and
+  // the next read destroys it. The fixture stores the code at that measured offset inside a synthetic
+  // 255-byte record, and the padding is written out here rather than imported from the parser under
+  // test, so trimming cannot satisfy the assertion by construction.
+  const res1 = `${" ".repeat(168)}CLEAR${" ".repeat(82)}`
+  assert.equal(res1.length, 255)
+  assert.equal(res1.slice(168, 173), "CLEAR")
+  assert.equal(res1.slice(0, 168).trim(), "")
+  const result = parseSapRepositoryResponse(`
+    <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
+      <soap-env:Body><Z_ORVANTA_MCP_EXECUTE.Response>
+        <EV_STATUS>S</EV_STATUS><EV_CODE>SCREEN_READ</EV_CODE>
+        <EV_MESSAGE>OK</EV_MESSAGE><EV_VERSION>1.1</EV_VERSION>
+        <ES_HEADER><PROG>ZMODULE_POOL</PROG><DNUM>0100</DNUM></ES_HEADER>
+        <EV_DYNPROTEXT>Demo</EV_DYNPROTEXT>
+        <CT_FIELDS><item><FNAM>BTN_CLEAR</FNAM><FILL>P</FILL><RES1>${res1}</RES1></item></CT_FIELDS>
+        <CT_FLOWLOGIC><item><LINE>PROCESS BEFORE OUTPUT.</LINE></item></CT_FLOWLOGIC>
+        <CT_PARAMS><item><PARAM_ID>  P1  </PARAM_ID></item></CT_PARAMS>
+        <ET_TCODES></ET_TCODES><ET_GUI_ATTRIBUTES></ET_GUI_ATTRIBUTES>
+      </Z_ORVANTA_MCP_EXECUTE.Response></soap-env:Body>
+    </soap-env:Envelope>`)
+  // The fixed-width rows keep every byte, so writing the read result back cannot shift the offset.
+  assert.equal(result.fields[0]?.RES1, res1)
+  assert.equal(result.fields[0]?.RES1?.slice(168, 173), "CLEAR")
+  assert.equal(result.params[0]?.PARAM_ID, "  P1  ")
+  // Free-text tables keep trimming: their padding carries no offset, and their readers rely on it.
+  assert.deepEqual(result.flowLogic, [{ LINE: "PROCESS BEFORE OUTPUT." }])
+})
+
 test("repository helper SOAP serializes the message-class version guard", () => {
   const envelope = buildSapRepositoryEnvelope({
     operation: "UPDATE_MESSAGE_CLASS",
@@ -1457,6 +1491,125 @@ test("Dynpro application tools validate customer scope and preserve structured r
       { name: "STATUS_0100", event: "PBO" },
       { name: "USER_COMMAND_0100", event: "PAI" }
     ]
+  )
+
+  // The read result must feed straight back into the write tool. This is the round trip that
+  // failed on 2026-10-03: `read_abap_screen` answers D021S rows while `upsert_abap_screen` used to
+  // parse only RPY_DYFATC rows, and the two structures share just `LINE` and `TYPE`, so every
+  // genuine read result was refused with SCREEN_PROPERTY_INVALID. The helper now routes a native
+  // field list through CT_FIELDS into RPY_DYNPRO_INSERT_NATIVE, so the same objects must be accepted
+  // unchanged - no key renaming, no re-encoding.
+  const roundTripped = await tools.upsertAbapScreen({
+    programName: "ZMODULE_POOL",
+    screenNumber: "0100",
+    description: "Round trip",
+    transportNumber: "W20K900001",
+    fields: screen.fields,
+    flowLogic: ["PROCESS BEFORE OUTPUT.", "MODULE status_0100."],
+    connectionId: "w200"
+  })
+  assert.match(roundTripped, /ABAP screen saved and verified/)
+
+  const afterRoundTrip = JSON.parse(
+    await tools.readAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      connectionId: "w200"
+    })
+  ) as { fields: Array<Record<string, string>>; flowLogic: string[] }
+  assert.equal(
+    afterRoundTrip.fields[0]?.FNAM,
+    "GV_NAME",
+    "the native field list must survive the round trip unchanged"
+  )
+  assert.deepEqual(afterRoundTrip.flowLogic, ["PROCESS BEFORE OUTPUT.", "MODULE status_0100."])
+
+  // The rule above can fail: a row mixing both dialects has no single correct interpretation, and a
+  // row with no distinguishing key cannot be routed at all. Both must be refused rather than guessed,
+  // because guessing wrong writes a screen with silently wrong coordinates.
+  await assert.rejects(
+    tools.upsertAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      description: "Mixed",
+      transportNumber: "W20K900001",
+      fields: [{ FNAM: "GV_NAME", NAME: "GV_NAME", TYPE: "CHAR", LINE: "1", COLN: "1" }],
+      flowLogic: ["PROCESS BEFORE OUTPUT."],
+      connectionId: "w200"
+    }),
+    /mixes the D021S and RPY_DYFATC vocabularies/
+  )
+  await assert.rejects(
+    tools.upsertAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      description: "Undecidable",
+      transportNumber: "W20K900001",
+      fields: [{ LINE: "1", TYPE: "CHAR" }],
+      flowLogic: ["PROCESS BEFORE OUTPUT."],
+      connectionId: "w200"
+    }),
+    /carries no distinguishing property/
+  )
+
+  // patch_abap_screen has the same obligation, and it must be met from the native side too: the rows
+  // it reads back are D021S, so a native definition is merged straight into that list and written
+  // through the native route. Nothing is translated between the two structures, which is what makes
+  // this honest - the read side's converter could not be reproduced.
+  const patchRead = JSON.parse(
+    await tools.readAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string; fields: Array<Record<string, string>> }
+  const nativePatch = JSON.parse(
+    await tools.patchAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      expectedFingerprint: patchRead.fingerprint,
+      transportNumber: "W20K900001",
+      componentOperations: [
+        {
+          operation: "add",
+          name: "GV_SECOND",
+          definition: { FNAM: "GV_SECOND", TYPE: "CHAR", STXT: "Second" }
+        }
+      ],
+      connectionId: "w200"
+    })
+  ) as { status: string; fields: Array<Record<string, string>> }
+  assert.equal(nativePatch.status, "SCREEN_PATCHED")
+  assert.ok(
+    nativePatch.fields.some((field) => field.FNAM === "GV_SECOND"),
+    "the natively added component must be present after the patch"
+  )
+  assert.ok(
+    nativePatch.fields.some((field) => field.FNAM === "BTN_EXIT"),
+    "a native patch must preserve the components it did not touch"
+  )
+
+  // A definition carrying markers of both dialects is refused rather than guessed: the two
+  // structures disagree about what coordinates mean, so a mixed row has no single interpretation.
+  const afterNativePatch = JSON.parse(
+    await tools.readAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      connectionId: "w200"
+    })
+  ) as { fingerprint: string }
+  await assert.rejects(
+    tools.patchAbapScreen({
+      programName: "ZMODULE_POOL",
+      screenNumber: "0100",
+      expectedFingerprint: afterNativePatch.fingerprint,
+      transportNumber: "W20K900001",
+      componentOperations: [
+        { operation: "update", name: "GV_NAME", definition: { FNAM: "GV_NAME", NAME: "GV_NAME" } }
+      ],
+      connectionId: "w200"
+    }),
+    /mixes the D021S and RPY_DYFATC vocabularies/
   )
 
   const validation = JSON.parse(
