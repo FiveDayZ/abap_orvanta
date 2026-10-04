@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1250
+ },
+ "startedAt": "2026-10-03T13:17:27.990Z",
+ "finishedAt": "2026-10-03T13:17:28.475Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 1250-1299 of 1636, 50 lines retrieved):\n\n```abap\n             USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n                      r_property_bag type ref to cl_dynpro_property_bag\n                      r_cntcmp type ref to cl_dynpro_control_composite\n             CHANGING P_DYNP_FIELD       TYPE RPYTY_DYNP_FIELD.\n\ndata: l_el_type type el_type,\n      l_el_name type el_name,\n      l_properties type prop_str,\n      l_prop_len type i,\n      l_prop_max_len type i.\n\n* Elementtyp bestimmen\n  CALL METHOD cl_dynpro_property_bag=>determine_el_type\n    EXPORTING\n      dynpro_element = p_field_int\n    IMPORTING\n      EL_TYPE        = l_el_type\n    EXCEPTIONS\n      ILLEGAL_SOURCE = 1\n      others         = 2.        .\n  IF sy-subrc <> 0.\n    MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO\n              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4\n            raising not_executed.\n  ENDIF.\n\n* aktuell gesetzte Properties lesen\n  l_el_name = p_field_int-fnam.\n  CALL METHOD r_property_bag->get_property_bag\n    EXPORTING\n      el_name    = l_el_name\n      el_type    = l_el_type\n    IMPORTING\n      PROPERTIES = l_properties\n    EXCEPTIONS\n      NOT_EXISTS = 1\n      others     = 2.\n  case sy-subrc.\n    when 0.\n      \"property bag existiert\n*      l_prop_len = strlen( l_properties ).\n*      describe field p_dynp_field-properties length l_prop_max_len.\n*      if l_prop_len > l_prop_max_len.\n*        message e410(37) with l_el_name l_prop_max_len\n*          raising not_executed.\n**       Propertystring zu lang für RPY-Format (DYFTC)\n*      endif.\n      p_dynp_field-properties = l_properties.\n    when 1.\n      \"property bag existiert nicht\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

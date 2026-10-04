@@ -1,0 +1,32 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "upsert_ddic_domain",
+  "arguments": {
+    "connectionId": "w200",
+    "operationId": "r11-dom01-create",
+    "objectName": "ZORVANTA_R11_DOM01",
+    "description": "Orvanta R11 acceptance domain",
+    "packageName": "ZABAP",
+    "transportNumber": "GR2K923472",
+    "dataType": "CHAR",
+    "length": 10,
+    "lowercase": true,
+    "fixedValues": [
+      {
+        "low": "A",
+        "description": "Value A"
+      },
+      {
+        "low": "B",
+        "description": "Value B"
+      }
+    ]
+  },
+  "startedAt": "2026-10-03T02:02:35.509Z",
+  "finishedAt": "2026-10-03T02:02:36.220Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"domain\",\n  \"objectName\": \"ZORVANTA_R11_DOM01\",\n  \"packageName\": \"ZABAP\",\n  \"version\": \"20261003100234\",\n  \"fingerprint\": \"e441f1e50576eeeb4c7a9d18e7ebed58abee8a281e7fba644dd7852ed98ce4f3\",\n  \"definition\": {\n    \"description\": \"Orvanta R11 acceptance domain\",\n    \"dataType\": \"CHAR\",\n    \"length\": 10,\n    \"outputLength\": 10,\n    \"decimals\": 0,\n    \"lowercase\": true,\n    \"signFlag\": false,\n    \"valueTable\": \"\",\n    \"conversionExit\": \"\",\n    \"fixedValues\": [\n      {\n        \"low\": \"A\",\n        \"high\": \"\",\n        \"description\": \"Value A\"\n      },\n      {\n        \"low\": \"B\",\n        \"high\": \"\",\n        \"description\": \"Value B\"\n      }\n    ]\n  },\n  \"status\": \"DDIC_OBJECT_SAVED\",\n  \"recordedRequest\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"r11-dom01-create\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"upsert_ddic_domain\",\n    \"operationIdHash\": \"49288a739dc57d3c0163bfecb44bc86a914f2c2e93c75f08e695ffe57cf095c3\",\n    \"targetKeyHash\": \"7887352ad2bc3e3d267436c01db997ce0af939c9a08a4c240cce806788b42bee\",\n    \"inputHash\": \"5ea0f452de4b8fbdb9d49c6c69723cfd964122a1cb3a07b07f0dff27e5c10d27\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"doma object ZORVANTA_R11_DOM01\\\",\\\"requestedOperation\\\":\\\"upsert_ddic_domain\\\",\\\"concurrencyGuard\\\":\\\"tool-specific SAP readback and lock checks\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T02:02:35.975Z\",\n      \"target\": \"doma object ZORVANTA_R11_DOM01\",\n      \"exists\": false,\n      \"active\": null,\n      \"version\": null,\n      \"fingerprint\": null,\n      \"packageName\": null,\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"sap_ddic_read\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"00dd13ab83b6d8ef704397196d62075ab2f75eab95a83bc78f36a41de6d555f0\",\n    \"startedAt\": \"2026-10-03T02:02:35.940Z\",\n    \"finishedAt\": \"2026-10-03T02:02:36.208Z\",\n    \"durationMs\": 265,\n    \"receiptHash\": \"434da821d8bd39e1a08678b416395fa88ea31d2684eea37d8457d1341edf3ef2\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back doma object ZORVANTA_R11_DOM01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

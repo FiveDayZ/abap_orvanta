@@ -1,0 +1,542 @@
+{
+  "startedAt": "2026-09-09T09:14:44.188Z",
+  "checks": [
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_CODEX_MCP_SCI_API",
+        "includeExecutionSupport": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"Z_CODEX_MCP_SCI_API\",\n  \"functionGroup\": \"ZCODEX_MCP_CORE\",\n  \"shortText\": \"MCP SCI inspection\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_ACTION\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_STATUS\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_CODE\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_ENGINE\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_VERSION\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_SCOPE\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_VARIANT\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_COUNT\",\n      \"typeName\": \"INT4\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [\n    {\n      \"name\": \"ET_RESULTS\",\n      \"typeName\": \"BAPIRET2\",\n      \"optional\": false,\n      \"passByValue\": false,\n      \"description\": \"\"\n    }\n  ],\n  \"exceptions\": [],\n  \"source\": [\n    \"FUNCTION Z_CODEX_MCP_SCI_API.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"本地接口：\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_ACTION) TYPE  CHAR50\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_STATUS) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_CODE) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_ENGINE) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_VERSION) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_SCOPE) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_VARIANT) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_COUNT) TYPE  INT4\",\n    \"*\\\"  TABLES\",\n    \"*\\\"      ET_RESULTS STRUCTURE  BAPIRET2\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  DATA lo_variant TYPE REF TO cl_ci_checkvariant.\",\n    \"  DATA lo_objects TYPE REF TO cl_ci_objectset.\",\n    \"  DATA lo_inspect TYPE REF TO cl_ci_inspection.\",\n    \"  DATA lo_tests TYPE REF TO cl_ci_tests.\",\n    \"  DATA lo_syntax TYPE REF TO cl_ci_test_syntax_check.\",\n    \"  DATA lo_critical TYPE REF TO cl_ci_test_critical_statements.\",\n    \"  DATA lo_test TYPE REF TO cl_ci_test_root.\",\n    \"  DATA lt_variant TYPE sci_tstvar.\",\n    \"  DATA lt_tests TYPE sci_tabtest.\",\n    \"  DATA lt_objects TYPE scit_objs.\",\n    \"  DATA ls_object TYPE scir_objs.\",\n    \"  DATA ls_finding TYPE scir_rest.\",\n    \"  DATA lv_text TYPE string.\",\n    \"  DATA lv_count TYPE i.\",\n    \"  DATA ls_rule TYPE sci_tstval.\",\n    \"  DATA ls_message TYPE bapiret2.\",\n    \"  CLEAR: ev_status, ev_code, ev_count.\",\n    \"  REFRESH et_results.\",\n    \"  ev_engine = 'SCI'.\",\n    \"  ev_version = '1.0'.\",\n    \"  ev_scope = 'ZCODEX_MCP_CORE'.\",\n    \"  ev_variant = 'DEFAULT'.\",\n    \"  ev_status = 'E'.\",\n    \"  ev_code = 'INVALID_ACTION'.\",\n    \"  IF iv_action <> 'PRECHECK' AND iv_action <> 'RUN'.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  AUTHORITY-CHECK OBJECT 'S_DEVELOP'\",\n    \"    ID 'DEVCLASS' FIELD 'ZABAP'\",\n    \"    ID 'OBJTYPE' FIELD 'FUGR'\",\n    \"    ID 'OBJNAME' FIELD 'ZCODEX_MCP_CORE'\",\n    \"    ID 'P_GROUP' DUMMY\",\n    \"    ID 'ACTVT' FIELD '03'.\",\n    \"  IF sy-subrc <> 0.\",\n    \"    ev_code = 'NOT_AUTHORIZED'.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  TRY.\",\n    \"      IF iv_action = 'RUN'.\",\n    \"        ev_variant = 'SYNTAX_CRITICAL_V1'.\",\n    \"        ev_code = 'RULE_VERSION_MISMATCH'.\",\n    \"        CREATE OBJECT lo_syntax.\",\n    \"        CREATE OBJECT lo_critical.\",\n    \"        IF lo_syntax->version <> '001' OR\",\n    \"           lo_critical->version <> '002'.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        CLEAR ls_rule.\",\n    \"        ls_rule-testname = 'CL_CI_TEST_SYNTAX_CHECK'.\",\n    \"        ls_rule-version = lo_syntax->version.\",\n    \"        INSERT ls_rule INTO TABLE lt_variant.\",\n    \"        ls_rule-testname = 'CL_CI_TEST_CRITICAL_STATEMENTS'.\",\n    \"        ls_rule-version = lo_critical->version.\",\n    \"        INSERT ls_rule INTO TABLE lt_variant.\",\n    \"        ev_code = 'RULE_LOAD_FAILED'.\",\n    \"        CALL METHOD cl_ci_tests=>get_list\",\n    \"          EXPORTING p_variant = lt_variant\",\n    \"          RECEIVING p_result = lo_tests\",\n    \"          EXCEPTIONS OTHERS = 1.\",\n    \"        IF sy-subrc <> 0 OR lo_tests IS INITIAL.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        lt_tests = lo_tests->give_list( ).\",\n    \"        DESCRIBE TABLE lt_tests LINES lv_count.\",\n    \"        IF lv_count <> 2.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        LOOP AT lt_tests INTO lo_test.\",\n    \"          IF '1PRG' NOT IN lo_test->typelist AND\",\n    \"             'FUGR' NOT IN lo_test->typelist.\",\n    \"            ev_code = 'RULE_NOT_APPLICABLE'.\",\n    \"            RETURN.\",\n    \"          ENDIF.\",\n    \"        ENDLOOP.\",\n    \"        ev_code = 'VARIANT_CREATE_FAILED'.\",\n    \"        CALL METHOD cl_ci_checkvariant=>create\",\n    \"          EXPORTING p_user = sy-uname p_name = space\",\n    \"          RECEIVING p_ref = lo_variant\",\n    \"          EXCEPTIONS OTHERS = 1.\",\n    \"        IF sy-subrc <> 0 OR lo_variant IS INITIAL.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        CALL METHOD lo_variant->set_variant\",\n    \"          EXPORTING p_variant = lt_variant\",\n    \"          EXCEPTIONS OTHERS = 1.\",\n    \"        IF sy-subrc <> 0.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        ls_object-objtype = 'FUGR'.\",\n    \"        ls_object-objname = 'ZCODEX_MCP_CORE'.\",\n    \"        APPEND ls_object TO lt_objects.\",\n    \"        ev_code = 'OBJECTSET_FAILED'.\",\n    \"        CALL METHOD cl_ci_objectset=>save_from_list\",\n    \"          EXPORTING p_user = sy-uname p_objects = lt_objects\",\n    \"          RECEIVING p_ref = lo_objects\",\n    \"          EXCEPTIONS OTHERS = 1.\",\n    \"        IF sy-subrc <> 0 OR lo_objects IS INITIAL.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        DESCRIBE TABLE lo_objects->iobjlst-objects\",\n    \"          LINES lv_count.\",\n    \"        IF lv_count <> 1.\",\n    \"          ev_code = 'OBJECTSET_NOT_EXACT'.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        READ TABLE lo_objects->iobjlst-objects\",\n    \"          INDEX 1 INTO ls_object.\",\n    \"        IF ls_object-objtype <> 'FUGR' OR\",\n    \"           ls_object-objname <> 'ZCODEX_MCP_CORE' OR\",\n    \"           ls_object-prgname IS INITIAL.\",\n    \"          ev_code = 'OBJECTSET_NOT_EXACT'.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        ev_code = 'INSPECTION_CREATE_FAILED'.\",\n    \"        CALL METHOD cl_ci_inspection=>create\",\n    \"          EXPORTING p_user = sy-uname p_name = space\",\n    \"          RECEIVING p_ref = lo_inspect\",\n    \"          EXCEPTIONS OTHERS = 1.\",\n    \"        IF sy-subrc <> 0 OR lo_inspect IS INITIAL.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        ev_code = 'INSPECTION_SET_FAILED'.\",\n    \"        CALL METHOD lo_inspect->set\",\n    \"          EXPORTING p_chkv = lo_variant p_objs = lo_objects\",\n    \"            p_noaunit = 'X' p_nosuppress = 'X'\",\n    \"          EXCEPTIONS OTHERS = 1.\",\n    \"        IF sy-subrc <> 0.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        ev_code = 'SCI_RUN_FAILED'.\",\n    \"        CALL METHOD lo_inspect->run\",\n    \"          EXPORTING p_howtorun = 'D'\",\n    \"          EXCEPTIONS OTHERS = 1.\",\n    \"        IF sy-subrc <> 0.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        DESCRIBE TABLE lo_inspect->sciresthd LINES lv_count.\",\n    \"        IF lv_count <> 1.\",\n    \"          ev_code = 'RESULT_COVERAGE_UNKNOWN'.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        DESCRIBE TABLE lo_inspect->scirestps LINES ev_count.\",\n    \"        LOOP AT lo_inspect->scirestps INTO ls_finding\",\n    \"          FROM 1 TO 1000.\",\n    \"          CLEAR: ls_message, lv_text.\",\n    \"          ls_message-type = ls_finding-kind.\",\n    \"          ls_message-message_v1 = ls_finding-test.\",\n    \"          ls_message-message_v2 = ls_finding-code.\",\n    \"          ls_message-message_v3 = ls_finding-sobjname.\",\n    \"          ls_message-message_v4 = ls_finding-col.\",\n    \"          CONDENSE ls_message-message_v4.\",\n    \"          ls_message-row = ls_finding-line.\",\n    \"          IF ls_finding-test = 'CL_CI_TEST_SYNTAX_CHECK'.\",\n    \"            lv_text = ls_finding-param1.\",\n    \"          ELSEIF ls_finding-test =\",\n    \"            'CL_CI_TEST_CRITICAL_STATEMENTS'.\",\n    \"            CALL METHOD lo_critical->get_message_text\",\n    \"              EXPORTING p_test = ls_finding-test\",\n    \"                p_code = ls_finding-code\",\n    \"              IMPORTING p_text = lv_text.\",\n    \"            REPLACE ALL OCCURRENCES OF '&1' IN lv_text\",\n    \"              WITH ls_finding-param1.\",\n    \"          ELSE.\",\n    \"            CONCATENATE ls_finding-test ls_finding-code\",\n    \"              ls_finding-param1 INTO lv_text\",\n    \"              SEPARATED BY space.\",\n    \"          ENDIF.\",\n    \"          ls_message-message = lv_text.\",\n    \"          IF strlen( lv_text ) > 220.\",\n    \"            ls_message-field = 'TEXT_TRUNCATED'.\",\n    \"          ENDIF.\",\n    \"          APPEND ls_message TO et_results.\",\n    \"        ENDLOOP.\",\n    \"        ev_status = 'W'.\",\n    \"        ev_code = 'FINDINGS_LIMITED'.\",\n    \"        IF ev_count = 0.\",\n    \"          ev_code = 'NO_FINDINGS_UNVERIFIED'.\",\n    \"        ELSEIF ev_count > 1000.\",\n    \"          ev_code = 'TRUNCATED_LIMITED'.\",\n    \"        ENDIF.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'VARIANT_NOT_FOUND'.\",\n    \"      CALL METHOD cl_ci_checkvariant=>get_ref\",\n    \"        EXPORTING\",\n    \"          p_user = space\",\n    \"          p_name = 'DEFAULT'\",\n    \"          p_dont_look_for_new_chkv = 'X'\",\n    \"        RECEIVING p_ref = lo_variant\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0 OR lo_variant IS INITIAL.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'VARIANT_READ_FAILED'.\",\n    \"      CALL METHOD lo_variant->get_info\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'EMPTY_VARIANT'.\",\n    \"      IF lo_variant->variant IS INITIAL.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      LOOP AT lo_variant->variant INTO ls_rule.\",\n    \"        CLEAR ls_message.\",\n    \"        ls_message-type = 'I'.\",\n    \"        ls_message-message_v1 = ls_rule-testname.\",\n    \"        ls_message-number = ls_rule-version.\",\n    \"        ls_message-message = 'Configured SCI rule; not executed'.\",\n    \"        IF ls_rule-attributes IS NOT INITIAL.\",\n    \"          ls_message-message_v2 = 'HAS_ATTRIBUTES'.\",\n    \"        ENDIF.\",\n    \"        APPEND ls_message TO et_results.\",\n    \"      ENDLOOP.\",\n    \"      SORT et_results BY message_v1.\",\n    \"      DESCRIBE TABLE et_results LINES ev_count.\",\n    \"      ev_status = 'S'.\",\n    \"      ev_code = 'PREFLIGHT_ONLY'.\",\n    \"    CATCH cx_root.\",\n    \"      ev_status = 'E'.\",\n    \"      \\\" Preserve the failed stage for the caller.\",\n    \"  ENDTRY.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"c3e260adf7a4e19f6d4c73c7c8c440800294022858da3c8322bbdf59d27735f8\",\n  \"interfaceFingerprint\": \"60f56e0c0542baa4851dbcaffb5627988224627d48db786b3a5993143ef8cbeb\",\n  \"sourceFingerprint\": \"dcf8bae0347349cfa256398cd713d98dcbc0b391ec944c16b87bfdaeaafbd1cb\",\n  \"executionSupport\": {\n    \"supported\": true,\n    \"reasons\": [],\n    \"parameters\": [\n      {\n        \"name\": \"IV_ACTION\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"import\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_STATUS\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_CODE\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_ENGINE\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_VERSION\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_SCOPE\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_VARIANT\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_COUNT\",\n        \"typeName\": \"INT4\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"supported\": true\n      },\n      {\n        \"name\": \"ET_RESULTS\",\n        \"typeName\": \"BAPIRET2\",\n        \"optional\": false,\n        \"direction\": \"table\",\n        \"kind\": \"table\",\n        \"fields\": [\n          \"TYPE\",\n          \"ID\",\n          \"NUMBER\",\n          \"MESSAGE\",\n          \"LOG_NO\",\n          \"LOG_MSG_NO\",\n          \"MESSAGE_V1\",\n          \"MESSAGE_V2\",\n          \"MESSAGE_V3\",\n          \"MESSAGE_V4\",\n          \"PARAMETER\",\n          \"ROW\",\n          \"FIELD\",\n          \"SYSTEM\"\n        ],\n        \"supported\": true\n      }\n    ]\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_CODEX_MCP_SCI_V2",
+        "includeExecutionSupport": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"Z_CODEX_MCP_SCI_V2\",\n  \"functionGroup\": \"ZCODEX_MCP_CORE\",\n  \"shortText\": \"MCP SCI single customer object V2\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_ACTION\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"IV_OBJECT_TYPE\",\n      \"typeName\": \"TROBJTYPE\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"IV_OBJECT_NAME\",\n      \"typeName\": \"SOBJ_NAME\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_STATUS\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_CODE\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_ENGINE\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_VERSION\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_VARIANT\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_COUNT\",\n      \"typeName\": \"INT4\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_OBJTYPE\",\n      \"typeName\": \"TROBJTYPE\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_OBJNAME\",\n      \"typeName\": \"SOBJ_NAME\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_PROGRAM\",\n      \"typeName\": \"PROGRAMM\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_PACKAGE\",\n      \"typeName\": \"DEVCLASS\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_SYNTAX\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    },\n    {\n      \"name\": \"EV_CRITICAL\",\n      \"typeName\": \"CHAR50\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [\n    {\n      \"name\": \"ET_RESULTS\",\n      \"typeName\": \"BAPIRET2\",\n      \"optional\": false,\n      \"passByValue\": false,\n      \"description\": \"\"\n    }\n  ],\n  \"exceptions\": [],\n  \"source\": [\n    \"FUNCTION Z_CODEX_MCP_SCI_V2.\",\n    \"*\\\"--------------------------------------------------------------------\",\n    \"*\\\"*\\\"局部接口：\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_ACTION) TYPE  CHAR50\",\n    \"*\\\"     VALUE(IV_OBJECT_TYPE) TYPE  TROBJTYPE\",\n    \"*\\\"     VALUE(IV_OBJECT_NAME) TYPE  SOBJ_NAME\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_STATUS) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_CODE) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_ENGINE) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_VERSION) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_VARIANT) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_COUNT) TYPE  INT4\",\n    \"*\\\"     VALUE(EV_OBJTYPE) TYPE  TROBJTYPE\",\n    \"*\\\"     VALUE(EV_OBJNAME) TYPE  SOBJ_NAME\",\n    \"*\\\"     VALUE(EV_PROGRAM) TYPE  PROGRAMM\",\n    \"*\\\"     VALUE(EV_PACKAGE) TYPE  DEVCLASS\",\n    \"*\\\"     VALUE(EV_SYNTAX) TYPE  CHAR50\",\n    \"*\\\"     VALUE(EV_CRITICAL) TYPE  CHAR50\",\n    \"*\\\"  TABLES\",\n    \"*\\\"      ET_RESULTS STRUCTURE  BAPIRET2\",\n    \"*\\\"--------------------------------------------------------------------\",\n    \"DATA lo_variant TYPE REF TO cl_ci_checkvariant.\",\n    \"  DATA lo_objects TYPE REF TO cl_ci_objectset.\",\n    \"  DATA lo_inspect TYPE REF TO cl_ci_inspection.\",\n    \"  DATA lo_tests TYPE REF TO cl_ci_tests.\",\n    \"  DATA lo_syntax TYPE REF TO cl_ci_test_syntax_check.\",\n    \"  DATA lo_critical TYPE REF TO cl_ci_test_critical_statements.\",\n    \"  DATA lo_test TYPE REF TO cl_ci_test_root.\",\n    \"  DATA lt_variant TYPE sci_tstvar.\",\n    \"  DATA lt_tests TYPE sci_tabtest.\",\n    \"  DATA lt_objects TYPE scit_objs.\",\n    \"  DATA ls_object TYPE scir_objs.\",\n    \"  DATA ls_finding TYPE scir_rest.\",\n    \"  DATA ls_rule TYPE sci_tstval.\",\n    \"  DATA ls_message TYPE bapiret2.\",\n    \"  DATA lv_text TYPE string.\",\n    \"  DATA lv_count TYPE i.\",\n    \"  DATA lv_package TYPE tadir-devclass.\",\n    \"  DATA lv_subc TYPE trdir-subc.\",\n    \"  CLEAR: ev_status, ev_code, ev_count, ev_objtype, ev_objname,\",\n    \"    ev_program, ev_package, ev_syntax, ev_critical.\",\n    \"  REFRESH et_results.\",\n    \"  ev_engine = 'SCI'.\",\n    \"  ev_version = '2.0'.\",\n    \"  ev_variant = 'SYNTAX_CRITICAL_V1'.\",\n    \"  ev_status = 'E'.\",\n    \"  ev_code = 'INVALID_ACTION'.\",\n    \"  IF iv_action <> 'PRECHECK' AND iv_action <> 'RUN'.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  ev_code = 'INVALID_TARGET'.\",\n    \"  IF iv_object_type <> 'PROG' AND iv_object_type <> 'CLAS'\",\n    \"     AND iv_object_type <> 'FUGR'.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  IF iv_object_name IS INITIAL OR\",\n    \"     ( iv_object_name(1) <> 'Z' AND iv_object_name(1) <> 'Y' ).\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  lv_text = iv_object_name.\",\n    \"  IF lv_text CN 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  IF iv_object_type <> 'PROG' AND strlen( lv_text ) > 30.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  ev_code = 'OBJECT_NOT_FOUND'.\",\n    \"  SELECT SINGLE devclass INTO lv_package FROM tadir\",\n    \"    WHERE pgmid = 'R3TR' AND object = iv_object_type\",\n    \"      AND obj_name = iv_object_name AND delflag = space.\",\n    \"  IF sy-subrc <> 0 OR lv_package IS INITIAL.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  AUTHORITY-CHECK OBJECT 'S_DEVELOP'\",\n    \"    ID 'DEVCLASS' FIELD lv_package\",\n    \"    ID 'OBJTYPE' FIELD iv_object_type\",\n    \"    ID 'OBJNAME' FIELD iv_object_name\",\n    \"    ID 'P_GROUP' DUMMY\",\n    \"    ID 'ACTVT' FIELD '03'.\",\n    \"  IF sy-subrc <> 0.\",\n    \"    ev_code = 'NOT_AUTHORIZED'.\",\n    \"    RETURN.\",\n    \"  ENDIF.\",\n    \"  IF iv_object_type = 'PROG'.\",\n    \"    ev_code = 'NOT_MAIN_PROGRAM'.\",\n    \"    SELECT SINGLE subc INTO lv_subc FROM trdir\",\n    \"      WHERE name = iv_object_name.\",\n    \"    IF sy-subrc <> 0 OR\",\n    \"       ( lv_subc <> '1' AND lv_subc <> 'M' AND lv_subc <> 'S' ).\",\n    \"      RETURN.\",\n    \"    ENDIF.\",\n    \"  ENDIF.\",\n    \"  TRY.\",\n    \"      ls_object-objtype = iv_object_type.\",\n    \"      ls_object-objname = iv_object_name.\",\n    \"      APPEND ls_object TO lt_objects.\",\n    \"      ev_code = 'OBJECTSET_FAILED'.\",\n    \"      CALL METHOD cl_ci_objectset=>save_from_list\",\n    \"        EXPORTING p_user = sy-uname p_objects = lt_objects\",\n    \"          p_name = space\",\n    \"        RECEIVING p_ref = lo_objects\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0 OR lo_objects IS INITIAL.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'OBJECTSET_NOT_EXACT'.\",\n    \"      DESCRIBE TABLE lo_objects->iobjlst-objects LINES lv_count.\",\n    \"      IF lv_count <> 1.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      READ TABLE lo_objects->iobjlst-objects INDEX 1 INTO ls_object.\",\n    \"      IF sy-subrc <> 0 OR ls_object-objtype <> iv_object_type\",\n    \"         OR ls_object-objname <> iv_object_name\",\n    \"         OR ls_object-devclass <> lv_package\",\n    \"         OR ls_object-prgname IS INITIAL.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      IF iv_object_type = 'PROG' AND\",\n    \"         ls_object-prgname <> iv_object_name.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_objtype = ls_object-objtype.\",\n    \"      ev_objname = ls_object-objname.\",\n    \"      ev_program = ls_object-prgname.\",\n    \"      ev_package = ls_object-devclass.\",\n    \"      ev_code = 'RULE_VERSION_MISMATCH'.\",\n    \"      CREATE OBJECT lo_syntax.\",\n    \"      CREATE OBJECT lo_critical.\",\n    \"      ev_syntax = lo_syntax->version.\",\n    \"      ev_critical = lo_critical->version.\",\n    \"      IF ev_syntax <> '001' OR ev_critical <> '002'.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ls_rule-testname = 'CL_CI_TEST_SYNTAX_CHECK'.\",\n    \"      ls_rule-version = lo_syntax->version.\",\n    \"      INSERT ls_rule INTO TABLE lt_variant.\",\n    \"      ls_rule-testname = 'CL_CI_TEST_CRITICAL_STATEMENTS'.\",\n    \"      ls_rule-version = lo_critical->version.\",\n    \"      INSERT ls_rule INTO TABLE lt_variant.\",\n    \"      ev_code = 'RULE_LOAD_FAILED'.\",\n    \"      CALL METHOD cl_ci_tests=>get_list\",\n    \"        EXPORTING p_variant = lt_variant\",\n    \"        RECEIVING p_result = lo_tests\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0 OR lo_tests IS INITIAL.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      lt_tests = lo_tests->give_list( ).\",\n    \"      DESCRIBE TABLE lt_tests LINES lv_count.\",\n    \"      IF lv_count <> 2.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      LOOP AT lt_tests INTO lo_test.\",\n    \"        IF '1PRG' NOT IN lo_test->typelist AND\",\n    \"           iv_object_type NOT IN lo_test->typelist.\",\n    \"          ev_code = 'RULE_NOT_APPLICABLE'.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"      ENDLOOP.\",\n    \"      IF iv_action = 'PRECHECK'.\",\n    \"        ev_status = 'S'.\",\n    \"        ev_code = 'PREFLIGHT_ONLY'.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'VARIANT_CREATE_FAILED'.\",\n    \"      CALL METHOD cl_ci_checkvariant=>create\",\n    \"        EXPORTING p_user = sy-uname p_name = space\",\n    \"        RECEIVING p_ref = lo_variant\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0 OR lo_variant IS INITIAL.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      CALL METHOD lo_variant->set_variant\",\n    \"        EXPORTING p_variant = lt_variant\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'INSPECTION_CREATE_FAILED'.\",\n    \"      CALL METHOD cl_ci_inspection=>create\",\n    \"        EXPORTING p_user = sy-uname p_name = space\",\n    \"        RECEIVING p_ref = lo_inspect\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0 OR lo_inspect IS INITIAL.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'INSPECTION_SET_FAILED'.\",\n    \"      CALL METHOD lo_inspect->set\",\n    \"        EXPORTING p_chkv = lo_variant p_objs = lo_objects\",\n    \"          p_noaunit = 'X' p_nosuppress = 'X'\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      ev_code = 'SCI_RUN_FAILED'.\",\n    \"      CALL METHOD lo_inspect->run\",\n    \"        EXPORTING p_howtorun = 'D'\",\n    \"        EXCEPTIONS OTHERS = 1.\",\n    \"      IF sy-subrc <> 0.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      DESCRIBE TABLE lo_inspect->sciresthd LINES lv_count.\",\n    \"      IF lv_count <> 1.\",\n    \"        ev_code = 'RESULT_COVERAGE_UNKNOWN'.\",\n    \"        RETURN.\",\n    \"      ENDIF.\",\n    \"      DESCRIBE TABLE lo_inspect->scirestps LINES ev_count.\",\n    \"      LOOP AT lo_inspect->scirestps INTO ls_finding FROM 1 TO 1000.\",\n    \"        IF ls_finding-objtype <> iv_object_type OR\",\n    \"           ls_finding-objname <> iv_object_name.\",\n    \"          ev_code = 'RESULT_OBJECT_MISMATCH'.\",\n    \"          CLEAR ev_count.\",\n    \"          REFRESH et_results.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        CLEAR: ls_message, lv_text.\",\n    \"        ls_message-type = ls_finding-kind.\",\n    \"        ls_message-message_v1 = ls_finding-test.\",\n    \"        ls_message-message_v2 = ls_finding-code.\",\n    \"        ls_message-message_v3 = ls_finding-sobjname.\",\n    \"        ls_message-message_v4 = ls_finding-col.\",\n    \"        CONDENSE ls_message-message_v4.\",\n    \"        ls_message-row = ls_finding-line.\",\n    \"        IF ls_finding-test = 'CL_CI_TEST_SYNTAX_CHECK'.\",\n    \"          lv_text = ls_finding-param1.\",\n    \"        ELSEIF ls_finding-test = 'CL_CI_TEST_CRITICAL_STATEMENTS'.\",\n    \"          CALL METHOD lo_critical->get_message_text\",\n    \"            EXPORTING p_test = ls_finding-test p_code = ls_finding-code\",\n    \"            IMPORTING p_text = lv_text.\",\n    \"          REPLACE ALL OCCURRENCES OF '&1' IN lv_text\",\n    \"            WITH ls_finding-param1.\",\n    \"        ELSE.\",\n    \"          ev_code = 'RESULT_RULE_MISMATCH'.\",\n    \"          CLEAR ev_count.\",\n    \"          REFRESH et_results.\",\n    \"          RETURN.\",\n    \"        ENDIF.\",\n    \"        ls_message-message = lv_text.\",\n    \"        IF strlen( lv_text ) > 220.\",\n    \"          ls_message-field = 'TEXT_TRUNCATED'.\",\n    \"        ENDIF.\",\n    \"        APPEND ls_message TO et_results.\",\n    \"      ENDLOOP.\",\n    \"      ev_status = 'W'.\",\n    \"      ev_code = 'FINDINGS_LIMITED'.\",\n    \"      IF ev_count = 0.\",\n    \"        ev_code = 'NO_FINDINGS_UNVERIFIED'.\",\n    \"      ELSEIF ev_count > 1000.\",\n    \"        ev_code = 'TRUNCATED_LIMITED'.\",\n    \"      ENDIF.\",\n    \"    CATCH cx_root.\",\n    \"      ev_status = 'E'.\",\n    \"      CLEAR ev_count.\",\n    \"      REFRESH et_results.\",\n    \"  ENDTRY.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"4095c4b6a76271eb52f7c92035ebea9850396a18bd884979338169766b29b984\",\n  \"interfaceFingerprint\": \"32d861d6032761951eb684d54737011e46f0dab9f0f3fc36333fc7013e0d3e31\",\n  \"sourceFingerprint\": \"8c97378fb7f600c5b29ca416074cde2925272de3b48c6c1c0773cb44421128e0\",\n  \"executionSupport\": {\n    \"supported\": true,\n    \"reasons\": [],\n    \"parameters\": [\n      {\n        \"name\": \"IV_ACTION\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"import\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"IV_OBJECT_TYPE\",\n        \"typeName\": \"TROBJTYPE\",\n        \"optional\": false,\n        \"direction\": \"import\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 4,\n        \"supported\": true\n      },\n      {\n        \"name\": \"IV_OBJECT_NAME\",\n        \"typeName\": \"SOBJ_NAME\",\n        \"optional\": false,\n        \"direction\": \"import\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 40,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_STATUS\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_CODE\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_ENGINE\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_VERSION\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_VARIANT\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_COUNT\",\n        \"typeName\": \"INT4\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_OBJTYPE\",\n        \"typeName\": \"TROBJTYPE\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 4,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_OBJNAME\",\n        \"typeName\": \"SOBJ_NAME\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 40,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_PROGRAM\",\n        \"typeName\": \"PROGRAMM\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 40,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_PACKAGE\",\n        \"typeName\": \"DEVCLASS\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 30,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_SYNTAX\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_CRITICAL\",\n        \"typeName\": \"CHAR50\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"maxCharacters\": 50,\n        \"supported\": true\n      },\n      {\n        \"name\": \"ET_RESULTS\",\n        \"typeName\": \"BAPIRET2\",\n        \"optional\": false,\n        \"direction\": \"table\",\n        \"kind\": \"table\",\n        \"fields\": [\n          \"TYPE\",\n          \"ID\",\n          \"NUMBER\",\n          \"MESSAGE\",\n          \"LOG_NO\",\n          \"LOG_MSG_NO\",\n          \"MESSAGE_V1\",\n          \"MESSAGE_V2\",\n          \"MESSAGE_V3\",\n          \"MESSAGE_V4\",\n          \"PARAMETER\",\n          \"ROW\",\n          \"FIELD\",\n          \"SYSTEM\"\n        ],\n        \"supported\": true\n      }\n    ]\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectType": "PROG",
+        "objectName": "ZCODEX_MCP_DYNPRO",
+        "startLine": 1,
+        "lineCount": 500
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCODEX_MCP_DYNPRO (lines 1-19 of 19, 19 lines retrieved):\n\n```abap\nPROGRAM zcodex_mcp_dynpro.\r\nDATA gv_message TYPE c LENGTH 40.\r\nDATA gv_ok_code TYPE sy-ucomm.\r\nDATA gv_initialized TYPE c LENGTH 1.\r\nMODULE status_0100 OUTPUT.\r\n  IF gv_initialized IS INITIAL.\r\n    gv_message = 'ABAP MCP Dynpro ready'.\r\n    gv_initialized = 'X'.\r\n  ENDIF.\r\nENDMODULE.\r\nMODULE user_command_0100 INPUT.\r\n  CASE gv_ok_code.\r\n    WHEN 'EXIT' OR 'BACK' OR 'CANC'.\r\n      LEAVE PROGRAM.\r\n    WHEN 'CLEAR'.\r\n      CLEAR gv_message.\r\n  ENDCASE.\r\n  CLEAR gv_ok_code.\r\nENDMODULE.\n```\n\nFull Source SHA-256: 840d0f3e3e3a79af327965f9728f16a1cfc6d05ff552b15bee21329fca218682\nURI: /sap/bc/adt/programs/programs/zcodex_mcp_dynpro/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectType": "CLAS",
+        "objectName": "ZCL_CODEX_MCP_CORE",
+        "startLine": 1,
+        "lineCount": 500
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCL_CODEX_MCP_CORE (lines 1-116 of 116, 116 lines retrieved):\n\n```abap\nCLASS zcl_codex_mcp_core DEFINITION\r\n  PUBLIC\r\n  FINAL\r\n  CREATE PRIVATE.\r\n\r\n  PUBLIC SECTION.\r\n    CONSTANTS c_version TYPE char10 VALUE '1.0'.\r\n\r\n    CLASS-METHODS execute\r\n      IMPORTING\r\n        iv_operation   TYPE rs38l-name\r\n        iv_object_type TYPE trobjtype\r\n        iv_object_name TYPE sobj_name\r\n      EXPORTING\r\n        ev_status      TYPE sy-msgty\r\n        ev_code        TYPE sy-msgv1\r\n        ev_message     TYPE bapi_msg\r\n        ev_version     TYPE sy-msgv1.\r\n\r\n  PRIVATE SECTION.\r\n    CLASS-METHODS validate_target\r\n      IMPORTING\r\n        iv_object_type TYPE trobjtype\r\n        iv_object_name TYPE sobj_name\r\n      EXPORTING\r\n        ev_code        TYPE sy-msgv1\r\n        ev_message     TYPE bapi_msg.\r\nENDCLASS.\r\n\r\n\r\nCLASS zcl_codex_mcp_core IMPLEMENTATION.\r\n  METHOD execute.\r\n    DATA lv_operation TYPE rs38l-name.\r\n    DATA lv_code TYPE sy-msgv1.\r\n    DATA lv_message TYPE bapi_msg.\r\n\r\n    CLEAR: ev_status, ev_code, ev_message.\r\n    ev_version = c_version.\r\n\r\n    lv_operation = iv_operation.\r\n    TRANSLATE lv_operation TO UPPER CASE.\r\n    CONDENSE lv_operation NO-GAPS.\r\n\r\n    CASE lv_operation.\r\n      WHEN 'PING'.\r\n        ev_status = 'S'.\r\n        ev_code = 'READY'.\r\n        ev_message = 'Codex MCP SAP helper is ready'.\r\n\r\n      WHEN 'VALIDATE_TARGET'.\r\n        validate_target(\r\n          EXPORTING\r\n            iv_object_type = iv_object_type\r\n            iv_object_name = iv_object_name\r\n          IMPORTING\r\n            ev_code = lv_code\r\n            ev_message = lv_message ).\r\n        IF lv_code IS INITIAL.\r\n          ev_status = 'S'.\r\n          ev_code = 'TARGET_ALLOWED'.\r\n          ev_message = 'Customer object target is allowed'.\r\n        ELSE.\r\n          ev_status = 'E'.\r\n          ev_code = lv_code.\r\n          ev_message = lv_message.\r\n        ENDIF.\r\n\r\n      WHEN OTHERS.\r\n        ev_status = 'E'.\r\n        ev_code = 'OPERATION_NOT_ALLOWED'.\r\n        ev_message = 'The requested operation is not allowed'.\r\n    ENDCASE.\r\n  ENDMETHOD.\r\n\r\n\r\n  METHOD validate_target.\r\n    DATA lv_object_type TYPE trobjtype.\r\n    DATA lv_object_name TYPE sobj_name.\r\n\r\n    CLEAR: ev_code, ev_message.\r\n    lv_object_type = iv_object_type.\r\n    lv_object_name = iv_object_name.\r\n    TRANSLATE: lv_object_type TO UPPER CASE,\r\n               lv_object_name TO UPPER CASE.\r\n    CONDENSE: lv_object_type NO-GAPS,\r\n              lv_object_name NO-GAPS.\r\n\r\n    IF lv_object_name IS INITIAL\r\n       OR ( lv_object_name(1) <> 'Z'\r\n            AND lv_object_name(1) <> 'Y' ).\r\n      ev_code = 'CUSTOMER_OBJECT_REQUIRED'.\r\n      ev_message = 'Only Z* or Y* customer objects are allowed'.\r\n      RETURN.\r\n    ENDIF.\r\n\r\n    CASE lv_object_type.\r\n      WHEN 'CLAS' OR 'INTF' OR 'PROG' OR 'FUGR' OR 'FUNC'\r\n        OR 'TABL' OR 'DTEL' OR 'DOMA' OR 'TTYP' OR 'MSAG'.\r\n      WHEN OTHERS.\r\n        ev_code = 'OBJECT_TYPE_NOT_ALLOWED'.\r\n        ev_message = 'The requested object type is not allowed'.\r\n        RETURN.\r\n    ENDCASE.\r\n\r\n    AUTHORITY-CHECK OBJECT 'S_DEVELOP'\r\n      ID 'DEVCLASS' DUMMY\r\n      ID 'OBJTYPE' FIELD lv_object_type\r\n      ID 'OBJNAME' FIELD lv_object_name\r\n      ID 'P_GROUP' DUMMY\r\n      ID 'ACTVT' FIELD '03'.\r\n    IF sy-subrc <> 0.\r\n      ev_code = 'NOT_AUTHORIZED'.\r\n      ev_message = 'SAP user is not authorized for this object'.\r\n    ENDIF.\r\n  ENDMETHOD.\r\nENDCLASS.\n```\n\nFull Source SHA-256: 6540ddc973bd64e2a4d1322e0e815d7a990353a7bbdd6a3b73bf8b923d265820\nURI: /sap/bc/adt/oo/classes/zcl_codex_mcp_core/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectType": "FUGR",
+        "objectName": "ZCODEX_MCP_CORE",
+        "startLine": 1,
+        "lineCount": 500
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCODEX_MCP_CORE (lines 1-14 of 14, 14 lines retrieved):\n\n```abap\n*******************************************************************\r\n*   System-defined Include-files.                                 *\r\n*******************************************************************\r\n  INCLUDE LZCODEX_MCP_CORETOP.               \" Global Data\r\n  INCLUDE LZCODEX_MCP_COREUXX.               \" Function Modules\r\n\r\n*******************************************************************\r\n*   User-defined Include-files (if necessary).                    *\r\n*******************************************************************\r\n* INCLUDE LZCODEX_MCP_COREF...               \" Subroutines\r\n* INCLUDE LZCODEX_MCP_COREO...               \" PBO-Modules\r\n* INCLUDE LZCODEX_MCP_COREI...               \" PAI-Modules\r\n* INCLUDE LZCODEX_MCP_COREE...               \" Events\r\n* INCLUDE LZCODEX_MCP_COREP...               \" Local class implement.\n```\n\nFull Source SHA-256: c969582eec9de1a89d3cdd157f9d7708e0028d746f2f370a15211580b86e0751\nURI: /sap/bc/adt/functions/groups/zcodex_mcp_core/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "analyze_abap_dumps",
+      "args": {
+        "connectionId": "w200",
+        "action": "list_dumps",
+        "maxResults": 10
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ABAP Runtime Dumps (10 of 30 total)\nSystem: w200\n\n1. ASSIGN_CASTING_ILLEGAL_CAST\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909171404GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 8KB\n\n2. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909165612GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n3. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909161711GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n4. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909154152GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n5. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909152407GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 6KB\n\n6. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909150038GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n7. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909144034GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n8. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909142010GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n9. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141235GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n10. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141234GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "precheck",
+        "target": {
+          "objectType": "PROG",
+          "objectName": "ZCODEX_MCP_DYNPRO"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_V2\",\n  \"helperFingerprint\": \"4095c4b6a76271eb52f7c92035ebea9850396a18bd884979338169766b29b984\",\n  \"execution\": \"not_run\",\n  \"qualityGate\": \"not_evaluated\",\n  \"requestedTarget\": {\n    \"objectType\": \"PROG\",\n    \"objectName\": \"ZCODEX_MCP_DYNPRO\"\n  },\n  \"scope\": {\n    \"objectType\": \"PROG\",\n    \"objectName\": \"ZCODEX_MCP_DYNPRO\",\n    \"programName\": \"ZCODEX_MCP_DYNPRO\",\n    \"packageName\": \"ZABAP\"\n  },\n  \"profile\": \"SYNTAX_CRITICAL_V1\",\n  \"selectedRules\": [\n    {\n      \"name\": \"CL_CI_TEST_SYNTAX_CHECK\",\n      \"version\": \"001\",\n      \"applicable\": true,\n      \"completion\": \"not_run\"\n    },\n    {\n      \"name\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"version\": \"002\",\n      \"applicable\": true,\n      \"completion\": \"not_run\"\n    }\n  ],\n  \"coverage\": \"limited\",\n  \"code\": \"PREFLIGHT_ONLY\",\n  \"returnedFindings\": 0,\n  \"truncated\": false,\n  \"findings\": [],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"One explicit customer main object; includes within its pool may be checked.\",\n    \"Two constructor-default rules only; no saved DEFAULT variant or ABAP Unit.\",\n    \"Anonymous direct execution; no named inspection, variant or object set is saved.\",\n    \"Applicability does not attest per-rule completion; empty findings never mean passed.\",\n    \"The 1000-row output limit does not bound SAP scan time or memory.\",\n    \"Timeout does not cancel SAP execution; never retry automatically.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "PROG",
+          "objectName": "ZCODEX_MCP_DYNPRO"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_V2\",\n  \"helperFingerprint\": \"4095c4b6a76271eb52f7c92035ebea9850396a18bd884979338169766b29b984\",\n  \"execution\": \"returned\",\n  \"qualityGate\": \"not_evaluated\",\n  \"requestedTarget\": {\n    \"objectType\": \"PROG\",\n    \"objectName\": \"ZCODEX_MCP_DYNPRO\"\n  },\n  \"scope\": {\n    \"objectType\": \"PROG\",\n    \"objectName\": \"ZCODEX_MCP_DYNPRO\",\n    \"programName\": \"ZCODEX_MCP_DYNPRO\",\n    \"packageName\": \"ZABAP\"\n  },\n  \"profile\": \"SYNTAX_CRITICAL_V1\",\n  \"selectedRules\": [\n    {\n      \"name\": \"CL_CI_TEST_SYNTAX_CHECK\",\n      \"version\": \"001\",\n      \"applicable\": true,\n      \"completion\": \"not_attested\"\n    },\n    {\n      \"name\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"version\": \"002\",\n      \"applicable\": true,\n      \"completion\": \"not_attested\"\n    }\n  ],\n  \"coverage\": \"limited\",\n  \"code\": \"NO_FINDINGS_UNVERIFIED\",\n  \"totalFindings\": 0,\n  \"returnedFindings\": 0,\n  \"truncated\": false,\n  \"findings\": [],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"One explicit customer main object; includes within its pool may be checked.\",\n    \"Two constructor-default rules only; no saved DEFAULT variant or ABAP Unit.\",\n    \"Anonymous direct execution; no named inspection, variant or object set is saved.\",\n    \"Applicability does not attest per-rule completion; empty findings never mean passed.\",\n    \"The 1000-row output limit does not bound SAP scan time or memory.\",\n    \"Timeout does not cancel SAP execution; never retry automatically.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "precheck",
+        "target": {
+          "objectType": "CLAS",
+          "objectName": "ZCL_CODEX_MCP_CORE"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_V2\",\n  \"helperFingerprint\": \"4095c4b6a76271eb52f7c92035ebea9850396a18bd884979338169766b29b984\",\n  \"execution\": \"not_run\",\n  \"qualityGate\": \"not_evaluated\",\n  \"requestedTarget\": {\n    \"objectType\": \"CLAS\",\n    \"objectName\": \"ZCL_CODEX_MCP_CORE\"\n  },\n  \"scope\": {\n    \"objectType\": \"CLAS\",\n    \"objectName\": \"ZCL_CODEX_MCP_CORE\",\n    \"programName\": \"ZCL_CODEX_MCP_CORE============CP\",\n    \"packageName\": \"ZABAP\"\n  },\n  \"profile\": \"SYNTAX_CRITICAL_V1\",\n  \"selectedRules\": [\n    {\n      \"name\": \"CL_CI_TEST_SYNTAX_CHECK\",\n      \"version\": \"001\",\n      \"applicable\": true,\n      \"completion\": \"not_run\"\n    },\n    {\n      \"name\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"version\": \"002\",\n      \"applicable\": true,\n      \"completion\": \"not_run\"\n    }\n  ],\n  \"coverage\": \"limited\",\n  \"code\": \"PREFLIGHT_ONLY\",\n  \"returnedFindings\": 0,\n  \"truncated\": false,\n  \"findings\": [],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"One explicit customer main object; includes within its pool may be checked.\",\n    \"Two constructor-default rules only; no saved DEFAULT variant or ABAP Unit.\",\n    \"Anonymous direct execution; no named inspection, variant or object set is saved.\",\n    \"Applicability does not attest per-rule completion; empty findings never mean passed.\",\n    \"The 1000-row output limit does not bound SAP scan time or memory.\",\n    \"Timeout does not cancel SAP execution; never retry automatically.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "CLAS",
+          "objectName": "ZCL_CODEX_MCP_CORE"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_V2\",\n  \"helperFingerprint\": \"4095c4b6a76271eb52f7c92035ebea9850396a18bd884979338169766b29b984\",\n  \"execution\": \"returned\",\n  \"qualityGate\": \"not_evaluated\",\n  \"requestedTarget\": {\n    \"objectType\": \"CLAS\",\n    \"objectName\": \"ZCL_CODEX_MCP_CORE\"\n  },\n  \"scope\": {\n    \"objectType\": \"CLAS\",\n    \"objectName\": \"ZCL_CODEX_MCP_CORE\",\n    \"programName\": \"ZCL_CODEX_MCP_CORE============CP\",\n    \"packageName\": \"ZABAP\"\n  },\n  \"profile\": \"SYNTAX_CRITICAL_V1\",\n  \"selectedRules\": [\n    {\n      \"name\": \"CL_CI_TEST_SYNTAX_CHECK\",\n      \"version\": \"001\",\n      \"applicable\": true,\n      \"completion\": \"not_attested\"\n    },\n    {\n      \"name\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"version\": \"002\",\n      \"applicable\": true,\n      \"completion\": \"not_attested\"\n    }\n  ],\n  \"coverage\": \"limited\",\n  \"code\": \"NO_FINDINGS_UNVERIFIED\",\n  \"totalFindings\": 0,\n  \"returnedFindings\": 0,\n  \"truncated\": false,\n  \"findings\": [],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"One explicit customer main object; includes within its pool may be checked.\",\n    \"Two constructor-default rules only; no saved DEFAULT variant or ABAP Unit.\",\n    \"Anonymous direct execution; no named inspection, variant or object set is saved.\",\n    \"Applicability does not attest per-rule completion; empty findings never mean passed.\",\n    \"The 1000-row output limit does not bound SAP scan time or memory.\",\n    \"Timeout does not cancel SAP execution; never retry automatically.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "precheck",
+        "target": {
+          "objectType": "FUGR",
+          "objectName": "ZCODEX_MCP_CORE"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_V2\",\n  \"helperFingerprint\": \"4095c4b6a76271eb52f7c92035ebea9850396a18bd884979338169766b29b984\",\n  \"execution\": \"not_run\",\n  \"qualityGate\": \"not_evaluated\",\n  \"requestedTarget\": {\n    \"objectType\": \"FUGR\",\n    \"objectName\": \"ZCODEX_MCP_CORE\"\n  },\n  \"scope\": {\n    \"objectType\": \"FUGR\",\n    \"objectName\": \"ZCODEX_MCP_CORE\",\n    \"programName\": \"SAPLZCODEX_MCP_CORE\",\n    \"packageName\": \"ZABAP\"\n  },\n  \"profile\": \"SYNTAX_CRITICAL_V1\",\n  \"selectedRules\": [\n    {\n      \"name\": \"CL_CI_TEST_SYNTAX_CHECK\",\n      \"version\": \"001\",\n      \"applicable\": true,\n      \"completion\": \"not_run\"\n    },\n    {\n      \"name\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"version\": \"002\",\n      \"applicable\": true,\n      \"completion\": \"not_run\"\n    }\n  ],\n  \"coverage\": \"limited\",\n  \"code\": \"PREFLIGHT_ONLY\",\n  \"returnedFindings\": 0,\n  \"truncated\": false,\n  \"findings\": [],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"One explicit customer main object; includes within its pool may be checked.\",\n    \"Two constructor-default rules only; no saved DEFAULT variant or ABAP Unit.\",\n    \"Anonymous direct execution; no named inspection, variant or object set is saved.\",\n    \"Applicability does not attest per-rule completion; empty findings never mean passed.\",\n    \"The 1000-row output limit does not bound SAP scan time or memory.\",\n    \"Timeout does not cancel SAP execution; never retry automatically.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "FUGR",
+          "objectName": "ZCODEX_MCP_CORE"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_V2\",\n  \"helperFingerprint\": \"4095c4b6a76271eb52f7c92035ebea9850396a18bd884979338169766b29b984\",\n  \"execution\": \"returned\",\n  \"qualityGate\": \"not_evaluated\",\n  \"requestedTarget\": {\n    \"objectType\": \"FUGR\",\n    \"objectName\": \"ZCODEX_MCP_CORE\"\n  },\n  \"scope\": {\n    \"objectType\": \"FUGR\",\n    \"objectName\": \"ZCODEX_MCP_CORE\",\n    \"programName\": \"SAPLZCODEX_MCP_CORE\",\n    \"packageName\": \"ZABAP\"\n  },\n  \"profile\": \"SYNTAX_CRITICAL_V1\",\n  \"selectedRules\": [\n    {\n      \"name\": \"CL_CI_TEST_SYNTAX_CHECK\",\n      \"version\": \"001\",\n      \"applicable\": true,\n      \"completion\": \"not_attested\"\n    },\n    {\n      \"name\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"version\": \"002\",\n      \"applicable\": true,\n      \"completion\": \"not_attested\"\n    }\n  ],\n  \"coverage\": \"limited\",\n  \"code\": \"FINDINGS_LIMITED\",\n  \"totalFindings\": 28,\n  \"returnedFindings\": 28,\n  \"truncated\": false,\n  \"findings\": [\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 532,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 830,\n      \"column\": 6,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 846,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 852,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 1048,\n      \"column\": 6,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 674,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"W\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0011\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 816,\n      \"column\": 6,\n      \"message\": \"写入/删除报表/文本池\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 819,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 1205,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2163,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2187,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2530,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2711,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2779,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"W\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0011\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2888,\n      \"column\": 8,\n      \"message\": \"写入/删除报表/文本池\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2903,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0009\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2982,\n      \"column\": 6,\n      \"message\": \"GENERATE REPORT 动态编程\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"W\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0011\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3251,\n      \"column\": 8,\n      \"message\": \"写入/删除报表/文本池\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3254,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3368,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3382,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3526,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3544,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3718,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3737,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3759,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3930,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3990,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    }\n  ],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"One explicit customer main object; includes within its pool may be checked.\",\n    \"Two constructor-default rules only; no saved DEFAULT variant or ABAP Unit.\",\n    \"Anonymous direct execution; no named inspection, variant or object set is saved.\",\n    \"Applicability does not attest per-rule completion; empty findings never mean passed.\",\n    \"The 1000-row output limit does not bound SAP scan time or memory.\",\n    \"Timeout does not cancel SAP execution; never retry automatically.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "PROG",
+          "objectName": "SAPMSSY0"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool run_sci_analysis: [\n  {\n    \"validation\": \"regex\",\n    \"code\": \"invalid_string\",\n    \"message\": \"Invalid\",\n    \"path\": [\n      \"target\",\n      \"objectName\"\n    ]\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "PROG",
+          "objectName": "Z*"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool run_sci_analysis: [\n  {\n    \"validation\": \"regex\",\n    \"code\": \"invalid_string\",\n    \"message\": \"Invalid\",\n    \"path\": [\n      \"target\",\n      \"objectName\"\n    ]\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "FUNC",
+          "objectName": "Z_CODEX_MCP_SCI_API"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool run_sci_analysis: [\n  {\n    \"received\": \"FUNC\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"PROG\",\n      \"CLAS\",\n      \"FUGR\"\n    ],\n    \"path\": [\n      \"target\",\n      \"objectType\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'PROG' | 'CLAS' | 'FUGR', received 'FUNC'\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "DEVC",
+          "objectName": "ZABAP"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool run_sci_analysis: [\n  {\n    \"received\": \"DEVC\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"PROG\",\n      \"CLAS\",\n      \"FUGR\"\n    ],\n    \"path\": [\n      \"target\",\n      \"objectType\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'PROG' | 'CLAS' | 'FUGR', received 'DEVC'\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "PROG",
+          "objectName": "ZCODEX_MCP_I_0828"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error invoking run_sci_analysis: Error: SCI V2 helper failed: NOT_MAIN_PROGRAM"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "PROG",
+          "objectName": "ZE1_NONEXISTENT_20260909"
+        },
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error invoking run_sci_analysis: Error: SCI V2 helper failed: OBJECT_NOT_FOUND"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "target": {
+          "objectType": "PROG",
+          "objectName": "ZCODEX_MCP_DYNPRO"
+        },
+        "acknowledgePotentialSideEffects": false
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool run_sci_analysis: [\n  {\n    \"received\": false,\n    \"code\": \"invalid_literal\",\n    \"expected\": true,\n    \"path\": [\n      \"acknowledgePotentialSideEffects\"\n    ],\n    \"message\": \"Invalid literal value, expected true\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "precheck",
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_API\",\n  \"helperFingerprint\": \"c3e260adf7a4e19f6d4c73c7c8c440800294022858da3c8322bbdf59d27735f8\",\n  \"execution\": \"not_run\",\n  \"qualityGate\": \"not_evaluated\",\n  \"scope\": {\n    \"objectType\": \"FUGR\",\n    \"objectName\": \"ZCODEX_MCP_CORE\"\n  },\n  \"profile\": \"DEFAULT\",\n  \"coverage\": \"limited\",\n  \"code\": \"PREFLIGHT_ONLY\",\n  \"configuredRules\": [\n    {\n      \"name\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"version\": \"002\",\n      \"hasAttributes\": true\n    },\n    {\n      \"name\": \"CL_CI_TEST_DYNPRO_USAB_ACC\",\n      \"version\": \"000\",\n      \"hasAttributes\": false\n    },\n    {\n      \"name\": \"CL_CI_TEST_EXTENDED_CHECK\",\n      \"version\": \"010\",\n      \"hasAttributes\": true\n    },\n    {\n      \"name\": \"CL_CI_TEST_FIND_BADI_CALL\",\n      \"version\": \"001\",\n      \"hasAttributes\": true\n    },\n    {\n      \"name\": \"CL_CI_TEST_IMUD_TAW_A\",\n      \"version\": \"001\",\n      \"hasAttributes\": true\n    },\n    {\n      \"name\": \"CL_CI_TEST_ITAB_PERFORMANCE\",\n      \"version\": \"000\",\n      \"hasAttributes\": true\n    },\n    {\n      \"name\": \"CL_CI_TEST_SELECT_TAW_A\",\n      \"version\": \"000\",\n      \"hasAttributes\": true\n    },\n    {\n      \"name\": \"CL_CI_TEST_SELECT_TAW_BYBUF\",\n      \"version\": \"001\",\n      \"hasAttributes\": false\n    },\n    {\n      \"name\": \"CL_CI_TEST_USAB_GUI\",\n      \"version\": \"000\",\n      \"hasAttributes\": false\n    },\n    {\n      \"name\": \"CL_CI_TEST_VALUE_PARAMETER\",\n      \"version\": \"000\",\n      \"hasAttributes\": true\n    },\n    {\n      \"name\": \"CL_WDY_CI_TEST_COMPONENT_DEF\",\n      \"version\": \"000\",\n      \"hasAttributes\": false\n    },\n    {\n      \"name\": \"CL_WDY_CI_TEST_CONVENTIONS\",\n      \"version\": \"000\",\n      \"hasAttributes\": true\n    }\n  ],\n  \"returnedFindings\": 0,\n  \"truncated\": false,\n  \"findings\": [],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"Only ZCODEX_MCP_CORE is allowed; no package or transport expansion.\",\n    \"RUN uses two constructor-default checks, not the DEFAULT variant.\",\n    \"ABAP Unit is disabled; no named inspection or variant is saved.\",\n    \"Per-rule completion is not attested; empty findings never mean passed.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_sci_analysis",
+      "args": {
+        "connectionId": "w200",
+        "action": "run",
+        "acknowledgePotentialSideEffects": true
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"engine\": \"SCI\",\n  \"nativeAtc\": false,\n  \"connectionId\": \"w200\",\n  \"helper\": \"Z_CODEX_MCP_SCI_API\",\n  \"helperFingerprint\": \"c3e260adf7a4e19f6d4c73c7c8c440800294022858da3c8322bbdf59d27735f8\",\n  \"execution\": \"returned\",\n  \"qualityGate\": \"not_evaluated\",\n  \"scope\": {\n    \"objectType\": \"FUGR\",\n    \"objectName\": \"ZCODEX_MCP_CORE\"\n  },\n  \"profile\": \"SYNTAX_CRITICAL_V1\",\n  \"coverage\": \"limited\",\n  \"code\": \"FINDINGS_LIMITED\",\n  \"selectedRules\": [\n    \"CL_CI_TEST_SYNTAX_CHECK\",\n    \"CL_CI_TEST_CRITICAL_STATEMENTS\"\n  ],\n  \"totalFindings\": 28,\n  \"returnedFindings\": 28,\n  \"truncated\": false,\n  \"findings\": [\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 532,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 830,\n      \"column\": 6,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 846,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 852,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU03\",\n      \"line\": 1048,\n      \"column\": 6,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 674,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"W\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0011\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 816,\n      \"column\": 6,\n      \"message\": \"写入/删除报表/文本池\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 819,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 1205,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2163,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2187,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2530,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2711,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2779,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"W\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0011\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2888,\n      \"column\": 8,\n      \"message\": \"写入/删除报表/文本池\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2903,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0009\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 2982,\n      \"column\": 6,\n      \"message\": \"GENERATE REPORT 动态编程\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"W\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0011\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3251,\n      \"column\": 8,\n      \"message\": \"写入/删除报表/文本池\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3254,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3368,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3382,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3526,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3544,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3718,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3737,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3759,\n      \"column\": 10,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3930,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    },\n    {\n      \"severity\": \"N\",\n      \"check\": \"CL_CI_TEST_CRITICAL_STATEMENTS\",\n      \"code\": \"0007\",\n      \"include\": \"LZCODEX_MCP_COREU02\",\n      \"line\": 3990,\n      \"column\": 8,\n      \"message\": \"ROLLBACK WORK 的使用\",\n      \"textTruncated\": false\n    }\n  ],\n  \"limitations\": [\n    \"SCI is not native ATC and does not prove business correctness.\",\n    \"Only ZCODEX_MCP_CORE is allowed; no package or transport expansion.\",\n    \"RUN uses two constructor-default checks, not the DEFAULT variant.\",\n    \"ABAP Unit is disabled; no named inspection or variant is saved.\",\n    \"Per-rule completion is not attested; empty findings never mean passed.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectType": "PROG",
+        "objectName": "ZCODEX_MCP_DYNPRO",
+        "startLine": 1,
+        "lineCount": 500
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCODEX_MCP_DYNPRO (lines 1-19 of 19, 19 lines retrieved):\n\n```abap\nPROGRAM zcodex_mcp_dynpro.\r\nDATA gv_message TYPE c LENGTH 40.\r\nDATA gv_ok_code TYPE sy-ucomm.\r\nDATA gv_initialized TYPE c LENGTH 1.\r\nMODULE status_0100 OUTPUT.\r\n  IF gv_initialized IS INITIAL.\r\n    gv_message = 'ABAP MCP Dynpro ready'.\r\n    gv_initialized = 'X'.\r\n  ENDIF.\r\nENDMODULE.\r\nMODULE user_command_0100 INPUT.\r\n  CASE gv_ok_code.\r\n    WHEN 'EXIT' OR 'BACK' OR 'CANC'.\r\n      LEAVE PROGRAM.\r\n    WHEN 'CLEAR'.\r\n      CLEAR gv_message.\r\n  ENDCASE.\r\n  CLEAR gv_ok_code.\r\nENDMODULE.\n```\n\nFull Source SHA-256: 840d0f3e3e3a79af327965f9728f16a1cfc6d05ff552b15bee21329fca218682\nURI: /sap/bc/adt/programs/programs/zcodex_mcp_dynpro/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectType": "CLAS",
+        "objectName": "ZCL_CODEX_MCP_CORE",
+        "startLine": 1,
+        "lineCount": 500
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCL_CODEX_MCP_CORE (lines 1-116 of 116, 116 lines retrieved):\n\n```abap\nCLASS zcl_codex_mcp_core DEFINITION\r\n  PUBLIC\r\n  FINAL\r\n  CREATE PRIVATE.\r\n\r\n  PUBLIC SECTION.\r\n    CONSTANTS c_version TYPE char10 VALUE '1.0'.\r\n\r\n    CLASS-METHODS execute\r\n      IMPORTING\r\n        iv_operation   TYPE rs38l-name\r\n        iv_object_type TYPE trobjtype\r\n        iv_object_name TYPE sobj_name\r\n      EXPORTING\r\n        ev_status      TYPE sy-msgty\r\n        ev_code        TYPE sy-msgv1\r\n        ev_message     TYPE bapi_msg\r\n        ev_version     TYPE sy-msgv1.\r\n\r\n  PRIVATE SECTION.\r\n    CLASS-METHODS validate_target\r\n      IMPORTING\r\n        iv_object_type TYPE trobjtype\r\n        iv_object_name TYPE sobj_name\r\n      EXPORTING\r\n        ev_code        TYPE sy-msgv1\r\n        ev_message     TYPE bapi_msg.\r\nENDCLASS.\r\n\r\n\r\nCLASS zcl_codex_mcp_core IMPLEMENTATION.\r\n  METHOD execute.\r\n    DATA lv_operation TYPE rs38l-name.\r\n    DATA lv_code TYPE sy-msgv1.\r\n    DATA lv_message TYPE bapi_msg.\r\n\r\n    CLEAR: ev_status, ev_code, ev_message.\r\n    ev_version = c_version.\r\n\r\n    lv_operation = iv_operation.\r\n    TRANSLATE lv_operation TO UPPER CASE.\r\n    CONDENSE lv_operation NO-GAPS.\r\n\r\n    CASE lv_operation.\r\n      WHEN 'PING'.\r\n        ev_status = 'S'.\r\n        ev_code = 'READY'.\r\n        ev_message = 'Codex MCP SAP helper is ready'.\r\n\r\n      WHEN 'VALIDATE_TARGET'.\r\n        validate_target(\r\n          EXPORTING\r\n            iv_object_type = iv_object_type\r\n            iv_object_name = iv_object_name\r\n          IMPORTING\r\n            ev_code = lv_code\r\n            ev_message = lv_message ).\r\n        IF lv_code IS INITIAL.\r\n          ev_status = 'S'.\r\n          ev_code = 'TARGET_ALLOWED'.\r\n          ev_message = 'Customer object target is allowed'.\r\n        ELSE.\r\n          ev_status = 'E'.\r\n          ev_code = lv_code.\r\n          ev_message = lv_message.\r\n        ENDIF.\r\n\r\n      WHEN OTHERS.\r\n        ev_status = 'E'.\r\n        ev_code = 'OPERATION_NOT_ALLOWED'.\r\n        ev_message = 'The requested operation is not allowed'.\r\n    ENDCASE.\r\n  ENDMETHOD.\r\n\r\n\r\n  METHOD validate_target.\r\n    DATA lv_object_type TYPE trobjtype.\r\n    DATA lv_object_name TYPE sobj_name.\r\n\r\n    CLEAR: ev_code, ev_message.\r\n    lv_object_type = iv_object_type.\r\n    lv_object_name = iv_object_name.\r\n    TRANSLATE: lv_object_type TO UPPER CASE,\r\n               lv_object_name TO UPPER CASE.\r\n    CONDENSE: lv_object_type NO-GAPS,\r\n              lv_object_name NO-GAPS.\r\n\r\n    IF lv_object_name IS INITIAL\r\n       OR ( lv_object_name(1) <> 'Z'\r\n            AND lv_object_name(1) <> 'Y' ).\r\n      ev_code = 'CUSTOMER_OBJECT_REQUIRED'.\r\n      ev_message = 'Only Z* or Y* customer objects are allowed'.\r\n      RETURN.\r\n    ENDIF.\r\n\r\n    CASE lv_object_type.\r\n      WHEN 'CLAS' OR 'INTF' OR 'PROG' OR 'FUGR' OR 'FUNC'\r\n        OR 'TABL' OR 'DTEL' OR 'DOMA' OR 'TTYP' OR 'MSAG'.\r\n      WHEN OTHERS.\r\n        ev_code = 'OBJECT_TYPE_NOT_ALLOWED'.\r\n        ev_message = 'The requested object type is not allowed'.\r\n        RETURN.\r\n    ENDCASE.\r\n\r\n    AUTHORITY-CHECK OBJECT 'S_DEVELOP'\r\n      ID 'DEVCLASS' DUMMY\r\n      ID 'OBJTYPE' FIELD lv_object_type\r\n      ID 'OBJNAME' FIELD lv_object_name\r\n      ID 'P_GROUP' DUMMY\r\n      ID 'ACTVT' FIELD '03'.\r\n    IF sy-subrc <> 0.\r\n      ev_code = 'NOT_AUTHORIZED'.\r\n      ev_message = 'SAP user is not authorized for this object'.\r\n    ENDIF.\r\n  ENDMETHOD.\r\nENDCLASS.\n```\n\nFull Source SHA-256: 6540ddc973bd64e2a4d1322e0e815d7a990353a7bbdd6a3b73bf8b923d265820\nURI: /sap/bc/adt/oo/classes/zcl_codex_mcp_core/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectType": "FUGR",
+        "objectName": "ZCODEX_MCP_CORE",
+        "startLine": 1,
+        "lineCount": 500
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCODEX_MCP_CORE (lines 1-14 of 14, 14 lines retrieved):\n\n```abap\n*******************************************************************\r\n*   System-defined Include-files.                                 *\r\n*******************************************************************\r\n  INCLUDE LZCODEX_MCP_CORETOP.               \" Global Data\r\n  INCLUDE LZCODEX_MCP_COREUXX.               \" Function Modules\r\n\r\n*******************************************************************\r\n*   User-defined Include-files (if necessary).                    *\r\n*******************************************************************\r\n* INCLUDE LZCODEX_MCP_COREF...               \" Subroutines\r\n* INCLUDE LZCODEX_MCP_COREO...               \" PBO-Modules\r\n* INCLUDE LZCODEX_MCP_COREI...               \" PAI-Modules\r\n* INCLUDE LZCODEX_MCP_COREE...               \" Events\r\n* INCLUDE LZCODEX_MCP_COREP...               \" Local class implement.\n```\n\nFull Source SHA-256: c969582eec9de1a89d3cdd157f9d7708e0028d746f2f370a15211580b86e0751\nURI: /sap/bc/adt/functions/groups/zcodex_mcp_core/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "analyze_abap_dumps",
+      "args": {
+        "connectionId": "w200",
+        "action": "list_dumps",
+        "maxResults": 10
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ABAP Runtime Dumps (10 of 30 total)\nSystem: w200\n\n1. ASSIGN_CASTING_ILLEGAL_CAST\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909171404GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 8KB\n\n2. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909165612GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n3. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909161711GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n4. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909154152GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n5. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909152407GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 6KB\n\n6. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909150038GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n7. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909144034GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n8. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909142010GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n9. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141235GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n10. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141234GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB"
+          }
+        ]
+      }
+    }
+  ],
+  "status": "Passed",
+  "server": {
+    "name": "orvanta",
+    "version": "0.36.26"
+  },
+  "toolCount": 85,
+  "contract": {
+    "name": "run_sci_analysis",
+    "description": "Run pinned SCI checks, never native ATC or a passed quality gate. Omit target to retain the legacy fixed ZCODEX_MCP_CORE/DEFAULT-precheck behavior. Supply target to explicitly select V2 for one exact Z/Y PROG main program, CLAS or FUGR; no include, FM, wildcard, package or transport expansion. V2 precheck resolves identity and two-rule applicability without RUN. RUN is anonymous/direct, syntax and critical-statement checks only, ABAP Unit disabled, at most 1000 returned findings. Scan resources are not bounded by the output limit; timeout is not cancellation and must not trigger an automatic retry. Requires the separately deployed, fingerprint-matched customer helper.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "connectionId": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "precheck",
+            "run"
+          ]
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "objectType": {
+              "type": "string",
+              "enum": [
+                "PROG",
+                "CLAS",
+                "FUGR"
+              ]
+            },
+            "objectName": {
+              "type": "string",
+              "pattern": "^[ZY][A-Z0-9_]{0,39}$"
+            }
+          },
+          "required": [
+            "objectType",
+            "objectName"
+          ],
+          "additionalProperties": false
+        },
+        "acknowledgePotentialSideEffects": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": [
+        "connectionId",
+        "action",
+        "acknowledgePotentialSideEffects"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  "dumpsBefore": "ABAP Runtime Dumps (10 of 30 total)\nSystem: w200\n\n1. ASSIGN_CASTING_ILLEGAL_CAST\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909171404GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 8KB\n\n2. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909165612GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n3. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909161711GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n4. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909154152GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n5. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909152407GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 6KB\n\n6. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909150038GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n7. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909144034GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n8. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909142010GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n9. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141235GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n10. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141234GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB",
+  "dumpsAfter": "ABAP Runtime Dumps (10 of 30 total)\nSystem: w200\n\n1. ASSIGN_CASTING_ILLEGAL_CAST\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909171404GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 8KB\n\n2. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909165612GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n3. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909161711GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n4. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909154152GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n5. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909152407GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 6KB\n\n6. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909150038GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n7. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909144034GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n8. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909142010GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n9. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141235GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n10. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141234GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB",
+  "dumpListUnchanged": true,
+  "scope": "0.36.26 dedicated SCI tool live acceptance; not complete SCI-E1 side-effect or native ATC acceptance",
+  "finishedAt": "2026-09-09T09:14:58.183Z"
+}

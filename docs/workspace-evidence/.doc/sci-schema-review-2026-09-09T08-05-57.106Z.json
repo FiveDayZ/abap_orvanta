@@ -1,0 +1,70 @@
+{
+  "startedAt": "2026-09-09T08:05:57.106Z",
+  "scope": "Read-only DDIC and framework contracts",
+  "checks": [
+    {
+      "name": "read_ddic_structure",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SCIR_OBJS"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"structure\",\n  \"objectName\": \"SCIR_OBJS\",\n  \"packageName\": \"S_CODE_INSPECTOR\",\n  \"version\": \"20110901121214\",\n  \"fingerprint\": \"a90c208485104e71dc688eaef46393f3e0c5695639f33478bf19520817158b50\",\n  \"definition\": {\n    \"description\": \"Code Inspector: Structure for Objects\",\n    \"tableClass\": \"INTTAB\",\n    \"fields\": [\n      {\n        \"name\": \"OBJTYPE\",\n        \"position\": 1,\n        \"dataElement\": \"TROBJTYPE\",\n        \"description\": \"对象类型\"\n      },\n      {\n        \"name\": \"OBJNAME\",\n        \"position\": 2,\n        \"dataElement\": \"SOBJ_NAME\",\n        \"description\": \"对象目录中的对象名称\"\n      },\n      {\n        \"name\": \"RESPONSIBL\",\n        \"position\": 3,\n        \"dataElement\": \"RESPONSIBL\",\n        \"description\": \"资源库对象的负责人\"\n      },\n      {\n        \"name\": \"DEVCLASS\",\n        \"position\": 4,\n        \"dataElement\": \"DEVCLASS\",\n        \"description\": \"包\"\n      },\n      {\n        \"name\": \"PRGNAME\",\n        \"position\": 5,\n        \"dataElement\": \"PROGRAMM\",\n        \"description\": \"ABAP 程序名称\"\n      }\n    ]\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_ddic_structure",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SCIR_REST"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"structure\",\n  \"objectName\": \"SCIR_REST\",\n  \"packageName\": \"S_CODE_INSPECTOR\",\n  \"version\": \"20110901130133\",\n  \"fingerprint\": \"d246098399156a78b20c9884994350c3506ae327f35c81c04022c9d72ff69f18\",\n  \"definition\": {\n    \"description\": \"Code Inspector: Results Structure\",\n    \"tableClass\": \"INTTAB\",\n    \"fields\": [\n      {\n        \"name\": \".INCLUDE\",\n        \"position\": 1,\n        \"dataElement\": \"\",\n        \"description\": \"Code Inspector: Key Structure for Results\"\n      },\n      {\n        \"name\": \"INSPECID\",\n        \"position\": 2,\n        \"dataElement\": \"SCI_ID\",\n        \"description\": \"代码分析器：元素标识（Chk、ChkV、ObjM、Inspec）\"\n      },\n      {\n        \"name\": \"INSPECVERS\",\n        \"position\": 3,\n        \"dataElement\": \"SCI_VERS\",\n        \"description\": \"代码分析器：元素的版本编号\"\n      },\n      {\n        \"name\": \"CIUSER\",\n        \"position\": 4,\n        \"dataElement\": \"SCI_USER\",\n        \"description\": \"代码分析器：负责人\"\n      },\n      {\n        \"name\": \"OBJTYPE\",\n        \"position\": 5,\n        \"dataElement\": \"SCI_TYPID\",\n        \"description\": \"代码分析器：对象类型\"\n      },\n      {\n        \"name\": \"OBJNAME\",\n        \"position\": 6,\n        \"dataElement\": \"SOBJ_NAME\",\n        \"description\": \"对象目录中的对象名称\"\n      },\n      {\n        \"name\": \"TEST\",\n        \"position\": 7,\n        \"dataElement\": \"SEOCLSNAME\",\n        \"description\": \"对象类型名称\"\n      },\n      {\n        \"name\": \"ERRCNT\",\n        \"position\": 8,\n        \"dataElement\": \"SCI_ERRCNT\",\n        \"description\": \"代码分析器：累计错误计数器\"\n      },\n      {\n        \"name\": \"CONSECCNT\",\n        \"position\": 9,\n        \"dataElement\": \"\",\n        \"description\": \"Code Inspector: Consecutive Counter for Long Messages\"\n      },\n      {\n        \"name\": \".INCLUDE\",\n        \"position\": 10,\n        \"dataElement\": \"\",\n        \"description\": \"Code Inspector: Extension Structure for Results\"\n      },\n      {\n        \"name\": \"SOBJNAME\",\n        \"position\": 11,\n        \"dataElement\": \"SOBJ_NAME\",\n        \"description\": \"对象目录中的对象名称\"\n      },\n      {\n        \"name\": \"SOBJTYPE\",\n        \"position\": 12,\n        \"dataElement\": \"TROBJTYPE\",\n        \"description\": \"对象类型\"\n      },\n      {\n        \"name\": \"LINE\",\n        \"position\": 13,\n        \"dataElement\": \"SCI_LINE\",\n        \"description\": \"代码分析器：消息的行号\"\n      },\n      {\n        \"name\": \"COL\",\n        \"position\": 14,\n        \"dataElement\": \"SCI_CLMN\",\n        \"description\": \"代码分析器：消息的列号\"\n      },\n      {\n        \"name\": \"KIND\",\n        \"position\": 15,\n        \"dataElement\": \"SCI_ERRTY\",\n        \"description\": \"代码分析器：消息类型（信息、警告，...)\"\n      },\n      {\n        \"name\": \"CODE\",\n        \"position\": 16,\n        \"dataElement\": \"SCI_ERRC\",\n        \"description\": \"代码分析器：消息代码标识\"\n      },\n      {\n        \"name\": \".INCLUDE\",\n        \"position\": 17,\n        \"dataElement\": \"\",\n        \"description\": \"Code Inspector: Long Parameter for Results\"\n      },\n      {\n        \"name\": \"PARAM1\",\n        \"position\": 18,\n        \"dataElement\": \"\",\n        \"description\": \"\"\n      },\n      {\n        \"name\": \"PARAM2\",\n        \"position\": 19,\n        \"dataElement\": \"\",\n        \"description\": \"\"\n      },\n      {\n        \"name\": \"PARAM3\",\n        \"position\": 20,\n        \"dataElement\": \"CHAR20\",\n        \"description\": \"字符 20\"\n      },\n      {\n        \"name\": \"PARAM4\",\n        \"position\": 21,\n        \"dataElement\": \"CHAR20\",\n        \"description\": \"字符 20\"\n      },\n      {\n        \"name\": \"CHECKSUM1\",\n        \"position\": 22,\n        \"dataElement\": \"\",\n        \"description\": \"\"\n      },\n      {\n        \"name\": \"EXCEPTN\",\n        \"position\": 23,\n        \"dataElement\": \"SYCHAR01\",\n        \"description\": \"SYST的CHAR01数据元素\"\n      },\n      {\n        \"name\": \"INCLSPEC\",\n        \"position\": 24,\n        \"dataElement\": \"SCI_INCLSPEC\",\n        \"description\": \"SAP 代码分析器：消息为包含文件特定\"\n      }\n    ]\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_CI_TEST_ROOT",
+        "objectType": "CLAS",
+        "methodName": "GET_MESSAGE_TEXT"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Method GET_MESSAGE_TEXT from class CL_CI_TEST_ROOT (lines 254-267 of 442, 14 method lines):\n\n```abap\nmethod GET_MESSAGE_TEXT .\r\n\r\n*--table scimessages is filled in constructor of single check\r\n  read table SCIMESSAGES into SMSG\r\n             with table key  TEST = P_TEST\r\n                             CODE = P_CODE\r\n             transporting TEXT.\r\n  if SY-SUBRC = 0.\r\n    P_TEXT = SMSG-TEXT.\r\n  else.\r\n    P_TEXT = 'Unbekannter Fehlercode'(100).\r\n  endif.\r\n\r\nendmethod.\r\n```\n\nFull Source SHA-256: 8d315080d6ddb87300546ec818349644c03f90b8a2386cd097a5df26130e399c\nURI: /sap/bc/adt/oo/classes/cl_ci_test_root/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_CI_TESTS",
+        "objectType": "CLAS",
+        "methodName": "RUN"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Method RUN from class CL_CI_TESTS (lines 1536-1574 of 1819, 39 method lines):\n\n```abap\nmethod RUN.\r\n  data:\r\n    L_REF_TEST type ref to CL_CI_TEST_ROOT,\r\n    L_1PRG     type FLAG,\r\n    L_PROGRAM_NAME type PROGRAM,\r\n    L_OBJNAME      type TROBJ_NAME.\r\n\r\n  loop at LIST into L_REF_TEST.\r\n    L_REF_TEST->CLEAR( ).\r\n    L_REF_TEST->_ERRCNT = 0.\r\n  endloop.\r\n\r\n*-- downstream program name calculation for web dynpro\r\n  if P_OBJECT_TYPE = 'WDYN'.\r\n     L_OBJNAME = P_OBJECT_NAME.\r\n     L_PROGRAM_NAME = CL_CI_OBJECTSET=>GET_PROGRAM(\r\n         P_PGMID   = 'R3TR'\r\n         P_OBJTYPE = P_OBJECT_TYPE\r\n         P_OBJNAME = L_OBJNAME ).\r\n  else.\r\n     L_PROGRAM_NAME = P_PROGRAM_NAME.\r\n  endif.\r\n\r\n  CL_CI_TEST_ROOT=>OBJECT_TYPE  = P_OBJECT_TYPE.\r\n  CL_CI_TEST_ROOT=>OBJECT_NAME  = P_OBJECT_NAME.\r\n  CL_CI_TEST_ROOT=>PROGRAM_NAME = L_PROGRAM_NAME.\r\n\r\n  if L_PROGRAM_NAME is not initial.\r\n    L_1PRG = 'X'.\r\n  endif.\r\n\r\n  loop at LIST into L_REF_TEST.\r\n    check L_1PRG = 'X' and\r\n          '1PRG'        in L_REF_TEST->TYPELIST  or\r\n          P_OBJECT_TYPE in L_REF_TEST->TYPELIST.\r\n    L_REF_TEST->RUN( ).\r\n  endloop.\r\n\r\nendmethod.                    \"run\r\n```\n\nFull Source SHA-256: a2093667cdb0ecc8c5c9f34a14b3d2a1b73cf0f989b82a01cad37a28a2baf8d3\nURI: /sap/bc/adt/oo/classes/cl_ci_tests/source/main"
+          }
+        ]
+      }
+    }
+  ]
+}

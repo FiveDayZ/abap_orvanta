@@ -1,0 +1,13 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_info",
+ "arguments": {
+  "objectName": "ZORVANTA_MAINT_DEPLOY_R04",
+  "objectType": "PROG",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:36:21.610Z",
+ "finishedAt": "2026-10-03T12:36:22.068Z",
+ "isError": false,
+ "responseText": "ZORVANTA_MAINT_DEPLOY_R04 Information:\n\n• Object Type: PROG/P\n• Description: No description available\n• Package: Unknown\n• System Type: CUSTOM\n• Total Lines: 690\n• URI: `/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04`\n• URI Used: `/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04/source/main`\n• Enhancements: Unavailable (unsupported)"
+}

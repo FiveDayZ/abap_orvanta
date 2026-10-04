@@ -1,0 +1,11 @@
+{
+  "tool": "get_quick_fix_proposals",
+  "arguments": {
+    "connectionId": "w200",
+    "fileUri": "adt://w200/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04/source/main",
+    "line": 30,
+    "column": 6
+  },
+  "isError": false,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"fileUri\": \"adt://w200/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04/source/main\",\n  \"sourceUri\": \"/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04/source/main\",\n  \"line\": 30,\n  \"column\": 6,\n  \"proposalCount\": 2,\n  \"proposals\": [\n    {\n      \"type\": \"\",\n      \"name\": \"Rename 'lv_name'\",\n      \"description\": \"\",\n      \"handlerUri\": \"/sap/bc/adt/quickfixes/proposals/providers/refactoring/quickfixes/qf_command_rename\",\n      \"userContent\": \"\"\n    },\n    {\n      \"type\": \"\",\n      \"name\": \"Rename 'lv_name' in source unit\",\n      \"description\": \"\",\n      \"handlerUri\": \"/sap/bc/adt/quickfixes/proposals/providers/refactoring/quickfixes/qf_rename\",\n      \"userContent\": \"\"\n    }\n  ],\n  \"mediaTypeUsed\": \"text/plain\",\n  \"acceptUsed\": \"application/*\",\n  \"mediaTypeAttempts\": [\n    {\n      \"contentType\": \"text/plain\",\n      \"accept\": \"application/*\",\n      \"outcome\": \"HTTP 200\",\n      \"proposalCount\": 2\n    }\n  ],\n  \"summary\": \"The quick-fix evaluator returned 2 proposal(s) for line 30, column 6. Nothing was applied: each proposal's handlerUri is reported so a caller can see what invoking it would touch, and applying one is a separate, explicitly authorised write that this tool does not perform. The evaluator answered request media type text/plain.\",\n  \"readOnly\": true,\n  \"wroteToSap\": false\n}"
+}

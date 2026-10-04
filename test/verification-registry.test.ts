@@ -141,9 +141,12 @@ test("a runtime failure is an observation and a static failure is a proof", () =
   // rather than a gap in the data: both R-20 length defects were refuted by real calls. The
   // 33-character DELETE_ENHANCEMENT_IMPLEMENTATION became DELETE_ENHANCEMENT_IMPL (23) and was
   // dispatched, and the 34-character MANAGE_CLASSIC_BADI_IMPLEMENTATION became
-  // MANAGE_CLASSIC_BADI_IMPL (24) and reached SAP, which refused it - so the honest kind for that
-  // one is the observation (`runtime`), not the proof. Demanding a static entry here would force a
-  // false claim back into the registry, so the count is asserted to be zero *and* the metric is
+  // MANAGE_CLASSIC_BADI_IMPL (24) and reached SAP, which refused it at the time - so the honest kind
+  // for that call was the observation (`runtime`), not the proof. That tool has since been called
+  // successfully and is now `verified`, and the surviving runtime failure is
+  // resume_ddic_table_activation; the count of static failures is still zero, because no operation is
+  // currently proven impossible without ever being called. Demanding a static entry here would force
+  // a false claim back into the registry, so the count is asserted to be zero *and* the metric is
   // still proven to have teeth against a constructed registry. Dropping the assertion entirely is
   // what would let the split rot.
   assert.equal(
@@ -179,24 +182,39 @@ test("R-20's four tools stay recorded with the state their evidence supports", (
 
   // Actually called and rejected by SAP: an observation, so it keeps the time it happened.
   expect("resume_ddic_table_activation", "failed", "runtime")
-  expect("manage_classic_badi_implementation", "failed", "runtime")
+
+  // The fourth R-20 row was refused when it was called in 2026-10-01, and that refusal is why it
+  // entered as `failed`. It was called again on 2026-10-03 with the one action that can pass the
+  // guard on an implementation that already exists (activate), SAP answered
+  // CLASSIC_BADI_IMPLEMENTATION_CHANGED, and the row is now a success rather than a refusal. The
+  // earlier refusal stays in its notes as history; the status follows the latest observation.
+  expect("manage_classic_badi_implementation", "verified", null)
 
   // Renamed and then really called - and that call SUCCEEDED. This one is no longer a failure at
   // all.
   expect("read_enhancement_implementation", "verified", null)
 
-  // Renamed, and the renamed opcode really was dispatched - but SAP was never reached, because a
-  // deliberately wrong fingerprint was refused before invocation. Nothing about this tool was
-  // observed failing, so it is not a failure either: it is unverified, with no borrowed timestamp.
-  expect("delete_enhancement_implementation", "unverified", null)
+  // Renamed, and the renamed opcode really was dispatched. It then spent two rounds unverified for a
+  // reason that was never a defect in the tool: the framework delete worked, but the TADIR
+  // registration could not be removed while the object sat in an open transport task. R48 cleared
+  // that precondition on the operator side and the tool finished the job - four orphan-registration
+  // calls answered ENHANCEMENT_IMPLEMENTATION_DELETED and an independent TADIR read confirmed every
+  // leftover row was gone. The row is verified; what it does NOT claim is recorded in its notes.
+  expect("delete_enhancement_implementation", "verified", null)
 })
 
 test("a length fix alone never counts as evidence of success", () => {
-  // Renaming an opcode proves deliverability, not an outcome. This is the mistake the four R-20 rows
-  // exist to prevent, asserted against the tool whose call really did land: the opcode fits, the
-  // call was made, and SAP refused it - so the row may NOT read as `verified`, and its kind is the
-  // observation (`runtime`), carrying the time the call actually happened.
-  const entry = findVerificationEntry(registry, "manage_classic_badi_implementation")!
+  // Renaming an opcode proves deliverability, not an outcome. This is the mistake the R-20 rows
+  // exist to prevent, asserted against a tool whose call really did land: RESUME_TABLE_ACTIVATION
+  // (23 characters) fits and reached its own arm, the call was made, and SAP refused it with rc 8 -
+  // so the row may NOT read as `verified`, and its kind is the observation (`runtime`), carrying the
+  // time the call actually happened.
+  //
+  // This used to be asserted against manage_classic_badi_implementation, whose 2026-10-01 call was
+  // refused. That tool has since been called successfully (R8 2026-10-03) and moved to `verified`,
+  // so the exemplar had to move to the row that is still a refusal; keeping the old subject would
+  // have turned this guard into an assertion about a success.
+  const entry = findVerificationEntry(registry, "resume_ddic_table_activation")!
   assert.equal(entry.status, "failed", "a refused call is not a success")
   assert.equal(entry.failureBasis, "runtime", "a call that reached SAP is an observation")
   assert.notEqual(entry.lastAttemptAt, null, "an observation carries the time it was made")
@@ -209,10 +227,10 @@ test("a length fix alone never counts as evidence of success", () => {
     "a failed entry relabelled verified must still be refused without evidence"
   )
 
-  // The other half of the same rule, on the same tool: producing a working interface (the separate
-  // IV_ACTION parameter) is also only deliverability. Until a call passes the guard, the row must
-  // not read as verified.
-  assert.notEqual(entry.status, "verified", "an upgraded interface is not a successful call")
+  // The other half of the same rule, on the same tool: dispatching the renamed opcode into its own
+  // arm is also only deliverability. Until the rc 8 reason is attributed, the row must not read as
+  // verified.
+  assert.notEqual(entry.status, "verified", "a dispatched call is not a successful call")
 })
 
 test("controlled writes must name the object they were written to", () => {
@@ -830,18 +848,117 @@ test("the registry records the honest gap rather than inflating it", () => {
     // the first real w200 success, after the operator approved the REPORT_PARAMETERS source and the
     // real reply exposed two defects the local gate had hidden - the entry named the wrong helper and
     // the reply schema capped the CHAR 4 RSSCR-DTYP dictionary type at one character.
-    // Raised from 127 to 129 on 2026-10-04 (R57d): patch_abap_screen and upsert_abap_screen moved off
-    // `unverified` on real w200 writes, not on code changes. patch_abap_screen changed one native D021S
-    // row (BTN_CLEAR.STXT) and put it back - the independent read showed only that key moved, and the
-    // revert matched the baseline in every field, flow-logic and params entry - while
-    // upsert_abap_screen replaced screen 0100 with its own five native rows and restored the two RES1
-    // function codes at the byte offset the untouched control screen ZPMCPC01/9000 exhibits. Each entry
-    // names its own receipt; the stale arm of the fingerprint guard (SCREEN_FINGERPRINT_CONFLICT with
-    // zero SAP writes) was measured in the same batch. Both writes used transport GR2K923472, which was
-    // not released. What remains unestablished - whether the restored function codes fire at runtime,
-    // and whether omitting `header` should have defaulted instead of zeroing D020S - is recorded in each
-    // entry's notes rather than absorbed into this bound.
-    totals.verified <= 129,
+    // Raised from 127 to 128 on 2026-10-03 (R8): manage_classic_badi_implementation moved off
+    // `failed` on a real activate call whose receipt completed, and patch_ddic_transparent_table_fields
+    // stayed verified while its last open class (data-element re-point) was closed by a live patch -
+    // so the count moved by exactly the one row whose status changed, not by the two rows touched.
+    // Raised from 128 to 129 on 2026-10-03 (R10): manage_enhancement_implementation_state moved off
+    // `unverified` on a real activate call against ZCHANGEBKTXT whose receipt completed and whose
+    // before/after fingerprint and hook source are identical (the helper's activate() arm ran, the net
+    // content did not change). The same batch recorded the reason the first attempt was refused: the
+    // enhancement framework compares the session language with the object's original language.
+    // Raised from 129 to 131 on 2026-10-03 (R11): upsert_ddic_domain and upsert_ddic_data_element
+    // moved off `unverified` on two real create calls in package ZABAP (a CHAR domain with fixed
+    // values and a data element pointing at it), each independently read back with the same version
+    // and fingerprint and each leaving exactly one new transport entry. Both rows had said no real
+    // call had been recorded, which this batch falsified.
+    // Raised from 131 to 133 on 2026-10-03 (R12): upsert_ddic_structure and upsert_ddic_table_type
+    // moved off `unverified` on two real create calls in package ZABAP (a three-field structure whose
+    // components reference data elements, and a standard table type whose row type is that structure),
+    // each independently read back with the same version, fingerprint and definition and each leaving
+    // exactly one new transport entry. Both rows had said no real call had been recorded, which this
+    // batch falsified. That batch also observed that the ddic helper's read probe advertises protocol
+    // 1.7 while both tools declare a 1.16/1.17 floor, and the writes succeeded anyway, so the
+    // read-probe protocol number does not gate the write path.
+    // Raised from 133 to 134 on 2026-10-03 (R40): patch_ddic_transparent_table_settings moved off
+    // `unverified` on one real call that changed four DD09V settings of ZORVANTA_R7C_TMP in package
+    // ZABAP at once (data class, size category, buffering mode, change logging), independently read
+    // back with the same version and fingerprint and with all five field rows unchanged. That row had
+    // said no real call had been recorded, which this batch falsified. The same batch deliberately did
+    // NOT raise the bound for append_ddic_transparent_table_fields: its live call wrote and activated
+    // both appended fields, but the receipt was a false negative from a verification defect this batch
+    // fixed, so it stays `unverified` until a call on the fixed build returns a clean receipt.
+    // Raised from 134 to 135 on 2026-10-03 (R42): that deferred receipt arrived. After the operator
+    // restarted the service, and after build identity was confirmed rather than assumed (PID 56104 on
+    // 4849, parent start-4849-verified.ps1 pointing at .wt-r21, whose dist carries the new identifier
+    // appendedNames while the shared worktree's dist does not), the same tool appended R15NOTE to
+    // ZORVANTA_R7C_TMP and answered DDIC_OBJECT_SAVED with a completed receipt and
+    // outcomeMayBeUnknown false; an independent read-back returned the same version and fingerprint
+    // with all six fields, R15NOTE carrying exactly the SAP-derived description the pre-fix build had
+    // reported as a mismatch. The same batch also recorded that the duplicate-refusal path is NOT a
+    // zero-SAP-call refusal: its receipt says sapInvocationStarted true, so the evidence of no state
+    // change is the byte-identical read-back, not the error text.
+    // Raised from 135 to 138 on 2026-10-03 (R16): the three message-class write tools were accepted
+    // together against live w200. create_abap_message_class built ZORVANTA_R16_MSG in ZABAP with
+    // three messages and answered MESSAGE_CLASS_CREATED; update_abap_message_class then applied
+    // add/update/remove at the read version and left the one message it never mentioned untouched;
+    // delete_abap_message_class removed a throwaway class created for that purpose under a one-off
+    // user authorization (the permanent class was deliberately kept). Each verdict rests on an
+    // independent read that is not the write echo, and all three carry an evidence path.
+    // Note what this batch did NOT do: it did not relabel these three rows' availabilityBasis. A
+    // verified row may still be `protocol-only` - 32 already were - because that field describes how
+    // *availability* is decided, and this batch pinned no operation requirement. Moving the label
+    // without pinning operations would be an unverified claim, which is the exact class of error the
+    // registry exists to prevent.
+    // Raised from 138 to 139 on 2026-10-03 (R17). Only one of the three enhancement-family write
+    // tools earned the promotion, and the two that did not are the point of this paragraph.
+    // create_enhancement_hook_implementation created a hook implementation on an explicit enhancement
+    // point in SAPLV60B and answered HOOK_ENHANCEMENT_CREATED, with an independent read confirming
+    // the fingerprint, package and source, and the base program's sourceFingerprint unchanged.
+    // update_enhancement_hook_implementation could not reach its success path at all: three real
+    // calls were refused by the deployed helper with ENHANCEMENT_INACTIVE_VERSION_EXISTS while every
+    // read of the same object reported no inactive version, so R17 left it unverified with the
+    // measured evidence in its note rather than a borrowed timestamp. R46 then proved the cause and
+    // promoted it; see the paragraph below. delete_enhancement_implementation
+    // dispatched, removed the framework data, and then reported ENHANCEMENT_DELETE_PARTIAL because
+    // its own TADIR re-read found the entry still present, so R17 left it unverified too and named
+    // the surviving TADIR row and transport entry in its note as residue rather than cleaning them.
+    // R46 measured why they could not be cleaned and R48 promoted the row once the operator cleared
+    // that precondition; both are covered below. R17's three tools were not the whole enhancement
+    // family: the New BAdI write pair shares the same helper WHEN block, and R49 promoted its update
+    // arm for the same reason R46 promoted the hook update - see the last paragraph.
+    // A tripwire that only ever rises by the number of tools a batch touched would have forced two
+    // false promotions here. It rises by one because one is what was observed.
+    // Raised from 139 to 140 on 2026-10-03 (R46). update_enhancement_hook_implementation reached the
+    // success path it had never reached: the guard-order defect R17 could only describe is now
+    // structurally proven and fixed in the generator, and a real call against a freshly created
+    // throwaway hook implementation answered HOOK_ENHANCEMENT_UPDATED with the source it was given,
+    // confirmed by an independent read whose fingerprint matched the receipt. The other two tools in
+    // this batch did not earn a promotion and are not covered by this rise: the create path was
+    // already verified, and delete_enhancement_implementation still cannot complete, because its
+    // TADIR cleanup is refused with OBJECT_LOCKED_FOR_ORDER while the object sits in an open
+    // transport task - a precondition the operator controls, not a missing capability, so R46 left
+    // the row unverified with the measurement in its note. R48 then cleared that precondition and
+    // promoted it; see the paragraph below.
+    // Raised from 140 to 141 on 2026-10-03 (R48). delete_enhancement_implementation finally reached
+    // its success exit, and it is worth being exact about which arm earned the promotion, because the
+    // obvious reading is the wrong one. The operator removed the four leftover ENHO objects from the
+    // open task GR2K923492 in SE09/SE10, and four DELETE_ORPHANED_REGISTRATION calls then answered
+    // ENHANCEMENT_IMPLEMENTATION_DELETED; an independent TADIR read - not the receipts - showed the
+    // ENHO rows go from 4 to 0. No single PERMANENT_DELETE call has ever been observed to remove both
+    // the framework data and the TADIR row, and that is not an accident of this batch: every object
+    // created through this tooling joins an open task, so its own TADIR cleanup is refused with
+    // OBJECT_LOCKED_FOR_ORDER until the object leaves the task. The row's notes say so rather than
+    // letting the promotion imply a one-call delete that no measurement supports.
+    // Raised from 141 to 142 on 2026-10-03 (R49). update_new_badi_implementation is the other arm of the
+    // same WHEN block R46 repaired, so it inherited that fix; R49 confirmed it by measurement rather than
+    // by reading the source, calling it on a real standing Z* New BAdI implementation and getting
+    // BADI_ENHANCEMENT_UPDATED. Note what the promotion does not claim: the target was a standing customer
+    // object, not a throwaway, so the payload was built as a semantic no-op and the fingerprint is
+    // identical before and after. The success path therefore demonstrably runs and reads back; that a
+    // changed value lands is still unmeasured, and the row's notes say so. create_new_badi_implementation
+    // stays unverified because it needs a new object and no such authorization was given.
+    // Raised from 142 to 144 on 2026-10-04 (R58, line reconciliation). The repository held two live
+    // lines that both forked at c07a870: the remote line carried R11-R52 and set the 142 above, while
+    // this local line carried the ops closure plus the screen-family work, whose R57d batch promoted
+    // patch_abap_screen and upsert_abap_screen on real w200 writes (127 -> 129 on that line alone).
+    // Merging the two lines unions the verified sets: 142 + 2 = 144. The two screen entries keep the
+    // local line's notes, and the two questions R57d left open are closed and recorded there rather
+    // than absorbed into this bound: R57h fixed upsert_abap_screen so an omitted header keeps the
+    // screen's own D020S instead of rebuilding it, and R57k clicked both restored buttons in a real
+    // WebGUI session - Clear emptied the message field and Exit left the program - which is what a
+    // restored RES1 function code firing at runtime looks like.
+    totals.verified <= 144,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

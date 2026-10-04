@@ -1,0 +1,15 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "read_ddic_table_type",
+  "arguments": {
+    "objectName": "IMPL_DATA",
+    "connectionId": "w200"
+  },
+  "startedAt": "2026-10-02T04:41:06.414Z",
+  "finishedAt": "2026-10-02T04:41:06.481Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectName\": \"IMPL_DATA\",\n  \"objectType\": \"tableType\",\n  \"status\": \"not-found\",\n  \"exists\": false,\n  \"active\": null,\n  \"version\": null,\n  \"fingerprint\": null,\n  \"packageName\": null,\n  \"requestNumber\": null,\n  \"authoritative\": true,\n  \"readOnly\": true,\n  \"reason\": \"The DDIC read completed and SAP answered that this object does not exist. This is a definite answer, not a tool failure and not an inconclusive result: there is nothing to reconcile for this object.\",\n  \"substitutes\": [\n    \"read_abap_table(TADIR, filters OBJECT = <object type>, OBJ_NAME = <name>) for the recorded repository entry\",\n    \"read_abap_table(DD02L or DD25L, filters for the object) for the stored header rows\"\n  ]\n}"
+}

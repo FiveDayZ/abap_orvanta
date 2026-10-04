@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_function_module_interface",
+ "arguments": {
+  "functionName": "TR_OBJECTS_DELETE",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:33:29.890Z",
+ "finishedAt": "2026-10-03T10:33:29.964Z",
+ "isError": true,
+ "responseText": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 TR_OBJECTS_DELETE 不存在"
+}

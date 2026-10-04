@@ -1,0 +1,19 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": false,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "delete_abap_message_class",
+  "arguments": {
+    "messageClass": "ZORVANTA_R16_DEL",
+    "expectedVersion": "20261003165812",
+    "packageName": "ZABAP",
+    "transportNumber": "GR2K923472",
+    "confirmation": "PERMANENT_DELETE",
+    "connectionId": "w200"
+  },
+  "startedAt": "2026-10-03T08:58:18.816Z",
+  "finishedAt": "2026-10-03T08:58:19.606Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"messageClass\",\n  \"messageClass\": \"ZORVANTA_R16_DEL\",\n  \"previousVersion\": \"20261003165812\",\n  \"previousFingerprint\": \"974916a8e3e1aabe4ca8c30f218aaa78aba1b4e18fc3da7b39b6f8c3cbaab0b5\",\n  \"packageName\": \"ZABAP\",\n  \"recordedRequest\": \"GR2K923492\",\n  \"status\": \"MESSAGE_CLASS_DELETED\",\n  \"operationReceipt\": {\n    \"operationId\": \"70ce4f21-f03d-476f-bb56-6e001284c418\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"delete_abap_message_class\",\n    \"operationIdHash\": \"4c3668ca9851c640d5aad3d225e827daa8c11471de329c4e3630b98d390fe9a1\",\n    \"targetKeyHash\": \"b19db81f025d8a7a063c478ca2024aaad514fbb35db68f539b3ee9c3547554cb\",\n    \"inputHash\": \"c00a0684fe3462ca7f627671bf48021ee46afafe2741c85f987c6a6ab7bcc923\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"message class ZORVANTA_R16_DEL\\\",\\\"requestedOperation\\\":\\\"delete_abap_message_class\\\",\\\"concurrencyGuard\\\":\\\"version 20261003165812\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T08:58:19.278Z\",\n      \"target\": \"message class ZORVANTA_R16_DEL\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": \"20261003165812\",\n      \"fingerprint\": \"974916a8e3e1aabe4ca8c30f218aaa78aba1b4e18fc3da7b39b6f8c3cbaab0b5\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_abap_message_class\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"3a2a039aeb0358d10a53c85f5cde3c6be415544554607f49ffdd52df8921b8d2\",\n    \"startedAt\": \"2026-10-03T08:58:19.116Z\",\n    \"finishedAt\": \"2026-10-03T08:58:19.597Z\",\n    \"durationMs\": 479,\n    \"receiptHash\": \"9c51162e380141b3d52b5eb0f4fae35841999d189cab89c35de7473b6513dfb6\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back message class ZORVANTA_R16_DEL from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

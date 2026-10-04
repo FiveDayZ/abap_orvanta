@@ -1,0 +1,1112 @@
+{
+  "productVersion": "0.35.0",
+  "phase": "M2",
+  "endpoint": "http://127.0.0.1:14847/mcp",
+  "connectionId": "w200",
+  "target": {
+    "functionGroup": "ZCMCP_FG_0350",
+    "functionName": "ZCMCP_FM_0350",
+    "packageName": "ZABAP",
+    "transportNumber": "GR2K923421"
+  },
+  "status": "failed",
+  "cleanupComplete": true,
+  "businessDataWritten": false,
+  "transportCreated": false,
+  "transportReleased": false,
+  "steps": [
+    {
+      "step": "add",
+      "beforeInterfaceFingerprint": "88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4",
+      "afterInterfaceFingerprint": "fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa",
+      "sourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+      "receipt": {
+        "operationId": "f350-add-31ca6dc0-9335-49bc-83bf-6d7784e2f445",
+        "version": 2,
+        "status": "completed",
+        "connectionId": "w200",
+        "toolName": "patch_function_module_interface",
+        "operationIdHash": "c6f51e44f5d4a41513cce8adc0648c0366e3c0a632a0474fb3a793e62b33d3f3",
+        "targetKeyHash": "645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672",
+        "inputHash": "db2e5fe59d26b3bcefe0929a8ed2f90e918ed4b0afe28b9859aacdd375c35cdb",
+        "preChangeSummary": "{\"target\":\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\"requestedOperation\":\"patch_function_module_interface\",\"concurrencyGuard\":\"interface fingerprint 88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4 and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\"transportNumber\":\"GR2K923421\",\"automaticRollback\":false}",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-09-07T03:15:14.293Z",
+          "target": "fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350",
+          "exists": true,
+          "active": true,
+          "version": null,
+          "fingerprint": "88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4",
+          "packageName": "ZABAP",
+          "requestNumber": "GR2K923421",
+          "taskNumber": "GR2K923422",
+          "observationStatus": "complete",
+          "sources": [
+            "read_function_module_interface",
+            "repository_assignment"
+          ],
+          "warnings": []
+        },
+        "sapInvocationStarted": true,
+        "resultHash": "94e189d67f003bb07ab33c2d12897f305e61421334995a49ea35ff467d38a536",
+        "startedAt": "2026-09-07T03:15:14.225Z",
+        "finishedAt": "2026-09-07T03:15:15.609Z",
+        "durationMs": 1380,
+        "receiptHash": "bef837dbc773326aff5506981cd3a6ee0e8fc37fa145192960fa869353935243",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "localLockReleased": true,
+        "manualRecovery": "Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+      }
+    },
+    {
+      "step": "rename",
+      "beforeInterfaceFingerprint": "fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa",
+      "afterInterfaceFingerprint": "c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce",
+      "sourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+      "receipt": {
+        "operationId": "f350-rename-f7c8d8a1-f2e0-4a98-97d5-d7bd04f81195",
+        "version": 2,
+        "status": "completed",
+        "connectionId": "w200",
+        "toolName": "patch_function_module_interface",
+        "operationIdHash": "6d7374ea296ca52cb81686e4df66a9d4af31b551c8f16b1d027923b9a3d084e2",
+        "targetKeyHash": "645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672",
+        "inputHash": "22c83a961a40e36538cb0a9313f3bd19bbed655cce80d67cd059afb090fc6c14",
+        "preChangeSummary": "{\"target\":\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\"requestedOperation\":\"patch_function_module_interface\",\"concurrencyGuard\":\"interface fingerprint fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\"transportNumber\":\"GR2K923421\",\"automaticRollback\":false}",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-09-07T03:15:15.838Z",
+          "target": "fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350",
+          "exists": true,
+          "active": true,
+          "version": null,
+          "fingerprint": "fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa",
+          "packageName": "ZABAP",
+          "requestNumber": "GR2K923421",
+          "taskNumber": "GR2K923422",
+          "observationStatus": "complete",
+          "sources": [
+            "read_function_module_interface",
+            "repository_assignment"
+          ],
+          "warnings": []
+        },
+        "sapInvocationStarted": true,
+        "resultHash": "617211fc38c76069e65d8f254e49ecc2a2a8e73c60b13a691d1be00385590a1b",
+        "startedAt": "2026-09-07T03:15:15.775Z",
+        "finishedAt": "2026-09-07T03:15:17.122Z",
+        "durationMs": 1343,
+        "receiptHash": "937cab770ce2187e3e24b5f0fb4b17b34584703f8792805069e04a944d5a555b",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "localLockReleased": true,
+        "manualRecovery": "Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+      }
+    },
+    {
+      "step": "update",
+      "beforeInterfaceFingerprint": "c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce",
+      "afterInterfaceFingerprint": "f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914",
+      "sourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+      "receipt": {
+        "operationId": "f350-update-5659b3fb-fefc-401c-a5c7-620b828531d2",
+        "version": 2,
+        "status": "completed",
+        "connectionId": "w200",
+        "toolName": "patch_function_module_interface",
+        "operationIdHash": "f2302e0df7bd1fe9c511cfd519fcb6ed00be262947e4b33fc56f50c01ba2c258",
+        "targetKeyHash": "645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672",
+        "inputHash": "7244396855a0a7990ee4f0e302eb054a3a142202e8d95e5b882597d380b4ba8f",
+        "preChangeSummary": "{\"target\":\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\"requestedOperation\":\"patch_function_module_interface\",\"concurrencyGuard\":\"interface fingerprint c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\"transportNumber\":\"GR2K923421\",\"automaticRollback\":false}",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-09-07T03:15:17.370Z",
+          "target": "fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350",
+          "exists": true,
+          "active": true,
+          "version": null,
+          "fingerprint": "c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce",
+          "packageName": "ZABAP",
+          "requestNumber": "GR2K923421",
+          "taskNumber": "GR2K923422",
+          "observationStatus": "complete",
+          "sources": [
+            "read_function_module_interface",
+            "repository_assignment"
+          ],
+          "warnings": []
+        },
+        "sapInvocationStarted": true,
+        "resultHash": "cbd38bbdd5aa892585649e0de97450ebb6da5ee7c4d06ef5a4292347fb2929ca",
+        "startedAt": "2026-09-07T03:15:17.304Z",
+        "finishedAt": "2026-09-07T03:15:18.639Z",
+        "durationMs": 1332,
+        "receiptHash": "d2e27472613533c8623781d3040da04fe36a4a4508ec882d07716f311be2be82",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "localLockReleased": true,
+        "manualRecovery": "Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+      }
+    },
+    {
+      "step": "remove",
+      "beforeInterfaceFingerprint": "f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914",
+      "afterInterfaceFingerprint": "88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4",
+      "sourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+      "receipt": {
+        "operationId": "f350-remove-5d75bbbe-e3cc-4878-8cdc-63b9eced6f90",
+        "version": 2,
+        "status": "completed",
+        "connectionId": "w200",
+        "toolName": "patch_function_module_interface",
+        "operationIdHash": "f394bc0879abd6041c2abd80210c6cc0f88da5c75098890186eeb81dd80453a2",
+        "targetKeyHash": "645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672",
+        "inputHash": "a82e6ff19c5f37cf8b374d1ecbbac3e2b4c6ae23a99b81b7da645d2998345fef",
+        "preChangeSummary": "{\"target\":\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\"requestedOperation\":\"patch_function_module_interface\",\"concurrencyGuard\":\"interface fingerprint f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914 and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\"transportNumber\":\"GR2K923421\",\"automaticRollback\":false}",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-09-07T03:15:18.749Z",
+          "target": "fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350",
+          "exists": true,
+          "active": true,
+          "version": null,
+          "fingerprint": "f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914",
+          "packageName": "ZABAP",
+          "requestNumber": "GR2K923421",
+          "taskNumber": "GR2K923422",
+          "observationStatus": "complete",
+          "sources": [
+            "read_function_module_interface",
+            "repository_assignment"
+          ],
+          "warnings": []
+        },
+        "sapInvocationStarted": true,
+        "resultHash": "c081865eed9e9def7c882495c98ca5fab9a5bb1a17cf63f5d05c7390dbcc894b",
+        "startedAt": "2026-09-07T03:15:18.679Z",
+        "finishedAt": "2026-09-07T03:15:20.037Z",
+        "durationMs": 1355,
+        "receiptHash": "f30f680c560f6e37438f024dafa3cc8da8fb748ae16d939ab98470a989c3e878",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "localLockReleased": true,
+        "manualRecovery": "Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+      }
+    }
+  ],
+  "calls": [
+    {
+      "name": "get_connected_systems",
+      "arguments": {
+        "connectionId": "w200"
+      },
+      "startedAt": "2026-09-07T03:15:12.456Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Connected SAP systems: w200"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_info",
+      "arguments": {
+        "connectionId": "w200",
+        "objectName": "CHAR20",
+        "objectType": "DTEL"
+      },
+      "startedAt": "2026-09-07T03:15:12.462Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "CHAR20 Information:\n\n• Object Type: DTEL/DE\n• Description: No description available\n• Package: Unknown\n• System Type: STANDARD\n• Total Lines: 1\n• URI: `/sap/bc/adt/vit/wb/object_type/dtelde/object_name/CHAR20`\n• URI Used: `/sap/bc/adt/vit/wb/object_type/dtelde/object_name/CHAR20`\n• Enhancements: No enhancements found"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_capability_report",
+      "arguments": {
+        "connectionId": "w200"
+      },
+      "startedAt": "2026-09-07T03:15:12.647Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"productVersion\": \"0.35.0\",\n  \"connection\": {\n    \"id\": \"w200\",\n    \"baseUrl\": \"http://192.168.88.26:8000\",\n    \"client\": \"200\",\n    \"language\": \"EN\",\n    \"username\": \"wys\"\n  },\n  \"observedAt\": \"2026-09-07T03:15:12.649Z\",\n  \"readOnly\": true,\n  \"safety\": {\n    \"sapWritesInvoked\": false,\n    \"sapLocksCleared\": false,\n    \"automaticWriteRetry\": false,\n    \"automaticRollbackClaimed\": false\n  },\n  \"helpers\": [\n    {\n      \"name\": \"base\",\n      \"availability\": \"available\",\n      \"protocolVersion\": \"1.0\",\n      \"responseStatus\": \"S\",\n      \"responseCode\": \"READY\",\n      \"reason\": \"Received a successful structured base helper response.\",\n      \"evidence\": {\n        \"source\": \"read-probe\",\n        \"detail\": \"READY; protocol 1.0\"\n      }\n    },\n    {\n      \"name\": \"repository\",\n      \"availability\": \"available\",\n      \"protocolVersion\": \"1.2\",\n      \"responseStatus\": \"S\",\n      \"responseCode\": \"MESSAGE_CLASS_READ\",\n      \"reason\": \"Received a successful structured repository helper response.\",\n      \"evidence\": {\n        \"source\": \"read-probe\",\n        \"detail\": \"MESSAGE_CLASS_READ; protocol 1.2\"\n      }\n    },\n    {\n      \"name\": \"ddic\",\n      \"availability\": \"available\",\n      \"protocolVersion\": \"1.6\",\n      \"responseStatus\": \"S\",\n      \"responseCode\": \"DDIC_OBJECT_READ\",\n      \"reason\": \"Received a successful structured ddic helper response.\",\n      \"evidence\": {\n        \"source\": \"read-probe\",\n        \"detail\": \"DDIC_OBJECT_READ; protocol 1.6\"\n      }\n    }\n  ],\n  \"discovery\": {\n    \"availability\": \"available\",\n    \"reason\": \"ADT discovery returned 21 workspaces and 0 core entries.\",\n    \"workspaceCount\": 21,\n    \"collectionCount\": 39,\n    \"coreEntryCount\": 0,\n    \"resourceApplicationClassCount\": 0\n  },\n  \"capabilities\": [\n    {\n      \"id\": \"local-service\",\n      \"implementedLocally\": true,\n      \"route\": \"local\",\n      \"toolNames\": [\n        \"get_connected_systems\",\n        \"get_capability_report\",\n        \"get_abap_sql_syntax\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"Implemented entirely by the standalone service and requires no SAP endpoint probe.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"Standalone runtime implementation\"\n        }\n      }\n    },\n    {\n      \"id\": \"local-receipts-and-recovery\",\n      \"implementedLocally\": true,\n      \"route\": \"local\",\n      \"toolNames\": [\n        \"get_customer_function_call_status\",\n        \"get_write_operation_status\",\n        \"list_write_recovery_operations\",\n        \"release_write_operation_lock\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"Implemented entirely by the standalone service and requires no SAP endpoint probe.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"Standalone runtime implementation\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-discovery\",\n      \"implementedLocally\": true,\n      \"route\": \"native-adt\",\n      \"toolNames\": [\n        \"adt_discovery_export\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"ADT discovery returned 21 workspaces and 0 core entries.\",\n        \"evidence\": {\n          \"source\": \"discovery\",\n          \"detail\": \"ADT discovery response received\"\n        },\n        \"snapshot\": {\n          \"workspaces\": [\n            {\n              \"title\": \"ABAP Profiler\",\n              \"collections\": []\n            },\n            {\n              \"title\": \"Compatibility\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/compatibility/graph\",\n                  \"title\": \"Compatibility graph\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Feed Repository\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/feeds\",\n                  \"title\": \"Feed Repository\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/feeds/variants\",\n                  \"title\": \"Feed Variants\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Reentranceticket\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/security/reentranceticket\",\n                  \"title\": \"Security Reentranceticket\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Client\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/system/clients\",\n                  \"title\": \"Client\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"User\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/system/users\",\n                  \"title\": \"User\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"ABAP Test Cockpit\",\n              \"collections\": []\n            },\n            {\n              \"title\": \"ABAP Unit\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/abapunit/testruns\",\n                  \"title\": \"ABAP Unit Testruns\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Change and Transport System\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/cts/transports\",\n                  \"title\": \"Transports\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/cts/transportchecks\",\n                  \"title\": \"Transport Checks\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"ABAP Source\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/codecompletion/proposal\",\n                  \"title\": \"Code Completion\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/codecompletion/elementinfo\",\n                  \"title\": \"Element Info\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/codecompletion/insertion\",\n                  \"title\": \"Code Insertion\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/typehierarchy\",\n                  \"title\": \"Type Hierarchy\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/prettyprinter\",\n                  \"title\": \"Pretty Printer\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/cleanup/source\",\n                  \"title\": \"Cleanup\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/occurencemarkers\",\n                  \"title\": \"Occurrence Markers\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/abapsource/parsers/rnd/grammar\",\n                  \"title\": \"Parser\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Navigation\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/navigation/target\",\n                  \"title\": \"Navigation\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Programs\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/programs/includes\",\n                  \"title\": \"Includes\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/programs/programs\",\n                  \"title\": \"Programs\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/programs/validation\",\n                  \"title\": \"Validation\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Classes and Interfaces\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/oo/classes\",\n                  \"title\": \"Classes\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/oo/interfaces\",\n                  \"title\": \"Interfaces\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/oo/validation/objectname\",\n                  \"title\": \"Validation of Object Name\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/oo/linenumber\",\n                  \"title\": \"Line Number\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Activation\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/activation/inactiveobjects\",\n                  \"title\": \"Inactive Objects\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/activation\",\n                  \"title\": \"Activation\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Functions and Function Groups\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/functions/groups\",\n                  \"title\": \"Function Groups\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Packages\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/packages\",\n                  \"title\": \"Packages\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Quickfixes\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/quickfixes/evaluation\",\n                  \"title\": \"Quickfixes\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Refactorings\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/refactorings\",\n                  \"title\": \"Refactoring\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Repository Information\",\n              \"collections\": [\n                {\n                  \"href\": \"/sap/bc/adt/repository/informationsystem/whereused\",\n                  \"title\": \"Where Used\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/repository/informationsystem/fullnamemapping\",\n                  \"title\": \"Full Name Mapping\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/repository/informationsystem/metadata\",\n                  \"title\": \"Meta Data\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/repository/informationsystem/search\",\n                  \"title\": \"Search\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/repository/nodepath\",\n                  \"title\": \"Node Path\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/repository/nodestructure\",\n                  \"title\": \"Node Structure\",\n                  \"templateLinks\": []\n                },\n                {\n                  \"href\": \"/sap/bc/adt/repository/typestructure\",\n                  \"title\": \"Type Structure\",\n                  \"templateLinks\": []\n                }\n              ]\n            },\n            {\n              \"title\": \"Debugger\",\n              \"collections\": []\n            },\n            {\n              \"title\": \"ABAP Documentation\",\n              \"collections\": [\n                {\n                  \"href\": \"http://grapp2.grgroup.cc:8000/sap/public/bc/abap/docu\",\n                  \"title\": \"ABAP Language Help\",\n                  \"templateLinks\": []\n                }\n              ]\n            }\n          ],\n          \"coreEntries\": [],\n          \"resAppClasses\": []\n        }\n      }\n    },\n    {\n      \"id\": \"adt-repository-search\",\n      \"implementedLocally\": true,\n      \"route\": \"native-adt\",\n      \"toolNames\": [\n        \"search_abap_objects\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"Repository search accepted a bounded no-match query.\",\n        \"evidence\": {\n          \"source\": \"read-probe\",\n          \"detail\": \"Repository search accepted a bounded no-match query.\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-data-preview\",\n      \"implementedLocally\": true,\n      \"route\": \"native-adt\",\n      \"toolNames\": [\n        \"get_sap_system_info\",\n        \"execute_data_query\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"ADT data preview accepted a one-row read-only query.\",\n        \"evidence\": {\n          \"source\": \"read-probe\",\n          \"detail\": \"ADT data preview accepted a one-row read-only query.\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-transport-read\",\n      \"implementedLocally\": true,\n      \"route\": \"native-adt\",\n      \"toolNames\": [\n        \"manage_transport_requests\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"ADT transport service returned the configured user's transport list.\",\n        \"evidence\": {\n          \"source\": \"read-probe\",\n          \"detail\": \"ADT transport service returned the configured user's transport list.\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-runtime-dumps\",\n      \"implementedLocally\": true,\n      \"route\": \"native-adt\",\n      \"toolNames\": [\n        \"analyze_abap_dumps\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"ADT runtime dump service returned an existing-dump list.\",\n        \"evidence\": {\n          \"source\": \"read-probe\",\n          \"detail\": \"Runtime dump endpoint available\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-runtime-traces\",\n      \"implementedLocally\": true,\n      \"route\": \"native-adt\",\n      \"toolNames\": [\n        \"analyze_abap_traces\"\n      ],\n      \"observation\": {\n        \"availability\": \"unsupported\",\n        \"reason\": \"The connected SAP system rejected or does not expose this endpoint: abap-traces capability unsupported-endpoint (HTTP 404): Request failed with status code 404\",\n        \"evidence\": {\n          \"source\": \"probe-error\",\n          \"detail\": \"abap-traces capability unsupported-endpoint (HTTP 404): Request failed with status code 404\"\n        }\n      }\n    },\n    {\n      \"id\": \"sap-base-helper\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"sap_helper_status\"\n      ],\n      \"observation\": {\n        \"name\": \"base\",\n        \"availability\": \"available\",\n        \"protocolVersion\": \"1.0\",\n        \"responseStatus\": \"S\",\n        \"responseCode\": \"READY\",\n        \"reason\": \"Received a successful structured base helper response.\",\n        \"evidence\": {\n          \"source\": \"read-probe\",\n          \"detail\": \"READY; protocol 1.0\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-dynpro-core\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"read_abap_screen\",\n        \"upsert_abap_screen\",\n        \"create_module_pool\",\n        \"delete_module_pool\",\n        \"read_transaction_code\",\n        \"create_transaction_code\",\n        \"delete_transaction_code\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"The observed repository read protocol 1.2 satisfies minimum 1.1.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.1\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-report-transaction\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"create_report_transaction\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"The observed repository read protocol 1.2 satisfies minimum 1.2.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.2\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-function-interface\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"read_function_module_interface\",\n        \"create_function_module_with_interface\",\n        \"inspect_repository_assignment\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"The read probe observed repository operation protocol 1.2; it does not prove whether capability version 1.3 is installed.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.3\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-screen-patch\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"patch_abap_screen\",\n        \"validate_dynpro_application\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"The read probe observed repository operation protocol 1.2; it does not prove whether capability version 1.4 is installed.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.4\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-gui-definition\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"read_abap_gui_definition\",\n        \"patch_abap_gui_definition\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"The read probe observed repository operation protocol 1.2; it does not prove whether capability version 1.5 is installed.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.5\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-ecc-fallbacks\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"read_abap_message_class\",\n        \"create_abap_message_class\",\n        \"manage_text_elements\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"The read probe observed repository operation protocol 1.2; it does not prove whether capability version 1.7 is installed.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.7\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-message-update\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"update_abap_message_class\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"The read probe observed repository operation protocol 1.2; it does not prove whether capability version 1.8 is installed.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.8\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-message-delete\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"delete_abap_message_class\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"The read probe observed repository operation protocol 1.2; it does not prove whether capability version 1.9 is installed.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 1.9\"\n        }\n      }\n    },\n    {\n      \"id\": \"repository-helper-function-interface-patch\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"patch_function_module_interface\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"The read probe observed repository operation protocol 1.2; it does not prove whether capability version 2.0 is installed.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"repository observed operation protocol 1.2; capability minimum 2.0\"\n        }\n      }\n    },\n    {\n      \"id\": \"ddic-helper-core\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"read_ddic_domain\",\n        \"upsert_ddic_domain\",\n        \"read_ddic_data_element\",\n        \"upsert_ddic_data_element\",\n        \"read_ddic_structure\",\n        \"upsert_ddic_structure\",\n        \"read_ddic_table_type\",\n        \"upsert_ddic_table_type\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"The observed ddic read protocol 1.6 satisfies minimum 1.2.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"ddic observed operation protocol 1.6; capability minimum 1.2\"\n        }\n      }\n    },\n    {\n      \"id\": \"ddic-helper-transparent-table\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"read_ddic_transparent_table\",\n        \"create_ddic_transparent_table\",\n        \"append_ddic_transparent_table_fields\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"The observed ddic read protocol 1.6 satisfies minimum 1.5.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"ddic observed operation protocol 1.6; capability minimum 1.5\"\n        }\n      }\n    },\n    {\n      \"id\": \"ddic-helper-transparent-table-patch\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"patch_ddic_transparent_table_fields\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"The observed ddic read protocol 1.6 satisfies minimum 1.6.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"ddic observed operation protocol 1.6; capability minimum 1.6\"\n        }\n      }\n    },\n    {\n      \"id\": \"ddic-helper-controlled-delete\",\n      \"implementedLocally\": true,\n      \"route\": \"sap-helper-fallback\",\n      \"toolNames\": [\n        \"delete_ddic_object\"\n      ],\n      \"observation\": {\n        \"availability\": \"available\",\n        \"reason\": \"The observed ddic read protocol 1.6 satisfies minimum 1.6.\",\n        \"evidence\": {\n          \"source\": \"version-check\",\n          \"detail\": \"ddic observed operation protocol 1.6; capability minimum 1.6\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-object-read\",\n      \"implementedLocally\": true,\n      \"route\": \"target-specific\",\n      \"toolNames\": [\n        \"get_abap_object_info\",\n        \"get_abap_object_lines\",\n        \"get_batch_lines\",\n        \"get_object_by_uri\",\n        \"search_abap_object_lines\",\n        \"get_abap_object_workspace_uri\",\n        \"get_abap_object_url\",\n        \"get_version_history\",\n        \"get_abap_diagnostics\",\n        \"abap_download\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"Availability requires a real object or execution target; registration and discovery alone are not proof.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"No target-specific operation was invoked\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-where-used\",\n      \"implementedLocally\": true,\n      \"route\": \"target-specific\",\n      \"toolNames\": [\n        \"find_where_used\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"Availability requires a real object or execution target; registration and discovery alone are not proof.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"No target-specific operation was invoked\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-quality\",\n      \"implementedLocally\": true,\n      \"route\": \"target-specific\",\n      \"toolNames\": [\n        \"run_atc_analysis\",\n        \"run_unit_tests\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"Availability requires a real object or execution target; registration and discovery alone are not proof.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"No target-specific operation was invoked\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-source-lifecycle\",\n      \"implementedLocally\": true,\n      \"route\": \"target-specific\",\n      \"toolNames\": [\n        \"replace_string_in_abap_object\",\n        \"abap_activate\",\n        \"create_object_programmatically\",\n        \"delete_abap_source_object\",\n        \"create_test_include\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"Availability requires a real object or execution target; registration and discovery alone are not proof.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"No target-specific operation was invoked\"\n        }\n      }\n    },\n    {\n      \"id\": \"adt-debugger\",\n      \"implementedLocally\": true,\n      \"route\": \"target-specific\",\n      \"toolNames\": [\n        \"abap_debug_session\",\n        \"abap_debug_breakpoint\",\n        \"abap_debug_status\",\n        \"abap_debug_stack\",\n        \"abap_debug_variable\",\n        \"abap_debug_step\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"Availability requires a real object or execution target; registration and discovery alone are not proof.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"No target-specific operation was invoked\"\n        }\n      }\n    },\n    {\n      \"id\": \"customer-rfc-execution\",\n      \"implementedLocally\": true,\n      \"route\": \"target-specific\",\n      \"toolNames\": [\n        \"test_remote_function_module\",\n        \"invoke_customer_function_module\"\n      ],\n      \"observation\": {\n        \"availability\": \"unknown\",\n        \"reason\": \"Availability and safety depend on the exact remote-enabled customer function, active interface fingerprint, allowlist, and explicit side-effect acknowledgement.\",\n        \"evidence\": {\n          \"source\": \"local-contract\",\n          \"detail\": \"No target-specific operation was invoked\"\n        }\n      }\n    }\n  ],\n  \"summary\": {\n    \"toolCount\": 75,\n    \"capabilityCount\": 28,\n    \"available\": 14,\n    \"unsupported\": 1,\n    \"unknown\": 13\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "arguments": {
+        "connectionId": "w200",
+        "pattern": "ZCMCP_FG_0350",
+        "types": [
+          "FUGR"
+        ],
+        "maxResults": 5
+      },
+      "startedAt": "2026-09-07T03:15:12.855Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No ABAP objects found matching pattern: ZCMCP_FG_0350"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "arguments": {
+        "connectionId": "w200",
+        "pattern": "ZCMCP_FM_0350",
+        "types": [
+          "FUNC"
+        ],
+        "maxResults": 5
+      },
+      "startedAt": "2026-09-07T03:15:12.922Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No ABAP objects found matching pattern: ZCMCP_FM_0350"
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_object_programmatically",
+      "arguments": {
+        "connectionId": "w200",
+        "objectType": "FUGR/F",
+        "name": "ZCMCP_FG_0350",
+        "description": "MCP 0.35 interface patch",
+        "packageName": "ZABAP",
+        "additionalOptions": {
+          "transportRequest": {
+            "type": "existing",
+            "number": "GR2K923421"
+          }
+        },
+        "operationId": "f350-create-group-24e7d5db-c96c-4896-bbfa-86aad7b1c393"
+      },
+      "startedAt": "2026-09-07T03:15:12.992Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ABAP Object Created Successfully\nObject Type: FUGR/F\nName: ZCMCP_FG_0350\nDescription: MCP 0.35 interface patch\nPackage: ZABAP\nTransport: GR2K923421\nWorkspace URI: adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350\nStatus: created and activated\n\nOperation Receipt\n{\n  \"operationId\": \"f350-create-group-24e7d5db-c96c-4896-bbfa-86aad7b1c393\",\n  \"version\": 2,\n  \"status\": \"completed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"create_object_programmatically\",\n  \"operationIdHash\": \"51dbb8feaf1a245a028803ca00ceafcdba8ad4e0a4a791f7675ef0e52de091ab\",\n  \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n  \"inputHash\": \"c59fac85c5ec0fed5feb529a679788091425ff64d9195432abb227cd178848c8\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"function group ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"create_object_programmatically\\\",\\\"concurrencyGuard\\\":\\\"target must not already exist\\\",\\\"transportNumber\\\":\\\"existing assignment\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-09-07T03:15:13.060Z\",\n    \"target\": \"function group ZCMCP_FG_0350\",\n    \"exists\": false,\n    \"active\": null,\n    \"version\": null,\n    \"fingerprint\": null,\n    \"packageName\": null,\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"adt_object_search\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"resultHash\": \"8bbc928e3837708b864e8597e171ee139b15f53d7679d001fe5bf9da5d7534b9\",\n  \"startedAt\": \"2026-09-07T03:15:12.995Z\",\n  \"finishedAt\": \"2026-09-07T03:15:13.954Z\",\n  \"durationMs\": 956,\n  \"receiptHash\": \"086b0340c0891916c605f7f862b947f48bd734970961342d5a7790583f28dc76\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back function group ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_function_module_with_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "functionGroup": "ZCMCP_FG_0350",
+        "description": "MCP 0.35 interface patch",
+        "remoteEnabled": true,
+        "importParameters": [
+          {
+            "name": "IV_INPUT",
+            "typeName": "CHAR20",
+            "passByValue": true,
+            "description": "Input value"
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "EV_OUTPUT",
+            "typeName": "CHAR20",
+            "passByValue": true,
+            "description": "Output value"
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [
+          {
+            "name": "INVALID_INPUT",
+            "description": "Input is required"
+          }
+        ],
+        "source": [
+          "  IF iv_input IS INITIAL.",
+          "    RAISE invalid_input.",
+          "  ENDIF.",
+          "  ev_output = iv_input."
+        ],
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "operationId": "f350-create-function-ccedf4b5-d301-437a-a836-4f9ae9edf2f1"
+      },
+      "startedAt": "2026-09-07T03:15:13.964Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"--------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"--------------------------------------------------------------------\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"5335c2a87bfbc138de90f2db81a31e8df6715ed5693390516fe7d778b17c27b6\",\n  \"interfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"status\": \"FUNCTION_MODULE_CREATED\",\n  \"packageName\": \"ZABAP\",\n  \"recordedRequest\": \"GR2K923421\",\n  \"operationReceipt\": {\n    \"operationId\": \"f350-create-function-ccedf4b5-d301-437a-a836-4f9ae9edf2f1\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"create_function_module_with_interface\",\n    \"operationIdHash\": \"ea3d64ef88996bd561bc58d9cfcdeb3235c1c7c4fc17d156aa42418a9fbf97c9\",\n    \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n    \"inputHash\": \"90e7ec0d32ed72bdac95fd7f3a1462e7f44e33e8478dd1d5621e341edc61ee5b\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"create_function_module_with_interface\\\",\\\"concurrencyGuard\\\":\\\"target must not already exist\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:14.061Z\",\n      \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n      \"exists\": false,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": null,\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"partial\",\n      \"sources\": [\n        \"repository_assignment\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": [\n        \"read_function_module_interface: observation failed (ebe54e37afa28b01661ef695aa7469578da1ac9305d999e2cb431d7b3bd767fa)\"\n      ]\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"bfa4f52850e72d45076ef52502652fc852f2d151b7e3b720977199971ce132ed\",\n    \"startedAt\": \"2026-09-07T03:15:13.967Z\",\n    \"finishedAt\": \"2026-09-07T03:15:14.148Z\",\n    \"durationMs\": 177,\n    \"receiptHash\": \"fb5fa2987e6a98d281d07f5339140425beda1b05983003359594e59bb563f677\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "inspect_repository_assignment",
+      "arguments": {
+        "connectionId": "w200",
+        "objectName": "ZCMCP_FM_0350",
+        "objectType": "FUGR/FF"
+      },
+      "startedAt": "2026-09-07T03:15:14.159Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectName\": \"ZCMCP_FM_0350\",\n  \"objectType\": \"FUGR/FF\",\n  \"parentObject\": \"ZCMCP_FG_0350\",\n  \"packageName\": \"ZABAP\",\n  \"requestNumber\": \"GR2K923421\",\n  \"taskNumber\": \"GR2K923422\",\n  \"transportStatus\": \"D\",\n  \"active\": true,\n  \"generated\": false,\n  \"originalSystem\": \"GR2\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:14.183Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"--------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"--------------------------------------------------------------------\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"5335c2a87bfbc138de90f2db81a31e8df6715ed5693390516fe7d778b17c27b6\",\n  \"interfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "patch_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-add-31ca6dc0-9335-49bc-83bf-6d7784e2f445",
+        "functionName": "ZCMCP_FM_0350",
+        "functionGroup": "ZCMCP_FG_0350",
+        "expectedInterfaceFingerprint": "88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4",
+        "expectedSourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+        "parameterOperations": [
+          {
+            "operation": "add",
+            "direction": "import",
+            "name": "IV_ADDED",
+            "typeName": "CHAR20",
+            "optional": true,
+            "passByValue": true,
+            "description": "Added value"
+          }
+        ],
+        "exceptionOperations": [],
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421"
+      },
+      "startedAt": "2026-09-07T03:15:14.222Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    },\n    {\n      \"name\": \"IV_ADDED\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": true,\n      \"passByValue\": true,\n      \"description\": \"Added value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"     VALUE(IV_ADDED) TYPE  CHAR20 OPTIONAL\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"ea4909c4ea233506bf74a1a49c3ea36bb213417d5c7e1a0c28b18ec2464d522e\",\n  \"interfaceFingerprint\": \"fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"previousInterfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"previousSourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"helperVersion\": \"2.0\",\n  \"status\": \"FUNCTION_INTERFACE_PATCHED\",\n  \"packageName\": \"ZABAP\",\n  \"recordedRequest\": \"GR2K923421\",\n  \"sourceMutation\": {\n    \"fileUri\": \"adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350\",\n    \"sourceUri\": \"/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350/source/main\",\n    \"objectName\": \"ZCMCP_FM_0350\",\n    \"oldLineCount\": 7,\n    \"newLineCount\": 8,\n    \"transportNumber\": \"GR2K923421\",\n    \"activation\": {\n      \"success\": true,\n      \"messages\": [],\n      \"inactiveObjects\": []\n    }\n  },\n  \"destructiveChangeConfirmed\": false,\n  \"automaticRetry\": false,\n  \"automaticSapUnlock\": false,\n  \"transportReleased\": false,\n  \"operationReceipt\": {\n    \"operationId\": \"f350-add-31ca6dc0-9335-49bc-83bf-6d7784e2f445\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"patch_function_module_interface\",\n    \"operationIdHash\": \"c6f51e44f5d4a41513cce8adc0648c0366e3c0a632a0474fb3a793e62b33d3f3\",\n    \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n    \"inputHash\": \"db2e5fe59d26b3bcefe0929a8ed2f90e918ed4b0afe28b9859aacdd375c35cdb\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"patch_function_module_interface\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint 88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4 and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:14.293Z\",\n      \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_function_module_interface\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"94e189d67f003bb07ab33c2d12897f305e61421334995a49ea35ff467d38a536\",\n    \"startedAt\": \"2026-09-07T03:15:14.225Z\",\n    \"finishedAt\": \"2026-09-07T03:15:15.609Z\",\n    \"durationMs\": 1380,\n    \"receiptHash\": \"bef837dbc773326aff5506981cd3a6ee0e8fc37fa145192960fa869353935243\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:15.621Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    },\n    {\n      \"name\": \"IV_ADDED\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": true,\n      \"passByValue\": true,\n      \"description\": \"Added value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"     VALUE(IV_ADDED) TYPE  CHAR20 OPTIONAL\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"ea4909c4ea233506bf74a1a49c3ea36bb213417d5c7e1a0c28b18ec2464d522e\",\n  \"interfaceFingerprint\": \"fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "patch_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-stale-f76b3ee7-292e-492f-8e5b-b1ac0e34443a",
+        "functionName": "ZCMCP_FM_0350",
+        "functionGroup": "ZCMCP_FG_0350",
+        "expectedInterfaceFingerprint": "88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4",
+        "expectedSourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+        "parameterOperations": [
+          {
+            "operation": "rename",
+            "direction": "import",
+            "name": "IV_ADDED",
+            "newName": "IV_RENAMED"
+          }
+        ],
+        "exceptionOperations": [],
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "confirmation": "DESTRUCTIVE_INTERFACE_CHANGE"
+      },
+      "startedAt": "2026-09-07T03:15:15.647Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error invoking patch_function_module_interface: Error: Function interface fingerprint changed: expected 88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4, current fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa\n\nOperation Receipt\n{\n  \"operationId\": \"f350-stale-f76b3ee7-292e-492f-8e5b-b1ac0e34443a\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"patch_function_module_interface\",\n  \"operationIdHash\": \"8fa41e73877328ed8165451c0a82402e8c327982e3223bcafd9db8be66cf3b88\",\n  \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n  \"inputHash\": \"073aacd7e3bcee0ed9b4c3eb599b8b798db944b1ba3117f6930952bea656cbf7\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"patch_function_module_interface\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint 88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4 and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-09-07T03:15:15.721Z\",\n    \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa\",\n    \"packageName\": \"ZABAP\",\n    \"requestNumber\": \"GR2K923421\",\n    \"taskNumber\": \"GR2K923422\",\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_function_module_interface\",\n      \"repository_assignment\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"7086a15b2b242fc85c8e7764193562c498edcb34e5c57297f76809ef52a3feb9\",\n  \"startedAt\": \"2026-09-07T03:15:15.650Z\",\n  \"finishedAt\": \"2026-09-07T03:15:15.758Z\",\n  \"durationMs\": 104,\n  \"receiptHash\": \"07212628a34e3c3d236f3b93658ec0d752d395bf3e308415e64c024265749577\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "patch_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-rename-f7c8d8a1-f2e0-4a98-97d5-d7bd04f81195",
+        "functionName": "ZCMCP_FM_0350",
+        "functionGroup": "ZCMCP_FG_0350",
+        "expectedInterfaceFingerprint": "fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa",
+        "expectedSourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+        "parameterOperations": [
+          {
+            "operation": "rename",
+            "direction": "import",
+            "name": "IV_ADDED",
+            "newName": "IV_RENAMED"
+          }
+        ],
+        "exceptionOperations": [],
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "confirmation": "DESTRUCTIVE_INTERFACE_CHANGE"
+      },
+      "startedAt": "2026-09-07T03:15:15.771Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    },\n    {\n      \"name\": \"IV_RENAMED\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": true,\n      \"passByValue\": true,\n      \"description\": \"Added value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"     VALUE(IV_RENAMED) TYPE  CHAR20 OPTIONAL\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"f9ea333af25aa3981e44f6c640dcc4a79b937597ea3d13538ad0ca475a9e5c92\",\n  \"interfaceFingerprint\": \"c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"previousInterfaceFingerprint\": \"fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa\",\n  \"previousSourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"helperVersion\": \"2.0\",\n  \"status\": \"FUNCTION_INTERFACE_PATCHED\",\n  \"packageName\": \"ZABAP\",\n  \"recordedRequest\": \"GR2K923421\",\n  \"sourceMutation\": {\n    \"fileUri\": \"adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350\",\n    \"sourceUri\": \"/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350/source/main\",\n    \"objectName\": \"ZCMCP_FM_0350\",\n    \"oldLineCount\": 8,\n    \"newLineCount\": 8,\n    \"transportNumber\": \"GR2K923421\",\n    \"activation\": {\n      \"success\": true,\n      \"messages\": [],\n      \"inactiveObjects\": []\n    }\n  },\n  \"destructiveChangeConfirmed\": true,\n  \"automaticRetry\": false,\n  \"automaticSapUnlock\": false,\n  \"transportReleased\": false,\n  \"operationReceipt\": {\n    \"operationId\": \"f350-rename-f7c8d8a1-f2e0-4a98-97d5-d7bd04f81195\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"patch_function_module_interface\",\n    \"operationIdHash\": \"6d7374ea296ca52cb81686e4df66a9d4af31b551c8f16b1d027923b9a3d084e2\",\n    \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n    \"inputHash\": \"22c83a961a40e36538cb0a9313f3bd19bbed655cce80d67cd059afb090fc6c14\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"patch_function_module_interface\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:15.838Z\",\n      \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"fd0b29c959fec9165bf76cc5f84480e7029ae48fd20ba450ae8d9cbe84350efa\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_function_module_interface\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"617211fc38c76069e65d8f254e49ecc2a2a8e73c60b13a691d1be00385590a1b\",\n    \"startedAt\": \"2026-09-07T03:15:15.775Z\",\n    \"finishedAt\": \"2026-09-07T03:15:17.122Z\",\n    \"durationMs\": 1343,\n    \"receiptHash\": \"937cab770ce2187e3e24b5f0fb4b17b34584703f8792805069e04a944d5a555b\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:17.133Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    },\n    {\n      \"name\": \"IV_RENAMED\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": true,\n      \"passByValue\": true,\n      \"description\": \"Added value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"     VALUE(IV_RENAMED) TYPE  CHAR20 OPTIONAL\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"f9ea333af25aa3981e44f6c640dcc4a79b937597ea3d13538ad0ca475a9e5c92\",\n  \"interfaceFingerprint\": \"c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "patch_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-reject-reference-d0630af1-e238-4c73-bf0c-2a49538af102",
+        "functionName": "ZCMCP_FM_0350",
+        "functionGroup": "ZCMCP_FG_0350",
+        "expectedInterfaceFingerprint": "c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce",
+        "expectedSourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+        "parameterOperations": [
+          {
+            "operation": "update",
+            "direction": "import",
+            "name": "IV_RENAMED",
+            "passByValue": false
+          }
+        ],
+        "exceptionOperations": [],
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "confirmation": "DESTRUCTIVE_INTERFACE_CHANGE"
+      },
+      "startedAt": "2026-09-07T03:15:17.160Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error invoking patch_function_module_interface: Error: Reference parameters are not allowed with RFC\n\nOperation Receipt\n{\n  \"operationId\": \"f350-reject-reference-d0630af1-e238-4c73-bf0c-2a49538af102\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"patch_function_module_interface\",\n  \"operationIdHash\": \"ff2481c051ad82f27ff465bedc7741bf8b78774ff7c789fd0c6b9e0ed6a8e67a\",\n  \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n  \"inputHash\": \"85cf001d2965baf29c9f7de7b11943992ad720a51dc92a7b8f25b7547d0e851d\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"patch_function_module_interface\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-09-07T03:15:17.225Z\",\n    \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce\",\n    \"packageName\": \"ZABAP\",\n    \"requestNumber\": \"GR2K923421\",\n    \"taskNumber\": \"GR2K923422\",\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_function_module_interface\",\n      \"repository_assignment\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"c55cfff1d3d62ad493b88af6409eb0c7c460e660d1335bec42e967ecf56b597a\",\n  \"startedAt\": \"2026-09-07T03:15:17.163Z\",\n  \"finishedAt\": \"2026-09-07T03:15:17.264Z\",\n  \"durationMs\": 97,\n  \"receiptHash\": \"6e0b2dda358f5860a2c88b647aecca73809ad62e8775d6dba4916ce611856f05\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:17.274Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    },\n    {\n      \"name\": \"IV_RENAMED\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": true,\n      \"passByValue\": true,\n      \"description\": \"Added value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"     VALUE(IV_RENAMED) TYPE  CHAR20 OPTIONAL\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"f9ea333af25aa3981e44f6c640dcc4a79b937597ea3d13538ad0ca475a9e5c92\",\n  \"interfaceFingerprint\": \"c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "patch_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-update-5659b3fb-fefc-401c-a5c7-620b828531d2",
+        "functionName": "ZCMCP_FM_0350",
+        "functionGroup": "ZCMCP_FG_0350",
+        "expectedInterfaceFingerprint": "c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce",
+        "expectedSourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+        "parameterOperations": [
+          {
+            "operation": "update",
+            "direction": "import",
+            "name": "IV_RENAMED",
+            "typeName": "CHAR40",
+            "optional": false,
+            "passByValue": true,
+            "description": "Updated value"
+          }
+        ],
+        "exceptionOperations": [],
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "confirmation": "DESTRUCTIVE_INTERFACE_CHANGE"
+      },
+      "startedAt": "2026-09-07T03:15:17.300Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    },\n    {\n      \"name\": \"IV_RENAMED\",\n      \"typeName\": \"CHAR40\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Updated value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"     VALUE(IV_RENAMED) TYPE  CHAR40\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"c753ca017c643b01201e6069fbd11cd38098650bc379fb81b2df881c82cf1e71\",\n  \"interfaceFingerprint\": \"f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"previousInterfaceFingerprint\": \"c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce\",\n  \"previousSourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"helperVersion\": \"2.0\",\n  \"status\": \"FUNCTION_INTERFACE_PATCHED\",\n  \"packageName\": \"ZABAP\",\n  \"recordedRequest\": \"GR2K923421\",\n  \"sourceMutation\": {\n    \"fileUri\": \"adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350\",\n    \"sourceUri\": \"/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350/source/main\",\n    \"objectName\": \"ZCMCP_FM_0350\",\n    \"oldLineCount\": 8,\n    \"newLineCount\": 8,\n    \"transportNumber\": \"GR2K923421\",\n    \"activation\": {\n      \"success\": true,\n      \"messages\": [],\n      \"inactiveObjects\": []\n    }\n  },\n  \"destructiveChangeConfirmed\": true,\n  \"automaticRetry\": false,\n  \"automaticSapUnlock\": false,\n  \"transportReleased\": false,\n  \"operationReceipt\": {\n    \"operationId\": \"f350-update-5659b3fb-fefc-401c-a5c7-620b828531d2\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"patch_function_module_interface\",\n    \"operationIdHash\": \"f2302e0df7bd1fe9c511cfd519fcb6ed00be262947e4b33fc56f50c01ba2c258\",\n    \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n    \"inputHash\": \"7244396855a0a7990ee4f0e302eb054a3a142202e8d95e5b882597d380b4ba8f\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"patch_function_module_interface\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:17.370Z\",\n      \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"c4f1e0685917c3940a96fdfd523c082e2bed83e950a9c9e36e635db763e432ce\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_function_module_interface\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"cbd38bbdd5aa892585649e0de97450ebb6da5ee7c4d06ef5a4292347fb2929ca\",\n    \"startedAt\": \"2026-09-07T03:15:17.304Z\",\n    \"finishedAt\": \"2026-09-07T03:15:18.639Z\",\n    \"durationMs\": 1332,\n    \"receiptHash\": \"d2e27472613533c8623781d3040da04fe36a4a4508ec882d07716f311be2be82\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:18.649Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    },\n    {\n      \"name\": \"IV_RENAMED\",\n      \"typeName\": \"CHAR40\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Updated value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"     VALUE(IV_RENAMED) TYPE  CHAR40\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"c753ca017c643b01201e6069fbd11cd38098650bc379fb81b2df881c82cf1e71\",\n  \"interfaceFingerprint\": \"f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "patch_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-remove-5d75bbbe-e3cc-4878-8cdc-63b9eced6f90",
+        "functionName": "ZCMCP_FM_0350",
+        "functionGroup": "ZCMCP_FG_0350",
+        "expectedInterfaceFingerprint": "f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914",
+        "expectedSourceFingerprint": "1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958",
+        "parameterOperations": [
+          {
+            "operation": "remove",
+            "direction": "import",
+            "name": "IV_RENAMED"
+          }
+        ],
+        "exceptionOperations": [],
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "confirmation": "DESTRUCTIVE_INTERFACE_CHANGE"
+      },
+      "startedAt": "2026-09-07T03:15:18.676Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"2b65c4ce8990a78c017f9ac4960fb3da75335af46169e2f6f777ff47b84602e1\",\n  \"interfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"previousInterfaceFingerprint\": \"f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914\",\n  \"previousSourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\",\n  \"helperVersion\": \"2.0\",\n  \"status\": \"FUNCTION_INTERFACE_PATCHED\",\n  \"packageName\": \"ZABAP\",\n  \"recordedRequest\": \"GR2K923421\",\n  \"sourceMutation\": {\n    \"fileUri\": \"adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350\",\n    \"sourceUri\": \"/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350/source/main\",\n    \"objectName\": \"ZCMCP_FM_0350\",\n    \"oldLineCount\": 8,\n    \"newLineCount\": 7,\n    \"transportNumber\": \"GR2K923421\",\n    \"activation\": {\n      \"success\": true,\n      \"messages\": [],\n      \"inactiveObjects\": []\n    }\n  },\n  \"destructiveChangeConfirmed\": true,\n  \"automaticRetry\": false,\n  \"automaticSapUnlock\": false,\n  \"transportReleased\": false,\n  \"operationReceipt\": {\n    \"operationId\": \"f350-remove-5d75bbbe-e3cc-4878-8cdc-63b9eced6f90\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"patch_function_module_interface\",\n    \"operationIdHash\": \"f394bc0879abd6041c2abd80210c6cc0f88da5c75098890186eeb81dd80453a2\",\n    \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n    \"inputHash\": \"a82e6ff19c5f37cf8b374d1ecbbac3e2b4c6ae23a99b81b7da645d2998345fef\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"patch_function_module_interface\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914 and source fingerprint 1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:18.749Z\",\n      \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"f2e2154f95d08184dbe55d63df35e82805f2f4b1e6ca383fbb2dcda54ed6a914\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_function_module_interface\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"c081865eed9e9def7c882495c98ca5fab9a5bb1a17cf63f5d05c7390dbcc894b\",\n    \"startedAt\": \"2026-09-07T03:15:18.679Z\",\n    \"finishedAt\": \"2026-09-07T03:15:20.037Z\",\n    \"durationMs\": 1355,\n    \"receiptHash\": \"f30f680c560f6e37438f024dafa3cc8da8fb748ae16d939ab98470a989c3e878\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:20.047Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"2b65c4ce8990a78c017f9ac4960fb3da75335af46169e2f6f777ff47b84602e1\",\n  \"interfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_workspace_uri",
+      "arguments": {
+        "connectionId": "w200",
+        "objectName": "ZCMCP_FM_0350",
+        "objectType": "FUGR/FF"
+      },
+      "startedAt": "2026-09-07T03:15:20.075Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ABAP Object Workspace URI\nObject: ZCMCP_FM_0350\nType: FUGR/FF\nPackage: unknown\nDescription: none\nADT URI: /sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350\nWorkspace URI: adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350\nUse this URI with standalone ABAP MCP tools."
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:20.148Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"2b65c4ce8990a78c017f9ac4960fb3da75335af46169e2f6f777ff47b84602e1\",\n  \"interfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"sourceFingerprint\": \"1019640b8deff732f9ab0f6e3eb385fac96681dac0f339aa2a7a51f5e33bd958\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "replace_string_in_abap_object",
+      "arguments": {
+        "connectionId": "w200",
+        "fileUri": "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350",
+        "oldString": "  IF iv_input IS INITIAL.\n    RAISE invalid_input.\n  ENDIF.\n  ev_output = iv_input.",
+        "newString": "  IF iv_input IS INITIAL.\n    RAISE invalid_input.\n  ENDIF.\n  ev_output = iv_input.\n  TRANSLATE ev_output TO UPPER CASE.",
+        "transportNumber": "GR2K923421",
+        "operationId": "f350-daily-source-34b0182e-837a-4c05-b059-99d7868b5185"
+      },
+      "startedAt": "2026-09-07T03:15:20.186Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully replaced 4 line(s) with 5 line(s) in adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350.\nSaved, unlocked, and activated ZCMCP_FM_0350 in SAP.\nTransport: GR2K923421\n\nOperation Receipt\n{\n  \"operationId\": \"f350-daily-source-34b0182e-837a-4c05-b059-99d7868b5185\",\n  \"version\": 2,\n  \"status\": \"completed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"replace_string_in_abap_object\",\n  \"operationIdHash\": \"a39e90cf03ce0d8928fbb61da39951aa73df023fa85e619d3a4b69c2ef4f0dc5\",\n  \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n  \"inputHash\": \"419eb284025d00e0e62d9935e1ca07d20e050a0870a68fa3e65ec2cbf01fcf3f\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"replace_string_in_abap_object\\\",\\\"concurrencyGuard\\\":\\\"exact source match 80027394c132712426e85c2337ea2bff63a99b8f4444a198397c5e1426ea9130\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-09-07T03:15:20.276Z\",\n    \"target\": \"fugr ZCMCP_FG_0350\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"054cf0d95bfc4563d3438b1ebbc628cf9b4789a2da9c1006dff60606c9f36457\",\n    \"packageName\": null,\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"partial\",\n    \"sources\": [\n      \"active_source\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"resultHash\": \"3cbaa57713eafeae7c62570aa06d9676025e1c612dce8eb1f12607949db619c1\",\n  \"startedAt\": \"2026-09-07T03:15:20.191Z\",\n  \"finishedAt\": \"2026-09-07T03:15:21.248Z\",\n  \"durationMs\": 1053,\n  \"receiptHash\": \"70a2f5f011449d82322f68b9ce90c3b5e921d38e96bd24d5e04141a4b130a461\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back fugr ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_diagnostics",
+      "arguments": {
+        "connectionId": "w200",
+        "fileUri": "adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350"
+      },
+      "startedAt": "2026-09-07T03:15:21.259Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No diagnostics found for adt://w200/sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350. The active SAP source has no syntax errors or warnings."
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": false
+      },
+      "startedAt": "2026-09-07T03:15:21.393Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"  TRANSLATE ev_output TO UPPER CASE.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15\",\n  \"interfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"sourceFingerprint\": \"5bc8905203f2301e0299be8868e4ee18d7aa5aa126adf54a3b039ac35f89d379\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "includeExecutionSupport": true
+      },
+      "startedAt": "2026-09-07T03:15:21.433Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"functionGroup\": \"ZCMCP_FG_0350\",\n  \"shortText\": \"MCP 0.35 interface patch\",\n  \"remoteMode\": \"R\",\n  \"updateTask\": false,\n  \"updateTaskMode\": \"\",\n  \"globalInterface\": false,\n  \"remoteEnabled\": true,\n  \"importParameters\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Input value\"\n    }\n  ],\n  \"exportParameters\": [\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"passByValue\": true,\n      \"description\": \"Output value\"\n    }\n  ],\n  \"changingParameters\": [],\n  \"tableParameters\": [],\n  \"exceptions\": [\n    {\n      \"name\": \"INVALID_INPUT\",\n      \"description\": \"Input is required\"\n    }\n  ],\n  \"source\": [\n    \"FUNCTION ZCMCP_FM_0350.\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"*\\\"*\\\"Local Interface:\",\n    \"*\\\"  IMPORTING\",\n    \"*\\\"     VALUE(IV_INPUT) TYPE  CHAR20\",\n    \"*\\\"  EXPORTING\",\n    \"*\\\"     VALUE(EV_OUTPUT) TYPE  CHAR20\",\n    \"*\\\"  EXCEPTIONS\",\n    \"*\\\"      INVALID_INPUT\",\n    \"*\\\"----------------------------------------------------------------------\",\n    \"\",\n    \"  IF iv_input IS INITIAL.\",\n    \"    RAISE invalid_input.\",\n    \"  ENDIF.\",\n    \"  ev_output = iv_input.\",\n    \"  TRANSLATE ev_output TO UPPER CASE.\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"\",\n    \"ENDFUNCTION.\"\n  ],\n  \"fingerprint\": \"c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15\",\n  \"interfaceFingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n  \"sourceFingerprint\": \"5bc8905203f2301e0299be8868e4ee18d7aa5aa126adf54a3b039ac35f89d379\",\n  \"executionSupport\": {\n    \"supported\": true,\n    \"reasons\": [],\n    \"parameters\": [\n      {\n        \"name\": \"IV_INPUT\",\n        \"typeName\": \"CHAR20\",\n        \"optional\": false,\n        \"direction\": \"import\",\n        \"kind\": \"scalar\",\n        \"supported\": true\n      },\n      {\n        \"name\": \"EV_OUTPUT\",\n        \"typeName\": \"CHAR20\",\n        \"optional\": false,\n        \"direction\": \"export\",\n        \"kind\": \"scalar\",\n        \"supported\": true\n      }\n    ]\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "test_remote_function_module",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "inputParameters": {
+          "IV_INPUT": "m2-valid"
+        },
+        "expectedOutputs": {
+          "EV_OUTPUT": "M2-VALID"
+        },
+        "expectedInterfaceFingerprint": "c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15",
+        "acknowledgePotentialSideEffects": true,
+        "operationId": "f350-daily-normal-ad93ab12-2aee-4fb8-81ba-39e0b6bf5be0"
+      },
+      "startedAt": "2026-09-07T03:15:21.560Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"passed\",\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"interfaceFingerprint\": \"c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15\",\n  \"inputParameterNames\": [\n    \"IV_INPUT\"\n  ],\n  \"outputs\": {\n    \"EV_OUTPUT\": \"M2-VALID\"\n  },\n  \"structureOutputs\": {},\n  \"tableOutputs\": {},\n  \"expectedOutputs\": {\n    \"EV_OUTPUT\": \"M2-VALID\"\n  },\n  \"expectedStructureOutputs\": {},\n  \"expectedTableOutputs\": {},\n  \"parameterShapes\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"direction\": \"import\",\n      \"kind\": \"scalar\",\n      \"supported\": true\n    },\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"direction\": \"export\",\n      \"kind\": \"scalar\",\n      \"supported\": true\n    }\n  ],\n  \"sideEffectsAcknowledged\": true,\n  \"operationReceipt\": {\n    \"operationId\": \"f350-daily-normal-ad93ab12-2aee-4fb8-81ba-39e0b6bf5be0\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"test_remote_function_module\",\n    \"operationIdHash\": \"a3567642d73e1349f2f127354a85150255ba8e1bc2afe6f59456f1e9819ef5d8\",\n    \"targetKeyHash\": \"634c51530d5b15f8f7c7580277c4634bc5c56bca3534bec2afb1e43a31eaeccf\",\n    \"inputHash\": \"53e67e12e70c9b0a505ce4c8ec39156dbe991b75b064a83db3e9437ce1ded661\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"function ZCMCP_FM_0350\\\",\\\"requestedOperation\\\":\\\"test_remote_function_module\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15 and source fingerprint undefined\\\",\\\"transportNumber\\\":\\\"existing assignment\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:21.633Z\",\n      \"target\": \"function ZCMCP_FM_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_function_module_interface\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"d03db3450d756639a746a8be0a24d38fae19d285fac96e38a5802ad826b1d618\",\n    \"startedAt\": \"2026-09-07T03:15:21.563Z\",\n    \"finishedAt\": \"2026-09-07T03:15:21.776Z\",\n    \"durationMs\": 210,\n    \"receiptHash\": \"764b627161215910a74a5947c7719e94e5b3ce216ceda77e6322455acafa0ddb\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back function ZCMCP_FM_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_write_operation_status",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-daily-normal-ad93ab12-2aee-4fb8-81ba-39e0b6bf5be0"
+      },
+      "startedAt": "2026-09-07T03:15:21.784Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"operationId\": \"f350-daily-normal-ad93ab12-2aee-4fb8-81ba-39e0b6bf5be0\",\n  \"version\": 2,\n  \"status\": \"completed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"test_remote_function_module\",\n  \"operationIdHash\": \"a3567642d73e1349f2f127354a85150255ba8e1bc2afe6f59456f1e9819ef5d8\",\n  \"targetKeyHash\": \"634c51530d5b15f8f7c7580277c4634bc5c56bca3534bec2afb1e43a31eaeccf\",\n  \"inputHash\": \"53e67e12e70c9b0a505ce4c8ec39156dbe991b75b064a83db3e9437ce1ded661\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"function ZCMCP_FM_0350\\\",\\\"requestedOperation\\\":\\\"test_remote_function_module\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15 and source fingerprint undefined\\\",\\\"transportNumber\\\":\\\"existing assignment\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-09-07T03:15:21.633Z\",\n    \"target\": \"function ZCMCP_FM_0350\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n    \"packageName\": \"ZABAP\",\n    \"requestNumber\": \"GR2K923421\",\n    \"taskNumber\": \"GR2K923422\",\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_function_module_interface\",\n      \"repository_assignment\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"resultHash\": \"d03db3450d756639a746a8be0a24d38fae19d285fac96e38a5802ad826b1d618\",\n  \"startedAt\": \"2026-09-07T03:15:21.563Z\",\n  \"finishedAt\": \"2026-09-07T03:15:21.776Z\",\n  \"durationMs\": 210,\n  \"receiptHash\": \"2fa6c935bb57e7d65328c2c7bb307e98e715aebcfbdd12539ee315dd1dc6beee\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back function ZCMCP_FM_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "test_remote_function_module",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "inputParameters": {
+          "IV_INPUT": "abcdefghijklmnopqrst"
+        },
+        "expectedOutputs": {
+          "EV_OUTPUT": "ABCDEFGHIJKLMNOPQRST"
+        },
+        "expectedInterfaceFingerprint": "c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15",
+        "acknowledgePotentialSideEffects": true,
+        "operationId": "f350-daily-boundary-2e4f8ea3-7a60-45a6-84fd-b6432026abc0"
+      },
+      "startedAt": "2026-09-07T03:15:21.788Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"passed\",\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZCMCP_FM_0350\",\n  \"interfaceFingerprint\": \"c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15\",\n  \"inputParameterNames\": [\n    \"IV_INPUT\"\n  ],\n  \"outputs\": {\n    \"EV_OUTPUT\": \"ABCDEFGHIJKLMNOPQRST\"\n  },\n  \"structureOutputs\": {},\n  \"tableOutputs\": {},\n  \"expectedOutputs\": {\n    \"EV_OUTPUT\": \"ABCDEFGHIJKLMNOPQRST\"\n  },\n  \"expectedStructureOutputs\": {},\n  \"expectedTableOutputs\": {},\n  \"parameterShapes\": [\n    {\n      \"name\": \"IV_INPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"direction\": \"import\",\n      \"kind\": \"scalar\",\n      \"supported\": true\n    },\n    {\n      \"name\": \"EV_OUTPUT\",\n      \"typeName\": \"CHAR20\",\n      \"optional\": false,\n      \"direction\": \"export\",\n      \"kind\": \"scalar\",\n      \"supported\": true\n    }\n  ],\n  \"sideEffectsAcknowledged\": true,\n  \"operationReceipt\": {\n    \"operationId\": \"f350-daily-boundary-2e4f8ea3-7a60-45a6-84fd-b6432026abc0\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"test_remote_function_module\",\n    \"operationIdHash\": \"b4e7ba37ca62638828f80406d34bb5b180a7a86d5dd246998d2c932d6916219a\",\n    \"targetKeyHash\": \"634c51530d5b15f8f7c7580277c4634bc5c56bca3534bec2afb1e43a31eaeccf\",\n    \"inputHash\": \"c824b20f067b51e4a469f4b8e9c5165b41fea6642d75307d22e61f4d8306b8a5\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"function ZCMCP_FM_0350\\\",\\\"requestedOperation\\\":\\\"test_remote_function_module\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15 and source fingerprint undefined\\\",\\\"transportNumber\\\":\\\"existing assignment\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:21.850Z\",\n      \"target\": \"function ZCMCP_FM_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_function_module_interface\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"f458cf15594a4210c70b0aa3141670c76630ed02abbb0c510b0a45088b5770aa\",\n    \"startedAt\": \"2026-09-07T03:15:21.790Z\",\n    \"finishedAt\": \"2026-09-07T03:15:21.995Z\",\n    \"durationMs\": 202,\n    \"receiptHash\": \"b6ed866d901f6268b248440c2c71d111ca212d5ae4f9b8f0fa9e74f4d972e680\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back function ZCMCP_FM_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_write_operation_status",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-daily-boundary-2e4f8ea3-7a60-45a6-84fd-b6432026abc0"
+      },
+      "startedAt": "2026-09-07T03:15:22.005Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"operationId\": \"f350-daily-boundary-2e4f8ea3-7a60-45a6-84fd-b6432026abc0\",\n  \"version\": 2,\n  \"status\": \"completed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"test_remote_function_module\",\n  \"operationIdHash\": \"b4e7ba37ca62638828f80406d34bb5b180a7a86d5dd246998d2c932d6916219a\",\n  \"targetKeyHash\": \"634c51530d5b15f8f7c7580277c4634bc5c56bca3534bec2afb1e43a31eaeccf\",\n  \"inputHash\": \"c824b20f067b51e4a469f4b8e9c5165b41fea6642d75307d22e61f4d8306b8a5\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"function ZCMCP_FM_0350\\\",\\\"requestedOperation\\\":\\\"test_remote_function_module\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15 and source fingerprint undefined\\\",\\\"transportNumber\\\":\\\"existing assignment\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-09-07T03:15:21.850Z\",\n    \"target\": \"function ZCMCP_FM_0350\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"88dc28df02be4c35e04136b88121eeacee8107671c514dabda9cf1418d20d1c4\",\n    \"packageName\": \"ZABAP\",\n    \"requestNumber\": \"GR2K923421\",\n    \"taskNumber\": \"GR2K923422\",\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_function_module_interface\",\n      \"repository_assignment\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"resultHash\": \"f458cf15594a4210c70b0aa3141670c76630ed02abbb0c510b0a45088b5770aa\",\n  \"startedAt\": \"2026-09-07T03:15:21.790Z\",\n  \"finishedAt\": \"2026-09-07T03:15:21.995Z\",\n  \"durationMs\": 202,\n  \"receiptHash\": \"23409d73f70d4cea6908eac3fc49e049bc46d40710f6983e7bf686b8c0777993\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back function ZCMCP_FM_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "test_remote_function_module",
+      "arguments": {
+        "connectionId": "w200",
+        "functionName": "ZCMCP_FM_0350",
+        "inputParameters": {
+          "IV_INPUT": ""
+        },
+        "expectedException": "INVALID_INPUT",
+        "expectedInterfaceFingerprint": "c1e2d653d77d0c69fe3f3c2b1d3ba6d95dc8d6a538321b9a8f30de550c3cbb15",
+        "acknowledgePotentialSideEffects": true,
+        "operationId": "f350-daily-declared-exception-6b477d4a-5191-49bf-9e94-e752a1e6840b"
+      },
+      "startedAt": "2026-09-07T03:15:22.009Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool test_remote_function_module: [\n  {\n    \"validation\": \"regex\",\n    \"code\": \"invalid_string\",\n    \"message\": \"Invalid\",\n    \"path\": [\n      \"operationId\"\n    ]\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "arguments": {
+        "connectionId": "w200",
+        "objectName": "ZCMCP_FM_0350",
+        "objectType": "FUNC",
+        "startLine": 1,
+        "lineCount": 5000
+      },
+      "startedAt": "2026-09-07T03:15:22.012Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCMCP_FM_0350 (lines 1-22 of 22, 22 lines retrieved):\n\n```abap\nFUNCTION ZCMCP_FM_0350\r\n  IMPORTING\r\n    VALUE(IV_INPUT) TYPE CHAR20\r\n  EXPORTING\r\n    VALUE(EV_OUTPUT) TYPE CHAR20\r\n  EXCEPTIONS\r\n    INVALID_INPUT.\r\n\r\n\r\n\r\n\r\n  IF iv_input IS INITIAL.\r\n    RAISE invalid_input.\r\n  ENDIF.\r\n  ev_output = iv_input.\r\n  TRANSLATE ev_output TO UPPER CASE.\r\n\r\n\r\n\r\n\r\n\r\nENDFUNCTION.\n```\n\nFull Source SHA-256: 52cb422e4e1983d0406c3e91ae88a1c94f099f00e425318bf7be6902253ce939\nURI: /sap/bc/adt/functions/groups/zcmcp_fg_0350/fmodules/zcmcp_fm_0350/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "delete_abap_source_object",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-cleanup-func-09f5297e-984f-4577-864b-c38900e333d1",
+        "objectType": "FUGR/FF",
+        "objectName": "ZCMCP_FM_0350",
+        "parentName": "ZCMCP_FG_0350",
+        "expectedFingerprint": "52cb422e4e1983d0406c3e91ae88a1c94f099f00e425318bf7be6902253ce939",
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "confirmation": "PERMANENT_DELETE"
+      },
+      "startedAt": "2026-09-07T03:15:22.291Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectType\": \"FUGR/FF\",\n  \"objectName\": \"ZCMCP_FM_0350\",\n  \"parentName\": \"ZCMCP_FG_0350\",\n  \"packageName\": \"ZABAP\",\n  \"transportNumber\": \"GR2K923421\",\n  \"preDeleteFingerprint\": \"52cb422e4e1983d0406c3e91ae88a1c94f099f00e425318bf7be6902253ce939\",\n  \"absenceVerified\": true,\n  \"status\": \"SOURCE_OBJECT_DELETED\",\n  \"operationReceipt\": {\n    \"operationId\": \"f350-cleanup-func-09f5297e-984f-4577-864b-c38900e333d1\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"delete_abap_source_object\",\n    \"operationIdHash\": \"2076130c236bfd86e7c5bbcc87c328e712bd579e06811f1405bcca2405cfedeb\",\n    \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n    \"inputHash\": \"dae8c70a25d13c1f9764eddd2a88539c590dd27f85afd5ba84694e2a4fd910b8\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"delete_abap_source_object\\\",\\\"concurrencyGuard\\\":\\\"fingerprint 52cb422e4e1983d0406c3e91ae88a1c94f099f00e425318bf7be6902253ce939\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:22.482Z\",\n      \"target\": \"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"52cb422e4e1983d0406c3e91ae88a1c94f099f00e425318bf7be6902253ce939\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"adt_object_search\",\n        \"active_source\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"b2c98b4dce9f07bebff2004f5cde8558f53b6b09491782e9047fa3f51719b857\",\n    \"startedAt\": \"2026-09-07T03:15:22.294Z\",\n    \"finishedAt\": \"2026-09-07T03:15:22.983Z\",\n    \"durationMs\": 686,\n    \"receiptHash\": \"b1b76e6c81815d7f1e0da1678e9f5efd11ac8916e8795f507b2456e96a0de469\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "arguments": {
+        "connectionId": "w200",
+        "pattern": "ZCMCP_FM_0350",
+        "types": [
+          "FUNC"
+        ],
+        "maxResults": 5
+      },
+      "startedAt": "2026-09-07T03:15:22.993Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No ABAP objects found matching pattern: ZCMCP_FM_0350"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "arguments": {
+        "connectionId": "w200",
+        "objectName": "ZCMCP_FG_0350",
+        "objectType": "FUGR",
+        "startLine": 1,
+        "lineCount": 5000
+      },
+      "startedAt": "2026-09-07T03:15:23.050Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCMCP_FG_0350 (lines 1-14 of 14, 14 lines retrieved):\n\n```abap\n*******************************************************************\r\n*   System-defined Include-files.                                 *\r\n*******************************************************************\r\n  INCLUDE LZCMCP_FG_0350TOP.                 \" Global Data\r\n  INCLUDE LZCMCP_FG_0350UXX.                 \" Function Modules\r\n\r\n*******************************************************************\r\n*   User-defined Include-files (if necessary).                    *\r\n*******************************************************************\r\n* INCLUDE LZCMCP_FG_0350F...                 \" Subroutines\r\n* INCLUDE LZCMCP_FG_0350O...                 \" PBO-Modules\r\n* INCLUDE LZCMCP_FG_0350I...                 \" PAI-Modules\r\n* INCLUDE LZCMCP_FG_0350E...                 \" Events\r\n* INCLUDE LZCMCP_FG_0350P...                 \" Local class implement.\n```\n\nFull Source SHA-256: 1828aabf58c0fd02962e7f974e04e23d3fbd25008dec5917918ff3c705a71cac\nURI: /sap/bc/adt/functions/groups/zcmcp_fg_0350/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "delete_abap_source_object",
+      "arguments": {
+        "connectionId": "w200",
+        "operationId": "f350-cleanup-fugr-37b719a7-f5a8-4640-9468-5d0b10523692",
+        "objectType": "FUGR/F",
+        "objectName": "ZCMCP_FG_0350",
+        "expectedFingerprint": "1828aabf58c0fd02962e7f974e04e23d3fbd25008dec5917918ff3c705a71cac",
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923421",
+        "confirmation": "PERMANENT_DELETE"
+      },
+      "startedAt": "2026-09-07T03:15:23.334Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectType\": \"FUGR/F\",\n  \"objectName\": \"ZCMCP_FG_0350\",\n  \"parentName\": \"\",\n  \"packageName\": \"ZABAP\",\n  \"transportNumber\": \"GR2K923421\",\n  \"preDeleteFingerprint\": \"1828aabf58c0fd02962e7f974e04e23d3fbd25008dec5917918ff3c705a71cac\",\n  \"absenceVerified\": true,\n  \"status\": \"SOURCE_OBJECT_DELETED\",\n  \"operationReceipt\": {\n    \"operationId\": \"f350-cleanup-fugr-37b719a7-f5a8-4640-9468-5d0b10523692\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"delete_abap_source_object\",\n    \"operationIdHash\": \"ee6015dde80a40e8a8036ab3be0b34ceeb138e6bf9ac10c7dfea5586537953fb\",\n    \"targetKeyHash\": \"645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672\",\n    \"inputHash\": \"c8320b61d020e1a587a1cb97b3cad4e827a291d76567f7235b54a9c703cb13e0\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"function group ZCMCP_FG_0350\\\",\\\"requestedOperation\\\":\\\"delete_abap_source_object\\\",\\\"concurrencyGuard\\\":\\\"fingerprint 1828aabf58c0fd02962e7f974e04e23d3fbd25008dec5917918ff3c705a71cac\\\",\\\"transportNumber\\\":\\\"GR2K923421\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-09-07T03:15:23.518Z\",\n      \"target\": \"function group ZCMCP_FG_0350\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"1828aabf58c0fd02962e7f974e04e23d3fbd25008dec5917918ff3c705a71cac\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"GR2K923421\",\n      \"taskNumber\": \"GR2K923422\",\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"adt_object_search\",\n        \"active_source\",\n        \"repository_assignment\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"a75cbd17c37a5a706f50874bac6360fe21a3a65720328291d31e60cca306e3bc\",\n    \"startedAt\": \"2026-09-07T03:15:23.337Z\",\n    \"finishedAt\": \"2026-09-07T03:15:24.061Z\",\n    \"durationMs\": 720,\n    \"receiptHash\": \"a52d18846c27ae60b2e66db56eda4fb8d547cbe82e9f48338dd1180e4d179d9e\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back function group ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "arguments": {
+        "connectionId": "w200",
+        "pattern": "ZCMCP_FG_0350",
+        "types": [
+          "FUGR"
+        ],
+        "maxResults": 5
+      },
+      "startedAt": "2026-09-07T03:15:24.072Z",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No ABAP objects found matching pattern: ZCMCP_FG_0350"
+          }
+        ]
+      }
+    }
+  ],
+  "preflight": {
+    "repositoryReadProtocol": "1.2",
+    "patchCapabilityAvailability": "unknown"
+  },
+  "referenceParameterGuard": "passed",
+  "error": "test_remote_function_module: MCP error -32602: Input validation error: Invalid arguments for tool test_remote_function_module: [\n  {\n    \"validation\": \"regex\",\n    \"code\": \"invalid_string\",\n    \"message\": \"Invalid\",\n    \"path\": [\n      \"operationId\"\n    ]\n  }\n]",
+  "cleanup": [
+    {
+      "target": "ZCMCP_FM_0350",
+      "status": "deleted",
+      "receipt": {
+        "operationId": "f350-cleanup-func-09f5297e-984f-4577-864b-c38900e333d1",
+        "version": 2,
+        "status": "completed",
+        "connectionId": "w200",
+        "toolName": "delete_abap_source_object",
+        "operationIdHash": "2076130c236bfd86e7c5bbcc87c328e712bd579e06811f1405bcca2405cfedeb",
+        "targetKeyHash": "645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672",
+        "inputHash": "dae8c70a25d13c1f9764eddd2a88539c590dd27f85afd5ba84694e2a4fd910b8",
+        "preChangeSummary": "{\"target\":\"fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350\",\"requestedOperation\":\"delete_abap_source_object\",\"concurrencyGuard\":\"fingerprint 52cb422e4e1983d0406c3e91ae88a1c94f099f00e425318bf7be6902253ce939\",\"transportNumber\":\"GR2K923421\",\"automaticRollback\":false}",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-09-07T03:15:22.482Z",
+          "target": "fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350",
+          "exists": true,
+          "active": true,
+          "version": null,
+          "fingerprint": "52cb422e4e1983d0406c3e91ae88a1c94f099f00e425318bf7be6902253ce939",
+          "packageName": "ZABAP",
+          "requestNumber": "GR2K923421",
+          "taskNumber": "GR2K923422",
+          "observationStatus": "complete",
+          "sources": [
+            "adt_object_search",
+            "active_source",
+            "repository_assignment"
+          ],
+          "warnings": []
+        },
+        "sapInvocationStarted": true,
+        "resultHash": "b2c98b4dce9f07bebff2004f5cde8558f53b6b09491782e9047fa3f51719b857",
+        "startedAt": "2026-09-07T03:15:22.294Z",
+        "finishedAt": "2026-09-07T03:15:22.983Z",
+        "durationMs": 686,
+        "receiptHash": "b1b76e6c81815d7f1e0da1678e9f5efd11ac8916e8795f507b2456e96a0de469",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "localLockReleased": true,
+        "manualRecovery": "Read back fugr/ff ZCMCP_FM_0350 in ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+      }
+    },
+    {
+      "target": "ZCMCP_FG_0350",
+      "status": "deleted",
+      "receipt": {
+        "operationId": "f350-cleanup-fugr-37b719a7-f5a8-4640-9468-5d0b10523692",
+        "version": 2,
+        "status": "completed",
+        "connectionId": "w200",
+        "toolName": "delete_abap_source_object",
+        "operationIdHash": "ee6015dde80a40e8a8036ab3be0b34ceeb138e6bf9ac10c7dfea5586537953fb",
+        "targetKeyHash": "645284054b1da992cd508d37db96422ecfbedb163dfbacccbbc653f7a143d672",
+        "inputHash": "c8320b61d020e1a587a1cb97b3cad4e827a291d76567f7235b54a9c703cb13e0",
+        "preChangeSummary": "{\"target\":\"function group ZCMCP_FG_0350\",\"requestedOperation\":\"delete_abap_source_object\",\"concurrencyGuard\":\"fingerprint 1828aabf58c0fd02962e7f974e04e23d3fbd25008dec5917918ff3c705a71cac\",\"transportNumber\":\"GR2K923421\",\"automaticRollback\":false}",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-09-07T03:15:23.518Z",
+          "target": "function group ZCMCP_FG_0350",
+          "exists": true,
+          "active": true,
+          "version": null,
+          "fingerprint": "1828aabf58c0fd02962e7f974e04e23d3fbd25008dec5917918ff3c705a71cac",
+          "packageName": "ZABAP",
+          "requestNumber": "GR2K923421",
+          "taskNumber": "GR2K923422",
+          "observationStatus": "complete",
+          "sources": [
+            "adt_object_search",
+            "active_source",
+            "repository_assignment"
+          ],
+          "warnings": []
+        },
+        "sapInvocationStarted": true,
+        "resultHash": "a75cbd17c37a5a706f50874bac6360fe21a3a65720328291d31e60cca306e3bc",
+        "startedAt": "2026-09-07T03:15:23.337Z",
+        "finishedAt": "2026-09-07T03:15:24.061Z",
+        "durationMs": 720,
+        "receiptHash": "a52d18846c27ae60b2e66db56eda4fb8d547cbe82e9f48338dd1180e4d179d9e",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "localLockReleased": true,
+        "manualRecovery": "Read back function group ZCMCP_FG_0350 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+      }
+    }
+  ]
+}

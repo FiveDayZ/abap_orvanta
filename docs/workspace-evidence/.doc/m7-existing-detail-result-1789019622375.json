@@ -1,0 +1,98 @@
+{
+  "at": "2026-09-10T05:53:42.375Z",
+  "mode": "READ_ONLY_FUNCTION",
+  "requestId": "m7-existing-detail-1789019622375",
+  "operationId": "m7-existing-detail-op-1789019622375",
+  "results": [
+    {
+      "status": "completed",
+      "outputs": {
+        "EV_GP_TYPE": "",
+        "EV_MTYPE": "S",
+        "EV_MESSAGE": "入库计划查询成功"
+      },
+      "interfaceFingerprint": "194a6ab6a5316e87008e04614af678dd1ba84ffdb5005a5882f910c136de57ee",
+      "callReceipt": {
+        "requestId": "m7-existing-detail-1789019622375",
+        "invokedAt": "2026-09-10T05:53:43.790Z",
+        "durationMs": 35,
+        "inputHash": "a5a3332dbfb3a49dc74a7f9bc3a376b453cf4cfb1ca352a66bad02510dd6c7d9",
+        "outputHash": "fbd13655a1bdf5a8d5c0cb369018afabb448097d9550dd53f1c2b8ce7e901b7e",
+        "persistentState": "completed"
+      },
+      "header": {
+        "MANDT": "200",
+        "WERKS": "809P",
+        "ZRKJHH": "PJX260907000004",
+        "ZRKZZ": "PR202609079255729",
+        "ZDOCTYPE": "",
+        "KUNNR": "0001100059",
+        "ZHTLSH": "5100481",
+        "ZZYZT": "1",
+        "ZJHST": "2",
+        "ZYXQ": "2026-09-27",
+        "ZTS": "100.000",
+        "CRE_DATE": "2026-09-08",
+        "APR_DATE": "2026-09-07",
+        "CXL_DATE": "0000-00-00"
+      },
+      "items": [
+        {
+          "MANDT": "200",
+          "WERKS": "809P",
+          "ZRKJHH": "PJX260907000004",
+          "POSNR": "000010",
+          "MATNR": "000000000000101447",
+          "MAKTX": "CA0145(1100059)100KG/桶",
+          "MEINS": "BBL",
+          "ZCOUNT": "26.000",
+          "LGPLA": "A1-01",
+          "CHARG": "",
+          "ZREMARK": ""
+        }
+      ],
+      "bulkCount": 0,
+      "packageCount": 0,
+      "return": [
+        {
+          "TYPE": "S",
+          "ID": "",
+          "NUMBER": "000",
+          "MESSAGE": "入库计划查询成功",
+          "LOG_NO": "",
+          "LOG_MSG_NO": "000000",
+          "MESSAGE_V1": "PJX260907000004",
+          "MESSAGE_V2": "",
+          "MESSAGE_V3": "",
+          "MESSAGE_V4": "",
+          "PARAMETER": "",
+          "ROW": "0",
+          "FIELD": "",
+          "SYSTEM": ""
+        }
+      ]
+    },
+    {
+      "name": "get_customer_function_call_status",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"completed\",\n  \"connectionId\": \"w200\",\n  \"functionName\": \"ZPMC_TZ_RK_GET_DETAIL\",\n  \"requestIdHash\": \"3c1d7d87e8edcb813765f9f1d9fc8c9ebefcc570ffd3b0ca628b82dd7c685a5f\",\n  \"interfaceFingerprint\": \"194a6ab6a5316e87008e04614af678dd1ba84ffdb5005a5882f910c136de57ee\",\n  \"inputHash\": \"a5a3332dbfb3a49dc74a7f9bc3a376b453cf4cfb1ca352a66bad02510dd6c7d9\",\n  \"outputHash\": \"fbd13655a1bdf5a8d5c0cb369018afabb448097d9550dd53f1c2b8ce7e901b7e\",\n  \"startedAt\": \"2026-09-10T05:53:43.788Z\",\n  \"finishedAt\": \"2026-09-10T05:53:43.827Z\",\n  \"durationMs\": 35,\n  \"automaticRetry\": false\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_write_operation_status",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"operationId\": \"m7-existing-detail-op-1789019622375\",\n  \"version\": 2,\n  \"status\": \"completed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"invoke_customer_function_module\",\n  \"operationIdHash\": \"f94e03d6e43bd4edccd198ec8d8ec3d98e64e67ac9c95d0c61d35ce49e5317ff\",\n  \"targetKeyHash\": \"43b742187190d6a9466654b80edb61bb3dc40de04da39ec5f76b1e949dd7e25c\",\n  \"inputHash\": \"8a4d2ea79ed04f2ea9b70a682acdfb08ef519870af98f666f5bbf1cb1fbdd6c0\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"function ZPMC_TZ_RK_GET_DETAIL\\\",\\\"requestedOperation\\\":\\\"invoke_customer_function_module\\\",\\\"concurrencyGuard\\\":\\\"interface fingerprint 194a6ab6a5316e87008e04614af678dd1ba84ffdb5005a5882f910c136de57ee and source fingerprint undefined\\\",\\\"transportNumber\\\":\\\"existing assignment\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-09-10T05:53:42.499Z\",\n    \"target\": \"function ZPMC_TZ_RK_GET_DETAIL\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"b49b8fd71e8e6487560d0282fab33cee934837bb130d8494494533a985121d4a\",\n    \"packageName\": \"ZPMC\",\n    \"requestNumber\": \"GR2K923407\",\n    \"taskNumber\": \"GR2K923408\",\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_function_module_interface\",\n      \"repository_assignment\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"resultHash\": \"acfbb96e7afb2d8b362ef5940f4aa25b1ac6fccb60366d4eb8e796eb0c3b64fc\",\n  \"startedAt\": \"2026-09-10T05:53:42.428Z\",\n  \"finishedAt\": \"2026-09-10T05:53:43.833Z\",\n  \"durationMs\": 1399,\n  \"receiptHash\": \"7b9479e3bd8fd6ed64efa2a16f163990ae8dd019fb163b323871f244325c8569\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back function ZPMC_TZ_RK_GET_DETAIL from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+          }
+        ]
+      }
+    }
+  ]
+}

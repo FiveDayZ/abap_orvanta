@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF11",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 50
+ },
+ "startedAt": "2026-10-03T13:16:04.946Z",
+ "finishedAt": "2026-10-03T13:16:05.527Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF11 (lines 50-99 of 2689, 50 lines retrieved):\n\n```abap\n\ndata: stxt like field_int-stxt,\n      stxt_leng type i.\n\n* Bei Schablonen prüfen, ob TEXT mit gültigem Zeichen beginnt\n  if dyn_field_attr-type = rpyty_dynp_ftype-template\n  or dyn_field_attr-type = rpyty_dynp_ftype-push_template\n  or dyn_field_attr-type = rpyty_dynp_ftype-frame_template.\n    if dyn_field_attr-text ne space.\n      shift dyn_field_attr-text left deleting leading ' '.\n      if dyn_field_attr-text(1) cn '_?'.\n        message e113 with 'FIELDS_TO_CONTAINERS'\n                           dyn_field_attr-name\n                          'TEXT'\n                           dyn_field_attr-text\n                     raising illegal_field_value.\n      endif.\n    endif.\n  endif.\n\n* mögliche Angaben zu Ikonen verarbeiten\n  icon_leng = 0.\n  icon_id = ' '.\n  icon_quick = ' '.\n  if  dyn_field_attr-type ne rpyty_dynp_ftype-template\n  and dyn_field_attr-type ne rpyty_dynp_ftype-push_template.\n    if dyn_field_attr-type = rpyty_dynp_ftype-infobutton. \"feste\n      dyn_field_attr-icon_name = 'ICON_DIALGHELP'.        \"Ikone\n      icon_leng = 2.\n      icon_id = '@OH@'.  \"#EC NOTEXT\n    endif.                                                \"erzwingen\n*   mögliche Ikonenangaben zu Textfeldern:\n*   falls ein Ikonenname angegeben ist, Ikoneninformationen beschaffen\n    if not ( dyn_field_attr-icon_name is initial )\n    and  dyn_field_attr-type <> rpyty_dynp_ftype-infobutton.\n\n      if dyn_field_attr-type = rpyty_dynp_ftype-push.\n        perform is_icon(saplseus) using dyn_field_attr-icon_name\n                                        'P'\n                               changing icon_leng\n                                        icon_id\n                                        icon_quick.\n        if icon_leng = 0.\n          message e113 with 'FIELDS_TO_CONTAINERS'\n                             dyn_field_attr-name\n                            'ICON_NAME'\n                             dyn_field_attr-icon_name\n                       raising illegal_field_value.\n        endif.\n      else.\n```\n\nFull Source SHA-256: 2b13cbf836d8bc20a4d0bbf2556f1a5e2d938c396c0c822fa929aedd0ec60ccf\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf11/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

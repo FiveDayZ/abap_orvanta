@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-09-11T01:43:51.312Z",
+  "mode": "unit",
+  "selection": {
+    "name": "run_unit_tests",
+    "args": {
+      "connectionId": "w200",
+      "objectName": "ZCODEX_MVP3_UNIT",
+      "outputFormat": "json"
+    }
+  },
+  "status": "Partially Verified",
+  "selectedChecksPassed": true,
+  "automaticRetry": false,
+  "steps": [
+    {
+      "name": "get_runtime_info",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"observed\",\n  \"readOnly\": true,\n  \"server\": {\n    \"name\": \"orvanta\",\n    \"version\": \"0.36.34\"\n  },\n  \"startedAt\": \"2026-09-11T01:42:28.163Z\",\n  \"nodeVersion\": \"24.8.0\",\n  \"startupArtifact\": {\n    \"status\": \"observed\",\n    \"observedAt\": \"2026-09-11T01:42:28.163Z\",\n    \"packageVersion\": \"0.36.34\",\n    \"artifactFingerprint\": \"d9c23277c3c447d8e840a147bba92c7d51251a2cef42bddab1e0708b5f0a8901\",\n    \"fileCount\": 41\n  },\n  \"currentDiskArtifact\": {\n    \"status\": \"observed\",\n    \"observedAt\": \"2026-09-11T01:43:51.398Z\",\n    \"packageVersion\": \"0.36.34\",\n    \"artifactFingerprint\": \"d9c23277c3c447d8e840a147bba92c7d51251a2cef42bddab1e0708b5f0a8901\",\n    \"fileCount\": 41\n  },\n  \"checks\": {\n    \"expectedVersion\": \"match\",\n    \"expectedArtifact\": \"match\",\n    \"diskSinceStartup\": \"match\",\n    \"moduleAndPackageVersion\": \"match\"\n  },\n  \"restartRequired\": false,\n  \"sapStatus\": \"not_probed\",\n  \"helperStatus\": \"not_probed; use get_capability_report for separately authorized observations\",\n  \"limitations\": [\n    \"Fingerprint covers service code, package.json and package-lock.json, not every dependency or UI asset.\",\n    \"Startup disk observation is not an attestation of every module already loaded in memory.\",\n    \"Matching artifacts do not prove SAP connectivity, helper compatibility or runtime acceptance.\",\n    \"No service switch, state cleanup, SAP retry or rollback is performed.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from ZCODEX_MVP3_UNIT (lines 1-29 of 29, 29 lines retrieved):\n\n```abap\nREPORT zcodex_mvp3_unit.\r\n\r\nCLASS ltc_assertion_control DEFINITION FOR TESTING\r\n  DURATION SHORT RISK LEVEL HARMLESS.\r\n  PRIVATE SECTION.\r\n    METHODS addition_passes FOR TESTING.\r\n    METHODS intentional_failure FOR TESTING.\r\nENDCLASS.\r\n\r\nCLASS ltc_assertion_control IMPLEMENTATION.\r\n  METHOD addition_passes.\r\n    DATA lv_actual TYPE i.\r\n    lv_actual = 1 + 1.\r\n    cl_abap_unit_assert=>assert_equals(\r\n      exp = 2\r\n      act = lv_actual\r\n      msg = 'MVP3 positive assertion control' ).\r\n  ENDMETHOD.\r\n\r\n  METHOD intentional_failure.\r\n    DATA lv_actual TYPE i.\r\n    lv_actual = 1 + 1.\r\n    \" Intentional negative control: this method must report a failure.\r\n    cl_abap_unit_assert=>assert_equals(\r\n      exp = 3\r\n      act = lv_actual\r\n      msg = 'MVP3 expected negative control: 3 differs from 2' ).\r\n  ENDMETHOD.\r\nENDCLASS.\n```\n\nFull Source SHA-256: 0eff6473675ddcd9ae5d667091fef802e082406f0a6415d4069ed7cbcb7b9aec\nURI: /sap/bc/adt/programs/programs/zcodex_mvp3_unit/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_unit_tests",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectName\": \"ZCODEX_MVP3_UNIT\",\n  \"objectUri\": \"/sap/bc/adt/programs/programs/zcodex_mvp3_unit\",\n  \"engine\": \"ABAP Unit\",\n  \"nativeAtc\": false,\n  \"status\": \"failed\",\n  \"total\": 2,\n  \"passed\": 1,\n  \"failed\": 1,\n  \"notExecutedClasses\": 0,\n  \"executionTime\": null,\n  \"classes\": [\n    {\n      \"name\": \"LTC_ASSERTION_CONTROL\",\n      \"alerts\": [],\n      \"methods\": [\n        {\n          \"name\": \"ADDITION_PASSES\",\n          \"executionTime\": null,\n          \"alerts\": []\n        },\n        {\n          \"name\": \"INTENTIONAL_FAILURE\",\n          \"executionTime\": null,\n          \"alerts\": [\n            {\n              \"kind\": \"failedAssertion\",\n              \"title\": \"Critical Assertion Error: 'MVP3 expected negative control: 3 differs from 2'\",\n              \"details\": [\n                \"Different Values:\\n\\tExpected [3] Actual [2]\",\n                \"Test 'LTC_ASSERTION_CONTROL->INTENTIONAL_FAILURE' in Main Program 'ZCODEX_MVP3_UNIT'.\"\n              ]\n            }\n          ]\n        }\n      ],\n      \"status\": \"failed\"\n    }\n  ],\n  \"activationPerformed\": false,\n  \"evidence\": \"ADT-reported methods and alerts; assertion execution is not independently attested\"\n}"
+          }
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "Only the selected case is checked, not full third-batch acceptance.",
+    "No save is requested; preview is not business validation or a transaction snapshot.",
+    "Source preflight is not an atomic lock across Unit execution.",
+    "Timeout is not cancellation; inspect the saved result before deciding next steps."
+  ],
+  "finishedAt": "2026-09-11T01:43:52.188Z"
+}

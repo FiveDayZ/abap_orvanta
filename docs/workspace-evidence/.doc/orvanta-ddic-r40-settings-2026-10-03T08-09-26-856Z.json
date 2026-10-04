@@ -1,0 +1,27 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": false,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "patch_ddic_transparent_table_settings",
+  "arguments": {
+    "objectName": "ZORVANTA_R7C_TMP",
+    "expectedVersion": "20261003160455",
+    "expectedFingerprint": "c37e56ac53afc115a2ee849104bac3ef7f28232b4603abeffdc7490faad53c2b",
+    "settings": {
+      "dataClass": "APPL1",
+      "sizeCategory": 2,
+      "buffering": "allowedButOff",
+      "logDataChanges": true
+    },
+    "packageName": "ZABAP",
+    "transportNumber": "GR2K923472",
+    "confirmation": "TECHNICAL_SETTINGS_CHANGE",
+    "operationId": "R40-SETTINGS-001",
+    "connectionId": "w200"
+  },
+  "startedAt": "2026-10-03T08:09:26.902Z",
+  "finishedAt": "2026-10-03T08:09:27.442Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"transparentTable\",\n  \"objectName\": \"ZORVANTA_R7C_TMP\",\n  \"packageName\": \"ZABAP\",\n  \"version\": \"20261003160925\",\n  \"fingerprint\": \"15518b32906a08cbb0b0a3e2e43434d83248614d1da4b210b7a38a9454b8eff2\",\n  \"definition\": {\n    \"description\": \"ORVANTA R7 temporary table-conversio\",\n    \"tableClass\": \"TRANSP\",\n    \"deliveryClass\": \"A\",\n    \"dataBrowserMaintenance\": \"allowed\",\n    \"sizeCategory\": 2,\n    \"dataClass\": \"APPL1\",\n    \"buffering\": \"allowedButOff\",\n    \"genericKeyFields\": 0,\n    \"logDataChanges\": true,\n    \"fields\": [\n      {\n        \"name\": \"MANDT\",\n        \"position\": 1,\n        \"dataElement\": \"MANDT\",\n        \"description\": \"客户端\",\n        \"key\": true,\n        \"notNull\": true\n      },\n      {\n        \"name\": \"ID\",\n        \"position\": 2,\n        \"dataElement\": \"NUMC10\",\n        \"description\": \"数字字符字段, 长度为 10\",\n        \"key\": true,\n        \"notNull\": true\n      },\n      {\n        \"name\": \"PAYLOAD\",\n        \"position\": 3,\n        \"dataElement\": \"NUMC10\",\n        \"description\": \"数字字符字段, 长度为 10\",\n        \"key\": true,\n        \"notNull\": true\n      },\n      {\n        \"name\": \"R15TEXT\",\n        \"position\": 4,\n        \"dataElement\": \"CHAR10\",\n        \"description\": \"字符字段长度 = 10\",\n        \"key\": false,\n        \"notNull\": false\n      },\n      {\n        \"name\": \"R15DATE\",\n        \"position\": 5,\n        \"dataElement\": \"DATS\",\n        \"description\": \"类型 DATS 的字段\",\n        \"key\": false,\n        \"notNull\": false\n      }\n    ]\n  },\n  \"status\": \"DDIC_OBJECT_SAVED\",\n  \"recordedRequest\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"R40-SETTINGS-001\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"patch_ddic_transparent_table_settings\",\n    \"operationIdHash\": \"11fca67a629f0db8364364976c12e42a6e8826c6f6b493af1ac6ab97362ca9d5\",\n    \"targetKeyHash\": \"f576ea05f516dfc73a626a467c13ebc2f80c7ef2f091fb8f8eb8294e94300963\",\n    \"inputHash\": \"c05d2aacdb31eac9ea3837dfecc806fcc4ee79ce2ea8ec9b1e7405e819188faa\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"tabl object ZORVANTA_R7C_TMP\\\",\\\"requestedOperation\\\":\\\"patch_ddic_transparent_table_settings\\\",\\\"concurrencyGuard\\\":\\\"fingerprint c37e56ac53afc115a2ee849104bac3ef7f28232b4603abeffdc7490faad53c2b\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T08:09:27.247Z\",\n      \"target\": \"tabl object ZORVANTA_R7C_TMP\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": \"20261003160455\",\n      \"fingerprint\": \"c37e56ac53afc115a2ee849104bac3ef7f28232b4603abeffdc7490faad53c2b\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_ddic_transparent_table\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"579901f0d4081631c60d68d05a8c48138a22c24f55cfe78a0d325c60f1b00f3e\",\n    \"startedAt\": \"2026-10-03T08:09:27.206Z\",\n    \"finishedAt\": \"2026-10-03T08:09:27.434Z\",\n    \"durationMs\": 225,\n    \"receiptHash\": \"ba541d986e8f8a36c8387ed1efb39ebd90c15dc046a6ee1d08c4a6d2977f281a\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back tabl object ZORVANTA_R7C_TMP from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

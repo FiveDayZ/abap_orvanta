@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_gui_definition",
+ "arguments": {
+  "programName": "ZORVANTA_MCP_DYNPRO_R11",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:34:09.543Z",
+ "finishedAt": "2026-10-03T12:34:09.601Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"programName\": \"ZORVANTA_MCP_DYNPRO_R11\",\n  \"versionToken\": \"00000000000000\",\n  \"metadata\": {\n    \"VERSION\": \"00000000000000\",\n    \"LANGUAGE\": \"\",\n    \"AUTHOR\": \"\",\n    \"DATE\": \"00000000\",\n    \"TIME\": \"000000\",\n    \"CAUTHOR\": \"\",\n    \"CDATE\": \"00000000\",\n    \"CTIME\": \"000000\",\n    \"GDATE\": \"00000000\",\n    \"GTIME\": \"000000\",\n    \"PACKAGE\": \"ZABAP\"\n  },\n  \"admin\": {\n    \"ACTCODE\": \"\",\n    \"MENCODE\": \"\",\n    \"PFKCODE\": \"\",\n    \"DEFAULTACT\": \"\",\n    \"DEFAULTPFK\": \"\",\n    \"MOD_LANGU\": \"\"\n  },\n  \"sections\": {\n    \"statuses\": [],\n    \"functions\": [],\n    \"menus\": [],\n    \"menuTexts\": [],\n    \"activeFunctions\": [],\n    \"buttons\": [],\n    \"pfKeys\": [],\n    \"statusFunctions\": [],\n    \"documentation\": [],\n    \"titles\": [],\n    \"buttonAssignments\": []\n  },\n  \"fingerprint\": \"d88e33e3ba79b570cb4e1ccd8bb9fd2b768d7e62b0a5553d51a98bb872d9cbef\"\n}"
+}

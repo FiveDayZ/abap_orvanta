@@ -1,0 +1,33 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_table",
+ "arguments": {
+  "tableName": "D020S",
+  "columns": [
+   "PROG",
+   "DNUM",
+   "TYPE",
+   "DBCL",
+   "FSEL",
+   "AINT"
+  ],
+  "filters": [
+   {
+    "column": "PROG",
+    "operator": "GE",
+    "value": "ZORVANTA"
+   },
+   {
+    "column": "PROG",
+    "operator": "LE",
+    "value": "ZORVANTAZZZZ"
+   }
+  ],
+  "maxRows": 200,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:33:21.668Z",
+ "finishedAt": "2026-10-03T12:33:21.677Z",
+ "isError": true,
+ "responseText": "Error invoking read_abap_table: Error: TABLE_NOT_ALLOWED: table D020S is not present in the D5-2 allowlist (default deny)"
+}

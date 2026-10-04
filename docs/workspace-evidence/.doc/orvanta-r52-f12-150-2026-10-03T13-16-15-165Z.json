@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 150
+ },
+ "startedAt": "2026-10-03T13:16:15.215Z",
+ "finishedAt": "2026-10-03T13:16:15.700Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 150-199 of 1636, 50 lines retrieved):\n\n```abap\n      IF P_FIELD_INT-LANF NE 0         \"Loopfeld oder TC Feld\n      AND P_FIELD_INT-LTYP NE 'O'.     \"außer OK-Code-feld\n        IF P_FIELD_INT-LTYP = 'T'.     \"Feld im Table Control\n          CONT-TYPE = RPYTY_DYNP_CTYPE-TABLE_CONTROL.\n          LOOP AT P_FIELD_LIST_INT     \"Table Control suchen\n                  WHERE FILL = 'T'     \"und dessen Namen\n                  AND   LANF = P_FIELD_INT-LANF. \"übernehmen\n            L_CONT_FOUND = 'X'.\n            EXIT.\n          ENDLOOP.\n          IF P_FIELD_LIST_INT-FNAM NE SPACE.\n            CONT-NAME = P_FIELD_LIST_INT-FNAM.\n          ELSE.\n            PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                       CHANGING CONT-NAME.\n          ENDIF.\n        ELSE.                          \"Feld im Loop\n          CONT-TYPE = RPYTY_DYNP_CTYPE-LOOP.\n          PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                     CHANGING CONT-NAME.\n          L_CONT_FOUND = 'X'.\n        ENDIF.\n      ELSE.                            \"Feld im Universalcontainer\n        \"als gewöhnliches Feld im Universalcont.behandeln\n        CONT-TYPE = RPYTY_DYNP_CTYPE-SCREEN.\n        CONT-NAME = CONT_SCREEN_NAME.\n      L_CONT_FOUND = 'X'.\n      ENDIF.\n    ENDIF.\n* Feld im LOOP oder TC oder TS\n  ELSEIF P_FIELD_INT-LANF NE 0      \"Feld im Loop oder im Control\n   AND P_FIELD_INT-LTYP NE 'O'.        \"außer OK-Code-Feld\n    IF P_FIELD_INT-LTYP = 'T'.         \"Feld im Table Control\n      CONT-TYPE = RPYTY_DYNP_CTYPE-TABLE_CONTROL.\n      LOOP AT P_FIELD_LIST_INT         \"Table Control suchen\n              WHERE FILL = 'T'         \"und dessen Namen\n              AND   LANF = P_FIELD_INT-LANF. \"übernehmen\n        L_CONT_FOUND = 'X'.\n        EXIT.\n      ENDLOOP.\n      IF P_FIELD_LIST_INT-FNAM NE SPACE.\n        CONT-NAME = P_FIELD_LIST_INT-FNAM.\n      ELSE.\n        PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                   CHANGING CONT-NAME.\n      ENDIF.\n    ELSEIF P_FIELD_INT-LTYP = 'I'.         \"Feld im Table Control\n      CONT-TYPE = RPYTY_DYNP_CTYPE-TABSTRIP_CONTROL.\n      LOOP AT P_FIELD_LIST_INT         \"TabStrip Control suchen\n              WHERE FILL = 'I'         \"und dessen Namen\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

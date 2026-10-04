@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZORVANTA_R47_ENH03",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:58:55.535Z",
+ "finishedAt": "2026-10-03T10:58:55.590Z",
+ "isError": true,
+ "responseText": "Error invoking read_enhancement_implementation: Error: SAP repository helper rejected the operation: ENHANCEMENT_READ_FAILED: The enhancement object ENHO ZORVANTA_R47_ENH03 cannot be read"
+}

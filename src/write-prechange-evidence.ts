@@ -86,6 +86,33 @@ export async function observeWritePreChange(
       }
     }
   } else if (
+    name === "delete_enhancement_implementation" &&
+    input.confirmation === "DELETE_ORPHANED_REGISTRATION"
+  ) {
+    // Orphan repair deletes the leftover TADIR registration of an implementation whose framework
+    // object is already gone, so the pre-change read is *expected* to fail. Record the unreadable
+    // state instead of refusing the write, and refuse here if the object still reads back.
+    const enhancementName = String(input.enhancementName)
+    try {
+      const value = parseJson(
+        await tools.readEnhancementImplementation({ enhancementName, connectionId })
+      )
+      evidence.sources.push("read_enhancement_implementation")
+      evidence.exists = true
+      evidence.active = booleanValue(
+        (value.definition as Record<string, unknown> | undefined)?.active
+      )
+      evidence.fingerprint = stringValue(value.fingerprint)
+      evidence.packageName = stringValue(value.packageName)
+      throw new Error("ENHANCEMENT_ORPHAN_NOT_CONFIRMED")
+    } catch (error) {
+      if (!/ENHANCEMENT_IMPLEMENTATION_NOT_FOUND|ENHANCEMENT_READ_FAILED/.test(String(error))) {
+        throw error
+      }
+      evidence.sources.push("enhancement_implementation_unreadable")
+      evidence.exists = false
+    }
+  } else if (
     name === "create_enhancement_hook_implementation" ||
     name === "create_new_badi_implementation" ||
     name === "update_enhancement_hook_implementation" ||

@@ -1,0 +1,15 @@
+{
+ "probe": "r47-call",
+ "tool": "search_abap_object_lines",
+ "arguments": {
+  "objectName": "SAPLSIFP",
+  "searchTerm": "FORM R_TYPE_OUT",
+  "isRegexp": false,
+  "contextLines": 0,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T13:13:04.538Z",
+ "finishedAt": "2026-10-03T13:13:05.219Z",
+ "isError": false,
+ "responseText": "No base-source matches for \"FORM R_TYPE_OUT\". Enhancement metadata was unavailable for 1 object(s)."
+}

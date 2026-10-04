@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 400
+ },
+ "startedAt": "2026-10-03T13:16:19.304Z",
+ "finishedAt": "2026-10-03T13:16:19.829Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 400-449 of 1636, 50 lines retrieved):\n\n```abap\n*       LINE:\n        IF P_CONT_ATTR-LINE = 0.\n          P_CONT_ATTR-LINE = FIELD_INT-LINE.\n        ELSEIF P_CONT_ATTR-LINE > FIELD_INT-LINE.\n          P_CONT_ATTR-LINE = FIELD_INT-LINE.\n        ENDIF.\n*       COLUMN:\n        IF P_CONT_ATTR-COLUMN = 0.\n          P_CONT_ATTR-COLUMN = FIELD_INT-COLN - 1.\n        ELSEIF P_CONT_ATTR-COLUMN > FIELD_INT-COLN.\n          P_CONT_ATTR-COLUMN = FIELD_INT-COLN - 1.\n        ENDIF.\n*       LENGTH:\n        CALL FUNCTION 'RS_SCRP_GET_LENG_AND_VLENG'\n             EXPORTING\n                  DYNP_FIELD   = FIELD_INT\n             IMPORTING\n                  LENGTH       = S_LENG\n                  VIS_LENGTH   = S_VLENG\n             EXCEPTIONS\n                  OTHERS  = 1.\n        S_LAST_COL_ACT = FIELD_INT-COLN + S_VLENG - 1.\n        S_LAST_COL = P_CONT_ATTR-COLUMN + P_CONT_ATTR-LENGTH - 1.\n        IF S_LAST_COL < S_LAST_COL_ACT.\n          P_CONT_ATTR-LENGTH = S_LAST_COL_ACT - P_CONT_ATTR-COLUMN.\n        ENDIF.\n*       HEIGTH/LOOP_BLOCK:\n        P_CONT_ATTR-LOOP_BLOCK = FIELD_INT-LBLK.\n        P_CONT_ATTR-HEIGHT     = FIELD_INT-LREP * FIELD_INT-LBLK.\n*       LOOP_DISP:\n        P_CONT_ATTR-LOOP_DISP  = FIELD_INT-LREP.\n*       LOOP_TYPE:\n        IF FIELD_INT-LANF = P_DYNP_HEADER-VALP.\n          P_CONT_ATTR-LOOP_TYPE = RPYTY_DYNP_LTYPE-VARIABLE.\n        ELSE.\n          P_CONT_ATTR-LOOP_TYPE = RPYTY_DYNP_LTYPE-FIX.\n        ENDIF.\n      ENDLOOP.\n\n    WHEN RPYTY_DYNP_CTYPE-RADIOGROUP.  \"Auswahlknopfgruppe:\n                                       \" Pos. und Größe\n      P_CONT_ATTR-LINE   = 0.\n      P_CONT_ATTR-COLUMN = 0.\n      P_CONT_ATTR-LENGTH = 0.\n      P_CONT_ATTR-HEIGHT = 1.\n*     kleinstmögliches Quadrat bestimmen, das alle Felder der\n*     Auswahlknopfgruppe umfaßt.\n      LOOP AT P_FIELDLIST_INT_EXTEND\n             WHERE CONT_NAME = P_CONT_ATTR-NAME\n             AND   CONT_TYPE = P_CONT_ATTR-TYPE.\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

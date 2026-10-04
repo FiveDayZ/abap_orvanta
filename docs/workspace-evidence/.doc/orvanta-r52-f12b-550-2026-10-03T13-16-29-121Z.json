@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 550
+ },
+ "startedAt": "2026-10-03T13:16:29.173Z",
+ "finishedAt": "2026-10-03T13:16:29.642Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 550-599 of 1636, 50 lines retrieved):\n\n```abap\n        ELSEIF FIELD_INT-FLG1 O FLG1ZSS.\n          P_CONT_ATTR-TC_SEL_LNS = RPYTY_DYNP_TCSELECT-SINGLE.\n        ELSE.\n          P_CONT_ATTR-TC_SEL_LNS = RPYTY_DYNP_TCSELECT-NONE.\n        ENDIF.\n\n        IF FIELD_INT-FLG1 O FLG1SSM.          \"TC_SEL_CLS: Spaltensel.\n          P_CONT_ATTR-TC_SEL_CLS = RPYTY_DYNP_TCSELECT-MULTIPLE.\n        ELSEIF FIELD_INT-FLG1 O FLG1SSS.\n          P_CONT_ATTR-TC_SEL_CLS = RPYTY_DYNP_TCSELECT-SINGLE.\n        ELSE.\n          P_CONT_ATTR-TC_SEL_CLS = RPYTY_DYNP_TCSELECT-NONE.\n        ENDIF.\n\n        R_C_BIT_TO_FIELD                                  \"TC_LSEL_CL:\n             FLG2 FLG2SEL    TC_LSEL_CL.                  \" Zl.markspalt\n\n        EXIT.\n      ENDLOOP.\n\n*     Anzahl fixer Spalten\n      P_CONT_ATTR-TC_FIXCOL = 0.\n      if field_int-lanf ne space.\n        LOOP AT P_FIELDLIST_INT_EXTEND            \"Felder des TC,\n             WHERE field-lanf = field_int-lanf    \"die\n             AND   FIELD-LTYP = c_type_table      \"das Attr.\n             AND   FIELD-FMB2 O FMB2FIX           \"FIX\n             AND   FIELD-FMB2 Z FMB2UEB           \"haben,jedoch nicht\n             AND   FIELD-COLN <> 0.               \"das Zeilenmarkierfeld\n          P_CONT_ATTR-TC_FIXCOL = P_CONT_ATTR-TC_FIXCOL + 1.\n        ENDLOOP.\n      endif.\n\n    WHEN RPYTY_DYNP_CTYPE-TABSTRIP_CONTROL. \"TabStrip Control:\n                                         \" Pos. und Größe; alle Ctrl-Att\n      LOOP AT P_FIELDLIST_INT_EXTEND\n             WHERE CONT_NAME = P_CONT_ATTR-NAME\n             AND   CONT_TYPE = P_CONT_ATTR-TYPE\n             AND   FIELD-FILL = c_type_tabstr.\n        FIELD_INT = P_FIELDLIST_INT_EXTEND-FIELD.\n        P_CONT_ATTR-LINE   = FIELD_INT-LINE.\n        P_CONT_ATTR-COLUMN = FIELD_INT-COLN - 1.\n        P_CONT_ATTR-LENGTH = FIELD_INT-LENG.\n        P_CONT_ATTR-HEIGHT = FIELD_INT-DIDX.\n        P_CONT_ATTR-C_LINE_MIN = FIELD_INT-AGLT.\n        P_CONT_ATTR-C_COLN_MIN = FIELD_INT-ADEZ.\n\n        R_C_BIT_TO_FIELD                                  \"C_RESIZE_V:\n             FLG2 FLG2VAV    C_RESIZE_V.                  \" Resiz.vert.\n        R_C_BIT_TO_FIELD                                  \"C_RESIZE_H:\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

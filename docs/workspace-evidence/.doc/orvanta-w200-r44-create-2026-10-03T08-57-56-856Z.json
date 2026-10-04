@@ -1,0 +1,32 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "create_abap_message_class",
+  "arguments": {
+    "messageClass": "ZORVANTA_R16_MSG",
+    "description": "Orvanta R16 acceptance",
+    "messages": [
+      {
+        "number": "001",
+        "text": "R16 create acceptance message one"
+      },
+      {
+        "number": "002",
+        "text": "R16 create acceptance message two"
+      },
+      {
+        "number": "003",
+        "text": "R16 create acceptance message three"
+      }
+    ],
+    "packageName": "ZABAP",
+    "transportNumber": "GR2K923472",
+    "connectionId": "w200"
+  },
+  "startedAt": "2026-10-03T08:57:56.901Z",
+  "finishedAt": "2026-10-03T08:57:57.659Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"messageClass\",\n  \"messageClass\": \"ZORVANTA_R16_MSG\",\n  \"packageName\": \"ZABAP\",\n  \"version\": \"20261003165755\",\n  \"fingerprint\": \"d14ef471d2c44a67d40d2ea4113f810eac9cd17417dabde1ed259ec27c68aad2\",\n  \"definition\": {\n    \"description\": \"Orvanta R16 acceptance\",\n    \"masterLanguage\": \"1\",\n    \"messages\": [\n      {\n        \"number\": \"001\",\n        \"text\": \"R16 create acceptance message one\"\n      },\n      {\n        \"number\": \"002\",\n        \"text\": \"R16 create acceptance message two\"\n      },\n      {\n        \"number\": \"003\",\n        \"text\": \"R16 create acceptance message three\"\n      }\n    ]\n  },\n  \"status\": \"MESSAGE_CLASS_CREATED\",\n  \"recordedRequest\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"4bc0f6f2-a162-44fd-b39c-53304eaf5fd2\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"create_abap_message_class\",\n    \"operationIdHash\": \"cabbad854ee87a15bdf71760644041d33698d94a3bffdfead53003f7fb88fd96\",\n    \"targetKeyHash\": \"f517da4520a80ea9cbbca5619d7362193c81209912d1c31b59be418f71036461\",\n    \"inputHash\": \"d832616287c07363a0b620e3618edf5b43be011407576306dc57618922939fbc\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"message class ZORVANTA_R16_MSG\\\",\\\"requestedOperation\\\":\\\"create_abap_message_class\\\",\\\"concurrencyGuard\\\":\\\"target must not already exist\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T08:57:57.351Z\",\n      \"target\": \"message class ZORVANTA_R16_MSG\",\n      \"exists\": false,\n      \"active\": null,\n      \"version\": null,\n      \"fingerprint\": null,\n      \"packageName\": null,\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_abap_message_class\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"65bc858a6e066f861755cfd45e984918e6ad3a87b1f3132ebf5056996de48f3c\",\n    \"startedAt\": \"2026-10-03T08:57:57.241Z\",\n    \"finishedAt\": \"2026-10-03T08:57:57.650Z\",\n    \"durationMs\": 406,\n    \"receiptHash\": \"4c8f0e205f7651df95dd457c21f75f744d53b76bca8892366be8115b9fd27538\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back message class ZORVANTA_R16_MSG from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 1
+ },
+ "startedAt": "2026-10-03T13:18:17.916Z",
+ "finishedAt": "2026-10-03T13:18:18.310Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 1-50 of 1636, 50 lines retrieved):\n\n```abap\n*----------------------------------------------------------------------*\n*   INCLUDE LSIFPF12                                                   *\n*----------------------------------------------------------------------*\n*   Forms/Macros für die Dynproschnitstelle zu RPY_DYNPRO_READ\n*----------------------------------------------------------------------*\n\n* Macros:\n\n* Containerfeld: Bit aus Einzelfeld (intern) in Cont-Feld umsetzen\nDEFINE R_C_BIT_TO_FIELD.\n  IF FIELD_INT-&1 O &2.\n    P_CONT_ATTR-&3 = 'X'.\n  ELSE.\n    P_CONT_ATTR-&3 = ' '.\n  ENDIF.\n\nEND-OF-DEFINITION.\n\n* Einzelfeld: Bit aus Einzelfeld (intern) in Feld (extern) umsetzen\nDEFINE R_F_BIT_TO_FIELD.\n  IF P_FIELD_INT-&1 O &2.\n    P_DYNP_FIELD-&3 = RPYTY_ON.\n  ELSE.\n    P_DYNP_FIELD-&3 = RPYTY_OFF.\n  ENDIF.\nEND-OF-DEFINITION.\n\n*&---------------------------------------------------------------------*\n*&      Form  R_FIND_CONTAINER_TO_FIELD\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       prüft, ob es zu einem Feld im internen Format bereits einen    *\n*       Container gibt.                                                *\n*       Wenn nein, werden ein (Regelfall) oder zwei (Auswahlknopf-     *\n*       gruppe innerhalb Loop) Container angelegt.                     *\n*       Die Attribute des Containers, der direkt übergeordnet ist,     *\n*       werden  zurückgegeben.                                         *\n*----------------------------------------------------------------------*\n*      <->P_DYNP_CONTAINERS  Tabelle der Container                     *\n*      -->P_FIELD_LIST_INT   Dynprofeldliste im internen Format        *\n*      -->P_FIELD_INT        akt. Dynprofeld im internen Format        *\n*      <--P_CONT_ATTR        Attribute des gefundenen Containers       *\n*----------------------------------------------------------------------*\nFORM R_FIND_CONTAINER_TO_FIELD\n         TABLES   P_DYNP_CONTAINERS  type DYCATT_tab\n                  P_FIELD_LIST_INT   TYPE DYNPRO_FIELD_LIST\n         USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n         CHANGING P_CONT_ATTR        type RPY_DYCATT.\n\n  LOCAL: P_FIELD_LIST_INT.\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

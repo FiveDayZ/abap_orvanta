@@ -1,0 +1,24 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "upsert_ddic_data_element",
+  "arguments": {
+    "connectionId": "w200",
+    "operationId": "r11-de01-create",
+    "objectName": "ZORVANTA_R11_DE01",
+    "description": "Orvanta R11 acceptance data element",
+    "domainName": "ZORVANTA_R11_DOM01",
+    "heading": "Orvanta R11 Acceptance Field",
+    "short": "R11FIELD",
+    "medium": "R11 Acceptance Field",
+    "long": "Orvanta R11 acceptance data element",
+    "packageName": "ZABAP",
+    "transportNumber": "GR2K923472"
+  },
+  "startedAt": "2026-10-03T02:02:47.990Z",
+  "finishedAt": "2026-10-03T02:02:48.539Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"dataElement\",\n  \"objectName\": \"ZORVANTA_R11_DE01\",\n  \"packageName\": \"ZABAP\",\n  \"version\": \"20261003100246\",\n  \"fingerprint\": \"ded2d5b1e3c4508be45d35084f72e3b965791c2843d28071cbc09b66d5643b64\",\n  \"definition\": {\n    \"description\": \"Orvanta R11 acceptance data element\",\n    \"domainName\": \"ZORVANTA_R11_DOM01\",\n    \"heading\": \"Orvanta R11 Acceptance Field\",\n    \"short\": \"R11FIELD\",\n    \"medium\": \"R11 Acceptance Field\",\n    \"long\": \"Orvanta R11 acceptance data element\"\n  },\n  \"status\": \"DDIC_OBJECT_SAVED\",\n  \"recordedRequest\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"r11-de01-create\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"upsert_ddic_data_element\",\n    \"operationIdHash\": \"b654882f62ea2ce0db2f5da34789d7e141d533497654ae4142bdbef0c1b4b3a7\",\n    \"targetKeyHash\": \"d054c477e9fbf3bbb80191132eba4244c9e958b4b99db485608fe5619dbbccc4\",\n    \"inputHash\": \"df5b567cd19885d89fb42301aec309a3aee1f1d95a77513faf9a3915835063f4\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"dtel object ZORVANTA_R11_DE01\\\",\\\"requestedOperation\\\":\\\"upsert_ddic_data_element\\\",\\\"concurrencyGuard\\\":\\\"tool-specific SAP readback and lock checks\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T02:02:48.337Z\",\n      \"target\": \"dtel object ZORVANTA_R11_DE01\",\n      \"exists\": false,\n      \"active\": null,\n      \"version\": null,\n      \"fingerprint\": null,\n      \"packageName\": null,\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"sap_ddic_read\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"11993c62e0b34ebac3b1163d289a54ca2be436a6db7eb8c19d59a93b762728d4\",\n    \"startedAt\": \"2026-10-03T02:02:48.303Z\",\n    \"finishedAt\": \"2026-10-03T02:02:48.529Z\",\n    \"durationMs\": 223,\n    \"receiptHash\": \"fc493dd3d44f915d23d0769db0f71932d890aee47ab55fdfb349037d56eb735d\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back dtel object ZORVANTA_R11_DE01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

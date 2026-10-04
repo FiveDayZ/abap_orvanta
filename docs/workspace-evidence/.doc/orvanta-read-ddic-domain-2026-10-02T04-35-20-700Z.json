@@ -1,0 +1,15 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "read_ddic_domain",
+  "arguments": {
+    "objectName": "EXITIMP",
+    "connectionId": "w200"
+  },
+  "startedAt": "2026-10-02T04:35:20.740Z",
+  "finishedAt": "2026-10-02T04:35:20.805Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"domain\",\n  \"objectName\": \"EXITIMP\",\n  \"packageName\": \"SECE\",\n  \"version\": \"20001108191400\",\n  \"fingerprint\": \"6a8230ab3b98983f15f0eced7ad6c71fdfe775ee49ad4b5898d30eb569b779a2\",\n  \"definition\": {\n    \"description\": \"Implementation names\",\n    \"dataType\": \"CHAR\",\n    \"length\": 20,\n    \"outputLength\": 20,\n    \"decimals\": 0,\n    \"lowercase\": false,\n    \"signFlag\": false,\n    \"valueTable\": \"\",\n    \"conversionExit\": \"\",\n    \"fixedValues\": []\n  }\n}"
+}

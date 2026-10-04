@@ -1,0 +1,20 @@
+{
+ "probe": "r47-call",
+ "tool": "search_enhancement_objects",
+ "arguments": {
+  "pattern": "ZORVANTA*",
+  "types": [
+   "ENHO",
+   "ENHS",
+   "ENHC",
+   "BADI",
+   "BADII"
+  ],
+  "maxResultsPerType": 50,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:04:41.026Z",
+ "finishedAt": "2026-10-03T12:04:41.486Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"pattern\": \"ZORVANTA*\",\n  \"results\": [\n    {\n      \"requestedType\": \"ENHO\",\n      \"repositoryKind\": \"enhancement_implementation\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    },\n    {\n      \"requestedType\": \"ENHS\",\n      \"repositoryKind\": \"enhancement_spot\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    },\n    {\n      \"requestedType\": \"ENHC\",\n      \"repositoryKind\": \"enhancement_composite\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    },\n    {\n      \"requestedType\": \"BADI\",\n      \"repositoryKind\": \"badi_definition\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    },\n    {\n      \"requestedType\": \"BADII\",\n      \"repositoryKind\": \"badi_implementation\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    }\n  ],\n  \"summary\": {\n    \"requestedTypeCount\": 5,\n    \"availableTypeCount\": 5,\n    \"unavailableTypeCount\": 0,\n    \"objectCount\": 0\n  },\n  \"coverage\": {\n    \"repositorySearchOnly\": true,\n    \"classicVersusNewBadiDetermined\": false,\n    \"activationOrConfigurationInspected\": false\n  }\n}"
+}

@@ -1,7 +1,12 @@
 import { createHash, randomUUID } from "node:crypto"
-import { mkdir, open, readFile, readdir, rename, unlink } from "node:fs/promises"
-import { basename, dirname, join, resolve } from "node:path"
+import { mkdir, open, readFile, readdir, unlink } from "node:fs/promises"
+import { join, dirname, resolve } from "node:path"
 import { z } from "zod"
+import {
+  createExclusiveJsonFile,
+  replaceJsonFile,
+  unlinkFileWithRetry
+} from "./durable-json-file.js"
 import { PreSapValidationError } from "./pre-sap-validation.js"
 import {
   isSourceSavedNotActivatedError,
@@ -68,6 +73,15 @@ const receiptSchema = z
     sapInvocationStarted: z.boolean().optional(),
     resultHash: z.string().regex(HASH_PATTERN).optional(),
     errorHash: z.string().regex(HASH_PATTERN).optional(),
+    // Machine-readable identity of a **local** protection error, stored beside `errorHash` rather
+    // than instead of it. The receipt keeps hashes instead of raw text because a Node message
+    // embeds the absolute state path, but a hash alone made the `protection_failed` outcome
+    // unattributable: the 2026-09-29 CI occurrence of `failure-process.test.ts` "M3 simultaneous
+    // duplicate requests across processes dispatch at most once" ended with twelve results and no
+    // completed dispatch, and the receipt could not say which errno refused the lock create. Only
+    // the errno code and the error class are kept, both bounded.
+    errorCode: z.string().min(1).max(40).optional(),
+    errorName: z.string().min(1).max(40).optional(),
     startedAt: z.string().datetime(),
     finishedAt: z.string().datetime().optional(),
     durationMs: z.number().int().nonnegative().optional(),
@@ -128,6 +142,15 @@ export class WriteOperationReceiptStore {
     this.lockRoot = resolve(root, "write-locks")
   }
 
+  /**
+   * The exclusive-create primitive the reservation path depends on. Production behaviour is exactly
+   * `createExclusiveJsonFile`; the seam exists because `protection_failed` is the one outcome a
+   * caller cannot reproduce on demand, and an untested branch is how it stayed unattributable.
+   */
+  protected async createExclusive(path: string, value: unknown): Promise<void> {
+    return createExclusiveJsonFile(path, value)
+  }
+
   async reserve(identity: WriteOperationIdentity): Promise<WriteOperationReservationResult> {
     const operationIdHash = sha256(identity.operationId)
     const targetKeyHash = sha256(identity.targetKey)
@@ -153,7 +176,7 @@ export class WriteOperationReceiptStore {
     }
 
     try {
-      await createExclusiveJson(receiptPath, receipt)
+      await this.createExclusive(receiptPath, receipt)
     } catch (error) {
       if (!isNodeError(error, "EEXIST")) throw error
       const existing = await this.readReceiptRequired(receiptPath)
@@ -168,7 +191,7 @@ export class WriteOperationReceiptStore {
     }
 
     try {
-      await createExclusiveJson(lockPath, {
+      await this.createExclusive(lockPath, {
         version: 1,
         operationIdHash,
         serviceInstanceId: this.serviceInstanceId,
@@ -182,6 +205,7 @@ export class WriteOperationReceiptStore {
           ...receipt,
           state: "failed",
           errorHash: sha256(String(error)),
+          ...localErrorIdentity(error),
           finishedAt: new Date().toISOString(),
           durationMs: 0,
           lockReleased: true
@@ -392,7 +416,7 @@ export class WriteOperationReceiptStore {
     if (lock.operationIdHash !== receipt.operationIdHash || resolve(lock.receiptPath) !== path) {
       throw new Error("The local lock does not belong to the confirmed operation")
     }
-    await unlink(lockPath)
+    await unlinkFileWithRetry(lockPath)
     const released = await this.finishReceipt(path, {
       ...receipt,
       lockReleased: true,
@@ -467,7 +491,7 @@ export class WriteOperationReceiptStore {
     path: string,
     receipt: WriteOperationReceipt
   ): Promise<WriteOperationReceipt> {
-    await replaceJson(path, receipt)
+    await replaceJsonFile(path, receipt)
     return receipt
   }
 
@@ -479,7 +503,7 @@ export class WriteOperationReceiptStore {
     ) {
       throw new Error("Write target lock ownership changed; inspect the SAP target manually")
     }
-    await unlink(path)
+    await unlinkFileWithRetry(path)
   }
 
   private receiptPath(connectionId: string, operationIdHash: string): string {
@@ -547,6 +571,8 @@ export class WriteOperationReceiptStore {
       sapInvocationStarted: receipt.sapInvocationStarted ?? null,
       ...(receipt.resultHash ? { resultHash: receipt.resultHash } : {}),
       ...(receipt.errorHash ? { errorHash: receipt.errorHash } : {}),
+      ...(receipt.errorCode ? { errorCode: receipt.errorCode } : {}),
+      ...(receipt.errorName ? { errorName: receipt.errorName } : {}),
       startedAt: receipt.startedAt,
       ...(receipt.finishedAt ? { finishedAt: receipt.finishedAt } : {}),
       ...(receipt.durationMs !== undefined ? { durationMs: receipt.durationMs } : {}),
@@ -591,29 +617,30 @@ function sortValue(value: unknown): unknown {
   return value
 }
 
-async function createExclusiveJson(path: string, value: unknown): Promise<void> {
-  const handle = await open(path, "wx", 0o600)
-  try {
-    await handle.writeFile(`${JSON.stringify(value)}\n`, "utf8")
-    await handle.sync()
-  } finally {
-    await handle.close()
-  }
-}
-
-async function replaceJson(path: string, value: unknown): Promise<void> {
-  const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`)
-  try {
-    await createExclusiveJson(temporary, value)
-    await rename(temporary, path)
-  } catch (error) {
-    await unlink(temporary).catch(() => undefined)
-    throw error
-  }
-}
-
+/**
+ * Windows refuses to replace or delete a file while another handle holds it open for reading
+ * (`EPERM: operation not permitted, rename/unlink ...`). A receipt and its lock are read by sibling
+ * requests - the duplicate check of a second call reads the very file its owner is updating - so the
+ * owner's own update failed inside its pre-change observation: on 2026-10-03 twelve simultaneous
+ * duplicate requests produced eleven `duplicate_blocked` results and one owner that never
+ * dispatched, and on 2026-09-29 the same test lost its single dispatch. `durable-json-file.ts` owns
+ * the bounded retry for that window; this store must not write receipts any other way.
+ */
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex")
+}
+
+/**
+ * The bounded, path-free identity of a caught error, for receipts that must stay attributable
+ * without storing raw messages. A thrown non-Error still records that fact rather than nothing.
+ */
+function localErrorIdentity(error: unknown): { errorName: string; errorCode?: string } {
+  const name = error instanceof Error && error.name ? error.name : "NonError"
+  const code = error instanceof Error ? (error as NodeJS.ErrnoException).code : undefined
+  return {
+    errorName: name.slice(0, 40),
+    ...(typeof code === "string" && code ? { errorCode: code.slice(0, 40) } : {})
+  }
 }
 
 function isNodeError(error: unknown, code: string): error is NodeJS.ErrnoException {

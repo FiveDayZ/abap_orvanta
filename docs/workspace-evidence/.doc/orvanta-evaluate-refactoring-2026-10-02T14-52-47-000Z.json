@@ -1,0 +1,45 @@
+{
+  "purpose": "R7-A acceptance for evaluate_refactoring on w200: the rename evaluate step at an exact identifier range returns HTTP 200 with an EMPTY body, while get_quick_fix_proposals names that same identifier at the same position, and extract-method is refused with SAP's own message.",
+  "recordedAt": "2026-10-02T14:52:35.676Z",
+  "calls": [
+    {
+      "tool": "evaluate_refactoring",
+      "arguments": {
+        "connectionId": "w200",
+        "fileUri": "adt://w200/sap/bc/adt/oo/classes/zcl_pmc_tp_wm/source/main",
+        "kind": "rename",
+        "startLine": 97,
+        "startColumn": 9,
+        "endLine": 97,
+        "endColumn": 25
+      },
+      "isError": false,
+      "responseText": "{\n  \"connectionId\": \"w200\",\n  \"fileUri\": \"adt://w200/sap/bc/adt/oo/classes/zcl_pmc_tp_wm/source/main\",\n  \"kind\": \"rename\",\n  \"range\": {\n    \"start\": {\n      \"line\": 97,\n      \"column\": 9\n    },\n    \"end\": {\n      \"line\": 97,\n      \"column\": 25\n    }\n  },\n  \"oldName\": \"\",\n  \"title\": \"\",\n  \"userContent\": \"\",\n  \"affectedObjectCount\": 0,\n  \"totalDeltaCount\": 0,\n  \"objectListReported\": false,\n  \"answerElements\": [],\n  \"affectedObjects\": [],\n  \"summary\": \"The rename evaluation answered about the position (line 97, column 9) WITHOUT an affected-object list, so this reply does NOT say that nothing would change - only that this answer carried no objects. On this release the object list comes from the preview step, which this read-only tool does not call. The answer's own elements are reported in answerElements (none) so the shape can be judged rather than assumed.\",\n  \"readOnly\": true,\n  \"wroteToSap\": false\n}"
+    },
+    {
+      "tool": "get_quick_fix_proposals",
+      "arguments": {
+        "connectionId": "w200",
+        "fileUri": "adt://w200/sap/bc/adt/oo/classes/zcl_pmc_tp_wm/source/main",
+        "line": 97,
+        "column": 9
+      },
+      "isError": false,
+      "responseText": "{\n  \"connectionId\": \"w200\",\n  \"fileUri\": \"adt://w200/sap/bc/adt/oo/classes/zcl_pmc_tp_wm/source/main\",\n  \"sourceUri\": \"/sap/bc/adt/oo/classes/zcl_pmc_tp_wm/source/main\",\n  \"line\": 97,\n  \"column\": 9,\n  \"proposalCount\": 2,\n  \"proposals\": [\n    {\n      \"type\": \"\",\n      \"name\": \"Rename 'ls_legacy_target'\",\n      \"description\": \"\",\n      \"handlerUri\": \"/sap/bc/adt/quickfixes/proposals/providers/refactoring/quickfixes/qf_command_rename\",\n      \"userContent\": \"\"\n    },\n    {\n      \"type\": \"\",\n      \"name\": \"Rename 'ls_legacy_target' in source unit\",\n      \"description\": \"\",\n      \"handlerUri\": \"/sap/bc/adt/quickfixes/proposals/providers/refactoring/quickfixes/qf_rename\",\n      \"userContent\": \"\"\n    }\n  ],\n  \"mediaTypeUsed\": \"text/plain\",\n  \"acceptUsed\": \"application/*\",\n  \"mediaTypeAttempts\": [\n    {\n      \"contentType\": \"text/plain\",\n      \"accept\": \"application/*\",\n      \"outcome\": \"HTTP 200\",\n      \"proposalCount\": 2\n    }\n  ],\n  \"summary\": \"The quick-fix evaluator returned 2 proposal(s) for line 97, column 9. Nothing was applied: each proposal's handlerUri is reported so a caller can see what invoking it would touch, and applying one is a separate, explicitly authorised write that this tool does not perform. The evaluator answered request media type text/plain.\",\n  \"readOnly\": true,\n  \"wroteToSap\": false\n}"
+    },
+    {
+      "tool": "evaluate_refactoring",
+      "arguments": {
+        "connectionId": "w200",
+        "fileUri": "adt://w200/sap/bc/adt/oo/classes/zcl_pmc_tp_wm/source/main",
+        "kind": "extract-method",
+        "startLine": 97,
+        "startColumn": 4,
+        "endLine": 97,
+        "endColumn": 47
+      },
+      "isError": true,
+      "responseText": "Error invoking evaluate_refactoring: Error: refactorings capability request-failed (HTTP 500): Selection contains incomplete ABAP statements."
+    }
+  ]
+}

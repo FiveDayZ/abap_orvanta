@@ -1,0 +1,26 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_table",
+ "arguments": {
+  "tableName": "TFDIR",
+  "columns": [
+   "FUNCNAME",
+   "PNAME",
+   "INCLUDE",
+   "FREEDATE"
+  ],
+  "filters": [
+   {
+    "column": "FUNCNAME",
+    "operator": "EQ",
+    "value": "RPY_DYNPRO_CVT_INTO_EXTFORMAT"
+   }
+  ],
+  "maxRows": 5,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T13:14:41.222Z",
+ "finishedAt": "2026-10-03T13:14:41.544Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"tableName\": \"TFDIR\",\n  \"columns\": [\n    \"FUNCNAME\",\n    \"PNAME\",\n    \"INCLUDE\",\n    \"FREEDATE\"\n  ],\n  \"maxRows\": 5,\n  \"readOnly\": true,\n  \"order\": \"unspecified\",\n  \"clientHandling\": \"sap_session_default\",\n  \"snapshot\": false,\n  \"status\": \"ok\",\n  \"method\": \"rfc_read_table\",\n  \"definitionSource\": \"adt_ddic\",\n  \"tableClassVerified\": true,\n  \"definitionFingerprint\": \"b8edfa4b6f669a53d098d02bcd434431c8125355c4bfa05058f85c1f6a8ae49c\",\n  \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\",\n  \"representation\": \"sap_text_trimmed\",\n  \"fieldMetadata\": [\n    {\n      \"FIELDNAME\": \"FUNCNAME\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000030\",\n      \"OFFSET\": \"000000\"\n    },\n    {\n      \"FIELDNAME\": \"PNAME\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000040\",\n      \"OFFSET\": \"000031\"\n    },\n    {\n      \"FIELDNAME\": \"INCLUDE\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000002\",\n      \"OFFSET\": \"000072\"\n    },\n    {\n      \"FIELDNAME\": \"FREEDATE\",\n      \"TYPE\": \"D\",\n      \"LENGTH\": \"000008\",\n      \"OFFSET\": \"000075\"\n    }\n  ],\n  \"returnedCount\": 1,\n  \"truncated\": false,\n  \"data\": [\n    {\n      \"FUNCNAME\": \"RPY_DYNPRO_CVT_INTO_EXTFORMAT\",\n      \"PNAME\": \"SAPLSIFP\",\n      \"INCLUDE\": \"18\",\n      \"FREEDATE\": \"00000000\"\n    }\n  ]\n}"
+}

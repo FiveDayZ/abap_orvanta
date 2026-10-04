@@ -1,0 +1,27 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_table",
+ "arguments": {
+  "tableName": "TADIR",
+  "columns": [
+   "PGMID",
+   "OBJECT",
+   "OBJ_NAME",
+   "DEVCLASS",
+   "SRCSYSTEM"
+  ],
+  "filters": [
+   {
+    "column": "OBJ_NAME",
+    "operator": "EQ",
+    "value": "ZORVANTA_R47_ENH01"
+   }
+  ],
+  "maxRows": 20,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:28:51.605Z",
+ "finishedAt": "2026-10-03T10:28:52.810Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"tableName\": \"TADIR\",\n  \"columns\": [\n    \"PGMID\",\n    \"OBJECT\",\n    \"OBJ_NAME\",\n    \"DEVCLASS\",\n    \"SRCSYSTEM\"\n  ],\n  \"maxRows\": 20,\n  \"readOnly\": true,\n  \"order\": \"unspecified\",\n  \"clientHandling\": \"sap_session_default\",\n  \"snapshot\": false,\n  \"status\": \"ok\",\n  \"method\": \"rfc_read_table\",\n  \"definitionSource\": \"adt_ddic\",\n  \"tableClassVerified\": true,\n  \"definitionFingerprint\": \"8eba7bf62aa3432a081e411a58f1965cd689192c46c9720bc9c960c5b36b8c51\",\n  \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\",\n  \"representation\": \"sap_text_trimmed\",\n  \"fieldMetadata\": [\n    {\n      \"FIELDNAME\": \"PGMID\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000004\",\n      \"OFFSET\": \"000000\"\n    },\n    {\n      \"FIELDNAME\": \"OBJECT\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000004\",\n      \"OFFSET\": \"000005\"\n    },\n    {\n      \"FIELDNAME\": \"OBJ_NAME\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000040\",\n      \"OFFSET\": \"000010\"\n    },\n    {\n      \"FIELDNAME\": \"DEVCLASS\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000030\",\n      \"OFFSET\": \"000051\"\n    },\n    {\n      \"FIELDNAME\": \"SRCSYSTEM\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000010\",\n      \"OFFSET\": \"000082\"\n    }\n  ],\n  \"returnedCount\": 1,\n  \"truncated\": false,\n  \"data\": [\n    {\n      \"PGMID\": \"R3TR\",\n      \"OBJECT\": \"ENHO\",\n      \"OBJ_NAME\": \"ZORVANTA_R47_ENH01\",\n      \"DEVCLASS\": \"ZABAP\",\n      \"SRCSYSTEM\": \"GR2\"\n    }\n  ]\n}"
+}

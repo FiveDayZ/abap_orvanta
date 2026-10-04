@@ -1,0 +1,171 @@
+{
+  "time": "2026-09-10T01:33:05.459Z",
+  "checks": [
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "functionName": "Z_CODEX_MCP_DEBUG_CAP"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_CODEX_MCP_DEBUG_CAP 不存在"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "objectName": "CHAR1"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"dataElement\",\n  \"objectName\": \"CHAR1\",\n  \"packageName\": \"SZZ\",\n  \"version\": \"20001108191731\",\n  \"fingerprint\": \"3b2a0efbbbc2513f90436a085f2c13b622e7a289cdcce64a18ecd66ff71b4ace\",\n  \"definition\": {\n    \"description\": \"单一字符标识\",\n    \"domainName\": \"CHAR1\",\n    \"heading\": \"\",\n    \"short\": \"\",\n    \"medium\": \"\",\n    \"long\": \"\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "objectName": "CHAR10"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"dataElement\",\n  \"objectName\": \"CHAR10\",\n  \"packageName\": \"SZS\",\n  \"version\": \"19920616185938\",\n  \"fingerprint\": \"c15cfcef1a250090a7abff5153123351284c1516f08e31a59dc6b0b12c6a4088\",\n  \"definition\": {\n    \"description\": \"字符字段长度 = 10\",\n    \"domainName\": \"CHAR10\",\n    \"heading\": \"\",\n    \"short\": \"\",\n    \"medium\": \"\",\n    \"long\": \"\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "objectName": "CHAR50"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"dataElement\",\n  \"objectName\": \"CHAR50\",\n  \"packageName\": \"SZS\",\n  \"version\": \"19920616185939\",\n  \"fingerprint\": \"edff036f7112843b78793c0897eb54fb2ddcb4fcec9df22e897bbf0388de590a\",\n  \"definition\": {\n    \"description\": \"注释\",\n    \"domainName\": \"TEXT50\",\n    \"heading\": \"c\",\n    \"short\": \"c\",\n    \"medium\": \"c\",\n    \"long\": \"c\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "objectName": "BAPI_MSG"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"dataElement\",\n  \"objectName\": \"BAPI_MSG\",\n  \"packageName\": \"SBF_BAPI\",\n  \"version\": \"20001108193045\",\n  \"fingerprint\": \"5b65642c1f01703378c7cfac49d0f33923b990c709ad8f9d3a0726ba73f7f1f5\",\n  \"definition\": {\n    \"description\": \"消息文本\",\n    \"domainName\": \"TEXT220\",\n    \"heading\": \"\",\n    \"short\": \"消息\",\n    \"medium\": \"消息文本\",\n    \"long\": \"消息文本\"\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "CL_ABDBG_ACT_FOR_ATTACH",
+        "objectType": "CLAS",
+        "methodName": "IS_DEBUGGER_ATTACH_SUPPORTED"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Method IS_DEBUGGER_ATTACH_SUPPORTED from class CL_ABDBG_ACT_FOR_ATTACH (lines 170-217 of 637, 48 method lines):\n\n```abap\nmethod IS_DEBUGGER_ATTACH_SUPPORTED.\r\n\r\ndata krn_rel(3).\r\n\r\nis_supported = ' '.\r\n\r\n*** determine kernel release\r\n**\r\n*   -> must be at least 720\r\n  DATA:\r\n    loa_system_data TYPE STANDARD TABLE OF text80.\r\n  FIELD-SYMBOLS:\r\n    <lor_system_data> TYPE text80.\r\n\r\n* propagate question\r\n  CALL 'SAPCORE'\r\n    ID 'ID'    FIELD 'VERSION'\r\n    ID 'TABLE' FIELD loa_system_data[].\r\n\r\n  LOOP AT loa_system_data[]\r\n    ASSIGNING <lor_system_data>.\r\n    IF ( <lor_system_data> CP 'kernel release*' ).\r\n      krn_rel = <lor_system_data>+21.\r\n      exit.\r\n    ENDIF.\r\n  ENDLOOP.\r\n\r\n  if krn_rel is initial OR\r\n     krn_rel < 720.\r\n    return.\r\n  endif.\r\n\r\n\r\n*** kernel is at least 720, now check if implementation exists\r\n**\r\n*\r\n  data _is_supported type i.\r\n  call 'TPDA_ATTACH' \"#EC CI_CCALL\r\n    id 'KIND'           field 'IS_DEBUGGER_ATTACH_SUPPORTED'\r\n    id 'IS_SUPPORTED'   field _is_supported.\r\n  if _is_supported = 1.\r\n    is_supported = 'X'.\r\n  endif.\r\n\r\n  return.\r\n\r\n\r\nendmethod.\r\n```\n\nFull Source SHA-256: bf032c1181f61cbd1740f3203a27577c86f4b3b864edc4ce148b49ad3f9d50d1\nURI: /sap/bc/adt/oo/classes/cl_abdbg_act_for_attach/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "CL_TPDAPI_SERVICE",
+        "objectType": "CLAS",
+        "methodName": "IS_DEBUGGING_AVAILABLE"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Method IS_DEBUGGING_AVAILABLE from class CL_TPDAPI_SERVICE (lines 682-699 of 724, 18 method lines):\n\n```abap\n  METHOD IS_DEBUGGING_AVAILABLE.\r\n\r\n    data:\r\n      l_flg_no_kernel type xflag.\r\n\r\n    if cl_abdbg_act_for_attach=>IS_DEBUGGER_ATTACH_SUPPORTED( ) is initial.\r\n      return.\r\n    endif.\r\n\r\n    r_available = 'X'.\r\n\r\n    get parameter id 'TPDAPI_NO_KERNEL' field l_flg_no_kernel.\r\n\r\n    if l_flg_no_kernel = '-'.\r\n       r_available = ''. \"todo: to be deleted\r\n    endif.\r\n\r\n  ENDMETHOD.\r\n```\n\nFull Source SHA-256: 628705a616ea4de1ce2b1f7bf12ecb43faffa8afdfc85d1fd53d819c243dbe62\nURI: /sap/bc/adt/oo/classes/cl_tpdapi_service/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "LZCODEX_MCP_COREUXX",
+        "objectType": "PROG",
+        "startLine": 1,
+        "lineCount": 150
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from LZCODEX_MCP_COREUXX (lines 1-20 of 20, 20 lines retrieved):\n\n```abap\n*****************************************************************\r\n*   THIS FILE IS GENERATED BY THE FUNCTION LIBRARY.             *\r\n*   NEVER CHANGE IT MANUALLY, PLEASE!                           *\r\n*****************************************************************\r\nINCLUDE LZCODEX_MCP_COREU01.\r\n                    \"Z_CODEX_MCP_EXECUTE\r\nINCLUDE LZCODEX_MCP_COREU03.\r\n                    \"Z_CODEX_MCP_DDIC_API\r\nINCLUDE LZCODEX_MCP_COREU02.\r\n                    \"Z_CODEX_MCP_DYNPRO_API\r\nINCLUDE LZCODEX_MCP_COREU04.\r\n                    \"Z_CODEX_MCP_QUERY_API\r\nINCLUDE LZCODEX_MCP_COREU05.\r\n                    \"Z_CODEX_MCP_DEBUG_CHECK\r\nINCLUDE LZCODEX_MCP_COREU06.\r\n                    \"Z_CODEX_MCP_SCI_API\r\nINCLUDE LZCODEX_MCP_COREU07.\r\n                    \"Z_CODEX_MCP_SCI_V2\r\nINCLUDE LZCODEX_MCP_COREU08.\r\n                    \"Z_CODEX_MCP_SCI_E2\n```\n\nFull Source SHA-256: 8c847d94d6b110a898afe2a832ffa0a33e4e0a27928e0d505a22a18855bf8793\nURI: /sap/bc/adt/functions/groups/zcodex_mcp_core/includes/lzcodex_mcp_coreuxx/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "inspect_repository_assignment",
+      "args": {
+        "objectName": "ZCODEX_MCP_CORE",
+        "objectType": "FUGR/F"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectName\": \"ZCODEX_MCP_CORE\",\n  \"objectType\": \"FUGR/F\",\n  \"parentObject\": \"ZCODEX_MCP_CORE\",\n  \"packageName\": \"ZABAP\",\n  \"requestNumber\": \"GR2K923421\",\n  \"taskNumber\": \"\",\n  \"transportStatus\": \"D\",\n  \"active\": true,\n  \"generated\": false,\n  \"originalSystem\": \"GR2\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "analyze_abap_dumps",
+      "args": {
+        "action": "list_dumps",
+        "maxResults": 10
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ABAP Runtime Dumps (10 of 30 total)\nSystem: w200\n\n1. ASSIGN_CASTING_ILLEGAL_CAST\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909171404GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 8KB\n\n2. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909165612GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n3. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909161711GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n4. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909154152GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\n   Content Size: 6KB\n\n5. RAISE_EXCEPTION\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909152407GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 6KB\n\n6. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909150038GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n7. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909144034GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%200\n   Content Size: 6KB\n\n8. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909142010GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n9. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141235GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB\n\n10. SYSTEM_NO_SHM_MEMORY\n   Dump ID: /sap/bc/adt/vit/runtime/dumps/20260909141234GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%202\n   Content Size: 8KB"
+          }
+        ]
+      }
+    },
+    {
+      "name": "abap_debug_status",
+      "args": {},
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"state\": \"idle\",\n  \"mode\": \"user\",\n  \"debugUser\": \"WYS\",\n  \"breakpointCount\": 0\n}"
+          }
+        ]
+      }
+    }
+  ],
+  "server": {
+    "name": "orvanta",
+    "version": "0.36.28"
+  }
+}
