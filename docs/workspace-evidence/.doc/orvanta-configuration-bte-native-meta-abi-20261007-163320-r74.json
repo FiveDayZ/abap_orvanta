@@ -1,0 +1,57 @@
+{
+  "functionName": "Z_ORVANTA_CFG_BTE_META",
+  "functionGroup": "ZORVANTA_BTE_CFG",
+  "packageName": "ZABAP",
+  "remoteEnabled": true,
+  "updateTask": false,
+  "globalInterface": false,
+  "importParameters": [],
+  "changingParameters": [],
+  "exceptions": [],
+  "exportParameters": [
+    {
+      "name": "EV_CODE",
+      "typeName": "CHAR40",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_MESSAGE",
+      "typeName": "BAPI_MSG",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_READ_ONLY",
+      "typeName": "TVDIR-FLAG",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_FRESH",
+      "typeName": "TVDIR-FLAG",
+      "optional": false,
+      "passByValue": true
+    }
+  ],
+  "tableParameters": [
+    {
+      "name": "ET_HEADER",
+      "typeName": "VIMDESC",
+      "optional": false,
+      "passByValue": false
+    },
+    {
+      "name": "ET_NAMTAB",
+      "typeName": "VIMNAMTAB",
+      "optional": false,
+      "passByValue": false
+    },
+    {
+      "name": "ET_EVENTS",
+      "typeName": "TVIMF",
+      "optional": false,
+      "passByValue": false
+    }
+  ]
+}

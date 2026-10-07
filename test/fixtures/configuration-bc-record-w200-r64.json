@@ -1,0 +1,806 @@
+{
+  "system": "GR2",
+  "client": "200",
+  "provenance": "Actual read_function_module_interface replies; no native configuration command dispatched.",
+  "functions": [
+    {
+      "readAt": "2026-10-06T07:22:40.600Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_DB_TABLE_TYPE_GET",
+        "functionGroup": "SCPRVI",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "TABNAME",
+            "typeName": "SCPR_TABL",
+            "optional": false,
+            "passByValue": false,
+            "description": "Table Name"
+          },
+          {
+            "name": "OBJNAME",
+            "typeName": "OB_OBJECT",
+            "optional": true,
+            "passByValue": false,
+            "description": "Customizing Obj"
+          },
+          {
+            "name": "OBJTYPE",
+            "typeName": "OB_TYP",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "TABTYPE",
+            "typeName": "C",
+            "optional": false,
+            "passByValue": false,
+            "description": "Table Type: V=View, S=Table"
+          },
+          {
+            "name": "NEW_OBJNAME",
+            "typeName": "OB_OBJECT",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "NEW_OBJTYPE",
+            "typeName": "OB_TYP",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "fingerprint": "9ec3950db57ba834b13f780324055a82220bf5daaf59bccf8c47aeea5625f62d",
+        "interfaceFingerprint": "9c3034b039d8076b88f80d81743e49f1e64086fa948a500b55107582a81c8adf",
+        "sourceFingerprint": "ca9126c0f3a3ba2d9d7c5709baf1d3c4f6161a2b03ab7610f47d871548c742cb"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:22:40.600Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_DB_TABLE_FIELDDEF_GET",
+        "functionGroup": "SCPRVI",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "TABNAME",
+            "typeName": "SCPRVALS-TABLENAME",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "TABTYPE",
+            "typeName": "OBJH-OBJECTTYPE",
+            "optional": true,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "FLDDESCR_REDUC",
+            "typeName": "C",
+            "optional": true,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "ENTITIES_VARIABLE",
+            "typeName": "C",
+            "optional": true,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "TABLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": false,
+            "description": "Table Width"
+          },
+          {
+            "name": "KEYLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": false,
+            "description": "Length of key"
+          },
+          {
+            "name": "CKEYLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "FLDDESCR_REDUCED",
+            "typeName": "C",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "CLIENT_FIELD",
+            "typeName": "SCPR_FLD",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "DELIVERY_CLASS",
+            "typeName": "CONTFLAG",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [
+          {
+            "name": "SELLIST",
+            "typeName": "VIMSELLIST",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "HEADER",
+            "typeName": "VIMDESC",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "NAMTAB",
+            "typeName": "VIMNAMTAB",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "FIELDDESCR",
+            "typeName": "SCPR_FLDDESCRS",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exceptions": [
+          {
+            "name": "NO_TABLE_NAME",
+            "description": ""
+          },
+          {
+            "name": "NO_TVDIR_ENTRY",
+            "description": "No Entry in Table TVDIR"
+          },
+          {
+            "name": "TABLE_NOT_FOUND",
+            "description": "Table not found"
+          },
+          {
+            "name": "TABLE_TO_LARGE",
+            "description": ""
+          },
+          {
+            "name": "DDIF_INTERNAL_ERROR",
+            "description": "Internal DDIC Interface Error"
+          },
+          {
+            "name": "TABLE_UNSUITABLE",
+            "description": ""
+          }
+        ],
+        "fingerprint": "a215d78b89d0b8f212ecd7a5074206a0330f5205dcad8fa67f376d42541c442e",
+        "interfaceFingerprint": "62ce109ea23ec89e6cd3e19b2972a9bec907e7b1470ffbd25ea7e270ea6bf27d",
+        "sourceFingerprint": "1149814756b0fa079c9da76e899ff6ca4ab2065e023cc24ef0f8348601c976db"
+      }
+    },
+    {
+      "readAt": "2026-10-06T06:05:36.721Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_PRSET_CT_ONE_TABLE_LOAD",
+        "functionGroup": "SCPRPS",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "TABLENAME",
+            "typeName": "SCPRDATA-TABLENAME",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "OBJECTNAME",
+            "typeName": "OBJH-OBJECTNAME",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "DELETEFLAG",
+            "typeName": "SCPRRECA-DELETEFLAG",
+            "optional": false,
+            "passByValue": false,
+            "description": "BC Sets: Data Record Deletion Flag"
+          },
+          {
+            "name": "ACTOPTS",
+            "typeName": "SCPRACTOPT",
+            "optional": false,
+            "passByValue": false,
+            "description": "BC Sets: Activation Options"
+          },
+          {
+            "name": "TABLEDESCR",
+            "typeName": "SCPR_RECORD2",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "VALUES",
+            "typeName": "SCPR_VALS_TAB",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "VALUES_IN_INT_FORMAT",
+            "typeName": "ABAP_BOOL",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "ERRORS",
+            "typeName": "SCP1_GENERAL_ERRORS",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "fingerprint": "ff8951ab01a2fc0521e183125b876b01cdaa0392c470e26a570cd96747bfa6ca",
+        "interfaceFingerprint": "1a7fffc46553344866b70356f44c8e788c071419431c2198bb98fc642448bef4",
+        "sourceFingerprint": "a7d73a3bcb86ad66ede551553568139222f45c29bfa1767e9d257a1d8e11cacb"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:38:57.737Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_DB_TABLE_RECORDS_GET",
+        "functionGroup": "SCPRVI",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "TABNAME",
+            "typeName": "DD02L-TABNAME",
+            "optional": false,
+            "passByValue": true,
+            "description": "Table Name"
+          },
+          {
+            "name": "KEY",
+            "typeName": "ANY",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "KEYLNG",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [],
+        "changingParameters": [],
+        "tableParameters": [
+          {
+            "name": "RECORDS",
+            "typeName": "",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exceptions": [
+          {
+            "name": "DB_ERROR",
+            "description": ""
+          },
+          {
+            "name": "NOT_FOUND",
+            "description": ""
+          },
+          {
+            "name": "WRONG_PARAM",
+            "description": "Incorrect Parameter Transfer"
+          }
+        ],
+        "fingerprint": "f85defb1a597935bf2463b642b79b8b6018a6d170ea1e0d5db290d7de381367e",
+        "interfaceFingerprint": "6c14adf1b11a0455f9281eb3330b83b00add6f3f67b38c9d7663664e3e1a2547",
+        "sourceFingerprint": "c5eaea2b89708b4cc4d5980b1b9a880984405d9112bb1bd19553f1a7463b7cdd"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:38:57.737Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_DB_TABLE_TABFLDDEF_GET",
+        "functionGroup": "SCPRVI",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "TABNAME",
+            "typeName": "SCPRDATA-TABLENAME",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "TABLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": true,
+            "description": "Table Width"
+          },
+          {
+            "name": "KEYLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": true,
+            "description": "Key Length"
+          },
+          {
+            "name": "CKEYLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "CLIENT_FIELD",
+            "typeName": "SCPR_FLD",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "DELIVERY_CLASS",
+            "typeName": "CONTFLAG",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [
+          {
+            "name": "FIELDDESCR",
+            "typeName": "SCPR_FLDDESCRS",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exceptions": [
+          {
+            "name": "TABLE_NOT_FOUND",
+            "description": "Table not found"
+          },
+          {
+            "name": "DDIF_INTERNAL_ERROR",
+            "description": "Internal DDIC Interface Error"
+          }
+        ],
+        "fingerprint": "8aa88ba51860718cb250d7f6b2532bd1733a788ec17b2c963c5141d257b56582",
+        "interfaceFingerprint": "dca5f484468d333a60c097a44ead101729b065fd2891f608dbb8bcbafa6f14d4",
+        "sourceFingerprint": "032368671c7e8816fa3a97710a5795ababa9811c416d70425b1f0c4db7af5ba0"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:38:57.737Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_CTRL_PREDEFINE_FLAGS",
+        "functionGroup": "SCPRCTRL",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "TABTYPE",
+            "typeName": "OB_TYP",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "ENTITIES_VARIABLE",
+            "typeName": "C",
+            "optional": true,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [],
+        "changingParameters": [
+          {
+            "name": "WA_TAB_FLDNAMES",
+            "typeName": "SCPR_FLDDESCR",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "tableParameters": [
+          {
+            "name": "TAB_FLDNAMES",
+            "typeName": "SCPR_FLDDESCRS",
+            "optional": true,
+            "passByValue": false,
+            "description": "Field Descriptions"
+          }
+        ],
+        "exceptions": [
+          {
+            "name": "TAB_UNSUITABLE",
+            "description": ""
+          }
+        ],
+        "fingerprint": "50d186dbe82055e168249efdfb508764cedffbf65f01a99becdfa1fd47e59555",
+        "interfaceFingerprint": "d7ca0917509c302bc472d66b8bb4949bd260b5decae587af9498a2692d6708b6",
+        "sourceFingerprint": "4f280905e9bbe79c2be79442513089b80763976ab5ca83f6d59a7144071030c5"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:41:13.456Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_CT_VALUE_CONVERT_INT_EXT",
+        "functionGroup": "SCPRPR",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "FIELDDESCR",
+            "typeName": "SCPR_FLDDESCR",
+            "optional": false,
+            "passByValue": true,
+            "description": "Field Descriptions"
+          },
+          {
+            "name": "VALUE_INTERN",
+            "typeName": "",
+            "optional": false,
+            "passByValue": true,
+            "description": "Value in Internal Format"
+          },
+          {
+            "name": "CURRKEY",
+            "typeName": "TCURX-CURRKEY",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "WITH_CONVEXIT",
+            "typeName": "",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "VALUE_EXTERN",
+            "typeName": "",
+            "optional": false,
+            "passByValue": true,
+            "description": "Value in External Format"
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "fingerprint": "24ea322872b489734139d7a0768b7d1cd40f4716af1d867c60d3cb48e45a016c",
+        "interfaceFingerprint": "7a61d6cf41159fe5810f10b9ca73daca75ead478e6e578cdb11c8dfe505a5ddf",
+        "sourceFingerprint": "db76d20610890412f3caa9df80316689d3cad88170097087a068e2cb935be8c0"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:41:13.456Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_CPROF_CT_PROFDATA_CONVERT",
+        "functionGroup": "SCPRCP",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "TABNAME",
+            "typeName": "SCPRDATA-TABLENAME",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "ONLY_KEY",
+            "typeName": "C",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "RECNUMBER",
+            "typeName": "SCPRVALS-RECNUMBER",
+            "optional": false,
+            "passByValue": false,
+            "description": "Data record number"
+          },
+          {
+            "name": "KEYLEN",
+            "typeName": "I",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "UNCOMPLETE",
+            "typeName": "SCPR_UNCPL",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "DELETEFLAG",
+            "typeName": "SCPR_DELET",
+            "optional": true,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "VALUES_IN_INT_FORMAT",
+            "typeName": "SAP_BOOL",
+            "optional": true,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "RAW_RECORD",
+            "typeName": "SCPR_RAW",
+            "optional": false,
+            "passByValue": false,
+            "description": "Compressed Data"
+          },
+          {
+            "name": "LINE",
+            "typeName": "",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "RAW_XRECORD",
+            "typeName": "",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "GENKEYLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "GENKEYFIELD",
+            "typeName": "SCPR_FLD",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [
+          {
+            "name": "PROFVALUES",
+            "typeName": "SCPRVALS",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "TABLEDESCR",
+            "typeName": "SCPR_FLDDESCRS",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exceptions": [],
+        "fingerprint": "6a123467e35d39b31ecb5d18b482b10cd61ae198a8c8918808430a50000081cf",
+        "interfaceFingerprint": "678844a691d83ea076f1c72c74d62daa7b68846bfe20300c57c7af597f00dfdc",
+        "sourceFingerprint": "58e7119821a8ec1fb3b94f756f2ea6f8705d391d671e92d8951b689981b29123"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:25:39.542Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_HI_SET_GLOBAL_ACTOPTS",
+        "functionGroup": "SCPRHI",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "ACTLINKS",
+            "typeName": "SCPRACTOPT-ACTLINKS",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "NO_STANDRD",
+            "typeName": "SCPRACTOPT-NO_STANDRD",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exportParameters": [],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "fingerprint": "85b5d5cfa3d04bcefd3c1c77e2be4da2ab3129c53ac0a66e15b56d6c8f039f20",
+        "interfaceFingerprint": "30b0fd4e4cab7d4af920a0ec5133a52478614499f902399830ee955a999c3881",
+        "sourceFingerprint": "2e276a8451c13c733145bfe058e2d0f59446dc3992b01b0136de404734023616"
+      }
+    },
+    {
+      "readAt": "2026-10-06T07:38:57.737Z",
+      "definition": {
+        "connectionId": "w200",
+        "functionName": "SCPR_HIST_CT_REMEMBER_TIME",
+        "functionGroup": "SCPRHI",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "MODDATE",
+            "typeName": "SCPRACTP-MODDATE",
+            "optional": false,
+            "passByValue": false,
+            "description": "Activation Date"
+          },
+          {
+            "name": "MODTIME",
+            "typeName": "SCPRACTP-MODTIME",
+            "optional": false,
+            "passByValue": false,
+            "description": "Activation date"
+          }
+        ],
+        "exportParameters": [],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "fingerprint": "1c578ef5aad8b2f4b81cf924537cae0cca3d2a1623bbd8ee10c855594e4dd542",
+        "interfaceFingerprint": "98309435bd303f8f1e1a38819080c1d14190e028e4d4f5f6dcb8e2feacd626c8",
+        "sourceFingerprint": "27a7667cabebbac6e8c88246f29fbdae8d1e3e5ca8dc43d216d255449e1ba79e"
+      }
+    }
+  ],
+  "scprTypeEvidence": {
+    "program": "%_CSCPR",
+    "readAt": "2026-10-06T06:13:00.943Z",
+    "sourceFingerprint": "67ee66398adfe20921af6fe96bc77499b79384abc1f4c799c08c0d4b0dab6c64",
+    "representation": "rfc_char255_rows_crlf",
+    "startLine": 77,
+    "endLine": 109,
+    "lines": [
+      "* Feldbeschreibung und Datum für ein Tabellenfeld",
+      "TYPES: scpr_flddescr TYPE scpr_descr.",
+      "",
+      "* Tabelle von Feldbeschreibungen und Werten",
+      "TYPES: scpr_flddescrs TYPE scpr_flddescr OCCURS 10.",
+      "",
+      "* Alle Feldbeschreibungen und Werte eines Tabellenrecords",
+      "TYPES: BEGIN OF scpr_record2 %_FINAL,",
+      "         tabname          TYPE scprdata-tablename,",
+      "         tabtype          TYPE objh-objecttype,",
+      "         tabtext          TYPE dd02t-ddtext,",
+      "         tablen           TYPE i,  \"table length (bytes)",
+      "         keylen           TYPE i,  \"key length (bytes)",
+      "         ckeylen          TYPE i,  \"character like key length (bytes)",
+      "         objname          TYPE objh-objectname,",
+      "         objtype          TYPE objh-objecttype,",
+      "         activity         TYPE scprreca-activity,",
+      "*        importable       TYPE c,",
+      "         status(1)        TYPE c,",
+      "         delete(1)        TYPE c,",
+      "         descr_reduced(1) TYPE c,",
+      "         clnt_fld         TYPE scpr_fld,",
+      "         deliverycl       TYPE contflag,",
+      "         descr            TYPE scpr_flddescr OCCURS 10,",
+      "         sellist          TYPE vimsellist    OCCURS 10,",
+      "         header           TYPE vimdesc       OCCURS 10,",
+      "         namtab           TYPE vimnamtab     OCCURS 10,",
+      "       END OF scpr_record2.",
+      "",
+      "* Feldbeschreibungen und Werte von Tabellenrecords unterschiedlicher",
+      "* Tabellen",
+      "TYPES: scpr_records TYPE scpr_record2 OCCURS 10.",
+      ""
+    ]
+  }
+}

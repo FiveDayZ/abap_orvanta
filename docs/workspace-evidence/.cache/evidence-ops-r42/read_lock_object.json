@@ -1,0 +1,23 @@
+{
+  "request": {
+    "tool": "read_lock_object",
+    "args": {
+      "objectName": "EZTESTLOCK01",
+      "connectionId": "w200"
+    }
+  },
+  "messages": [
+    {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"lockObject\",\n  \"objectName\": \"EZTESTLOCK01\",\n  \"packageName\": \"$TMP\",\n  \"version\": \"20260928173307\",\n  \"fingerprint\": \"c4acb16c17f4769e070a335f009294bba8ffcf478ca4044316f0bbb0947fbcf8\",\n  \"definition\": {\n    \"description\": \"11111\",\n    \"aggregationType\": \"E\",\n    \"rootTable\": \"T000\",\n    \"lockTables\": [\n      {\n        \"TABNAME\": \"T000\",\n        \"FORTABNAME\": \"T000\",\n        \"FORFIELD\": \"\",\n        \"FORDIR\": \"\",\n        \"ENQMODE\": \"E\"\n      }\n    ],\n    \"lockFields\": [\n      {\n        \"VIEWFIELD\": \"MANDT\",\n        \"TABNAME\": \"T000\",\n        \"FIELDNAME\": \"MANDT\",\n        \"ENQMODE\": \"E\",\n        \"ROLLNAME\": \"MANDT\",\n        \"KEYFLAG\": \"X\",\n        \"CHECKTABLE\": \"\"\n      }\n    ]\n  }\n}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 2
+    }
+  ]
+}

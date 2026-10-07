@@ -1,0 +1,20 @@
+{
+  "request": {
+    "tool": "get_runtime_info",
+    "args": {}
+  },
+  "messages": [
+    {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"observed\",\n  \"readOnly\": true,\n  \"server\": {\n    \"name\": \"orvanta\",\n    \"version\": \"0.50.23\"\n  },\n  \"startedAt\": \"2026-09-29T01:15:05.244Z\",\n  \"nodeVersion\": \"24.8.0\",\n  \"startupArtifact\": {\n    \"status\": \"observed\",\n    \"observedAt\": \"2026-09-29T01:15:05.245Z\",\n    \"packageVersion\": \"0.50.23\",\n    \"artifactFingerprint\": \"b672d6be74a1ddd2e00581029dca510da49dfd2a0d91a997291f2140b357520e\",\n    \"fileCount\": 75\n  },\n  \"currentDiskArtifact\": {\n    \"status\": \"observed\",\n    \"observedAt\": \"2026-09-29T01:15:09.539Z\",\n    \"packageVersion\": \"0.50.23\",\n    \"artifactFingerprint\": \"b672d6be74a1ddd2e00581029dca510da49dfd2a0d91a997291f2140b357520e\",\n    \"fileCount\": 75\n  },\n  \"checks\": {\n    \"expectedVersion\": \"not_requested\",\n    \"expectedArtifact\": \"not_requested\",\n    \"diskSinceStartup\": \"match\",\n    \"moduleAndPackageVersion\": \"match\"\n  },\n  \"restartRequired\": false,\n  \"sapStatus\": \"not_probed\",\n  \"helperStatus\": \"not_probed; use get_capability_report for separately authorized observations\",\n  \"limitations\": [\n    \"Fingerprint covers service code, package.json and package-lock.json, not every dependency or UI asset.\",\n    \"Startup disk observation is not an attestation of every module already loaded in memory.\",\n    \"Matching artifacts do not prove SAP connectivity, helper compatibility or runtime acceptance.\",\n    \"No service switch, state cleanup, SAP retry or rollback is performed.\"\n  ],\n  \"toolProfile\": {\n    \"profile\": \"full\",\n    \"source\": \"default\",\n    \"requested\": null,\n    \"enabledCount\": 159,\n    \"disabledCount\": 0,\n    \"denied\": []\n  }\n}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 2
+    }
+  ]
+}

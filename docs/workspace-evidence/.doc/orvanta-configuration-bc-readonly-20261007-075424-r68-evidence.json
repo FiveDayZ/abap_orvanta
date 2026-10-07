@@ -1,0 +1,2412 @@
+{
+  "recordedAt": "2026-10-07T07:54:24.455+08:00",
+  "status": "Partially Verified",
+  "baseline": {
+    "at": "2026-10-06T23:44:17.707Z",
+    "head": "775ae25980f2988e1f84f11d71409592d8bc4063"
+  },
+  "sourceHashes": {
+    "src/mcp.ts": "149e9e605a235827b44a22a8541d4b50abc5b44586889362310b2cbbcfe71ab3",
+    "src/configuration-bc-read-cancellation.ts": "69e2004445abb7d621b9f6c781bbb7d5e4d3c93ef19362122192d1e3d23ec28f",
+    "test/configuration-bc-read-cancellation.test.ts": "54faaa1da886dbf31d4bf70ac5962c13e7f53163e3618c5d31eaad82a2d824c9"
+  },
+  "checks": {
+    "compile": {
+      "started": "2026-10-06T23:46:56.939Z",
+      "finished": "2026-10-06T23:47:06.694Z",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--outDir",
+        ".cache/spro-r68/runtime/dist",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "output": "",
+      "error": ""
+    },
+    "bc-tests": {
+      "started": "2026-10-06T23:47:06.711Z",
+      "finished": "2026-10-06T23:47:10.130Z",
+      "command": [
+        "node",
+        "--test",
+        ".cache/spro-r68/runtime/dist/test/configuration-bc*.test.js"
+      ],
+      "exitCode": 0,
+      "output": "✔ dependency graph preserves positions, missing selected versions and cycles across branches (10.8667ms)\n✔ depth and node budgets retain unvisited references without exceeding the read scope (3.7572ms)\n✔ stable empty graphs are distinct from missing or unsupported headers (14.2772ms)\n✔ logs deduplicate references, preserve raw errors and filter recorded target client (8.1123ms)\n✔ empty logs and bounded unexpanded activation IDs do not imply the latest successful activation (2.4562ms)\n✔ failed, changed, truncated and duplicate reads cannot produce a trusted audit (5.289ms)\n✔ scope, source and layout refusals occur before data queries; profiles stay read-only (3.2061ms)\n✔ only the reviewed empty-HTML fallback is used for bounded reads (1.0524ms)\n✔ immutable native before-state survives a fresh store and concurrent duplicate capture (311.4688ms)\n✔ capture failure or corrupt native/CTS buffers produce no published evidence (24.2459ms)\n✔ disk corruption and mismatched reference cannot turn bytes into recovery permission (58.6781ms)\n✔ command contract rejects external bytes and keeps existing receipt ownership with execution disabled (3.2178ms)\n✔ reconciliation requires configuration, CTS, protections, locks, logs and known commit evidence (1.0278ms)\n✔ matching current before values never resolve an unknown native historical outcome (0.2235ms)\n✔ incomplete applied proof {\"complete\":false} cannot claim success or authorize replay (0.262ms)\n✔ incomplete applied proof {\"locks\":\"held\"} cannot claim success or authorize replay (0.1889ms)\n✔ incomplete applied proof {\"locks\":\"unknown\"} cannot claim success or authorize replay (0.2167ms)\n✔ incomplete applied proof {\"logs\":\"unknown\"} cannot claim success or authorize replay (0.1708ms)\n✔ incomplete applied proof {\"protectionPreserved\":null} cannot claim success or authorize replay (0.1036ms)\n✔ incomplete applied proof {\"sideEffectsAccounted\":false} cannot claim success or authorize replay (0.1999ms)\n✔ incomplete applied proof {\"commit\":\"unknown\"} cannot claim success or authorize replay (0.2441ms)\n✔ incomplete applied proof {\"cts\":\"changed\"} cannot claim success or authorize replay (0.1754ms)\n✔ SDK HTTP -> public strict schema -> real ToolService -> protected native dispatch/recovery; no generic fallback (735.8596ms)\n✔ preparation binds durable reference and fresh complete state without write or recovery permission (99.1336ms)\n✔ foreign authenticated users, client scopes and external buffers fail before current SAP read (71.9482ms)\n✔ missing immutable references do not trigger SAP reads or create a new before-state (35.0326ms)\n✔ a fresh valid different native buffer refuses stale preparation without changing stored evidence (32.3424ms)\n✔ fresh identity or counts drift cannot pass on equal configuration bytes alone (128.6794ms)\n✔ corrupt CTS, layout or version evidence fails before any prepared result is returned (29.8739ms)\n✔ failed fresh reader is propagated; equal persisted before-state is never substituted (43.8824ms)\n✔ valid full CTS drift is rejected even when the displayed configuration remains equal (37.5988ms)\n✔ one durable intent/receipt dispatch, exact applied frame, duplicate never replayed, bound recovery (837.5986ms)\n✔ twelve simultaneous operations dispatch at most once with the shared CUNI target (305.9355ms)\n✔ wrongActor: no success, target stays protected across new operationId (178.7125ms)\n✔ wrongReference: no success, target stays protected across new operationId (158.4413ms)\n✔ badFrame: no success, target stays protected across new operationId (176.9298ms)\n✔ protectedChanged: no success, target stays protected across new operationId (108.0407ms)\n✔ ctsChanged: no success, target stays protected across new operationId (102.608ms)\n✔ effectsChanged: no success, target stays protected across new operationId (80.5711ms)\n✔ locksHeld: no success, target stays protected across new operationId (81.2582ms)\n✔ protocolUnfinished: no success, target stays protected across new operationId (81.4374ms)\n✔ missingCommit: no success, target stays protected across new operationId (78.712ms)\n✔ configurationPartial: no success, target stays protected across new operationId (69.0655ms)\n✔ transport loss after dispatch never leaks fault secrets and never sends another command (53.8034ms)\n✔ standard or customer source drift refuses before SAP and releases only the local reservation (38.0669ms)\n✔ receipt pre-dispatch failure invokes no native command (53.7839ms)\n✔ native cleanup partial commit remains unknown and cannot be replayed or silently recovered (127.9094ms)\n✔ read-only reconcile observes native commit while leaving receipt and target protection unchanged (78.4206ms)\n✔ unknown result cannot borrow an applied result's frame to authorize recovery (82.2578ms)\n✔ tampered immutable intent is rejected by digest before read-only native dispatch (68.4166ms)\n✔ public schema never accepts raw frames, arbitrary targets or omitted write acknowledgement (14.5213ms)\n✔ owner generated direct standard/helper calls satisfy actual w200 ABI, not guessed signatures (2.2127ms)\n✔ owner has one top-level config commit, isolated CTS cleanup, exact link ownership and no standard table SQL writes (0.5503ms)\n✔ intent persistence failure: no unsafe dispatch or replay (40.2428ms)\n✔ result persistence failure: no unsafe dispatch or replay (55.9836ms)\n✔ completion persistence failure: no unsafe dispatch or replay (89.2971ms)\n✔ BC Set comparison selects stored translation cells without resolving a variable activation language (15.2135ms)\n✔ actual target absence differs from an unavailable target (2.4463ms)\n✔ variable, wildcard and incomplete keys never select target rows (4.6661ms)\n✔ variable values, unknown fields and ambiguous language overlays cannot report equality (3.739ms)\n✔ truncated or orphaned content does not query targets (1.4257ms)\n✔ source or target drift discards all comparisons, metadata drift refuses the reply (3.2415ms)\n✔ target observation budget is enforced without dropping the unobserved record (1.3744ms)\n✔ scope and undeclared inputs fail before reads, tools remain read-only (0.9321ms)\n✔ public CTS MCP contract binds full opaque output and refuses invalid scope and native failures (330.0373ms)\n✔ CTS adapter preserves exact bytes and rechecks API, tables and complete results (19.5828ms)\n✔ CTS scope refuses connectionId before native or metadata dispatch (1.3382ms)\n✔ CTS scope refuses requestNumber before native or metadata dispatch (0.4886ms)\n✔ CTS scope refuses taskNumber before native or metadata dispatch (0.3042ms)\n✔ CTS scope refuses bcSetId before native or metadata dispatch (0.2756ms)\n✔ CTS scope refuses version before native or metadata dispatch (0.2732ms)\n✔ CTS scope refuses save before native or metadata dispatch (0.3554ms)\n✔ CTS response refuses invalid EV_DATA_BASE64 without returning a buffer or retrying (1.9422ms)\n✔ CTS response refuses invalid EV_DATA_BASE64 without returning a buffer or retrying (1.3941ms)\n✔ CTS response refuses invalid EV_DATA_BYTES without returning a buffer or retrying (2.1944ms)\n✔ CTS response refuses invalid EV_DATA_BYTES without returning a buffer or retrying (1.1427ms)\n✔ CTS response refuses invalid EV_CTS_VERSION without returning a buffer or retrying (2.5102ms)\n✔ CTS response refuses invalid EV_USER without returning a buffer or retrying (1.7018ms)\n✔ CTS response refuses invalid EV_TASK without returning a buffer or retrying (1.3334ms)\n✔ CTS response refuses invalid EV_KEY_COUNT without returning a buffer or retrying (1.2233ms)\n✔ CTS response refuses invalid EV_KEY_COUNT without returning a buffer or retrying (1.7987ms)\n✔ CTS response refuses invalid EV_CLIENT without returning a buffer or retrying (0.9523ms)\n✔ CTS response refuses invalid EV_SYSTEM without returning a buffer or retrying (0.974ms)\n✔ CTS native AUTHORIZATION_DENIED retracts the result with no fallback (3.4405ms)\n✔ CTS native READ_CHANGED retracts the result with no fallback (0.8718ms)\n✔ CTS native HEADER_SCOPE_INVALID retracts the result with no fallback (0.8236ms)\n✔ CTS native unknown retracts the result with no fallback (0.756ms)\n✔ CTS complete-result drift includes changed counts even when the buffer is unchanged (0.9769ms)\n✔ changed bridge body and table/dependency identities prevent all native dispatch (8.6722ms)\n✔ closing dependency failure retracts the opaque buffer after native reads (1.8554ms)\n✔ CTS deployment candidate has no mutation or dialog/session APIs and includes all raw key tables (0.525ms)\n✔ CTS dependency pins match actual SAP interfaces rather than aggregate definition hashes (5.371ms)\n✔ command preparation rechecks linked native effects while read labels grant no command permit (139.0305ms)\n✔ command preparation rejects missing and cross-linked effect evidence before either fresh reader (136.0334ms)\n✔ command preparation rejects valid changed effect bytes and propagates fresh reader failure (72.9781ms)\n✔ effects capture publishes immutable linked evidence and preserves format1 and concurrent capture (115.7979ms)\n✔ effects store rejects identity changes, recomputed unsafe evidence, broken links and changed native bytes (72.6549ms)\n✔ public effects MCP exposes fixed readonly inputs, links immutable evidence and retracts failures (226.8617ms)\n✔ effects read is one fixed dispatch with full source/layout bracketing and no permit (27.226ms)\n✔ reject input connectionId before native dispatch (15.7661ms)\n✔ reject input bcSetId before native dispatch (12.0433ms)\n✔ reject input version before native dispatch (12.2586ms)\n✔ reject input requestNumber before native dispatch (16.5674ms)\n✔ reject input taskNumber before native dispatch (12.8091ms)\n✔ reject input tableName before native dispatch (15.0099ms)\n✔ reject input IV_CTS_VERSION before native dispatch (12.2379ms)\n✔ reject input buffer before native dispatch (16.5635ms)\n✔ reject input execute before native dispatch (11.5311ms)\n✔ reject input beforeStateReference before native dispatch (12.1066ms)\n✔ immutable state cannot be read under another authenticated user (15.638ms)\n✔ repository descriptions and parameter ordering preserve the exact signature (19.8633ms)\n✔ changed dependency Z_ORVANTA_CFG_BC_EFFECTS prevents native dispatch (12.5112ms)\n✔ changed dependency Z_ORVANTA_CFG_BC_CTS prevents native dispatch (13.1952ms)\n✔ changed dependency TR_READ_REQUEST prevents native dispatch (15.1881ms)\n✔ changed dependency TRINT_READ_REQUEST prevents native dispatch (15.6835ms)\n✔ changed dependency TRINT_READ_REQUEST_HEADER prevents native dispatch (12.9997ms)\n✔ changed dependency TR_AUTHORITY_CHECK_DISPLAY prevents native dispatch (16.1852ms)\n✔ changed dependency SCMS_BASE64_ENCODE_STR prevents native dispatch (11.5215ms)\n✔ changed dependency CALCULATE_HASH_FOR_RAW prevents native dispatch (21.6849ms)\n✔ changed dependency SCPR_HI_KEY_TO_ACTKEY prevents native dispatch (16.6829ms)\n✔ changed dependency SCPR_DB_TABLE_TABFLDDEF_GET prevents native dispatch (12.8006ms)\n✔ changed dependency SCPR_CT_VALUE_CONVERT_INT_EXT prevents native dispatch (15.7873ms)\n✔ changed dependency SCPR_CT_CURRKEY_GET prevents native dispatch (11.3913ms)\n✔ changed dependency VIEW_CONVERSION_OUTPUT prevents native dispatch (13.0201ms)\n✔ changed layout SCPRACTR prevents native dispatch (14.4483ms)\n✔ changed layout SCPRACTP prevents native dispatch (12.0462ms)\n✔ changed layout SCPRACTX prevents native dispatch (12.4981ms)\n✔ changed layout SCPRACTXL prevents native dispatch (15.6827ms)\n✔ changed layout T006 prevents native dispatch (14.605ms)\n✔ changed layout E071K prevents native dispatch (13.2081ms)\n✔ standard FORM drift prevents dispatch even with unchanged function fingerprints (15.5296ms)\n✔ discard body drift after call and never retry (12.6012ms)\n✔ discard include drift after call and never retry (11.8999ms)\n✔ discard layout drift after call and never retry (13.6389ms)\n✔ discard interface drift after call and never retry (13.5948ms)\n✔ reject response EV_USER=OTHER (14.8904ms)\n✔ reject response EV_SYSTEM=GR3 (12.8869ms)\n✔ reject response EV_CLIENT=300 (13.5344ms)\n✔ reject response EV_REQUEST=GR2K923472 (12.2796ms)\n✔ reject response EV_TASK=GR2K923492 (14.2456ms)\n✔ reject response EV_CTS_VERSION=ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff (12.3141ms)\n✔ reject response EV_SCOPE_VERSION=ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff (16.4698ms)\n✔ reject response EV_EFFECTS_VERSION=ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff (13.3713ms)\n✔ reject response EV_ROUNDTRIP= (14.0431ms)\n✔ reject response EV_DATA_BYTES=0 (12.2088ms)\n✔ reject response EV_DATA_BYTES=999999 (11.7011ms)\n✔ reject response EV_DATA_BASE64=AAAA\n (11.3575ms)\n✔ reject response EV_ROW_COUNTS=matched=513;records=513;headers=0;variables=0;links=0; (13.8916ms)\n✔ reject response EV_ROW_COUNTS=matched=02;records=3;headers=2;variables=1;links=0; (12.7446ms)\n✔ reject response EV_ROW_COUNTS=matched=4;records=3;headers=2;variables=1;links=0; (11.9259ms)\n✔ reject response EV_ROW_COUNTS=records=3;matched=2;headers=2;variables=1;links=0; (11.8905ms)\n✔ reject response EV_ROW_COUNTS=matched=2;records=3;headers=2;variables=1;links=0 (12.1021ms)\n✔ reject response EV_PROFILE_COUNT=33 (11.6547ms)\n✔ reject response EV_PROFILE_COUNT=0 (15.3365ms)\n✔ reject response EV_PROFILE_COUNT=4 (11.3582ms)\n✔ reject response EV_CODE=READ_CHANGED (10.9986ms)\n✔ reject response EV_CODE=VERSION_CONFLICT (11.4727ms)\n✔ reject response EV_CODE=<untrusted message> (10.8466ms)\n✔ reject response UNKNOWN=1 (11.1854ms)\n✔ fault and transport rejection cannot trigger a second native dispatch (14.0682ms)\n✔ zero matched records still capture the current profile; empty tables are valid (12.4785ms)\n✔ generated ECC source has fixed native keys and only the four read dependencies (0.9713ms)\n✔ public guard MCP dispatches valid readonly calls and rejects invalid scope before reads (274.0108ms)\n✔ guard returns complete fields and explicit eight-key presence without enabling writes (23.7395ms)\n✔ empty native tables mean eight named missing states, never a missing response (3.2915ms)\n✔ guard preserves a partial language presence and full raw decimal text (4.587ms)\n✔ guard refuses unattested source before any route or native read (0.5918ms)\n✔ guard refuses other client before any route or native read (0.2905ms)\n✔ guard refuses other connection before any route or native read (0.8332ms)\n✔ guard refuses key injection before any route or native read (0.3512ms)\n✔ guard rejects stale route EV_SOURCE_VERSION before native read (0.7849ms)\n✔ guard rejects stale route EV_TARGET_VERSION before native read (0.4386ms)\n✔ guard rejects stale route EV_METADATA_VERSION before native read (0.7442ms)\n✔ guard rejects badBody before native read (0.8958ms)\n✔ guard rejects badLayout before native read (0.4621ms)\n✔ guard rejects wrongFields before native read (0.3489ms)\n✔ guard refuses a duplicate member in the otherwise nine-row route (0.3374ms)\n✔ guard refuses newly registered methods before related-value read (13.4816ms)\n✔ guard discards permission without usable protection values (15.8743ms)\n✔ guard discards identity without usable protection values (1.3053ms)\n✔ guard discards target without usable protection values (1.3976ms)\n✔ guard discards metadata without usable protection values (2.5698ms)\n✔ guard discards noVersion without usable protection values (1.1972ms)\n✔ guard discards noTable without usable protection values (1.1355ms)\n✔ guard discards noField without usable protection values (1.2423ms)\n✔ guard discards otherClient without usable protection values (1.3768ms)\n✔ guard discards otherIso without usable protection values (1.5302ms)\n✔ guard discards otherLanguage without usable protection values (1.0429ms)\n✔ guard discards otherDimension without usable protection values (2.0334ms)\n✔ guard discards duplicate without usable protection values (1.0491ms)\n✔ guard discards alias without usable protection values (1.3463ms)\n✔ guard discards extraField without usable protection values (1.372ms)\n✔ guard discards overLimit without usable protection values (1.2148ms)\n✔ guard discards control without usable protection values (1.2678ms)\n✔ guard discards fault even when the other observations agree (1.0245ms)\n✔ guard discards drift even when the other observations agree (1.5191ms)\n✔ guard discards changedValue even when the other observations agree (1.4811ms)\n✔ guard discards routeDrift even when the other observations agree (1.535ms)\n✔ guard discards lateLayout even when the other observations agree (1.5463ms)\n✔ guard discards lateApi even when the other observations agree (4.4972ms)\n✔ native guard queries keep ECC implicit client handling for all four related tables (0.7166ms)\n✔ native guard source is bounded, balanced and contains only approved readonly calls (0.8171ms)\n✔ impact report composes selected observations while remaining explicitly partial (13.302ms)\n✔ impact composes whole-set inventories without promoting unsupported tables to values (1.367ms)\n✔ impact inventory changes and failures retract scope evidence; truncation remains partial (1.6037ms)\n✔ one global budget covers comparisons and confirmations across nodes and tables (0.9027ms)\n✔ graph, header and content linkage drift discard every composed observation (1.6831ms)\n✔ unavailable graph or content confirmation never yields target absence or trusted counts (2.1448ms)\n✔ truncation, unresolved keys, cycles and unexpanded references cannot become complete reports (1.06ms)\n✔ scope, language, budgets and undeclared inputs refuse before adapter calls (2.5172ms)\n✔ optional activation audit rechecks reviewed functions and includes without enabling execution (9.7216ms)\n✔ unreviewed identity, mode, source, interface and truncation withhold activation facts (5.1347ms)\n✔ changed or unavailable confirmations discard source verdicts independently of data observations (8.7352ms)\n✔ unreviewed include identity, canonical URI, hash or truncation discards every source-derived policy (10.396ms)\n✔ changed or failed include confirmation cannot retain options or authorization facts (8.2052ms)\n✔ public MCP exposes bounded BC metadata inventory and rejects invalid scope before SAP reads (406.9578ms)\n✔ preflight metadata scope deduplicates definitions and performs fresh complete rechecks (3.8824ms)\n✔ closing ddic drift retracts the preflight (0.7114ms)\n✔ closing repository drift retracts the preflight (0.4721ms)\n✔ closing source drift retracts the preflight (0.3885ms)\n✔ rows, native calls, other connections and non-read operations are never cached (0.573ms)\n✔ simultaneous preflights use isolated baselines and no cache survives a request (0.6141ms)\n✔ a failed shared read remains failed and a closing service failure is not hidden (1.1131ms)\n✔ large nested metadata repetition retains one fresh read per identity at closing (29.6906ms)\n✔ native five-table reader preserves conflicting alias and explicit missing languages (38.2775ms)\n✔ native unit response retains every field including both float display strings (8.8612ms)\n✔ invalid input and client cannot invoke metadata or native API (3.1527ms)\n✔ unattested sourceChanged stops before native invocation (0.404ms)\n✔ unattested layoutChanged stops before native invocation (0.5883ms)\n✔ unattested typeChanged stops before native invocation (7.0813ms)\n✔ unattested bodyChanged stops before native invocation (2.9369ms)\n✔ changed EV_SOURCE_VERSION retracts complete snapshot (4.5732ms)\n✔ changed EV_TARGET_VERSION retracts complete snapshot (4.5533ms)\n✔ changed EV_USER retracts complete snapshot (3.6783ms)\n✔ changed field with reused native version is still rejected (3.6278ms)\n✔ post-call afterTypeChanged retracts snapshot (4.8519ms)\n✔ post-call afterBodyChanged retracts snapshot (5.3726ms)\n✔ source drift after native calls rejects snapshot (3.7459ms)\n✔ native AUTHORIZATION_DENIED returns no successful partial rows (4.6415ms)\n✔ native SOURCE_LIMIT_EXCEEDED returns no successful partial rows (3.2879ms)\n✔ native READ_CHANGED returns no successful partial rows (3.0123ms)\n✔ native HASH_FAILED returns no successful partial rows (2.7604ms)\n✔ native UNREVIEWED returns no successful partial rows (3.1633ms)\n✔ native declared fault fails without retry (3.4762ms)\n✔ wrong alias key, duplicate language, missing field, wrong client and incomplete output fail closed (15.5926ms)\n✔ ECC INSERT REPORT source lines stay within its 255-character limit (1.7211ms)\n✔ public MCP preflight validates eight version/scope fields and dispatches readonly composition (278.0056ms)\n✔ local replay binds nineteen fixed keys and preserves eight related rows including absence (41.968ms)\n✔ schema refuses scope/command input before reads: connectionId (1.7065ms)\n✔ schema refuses scope/command input before reads: bcSetId (0.8142ms)\n✔ schema refuses scope/command input before reads: version (1.994ms)\n✔ schema refuses scope/command input before reads: client (1.055ms)\n✔ schema refuses scope/command input before reads: nativeGuardVersion (0.8033ms)\n✔ schema refuses scope/command input before reads: nativeCandidateVersion (1.0841ms)\n✔ schema refuses scope/command input before reads: activate (0.7236ms)\n✔ schema refuses scope/command input before reads: simulate (0.6793ms)\n✔ schema refuses scope/command input before reads: unitKey (0.7832ms)\n✔ schema refuses scope/command input before reads: transportRequest (0.7074ms)\n✔ stale nativeTargetVersion retracts the full preflight (2.9866ms)\n✔ stale nativeCandidateVersion retracts the full preflight (4.2436ms)\n✔ stale nativeMetadataVersion retracts the full preflight (3.2993ms)\n✔ stale nativeGuardVersion retracts the full preflight (4.5662ms)\n✔ invalid child response retracts full preflight: unbound related metadata version (2.8576ms)\n✔ invalid child response retracts full preflight: missing complete field (2.9964ms)\n✔ invalid child response retracts full preflight: duplicate related key (3.6437ms)\n✔ invalid child response retracts full preflight: foreign ISO key (5.4344ms)\n✔ invalid child response retracts full preflight: method registration (3.9585ms)\n✔ invalid child response retracts full preflight: member table drift (3.2678ms)\n✔ invalid child response retracts full preflight: wrong system (3.992ms)\n✔ invalid child response retracts full preflight: wrong authenticated user (4.1299ms)\n✔ invalid child response retracts full preflight: wrong body identity (3.4477ms)\n✔ invalid child response retracts full preflight: incomplete candidate key (3.4185ms)\n✔ invalid child response retracts full preflight: out of scope candidate (3.6265ms)\n✔ invalid child response retracts full preflight: candidate alias points elsewhere (8.3976ms)\n✔ invalid child response retracts full preflight: duplicate candidate (3.7163ms)\n✔ invalid child response retracts full preflight: unbound native candidate version (3.6353ms)\n✔ invalid child response retracts full preflight: bad diff status (5.553ms)\n✔ invalid child response retracts full preflight: extra diff (4.0215ms)\n✔ invalid child response retracts full preflight: changed API body (1.8185ms)\n✔ invalid child response retracts full preflight: changed API interface (1.8032ms)\n✔ invalid child response retracts full preflight: write capability advertised (2.7532ms)\n✔ invalid child response retracts full preflight: locked snapshot advertised (2.3554ms)\n✔ late snapshot payload drift without changed version retracts full preflight (16.8349ms)\n✔ late route payload drift without changed version retracts full preflight (5.5855ms)\n✔ late guard payload drift without changed version retracts full preflight (7.3141ms)\n✔ late API identity drift retracts full preflight (7.125ms)\n✔ wrong source or client is refused before any child read (0.8407ms)\n✔ read failure has no partial result or retry: snapshot (2.2589ms)\n✔ read failure has no partial result or retry: preview (3.4929ms)\n✔ read failure has no partial result or retry: route (2.3695ms)\n✔ read failure has no partial result or retry: guard (3.1578ms)\n✔ read failure has no partial result or retry: definition (0.7431ms)\n✔ native preview closes control blocks in nesting order (7.7151ms)\n✔ five-table preview returns ten creates and preserved shared PRESS fields with native equality (25.6029ms)\n✔ native field comparison remains authoritative when display strings hide numeric changes (7.3999ms)\n✔ preview refuses scope before conversion (1.1216ms)\n✔ preview refuses unknownSource before conversion (0.4262ms)\n✔ preview refuses staleTarget before conversion (0.4049ms)\n✔ preview refuses alias before conversion (0.5349ms)\n✔ preview refuses definition before conversion (2.293ms)\n✔ preview refuses include before conversion (2.7176ms)\n✔ preview refuses structure before conversion (1.1883ms)\n✔ preview discards fault without a usable candidate (1.7884ms)\n✔ preview discards conversion without a usable candidate (2.221ms)\n✔ preview discards scope without a usable candidate (1.7896ms)\n✔ preview discards partialRows without a usable candidate (2.3688ms)\n✔ preview discards duplicateLanguage without a usable candidate (2.2119ms)\n✔ preview discards badDifference without a usable candidate (4.436ms)\n✔ preview discards badStatus without a usable candidate (4.4828ms)\n✔ preview discards extraDifference without a usable candidate (2.7053ms)\n✔ preview discards version without a usable candidate (2.0699ms)\n✔ preview discards changedCandidate without a usable candidate (1.803ms)\n✔ preview discards changedBefore without a usable candidate (1.7964ms)\n✔ preview discards changedIncludeAfter without a usable candidate (4.6445ms)\n✔ cancelled BC read refuses every later backend dispatch, including a previously captured method (2.2696ms)\n✔ in-flight read settles but cancellation retracts its result and blocks the next call (0.7314ms)\n✔ a read without cancellation preserves SAP errors and does not affect another request (0.7595ms)\n✔ SDK cancellation of public STATE stops the second native call and publishes no before-state (58.0243ms)\n✔ the 8-existing/11-missing pilot produces ten inserts and exact reversed deletes; PRESS is protected (20.1288ms)\n✔ input row and key order do not change the native maintenance plan or digest (6.1495ms)\n✔ all nineteen protected identity/presence/hash combinations are checked, including absent OIB (14.6578ms)\n✔ an existing KNM row or a missing desired row stops preparation before any mutation (9.4466ms)\n✔ wrong/extra/case-changed keys and duplicates cannot masquerade as nineteen valid proofs (5.5886ms)\n✔ server user and all version references must match the immutable owner binding (3.6726ms)\n✔ actual ten-function ABI pins reject source/interface drift, duplicate functions and remote/update modes (4.6881ms)\n✔ each generated standard call has the actual import/export/table names and required parameters (1.322ms)\n✔ the private native kernel cannot mutate protected tables, commit, release locks or dispatch distribution (0.6494ms)\n✔ constructed SCPR_RECORD2 members come from the actually read type pool, including its deep subtables (0.7798ms)\n✔ public preparation continues to require complete command ownership and separately protects PRESS (0.2936ms)\n✔ the batch validates ten unique ordered records before global initialization and mutation, and reports staged counts (0.2902ms)\n✔ live repository parameter descriptions do not change the attested signature (95.2091ms)\n✔ conversion check loads only immutable native before-state, brackets source checks and grants no recovery (58.8053ms)\n✔ untrusted bytes, write flags, scope drift and foreign users cannot reach SAP (36.3719ms)\n✔ native body drift fails before invocation (37.1505ms)\n✔ native signature drift fails before invocation (31.344ms)\n✔ native updateTask drift fails before invocation (31.2498ms)\n✔ native remote drift fails before invocation (55.66ms)\n✔ native group drift fails before invocation (81.8549ms)\n✔ standard conversion source/interface drift and failed metadata reads block native dispatch (40.3015ms)\n✔ changed DDIC definitions cannot reuse a stored before-state, before or after conversion (37.5775ms)\n✔ candidate or conversion code changes during invocation discard success (33.532ms)\n✔ native ROUNDTRIP_LOSSY is preserved without retry or permissive fallback (21.9444ms)\n✔ native DESCRIPTOR_UNSUPPORTED is preserved without retry or permissive fallback (37.2335ms)\n✔ native AUTHORIZATION_DENIED is preserved without retry or permissive fallback (28.536ms)\n✔ native CONVERSION_FAILED is preserved without retry or permissive fallback (48.4175ms)\n✔ native ROW_SCOPE_INVALID is preserved without retry or permissive fallback (39.1595ms)\n✔ unknown native error text and SOAP faults are sanitized (34.8235ms)\n✔ malformed or foreign output EV_USER is rejected (21.1341ms)\n✔ malformed or foreign output EV_CLIENT is rejected (26.1317ms)\n✔ malformed or foreign output EV_STATE_VERSION is rejected (32.0974ms)\n✔ malformed or foreign output EV_LAYOUT_VERSION is rejected (21.8198ms)\n✔ malformed or foreign output EV_ROW_COUNTS is rejected (22.5678ms)\n✔ malformed or foreign output EV_ROUNDTRIP is rejected (20.0032ms)\n✔ malformed or foreign output EV_PROOF_BASE64 is rejected (21.6319ms)\n✔ malformed or foreign output EV_PROOF_VERSION is rejected (23.0091ms)\n✔ malformed or foreign output EV_UNEXPECTED_WRITE is rejected (19.2514ms)\n✔ proof lostRow cannot establish a recovery-value result (21.6778ms)\n✔ proof duplicateRow cannot establish a recovery-value result (21.4121ms)\n✔ proof reordered cannot establish a recovery-value result (16.9816ms)\n✔ proof lossy cannot establish a recovery-value result (17.4836ms)\n✔ proof presence cannot establish a recovery-value result (16.6507ms)\n✔ proof noncanonicalBase64 cannot establish a recovery-value result (14.3281ms)\n✔ field list generation preserves DDIC order with valid single or multiple ABAP operands (1.1301ms)\n✔ candidate has a closed read/conversion call graph and rejects data drift before conversion (1.1601ms)\n✔ CUNI route exposes actual metadata and method identities while leaving execution blocked (21.8235ms)\n✔ route preserves an initial DATS representation \"\" (5.4723ms)\n✔ route preserves an initial DATS representation \"00000000\" (2.9376ms)\n✔ route preserves an initial DATS representation \"0000-00-00\" (3.8344ms)\n✔ route refuses non-initial or malformed audit DATS \"20261005\" (1.5334ms)\n✔ route refuses non-initial or malformed audit DATS \"2026-10-05\" (0.9532ms)\n✔ route refuses non-initial or malformed audit DATS \"0000-00-01\" (1.0184ms)\n✔ route refuses non-initial or malformed audit DATS \"0000000\" (0.892ms)\n✔ route refuses non-initial or malformed audit DATS \" \" (1.0001ms)\n✔ source and target version checks run before route calls (0.4885ms)\n✔ route refuses badBody before native invocation (0.6238ms)\n✔ route refuses badTable before native invocation (0.9358ms)\n✔ route refuses badInclude before native invocation (0.5006ms)\n✔ route discards authorization without usable metadata (2.1342ms)\n✔ route discards missingObject without usable metadata (0.889ms)\n✔ route discards partial without usable metadata (1.1465ms)\n✔ route discards binding without usable metadata (1.2741ms)\n✔ route discards foreign without usable metadata (1.0334ms)\n✔ route discards duplicate without usable metadata (1.105ms)\n✔ route discards memberLimit without usable metadata (1.7731ms)\n✔ route discards methodLimit without usable metadata (1.2335ms)\n✔ route discards methodWildcard without usable metadata (1.0476ms)\n✔ route discards unknownMethod without usable metadata (1.0333ms)\n✔ route discards unexpectedAudit without usable metadata (0.9405ms)\n✔ route discards fault without usable metadata (0.8437ms)\n✔ route discards drift without usable metadata (0.9746ms)\n✔ route discards changedAfter without usable metadata (1.1766ms)\n✔ route discards changedMethod without usable metadata (1.6157ms)\n✔ route discards changedTableAfter without usable metadata (4.6616ms)\n✔ dialog import metadata never enables execution (1.6123ms)\n✔ native route control structures are balanced and contain no mutating command (0.6969ms)\n✔ nested source checks share five projections but retain independent fresh closing reads (12.2726ms)\n✔ source scope refuses unsupported connectionId before dispatch (0.8471ms)\n✔ source scope refuses unsupported bcSetId before dispatch (0.2839ms)\n✔ source scope refuses unsupported version before dispatch (0.1838ms)\n✔ source scope refuses unsupported objectName before dispatch (0.2926ms)\n✔ source scope refuses unsupported maxValues before dispatch (0.1994ms)\n✔ source scope refuses unsupported includeRecordInventory before dispatch (0.2477ms)\n✔ source scope refuses unsupported save before dispatch (0.2441ms)\n✔ fresh closing readFingerprint failure retracts the scope (0.7958ms)\n✔ fresh closing recordInventory failure retracts the scope (0.8342ms)\n✔ fresh closing coverage failure retracts the scope (0.7525ms)\n✔ fresh closing dependencies failure retracts the scope (0.6377ms)\n✔ fresh closing client failure retracts the scope (0.5159ms)\n✔ caller mutation and concurrent requests cannot contaminate the source baseline (1.0449ms)\n✔ failed source reads are retained and closing transport errors are not hidden (0.6171ms)\n✔ ToolService publishes no preflight if shared BC Set source changes at closing (47.1191ms)\n✔ public native before-state MCP routes fixed read-only input and retracts failures without fallback (182.046ms)\n✔ native state composes bounded before/CTS observations and opaque byte validation without write permission (60.051ms)\n✔ wrong scope, omitted versions and external buffers are refused before any dependency call (13.9522ms)\n✔ missing customer API fails before native dispatch or preflight (12.7552ms)\n✔ attestation rejects body/interface/header drift but tolerates named parameter display order (14.1772ms)\n✔ native state refuses EV_SYSTEM drift with no second dispatch (15.6801ms)\n✔ native state refuses EV_CLIENT drift with no second dispatch (11.7661ms)\n✔ native state refuses EV_USER drift with no second dispatch (10.7767ms)\n✔ native state refuses EV_REQUEST drift with no second dispatch (14.816ms)\n✔ native state refuses EV_TASK drift with no second dispatch (17.0304ms)\n✔ native state refuses EV_SOURCE_VERSION drift with no second dispatch (24.5103ms)\n✔ native state refuses EV_TARGET_VERSION drift with no second dispatch (20.664ms)\n✔ native state refuses EV_CANDIDATE_VERSION drift with no second dispatch (15.1531ms)\n✔ native state refuses EV_METADATA_VERSION drift with no second dispatch (11.2383ms)\n✔ native state refuses EV_GUARD_VERSION drift with no second dispatch (19.8468ms)\n✔ native state refuses EV_CTS_VERSION drift with no second dispatch (12.5099ms)\n✔ native state refuses EV_DATA_BYTES drift with no second dispatch (13.7829ms)\n✔ native state refuses EV_DATA_BASE64 drift with no second dispatch (11.8403ms)\n✔ native state refuses EV_STATE_VERSION drift with no second dispatch (14.8523ms)\n✔ native state refuses EV_ROUNDTRIP drift with no second dispatch (10.11ms)\n✔ native state refuses EV_ROW_COUNTS drift with no second dispatch (11.5534ms)\n✔ noncanonical Base64 is refused even if permissive decoder returns the same bytes (13.1707ms)\n✔ native state DEPENDENCY_FAILED never publishes partial data or retries (11.9507ms)\n✔ native state DEPENDENCY_REFUSED never publishes partial data or retries (15.2347ms)\n✔ native state ROUNDTRIP_FAILED never publishes partial data or retries (9.3944ms)\n✔ native state VERSION_CONFLICT never publishes partial data or retries (15.5584ms)\n✔ native state AUTHORIZATION_DENIED never publishes partial data or retries (10.9888ms)\n✔ native state UNRECOGNIZED never publishes partial data or retries (9.6112ms)\n✔ SOAP fault is refused even when success-shaped outputs exist (11.7445ms)\n✔ second native response drift retracts the whole result (9.8489ms)\n✔ closing CTS and preflight reads plus final API identity are mandatory (37.7043ms)\n✔ schema-valid preflight drift in keys, presence or API identities is rejected (12.7034ms)\n✔ preflight missing/duplicate keys never reach the native API (14.5056ms)\n✔ closing CTS count-only drift is rejected even with identical buffer digest (18.0879ms)\n✔ candidate stays ECC7.31/RSSOURCE compatible and has no mutating statements (1.2678ms)\n✔ type pool read preserves rows and pins the sole active native request (5.3377ms)\n✔ type pool scope cannot become a generic program or cross-client source reader (1.3169ms)\n✔ type pool reader refuses changed API or layout before native dispatch (2.847ms)\n✔ post-read source drift and metadata failures retract the result without a retry (1.3389ms)\n✔ native source identity, row limits, header and transport errors cannot return success (27.7283ms)\n✔ the URI tool exposes native source provenance and preserves ordinary URI behavior (1.5771ms)\n✔ actual SOAP backend preserves CHAR255 indentation only for the standard source reader (48.1757ms)\nℹ tests 453\nℹ suites 0\nℹ pass 453\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3356.3815\n",
+      "error": ""
+    },
+    "format": {
+      "started": "2026-10-06T23:47:10.132Z",
+      "finished": "2026-10-06T23:47:10.468Z",
+      "command": [
+        "node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "src/mcp.ts",
+        "src/configuration-bc-read-cancellation.ts",
+        "test/configuration-bc-read-cancellation.test.ts"
+      ],
+      "exitCode": 0,
+      "output": "Checking formatting...\nAll matched files use Prettier code style!\n",
+      "error": ""
+    },
+    "headless": {
+      "started": "2026-10-06T23:47:10.468Z",
+      "finished": "2026-10-06T23:47:10.600Z",
+      "command": [
+        "node",
+        "scripts/verify-headless.mjs",
+        "--source-only"
+      ],
+      "exitCode": 0,
+      "output": "Headless verification PASS (1 tree(s), no VS Code host dependency)\n",
+      "error": ""
+    }
+  },
+  "initialCompileFailure": {
+    "started": "2026-10-06T23:45:45.745Z",
+    "finished": "2026-10-06T23:45:55.742Z",
+    "command": [
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "--outDir",
+      ".cache/spro-r68/runtime/dist",
+      "--incremental",
+      "false"
+    ],
+    "exitCode": 2,
+    "output": "src/configuration-bc-read-cancellation.ts(16,37): error TS2339: Property 'then' does not exist on type '{}'.\r\ntest/configuration-bc-read-cancellation.test.ts(34,34): error TS2345: Argument of type '{ functionName: string; outputParameters: never[]; }' is not assignable to parameter of type 'RemoteFunctionRequest'.\r\n  Property 'inputParameters' is missing in type '{ functionName: string; outputParameters: never[]; }' but required in type 'RemoteFunctionRequest'.\r\ntest/configuration-bc-read-cancellation.test.ts(52,53): error TS2345: Argument of type '{ functionName: string; outputParameters: never[]; }' is not assignable to parameter of type 'RemoteFunctionRequest'.\r\n  Property 'inputParameters' is missing in type '{ functionName: string; outputParameters: never[]; }' but required in type 'RemoteFunctionRequest'.\r\ntest/configuration-bc-read-cancellation.test.ts(60,51): error TS2345: Argument of type '{ functionName: string; outputParameters: never[]; }' is not assignable to parameter of type 'RemoteFunctionRequest'.\r\n  Property 'inputParameters' is missing in type '{ functionName: string; outputParameters: never[]; }' but required in type 'RemoteFunctionRequest'.\r\ntest/configuration-bc-read-cancellation.test.ts(80,39): error TS2345: Argument of type '{ functionName: string; outputParameters: never[]; }' is not assignable to parameter of type 'RemoteFunctionRequest'.\r\n  Property 'inputParameters' is missing in type '{ functionName: string; outputParameters: never[]; }' but required in type 'RemoteFunctionRequest'.\r\n",
+    "error": ""
+  },
+  "runtimeSummary": {
+    "started": "2026-10-06T23:40:57.449Z",
+    "finished": "2026-10-06T23:42:21.116Z",
+    "status": "active_owner_attestation_and_remaining_readonly_acceptance_passed",
+    "elapsedMs": 83667,
+    "remoteCalls": 348,
+    "histogram": {
+      "RFC_READ_TABLE": 240,
+      "Z_ORVANTA_CFG_BC_READ": 64,
+      "Z_ORVANTA_CFG_BC_ROUTE": 24,
+      "Z_ORVANTA_CFG_BC_GUARD": 8,
+      "Z_ORVANTA_CFG_BC_PREVIEW": 4,
+      "Z_ORVANTA_CFG_BC_CTS": 4,
+      "Z_ORVANTA_CFG_BC_STATE": 2,
+      "Z_ORVANTA_CFG_BC_EFFECTS": 1,
+      "Z_ORVANTA_CFG_BC_RECONCILE": 1
+    },
+    "publicCalls": [
+      {
+        "name": "read_configuration_bc_native_snapshot",
+        "reusedVersionBoundInputOnly": true
+      },
+      {
+        "name": "preview_configuration_bc_native",
+        "reusedVersionBoundInputOnly": true
+      },
+      {
+        "name": "inspect_configuration_bc_route",
+        "reusedVersionBoundInputOnly": true
+      },
+      {
+        "name": "read_configuration_bc_guard",
+        "reusedVersionBoundInputOnly": true
+      },
+      {
+        "name": "read_configuration_bc_cts_snapshot",
+        "reusedVersionBoundInputOnly": true
+      },
+      {
+        "name": "read_configuration_bc_before_state",
+        "reusedVersionBoundInputOnly": false,
+        "elapsedMs": 75574,
+        "remoteCalls": 346,
+        "isError": false
+      },
+      {
+        "name": "read_configuration_bc_effects",
+        "reusedVersionBoundInputOnly": false,
+        "elapsedMs": 1570,
+        "remoteCalls": 1,
+        "isError": false
+      }
+    ],
+    "attestation": "c87ac62e6d8888bcc4cee2559ea2f096d083b8fabda11924659d2e2a0e095811",
+    "counts": {
+      "T006": 0,
+      "T006A": 0,
+      "T006B": 0,
+      "T006C": 0,
+      "T006D": 1,
+      "T006I": 1,
+      "T006J": 3,
+      "T006T": 3,
+      "T006_OIB": 0
+    },
+    "effectsCounts": {
+      "matched": 0,
+      "records": 0,
+      "headers": 0,
+      "variables": 0,
+      "links": 0
+    },
+    "beforeStateReference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+    "effectsStateReference": "456fa5b39b3e2fe04968e76d202a8429428d6e02c71ac5592e5eef69d91ef867",
+    "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+    "configurationWrites": 0,
+    "configurationCtsWrites": 0,
+    "applyCalls": 0,
+    "recoverCalls": 0
+  },
+  "nativeNoHistory": {
+    "outputs": {
+      "EV_CODE": "HISTORY_UNPROVEN",
+      "EV_SYSTEM": "GR2",
+      "EV_CLIENT": "200",
+      "EV_USER": "WYS",
+      "EV_OPERATION_HASH": "e04c1b4f3b7142607295db83c3d11fe9106412fe63d3acd25eb5bc39acde0eac",
+      "EV_BEFORE_REFERENCE": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+      "EV_COMMIT": "not_started",
+      "EV_PHASE": "precheck",
+      "EV_CONFIGURATION": "unknown",
+      "EV_PROTECTED": "unknown",
+      "EV_CTS": "unknown",
+      "EV_EFFECTS": "unknown",
+      "EV_LOCKS": "released",
+      "EV_PROTOCOL": "unknown",
+      "EV_ACT_ID": "",
+      "EV_FRAME_BASE64": "",
+      "EV_FRAME_VERSION": "",
+      "EV_MSGID": "",
+      "EV_MSGNO": "",
+      "EV_MSGV1": "",
+      "EV_MSGV2": "",
+      "EV_MSGV3": "",
+      "EV_MSGV4": ""
+    }
+  },
+  "publicMissingReceipt": {
+    "refused": true,
+    "sapDispatched": false,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Error invoking reconcile_configuration_bc_execution: Error: CONFIGURATION_BC_RECONCILE_RECEIPT_INVALID"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "observations": {
+    "native": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "client": "200",
+      "readOnly": true,
+      "activationAvailable": false,
+      "saveAvailable": false,
+      "snapshot": false,
+      "versionOrigin": "sap_sha256_native_data_buffer",
+      "versionScope": "complete_five_table_rows_including_missing_rows_and_FLTP; GR2/200/user/EHS_CUNI_KNM/N",
+      "sourceValueFingerprints": {
+        "T006": "68445907a7e02498cba125b359631f8121b8f411f1651f6b8a32cbab27d1cbb1",
+        "T006A": "b3adb6899b5fe95f18838d2bf2eec361f3359d20fcb6d7b9d5f10f6e33df0c2b",
+        "T006B": "41f208bfc3d3a11116fd4d102ee064541ecab5dedcc3fca1024cf6c87d9bad51",
+        "T006C": "6ca82a7a54b68e4e0dfa81d93ff428b37461463719cd31748155feb7f3b01d0f",
+        "T006D": "f71a3ed75487b48a905e0a79c7bf0f5569e3114dad901c12fca34899cb90057c"
+      },
+      "bodyFingerprint": "c2a86940b2fae1344610508fb48341a5952ef83f66a588870dc02f4560911c67",
+      "states": [
+        {
+          "tableName": "T006",
+          "key": {
+            "MANDT": "200",
+            "MSEHI": "KNM"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006A",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEHI": "KNM"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006A",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEHI": "KNM"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006A",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEHI": "KNM"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006B",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH3": "KNM"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006B",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH3": "KNM"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006B",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH3": "KNM"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006C",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH6": "kN/m2"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006C",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH6": "kN/m2"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006C",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH6": "kN/m2"
+          },
+          "status": "missing",
+          "mappingConflict": false
+        },
+        {
+          "tableName": "T006D",
+          "key": {
+            "MANDT": "200",
+            "DIMID": "PRESS"
+          },
+          "status": "present",
+          "mappingConflict": false
+        }
+      ],
+      "native": {
+        "EV_CODE": "READ_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "ET_T006": [],
+        "ET_T006A": [],
+        "ET_T006B": [],
+        "ET_T006C": [],
+        "ET_T006D": [
+          {
+            "MANDT": "200",
+            "DIMID": "PRESS",
+            "LENG": "-1",
+            "MASS": "1",
+            "TIMEX": "-2",
+            "ECURR": "0",
+            "TEMP": "0",
+            "MOLQU": "0",
+            "LIGHT": "0",
+            "MSSIE": "PA",
+            "TEMP_DEP": "",
+            "PRESS_DEP": ""
+          }
+        ]
+      },
+      "evidence": {
+        "apiInvocations": 2,
+        "apiInvocationLimit": 2,
+        "sourceReaderInvocations": 10,
+        "sourceReaderInvocationLimit": 10,
+        "metadataReads": 248,
+        "metadataReadLimit": 248
+      },
+      "warning": "Sequential repeated observations are not a locked snapshot. SOAP fields are display strings; native versions retain full typed rows, float fields and padding. No language overlay, value conversion, activation, simulation, CTS recording or write approval is produced."
+    },
+    "preview": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+      "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+      "client": "200",
+      "readOnly": true,
+      "activationAvailable": false,
+      "saveAvailable": false,
+      "executable": false,
+      "simulation": false,
+      "snapshot": false,
+      "candidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+      "versionOrigin": "sap_sha256_native_data_buffer",
+      "policy": "CREATE_INITIAL_OR_UPDATE_USE",
+      "languagePolicy": {
+        "sourcePlaceholder": "D",
+        "selected": [
+          "1",
+          "D",
+          "E"
+        ],
+        "approvedForActivation": false
+      },
+      "clientMapping": {
+        "source": "001",
+        "target": "200"
+      },
+      "omittedFields": {
+        "T006": [
+          "PRESS_VAL",
+          "PRESS_UNIT"
+        ],
+        "T006D": [
+          "PRESS_DEP"
+        ]
+      },
+      "rows": [
+        {
+          "tableName": "T006",
+          "key": {
+            "MANDT": "200",
+            "MSEHI": "KNM"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "MSEHI": "KNM",
+            "KZEX3": "X",
+            "KZEX6": "X",
+            "ANDEC": "0",
+            "KZKEH": "X",
+            "KZWOB": "",
+            "KZ1EH": "",
+            "KZ2EH": "",
+            "DIMID": "PRESS",
+            "ZAEHL": "1000",
+            "NENNR": "1",
+            "EXP10": "0",
+            "ADDKO": "0.000000",
+            "EXPON": "0",
+            "DECAN": "3",
+            "ISOCODE": "KPA",
+            "PRIMARY": "",
+            "TEMP_VALUE": "0",
+            "TEMP_UNIT": "",
+            "FAMUNIT": "",
+            "PRESS_VAL": "0",
+            "PRESS_UNIT": ""
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "KZEX3",
+              "status": "NEW",
+              "before": null,
+              "after": "X",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "KZEX6",
+              "status": "NEW",
+              "before": null,
+              "after": "X",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "ANDEC",
+              "status": "NEW",
+              "before": null,
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "KZKEH",
+              "status": "NEW",
+              "before": null,
+              "after": "X",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "KZWOB",
+              "status": "NEW",
+              "before": null,
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "KZ1EH",
+              "status": "NEW",
+              "before": null,
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "KZ2EH",
+              "status": "NEW",
+              "before": null,
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "DIMID",
+              "status": "NEW",
+              "before": null,
+              "after": "PRESS",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "ZAEHL",
+              "status": "NEW",
+              "before": null,
+              "after": "1000",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "NENNR",
+              "status": "NEW",
+              "before": null,
+              "after": "1",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "EXP10",
+              "status": "NEW",
+              "before": null,
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "ADDKO",
+              "status": "NEW",
+              "before": null,
+              "after": "0.000000",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "EXPON",
+              "status": "NEW",
+              "before": null,
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "DECAN",
+              "status": "NEW",
+              "before": null,
+              "after": "3",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "ISOCODE",
+              "status": "NEW",
+              "before": null,
+              "after": "KPA",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "PRIMARY",
+              "status": "NEW",
+              "before": null,
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "TEMP_VALUE",
+              "status": "NEW",
+              "before": null,
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "TEMP_UNIT",
+              "status": "NEW",
+              "before": null,
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "FAMUNIT",
+              "status": "NEW",
+              "before": null,
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "PRESS_VAL",
+              "status": "NEW",
+              "before": null,
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "PRESS_UNIT",
+              "status": "NEW",
+              "before": null,
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006A",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEHI": "KNM"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEHI": "KNM",
+            "MSEH3": "KNM",
+            "MSEH6": "kN/m2",
+            "MSEHT": "kN/m2",
+            "MSEHL": "每平方米千牛顿"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "1",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH3",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH6",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHT",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHL",
+              "status": "NEW",
+              "before": null,
+              "after": "每平方米千牛顿",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006A",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEHI": "KNM"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEHI": "KNM",
+            "MSEH3": "KNM",
+            "MSEH6": "kN/m2",
+            "MSEHT": "kN/m2",
+            "MSEHL": "Kilonewton pro Quadratmeter"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "D",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH3",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH6",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHT",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHL",
+              "status": "NEW",
+              "before": null,
+              "after": "Kilonewton pro Quadratmeter",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006A",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEHI": "KNM"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEHI": "KNM",
+            "MSEH3": "KNM",
+            "MSEH6": "kN/m2",
+            "MSEHT": "kN/m2",
+            "MSEHL": "Kilonewton per square meter"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "E",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH3",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH6",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHT",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHL",
+              "status": "NEW",
+              "before": null,
+              "after": "Kilonewton per square meter",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006B",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH3": "KNM"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH3": "KNM",
+            "MSEHI": "KNM"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "1",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH3",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006B",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH3": "KNM"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH3": "KNM",
+            "MSEHI": "KNM"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "D",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH3",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006B",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH3": "KNM"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH3": "KNM",
+            "MSEHI": "KNM"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "E",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH3",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006C",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH6": "kN/m2"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH6": "kN/m2",
+            "MSEHI": "KNM"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "1",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH6",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006C",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH6": "kN/m2"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH6": "kN/m2",
+            "MSEHI": "KNM"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "D",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH6",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006C",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH6": "kN/m2"
+          },
+          "status": "create",
+          "before": null,
+          "after": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH6": "kN/m2",
+            "MSEHI": "KNM"
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "NEW",
+              "before": null,
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "SPRAS",
+              "status": "NEW",
+              "before": null,
+              "after": "E",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEH6",
+              "status": "NEW",
+              "before": null,
+              "after": "kN/m2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSEHI",
+              "status": "NEW",
+              "before": null,
+              "after": "KNM",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": false
+        },
+        {
+          "tableName": "T006D",
+          "key": {
+            "MANDT": "200",
+            "DIMID": "PRESS"
+          },
+          "status": "unchanged",
+          "before": {
+            "MANDT": "200",
+            "DIMID": "PRESS",
+            "LENG": "-1",
+            "MASS": "1",
+            "TIMEX": "-2",
+            "ECURR": "0",
+            "TEMP": "0",
+            "MOLQU": "0",
+            "LIGHT": "0",
+            "MSSIE": "PA",
+            "TEMP_DEP": "",
+            "PRESS_DEP": ""
+          },
+          "after": {
+            "MANDT": "200",
+            "DIMID": "PRESS",
+            "LENG": "-1",
+            "MASS": "1",
+            "TIMEX": "-2",
+            "ECURR": "0",
+            "TEMP": "0",
+            "MOLQU": "0",
+            "LIGHT": "0",
+            "MSSIE": "PA",
+            "TEMP_DEP": "",
+            "PRESS_DEP": ""
+          },
+          "differences": [
+            {
+              "field": "MANDT",
+              "status": "EQL",
+              "before": "200",
+              "after": "200",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "DIMID",
+              "status": "EQL",
+              "before": "PRESS",
+              "after": "PRESS",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "LENG",
+              "status": "EQL",
+              "before": "-1",
+              "after": "-1",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MASS",
+              "status": "EQL",
+              "before": "1",
+              "after": "1",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "TIMEX",
+              "status": "EQL",
+              "before": "-2",
+              "after": "-2",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "ECURR",
+              "status": "EQL",
+              "before": "0",
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "TEMP",
+              "status": "EQL",
+              "before": "0",
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MOLQU",
+              "status": "EQL",
+              "before": "0",
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "LIGHT",
+              "status": "EQL",
+              "before": "0",
+              "after": "0",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "MSSIE",
+              "status": "EQL",
+              "before": "PA",
+              "after": "PA",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "TEMP_DEP",
+              "status": "EQL",
+              "before": "",
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            },
+            {
+              "field": "PRESS_DEP",
+              "status": "EQL",
+              "before": "",
+              "after": "",
+              "comparisonOrigin": "sap_typed_field_comparison"
+            }
+          ],
+          "sharedDimension": true
+        }
+      ],
+      "native": {
+        "EV_CODE": "PREVIEW_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "EV_CANDIDATE_VERSION": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "EV_DIFFERENCES": "T006:1:MANDT:NEW;T006:1:MSEHI:NEW;T006:1:KZEX3:NEW;T006:1:KZEX6:NEW;T006:1:ANDEC:NEW;T006:1:KZKEH:NEW;T006:1:KZWOB:NEW;T006:1:KZ1EH:NEW;T006:1:KZ2EH:NEW;T006:1:DIMID:NEW;T006:1:ZAEHL:NEW;T006:1:NENNR:NEW;T006:1:EXP10:NEW;T006:1:ADDKO:NEW;T006:1:EXPON:NEW;T006:1:DECAN:NEW;T006:1:ISOCODE:NEW;T006:1:PRIMARY:NEW;T006:1:TEMP_VALUE:NEW;T006:1:TEMP_UNIT:NEW;T006:1:FAMUNIT:NEW;T006:1:PRESS_VAL:NEW;T006:1:PRESS_UNIT:NEW;T006A:1:MANDT:NEW;T006A:1:SPRAS:NEW;T006A:1:MSEHI:NEW;T006A:1:MSEH3:NEW;T006A:1:MSEH6:NEW;T006A:1:MSEHT:NEW;T006A:1:MSEHL:NEW;T006A:2:MANDT:NEW;T006A:2:SPRAS:NEW;T006A:2:MSEHI:NEW;T006A:2:MSEH3:NEW;T006A:2:MSEH6:NEW;T006A:2:MSEHT:NEW;T006A:2:MSEHL:NEW;T006A:3:MANDT:NEW;T006A:3:SPRAS:NEW;T006A:3:MSEHI:NEW;T006A:3:MSEH3:NEW;T006A:3:MSEH6:NEW;T006A:3:MSEHT:NEW;T006A:3:MSEHL:NEW;T006B:1:MANDT:NEW;T006B:1:SPRAS:NEW;T006B:1:MSEH3:NEW;T006B:1:MSEHI:NEW;T006B:2:MANDT:NEW;T006B:2:SPRAS:NEW;T006B:2:MSEH3:NEW;T006B:2:MSEHI:NEW;T006B:3:MANDT:NEW;T006B:3:SPRAS:NEW;T006B:3:MSEH3:NEW;T006B:3:MSEHI:NEW;T006C:1:MANDT:NEW;T006C:1:SPRAS:NEW;T006C:1:MSEH6:NEW;T006C:1:MSEHI:NEW;T006C:2:MANDT:NEW;T006C:2:SPRAS:NEW;T006C:2:MSEH6:NEW;T006C:2:MSEHI:NEW;T006C:3:MANDT:NEW;T006C:3:SPRAS:NEW;T006C:3:MSEH6:NEW;T006C:3:MSEHI:NEW;T006D:1:MANDT:EQL;T006D:1:DIMID:EQL;T006D:1:LENG:EQL;T006D:1:MASS:EQL;T006D:1:TIMEX:EQL;T006D:1:ECURR:EQL;T006D:1:TEMP:EQL;T006D:1:MOLQU:EQL;T006D:1:LIGHT:EQL;T006D:1:MSSIE:EQL;T006D:1:TEMP_DEP:EQL;T006D:1:PRESS_DEP:EQL;",
+        "EV_ERROR_FIELD": "",
+        "ET_T006": [
+          {
+            "MANDT": "200",
+            "MSEHI": "KNM",
+            "KZEX3": "X",
+            "KZEX6": "X",
+            "ANDEC": "0",
+            "KZKEH": "X",
+            "KZWOB": "",
+            "KZ1EH": "",
+            "KZ2EH": "",
+            "DIMID": "PRESS",
+            "ZAEHL": "1000",
+            "NENNR": "1",
+            "EXP10": "0",
+            "ADDKO": "0.000000",
+            "EXPON": "0",
+            "DECAN": "3",
+            "ISOCODE": "KPA",
+            "PRIMARY": "",
+            "TEMP_VALUE": "0",
+            "TEMP_UNIT": "",
+            "FAMUNIT": "",
+            "PRESS_VAL": "0",
+            "PRESS_UNIT": ""
+          }
+        ],
+        "ET_T006A": [
+          {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEHI": "KNM",
+            "MSEH3": "KNM",
+            "MSEH6": "kN/m2",
+            "MSEHT": "kN/m2",
+            "MSEHL": "每平方米千牛顿"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEHI": "KNM",
+            "MSEH3": "KNM",
+            "MSEH6": "kN/m2",
+            "MSEHT": "kN/m2",
+            "MSEHL": "Kilonewton pro Quadratmeter"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEHI": "KNM",
+            "MSEH3": "KNM",
+            "MSEH6": "kN/m2",
+            "MSEHT": "kN/m2",
+            "MSEHL": "Kilonewton per square meter"
+          }
+        ],
+        "ET_T006B": [
+          {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH3": "KNM",
+            "MSEHI": "KNM"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH3": "KNM",
+            "MSEHI": "KNM"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH3": "KNM",
+            "MSEHI": "KNM"
+          }
+        ],
+        "ET_T006C": [
+          {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEH6": "kN/m2",
+            "MSEHI": "KNM"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "MSEH6": "kN/m2",
+            "MSEHI": "KNM"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "MSEH6": "kN/m2",
+            "MSEHI": "KNM"
+          }
+        ],
+        "ET_T006D": [
+          {
+            "MANDT": "200",
+            "DIMID": "PRESS",
+            "LENG": "-1",
+            "MASS": "1",
+            "TIMEX": "-2",
+            "ECURR": "0",
+            "TEMP": "0",
+            "MOLQU": "0",
+            "LIGHT": "0",
+            "MSSIE": "PA",
+            "TEMP_DEP": "",
+            "PRESS_DEP": ""
+          }
+        ]
+      },
+      "bodyFingerprint": "3f1566e6527ff0c8d32025815a155bdbbe5dd177e23216472ee285e974bd00cc",
+      "evidence": {
+        "apiInvocations": 2,
+        "apiInvocationLimit": 2,
+        "metadataReads": 28,
+        "metadataReadLimit": 28,
+        "before": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        },
+        "after": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        }
+      },
+      "warning": "Hypothetical standard USE update: new rows start initial; existing rows retain omitted fields. Source-client and language overlay are explicit preview choices, not approved activation options. Shared PRESS affects other units. No standard loader, activation, simulation, CTS, logs, commit or configuration write is called. Sequential repeated observations are not locked snapshots; SOAP values are display strings, equality and versions originate in SAP."
+    },
+    "route": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+      "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+      "client": "200",
+      "readOnly": true,
+      "executable": false,
+      "activationAvailable": false,
+      "methodExecutionAvailable": false,
+      "snapshot": false,
+      "metadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+      "versionOrigin": "sap_sha256_native_data_buffer",
+      "object": {
+        "name": "CUNI",
+        "type": "T",
+        "transportType": "TDAT"
+      },
+      "importHandling": "unknown",
+      "transportHandling": "automatic",
+      "members": [
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "X",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006A",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006B",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006C",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006D",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "X",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006I",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "X",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006J",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006T",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        },
+        {
+          "OBJECTNAME": "CUNI",
+          "OBJECTTYPE": "T",
+          "TABNAME": "T006_OIB",
+          "COVER": "",
+          "CANDIDATE": "",
+          "DDIC": "",
+          "PRIM_TABLE": "",
+          "VIEWGRANT": "",
+          "TAB_FILLED": ""
+        }
+      ],
+      "methods": [],
+      "methodSources": [],
+      "otherMemberTables": [
+        "T006I",
+        "T006J",
+        "T006T",
+        "T006_OIB"
+      ],
+      "unresolved": [
+        "STANDARD_ACTIVATION_DEPENDENCIES_NOT_ATTESTED",
+        "AFTER_IMPORT_DEPENDENCIES_NOT_ATTESTED",
+        "CTS_AND_RECOVERY_NOT_ATTESTED"
+      ],
+      "native": {
+        "EV_CODE": "ROUTE_READ_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "ET_OBJH": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "CLIDEP": "X",
+            "LANGDEP": "X",
+            "ALEDEP": "",
+            "OBJCATEG": "CUST",
+            "TRCOMPLETE": "",
+            "TRDISJUNCT": "",
+            "PHASELEVEL": "0",
+            "LOCKMETH": "",
+            "TADIRCMETH": "",
+            "CHECKID": "",
+            "OBJNAMELEN": "00",
+            "PROTECT": "",
+            "OBJTRANSP": "2",
+            "LUSER": "",
+            "LDATE": "0000-00-00",
+            "OBJNAMECLS": "",
+            "CURSETTING": "",
+            "OBJHASADDR": "",
+            "IMPORTABLE": "",
+            "OBJCHARSET": "",
+            "MCCATEGORY": "",
+            "MCDOCUID": ""
+          }
+        ],
+        "ET_OBJS": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006A",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006B",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006C",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006D",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006I",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006J",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006T",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006_OIB",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          }
+        ],
+        "ET_OBJM": []
+      },
+      "bodyFingerprint": "4df5d912da76a1a117c14802be1a1811a7631c33167e7995ac09a320bc969ea3",
+      "evidence": {
+        "apiInvocations": 2,
+        "apiInvocationLimit": 2,
+        "metadataReads": 12,
+        "metadataReadLimit": 32,
+        "before": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        },
+        "after": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        }
+      },
+      "warning": "Observed CUNI/T metadata and method source identities only. No dynamic method, GUI routine, activation, simulation, CTS, log or configuration write is invoked. Source readback does not prove an executable activation route or its dependencies. Repeated sequential observations are not locked snapshots."
+    },
+    "guard": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+      "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+      "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+      "client": "200",
+      "readOnly": true,
+      "executable": false,
+      "activationAvailable": false,
+      "methodExecutionAvailable": false,
+      "snapshot": false,
+      "guardVersion": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+      "versionOrigin": "sap_sha256_native_data_buffer",
+      "states": [
+        {
+          "tableName": "T006I",
+          "key": {
+            "CLIENT": "200",
+            "ISOCODE": "KPA"
+          },
+          "status": "present",
+          "values": {
+            "CLIENT": "200",
+            "ISOCODE": "KPA"
+          }
+        },
+        {
+          "tableName": "T006J",
+          "key": {
+            "CLIENT": "200",
+            "LANGU": "1",
+            "ISOCODE": "KPA"
+          },
+          "status": "present",
+          "values": {
+            "CLIENT": "200",
+            "LANGU": "1",
+            "ISOCODE": "KPA",
+            "ISOTXT": "千帕"
+          }
+        },
+        {
+          "tableName": "T006J",
+          "key": {
+            "CLIENT": "200",
+            "LANGU": "D",
+            "ISOCODE": "KPA"
+          },
+          "status": "present",
+          "values": {
+            "CLIENT": "200",
+            "LANGU": "D",
+            "ISOCODE": "KPA",
+            "ISOTXT": "Kilopascal"
+          }
+        },
+        {
+          "tableName": "T006J",
+          "key": {
+            "CLIENT": "200",
+            "LANGU": "E",
+            "ISOCODE": "KPA"
+          },
+          "status": "present",
+          "values": {
+            "CLIENT": "200",
+            "LANGU": "E",
+            "ISOCODE": "KPA",
+            "ISOTXT": "Kilopascal"
+          }
+        },
+        {
+          "tableName": "T006T",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "DIMID": "PRESS"
+          },
+          "status": "present",
+          "values": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "DIMID": "PRESS",
+            "TXDIM": "压力"
+          }
+        },
+        {
+          "tableName": "T006T",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "DIMID": "PRESS"
+          },
+          "status": "present",
+          "values": {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "DIMID": "PRESS",
+            "TXDIM": "Druck"
+          }
+        },
+        {
+          "tableName": "T006T",
+          "key": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "DIMID": "PRESS"
+          },
+          "status": "present",
+          "values": {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "DIMID": "PRESS",
+            "TXDIM": "Pressure"
+          }
+        },
+        {
+          "tableName": "T006_OIB",
+          "key": {
+            "MANDT": "200",
+            "MSEHI": "KNM"
+          },
+          "status": "missing",
+          "values": null
+        }
+      ],
+      "scope": {
+        "object": {
+          "name": "CUNI",
+          "type": "T",
+          "transportType": "TDAT"
+        },
+        "keyCount": 8,
+        "memberTables": [
+          "T006I",
+          "T006J",
+          "T006T",
+          "T006_OIB"
+        ],
+        "allCuniKeys": false
+      },
+      "native": {
+        "EV_CODE": "GUARD_READ_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "EV_GUARD_VERSION": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+        "ET_T006I": [
+          {
+            "CLIENT": "200",
+            "ISOCODE": "KPA"
+          }
+        ],
+        "ET_T006J": [
+          {
+            "CLIENT": "200",
+            "LANGU": "1",
+            "ISOCODE": "KPA",
+            "ISOTXT": "千帕"
+          },
+          {
+            "CLIENT": "200",
+            "LANGU": "D",
+            "ISOCODE": "KPA",
+            "ISOTXT": "Kilopascal"
+          },
+          {
+            "CLIENT": "200",
+            "LANGU": "E",
+            "ISOCODE": "KPA",
+            "ISOTXT": "Kilopascal"
+          }
+        ],
+        "ET_T006T": [
+          {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "DIMID": "PRESS",
+            "TXDIM": "压力"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "D",
+            "DIMID": "PRESS",
+            "TXDIM": "Druck"
+          },
+          {
+            "MANDT": "200",
+            "SPRAS": "E",
+            "DIMID": "PRESS",
+            "TXDIM": "Pressure"
+          }
+        ],
+        "ET_T006_OIB": []
+      },
+      "bodyFingerprint": "47b47bd22c5a4c48575e88512262a95c7ab64293c9a4f7f5e2d0b69b014a091e",
+      "evidence": {
+        "apiInvocations": 2,
+        "apiInvocationLimit": 2,
+        "metadataReads": 10,
+        "metadataReadLimit": 10,
+        "routeReads": 2,
+        "routeReadLimit": 2
+      },
+      "warning": "Complete fields for eight fixed related keys only. Missing rows are observations, not validation or permission to create. Source/target/route versions and sequential reads are bound; no locked snapshot, whole CUNI coverage, activation, methods, configuration/CTS/log writes or recovery is provided."
+    },
+    "cts": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "system": "GR2",
+      "client": "200",
+      "user": "WYS",
+      "readOnly": true,
+      "executable": false,
+      "activationAvailable": false,
+      "snapshot": false,
+      "recoveryAvailable": false,
+      "scope": "two_complete_transport_roots_not_a_CUNI_projection",
+      "counts": {
+        "objects": 2,
+        "keys": 2,
+        "stringKeys": 0
+      },
+      "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+      "buffer": {
+        "format": "sap_export_data_buffer_base64",
+        "encoding": "opaque_native_typed_data",
+        "data": "/wYBAQECgAA0MTAyAAAAAAEAAAAAABAAAABCBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNvAAAABAARwBSADIAIAAgACAAIAAgvQEAAAAAAAYAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAEMATABJAEUATgBUvAAAAAYAMgAwADC9AQAAAAAAGAAAAEYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVQBTAEUAUrwAAAAYAFcAWQBTACAAIAAgACAAIAAgACAAIAAgvQcTAAAAAAgAAABKBgAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAQwBfAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLAw4AAAAApAAAAdkHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKSqAAAAAAAoqgAAAAAAAqoAAAAAAAKqAAAAAAAUqgAAAAAACKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACkvgAAAKQAAAACvAAAAKQARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgAFcARABHAFIAMwAgACAAIAAgACAAIAAgAEMAVQBTAFQAVwBZAFMAIAAgACAAIAAgACAAIAAgACAAMgAwADIANgAwADkAMAAxADEAMQAwADIANAA0ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAAApABHAFIAMgBLADkAMgAzADQAMwAwACAAIAAgACAAIAAgACAAIAAgACAAUQBEACAAIAAgACAAIAAgACAAIAAgACAAQwBVAFMAVABXAFkAUwAgACAAIAAgACAAIAAgACAAIAAyADAAMgA2ADEAMAAwADQAMQAwADAAMAAzADIARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAA4AAAA5QcAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVABTrQ4AAAAAOKoAAAAAACiqAAAAAAAGqgAAAAAABqoAAAAAAAKqAAAAAAACrg4AAAAAOL4AAAA4AAAAArwAAAA4AEcAUgAyAEsAOQAyADMANAAyADkAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAgACAAIAAgACC9vAAAADgARwBSADIASwA5ADIAMwA0ADMAMAAgACAAIAAgACAAIAAgACAAIAAgADIAMAAwACAAIAAgACAAIL2/Aw4AAAABaAAAA2gHAAAAAAAAAAAAAAAAAAAAAAAAAAAATwBCAEoARQBDAFQAU60OAAAAAWiqAAAAAAAoqgYAAAAADKoAAAAAAAiqAAAAAAAIqgAAAAAA8KoAAAAAAAKqAAAAAAACqgAAAAAABqoAAAAAAAKqAAAAAAAorg4AAAABaL4AAAFoAAAAArwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMQBSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMgBSADMAVABSAFQARABBAFQAQwBVAE4ASQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAI0AAAFFgQAAAAAAAAAAAAAAAAAAAAAAAAAAABLAEUAWQBTrQ4AAAACNKoAAAAAACiqAAAAAAAIqgAAAAAACKoAAAAAADyqBgAAAAAMqgAAAAAACKoAAAAAAFCqAAAAAAA8qgAAAAAAAqoAAAAAAPCqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorg4AAAACNL4AAAI0AAAAArwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAVAAwADAANgBBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABEAEEAVABDAFUATgBJACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAMQBLAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABBAEIAVQBaAFQAUABNAEMAXwBUAFAAQwBGAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAOAAwADkAUAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8GDwAAAAFYAAAAxQsAAAAAAAAAAAAAAAAAAAAAAAAAAABTAFQAUgBJAE4ARwBfAEsARQBZAFOtDwAAAAFYqgAAAAAAKKoAAAAAAAiqAAAAAAAIqgAAAAAAPKoGAAAAAAyqAAAAAAAIqgAAAAAAUKoAAAAAADyqAAAAAAACrwQAAAAAAqoTAAAAAAiqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorwQAAAAAAqoTAAAAAAiuDwAAAAFYvgAAAVgAAAAAvwQ=",
+        "bytes": 3548,
+        "keyPaddingPreserved": true,
+        "clientSideImportAvailable": false,
+        "recoveryPermit": false
+      },
+      "bodyFingerprint": "b3303da468b0f090a0fff751b1f2b207ae1d2c355740f1146c0f27c22d657113",
+      "identities": [
+        {
+          "source": "0233aa3297bbcee7dbf6377529fa8bd2a50e260accb48e2b17edea2b668e45d7",
+          "interface": "34ee7da0e9c1a2d980956b1b986c20302ae7353e6fac02dc795ab257ae7f45c0"
+        },
+        {
+          "functionName": "TR_READ_REQUEST",
+          "source": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718",
+          "interface": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c"
+        },
+        {
+          "functionName": "TRINT_READ_REQUEST",
+          "source": "f5cebb50274f01915d6d5d85a6b058ae417889380db50d44d672d3cbc80094c8",
+          "interface": "ad8a3c8352ef4b4615aef7648b9ffead28751f151789e726ac3007d27d2e555a"
+        },
+        {
+          "functionName": "TRINT_READ_REQUEST_HEADER",
+          "source": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090",
+          "interface": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813"
+        },
+        {
+          "functionName": "TR_AUTHORITY_CHECK_DISPLAY",
+          "source": "1bf1f040acd563e46f775fb2c0c354c75ea8cb494379243ec5ff0950b24c2be7",
+          "interface": "6d966c3affd105d7808a659b62fc4356106648016b0ceae864b550182e290574"
+        },
+        {
+          "functionName": "SCMS_BASE64_ENCODE_STR",
+          "source": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0",
+          "interface": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9"
+        },
+        {
+          "functionName": "CALCULATE_HASH_FOR_RAW",
+          "source": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458",
+          "interface": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779"
+        },
+        {
+          "tableName": "E070",
+          "layout": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1"
+        },
+        {
+          "tableName": "E070C",
+          "layout": "e6d5897c0588ee2e1720b7a9bd420c8a75efa6a5b2163266d0fdca864a722632"
+        },
+        {
+          "tableName": "E071",
+          "layout": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1"
+        },
+        {
+          "tableName": "E071K",
+          "layout": "f6da6a1556eaea9b3c3df7e4f065eca401cf53381578d2a7a4e1af518a368000"
+        },
+        {
+          "tableName": "E071K_STR",
+          "layout": "c0ed80a482355e0be761fd3236a5e2e2dc69e14dcf034d792316950657fe66fc"
+        }
+      ],
+      "evidence": {
+        "apiInvocations": 2,
+        "identityPasses": 2,
+        "rawBytesRechecked": true
+      },
+      "warning": "Requires the exact approved customer API. Entire fixed request/task CTS rows include unrelated entries for preservation. Native bytes retain padding and string keys; they are opaque to the client and are not a restore command. Sequential observations are not locked snapshots. No activation, simulation, CTS/configuration write, cleanup, commit or release is performed."
+    },
+    "state": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+      "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+      "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+      "nativeCandidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+      "nativeGuardVersion": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "nativeCtsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+      "system": "GR2",
+      "client": "200",
+      "user": "WYS",
+      "readOnly": true,
+      "executable": false,
+      "activationAvailable": false,
+      "recoveryAvailable": false,
+      "snapshot": false,
+      "scope": {
+        "object": "CUNI",
+        "tableCount": 9,
+        "keyCount": 19,
+        "allCuniKeys": false
+      },
+      "versions": {
+        "source": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "target": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "candidate": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "metadata": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "guard": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+        "cts": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+        "state": "0d07309bf86d5cbfb93ddb0d62fbeb34efa9338d35d0c9e12d32fffadbb42663"
+      },
+      "counts": {
+        "T006": 0,
+        "T006A": 0,
+        "T006B": 0,
+        "T006C": 0,
+        "T006D": 1,
+        "T006I": 1,
+        "T006J": 3,
+        "T006T": 3,
+        "T006_OIB": 0
+      },
+      "layouts": {
+        "T006": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7",
+        "T006A": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d",
+        "T006B": "ab70255e75a3137279fe7138aecba6dea563ad9886455ecb6d28534a69bbd286",
+        "T006C": "b0b1f805571a82c34ee6ce4c157e6b4a5dacdfe76ed29da5805e8699ac6b8521",
+        "T006D": "b8c3a7317ae77355313a75ff37216a2899338b0b45c4753772810b9815e4b95f",
+        "T006I": "cb0bff534a1644ff32d10d071c5b4753fe584487720a9f4cfb6b61edc5e88644",
+        "T006J": "f90e52e900704080f4c37351b5147ec0711eeeb36ba473b9a3e663e6a78eaeb0",
+        "T006T": "1f44b60866c9c9b181f4a4a8147c74d6212fd0fb2fc5ac7b6e20447790ba21b0",
+        "T006_OIB": "c6cbe2e2de45048f2f380bac738e8ad33400cd69506d74529d410f791674e4d6"
+      },
+      "layoutFingerprint": "da348eaef777b1a459779cb49688d39169ebfc8516af05a3baaf8a492b3f77c5",
+      "buffer": {
+        "format": "sap_export_data_buffer_base64",
+        "data": "/wYBAQECgAA0MTAyAAAAAAcTAAAAAAgAAABiCQAAAAAAAAAAAAAAAAAAAAAAAAAAAE4AQQBNAEUAUwBQAEEAQwBFygAAACoATwBSAFYAQQBOAFQAQQBfAEMAVQBOAEkAXwBTAFQAQQBUAEUAXwBWADHLBxMAAAAACAAAADgGAAAAAAAAAAAAAAAAAAAAAAAAAAAAUwBZAFMAVABFAE3KAAAABgBHAFIAMssHEwAAAAAIAAAAOAYAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVMoAAAAGADIAMAAwywcTAAAAAAgAAAA0BAAAAAAAAAAAAAAAAAAAAAAAAAAAAFUAUwBFAFLKAAAABgBXAFkAU8sHEwAAAAAIAAAASAUAAAAAAAAAAAAAAAAAAAAAAAAAAABCAEMAUwBFAFTKAAAAGABFAEgAUwBfAEMAVQBOAEkAXwBLAE4ATcsHEwAAAAAIAAAANgcAAAAAAAAAAAAAAAAAAAAAAAAAAABWAEUAUgBTAEkATwBOygAAAAIATssHEwAAAAAIAAAASAcAAAAAAAAAAAAAAAAAAAAAAAAAAABSAEUAUQBVAEUAUwBUygAAABQARwBSADIASwA5ADIAMwA0ADIAOcsHEwAAAAAIAAAAQgQAAAAAAAAAAAAAAAAAAAAAAAAAAABUAEEAUwBLygAAABQARwBSADIASwA5ADIAMwA0ADMAMMsHEwAAAAAIAAAAsgYAAAAAAAAAAAAAAAAAAAAAAAAAAABMAEEAWQBPAFUAVMoAAACAAGQAYQAzADQAOABlAGEAZQBmADcANwA3AGIAMQBhADQANQA5ADcANwA5AGMAYgA0ADkANgA4ADgAZAAzADkAMQA2ADkAZQBiAGYAYwA4ADUAMQA2AGEAZgAwADUAYQAzAGIAYQBhAGYAOABhADQAOQAyAGIAMwBmADcANwBjADXLBxMAAAAACAAAALIGAAAAAAAAAAAAAAAAAAAAAAAAAAAAUwBPAFUAUgBDAEXKAAAAgAA3ADMANwA4ADMAZgA2ADkAZgAxAGIAZgA5ADgAMAA1AGIAMAA1ADgAZgBiAGMAOQBiAGEAYgAwAGEAZABiADgAYwBjADgAMAA0ADcAZgA4ADUAYwA4ADMANwBlAGUAMQA2AGMAMQA3ADQAYQA5AGUAZABkADAAZgA1ADEAMgBiywcTAAAAAAgAAACyBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFQAQQBSAEcARQBUygAAAIAAMgAzAGEAMQA5ADMAYQAzADcAZgA4ADEAZAA0AGIAMgAwADgAOAAyADkAYwA2ADQANwBkADgAZQAzADAANQA4AGMANAA3ADMAMQAyAGMAZAA0ADkANwAyADcAMwA0ADMAZgA5AGMAZABlAGIAZQA1ADgAMQAxADQAOAA0ADcAN8sHEwAAAAAIAAAAuAkAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEEATgBEAEkARABBAFQARcoAAACAADEAZgBkADgAZgBjAGIAZQA0ADAANQAwADYAYQBmADIAOQA2ADQANQBhADQAYwAyADEANgBjADMAZgBmADIAZQAzADQAMwA5ADEAOQA3ADEANAAyAGMANAA1ADMAYgA3ADEAZAA5ADAAZgAzADEAYQBkAGMAMQBjADMAYQAxADjLBxMAAAAACAAAALYIAAAAAAAAAAAAAAAAAAAAAAAAAAAATQBFAFQAQQBEAEEAVABBygAAAIAAYgA5AGYAMQBiADYANwAyAGMAYwA3ADQAMgA3ADEAOABlADkANgA3AGQAZgBmADUAZgA0ADgAZAA1ADQANQBiAGQAOABkAGIAZABiAGUAZQA1ADgAZQBkADEAMwBjAGQAOQAyADAANABlADAAZQAzADYANgAyADEAMQBkADYAZMsHEwAAAAAIAAAAsAUAAAAAAAAAAAAAAAAAAAAAAAAAAABHAFUAQQBSAETKAAAAgAAxAGMANABlADAAOQAyADUANwBmADMAYgAyADYAOQA5AGUANwBjAGIAMgA1ADgAMwA0AGIAMwBmADMAOQA4ADIAOQAxADcAMAA2ADcANQA3ADAAMAA4AGEANgAwADgANwBmADgAZAA0ADEAMQA4AGUAMQBjAGMANABhAGIAOQBmywcTAAAAAAgAAACsAwAAAAAAAAAAAAAAAAAAAAAAAAAAAEMAVABTygAAAIAANwA1ADkAMgBmAGMAYwAxADcAMwA2AGMANQBiADYAOAA1ADYAZgA3AGMANwAwADIAZgBiAGYAMQBiAGMAYwBhADMAYwAzAGYAZgAzADcAMgBmADcAMQA3ADYAMQBmAGQAYwA2AGYAZAA0AGYAZgA3AGUAYgBlADYAMwBiADUAMMsDDgAAAABoAAAA/QQAAAAAAAAAAAAAAAAAAAAAAAAAAABUADAAMAA2rQ4AAAAAaKoAAAAAAAaqAAAAAAAGqgAAAAAAAqoAAAAAAAKqCQAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAACqgAAAAAAAqoAAAAAAAyvBAAAAAACqggAAAAABKoIAAAAAASqCQAAAAACqgIGAAAABa8EAAAAAAGqCQAAAAACqgkAAAAAAqoAAAAAAAaqAAAAAAACrwQAAAAABKoHAAAAAAiqAAAAAAAGqgAAAAAAAqoHAAAAAAiqAAAAAAAGrwQAAAAAAq4OAAAAAGi+AAAAaAAAAAC/Aw4AAAAAcAAAAHMFAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAAwADAANgBBrQ4AAAAAcKoAAAAAAAaqAAAAAAACqgAAAAAABqoAAAAAAAaqAAAAAAAMqgAAAAAAFKoAAAAAADyuDgAAAABwvgAAAHAAAAAAvwMOAAAAABQAAABeBQAAAAAAAAAAAAAAAAAAAAAAAAAAAFQAMAAwADYAQq0OAAAAABSqAAAAAAAGqgAAAAAAAqoAAAAAAAaqAAAAAAAGrg4AAAAAFL4AAAAUAAAAAL8DDgAAAAAaAAAAXgUAAAAAAAAAAAAAAAAAAAAAAAAAAABUADAAMAA2AEOtDgAAAAAaqgAAAAAABqoAAAAAAAKqAAAAAAAMqgAAAAAABq4OAAAAABq+AAAAGgAAAAC/Aw4AAAAAKgAAAMYFAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAAwADAANgBErQ4AAAAAKqoAAAAAAAaqAAAAAAAMqgkAAAAAAqoJAAAAAAKqCQAAAAACqgkAAAAAAqoJAAAAAAKqCQAAAAACqgkAAAAAAqoAAAAAAAaqAAAAAAACqgAAAAAAAq4OAAAAACq+AAAAKgAAAAG8AAAAKgAyADAAMABQAFIARQBTAFMAIP//AAH//gAAAAAAAAAAAFAAQQAgACAAIL2/Aw4AAAAADAAAAGIFAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAAwADAANgBJrQ4AAAAADKoAAAAAAAaqAAAAAAAGrg4AAAAADL4AAAAMAAAAAbwAAAAMADIAMAAwAEsAUABBvb8DDgAAAABAAAABMAUAAAAAAAAAAAAAAAAAAAAAAAAAAABUADAAMAA2AEqtDgAAAABAqgAAAAAABqoAAAAAAAKqAAAAAAAGqgAAAAAAMq4OAAAAAEC+AAAAQAAAAAO8AAAAQAAyADAAMAAxAEsAUABBU0NeFQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACC9vAAAAEAAMgAwADAARABLAFAAQQBLAGkAbABvAHAAYQBzAGMAYQBsACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAABAADIAMAAwAEUASwBQAEEASwBpAGwAbwBwAGEAcwBjAGEAbAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL2/Aw4AAAAAPAAAASQFAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAAwADAANgBUrQ4AAAAAPKoAAAAAAAaqAAAAAAACqgAAAAAADKoAAAAAACiuDgAAAAA8vgAAADwAAAADvAAAADwAMgAwADAAMQBQAFIARQBTAFMAIFOLUpsAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACC9vAAAADwAMgAwADAARABQAFIARQBTAFMAIABEAHIAdQBjAGsAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACC9vAAAADwAMgAwADAARQBQAFIARQBTAFMAIABQAHIAZQBzAHMAdQByAGUAIAAgACAAIAAgACAAIAAgACAAIAAgACC9vwMOAAAAAEgAAACjCAAAAAAAAAAAAAAAAAAAAAAAAAAAAFQAMAAwADYAXwBPAEkAQq0OAAAAAEiqAAAAAAAGqgAAAAAABq8EAAAAAASqBwAAAAAIqgAAAAAABq8EAAAAAAKqBwAAAAAIqgAAAAAABq8EAAAAAAKqBwAAAAAIqgAAAAAABqoAAAAAAASvBAAAAAAGrg4AAAAASL4AAABIAAAAAL8E",
+        "bytes": 3402,
+        "nativeRoundtrip": true,
+        "clientSideImportAvailable": false,
+        "recoveryPermit": false
+      },
+      "cts": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430",
+        "system": "GR2",
+        "client": "200",
+        "user": "WYS",
+        "readOnly": true,
+        "executable": false,
+        "activationAvailable": false,
+        "snapshot": false,
+        "recoveryAvailable": false,
+        "scope": "two_complete_transport_roots_not_a_CUNI_projection",
+        "counts": {
+          "objects": 2,
+          "keys": 2,
+          "stringKeys": 0
+        },
+        "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+        "buffer": {
+          "format": "sap_export_data_buffer_base64",
+          "encoding": "opaque_native_typed_data",
+          "data": "/wYBAQECgAA0MTAyAAAAAAEAAAAAABAAAABCBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNvAAAABAARwBSADIAIAAgACAAIAAgvQEAAAAAAAYAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAEMATABJAEUATgBUvAAAAAYAMgAwADC9AQAAAAAAGAAAAEYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVQBTAEUAUrwAAAAYAFcAWQBTACAAIAAgACAAIAAgACAAIAAgvQcTAAAAAAgAAABKBgAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAQwBfAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLAw4AAAAApAAAAdkHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKSqAAAAAAAoqgAAAAAAAqoAAAAAAAKqAAAAAAAUqgAAAAAACKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACkvgAAAKQAAAACvAAAAKQARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgAFcARABHAFIAMwAgACAAIAAgACAAIAAgAEMAVQBTAFQAVwBZAFMAIAAgACAAIAAgACAAIAAgACAAMgAwADIANgAwADkAMAAxADEAMQAwADIANAA0ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAAApABHAFIAMgBLADkAMgAzADQAMwAwACAAIAAgACAAIAAgACAAIAAgACAAUQBEACAAIAAgACAAIAAgACAAIAAgACAAQwBVAFMAVABXAFkAUwAgACAAIAAgACAAIAAgACAAIAAyADAAMgA2ADEAMAAwADQAMQAwADAAMAAzADIARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAA4AAAA5QcAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVABTrQ4AAAAAOKoAAAAAACiqAAAAAAAGqgAAAAAABqoAAAAAAAKqAAAAAAACrg4AAAAAOL4AAAA4AAAAArwAAAA4AEcAUgAyAEsAOQAyADMANAAyADkAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAgACAAIAAgACC9vAAAADgARwBSADIASwA5ADIAMwA0ADMAMAAgACAAIAAgACAAIAAgACAAIAAgADIAMAAwACAAIAAgACAAIL2/Aw4AAAABaAAAA2gHAAAAAAAAAAAAAAAAAAAAAAAAAAAATwBCAEoARQBDAFQAU60OAAAAAWiqAAAAAAAoqgYAAAAADKoAAAAAAAiqAAAAAAAIqgAAAAAA8KoAAAAAAAKqAAAAAAACqgAAAAAABqoAAAAAAAKqAAAAAAAorg4AAAABaL4AAAFoAAAAArwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMQBSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMgBSADMAVABSAFQARABBAFQAQwBVAE4ASQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAI0AAAFFgQAAAAAAAAAAAAAAAAAAAAAAAAAAABLAEUAWQBTrQ4AAAACNKoAAAAAACiqAAAAAAAIqgAAAAAACKoAAAAAADyqBgAAAAAMqgAAAAAACKoAAAAAAFCqAAAAAAA8qgAAAAAAAqoAAAAAAPCqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorg4AAAACNL4AAAI0AAAAArwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAVAAwADAANgBBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABEAEEAVABDAFUATgBJACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAMQBLAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABBAEIAVQBaAFQAUABNAEMAXwBUAFAAQwBGAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAOAAwADkAUAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8GDwAAAAFYAAAAxQsAAAAAAAAAAAAAAAAAAAAAAAAAAABTAFQAUgBJAE4ARwBfAEsARQBZAFOtDwAAAAFYqgAAAAAAKKoAAAAAAAiqAAAAAAAIqgAAAAAAPKoGAAAAAAyqAAAAAAAIqgAAAAAAUKoAAAAAADyqAAAAAAACrwQAAAAAAqoTAAAAAAiqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorwQAAAAAAqoTAAAAAAiuDwAAAAFYvgAAAVgAAAAAvwQ=",
+          "bytes": 3548,
+          "keyPaddingPreserved": true,
+          "clientSideImportAvailable": false,
+          "recoveryPermit": false
+        },
+        "bodyFingerprint": "b3303da468b0f090a0fff751b1f2b207ae1d2c355740f1146c0f27c22d657113",
+        "identities": [
+          {
+            "source": "0233aa3297bbcee7dbf6377529fa8bd2a50e260accb48e2b17edea2b668e45d7",
+            "interface": "34ee7da0e9c1a2d980956b1b986c20302ae7353e6fac02dc795ab257ae7f45c0"
+          },
+          {
+            "functionName": "TR_READ_REQUEST",
+            "source": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718",
+            "interface": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST",
+            "source": "f5cebb50274f01915d6d5d85a6b058ae417889380db50d44d672d3cbc80094c8",
+            "interface": "ad8a3c8352ef4b4615aef7648b9ffead28751f151789e726ac3007d27d2e555a"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST_HEADER",
+            "source": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090",
+            "interface": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813"
+          },
+          {
+            "functionName": "TR_AUTHORITY_CHECK_DISPLAY",
+            "source": "1bf1f040acd563e46f775fb2c0c354c75ea8cb494379243ec5ff0950b24c2be7",
+            "interface": "6d966c3affd105d7808a659b62fc4356106648016b0ceae864b550182e290574"
+          },
+          {
+            "functionName": "SCMS_BASE64_ENCODE_STR",
+            "source": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0",
+            "interface": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9"
+          },
+          {
+            "functionName": "CALCULATE_HASH_FOR_RAW",
+            "source": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458",
+            "interface": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779"
+          },
+          {
+            "tableName": "E070",
+            "layout": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1"
+          },
+          {
+            "tableName": "E070C",
+            "layout": "e6d5897c0588ee2e1720b7a9bd420c8a75efa6a5b2163266d0fdca864a722632"
+          },
+          {
+            "tableName": "E071",
+            "layout": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1"
+          },
+          {
+            "tableName": "E071K",
+            "layout": "f6da6a1556eaea9b3c3df7e4f065eca401cf53381578d2a7a4e1af518a368000"
+          },
+          {
+            "tableName": "E071K_STR",
+            "layout": "c0ed80a482355e0be761fd3236a5e2e2dc69e14dcf034d792316950657fe66fc"
+          }
+        ],
+        "evidence": {
+          "apiInvocations": 2,
+          "identityPasses": 2,
+          "rawBytesRechecked": true
+        },
+        "warning": "Requires the exact approved customer API. Entire fixed request/task CTS rows include unrelated entries for preservation. Native bytes retain padding and string keys; they are opaque to the client and are not a restore command. Sequential observations are not locked snapshots. No activation, simulation, CTS/configuration write, cleanup, commit or release is performed."
+      },
+      "bodyFingerprint": "5da4894421b56d22d38eccaccd01a22883d76a89645c72cdfa3ea7ce9382d554",
+      "identity": {
+        "source": "6024fb854a0509bf3c64710cf55e1f7717ebdc206204c3ad267b58f85adaa8f5",
+        "interface": "2ec35dc0650882b1312763fb44eeb831cdec1a40562edc3a5bc57a3ea2b4c2af"
+      },
+      "evidence": {
+        "apiInvocations": 2,
+        "preflightPasses": 2,
+        "ctsPasses": 2,
+        "identityPasses": 2
+      },
+      "warning": "Fixed native nine-table before-state only. Missing rows remain absent typed-table entries. Native IMPORT/re-EXPORT is checked internally, but no restore command, atomic snapshot, lock, activation or configuration/CTS mutation is provided.",
+      "beforeStateReference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+      "beforeStatePersistence": {
+        "immutable": true,
+        "recoveryPermit": false,
+        "executable": false
+      }
+    },
+    "effects": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "operationId": "spro-r66-readonly-owner-check",
+      "beforeStateReference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+      "system": "GR2",
+      "client": "200",
+      "user": "WYS",
+      "readOnly": true,
+      "snapshot": false,
+      "executable": false,
+      "activationAvailable": false,
+      "recoveryAvailable": false,
+      "currentStateRechecked": false,
+      "ctsRecoveryChecked": false,
+      "scopeVersion": "2b806d55466ce07e05b81f06a64595486137bf291d4e2871840706a84b6bb963",
+      "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+      "effectsVersion": "b7541b9dcb26dcd6c5ae550d00b090563f692d5d70d9cebe36aa7e40bf2ee929",
+      "bodyFingerprint": "f9913506d16864a367b2d66ae3bab4b8b346dfdbb72f38a3e4e904b140217ae9",
+      "counts": {
+        "matched": 0,
+        "records": 0,
+        "headers": 0,
+        "variables": 0,
+        "links": 0
+      },
+      "profileCount": 1,
+      "identities": [
+        {
+          "functionName": "Z_ORVANTA_CFG_BC_EFFECTS",
+          "source": "d93bb9b48fa0a0b06ded0c2b725036bbe0decee7c8c43deefdd397a8abe871d2",
+          "interface": "e74a29dabf4bb371f54e9af5325ac27874656e067dbd3b1a4175eff91ad12b0b"
+        },
+        {
+          "functionName": "Z_ORVANTA_CFG_BC_CTS",
+          "source": "0233aa3297bbcee7dbf6377529fa8bd2a50e260accb48e2b17edea2b668e45d7",
+          "interface": "34ee7da0e9c1a2d980956b1b986c20302ae7353e6fac02dc795ab257ae7f45c0"
+        },
+        {
+          "objectName": "LSCPRHIF01",
+          "objectType": "FUGR/I",
+          "source": "627cbd2dcb9eff8443aee3256bf4b3e79fcef5a94132c3c590ab1cfe84215111"
+        },
+        {
+          "functionName": "TR_READ_REQUEST",
+          "source": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718",
+          "interface": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c"
+        },
+        {
+          "functionName": "TRINT_READ_REQUEST",
+          "source": "f5cebb50274f01915d6d5d85a6b058ae417889380db50d44d672d3cbc80094c8",
+          "interface": "ad8a3c8352ef4b4615aef7648b9ffead28751f151789e726ac3007d27d2e555a"
+        },
+        {
+          "functionName": "TRINT_READ_REQUEST_HEADER",
+          "source": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090",
+          "interface": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813"
+        },
+        {
+          "functionName": "TR_AUTHORITY_CHECK_DISPLAY",
+          "source": "1bf1f040acd563e46f775fb2c0c354c75ea8cb494379243ec5ff0950b24c2be7",
+          "interface": "6d966c3affd105d7808a659b62fc4356106648016b0ceae864b550182e290574"
+        },
+        {
+          "functionName": "SCMS_BASE64_ENCODE_STR",
+          "source": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0",
+          "interface": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9"
+        },
+        {
+          "functionName": "CALCULATE_HASH_FOR_RAW",
+          "source": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458",
+          "interface": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779"
+        },
+        {
+          "functionName": "SCPR_HI_KEY_TO_ACTKEY",
+          "source": "0ad008ba2a0e3bd17fb88ccda0a2cbb4629c03853743ef4a8fddd8f5945e74d5",
+          "interface": "3e3d4512e8f8f5a83864a0900caf38b5870961e19dcd902193fe646b71e51e1f"
+        },
+        {
+          "functionName": "SCPR_DB_TABLE_TABFLDDEF_GET",
+          "source": "032368671c7e8816fa3a97710a5795ababa9811c416d70425b1f0c4db7af5ba0",
+          "interface": "dca5f484468d333a60c097a44ead101729b065fd2891f608dbb8bcbafa6f14d4"
+        },
+        {
+          "functionName": "SCPR_CT_VALUE_CONVERT_INT_EXT",
+          "source": "db76d20610890412f3caa9df80316689d3cad88170097087a068e2cb935be8c0",
+          "interface": "7a61d6cf41159fe5810f10b9ca73daca75ead478e6e578cdb11c8dfe505a5ddf"
+        },
+        {
+          "functionName": "SCPR_CT_CURRKEY_GET",
+          "source": "77331397170134c73ccce879147cc72de168108a65f2b36fcaddbb6a88fb8748",
+          "interface": "483f4a27cc888c674d3cdc58a893857e2d221c3aecc69e1e168aa8d3e720b222"
+        },
+        {
+          "functionName": "VIEW_CONVERSION_OUTPUT",
+          "source": "cabbcb4e1a6f89ef529b47e85b069b9ef51d7c724d22b57935283d40b2d9bb63",
+          "interface": "06ce9aa72c7f3fa1dd3296af5f5a80dfe9243285b5b143451af94f6063becc6f"
+        },
+        {
+          "tableName": "T006",
+          "fingerprint": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7"
+        },
+        {
+          "tableName": "T006A",
+          "fingerprint": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d"
+        },
+        {
+          "tableName": "T006B",
+          "fingerprint": "ab70255e75a3137279fe7138aecba6dea563ad9886455ecb6d28534a69bbd286"
+        },
+        {
+          "tableName": "T006C",
+          "fingerprint": "b0b1f805571a82c34ee6ce4c157e6b4a5dacdfe76ed29da5805e8699ac6b8521"
+        },
+        {
+          "tableName": "T006D",
+          "fingerprint": "b8c3a7317ae77355313a75ff37216a2899338b0b45c4753772810b9815e4b95f"
+        },
+        {
+          "tableName": "T006I",
+          "fingerprint": "cb0bff534a1644ff32d10d071c5b4753fe584487720a9f4cfb6b61edc5e88644"
+        },
+        {
+          "tableName": "T006J",
+          "fingerprint": "f90e52e900704080f4c37351b5147ec0711eeeb36ba473b9a3e663e6a78eaeb0"
+        },
+        {
+          "tableName": "T006T",
+          "fingerprint": "1f44b60866c9c9b181f4a4a8147c74d6212fd0fb2fc5ac7b6e20447790ba21b0"
+        },
+        {
+          "tableName": "T006_OIB",
+          "fingerprint": "c6cbe2e2de45048f2f380bac738e8ad33400cd69506d74529d410f791674e4d6"
+        },
+        {
+          "tableName": "SCPRACTR",
+          "fingerprint": "eee9c8994fbb082f7019d7f8f61c9f890e4652d4e55c56d27bacbb6c76ac9619"
+        },
+        {
+          "tableName": "SCPRACTP",
+          "fingerprint": "7449a52bd3293c31ad419f2fd357d9974878b7a1a577406ca9f05947695946ff"
+        },
+        {
+          "tableName": "SCPRACTX",
+          "fingerprint": "fc149745aa6d52a1c0f18d3b0b205323a4f9db8bb83a4b9a16b8193c1e979aa4"
+        },
+        {
+          "tableName": "SCPRACTXL",
+          "fingerprint": "9775b093668a50ac579ebc81bfcaaddf85d5aca55a1bb701cab72aae008e547f"
+        },
+        {
+          "tableName": "E070",
+          "fingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1"
+        },
+        {
+          "tableName": "E070C",
+          "fingerprint": "e6d5897c0588ee2e1720b7a9bd420c8a75efa6a5b2163266d0fdca864a722632"
+        },
+        {
+          "tableName": "E071",
+          "fingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1"
+        },
+        {
+          "tableName": "E071K",
+          "fingerprint": "f6da6a1556eaea9b3c3df7e4f065eca401cf53381578d2a7a4e1af518a368000"
+        },
+        {
+          "tableName": "E071K_STR",
+          "fingerprint": "c0ed80a482355e0be761fd3236a5e2e2dc69e14dcf034d792316950657fe66fc"
+        }
+      ],
+      "buffer": {
+        "data": "/wYBAQECgAA0MTAyAAAAAAcTAAAAAAgAAABmCQAAAAAAAAAAAAAAAAAAAAAAAAAAAE4AQQBNAEUAUwBQAEEAQwBFygAAAC4ATwBSAFYAQQBOAFQAQQBfAEMAVQBOAEkAXwBFAEYARgBFAEMAVABTAF8AVgAxywcTAAAAAAgAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNygAAAAYARwBSADLLBxMAAAAACAAAADgGAAAAAAAAAAAAAAAAAAAAAAAAAAAAQwBMAEkARQBOAFTKAAAABgAyADAAMMsHEwAAAAAIAAAANAQAAAAAAAAAAAAAAAAAAAAAAAAAAABVAFMARQBSygAAAAYAVwBZAFPLBxMAAAAACAAAAEgFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQgBDAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLBxMAAAAACAAAAKwDAAAAAAAAAAAAAAAAAAAAAAAAAAAAQwBUAFPKAAAAgAA3ADUAOQAyAGYAYwBjADEANwAzADYAYwA1AGIANgA4ADUANgBmADcAYwA3ADAAMgBmAGIAZgAxAGIAYwBjAGEAMwBjADMAZgBmADMANwAyAGYANwAxADcANgAxAGYAZABjADYAZgBkADQAZgBmADcAZQBiAGUANgAzAGIANQAwywcTAAAAAAgAAACwBQAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAQwBPAFAARcoAAACAADIAYgA4ADAANgBkADUANQA0ADYANgBjAGUAMAA3AGUAMAA1AGIAOAAxAGYAMAA2AGEANgA0ADUAOQA1ADQAOAA2ADEAMwA3AGIAZgAyADkAMQBkADQAZQAyADgANwAxADgANAAwADcAMAA2AGEAOAA0AGIANgBiAGIAOQA2ADPLAw4AAAACOgAAKw4EAAAAAAAAAAAAAAAAAAAAAAAAAAAASwBFAFkAU60OAAAAAjqqAAAAAAA8qgAAAAAB/q4OAAAAAjq+AAACOgAAABO8AAACOgBUADAAMAA2ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABLAE4ATQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEEAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAxAEsATgBNACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEEAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABEAEsATgBNACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEEAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABFAEsATgBNACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEIAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAxAEsATgBNACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEIAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABEAEsATgBNACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEIAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABFAEsATgBNACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEMAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAxAGsATgAvAG0AMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEMAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABEAGsATgAvAG0AMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEMAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABFAGsATgAvAG0AMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEQAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABQAFIARQBTAFMAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEkAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABLAFAAQQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEoAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAxAEsAUABBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEoAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABEAEsAUABBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AEoAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABFAEsAUABBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AFQAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAxAFAAUgBFAFMAUwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AFQAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABEAFAAUgBFAFMAUwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AFQAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABFAFAAUgBFAFMAUwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAACOgBUADAAMAA2AF8ATwBJAEIAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMABLAE4ATQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL2/Aw4AAAADQgAAAJMHAAAAAAAAAAAAAAAAAAAAAAAAAAAATQBBAFQAQwBIAEUARK0OAAAAA0KqAAAAAAAGqgAAAAAAPKoAAAAAABSqAAAAAAH+qgAAAAAAQKoAAAAAABSqAAAAAAA8qgEAAAAAEKoDAAAAAAyqAAAAAAA8qgAAAAAABq4OAAAAA0K+AAADQgAAAAC/Aw4AAAADQgAAAJMHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAEMATwBSAEQAU60OAAAAA0KqAAAAAAAGqgAAAAAAPKoAAAAAABSqAAAAAAH+qgAAAAAAQKoAAAAAABSqAAAAAAA8qgEAAAAAEKoDAAAAAAyqAAAAAAA8qgAAAAAABq4OAAAAA0K+AAADQgAAAAC/Aw4AAAAAogAAAHAHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKKqAAAAAAAGqgAAAAAAQKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACivgAAAKIAAAAAvwMOAAAAAqYAAAB7CQAAAAAAAAAAAAAAAAAAAAAAAAAAAFYAQQBSAEkAQQBCAEwARQBTrQ4AAAACpqoAAAAAAAaqAAAAAABAqgEAAAAAEKoDAAAAAAyqAAAAAAA8qgAAAAABBKoAAAAAAQSuDgAAAAKmvgAAAqYAAAAAvwMOAAAAAfQAAACBBQAAAAAAAAAAAAAAAAAAAAAAAAAAAEwASQBOAEsAU60OAAAAAfSqAAAAAAAGqgAAAAAAQKoBAAAAABCqAwAAAAAMqgAAAAAAPKoAAAAAABSqAAAAAAA8qgAAAAAAAqoAAAAAAQSuDgAAAAH0vgAAAfQAAAAAvwQ=",
+        "bytes": 12575,
+        "nativeRoundtrip": true,
+        "clientSideImportAvailable": false,
+        "recoveryPermit": false
+      },
+      "blockedBy": [
+        "sap_locked_before_state_not_established",
+        "standard_save_and_recovery_not_executed",
+        "specific_configuration_and_cts_write_authorization"
+      ],
+      "effectsStateReference": "456fa5b39b3e2fe04968e76d202a8429428d6e02c71ac5592e5eef69d91ef867",
+      "effectsStatePersistence": {
+        "immutable": true,
+        "beforeStateReference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+        "recoveryPermit": false,
+        "executable": false,
+        "snapshot": false
+      }
+    }
+  },
+  "activeProofs": [
+    {
+      "uri": "adt://w200/sap/bc/adt/programs/includes/zorvanta_cfg_bc_record_kernel",
+      "sha256": "4631c1c868daa10a09d6200feba4096c6e71e428c04851d3d3aaa9af531dc3ee",
+      "bytes": 26175
+    },
+    {
+      "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop",
+      "sha256": "a02f3eb54accdb689f524883d97ad2ebb3776dc540df3a1f4d20598154514cb8",
+      "bytes": 203
+    }
+  ],
+  "provenance": {
+    ".cache/spro-r67/acceptance.json": {
+      "sha256": "623008241a09b7a1c2f9ab49b233189ba64d56e98add1cbe8bc7c437bcbc3967",
+      "bytes": 820955
+    },
+    ".cache/spro-r67/remote.jsonl": {
+      "sha256": "d9bbc1b544ff4f830f63ca758d35996a177c12798b008a619bf869265e8d14e7",
+      "bytes": 358151
+    },
+    ".cache/spro-r67/frozen.json": {
+      "sha256": "339c4464abc321fb84557a8ec1dac8f2f5900dc77c5e8ea60b74704195996b4e",
+      "bytes": 15593
+    },
+    "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-bc-native-pilot-values-20261006-221243-r67.json": {
+      "sha256": "c59dc79f8df93130d0d054e11363f708cab985179f082e578c61e792bcb2dcba",
+      "bytes": 107955
+    }
+  },
+  "r68SapRuntime": "not_executed",
+  "cancellationSemantics": "inflight_read_settles_result_discarded_no_later_backend_dispatch",
+  "sdkDefaultRequestTimeoutMs": 60000,
+  "privateAcceptanceTimeoutMs": 1200000,
+  "windowClosure": {
+    "observedAt": "2026-10-07T07:54:24.455+08:00",
+    "pids": [
+      41196,
+      26140
+    ],
+    "processesPresent": false,
+    "method": "Get-CimInstance Win32_Process exact PID query returned no process"
+  },
+  "sharedService": {
+    "source": "r67 actual SDK tools/list; not repeated",
+    "server": {
+      "name": "orvanta",
+      "version": "0.50.23"
+    },
+    "toolCount": 189
+  },
+  "limits": [
+    "STATE 75574ms exceeds default SDK timeout",
+    "r68 latest cancellation code not live SAP accepted",
+    "KNM configuration APPLY/RECOVER not authorized or executed",
+    "ATC endpoint unsupported HTTP404; no passing ATC gate"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-03T10:08:03.921Z",
+  "server": {
+    "pid": 2572,
+    "url": "http://127.0.0.1:5823/mcp",
+    "revision": "r15",
+    "startedAt": "2026-10-03T09:52:07.727Z",
+    "readOnly": true,
+    "connections": [
+      {
+        "id": "w200",
+        "client": "200"
+      }
+    ],
+    "manifestFingerprint": "176982400a02ffec936e45931251c01338722e5e6e89717f1f396503842fd0db"
+  },
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SAPMUNIT",
+        "objectType": "PROG/P",
+        "startLine": 1,
+        "lineCount": 10000
+      },
+      "isError": false,
+      "response": "Source from SAPMUNIT (lines 1-37 of 37, 37 lines retrieved):\n\n```abap\n*&---------------------------------------------------------------------*\n*& Modulpool         SAPMUNIT                                          *\n*&                                                                     *\n*&---------------------------------------------------------------------*\n*&                                                                     *\n*&                                                                     *\n*&---------------------------------------------------------------------*\n\n\n\nINCLUDE munittop.            \" globale Daten\n\nINCLUDE munito01.            \" PBO-Module\n\nINCLUDE muniti01.            \" PAI-Module\n\nINCLUDE munitf01.            \" Form-Routinen\n\nINCLUDE munitf02.            \" Form-Routinen Uebersetzung\n\n\nINCLUDE munitf03.\n\nINCLUDE munitf04.\n\nINCLUDE munitf05.                                           \"*023i\n* IS-Oil ADD-On specific enhancements if necessary          \"*023i KH\nINCLUDE munitfoi_add_on_foi if found.  \"FORMs in IS-Oil if  \"*023i KH\n\nLOAD-OF-PROGRAM.                                            \"*023i\n\n  PERFORM set_g_oilact.                                     \"*023i\n\nINCLUDE MUNITI02.\n\nINCLUDE MUNITF06.\n\n```\n\nFull Source SHA-256: 750fcdce28c18fb76f2ae39a716dddbd882ccb19c15d5566bc683e8c0999a029\nURI: /sap/bc/adt/programs/programs/sapmunit/source/main\n\nEnhancement metadata unavailable (unsupported)."
+    }
+  ],
+  "finishedAt": "2026-10-03T10:08:05.778Z"
+}

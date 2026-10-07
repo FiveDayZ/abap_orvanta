@@ -1,0 +1,152 @@
+{
+  "status": "passed",
+  "result": {
+    "outputs": {
+      "EV_CODE": "VERSION_CHANGED",
+      "EV_SYSTEM": "GR2",
+      "EV_CLIENT": "200",
+      "EV_USER": "WYS",
+      "EV_COMMITTED": "",
+      "EV_BEFORE_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+      "EV_VERSION": "",
+      "EV_SESSION_RESET": "not_required",
+      "EV_UNLOCKED": "X",
+      "EV_MSGID": "",
+      "EV_MSGNO": "",
+      "ES_ERROR": {
+        "MSGNR": "",
+        "TABLENAME": "",
+        "FIELDNAME": "",
+        "TABIX": "0"
+      },
+      "ET_INTERVALS": []
+    }
+  },
+  "before": {
+    "EV_CODE": "READ_OK",
+    "EV_SYSTEM": "GR2",
+    "EV_CLIENT": "200",
+    "EV_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+    "ES_DEFINITION": {
+      "OBJECT": "ZORVCFGNR",
+      "DTELSOBJ": "",
+      "NRTAB": "",
+      "NRINTFLD": "",
+      "NREXTFLD": "",
+      "NRFLD": "",
+      "NRSOBJFLD": "",
+      "NRELEFLD": "",
+      "YEARIND": "",
+      "DOMLEN": "NUMC20",
+      "PERCENTAGE": "10.0",
+      "CODE": "",
+      "TEXTIND": "",
+      "NRELTXTTAB": "",
+      "NRELTXTSOB": "",
+      "NRELTXTELE": "",
+      "NRELTXTTXT": "",
+      "NRELTXTLNG": "",
+      "BUFFER": "",
+      "NOIVBUFFER": "00000000",
+      "NONRSWAP": "",
+      "RFCDEST": "",
+      "NRCHECKASCII": ""
+    },
+    "ET_INTERVALS": [
+      {
+        "CLIENT": "200",
+        "OBJECT": "ZORVCFGNR",
+        "SUBOBJECT": "",
+        "NRRANGENR": "01",
+        "TOYEAR": "0000",
+        "FROMNUMBER": "00000000000000000001",
+        "TONUMBER": "00000000000000000100",
+        "NRLEVEL": "00000000000000000000",
+        "EXTERNIND": ""
+      }
+    ]
+  },
+  "after": {
+    "EV_CODE": "READ_OK",
+    "EV_SYSTEM": "GR2",
+    "EV_CLIENT": "200",
+    "EV_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+    "ES_DEFINITION": {
+      "OBJECT": "ZORVCFGNR",
+      "DTELSOBJ": "",
+      "NRTAB": "",
+      "NRINTFLD": "",
+      "NREXTFLD": "",
+      "NRFLD": "",
+      "NRSOBJFLD": "",
+      "NRELEFLD": "",
+      "YEARIND": "",
+      "DOMLEN": "NUMC20",
+      "PERCENTAGE": "10.0",
+      "CODE": "",
+      "TEXTIND": "",
+      "NRELTXTTAB": "",
+      "NRELTXTSOB": "",
+      "NRELTXTELE": "",
+      "NRELTXTTXT": "",
+      "NRELTXTLNG": "",
+      "BUFFER": "",
+      "NOIVBUFFER": "00000000",
+      "NONRSWAP": "",
+      "RFCDEST": "",
+      "NRCHECKASCII": ""
+    },
+    "ET_INTERVALS": [
+      {
+        "CLIENT": "200",
+        "OBJECT": "ZORVCFGNR",
+        "SUBOBJECT": "",
+        "NRRANGENR": "01",
+        "TOYEAR": "0000",
+        "FROMNUMBER": "00000000000000000001",
+        "TONUMBER": "00000000000000000100",
+        "NRLEVEL": "00000000000000000000",
+        "EXTERNIND": ""
+      }
+    ]
+  },
+  "receipt": {
+    "version": 2,
+    "status": "completed",
+    "connectionId": "w200",
+    "toolName": "configuration_nr_native_stale_probe",
+    "operationIdHash": "d697ec63085414774adccf005bd893569b884138b5b9f816800aefa4efb1cefb",
+    "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+    "inputHash": "357da8d2fbc2169b7150d42e362879ba2b65ec4e67dd561e313bf52e291f056d",
+    "preChangeSummary": "Approved old-version native rejection, dedicated unused ZORVCFGNR/01",
+    "sapPreChangeEvidence": {
+      "observedAt": "2026-10-04T11:13:11.343Z",
+      "target": "NRIV:ZORVCFGNR:200",
+      "exists": true,
+      "active": null,
+      "version": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+      "fingerprint": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+      "packageName": "ZABAP",
+      "requestNumber": "GR2K923472",
+      "taskNumber": null,
+      "observationStatus": "complete",
+      "sources": [
+        "Z_ORVANTA_CFG_NR_READ"
+      ],
+      "warnings": [
+        "Intervals local client only"
+      ]
+    },
+    "sapInvocationStarted": true,
+    "resultHash": "84d63871fab758c5b1a5bd6602b95f9bde90785b7f839a2e34878f1af0bfffbc",
+    "startedAt": "2026-10-04T11:13:11.339Z",
+    "finishedAt": "2026-10-04T11:13:12.732Z",
+    "durationMs": 0,
+    "receiptHash": "61627f575b5d8e3fde1b20ff4db5f337a7fec240382a1f85352cbe80755c28f3",
+    "automaticRetry": false,
+    "automaticRollback": false,
+    "outcomeMayBeUnknown": false,
+    "localLockReleased": true,
+    "manualRecovery": "No retry or rollback. Read complete state and locks if result is unknown."
+  }
+}

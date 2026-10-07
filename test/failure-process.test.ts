@@ -279,7 +279,29 @@ test(
           call(index % 2 ? first.client : second.client, "invoke_customer_function_module", args)
         )
       )
-      assert.equal(results.filter((result) => result.data.status === "completed").length, 1)
+      const statuses = results.map((result) => result.data.status)
+      // The count is the invariant, but a bare `0 !== 1` said nothing about *why* a run lost its
+      // single dispatch. This occurrence was recorded on 2026-09-29 and again on 2026-10-03 with
+      // no attribution; the receipt now carries the errno of a local protection failure, so name
+      // it here instead of leaving the next occurrence equally opaque.
+      const localErrors = results.flatMap((result) => {
+        const code = result.data.operationReceipt?.errorCode
+        const thrown = /Local protection error: ([^\n"]+)/.exec(result.text)?.[1]
+        // A result whose body is not JSON never reaches `status`, and its text is then the only
+        // evidence of why. The 2026-10-03 occurrence had exactly that shape - eleven
+        // `duplicate_blocked` and one result with no status at all - so the text head is reported
+        // instead of leaving the next occurrence as a bare count mismatch again.
+        const opaque =
+          result.data.status === undefined ? `opaque body: ${result.text.slice(0, 200)}` : undefined
+        return [code ?? thrown ?? opaque].filter((value) => value !== undefined)
+      })
+      assert.equal(
+        statuses.filter((status) => status === "completed").length,
+        1,
+        `expected exactly one completed dispatch; statuses ${JSON.stringify(
+          statuses
+        )}; local protection error codes ${JSON.stringify(localErrors)}`
+      )
       for (const result of results.filter((result) => result.data.status !== "completed")) {
         assert.equal(result.error, true)
         assert.ok(

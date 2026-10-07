@@ -1,0 +1,303 @@
+{
+  "at": "2026-10-05T15:47:52.950+08:00",
+  "commands": [
+    {
+      "at": "2026-10-05T07:28:07.070Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "node_modules/typescript/bin/tsc",
+        "--outDir",
+        "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\dist"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T07:28:07.497Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/generate-tool-index.mjs"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+      "exitCode": 0,
+      "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\nwrote C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\docs\\tool-index.md and C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\contracts\\tool-index.json (198 tools, 129 read-only)\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T07:28:07.896Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/generate-tool-index.mjs",
+        "--check"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+      "exitCode": 0,
+      "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\ntool index consistent: 198 tools, 129 read-only, 12 groups\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T07:28:07.963Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/generate-ops-matrix.mjs",
+        "--check"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+      "exitCode": 0,
+      "stdout": "docs/ops-acceptance-matrix.md is current (15 families)\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T07:28:08.102Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/verify-headless.mjs",
+        "--source-only"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+      "exitCode": 0,
+      "stdout": "Headless verification PASS (1 tree(s), no VS Code host dependency)\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T07:28:11.910Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "dist/test/verification-registry.test.js",
+        "dist/test/protocol.test.js",
+        "dist/test/http-preflight-stream.test.js",
+        "dist/test/http-ports.test.js"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+      "exitCode": 0,
+      "stdout": "✔ MCP rejects fetch-blocked explicit ports before listening, including newly observed omissions (5.5256ms)\n✔ MCP reports an expired session as not found so clients can reinitialize (38.8949ms)\n✔ preflight keepalive preserves sse response content and headers (118.1199ms)\n✔ preflight keepalive preserves json response content and headers (92.7907ms)\n✔ preflight keepalive preserves delayed-headers response content and headers (92.9117ms)\n✔ preflight stream cancellation removes both timer cleanup listeners (6.5407ms)\n✔ streamable HTTP exposes the implemented standalone tool waves (342.7746ms)\n✔ full source baseline freezes and classifies every original tool contract (1.7669ms)\n✔ 0.30 lifecycle writes return version 2 operation receipts (175.757ms)\n✔ failed SAP pre-change observation prevents the write action (36.5722ms)\n✔ health endpoint responds without an MCP session (3.7694ms)\n✔ an argument the contract does not declare is rejected, not discarded (11.767ms)\n✔ every tool in the index has exactly one verification entry, with no unknown names (24.5921ms)\n✔ the registry declares only known field values (0.3383ms)\n✔ verified and failed entries cite evidence that actually exists on disk (41.7395ms)\n✔ unverified entries claim neither evidence nor an attempt time (0.2264ms)\n✔ a runtime failure is an observation and a static failure is a proof (0.2682ms)\n✔ R-20's four tools stay recorded with the state their evidence supports (0.1425ms)\n✔ a length fix alone never counts as evidence of success (0.1412ms)\n✔ controlled writes must name the object they were written to (19.5391ms)\n✔ number range runtime evidence proves fresh create and prior update while preserving historical unknown (3.5092ms)\n✔ unit description write evidence contains completed save and restoration with real key readback (2.8181ms)\n✔ unit reconciliation evidence retains real unknown receipts and performs no native writes (2.3897ms)\n✔ the method states what kind of SAP operation the tool actually performs (0.3469ms)\n✔ the availability-without-evidence metric is derived, not asserted (0.4289ms)\n✔ notes and availabilityBasis agree about the protocol-only weakness, in both directions (0.3712ms)\n✔ MUTATION: notes contradicting the basis are caught in both directions (0.2506ms)\n✔ platform-unsupported is a claim too, and must carry evidence (1.8405ms)\n✔ availability and verification status stay orthogonal (0.3996ms)\n✔ no entry claims protocol-only without a helper to carry that protocol (0.6219ms)\n✔ the protocol-only residual stays visible and countable (0.2176ms)\n✔ MUTATION: a verified entry pointing at a missing file must be rejected (0.7603ms)\n✔ MUTATION: a duplicate and an unknown tool are both rejected (0.4172ms)\n✔ MUTATION: an unverified entry claiming an attempt time is rejected (0.0838ms)\n✔ MUTATION: a static failure claiming an attempt time is rejected (0.4498ms)\n✔ MUTATION: a runtime failure without an attempt time is rejected (0.2356ms)\n✔ MUTATION: a failed entry without a failure basis is rejected (0.2507ms)\n✔ native BC before-state evidence contains named public reads and empty native rejections (3.3354ms)\n✔ native BC preview evidence proves conversion, empty refusals and unchanged target (1.6431ms)\n✔ native CUNI route evidence proves metadata scope without activation (1.4864ms)\n✔ native CUNI guard evidence binds eight related keys without configuration writes (1.7189ms)\n✔ unified BC preflight evidence covers nineteen complete fixed keys without activation (2.574ms)\n✔ the registry records the honest gap rather than inflating it (128.226ms)\nℹ tests 43\nℹ suites 0\nℹ pass 43\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3752.3271\n",
+      "stderr": ""
+    }
+  ],
+  "httpRuns": [
+    {
+      "id": "http",
+      "commands": [
+        {
+          "at": "2026-10-05T07:16:06.524Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "node_modules/typescript/bin/tsc",
+            "--outDir",
+            "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\dist"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:16:10.565Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/generate-tool-index.mjs"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 0,
+          "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\nwrote C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\docs\\tool-index.md and C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\contracts\\tool-index.json (198 tools, 129 read-only)\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:16:10.954Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/generate-tool-index.mjs",
+            "--check"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 0,
+          "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\ntool index consistent: 198 tools, 129 read-only, 12 groups\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:16:11.021Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/generate-ops-matrix.mjs",
+            "--check"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 0,
+          "stdout": "docs/ops-acceptance-matrix.md is current (15 families)\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:16:11.151Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/verify-headless.mjs",
+            "--source-only"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+          "exitCode": 0,
+          "stdout": "Headless verification PASS (1 tree(s), no VS Code host dependency)\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:16:15.021Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "--test",
+            "dist/test/http-preflight-stream.test.js",
+            "dist/test/http-ports.test.js",
+            "dist/test/protocol.test.js",
+            "dist/test/configuration-bc-preflight-mcp.test.js"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 1,
+          "stdout": "✔ public MCP preflight validates eight version/scope fields and dispatches readonly composition (146.0431ms)\n✔ MCP rejects fetch-blocked explicit ports before listening, including newly observed omissions (7.1536ms)\n✔ MCP reports an expired session as not found so clients can reinitialize (40.583ms)\n✖ preflight keepalive preserves sse response content and headers (121.9935ms)\n✔ preflight keepalive preserves json response content and headers (105.2799ms)\n✔ preflight keepalive preserves delayed-headers response content and headers (92.9076ms)\n✔ preflight stream cancellation removes both timer cleanup listeners (5.7217ms)\n✔ streamable HTTP exposes the implemented standalone tool waves (346.0891ms)\n✔ full source baseline freezes and classifies every original tool contract (1.1379ms)\n✔ 0.30 lifecycle writes return version 2 operation receipts (179.5791ms)\n✔ failed SAP pre-change observation prevents the write action (37.1419ms)\n✔ health endpoint responds without an MCP session (3.4472ms)\n✔ an argument the contract does not declare is rejected, not discarded (11.4184ms)\nℹ tests 13\nℹ suites 0\nℹ pass 12\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3815.3377\n\n✖ failing tests:\n\ntest at dist\\test\\http-preflight-stream.test.js:7:5\n✖ preflight keepalive preserves sse response content and headers (121.9935ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /: keep-alive\\n\\n/. Input:\n  \n  'data: {\"result\":\"complete\"}\\n\\n'\n  \n      at TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r50/verification-runtime/dist/test/http-preflight-stream.test.js:37:20)\n      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'data: {\"result\":\"complete\"}\\n\\n',\n    expected: /: keep-alive\\n\\n/,\n    operator: 'match',\n    diff: 'simple'\n  }\n",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "id": "http-repair",
+      "commands": [
+        {
+          "at": "2026-10-05T07:18:30.148Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "node_modules/typescript/bin/tsc",
+            "--outDir",
+            "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\dist"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+          "exitCode": 2,
+          "stdout": "src/http.ts(166,56): error TS2493: Tuple type '[statusCode: number, headers?: OutgoingHttpHeaders | OutgoingHttpHeader[] | undefined]' of length '2' has no element at index '2'.\r\n",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "id": "http-fixed",
+      "commands": [
+        {
+          "at": "2026-10-05T07:19:01.124Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "node_modules/typescript/bin/tsc",
+            "--outDir",
+            "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\dist"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:19:01.534Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/generate-tool-index.mjs"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 0,
+          "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\nwrote C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\docs\\tool-index.md and C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime\\contracts\\tool-index.json (198 tools, 129 read-only)\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:19:01.938Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/generate-tool-index.mjs",
+            "--check"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 0,
+          "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\ntool index consistent: 198 tools, 129 read-only, 12 groups\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:19:02.005Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/generate-ops-matrix.mjs",
+            "--check"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 0,
+          "stdout": "docs/ops-acceptance-matrix.md is current (15 families)\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:19:02.139Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "scripts/verify-headless.mjs",
+            "--source-only"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+          "exitCode": 0,
+          "stdout": "Headless verification PASS (1 tree(s), no VS Code host dependency)\n",
+          "stderr": ""
+        },
+        {
+          "at": "2026-10-05T07:19:06.022Z",
+          "cmd": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "--test",
+            "dist/test/http-preflight-stream.test.js",
+            "dist/test/http-ports.test.js",
+            "dist/test/protocol.test.js",
+            "dist/test/configuration-bc-preflight-mcp.test.js"
+          ],
+          "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r50\\verification-runtime",
+          "exitCode": 0,
+          "stdout": "✔ public MCP preflight validates eight version/scope fields and dispatches readonly composition (142.3031ms)\n✔ MCP rejects fetch-blocked explicit ports before listening, including newly observed omissions (5.8282ms)\n✔ MCP reports an expired session as not found so clients can reinitialize (39.5307ms)\n✔ preflight keepalive preserves sse response content and headers (115.3339ms)\n✔ preflight keepalive preserves json response content and headers (90.1232ms)\n✔ preflight keepalive preserves delayed-headers response content and headers (93.4859ms)\n✔ preflight stream cancellation removes both timer cleanup listeners (6.5263ms)\n✔ streamable HTTP exposes the implemented standalone tool waves (353.4949ms)\n✔ full source baseline freezes and classifies every original tool contract (1.2055ms)\n✔ 0.30 lifecycle writes return version 2 operation receipts (189.6196ms)\n✔ failed SAP pre-change observation prevents the write action (38.6654ms)\n✔ health endpoint responds without an MCP session (4.3539ms)\n✔ an argument the contract does not declare is rejected, not discarded (15.1095ms)\nℹ tests 13\nℹ suites 0\nℹ pass 13\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3832.4\n",
+          "stderr": ""
+        }
+      ]
+    }
+  ],
+  "httpIdleReproduction": {
+    "startedAt": "2026-10-05T07:19:54.333Z",
+    "kind": "local_transport_only_no_sap",
+    "configurationWrites": 0,
+    "durationMs": 310000,
+    "cases": [
+      {
+        "name": "default_fetch_without_keepalive",
+        "at": "2026-10-05T07:19:54.396Z",
+        "finishedAt": "2026-10-05T07:25:01.009Z",
+        "ok": false,
+        "error": "TypeError: terminated",
+        "cause": "BodyTimeoutError: Body Timeout Error",
+        "causeCode": "UND_ERR_BODY_TIMEOUT"
+      },
+      {
+        "name": "native_http_acceptance_without_keepalive",
+        "at": "2026-10-05T07:19:54.397Z",
+        "finishedAt": "2026-10-05T07:25:04.428Z",
+        "ok": true,
+        "status": 200,
+        "complete": true
+      },
+      {
+        "name": "public_mcp_default_fetch_with_product_keepalive",
+        "at": "2026-10-05T07:19:54.398Z",
+        "finishedAt": "2026-10-05T07:25:04.429Z",
+        "ok": true,
+        "complete": true,
+        "keyCount": 19,
+        "readOnly": true
+      }
+    ],
+    "transportErrors": [
+      "Error: SSE stream disconnected: TypeError: terminated",
+      "Error: SSE stream disconnected: AbortError: This operation was aborted",
+      "Error: SSE stream disconnected: AbortError: This operation was aborted"
+    ],
+    "status": "passed",
+    "finishedAt": "2026-10-05T07:25:04.430Z"
+  },
+  "evidenceTest": "Recorded actual positive and six public refusals, exact nineteen keys and complete field layouts, five versions and four API identities; no synthetic pass receipt.",
+  "historicalChecks": ".doc/orvanta-configuration-bc-preflight-local-checks-20261005-r50.json"
+}

@@ -1,0 +1,6 @@
+Headless verification PASS (1 tree(s), no VS Code host dependency)
+helper capabilities consistent: 38 capabilities over 67 tools
+helper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool
+bootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared
+tool index consistent: 190 tools, 122 read-only, 12 groups
+docs/ops-acceptance-matrix.md is current (15 families)

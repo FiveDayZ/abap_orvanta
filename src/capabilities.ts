@@ -597,18 +597,81 @@ export async function buildCapabilityReport(
         "read_abap_table",
         "preview_configuration",
         "describe_configuration_object",
+        "read_configuration_fi_rule",
+        "inspect_configuration_transport",
+        "compare_configuration_unit",
+        "preview_configuration_number_range",
+        "read_configuration_number_range_scope",
+        "read_configuration_number_range",
+        "read_configuration_bc_set",
+        "read_configuration_bc_native_snapshot",
+        "preview_configuration_bc_native",
+        "preview_configuration_bte_product",
+        "prepare_configuration_bte_product_change",
+        "inspect_configuration_bte_maintenance_route",
+        "inspect_configuration_bte_native_metadata",
+        "inspect_configuration_bc_route",
+        "read_configuration_bc_guard",
+        "read_configuration_bc_cts_snapshot",
+        "read_configuration_bc_before_state",
+        "read_configuration_bc_effects",
+        "preflight_configuration_bc_activation",
+        "find_configuration_bc_sets",
+        "compare_configuration_bc_set",
+        "inspect_configuration_bc_impact",
+        "read_configuration_bc_dependencies",
+        "read_configuration_bc_logs",
+        "read_configuration_unit",
+        "preview_configuration_unit_text",
+        "reconcile_configuration_unit_text",
         "read_ddic_table_conversion_status"
       ],
       unknownTargetObservation(
-        "Requires live table metadata and a successful query; the legacy alternative additionally requires the reviewed RFC reader and a supported full-row layout."
+        "Requires live table metadata and a successful query; the legacy alternative additionally requires the reviewed RFC reader and a supported layout. read_configuration_unit is a pinned w200/200 exact internal-key reader for T006/T006A text projections with value rechecks; two T006 FLTP fields are omitted and its fingerprint cannot guard writes. Reconciliation additionally requires a matching local write receipt, a version-bound old row, the attested native full-row reader and bounded CTS observations; optional lock diagnostics need their existing approval. Current values never settle historical commit uncertainty."
       )
     ),
     capability(
       "configuration-img-read",
       "target-specific",
-      ["find_configuration_activities"],
+      [
+        "find_configuration_activities",
+        "read_configuration_activity",
+        "read_configuration_documentation"
+      ],
       unknownTargetObservation(
-        "Requires the reviewed standard RFC wrapper, dependency and IMG header layout. Optional object resolution and details are scoped to w200/200 T006/T006A with pinned metadata readers, ISO language mapping and bounded local physical paths. Complete SPRO visibility and documentation content remain unverified. No IMG call is made by this capability report."
+        "Table lookup requires the reviewed standard RFC wrapper, dependency and IMG header layout; resolved objects/details remain scoped to w200/200 T006/T006A. Direct activity lookup is scoped to w200/200 with pinned metadata, ISO language mapping and bounded local physical paths. Documentation requires a SIMG-linked HY/E index and pinned DOCU_GET/DOCU_READ APIs; line count is checked before whole-document reads. Complete SPRO visibility, links, dependency semantics and executable maintenance APIs remain unresolved. This capability report makes no IMG/documentation call and does not attest target availability."
+      )
+    ),
+    capability(
+      "configuration-unit-text-apply",
+      "target-specific",
+      ["apply_configuration_unit_text"],
+      unknownTargetObservation(
+        "Requires separately deployed, exact active-source/interface-attested Z_ORVANTA_CFG_UNIT_APPLY on w200/200. Registration and the local candidate do not establish modification authority, locks, exact CTS recording, commit/rollback or business acceptance. Only existing language-row nonempty descriptions; client/ALE restrictions may block. No GUI, generic writes or automatic retry. This report does not invoke the command."
+      )
+    ),
+    capability(
+      "configuration-number-range-api",
+      "target-specific",
+      [
+        "read_configuration_number_range_api",
+        "apply_configuration_number_range",
+        "reconcile_configuration_number_range"
+      ],
+      unknownTargetObservation(
+        "Requires independently deployed exact active Z_ORVANTA_CFG_NR_READ/APPLY, complete TNRO/NRIV layouts and pinned standard APIs on w200/200. Local registration does not attest native availability or positive SAP persistence. Writes are limited to unused, unbuffered, numeric, nonannual customer intervals with whole-object versions and protected receipts; no allocation, current-level reset, CTS migration or automatic retry. Reconciliation preserves historical unknown outcomes and cannot prove commit, authorship or released locks from current values. This report does not invoke either native API."
+      )
+    ),
+    capability(
+      "configuration-bc-native-command",
+      "target-specific",
+      [
+        "apply_configuration_bc_set",
+        "recover_configuration_bc_set",
+        "reconcile_configuration_bc_execution"
+      ],
+      unknownTargetObservation(
+        "Requires independently deployed and exactly attested Z_ORVANTA_CFG_BC_APPLY/RECOVER/RECONCILE, r64 record kernel and r65 owner include on w200/GR2/200. Fixed EHS_CUNI_KNM/N ten insertions with nine protected keys and Customizing429/430 only. Durable intent and protected receipts forbid replay after uncertain dispatch. Protocol commits independently; recovery CTS cleanup is a separate durable phase. Read-only reconciliation preserves the historical receipt and target protection. Direct standard-call and layout pins do not prove the full transitive graph. Local registration/candidates do not prove native syntax, deployment or persistence. This report invokes no command."
       )
     ),
     capability("adt-transport-read", "native-adt", ["manage_transport_requests"], transports),

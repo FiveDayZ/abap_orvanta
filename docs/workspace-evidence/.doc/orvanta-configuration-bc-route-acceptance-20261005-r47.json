@@ -1,0 +1,1832 @@
+{
+  "startedAt": "2026-10-05T02:38:37.326Z",
+  "configurationWrites": 0,
+  "ready": {
+    "pid": 21164,
+    "url": "http://127.0.0.1:7304/mcp",
+    "allowedTools": [
+      "read_configuration_bc_native_snapshot",
+      "inspect_configuration_bc_route",
+      "read_function_module_interface"
+    ],
+    "manifestFingerprint": "a690438ee116817e57a4ce3fa0aa0f94a80991e9f51e8994cedd3206ff7527d7",
+    "startedAt": "2026-10-05T02:37:43.373Z"
+  },
+  "calls": [
+    {
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "client": "200",
+        "readOnly": true,
+        "activationAvailable": false,
+        "saveAvailable": false,
+        "snapshot": false,
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "versionScope": "complete_five_table_rows_including_missing_rows_and_FLTP; GR2/200/user/EHS_CUNI_KNM/N",
+        "sourceValueFingerprints": {
+          "T006": "68445907a7e02498cba125b359631f8121b8f411f1651f6b8a32cbab27d1cbb1",
+          "T006A": "b3adb6899b5fe95f18838d2bf2eec361f3359d20fcb6d7b9d5f10f6e33df0c2b",
+          "T006B": "41f208bfc3d3a11116fd4d102ee064541ecab5dedcc3fca1024cf6c87d9bad51",
+          "T006C": "6ca82a7a54b68e4e0dfa81d93ff428b37461463719cd31748155feb7f3b01d0f",
+          "T006D": "f71a3ed75487b48a905e0a79c7bf0f5569e3114dad901c12fca34899cb90057c"
+        },
+        "bodyFingerprint": "c2a86940b2fae1344610508fb48341a5952ef83f66a588870dc02f4560911c67",
+        "states": [
+          {
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "status": "present",
+            "mappingConflict": false
+          }
+        ],
+        "native": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "ET_T006": [],
+          "ET_T006A": [],
+          "ET_T006B": [],
+          "ET_T006C": [],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        },
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        },
+        "warning": "Sequential repeated observations are not a locked snapshot. SOAP fields are display strings; native versions retain full typed rows, float fields and padding. No language overlay, value conversion, activation, simulation, CTS recording or write approval is produced."
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w300",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool inspect_configuration_bc_route: [\n  {\n    \"received\": \"w300\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"w200\",\n    \"path\": [\n      \"connectionId\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"w200\\\"\"\n  }\n]"
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "OTHER",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool inspect_configuration_bc_route: [\n  {\n    \"received\": \"OTHER\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"EHS_CUNI_KNM\",\n    \"path\": [\n      \"bcSetId\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"EHS_CUNI_KNM\\\"\"\n  }\n]"
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "short"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool inspect_configuration_bc_route: [\n  {\n    \"validation\": \"regex\",\n    \"code\": \"invalid_string\",\n    \"message\": \"Invalid\",\n    \"path\": [\n      \"nativeTargetVersion\"\n    ]\n  }\n]"
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "executeMethod": true
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool inspect_configuration_bc_route: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"executeMethod\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'executeMethod'\"\n  }\n]"
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "client": "200",
+        "readOnly": true,
+        "executable": false,
+        "activationAvailable": false,
+        "methodExecutionAvailable": false,
+        "snapshot": false,
+        "metadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "object": {
+          "name": "CUNI",
+          "type": "T",
+          "transportType": "TDAT"
+        },
+        "importHandling": "unknown",
+        "transportHandling": "automatic",
+        "members": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006A",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006B",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006C",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006D",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006I",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006J",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006T",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006_OIB",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          }
+        ],
+        "methods": [],
+        "methodSources": [],
+        "otherMemberTables": [
+          "T006I",
+          "T006J",
+          "T006T",
+          "T006_OIB"
+        ],
+        "unresolved": [
+          "STANDARD_ACTIVATION_DEPENDENCIES_NOT_ATTESTED",
+          "AFTER_IMPORT_DEPENDENCIES_NOT_ATTESTED",
+          "CTS_AND_RECOVERY_NOT_ATTESTED"
+        ],
+        "native": {
+          "EV_CODE": "ROUTE_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+          "ET_OBJH": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "CLIDEP": "X",
+              "LANGDEP": "X",
+              "ALEDEP": "",
+              "OBJCATEG": "CUST",
+              "TRCOMPLETE": "",
+              "TRDISJUNCT": "",
+              "PHASELEVEL": "0",
+              "LOCKMETH": "",
+              "TADIRCMETH": "",
+              "CHECKID": "",
+              "OBJNAMELEN": "00",
+              "PROTECT": "",
+              "OBJTRANSP": "2",
+              "LUSER": "",
+              "LDATE": "0000-00-00",
+              "OBJNAMECLS": "",
+              "CURSETTING": "",
+              "OBJHASADDR": "",
+              "IMPORTABLE": "",
+              "OBJCHARSET": "",
+              "MCCATEGORY": "",
+              "MCDOCUID": ""
+            }
+          ],
+          "ET_OBJS": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006A",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006B",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006C",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006D",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006I",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006J",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006T",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006_OIB",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            }
+          ],
+          "ET_OBJM": []
+        },
+        "bodyFingerprint": "4df5d912da76a1a117c14802be1a1811a7631c33167e7995ac09a320bc969ea3",
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "metadataReads": 12,
+          "metadataReadLimit": 32,
+          "before": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          },
+          "after": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          }
+        },
+        "warning": "Observed CUNI/T metadata and method source identities only. No dynamic method, GUI routine, activation, simulation, CTS, log or configuration write is invoked. Source readback does not prove an executable activation route or its dependencies. Repeated sequential observations are not locked snapshots."
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "client": "200",
+        "readOnly": true,
+        "executable": false,
+        "activationAvailable": false,
+        "methodExecutionAvailable": false,
+        "snapshot": false,
+        "metadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "object": {
+          "name": "CUNI",
+          "type": "T",
+          "transportType": "TDAT"
+        },
+        "importHandling": "unknown",
+        "transportHandling": "automatic",
+        "members": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006A",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006B",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006C",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006D",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006I",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006J",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006T",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006_OIB",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          }
+        ],
+        "methods": [],
+        "methodSources": [],
+        "otherMemberTables": [
+          "T006I",
+          "T006J",
+          "T006T",
+          "T006_OIB"
+        ],
+        "unresolved": [
+          "STANDARD_ACTIVATION_DEPENDENCIES_NOT_ATTESTED",
+          "AFTER_IMPORT_DEPENDENCIES_NOT_ATTESTED",
+          "CTS_AND_RECOVERY_NOT_ATTESTED"
+        ],
+        "native": {
+          "EV_CODE": "ROUTE_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+          "ET_OBJH": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "CLIDEP": "X",
+              "LANGDEP": "X",
+              "ALEDEP": "",
+              "OBJCATEG": "CUST",
+              "TRCOMPLETE": "",
+              "TRDISJUNCT": "",
+              "PHASELEVEL": "0",
+              "LOCKMETH": "",
+              "TADIRCMETH": "",
+              "CHECKID": "",
+              "OBJNAMELEN": "00",
+              "PROTECT": "",
+              "OBJTRANSP": "2",
+              "LUSER": "",
+              "LDATE": "0000-00-00",
+              "OBJNAMECLS": "",
+              "CURSETTING": "",
+              "OBJHASADDR": "",
+              "IMPORTABLE": "",
+              "OBJCHARSET": "",
+              "MCCATEGORY": "",
+              "MCDOCUID": ""
+            }
+          ],
+          "ET_OBJS": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006A",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006B",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006C",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006D",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006I",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006J",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006T",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006_OIB",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            }
+          ],
+          "ET_OBJM": []
+        },
+        "bodyFingerprint": "4df5d912da76a1a117c14802be1a1811a7631c33167e7995ac09a320bc969ea3",
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "metadataReads": 12,
+          "metadataReadLimit": 32,
+          "before": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          },
+          "after": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          }
+        },
+        "warning": "Observed CUNI/T metadata and method source identities only. No dynamic method, GUI routine, activation, simulation, CTS, log or configuration write is invoked. Source readback does not prove an executable activation route or its dependencies. Repeated sequential observations are not locked snapshots."
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking inspect_configuration_bc_route: Error: CONFIGURATION_BC_ROUTE_VERSION_CONFLICT"
+      }
+    },
+    {
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "client": "200",
+        "readOnly": true,
+        "activationAvailable": false,
+        "saveAvailable": false,
+        "snapshot": false,
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "versionScope": "complete_five_table_rows_including_missing_rows_and_FLTP; GR2/200/user/EHS_CUNI_KNM/N",
+        "sourceValueFingerprints": {
+          "T006": "68445907a7e02498cba125b359631f8121b8f411f1651f6b8a32cbab27d1cbb1",
+          "T006A": "b3adb6899b5fe95f18838d2bf2eec361f3359d20fcb6d7b9d5f10f6e33df0c2b",
+          "T006B": "41f208bfc3d3a11116fd4d102ee064541ecab5dedcc3fca1024cf6c87d9bad51",
+          "T006C": "6ca82a7a54b68e4e0dfa81d93ff428b37461463719cd31748155feb7f3b01d0f",
+          "T006D": "f71a3ed75487b48a905e0a79c7bf0f5569e3114dad901c12fca34899cb90057c"
+        },
+        "bodyFingerprint": "c2a86940b2fae1344610508fb48341a5952ef83f66a588870dc02f4560911c67",
+        "states": [
+          {
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "status": "present",
+            "mappingConflict": false
+          }
+        ],
+        "native": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "ET_T006": [],
+          "ET_T006A": [],
+          "ET_T006B": [],
+          "ET_T006C": [],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        },
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        },
+        "warning": "Sequential repeated observations are not a locked snapshot. SOAP fields are display strings; native versions retain full typed rows, float fields and padding. No language overlay, value conversion, activation, simulation, CTS recording or write approval is produced."
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "read_function_module_interface",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "functionName": {
+            "type": "string"
+          },
+          "includeExecutionSupport": {
+            "type": "boolean",
+            "default": false
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "functionName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    },
+    {
+      "name": "inspect_configuration_bc_route",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "bcSetId": {
+            "type": "string",
+            "const": "EHS_CUNI_KNM"
+          },
+          "version": {
+            "type": "string",
+            "const": "N"
+          },
+          "nativeSourceVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "nativeTargetVersion": {
+            "$ref": "#/properties/nativeSourceVersion"
+          }
+        },
+        "required": [
+          "connectionId",
+          "bcSetId",
+          "version",
+          "nativeSourceVersion",
+          "nativeTargetVersion"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    },
+    {
+      "name": "read_configuration_bc_native_snapshot",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "bcSetId": {
+            "type": "string",
+            "const": "EHS_CUNI_KNM"
+          },
+          "version": {
+            "type": "string",
+            "const": "N"
+          }
+        },
+        "required": [
+          "connectionId",
+          "bcSetId",
+          "version"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    }
+  ],
+  "publicSchemaRefusals": 4,
+  "staleTargetRefusedBeforeRoute": true,
+  "beforeAfterUnchanged": true,
+  "nativeRejections": {
+    "startedAt": "2026-10-05T02:37:43.116Z",
+    "configurationWrites": 0,
+    "definition": {
+      "sourceFingerprint": "66a20f9674a43b97e152ab80b7c022a356c9ce69c01a2b10c113bc9df6c87412",
+      "interfaceFingerprint": "6403067b2b9cce0e92d1e40e1c7c2732822f0e06c4ce829ad03294c00d3756ff"
+    },
+    "calls": [
+      {
+        "input": {
+          "IV_BC_SET": "EHS_CUNI_KNM",
+          "IV_VERSION": "N",
+          "IV_SOURCE_VERSION": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "IV_TARGET_VERSION": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "response": {
+          "outputs": {
+            "EV_CODE": "SOURCE_NOT_ATTESTED",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_SOURCE_VERSION": "",
+            "EV_TARGET_VERSION": "",
+            "EV_METADATA_VERSION": "",
+            "ET_OBJH": [],
+            "ET_OBJS": [],
+            "ET_OBJM": []
+          }
+        }
+      },
+      {
+        "input": {
+          "IV_BC_SET": "EHS_CUNI_KNM",
+          "IV_VERSION": "N",
+          "IV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "IV_TARGET_VERSION": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "response": {
+          "outputs": {
+            "EV_CODE": "VERSION_CONFLICT",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_SOURCE_VERSION": "",
+            "EV_TARGET_VERSION": "",
+            "EV_METADATA_VERSION": "",
+            "ET_OBJH": [],
+            "ET_OBJS": [],
+            "ET_OBJM": []
+          }
+        }
+      }
+    ],
+    "status": "passed"
+  },
+  "metrics": {
+    "startedAt": "2026-10-05T02:37:42.982Z",
+    "nativeQueries": 840,
+    "tableReads": 840,
+    "definitionReads": 3064,
+    "repositoryReads": 103,
+    "nativeReaderCalls": 14,
+    "nativePreviewCalls": 0,
+    "nativeRouteCalls": 6,
+    "sourceReads": 8,
+    "configurationWrites": 0
+  },
+  "status": "passed",
+  "finishedAt": "2026-10-05T02:42:48.607Z",
+  "nativeObservations": [
+    {
+      "at": "2026-10-05T02:37:43.232Z",
+      "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+      "outputs": {
+        "EV_CODE": "SOURCE_NOT_ATTESTED",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "",
+        "EV_TARGET_VERSION": "",
+        "EV_METADATA_VERSION": "",
+        "ET_OBJH": [],
+        "ET_OBJS": [],
+        "ET_OBJM": []
+      }
+    },
+    {
+      "at": "2026-10-05T02:37:43.358Z",
+      "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+      "outputs": {
+        "EV_CODE": "VERSION_CONFLICT",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "",
+        "EV_TARGET_VERSION": "",
+        "EV_METADATA_VERSION": "",
+        "ET_OBJH": [],
+        "ET_OBJS": [],
+        "ET_OBJM": []
+      }
+    },
+    {
+      "at": "2026-10-05T02:39:47.116Z",
+      "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+      "outputs": {
+        "EV_CODE": "ROUTE_READ_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "ET_OBJH": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "CLIDEP": "X",
+            "LANGDEP": "X",
+            "ALEDEP": "",
+            "OBJCATEG": "CUST",
+            "TRCOMPLETE": "",
+            "TRDISJUNCT": "",
+            "PHASELEVEL": "0",
+            "LOCKMETH": "",
+            "TADIRCMETH": "",
+            "CHECKID": "",
+            "OBJNAMELEN": "00",
+            "PROTECT": "",
+            "OBJTRANSP": "2",
+            "LUSER": "",
+            "LDATE": "0000-00-00",
+            "OBJNAMECLS": "",
+            "CURSETTING": "",
+            "OBJHASADDR": "",
+            "IMPORTABLE": "",
+            "OBJCHARSET": "",
+            "MCCATEGORY": "",
+            "MCDOCUID": ""
+          }
+        ],
+        "ET_OBJS": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006A",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006B",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006C",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006D",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006I",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006J",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006T",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006_OIB",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          }
+        ],
+        "ET_OBJM": []
+      }
+    },
+    {
+      "at": "2026-10-05T02:39:47.271Z",
+      "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+      "outputs": {
+        "EV_CODE": "ROUTE_READ_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "ET_OBJH": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "CLIDEP": "X",
+            "LANGDEP": "X",
+            "ALEDEP": "",
+            "OBJCATEG": "CUST",
+            "TRCOMPLETE": "",
+            "TRDISJUNCT": "",
+            "PHASELEVEL": "0",
+            "LOCKMETH": "",
+            "TADIRCMETH": "",
+            "CHECKID": "",
+            "OBJNAMELEN": "00",
+            "PROTECT": "",
+            "OBJTRANSP": "2",
+            "LUSER": "",
+            "LDATE": "0000-00-00",
+            "OBJNAMECLS": "",
+            "CURSETTING": "",
+            "OBJHASADDR": "",
+            "IMPORTABLE": "",
+            "OBJCHARSET": "",
+            "MCCATEGORY": "",
+            "MCDOCUID": ""
+          }
+        ],
+        "ET_OBJS": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006A",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006B",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006C",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006D",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006I",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006J",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006T",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006_OIB",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          }
+        ],
+        "ET_OBJM": []
+      }
+    },
+    {
+      "at": "2026-10-05T02:41:00.581Z",
+      "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+      "outputs": {
+        "EV_CODE": "ROUTE_READ_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "ET_OBJH": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "CLIDEP": "X",
+            "LANGDEP": "X",
+            "ALEDEP": "",
+            "OBJCATEG": "CUST",
+            "TRCOMPLETE": "",
+            "TRDISJUNCT": "",
+            "PHASELEVEL": "0",
+            "LOCKMETH": "",
+            "TADIRCMETH": "",
+            "CHECKID": "",
+            "OBJNAMELEN": "00",
+            "PROTECT": "",
+            "OBJTRANSP": "2",
+            "LUSER": "",
+            "LDATE": "0000-00-00",
+            "OBJNAMECLS": "",
+            "CURSETTING": "",
+            "OBJHASADDR": "",
+            "IMPORTABLE": "",
+            "OBJCHARSET": "",
+            "MCCATEGORY": "",
+            "MCDOCUID": ""
+          }
+        ],
+        "ET_OBJS": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006A",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006B",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006C",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006D",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006I",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006J",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006T",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006_OIB",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          }
+        ],
+        "ET_OBJM": []
+      }
+    },
+    {
+      "at": "2026-10-05T02:41:00.731Z",
+      "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+      "outputs": {
+        "EV_CODE": "ROUTE_READ_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "ET_OBJH": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "CLIDEP": "X",
+            "LANGDEP": "X",
+            "ALEDEP": "",
+            "OBJCATEG": "CUST",
+            "TRCOMPLETE": "",
+            "TRDISJUNCT": "",
+            "PHASELEVEL": "0",
+            "LOCKMETH": "",
+            "TADIRCMETH": "",
+            "CHECKID": "",
+            "OBJNAMELEN": "00",
+            "PROTECT": "",
+            "OBJTRANSP": "2",
+            "LUSER": "",
+            "LDATE": "0000-00-00",
+            "OBJNAMECLS": "",
+            "CURSETTING": "",
+            "OBJHASADDR": "",
+            "IMPORTABLE": "",
+            "OBJCHARSET": "",
+            "MCCATEGORY": "",
+            "MCDOCUID": ""
+          }
+        ],
+        "ET_OBJS": [
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006A",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006B",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006C",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006D",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006I",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "X",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006J",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006T",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          },
+          {
+            "OBJECTNAME": "CUNI",
+            "OBJECTTYPE": "T",
+            "TABNAME": "T006_OIB",
+            "COVER": "",
+            "CANDIDATE": "",
+            "DDIC": "",
+            "PRIM_TABLE": "",
+            "VIEWGRANT": "",
+            "TAB_FILLED": ""
+          }
+        ],
+        "ET_OBJM": []
+      }
+    }
+  ],
+  "previousFailure": {
+    "at": "2026-10-05T02:09:22.867Z",
+    "incident": ".logs/spro-r47-route-audit-2026-10-05-020922",
+    "beforeAfterUnchanged": true
+  }
+}

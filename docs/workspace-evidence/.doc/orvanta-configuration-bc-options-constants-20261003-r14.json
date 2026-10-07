@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-03T09:30:38.399Z",
+  "server": {
+    "pid": 45720,
+    "url": "http://127.0.0.1:7891/mcp",
+    "revision": "r14",
+    "startedAt": "2026-10-03T09:08:34.961Z",
+    "readOnly": true,
+    "connections": [
+      {
+        "id": "w200",
+        "client": "200"
+      }
+    ],
+    "manifestFingerprint": "67fc80560dda72e438f0e2c4717f2c100cf7e1eab47897ba6473fbdcc2581d8f"
+  },
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SCPRCONST",
+        "objectType": "PROG/I",
+        "startLine": 1,
+        "lineCount": 10000
+      },
+      "isError": false,
+      "response": "Source from SCPRCONST (lines 1-18 of 18, 18 lines retrieved):\n\n```abap\n*----------------------------------------------------------------------\n*   INCLUDE LSCPRCPTCO\n*----------------------------------------------------------------------\n\n* Symbols for list output\ninclude: <symbol>, <icon>.\n\n* Constants used by programs at the interface\ninclude scprextconst.\n\n* Switch on/off authority check for scpr* and\n* Define authority object\nconstants: scpr_authority_check type c value 'X',\n           scpr_authority_object(12) type c value 'S_BCSETS'.\n\n* Constants for bcset internal use\ninclude scprintconst.\n\n```\n\nFull Source SHA-256: 714f24278a7e45d62c6661d96d9207179820cd79f7b82e7d8b6c3f7e2e47b8b6\nURI: /sap/bc/adt/programs/includes/scprconst/source/main\n\nEnhancement metadata unavailable (unsupported)."
+    }
+  ],
+  "finishedAt": "2026-10-03T09:30:38.841Z"
+}

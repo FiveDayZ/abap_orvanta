@@ -1,0 +1,53 @@
+{
+  "preparedAt": "2026-10-04T01:26:26.699Z",
+  "revision": "r33",
+  "status": "planned_business_writes_not_authorized",
+  "goal": "One API-only existing unit-language description save, full readback, CTS reconciliation and restoration closure",
+  "target": {
+    "connectionId": "w200",
+    "system": "GR2",
+    "client": "200",
+    "unitKey": "KG",
+    "language": "ZH",
+    "sapLanguage": "1",
+    "field": "MSEHL",
+    "originalValueObserved": "千克",
+    "proposedTemporaryValue": "千克（API验收）",
+    "restorationValue": "千克"
+  },
+  "customizing": {
+    "requestNumber": "GR2K923429",
+    "taskNumber": "GR2K923430",
+    "lastObservation": "metadata_matches; four bounded CUNI/T006A entry projections empty before and after r32",
+    "businessEntryRecordingApproval": "required"
+  },
+  "nativeApi": "Z_ORVANTA_CFG_UNIT_APPLY",
+  "hostTool": "apply_configuration_unit_text",
+  "versionSource": "Fresh SAP full-row version plus fresh existing readFingerprint before each separate command; never reuse pre-save version for restoration",
+  "sequence": [
+    "Before any business invocation, obtain explicit approval for this exact key, MSEHL temporary value, restore value and W/Q container use. Freeze a separate isolated build and keep shared service unchanged.",
+    "Re-attest native writer and reader, DDIC and all unchanged baseline fields. Re-check W/Q open type, owner, source client and metadata. Stop on drift.",
+    "Invoke the approved temporary patch once with a new operationId; require native APPLIED, committed=true, full SAP row/version readback and official CTS key evidence in the approved task.",
+    "If a command is uncertain or fails after invocation, preserve the receipt and reconcile real values, CTS and locks before any retry or restore; never blindly repeat.",
+    "Restore only MSEHL to 千克 with a separate operationId and the freshly read post-save version, after proving the current row matches this approved temporary patch. Stop rather than overwrite independent edits.",
+    "Read full ZH/EN text rows, supported T006 projection, source/interface, CTS and WYS target locks; compare final values to baseline. Leave approved CTS entries open and record their actual state; do not remove entries or release requests."
+  ],
+  "acceptance": [
+    "Temporary value persisted as approved",
+    "Omitted fields and English row unchanged",
+    "Official exact-key recording proved without generic E071K allowlist changes",
+    "Original text and all unchanged row fields restored",
+    "Durable receipts reconciled and no observed target locks remain"
+  ],
+  "stillSeparate": [
+    "Native locked stale-version race and lock contention need a controlled SAP collaborator",
+    "Maintenance/CTS/update failure rollback requires a separately reviewed safe fault scenario",
+    "BC Set/number-range/other configuration business operations are outside this one exact-key approval",
+    "Transport release, import, production writes and GUI automation excluded"
+  ],
+  "constraints": [
+    "r32 remains no-new-value-only and is already stopped; do not broaden its guard",
+    "Restoration does not remove recorded CTS keys",
+    "Full SPRO project remains open until backlog requirements have their own acceptance evidence"
+  ]
+}

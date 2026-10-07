@@ -1,0 +1,188 @@
+{
+  "format": 1,
+  "at": "2026-10-06T18:03:35.509+08:00",
+  "status": "Partially Verified",
+  "finalTestFile": {
+    "path": "test/configuration-bc-command-mcp.test.ts",
+    "sha256": "cd20e7062033f67a76675fdef353739f2eee68514452fb5b15680815d90252e6"
+  },
+  "checks": [
+    {
+      "name": "compile-public-reconcile",
+      "started": "2026-10-06T10:01:00.666Z",
+      "finished": "2026-10-06T10:01:10.444Z",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--outDir",
+        ".cache/spro-r65/runtime/dist",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "name": "public-final",
+      "started": "2026-10-06T10:02:16.089Z",
+      "finished": "2026-10-06T10:02:17.118Z",
+      "command": [
+        "node",
+        "--test",
+        ".cache/spro-r65/runtime/dist/test/configuration-bc-command-mcp.test.js"
+      ],
+      "exitCode": 0,
+      "output": "✔ SDK HTTP -> public strict schema -> real ToolService -> protected native dispatch/recovery; no generic fallback (306.4992ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 961.778\n"
+    },
+    {
+      "name": "format-public-final",
+      "started": "2026-10-06T10:02:17.176Z",
+      "finished": "2026-10-06T10:02:17.367Z",
+      "command": [
+        "node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "test/configuration-bc-command-mcp.test.ts"
+      ],
+      "exitCode": 0,
+      "output": "Checking formatting...\nAll matched files use Prettier code style!\n"
+    }
+  ],
+  "artifactVerification": {
+    "at": "2026-10-06T10:02:18.990Z",
+    "documents": [
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-record-kernel-20261006-175703-r65.abap",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-record-kernel-20261006-175703-r65.abap",
+        "bytes": 26094,
+        "sha256": "ab58b72667d3924f40e1161312a29d8f33cfe540ed4d0a94aace2afc46ed74ce"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-owner-20261006-175703-r65.abap",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-owner-20261006-175703-r65.abap",
+        "bytes": 59908,
+        "sha256": "09f15fd676f5898eba486530e763e71f55f916adef64830a5af9464ea3d56950"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-apply-20261006-175703-r65.abap",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-apply-20261006-175703-r65.abap",
+        "bytes": 1635,
+        "sha256": "95623ff23885105f5a02a029876217e9d871d193c7233cafcf9062eb20d26c29"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-recover-20261006-175703-r65.abap",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-recover-20261006-175703-r65.abap",
+        "bytes": 1637,
+        "sha256": "5835afc85c28eaa6c58148807461c2c0a3dabf5bceac03534c0844ad61a84f66"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-reconcile-20261006-175703-r65.abap",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-reconcile-20261006-175703-r65.abap",
+        "bytes": 1646,
+        "sha256": "dc0e4721606bf7a9ff0e3bc2b48b8dbf56c2ce7a0a59645ac5ffa6fbd2ff5e54"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-top-after-20261006-175703-r65.abap",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-top-after-20261006-175703-r65.abap",
+        "bytes": 205,
+        "sha256": "ddcbf62b1f86f11e6a6d1cb1805c752250f18a712ee3a661058749e477742267"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-top-before-20261006-175703-r65.abap",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-top-before-20261006-175703-r65.abap",
+        "bytes": 133,
+        "sha256": "2fa6f1a96f7353d85377118b9e05e90868805806f5b2bac63b5236b21a4dab18"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-owner-deployment-candidate-20261006-175703-r65.json",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-owner-deployment-candidate-20261006-175703-r65.json",
+        "bytes": 146974,
+        "sha256": "a1983bbf952dcf81cafe3609178154cf438fbef434c3b58cdebf333b4f2d3229"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-owner-deployment-review-20261006-175703-r65.md",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-owner-deployment-review-20261006-175703-r65.md",
+        "bytes": 9463,
+        "sha256": "edf57e7f52d82e3a2d44a5a89272cd85fbd9a4202f285019ee377f927205f28c"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-native-acceptance-plan-20261006-175703-r66.md",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-native-acceptance-plan-20261006-175703-r66.md",
+        "bytes": 2975,
+        "sha256": "e4357ef8b1b61df3964344528e8064bd8cf76f403cba7d34815729776968f619"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\code-update-20261006-175703.md",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\code-update-20261006-175703.md",
+        "bytes": 10327,
+        "sha256": "db75a6d81d96f51961dfd22b8bc90adc87270ab58fee201cd65655bd73eb31f6"
+      },
+      {
+        "original": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-owner-evidence-20261006-175703-r65.json",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-owner-evidence-20261006-175703-r65.json",
+        "bytes": 598289,
+        "sha256": "ed29d37c42ed3ad52ab39f9bc52ba2b4fe4eb4ff9d21269e19122d633516635a"
+      }
+    ],
+    "changed": [
+      "docs/workspace-evidence/.doc/code-update-20261006-175703.md",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-apply-20261006-175703-r65.abap",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-native-acceptance-plan-20261006-175703-r66.md",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-20261006-175703-r65.abap",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-deployment-candidate-20261006-175703-r65.json",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-deployment-review-20261006-175703-r65.md",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-evidence-20261006-175703-r65.json",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-reconcile-20261006-175703-r65.abap",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-record-kernel-20261006-175703-r65.abap",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-recover-20261006-175703-r65.abap",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-top-after-20261006-175703-r65.abap",
+      "docs/workspace-evidence/.doc/orvanta-configuration-bc-top-before-20261006-175703-r65.abap",
+      "src/configuration-bc-command.ts",
+      "src/configuration-bc-execution-store.ts",
+      "src/configuration-bc-owner-api.ts",
+      "src/configuration-bc-owner-pins.ts",
+      "test/configuration-bc-command-fixture.ts",
+      "test/configuration-bc-command-mcp.test.ts",
+      "test/configuration-bc-command.test.ts",
+      "test/fixtures/configuration-bc-owner-w200-r65.json",
+      "contracts/tool-index.json",
+      "contracts/verification-registry.json",
+      "docs/tool-index.md",
+      "src/capabilities.ts",
+      "src/contracts.ts",
+      "src/mcp.ts",
+      "src/tool-registry.ts",
+      "src/tools.ts"
+    ],
+    "deleted": [],
+    "stagedUnchanged": true,
+    "sharedDistUnchanged": true,
+    "nativeCommandCalls": 0
+  },
+  "latestReadAttempt": {
+    "at": "2026-10-06T09:58:45.947Z",
+    "readOnly": true,
+    "configurationWrites": 0,
+    "ctsWrites": 0,
+    "protocolWrites": 0,
+    "calls": [
+      {
+        "at": "2026-10-06T09:58:45.945Z",
+        "name": "read_configuration_bc_native_snapshot",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N"
+        },
+        "isError": true,
+        "data": {
+          "text": "MCP error -32602: Tool read_configuration_bc_native_snapshot not found"
+        }
+      }
+    ]
+  },
+  "sapWrites": 0,
+  "nativeApplyRecoverCalls": 0,
+  "transportsReleased": 0,
+  "baseEvidence": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-bc-owner-evidence-20261006-175703-r65.json"
+}

@@ -1,0 +1,26 @@
+{
+  "plannedAt": "2026-10-04T02:15:25.573Z",
+  "status": "planned_not_implemented",
+  "basis": "CFG-02 reconcile requirement and r33 actual unknown-receipt incident, after r34 happy-path save/restore acceptance",
+  "goal": "Add an API-only read-only unit-text reconciliation tool; never repeat an uncertain write automatically",
+  "minimumDelivery": [
+    "Strict operationId / connection / unit / language / approved request-task context; validate existing receipt targetKeyHash and inputHash against the original canonical write request before using caller context",
+    "Reuse existing durable receipt, native full-row snapshot and CTS readers; observe value/version, ownership/status and bounded exact-target CTS projection with timestamps, truncation and unavailable reasons",
+    "Return observed_requested, observed_original, observed_conflicting or unknown only when observations justify them; retain original receipt status and first cause, especially where later restoration makes historical causation unprovable",
+    "Separate current observation from historical write/commit certainty; CTS recorded does not prove current value or transport import, and stale/non-atomic reads do not prove absence",
+    "Read-only tool registration, documentation and regression coverage; lock observations only through an already approved diagnostic route, otherwise explicitly unavailable"
+  ],
+  "acceptance": [
+    "Missing or mismatched receipt/context rejected before SAP reads; no customer writer, append, lock acquisition, release or automatic retry called",
+    "Desired/original/conflicting/unknown states covered with incomplete, stale, truncated and unavailable observations; original unknown receipt remains unchanged",
+    "Historical r33 and completed r34 receipts used as immutable regression evidence; any live read-only acceptance stays on a frozen isolated build",
+    "Current restored KG/ZH row, existing CUNI/T006A key and any diagnostic limitations reported accurately; no claim that current original value proves an earlier command did not write"
+  ],
+  "dependenciesAndLimits": [
+    "Existing receipt stores hashes rather than complete original input; define narrowly scoped canonical context verification before implementation, do not invent missing before data",
+    "Live read-only acceptance requires a temporary login if no authorized isolated session remains; current session closed normally",
+    "CFG-02 native stale-under-lock, contention, authority denial and standard API/CTS failure rollback remain pending; design non-destructive fault scenarios first, and seek concrete scope if further business writes are necessary",
+    "CFG-03/04/07/08 and full SPRO automation remain subject to scene-specific standard API evidence; do not broaden the unit-text writer into generic table writes"
+  ],
+  "authorization": "Local implementation and existing test authorization continue; this plan grants no new business writes, source deployment, CTS removal/release, imports or GUI automation"
+}

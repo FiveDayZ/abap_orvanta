@@ -1,0 +1,49 @@
+{
+  "status": "preflight_passed_native_dispatch_zero",
+  "preparedAt": "2026-10-04T01:53:34.291Z",
+  "writer": {
+    "sourceFingerprint": "3c911f81bcb8910f8a74c049954f2ebf99e5a391a21dae20da85043cac3e4db5",
+    "interfaceFingerprint": "380294aeff5d634906c6ae4987f20bfda5d4feb58b9eab98e98a1068ef8ec62a"
+  },
+  "dependencies": [
+    {
+      "functionName": "UPDATE_T006A",
+      "sourceFingerprint": "b0b061b0ab46cc8b190e9ee33b5ef1e999955339a3776a8bbb9e49c6a741b1ac",
+      "interfaceFingerprint": "69ecde3d00ae343c5d84e09c0ba5f357e5890aced1840a525a0cdc87753f172b",
+      "unchanged": true
+    },
+    {
+      "functionName": "TR_REQ_CHECK_OBJECT",
+      "sourceFingerprint": "f63a79b41344d49023eb459031f27935322cc87e8d46279fc74911f6e3cda8db",
+      "interfaceFingerprint": "25fa14abfc543afcbb1cdc5595647e3e71fe9b9f6f584f921f6f27dd79cb51aa",
+      "unchanged": true
+    },
+    {
+      "functionName": "TRINT_APPEND_TO_COMM_ARRAYS",
+      "sourceFingerprint": "34a6d758f83c9460821ff95a74e9565bd89b4d6b548c7ea5a9d522fbd49a7611",
+      "interfaceFingerprint": "c834dc05f0a221e952fc3dec5c524c3c1b82186826a67b93819d40909f5f9fe7",
+      "unchanged": true
+    },
+    {
+      "functionName": "TR_REQ_CHECK_KEY",
+      "sourceFingerprint": "7229d95e82820ea4234517932fd1204c98ecca7b2a665d179baac8c3173739c8",
+      "interfaceFingerprint": "ab37b317e147fc297d0500bd74def2a19def5daf616d5ec79d0bc448ccb09738",
+      "unchanged": true
+    },
+    {
+      "functionName": "CALCULATE_HASH_FOR_CHAR",
+      "sourceFingerprint": "d6df1059f3e68d905f2577b097cca80177e04b04b1baa640f5719ff73a3bdd1b",
+      "interfaceFingerprint": "f1ba5060063ab3cb25cba923a58ec9ce8a36e0918a91d03a9fa8f681da90bad6",
+      "unchanged": true
+    },
+    {
+      "functionName": "Z_ORVANTA_CFG_UNIT_READ",
+      "sourceFingerprint": "8bf1eed7706b7ef4ab75a704febc77cd5fe91d619e63b69732652f8794d5e611",
+      "interfaceFingerprint": "0d68032d874fec10f48427070bb1120c46a0f1aa3bf5492c706f07a1bc0b8617",
+      "unchanged": true
+    }
+  ],
+  "sourceEvidence": "../.doc/orvanta-unit-text-apply-save-restore-reconciliation-20261004-r33.json",
+  "reuseReason": "SAP source unchanged after independently reconciled r33; only host SOAP parser changes. r34 command guard re-attests native source and fresh values before each new dispatch.",
+  "nativeWriterCalls": 0
+}

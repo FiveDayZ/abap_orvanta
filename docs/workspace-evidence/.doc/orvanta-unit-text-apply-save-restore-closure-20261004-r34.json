@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-10-04T10:11:04.9404021+08:00",
+  "testPort": 4248,
+  "testPid": 58488,
+  "normalStopRequested": true,
+  "testListenerGone": true,
+  "testProcessGone": true,
+  "priorSharedPid": 54604,
+  "sharedListeners": [
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 4849,
+      "OwningProcess": 16180
+    }
+  ],
+  "sharedProcessChangedExternally": true,
+  "sharedRestartPerformedByThisTask": false
+}

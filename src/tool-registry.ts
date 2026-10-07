@@ -593,6 +593,34 @@ const ROWS: readonly ToolRow[] = [
   ["inspect_customer_function_exits", "enhancement", DEV, "R", "target-specific", null, null],
   ["inspect_customer_screen_menu_exits", "enhancement", DEV, "R", "target-specific", null, null],
   ["search_bte_dispatchers", "enhancement", DEV_CFG, "R", "native-adt", null, null],
+  ["preview_configuration_bte_product", "enhancement", DEV_CFG, "R", "target-specific", null, null],
+  [
+    "prepare_configuration_bte_product_change",
+    "enhancement",
+    DEV_CFG,
+    "R",
+    "target-specific",
+    null,
+    null
+  ],
+  [
+    "inspect_configuration_bte_maintenance_route",
+    "enhancement",
+    DEV_CFG,
+    "R",
+    "target-specific",
+    null,
+    null
+  ],
+  [
+    "inspect_configuration_bte_native_metadata",
+    "enhancement",
+    DEV_CFG,
+    "R",
+    "target-specific",
+    null,
+    null
+  ],
   ["read_bte_configuration", "enhancement", DEV_CFG, "R", "sap-helper-fallback", REPOSITORY, "2.3"],
   [
     "prepare_enhancement_configuration_workflow",
@@ -798,6 +826,38 @@ const ROWS: readonly ToolRow[] = [
   ["preview_configuration", "data", CFG, "R", "target-specific", null, null],
   ["describe_configuration_object", "data", CFG, "R", "target-specific", null, null],
   ["find_configuration_activities", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_activity", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_documentation", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_fi_rule", "enhancement", CFG, "R", "target-specific", null, null],
+  ["inspect_configuration_transport", "data", CFG, "R", "target-specific", null, null],
+  ["compare_configuration_unit", "data", CFG, "R", "target-specific", null, null],
+  ["preview_configuration_number_range", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_number_range_scope", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_number_range", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_number_range_api", "data", CFG, "R", "target-specific", null, null],
+  ["apply_configuration_number_range", "data", CFG, "W", "target-specific", null, null],
+  ["reconcile_configuration_number_range", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_set", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_native_snapshot", "data", CFG, "R", "target-specific", null, null],
+  ["preview_configuration_bc_native", "data", CFG, "R", "target-specific", null, null],
+  ["inspect_configuration_bc_route", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_guard", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_cts_snapshot", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_before_state", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_effects", "data", CFG, "R", "target-specific", null, null],
+  ["apply_configuration_bc_set", "data", CFG, "W", "target-specific", null, null],
+  ["recover_configuration_bc_set", "data", CFG, "D", "target-specific", null, null],
+  ["reconcile_configuration_bc_execution", "data", CFG, "R", "target-specific", null, null],
+  ["preflight_configuration_bc_activation", "data", CFG, "R", "target-specific", null, null],
+  ["find_configuration_bc_sets", "data", CFG, "R", "target-specific", null, null],
+  ["compare_configuration_bc_set", "data", CFG, "R", "target-specific", null, null],
+  ["inspect_configuration_bc_impact", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_dependencies", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_bc_logs", "data", CFG, "R", "target-specific", null, null],
+  ["read_configuration_unit", "data", CFG, "R", "target-specific", null, null],
+  ["preview_configuration_unit_text", "data", CFG, "R", "target-specific", null, null],
+  ["apply_configuration_unit_text", "data", CFG, "W", "target-specific", null, null],
+  ["reconcile_configuration_unit_text", "data", CFG, "R", "target-specific", null, null],
   ["run_unit_tests", "quality", DEV, "W", "native-adt", null, null],
   ["search_background_jobs", "ops", OPSP, "R", "sap-helper-fallback", OPS, null],
   ["search_sap_locks", "ops", OPSP, "R", "sap-helper-fallback", MAINT, null],
@@ -970,9 +1030,51 @@ const NOTES: Record<string, string> = {
   preview_configuration:
     "仅服务 w200/200 的 ZTPMC_TPCFG 工厂行预览，属客户项目对象固化在通用服务中的待整改项。",
   describe_configuration_object:
-    "CFG-01 首阶段：仅现有 customizing 白名单内的至多 64 字段平面透明表元数据；未知 IMG/API/CTS 明示 partial，无配置值读取或写入。",
+    "CFG-01：现有 customizing 白名单内至多 64 字段的平面透明表元数据；T006/T006A 可选复用 IMG 标题与局部路径读取。业务维护 API/CTS 未知，无配置值读取或写入。",
   find_configuration_activities:
-    "CFG-05：默认保留精确 S 类型查找；resolveMaintenanceObjects 仅为 w200/200 T006/T006A 读取至多 16 个 OBJS 关联，T 类型经 TSTC、CUS_ACTOBJ.TCODE 与 CUS_IMGACH.C_ACTIVITY 导航，其他类型使用已审阅 RFC。通用白名单不扩展。标题、路径和业务维护 API 未知，无写入。",
+    "CFG-05：默认精确 S 类型查找；T006/T006A 可选解析 OBJS 关联、标题和局部物理路径。T 类型经 TSTC/CUS_ACTOBJ 导航，其他类型使用已审阅 RFC。完整 SPRO 可见性和业务维护 API 未验证，无写入。",
+  read_configuration_activity:
+    "CFG-05：w200/200 按活动标识直接读取标题、局部节点路径与至多 16 个 CUS_ACTOBJ 维护对象关联；固定元数据读取与指纹复核，不扩展通用白名单，不执行配置维护。",
+  preview_configuration_unit_text:
+    "CFG-02 文本草案：仅 w200/200 已有单语言 T006A 描述 MSEHT/MSEHL；核对已读投影版本及字段元数据，保留省略字段。可选 expectedTextVersion 最后读取并比较 SAP 完整行版本，旧版本撤回草案；锁内检查及业务规则/API/CTS 未验证，不可执行，无保存 token 或写入。",
+  apply_configuration_unit_text:
+    "CFG-02 API 保存：仅 w200/200 已有单语言 T006A 非空描述，必需双版本、明确 W/Q 请求任务及 operationId。客户 RFC 未部署/正文漂移即拒绝；注册不代表保存验收。锁内版本、同步 UPDATE_T006A、精确 CTS 和回滚仍待 SAP 实测，无 GUI 或通用写表回退。",
+  read_configuration_fi_rule:
+    "CFG-07：w200/200 精确 FI 规则头/步骤引用及公司代码/调用点启用等级、应用类回读；生成代码和业务效果未验证，无启停维护。",
+  reconcile_configuration_unit_text:
+    "CFG-02：原请求/旧行先绑定本地回执与原生版本，再只读复核现值、CTS 投影及可选获准锁观察；当前值与历史提交不等价，保留未知回执，不自动重试或恢复。",
+  inspect_configuration_transport:
+    "CFG-01：w200/200 明确请求/任务的 W/Q 类型、归属、状态、客户端及目标复读；未知保持阻断，不认定 E071K/API 可写。",
+  compare_configuration_unit:
+    "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；两侧元数据必须实读匹配，失败不可比较，当前 w300 登录验收待完成。",
+  preview_configuration_number_range:
+    "CFG-03：精确数字区间候选的边界、重叠、缩容及模式风险只读预检；复读全部区间和已核实域/API 源码，不调用有会话副作用的维护函数，不认定可写。",
+  read_configuration_number_range_api:
+    "Complete native customer TNRO/current-client NRIV version; pinned layout, reader and hash source. Deployment and positive SAP acceptance pending; no mutation.",
+  apply_configuration_number_range:
+    "Unused NUMC20 client-local interval create/update through attested customer API and protected whole-object receipt. Native deployment/acceptance pending; no allocator, CTS migration or GUI.",
+  reconcile_configuration_number_range:
+    "Protected receipt and current full number range snapshot read-only comparison; no historical outcome promotion, retry, rollback or unlock. Native positive acceptance pending.",
+  read_configuration_number_range_scope:
+    "CFG-03：精确子对象的跨年度 NRIV 投影与有效年度范围，区分空值和通配；复读子对象元素/域，来源表和存在性未知保持 unknown，不执行标准有状态接口。",
+  read_configuration_number_range:
+    "CFG-03：w200/200 精确 Z/Y 对象、子对象和年度的 NRIV 区间投影；号码保持字符串，无分配与维护，复读变化和截断明确。",
+  read_configuration_bc_set:
+    "CFG-04：w200/200 精确 BC Set/版本的表头及 T006/T006A 内容投影；标志有依据，依赖和目标比较未覆盖，不执行激活。",
+  read_configuration_bc_native_snapshot:
+    "CFG-04：EHS_CUNI_KNM/N 五表完整原生前态与 SAP 版本；别名按自身键查询冲突，缺失明确，来源和元数据复读，不激活或修改配置。",
+  inspect_configuration_bc_impact:
+    "CFG-04：依赖图、T006/T006A 内容与现值差异的有界只读汇总；总单位读取限额和复读明确，不产生激活计划或整套配置结论。",
+  read_configuration_bc_dependencies:
+    "CFG-04：w200/200 N 版本子引用有界图；复读、缺节点、循环及边界明确，不推断激活顺序或目标表影响。",
+  read_configuration_bc_logs:
+    "CFG-04：经典 BC Set 历史选中消息与记录目标 client 200 的激活表头；不推断当前状态、整次成功或日志版本。",
+  compare_configuration_bc_set:
+    "CFG-04：BC Set 已存字符字段与 w200/200 单位/明确语言现值比较；变量/通配键、数值转换及语言覆盖不可推断，拒绝激活与写入。",
+  find_configuration_bc_sets:
+    "CFG-04：按获准 T006/T006A 和明确版本定向发现经典 BC Set 候选；有行数上限、复读与元数据保护，不能据候选认定可激活。",
+  read_configuration_unit:
+    "CFG-02 读侧：仅 w200/200 内部 MSEHI 精确键，读取 T006 非浮点字段及单语言 T006A 文本；复核读值与定义，指纹仅覆盖已读文本投影，不能用于配置写入。",
   read_report_parameters:
     "依赖 Z_ORVANTA_OPS_READ 的 REPORT_PARAMETERS scope（须在批准文件中对该连接单独启用）；仅读取已编译 SSCR 元数据，不生成、不读变式内容。",
   read_report_variants:

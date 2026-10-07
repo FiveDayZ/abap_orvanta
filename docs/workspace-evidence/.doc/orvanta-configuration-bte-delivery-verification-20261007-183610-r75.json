@@ -1,0 +1,2018 @@
+{
+  "at": "2026-10-07T18:36:10+08:00",
+  "status": "readonly_current_stage_passed_full_spro_pending",
+  "acceptanceEvidence": {
+    "at": "2026-10-07T18:31:27+08:00",
+    "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-bte-change-preparation-acceptance-20261007-183127-r75.json",
+    "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-bte-change-preparation-acceptance-20261007-183127-r75.json",
+    "bytes": 393660,
+    "sha256": "6b5dd4da50d42f35aa2878f783abb6ece659c4dda6781b674b414ce4f5a3dce5",
+    "nativeRows": {
+      "header": 1,
+      "namtab": 8,
+      "events": 1
+    },
+    "nativeLayouts": {
+      "header": 92,
+      "namtab": 33,
+      "events": 3
+    },
+    "nativeBudgetUsed": 2,
+    "nativeBudgetRemaining": 0,
+    "publicTool": "prepare_configuration_bte_product_change",
+    "elapsedMs": 11307
+  },
+  "checks": {
+    "compile-delivery-2": {
+      "at": "2026-10-07T10:33:13.810Z",
+      "finishedAt": "2026-10-07T10:33:23.740Z",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--outDir",
+        ".cache/spro-r75/post-runtime/dist",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "error": null
+    },
+    "registry-delivery-2": {
+      "at": "2026-10-07T10:33:48.145Z",
+      "finishedAt": "2026-10-07T10:33:48.606Z",
+      "command": [
+        "node",
+        "--test",
+        ".cache/spro-r75/post-runtime/dist/test/verification-registry.test.js"
+      ],
+      "exitCode": 0,
+      "stdout": "✔ every tool in the index has exactly one verification entry, with no unknown names (25.8217ms)\n✔ the registry declares only known field values (0.7748ms)\n✔ verified and failed entries cite evidence that actually exists on disk (41.7951ms)\n✔ unverified entries claim neither evidence nor an attempt time (0.2632ms)\n✔ a runtime failure is an observation and a static failure is a proof (0.3025ms)\n✔ R-20's four tools stay recorded with the state their evidence supports (0.1523ms)\n✔ a length fix alone never counts as evidence of success (0.2271ms)\n✔ controlled writes must name the object they were written to (20.3974ms)\n✔ number range runtime evidence proves fresh create and prior update while preserving historical unknown (1.481ms)\n✔ unit description write evidence contains completed save and restoration with real key readback (3.2477ms)\n✔ unit reconciliation evidence retains real unknown receipts and performs no native writes (2.2231ms)\n✔ the method states what kind of SAP operation the tool actually performs (0.2947ms)\n✔ the availability-without-evidence metric is derived, not asserted (0.557ms)\n✔ notes and availabilityBasis agree about the protocol-only weakness, in both directions (0.4704ms)\n✔ MUTATION: notes contradicting the basis are caught in both directions (0.4243ms)\n✔ platform-unsupported is a claim too, and must carry evidence (1.9414ms)\n✔ availability and verification status stay orthogonal (0.4716ms)\n✔ no entry claims protocol-only without a helper to carry that protocol (0.2073ms)\n✔ the protocol-only residual stays visible and countable (0.1443ms)\n✔ MUTATION: a verified entry pointing at a missing file must be rejected (0.7979ms)\n✔ MUTATION: a duplicate and an unknown tool are both rejected (0.6398ms)\n✔ MUTATION: an unverified entry claiming an attempt time is rejected (0.0839ms)\n✔ MUTATION: a static failure claiming an attempt time is rejected (0.4441ms)\n✔ MUTATION: a runtime failure without an attempt time is rejected (0.3581ms)\n✔ MUTATION: a failed entry without a failure basis is rejected (0.2709ms)\n✔ native BC before-state evidence contains named public reads and empty native rejections (2.8174ms)\n✔ native BC preview evidence proves conversion, empty refusals and unchanged target (1.7325ms)\n✔ native CUNI route evidence proves metadata scope without activation (1.6537ms)\n✔ native CUNI guard evidence binds eight related keys without configuration writes (1.8546ms)\n✔ unified BC preflight evidence covers nineteen complete fixed keys without activation (2.6603ms)\n✔ native CTS evidence binds complete repeated buffers without claiming recovery or string-key coverage (1.5928ms)\n✔ native before-state verification requires the real roundtrip response and preserves the timeout distinction (7.9193ms)\n✔ BTE route and product verification require actual frozen public reads without native maintenance (2.5346ms)\n✔ BTE preparation verification binds one public review and unchanged complete protected state (3.7908ms)\n✔ the registry records the honest gap rather than inflating it (115.3191ms)\nℹ tests 35\nℹ suites 0\nℹ pass 35\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 405.8444\n",
+      "stderr": "",
+      "error": null
+    },
+    "registry-delivery-format": {
+      "at": "2026-10-07T10:32:01.666Z",
+      "finishedAt": "2026-10-07T10:32:02.098Z",
+      "command": [
+        "node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "contracts/verification-registry.json",
+        "test/verification-registry.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "Checking formatting...\nAll matched files use Prettier code style!\n",
+      "stderr": "",
+      "error": null
+    },
+    "compile-5": {
+      "at": "2026-10-07T10:13:29.276Z",
+      "finishedAt": "2026-10-07T10:13:40.597Z",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--outDir",
+        ".cache/spro-r75/runtime/dist",
+        "--incremental",
+        "false"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "error": null
+    },
+    "bte-preparation-2": {
+      "at": "2026-10-07T10:08:48.460Z",
+      "finishedAt": "2026-10-07T10:08:49.338Z",
+      "command": [
+        "node",
+        "--test",
+        ".cache/spro-r75/runtime/dist/test/configuration-bte-change.test.js",
+        ".cache/spro-r75/runtime/dist/test/configuration-bte-change-mcp.test.js",
+        ".cache/spro-r75/runtime/dist/test/configuration-bte-authority.test.js",
+        ".cache/spro-r75/runtime/dist/test/configuration-bte-metadata.test.js",
+        ".cache/spro-r75/runtime/dist/test/configuration-bte-metadata-mcp.test.js"
+      ],
+      "exitCode": 0,
+      "stdout": "✔ ECC display authority succeeds with initial GRANTED_ACTVT; adapter preserves native refusal contract (1.8451ms)\n✔ public BTE change preparation stays strict and readonly, rejecting command and transport selectors (33.2835ms)\n✔ preparation protects all languages and both assignment kinds, records shared cache and exact recovery (13.4153ms)\n✔ scope and strict command-shaped input refuse before SAP (1.4259ms)\n✔ failed or duplicate language read never becomes an empty protection set (1.065ms)\n✔ complete empty texts/cache are allowed and truncation is refused (3.5644ms)\n✔ text, cache and assignment changes during metadata are refused (3.7698ms)\n✔ native failures, callbacks and write claims refuse without replay (1.106ms)\n✔ stale bundle fingerprint and unchanged flag do not grant execution (1.3106ms)\n✔ invalid native SQL uses the reviewed RFC reader with the same complete protections (0.9774ms)\n✔ public native metadata tool exposes only fixed readonly inputs and refuses write or object selectors (112.7565ms)\n✔ one fixed native metadata call returns cached control blocks, never a write permit (15.1115ms)\n✔ client and strict schema reject arbitrary objects, actions and target systems before SAP (0.9274ms)\n✔ source, ABI and update-task drift block the call (4.1702ms)\n✔ standard dependency drift blocks the call (0.5522ms)\n✔ field layout drift blocks the call (0.3031ms)\n✔ unconfirmed or truncated route blocks the call (1.6178ms)\n✔ native authority refusal and fault are never retried (1.4411ms)\n✔ unexpected status and unsafe flags are refused (2.8058ms)\n✔ complete primitive payload rejects missing, foreign or invalid fields (4.9814ms)\n✔ header identity, generation and related text table must agree (4.875ms)\n✔ native events must equal registered events (0.7617ms)\n✔ foreign, mislabelled or duplicate fields are refused (4.4979ms)\n✔ bounds reject excess rows (11.798ms)\n✔ metadata changes after call are detected without replay (1.1399ms)\n✔ route changes after call are detected without replay (1.0985ms)\nℹ tests 26\nℹ suites 0\nℹ pass 26\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 816.2876\n",
+      "stderr": "",
+      "error": null
+    },
+    "registry-final": {
+      "at": "2026-10-07T10:15:25.979Z",
+      "finishedAt": "2026-10-07T10:15:26.426Z",
+      "command": [
+        "node",
+        "--test",
+        ".cache/spro-r75/runtime/dist/test/verification-registry.test.js"
+      ],
+      "exitCode": 0,
+      "stdout": "✔ every tool in the index has exactly one verification entry, with no unknown names (26.8353ms)\n✔ the registry declares only known field values (0.4309ms)\n✔ verified and failed entries cite evidence that actually exists on disk (36.1272ms)\n✔ unverified entries claim neither evidence nor an attempt time (0.2218ms)\n✔ a runtime failure is an observation and a static failure is a proof (0.25ms)\n✔ R-20's four tools stay recorded with the state their evidence supports (0.1465ms)\n✔ a length fix alone never counts as evidence of success (0.1642ms)\n✔ controlled writes must name the object they were written to (21.0103ms)\n✔ number range runtime evidence proves fresh create and prior update while preserving historical unknown (1.8586ms)\n✔ unit description write evidence contains completed save and restoration with real key readback (3.871ms)\n✔ unit reconciliation evidence retains real unknown receipts and performs no native writes (3.0805ms)\n✔ the method states what kind of SAP operation the tool actually performs (0.4992ms)\n✔ the availability-without-evidence metric is derived, not asserted (0.5557ms)\n✔ notes and availabilityBasis agree about the protocol-only weakness, in both directions (0.6962ms)\n✔ MUTATION: notes contradicting the basis are caught in both directions (0.3604ms)\n✔ platform-unsupported is a claim too, and must carry evidence (2.0097ms)\n✔ availability and verification status stay orthogonal (0.4112ms)\n✔ no entry claims protocol-only without a helper to carry that protocol (0.1874ms)\n✔ the protocol-only residual stays visible and countable (0.1524ms)\n✔ MUTATION: a verified entry pointing at a missing file must be rejected (0.7839ms)\n✔ MUTATION: a duplicate and an unknown tool are both rejected (0.132ms)\n✔ MUTATION: an unverified entry claiming an attempt time is rejected (0.0686ms)\n✔ MUTATION: a static failure claiming an attempt time is rejected (0.4303ms)\n✔ MUTATION: a runtime failure without an attempt time is rejected (0.2603ms)\n✔ MUTATION: a failed entry without a failure basis is rejected (0.4517ms)\n✔ native BC before-state evidence contains named public reads and empty native rejections (2.9778ms)\n✔ native BC preview evidence proves conversion, empty refusals and unchanged target (1.9476ms)\n✔ native CUNI route evidence proves metadata scope without activation (1.233ms)\n✔ native CUNI guard evidence binds eight related keys without configuration writes (1.5461ms)\n✔ unified BC preflight evidence covers nineteen complete fixed keys without activation (2.6083ms)\n✔ native CTS evidence binds complete repeated buffers without claiming recovery or string-key coverage (1.5302ms)\n✔ native before-state verification requires the real roundtrip response and preserves the timeout distinction (8.798ms)\n✔ BTE route and product verification require actual frozen public reads without native maintenance (3.3124ms)\n✔ the registry records the honest gap rather than inflating it (112.2452ms)\nℹ tests 34\nℹ suites 0\nℹ pass 34\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 390.3948\n",
+      "stderr": "",
+      "error": null
+    },
+    "protocol-5": {
+      "at": "2026-10-07T10:14:33.605Z",
+      "finishedAt": "2026-10-07T10:14:37.405Z",
+      "command": [
+        "node",
+        "--test",
+        ".cache/spro-r75/runtime/dist/test/protocol.test.js"
+      ],
+      "exitCode": 0,
+      "stdout": "✔ streamable HTTP exposes the implemented standalone tool waves (327.8187ms)\n✔ full source baseline freezes and classifies every original tool contract (0.9542ms)\n✔ 0.30 lifecycle writes return version 2 operation receipts (189.7442ms)\n✔ failed SAP pre-change observation prevents the write action (28.3745ms)\n✔ health endpoint responds without an MCP session (3.6038ms)\n✔ an argument the contract does not declare is rejected, not discarded (12.6506ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3744.9315\n",
+      "stderr": "",
+      "error": null
+    },
+    "matrix-final": {
+      "at": "2026-10-07T10:15:26.491Z",
+      "finishedAt": "2026-10-07T10:15:26.923Z",
+      "command": [
+        "node",
+        ".cache/spro-r75/runtime/scripts/generate-tool-index.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\ntool index consistent: 208 tools, 137 read-only, 12 groups\n",
+      "stderr": "",
+      "error": null
+    },
+    "ops-matrix-final": {
+      "at": "2026-10-07T10:21:08.598Z",
+      "finishedAt": "2026-10-07T10:21:08.668Z",
+      "command": [
+        "node",
+        ".cache/spro-r75/runtime/scripts/generate-ops-matrix.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "docs/ops-acceptance-matrix.md is current (15 families)\n",
+      "stderr": "",
+      "error": null
+    },
+    "format-check": {
+      "at": "2026-10-07T10:09:19.746Z",
+      "finishedAt": "2026-10-07T10:09:21.306Z",
+      "command": [
+        "node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "src/configuration-bte-change.ts",
+        "src/configuration-bte-metadata-api.ts",
+        "src/tools.ts",
+        "src/contracts.ts",
+        "src/mcp.ts",
+        "src/tool-registry.ts",
+        "src/capabilities.ts",
+        "test/protocol.test.ts",
+        "test/configuration-bte-change.test.ts",
+        "test/configuration-bte-change-mcp.test.ts",
+        "test/configuration-bte-authority.test.ts",
+        "test/fixtures/view-authority-display-w200-r75.json",
+        "contracts/verification-registry.json",
+        "contracts/tool-index.json",
+        "docs/tool-index.md"
+      ],
+      "exitCode": 0,
+      "stdout": "Checking formatting...\nAll matched files use Prettier code style!\n",
+      "stderr": "",
+      "error": null
+    },
+    "format-protocol": {
+      "at": "2026-10-07T10:13:28.971Z",
+      "finishedAt": "2026-10-07T10:13:29.216Z",
+      "command": [
+        "node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "test/protocol.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "Checking formatting...\nAll matched files use Prettier code style!\n",
+      "stderr": "",
+      "error": null
+    },
+    "headless": {
+      "at": "2026-10-07T10:09:19.499Z",
+      "finishedAt": "2026-10-07T10:09:19.685Z",
+      "command": [
+        "node",
+        "scripts/verify-headless.mjs",
+        "--source-only"
+      ],
+      "exitCode": 0,
+      "stdout": "Headless verification PASS (1 tree(s), no VS Code host dependency)\n",
+      "stderr": "",
+      "error": null
+    }
+  },
+  "preservation": {
+    "at": "2026-10-07T10:34:07.433Z",
+    "changed": [
+      "src/configuration-bte-metadata-api.ts",
+      "contracts/tool-index.json",
+      "contracts/verification-registry.json",
+      "docs/tool-index.md",
+      "src/capabilities.ts",
+      "src/contracts.ts",
+      "src/mcp.ts",
+      "src/tool-registry.ts",
+      "src/tools.ts",
+      "test/protocol.test.ts",
+      "test/verification-registry.test.ts"
+    ],
+    "unrelated": [],
+    "missing": [],
+    "reversed": [
+      {
+        "path": "src/tools.ts",
+        "originalPreserved": true,
+        "cuts": 2
+      },
+      {
+        "path": "src/contracts.ts",
+        "originalPreserved": true,
+        "cuts": 2
+      },
+      {
+        "path": "src/mcp.ts",
+        "originalPreserved": true,
+        "cuts": 1
+      },
+      {
+        "path": "src/tool-registry.ts",
+        "originalPreserved": true,
+        "cuts": 1
+      },
+      {
+        "path": "src/capabilities.ts",
+        "originalPreserved": true,
+        "cuts": 1
+      },
+      {
+        "path": "test/protocol.test.ts",
+        "originalPreserved": true,
+        "cuts": 1
+      },
+      {
+        "path": "test/verification-registry.test.ts",
+        "originalPreserved": true,
+        "cuts": 1
+      },
+      {
+        "path": "src/configuration-bte-metadata-api.ts",
+        "originalPreserved": true
+      },
+      {
+        "path": "contracts/verification-registry.json",
+        "originalPreserved": true
+      }
+    ],
+    "sharedDistFiles": 230,
+    "distChanged": [],
+    "stagedUnchanged": true,
+    "headUnchanged": true,
+    "frozenChanged": [],
+    "pass": true
+  },
+  "r74Frozen": {
+    "files": 567,
+    "sha256": "a5ed70d686f4b6bc252247cef93aedb302c03d77079294d38ecfc0a1422ce798",
+    "changed": []
+  },
+  "historicalFailures": {
+    "registryDelivery": {
+      "at": "2026-10-07T10:32:48.303Z",
+      "finishedAt": "2026-10-07T10:32:48.644Z",
+      "command": [
+        "node",
+        "--test",
+        ".cache/spro-r75/post-runtime/dist/test/verification-registry.test.js"
+      ],
+      "exitCode": 1,
+      "stdout": "✔ every tool in the index has exactly one verification entry, with no unknown names (24.6454ms)\n✔ the registry declares only known field values (0.3293ms)\n✔ verified and failed entries cite evidence that actually exists on disk (38.4037ms)\n✔ unverified entries claim neither evidence nor an attempt time (0.3868ms)\n✔ a runtime failure is an observation and a static failure is a proof (0.3273ms)\n✔ R-20's four tools stay recorded with the state their evidence supports (0.1728ms)\n✔ a length fix alone never counts as evidence of success (0.1615ms)\n✔ controlled writes must name the object they were written to (21.3593ms)\n✔ number range runtime evidence proves fresh create and prior update while preserving historical unknown (2.0044ms)\n✔ unit description write evidence contains completed save and restoration with real key readback (3.7682ms)\n✔ unit reconciliation evidence retains real unknown receipts and performs no native writes (2.9784ms)\n✔ the method states what kind of SAP operation the tool actually performs (0.5323ms)\n✔ the availability-without-evidence metric is derived, not asserted (0.5127ms)\n✔ notes and availabilityBasis agree about the protocol-only weakness, in both directions (0.3363ms)\n✔ MUTATION: notes contradicting the basis are caught in both directions (0.2564ms)\n✔ platform-unsupported is a claim too, and must carry evidence (1.5041ms)\n✔ availability and verification status stay orthogonal (0.4054ms)\n✔ no entry claims protocol-only without a helper to carry that protocol (0.1641ms)\n✔ the protocol-only residual stays visible and countable (0.1314ms)\n✔ MUTATION: a verified entry pointing at a missing file must be rejected (0.6879ms)\n✔ MUTATION: a duplicate and an unknown tool are both rejected (0.5931ms)\n✔ MUTATION: an unverified entry claiming an attempt time is rejected (0.0752ms)\n✔ MUTATION: a static failure claiming an attempt time is rejected (0.4062ms)\n✔ MUTATION: a runtime failure without an attempt time is rejected (0.2598ms)\n✔ MUTATION: a failed entry without a failure basis is rejected (0.2462ms)\n✔ native BC before-state evidence contains named public reads and empty native rejections (3.5263ms)\n✔ native BC preview evidence proves conversion, empty refusals and unchanged target (1.758ms)\n✔ native CUNI route evidence proves metadata scope without activation (2.0579ms)\n✔ native CUNI guard evidence binds eight related keys without configuration writes (2.3792ms)\n✔ unified BC preflight evidence covers nineteen complete fixed keys without activation (2.5649ms)\n✔ native CTS evidence binds complete repeated buffers without claiming recovery or string-key coverage (1.4335ms)\n✔ native before-state verification requires the real roundtrip response and preserves the timeout distinction (8.0972ms)\n✔ BTE route and product verification require actual frozen public reads without native maintenance (2.685ms)\n✔ BTE preparation verification binds one public review and unchanged complete protected state (3.3429ms)\n✖ the registry records the honest gap rather than inflating it (1.0024ms)\nℹ tests 35\nℹ suites 0\nℹ pass 34\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 286.9963\n\n✖ failing tests:\n\ntest at .cache\\spro-r75\\post-runtime\\dist\\test\\verification-registry.test.js:1037:1\n✖ the registry records the honest gap rather than inflating it (1.0024ms)\n  AssertionError [ERR_ASSERTION]: only individually cited tools may be verified; found 155\n      at TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r75/post-runtime/dist/test/verification-registry.test.js:1221:12)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n",
+      "stderr": "",
+      "error": null
+    },
+    "earlierNativeAcceptance": {
+      "at": "2026-10-07T09:30:25.724Z",
+      "pid": 59380,
+      "status": "failed",
+      "configurationWrites": 0,
+      "sourceWrites": 0,
+      "transportWrites": 0,
+      "nativeMetadataCalls": 1,
+      "remoteCalls": [
+        {
+          "at": "2026-10-07T09:30:26.782Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TBE24",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "MANDT = '200'"
+                },
+                {
+                  "TEXT": "AND PRDKT = 'ZFICHK'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "RFCDS"
+                },
+                {
+                  "FIELDNAME": "AKTIV"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "RFCDS"
+                },
+                {
+                  "FIELDNAME": "AKTIV"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "200|ZFICHK  |                                |X"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:27.430Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TBE24T",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "201",
+              "OPTIONS": [
+                {
+                  "TEXT": "MANDT = '200'"
+                },
+                {
+                  "TEXT": "AND PRDKT = 'ZFICHK'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "SPRAS"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "TXT50"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "SPRAS"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "TXT50"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "200|1|ZFICHK  |FI CHECK"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:28.123Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TBE34",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "201",
+              "OPTIONS": [
+                {
+                  "TEXT": "MANDT = '200'"
+                },
+                {
+                  "TEXT": "AND PRDKT = 'ZFICHK'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "EVENT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "LAND"
+                },
+                {
+                  "FIELDNAME": "APPLK"
+                },
+                {
+                  "FIELDNAME": "FUNCT"
+                },
+                {
+                  "FIELDNAME": "MONIT"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "EVENT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "LAND"
+                },
+                {
+                  "FIELDNAME": "APPLK"
+                },
+                {
+                  "FIELDNAME": "FUNCT"
+                },
+                {
+                  "FIELDNAME": "MONIT"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "200|00001025|ZFICHK  |   |      |ZSAMPLE_INTERFACE_00001025    |"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:28.803Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TPS34",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "201",
+              "OPTIONS": [
+                {
+                  "TEXT": "MANDT = '200'"
+                },
+                {
+                  "TEXT": "AND PRDKT = 'ZFICHK'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PROCS"
+                },
+                {
+                  "FIELDNAME": "LAND"
+                },
+                {
+                  "FIELDNAME": "APPLK"
+                },
+                {
+                  "FIELDNAME": "FUNCT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "MONIT"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PROCS"
+                },
+                {
+                  "FIELDNAME": "LAND"
+                },
+                {
+                  "FIELDNAME": "APPLK"
+                },
+                {
+                  "FIELDNAME": "FUNCT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "MONIT"
+                }
+              ],
+              "DATA": []
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:29.432Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TCONT",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "FRMID = 'CP_INFO'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "FRMID"
+                },
+                {
+                  "FIELDNAME": "DATUM"
+                },
+                {
+                  "FIELDNAME": "UZEIT"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "FRMID"
+                },
+                {
+                  "FIELDNAME": "DATUM"
+                },
+                {
+                  "FIELDNAME": "UZEIT"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "CP_INFO             |20140819|102106"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:33.353Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TSTC",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "TCODE = 'BF24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PGMNA"
+                },
+                {
+                  "FIELDNAME": "DYPNO"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PGMNA"
+                },
+                {
+                  "FIELDNAME": "DYPNO"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "BF24                |                                        |0000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:33.770Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TSTCP",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "TCODE = 'BF24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PARAM"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PARAM"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "BF24                |/*SM30 VIEWNAME=TBE24;UPDATE=X;"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:34.198Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TVDIR",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "TABNAME = 'TBE24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "AREA"
+                },
+                {
+                  "FIELDNAME": "DEVCLASS"
+                },
+                {
+                  "FIELDNAME": "TYPE"
+                },
+                {
+                  "FIELDNAME": "LISTE"
+                },
+                {
+                  "FIELDNAME": "DETAIL"
+                },
+                {
+                  "FIELDNAME": "OCCURS"
+                },
+                {
+                  "FIELDNAME": "CLTCODE"
+                },
+                {
+                  "FIELDNAME": "BASTAB"
+                },
+                {
+                  "FIELDNAME": "NEWGENER"
+                },
+                {
+                  "FIELDNAME": "GENDATE"
+                },
+                {
+                  "FIELDNAME": "GENTIME"
+                },
+                {
+                  "FIELDNAME": "FLAG"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "AREA"
+                },
+                {
+                  "FIELDNAME": "DEVCLASS"
+                },
+                {
+                  "FIELDNAME": "TYPE"
+                },
+                {
+                  "FIELDNAME": "LISTE"
+                },
+                {
+                  "FIELDNAME": "DETAIL"
+                },
+                {
+                  "FIELDNAME": "OCCURS"
+                },
+                {
+                  "FIELDNAME": "CLTCODE"
+                },
+                {
+                  "FIELDNAME": "BASTAB"
+                },
+                {
+                  "FIELDNAME": "NEWGENER"
+                },
+                {
+                  "FIELDNAME": "GENDATE"
+                },
+                {
+                  "FIELDNAME": "GENTIME"
+                },
+                {
+                  "FIELDNAME": "FLAG"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "TBE24                         |BFTM                      |FIBF                          |1|0090|0000|0000|                    |X| |19970505|142459|"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:34.643Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TVIMF",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "65",
+              "OPTIONS": [
+                {
+                  "TEXT": "TABNAME = 'TBE24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "EVENT"
+                },
+                {
+                  "FIELDNAME": "FORMNAME"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "EVENT"
+                },
+                {
+                  "FIELDNAME": "FORMNAME"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "TBE24                         |02|CONTEXT_BUFFER_DELETE_CUS"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:35.120Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TBE24",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "201",
+              "OPTIONS": [
+                {
+                  "TEXT": "MANDT = '200'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "RFCDS"
+                },
+                {
+                  "FIELDNAME": "AKTIV"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "RFCDS"
+                },
+                {
+                  "FIELDNAME": "AKTIV"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "200|IS-BEV  |                                |"
+                },
+                {
+                  "WA": "200|SEDUNN  |                                |"
+                },
+                {
+                  "WA": "200|ZFICHK  |                                |X"
+                },
+                {
+                  "WA": "200|ZWMS_MM |                                |X"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:37.287Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TSTC",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "TCODE = 'BF24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PGMNA"
+                },
+                {
+                  "FIELDNAME": "DYPNO"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PGMNA"
+                },
+                {
+                  "FIELDNAME": "DYPNO"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "BF24                |                                        |0000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:37.750Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TSTCP",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "TCODE = 'BF24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PARAM"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TCODE"
+                },
+                {
+                  "FIELDNAME": "PARAM"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "BF24                |/*SM30 VIEWNAME=TBE24;UPDATE=X;"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:38.227Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TVDIR",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "2",
+              "OPTIONS": [
+                {
+                  "TEXT": "TABNAME = 'TBE24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "AREA"
+                },
+                {
+                  "FIELDNAME": "DEVCLASS"
+                },
+                {
+                  "FIELDNAME": "TYPE"
+                },
+                {
+                  "FIELDNAME": "LISTE"
+                },
+                {
+                  "FIELDNAME": "DETAIL"
+                },
+                {
+                  "FIELDNAME": "OCCURS"
+                },
+                {
+                  "FIELDNAME": "CLTCODE"
+                },
+                {
+                  "FIELDNAME": "BASTAB"
+                },
+                {
+                  "FIELDNAME": "NEWGENER"
+                },
+                {
+                  "FIELDNAME": "GENDATE"
+                },
+                {
+                  "FIELDNAME": "GENTIME"
+                },
+                {
+                  "FIELDNAME": "FLAG"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "AREA"
+                },
+                {
+                  "FIELDNAME": "DEVCLASS"
+                },
+                {
+                  "FIELDNAME": "TYPE"
+                },
+                {
+                  "FIELDNAME": "LISTE"
+                },
+                {
+                  "FIELDNAME": "DETAIL"
+                },
+                {
+                  "FIELDNAME": "OCCURS"
+                },
+                {
+                  "FIELDNAME": "CLTCODE"
+                },
+                {
+                  "FIELDNAME": "BASTAB"
+                },
+                {
+                  "FIELDNAME": "NEWGENER"
+                },
+                {
+                  "FIELDNAME": "GENDATE"
+                },
+                {
+                  "FIELDNAME": "GENTIME"
+                },
+                {
+                  "FIELDNAME": "FLAG"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "TBE24                         |BFTM                      |FIBF                          |1|0090|0000|0000|                    |X| |19970505|142459|"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:38.680Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TVIMF",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "65",
+              "OPTIONS": [
+                {
+                  "TEXT": "TABNAME = 'TBE24'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "EVENT"
+                },
+                {
+                  "FIELDNAME": "FORMNAME"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "TABNAME"
+                },
+                {
+                  "FIELDNAME": "EVENT"
+                },
+                {
+                  "FIELDNAME": "FORMNAME"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "TBE24                         |02|CONTEXT_BUFFER_DELETE_CUS"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:39.160Z",
+          "request": {
+            "functionName": "RFC_READ_TABLE",
+            "inputParameters": {
+              "QUERY_TABLE": "TBE24",
+              "DELIMITER": "|",
+              "NO_DATA": "",
+              "ROWSKIPS": "0",
+              "ROWCOUNT": "201",
+              "OPTIONS": [
+                {
+                  "TEXT": "MANDT = '200'"
+                }
+              ],
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "RFCDS"
+                },
+                {
+                  "FIELDNAME": "AKTIV"
+                }
+              ],
+              "DATA": []
+            },
+            "outputParameters": [
+              {
+                "name": "FIELDS",
+                "kind": "table",
+                "fields": [
+                  "FIELDNAME"
+                ]
+              },
+              {
+                "name": "DATA",
+                "kind": "table",
+                "fields": [
+                  "WA"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "FIELDS": [
+                {
+                  "FIELDNAME": "MANDT"
+                },
+                {
+                  "FIELDNAME": "PRDKT"
+                },
+                {
+                  "FIELDNAME": "RFCDS"
+                },
+                {
+                  "FIELDNAME": "AKTIV"
+                }
+              ],
+              "DATA": [
+                {
+                  "WA": "200|IS-BEV  |                                |"
+                },
+                {
+                  "WA": "200|SEDUNN  |                                |"
+                },
+                {
+                  "WA": "200|ZFICHK  |                                |X"
+                },
+                {
+                  "WA": "200|ZWMS_MM |                                |X"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-07T09:30:39.373Z",
+          "request": {
+            "functionName": "Z_ORVANTA_CFG_BTE_META",
+            "inputParameters": {
+              "ET_HEADER": [],
+              "ET_NAMTAB": [],
+              "ET_EVENTS": []
+            },
+            "outputParameters": [
+              {
+                "name": "EV_CODE",
+                "kind": "scalar"
+              },
+              {
+                "name": "EV_MESSAGE",
+                "kind": "scalar"
+              },
+              {
+                "name": "EV_READ_ONLY",
+                "kind": "scalar"
+              },
+              {
+                "name": "EV_FRESH",
+                "kind": "scalar"
+              },
+              {
+                "name": "ET_HEADER",
+                "kind": "table",
+                "fields": [
+                  "VIEWNAME",
+                  "MAINTVIEW",
+                  "AREA",
+                  "DEVCLASS",
+                  "TYPE",
+                  "LISTE",
+                  "DETAIL",
+                  "OCCURS",
+                  "CLTCODE",
+                  "BASTAB",
+                  "NEWGENER",
+                  "GENDATE",
+                  "GENTIME",
+                  "FLAG",
+                  "EXISTENCY",
+                  "SELECTION",
+                  "DDTEXT",
+                  "CLIDEP",
+                  "TEXTCLIDEP",
+                  "KEYLEN",
+                  "AFTER_KEYC",
+                  "TEXTKEYLEN",
+                  "AFT_TXTKC",
+                  "TABLEN",
+                  "AFTER_TABC",
+                  "TEXTTABLEN",
+                  "AFT_TXTTBC",
+                  "MAXTRKEYLN",
+                  "TRGKEYPOS",
+                  "MAXTRTXKLN",
+                  "TRTXGKPOS",
+                  "CUSTOMAUTH",
+                  "AUTHCLASS",
+                  "SUBSETFLAG",
+                  "RDONLYFLAG",
+                  "ADRNBRFLAG",
+                  "GUIDFLAG",
+                  "USREXIFLAG",
+                  "HIDDENFLAG",
+                  "DELMDTFLAG",
+                  "TEXTTBEXST",
+                  "PTFRKYEXST",
+                  "GENERICTRP",
+                  "GENERTXTRP",
+                  "FIELDORDER",
+                  "TEXTTAB",
+                  "ORIG_LANG",
+                  "SPRASFIELD",
+                  "SPRASFDPOS",
+                  "ROOTTAB",
+                  "GUI_PROG",
+                  "CURSETTING",
+                  "IMPORTABLE",
+                  "SCRFRMFLAG",
+                  "FPOOLNAME",
+                  "MAINFLAG",
+                  "FRM_BF_SAV",
+                  "FRM_AF_SAV",
+                  "FRM_BF_DEL",
+                  "FRM_AF_DEL",
+                  "FRM_ON_NEW",
+                  "FRM_AF_ORG",
+                  "FRM_BF_RPL",
+                  "FRM_AF_RPL",
+                  "FRM_RP_ORG",
+                  "FRM_RP_GET",
+                  "FRM_RP_UPD",
+                  "FRM_RP_CPL",
+                  "FRM_ON_ORG",
+                  "FRM_E071",
+                  "FRM_E071KS",
+                  "FRM_E071KA",
+                  "FRM_BF_END",
+                  "FRM_AF_ENQ",
+                  "FRM_BF_UDL",
+                  "FRM_AF_UDL",
+                  "FRM_BF_PRN",
+                  "FRM_AF_CHK",
+                  "FRM_AF_INI",
+                  "FRM_IN_DSS",
+                  "FRM_H_FLDS",
+                  "FRM_RP_POS",
+                  "FRM_TL_GET",
+                  "FRM_TL_ORG",
+                  "FRM_TL_UPD",
+                  "FRM_TLTEXT",
+                  "FRM_BF_ADR",
+                  "FRM_AF_DLM",
+                  "FRM_ON_AUT",
+                  "FRM_BF_ALV",
+                  "FRM_AF_UID",
+                  "FRM_AF_EDD"
+                ]
+              },
+              {
+                "name": "ET_NAMTAB",
+                "kind": "table",
+                "fields": [
+                  "VIEWFIELD",
+                  "KEYFLAG",
+                  "POSITION",
+                  "READONLY",
+                  "LOWERCASE",
+                  "FLENGTH",
+                  "OUTPUTLEN",
+                  "SCRTEXT",
+                  "TABIX",
+                  "DOMNAME",
+                  "CHECKTABLE",
+                  "INTTYPE",
+                  "DATATYPE",
+                  "PRIMTABKEY",
+                  "CONVEXIT",
+                  "TEXTTABFLD",
+                  "DECIMALS",
+                  "SIGN",
+                  "LENG",
+                  "ROLLNAME",
+                  "PRTFRKYFLD",
+                  "BASTABNAME",
+                  "BASTABFLD",
+                  "TXTTABFLDN",
+                  "TEXTTABPOS",
+                  "TEXTFLDSEL",
+                  "MEMORYID",
+                  "REFTABLE",
+                  "REFFIELD",
+                  "REPTEXT",
+                  "SCRTEXT_S",
+                  "SCRTEXT_M",
+                  "SCRTEXT_L"
+                ]
+              },
+              {
+                "name": "ET_EVENTS",
+                "kind": "table",
+                "fields": [
+                  "TABNAME",
+                  "EVENT",
+                  "FORMNAME"
+                ]
+              }
+            ]
+          },
+          "result": {
+            "outputs": {
+              "EV_CODE": "AUTHORIZATION_DENIED",
+              "EV_MESSAGE": "Standard TBE24 display authorization refused.",
+              "EV_READ_ONLY": "X",
+              "EV_FRESH": "",
+              "ET_HEADER": [],
+              "ET_NAMTAB": [],
+              "ET_EVENTS": []
+            }
+          }
+        }
+      ],
+      "metadataCalls": [
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TBE24"
+        },
+        {
+          "channel": "callSapRepository",
+          "operation": "READ_FUNCTION_INTERFACE",
+          "objectName": "RFC_READ_TABLE"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TBE24T"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TBE34"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TPS34"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TCONT"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_STRUCTURE",
+          "objectName": "VIMDESC"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_STRUCTURE",
+          "objectName": "VIMNAMTAB"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TVIMF"
+        },
+        {
+          "channel": "callSapRepository",
+          "operation": "READ_FUNCTION_INTERFACE",
+          "objectName": "VIEW_GET_DDIC_INFO"
+        },
+        {
+          "channel": "callSapRepository",
+          "operation": "READ_FUNCTION_INTERFACE",
+          "objectName": "VIEW_AUTHORITY_CHECK"
+        },
+        {
+          "channel": "callSapRepository",
+          "operation": "READ_FUNCTION_INTERFACE",
+          "objectName": "Z_ORVANTA_CFG_BTE_META"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TSTC"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TSTCP"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TVDIR"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TVIMF"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TBE24"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TBE24T"
+        },
+        {
+          "channel": "callSapRepository",
+          "operation": "READ_FUNCTION_INTERFACE",
+          "objectName": "VIEW_MAINTENANCE_NO_DIALOG"
+        },
+        {
+          "channel": "callSapRepository",
+          "operation": "READ_FUNCTION_INTERFACE",
+          "objectName": "RFC_READ_TABLE"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TSTC"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TSTCP"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TVDIR"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TVIMF"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TBE24"
+        },
+        {
+          "channel": "callSapDdic",
+          "operation": "READ_TRANSPARENT_TABLE",
+          "objectName": "TBE24T"
+        },
+        {
+          "channel": "callSapRepository",
+          "operation": "READ_FUNCTION_INTERFACE",
+          "objectName": "VIEW_MAINTENANCE_NO_DIALOG"
+        }
+      ],
+      "queries": [
+        {
+          "sql": "SELECT MANDT, PRDKT, RFCDS, AKTIV FROM TBE24 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT MANDT, SPRAS, PRDKT, TXT50 FROM TBE24T WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+          "limit": 201
+        },
+        {
+          "sql": "SELECT MANDT, EVENT, PRDKT, LAND, APPLK, FUNCT, MONIT FROM TBE34 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+          "limit": 201
+        },
+        {
+          "sql": "SELECT MANDT, PROCS, LAND, APPLK, FUNCT, PRDKT, MONIT FROM TPS34 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+          "limit": 201
+        },
+        {
+          "sql": "SELECT FRMID, DATUM, UZEIT FROM TCONT WHERE FRMID = 'CP_INFO'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT TCODE, PGMNA, DYPNO FROM TSTC WHERE TCODE = 'BF24'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT TCODE, PARAM FROM TSTCP WHERE TCODE = 'BF24'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT TABNAME, AREA, DEVCLASS, TYPE, LISTE, DETAIL, OCCURS, CLTCODE, BASTAB, NEWGENER, GENDATE, GENTIME, FLAG FROM TVDIR WHERE TABNAME = 'TBE24'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT TABNAME, EVENT, FORMNAME FROM TVIMF WHERE TABNAME = 'TBE24'",
+          "limit": 65
+        },
+        {
+          "sql": "SELECT MANDT, PRDKT, RFCDS, AKTIV FROM TBE24 WHERE MANDT = '200'",
+          "limit": 201
+        },
+        {
+          "sql": "SELECT TCODE, PGMNA, DYPNO FROM TSTC WHERE TCODE = 'BF24'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT TCODE, PARAM FROM TSTCP WHERE TCODE = 'BF24'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT TABNAME, AREA, DEVCLASS, TYPE, LISTE, DETAIL, OCCURS, CLTCODE, BASTAB, NEWGENER, GENDATE, GENTIME, FLAG FROM TVDIR WHERE TABNAME = 'TBE24'",
+          "limit": 2
+        },
+        {
+          "sql": "SELECT TABNAME, EVENT, FORMNAME FROM TVIMF WHERE TABNAME = 'TBE24'",
+          "limit": 65
+        },
+        {
+          "sql": "SELECT MANDT, PRDKT, RFCDS, AKTIV FROM TBE24 WHERE MANDT = '200'",
+          "limit": 201
+        }
+      ],
+      "publicCalls": [
+        {
+          "name": "inspect_configuration_bte_native_metadata",
+          "args": {
+            "connectionId": "w200"
+          },
+          "result": {
+            "text": "Error invoking inspect_configuration_bte_native_metadata: Error: BTE_METADATA_AUTHORIZATION_DENIED"
+          },
+          "isError": true,
+          "elapsedMs": 9653
+        }
+      ],
+      "ctsCalls": [
+        {
+          "request": "GR2K923429",
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "Transport Details: GR2K923429\nNumber: GR2K923429\nOwner: WYS\nDescription: \nStatus: D\nObjects: 0\n\nTasks (1):\n  - GR2K923430 - WYS - \n    Status: D | Objects: 2\n\n"
+              }
+            ]
+          }
+        },
+        {
+          "request": "GR2K923430",
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "Transport Details: GR2K923430\nNumber: GR2K923430\nOwner: WYS\nDescription: \nStatus: D\nObjects: 2\n\nObjects (2):\n  - ZTPMC_TPCFG (TABU) - \n  - CUNI (TDAT) - \n"
+              }
+            ]
+          }
+        }
+      ],
+      "before": {
+        "TBE24": [
+          {
+            "MANDT": "200",
+            "PRDKT": "ZFICHK",
+            "RFCDS": "",
+            "AKTIV": "X"
+          }
+        ],
+        "TBE24T": [
+          {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "PRDKT": "ZFICHK",
+            "TXT50": "FI CHECK"
+          }
+        ],
+        "TBE34": [
+          {
+            "MANDT": "200",
+            "EVENT": "00001025",
+            "PRDKT": "ZFICHK",
+            "LAND": "",
+            "APPLK": "",
+            "FUNCT": "ZSAMPLE_INTERFACE_00001025",
+            "MONIT": ""
+          }
+        ],
+        "TPS34": [],
+        "TCONT": [
+          {
+            "FRMID": "CP_INFO",
+            "DATUM": "20140819",
+            "UZEIT": "102106"
+          }
+        ]
+      },
+      "ctsBefore": {
+        "GR2K923429": "Transport Details: GR2K923429\nNumber: GR2K923429\nOwner: WYS\nDescription: \nStatus: D\nObjects: 0\n\nTasks (1):\n  - GR2K923430 - WYS - \n    Status: D | Objects: 2\n\n",
+        "GR2K923430": "Transport Details: GR2K923430\nNumber: GR2K923430\nOwner: WYS\nDescription: \nStatus: D\nObjects: 2\n\nObjects (2):\n  - ZTPMC_TPCFG (TABU) - \n  - CUNI (TDAT) - \n"
+      },
+      "error": "Error: Error invoking inspect_configuration_bte_native_metadata: Error: BTE_METADATA_AUTHORIZATION_DENIED",
+      "sources": [
+        {
+          "table": "TBE24",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TBE24T",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TBE34",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TPS34",
+          "status": "empty",
+          "method": "rfc_read_table",
+          "returnedCount": 0,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TCONT",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        }
+      ],
+      "warnings": [
+        "TPS34: empty"
+      ],
+      "finishedAt": "2026-10-07T09:30:39.414Z"
+    }
+  },
+  "uniqueProjectTestsPassed": 258,
+  "publicTools": 208,
+  "readOnlyTools": 137,
+  "noSharedServiceUpdate": true,
+  "noConfigurationWrites": true,
+  "noTransportRelease": true
+}

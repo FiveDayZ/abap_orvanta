@@ -1,0 +1,12 @@
+{
+  "revision": "r37",
+  "startedAt": "2026-10-04T06:08:05.392Z",
+  "mode": "approved_single_native_stale_rejection",
+  "publicWriteTools": 0,
+  "maximumNativeCalls": 1,
+  "automaticRetry": false,
+  "automaticRestore": false,
+  "status": "Partially Verified",
+  "error": "R37_OBSERVATION_TIMEOUT_NO_RETRY",
+  "finishedAt": "2026-10-04T06:12:05.676Z"
+}

@@ -1,0 +1,763 @@
+{
+  "startedAt": "2026-10-04T07:06:36.652Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "functionName": "NUMBER_RANGE_UPDATE_INIT"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "NUMBER_RANGE_UPDATE_INIT",
+        "functionGroup": "SNR1",
+        "shortText": "  显示和维护号码范围和组的初始化",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "OBJECT",
+            "typeName": "TNRO-OBJECT",
+            "optional": false,
+            "passByValue": true,
+            "description": "编号范围对象名称"
+          }
+        ],
+        "exportParameters": [],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [
+          {
+            "name": "OBJECT_NOT_FOUND",
+            "description": "对象未在 TNRO 定义"
+          }
+        ],
+        "source": [
+          "function number_range_update_init.",
+          "*\"----------------------------------------------------------------------",
+          "*\"*\"Lokale Schnittstelle:",
+          "*\"  IMPORTING",
+          "*\"     VALUE(OBJECT) LIKE  TNRO-OBJECT",
+          "*\"  EXCEPTIONS",
+          "*\"      OBJECT_NOT_FOUND",
+          "*\"----------------------------------------------------------------------",
+          "data: l_domain     type dd03p-domname,",
+          "      l_dummytab   type dd01v-entitytab,",
+          "      l_returncode type c.",
+          "data: l_err        type table of inoer,",
+          "      l_err_wa     type inoer.",
+          "",
+          "* interne Tabellen, Strukturen und Felder initialisieren",
+          "  clear iobject.",
+          "  xinrg_modified     =",
+          "  xtnrgt_modified    =",
+          "  xnriv_modified     =",
+          "  g_group_read       =",
+          "  g_interval_read    =",
+          "  g_elementtext_read = no.",
+          "  refresh: yinrg,   xinrg,   ytnrgt, xtnrgt, ynriv, xnriv, nriv_sobj,",
+          "           ynriv_l, xnriv_l.",
+          "*          nriv_sobj_l.",
+          "",
+          "  clear tnro.",
+          "  select single * from tnro where object = object.",
+          "  if sy-subrc <> 0.",
+          "    message e002 with object raising object_not_found.",
+          "  endif.",
+          "  clear tnrot.",
+          "  select single * from  tnrot",
+          "                  where langu  = sy-langu",
+          "                    and object = object.",
+          "  g_object_init = yes.",
+          "* Elemente mit Texten anzeigen: Textangaben ok?",
+          "  if tnro-textind = yes.",
+          "    call function 'NUMBER_RANGE_OBJECT_UPDATE'",
+          "         exporting",
+          "           indicator                 = 'U'",
+          "           object_attributes         = tnro",
+          "           object_text               = tnrot",
+          "         importing",
+          "           returncode                = l_returncode",
+          "         tables",
+          "           errors                    = l_err",
+          "         exceptions",
+          "           object_already_exists     = 0",
+          "           object_attributes_missing = 0",
+          "           object_not_found          = 0",
+          "           object_text_missing       = 0",
+          "           wrong_indicator           = 0.",
+          "    if l_returncode = 'W'.",
+          "*     Warnungen könnten sich auf Textangaben beziehen",
+          "      loop at l_err into  l_err_wa",
+          "                    where fieldname = 'TEXTIND'    or",
+          "                          fieldname = 'NRELTXTSOB' or",
+          "                          fieldname = 'NRELTXTELE' or",
+          "                          fieldname = 'NRELTXTTXT' or",
+          "                          fieldname = 'NRELTXTTAB' or",
+          "                          fieldname = 'NRELTXTLNG'.",
+          "*       Warnung für Textangabe: Elementtexte können nicht angezeigt",
+          "*       werden, Textangaben müssen initialisiert werden",
+          "        clear: tnro-textind,    tnro-nreltxttab,",
+          "               tnro-nreltxtsob, tnro-nreltxtele,",
+          "               tnro-nreltxttxt, tnro-nreltxtlng.",
+          "        exit.",
+          "      endloop.",
+          "    endif.",
+          "  endif.",
+          "* aktuelles Objekt ins lokale Gedächtnis stellen",
+          "  iobject          = tnro.",
+          "  iobject-txt      = tnrot-txt.",
+          "  iobject-txtshort = tnrot-txtshort.",
+          "*   OBJECT unterscheidet Gruppen",
+          "  if iobject-nrtab <> space.",
+          "",
+          "    if iobject-nrfld <> space.",
+          "*     Gruppenelementtabelle besitzt ein Nummernkreisfeld",
+          "      iobject-nr_fields = '1'.",
+          "    else.",
+          "*     Gruppenelementtabelle besitzt ext. und int. Nummernkreisfeld",
+          "      iobject-nr_fields = '2'.",
+          "    endif.",
+          "  else.",
+          "*   OBJECT unterscheidet nicht nach Gruppen",
+          "    iobject-nr_fields = '0'.",
+          "  endif.",
+          "",
+          "  if iobject-dtelsobj = space.",
+          "*    ohne Unterobjekt",
+          "     case iobject-nr_fields.",
+          "        when '0'.",
+          "*         ohne Gruppe",
+          "          iobject-type = '1'.",
+          "        when '1'.",
+          "*         mit Gruppe, 1 Intervall",
+          "          iobject-type = '2'.",
+          "        when '2'.",
+          "*         mit Gruppe, 2 Intervalle",
+          "          iobject-type = '3'.",
+          "     endcase.",
+          "  else.",
+          "*   mit Unterobjekt",
+          "    if iobject-nr_fields = '0'.",
+          "*     ohne Gruppe",
+          "      iobject-type = '4'.",
+          "    else.",
+          "*     mit Gruppe",
+          "      if iobject-nrsobjfld = space.",
+          "*       Gruppe unabhängig vom Unterobjekt",
+          "        if iobject-nr_fields = '1'.",
+          "          iobject-type = '5'.",
+          "        else.",
+          "          iobject-type = '6'.",
+          "        endif.",
+          "      else.",
+          "*       Gruppe abhängig vom Unterobjekt",
+          "        if iobject-nr_fields = '1'.",
+          "          iobject-type = '7'.",
+          "        else.",
+          "          iobject-type = '8'.",
+          "        endif.",
+          "      endif.",
+          "    endif.",
+          "  endif.",
+          "* Länge der Nummernkreisnummer über Domäne bestimmen",
+          "  perform get_domain",
+          "          using    iobject-domlen",
+          "          changing iobject-numbertype",
+          "                   l_dummytab",
+          "                   iobject-numberlength.",
+          "* Nametab für Unterobjekt lesen, falls Unterobjekte existieren",
+          "* interne Tabelle für späteren Zugriff und Prüfungen aufbauen",
+          "  if iobject-dtelsobj ne space.",
+          "*   Nametab bestimmen",
+          "    perform get_roll",
+          "            using    iobject-dtelsobj",
+          "            changing iobject-nrobjlen",
+          "                     l_domain.",
+          "    clear ntb_subobject.",
+          "    perform get_elemfield",
+          "            using    l_domain",
+          "            changing ntb_subobject",
+          "                     g_subobj_client_dep.",
+          "*   Daten lesen",
+          "    perform read_subobjects",
+          "            using ntb_subobject-tabname",
+          "                  ntb_subobject-fieldname.",
+          "  endif.",
+          "",
+          "* Nametab für Gruppen lesen, falls Objekt nach Gruppen unterscheidet",
+          "  if iobject-nrtab <> space.",
+          "*   Nametab bestimmen",
+          "    perform get_fields.",
+          "  endif.",
+          "",
+          "* Nametab für Elementtexte lesen, falls Objekt Textangaben enthält",
+          "  if iobject-textind <> space.",
+          "*   Nametab bestimmen",
+          "    perform get_elemtext_fields.",
+          "  endif.",
+          "endfunction."
+        ],
+        "fingerprint": "e7dc447ea1d635bd85302ecde8b91b6e7e931c2d83d756552a433cbabcd14b9a",
+        "interfaceFingerprint": "aca1e5ceec2392a0381cd8a614a73295967a21b60d41c77f4a837cf206c95819",
+        "sourceFingerprint": "00bf94f36be4746a4c8f302dd3d128fe13a6b74886687ed88fd8239bd1027ad2"
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "functionName": "CALCULATE_HASH_FOR_RAW"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "CALCULATE_HASH_FOR_RAW",
+        "functionGroup": "SECH",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "ALG",
+            "typeName": "HASHALG",
+            "optional": true,
+            "passByValue": true,
+            "description": "Hash Algorithm:"
+          },
+          {
+            "name": "DATA",
+            "typeName": "XSTRING",
+            "optional": false,
+            "passByValue": false,
+            "description": "Data"
+          },
+          {
+            "name": "LENGTH",
+            "typeName": "I",
+            "optional": true,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "HASH",
+            "typeName": "HASH160",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "HASHLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "HASHX",
+            "typeName": "HASH160X",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "HASHXLEN",
+            "typeName": "I",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "HASHSTRING",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "HASHXSTRING",
+            "typeName": "XSTRING",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "HASHB64STRING",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [
+          {
+            "name": "UNKNOWN_ALG",
+            "description": ""
+          },
+          {
+            "name": "PARAM_ERROR",
+            "description": "Parameter Error"
+          },
+          {
+            "name": "INTERNAL_ERROR",
+            "description": "Unknown Error"
+          }
+        ],
+        "source": [
+          "FUNCTION CALCULATE_HASH_FOR_RAW.",
+          "*\"----------------------------------------------------------------------",
+          "*\"*\"Lokale Schnittstelle:",
+          "*\"  IMPORTING",
+          "*\"     VALUE(ALG) TYPE  HASHALG DEFAULT 'SHA1'",
+          "*\"     REFERENCE(DATA) TYPE  XSTRING",
+          "*\"     VALUE(LENGTH) TYPE  I DEFAULT 0",
+          "*\"  EXPORTING",
+          "*\"     VALUE(HASH) TYPE  HASH160",
+          "*\"     VALUE(HASHLEN) TYPE  I",
+          "*\"     VALUE(HASHX) TYPE  HASH160X",
+          "*\"     VALUE(HASHXLEN) TYPE  I",
+          "*\"     REFERENCE(HASHSTRING) TYPE  STRING",
+          "*\"     REFERENCE(HASHXSTRING) TYPE  XSTRING",
+          "*\"     REFERENCE(HASHB64STRING) TYPE  STRING",
+          "*\"  EXCEPTIONS",
+          "*\"      UNKNOWN_ALG",
+          "*\"      PARAM_ERROR",
+          "*\"      INTERNAL_ERROR",
+          "*\"----------------------------------------------------------------------",
+          "  DATA: lf_opcode TYPE x VALUE snt_ab_opcode_genhashblob.",
+          "  IF hashstring IS REQUESTED.",
+          "    hashstring    = snt_ab_is_requested_c.",
+          "    lf_opcode     = snt_ab_opcode_hashblobext.",
+          "  ENDIF.",
+          "  IF hashxstring IS REQUESTED.",
+          "    hashxstring   = snt_ab_is_requested_x.",
+          "    lf_opcode     = snt_ab_opcode_hashblobext.",
+          "  ENDIF.",
+          "  IF hashb64string IS REQUESTED.",
+          "    hashb64string = snt_ab_is_requested_c.",
+          "    lf_opcode     = snt_ab_opcode_hashblobext.",
+          "  ENDIF.",
+          "* Hashwert aus Data ohne Konvertierung berechnen",
+          "  CALL 'SNC_ABAP_SERVICE'                                 \"#EC CI_CCALL",
+          "    ID 'OPCODE'       FIELD lf_opcode",
+          "    ID 'ALG'          FIELD alg",
+          "    ID 'BLOBXSTR'     FIELD data",
+          "    ID 'BLOBLEN'      FIELD length",
+          "    ID 'HASH'         FIELD hash      \"obsolete",
+          "    ID 'HASHLEN'      FIELD hashlen   \"obsolete",
+          "    ID 'HASHX'        FIELD hashx     \"obsolete",
+          "    ID 'HASHXLEN'     FIELD hashxlen  \"obsolete",
+          "    ID 'HASHCSTR'     FIELD hashstring",
+          "    ID 'HASHXSTR'     FIELD hashxstring",
+          "    ID 'HASHB64CSTR'  FIELD hashb64string.",
+          "",
+          "  IF sy-subrc <> 0.",
+          "    CLEAR: hashstring,hashxstring,hashb64string.",
+          "    CASE sy-subrc.",
+          "      WHEN 2.      MESSAGE e008(md5) RAISING internal_error.",
+          "      WHEN 8.      MESSAGE e005(md5) RAISING param_error.",
+          "      WHEN 12.     MESSAGE e020(md5) RAISING param_error.",
+          "      WHEN 16.     MESSAGE e004(md5) WITH alg RAISING unknown_alg.",
+          "      WHEN OTHERS. MESSAGE e006(md5) RAISING internal_error.",
+          "    ENDCASE.",
+          "  ENDIF.",
+          "",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "981ff0b5c608e75f0392c7839d4da9a08b6b9b24bd8687b007e1bec74872562c",
+        "interfaceFingerprint": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779",
+        "sourceFingerprint": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458"
+      }
+    },
+    {
+      "name": "read_ddic_structure",
+      "args": {
+        "objectName": "INRIV"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "structure",
+        "objectName": "INRIV",
+        "packageName": "SZN",
+        "version": "20110901120709",
+        "fingerprint": "b492238ac489db1f68c8b70a8b85eca98060b57a4e74c6f7baec28bfef1ba08c",
+        "guardToken": "F4F6BAF1ED289373EFD41DFB5FEF74347F063DCD",
+        "definition": {
+          "description": "编号范围间隔结构，功能模块的传输",
+          "tableClass": "INTTAB",
+          "baseTable": "",
+          "fields": [
+            {
+              "name": "SUBOBJECT",
+              "position": 1,
+              "dataElement": "NRSOBJ",
+              "description": "编号范围对象的子对象的值"
+            },
+            {
+              "name": "NRRANGENR",
+              "position": 2,
+              "dataElement": "NRNR",
+              "description": "序号区间编号"
+            },
+            {
+              "name": "TOYEAR",
+              "position": 3,
+              "dataElement": "NRYEAR",
+              "description": "到会计年度"
+            },
+            {
+              "name": "FROMNUMBER",
+              "position": 4,
+              "dataElement": "NRFROM",
+              "description": "起始号"
+            },
+            {
+              "name": "TONUMBER",
+              "position": 5,
+              "dataElement": "NRTO",
+              "description": "终止号"
+            },
+            {
+              "name": "NRLEVEL",
+              "position": 6,
+              "dataElement": "NRLEVEL",
+              "description": "编号范围状态"
+            },
+            {
+              "name": "EXTERNIND",
+              "position": 7,
+              "dataElement": "NRIND",
+              "description": "内部 (&#39; &#39;) 或 外部  (&#39;X&#39;) 编号范围的标志"
+            },
+            {
+              "name": "PROCIND",
+              "position": 8,
+              "dataElement": "PROCIND",
+              "description": "处理标记（I=插入，D=删除，U=更新，‘ ’=不修改）"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_ddic_structure",
+      "args": {
+        "objectName": "INRER"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "structure",
+        "objectName": "INRER",
+        "packageName": "SZN",
+        "version": "19970506190247",
+        "fingerprint": "a8a904524f7ad1de0365fa22f92134650f9feeacd2ec5b2fc8b5c52e643e6704",
+        "guardToken": "39ACB873436C8FD77F4B816525865B15ECEDF174",
+        "definition": {
+          "description": "编号范围更新函数模块的错误信息表",
+          "tableClass": "INTTAB",
+          "baseTable": "",
+          "fields": [
+            {
+              "name": "MSGNR",
+              "position": 1,
+              "dataElement": "MSGNR",
+              "description": "消息编号"
+            },
+            {
+              "name": "TABLENAME",
+              "position": 2,
+              "dataElement": "PARAMETER",
+              "description": "参数名称"
+            },
+            {
+              "name": "FIELDNAME",
+              "position": 3,
+              "dataElement": "FIELDNAME",
+              "description": "字段名"
+            },
+            {
+              "name": "TABIX",
+              "position": 4,
+              "dataElement": "NRTABIX",
+              "description": "错误行索引"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_ddic_transparent_table",
+      "args": {
+        "objectName": "TNRO"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "transparentTable",
+        "objectName": "TNRO",
+        "packageName": "SZN",
+        "version": "20121201002425",
+        "fingerprint": "1b9ee7b110ae57c8e055e6048d6676ba76b16b893be443885682bb1953a572b2",
+        "definition": {
+          "description": "编号范围对象定义",
+          "tableClass": "TRANSP",
+          "deliveryClass": "E",
+          "dataBrowserMaintenance": "notAllowed",
+          "sizeCategory": 0,
+          "dataClass": "APPL2",
+          "buffering": "full",
+          "genericKeyFields": 0,
+          "logDataChanges": false,
+          "fields": [
+            {
+              "name": "OBJECT",
+              "position": 1,
+              "dataElement": "NROBJ",
+              "description": "编号范围对象名称",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "DTELSOBJ",
+              "position": 2,
+              "dataElement": "NRSOBJNAM",
+              "description": "子对象数据元素",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRTAB",
+              "position": 3,
+              "dataElement": "NRTAB",
+              "description": "组表名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRINTFLD",
+              "position": 4,
+              "dataElement": "NRINTNR",
+              "description": "用于内部编号范围的编号范围号码字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NREXTFLD",
+              "position": 5,
+              "dataElement": "NRINTNR",
+              "description": "用于内部编号范围的编号范围号码字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRFLD",
+              "position": 6,
+              "dataElement": "NRNRNAME",
+              "description": "用于编号范围的编号范围号码字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRSOBJFLD",
+              "position": 7,
+              "dataElement": "NRNRSUBOBJ",
+              "description": "编号范围表的子对象字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELEFLD",
+              "position": 8,
+              "dataElement": "NRNRELEM",
+              "description": "编号范围要素字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "YEARIND",
+              "position": 9,
+              "dataElement": "NRYEARIND",
+              "description": "标志,与编号范围对象有关的到期年",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "DOMLEN",
+              "position": 10,
+              "dataElement": "NRLENDOM",
+              "description": "编号长度域",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "PERCENTAGE",
+              "position": 11,
+              "dataElement": "NRPERC",
+              "description": "警告信息的百分比",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "CODE",
+              "position": 12,
+              "dataElement": "NRCODE",
+              "description": "CUA 接口的代码",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "TEXTIND",
+              "position": 13,
+              "dataElement": "NRTEXTIND",
+              "description": "带文本标识显示元素",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTTAB",
+              "position": 14,
+              "dataElement": "NRELTXTTAB",
+              "description": "要素说明表名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTSOB",
+              "position": 15,
+              "dataElement": "NRELTXTOBJ",
+              "description": "要素文本表中的子对象字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTELE",
+              "position": 16,
+              "dataElement": "NRELTXTELE",
+              "description": "元素说明表中的要素字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTTXT",
+              "position": 17,
+              "dataElement": "NRELTXTTXT",
+              "description": "元素文本表中的文本字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTLNG",
+              "position": 18,
+              "dataElement": "NRELTXTLNG",
+              "description": "要素文本表中的语言字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "BUFFER",
+              "position": 19,
+              "dataElement": "NRBUFFER",
+              "description": "缓冲区标志",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NOIVBUFFER",
+              "position": 20,
+              "dataElement": "NRIVBUFFER",
+              "description": "必须保存在缓存中的编号数",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NONRSWAP",
+              "position": 21,
+              "dataElement": "NRSWAP",
+              "description": "标志:没有翻滚间隔",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "RFCDEST",
+              "position": 22,
+              "dataElement": "RFCDEST",
+              "description": "逻辑目标（在函数调用中指定）",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "NRCHECKASCII",
+              "position": 23,
+              "dataElement": "NRCHECKASCII",
+              "description": "检查编号中非 ASCII 字符的外部间隔",
+              "key": false,
+              "notNull": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "objectName": "CHAR64"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "dataElement",
+        "objectName": "CHAR64",
+        "packageName": "SH",
+        "version": "20031106162317",
+        "fingerprint": "88fa535c3591e3f97358ed172c5022ad20fdd3276e681787a00e98011c913c4d",
+        "definition": {
+          "description": "字符字段，长度 64",
+          "domainName": "CHAR64",
+          "heading": "",
+          "short": "",
+          "medium": "",
+          "long": ""
+        }
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "LSNR1F01",
+        "objectType": "PROG",
+        "startLine": 1,
+        "endLine": 2000
+      },
+      "isError": true,
+      "data": {
+        "text": "MCP error -32602: Input validation error: Invalid arguments for tool get_abap_object_lines: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"endLine\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'endLine'\"\n  }\n]"
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "LSNR1F02",
+        "objectType": "PROG",
+        "startLine": 1,
+        "endLine": 2000
+      },
+      "isError": true,
+      "data": {
+        "text": "MCP error -32602: Input validation error: Invalid arguments for tool get_abap_object_lines: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"endLine\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'endLine'\"\n  }\n]"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-04T07:06:38.131Z"
+}

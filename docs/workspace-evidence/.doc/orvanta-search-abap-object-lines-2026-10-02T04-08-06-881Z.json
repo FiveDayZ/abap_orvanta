@@ -1,0 +1,16 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "search_abap_object_lines",
+  "arguments": {
+    "objectName": "Z_ORVANTA_MCP_EXECUTE",
+    "searchTerm": "Duplicate or unknown parameter text",
+    "connectionId": "w200"
+  },
+  "startedAt": "2026-10-02T04:08:06.924Z",
+  "finishedAt": "2026-10-02T04:08:08.179Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "Found 1 matches for \"Duplicate or unknown parameter text\" in Z_ORVANTA_MCP_EXECUTE:\nBase: 1 | Enhancement: 0\n\n\n## Z_ORVANTA_MCP_EXECUTE (FUGR/FF)\n\nBase Source Matches (1):\n\nLine 3794:\n```abap\n            EXPORTING funcname = lv_function_name.\r\n          ev_status = 'E'.\r\n          ev_code = 'FUNCTION_PATCH_DOCUMENTATION_MISMATCH'.\r\n>         ev_message = 'Duplicate or unknown parameter text'.\r\n          ev_version = '2.0'. RETURN.\r\n        ENDIF.\r\n        PERFORM fu_modification_globals_init(SAPMS38L)\r\n```\n\nEnhancement Metadata: Unavailable (unsupported)\n\nURI: /sap/bc/adt/functions/groups/zorvanta_mcp_core/fmodules/z_orvanta_mcp_execute/source/main (9818 lines total)\n\n"
+}

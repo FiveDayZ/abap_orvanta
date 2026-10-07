@@ -1,0 +1,35 @@
+[
+  {
+    "name": "ZORVANTA_BTE_CFG",
+    "type": "FUGR",
+    "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bte_cfg",
+    "path": "C:/My/Workplace/Coding/vscode-abap/.doc/sap-backups/r74-bte-meta-fixed-function/ZORVANTA_BTE_CFG-active.abap",
+    "state": "active",
+    "sourceAsReturned": true,
+    "retrievedAt": "2026-10-07T08:51:19.288Z",
+    "sha256": "cddf1753c958e1240cf6311f0213b2e606c2e3dfc0487ff162267ca97c607807",
+    "bytes": 832
+  },
+  {
+    "name": "LZORVANTA_BTE_CFGTOP",
+    "type": "FUGR/I",
+    "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bte_cfg/includes/lzorvanta_bte_cfgtop",
+    "path": "C:/My/Workplace/Coding/vscode-abap/.doc/sap-backups/r74-bte-meta-fixed-function/LZORVANTA_BTE_CFGTOP-active.abap",
+    "state": "active",
+    "sourceAsReturned": true,
+    "retrievedAt": "2026-10-07T08:51:19.511Z",
+    "sha256": "c79515fdf346ada7b5ffc96abf507098ee19daa13901fdc69cb3217c9a876136",
+    "bytes": 129
+  },
+  {
+    "name": "LZORVANTA_BTE_CFGUXX",
+    "type": "FUGR/I",
+    "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bte_cfg/includes/lzorvanta_bte_cfguxx",
+    "path": "C:/My/Workplace/Coding/vscode-abap/.doc/sap-backups/r74-bte-meta-fixed-function/LZORVANTA_BTE_CFGUXX-active.abap",
+    "state": "active",
+    "sourceAsReturned": true,
+    "retrievedAt": "2026-10-07T08:51:19.712Z",
+    "sha256": "7f92635c7365790fc92c7432be40ad5427ff063f932712f716001f4591077aae",
+    "bytes": 263
+  }
+]

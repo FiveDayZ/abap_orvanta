@@ -1,0 +1,357 @@
+{
+  "startedAt": "2026-10-04T07:46:53.546Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "read_ddic_transparent_table",
+      "args": {
+        "objectName": "NRIV"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "transparentTable",
+        "objectName": "NRIV",
+        "packageName": "SZN",
+        "version": "20110901120946",
+        "fingerprint": "a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105",
+        "definition": {
+          "description": "号码范围间隔",
+          "tableClass": "TRANSP",
+          "deliveryClass": "C",
+          "dataBrowserMaintenance": "notAllowed",
+          "sizeCategory": 1,
+          "dataClass": "APPL2",
+          "buffering": "notAllowed",
+          "genericKeyFields": 0,
+          "logDataChanges": false,
+          "fields": [
+            {
+              "name": "CLIENT",
+              "position": 1,
+              "dataElement": "MANDT",
+              "description": "客户端",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "OBJECT",
+              "position": 2,
+              "dataElement": "NROBJ",
+              "description": "编号范围对象名称",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "SUBOBJECT",
+              "position": 3,
+              "dataElement": "NRSOBJ",
+              "description": "编号范围对象的子对象的值",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "NRRANGENR",
+              "position": 4,
+              "dataElement": "NRNR",
+              "description": "序号区间编号",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "TOYEAR",
+              "position": 5,
+              "dataElement": "NRYEAR",
+              "description": "到会计年度",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "FROMNUMBER",
+              "position": 6,
+              "dataElement": "NRFROM",
+              "description": "起始号",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "TONUMBER",
+              "position": 7,
+              "dataElement": "NRTO",
+              "description": "终止号",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "NRLEVEL",
+              "position": 8,
+              "dataElement": "NRLEVEL",
+              "description": "编号范围状态",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "EXTERNIND",
+              "position": 9,
+              "dataElement": "NRIND",
+              "description": "内部 (&#39; &#39;) 或 外部  (&#39;X&#39;) 编号范围的标志",
+              "key": false,
+              "notNull": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "objectName": "NRLEVEL"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "dataElement",
+        "objectName": "NRLEVEL",
+        "packageName": "SZN",
+        "version": "19920609124832",
+        "fingerprint": "fcb44ab57464be85fcc6f6d1deaaf524df16f359a30af71cf9a018e7eb818693",
+        "definition": {
+          "description": "编号范围状态",
+          "domainName": "NUMC20",
+          "heading": "编号范围状态",
+          "short": "状态",
+          "medium": "编号状态",
+          "long": "编号范围状态"
+        }
+      }
+    }
+  ],
+  "schemas": [
+    {
+      "name": "read_ddic_transparent_table",
+      "description": "Read one SAP Dictionary transparent table, including keys, delivery class, technical settings, package, concurrency version, and SHA-256 definition fingerprint. If the object has only a non-active version (for example left behind by an interrupted create), that stored version is returned instead with status 'inactive', active false, its own definitionFingerprint and a resumeTool hint, so the pending definition can be inspected rather than merely reported as blocking. Read-only and allowed for customer or standard objects. A read that completes and finds nothing answers with status \"not-found\", exists false and authoritative true instead of failing, so a missing object is distinguishable from a broken helper; every other failure is still reported as an error.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string"
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "objectName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "description": "Read active ABAP source and return the SHA-256 fingerprint of the complete untrimmed source. objectType disambiguates same-named objects. methodName extracts one method body from a class while retaining the complete-source fingerprint.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string"
+          },
+          "objectType": {
+            "type": "string",
+            "enum": [
+              "FUNC",
+              "CLAS",
+              "TABL",
+              "PROG",
+              "INTF",
+              "DTEL",
+              "DDLS",
+              "DOMA",
+              "TTYP",
+              "SHLP",
+              "ENQU",
+              "MSAG",
+              "FUGR",
+              "DEVC",
+              "TRAN",
+              "VIEW",
+              "SICF",
+              "WDYN",
+              "SPRX",
+              "XSLT",
+              "TRANSFORMATIONS",
+              "SUSH",
+              "SUSC",
+              "PINF",
+              "ENHC",
+              "ENHO",
+              "ENHS",
+              "BADI",
+              "BADII",
+              "SAMC",
+              "SAPC",
+              "SFSW",
+              "SFBF",
+              "SFBS",
+              "JOBD",
+              "NROB",
+              "SUSO",
+              "BDEF",
+              "SRVB",
+              "FUNC/FM",
+              "FUNC/FF",
+              "FUGR/FF",
+              "CLAS/OC",
+              "INTF/OI",
+              "PROG/P",
+              "PROG/I",
+              "FUGR/I",
+              "FUGR/F",
+              "TABL/DT",
+              "TABL/DS"
+            ]
+          },
+          "methodName": {
+            "type": "string"
+          },
+          "startLine": {
+            "type": "number",
+            "default": 1
+          },
+          "lineCount": {
+            "type": "number",
+            "default": 50
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "objectName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "create_object_programmatically",
+      "description": "Create and activate a new Z* or Y* customer source object without VS Code. Supported types: classes, interfaces, programs, includes, function groups, function modules, function-group includes, DDL sources, and DCL sources. Function children require a Z* or Y* parentName. $TMP is local; non-local packages require an existing transport. Pass source to seed the initial implementation in the SAME operation, one array element per line with no embedded line breaks; it is written after the object exists and before activation, so a single call yields a complete active object. source is accepted for CLAS/OC, INTF/OI, PROG/P, PROG/I, FUGR/I and FUGR/FF, and rejected for FUGR/F (which has no source of its own) and for DDLS/DF and DCLS/DL (which carry their own document serialisation). Without source the object is created empty. The service never creates or releases transports.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+            "description": "Caller-generated write operation ID. Reuse is blocked; keep this ID to query recovery status. If omitted, the service generates one for backward compatibility."
+          },
+          "objectType": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "packageName": {
+            "type": "string",
+            "default": "$TMP"
+          },
+          "parentName": {
+            "type": "string"
+          },
+          "source": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "connectionId": {
+            "type": "string"
+          },
+          "additionalOptions": {
+            "type": "object",
+            "properties": {
+              "serviceDefinition": {
+                "type": "string"
+              },
+              "bindingType": {
+                "type": "string"
+              },
+              "bindingCategory": {
+                "type": "string"
+              },
+              "softwareComponent": {
+                "type": "string"
+              },
+              "packageType": {
+                "type": "string"
+              },
+              "transportLayer": {
+                "type": "string"
+              },
+              "transportRequest": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "new",
+                      "existing"
+                    ]
+                  },
+                  "number": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "objectType",
+          "name",
+          "description",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-04T07:46:53.754Z"
+}

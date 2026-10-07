@@ -1,0 +1,178 @@
+### shape of read_ddic_structure DD26V ###
+{
+  "connectionId": "w200",
+  "objectKind": "structure",
+  "objectName": "DD26V",
+  "packageName": "SDVI",
+  "version": "20031107094440",
+  "fingerprint": "d378420a8d4da4ea9eeae5b57718534b9a06ba72ed606e0c5a149e59f0bd41d6",
+  "definition": {
+    "description": "V-VIEWTABLE：一个视图的基本表视图",
+    "tableClass": "INTTAB",
+    "fields": [
+      {
+        "name": "DDLANGUAGE",
+        "position": 1,
+        "dataElement": "DSPRAS",
+        "description": "语言代码"
+      },
+      {
+        "name": "VIEWNAME",
+        "position": 2,
+        "dataElement": "VIEWNAME",
+        "description": "SAP 表视图的名称"
+      },
+      {
+        "name": "TABNAME",
+        "position": 3,
+        "dataElement": "DDVIEWTABL",
+        "description": "表名称"
+      },
+      {
+        "name": "TABPOS",
+        "position": 4,
+        "dataElement": "MCPOS",
+        "description": "在重复组中的位置"
+      },
+      {
+        "name": "FORTABNAME",
+        "position": 5,
+        "dataElement": "TABNAME",
+        "description": "表名"
+      },
+      {
+        "name": "FORFIELD",
+        "position": 6,
+        "dataElement": "FIELDNAME",
+        "description": "字段名"
+      },
+      {
+        "name": "FORDIR",
+        "position": 7,
+        "dataElement": "FORDIR",
+        "description": "外键相关性的方向"
+      }
+    ]
+  }
+}
+
+### type discovery for DD25V / DD02V / DD08V ###
+-- DD25V --
+Found 1 ABAP objects matching "DD25V":
+
+• DD25V (VIEW/DV)
+  
+  Package: 
+  URI: /sap/bc/adt/vit/wb/object_type/viewdv/object_name/DD25V
+  ADT: adt://w200/sap/bc/adt/vit/wb/object_type/viewdv/object_name/DD25V
+-- DD02V --
+Found 1 ABAP objects matching "DD02V":
+
+• DD02V (VIEW/DV)
+  
+  Package: 
+  URI: /sap/bc/adt/vit/wb/object_type/viewdv/object_name/DD02V
+  ADT: adt://w200/sap/bc/adt/vit/wb/object_type/viewdv/object_name/DD02V
+-- DD08V --
+Found 1 ABAP objects matching "DD08V":
+
+• DD08V (VIEW/DV)
+  
+  Package: 
+  URI: /sap/bc/adt/vit/wb/object_type/viewdv/object_name/DD08V
+  ADT: adt://w200/sap/bc/adt/vit/wb/object_type/viewdv/object_name/DD08V
+
+### resolve remaining names by other DDIC readers ###
+
+=========== DD25V ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a transparent table
+
+=========== DD02V ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a transparent table
+
+=========== DD08V ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a transparent table
+
+=========== C ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+
+=========== DDADDTYPE ===========
+  read_ddic_data_element: { "connectionId": "w200", "objectKind": "dataElement", "objectName": "DDADDTYPE", "packageName": "SDBT", "version": "19981110050118", "fingerprint": "802b10239f823fdb33432fc3d57dff6205ac3192d51fb848512768d9c7c7de28", "definition": { "description": "是否读取已引用类型的信息，以及读取的方式", "domainName": "DDADDTYPE", "heading": "", "short
+
+=========== DDBOOL_D ===========
+  read_ddic_data_element: { "connectionId": "w200", "objectKind": "dataElement", "objectName": "DDBOOL_D", "packageName": "SDBT", "version": "19950401181557", "fingerprint": "507b77e89c1929681760c0704b0742f80229e8d826f494ef6d888d380a404bed", "definition": { "description": "ABAP 字典：真值", "domainName": "DDBOOL", "heading": "", "short": "", "medium
+
+=========== DDOBJECTID ===========
+  read_ddic_data_element: { "connectionId": "w200", "objectKind": "dataElement", "objectName": "DDOBJECTID", "packageName": "SDIC", "version": "20001108191811", "fingerprint": "946d0d9d88a188f036d712d70432f4122dfe123e0607bc539a6162d0639d1e13", "definition": { "description": "ABAP 字典对象的附加 ID (MC ID, 索引)", "domainName": "DDOBJECTID", "heading": "
+
+=========== DDOBJNAME ===========
+  read_ddic_data_element: { "connectionId": "w200", "objectKind": "dataElement", "objectName": "DDOBJNAME", "packageName": "SDIC", "version": "20001108191811", "fingerprint": "f4137cb78e483dea3713fbd3886469f27e10da6c0ace0de40edee6619316aa83", "definition": { "description": "ABAP 字典对象的名称", "domainName": "DDOBJNAME", "heading": "", "short": "对象名称
+
+=========== DDOBJTYP ===========
+  read_ddic_data_element: { "connectionId": "w200", "objectKind": "dataElement", "objectName": "DDOBJTYP", "packageName": "SDIC", "version": "20001108191811", "fingerprint": "e57f1d49dea18bef09a62b185048c3b046ee567d04771c425105ea5910e55f37", "definition": { "description": "ABAP 字典对象的对象类型", "domainName": "OBJECTTYP", "heading": "型", "short": "型"
+
+=========== SLCTR_TABLES_KEYS ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+
+=========== UNICODELG ===========
+  read_ddic_data_element: { "connectionId": "w200", "objectKind": "dataElement", "objectName": "UNICODELG", "packageName": "SAUS", "version": "20110909140801", "fingerprint": "105ca6dfcc43304bcb4cd6634c27e79cd0dd19ea1648b996e1814da73903b4a7", "definition": { "description": "", "domainName": "NTABSHORT", "heading": "", "short": "", "medium": "",
+
+=========== VIMTY_MESSAGE ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+
+=========== VIMTY_OC_TYPE ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+
+=========== VIMTY_TCODE ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+
+=========== XFELD ===========
+  read_ddic_data_element: { "connectionId": "w200", "objectKind": "dataElement", "objectName": "XFELD", "packageName": "SZS", "version": "19981105013152", "fingerprint": "506ef237743c1984592ace05516afe079365becfa3ea49a2f30979a7cee6e288", "definition": { "description": "复选框", "domainName": "XFELD", "heading": "", "short": "", "medium": "", "long
+
+=========== SY ===========
+  read_ddic_data_element: ERROR: Error invoking read_ddic_data_element: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_domain: ERROR: Error invoking read_ddic_domain: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_table_type: ERROR: Error invoking read_ddic_table_type: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_search_help: ERROR: Error invoking read_search_help: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_structure: ERROR: Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist
+  read_ddic_transparent_table: ERROR: Error invoking read_ddic_transparent_table: Error: SAP DDIC helper rejected the operation: DDIC_OBJECT_NOT_FOUND: DDIC object does not exist

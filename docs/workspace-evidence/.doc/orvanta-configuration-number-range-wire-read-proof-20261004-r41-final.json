@@ -1,0 +1,96 @@
+{
+  "startedAt": "2026-10-04T11:09:40.722Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "boundTableParameter": false,
+      "requestXml": "<?xml version=\"1.0\" encoding=\"utf-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><n1:Z_ORVANTA_CFG_NR_READ xmlns:n1=\"urn:sap-com:document:sap:rfc:functions\"><IV_OBJECT>ZORVCFGNR</IV_OBJECT></n1:Z_ORVANTA_CFG_NR_READ></soapenv:Body></soapenv:Envelope>",
+      "result": {
+        "outputs": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": []
+        }
+      }
+    },
+    {
+      "boundTableParameter": true,
+      "requestXml": "<?xml version=\"1.0\" encoding=\"utf-8\"?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><n1:Z_ORVANTA_CFG_NR_READ xmlns:n1=\"urn:sap-com:document:sap:rfc:functions\"><IV_OBJECT>ZORVCFGNR</IV_OBJECT><ET_INTERVALS></ET_INTERVALS></n1:Z_ORVANTA_CFG_NR_READ></soapenv:Body></soapenv:Envelope>",
+      "result": {
+        "outputs": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000100",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "status": "confirmed_table_binding_required_and_created_interval_persisted",
+  "finishedAt": "2026-10-04T11:09:40.973Z"
+}

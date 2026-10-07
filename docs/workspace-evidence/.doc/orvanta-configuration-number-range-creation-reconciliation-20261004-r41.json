@@ -1,0 +1,272 @@
+{
+  "startedAt": "2026-10-04T10:24:53.456Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "read_number_range_object",
+      "args": {
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "objectType": "numberRangeObject",
+        "status": "not-found",
+        "exists": false,
+        "active": null,
+        "version": null,
+        "fingerprint": null,
+        "packageName": null,
+        "requestNumber": null,
+        "authoritative": true,
+        "readOnly": true,
+        "reason": "The DDIC read completed and SAP answered that this object does not exist. This is a definite answer, not a tool failure and not an inconclusive result: there is nothing to reconcile for this object.",
+        "substitutes": [
+          "read_abap_table(TADIR, filters OBJECT = <object type>, OBJ_NAME = <name>) for the recorded repository entry",
+          "read_abap_table(DD02L or DD25L, filters for the object) for the stored header rows"
+        ]
+      }
+    },
+    {
+      "name": "get_write_operation_status",
+      "args": {
+        "operationId": "cfg-r41-create-test-number-range"
+      },
+      "isError": false,
+      "data": {
+        "operationId": "cfg-r41-create-test-number-range",
+        "version": 2,
+        "status": "failed",
+        "connectionId": "w200",
+        "toolName": "upsert_number_range_object",
+        "operationIdHash": "5b2b8c91a7d0850725d817d9cf2c60401a543a7a63766fb27d300ab4b53f793e",
+        "targetKeyHash": "d95bd1a818ec1c62c3d516c4bb23b5b5206c85f064a79f29db1269ce8ae9147d",
+        "inputHash": "516d6e5591c313af1de6447a957b412ab78a616a9e576a3f5b6845fbab90a184",
+        "preChangeSummary": "{\"target\":\"object object ZORVCFGNR\",\"requestedOperation\":\"upsert_number_range_object\",\"concurrencyGuard\":\"tool-specific SAP readback and lock checks\",\"transportNumber\":\"GR2K923472\",\"automaticRollback\":false}",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-10-04T10:22:39.117Z",
+          "target": "object object ZORVCFGNR",
+          "exists": false,
+          "active": null,
+          "version": null,
+          "fingerprint": null,
+          "packageName": null,
+          "requestNumber": null,
+          "taskNumber": null,
+          "observationStatus": "complete",
+          "sources": [
+            "sap_ddic_read"
+          ],
+          "warnings": []
+        },
+        "sapInvocationStarted": true,
+        "errorHash": "7a7185986aa6b2e770063a9e5b036b762ca666470da55e3461d934ac8b959e3a",
+        "startedAt": "2026-10-04T10:22:39.080Z",
+        "finishedAt": "2026-10-04T10:22:39.126Z",
+        "durationMs": 43,
+        "receiptHash": "84533c7079ec329cc223853ac0d342359f96a71602d391de51697204a3ec1239",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": true,
+        "localLockReleased": true,
+        "manualRecovery": "Read back object object ZORVCFGNR from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+      }
+    },
+    {
+      "name": "read_abap_table",
+      "args": {
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME"
+        ],
+        "filters": [
+          {
+            "column": "OBJECT",
+            "operator": "EQ",
+            "value": "NROB"
+          },
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "ZORVCFGNR"
+          }
+        ],
+        "maxRows": 20
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME"
+        ],
+        "maxRows": 20,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "PGMID",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "OBJECT",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000026"
+          },
+          {
+            "FIELDNAME": "OBJ_NAME",
+            "TYPE": "C",
+            "LENGTH": "000120",
+            "OFFSET": "000031"
+          }
+        ],
+        "returnedCount": 0,
+        "truncated": false,
+        "data": []
+      }
+    },
+    {
+      "name": "read_abap_table",
+      "args": {
+        "tableName": "T002",
+        "columns": [
+          "SPRAS",
+          "LAISO"
+        ],
+        "filters": [
+          {
+            "column": "SPRAS",
+            "operator": "EQ",
+            "value": "1"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "T002",
+        "columns": [
+          "SPRAS",
+          "LAISO"
+        ],
+        "maxRows": 2,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "SPRAS",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "LAISO",
+            "TYPE": "C",
+            "LENGTH": "000002",
+            "OFFSET": "000002"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "SPRAS": "1",
+            "LAISO": "ZH"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_runtime_info",
+      "args": {},
+      "isError": false,
+      "data": {
+        "status": "observed",
+        "readOnly": true,
+        "server": {
+          "name": "orvanta",
+          "version": "0.50.23"
+        },
+        "startedAt": "2026-10-04T10:12:48.980Z",
+        "nodeVersion": "24.8.0",
+        "startupArtifact": {
+          "status": "observed",
+          "observedAt": "2026-10-04T10:12:48.981Z",
+          "packageVersion": "0.50.23",
+          "artifactFingerprint": "fb3a974e6bdd5aa5a67e77f25c7c6e90a90ffe34c6363d87acd4681deaabe5ca",
+          "fileCount": 99
+        },
+        "currentDiskArtifact": {
+          "status": "observed",
+          "observedAt": "2026-10-04T10:24:57.629Z",
+          "packageVersion": "0.50.23",
+          "artifactFingerprint": "fb3a974e6bdd5aa5a67e77f25c7c6e90a90ffe34c6363d87acd4681deaabe5ca",
+          "fileCount": 99
+        },
+        "checks": {
+          "expectedVersion": "not_requested",
+          "expectedArtifact": "not_requested",
+          "diskSinceStartup": "match",
+          "moduleAndPackageVersion": "match"
+        },
+        "restartRequired": false,
+        "sapStatus": "not_probed",
+        "helperStatus": "not_probed; use get_capability_report for separately authorized observations",
+        "limitations": [
+          "Fingerprint covers service code, package.json and package-lock.json, not every dependency or UI asset.",
+          "Startup disk observation is not an attestation of every module already loaded in memory.",
+          "Matching artifacts do not prove SAP connectivity, helper compatibility or runtime acceptance.",
+          "No service switch, state cleanup, SAP retry or rollback is performed."
+        ],
+        "toolProfile": {
+          "profile": "full",
+          "source": "default",
+          "requested": null,
+          "enabledCount": 189,
+          "disabledCount": 0,
+          "denied": []
+        }
+      }
+    }
+  ],
+  "verifiedServiceRoot": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone",
+  "rootEvidence": "Local default dist fingerprint equals live shared service current/startup artifact",
+  "artifactFingerprint": "fb3a974e6bdd5aa5a67e77f25c7c6e90a90ffe34c6363d87acd4681deaabe5ca",
+  "status": "confirmed_no_created_NROB_or_CTS_entry_after_local_refusal",
+  "finishedAt": "2026-10-04T10:24:57.713Z"
+}

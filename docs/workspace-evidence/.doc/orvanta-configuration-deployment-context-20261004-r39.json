@@ -1,0 +1,306 @@
+{
+  "startedAt": "2026-10-04T07:39:16.984Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "read_abap_table",
+      "args": {
+        "tableName": "TADIR",
+        "columns": [
+          "OBJECT",
+          "OBJ_NAME",
+          "DEVCLASS"
+        ],
+        "filters": [
+          {
+            "column": "PGMID",
+            "operator": "EQ",
+            "value": "R3TR"
+          },
+          {
+            "column": "OBJECT",
+            "operator": "EQ",
+            "value": "FUGR"
+          },
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "ZORVANTA_CFG_UNIT"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"tableName\": \"TADIR\",\n  \"columns\": [\n    \"OBJECT\",\n    \"OBJ_NAME\",\n    \"DEVCLASS\"\n  ],\n  \"maxRows\": 2,\n  \"readOnly\": true,\n  \"order\": \"unspecified\",\n  \"clientHandling\": \"sap_session_default\",\n  \"snapshot\": false,\n  \"status\": \"ok\",\n  \"method\": \"rfc_read_table\",\n  \"definitionSource\": \"adt_ddic\",\n  \"tableClassVerified\": true,\n  \"definitionFingerprint\": \"8eba7bf62aa3432a081e411a58f1965cd689192c46c9720bc9c960c5b36b8c51\",\n  \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\",\n  \"representation\": \"sap_text_trimmed\",\n  \"fieldMetadata\": [\n    {\n      \"FIELDNAME\": \"OBJECT\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000004\",\n      \"OFFSET\": \"000000\"\n    },\n    {\n      \"FIELDNAME\": \"OBJ_NAME\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000040\",\n      \"OFFSET\": \"000005\"\n    },\n    {\n      \"FIELDNAME\": \"DEVCLASS\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000030\",\n      \"OFFSET\": \"000046\"\n    }\n  ],\n  \"returnedCount\": 1,\n  \"truncated\": false,\n  \"data\": [\n    {\n      \"OBJECT\": \"FUGR\",\n      \"OBJ_NAME\": \"ZORVANTA_CFG_UNIT\",\n      \"DEVCLASS\": \"ZABAP\"\n    }\n  ]\n}"
+    },
+    {
+      "name": "read_abap_table",
+      "args": {
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "filters": [
+          {
+            "column": "TRKORR",
+            "operator": "EQ",
+            "value": "GR2K923472"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"tableName\": \"E070\",\n  \"columns\": [\n    \"TRKORR\",\n    \"TRFUNCTION\",\n    \"TRSTATUS\",\n    \"AS4USER\",\n    \"STRKORR\"\n  ],\n  \"maxRows\": 2,\n  \"readOnly\": true,\n  \"order\": \"unspecified\",\n  \"clientHandling\": \"sap_session_default\",\n  \"snapshot\": false,\n  \"status\": \"ok\",\n  \"method\": \"rfc_read_table\",\n  \"definitionSource\": \"adt_ddic\",\n  \"tableClassVerified\": true,\n  \"definitionFingerprint\": \"8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1\",\n  \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\",\n  \"representation\": \"sap_text_trimmed\",\n  \"fieldMetadata\": [\n    {\n      \"FIELDNAME\": \"TRKORR\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000020\",\n      \"OFFSET\": \"000000\"\n    },\n    {\n      \"FIELDNAME\": \"TRFUNCTION\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000001\",\n      \"OFFSET\": \"000021\"\n    },\n    {\n      \"FIELDNAME\": \"TRSTATUS\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000001\",\n      \"OFFSET\": \"000023\"\n    },\n    {\n      \"FIELDNAME\": \"AS4USER\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000012\",\n      \"OFFSET\": \"000025\"\n    },\n    {\n      \"FIELDNAME\": \"STRKORR\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000020\",\n      \"OFFSET\": \"000038\"\n    }\n  ],\n  \"returnedCount\": 1,\n  \"truncated\": false,\n  \"data\": [\n    {\n      \"TRKORR\": \"GR2K923472\",\n      \"TRFUNCTION\": \"K\",\n      \"TRSTATUS\": \"D\",\n      \"AS4USER\": \"WYS\",\n      \"STRKORR\": \"\"\n    }\n  ]\n}"
+    },
+    {
+      "name": "read_number_range_object",
+      "args": {
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"objectName\": \"ZORVCFGNR\",\n  \"objectType\": \"numberRangeObject\",\n  \"status\": \"not-found\",\n  \"exists\": false,\n  \"active\": null,\n  \"version\": null,\n  \"fingerprint\": null,\n  \"packageName\": null,\n  \"requestNumber\": null,\n  \"authoritative\": true,\n  \"readOnly\": true,\n  \"reason\": \"The DDIC read completed and SAP answered that this object does not exist. This is a definite answer, not a tool failure and not an inconclusive result: there is nothing to reconcile for this object.\",\n  \"substitutes\": [\n    \"read_abap_table(TADIR, filters OBJECT = <object type>, OBJ_NAME = <name>) for the recorded repository entry\",\n    \"read_abap_table(DD02L or DD25L, filters for the object) for the stored header rows\"\n  ]\n}"
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "functionName": "Z_ORVANTA_CFG_NR_READ"
+      },
+      "isError": true,
+      "response": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_CFG_NR_READ 不存在"
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "functionName": "Z_ORVANTA_CFG_NR_APPLY"
+      },
+      "isError": true,
+      "response": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_CFG_NR_APPLY 不存在"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "SAPLSNR1",
+        "objectType": "PROG",
+        "startLine": 1,
+        "lineCount": 1000
+      },
+      "isError": false,
+      "response": "Source from SAPLSNR1 (lines 1-16 of 16, 16 lines retrieved):\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LSNR1TOP.      \" Global Data\n  INCLUDE LSNR1UXX.      \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n  INCLUDE LSNR1F01.\n  INCLUDE LSNR1F02.\n  INCLUDE LSNR1F99.\n  INCLUDE FSNR1CDC.\n* INCLUDE LSNR1O...      \" PBO-Modules\n* INCLUDE LSNR1I...      \" PAI-Modules\n\n```\n\nFull Source SHA-256: b9f80beb8f1fa1298a5c4191382a4a953f9929bbfe4fc4900e249c6bc19e36da\nURI: /sap/bc/adt/functions/groups/snr1/source/main\n\nEnhancement metadata unavailable (unsupported)."
+    }
+  ],
+  "deploymentSchemas": [
+    {
+      "name": "create_function_module_with_interface",
+      "description": "Create one new Z* or Y* function module with an explicit interface and ECC 7.31-compatible source body in an existing Z* or Y* function group. Supply only body statements, never FUNCTION/ENDFUNCTION boundaries. Export parameters cannot be optional: SAP has no OPTIONAL flag on EXPORTING parameters, so optional=true there is refused before SAP is called instead of being silently normalised and reported as a mismatch after the function module already exists. Requires a transportable package and existing transport. Existing functions are rejected; transports are never created or released.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+            "description": "Caller-generated write operation ID. Reuse is blocked; keep this ID to query recovery status. If omitted, the service generates one for backward compatibility."
+          },
+          "functionName": {
+            "type": "string"
+          },
+          "functionGroup": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "remoteEnabled": {
+            "type": "boolean"
+          },
+          "importParameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "typeName": {
+                  "type": "string"
+                },
+                "optional": {
+                  "type": "boolean"
+                },
+                "passByValue": {
+                  "type": "boolean"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "typeName"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "exportParameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/properties/importParameters/items"
+            }
+          },
+          "changingParameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/properties/importParameters/items"
+            }
+          },
+          "tableParameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/properties/importParameters/items"
+            }
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "source": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "packageName": {
+            "type": "string"
+          },
+          "transportNumber": {
+            "type": "string"
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "functionName",
+          "functionGroup",
+          "description",
+          "remoteEnabled",
+          "importParameters",
+          "exportParameters",
+          "changingParameters",
+          "tableParameters",
+          "exceptions",
+          "source",
+          "packageName",
+          "transportNumber",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "upsert_number_range_object",
+      "description": "Create or update one Z* or Y* number range object DEFINITION through the installed DDIC helper. objectName is the TNRO OBJECT key (data element NROBJ, CHAR 10, characters A-Z 0-9 _ only). This tool never creates, changes or deletes a number range INTERVAL (NRIV), so it does not by itself make number assignment available. description is the long text of the helper logon language (TNROT-TXT, 60 characters). An existing object requires the version returned by read_number_range_object: a 40-character SHA-1 definition digest, NOT a 14-digit DDIC timestamp, never numeric, and rejected if the stored definition changed since the read. properties is a partial patch keyed by TNRO field name - omitted fields keep the value already stored, so an update never clears an attribute the caller did not mention and never deletes a row it did not send. A create starts from an empty TNRO row; SAP's own check_object then reports any attribute it still needs in the error message. TNRO fields are DTELSOBJ, NRTAB, NRINTFLD, NREXTFLD, NRFLD, NRSOBJFLD, NRELEFLD, YEARIND, DOMLEN (a domain name, not a length), PERCENTAGE, CODE, TEXTIND, NRELTXTTAB, NRELTXTSOB, NRELTXTELE, NRELTXTTXT, NRELTXTLNG, BUFFER, NOIVBUFFER, NONRSWAP, RFCDEST, NRCHECKASCII; any other key, including OBJECT, is rejected before SAP is called. texts carries TNROT rows (language, text, shortText up to 60 and 20 characters). The helper logon language must be among them and is written first; every other language follows as a text update, and a text in a language the caller did not send is preserved. The write is one atomic LUW: TNRO/TNROT, the R3TR/NROB transport registration and a single COMMIT WORK AND WAIT. It fails closed with NUMBER_RANGE_TADIR_FAILED or NUMBER_RANGE_TRANSPORT_RECORD_FAILED when the object cannot be recorded in the package's request, so an unrecorded definition never survives as success. Requires a helper that publishes UPSERT_NUMBER_RANGE_OBJECT (protocol 1.11 or later).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+            "description": "Caller-generated write operation ID. Reuse is blocked; keep this ID to query recovery status. If omitted, the service generates one for backward compatibility."
+          },
+          "objectName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "packageName": {
+            "type": "string"
+          },
+          "transportNumber": {
+            "type": "string"
+          },
+          "expectedVersion": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "language": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "shortText": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "language",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "objectName",
+          "description",
+          "packageName",
+          "transportNumber",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-04T07:39:18.313Z"
+}

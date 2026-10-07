@@ -1,0 +1,85 @@
+{
+  "at": "2026-10-05T03:41:10.721Z",
+  "localTime": "2026-10-05T11:41:10.723+08:00",
+  "status": "Partially Verified",
+  "record": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\code-update-20261005-114110.md",
+  "documents": [
+    {
+      "name": "orvanta-configuration-bc-guard-candidate-20261005-r48.abap",
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-candidate-20261005-r48.abap",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-candidate-20261005-r48.abap",
+      "bytes": 7161,
+      "sha256": "dba13bdd232ea0aa8469e3312cf24b03423cebd52526c3790380646562c8fd52"
+    },
+    {
+      "name": "orvanta-configuration-bc-guard-candidate-20261005-r48.json",
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-candidate-20261005-r48.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-candidate-20261005-r48.json",
+      "bytes": 14740,
+      "sha256": "027a6206763fadb55a3a7bc3da4134d3c2b5eed673df30ab944d512473557c52"
+    },
+    {
+      "name": "orvanta-configuration-bc-guard-preparation-20261005-r48.json",
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-preparation-20261005-r48.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-preparation-20261005-r48.json",
+      "bytes": 194105,
+      "sha256": "5e231d43ea2edd07caa87717c4c02997725306966d7c1ef0b0ea04449ce3f78e"
+    },
+    {
+      "name": "orvanta-configuration-bc-guard-local-checks-20261005-r48.txt",
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-local-checks-20261005-r48.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-local-checks-20261005-r48.txt",
+      "bytes": 151588,
+      "sha256": "4771f01576147dabde4408fe54e057ae28763139f8f1049f56ace3c831d7c90e"
+    },
+    {
+      "name": "orvanta-configuration-bc-guard-deployment-proposal-20261005-r48.md",
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-deployment-proposal-20261005-r48.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-deployment-proposal-20261005-r48.md",
+      "bytes": 4853,
+      "sha256": "454421f3bf55b09caa4f5c6cd4de8e64847ed834c08dbaca637e0708dc7f5955"
+    },
+    {
+      "name": "orvanta-configuration-bc-guard-acceptance-plan-20261005-r49.md",
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-acceptance-plan-20261005-r49.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-acceptance-plan-20261005-r49.md",
+      "bytes": 3812,
+      "sha256": "e49e9108752a8de42d73764baa3da583fa5bae46c23dc672c07e2fdb3fd49b3e"
+    },
+    {
+      "name": "code-update-20261005-114110.md",
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\code-update-20261005-114110.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\code-update-20261005-114110.md",
+      "bytes": 6897,
+      "sha256": "ffc6eec850d674bf69f0f82c79912427fc51f07a094ba1e3db6eea08d886f848"
+    }
+  ],
+  "files": {
+    "src/configuration-bc-guard-api.ts": "a81c760a0d5fa8d21944cb7bf071665598b12fcdfe165c2dbfc0a342989274b7",
+    "src/configuration-bc-guard.ts": "8bb69b799829a32e9227ca3a951647a53f48c00b67f724804b612c3afa5aa9ee",
+    "src/tools.ts": "69ac0527326b60f75d2055121ad0e94eb61c3612e66b331aa1b87e7b9f2eabc5",
+    "src/contracts.ts": "e995d008ec60c404256c11118c5df9c5ca1b16dd86027f53409ccf8fe4ff4f9b",
+    "src/mcp.ts": "5f713ff4c56ab9c999c3234bbb6743f694c7c39064161d4b858cf63e50aa32df",
+    "src/capabilities.ts": "9f749f3963bae70bd4e6d70033b47a7fdbcf535630a0a1eef84f5d8898a9be27",
+    "src/tool-registry.ts": "c444b6ad7f1332fff7f4c8681be607fc6d304fab8053b4c789b4cdf9df410964",
+    "contracts/verification-registry.json": "2b24b0cc9f1dffe95bcd15a78d89b083409fc8ef857d1e1b091d3bfd0326ac42",
+    "contracts/tool-index.json": "1af6a293c8a9c58a640e9b40a1d84b4b9f43c8e798a036053b5b547a47015777",
+    "docs/tool-index.md": "f94b69a4470e864d3709bf7639d5fd5e59b135db33b7c9b1f926087a49191371",
+    "test/configuration-bc-guard.test.ts": "e84ce5efc998daaa54ca6e04b0359cd31d927c8c57fb4916e107f064082d02a0",
+    "test/configuration-bc-guard-mcp.test.ts": "a1d26b185d4caa1b2ef0bfef4deb3b2263875f55b919b1fb4ec3ff19d9337f6f",
+    "test/configuration-bc-mcp.test.ts": "63d19a72de64651c098ba8cd58c830149b7d0b98f6bc6f8734207455501ac91a",
+    "test/protocol.test.ts": "5f4a52ab8eb1ba592edaf579a7a63350f76c75b80cbb7dd5696c27572ef56f13"
+  },
+  "preserved": {
+    "head": "775ae25980f2988e1f84f11d71409592d8bc4063",
+    "defaultDistSha256": "337048373194468491426bf1cffee332e970ca20eaf68d6000b1edcc0af51320",
+    "cachedExact": true
+  },
+  "checks": {
+    "typeScript": "pass",
+    "guardTests": 39,
+    "relatedTests": 684,
+    "relatedFailures": 0,
+    "newSapGuardRuntime": "pending"
+  }
+}

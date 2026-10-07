@@ -1,0 +1,40 @@
+diff --git a/.cache/spro-r57/before/test/configuration-bc-recovery-check.test.ts b/test/configuration-bc-recovery-check.test.ts
+index 23166ca..05e493c 100644
+--- a/.cache/spro-r57/before/test/configuration-bc-recovery-check.test.ts
++++ b/test/configuration-bc-recovery-check.test.ts
+@@ -12,6 +12,8 @@ import {
+   configurationBcRecoveryDependencies
+ } from "../src/configuration-bc-recovery-check.js"
+ import { configurationBcPreflightKeys } from "../src/configuration-bc-preflight.js"
++import { configurationBcNativeLayouts } from "../src/configuration-bc-native-api.js"
++import { configurationBcGuardLayouts } from "../src/configuration-bc-guard-api.js"
+ import { configurationBcStateTables } from "../src/configuration-bc-state-api.js"
+ import { stateFixture } from "./configuration-bc-state-fixture.js"
+ 
+@@ -381,6 +383,26 @@ for (const kind of [
+     await assert.rejects(f.invoke())
+   })
+ 
++test("field list generation preserves DDIC order with valid single or multiple ABAP operands", () => {
++  const layouts = { ...configurationBcNativeLayouts, ...configurationBcGuardLayouts }
++  const source = api.source.join("\n")
++  const cases = /CASE lv_index\.([\s\S]*?)ENDCASE\./.exec(source)![1]!
++  for (const [i, { tableName }] of configurationBcPreflightKeys.entries()) {
++    const branch = new RegExp(`WHEN ${i + 1}\\.([\\s\\S]*?)(?=WHEN |$)`).exec(cases)![1]!
++    const assignment = /lv_expected = '([^']*)'\./.exec(branch)
++    let fields: string
++    if (assignment) fields = assignment[1]!
++    else {
++      const concatenate = /CONCATENATE([\s\S]*?)INTO lv_expected\./.exec(branch)![1]!
++      const operands = [...concatenate.matchAll(/'([^']*)'/g)].map((m) => m[1]!)
++      // The native compiler rejects CONCATENATE with a single source operand.
++      assert.ok(operands.length >= 2, tableName)
++      fields = operands.join("")
++    }
++    assert.equal(fields, layouts[tableName as keyof typeof layouts].fields.join(","))
++  }
++})
++
+ test("candidate has a closed read/conversion call graph and rejects data drift before conversion", () => {
+   const source = api.source.join("\n")
+   for (const banned of [

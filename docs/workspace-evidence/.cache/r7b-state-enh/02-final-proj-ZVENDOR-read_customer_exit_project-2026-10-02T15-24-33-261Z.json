@@ -1,0 +1,9 @@
+{
+  "tool": "read_customer_exit_project",
+  "arguments": {
+    "projectName": "ZVENDOR",
+    "connectionId": "w200"
+  },
+  "isError": false,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"customer_exit_project\",\n  \"packageName\": \"Z001\",\n  \"project\": {\n    \"name\": \"ZVENDOR\",\n    \"rawStatus\": \"A\",\n    \"changedBy\": \"LEE\",\n    \"changedOn\": \"20121114\",\n    \"assignments\": [\n      {\n        \"enhancementName\": \"\",\n        \"assignmentType\": \"\"\n      },\n      {\n        \"enhancementName\": \"SAPMF02K\",\n        \"assignmentType\": \"\"\n      }\n    ]\n  },\n  \"fingerprint\": \"fc98370ddced39643d5a8046a035937783e764738d408eed07906a31e4559daf\",\n  \"summary\": {\n    \"assignmentCount\": 2\n  },\n  \"coverage\": {\n    \"exactProjectRead\": true,\n    \"enhancementAssignmentsInspected\": true,\n    \"rawProjectStatusInspected\": true,\n    \"activationStateInterpreted\": false,\n    \"componentImplementationsInspected\": false,\n    \"runtimeInspected\": false\n  }\n}"
+}

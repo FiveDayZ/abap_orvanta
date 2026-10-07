@@ -1,0 +1,16 @@
+{
+  "tool": "inspect_customer_screen_menu_exits",
+  "arguments": {
+    "programName": "SAPMV45A",
+    "screenNumbers": [
+      "0100",
+      "4001",
+      "8309",
+      "4900"
+    ],
+    "includeMenuExits": true,
+    "connectionId": "w200"
+  },
+  "isError": false,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"programName\": \"SAPMV45A\",\n  \"screens\": [\n    {\n      \"screenNumber\": \"0100\",\n      \"status\": \"error\",\n      \"description\": null,\n      \"fingerprint\": null,\n      \"flowLineCount\": null,\n      \"hookCount\": null,\n      \"hooks\": [],\n      \"reason\": \"The screen definition could not be read; content was not established.\"\n    },\n    {\n      \"screenNumber\": \"4001\",\n      \"status\": \"available\",\n      \"description\": \"4.0: Trägerdynpro für Übersichtsbilder (großer Header)\",\n      \"fingerprint\": \"de093e3ea67438c9280199e85ddbdb146bcf9b25821478ea2a83dbd7d0bc7c37\",\n      \"flowLineCount\": 87,\n      \"hookCount\": 0,\n      \"hooks\": []\n    },\n    {\n      \"screenNumber\": \"8309\",\n      \"status\": \"available\",\n      \"description\": \"Verkaufsbeleg          Kopf      Userexit Header\",\n      \"fingerprint\": \"8e3833bb48cbcd540455e4725f0b0834cb775627c77f82021dc5c30b4d8083d3\",\n      \"flowLineCount\": 6,\n      \"hookCount\": 0,\n      \"hooks\": []\n    },\n    {\n      \"screenNumber\": \"4900\",\n      \"status\": \"available\",\n      \"description\": \"4.0: Subscreen: Übersicht-TC Erfassung Default\",\n      \"fingerprint\": \"2cf3f62020059fcde9ed2dd9ad0ad2ef6cda6d0ac6aab9712df7a9f983bb0be6\",\n      \"flowLineCount\": 1151,\n      \"hookCount\": 0,\n      \"hooks\": []\n    }\n  ],\n  \"menu\": {\n    \"status\": \"available\",\n    \"versionToken\": \"20080401142539\",\n    \"fingerprint\": \"483568d391857499b2e4b9d27d2242a656d92b483b36630dc4f0360e2a65852d\",\n    \"definitionCount\": 0,\n    \"definitions\": [],\n    \"references\": []\n  },\n  \"summary\": {\n    \"screenInspectionStatus\": \"requested\",\n    \"requestedScreenCount\": 4,\n    \"availableScreenCount\": 3,\n    \"unavailableScreenCount\": 1,\n    \"customerSubscreenHookCount\": 0,\n    \"menuDefinitionCount\": 0\n  },\n  \"coverage\": {\n    \"activeScreenFlowLogicOnly\": true,\n    \"explicitScreenListOnly\": true,\n    \"screensInspected\": true,\n    \"screenAbsenceEstablished\": false,\n    \"activeGuiDefinitionOnly\": true,\n    \"plusPrefixedMenuFunctionCodesInspected\": true,\n    \"smodComponentsInspected\": false,\n    \"cmodProjectAssignmentsInspected\": false,\n    \"activationStatusInspected\": false,\n    \"customerSubscreenImplementationsInspected\": false,\n    \"menuTextActivationInspected\": false,\n    \"runtimeInspected\": false\n  }\n}"
+}

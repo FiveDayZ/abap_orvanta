@@ -1,0 +1,205 @@
+{
+  "generatedAt": "2026-10-04T18:44:39.157+08:00",
+  "status": "Partially Verified",
+  "record": "code-update-20261004-184439.md",
+  "files": [
+    {
+      "file": "orvanta-configuration-number-range-preflight-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-preflight-20261004-r41.json",
+      "size": 219898,
+      "sha256": "61c91967b4089750b3253521ecf8fc6aed24d802d7bb186956716fb35750a2e9"
+    },
+    {
+      "file": "orvanta-configuration-number-range-preflight-followup-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-preflight-followup-20261004-r41.json",
+      "size": 13697,
+      "sha256": "b8632a37f2bd714bbbcd6192601bdaa6daaa81c751e53e2483b5e4c37487ba92"
+    },
+    {
+      "file": "orvanta-configuration-number-range-deployment-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-deployment-20261004-r41.json",
+      "size": 84434,
+      "sha256": "11c7bac101a2d1113aa47a471184f687ee37918d5bed74ead0d5b0cce4d2a3aa"
+    },
+    {
+      "file": "orvanta-configuration-number-range-created-functions-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-created-functions-20261004-r41.json",
+      "size": 21565,
+      "sha256": "df04bd594acb80db13107c4a27eb2d516b05c577f30d0f31be4c3e6cd2059094"
+    },
+    {
+      "file": "orvanta-configuration-number-range-creation-reconciliation-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-creation-reconciliation-20261004-r41.json",
+      "size": 9016,
+      "sha256": "f3a4eff4b6f3de942533bb2eb4c2ec1a5caffd2fed59a20f2b1dd7e774bc5837"
+    },
+    {
+      "file": "orvanta-configuration-number-range-quality-readback-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-quality-readback-20261004-r41.json",
+      "size": 41094,
+      "sha256": "e716b98f81c253e7a5196ff0d678eefee5b560c9a3967a49995bbe1fcecea654"
+    },
+    {
+      "file": "orvanta-configuration-number-range-final-sap-state-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-final-sap-state-20261004-r41.json",
+      "size": 5141,
+      "sha256": "415be9723e95afad5210286892ee7767c77fae6dc2bee23b23b765b85980bf93"
+    },
+    {
+      "file": "orvanta-configuration-number-range-final-source-audit-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-final-source-audit-20261004-r41.json",
+      "size": 468,
+      "sha256": "ce421934e8bb1efae77c7031c48f9de3d6f470b8a05ac5e342b5cd9b6e1ba972"
+    },
+    {
+      "file": "orvanta-configuration-number-range-frozen-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-frozen-20261004-r41.json",
+      "size": 23539,
+      "sha256": "555ca188e5409ea67d300ebab6c1954ebda7574f31722bf591197492be7f8623"
+    },
+    {
+      "file": "orvanta-configuration-deployment-log-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-deployment-log-20261004-r41.log",
+      "size": 6783,
+      "sha256": "309dd6f21f275f626329b4449300ec05e43d303d629e760527568bb0b39b2d2a"
+    },
+    {
+      "file": "orvanta-configuration-compile-red-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-compile-red-20261004-r41.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "orvanta-configuration-compile-green-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-compile-green-20261004-r41.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "orvanta-configuration-compile-guard-final-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-compile-guard-final-20261004-r41.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "orvanta-configuration-language-red-tests-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-language-red-tests-20261004-r41.log",
+      "size": 2387,
+      "sha256": "efcae205896f1a371063abe08853fa500085d5a0335cc513ac2f12fbc1fe29bc"
+    },
+    {
+      "file": "orvanta-configuration-guard-green-tests-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-guard-green-tests-20261004-r41.log",
+      "size": 4814,
+      "sha256": "17e02a8a37efcb585fc55fc60fa5f1854e60f186f63e82f1c6faaae457012867"
+    },
+    {
+      "file": "orvanta-configuration-guard-final-tests-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-guard-final-tests-20261004-r41.log",
+      "size": 3687,
+      "sha256": "c2468880e7fe39db2c4d00f59a0809d8469edccf63a17caec83577e37853ed20"
+    },
+    {
+      "file": "orvanta-configuration-regression-tests-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-regression-tests-20261004-r41.log",
+      "size": 19230,
+      "sha256": "1ac246cac2bc14f154259143f135675eeb4fdd3a7c502340be173640d6362762"
+    },
+    {
+      "file": "orvanta-configuration-isolated-guard-final-tests-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-isolated-guard-final-tests-20261004-r41.log",
+      "size": 435,
+      "sha256": "c8577179ed05341af870db0ce4e200b70ab082ab2e2fd6fbb0362db54d18825a"
+    },
+    {
+      "file": "orvanta-configuration-format-check-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-format-check-20261004-r41.log",
+      "size": 68,
+      "sha256": "f20510a9da4717c51c4cffee6d0dd88d6c9a723d0a83711d01216f5b48961283"
+    },
+    {
+      "file": "orvanta-configuration-index-check-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-index-check-20261004-r41.log",
+      "size": 298,
+      "sha256": "ca18f987018839b4a28e79edb2e895f610ad20a97a4e0446ee7317934552f787"
+    },
+    {
+      "file": "orvanta-configuration-headless-check-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-headless-check-20261004-r41.log",
+      "size": 68,
+      "sha256": "fc281cdf9761e8cc9b43d7dfc050a77fb3d73d15af2996accc62048bf9a2ffa9"
+    },
+    {
+      "file": "orvanta-configuration-quality-readback-log-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-quality-readback-log-20261004-r41.log",
+      "size": 448,
+      "sha256": "edde32f5439aeae3be89ce479a174fed554c3975de8b57edd517611ead4965b7"
+    },
+    {
+      "file": "orvanta-configuration-diff-check-20261004-r41.log",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-diff-check-20261004-r41.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "orvanta-configuration-number-range-server-20261004-r41.mjs",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-server-20261004-r41.mjs",
+      "size": 6955,
+      "sha256": "c4843346aa8f69a0a270f63abdf2e268c51b59490b580abdcd6d594fd863ce7c"
+    },
+    {
+      "file": "orvanta-configuration-number-range-guard-20261004-r41.mjs",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-guard-20261004-r41.mjs",
+      "size": 3796,
+      "sha256": "ffbb7b565ce5d5ed6259dfbc310f98f71bba8b79218024b351c463acb07e5e2f"
+    },
+    {
+      "file": "orvanta-configuration-number-range-accept-create-20261004-r41.mjs",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-accept-create-20261004-r41.mjs",
+      "size": 4531,
+      "sha256": "7c74479a45802c92ac1adec4ba75031638718b671d572f37b73bad1118ff4f61"
+    },
+    {
+      "file": "orvanta-configuration-number-range-accept-update-20261004-r41.mjs",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-accept-update-20261004-r41.mjs",
+      "size": 4209,
+      "sha256": "44e04a2d3baa1b8f50eca91451d5adfcd71b44312bd30a4d66d9279bd5395148"
+    },
+    {
+      "file": "orvanta-configuration-number-range-guard.test-20261004-r41.mjs",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-guard.test-20261004-r41.mjs",
+      "size": 2382,
+      "sha256": "a8dc237d4f09116b9bcb38899d7b64fb026f706a7724b20a8ab06e510278e757"
+    },
+    {
+      "file": "z_orvanta_cfg_nr_read-active-readback-20261004-r41.txt",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/z_orvanta_cfg_nr_read-active-readback-20261004-r41.txt",
+      "size": 3007,
+      "sha256": "b8acbbcb727ee5bdf799fe87b1be29e7afb9dec469e049d582706e7c7869054c"
+    },
+    {
+      "file": "z_orvanta_cfg_nr_apply-active-readback-20261004-r41.txt",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/z_orvanta_cfg_nr_apply-active-readback-20261004-r41.txt",
+      "size": 9102,
+      "sha256": "bfbb5ba5b09271849a167e41a49bf2d6cad2e480d5afcc34090a5e1e047e9949"
+    },
+    {
+      "file": "orvanta-configuration-number-range-before-create-20261004-r41.json",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-before-create-20261004-r41.json",
+      "size": 4684,
+      "sha256": "f87aef09841cfcf23228ca08d6213980ea58dffcf4c9feb2e42c61a17ba6f60d"
+    },
+    {
+      "file": "orvanta-configuration-number-range-language-incident-20261004-r41.md",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-language-incident-20261004-r41.md",
+      "size": 4026,
+      "sha256": "0ea8c996a87af45224e0ca7612fa4d49453d512af86efda262c13e35b84ad9a4"
+    },
+    {
+      "file": "code-update-20261004-184439.md",
+      "absolutePath": "C:/My/Workplace/Coding/vscode-abap/.doc/code-update-20261004-184439.md",
+      "size": 13748,
+      "sha256": "9afc3a3997e7bfbdd850a7db28f6856d6d7a66cfb4b155ddabbce6365a50adde"
+    }
+  ]
+}

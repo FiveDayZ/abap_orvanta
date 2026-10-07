@@ -1,0 +1,12 @@
+{
+  "observedAt": "2026-10-04T10:07:41.902Z",
+  "status": "passed",
+  "record": "C:/My/Workplace/Coding/vscode-abap/.doc/code-update-20261004-180741.md",
+  "recordSize": 13046,
+  "manifest": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-manifest-20261004-180741.json",
+  "verifiedFiles": 30,
+  "mirrorsByteIdentical": true,
+  "requiredSectionsVerified": true,
+  "credentialKeysAbsent": true,
+  "sapDocumentRootOnly": true
+}

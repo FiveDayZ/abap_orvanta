@@ -1,0 +1,93 @@
+{
+  "connectionId": "w200",
+  "objectKind": "transparentTable",
+  "objectName": "ZORV_MCP_T01",
+  "packageName": "ZABAP",
+  "version": "20260922154611",
+  "fingerprint": "5486d2b9f97b24806d78358ea9b86ac88b1641a6c0cf71c1af39b2a6ff6c8499",
+  "definition": {
+    "description": "ORVANTA MCP runtime regression table",
+    "tableClass": "TRANSP",
+    "deliveryClass": "A",
+    "dataBrowserMaintenance": "allowed",
+    "sizeCategory": 0,
+    "dataClass": "APPL0",
+    "buffering": "notAllowed",
+    "genericKeyFields": 0,
+    "logDataChanges": false,
+    "fields": [
+      {
+        "name": "MANDT",
+        "position": 1,
+        "dataElement": "MANDT",
+        "description": "客户端",
+        "key": true,
+        "notNull": true
+      },
+      {
+        "name": "ZKEY",
+        "position": 2,
+        "dataElement": "CHAR10",
+        "description": "字符字段长度 = 10",
+        "key": true,
+        "notNull": true
+      },
+      {
+        "name": "ZTEXT",
+        "position": 3,
+        "dataElement": "CHAR40",
+        "description": "长度为 40 的字符型字段",
+        "key": false,
+        "notNull": true
+      },
+      {
+        "name": "ZCOUNT",
+        "position": 4,
+        "dataElement": "INT4",
+        "description": "自然数",
+        "key": false,
+        "notNull": true
+      }
+    ]
+  },
+  "status": "DDIC_OBJECT_SAVED",
+  "recordedRequest": "GR2K923472",
+  "operationReceipt": {
+    "operationId": "regr-r11-create-table-02",
+    "version": 2,
+    "status": "completed",
+    "connectionId": "w200",
+    "toolName": "create_ddic_transparent_table",
+    "operationIdHash": "9d463ac641343762769efaca2903182eefaae3967035ed6ba5c168edfeb781c3",
+    "targetKeyHash": "9111a70f578375cf1924e2efa453d9ec40cbf1761ab8c9b15d3936f774e58d90",
+    "inputHash": "c3fce1be48997a7a94284316dfb5828f8347219681122f7af7413da038177700",
+    "preChangeSummary": "{\"target\":\"tabl object ZORV_MCP_T01\",\"requestedOperation\":\"create_ddic_transparent_table\",\"concurrencyGuard\":\"target must not already exist\",\"transportNumber\":\"GR2K923472\",\"automaticRollback\":false}",
+    "sapPreChangeEvidence": {
+      "observedAt": "2026-09-22T07:46:14.232Z",
+      "target": "tabl object ZORV_MCP_T01",
+      "exists": false,
+      "active": null,
+      "version": null,
+      "fingerprint": null,
+      "packageName": null,
+      "requestNumber": null,
+      "taskNumber": null,
+      "observationStatus": "complete",
+      "sources": [
+        "sap_ddic_read"
+      ],
+      "warnings": []
+    },
+    "sapInvocationStarted": true,
+    "resultHash": "94240d1d1f380167b9981016680e9dd04058431f609425d409985d6672f0b8bc",
+    "startedAt": "2026-09-22T07:46:14.199Z",
+    "finishedAt": "2026-09-22T07:46:14.462Z",
+    "durationMs": 259,
+    "receiptHash": "9d28468abe498211c29809b69ac11946c231898d4456f05e2644b1c0ca904c25",
+    "automaticRetry": false,
+    "automaticRollback": false,
+    "outcomeMayBeUnknown": false,
+    "localLockReleased": true,
+    "manualRecovery": "Read back tabl object ZORV_MCP_T01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+  }
+}

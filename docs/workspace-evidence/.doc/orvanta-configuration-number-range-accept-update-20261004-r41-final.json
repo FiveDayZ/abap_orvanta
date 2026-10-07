@@ -1,0 +1,928 @@
+{
+  "startedAt": "2026-10-04T11:14:08.120Z",
+  "calls": [
+    {
+      "at": "2026-10-04T11:14:09.445Z",
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "readOnly": true,
+        "versionScope": "complete_TNRO_and_current_client_NRIV",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000100",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:14:20.521Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+        "action": "update",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000200",
+        "external": false,
+        "operationId": "r41b-public-update-01",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": false,
+      "data": {
+        "status": "completed",
+        "operationId": "r41b-public-update-01",
+        "objectName": "ZORVCFGNR",
+        "client": "200",
+        "transportPolicy": "local_client_only_not_recorded",
+        "sapInvocationStarted": true,
+        "outcomeMayBeUnknown": false,
+        "native": {
+          "EV_CODE": "SAVED_LOCAL_CLIENT",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_COMMITTED": "X",
+          "EV_BEFORE_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "EV_SESSION_RESET": "X",
+          "EV_UNLOCKED": "X",
+          "EV_MSGID": "",
+          "EV_MSGNO": "",
+          "ES_ERROR": {
+            "MSGNR": "",
+            "TABLENAME": "",
+            "FIELDNAME": "",
+            "TABIX": "0"
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        },
+        "readback": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        },
+        "retryAvailable": false,
+        "operationReceipt": {
+          "version": 2,
+          "status": "completed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "d3684d7c3ca065c0d2f39a35ffa4b77795412696a69480bb6c90ff5112e2c41e",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "b33f7f1186e60d3df8adcb90865c4e2880dce707b7842d39c4ea0d1fe2ace282",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version 22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5; update interval 01.",
+          "sapPreChangeEvidence": {
+            "observedAt": "2026-10-04T11:14:19.042Z",
+            "target": "NRIV:ZORVCFGNR:200",
+            "exists": true,
+            "active": null,
+            "version": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+            "fingerprint": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+            "packageName": null,
+            "requestNumber": null,
+            "taskNumber": null,
+            "observationStatus": "complete",
+            "sources": [
+              "Z_ORVANTA_CFG_NR_READ",
+              "TNRO",
+              "NRIV"
+            ],
+            "warnings": [
+              "NRIV intervals are local client only; no CTS recording."
+            ]
+          },
+          "sapInvocationStarted": true,
+          "resultHash": "c3cc95eec97ddc095fc7915316929ea89a13071f345fe04f5f29b418a07ee21e",
+          "startedAt": "2026-10-04T11:14:09.451Z",
+          "finishedAt": "2026-10-04T11:14:20.510Z",
+          "durationMs": 11059,
+          "receiptHash": "6e2a20a75ebcf2f8de6d50e2124b2c469a60fa9f9f7fc4ea160432937ac086ae",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": false,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:14:21.646Z",
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "readOnly": true,
+        "versionScope": "complete_TNRO_and_current_client_NRIV",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:14:32.008Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+        "action": "update",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000200",
+        "external": false,
+        "operationId": "r41b-public-no-changes-01",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": false,
+      "data": {
+        "status": "no_changes",
+        "operationId": "r41b-public-no-changes-01",
+        "objectName": "ZORVCFGNR",
+        "client": "200",
+        "transportPolicy": "local_client_only_not_recorded",
+        "sapInvocationStarted": true,
+        "outcomeMayBeUnknown": false,
+        "native": {
+          "EV_CODE": "NO_CHANGES",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_COMMITTED": "",
+          "EV_BEFORE_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "EV_SESSION_RESET": "not_required",
+          "EV_UNLOCKED": "X",
+          "EV_MSGID": "",
+          "EV_MSGNO": "",
+          "ES_ERROR": {
+            "MSGNR": "",
+            "TABLENAME": "",
+            "FIELDNAME": "",
+            "TABIX": "0"
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        },
+        "readback": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        },
+        "retryAvailable": false,
+        "operationReceipt": {
+          "version": 2,
+          "status": "completed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "366aa0a1ee3913d3157413d3cbe67b9fa3edcd88b5ba906257f295f14f93aec3",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "8b5128f10bfac337c28b858736991c9a0db872c04c53ea5d92bfed6fe17c7aca",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8; update interval 01.",
+          "sapPreChangeEvidence": {
+            "observedAt": "2026-10-04T11:14:30.634Z",
+            "target": "NRIV:ZORVCFGNR:200",
+            "exists": true,
+            "active": null,
+            "version": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+            "fingerprint": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+            "packageName": null,
+            "requestNumber": null,
+            "taskNumber": null,
+            "observationStatus": "complete",
+            "sources": [
+              "Z_ORVANTA_CFG_NR_READ",
+              "TNRO",
+              "NRIV"
+            ],
+            "warnings": [
+              "NRIV intervals are local client only; no CTS recording."
+            ]
+          },
+          "sapInvocationStarted": true,
+          "resultHash": "5659f04c90a76d048e847386aa48345a6455250b1da515b9a06fd975decadd18",
+          "startedAt": "2026-10-04T11:14:21.651Z",
+          "finishedAt": "2026-10-04T11:14:31.997Z",
+          "durationMs": 10347,
+          "receiptHash": "939ea226d1330534b7b5e7d6e3375e76c0ebde62097c06dba9d649c218099302",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": false,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:14:37.262Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+        "action": "create",
+        "intervalNumber": "02",
+        "fromNumber": "00000000000000000150",
+        "toNumber": "00000000000000000300",
+        "external": false,
+        "operationId": "r41b-overlap-02",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "status": "declined",
+        "operationId": "r41b-overlap-02",
+        "code": "CONFIGURATION_NR_OVERLAP",
+        "sapInvocationStarted": false,
+        "outcomeMayBeUnknown": false,
+        "retryAvailable": false,
+        "operationReceipt": {
+          "version": 2,
+          "status": "failed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "334aed13343bcaeeda3ffb4fc66bb860abd2e2efb2d218443fc57010461555f0",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "129b47bb17892327194809c19058f0ee516b5fa972aed5f38f44d21749187c0d",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8; create interval 02.",
+          "sapInvocationStarted": false,
+          "errorHash": "a79ac7aa746d4bfcc084abae623a2500df6b57c256dd0421f7ca0e1aee0c2e8d",
+          "startedAt": "2026-10-04T11:14:32.013Z",
+          "finishedAt": "2026-10-04T11:14:37.251Z",
+          "durationMs": 5239,
+          "receiptHash": "662b005e4014f0c72243004907f48938d498caf552947fab61240607b9ab04d3",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": false,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:14:41.782Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+        "action": "update",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000200",
+        "external": false,
+        "operationId": "r41b-host-stale",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "status": "declined",
+        "operationId": "r41b-host-stale",
+        "code": "CONFIGURATION_NR_VERSION_CHANGED",
+        "sapInvocationStarted": false,
+        "outcomeMayBeUnknown": false,
+        "retryAvailable": false,
+        "operationReceipt": {
+          "version": 2,
+          "status": "failed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "bf40e11902063aeef0bcbb0cad1bf979c42b86fc36eaeef13f0ddef74d387dda",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "b33f7f1186e60d3df8adcb90865c4e2880dce707b7842d39c4ea0d1fe2ace282",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version 22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5; update interval 01.",
+          "sapInvocationStarted": false,
+          "errorHash": "e0f6e321f6b22a7cce946b30661abf8b08ab6dbcc954e94bf62c6a9292714dde",
+          "startedAt": "2026-10-04T11:14:37.265Z",
+          "finishedAt": "2026-10-04T11:14:41.772Z",
+          "durationMs": 4508,
+          "receiptHash": "4e231f23008764f91c8d2184ebdde27653b6279f74f63a8a7240abdece3af6d7",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": false,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:14:43.001Z",
+      "name": "reconcile_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "operationId": "r41b-public-update-01"
+      },
+      "isError": false,
+      "data": {
+        "readOnly": true,
+        "objectName": "ZORVCFGNR",
+        "operationId": "r41b-public-update-01",
+        "operationReceipt": {
+          "version": 2,
+          "status": "completed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "d3684d7c3ca065c0d2f39a35ffa4b77795412696a69480bb6c90ff5112e2c41e",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "b33f7f1186e60d3df8adcb90865c4e2880dce707b7842d39c4ea0d1fe2ace282",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version 22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5; update interval 01.",
+          "sapPreChangeEvidence": {
+            "observedAt": "2026-10-04T11:14:19.042Z",
+            "target": "NRIV:ZORVCFGNR:200",
+            "exists": true,
+            "active": null,
+            "version": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+            "fingerprint": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+            "packageName": null,
+            "requestNumber": null,
+            "taskNumber": null,
+            "observationStatus": "complete",
+            "sources": [
+              "Z_ORVANTA_CFG_NR_READ",
+              "TNRO",
+              "NRIV"
+            ],
+            "warnings": [
+              "NRIV intervals are local client only; no CTS recording."
+            ]
+          },
+          "sapInvocationStarted": true,
+          "resultHash": "c3cc95eec97ddc095fc7915316929ea89a13071f345fe04f5f29b418a07ee21e",
+          "startedAt": "2026-10-04T11:14:09.451Z",
+          "finishedAt": "2026-10-04T11:14:20.510Z",
+          "durationMs": 11059,
+          "receiptHash": "6e2a20a75ebcf2f8de6d50e2124b2c469a60fa9f9f7fc4ea160432937ac086ae",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": false,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        },
+        "retryAvailable": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "locks": "unverified",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        },
+        "status": "partial",
+        "stateComparison": "changed_since_before",
+        "semantics": "Current state comparison does not prove who wrote, committed or restored it. Historical outcome and retry prohibition remain unchanged."
+      }
+    },
+    {
+      "at": "2026-10-04T11:14:44.116Z",
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "readOnly": true,
+        "versionScope": "complete_TNRO_and_current_client_NRIV",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "final": {
+    "EV_CODE": "READ_OK",
+    "EV_SYSTEM": "GR2",
+    "EV_CLIENT": "200",
+    "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+    "ES_DEFINITION": {
+      "OBJECT": "ZORVCFGNR",
+      "DTELSOBJ": "",
+      "NRTAB": "",
+      "NRINTFLD": "",
+      "NREXTFLD": "",
+      "NRFLD": "",
+      "NRSOBJFLD": "",
+      "NRELEFLD": "",
+      "YEARIND": "",
+      "DOMLEN": "NUMC20",
+      "PERCENTAGE": "10.0",
+      "CODE": "",
+      "TEXTIND": "",
+      "NRELTXTTAB": "",
+      "NRELTXTSOB": "",
+      "NRELTXTELE": "",
+      "NRELTXTTXT": "",
+      "NRELTXTLNG": "",
+      "BUFFER": "",
+      "NOIVBUFFER": "00000000",
+      "NONRSWAP": "",
+      "RFCDEST": "",
+      "NRCHECKASCII": ""
+    },
+    "ET_INTERVALS": [
+      {
+        "CLIENT": "200",
+        "OBJECT": "ZORVCFGNR",
+        "SUBOBJECT": "",
+        "NRRANGENR": "01",
+        "TOYEAR": "0000",
+        "FROMNUMBER": "00000000000000000001",
+        "TONUMBER": "00000000000000000200",
+        "NRLEVEL": "00000000000000000000",
+        "EXTERNIND": ""
+      }
+    ]
+  },
+  "metrics": {
+    "startedAt": "2026-10-04T10:58:39.077Z",
+    "nativeReads": 23,
+    "nativeWrites": 4,
+    "committedWrites": 2,
+    "definitionWrites": 1,
+    "ddicReads": 91,
+    "repositoryReads": 203,
+    "stopped": false,
+    "events": [
+      {
+        "at": "2026-10-04T11:05:00.108Z",
+        "kind": "native_command_started",
+        "index": 1,
+        "input": {
+          "IV_OBJECT": "ZORVCFGNR",
+          "IV_EXPECTED_VERSION": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+          "IV_ACTION": "I",
+          "IV_INTERVAL": "01",
+          "IV_FROM_NUMBER": "00000000000000000001",
+          "IV_TO_NUMBER": "00000000000000000100",
+          "IV_EXTERNAL": "",
+          "IV_ACK_LOCAL_ONLY": "X"
+        }
+      },
+      {
+        "at": "2026-10-04T11:05:00.185Z",
+        "kind": "native_command_result",
+        "index": 1,
+        "result": {
+          "outputs": {
+            "EV_CODE": "SAVED_LOCAL_CLIENT",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_COMMITTED": "X",
+            "EV_BEFORE_VERSION": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+            "EV_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+            "EV_SESSION_RESET": "X",
+            "EV_UNLOCKED": "X",
+            "EV_MSGID": "",
+            "EV_MSGNO": "",
+            "ES_ERROR": {
+              "MSGNR": "",
+              "TABLENAME": "",
+              "FIELDNAME": "",
+              "TABIX": "0"
+            },
+            "ET_INTERVALS": []
+          }
+        }
+      },
+      {
+        "at": "2026-10-04T11:13:11.439Z",
+        "kind": "native_command_started",
+        "index": 2,
+        "input": {
+          "IV_OBJECT": "ZORVCFGNR",
+          "IV_EXPECTED_VERSION": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+          "IV_ACTION": "U",
+          "IV_INTERVAL": "01",
+          "IV_FROM_NUMBER": "00000000000000000001",
+          "IV_TO_NUMBER": "00000000000000000200",
+          "IV_EXTERNAL": "",
+          "IV_ACK_LOCAL_ONLY": "X",
+          "ET_INTERVALS": []
+        }
+      },
+      {
+        "at": "2026-10-04T11:13:11.488Z",
+        "kind": "native_command_result",
+        "index": 2,
+        "result": {
+          "outputs": {
+            "EV_CODE": "VERSION_CHANGED",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_COMMITTED": "",
+            "EV_BEFORE_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+            "EV_VERSION": "",
+            "EV_SESSION_RESET": "not_required",
+            "EV_UNLOCKED": "X",
+            "EV_MSGID": "",
+            "EV_MSGNO": "",
+            "ES_ERROR": {
+              "MSGNR": "",
+              "TABLENAME": "",
+              "FIELDNAME": "",
+              "TABIX": "0"
+            },
+            "ET_INTERVALS": []
+          }
+        }
+      },
+      {
+        "at": "2026-10-04T11:14:19.133Z",
+        "kind": "native_command_started",
+        "index": 3,
+        "input": {
+          "IV_OBJECT": "ZORVCFGNR",
+          "IV_EXPECTED_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+          "IV_ACTION": "U",
+          "IV_INTERVAL": "01",
+          "IV_FROM_NUMBER": "00000000000000000001",
+          "IV_TO_NUMBER": "00000000000000000200",
+          "IV_EXTERNAL": "",
+          "IV_ACK_LOCAL_ONLY": "X",
+          "ET_INTERVALS": []
+        }
+      },
+      {
+        "at": "2026-10-04T11:14:19.206Z",
+        "kind": "native_command_result",
+        "index": 3,
+        "result": {
+          "outputs": {
+            "EV_CODE": "SAVED_LOCAL_CLIENT",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_COMMITTED": "X",
+            "EV_BEFORE_VERSION": "22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5",
+            "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+            "EV_SESSION_RESET": "X",
+            "EV_UNLOCKED": "X",
+            "EV_MSGID": "",
+            "EV_MSGNO": "",
+            "ES_ERROR": {
+              "MSGNR": "",
+              "TABLENAME": "",
+              "FIELDNAME": "",
+              "TABIX": "0"
+            },
+            "ET_INTERVALS": [
+              {
+                "CLIENT": "200",
+                "OBJECT": "ZORVCFGNR",
+                "SUBOBJECT": "",
+                "NRRANGENR": "01",
+                "TOYEAR": "0000",
+                "FROMNUMBER": "00000000000000000001",
+                "TONUMBER": "00000000000000000200",
+                "NRLEVEL": "00000000000000000000",
+                "EXTERNIND": ""
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-04T11:14:30.726Z",
+        "kind": "native_command_started",
+        "index": 4,
+        "input": {
+          "IV_OBJECT": "ZORVCFGNR",
+          "IV_EXPECTED_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "IV_ACTION": "U",
+          "IV_INTERVAL": "01",
+          "IV_FROM_NUMBER": "00000000000000000001",
+          "IV_TO_NUMBER": "00000000000000000200",
+          "IV_EXTERNAL": "",
+          "IV_ACK_LOCAL_ONLY": "X",
+          "ET_INTERVALS": []
+        }
+      },
+      {
+        "at": "2026-10-04T11:14:30.772Z",
+        "kind": "native_command_result",
+        "index": 4,
+        "result": {
+          "outputs": {
+            "EV_CODE": "NO_CHANGES",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_COMMITTED": "",
+            "EV_BEFORE_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+            "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+            "EV_SESSION_RESET": "not_required",
+            "EV_UNLOCKED": "X",
+            "EV_MSGID": "",
+            "EV_MSGNO": "",
+            "ES_ERROR": {
+              "MSGNR": "",
+              "TABLENAME": "",
+              "FIELDNAME": "",
+              "TABIX": "0"
+            },
+            "ET_INTERVALS": [
+              {
+                "CLIENT": "200",
+                "OBJECT": "ZORVCFGNR",
+                "SUBOBJECT": "",
+                "NRRANGENR": "01",
+                "TOYEAR": "0000",
+                "FROMNUMBER": "00000000000000000001",
+                "TONUMBER": "00000000000000000200",
+                "NRLEVEL": "00000000000000000000",
+                "EXTERNIND": ""
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "resumedAt": "2026-10-04T11:12:38.602Z",
+    "initialVersion": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d"
+  },
+  "status": "passed_public_update_no_changes_and_native_old_version",
+  "finishedAt": "2026-10-04T11:14:44.120Z"
+}

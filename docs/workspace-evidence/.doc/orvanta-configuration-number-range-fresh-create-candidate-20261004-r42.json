@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-10-04T19:33:36.239+08:00",
+  "stage": "r42",
+  "executionStatus": "not_executed",
+  "pendingSapWriteApproval": true,
+  "nativeCommandBudget": 1,
+  "changedIntervalCommitBudget": 1,
+  "tool": "apply_configuration_number_range",
+  "arguments": {
+    "connectionId": "w200",
+    "objectName": "ZORVCFGNR",
+    "expectedVersion": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+    "action": "create",
+    "intervalNumber": "02",
+    "fromNumber": "00000000000000000201",
+    "toNumber": "00000000000000000300",
+    "external": false,
+    "operationId": "r42-public-create-02",
+    "acknowledgeConfigurationWrite": true,
+    "acknowledgeLocalClientOnly": true
+  },
+  "preconditions": [
+    "Re-read fresh complete version; 01 must remain 1..200/current level0; 02 absent.",
+    "Active customer and standard API sources and whole DDIC layouts must match.",
+    "No retries/rollback/deletion/allocation/release/CTS migration."
+  ],
+  "authorizationBasis": "Concrete additional SAP write approval is required; r41 native budget is exhausted."
+}

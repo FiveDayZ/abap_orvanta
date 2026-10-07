@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: stale plan uses the actual native row and pins one no-value-change command
+ok 1 - stale plan uses the actual native row and pins one no-value-change command
+  ---
+  duration_ms: 11.6694
+  type: 'test'
+  ...
+# Subtest: other keys, fields, containers and hidden execute flags refuse before reads
+ok 2 - other keys, fields, containers and hidden execute flags refuse before reads
+  ---
+  duration_ms: 2.8991
+  type: 'test'
+  ...
+# Subtest: drifting native body refuses preparation before table reads
+ok 3 - drifting native body refuses preparation before table reads
+  ---
+  duration_ms: 0.9628
+  type: 'test'
+  ...
+# Subtest: missing native snapshot, mismatched full-row version and reader scope refuse
+ok 4 - missing native snapshot, mismatched full-row version and reader scope refuse
+  ---
+  duration_ms: 1.8959
+  type: 'test'
+  ...
+# Subtest: wrong or truncated CTS projections cannot create a stale plan
+ok 5 - wrong or truncated CTS projections cannot create a stale plan
+  ---
+  duration_ms: 2.0405
+  type: 'test'
+  ...
+# Subtest: unavailable lock diagnostics remain explicit and do not authorize dispatch
+ok 6 - unavailable lock diagnostics remain explicit and do not authorize dispatch
+  ---
+  duration_ms: 7.5204
+  type: 'test'
+  ...
+# Subtest: wrong, absent, expired or broadened grants dispatch zero times
+ok 7 - wrong, absent, expired or broadened grants dispatch zero times
+  ---
+  duration_ms: 2.2523
+  type: 'test'
+  ...
+# Subtest: tampered parameters and changed evidence block before native call
+ok 8 - tampered parameters and changed evidence block before native call
+  ---
+  duration_ms: 4.9451
+  type: 'test'
+  ...
+# Subtest: valid rejection persists invocation evidence before its only bounded dispatch
+ok 9 - valid rejection persists invocation evidence before its only bounded dispatch
+  ---
+  duration_ms: 27.6644
+  type: 'test'
+  ...
+# Subtest: lost native response remains unknown even when readonly observations match
+ok 10 - lost native response remains unknown even when readonly observations match
+  ---
+  duration_ms: 21.7898
+  type: 'test'
+  ...
+# Subtest: unexpected native success or another refusal is never accepted as the stale sample
+ok 11 - unexpected native success or another refusal is never accepted as the stale sample
+  ---
+  duration_ms: 103.4617
+  type: 'test'
+  ...
+# Subtest: post-dispatch observation failure preserves the original first cause
+ok 12 - post-dispatch observation failure preserves the original first cause
+  ---
+  duration_ms: 21.7461
+  type: 'test'
+  ...
+# Subtest: scope or commit flags in an otherwise matching native refusal remain uncertain
+ok 13 - scope or commit flags in an otherwise matching native refusal remain uncertain
+  ---
+  duration_ms: 124.7659
+  type: 'test'
+  ...
+# Subtest: readonly MCP preparation rejects older schemas without calling any SAP tool
+ok 14 - readonly MCP preparation rejects older schemas without calling any SAP tool
+  ---
+  duration_ms: 4.3899
+  type: 'test'
+  ...
+# Subtest: CLI endpoint cannot expose credentials or use a remote MCP service
+ok 15 - CLI endpoint cannot expose credentials or use a remote MCP service
+  ---
+  duration_ms: 0.2608
+  type: 'test'
+  ...
+# Subtest: actual loopback MCP preparation makes only the five pinned reader calls
+not ok 16 - actual loopback MCP preparation makes only the five pinned reader calls
+  ---
+  duration_ms: 56.2735
+  type: 'test'
+  location: 'C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-safety-r36\\runtime\\dist\\test\\configuration-unit-native-safety.test.js:343:1'
+  failureType: 'testCodeFailure'
+  error: 'Streamable HTTP error: Error POSTing to endpoint: '
+  code: 500
+  stack: |-
+    StreamableHTTPClientTransport.send (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/node_modules/@modelcontextprotocol/sdk/dist/esm/client/streamableHttp.js:364:23)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Client.notification (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/protocol.js:879:9)
+    async Client.connect (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js:314:13)
+    async TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/unit-native-safety-r36/runtime/dist/test/configuration-unit-native-safety.test.js:381:9)
+    async Test.run (node:internal/test_runner/test:1113:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+  ...
+# Subtest: receipt persistence failure prevents dispatch and leaves SAP invocation false
+ok 17 - receipt persistence failure prevents dispatch and leaves SAP invocation false
+  ---
+  duration_ms: 19.838
+  type: 'test'
+  ...
+# Subtest: native failure text is preserved by hash while a later read failure cannot replace it
+ok 18 - native failure text is preserved by hash while a later read failure cannot replace it
+  ---
+  duration_ms: 22.2097
+  type: 'test'
+  ...
+# Subtest: changed CTS after a genuine rejection keeps the receipt unknown
+ok 19 - changed CTS after a genuine rejection keeps the receipt unknown
+  ---
+  duration_ms: 20.5103
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 18
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 760.8162

@@ -1,0 +1,536 @@
+{
+  "observedAt": "2026-10-04T06:41:18.307Z",
+  "mode": "real_loopback_tools_list_with_mock_backend",
+  "sapCalls": 0,
+  "observations": [
+    {
+      "name": "read_bte_configuration",
+      "expectedFields": [
+        "kind",
+        "identifier",
+        "connectionId"
+      ],
+      "advertisedFields": [
+        "kind",
+        "identifier",
+        "connectionId"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "prepare_enhancement_configuration_workflow",
+      "expectedFields": [
+        "kind",
+        "targetName",
+        "desiredState",
+        "enhancementNames",
+        "productName",
+        "functionModule",
+        "applicationIndicator",
+        "country",
+        "applicationArea",
+        "callupPoint",
+        "organizationalUnit",
+        "exitProgram",
+        "packageName",
+        "transportNumber",
+        "connectionId"
+      ],
+      "advertisedFields": [
+        "kind",
+        "targetName",
+        "desiredState",
+        "enhancementNames",
+        "productName",
+        "functionModule",
+        "applicationIndicator",
+        "country",
+        "applicationArea",
+        "callupPoint",
+        "organizationalUnit",
+        "exitProgram",
+        "packageName",
+        "transportNumber",
+        "connectionId"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "preview_configuration",
+      "expectedFields": [
+        "connectionId",
+        "plant",
+        "changes",
+        "expectedRowFingerprint"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "plant",
+        "changes",
+        "expectedRowFingerprint"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "describe_configuration_object",
+      "expectedFields": [
+        "connectionId",
+        "objectName",
+        "expectedDefinitionFingerprint",
+        "includeImg",
+        "includeMaintenanceBoundary",
+        "includeTextMaintenanceBoundary",
+        "includeApiMaintenanceBoundary",
+        "language"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "objectName",
+        "expectedDefinitionFingerprint",
+        "includeImg",
+        "includeMaintenanceBoundary",
+        "includeTextMaintenanceBoundary",
+        "includeApiMaintenanceBoundary",
+        "language"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "find_configuration_activities",
+      "expectedFields": [
+        "connectionId",
+        "objectName",
+        "expectedDefinitionFingerprint",
+        "maxActivities",
+        "resolveMaintenanceObjects",
+        "includeDetails",
+        "language"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "objectName",
+        "expectedDefinitionFingerprint",
+        "maxActivities",
+        "resolveMaintenanceObjects",
+        "includeDetails",
+        "language"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_activity",
+      "expectedFields": [
+        "connectionId",
+        "activityId",
+        "language"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "activityId",
+        "language"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_documentation",
+      "expectedFields": [
+        "connectionId",
+        "activityId",
+        "language",
+        "maxLines"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "activityId",
+        "language",
+        "maxLines"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_fi_rule",
+      "expectedFields": [
+        "connectionId",
+        "kind",
+        "ruleName",
+        "companyCode",
+        "applicationArea",
+        "callupPoint",
+        "maxSteps"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "kind",
+        "ruleName",
+        "companyCode",
+        "applicationArea",
+        "callupPoint",
+        "maxSteps"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "inspect_configuration_transport",
+      "expectedFields": [
+        "connectionId",
+        "requestNumber",
+        "taskNumber",
+        "unitText"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "requestNumber",
+        "taskNumber",
+        "unitText"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "compare_configuration_unit",
+      "expectedFields": [
+        "from",
+        "to",
+        "unitKey",
+        "language",
+        "ignoreFields"
+      ],
+      "advertisedFields": [],
+      "missing": [
+        "from",
+        "to",
+        "unitKey",
+        "language",
+        "ignoreFields"
+      ],
+      "readOnlyHint": true
+    },
+    {
+      "name": "preview_configuration_number_range",
+      "expectedFields": [
+        "connectionId",
+        "objectName",
+        "subobject",
+        "year",
+        "maxIntervals",
+        "yearScope",
+        "changes"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "objectName",
+        "subobject",
+        "year",
+        "maxIntervals",
+        "yearScope",
+        "changes"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_number_range_scope",
+      "expectedFields": [
+        "connectionId",
+        "objectName",
+        "subobject",
+        "maxIntervals"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "objectName",
+        "subobject",
+        "maxIntervals"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_number_range",
+      "expectedFields": [
+        "connectionId",
+        "objectName",
+        "subobject",
+        "year",
+        "intervalNumber",
+        "maxIntervals"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "objectName",
+        "subobject",
+        "year",
+        "intervalNumber",
+        "maxIntervals"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_bc_set",
+      "expectedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "objectName",
+        "maxRecords",
+        "maxValues",
+        "maxDependencies"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "objectName",
+        "maxRecords",
+        "maxValues",
+        "maxDependencies"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "find_configuration_bc_sets",
+      "expectedFields": [
+        "connectionId",
+        "version",
+        "objectName",
+        "maxRecords"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "version",
+        "objectName",
+        "maxRecords"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "compare_configuration_bc_set",
+      "expectedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "objectName",
+        "maxRecords",
+        "maxValues",
+        "maxDependencies",
+        "language"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "objectName",
+        "maxRecords",
+        "maxValues",
+        "maxDependencies",
+        "language"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "inspect_configuration_bc_impact",
+      "expectedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "maxNodes",
+        "maxDepth",
+        "maxChildren",
+        "language",
+        "maxRecords",
+        "maxValues",
+        "maxTargetReads",
+        "includeActivationBoundary"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "maxNodes",
+        "maxDepth",
+        "maxChildren",
+        "language",
+        "maxRecords",
+        "maxValues",
+        "maxTargetReads",
+        "includeActivationBoundary"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_bc_dependencies",
+      "expectedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "maxNodes",
+        "maxDepth",
+        "maxChildren"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "maxNodes",
+        "maxDepth",
+        "maxChildren"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_bc_logs",
+      "expectedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "maxReferences",
+        "maxActivations"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "bcSetId",
+        "version",
+        "maxReferences",
+        "maxActivations"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "read_configuration_unit",
+      "expectedFields": [
+        "connectionId",
+        "unitKey",
+        "language",
+        "expectedReadFingerprint",
+        "includeApiSnapshot",
+        "transport",
+        "textReconciliation"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "unitKey",
+        "language",
+        "expectedReadFingerprint",
+        "includeApiSnapshot",
+        "transport",
+        "textReconciliation"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "preview_configuration_unit_text",
+      "expectedFields": [
+        "connectionId",
+        "unitKey",
+        "language",
+        "expectedReadFingerprint",
+        "includeMaintenanceBoundary",
+        "transport",
+        "expectedTextVersion",
+        "patch"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "unitKey",
+        "language",
+        "expectedReadFingerprint",
+        "includeMaintenanceBoundary",
+        "transport",
+        "expectedTextVersion",
+        "patch"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    },
+    {
+      "name": "apply_configuration_unit_text",
+      "expectedFields": [
+        "connectionId",
+        "unitKey",
+        "language",
+        "expectedReadFingerprint",
+        "expectedTextVersion",
+        "patch",
+        "requestNumber",
+        "taskNumber",
+        "operationId",
+        "acknowledgeConfigurationWrite"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "unitKey",
+        "language",
+        "expectedReadFingerprint",
+        "expectedTextVersion",
+        "patch",
+        "requestNumber",
+        "taskNumber",
+        "operationId",
+        "acknowledgeConfigurationWrite"
+      ],
+      "missing": [],
+      "readOnlyHint": false
+    },
+    {
+      "name": "reconcile_configuration_unit_text",
+      "expectedFields": [
+        "connectionId",
+        "operationId",
+        "originalInput",
+        "beforeText",
+        "includeLocks"
+      ],
+      "advertisedFields": [
+        "connectionId",
+        "operationId",
+        "originalInput",
+        "beforeText",
+        "includeLocks"
+      ],
+      "missing": [],
+      "readOnlyHint": true
+    }
+  ],
+  "confirmedMissingShapes": [
+    "compare_configuration_unit"
+  ],
+  "fixedToolsActuallyObservedInSapInstance": [
+    {
+      "name": "inspect_configuration_transport",
+      "fields": [
+        "connectionId",
+        "requestNumber",
+        "taskNumber",
+        "unitText"
+      ]
+    },
+    {
+      "name": "read_configuration_unit",
+      "fields": [
+        "connectionId",
+        "unitKey",
+        "language",
+        "expectedReadFingerprint",
+        "includeApiSnapshot",
+        "transport",
+        "textReconciliation"
+      ]
+    }
+  ]
+}

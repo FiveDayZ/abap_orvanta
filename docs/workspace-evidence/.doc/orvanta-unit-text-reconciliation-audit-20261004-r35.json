@@ -1,0 +1,87 @@
+{
+  "observedAt": "2026-10-04T04:49:55.296Z",
+  "baselineHead": "3af103b6b9336b011625b74df2593e65c9f34d45",
+  "currentHead": "e81966748b12d01746bb39ae6e10ea97a58ee088",
+  "branch": "main",
+  "frozenRuntimeFilesUnchanged": 107,
+  "originalReceiptFilesUnchanged": 4,
+  "ownSourceMatchesFrozen": [
+    "src/tools.ts",
+    "src/contracts.ts",
+    "src/mcp.ts",
+    "src/tool-registry.ts",
+    "src/capabilities.ts",
+    "src/configuration-unit-reconcile.ts",
+    "test/configuration-unit-reconcile.test.ts",
+    "test/configuration-unit-reconcile-schema.test.ts",
+    "test/protocol.test.ts"
+  ],
+  "otherRegistryEntriesUnchanged": true,
+  "otherIndexedToolEntriesUnchanged": true,
+  "originalBaselineChanges": [
+    {
+      "path": "src/tools.ts",
+      "beforeHash": "d74dcb120bf490469f6f9922120c7fa95806a65bd5b2a5b557e6bae7934fbc12",
+      "currentHash": "1d0b2c93674199a339b0dc115ffa40d0936ba413f380c6c882948a4196e12d74"
+    },
+    {
+      "path": "src/contracts.ts",
+      "beforeHash": "ccdb8e0dd529c42d607957b9f94443dcfbfb8c2b69e34887d293e3b9e644e902",
+      "currentHash": "b189a0f8c87152bffa54e0c0759a754110b37d0f26a689f1f0057c9fbc54841e"
+    },
+    {
+      "path": "src/mcp.ts",
+      "beforeHash": "07d019ca5bc66cb44799ceef418a7f603c69393746ab1c9a90f609a1af8c2561",
+      "currentHash": "27e86d475d3c69420f1ba66a441cc8695896f479d486065f75079469b0ddca59"
+    },
+    {
+      "path": "src/tool-registry.ts",
+      "beforeHash": "ea044bd266ca3817ef1002bd10720f7e5eeb2d2293540662ce800d6fe300b3cc",
+      "currentHash": "04500111a7c74fd537b78c0e99f249c53bc7ea1c6cc60366695e76663f25e596"
+    },
+    {
+      "path": "contracts/tool-index.json",
+      "beforeHash": "64f3c3964901fe337404ddb07b430c16e7f9a99e33c5bddd2b551e619cfd2cce",
+      "currentHash": "fddcdfe1b7cf336ad6dbd976b398ce31b0c1fad83c6d302292984cf3fd8aab88"
+    },
+    {
+      "path": "contracts/verification-registry.json",
+      "beforeHash": "61f9fa179a1d24ae54fe048f12d52bc4d8bfafe40695357d6c70103ebc163ea0",
+      "currentHash": "274a2fab5e81c6989c53af9142b7874b444bf5f2f1120907fffd616048c45fd6"
+    },
+    {
+      "path": "docs/tool-index.md",
+      "beforeHash": "6dd82135b65c715937d2ee737ba295497e3f45381cc3a8ba67365a91437fca85",
+      "currentHash": "221f970aabcb2e41eeef0e38786fdc9fa17cb6f62c3a439b41dcf489bb40a63a"
+    },
+    {
+      "path": "test/verification-registry.test.ts",
+      "beforeHash": "5ef45ee9e718e818257184427d8e3c844494d4598cbf29ddd37596d569e45df5",
+      "currentHash": "dc24810eb644ff632789412607b095becd91293abf31ef918ba874714098155e"
+    }
+  ],
+  "status": "M contracts/tool-index.json\n M contracts/verification-registry.json\n M docs/ops-coverage.md\n M docs/tool-index.md\n M scripts/bootstrap-sap-helper.ps1\n M src/adt-backend.ts\n M src/capabilities.ts\n M src/configuration-img-details.ts\n M src/configuration-object.ts\n M src/contracts.ts\n M src/invocation-receipts.ts\n M src/mcp.ts\n M src/tool-registry.ts\n M src/tools.ts\n M src/write-operation-receipts.ts\n M src/write-prechange-evidence.ts\n M test/configuration-object.test.ts\n M test/failure-process.test.ts\n M test/protocol.test.ts\n M test/tools.test.ts\n M test/verification-registry.test.ts\n M test/write-operation-receipts.test.ts\n?? adt-discovery_w200_2026-10-02-10-36-03/\n?? docs/workspace-evidence/.doc/code-update-20261003-134949.md\n?? docs/workspace-evidence/.doc/code-update-20261004-082106.md\n?? docs/workspace-evidence/.doc/code-update-20261004-085446.md\n?? docs/workspace-evidence/.doc/code-update-20261004-092626.md\n?? docs/workspace-evidence/.doc/code-update-20261004-101525.md\n?? docs/workspace-evidence/.doc/orvanta-configuration-activity-acceptance-20261002T174332.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-activity-metadata-20261003-014415.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-acceptance-20261003-r14.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-chain-20261003-r13.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-discovery-20261003-r13.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-function-discovery-20261003-r13.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-sources-20261003-r13.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-audit-acceptance-20261003-r6-recheck.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-candidate-acceptance-20261003-r4.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-comparison-acceptance-20261003-r5.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-impact-acceptance-20261003-r7.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-options-acceptance-20261003-r15.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-options-constants-20261003-r14.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-options-discovery-20261003-r14.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-options-flags-20261003-r14.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-options-includes-20261003-r14.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-bc-unit-payload-20261003-r4.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-cts-key-acceptance-20261003-r20.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-cts-key-baseline-20261003-r19.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-cts-key-discovery-20261003-r19.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-documentation-acceptance-20261003-r2.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-maintenance-acceptance-20261003-r16.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-maintenance-discovery-20261003-r15.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-maintenance-includes-discovery-20261003-r15.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-maintenance-legacy-baseline-20261003-r15.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-maintenance-program-discovery-20261003-r15.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-number-range-annual-preview-acceptance-20261003-r13.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-number-range-boundary-acceptance-20261003-r10-recheck.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-number-range-boundary-acceptance-20261003-r11-recheck.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-number-range-preview-acceptance-20261003-r8.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-number-range-scope-acceptance-20261003-r9-recheck.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-acceptance-20261002T232201.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-reconciliation-acceptance-20261003-r18-recheck.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-reconciliation-acceptance-20261003-r18.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-reconciliation-acceptance-20261003-r19.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-reconciliation-baseline-20261003-r17.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-text-acceptance-20261002T233457.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-text-entry-acceptance-20261003-r17.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-text-entry-baseline-20261003-r16.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-text-entry-dependencies-20261003-r16.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-text-entry-discovery-20261003-r16.json\n?? docs/workspace-evidence/.doc/orvanta-configuration-unit-text-entry-readback-20261003-r17.json\n?? docs/workspace-evidence/.doc/orvanta-mcp-development-pending-acceptance-20261003.md\n?? docs/workspace-evidence/.doc/orvanta-unit-api-only-acceptance-20261003-r22-recheck.json\n?? docs/workspace-evidence/.doc/orvanta-unit-cts-handoff-acceptance-20261003-r21.json\n?? docs/workspace-evidence/.doc/orvanta-unit-cts-handoff-baseline-20261003-r20.json\n?? docs/workspace-evidence/.doc/orvanta-unit-read-api-acceptance-20261003-r23.json\n?? docs/workspace-evidence/.doc/orvanta-unit-read-api-acceptance-20261004-r27.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-api-preview-acceptance-20261004-r29.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-active-definition-20261004-r31.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-active-source-20261004-r31.abap\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-approved-container-20261004-r31.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-candidate-20261004-r30.abap\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-candidate-20261004-r30.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-customizing-preparation-20261004-r31.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-deployment-readonly-final-20261004-r31.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-include-graph-20261004-r31.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-local-regression-20261004-r30.txt\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-native-check-recheck-20261004-r31.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-no-change-acceptance-20261004-r32.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-no-change-complete-acceptance-20261004-r32.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-no-change-final-acceptance-20261004-r32.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-no-change-regression-20261004-r32.txt\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-readonly-guard-20261004-r30.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-registry-check-20261004-r32.txt\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-acceptance-20261004-r33.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-acceptance-20261004-r34.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-audit-20261004-r34.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-closure-20261004-r34.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-plan-20261004-r33.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-preflight-20261004-r33.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-preflight-recheck-20261004-r33.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-preflight-recheck-20261004-r34.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-reconciliation-20261004-r33.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-registry-check-20261004-r34.txt\n?? docs/workspace-evidence/.doc/orvanta-unit-text-apply-save-restore-regression-20261004-r34.txt\n?? docs/workspace-evidence/.doc/orvanta-unit-text-reconciliation-acceptance-20261004-r35-recheck.json\n?? docs/workspace-evidence/.doc/orvanta-unit-text-reconciliation-guide-20261004-r35.md\n?? docs/workspace-evidence/.doc/orvanta-unit-text-reconciliation-plan-20261004-r35.json\n?? src/configuration-activity.ts\n?? src/configuration-bc-audit.ts\n?? src/configuration-bc-compare.ts\n?? src/configuration-bc-impact.ts\n?? src/configuration-bc-set.ts\n?? src/configuration-compare.ts\n?? src/configuration-documentation.ts\n?? src/configuration-fi-rule.ts\n?? src/configuration-number-range-preview.ts\n?? src/configuration-number-range-scope.ts\n?? src/configuration-number-range.ts\n?? src/configuration-transport.ts\n?? src/configuration-unit-api.ts\n?? src/configuration-unit-apply-api.ts\n?? src/configuration-unit-apply.ts\n?? src/configuration-unit-reconcile.ts\n?? src/configuration-unit.ts\n?? src/durable-json-file.ts\n?? test/configuration-activity.test.ts\n?? test/configuration-bc-audit.test.ts\n?? test/configuration-bc-compare.test.ts\n?? test/configuration-bc-impact.test.ts\n?? test/configuration-documentation.test.ts\n?? test/configuration-domains.test.ts\n?? test/configuration-number-range-preview.test.ts\n?? test/configuration-number-range-scope.test.ts\n?? test/configuration-unit-api.test.ts\n?? test/configuration-unit-apply.test.ts\n?? test/configuration-unit-reconcile-schema.test.ts\n?? test/configuration-unit-reconcile.test.ts\n?? test/configuration-unit-schema.test.ts\n?? test/configuration-unit-soap-key.test.ts\n?? test/configuration-unit.test.ts\n?? test/function-create-source-width.test.ts",
+  "diffStat": "contracts/tool-index.json             | 305 +++++++++++++++-\n contracts/verification-registry.json  | 236 +++++++++++-\n docs/ops-coverage.md                  |   6 +-\n docs/tool-index.md                    |  53 ++-\n scripts/bootstrap-sap-helper.ps1      | 144 ++++++--\n src/adt-backend.ts                    |  34 +-\n src/capabilities.ts                   |  33 +-\n src/configuration-img-details.ts      |  27 +-\n src/configuration-object.ts           | 599 ++++++++++++++++++++++++++++++-\n src/contracts.ts                      | 135 ++++++-\n src/invocation-receipts.ts            |  32 +-\n src/mcp.ts                            | 190 ++++++++--\n src/tool-registry.ts                  |  56 ++-\n src/tools.ts                          | 650 +++++++++++++++++++++++++++++++++-\n src/write-operation-receipts.ts       |  81 +++--\n src/write-prechange-evidence.ts       |  46 ++-\n test/configuration-object.test.ts     | 455 +++++++++++++++++++++++-\n test/failure-process.test.ts          |  24 +-\n test/protocol.test.ts                 |  18 +\n test/tools.test.ts                    |  28 ++\n test/verification-registry.test.ts    | 101 +++++-\n test/write-operation-receipts.test.ts | 195 +++++++++-\n 22 files changed, 3260 insertions(+), 188 deletions(-)",
+  "stagedDiffStat": "",
+  "diffCheck": "",
+  "nativeWriterCalls": 0,
+  "currentRowAndVersionUnchanged": true,
+  "closure": {
+    "observedAt": "2026-10-04T12:46:00.9234822+08:00",
+    "pid": 58352,
+    "port": 1479,
+    "listenerGone": true,
+    "processGone": true,
+    "stopRequested": true,
+    "sharedServiceRestartedByThisTask": false,
+    "sharedListener": [
+      {
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 4849,
+        "OwningProcess": 16180
+      }
+    ]
+  },
+  "scope": "Frozen isolated MCP source; main metadata updated separately; shared service not rebuilt/restarted",
+  "noCommitByThisTask": true
+}

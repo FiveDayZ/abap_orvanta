@@ -1,0 +1,580 @@
+{
+  "startedAt": "2026-10-05T13:09:05.876Z",
+  "configurationWrites": 0,
+  "configurationCtsWrites": 0,
+  "activationCalls": 0,
+  "transport": "same frozen r53 public tool; native node:http loopback client only; deadline 1200000ms",
+  "httpObservations": [
+    {
+      "at": "2026-10-05T13:09:05.916Z",
+      "method": "POST",
+      "status": 200,
+      "finishedAt": "2026-10-05T13:09:05.936Z"
+    },
+    {
+      "at": "2026-10-05T13:09:05.939Z",
+      "method": "POST",
+      "status": 202,
+      "finishedAt": "2026-10-05T13:09:05.944Z"
+    },
+    {
+      "at": "2026-10-05T13:09:05.943Z",
+      "method": "GET",
+      "status": 200,
+      "finishedAt": null,
+      "error": "Error: aborted"
+    },
+    {
+      "at": "2026-10-05T13:09:05.943Z",
+      "method": "POST",
+      "status": 200,
+      "finishedAt": "2026-10-05T13:09:05.947Z"
+    },
+    {
+      "at": "2026-10-05T13:09:05.951Z",
+      "method": "POST",
+      "status": 200,
+      "finishedAt": "2026-10-05T13:21:31.847Z"
+    }
+  ],
+  "transportErrors": [
+    {
+      "at": "2026-10-05T13:21:31.856Z",
+      "error": "Error: SSE stream disconnected: Error: aborted"
+    }
+  ],
+  "ready": {
+    "pid": 58976,
+    "url": "http://127.0.0.1:3383/mcp",
+    "allowedTools": [
+      "read_configuration_bc_before_state"
+    ],
+    "input": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+      "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+      "nativeCandidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+      "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+      "nativeGuardVersion": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+      "nativeCtsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50"
+    },
+    "manifestFingerprint": "c96f03cc2a3b4ea9ffe6ad6b865c81c27ce118dab69269b6d9453ffb8a10aae2",
+    "at": "2026-10-05T12:44:02.875Z"
+  },
+  "schemaRefusalsBeforeBackend": 4,
+  "defaultClientTimedOut": true,
+  "priorServerCompleted": {
+    "capturedAt": "2026-10-05T12:54:08.021Z",
+    "reference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+    "stateVersion": "0d07309bf86d5cbfb93ddb0d62fbeb34efa9338d35d0c9e12d32fffadbb42663",
+    "counts": {
+      "T006": 0,
+      "T006A": 0,
+      "T006B": 0,
+      "T006C": 0,
+      "T006D": 1,
+      "T006I": 1,
+      "T006J": 3,
+      "T006T": 3,
+      "T006_OIB": 0
+    },
+    "fileSha256": "076504e2e5e0c1ea5850bcb3c0a1cb519a157d88f5ca72e3598a5b4741512fc2",
+    "nativeStateCalls": 2
+  },
+  "tools": [
+    {
+      "name": "read_configuration_bc_before_state",
+      "description": "Read-only native nine-table/nineteen-key before-state for fixed w200/GR2/200 EHS_CUNI_KNM/N and GR2K923429/430. Requires fresh source/target/candidate/metadata/guard/CTS versions and the exactly attested Z_ORVANTA_CFG_BC_STATE customer API. Brackets two native calls with complete existing preflight and CTS readers, verifies user, counts, all versions, canonical Base64/length/SHA256 and native IMPORT/re-EXPORT assertion; retracts all output on any drift or failure. Returns opaque typed data with missing rows preserved and the complete fixed CTS buffers; durably retains server-generated immutable local evidence and returns beforeStateReference without granting recovery. No caller-supplied restore bytes, generic RFC/SQL/GUI fallback, configuration/CTS/log writes, commit, activation, simulation, recovery or locked snapshot. New customer API deployment and native runtime acceptance are pending; executable/recoveryAvailable remain false.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "bcSetId": {
+            "type": "string",
+            "const": "EHS_CUNI_KNM"
+          },
+          "version": {
+            "type": "string",
+            "const": "N"
+          },
+          "nativeSourceVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "nativeTargetVersion": {
+            "$ref": "#/properties/nativeSourceVersion"
+          },
+          "nativeMetadataVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "nativeCandidateVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "nativeGuardVersion": {
+            "$ref": "#/properties/nativeCandidateVersion"
+          },
+          "requestNumber": {
+            "type": "string",
+            "const": "GR2K923429"
+          },
+          "taskNumber": {
+            "type": "string",
+            "const": "GR2K923430"
+          },
+          "nativeCtsVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "connectionId",
+          "bcSetId",
+          "version",
+          "nativeSourceVersion",
+          "nativeTargetVersion",
+          "nativeMetadataVersion",
+          "nativeCandidateVersion",
+          "nativeGuardVersion",
+          "requestNumber",
+          "taskNumber",
+          "nativeCtsVersion"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "callStartedAt": "2026-10-05T13:09:05.949Z",
+  "publicCall": {
+    "at": "2026-10-05T13:09:05.949Z",
+    "finishedAt": "2026-10-05T13:21:31.847Z",
+    "name": "read_configuration_bc_before_state",
+    "arguments": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+      "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+      "nativeCandidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+      "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+      "nativeGuardVersion": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+      "nativeCtsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50"
+    },
+    "isError": false,
+    "data": {
+      "connectionId": "w200",
+      "bcSetId": "EHS_CUNI_KNM",
+      "version": "N",
+      "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+      "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+      "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+      "nativeCandidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+      "nativeGuardVersion": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "nativeCtsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+      "system": "GR2",
+      "client": "200",
+      "user": "WYS",
+      "readOnly": true,
+      "executable": false,
+      "activationAvailable": false,
+      "recoveryAvailable": false,
+      "snapshot": false,
+      "scope": {
+        "object": "CUNI",
+        "tableCount": 9,
+        "keyCount": 19,
+        "allCuniKeys": false
+      },
+      "versions": {
+        "source": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "target": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "candidate": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "metadata": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "guard": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+        "cts": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+        "state": "0d07309bf86d5cbfb93ddb0d62fbeb34efa9338d35d0c9e12d32fffadbb42663"
+      },
+      "counts": {
+        "T006": 0,
+        "T006A": 0,
+        "T006B": 0,
+        "T006C": 0,
+        "T006D": 1,
+        "T006I": 1,
+        "T006J": 3,
+        "T006T": 3,
+        "T006_OIB": 0
+      },
+      "layouts": {
+        "T006": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7",
+        "T006A": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d",
+        "T006B": "ab70255e75a3137279fe7138aecba6dea563ad9886455ecb6d28534a69bbd286",
+        "T006C": "b0b1f805571a82c34ee6ce4c157e6b4a5dacdfe76ed29da5805e8699ac6b8521",
+        "T006D": "b8c3a7317ae77355313a75ff37216a2899338b0b45c4753772810b9815e4b95f",
+        "T006I": "cb0bff534a1644ff32d10d071c5b4753fe584487720a9f4cfb6b61edc5e88644",
+        "T006J": "f90e52e900704080f4c37351b5147ec0711eeeb36ba473b9a3e663e6a78eaeb0",
+        "T006T": "1f44b60866c9c9b181f4a4a8147c74d6212fd0fb2fc5ac7b6e20447790ba21b0",
+        "T006_OIB": "c6cbe2e2de45048f2f380bac738e8ad33400cd69506d74529d410f791674e4d6"
+      },
+      "layoutFingerprint": "da348eaef777b1a459779cb49688d39169ebfc8516af05a3baaf8a492b3f77c5",
+      "buffer": {
+        "format": "sap_export_data_buffer_base64",
+        "data": "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",
+        "bytes": 3402,
+        "nativeRoundtrip": true,
+        "clientSideImportAvailable": false,
+        "recoveryPermit": false
+      },
+      "cts": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430",
+        "system": "GR2",
+        "client": "200",
+        "user": "WYS",
+        "readOnly": true,
+        "executable": false,
+        "activationAvailable": false,
+        "snapshot": false,
+        "recoveryAvailable": false,
+        "scope": "two_complete_transport_roots_not_a_CUNI_projection",
+        "counts": {
+          "objects": 2,
+          "keys": 2,
+          "stringKeys": 0
+        },
+        "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+        "buffer": {
+          "format": "sap_export_data_buffer_base64",
+          "encoding": "opaque_native_typed_data",
+          "data": "/wYBAQECgAA0MTAyAAAAAAEAAAAAABAAAABCBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNvAAAABAARwBSADIAIAAgACAAIAAgvQEAAAAAAAYAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAEMATABJAEUATgBUvAAAAAYAMgAwADC9AQAAAAAAGAAAAEYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVQBTAEUAUrwAAAAYAFcAWQBTACAAIAAgACAAIAAgACAAIAAgvQcTAAAAAAgAAABKBgAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAQwBfAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLAw4AAAAApAAAAdkHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKSqAAAAAAAoqgAAAAAAAqoAAAAAAAKqAAAAAAAUqgAAAAAACKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACkvgAAAKQAAAACvAAAAKQARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgAFcARABHAFIAMwAgACAAIAAgACAAIAAgAEMAVQBTAFQAVwBZAFMAIAAgACAAIAAgACAAIAAgACAAMgAwADIANgAwADkAMAAxADEAMQAwADIANAA0ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAAApABHAFIAMgBLADkAMgAzADQAMwAwACAAIAAgACAAIAAgACAAIAAgACAAUQBEACAAIAAgACAAIAAgACAAIAAgACAAQwBVAFMAVABXAFkAUwAgACAAIAAgACAAIAAgACAAIAAyADAAMgA2ADEAMAAwADQAMQAwADAAMAAzADIARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAA4AAAA5QcAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVABTrQ4AAAAAOKoAAAAAACiqAAAAAAAGqgAAAAAABqoAAAAAAAKqAAAAAAACrg4AAAAAOL4AAAA4AAAAArwAAAA4AEcAUgAyAEsAOQAyADMANAAyADkAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAgACAAIAAgACC9vAAAADgARwBSADIASwA5ADIAMwA0ADMAMAAgACAAIAAgACAAIAAgACAAIAAgADIAMAAwACAAIAAgACAAIL2/Aw4AAAABaAAAA2gHAAAAAAAAAAAAAAAAAAAAAAAAAAAATwBCAEoARQBDAFQAU60OAAAAAWiqAAAAAAAoqgYAAAAADKoAAAAAAAiqAAAAAAAIqgAAAAAA8KoAAAAAAAKqAAAAAAACqgAAAAAABqoAAAAAAAKqAAAAAAAorg4AAAABaL4AAAFoAAAAArwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMQBSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMgBSADMAVABSAFQARABBAFQAQwBVAE4ASQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAI0AAAFFgQAAAAAAAAAAAAAAAAAAAAAAAAAAABLAEUAWQBTrQ4AAAACNKoAAAAAACiqAAAAAAAIqgAAAAAACKoAAAAAADyqBgAAAAAMqgAAAAAACKoAAAAAAFCqAAAAAAA8qgAAAAAAAqoAAAAAAPCqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorg4AAAACNL4AAAI0AAAAArwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAVAAwADAANgBBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABEAEEAVABDAFUATgBJACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAMQBLAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABBAEIAVQBaAFQAUABNAEMAXwBUAFAAQwBGAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAOAAwADkAUAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8GDwAAAAFYAAAAxQsAAAAAAAAAAAAAAAAAAAAAAAAAAABTAFQAUgBJAE4ARwBfAEsARQBZAFOtDwAAAAFYqgAAAAAAKKoAAAAAAAiqAAAAAAAIqgAAAAAAPKoGAAAAAAyqAAAAAAAIqgAAAAAAUKoAAAAAADyqAAAAAAACrwQAAAAAAqoTAAAAAAiqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorwQAAAAAAqoTAAAAAAiuDwAAAAFYvgAAAVgAAAAAvwQ=",
+          "bytes": 3548,
+          "keyPaddingPreserved": true,
+          "clientSideImportAvailable": false,
+          "recoveryPermit": false
+        },
+        "bodyFingerprint": "b3303da468b0f090a0fff751b1f2b207ae1d2c355740f1146c0f27c22d657113",
+        "identities": [
+          {
+            "source": "0233aa3297bbcee7dbf6377529fa8bd2a50e260accb48e2b17edea2b668e45d7",
+            "interface": "34ee7da0e9c1a2d980956b1b986c20302ae7353e6fac02dc795ab257ae7f45c0"
+          },
+          {
+            "functionName": "TR_READ_REQUEST",
+            "source": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718",
+            "interface": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST",
+            "source": "f5cebb50274f01915d6d5d85a6b058ae417889380db50d44d672d3cbc80094c8",
+            "interface": "ad8a3c8352ef4b4615aef7648b9ffead28751f151789e726ac3007d27d2e555a"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST_HEADER",
+            "source": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090",
+            "interface": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813"
+          },
+          {
+            "functionName": "TR_AUTHORITY_CHECK_DISPLAY",
+            "source": "1bf1f040acd563e46f775fb2c0c354c75ea8cb494379243ec5ff0950b24c2be7",
+            "interface": "6d966c3affd105d7808a659b62fc4356106648016b0ceae864b550182e290574"
+          },
+          {
+            "functionName": "SCMS_BASE64_ENCODE_STR",
+            "source": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0",
+            "interface": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9"
+          },
+          {
+            "functionName": "CALCULATE_HASH_FOR_RAW",
+            "source": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458",
+            "interface": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779"
+          },
+          {
+            "tableName": "E070",
+            "layout": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1"
+          },
+          {
+            "tableName": "E070C",
+            "layout": "e6d5897c0588ee2e1720b7a9bd420c8a75efa6a5b2163266d0fdca864a722632"
+          },
+          {
+            "tableName": "E071",
+            "layout": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1"
+          },
+          {
+            "tableName": "E071K",
+            "layout": "f6da6a1556eaea9b3c3df7e4f065eca401cf53381578d2a7a4e1af518a368000"
+          },
+          {
+            "tableName": "E071K_STR",
+            "layout": "c0ed80a482355e0be761fd3236a5e2e2dc69e14dcf034d792316950657fe66fc"
+          }
+        ],
+        "evidence": {
+          "apiInvocations": 2,
+          "identityPasses": 2,
+          "rawBytesRechecked": true
+        },
+        "warning": "Requires the exact approved customer API. Entire fixed request/task CTS rows include unrelated entries for preservation. Native bytes retain padding and string keys; they are opaque to the client and are not a restore command. Sequential observations are not locked snapshots. No activation, simulation, CTS/configuration write, cleanup, commit or release is performed."
+      },
+      "bodyFingerprint": "5da4894421b56d22d38eccaccd01a22883d76a89645c72cdfa3ea7ce9382d554",
+      "identity": {
+        "source": "6024fb854a0509bf3c64710cf55e1f7717ebdc206204c3ad267b58f85adaa8f5",
+        "interface": "2ec35dc0650882b1312763fb44eeb831cdec1a40562edc3a5bc57a3ea2b4c2af"
+      },
+      "evidence": {
+        "apiInvocations": 2,
+        "preflightPasses": 2,
+        "ctsPasses": 2,
+        "identityPasses": 2
+      },
+      "warning": "Fixed native nine-table before-state only. Missing rows remain absent typed-table entries. Native IMPORT/re-EXPORT is checked internally, but no restore command, atomic snapshot, lock, activation or configuration/CTS mutation is provided.",
+      "beforeStateReference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+      "beforeStatePersistence": {
+        "immutable": true,
+        "recoveryPermit": false,
+        "executable": false
+      }
+    }
+  },
+  "commandPreparation": {
+    "connectionId": "w200",
+    "bcSetId": "EHS_CUNI_KNM",
+    "version": "N",
+    "requestNumber": "GR2K923429",
+    "taskNumber": "GR2K923430",
+    "operationId": "r54-readonly-command-preparation-01",
+    "beforeStateReference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+    "executable": false,
+    "recoveryAvailable": false,
+    "duplicatePolicy": "reuse_receipt_then_reconcile_never_replay",
+    "receiptOwner": "WriteOperationReceiptStore",
+    "requiredNativeChecks": [
+      "approved_budget",
+      "authenticated_binding",
+      "source_and_layout_attestation",
+      "sap_enqueue",
+      "locked_before_state",
+      "native_versions",
+      "cts_open_owned_task",
+      "headless_route_and_commit_boundaries"
+    ],
+    "successProof": [
+      "complete_nineteen_key_readback",
+      "exact_cts_recording",
+      "eight_protected_keys_unchanged",
+      "locks_released",
+      "logs_and_independent_side_effects_accounted"
+    ],
+    "blockedBy": [
+      "approved_headless_activation_and_recovery_api",
+      "specific_configuration_and_cts_write_authorization",
+      "distribution_resolver_can_write_SCDTSYNC_and_invoke_remote_RFC",
+      "sap_locked_before_state_not_established"
+    ],
+    "readOnly": true,
+    "lockedSnapshot": false,
+    "nativeBeforeStateRechecked": true,
+    "beforeState": {
+      "reference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+      "versions": {
+        "source": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "target": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "candidate": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "metadata": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "guard": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+        "cts": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+        "state": "0d07309bf86d5cbfb93ddb0d62fbeb34efa9338d35d0c9e12d32fffadbb42663"
+      },
+      "counts": {
+        "T006": 0,
+        "T006A": 0,
+        "T006B": 0,
+        "T006C": 0,
+        "T006D": 1,
+        "T006I": 1,
+        "T006J": 3,
+        "T006T": 3,
+        "T006_OIB": 0
+      },
+      "identity": {
+        "source": "6024fb854a0509bf3c64710cf55e1f7717ebdc206204c3ad267b58f85adaa8f5",
+        "interface": "2ec35dc0650882b1312763fb44eeb831cdec1a40562edc3a5bc57a3ea2b4c2af"
+      },
+      "layoutFingerprint": "da348eaef777b1a459779cb49688d39169ebfc8516af05a3baaf8a492b3f77c5"
+    }
+  },
+  "immutableFile": {
+    "path": ".cache/spro-r53/state/exports/configuration-bc-before-state/c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95.json",
+    "bytes": 15489,
+    "sha256": "076504e2e5e0c1ea5850bcb3c0a1cb519a157d88f5ca72e3598a5b4741512fc2",
+    "secondCaptureDidNotOverwrite": true
+  },
+  "nativeRefusals": [
+    {
+      "field": "IV_BC_SET",
+      "result": {
+        "outputs": {
+          "EV_CODE": "INPUT_INVALID",
+          "EV_SYSTEM": "",
+          "EV_CLIENT": "",
+          "EV_USER": "",
+          "EV_REQUEST": "",
+          "EV_TASK": "",
+          "EV_SOURCE_VERSION": "",
+          "EV_TARGET_VERSION": "",
+          "EV_CANDIDATE_VERSION": "",
+          "EV_METADATA_VERSION": "",
+          "EV_GUARD_VERSION": "",
+          "EV_CTS_VERSION": "",
+          "EV_STATE_VERSION": "",
+          "EV_DATA_BASE64": "",
+          "EV_DATA_BYTES": "",
+          "EV_ROW_COUNTS": "",
+          "EV_ROUNDTRIP": ""
+        }
+      }
+    },
+    {
+      "field": "IV_VERSION",
+      "result": {
+        "outputs": {
+          "EV_CODE": "INPUT_INVALID",
+          "EV_SYSTEM": "",
+          "EV_CLIENT": "",
+          "EV_USER": "",
+          "EV_REQUEST": "",
+          "EV_TASK": "",
+          "EV_SOURCE_VERSION": "",
+          "EV_TARGET_VERSION": "",
+          "EV_CANDIDATE_VERSION": "",
+          "EV_METADATA_VERSION": "",
+          "EV_GUARD_VERSION": "",
+          "EV_CTS_VERSION": "",
+          "EV_STATE_VERSION": "",
+          "EV_DATA_BASE64": "",
+          "EV_DATA_BYTES": "",
+          "EV_ROW_COUNTS": "",
+          "EV_ROUNDTRIP": ""
+        }
+      }
+    },
+    {
+      "field": "IV_REQUEST",
+      "result": {
+        "outputs": {
+          "EV_CODE": "INPUT_INVALID",
+          "EV_SYSTEM": "",
+          "EV_CLIENT": "",
+          "EV_USER": "",
+          "EV_REQUEST": "",
+          "EV_TASK": "",
+          "EV_SOURCE_VERSION": "",
+          "EV_TARGET_VERSION": "",
+          "EV_CANDIDATE_VERSION": "",
+          "EV_METADATA_VERSION": "",
+          "EV_GUARD_VERSION": "",
+          "EV_CTS_VERSION": "",
+          "EV_STATE_VERSION": "",
+          "EV_DATA_BASE64": "",
+          "EV_DATA_BYTES": "",
+          "EV_ROW_COUNTS": "",
+          "EV_ROUNDTRIP": ""
+        }
+      }
+    },
+    {
+      "field": "IV_CTS_VERSION",
+      "result": {
+        "outputs": {
+          "EV_CODE": "INPUT_INVALID",
+          "EV_SYSTEM": "",
+          "EV_CLIENT": "",
+          "EV_USER": "",
+          "EV_REQUEST": "",
+          "EV_TASK": "",
+          "EV_SOURCE_VERSION": "",
+          "EV_TARGET_VERSION": "",
+          "EV_CANDIDATE_VERSION": "",
+          "EV_METADATA_VERSION": "",
+          "EV_GUARD_VERSION": "",
+          "EV_CTS_VERSION": "",
+          "EV_STATE_VERSION": "",
+          "EV_DATA_BASE64": "",
+          "EV_DATA_BYTES": "",
+          "EV_ROW_COUNTS": "",
+          "EV_ROUNDTRIP": ""
+        }
+      }
+    }
+  ],
+  "metrics": {
+    "startedAt": "2026-10-05T12:44:02.043Z",
+    "configurationWrites": 0,
+    "configurationCtsWrites": 0,
+    "nativeStateReads": 4,
+    "nativeRefusals": 4,
+    "nativeDependencies": {
+      "Z_ORVANTA_CFG_BC_READ": 129,
+      "Z_ORVANTA_CFG_BC_PREVIEW": 9,
+      "Z_ORVANTA_CFG_BC_ROUTE": 49,
+      "Z_ORVANTA_CFG_BC_GUARD": 17,
+      "Z_ORVANTA_CFG_BC_CTS": 9
+    },
+    "tableReads": 7680,
+    "nativeQueries": 7680,
+    "metadataReads": 1088,
+    "definitionReads": 157,
+    "sourceReads": 56
+  },
+  "publicResponsesReceived": 1,
+  "publicExecutionsCompleted": 2,
+  "nativePositiveCalls": 4,
+  "bytes": 3402,
+  "counts": {
+    "T006": 0,
+    "T006A": 0,
+    "T006B": 0,
+    "T006C": 0,
+    "T006D": 1,
+    "T006I": 1,
+    "T006J": 3,
+    "T006T": 3,
+    "T006_OIB": 0
+  },
+  "versions": {
+    "source": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+    "target": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+    "candidate": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+    "metadata": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+    "guard": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+    "cts": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+    "state": "0d07309bf86d5cbfb93ddb0d62fbeb34efa9338d35d0c9e12d32fffadbb42663"
+  },
+  "reference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+  "status": "passed",
+  "finishedAt": "2026-10-05T13:21:31.854Z"
+}

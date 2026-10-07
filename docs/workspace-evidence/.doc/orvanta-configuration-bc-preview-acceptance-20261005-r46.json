@@ -1,0 +1,2638 @@
+{
+  "startedAt": "2026-10-04T23:55:27.546Z",
+  "configurationWrites": 0,
+  "ready": {
+    "pid": 9388,
+    "url": "http://127.0.0.1:9578/mcp",
+    "allowedTools": [
+      "read_configuration_bc_native_snapshot",
+      "preview_configuration_bc_native",
+      "read_function_module_interface"
+    ],
+    "manifestFingerprint": "cef08420b3e8e20338ee13450c062af26b50b5c2516fb40ac6fbbe2ce46a7364",
+    "startedAt": "2026-10-04T23:54:20.844Z"
+  },
+  "calls": [
+    {
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "client": "200",
+        "readOnly": true,
+        "activationAvailable": false,
+        "saveAvailable": false,
+        "snapshot": false,
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "versionScope": "complete_five_table_rows_including_missing_rows_and_FLTP; GR2/200/user/EHS_CUNI_KNM/N",
+        "sourceValueFingerprints": {
+          "T006": "68445907a7e02498cba125b359631f8121b8f411f1651f6b8a32cbab27d1cbb1",
+          "T006A": "b3adb6899b5fe95f18838d2bf2eec361f3359d20fcb6d7b9d5f10f6e33df0c2b",
+          "T006B": "41f208bfc3d3a11116fd4d102ee064541ecab5dedcc3fca1024cf6c87d9bad51",
+          "T006C": "6ca82a7a54b68e4e0dfa81d93ff428b37461463719cd31748155feb7f3b01d0f",
+          "T006D": "f71a3ed75487b48a905e0a79c7bf0f5569e3114dad901c12fca34899cb90057c"
+        },
+        "bodyFingerprint": "c2a86940b2fae1344610508fb48341a5952ef83f66a588870dc02f4560911c67",
+        "states": [
+          {
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "status": "present",
+            "mappingConflict": false
+          }
+        ],
+        "native": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "ET_T006": [],
+          "ET_T006A": [],
+          "ET_T006B": [],
+          "ET_T006C": [],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        },
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        },
+        "warning": "Sequential repeated observations are not a locked snapshot. SOAP fields are display strings; native versions retain full typed rows, float fields and padding. No language overlay, value conversion, activation, simulation, CTS recording or write approval is produced."
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w300",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool preview_configuration_bc_native: [\n  {\n    \"received\": \"w300\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"w200\",\n    \"path\": [\n      \"connectionId\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"w200\\\"\"\n  }\n]"
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "OTHER",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool preview_configuration_bc_native: [\n  {\n    \"received\": \"OTHER\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"EHS_CUNI_KNM\",\n    \"path\": [\n      \"bcSetId\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"EHS_CUNI_KNM\\\"\"\n  }\n]"
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "short"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool preview_configuration_bc_native: [\n  {\n    \"validation\": \"regex\",\n    \"code\": \"invalid_string\",\n    \"message\": \"Invalid\",\n    \"path\": [\n      \"nativeTargetVersion\"\n    ]\n  }\n]"
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "activate": true
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool preview_configuration_bc_native: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"activate\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'activate'\"\n  }\n]"
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "client": "200",
+        "readOnly": true,
+        "activationAvailable": false,
+        "saveAvailable": false,
+        "executable": false,
+        "simulation": false,
+        "snapshot": false,
+        "candidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "policy": "CREATE_INITIAL_OR_UPDATE_USE",
+        "languagePolicy": {
+          "sourcePlaceholder": "D",
+          "selected": [
+            "1",
+            "D",
+            "E"
+          ],
+          "approvedForActivation": false
+        },
+        "clientMapping": {
+          "source": "001",
+          "target": "200"
+        },
+        "omittedFields": {
+          "T006": [
+            "PRESS_VAL",
+            "PRESS_UNIT"
+          ],
+          "T006D": [
+            "PRESS_DEP"
+          ]
+        },
+        "rows": [
+          {
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "MSEHI": "KNM",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "0",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "PRESS",
+              "ZAEHL": "1000",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "3",
+              "ISOCODE": "KPA",
+              "PRIMARY": "",
+              "TEMP_VALUE": "0",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_VAL": "0",
+              "PRESS_UNIT": ""
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZEX3",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZEX6",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ANDEC",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZKEH",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZWOB",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZ1EH",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZ2EH",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DIMID",
+                "status": "NEW",
+                "before": null,
+                "after": "PRESS",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ZAEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "1000",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "NENNR",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "EXP10",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ADDKO",
+                "status": "NEW",
+                "before": null,
+                "after": "0.000000",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "EXPON",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DECAN",
+                "status": "NEW",
+                "before": null,
+                "after": "3",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ISOCODE",
+                "status": "NEW",
+                "before": null,
+                "after": "KPA",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRIMARY",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_VALUE",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_UNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "FAMUNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_VAL",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_UNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "每平方米千牛顿"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "每平方米千牛顿",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton pro Quadratmeter"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "Kilonewton pro Quadratmeter",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton per square meter"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "Kilonewton per square meter",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "status": "unchanged",
+            "before": {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            },
+            "after": {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "EQL",
+                "before": "200",
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DIMID",
+                "status": "EQL",
+                "before": "PRESS",
+                "after": "PRESS",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "LENG",
+                "status": "EQL",
+                "before": "-1",
+                "after": "-1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MASS",
+                "status": "EQL",
+                "before": "1",
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TIMEX",
+                "status": "EQL",
+                "before": "-2",
+                "after": "-2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ECURR",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MOLQU",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "LIGHT",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSSIE",
+                "status": "EQL",
+                "before": "PA",
+                "after": "PA",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_DEP",
+                "status": "EQL",
+                "before": "",
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_DEP",
+                "status": "EQL",
+                "before": "",
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": true
+          }
+        ],
+        "native": {
+          "EV_CODE": "PREVIEW_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_CANDIDATE_VERSION": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+          "EV_DIFFERENCES": "T006:1:MANDT:NEW;T006:1:MSEHI:NEW;T006:1:KZEX3:NEW;T006:1:KZEX6:NEW;T006:1:ANDEC:NEW;T006:1:KZKEH:NEW;T006:1:KZWOB:NEW;T006:1:KZ1EH:NEW;T006:1:KZ2EH:NEW;T006:1:DIMID:NEW;T006:1:ZAEHL:NEW;T006:1:NENNR:NEW;T006:1:EXP10:NEW;T006:1:ADDKO:NEW;T006:1:EXPON:NEW;T006:1:DECAN:NEW;T006:1:ISOCODE:NEW;T006:1:PRIMARY:NEW;T006:1:TEMP_VALUE:NEW;T006:1:TEMP_UNIT:NEW;T006:1:FAMUNIT:NEW;T006:1:PRESS_VAL:NEW;T006:1:PRESS_UNIT:NEW;T006A:1:MANDT:NEW;T006A:1:SPRAS:NEW;T006A:1:MSEHI:NEW;T006A:1:MSEH3:NEW;T006A:1:MSEH6:NEW;T006A:1:MSEHT:NEW;T006A:1:MSEHL:NEW;T006A:2:MANDT:NEW;T006A:2:SPRAS:NEW;T006A:2:MSEHI:NEW;T006A:2:MSEH3:NEW;T006A:2:MSEH6:NEW;T006A:2:MSEHT:NEW;T006A:2:MSEHL:NEW;T006A:3:MANDT:NEW;T006A:3:SPRAS:NEW;T006A:3:MSEHI:NEW;T006A:3:MSEH3:NEW;T006A:3:MSEH6:NEW;T006A:3:MSEHT:NEW;T006A:3:MSEHL:NEW;T006B:1:MANDT:NEW;T006B:1:SPRAS:NEW;T006B:1:MSEH3:NEW;T006B:1:MSEHI:NEW;T006B:2:MANDT:NEW;T006B:2:SPRAS:NEW;T006B:2:MSEH3:NEW;T006B:2:MSEHI:NEW;T006B:3:MANDT:NEW;T006B:3:SPRAS:NEW;T006B:3:MSEH3:NEW;T006B:3:MSEHI:NEW;T006C:1:MANDT:NEW;T006C:1:SPRAS:NEW;T006C:1:MSEH6:NEW;T006C:1:MSEHI:NEW;T006C:2:MANDT:NEW;T006C:2:SPRAS:NEW;T006C:2:MSEH6:NEW;T006C:2:MSEHI:NEW;T006C:3:MANDT:NEW;T006C:3:SPRAS:NEW;T006C:3:MSEH6:NEW;T006C:3:MSEHI:NEW;T006D:1:MANDT:EQL;T006D:1:DIMID:EQL;T006D:1:LENG:EQL;T006D:1:MASS:EQL;T006D:1:TIMEX:EQL;T006D:1:ECURR:EQL;T006D:1:TEMP:EQL;T006D:1:MOLQU:EQL;T006D:1:LIGHT:EQL;T006D:1:MSSIE:EQL;T006D:1:TEMP_DEP:EQL;T006D:1:PRESS_DEP:EQL;",
+          "EV_ERROR_FIELD": "",
+          "ET_T006": [
+            {
+              "MANDT": "200",
+              "MSEHI": "KNM",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "0",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "PRESS",
+              "ZAEHL": "1000",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "3",
+              "ISOCODE": "KPA",
+              "PRIMARY": "",
+              "TEMP_VALUE": "0",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_VAL": "0",
+              "PRESS_UNIT": ""
+            }
+          ],
+          "ET_T006A": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "每平方米千牛顿"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton pro Quadratmeter"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton per square meter"
+            }
+          ],
+          "ET_T006B": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006C": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        },
+        "bodyFingerprint": "3f1566e6527ff0c8d32025815a155bdbbe5dd177e23216472ee285e974bd00cc",
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "metadataReads": 28,
+          "metadataReadLimit": 28,
+          "before": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          },
+          "after": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          }
+        },
+        "warning": "Hypothetical standard USE update: new rows start initial; existing rows retain omitted fields. Source-client and language overlay are explicit preview choices, not approved activation options. Shared PRESS affects other units. No standard loader, activation, simulation, CTS, logs, commit or configuration write is called. Sequential repeated observations are not locked snapshots; SOAP values are display strings, equality and versions originate in SAP."
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "client": "200",
+        "readOnly": true,
+        "activationAvailable": false,
+        "saveAvailable": false,
+        "executable": false,
+        "simulation": false,
+        "snapshot": false,
+        "candidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "policy": "CREATE_INITIAL_OR_UPDATE_USE",
+        "languagePolicy": {
+          "sourcePlaceholder": "D",
+          "selected": [
+            "1",
+            "D",
+            "E"
+          ],
+          "approvedForActivation": false
+        },
+        "clientMapping": {
+          "source": "001",
+          "target": "200"
+        },
+        "omittedFields": {
+          "T006": [
+            "PRESS_VAL",
+            "PRESS_UNIT"
+          ],
+          "T006D": [
+            "PRESS_DEP"
+          ]
+        },
+        "rows": [
+          {
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "MSEHI": "KNM",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "0",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "PRESS",
+              "ZAEHL": "1000",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "3",
+              "ISOCODE": "KPA",
+              "PRIMARY": "",
+              "TEMP_VALUE": "0",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_VAL": "0",
+              "PRESS_UNIT": ""
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZEX3",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZEX6",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ANDEC",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZKEH",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZWOB",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZ1EH",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZ2EH",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DIMID",
+                "status": "NEW",
+                "before": null,
+                "after": "PRESS",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ZAEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "1000",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "NENNR",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "EXP10",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ADDKO",
+                "status": "NEW",
+                "before": null,
+                "after": "0.000000",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "EXPON",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DECAN",
+                "status": "NEW",
+                "before": null,
+                "after": "3",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ISOCODE",
+                "status": "NEW",
+                "before": null,
+                "after": "KPA",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRIMARY",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_VALUE",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_UNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "FAMUNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_VAL",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_UNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "每平方米千牛顿"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "每平方米千牛顿",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton pro Quadratmeter"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "Kilonewton pro Quadratmeter",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton per square meter"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "Kilonewton per square meter",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "status": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": false
+          },
+          {
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "status": "unchanged",
+            "before": {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            },
+            "after": {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "EQL",
+                "before": "200",
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DIMID",
+                "status": "EQL",
+                "before": "PRESS",
+                "after": "PRESS",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "LENG",
+                "status": "EQL",
+                "before": "-1",
+                "after": "-1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MASS",
+                "status": "EQL",
+                "before": "1",
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TIMEX",
+                "status": "EQL",
+                "before": "-2",
+                "after": "-2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ECURR",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MOLQU",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "LIGHT",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSSIE",
+                "status": "EQL",
+                "before": "PA",
+                "after": "PA",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_DEP",
+                "status": "EQL",
+                "before": "",
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_DEP",
+                "status": "EQL",
+                "before": "",
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ],
+            "sharedDimension": true
+          }
+        ],
+        "native": {
+          "EV_CODE": "PREVIEW_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_CANDIDATE_VERSION": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+          "EV_DIFFERENCES": "T006:1:MANDT:NEW;T006:1:MSEHI:NEW;T006:1:KZEX3:NEW;T006:1:KZEX6:NEW;T006:1:ANDEC:NEW;T006:1:KZKEH:NEW;T006:1:KZWOB:NEW;T006:1:KZ1EH:NEW;T006:1:KZ2EH:NEW;T006:1:DIMID:NEW;T006:1:ZAEHL:NEW;T006:1:NENNR:NEW;T006:1:EXP10:NEW;T006:1:ADDKO:NEW;T006:1:EXPON:NEW;T006:1:DECAN:NEW;T006:1:ISOCODE:NEW;T006:1:PRIMARY:NEW;T006:1:TEMP_VALUE:NEW;T006:1:TEMP_UNIT:NEW;T006:1:FAMUNIT:NEW;T006:1:PRESS_VAL:NEW;T006:1:PRESS_UNIT:NEW;T006A:1:MANDT:NEW;T006A:1:SPRAS:NEW;T006A:1:MSEHI:NEW;T006A:1:MSEH3:NEW;T006A:1:MSEH6:NEW;T006A:1:MSEHT:NEW;T006A:1:MSEHL:NEW;T006A:2:MANDT:NEW;T006A:2:SPRAS:NEW;T006A:2:MSEHI:NEW;T006A:2:MSEH3:NEW;T006A:2:MSEH6:NEW;T006A:2:MSEHT:NEW;T006A:2:MSEHL:NEW;T006A:3:MANDT:NEW;T006A:3:SPRAS:NEW;T006A:3:MSEHI:NEW;T006A:3:MSEH3:NEW;T006A:3:MSEH6:NEW;T006A:3:MSEHT:NEW;T006A:3:MSEHL:NEW;T006B:1:MANDT:NEW;T006B:1:SPRAS:NEW;T006B:1:MSEH3:NEW;T006B:1:MSEHI:NEW;T006B:2:MANDT:NEW;T006B:2:SPRAS:NEW;T006B:2:MSEH3:NEW;T006B:2:MSEHI:NEW;T006B:3:MANDT:NEW;T006B:3:SPRAS:NEW;T006B:3:MSEH3:NEW;T006B:3:MSEHI:NEW;T006C:1:MANDT:NEW;T006C:1:SPRAS:NEW;T006C:1:MSEH6:NEW;T006C:1:MSEHI:NEW;T006C:2:MANDT:NEW;T006C:2:SPRAS:NEW;T006C:2:MSEH6:NEW;T006C:2:MSEHI:NEW;T006C:3:MANDT:NEW;T006C:3:SPRAS:NEW;T006C:3:MSEH6:NEW;T006C:3:MSEHI:NEW;T006D:1:MANDT:EQL;T006D:1:DIMID:EQL;T006D:1:LENG:EQL;T006D:1:MASS:EQL;T006D:1:TIMEX:EQL;T006D:1:ECURR:EQL;T006D:1:TEMP:EQL;T006D:1:MOLQU:EQL;T006D:1:LIGHT:EQL;T006D:1:MSSIE:EQL;T006D:1:TEMP_DEP:EQL;T006D:1:PRESS_DEP:EQL;",
+          "EV_ERROR_FIELD": "",
+          "ET_T006": [
+            {
+              "MANDT": "200",
+              "MSEHI": "KNM",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "0",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "PRESS",
+              "ZAEHL": "1000",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "3",
+              "ISOCODE": "KPA",
+              "PRIMARY": "",
+              "TEMP_VALUE": "0",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_VAL": "0",
+              "PRESS_UNIT": ""
+            }
+          ],
+          "ET_T006A": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "每平方米千牛顿"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton pro Quadratmeter"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton per square meter"
+            }
+          ],
+          "ET_T006B": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006C": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        },
+        "bodyFingerprint": "3f1566e6527ff0c8d32025815a155bdbbe5dd177e23216472ee285e974bd00cc",
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "metadataReads": 28,
+          "metadataReadLimit": 28,
+          "before": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          },
+          "after": {
+            "apiInvocations": 2,
+            "apiInvocationLimit": 2,
+            "sourceReaderInvocations": 10,
+            "sourceReaderInvocationLimit": 10,
+            "metadataReads": 248,
+            "metadataReadLimit": 248
+          }
+        },
+        "warning": "Hypothetical standard USE update: new rows start initial; existing rows retain omitted fields. Source-client and language overlay are explicit preview choices, not approved activation options. Shared PRESS affects other units. No standard loader, activation, simulation, CTS, logs, commit or configuration write is called. Sequential repeated observations are not locked snapshots; SOAP values are display strings, equality and versions originate in SAP."
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking preview_configuration_bc_native: Error: CONFIGURATION_BC_PREVIEW_VERSION_CONFLICT"
+      }
+    },
+    {
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "client": "200",
+        "readOnly": true,
+        "activationAvailable": false,
+        "saveAvailable": false,
+        "snapshot": false,
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "versionScope": "complete_five_table_rows_including_missing_rows_and_FLTP; GR2/200/user/EHS_CUNI_KNM/N",
+        "sourceValueFingerprints": {
+          "T006": "68445907a7e02498cba125b359631f8121b8f411f1651f6b8a32cbab27d1cbb1",
+          "T006A": "b3adb6899b5fe95f18838d2bf2eec361f3359d20fcb6d7b9d5f10f6e33df0c2b",
+          "T006B": "41f208bfc3d3a11116fd4d102ee064541ecab5dedcc3fca1024cf6c87d9bad51",
+          "T006C": "6ca82a7a54b68e4e0dfa81d93ff428b37461463719cd31748155feb7f3b01d0f",
+          "T006D": "f71a3ed75487b48a905e0a79c7bf0f5569e3114dad901c12fca34899cb90057c"
+        },
+        "bodyFingerprint": "c2a86940b2fae1344610508fb48341a5952ef83f66a588870dc02f4560911c67",
+        "states": [
+          {
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "status": "missing",
+            "mappingConflict": false
+          },
+          {
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "status": "present",
+            "mappingConflict": false
+          }
+        ],
+        "native": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "ET_T006": [],
+          "ET_T006A": [],
+          "ET_T006B": [],
+          "ET_T006C": [],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        },
+        "evidence": {
+          "apiInvocations": 2,
+          "apiInvocationLimit": 2,
+          "sourceReaderInvocations": 10,
+          "sourceReaderInvocationLimit": 10,
+          "metadataReads": 248,
+          "metadataReadLimit": 248
+        },
+        "warning": "Sequential repeated observations are not a locked snapshot. SOAP fields are display strings; native versions retain full typed rows, float fields and padding. No language overlay, value conversion, activation, simulation, CTS recording or write approval is produced."
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "read_function_module_interface",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "functionName": {
+            "type": "string"
+          },
+          "includeExecutionSupport": {
+            "type": "boolean",
+            "default": false
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "functionName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    },
+    {
+      "name": "preview_configuration_bc_native",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "bcSetId": {
+            "type": "string",
+            "const": "EHS_CUNI_KNM"
+          },
+          "version": {
+            "type": "string",
+            "const": "N"
+          },
+          "nativeSourceVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "nativeTargetVersion": {
+            "$ref": "#/properties/nativeSourceVersion"
+          }
+        },
+        "required": [
+          "connectionId",
+          "bcSetId",
+          "version",
+          "nativeSourceVersion",
+          "nativeTargetVersion"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    },
+    {
+      "name": "read_configuration_bc_native_snapshot",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "bcSetId": {
+            "type": "string",
+            "const": "EHS_CUNI_KNM"
+          },
+          "version": {
+            "type": "string",
+            "const": "N"
+          }
+        },
+        "required": [
+          "connectionId",
+          "bcSetId",
+          "version"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    }
+  ],
+  "publicSchemaRefusals": 4,
+  "staleTargetRefusedBeforePreview": true,
+  "beforeAfterUnchanged": true,
+  "nativeRejections": {
+    "startedAt": "2026-10-04T23:54:20.529Z",
+    "configurationWrites": 0,
+    "definition": {
+      "sourceFingerprint": "78d3bea69bde1ce616881b8b4b301a6c844eeb4be138b114a27539d6d803fbc8",
+      "interfaceFingerprint": "fb263b9e2c0292306c786c113e5c6eb3961860bba292295a24caf11e36e7da21"
+    },
+    "calls": [
+      {
+        "input": {
+          "IV_BC_SET": "EHS_CUNI_KNM",
+          "IV_VERSION": "N",
+          "IV_SOURCE_VERSION": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "IV_TARGET_VERSION": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "response": {
+          "outputs": {
+            "EV_CODE": "SOURCE_NOT_ATTESTED",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_SOURCE_VERSION": "",
+            "EV_TARGET_VERSION": "",
+            "EV_CANDIDATE_VERSION": "",
+            "EV_DIFFERENCES": "",
+            "EV_ERROR_FIELD": "",
+            "ET_T006": [],
+            "ET_T006A": [],
+            "ET_T006B": [],
+            "ET_T006C": [],
+            "ET_T006D": []
+          }
+        }
+      },
+      {
+        "input": {
+          "IV_BC_SET": "EHS_CUNI_KNM",
+          "IV_VERSION": "N",
+          "IV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "IV_TARGET_VERSION": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "response": {
+          "outputs": {
+            "EV_CODE": "VERSION_CONFLICT",
+            "EV_SYSTEM": "GR2",
+            "EV_CLIENT": "200",
+            "EV_USER": "WYS",
+            "EV_SOURCE_VERSION": "",
+            "EV_TARGET_VERSION": "",
+            "EV_CANDIDATE_VERSION": "",
+            "EV_DIFFERENCES": "",
+            "EV_ERROR_FIELD": "",
+            "ET_T006": [],
+            "ET_T006A": [],
+            "ET_T006B": [],
+            "ET_T006C": [],
+            "ET_T006D": []
+          }
+        }
+      }
+    ],
+    "status": "passed"
+  },
+  "metrics": {
+    "startedAt": "2026-10-04T23:54:20.343Z",
+    "nativeQueries": 720,
+    "tableReads": 720,
+    "definitionReads": 2624,
+    "repositoryReads": 113,
+    "nativeReaderCalls": 12,
+    "nativePreviewCalls": 6,
+    "sourceReads": 20,
+    "configurationWrites": 0
+  },
+  "status": "passed",
+  "finishedAt": "2026-10-04T23:59:46.435Z"
+}

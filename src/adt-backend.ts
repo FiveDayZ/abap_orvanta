@@ -795,7 +795,13 @@ export class AdtBackend implements SapBackend {
     return parseRemoteFunctionResponse(
       body,
       request.outputParameters,
-      ["RFC_READ_TABLE", "BBP_RFC_READ_TABLE"].includes(request.functionName)
+      ["RFC_READ_TABLE", "BBP_RFC_READ_TABLE"].includes(request.functionName),
+      request.functionName === "DOCU_GET"
+        ? ["LINE"]
+        : request.functionName === "RPY_PROGRAM_READ"
+          ? ["SOURCE_EXTENDED"]
+          : [],
+      request.functionName === "Z_ORVANTA_CFG_UNIT_APPLY" ? ["EV_TABKEY"] : []
     )
   }
 
@@ -2643,12 +2649,15 @@ export function buildRemoteFunctionEnvelope(request: RemoteFunctionRequest): str
 export function parseRemoteFunctionResponse(
   body: string,
   outputParameters: RemoteFunctionParameterShape[],
-  preserveTableReaderPadding = false
+  preserveTableReaderPadding = false,
+  preserveTables: readonly string[] = [],
+  preserveScalars: readonly string[] = []
 ): RemoteFunctionResult {
   const document = parse(body, { parseTagValue: false, trimValues: true, htmlEntities: true })
-  const rawDocument = preserveTableReaderPadding
-    ? parse(body, { parseTagValue: false, trimValues: false, htmlEntities: true })
-    : document
+  const rawDocument =
+    preserveTableReaderPadding || preserveTables.length || preserveScalars.length
+      ? parse(body, { parseTagValue: false, trimValues: false, htmlEntities: true })
+      : document
   const faultMessage = findXmlValue(document, "faultstring")
   if (faultMessage !== undefined) {
     return {
@@ -2664,7 +2673,13 @@ export function parseRemoteFunctionResponse(
     outputs: Object.fromEntries(
       outputParameters.map((parameter) => {
         if (parameter.kind === "scalar") {
-          return [parameter.name, findXmlValue(document, parameter.name) ?? ""]
+          return [
+            parameter.name,
+            findXmlValue(
+              preserveScalars.includes(parameter.name) ? rawDocument : document,
+              parameter.name
+            ) ?? ""
+          ]
         }
         if (parameter.kind === "structure") {
           return [
@@ -2675,7 +2690,10 @@ export function parseRemoteFunctionResponse(
         return [
           parameter.name,
           findXmlRows(
-            preserveTableReaderPadding && parameter.name === "DATA" ? rawDocument : document,
+            (preserveTableReaderPadding && parameter.name === "DATA") ||
+              preserveTables.includes(parameter.name)
+              ? rawDocument
+              : document,
             parameter.name
           ).map((row) => filterRemoteRecord(row, parameter.fields ?? []))
         ]

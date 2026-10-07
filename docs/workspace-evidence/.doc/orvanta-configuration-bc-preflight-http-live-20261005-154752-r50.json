@@ -1,0 +1,1703 @@
+{
+  "startedAt": "2026-10-05T07:31:13.156Z",
+  "kind": "new_product_http_and_preflight_with_live_frozen_readonly_child_api_delegation",
+  "configurationWrites": 0,
+  "credentialCopied": false,
+  "backendUrl": "http://127.0.0.1:4961/mcp",
+  "backendFrozenManifest": "b08cc5d825cfd826ac3fbd50c816cdc3a151d9348590b6f54b5cc0230cc56939",
+  "productHttpSha256": "17c86a18e529887b67252654bf71dbde2a4fb8518cf856397b3346b478cb7a42",
+  "calls": [
+    {
+      "at": "2026-10-05T07:31:48.551Z",
+      "finishedAt": "2026-10-05T07:41:32.188Z",
+      "name": "preflight_configuration_bc_activation",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "nativeCandidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "nativeGuardVersion": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+        "nativeCandidateVersion": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+        "nativeGuardVersion": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+        "client": "200",
+        "system": "GR2",
+        "user": "WYS",
+        "readOnly": true,
+        "executable": false,
+        "activationAvailable": false,
+        "simulation": false,
+        "methodExecutionAvailable": false,
+        "snapshot": false,
+        "versionOrigin": "sap_sha256_native_data_buffer",
+        "versions": {
+          "source": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "target": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "candidate": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+          "metadata": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+          "guard": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f"
+        },
+        "scope": {
+          "object": "CUNI",
+          "tableCount": 9,
+          "keyCount": 19,
+          "candidateKeys": 11,
+          "protectionKeys": 8,
+          "allCuniKeys": false
+        },
+        "policy": "CREATE_INITIAL_OR_UPDATE_USE",
+        "clientMapping": {
+          "source": "001",
+          "target": "200"
+        },
+        "languagePolicy": {
+          "sourcePlaceholder": "D",
+          "selected": [
+            "1",
+            "D",
+            "E"
+          ],
+          "approvedForActivation": false
+        },
+        "rows": [
+          {
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "MSEHI": "KNM",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "0",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "PRESS",
+              "ZAEHL": "1000",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "3",
+              "ISOCODE": "KPA",
+              "PRIMARY": "",
+              "TEMP_VALUE": "0",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_VAL": "0",
+              "PRESS_UNIT": ""
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZEX3",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZEX6",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ANDEC",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZKEH",
+                "status": "NEW",
+                "before": null,
+                "after": "X",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZWOB",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZ1EH",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "KZ2EH",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DIMID",
+                "status": "NEW",
+                "before": null,
+                "after": "PRESS",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ZAEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "1000",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "NENNR",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "EXP10",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ADDKO",
+                "status": "NEW",
+                "before": null,
+                "after": "0.000000",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "EXPON",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DECAN",
+                "status": "NEW",
+                "before": null,
+                "after": "3",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ISOCODE",
+                "status": "NEW",
+                "before": null,
+                "after": "KPA",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRIMARY",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_VALUE",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_UNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "FAMUNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_VAL",
+                "status": "NEW",
+                "before": null,
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_UNIT",
+                "status": "NEW",
+                "before": null,
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "每平方米千牛顿"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "每平方米千牛顿",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton pro Quadratmeter"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "Kilonewton pro Quadratmeter",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton per square meter"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHT",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHL",
+                "status": "NEW",
+                "before": null,
+                "after": "Kilonewton per square meter",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH3",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "D",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "role": "candidate",
+            "presence": "missing",
+            "action": "create",
+            "before": null,
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "NEW",
+                "before": null,
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "SPRAS",
+                "status": "NEW",
+                "before": null,
+                "after": "E",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEH6",
+                "status": "NEW",
+                "before": null,
+                "after": "kN/m2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSEHI",
+                "status": "NEW",
+                "before": null,
+                "after": "KNM",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "role": "candidate",
+            "presence": "present",
+            "action": "unchanged",
+            "before": {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            },
+            "after": {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            },
+            "differences": [
+              {
+                "field": "MANDT",
+                "status": "EQL",
+                "before": "200",
+                "after": "200",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "DIMID",
+                "status": "EQL",
+                "before": "PRESS",
+                "after": "PRESS",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "LENG",
+                "status": "EQL",
+                "before": "-1",
+                "after": "-1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MASS",
+                "status": "EQL",
+                "before": "1",
+                "after": "1",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TIMEX",
+                "status": "EQL",
+                "before": "-2",
+                "after": "-2",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "ECURR",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MOLQU",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "LIGHT",
+                "status": "EQL",
+                "before": "0",
+                "after": "0",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "MSSIE",
+                "status": "EQL",
+                "before": "PA",
+                "after": "PA",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "TEMP_DEP",
+                "status": "EQL",
+                "before": "",
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              },
+              {
+                "field": "PRESS_DEP",
+                "status": "EQL",
+                "before": "",
+                "after": "",
+                "comparisonOrigin": "sap_typed_field_comparison"
+              }
+            ]
+          },
+          {
+            "tableName": "T006I",
+            "key": {
+              "CLIENT": "200",
+              "ISOCODE": "KPA"
+            },
+            "role": "preserve",
+            "presence": "present",
+            "action": "preserve",
+            "before": {
+              "CLIENT": "200",
+              "ISOCODE": "KPA"
+            },
+            "after": {
+              "CLIENT": "200",
+              "ISOCODE": "KPA"
+            },
+            "differences": []
+          },
+          {
+            "tableName": "T006J",
+            "key": {
+              "CLIENT": "200",
+              "LANGU": "1",
+              "ISOCODE": "KPA"
+            },
+            "role": "preserve",
+            "presence": "present",
+            "action": "preserve",
+            "before": {
+              "CLIENT": "200",
+              "LANGU": "1",
+              "ISOCODE": "KPA",
+              "ISOTXT": "千帕"
+            },
+            "after": {
+              "CLIENT": "200",
+              "LANGU": "1",
+              "ISOCODE": "KPA",
+              "ISOTXT": "千帕"
+            },
+            "differences": []
+          },
+          {
+            "tableName": "T006J",
+            "key": {
+              "CLIENT": "200",
+              "LANGU": "D",
+              "ISOCODE": "KPA"
+            },
+            "role": "preserve",
+            "presence": "present",
+            "action": "preserve",
+            "before": {
+              "CLIENT": "200",
+              "LANGU": "D",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            },
+            "after": {
+              "CLIENT": "200",
+              "LANGU": "D",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            },
+            "differences": []
+          },
+          {
+            "tableName": "T006J",
+            "key": {
+              "CLIENT": "200",
+              "LANGU": "E",
+              "ISOCODE": "KPA"
+            },
+            "role": "preserve",
+            "presence": "present",
+            "action": "preserve",
+            "before": {
+              "CLIENT": "200",
+              "LANGU": "E",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            },
+            "after": {
+              "CLIENT": "200",
+              "LANGU": "E",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            },
+            "differences": []
+          },
+          {
+            "tableName": "T006T",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "DIMID": "PRESS"
+            },
+            "role": "preserve",
+            "presence": "present",
+            "action": "preserve",
+            "before": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "DIMID": "PRESS",
+              "TXDIM": "压力"
+            },
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "DIMID": "PRESS",
+              "TXDIM": "压力"
+            },
+            "differences": []
+          },
+          {
+            "tableName": "T006T",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "DIMID": "PRESS"
+            },
+            "role": "preserve",
+            "presence": "present",
+            "action": "preserve",
+            "before": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "DIMID": "PRESS",
+              "TXDIM": "Druck"
+            },
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "DIMID": "PRESS",
+              "TXDIM": "Druck"
+            },
+            "differences": []
+          },
+          {
+            "tableName": "T006T",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "DIMID": "PRESS"
+            },
+            "role": "preserve",
+            "presence": "present",
+            "action": "preserve",
+            "before": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "DIMID": "PRESS",
+              "TXDIM": "Pressure"
+            },
+            "after": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "DIMID": "PRESS",
+              "TXDIM": "Pressure"
+            },
+            "differences": []
+          },
+          {
+            "tableName": "T006_OIB",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "role": "preserve",
+            "presence": "missing",
+            "action": "preserve",
+            "before": null,
+            "after": null,
+            "differences": []
+          }
+        ],
+        "apiIdentities": [
+          {
+            "functionName": "Z_ORVANTA_CFG_BC_READ",
+            "source": "306ddd0f9a75c7e73634d12d82cd713ae536367863a81e0be6cb56e8ab3da880",
+            "interface": "8f9b627c30cb74f36bfbafdb2218b8f51c0eddba83471e8dd18ccf7fa14714e7"
+          },
+          {
+            "functionName": "Z_ORVANTA_CFG_BC_PREVIEW",
+            "source": "78d3bea69bde1ce616881b8b4b301a6c844eeb4be138b114a27539d6d803fbc8",
+            "interface": "fb263b9e2c0292306c786c113e5c6eb3961860bba292295a24caf11e36e7da21"
+          },
+          {
+            "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+            "source": "66a20f9674a43b97e152ab80b7c022a356c9ce69c01a2b10c113bc9df6c87412",
+            "interface": "6403067b2b9cce0e92d1e40e1c7c2732822f0e06c4ce829ad03294c00d3756ff"
+          },
+          {
+            "functionName": "Z_ORVANTA_CFG_BC_GUARD",
+            "source": "e1bc88c375d6c4c215b9fae9b6cbaac1c32fcc145994ed0bebff953c23055139",
+            "interface": "5c9d25ad9d41f163e6a92bbd5486b18be98898e022ca4ca66561c6de4fbc22f2"
+          }
+        ],
+        "evidence": {
+          "readerInvocations": {
+            "snapshot": 2,
+            "preview": 1,
+            "route": 2,
+            "guard": 2
+          },
+          "apiIdentityReads": 8,
+          "native": {
+            "before": {
+              "EV_CODE": "READ_OK",
+              "EV_SYSTEM": "GR2",
+              "EV_CLIENT": "200",
+              "EV_USER": "WYS",
+              "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+              "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+              "ET_T006": [],
+              "ET_T006A": [],
+              "ET_T006B": [],
+              "ET_T006C": [],
+              "ET_T006D": [
+                {
+                  "MANDT": "200",
+                  "DIMID": "PRESS",
+                  "LENG": "-1",
+                  "MASS": "1",
+                  "TIMEX": "-2",
+                  "ECURR": "0",
+                  "TEMP": "0",
+                  "MOLQU": "0",
+                  "LIGHT": "0",
+                  "MSSIE": "PA",
+                  "TEMP_DEP": "",
+                  "PRESS_DEP": ""
+                }
+              ]
+            },
+            "candidate": {
+              "EV_CODE": "PREVIEW_OK",
+              "EV_SYSTEM": "GR2",
+              "EV_CLIENT": "200",
+              "EV_USER": "WYS",
+              "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+              "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+              "EV_CANDIDATE_VERSION": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+              "EV_DIFFERENCES": "T006:1:MANDT:NEW;T006:1:MSEHI:NEW;T006:1:KZEX3:NEW;T006:1:KZEX6:NEW;T006:1:ANDEC:NEW;T006:1:KZKEH:NEW;T006:1:KZWOB:NEW;T006:1:KZ1EH:NEW;T006:1:KZ2EH:NEW;T006:1:DIMID:NEW;T006:1:ZAEHL:NEW;T006:1:NENNR:NEW;T006:1:EXP10:NEW;T006:1:ADDKO:NEW;T006:1:EXPON:NEW;T006:1:DECAN:NEW;T006:1:ISOCODE:NEW;T006:1:PRIMARY:NEW;T006:1:TEMP_VALUE:NEW;T006:1:TEMP_UNIT:NEW;T006:1:FAMUNIT:NEW;T006:1:PRESS_VAL:NEW;T006:1:PRESS_UNIT:NEW;T006A:1:MANDT:NEW;T006A:1:SPRAS:NEW;T006A:1:MSEHI:NEW;T006A:1:MSEH3:NEW;T006A:1:MSEH6:NEW;T006A:1:MSEHT:NEW;T006A:1:MSEHL:NEW;T006A:2:MANDT:NEW;T006A:2:SPRAS:NEW;T006A:2:MSEHI:NEW;T006A:2:MSEH3:NEW;T006A:2:MSEH6:NEW;T006A:2:MSEHT:NEW;T006A:2:MSEHL:NEW;T006A:3:MANDT:NEW;T006A:3:SPRAS:NEW;T006A:3:MSEHI:NEW;T006A:3:MSEH3:NEW;T006A:3:MSEH6:NEW;T006A:3:MSEHT:NEW;T006A:3:MSEHL:NEW;T006B:1:MANDT:NEW;T006B:1:SPRAS:NEW;T006B:1:MSEH3:NEW;T006B:1:MSEHI:NEW;T006B:2:MANDT:NEW;T006B:2:SPRAS:NEW;T006B:2:MSEH3:NEW;T006B:2:MSEHI:NEW;T006B:3:MANDT:NEW;T006B:3:SPRAS:NEW;T006B:3:MSEH3:NEW;T006B:3:MSEHI:NEW;T006C:1:MANDT:NEW;T006C:1:SPRAS:NEW;T006C:1:MSEH6:NEW;T006C:1:MSEHI:NEW;T006C:2:MANDT:NEW;T006C:2:SPRAS:NEW;T006C:2:MSEH6:NEW;T006C:2:MSEHI:NEW;T006C:3:MANDT:NEW;T006C:3:SPRAS:NEW;T006C:3:MSEH6:NEW;T006C:3:MSEHI:NEW;T006D:1:MANDT:EQL;T006D:1:DIMID:EQL;T006D:1:LENG:EQL;T006D:1:MASS:EQL;T006D:1:TIMEX:EQL;T006D:1:ECURR:EQL;T006D:1:TEMP:EQL;T006D:1:MOLQU:EQL;T006D:1:LIGHT:EQL;T006D:1:MSSIE:EQL;T006D:1:TEMP_DEP:EQL;T006D:1:PRESS_DEP:EQL;",
+              "EV_ERROR_FIELD": "",
+              "ET_T006": [
+                {
+                  "MANDT": "200",
+                  "MSEHI": "KNM",
+                  "KZEX3": "X",
+                  "KZEX6": "X",
+                  "ANDEC": "0",
+                  "KZKEH": "X",
+                  "KZWOB": "",
+                  "KZ1EH": "",
+                  "KZ2EH": "",
+                  "DIMID": "PRESS",
+                  "ZAEHL": "1000",
+                  "NENNR": "1",
+                  "EXP10": "0",
+                  "ADDKO": "0.000000",
+                  "EXPON": "0",
+                  "DECAN": "3",
+                  "ISOCODE": "KPA",
+                  "PRIMARY": "",
+                  "TEMP_VALUE": "0",
+                  "TEMP_UNIT": "",
+                  "FAMUNIT": "",
+                  "PRESS_VAL": "0",
+                  "PRESS_UNIT": ""
+                }
+              ],
+              "ET_T006A": [
+                {
+                  "MANDT": "200",
+                  "SPRAS": "1",
+                  "MSEHI": "KNM",
+                  "MSEH3": "KNM",
+                  "MSEH6": "kN/m2",
+                  "MSEHT": "kN/m2",
+                  "MSEHL": "每平方米千牛顿"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "D",
+                  "MSEHI": "KNM",
+                  "MSEH3": "KNM",
+                  "MSEH6": "kN/m2",
+                  "MSEHT": "kN/m2",
+                  "MSEHL": "Kilonewton pro Quadratmeter"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "E",
+                  "MSEHI": "KNM",
+                  "MSEH3": "KNM",
+                  "MSEH6": "kN/m2",
+                  "MSEHT": "kN/m2",
+                  "MSEHL": "Kilonewton per square meter"
+                }
+              ],
+              "ET_T006B": [
+                {
+                  "MANDT": "200",
+                  "SPRAS": "1",
+                  "MSEH3": "KNM",
+                  "MSEHI": "KNM"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "D",
+                  "MSEH3": "KNM",
+                  "MSEHI": "KNM"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "E",
+                  "MSEH3": "KNM",
+                  "MSEHI": "KNM"
+                }
+              ],
+              "ET_T006C": [
+                {
+                  "MANDT": "200",
+                  "SPRAS": "1",
+                  "MSEH6": "kN/m2",
+                  "MSEHI": "KNM"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "D",
+                  "MSEH6": "kN/m2",
+                  "MSEHI": "KNM"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "E",
+                  "MSEH6": "kN/m2",
+                  "MSEHI": "KNM"
+                }
+              ],
+              "ET_T006D": [
+                {
+                  "MANDT": "200",
+                  "DIMID": "PRESS",
+                  "LENG": "-1",
+                  "MASS": "1",
+                  "TIMEX": "-2",
+                  "ECURR": "0",
+                  "TEMP": "0",
+                  "MOLQU": "0",
+                  "LIGHT": "0",
+                  "MSSIE": "PA",
+                  "TEMP_DEP": "",
+                  "PRESS_DEP": ""
+                }
+              ]
+            },
+            "route": {
+              "EV_CODE": "ROUTE_READ_OK",
+              "EV_SYSTEM": "GR2",
+              "EV_CLIENT": "200",
+              "EV_USER": "WYS",
+              "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+              "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+              "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+              "ET_OBJH": [
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "CLIDEP": "X",
+                  "LANGDEP": "X",
+                  "ALEDEP": "",
+                  "OBJCATEG": "CUST",
+                  "TRCOMPLETE": "",
+                  "TRDISJUNCT": "",
+                  "PHASELEVEL": "0",
+                  "LOCKMETH": "",
+                  "TADIRCMETH": "",
+                  "CHECKID": "",
+                  "OBJNAMELEN": "00",
+                  "PROTECT": "",
+                  "OBJTRANSP": "2",
+                  "LUSER": "",
+                  "LDATE": "0000-00-00",
+                  "OBJNAMECLS": "",
+                  "CURSETTING": "",
+                  "OBJHASADDR": "",
+                  "IMPORTABLE": "",
+                  "OBJCHARSET": "",
+                  "MCCATEGORY": "",
+                  "MCDOCUID": ""
+                }
+              ],
+              "ET_OBJS": [
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "X",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006A",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006B",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006C",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006D",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "X",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006I",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "X",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006J",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006T",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                },
+                {
+                  "OBJECTNAME": "CUNI",
+                  "OBJECTTYPE": "T",
+                  "TABNAME": "T006_OIB",
+                  "COVER": "",
+                  "CANDIDATE": "",
+                  "DDIC": "",
+                  "PRIM_TABLE": "",
+                  "VIEWGRANT": "",
+                  "TAB_FILLED": ""
+                }
+              ],
+              "ET_OBJM": []
+            },
+            "guard": {
+              "EV_CODE": "GUARD_READ_OK",
+              "EV_SYSTEM": "GR2",
+              "EV_CLIENT": "200",
+              "EV_USER": "WYS",
+              "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+              "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+              "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+              "EV_GUARD_VERSION": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+              "ET_T006I": [
+                {
+                  "CLIENT": "200",
+                  "ISOCODE": "KPA"
+                }
+              ],
+              "ET_T006J": [
+                {
+                  "CLIENT": "200",
+                  "LANGU": "1",
+                  "ISOCODE": "KPA",
+                  "ISOTXT": "千帕"
+                },
+                {
+                  "CLIENT": "200",
+                  "LANGU": "D",
+                  "ISOCODE": "KPA",
+                  "ISOTXT": "Kilopascal"
+                },
+                {
+                  "CLIENT": "200",
+                  "LANGU": "E",
+                  "ISOCODE": "KPA",
+                  "ISOTXT": "Kilopascal"
+                }
+              ],
+              "ET_T006T": [
+                {
+                  "MANDT": "200",
+                  "SPRAS": "1",
+                  "DIMID": "PRESS",
+                  "TXDIM": "压力"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "D",
+                  "DIMID": "PRESS",
+                  "TXDIM": "Druck"
+                },
+                {
+                  "MANDT": "200",
+                  "SPRAS": "E",
+                  "DIMID": "PRESS",
+                  "TXDIM": "Pressure"
+                }
+              ],
+              "ET_T006_OIB": []
+            }
+          }
+        },
+        "blockers": [
+          "ACTIVATION_COMMAND_NOT_IMPLEMENTED",
+          "STANDARD_CHAIN_AND_COMMIT_DEPENDENCIES_NOT_ATTESTED",
+          "BUSINESS_WRITE_APPROVAL_REQUIRED",
+          "CUSTOMIZING_TASK_AND_RECOVERY_NOT_BOUND"
+        ],
+        "warning": "Nineteen fixed keys only. Sequential repeated observations are not a locked snapshot. Candidate USE/client/language choices are hypothetical, not activation approval. Full SAP native versions bind typed fields; display strings cannot reproduce their precision. Missing protection rows remain missing. No activation, simulation, GUI, methods, configuration/CTS/log writes, commit or recovery is called."
+      }
+    }
+  ],
+  "childCalls": [
+    {
+      "at": "2026-10-05T07:31:13.232Z",
+      "finishedAt": "2026-10-05T07:31:48.550Z",
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "responseSha256": "5192cb0675cbea409d9ed34303dfe64d05bb2cbb7a30ec445352b6de467ea9a1"
+    },
+    {
+      "at": "2026-10-05T07:31:48.555Z",
+      "finishedAt": "2026-10-05T07:31:48.625Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_READ"
+      },
+      "isError": false,
+      "responseSha256": "07206c3fa655810b221a77375491deec18a34457b8bf98567ee139c32a969b46"
+    },
+    {
+      "at": "2026-10-05T07:31:48.556Z",
+      "finishedAt": "2026-10-05T07:31:48.668Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_ROUTE"
+      },
+      "isError": false,
+      "responseSha256": "81343572d013c5f9ff104c9ca4fb040a1958b1b735408ae935b3e6b8dad6636b"
+    },
+    {
+      "at": "2026-10-05T07:31:48.556Z",
+      "finishedAt": "2026-10-05T07:31:48.686Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_GUARD"
+      },
+      "isError": false,
+      "responseSha256": "41b62547172a62ed72b7fd2db303cb54ff5f3f1b721a059478d3857918bdd1e6"
+    },
+    {
+      "at": "2026-10-05T07:31:48.555Z",
+      "finishedAt": "2026-10-05T07:31:48.701Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_PREVIEW"
+      },
+      "isError": false,
+      "responseSha256": "6306e1a366df1dcc5a59bce00384bb48d0b96d80d00264dc0a86d67da45ffe12"
+    },
+    {
+      "at": "2026-10-05T07:31:48.702Z",
+      "finishedAt": "2026-10-05T07:32:24.714Z",
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "responseSha256": "5192cb0675cbea409d9ed34303dfe64d05bb2cbb7a30ec445352b6de467ea9a1"
+    },
+    {
+      "at": "2026-10-05T07:32:24.715Z",
+      "finishedAt": "2026-10-05T07:33:35.959Z",
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": false,
+      "responseSha256": "45af3f38f9d13aeaa0acd3fa55d37276eb899035ddc379198d857dbfb5dae8ee"
+    },
+    {
+      "at": "2026-10-05T07:33:35.961Z",
+      "finishedAt": "2026-10-05T07:36:01.372Z",
+      "name": "read_configuration_bc_guard",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d"
+      },
+      "isError": false,
+      "responseSha256": "8fe28cc54e39d2988b69c36bee7939d553a1fb2e2563122b639f27f8a1a4b98c"
+    },
+    {
+      "at": "2026-10-05T07:36:01.373Z",
+      "finishedAt": "2026-10-05T07:37:14.735Z",
+      "name": "preview_configuration_bc_native",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": false,
+      "responseSha256": "c21a1f3e646d4653cd6cf9c5e5c40de8cf9ccbc6d40c4ac18c97a94a4883d260"
+    },
+    {
+      "at": "2026-10-05T07:37:14.738Z",
+      "finishedAt": "2026-10-05T07:37:49.802Z",
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "responseSha256": "5192cb0675cbea409d9ed34303dfe64d05bb2cbb7a30ec445352b6de467ea9a1"
+    },
+    {
+      "at": "2026-10-05T07:37:49.803Z",
+      "finishedAt": "2026-10-05T07:39:02.230Z",
+      "name": "inspect_configuration_bc_route",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477"
+      },
+      "isError": false,
+      "responseSha256": "45af3f38f9d13aeaa0acd3fa55d37276eb899035ddc379198d857dbfb5dae8ee"
+    },
+    {
+      "at": "2026-10-05T07:39:02.232Z",
+      "finishedAt": "2026-10-05T07:41:32.012Z",
+      "name": "read_configuration_bc_guard",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "nativeSourceVersion": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+        "nativeTargetVersion": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+        "nativeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d"
+      },
+      "isError": false,
+      "responseSha256": "8fe28cc54e39d2988b69c36bee7939d553a1fb2e2563122b639f27f8a1a4b98c"
+    },
+    {
+      "at": "2026-10-05T07:41:32.013Z",
+      "finishedAt": "2026-10-05T07:41:32.115Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_READ"
+      },
+      "isError": false,
+      "responseSha256": "07206c3fa655810b221a77375491deec18a34457b8bf98567ee139c32a969b46"
+    },
+    {
+      "at": "2026-10-05T07:41:32.013Z",
+      "finishedAt": "2026-10-05T07:41:32.148Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_GUARD"
+      },
+      "isError": false,
+      "responseSha256": "41b62547172a62ed72b7fd2db303cb54ff5f3f1b721a059478d3857918bdd1e6"
+    },
+    {
+      "at": "2026-10-05T07:41:32.013Z",
+      "finishedAt": "2026-10-05T07:41:32.152Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_ROUTE"
+      },
+      "isError": false,
+      "responseSha256": "81343572d013c5f9ff104c9ca4fb040a1958b1b735408ae935b3e6b8dad6636b"
+    },
+    {
+      "at": "2026-10-05T07:41:32.013Z",
+      "finishedAt": "2026-10-05T07:41:32.184Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_PREVIEW"
+      },
+      "isError": false,
+      "responseSha256": "6306e1a366df1dcc5a59bce00384bb48d0b96d80d00264dc0a86d67da45ffe12"
+    },
+    {
+      "at": "2026-10-05T07:41:32.189Z",
+      "finishedAt": "2026-10-05T07:42:08.247Z",
+      "name": "read_configuration_bc_native_snapshot",
+      "args": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N"
+      },
+      "isError": false,
+      "responseSha256": "5192cb0675cbea409d9ed34303dfe64d05bb2cbb7a30ec445352b6de467ea9a1"
+    }
+  ],
+  "transportErrors": [
+    {
+      "at": "2026-10-05T07:36:19.762Z",
+      "error": "Error: SSE stream disconnected: TypeError: terminated"
+    },
+    {
+      "at": "2026-10-05T07:41:27.440Z",
+      "error": "Error: SSE stream disconnected: TypeError: terminated"
+    },
+    {
+      "at": "2026-10-05T07:42:08.253Z",
+      "error": "Error: SSE stream disconnected: AbortError: This operation was aborted"
+    },
+    {
+      "at": "2026-10-05T07:42:08.254Z",
+      "error": "Error: SSE stream disconnected: AbortError: This operation was aborted"
+    }
+  ],
+  "caveat": "SAP authentication stays in the existing frozen host; four unchanged child API routes and function metadata are delegated over MCP. No child result is mocked or stored as a cache; this does not deploy the new standalone process or retest SAP authentication.",
+  "newHttpUrl": "http://127.0.0.1:11677/mcp",
+  "invalidBeforeChildCalls": true,
+  "completeResultEqualsFrozenAcceptance": true,
+  "nativeBeforeAfterUnchanged": true,
+  "status": "passed",
+  "finishedAt": "2026-10-05T07:42:08.251Z"
+}

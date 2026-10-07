@@ -1,0 +1,649 @@
+{
+  "startedAt": "2026-10-04T09:57:05.526Z",
+  "mode": "new public MCP over live read-only metadata bridge; native invocation forbidden",
+  "sharedEndpoint": "http://127.0.0.1:4849/mcp",
+  "liveReads": [
+    {
+      "name": "get_connected_systems",
+      "args": {},
+      "isError": false,
+      "data": {
+        "message": "Connected SAP systems: w200, w300"
+      }
+    },
+    {
+      "name": "read_ddic_transparent_table",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "TNRO"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "transparentTable",
+        "objectName": "TNRO",
+        "packageName": "SZN",
+        "version": "20121201002425",
+        "fingerprint": "1b9ee7b110ae57c8e055e6048d6676ba76b16b893be443885682bb1953a572b2",
+        "definition": {
+          "description": "编号范围对象定义",
+          "tableClass": "TRANSP",
+          "deliveryClass": "E",
+          "dataBrowserMaintenance": "notAllowed",
+          "sizeCategory": 0,
+          "dataClass": "APPL2",
+          "buffering": "full",
+          "genericKeyFields": 0,
+          "logDataChanges": false,
+          "fields": [
+            {
+              "name": "OBJECT",
+              "position": 1,
+              "dataElement": "NROBJ",
+              "description": "编号范围对象名称",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "DTELSOBJ",
+              "position": 2,
+              "dataElement": "NRSOBJNAM",
+              "description": "子对象数据元素",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRTAB",
+              "position": 3,
+              "dataElement": "NRTAB",
+              "description": "组表名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRINTFLD",
+              "position": 4,
+              "dataElement": "NRINTNR",
+              "description": "用于内部编号范围的编号范围号码字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NREXTFLD",
+              "position": 5,
+              "dataElement": "NRINTNR",
+              "description": "用于内部编号范围的编号范围号码字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRFLD",
+              "position": 6,
+              "dataElement": "NRNRNAME",
+              "description": "用于编号范围的编号范围号码字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRSOBJFLD",
+              "position": 7,
+              "dataElement": "NRNRSUBOBJ",
+              "description": "编号范围表的子对象字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELEFLD",
+              "position": 8,
+              "dataElement": "NRNRELEM",
+              "description": "编号范围要素字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "YEARIND",
+              "position": 9,
+              "dataElement": "NRYEARIND",
+              "description": "标志,与编号范围对象有关的到期年",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "DOMLEN",
+              "position": 10,
+              "dataElement": "NRLENDOM",
+              "description": "编号长度域",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "PERCENTAGE",
+              "position": 11,
+              "dataElement": "NRPERC",
+              "description": "警告信息的百分比",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "CODE",
+              "position": 12,
+              "dataElement": "NRCODE",
+              "description": "CUA 接口的代码",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "TEXTIND",
+              "position": 13,
+              "dataElement": "NRTEXTIND",
+              "description": "带文本标识显示元素",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTTAB",
+              "position": 14,
+              "dataElement": "NRELTXTTAB",
+              "description": "要素说明表名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTSOB",
+              "position": 15,
+              "dataElement": "NRELTXTOBJ",
+              "description": "要素文本表中的子对象字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTELE",
+              "position": 16,
+              "dataElement": "NRELTXTELE",
+              "description": "元素说明表中的要素字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTTXT",
+              "position": 17,
+              "dataElement": "NRELTXTTXT",
+              "description": "元素文本表中的文本字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NRELTXTLNG",
+              "position": 18,
+              "dataElement": "NRELTXTLNG",
+              "description": "要素文本表中的语言字段名",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "BUFFER",
+              "position": 19,
+              "dataElement": "NRBUFFER",
+              "description": "缓冲区标志",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NOIVBUFFER",
+              "position": 20,
+              "dataElement": "NRIVBUFFER",
+              "description": "必须保存在缓存中的编号数",
+              "key": false,
+              "notNull": true
+            },
+            {
+              "name": "NONRSWAP",
+              "position": 21,
+              "dataElement": "NRSWAP",
+              "description": "标志:没有翻滚间隔",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "RFCDEST",
+              "position": 22,
+              "dataElement": "RFCDEST",
+              "description": "逻辑目标（在函数调用中指定）",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "NRCHECKASCII",
+              "position": 23,
+              "dataElement": "NRCHECKASCII",
+              "description": "检查编号中非 ASCII 字符的外部间隔",
+              "key": false,
+              "notNull": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_ddic_transparent_table",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "NRIV"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "transparentTable",
+        "objectName": "NRIV",
+        "packageName": "SZN",
+        "version": "20110901120946",
+        "fingerprint": "a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105",
+        "definition": {
+          "description": "号码范围间隔",
+          "tableClass": "TRANSP",
+          "deliveryClass": "C",
+          "dataBrowserMaintenance": "notAllowed",
+          "sizeCategory": 1,
+          "dataClass": "APPL2",
+          "buffering": "notAllowed",
+          "genericKeyFields": 0,
+          "logDataChanges": false,
+          "fields": [
+            {
+              "name": "CLIENT",
+              "position": 1,
+              "dataElement": "MANDT",
+              "description": "客户端",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "OBJECT",
+              "position": 2,
+              "dataElement": "NROBJ",
+              "description": "编号范围对象名称",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "SUBOBJECT",
+              "position": 3,
+              "dataElement": "NRSOBJ",
+              "description": "编号范围对象的子对象的值",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "NRRANGENR",
+              "position": 4,
+              "dataElement": "NRNR",
+              "description": "序号区间编号",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "TOYEAR",
+              "position": 5,
+              "dataElement": "NRYEAR",
+              "description": "到会计年度",
+              "key": true,
+              "notNull": true
+            },
+            {
+              "name": "FROMNUMBER",
+              "position": 6,
+              "dataElement": "NRFROM",
+              "description": "起始号",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "TONUMBER",
+              "position": 7,
+              "dataElement": "NRTO",
+              "description": "终止号",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "NRLEVEL",
+              "position": 8,
+              "dataElement": "NRLEVEL",
+              "description": "编号范围状态",
+              "key": false,
+              "notNull": false
+            },
+            {
+              "name": "EXTERNIND",
+              "position": 9,
+              "dataElement": "NRIND",
+              "description": "内部 (&#39; &#39;) 或 外部  (&#39;X&#39;) 编号范围的标志",
+              "key": false,
+              "notNull": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_NR_READ"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_CFG_NR_READ 不存在"
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_NR_READ"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_CFG_NR_READ 不存在"
+      }
+    }
+  ],
+  "publicCalls": [
+    {
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w300",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "action": "create",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000100",
+        "external": false,
+        "operationId": "r40-live-missing-api",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool apply_configuration_number_range: [\n  {\n    \"received\": \"w300\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"w200\",\n    \"path\": [\n      \"connectionId\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"w200\\\"\"\n  }\n]"
+      }
+    },
+    {
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking read_configuration_number_range_api: Error: LIVE_READ_REFUSED"
+      }
+    },
+    {
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "action": "create",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000100",
+        "external": false,
+        "operationId": "r40-live-missing-api",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "status": "declined",
+        "operationId": "r40-live-missing-api",
+        "code": "CONFIGURATION_NR_PRE_INVOKE_REFUSED",
+        "sapInvocationStarted": false,
+        "outcomeMayBeUnknown": false,
+        "retryAvailable": false,
+        "operationReceipt": {
+          "version": 2,
+          "status": "failed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "f196259c04ffa39a7b666c1d46055461dd966047315b78e41aeac635bcda2cbd",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "2c074c1a6b68648e7eb88ce2c7b7f6d05724d642c7ca9d2f92e17a96d477cb6e",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; create interval 01.",
+          "sapInvocationStarted": false,
+          "errorHash": "1e12d5c72263ace37c57fd59517ebe85b610fd439c92a8d181d16d811756f589",
+          "startedAt": "2026-10-04T09:57:05.898Z",
+          "finishedAt": "2026-10-04T09:57:05.938Z",
+          "durationMs": 49,
+          "receiptHash": "8fc552d22439d7a840134f6dd6366103fef0a9109a2bd210f0205eca3051fc86",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": false,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        }
+      }
+    },
+    {
+      "name": "reconcile_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "operationId": "r40-live-missing-api"
+      },
+      "isError": false,
+      "data": {
+        "readOnly": true,
+        "objectName": "ZORVCFGNR",
+        "operationId": "r40-live-missing-api",
+        "operationReceipt": {
+          "version": 2,
+          "status": "failed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "f196259c04ffa39a7b666c1d46055461dd966047315b78e41aeac635bcda2cbd",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "2c074c1a6b68648e7eb88ce2c7b7f6d05724d642c7ca9d2f92e17a96d477cb6e",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; create interval 01.",
+          "sapInvocationStarted": false,
+          "errorHash": "1e12d5c72263ace37c57fd59517ebe85b610fd439c92a8d181d16d811756f589",
+          "startedAt": "2026-10-04T09:57:05.898Z",
+          "finishedAt": "2026-10-04T09:57:05.938Z",
+          "durationMs": 49,
+          "receiptHash": "8fc552d22439d7a840134f6dd6366103fef0a9109a2bd210f0205eca3051fc86",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": false,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        },
+        "retryAvailable": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "locks": "unverified",
+        "snapshot": null,
+        "status": "not_dispatched",
+        "stateComparison": "not_observed"
+      }
+    }
+  ],
+  "nativeInvocations": 0,
+  "sapWrites": 0,
+  "systems": {
+    "message": "Connected SAP systems: w200, w300"
+  },
+  "localEndpoint": "http://127.0.0.1:13909/mcp",
+  "schemas": [
+    {
+      "name": "read_configuration_number_range_api",
+      "description": "Read one exact customer number range's complete TNRO definition and all client 200 NRIV intervals (at most 100), through the separately deployed and source/interface-attested Z_ORVANTA_CFG_NR_READ API. w200/GR2/200 only. Recheck pinned full DDIC layouts and reader/hash source; absent, changed, unauthorized or failed reads never supply a version. snapshot.EV_VERSION is an opaque SHA-256 of complete native state for apply_configuration_number_range, distinct from read_number_range_object's SHA-1 definition version. No lock, writer, allocator, GUI, CTS or global table allowlist change. SAP deployment and positive native acceptance remain pending.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "objectName": {
+            "type": "string",
+            "pattern": "^[ZY][A-Z0-9_]{0,9}$"
+          }
+        },
+        "required": [
+          "connectionId",
+          "objectName"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "apply_configuration_number_range",
+      "description": "Create or update one unused customer NUMC20 number range interval through separately deployed and attested Z_ORVANTA_CFG_NR_APPLY; w200/GR2/200 only, nonannual, unbuffered, no subobjects/group/text/remote/ASCII scope. Requires read_configuration_number_range_api.snapshot.EV_VERSION, exact 20-digit bounds, unchanged internal/external mode, zero levels throughout, explicit write/local-client acknowledgments and operationId. Native standard lock, complete version guard, one top-level commit, full readback and session cleanup. Protected durable receipt before dispatch; all intervals of one object share a local target lock. Unknown commit/transport/readback/cleanup results never become success or automatic retries. Intervals remain local client only, with no CTS recording/migration/release, deletion, level reset, number allocation, direct table write or GUI. SAP deployment and positive native acceptance remain pending.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "objectName": {
+            "type": "string",
+            "pattern": "^[ZY][A-Z0-9_]{0,9}$"
+          },
+          "expectedVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update"
+            ]
+          },
+          "intervalNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}$"
+          },
+          "fromNumber": {
+            "type": "string",
+            "pattern": "^[0-9]{20}$"
+          },
+          "toNumber": {
+            "type": "string",
+            "pattern": "^[0-9]{20}$"
+          },
+          "external": {
+            "type": "boolean"
+          },
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+          },
+          "acknowledgeConfigurationWrite": {
+            "type": "boolean",
+            "const": true
+          },
+          "acknowledgeLocalClientOnly": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "connectionId",
+          "objectName",
+          "expectedVersion",
+          "action",
+          "intervalNumber",
+          "fromNumber",
+          "toNumber",
+          "external",
+          "operationId",
+          "acknowledgeConfigurationWrite",
+          "acknowledgeLocalClientOnly"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "reconcile_configuration_number_range",
+      "description": "Read-only reconciliation of one protected apply_configuration_number_range operation and the attested current complete native snapshot. w200/200 only; verifies exact operation/whole-object receipt identity and rechecks its hash around reading. Missing or mismatched receipts never imply success; a not-dispatched receipt skips SAP. Same/changed current state never proves who wrote/committed/restored it and never resolves historical unknown outcomes. Does not rewrite receipts, retry, rollback, unlock, save, allocate or perform CTS; SAP locks remain unverified.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "objectName": {
+            "type": "string",
+            "pattern": "^[ZY][A-Z0-9_]{0,9}$"
+          },
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+          }
+        },
+        "required": [
+          "connectionId",
+          "objectName",
+          "operationId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "persistedReceipt": {
+    "version": 2,
+    "status": "failed",
+    "connectionId": "w200",
+    "toolName": "apply_configuration_number_range",
+    "operationIdHash": "f196259c04ffa39a7b666c1d46055461dd966047315b78e41aeac635bcda2cbd",
+    "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+    "inputHash": "2c074c1a6b68648e7eb88ce2c7b7f6d05724d642c7ca9d2f92e17a96d477cb6e",
+    "preChangeSummary": "Complete ZORVCFGNR/200 version aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; create interval 01.",
+    "sapInvocationStarted": false,
+    "errorHash": "1e12d5c72263ace37c57fd59517ebe85b610fd439c92a8d181d16d811756f589",
+    "startedAt": "2026-10-04T09:57:05.898Z",
+    "finishedAt": "2026-10-04T09:57:05.938Z",
+    "durationMs": 49,
+    "receiptHash": "8fc552d22439d7a840134f6dd6366103fef0a9109a2bd210f0205eca3051fc86",
+    "automaticRetry": false,
+    "automaticRollback": false,
+    "outcomeMayBeUnknown": false,
+    "localLockReleased": true,
+    "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+  },
+  "status": "passed_readonly_live_refusal_only",
+  "finishedAt": "2026-10-04T09:57:05.957Z",
+  "isolatedServerClosed": true
+}

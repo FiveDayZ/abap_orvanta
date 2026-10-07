@@ -1,0 +1,14 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "adt_discovery_export",
+  "arguments": {
+    "connectionId": "w200"
+  },
+  "startedAt": "2026-10-02T10:36:03.361Z",
+  "finishedAt": "2026-10-02T10:36:03.774Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "ADT discovery exported to folder: C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\adt-discovery_w200_2026-10-02-10-36-03\n\nFiles created:\n- README.md - Overview and stats\n- workspaces.md - All 21 discovery workspaces with 39 collections and 0 template links\n- core-discovery.md - 0 core discovery entries\n- res-app-classes.md - 0 RES_APP classes"
+}

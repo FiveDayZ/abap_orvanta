@@ -1,0 +1,54 @@
+{
+  "startedAt": "2026-09-09T09:27:34.795Z",
+  "checks": [
+    {
+      "name": "manage_text_elements",
+      "args": {
+        "objectName": "CL_CI_TEST_SELECT_NESTED",
+        "objectType": "CLASS",
+        "action": "read"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Text Elements for CL_CI_TEST_SELECT_NESTED\nObject Type: CLASS\nTotal: 4\n\n- 000: \"循环中的 SELECT\" (max: 20)\n- 101: \"&1 循环中的 SELECT\" (max: 21)\n- 102: \"LOOP/ENDLOOP 循环中的 SELECT\" (max: 31)\n- 103: \"SELECT/ENDSELECT 循环中的 SELECT\" (max: 35)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "CL_CI_TEST_SELECT",
+        "objectType": "CLAS",
+        "startLine": 1,
+        "lineCount": 180
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from CL_CI_TEST_SELECT (lines 1-80 of 80, 80 lines retrieved):\n\n```abap\nclass CL_CI_TEST_SELECT definition\r\n  public\r\n  inheriting from CL_CI_TEST_SCAN\r\n  abstract\r\n  create public .\r\n\r\n*\"* public components of class CL_CI_TEST_SELECT\r\n*\"* do not include other source files here!!!\r\npublic section.\r\n\r\n  methods CLEAR\r\n    redefinition .\r\n*\"* protected components of class CL_CI_TEST_SELECT\r\n*\"* do not include other source files here!!!\r\nprotected section.\r\n\r\n  class-data SELECT_STATEMENTS type SCI_STMNTS .\r\n  class-data CLR_SELECT_STATEMENTS type SYCHAR01 .\r\n\r\n  methods GET\r\n    redefinition .\r\n*\"* private components of class CL_CI_TEST_SELECT\r\n*\"* do not include other source files here!!!\r\nprivate section.\r\nENDCLASS.\r\n\r\n\r\n\r\nCLASS CL_CI_TEST_SELECT IMPLEMENTATION.\r\n\r\n\r\nmethod clear.\r\n\r\n  check not CLR_SELECT_STATEMENTS = 'X'.\r\n  SUPER->CLEAR( ).\r\n  clear SELECT_STATEMENTS.\r\n  CLR_SELECT_STATEMENTS = 'X'.\r\n\r\nendmethod.\r\n\r\n\r\nmethod GET.\r\n  data:\r\n    L_SELECT like line of SELECT_STATEMENTS.\r\n\r\n  CLR_SELECT_STATEMENTS = ' '.\r\n\r\n  if ( object_Type eq c_Type_Web_Dynpro ).  \" Web Dynpro denies database access at all\r\n    return.                                 \" see CL_WDY_CI_TEST_CONVENTIONS\r\n  endif.                                    \" ABAP Web Dynpro Conventions\r\n\r\n  if REF_SCAN is initial.\r\n    check SUPER->GET( ) = 'X'.\r\n  endif.\r\n\r\n  check REF_SCAN->SUBRC = 0.\r\n  check SELECT_STATEMENTS is INITIAL.\r\n\r\n  loop at REF_SCAN->STATEMENTS into STATEMENT_WA.\r\n    check STATEMENT_WA-FROM <= STATEMENT_WA-TO.\r\n*-- avoid native SQL\r\n    check STATEMENT_WA-TYPE NE 'E'.\r\n*-- avoid unexpanded MAKROS\r\n    check STATEMENT_WA-TYPE NE 'M'.\r\n\r\n    L_SELECT = SY-TABIX.\r\n    case KEYWORD( ).\r\n      when 'SELECT'.\r\n        append L_SELECT to SELECT_STATEMENTS.\r\n      when 'OPEN'.\r\n        if GET_TOKEN_REL( 2 ) = 'CURSOR'.\r\n          append L_SELECT to SELECT_STATEMENTS.\r\n        endif.\r\n    endcase.\r\n  endloop.\r\n\r\n  P_RESULT = 'X'.\r\n\r\nendmethod.                    \"get\r\nENDCLASS.\n```\n\nFull Source SHA-256: df322c2f56761da39afa35a58205fa86e8c85be439e621e3b586cbc3ac61cbf5\nURI: /sap/bc/adt/oo/classes/cl_ci_test_select/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_object_by_uri",
+      "args": {
+        "uri": "/sap/bc/adt/oo/classes/cl_ci_test_for_all_entries/source/locals_implementations",
+        "startLine": 0,
+        "lineCount": 160
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Direct URI Access Successful\nOriginal URI: /sap/bc/adt/oo/classes/cl_ci_test_for_all_entries/source/locals_implementations\nURI Used: /sap/bc/adt/oo/classes/cl_ci_test_for_all_entries/source/locals_implementations\nLines: 0-160 of 171 (160 retrieved)\n\n```abap\nclass CL_CI_TEST_FOR_ALL_ENTRIES definition\r\n  public\r\n  inheriting from CL_CI_TEST_SCAN\r\n  create public\r\n\r\n  global friends CL_CM_CHK_FOR_ALL_ENTRIES .\r\n\r\npublic section.\r\n*\"* public components of class CL_CI_TEST_FOR_ALL_ENTRIES\r\n*\"* do not include other source files here!!!\r\n  type-pools ABAP .\r\n  type-pools SANA .\r\n  type-pools SCAN .\r\n\r\n  methods CONSTRUCTOR .\r\n\r\n  methods GET_MESSAGE_TEXT\r\n    redefinition .\r\n  methods RUN\r\n    redefinition .\r\nprotected section.\r\nprivate section.\r\n\r\n  constants C_MY_NAME type SEOCLSNAME value 'CL_CI_TEST_FOR_ALL_ENTRIES' ##no_text .\r\n  constants:\r\n    begin of c_Pitfall,\r\n      likely_No_Content_Check          type sci_Errc value 'FAllUnsafe',\r\n      likely_No_Local_Content_Check    type sci_Errc value 'FAllRisky',\r\n    end of c_Pitfall .\r\n\r\n  methods REPORT_UNSAFE_QUERY\r\n    importing\r\n      !QUERY_NDX type SYTABIX\r\n      !TABLE_VAR_NAME type STRING\r\n      !has_EXTERNAL_CONTENT type ABAP_BOOL .\r\nENDCLASS.\r\n\r\n\r\n\r\nCLASS CL_CI_TEST_FOR_ALL_ENTRIES IMPLEMENTATION.\r\n\r\n\r\nmethod CONSTRUCTOR .\r\n  super->constructor( ).\r\n  me->description    = 'Unsecure use of FOR ALL ENTRIES'(000).\r\n  me->category       = 'CL_CI_CATEGORY_ROBUSTNESS'.\r\n  me->position       = '999'.\r\n  me->version        = '002'.\r\n  me->has_Attributes = abap_False.\r\n  me->attributes_Ok  = abap_True.\r\n\r\n  data:\r\n    sci_Message like line of me->scimessages.\r\n\r\n  define declare_Message.\r\n    clear sci_Message.\r\n    sci_Message-test = c_my_name.\r\n    sci_Message-code = &1.\r\n    sci_Message-kind = &2.\r\n    sci_Message-text = &3.\r\n    sci_Message-pcom = &4.\r\n    insert sci_Message into table me->scimessages.\r\n  end-of-definition.\r\n\r\n  declare_Message:\r\n    c_Pitfall-likely_No_Local_Content_Check\r\n    c_Note\r\n    'Possible use of &1 without prior content check within procedure'(003)\r\n    c_Exceptn_Imposibl.\r\n\r\n  declare_Message:\r\n    c_Pitfall-likely_No_Content_Check\r\n    c_Warning\r\n    'Possible use of &1 without prior content check'(002)\r\n    c_Exceptn_Imposibl.\r\nendmethod.\r\n\r\n\r\nmethod GET_MESSAGE_TEXT.\r\n  case p_Code.\r\n    when c_Pitfall-likely_No_Content_Check.\r\n      p_Text =\r\n        'Possible use of &1 without prior content check'(002).\r\n\r\n    when c_Pitfall-likely_No_Local_Content_Check.\r\n      p_Text =\r\n        'Possible use of &1 without prior content check within procedure'(003).\r\n\r\n    when others.\r\n      super->get_Message_Text(\r\n        exporting p_Test = p_Test p_Code = p_Code\r\n        importing p_Text = p_Text ).\r\n\r\n  endcase.\r\n\r\nendmethod.\r\n\r\n\r\nmethod REPORT_UNSAFE_QUERY.\r\n  data:\r\n    statement        type sstmnt,\r\n    token            type stokesx,\r\n    include_Name     type syrepid,\r\n    finding_Code     type sci_Errc,\r\n    finding_Severity type c length 1.\r\n\r\n  if ( abap_True eq has_External_Content ).\r\n    finding_Code =     c_Pitfall-likely_No_Local_Content_Check.\r\n    finding_Severity = c_Note.\r\n  else.\r\n    finding_Code = c_Pitfall-likely_No_Content_Check.\r\n    finding_Severity = c_Warning.\r\n  endif.\r\n\r\n  read table me->ref_Scan->statements\r\n    index query_Ndx\r\n    into statement.\r\n  read table me->ref_Scan->tokens\r\n    index statement-from\r\n    into token.\r\n\r\n  include_Name = get_Include( p_Level = statement-level ).\r\n\r\n  if ( include_Name is initial ).\r\n    inform(\r\n      p_Test  =    c_My_Name\r\n      p_Code  =    finding_Code\r\n      p_Kind  =    finding_Severity\r\n      p_Param_1 =  table_Var_Name ).\r\n  else.\r\n    inform(\r\n      p_Test  =        c_My_Name\r\n      p_Code  =        finding_Code\r\n      p_Kind  =        finding_Severity\r\n      p_Sub_Obj_Type = c_Type_Include\r\n      p_Sub_Obj_Name = include_Name\r\n      p_Line =         token-row\r\n      p_Column =       token-col\r\n      p_Param_1 =      table_Var_Name ).\r\n  endif.\r\n\r\nendmethod.\r\n\r\n\r\nmethod RUN .\r\n  data:\r\n    listener         type ref to listener,\r\n    scanned_Source   type ref to scanned_Source,\r\n    analyzer         type ref to for_All_Entries_Analysis.\r\n\r\n  if ( me->ref_Scan is initial ).\r\n    if ( me->program_Name is initial ). return. endif.\r\n    if ( abap_False eq get( ) ).        return. endif.\r\n  endif.\r\n\r\n  create object listener type listener_For_Ci\r\n    exporting\r\n       adapter_To_Ci = me.\r\n  create object analyzer\r\n    exporting\n```"
+          }
+        ]
+      }
+    }
+  ]
+}

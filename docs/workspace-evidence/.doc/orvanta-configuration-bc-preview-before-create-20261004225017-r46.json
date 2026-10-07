@@ -1,0 +1,3833 @@
+{
+  "at": "2026-10-04T14:50:11.261Z",
+  "scope": {
+    "connectionId": "w200",
+    "system": "GR2",
+    "client": "200",
+    "newFunction": "Z_ORVANTA_CFG_BC_PREVIEW",
+    "functionGroup": "ZORVANTA_BC_CFG",
+    "package": "ZABAP",
+    "request": "GR2K923472",
+    "task": "GR2K923492",
+    "configurationWrites": 0
+  },
+  "calls": [
+    {
+      "at": "2026-10-04T14:50:11.406Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_PREVIEW"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_CFG_BC_PREVIEW 不存在"
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:11.590Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_READ"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_READ",
+        "functionGroup": "ZORVANTA_BC_CFG",
+        "shortText": "CUNI BC Set full native before state",
+        "remoteMode": "R",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": true,
+        "importParameters": [
+          {
+            "name": "IV_BC_SET",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "IV_VERSION",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "EV_CODE",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "EV_SYSTEM",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "EV_CLIENT",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "EV_USER",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "EV_SOURCE_VERSION",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "EV_TARGET_VERSION",
+            "typeName": "STRING",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [
+          {
+            "name": "ET_T006",
+            "typeName": "T006",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "ET_T006A",
+            "typeName": "T006A",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "ET_T006B",
+            "typeName": "T006B",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "ET_T006C",
+            "typeName": "T006C",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "ET_T006D",
+            "typeName": "T006D",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exceptions": [],
+        "source": [
+          "FUNCTION Z_ORVANTA_CFG_BC_READ.",
+          "*\"--------------------------------------------------------------------",
+          "*\"*\"局部接口：",
+          "*\"  IMPORTING",
+          "*\"     VALUE(IV_BC_SET) TYPE  STRING",
+          "*\"     VALUE(IV_VERSION) TYPE  STRING",
+          "*\"  EXPORTING",
+          "*\"     VALUE(EV_CODE) TYPE  STRING",
+          "*\"     VALUE(EV_SYSTEM) TYPE  STRING",
+          "*\"     VALUE(EV_CLIENT) TYPE  STRING",
+          "*\"     VALUE(EV_USER) TYPE  STRING",
+          "*\"     VALUE(EV_SOURCE_VERSION) TYPE  STRING",
+          "*\"     VALUE(EV_TARGET_VERSION) TYPE  STRING",
+          "*\"  TABLES",
+          "*\"      ET_T006 STRUCTURE  T006",
+          "*\"      ET_T006A STRUCTURE  T006A",
+          "*\"      ET_T006B STRUCTURE  T006B",
+          "*\"      ET_T006C STRUCTURE  T006C",
+          "*\"      ET_T006D STRUCTURE  T006D",
+          "*\"--------------------------------------------------------------------",
+          "DATA: ls_header TYPE scprattr,",
+          "      ls_record TYPE scprreca,",
+          "      lt_records TYPE STANDARD TABLE OF scprreca,",
+          "      lt_values TYPE STANDARD TABLE OF scprvals,",
+          "      lt_languages TYPE STANDARD TABLE OF scprvall,",
+          "      lt_dependencies TYPE STANDARD TABLE OF scprpprl,",
+          "      lt_t006 TYPE STANDARD TABLE OF t006,",
+          "      lt_t006a TYPE STANDARD TABLE OF t006a,",
+          "      lt_t006b TYPE STANDARD TABLE OF t006b,",
+          "      lt_t006c TYPE STANDARD TABLE OF t006c,",
+          "      lt_t006d TYPE STANDARD TABLE OF t006d,",
+          "      lv_table TYPE tddat-tabname,",
+          "      lv_group TYPE tddat-cclass,",
+          "      lv_source TYPE xstring,",
+          "      lv_target TYPE xstring,",
+          "      lv_source_first TYPE xstring,",
+          "      lv_target_first TYPE xstring,",
+          "      lv_source_hash TYPE string,",
+          "      lv_target_hash TYPE string,",
+          "      lv_count TYPE i.",
+          "\" 每次初始化全部输出；失败不泄露前次调用的行或版本。",
+          "CLEAR: ev_code, ev_system, ev_client, ev_user,",
+          "       ev_source_version, ev_target_version.",
+          "REFRESH et_t006.",
+          "REFRESH et_t006a.",
+          "REFRESH et_t006b.",
+          "REFRESH et_t006c.",
+          "REFRESH et_t006d.",
+          "ev_system = sy-sysid.",
+          "ev_client = sy-mandt.",
+          "ev_user = sy-uname.",
+          "IF sy-sysid <> 'GR2' OR sy-mandt <> '200'.",
+          "  ev_code = 'SCOPE_UNSUPPORTED'.",
+          "  RETURN.",
+          "ENDIF.",
+          "IF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'.",
+          "  ev_code = 'INPUT_INVALID'.",
+          "  RETURN.",
+          "ENDIF.",
+          "\" 逐表验证读取权限；没有授权组时沿用 &NC&，名称权限可替代组权限。",
+          "DO 10 TIMES.",
+          "  CASE sy-index.",
+          "    WHEN 1. lv_table = 'T006'.",
+          "    WHEN 2. lv_table = 'T006A'.",
+          "    WHEN 3. lv_table = 'T006B'.",
+          "    WHEN 4. lv_table = 'T006C'.",
+          "    WHEN 5. lv_table = 'T006D'.",
+          "    WHEN 6. lv_table = 'SCPRATTR'.",
+          "    WHEN 7. lv_table = 'SCPRRECA'.",
+          "    WHEN 8. lv_table = 'SCPRVALS'.",
+          "    WHEN 9. lv_table = 'SCPRVALL'.",
+          "    WHEN 10. lv_table = 'SCPRPPRL'.",
+          "  ENDCASE.",
+          "  CLEAR lv_group.",
+          "  SELECT SINGLE cclass INTO lv_group FROM tddat",
+          "    WHERE tabname = lv_table.",
+          "  IF sy-subrc <> 0 OR lv_group IS INITIAL.",
+          "    lv_group = '&NC&'.",
+          "  ENDIF.",
+          "  AUTHORITY-CHECK OBJECT 'S_TABU_DIS'",
+          "    ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.",
+          "  IF sy-subrc <> 0.",
+          "    AUTHORITY-CHECK OBJECT 'S_TABU_NAM'",
+          "      ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.",
+          "    IF sy-subrc <> 0.",
+          "      ev_code = 'AUTHORIZATION_DENIED'.",
+          "      RETURN.",
+          "    ENDIF.",
+          "  ENDIF.",
+          "ENDDO.",
+          "\" 两轮完整读取并比较原生缓冲；这是顺序观察，不是加锁快照。",
+          "DO 2 TIMES.",
+          "  SELECT SINGLE * INTO ls_header FROM scprattr",
+          "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+          "  IF sy-subrc <> 0.",
+          "    ev_code = 'SOURCE_NOT_FOUND'.",
+          "    RETURN.",
+          "  ENDIF.",
+          "  IF ls_header-category IS NOT INITIAL OR ls_header-type <> 'TMV'.",
+          "    ev_code = 'SOURCE_SCOPE_INVALID'.",
+          "    RETURN.",
+          "  ENDIF.",
+          "  SELECT * FROM scprreca INTO TABLE lt_records UP TO 6 ROWS",
+          "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+          "  DESCRIBE TABLE lt_records LINES lv_count.",
+          "  IF lv_count <> 5.",
+          "    ev_code = 'SOURCE_SCOPE_INVALID'.",
+          "    RETURN.",
+          "  ENDIF.",
+          "  SORT lt_records BY id version tablename recnumber.",
+          "  LOOP AT lt_records INTO ls_record.",
+          "    CASE sy-tabix.",
+          "      WHEN 1. lv_table = 'T006'.",
+          "      WHEN 2. lv_table = 'T006A'.",
+          "      WHEN 3. lv_table = 'T006B'.",
+          "      WHEN 4. lv_table = 'T006C'.",
+          "      WHEN 5. lv_table = 'T006D'.",
+          "    ENDCASE.",
+          "    IF ls_record-tablename <> lv_table OR ls_record-recnumber <> 1",
+          "    OR ls_record-objectname <> 'CUNI' OR ls_record-objecttype <> 'T'",
+          "    OR ls_record-deleteflag IS NOT INITIAL",
+          "    OR ls_record-uncomplete IS NOT INITIAL",
+          "    OR ls_record-genref IS NOT INITIAL",
+          "    OR ls_record-activity IS NOT INITIAL",
+          "    OR ls_record-clustname IS NOT INITIAL.",
+          "      ev_code = 'SOURCE_SCOPE_INVALID'.",
+          "      RETURN.",
+          "    ENDIF.",
+          "  ENDLOOP.",
+          "  SELECT * FROM scprvals INTO TABLE lt_values UP TO 101 ROWS",
+          "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+          "  DESCRIBE TABLE lt_values LINES lv_count.",
+          "  IF lv_count > 100.",
+          "    ev_code = 'SOURCE_LIMIT_EXCEEDED'.",
+          "    RETURN.",
+          "  ENDIF.",
+          "  SORT lt_values BY id version tablename recnumber fieldname.",
+          "  SELECT * FROM scprvall INTO TABLE lt_languages UP TO 101 ROWS",
+          "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+          "  DESCRIBE TABLE lt_languages LINES lv_count.",
+          "  IF lv_count > 100.",
+          "    ev_code = 'SOURCE_LIMIT_EXCEEDED'.",
+          "    RETURN.",
+          "  ENDIF.",
+          "  SORT lt_languages BY id version tablename recnumber fieldname langu.",
+          "  SELECT * FROM scprpprl INTO TABLE lt_dependencies UP TO 1 ROWS",
+          "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+          "  IF lt_dependencies IS NOT INITIAL.",
+          "    ev_code = 'SOURCE_SCOPE_INVALID'.",
+          "    RETURN.",
+          "  ENDIF.",
+          "  SELECT * FROM t006 INTO TABLE lt_t006 WHERE msehi = 'KNM'.",
+          "  SELECT * FROM t006a INTO TABLE lt_t006a WHERE msehi = 'KNM'",
+          "    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).",
+          "  \" 别名按自身键读取；映射到其他单位的冲突也必须返回。",
+          "  SELECT * FROM t006b INTO TABLE lt_t006b WHERE mseh3 = 'KNM'",
+          "    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).",
+          "  SELECT * FROM t006c INTO TABLE lt_t006c WHERE mseh6 = 'kN/m2'",
+          "    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).",
+          "  \" PRESS 是共享维度；这里只读取完整行，不做保存。",
+          "  SELECT * FROM t006d INTO TABLE lt_t006d WHERE dimid = 'PRESS'.",
+          "  SORT lt_t006 BY mandt msehi.",
+          "  SORT lt_t006a BY mandt spras msehi.",
+          "  SORT lt_t006b BY mandt spras mseh3.",
+          "  SORT lt_t006c BY mandt spras mseh6.",
+          "  SORT lt_t006d BY mandt dimid.",
+          "  \" 原生类型序列化包括 FLTP、空格和缺失行；不经显示文本重建。",
+          "  EXPORT namespace = 'ORVANTA_BC_SOURCE_V1'",
+          "    system = sy-sysid client = sy-mandt",
+          "    header = ls_header records = lt_records values = lt_values",
+          "    languages = lt_languages dependencies = lt_dependencies",
+          "    TO DATA BUFFER lv_source.",
+          "  EXPORT namespace = 'ORVANTA_BC_TARGET_V1'",
+          "    system = sy-sysid client = sy-mandt user = sy-uname",
+          "    bc_set = iv_bc_set version = iv_version",
+          "    unit = lt_t006 texts = lt_t006a commercial = lt_t006b",
+          "    technical = lt_t006c dimension = lt_t006d",
+          "    TO DATA BUFFER lv_target.",
+          "  IF sy-index = 1.",
+          "    lv_source_first = lv_source.",
+          "    lv_target_first = lv_target.",
+          "  ELSEIF lv_source <> lv_source_first OR lv_target <> lv_target_first.",
+          "    ev_code = 'READ_CHANGED'.",
+          "    RETURN.",
+          "  ENDIF.",
+          "ENDDO.",
+          "CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'",
+          "  EXPORTING alg = 'SHA2' data = lv_source",
+          "  IMPORTING hashstring = lv_source_hash",
+          "  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3",
+          "             error_message = 4 OTHERS = 5.",
+          "IF sy-subrc <> 0.",
+          "  ev_code = 'HASH_FAILED'.",
+          "  RETURN.",
+          "ENDIF.",
+          "CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'",
+          "  EXPORTING alg = 'SHA2' data = lv_target",
+          "  IMPORTING hashstring = lv_target_hash",
+          "  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3",
+          "             error_message = 4 OTHERS = 5.",
+          "IF sy-subrc <> 0.",
+          "  ev_code = 'HASH_FAILED'.",
+          "  RETURN.",
+          "ENDIF.",
+          "TRANSLATE lv_source_hash TO LOWER CASE.",
+          "TRANSLATE lv_target_hash TO LOWER CASE.",
+          "IF strlen( lv_source_hash ) <> 64 OR strlen( lv_target_hash ) <> 64",
+          "OR lv_source_hash CN '0123456789abcdef'",
+          "OR lv_target_hash CN '0123456789abcdef'.",
+          "  ev_code = 'HASH_FAILED'.",
+          "  RETURN.",
+          "ENDIF.",
+          "et_t006[] = lt_t006[].",
+          "et_t006a[] = lt_t006a[].",
+          "et_t006b[] = lt_t006b[].",
+          "et_t006c[] = lt_t006c[].",
+          "et_t006d[] = lt_t006d[].",
+          "ev_source_version = lv_source_hash.",
+          "ev_target_version = lv_target_hash.",
+          "ev_code = 'READ_OK'.",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "ebf8ff8ecacf22fc06defc4232da3a35ea5d99abdc61e113112eecc1d0209b38",
+        "interfaceFingerprint": "8f9b627c30cb74f36bfbafdb2218b8f51c0eddba83471e8dd18ccf7fa14714e7",
+        "sourceFingerprint": "306ddd0f9a75c7e73634d12d82cd713ae536367863a81e0be6cb56e8ab3da880"
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:12.050Z",
+      "name": "get_abap_object_workspace_uri",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SAPLZORVANTA_BC_CFG",
+        "objectType": "PROG/P"
+      },
+      "isError": false,
+      "data": {
+        "message": "ABAP Object Workspace URI\nObject: SAPLZORVANTA_BC_CFG (PROG/P)\nConnection: w200\nStatus: not-found\nResolved: false\nAuthoritative: false\nReason: The repository search completed and returned no exact match for this name and type. This is a failed lookup, not a tool failure, and not proof that the object does not exist: the search answers nothing for an object type this release cannot search.\nNext: verify the exact name and type with search_abap_objects, and treat a creation pre-check, not this lookup, as the authority on whether the name is free."
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:12.625Z",
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SAPLZORVANTA_BC_CFG",
+        "objectType": "PROG/P",
+        "startLine": 1,
+        "lineCount": 600
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from SAPLZORVANTA_BC_CFG (lines 1-14 of 14, 14 lines retrieved):\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LZORVANTA_BC_CFGTOP.               \" Global Data\n  INCLUDE LZORVANTA_BC_CFGUXX.               \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n* INCLUDE LZORVANTA_BC_CFGF...               \" Subroutines\n* INCLUDE LZORVANTA_BC_CFGO...               \" PBO-Modules\n* INCLUDE LZORVANTA_BC_CFGI...               \" PAI-Modules\n* INCLUDE LZORVANTA_BC_CFGE...               \" Events\n* INCLUDE LZORVANTA_BC_CFGP...               \" Local class implement.\n```\n\nFull Source SHA-256: 3cb0bfcfe5cd1f7c8b46f82b0ea660d22d3b7bbbd309ed1f67b28065bc1ac286\nURI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\n\nEnhancement metadata unavailable (unsupported)."
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:13.376Z",
+      "name": "get_object_by_uri",
+      "args": {
+        "connectionId": "w200",
+        "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main",
+        "startLine": 0,
+        "lineCount": 600
+      },
+      "isError": false,
+      "data": {
+        "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\nLines: 0-14 of 14 (14 retrieved)\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LZORVANTA_BC_CFGTOP.               \" Global Data\n  INCLUDE LZORVANTA_BC_CFGUXX.               \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n* INCLUDE LZORVANTA_BC_CFGF...               \" Subroutines\n* INCLUDE LZORVANTA_BC_CFGO...               \" PBO-Modules\n* INCLUDE LZORVANTA_BC_CFGI...               \" PAI-Modules\n* INCLUDE LZORVANTA_BC_CFGE...               \" Events\n* INCLUDE LZORVANTA_BC_CFGP...               \" Local class implement.\n```"
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:13.530Z",
+      "name": "get_abap_object_workspace_uri",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LZORVANTA_BC_CFGTOP",
+        "objectType": "PROG/I"
+      },
+      "isError": false,
+      "data": {
+        "message": "ABAP Object Workspace URI\nObject: LZORVANTA_BC_CFGTOP (PROG/I)\nConnection: w200\nStatus: not-found\nResolved: false\nAuthoritative: false\nReason: The repository search completed and returned no exact match for this name and type. This is a failed lookup, not a tool failure, and not proof that the object does not exist: the search answers nothing for an object type this release cannot search.\nNext: verify the exact name and type with search_abap_objects, and treat a creation pre-check, not this lookup, as the authority on whether the name is free."
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:14.021Z",
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LZORVANTA_BC_CFGTOP",
+        "objectType": "PROG/I",
+        "startLine": 1,
+        "lineCount": 600
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LZORVANTA_BC_CFGTOP (lines 1-3 of 3, 3 lines retrieved):\n\n```abap\nFUNCTION-POOL ZORVANTA_BC_CFG.              \"MESSAGE-ID ..\n\n* INCLUDE LZORVANTA_BC_CFGD...               \" Local class definition\n```\n\nFull Source SHA-256: dab569b57c9dac5f812ec087e464da45114ffc7556d9f0a16add44e1b4b62349\nURI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\n\nEnhancement metadata unavailable (unsupported)."
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:14.158Z",
+      "name": "get_object_by_uri",
+      "args": {
+        "connectionId": "w200",
+        "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+        "startLine": 0,
+        "lineCount": 600
+      },
+      "isError": false,
+      "data": {
+        "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\nLines: 0-3 of 3 (3 retrieved)\n\n```abap\nFUNCTION-POOL ZORVANTA_BC_CFG.              \"MESSAGE-ID ..\n\n* INCLUDE LZORVANTA_BC_CFGD...               \" Local class definition\n```"
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:14.618Z",
+      "name": "get_abap_object_workspace_uri",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LZORVANTA_BC_CFGUXX",
+        "objectType": "PROG/I"
+      },
+      "isError": false,
+      "data": {
+        "message": "ABAP Object Workspace URI\nObject: LZORVANTA_BC_CFGUXX (PROG/I)\nConnection: w200\nStatus: not-found\nResolved: false\nAuthoritative: false\nReason: The repository search completed and returned no exact match for this name and type. This is a failed lookup, not a tool failure, and not proof that the object does not exist: the search answers nothing for an object type this release cannot search.\nNext: verify the exact name and type with search_abap_objects, and treat a creation pre-check, not this lookup, as the authority on whether the name is free."
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:15.484Z",
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LZORVANTA_BC_CFGUXX",
+        "objectType": "PROG/I",
+        "startLine": 1,
+        "lineCount": 600
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LZORVANTA_BC_CFGUXX (lines 1-6 of 6, 6 lines retrieved):\n\n```abap\n*****************************************************************\n*   THIS FILE IS GENERATED BY THE FUNCTION LIBRARY.             *\n*   NEVER CHANGE IT MANUALLY, PLEASE!                           *\n*****************************************************************\nINCLUDE LZORVANTA_BC_CFGU01.\n                    \"Z_ORVANTA_CFG_BC_READ\n```\n\nFull Source SHA-256: d751f79daaae92c59d7b6cc4721c9932408e35a825c49f34c2753912f953cc9a\nURI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\n\nEnhancement metadata unavailable (unsupported)."
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:15.622Z",
+      "name": "get_object_by_uri",
+      "args": {
+        "connectionId": "w200",
+        "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+        "startLine": 0,
+        "lineCount": 600
+      },
+      "isError": false,
+      "data": {
+        "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\nLines: 0-6 of 6 (6 retrieved)\n\n```abap\n*****************************************************************\n*   THIS FILE IS GENERATED BY THE FUNCTION LIBRARY.             *\n*   NEVER CHANGE IT MANUALLY, PLEASE!                           *\n*****************************************************************\nINCLUDE LZORVANTA_BC_CFGU01.\n                    \"Z_ORVANTA_CFG_BC_READ\n```"
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:15.748Z",
+      "name": "get_abap_object_workspace_uri",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "Z_ORVANTA_CFG_BC_READ",
+        "objectType": "FUGR/FF"
+      },
+      "isError": false,
+      "data": {
+        "message": "ABAP Object Workspace URI\nObject: Z_ORVANTA_CFG_BC_READ\nType: FUGR/FF\nPackage: unknown\nDescription: none\nADT URI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read\nWorkspace URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read\nUse this URI with standalone ABAP MCP tools."
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:15.920Z",
+      "name": "get_object_by_uri",
+      "args": {
+        "connectionId": "w200",
+        "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+        "startLine": 0,
+        "lineCount": 600
+      },
+      "isError": false,
+      "data": {
+        "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read/source/main\nLines: 0-226 of 226 (226 retrieved)\n\n```abap\nFUNCTION Z_ORVANTA_CFG_BC_READ\n  IMPORTING\n    VALUE(IV_BC_SET) TYPE STRING\n    VALUE(IV_VERSION) TYPE STRING\n  EXPORTING\n    VALUE(EV_CODE) TYPE STRING\n    VALUE(EV_SYSTEM) TYPE STRING\n    VALUE(EV_CLIENT) TYPE STRING\n    VALUE(EV_USER) TYPE STRING\n    VALUE(EV_SOURCE_VERSION) TYPE STRING\n    VALUE(EV_TARGET_VERSION) TYPE STRING\n  TABLES\n    ET_T006 LIKE T006\n    ET_T006A LIKE T006A\n    ET_T006B LIKE T006B\n    ET_T006C LIKE T006C\n    ET_T006D LIKE T006D.\n\n\n\nDATA: ls_header TYPE scprattr,\n      ls_record TYPE scprreca,\n      lt_records TYPE STANDARD TABLE OF scprreca,\n      lt_values TYPE STANDARD TABLE OF scprvals,\n      lt_languages TYPE STANDARD TABLE OF scprvall,\n      lt_dependencies TYPE STANDARD TABLE OF scprpprl,\n      lt_t006 TYPE STANDARD TABLE OF t006,\n      lt_t006a TYPE STANDARD TABLE OF t006a,\n      lt_t006b TYPE STANDARD TABLE OF t006b,\n      lt_t006c TYPE STANDARD TABLE OF t006c,\n      lt_t006d TYPE STANDARD TABLE OF t006d,\n      lv_table TYPE tddat-tabname,\n      lv_group TYPE tddat-cclass,\n      lv_source TYPE xstring,\n      lv_target TYPE xstring,\n      lv_source_first TYPE xstring,\n      lv_target_first TYPE xstring,\n      lv_source_hash TYPE string,\n      lv_target_hash TYPE string,\n      lv_count TYPE i.\n\" 每次初始化全部输出；失败不泄露前次调用的行或版本。\nCLEAR: ev_code, ev_system, ev_client, ev_user,\n       ev_source_version, ev_target_version.\nREFRESH et_t006.\nREFRESH et_t006a.\nREFRESH et_t006b.\nREFRESH et_t006c.\nREFRESH et_t006d.\nev_system = sy-sysid.\nev_client = sy-mandt.\nev_user = sy-uname.\nIF sy-sysid <> 'GR2' OR sy-mandt <> '200'.\n  ev_code = 'SCOPE_UNSUPPORTED'.\n  RETURN.\nENDIF.\nIF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'.\n  ev_code = 'INPUT_INVALID'.\n  RETURN.\nENDIF.\n\" 逐表验证读取权限；没有授权组时沿用 &NC&，名称权限可替代组权限。\nDO 10 TIMES.\n  CASE sy-index.\n    WHEN 1. lv_table = 'T006'.\n    WHEN 2. lv_table = 'T006A'.\n    WHEN 3. lv_table = 'T006B'.\n    WHEN 4. lv_table = 'T006C'.\n    WHEN 5. lv_table = 'T006D'.\n    WHEN 6. lv_table = 'SCPRATTR'.\n    WHEN 7. lv_table = 'SCPRRECA'.\n    WHEN 8. lv_table = 'SCPRVALS'.\n    WHEN 9. lv_table = 'SCPRVALL'.\n    WHEN 10. lv_table = 'SCPRPPRL'.\n  ENDCASE.\n  CLEAR lv_group.\n  SELECT SINGLE cclass INTO lv_group FROM tddat\n    WHERE tabname = lv_table.\n  IF sy-subrc <> 0 OR lv_group IS INITIAL.\n    lv_group = '&NC&'.\n  ENDIF.\n  AUTHORITY-CHECK OBJECT 'S_TABU_DIS'\n    ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.\n  IF sy-subrc <> 0.\n    AUTHORITY-CHECK OBJECT 'S_TABU_NAM'\n      ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.\n    IF sy-subrc <> 0.\n      ev_code = 'AUTHORIZATION_DENIED'.\n      RETURN.\n    ENDIF.\n  ENDIF.\nENDDO.\n\" 两轮完整读取并比较原生缓冲；这是顺序观察，不是加锁快照。\nDO 2 TIMES.\n  SELECT SINGLE * INTO ls_header FROM scprattr\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  IF sy-subrc <> 0.\n    ev_code = 'SOURCE_NOT_FOUND'.\n    RETURN.\n  ENDIF.\n  IF ls_header-category IS NOT INITIAL OR ls_header-type <> 'TMV'.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SELECT * FROM scprreca INTO TABLE lt_records UP TO 6 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_records LINES lv_count.\n  IF lv_count <> 5.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SORT lt_records BY id version tablename recnumber.\n  LOOP AT lt_records INTO ls_record.\n    CASE sy-tabix.\n      WHEN 1. lv_table = 'T006'.\n      WHEN 2. lv_table = 'T006A'.\n      WHEN 3. lv_table = 'T006B'.\n      WHEN 4. lv_table = 'T006C'.\n      WHEN 5. lv_table = 'T006D'.\n    ENDCASE.\n    IF ls_record-tablename <> lv_table OR ls_record-recnumber <> 1\n    OR ls_record-objectname <> 'CUNI' OR ls_record-objecttype <> 'T'\n    OR ls_record-deleteflag IS NOT INITIAL\n    OR ls_record-uncomplete IS NOT INITIAL\n    OR ls_record-genref IS NOT INITIAL\n    OR ls_record-activity IS NOT INITIAL\n    OR ls_record-clustname IS NOT INITIAL.\n      ev_code = 'SOURCE_SCOPE_INVALID'.\n      RETURN.\n    ENDIF.\n  ENDLOOP.\n  SELECT * FROM scprvals INTO TABLE lt_values UP TO 101 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_values LINES lv_count.\n  IF lv_count > 100.\n    ev_code = 'SOURCE_LIMIT_EXCEEDED'.\n    RETURN.\n  ENDIF.\n  SORT lt_values BY id version tablename recnumber fieldname.\n  SELECT * FROM scprvall INTO TABLE lt_languages UP TO 101 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_languages LINES lv_count.\n  IF lv_count > 100.\n    ev_code = 'SOURCE_LIMIT_EXCEEDED'.\n    RETURN.\n  ENDIF.\n  SORT lt_languages BY id version tablename recnumber fieldname langu.\n  SELECT * FROM scprpprl INTO TABLE lt_dependencies UP TO 1 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  IF lt_dependencies IS NOT INITIAL.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SELECT * FROM t006 INTO TABLE lt_t006 WHERE msehi = 'KNM'.\n  SELECT * FROM t006a INTO TABLE lt_t006a WHERE msehi = 'KNM'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  \" 别名按自身键读取；映射到其他单位的冲突也必须返回。\n  SELECT * FROM t006b INTO TABLE lt_t006b WHERE mseh3 = 'KNM'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  SELECT * FROM t006c INTO TABLE lt_t006c WHERE mseh6 = 'kN/m2'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  \" PRESS 是共享维度；这里只读取完整行，不做保存。\n  SELECT * FROM t006d INTO TABLE lt_t006d WHERE dimid = 'PRESS'.\n  SORT lt_t006 BY mandt msehi.\n  SORT lt_t006a BY mandt spras msehi.\n  SORT lt_t006b BY mandt spras mseh3.\n  SORT lt_t006c BY mandt spras mseh6.\n  SORT lt_t006d BY mandt dimid.\n  \" 原生类型序列化包括 FLTP、空格和缺失行；不经显示文本重建。\n  EXPORT namespace = 'ORVANTA_BC_SOURCE_V1'\n    system = sy-sysid client = sy-mandt\n    header = ls_header records = lt_records values = lt_values\n    languages = lt_languages dependencies = lt_dependencies\n    TO DATA BUFFER lv_source.\n  EXPORT namespace = 'ORVANTA_BC_TARGET_V1'\n    system = sy-sysid client = sy-mandt user = sy-uname\n    bc_set = iv_bc_set version = iv_version\n    unit = lt_t006 texts = lt_t006a commercial = lt_t006b\n    technical = lt_t006c dimension = lt_t006d\n    TO DATA BUFFER lv_target.\n  IF sy-index = 1.\n    lv_source_first = lv_source.\n    lv_target_first = lv_target.\n  ELSEIF lv_source <> lv_source_first OR lv_target <> lv_target_first.\n    ev_code = 'READ_CHANGED'.\n    RETURN.\n  ENDIF.\nENDDO.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_source\n  IMPORTING hashstring = lv_source_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n             error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_target\n  IMPORTING hashstring = lv_target_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n             error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nTRANSLATE lv_source_hash TO LOWER CASE.\nTRANSLATE lv_target_hash TO LOWER CASE.\nIF strlen( lv_source_hash ) <> 64 OR strlen( lv_target_hash ) <> 64\nOR lv_source_hash CN '0123456789abcdef'\nOR lv_target_hash CN '0123456789abcdef'.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\net_t006[] = lt_t006[].\net_t006a[] = lt_t006a[].\net_t006b[] = lt_t006b[].\net_t006c[] = lt_t006c[].\net_t006d[] = lt_t006d[].\nev_source_version = lv_source_hash.\nev_target_version = lv_target_hash.\nev_code = 'READ_OK'.\n\n\n\n\n\nENDFUNCTION.\n```"
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:16.786Z",
+      "name": "manage_transport_requests",
+      "args": {
+        "connectionId": "w200",
+        "action": "prepare_delivery",
+        "transportNumber": "GR2K923472",
+        "expectedObjects": [
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_BC_CFG"
+          }
+        ],
+        "inactiveTargets": [
+          {
+            "objectName": "LZORVANTA_BC_CFGTOP",
+            "objectUri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main"
+          },
+          {
+            "objectName": "LZORVANTA_BC_CFGUXX",
+            "objectUri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main"
+          },
+          {
+            "objectName": "Z_ORVANTA_CFG_BC_READ",
+            "objectUri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read"
+          }
+        ]
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "transportNumber": "GR2K923472",
+        "observedAt": "2026-10-04T14:50:16.785Z",
+        "readOnly": true,
+        "status": "partial",
+        "comparison": "differences",
+        "readyToRelease": "not_determined",
+        "headers": [
+          {
+            "number": "GR2K923472",
+            "owner": "WYS",
+            "rawStatus": "D",
+            "role": "selected_request"
+          },
+          {
+            "number": "GR2K923492",
+            "owner": "WYS",
+            "rawStatus": "D",
+            "role": "returned_task"
+          }
+        ],
+        "expected": [
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_BC_CFG"
+          }
+        ],
+        "expectedObjectDuplicates": [],
+        "objects": [
+          {
+            "pgmid": "LIMU",
+            "type": "DOMD",
+            "name": "ZORVANTA_R11_DOM01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "DTED",
+            "name": "ZORVANTA_R11_DE01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "DYNP",
+            "name": "ZCODEX_MCP_DYNPRO                       0100",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "FUNC",
+            "name": "Z_ORVANTA_OPS_READ",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "REPS",
+            "name": "ZORVANTA_MCP_DYNPRO_DEPLOY",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "REPS",
+            "name": "ZORVANTA_MCP_EXEC_DEPLOY",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "SHLD",
+            "name": "ZORVANTA_MCP_DESC_TEST",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "SHLD",
+            "name": "ZORVANTA_WB_H",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORVANTA_R12_STR01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORVANTA_R7C_TMP",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORVANTA_T_PROBE",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T01",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T02",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T03",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TTYD",
+            "name": "ZORVANTA_R12_TT01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "CLAS",
+            "name": "ZCL_ORVANTA_MCP_CORE",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "ENHO",
+            "name": "ZACC_DOCUMENT",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_BC_CFG",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_CFG_NR",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_CFG_UNIT",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_LOG",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_MAINT",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_MCP_CORE",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_MCP_PROBE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_RUNNER",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "MSAG",
+            "name": "ZORVANTA_R16_DEL",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "MSAG",
+            "name": "ZORVANTA_R16_MSG",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "NROB",
+            "name": "ZORVCFGNR",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "NROB",
+            "name": "ZORVMCPNR1",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZCODEX_MCP_DYNPRO",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_COMPILE_ORACLE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY_R02",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY_R03",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY_R04",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_BOOTSTRAP",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DDIC_D117",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN210",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN211",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN211_REPAIR",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212B",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212C",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212D",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212E",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212F",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212G",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212_DBG",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN221",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN222",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN223",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN224",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN225",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN226",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN227",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN228",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN229",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN230",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN231",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN232",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN233",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN234",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN29",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R14",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R15",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_R10",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_R11",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_R12",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_EXEC_D210",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_EXEC_D211",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_EXEC_D29",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_TXTPOOL_PROBE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_VERDICT",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_ARCHIVE_SEL_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_COMPARE_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_FIELDS39_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_FIELDS_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_KIND_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_ROUTES_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_TYPE_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE2",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE3",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE4",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "VIEW",
+            "name": "ZORV_MCP_V01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          }
+        ],
+        "missingFromObservedList": [],
+        "unexpectedInObservedList": [
+          {
+            "pgmid": "LIMU",
+            "type": "DOMD",
+            "name": "ZORVANTA_R11_DOM01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "DTED",
+            "name": "ZORVANTA_R11_DE01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "DYNP",
+            "name": "ZCODEX_MCP_DYNPRO                       0100",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "FUNC",
+            "name": "Z_ORVANTA_OPS_READ",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "REPS",
+            "name": "ZORVANTA_MCP_DYNPRO_DEPLOY",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "REPS",
+            "name": "ZORVANTA_MCP_EXEC_DEPLOY",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "SHLD",
+            "name": "ZORVANTA_MCP_DESC_TEST",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "SHLD",
+            "name": "ZORVANTA_WB_H",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORVANTA_R12_STR01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORVANTA_R7C_TMP",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORVANTA_T_PROBE",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T01",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T02",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T03",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TTYD",
+            "name": "ZORVANTA_R12_TT01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "CLAS",
+            "name": "ZCL_ORVANTA_MCP_CORE",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "ENHO",
+            "name": "ZACC_DOCUMENT",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_CFG_NR",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_CFG_UNIT",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_LOG",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_MAINT",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_MCP_CORE",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_MCP_PROBE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "FUGR",
+            "name": "ZORVANTA_RUNNER",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "MSAG",
+            "name": "ZORVANTA_R16_DEL",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "MSAG",
+            "name": "ZORVANTA_R16_MSG",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "NROB",
+            "name": "ZORVCFGNR",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "NROB",
+            "name": "ZORVMCPNR1",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZCODEX_MCP_DYNPRO",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_COMPILE_ORACLE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY_R02",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY_R03",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MAINT_DEPLOY_R04",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_BOOTSTRAP",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DDIC_D117",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN210",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN211",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN211_REPAIR",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212B",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212C",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212D",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212E",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212F",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212G",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN212_DBG",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN221",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN222",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN223",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN224",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN225",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN226",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN227",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN228",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN229",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN230",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN231",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN232",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN233",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN234",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYN29",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R14",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R15",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_R10",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_R11",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_DYNPRO_R12",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_EXEC_D210",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_EXEC_D211",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_EXEC_D29",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_TXTPOOL_PROBE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_MCP_VERDICT",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_ARCHIVE_SEL_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_COMPARE_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_FIELDS39_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_FIELDS_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_KIND_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_ROUTES_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "ZORVANTA_PROBE_TYPE_01",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE2",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE3",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "PROG",
+            "name": "Z_ORVANTA_R7_REPAIR_IFPROBE4",
+            "occurrences": [
+              "GR2K923492"
+            ]
+          },
+          {
+            "pgmid": "R3TR",
+            "type": "VIEW",
+            "name": "ZORV_MCP_V01",
+            "occurrences": [
+              "GR2K923472"
+            ]
+          }
+        ],
+        "duplicateOccurrences": [
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORVANTA_T_PROBE",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T01",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T02",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          },
+          {
+            "pgmid": "LIMU",
+            "type": "TABD",
+            "name": "ZORV_MCP_T03",
+            "occurrences": [
+              "GR2K923472",
+              "GR2K923472"
+            ]
+          }
+        ],
+        "inactiveCheck": {
+          "status": "observed",
+          "transportOnlyRecords": 0,
+          "targets": [
+            {
+              "objectName": "LZORVANTA_BC_CFGTOP",
+              "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+              "status": "not_in_returned_list",
+              "matches": []
+            },
+            {
+              "objectName": "LZORVANTA_BC_CFGUXX",
+              "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+              "status": "not_in_returned_list",
+              "matches": []
+            },
+            {
+              "objectName": "Z_ORVANTA_CFG_BC_READ",
+              "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+              "status": "not_in_returned_list",
+              "matches": []
+            }
+          ],
+          "requestedTargets": [
+            {
+              "objectName": "LZORVANTA_BC_CFGTOP",
+              "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main"
+            },
+            {
+              "objectName": "LZORVANTA_BC_CFGUXX",
+              "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main"
+            },
+            {
+              "objectName": "Z_ORVANTA_CFG_BC_READ",
+              "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read"
+            }
+          ]
+        },
+        "fingerprint": "c394750c6f8c2f404539ec90cf88a21959283d45390be2a1c7dfc3afe1a56d2d",
+        "coverage": {
+          "source": "single_adt_transport_details_response",
+          "repositoryComplete": false,
+          "atomicSnapshot": false,
+          "inactiveObjects": "explicit_source_targets_only",
+          "dependencies": "not_checked",
+          "tableKeys": "not_checked",
+          "otherRequests": "not_searched"
+        },
+        "warnings": [
+          "Exact CTS pgmid/type/name keys only; R3TR containers and LIMU subobjects are not treated as interchangeable.",
+          "Duplicate expected keys are compared once and listed in expectedObjectDuplicates: E071 repeats LIMU keys legitimately, so a repeated expectation is not a failure.",
+          "Missing means absent from the observed list, not unassigned or nonexistent in SAP.",
+          "Duplicate occurrences may legitimately exist in parent and task lists; they are not automatically defects.",
+          "An exact key match does not establish activation, dependency completeness, transportability or release readiness.",
+          "No assignment, activation, request creation or release is performed. No SAP source is downloaded.",
+          "Inactive checks use one session-visible ADT inventory, independently of CTS key comparison. Explicit source targets are not automatically mapped to transport objects.",
+          "Not in the returned inactive list never proves active state or coverage of other users. Inactive observations are separate from the transport fingerprint."
+        ]
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:16.836Z",
+      "name": "inspect_repository_assignment",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVANTA_BC_CFG",
+        "objectType": "FUGR/F"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVANTA_BC_CFG",
+        "objectType": "FUGR/F",
+        "parentObject": "ZORVANTA_BC_CFG",
+        "packageName": "ZABAP",
+        "requestNumber": "GR2K923472",
+        "taskNumber": "GR2K923492",
+        "transportStatus": "D",
+        "active": true,
+        "generated": false,
+        "originalSystem": "GR2"
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:17.298Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "filters": [
+          {
+            "column": "TRKORR",
+            "operator": "EQ",
+            "value": "GR2K923472"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "maxRows": 2,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "TRFUNCTION",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "TRSTATUS",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000023"
+          },
+          {
+            "FIELDNAME": "AS4USER",
+            "TYPE": "C",
+            "LENGTH": "000012",
+            "OFFSET": "000025"
+          },
+          {
+            "FIELDNAME": "STRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000038"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923472",
+            "TRFUNCTION": "K",
+            "TRSTATUS": "D",
+            "AS4USER": "WYS",
+            "STRKORR": ""
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-04T14:50:17.697Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "filters": [
+          {
+            "column": "TRKORR",
+            "operator": "EQ",
+            "value": "GR2K923492"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "maxRows": 2,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "TRFUNCTION",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "TRSTATUS",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000023"
+          },
+          {
+            "FIELDNAME": "AS4USER",
+            "TYPE": "C",
+            "LENGTH": "000012",
+            "OFFSET": "000025"
+          },
+          {
+            "FIELDNAME": "STRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000038"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923492",
+            "TRFUNCTION": "S",
+            "TRSTATUS": "D",
+            "AS4USER": "WYS",
+            "STRKORR": "GR2K923472"
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "objectName": "SAPLZORVANTA_BC_CFG",
+      "workspaceUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main",
+      "objectUri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main",
+      "activeReceipt": {
+        "at": "2026-10-04T14:50:13.376Z",
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main",
+          "startLine": 0,
+          "lineCount": 600
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\nLines: 0-14 of 14 (14 retrieved)\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LZORVANTA_BC_CFGTOP.               \" Global Data\n  INCLUDE LZORVANTA_BC_CFGUXX.               \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n* INCLUDE LZORVANTA_BC_CFGF...               \" Subroutines\n* INCLUDE LZORVANTA_BC_CFGO...               \" PBO-Modules\n* INCLUDE LZORVANTA_BC_CFGI...               \" PAI-Modules\n* INCLUDE LZORVANTA_BC_CFGE...               \" Events\n* INCLUDE LZORVANTA_BC_CFGP...               \" Local class implement.\n```"
+        }
+      }
+    },
+    {
+      "objectName": "LZORVANTA_BC_CFGTOP",
+      "workspaceUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+      "objectUri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+      "activeReceipt": {
+        "at": "2026-10-04T14:50:14.158Z",
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+          "startLine": 0,
+          "lineCount": 600
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\nLines: 0-3 of 3 (3 retrieved)\n\n```abap\nFUNCTION-POOL ZORVANTA_BC_CFG.              \"MESSAGE-ID ..\n\n* INCLUDE LZORVANTA_BC_CFGD...               \" Local class definition\n```"
+        }
+      }
+    },
+    {
+      "objectName": "LZORVANTA_BC_CFGUXX",
+      "workspaceUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+      "objectUri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+      "activeReceipt": {
+        "at": "2026-10-04T14:50:15.622Z",
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+          "startLine": 0,
+          "lineCount": 600
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\nLines: 0-6 of 6 (6 retrieved)\n\n```abap\n*****************************************************************\n*   THIS FILE IS GENERATED BY THE FUNCTION LIBRARY.             *\n*   NEVER CHANGE IT MANUALLY, PLEASE!                           *\n*****************************************************************\nINCLUDE LZORVANTA_BC_CFGU01.\n                    \"Z_ORVANTA_CFG_BC_READ\n```"
+        }
+      }
+    },
+    {
+      "objectName": "Z_ORVANTA_CFG_BC_READ",
+      "workspaceUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+      "objectUri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+      "activeReceipt": {
+        "at": "2026-10-04T14:50:15.920Z",
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+          "startLine": 0,
+          "lineCount": 600
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read/source/main\nLines: 0-226 of 226 (226 retrieved)\n\n```abap\nFUNCTION Z_ORVANTA_CFG_BC_READ\n  IMPORTING\n    VALUE(IV_BC_SET) TYPE STRING\n    VALUE(IV_VERSION) TYPE STRING\n  EXPORTING\n    VALUE(EV_CODE) TYPE STRING\n    VALUE(EV_SYSTEM) TYPE STRING\n    VALUE(EV_CLIENT) TYPE STRING\n    VALUE(EV_USER) TYPE STRING\n    VALUE(EV_SOURCE_VERSION) TYPE STRING\n    VALUE(EV_TARGET_VERSION) TYPE STRING\n  TABLES\n    ET_T006 LIKE T006\n    ET_T006A LIKE T006A\n    ET_T006B LIKE T006B\n    ET_T006C LIKE T006C\n    ET_T006D LIKE T006D.\n\n\n\nDATA: ls_header TYPE scprattr,\n      ls_record TYPE scprreca,\n      lt_records TYPE STANDARD TABLE OF scprreca,\n      lt_values TYPE STANDARD TABLE OF scprvals,\n      lt_languages TYPE STANDARD TABLE OF scprvall,\n      lt_dependencies TYPE STANDARD TABLE OF scprpprl,\n      lt_t006 TYPE STANDARD TABLE OF t006,\n      lt_t006a TYPE STANDARD TABLE OF t006a,\n      lt_t006b TYPE STANDARD TABLE OF t006b,\n      lt_t006c TYPE STANDARD TABLE OF t006c,\n      lt_t006d TYPE STANDARD TABLE OF t006d,\n      lv_table TYPE tddat-tabname,\n      lv_group TYPE tddat-cclass,\n      lv_source TYPE xstring,\n      lv_target TYPE xstring,\n      lv_source_first TYPE xstring,\n      lv_target_first TYPE xstring,\n      lv_source_hash TYPE string,\n      lv_target_hash TYPE string,\n      lv_count TYPE i.\n\" 每次初始化全部输出；失败不泄露前次调用的行或版本。\nCLEAR: ev_code, ev_system, ev_client, ev_user,\n       ev_source_version, ev_target_version.\nREFRESH et_t006.\nREFRESH et_t006a.\nREFRESH et_t006b.\nREFRESH et_t006c.\nREFRESH et_t006d.\nev_system = sy-sysid.\nev_client = sy-mandt.\nev_user = sy-uname.\nIF sy-sysid <> 'GR2' OR sy-mandt <> '200'.\n  ev_code = 'SCOPE_UNSUPPORTED'.\n  RETURN.\nENDIF.\nIF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'.\n  ev_code = 'INPUT_INVALID'.\n  RETURN.\nENDIF.\n\" 逐表验证读取权限；没有授权组时沿用 &NC&，名称权限可替代组权限。\nDO 10 TIMES.\n  CASE sy-index.\n    WHEN 1. lv_table = 'T006'.\n    WHEN 2. lv_table = 'T006A'.\n    WHEN 3. lv_table = 'T006B'.\n    WHEN 4. lv_table = 'T006C'.\n    WHEN 5. lv_table = 'T006D'.\n    WHEN 6. lv_table = 'SCPRATTR'.\n    WHEN 7. lv_table = 'SCPRRECA'.\n    WHEN 8. lv_table = 'SCPRVALS'.\n    WHEN 9. lv_table = 'SCPRVALL'.\n    WHEN 10. lv_table = 'SCPRPPRL'.\n  ENDCASE.\n  CLEAR lv_group.\n  SELECT SINGLE cclass INTO lv_group FROM tddat\n    WHERE tabname = lv_table.\n  IF sy-subrc <> 0 OR lv_group IS INITIAL.\n    lv_group = '&NC&'.\n  ENDIF.\n  AUTHORITY-CHECK OBJECT 'S_TABU_DIS'\n    ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.\n  IF sy-subrc <> 0.\n    AUTHORITY-CHECK OBJECT 'S_TABU_NAM'\n      ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.\n    IF sy-subrc <> 0.\n      ev_code = 'AUTHORIZATION_DENIED'.\n      RETURN.\n    ENDIF.\n  ENDIF.\nENDDO.\n\" 两轮完整读取并比较原生缓冲；这是顺序观察，不是加锁快照。\nDO 2 TIMES.\n  SELECT SINGLE * INTO ls_header FROM scprattr\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  IF sy-subrc <> 0.\n    ev_code = 'SOURCE_NOT_FOUND'.\n    RETURN.\n  ENDIF.\n  IF ls_header-category IS NOT INITIAL OR ls_header-type <> 'TMV'.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SELECT * FROM scprreca INTO TABLE lt_records UP TO 6 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_records LINES lv_count.\n  IF lv_count <> 5.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SORT lt_records BY id version tablename recnumber.\n  LOOP AT lt_records INTO ls_record.\n    CASE sy-tabix.\n      WHEN 1. lv_table = 'T006'.\n      WHEN 2. lv_table = 'T006A'.\n      WHEN 3. lv_table = 'T006B'.\n      WHEN 4. lv_table = 'T006C'.\n      WHEN 5. lv_table = 'T006D'.\n    ENDCASE.\n    IF ls_record-tablename <> lv_table OR ls_record-recnumber <> 1\n    OR ls_record-objectname <> 'CUNI' OR ls_record-objecttype <> 'T'\n    OR ls_record-deleteflag IS NOT INITIAL\n    OR ls_record-uncomplete IS NOT INITIAL\n    OR ls_record-genref IS NOT INITIAL\n    OR ls_record-activity IS NOT INITIAL\n    OR ls_record-clustname IS NOT INITIAL.\n      ev_code = 'SOURCE_SCOPE_INVALID'.\n      RETURN.\n    ENDIF.\n  ENDLOOP.\n  SELECT * FROM scprvals INTO TABLE lt_values UP TO 101 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_values LINES lv_count.\n  IF lv_count > 100.\n    ev_code = 'SOURCE_LIMIT_EXCEEDED'.\n    RETURN.\n  ENDIF.\n  SORT lt_values BY id version tablename recnumber fieldname.\n  SELECT * FROM scprvall INTO TABLE lt_languages UP TO 101 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_languages LINES lv_count.\n  IF lv_count > 100.\n    ev_code = 'SOURCE_LIMIT_EXCEEDED'.\n    RETURN.\n  ENDIF.\n  SORT lt_languages BY id version tablename recnumber fieldname langu.\n  SELECT * FROM scprpprl INTO TABLE lt_dependencies UP TO 1 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  IF lt_dependencies IS NOT INITIAL.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SELECT * FROM t006 INTO TABLE lt_t006 WHERE msehi = 'KNM'.\n  SELECT * FROM t006a INTO TABLE lt_t006a WHERE msehi = 'KNM'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  \" 别名按自身键读取；映射到其他单位的冲突也必须返回。\n  SELECT * FROM t006b INTO TABLE lt_t006b WHERE mseh3 = 'KNM'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  SELECT * FROM t006c INTO TABLE lt_t006c WHERE mseh6 = 'kN/m2'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  \" PRESS 是共享维度；这里只读取完整行，不做保存。\n  SELECT * FROM t006d INTO TABLE lt_t006d WHERE dimid = 'PRESS'.\n  SORT lt_t006 BY mandt msehi.\n  SORT lt_t006a BY mandt spras msehi.\n  SORT lt_t006b BY mandt spras mseh3.\n  SORT lt_t006c BY mandt spras mseh6.\n  SORT lt_t006d BY mandt dimid.\n  \" 原生类型序列化包括 FLTP、空格和缺失行；不经显示文本重建。\n  EXPORT namespace = 'ORVANTA_BC_SOURCE_V1'\n    system = sy-sysid client = sy-mandt\n    header = ls_header records = lt_records values = lt_values\n    languages = lt_languages dependencies = lt_dependencies\n    TO DATA BUFFER lv_source.\n  EXPORT namespace = 'ORVANTA_BC_TARGET_V1'\n    system = sy-sysid client = sy-mandt user = sy-uname\n    bc_set = iv_bc_set version = iv_version\n    unit = lt_t006 texts = lt_t006a commercial = lt_t006b\n    technical = lt_t006c dimension = lt_t006d\n    TO DATA BUFFER lv_target.\n  IF sy-index = 1.\n    lv_source_first = lv_source.\n    lv_target_first = lv_target.\n  ELSEIF lv_source <> lv_source_first OR lv_target <> lv_target_first.\n    ev_code = 'READ_CHANGED'.\n    RETURN.\n  ENDIF.\nENDDO.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_source\n  IMPORTING hashstring = lv_source_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n             error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_target\n  IMPORTING hashstring = lv_target_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n             error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nTRANSLATE lv_source_hash TO LOWER CASE.\nTRANSLATE lv_target_hash TO LOWER CASE.\nIF strlen( lv_source_hash ) <> 64 OR strlen( lv_target_hash ) <> 64\nOR lv_source_hash CN '0123456789abcdef'\nOR lv_target_hash CN '0123456789abcdef'.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\net_t006[] = lt_t006[].\net_t006a[] = lt_t006a[].\net_t006b[] = lt_t006b[].\net_t006c[] = lt_t006c[].\net_t006d[] = lt_t006d[].\nev_source_version = lv_source_hash.\nev_target_version = lv_target_hash.\nev_code = 'READ_OK'.\n\n\n\n\n\nENDFUNCTION.\n```"
+        }
+      }
+    }
+  ],
+  "readerFingerprints": {
+    "source": "306ddd0f9a75c7e73634d12d82cd713ae536367863a81e0be6cb56e8ab3da880",
+    "interface": "8f9b627c30cb74f36bfbafdb2218b8f51c0eddba83471e8dd18ccf7fa14714e7"
+  },
+  "delivery": {
+    "connectionId": "w200",
+    "transportNumber": "GR2K923472",
+    "observedAt": "2026-10-04T14:50:16.785Z",
+    "readOnly": true,
+    "status": "partial",
+    "comparison": "differences",
+    "readyToRelease": "not_determined",
+    "headers": [
+      {
+        "number": "GR2K923472",
+        "owner": "WYS",
+        "rawStatus": "D",
+        "role": "selected_request"
+      },
+      {
+        "number": "GR2K923492",
+        "owner": "WYS",
+        "rawStatus": "D",
+        "role": "returned_task"
+      }
+    ],
+    "expected": [
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_BC_CFG"
+      }
+    ],
+    "expectedObjectDuplicates": [],
+    "objects": [
+      {
+        "pgmid": "LIMU",
+        "type": "DOMD",
+        "name": "ZORVANTA_R11_DOM01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "DTED",
+        "name": "ZORVANTA_R11_DE01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "DYNP",
+        "name": "ZCODEX_MCP_DYNPRO                       0100",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "FUNC",
+        "name": "Z_ORVANTA_OPS_READ",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "REPS",
+        "name": "ZORVANTA_MCP_DYNPRO_DEPLOY",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "REPS",
+        "name": "ZORVANTA_MCP_EXEC_DEPLOY",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "SHLD",
+        "name": "ZORVANTA_MCP_DESC_TEST",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "SHLD",
+        "name": "ZORVANTA_WB_H",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORVANTA_R12_STR01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORVANTA_R7C_TMP",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORVANTA_T_PROBE",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T01",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T02",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T03",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TTYD",
+        "name": "ZORVANTA_R12_TT01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "CLAS",
+        "name": "ZCL_ORVANTA_MCP_CORE",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "ENHO",
+        "name": "ZACC_DOCUMENT",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_BC_CFG",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_CFG_NR",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_CFG_UNIT",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_LOG",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_MAINT",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_MCP_CORE",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_MCP_PROBE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_RUNNER",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "MSAG",
+        "name": "ZORVANTA_R16_DEL",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "MSAG",
+        "name": "ZORVANTA_R16_MSG",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "NROB",
+        "name": "ZORVCFGNR",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "NROB",
+        "name": "ZORVMCPNR1",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZCODEX_MCP_DYNPRO",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_COMPILE_ORACLE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY_R02",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY_R03",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY_R04",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_BOOTSTRAP",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DDIC_D117",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN210",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN211",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN211_REPAIR",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212B",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212C",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212D",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212E",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212F",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212G",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212_DBG",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN221",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN222",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN223",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN224",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN225",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN226",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN227",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN228",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN229",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN230",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN231",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN232",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN233",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN234",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN29",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R14",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R15",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_R10",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_R11",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_R12",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_EXEC_D210",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_EXEC_D211",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_EXEC_D29",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_TXTPOOL_PROBE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_VERDICT",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_ARCHIVE_SEL_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_COMPARE_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_FIELDS39_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_FIELDS_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_KIND_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_ROUTES_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_TYPE_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE2",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE3",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE4",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "VIEW",
+        "name": "ZORV_MCP_V01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      }
+    ],
+    "missingFromObservedList": [],
+    "unexpectedInObservedList": [
+      {
+        "pgmid": "LIMU",
+        "type": "DOMD",
+        "name": "ZORVANTA_R11_DOM01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "DTED",
+        "name": "ZORVANTA_R11_DE01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "DYNP",
+        "name": "ZCODEX_MCP_DYNPRO                       0100",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "FUNC",
+        "name": "Z_ORVANTA_OPS_READ",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "REPS",
+        "name": "ZORVANTA_MCP_DYNPRO_DEPLOY",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "REPS",
+        "name": "ZORVANTA_MCP_EXEC_DEPLOY",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "SHLD",
+        "name": "ZORVANTA_MCP_DESC_TEST",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "SHLD",
+        "name": "ZORVANTA_WB_H",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORVANTA_R12_STR01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORVANTA_R7C_TMP",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORVANTA_T_PROBE",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T01",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T02",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T03",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TTYD",
+        "name": "ZORVANTA_R12_TT01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "CLAS",
+        "name": "ZCL_ORVANTA_MCP_CORE",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "ENHO",
+        "name": "ZACC_DOCUMENT",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_CFG_NR",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_CFG_UNIT",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_LOG",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_MAINT",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_MCP_CORE",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_MCP_PROBE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_RUNNER",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "MSAG",
+        "name": "ZORVANTA_R16_DEL",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "MSAG",
+        "name": "ZORVANTA_R16_MSG",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "NROB",
+        "name": "ZORVCFGNR",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "NROB",
+        "name": "ZORVMCPNR1",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZCODEX_MCP_DYNPRO",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_COMPILE_ORACLE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY_R02",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY_R03",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MAINT_DEPLOY_R04",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_BOOTSTRAP",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DDIC_D117",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN210",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN211",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN211_REPAIR",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212B",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212C",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212D",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212E",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212F",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212G",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN212_DBG",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN221",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN222",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN223",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN224",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN225",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN226",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN227",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN228",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN229",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN230",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN231",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN232",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN233",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN234",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYN29",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R14",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_DEPLOY_R15",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_R10",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_R11",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_DYNPRO_R12",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_EXEC_D210",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_EXEC_D211",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_EXEC_D29",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_TXTPOOL_PROBE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_MCP_VERDICT",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_ARCHIVE_SEL_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_COMPARE_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_FIELDS39_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_FIELDS_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_KIND_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_ROUTES_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "ZORVANTA_PROBE_TYPE_01",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE2",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE3",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "PROG",
+        "name": "Z_ORVANTA_R7_REPAIR_IFPROBE4",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      },
+      {
+        "pgmid": "R3TR",
+        "type": "VIEW",
+        "name": "ZORV_MCP_V01",
+        "occurrences": [
+          "GR2K923472"
+        ]
+      }
+    ],
+    "duplicateOccurrences": [
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORVANTA_T_PROBE",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T01",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T02",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      },
+      {
+        "pgmid": "LIMU",
+        "type": "TABD",
+        "name": "ZORV_MCP_T03",
+        "occurrences": [
+          "GR2K923472",
+          "GR2K923472"
+        ]
+      }
+    ],
+    "inactiveCheck": {
+      "status": "observed",
+      "transportOnlyRecords": 0,
+      "targets": [
+        {
+          "objectName": "LZORVANTA_BC_CFGTOP",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+          "status": "not_in_returned_list",
+          "matches": []
+        },
+        {
+          "objectName": "LZORVANTA_BC_CFGUXX",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+          "status": "not_in_returned_list",
+          "matches": []
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_READ",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+          "status": "not_in_returned_list",
+          "matches": []
+        }
+      ],
+      "requestedTargets": [
+        {
+          "objectName": "LZORVANTA_BC_CFGTOP",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main"
+        },
+        {
+          "objectName": "LZORVANTA_BC_CFGUXX",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main"
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_READ",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read"
+        }
+      ]
+    },
+    "fingerprint": "c394750c6f8c2f404539ec90cf88a21959283d45390be2a1c7dfc3afe1a56d2d",
+    "coverage": {
+      "source": "single_adt_transport_details_response",
+      "repositoryComplete": false,
+      "atomicSnapshot": false,
+      "inactiveObjects": "explicit_source_targets_only",
+      "dependencies": "not_checked",
+      "tableKeys": "not_checked",
+      "otherRequests": "not_searched"
+    },
+    "warnings": [
+      "Exact CTS pgmid/type/name keys only; R3TR containers and LIMU subobjects are not treated as interchangeable.",
+      "Duplicate expected keys are compared once and listed in expectedObjectDuplicates: E071 repeats LIMU keys legitimately, so a repeated expectation is not a failure.",
+      "Missing means absent from the observed list, not unassigned or nonexistent in SAP.",
+      "Duplicate occurrences may legitimately exist in parent and task lists; they are not automatically defects.",
+      "An exact key match does not establish activation, dependency completeness, transportability or release readiness.",
+      "No assignment, activation, request creation or release is performed. No SAP source is downloaded.",
+      "Inactive checks use one session-visible ADT inventory, independently of CTS key comparison. Explicit source targets are not automatically mapped to transport objects.",
+      "Not in the returned inactive list never proves active state or coverage of other users. Inactive observations are separate from the transport fingerprint."
+    ]
+  },
+  "status": "prechange_collected",
+  "immutableBackup": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-bc-preview-before-create-20261004225017-r46.json"
+}

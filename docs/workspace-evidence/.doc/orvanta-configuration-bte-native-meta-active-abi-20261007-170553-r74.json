@@ -1,0 +1,789 @@
+{
+  "connectionId": "w200",
+  "functionName": "Z_ORVANTA_CFG_BTE_META",
+  "functionGroup": "ZORVANTA_BTE_CFG",
+  "shortText": "Fixed TBE24 read-only native metadata",
+  "remoteMode": "R",
+  "updateTask": false,
+  "updateTaskMode": "",
+  "globalInterface": false,
+  "remoteEnabled": true,
+  "importParameters": [],
+  "exportParameters": [
+    {
+      "name": "EV_CODE",
+      "typeName": "CHAR40",
+      "optional": false,
+      "passByValue": true,
+      "description": ""
+    },
+    {
+      "name": "EV_MESSAGE",
+      "typeName": "BAPI_MSG",
+      "optional": false,
+      "passByValue": true,
+      "description": ""
+    },
+    {
+      "name": "EV_READ_ONLY",
+      "typeName": "XFELD",
+      "optional": false,
+      "passByValue": true,
+      "description": ""
+    },
+    {
+      "name": "EV_FRESH",
+      "typeName": "XFELD",
+      "optional": false,
+      "passByValue": true,
+      "description": ""
+    }
+  ],
+  "changingParameters": [],
+  "tableParameters": [
+    {
+      "name": "ET_HEADER",
+      "typeName": "VIMDESC",
+      "optional": false,
+      "passByValue": false,
+      "description": ""
+    },
+    {
+      "name": "ET_NAMTAB",
+      "typeName": "VIMNAMTAB",
+      "optional": false,
+      "passByValue": false,
+      "description": ""
+    },
+    {
+      "name": "ET_EVENTS",
+      "typeName": "TVIMF",
+      "optional": false,
+      "passByValue": false,
+      "description": ""
+    }
+  ],
+  "exceptions": [],
+  "fingerprint": "7c2f8b71336f73f31a2e1c284a6d742c6977018243328f55c6062e20e82ff5c6",
+  "interfaceFingerprint": "b498f6e907c84afbed3d5c913121fcea9e11c10102e5c4270e395d2125570307",
+  "sourceFingerprint": "2a7ee18051e17ad1af63d8ae11fcda59dd8c6fccdc17c320b5501ab1e81e1b4e",
+  "executionSupport": {
+    "supported": true,
+    "reasons": [],
+    "parameters": [
+      {
+        "name": "EV_CODE",
+        "typeName": "CHAR40",
+        "optional": false,
+        "direction": "export",
+        "kind": "scalar",
+        "maxCharacters": 40,
+        "valueContract": {
+          "dataType": "CHAR",
+          "length": 40
+        },
+        "supported": true
+      },
+      {
+        "name": "EV_MESSAGE",
+        "typeName": "BAPI_MSG",
+        "optional": false,
+        "direction": "export",
+        "kind": "scalar",
+        "maxCharacters": 220,
+        "valueContract": {
+          "dataType": "CHAR",
+          "length": 220
+        },
+        "supported": true
+      },
+      {
+        "name": "EV_READ_ONLY",
+        "typeName": "XFELD",
+        "optional": false,
+        "direction": "export",
+        "kind": "scalar",
+        "maxCharacters": 1,
+        "valueContract": {
+          "dataType": "CHAR",
+          "length": 1
+        },
+        "supported": true
+      },
+      {
+        "name": "EV_FRESH",
+        "typeName": "XFELD",
+        "optional": false,
+        "direction": "export",
+        "kind": "scalar",
+        "maxCharacters": 1,
+        "valueContract": {
+          "dataType": "CHAR",
+          "length": 1
+        },
+        "supported": true
+      },
+      {
+        "name": "ET_HEADER",
+        "typeName": "VIMDESC",
+        "optional": false,
+        "direction": "table",
+        "kind": "table",
+        "fields": [
+          "VIEWNAME",
+          "MAINTVIEW",
+          "AREA",
+          "DEVCLASS",
+          "TYPE",
+          "LISTE",
+          "DETAIL",
+          "OCCURS",
+          "CLTCODE",
+          "BASTAB",
+          "NEWGENER",
+          "GENDATE",
+          "GENTIME",
+          "FLAG",
+          "EXISTENCY",
+          "SELECTION",
+          "DDTEXT",
+          "CLIDEP",
+          "TEXTCLIDEP",
+          "KEYLEN",
+          "AFTER_KEYC",
+          "TEXTKEYLEN",
+          "AFT_TXTKC",
+          "TABLEN",
+          "AFTER_TABC",
+          "TEXTTABLEN",
+          "AFT_TXTTBC",
+          "MAXTRKEYLN",
+          "TRGKEYPOS",
+          "MAXTRTXKLN",
+          "TRTXGKPOS",
+          "CUSTOMAUTH",
+          "AUTHCLASS",
+          "SUBSETFLAG",
+          "RDONLYFLAG",
+          "ADRNBRFLAG",
+          "GUIDFLAG",
+          "USREXIFLAG",
+          "HIDDENFLAG",
+          "DELMDTFLAG",
+          "TEXTTBEXST",
+          "PTFRKYEXST",
+          "GENERICTRP",
+          "GENERTXTRP",
+          "FIELDORDER",
+          "TEXTTAB",
+          "ORIG_LANG",
+          "SPRASFIELD",
+          "SPRASFDPOS",
+          "ROOTTAB",
+          "GUI_PROG",
+          "CURSETTING",
+          "IMPORTABLE",
+          "SCRFRMFLAG",
+          "FPOOLNAME",
+          "MAINFLAG",
+          "FRM_BF_SAV",
+          "FRM_AF_SAV",
+          "FRM_BF_DEL",
+          "FRM_AF_DEL",
+          "FRM_ON_NEW",
+          "FRM_AF_ORG",
+          "FRM_BF_RPL",
+          "FRM_AF_RPL",
+          "FRM_RP_ORG",
+          "FRM_RP_GET",
+          "FRM_RP_UPD",
+          "FRM_RP_CPL",
+          "FRM_ON_ORG",
+          "FRM_E071",
+          "FRM_E071KS",
+          "FRM_E071KA",
+          "FRM_BF_END",
+          "FRM_AF_ENQ",
+          "FRM_BF_UDL",
+          "FRM_AF_UDL",
+          "FRM_BF_PRN",
+          "FRM_AF_CHK",
+          "FRM_AF_INI",
+          "FRM_IN_DSS",
+          "FRM_H_FLDS",
+          "FRM_RP_POS",
+          "FRM_TL_GET",
+          "FRM_TL_ORG",
+          "FRM_TL_UPD",
+          "FRM_TLTEXT",
+          "FRM_BF_ADR",
+          "FRM_AF_DLM",
+          "FRM_ON_AUT",
+          "FRM_BF_ALV",
+          "FRM_AF_UID",
+          "FRM_AF_EDD"
+        ],
+        "fieldContracts": {
+          "VIEWNAME": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "MAINTVIEW": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "AREA": {
+            "dataType": "CHAR",
+            "length": 26
+          },
+          "DEVCLASS": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "TYPE": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "LISTE": {
+            "dataType": "NUMC",
+            "length": 4
+          },
+          "DETAIL": {
+            "dataType": "NUMC",
+            "length": 4
+          },
+          "OCCURS": {
+            "dataType": "NUMC",
+            "length": 4
+          },
+          "CLTCODE": {
+            "dataType": "CHAR",
+            "length": 20
+          },
+          "BASTAB": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "NEWGENER": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "GENDATE": {
+            "dataType": "DATS"
+          },
+          "GENTIME": {
+            "dataType": "TIMS"
+          },
+          "FLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "EXISTENCY": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "SELECTION": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "DDTEXT": {
+            "dataType": "CHAR",
+            "length": 60
+          },
+          "CLIDEP": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "TEXTCLIDEP": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "KEYLEN": {
+            "dataType": "INT4"
+          },
+          "AFTER_KEYC": {
+            "dataType": "INT4"
+          },
+          "TEXTKEYLEN": {
+            "dataType": "INT4"
+          },
+          "AFT_TXTKC": {
+            "dataType": "INT4"
+          },
+          "TABLEN": {
+            "dataType": "INT4"
+          },
+          "AFTER_TABC": {
+            "dataType": "INT4"
+          },
+          "TEXTTABLEN": {
+            "dataType": "INT4"
+          },
+          "AFT_TXTTBC": {
+            "dataType": "INT4"
+          },
+          "MAXTRKEYLN": {
+            "dataType": "INT4"
+          },
+          "TRGKEYPOS": {
+            "dataType": "INT4"
+          },
+          "MAXTRTXKLN": {
+            "dataType": "INT4"
+          },
+          "TRTXGKPOS": {
+            "dataType": "INT4"
+          },
+          "CUSTOMAUTH": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "AUTHCLASS": {
+            "dataType": "NUMC",
+            "length": 2
+          },
+          "SUBSETFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "RDONLYFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "ADRNBRFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "GUIDFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "USREXIFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "HIDDENFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "DELMDTFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "TEXTTBEXST": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "PTFRKYEXST": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "GENERICTRP": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "GENERTXTRP": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "FIELDORDER": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "TEXTTAB": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "ORIG_LANG": {
+            "dataType": "LANG",
+            "length": 1
+          },
+          "SPRASFIELD": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "SPRASFDPOS": {
+            "dataType": "NUMC",
+            "length": 6
+          },
+          "ROOTTAB": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "GUI_PROG": {
+            "dataType": "CHAR",
+            "length": 40
+          },
+          "CURSETTING": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "IMPORTABLE": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "SCRFRMFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "FPOOLNAME": {
+            "dataType": "CHAR",
+            "length": 40
+          },
+          "MAINFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "FRM_BF_SAV": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_SAV": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_BF_DEL": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_DEL": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_ON_NEW": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_ORG": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_BF_RPL": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_RPL": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_RP_ORG": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_RP_GET": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_RP_UPD": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_RP_CPL": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_ON_ORG": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_E071": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_E071KS": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_E071KA": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_BF_END": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_ENQ": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_BF_UDL": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_UDL": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_BF_PRN": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_CHK": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_INI": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_IN_DSS": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_H_FLDS": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_RP_POS": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_TL_GET": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_TL_ORG": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_TL_UPD": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_TLTEXT": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_BF_ADR": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_DLM": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_ON_AUT": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_BF_ALV": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_UID": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "FRM_AF_EDD": {
+            "dataType": "CHAR",
+            "length": 30
+          }
+        },
+        "supported": true
+      },
+      {
+        "name": "ET_NAMTAB",
+        "typeName": "VIMNAMTAB",
+        "optional": false,
+        "direction": "table",
+        "kind": "table",
+        "fields": [
+          "VIEWFIELD",
+          "KEYFLAG",
+          "POSITION",
+          "READONLY",
+          "LOWERCASE",
+          "FLENGTH",
+          "OUTPUTLEN",
+          "SCRTEXT",
+          "TABIX",
+          "DOMNAME",
+          "CHECKTABLE",
+          "INTTYPE",
+          "DATATYPE",
+          "PRIMTABKEY",
+          "CONVEXIT",
+          "TEXTTABFLD",
+          "DECIMALS",
+          "SIGN",
+          "LENG",
+          "ROLLNAME",
+          "PRTFRKYFLD",
+          "BASTABNAME",
+          "BASTABFLD",
+          "TXTTABFLDN",
+          "TEXTTABPOS",
+          "TEXTFLDSEL",
+          "MEMORYID",
+          "REFTABLE",
+          "REFFIELD",
+          "REPTEXT",
+          "SCRTEXT_S",
+          "SCRTEXT_M",
+          "SCRTEXT_L"
+        ],
+        "fieldContracts": {
+          "VIEWFIELD": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "KEYFLAG": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "POSITION": {
+            "dataType": "NUMC",
+            "length": 4
+          },
+          "READONLY": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "LOWERCASE": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "FLENGTH": {
+            "dataType": "NUMC",
+            "length": 6
+          },
+          "OUTPUTLEN": {
+            "dataType": "NUMC",
+            "length": 6
+          },
+          "SCRTEXT": {
+            "dataType": "CHAR",
+            "length": 40
+          },
+          "TABIX": {
+            "dataType": "INT4"
+          },
+          "DOMNAME": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "CHECKTABLE": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "INTTYPE": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "DATATYPE": {
+            "dataType": "CHAR",
+            "length": 4
+          },
+          "PRIMTABKEY": {
+            "dataType": "NUMC",
+            "length": 4
+          },
+          "CONVEXIT": {
+            "dataType": "CHAR",
+            "length": 5
+          },
+          "TEXTTABFLD": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "DECIMALS": {
+            "dataType": "NUMC",
+            "length": 6
+          },
+          "SIGN": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "LENG": {
+            "dataType": "NUMC",
+            "length": 6
+          },
+          "ROLLNAME": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "PRTFRKYFLD": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "BASTABNAME": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "BASTABFLD": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "TXTTABFLDN": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "TEXTTABPOS": {
+            "dataType": "NUMC",
+            "length": 6
+          },
+          "TEXTFLDSEL": {
+            "dataType": "CHAR",
+            "length": 1
+          },
+          "MEMORYID": {
+            "dataType": "CHAR",
+            "length": 20
+          },
+          "REFTABLE": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "REFFIELD": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "REPTEXT": {
+            "dataType": "CHAR",
+            "length": 55
+          },
+          "SCRTEXT_S": {
+            "dataType": "CHAR",
+            "length": 10
+          },
+          "SCRTEXT_M": {
+            "dataType": "CHAR",
+            "length": 20
+          },
+          "SCRTEXT_L": {
+            "dataType": "CHAR",
+            "length": 40
+          }
+        },
+        "supported": true
+      },
+      {
+        "name": "ET_EVENTS",
+        "typeName": "TVIMF",
+        "optional": false,
+        "direction": "table",
+        "kind": "table",
+        "fields": [
+          "TABNAME",
+          "EVENT",
+          "FORMNAME"
+        ],
+        "fieldContracts": {
+          "TABNAME": {
+            "dataType": "CHAR",
+            "length": 30
+          },
+          "EVENT": {
+            "dataType": "CHAR",
+            "length": 2
+          },
+          "FORMNAME": {
+            "dataType": "CHAR",
+            "length": 30
+          }
+        },
+        "supported": true
+      }
+    ]
+  }
+}

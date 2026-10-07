@@ -1,0 +1,781 @@
+{
+  "startedAt": "2026-10-04T11:17:57.019Z",
+  "calls": [
+    {
+      "at": "2026-10-04T11:17:58.103Z",
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "readOnly": true,
+        "versionScope": "complete_TNRO_and_current_client_NRIV",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:17:58.111Z",
+      "name": "get_write_operation_status",
+      "args": {
+        "connectionId": "w200",
+        "operationId": "r41b-public-create-01-fixed-include"
+      },
+      "isError": false,
+      "data": {
+        "operationId": "r41b-public-create-01-fixed-include",
+        "version": 2,
+        "status": "failed",
+        "connectionId": "w200",
+        "toolName": "apply_configuration_number_range",
+        "operationIdHash": "80eb7337faf6cfc66ca40cb03fe621bddc2cb1b6f0eed44beef00e327676c9a2",
+        "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+        "inputHash": "7d17f8efbad6bde8b264eac5eb34daaf1f2b39c14e8f46cd257286b023e012f3",
+        "preChangeSummary": "Complete ZORVCFGNR/200 version 7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d; create interval 01.",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-10-04T11:05:00.009Z",
+          "target": "NRIV:ZORVCFGNR:200",
+          "exists": true,
+          "active": null,
+          "version": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+          "fingerprint": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+          "packageName": null,
+          "requestNumber": null,
+          "taskNumber": null,
+          "observationStatus": "complete",
+          "sources": [
+            "Z_ORVANTA_CFG_NR_READ",
+            "TNRO",
+            "NRIV"
+          ],
+          "warnings": [
+            "NRIV intervals are local client only; no CTS recording."
+          ]
+        },
+        "sapInvocationStarted": true,
+        "errorHash": "4c54ad5edde5ea30945c0d5cade8ea67d1c8802889fe3581e2ddd9ca2e9363b2",
+        "startedAt": "2026-10-04T11:04:52.133Z",
+        "finishedAt": "2026-10-04T11:05:01.334Z",
+        "durationMs": 9202,
+        "receiptHash": "d6970bf9e1e237852fcab515b85fe78b3e0d08eafc3fd2f56f1ed117fc7fee2e",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": true,
+        "localLockReleased": true,
+        "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+      }
+    },
+    {
+      "at": "2026-10-04T11:17:59.072Z",
+      "name": "reconcile_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "operationId": "r41b-public-create-01-fixed-include"
+      },
+      "isError": false,
+      "data": {
+        "readOnly": true,
+        "objectName": "ZORVCFGNR",
+        "operationId": "r41b-public-create-01-fixed-include",
+        "operationReceipt": {
+          "version": 2,
+          "status": "failed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "80eb7337faf6cfc66ca40cb03fe621bddc2cb1b6f0eed44beef00e327676c9a2",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "7d17f8efbad6bde8b264eac5eb34daaf1f2b39c14e8f46cd257286b023e012f3",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version 7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d; create interval 01.",
+          "sapPreChangeEvidence": {
+            "observedAt": "2026-10-04T11:05:00.009Z",
+            "target": "NRIV:ZORVCFGNR:200",
+            "exists": true,
+            "active": null,
+            "version": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+            "fingerprint": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+            "packageName": null,
+            "requestNumber": null,
+            "taskNumber": null,
+            "observationStatus": "complete",
+            "sources": [
+              "Z_ORVANTA_CFG_NR_READ",
+              "TNRO",
+              "NRIV"
+            ],
+            "warnings": [
+              "NRIV intervals are local client only; no CTS recording."
+            ]
+          },
+          "sapInvocationStarted": true,
+          "errorHash": "4c54ad5edde5ea30945c0d5cade8ea67d1c8802889fe3581e2ddd9ca2e9363b2",
+          "startedAt": "2026-10-04T11:04:52.133Z",
+          "finishedAt": "2026-10-04T11:05:01.334Z",
+          "durationMs": 9202,
+          "receiptHash": "d6970bf9e1e237852fcab515b85fe78b3e0d08eafc3fd2f56f1ed117fc7fee2e",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": true,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        },
+        "retryAvailable": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": true,
+        "locks": "unverified",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        },
+        "status": "partial",
+        "stateComparison": "changed_since_before",
+        "semantics": "Current state comparison does not prove who wrote, committed or restored it. Historical outcome and retry prohibition remain unchanged."
+      }
+    },
+    {
+      "at": "2026-10-04T11:17:59.264Z",
+      "name": "search_sap_locks",
+      "args": {
+        "connectionId": "w200",
+        "username": "WYS",
+        "argument": "ZORVCFGNR",
+        "maxResults": 20
+      },
+      "isError": false,
+      "data": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T11:17:59.075Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    },
+    {
+      "at": "2026-10-04T11:18:01.004Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "filters": [
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "ZORVCFGNR"
+          }
+        ],
+        "maxRows": 10
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "maxRows": 10,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "PGMID",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "OBJECT",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000026"
+          },
+          {
+            "FIELDNAME": "OBJ_NAME",
+            "TYPE": "C",
+            "LENGTH": "000120",
+            "OFFSET": "000031"
+          },
+          {
+            "FIELDNAME": "AS4POS",
+            "TYPE": "N",
+            "LENGTH": "000006",
+            "OFFSET": "000152"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923472",
+            "PGMID": "R3TR",
+            "OBJECT": "NROB",
+            "OBJ_NAME": "ZORVCFGNR",
+            "AS4POS": "000025"
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-04T11:18:02.711Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "filters": [
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "ZORVANTA_CFG_NR"
+          }
+        ],
+        "maxRows": 10
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "maxRows": 10,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "PGMID",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "OBJECT",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000026"
+          },
+          {
+            "FIELDNAME": "OBJ_NAME",
+            "TYPE": "C",
+            "LENGTH": "000120",
+            "OFFSET": "000031"
+          },
+          {
+            "FIELDNAME": "AS4POS",
+            "TYPE": "N",
+            "LENGTH": "000006",
+            "OFFSET": "000152"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923492",
+            "PGMID": "R3TR",
+            "OBJECT": "FUGR",
+            "OBJ_NAME": "ZORVANTA_CFG_NR",
+            "AS4POS": "000063"
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-04T11:18:04.421Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "filters": [
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "Z_ORVANTA_CFG_NR_READ"
+          }
+        ],
+        "maxRows": 10
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "maxRows": 10,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "PGMID",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "OBJECT",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000026"
+          },
+          {
+            "FIELDNAME": "OBJ_NAME",
+            "TYPE": "C",
+            "LENGTH": "000120",
+            "OFFSET": "000031"
+          },
+          {
+            "FIELDNAME": "AS4POS",
+            "TYPE": "N",
+            "LENGTH": "000006",
+            "OFFSET": "000152"
+          }
+        ],
+        "returnedCount": 0,
+        "truncated": false,
+        "data": []
+      }
+    },
+    {
+      "at": "2026-10-04T11:18:06.142Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "filters": [
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "Z_ORVANTA_CFG_NR_APPLY"
+          }
+        ],
+        "maxRows": 10
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "maxRows": 10,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "PGMID",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "OBJECT",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000026"
+          },
+          {
+            "FIELDNAME": "OBJ_NAME",
+            "TYPE": "C",
+            "LENGTH": "000120",
+            "OFFSET": "000031"
+          },
+          {
+            "FIELDNAME": "AS4POS",
+            "TYPE": "N",
+            "LENGTH": "000006",
+            "OFFSET": "000152"
+          }
+        ],
+        "returnedCount": 0,
+        "truncated": false,
+        "data": []
+      }
+    },
+    {
+      "at": "2026-10-04T11:18:06.146Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E071K",
+        "columns": [
+          "TRKORR",
+          "OBJECT",
+          "OBJNAME",
+          "TABKEY"
+        ],
+        "filters": [
+          {
+            "column": "TRKORR",
+            "operator": "EQ",
+            "value": "GR2K923492"
+          },
+          {
+            "column": "OBJNAME",
+            "operator": "EQ",
+            "value": "NRIV"
+          }
+        ],
+        "maxRows": 10
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking read_abap_table: Error: TABLE_NOT_ALLOWED: table E071K is not present in the D5-2 allowlist (default deny)"
+      }
+    }
+  ],
+  "finalSnapshot": {
+    "EV_CODE": "READ_OK",
+    "EV_SYSTEM": "GR2",
+    "EV_CLIENT": "200",
+    "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+    "ES_DEFINITION": {
+      "OBJECT": "ZORVCFGNR",
+      "DTELSOBJ": "",
+      "NRTAB": "",
+      "NRINTFLD": "",
+      "NREXTFLD": "",
+      "NRFLD": "",
+      "NRSOBJFLD": "",
+      "NRELEFLD": "",
+      "YEARIND": "",
+      "DOMLEN": "NUMC20",
+      "PERCENTAGE": "10.0",
+      "CODE": "",
+      "TEXTIND": "",
+      "NRELTXTTAB": "",
+      "NRELTXTSOB": "",
+      "NRELTXTELE": "",
+      "NRELTXTTXT": "",
+      "NRELTXTLNG": "",
+      "BUFFER": "",
+      "NOIVBUFFER": "00000000",
+      "NONRSWAP": "",
+      "RFCDEST": "",
+      "NRCHECKASCII": ""
+    },
+    "ET_INTERVALS": [
+      {
+        "CLIENT": "200",
+        "OBJECT": "ZORVCFGNR",
+        "SUBOBJECT": "",
+        "NRRANGENR": "01",
+        "TOYEAR": "0000",
+        "FROMNUMBER": "00000000000000000001",
+        "TONUMBER": "00000000000000000200",
+        "NRLEVEL": "00000000000000000000",
+        "EXTERNIND": ""
+      }
+    ]
+  },
+  "validatedEarlierRefusals": [
+    {
+      "at": "2026-10-04T11:16:58.839Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+        "action": "create",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000100",
+        "external": false,
+        "operationId": "r41b-public-create-01-fixed-include",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "status": "protection_refused",
+        "protectionStatus": "duplicate",
+        "operationId": "r41b-public-create-01-fixed-include",
+        "sapInvocationStarted": false,
+        "retryAvailable": false,
+        "operationReceipt": {
+          "version": 2,
+          "status": "failed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "80eb7337faf6cfc66ca40cb03fe621bddc2cb1b6f0eed44beef00e327676c9a2",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "7d17f8efbad6bde8b264eac5eb34daaf1f2b39c14e8f46cd257286b023e012f3",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version 7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d; create interval 01.",
+          "sapPreChangeEvidence": {
+            "observedAt": "2026-10-04T11:05:00.009Z",
+            "target": "NRIV:ZORVCFGNR:200",
+            "exists": true,
+            "active": null,
+            "version": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+            "fingerprint": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+            "packageName": null,
+            "requestNumber": null,
+            "taskNumber": null,
+            "observationStatus": "complete",
+            "sources": [
+              "Z_ORVANTA_CFG_NR_READ",
+              "TNRO",
+              "NRIV"
+            ],
+            "warnings": [
+              "NRIV intervals are local client only; no CTS recording."
+            ]
+          },
+          "sapInvocationStarted": true,
+          "errorHash": "4c54ad5edde5ea30945c0d5cade8ea67d1c8802889fe3581e2ddd9ca2e9363b2",
+          "startedAt": "2026-10-04T11:04:52.133Z",
+          "finishedAt": "2026-10-04T11:05:01.334Z",
+          "durationMs": 9202,
+          "receiptHash": "d6970bf9e1e237852fcab515b85fe78b3e0d08eafc3fd2f56f1ed117fc7fee2e",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": true,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:16:58.842Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+        "action": "create",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000001",
+        "external": false,
+        "operationId": "r41b-invalid-equal-bounds",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking apply_configuration_number_range: [\n  {\n    \"code\": \"custom\",\n    \"message\": \"Lower bound must be less than upper bound\",\n    \"path\": []\n  }\n]"
+      }
+    }
+  ],
+  "transportEntries": [
+    {
+      "TRKORR": "GR2K923472",
+      "PGMID": "R3TR",
+      "OBJECT": "NROB",
+      "OBJ_NAME": "ZORVCFGNR",
+      "AS4POS": "000025"
+    },
+    {
+      "TRKORR": "GR2K923492",
+      "PGMID": "R3TR",
+      "OBJECT": "FUGR",
+      "OBJ_NAME": "ZORVANTA_CFG_NR",
+      "AS4POS": "000063"
+    }
+  ],
+  "status": "stopped",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\ntrue !== false\n",
+  "finishedAt": "2026-10-04T11:18:06.149Z"
+}

@@ -1,0 +1,424 @@
+{
+  "startedAt": "2026-10-04T07:09:53.529Z",
+  "readOnly": true,
+  "nativeWriterCalls": 0,
+  "publicSchemaIntegration": "separately_tested_with_mock_backend",
+  "sapReader": "existing_shared_MCP",
+  "observations": [
+    {
+      "at": "2026-10-04T07:09:54.742Z",
+      "connectionId": "w200",
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "client": "200",
+        "unitKey": "KG",
+        "keyFormat": "internal_MSEHI",
+        "status": "partial",
+        "readOnly": true,
+        "saveAvailable": false,
+        "unit": {
+          "table": "T006",
+          "status": "read",
+          "code": null,
+          "data": {
+            "MANDT": "200",
+            "MSEHI": "KG",
+            "KZEX3": "X",
+            "KZEX6": "X",
+            "ANDEC": "3",
+            "KZKEH": "X",
+            "KZWOB": "",
+            "KZ1EH": "",
+            "KZ2EH": "",
+            "DIMID": "MASS",
+            "ZAEHL": "1",
+            "NENNR": "1",
+            "EXP10": "0",
+            "ADDKO": "0.000000",
+            "EXPON": "0",
+            "DECAN": "0",
+            "ISOCODE": "KGM",
+            "PRIMARY": "X",
+            "TEMP_UNIT": "",
+            "FAMUNIT": "",
+            "PRESS_UNIT": ""
+          }
+        },
+        "text": {
+          "table": "T006A",
+          "status": "read",
+          "code": null,
+          "data": {
+            "MANDT": "200",
+            "SPRAS": "1",
+            "MSEHI": "KG",
+            "MSEH3": "KG",
+            "MSEH6": "公斤",
+            "MSEHT": "公斤",
+            "MSEHL": "千克"
+          },
+          "requestedLanguage": "ZH",
+          "sapLanguage": "1",
+          "fallbackUsed": false
+        },
+        "readFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+        "comparison": "not_requested",
+        "coverage": {
+          "complete": false,
+          "includedFields": {
+            "T006": [
+              "MANDT",
+              "MSEHI",
+              "KZEX3",
+              "KZEX6",
+              "ANDEC",
+              "KZKEH",
+              "KZWOB",
+              "KZ1EH",
+              "KZ2EH",
+              "DIMID",
+              "ZAEHL",
+              "NENNR",
+              "EXP10",
+              "ADDKO",
+              "EXPON",
+              "DECAN",
+              "ISOCODE",
+              "PRIMARY",
+              "TEMP_UNIT",
+              "FAMUNIT",
+              "PRESS_UNIT"
+            ],
+            "T006A": [
+              "MANDT",
+              "SPRAS",
+              "MSEHI",
+              "MSEH3",
+              "MSEH6",
+              "MSEHT",
+              "MSEHL"
+            ]
+          },
+          "omittedFields": {
+            "T006": [
+              "TEMP_VALUE",
+              "PRESS_VAL"
+            ],
+            "T006A": []
+          },
+          "reason": "FLTP value decoding is not verified; no binary/numeric lossless snapshot is attested."
+        },
+        "representation": "sap_text_trimmed",
+        "usableForWritePrecondition": false,
+        "evidence": {
+          "startedAt": "2026-10-04T07:09:53.628Z",
+          "finishedAt": "2026-10-04T07:09:54.741Z",
+          "sources": [
+            {
+              "table": "T006",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T002",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T006A",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T006",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T002",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T006A",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            }
+          ],
+          "warnings": [],
+          "definitionFingerprints": {
+            "T006": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7",
+            "T006A": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d",
+            "T002": "f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307"
+          },
+          "definitionsRechecked": true,
+          "valuesRechecked": true,
+          "snapshot": false
+        },
+        "warnings": [
+          "Internal case-sensitive unit key only; external display units and ISO codes are not converted through CUNIT.",
+          "Both value tables are constrained to client 200. Missing translation does not mean missing unit; read failures do not mean absence.",
+          "Read fingerprint covers returned text projections and one language only, including observed absence. It is not a complete row version, business validation or CTS/write authorization."
+        ]
+      }
+    },
+    {
+      "at": "2026-10-04T07:09:54.745Z",
+      "connectionId": "w300",
+      "isError": true,
+      "data": {
+        "message": "Error invoking read_configuration_unit: Error: CONFIGURATION_UNIT_SCOPE_UNSUPPORTED"
+      }
+    }
+  ],
+  "input": {
+    "from": "w200",
+    "to": "w300",
+    "unitKey": "KG",
+    "language": "ZH"
+  },
+  "compiledCompareSha256": "14d3f2eb2513ad598315009499daa776ae1df2dce511a46404bae01e2e951e32",
+  "result": {
+    "from": "w200",
+    "to": "w300",
+    "unitKey": "KG",
+    "language": "ZH",
+    "status": "incomparable",
+    "readOnly": true,
+    "saveAvailable": false,
+    "rows": [
+      {
+        "table": "T006",
+        "key": {
+          "MSEHI": "KG"
+        },
+        "status": "incomparable",
+        "differences": []
+      },
+      {
+        "table": "T006A",
+        "key": {
+          "MSEHI": "KG",
+          "language": "ZH"
+        },
+        "status": "incomparable",
+        "differences": []
+      }
+    ],
+    "observations": {
+      "from": {
+        "status": "observed",
+        "result": {
+          "connectionId": "w200",
+          "client": "200",
+          "unitKey": "KG",
+          "keyFormat": "internal_MSEHI",
+          "status": "partial",
+          "readOnly": true,
+          "saveAvailable": false,
+          "unit": {
+            "table": "T006",
+            "status": "read",
+            "code": null,
+            "data": {
+              "MANDT": "200",
+              "MSEHI": "KG",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "3",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "MASS",
+              "ZAEHL": "1",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "0",
+              "ISOCODE": "KGM",
+              "PRIMARY": "X",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_UNIT": ""
+            }
+          },
+          "text": {
+            "table": "T006A",
+            "status": "read",
+            "code": null,
+            "data": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KG",
+              "MSEH3": "KG",
+              "MSEH6": "公斤",
+              "MSEHT": "公斤",
+              "MSEHL": "千克"
+            },
+            "requestedLanguage": "ZH",
+            "sapLanguage": "1",
+            "fallbackUsed": false
+          },
+          "readFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+          "comparison": "not_requested",
+          "coverage": {
+            "complete": false,
+            "includedFields": {
+              "T006": [
+                "MANDT",
+                "MSEHI",
+                "KZEX3",
+                "KZEX6",
+                "ANDEC",
+                "KZKEH",
+                "KZWOB",
+                "KZ1EH",
+                "KZ2EH",
+                "DIMID",
+                "ZAEHL",
+                "NENNR",
+                "EXP10",
+                "ADDKO",
+                "EXPON",
+                "DECAN",
+                "ISOCODE",
+                "PRIMARY",
+                "TEMP_UNIT",
+                "FAMUNIT",
+                "PRESS_UNIT"
+              ],
+              "T006A": [
+                "MANDT",
+                "SPRAS",
+                "MSEHI",
+                "MSEH3",
+                "MSEH6",
+                "MSEHT",
+                "MSEHL"
+              ]
+            },
+            "omittedFields": {
+              "T006": [
+                "TEMP_VALUE",
+                "PRESS_VAL"
+              ],
+              "T006A": []
+            },
+            "reason": "FLTP value decoding is not verified; no binary/numeric lossless snapshot is attested."
+          },
+          "representation": "sap_text_trimmed",
+          "usableForWritePrecondition": false,
+          "evidence": {
+            "startedAt": "2026-10-04T07:09:53.628Z",
+            "finishedAt": "2026-10-04T07:09:54.741Z",
+            "sources": [
+              {
+                "table": "T006",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "T002",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "T006A",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "T006",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "T002",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "T006A",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [],
+            "definitionFingerprints": {
+              "T006": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7",
+              "T006A": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d",
+              "T002": "f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307"
+            },
+            "definitionsRechecked": true,
+            "valuesRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Internal case-sensitive unit key only; external display units and ISO codes are not converted through CUNIT.",
+            "Both value tables are constrained to client 200. Missing translation does not mean missing unit; read failures do not mean absence.",
+            "Read fingerprint covers returned text projections and one language only, including observed absence. It is not a complete row version, business validation or CTS/write authorization."
+          ]
+        }
+      },
+      "to": {
+        "status": "unavailable",
+        "result": null,
+        "code": "CONFIGURATION_COMPARE_SIDE_UNAVAILABLE"
+      }
+    },
+    "rules": {
+      "key": "internal_case_sensitive_MSEHI_plus_ISO_language_for_text",
+      "client": "each_connection_client_filter; MANDT_not_compared",
+      "language": "explicit_ISO_language; local_SPRAS_not_compared; no_fallback",
+      "ignoredFields": [],
+      "derivedFields": [],
+      "omittedFields": {
+        "T006": [
+          "TEMP_VALUE",
+          "PRESS_VAL"
+        ],
+        "T006A": []
+      },
+      "representation": "sap_text_trimmed"
+    },
+    "evidence": {
+      "startedAt": "2026-10-04T07:09:53.624Z",
+      "finishedAt": "2026-10-04T07:09:54.745Z",
+      "snapshot": false,
+      "complete": false
+    },
+    "warnings": [
+      "Only one exact internal unit key and one explicit language are compared. Equality covers projected fields only; FLTP fields and other languages are omitted.",
+      "Sequential reads are not an atomic cross-system snapshot. Failed or changed reads remain incomparable; no synchronization or transport is performed."
+    ]
+  },
+  "status": "incomparable",
+  "finishedAt": "2026-10-04T07:09:54.748Z"
+}

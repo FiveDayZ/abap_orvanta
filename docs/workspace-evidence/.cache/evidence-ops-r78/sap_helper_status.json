@@ -1,0 +1,23 @@
+{
+  "request": {
+    "tool": "sap_helper_status",
+    "args": {
+      "connectionId": "w200",
+      "action": "ping"
+    }
+  },
+  "messages": [
+    {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "SAP Helper Result\nConnection: w200\nStatus: S\nCode: READY\nMessage: ORVANTA MCP SAP helper is ready\nVersion: 1.0"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 3
+    }
+  ]
+}

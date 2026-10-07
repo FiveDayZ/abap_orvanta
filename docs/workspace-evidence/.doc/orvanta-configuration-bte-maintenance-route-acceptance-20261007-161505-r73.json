@@ -1,0 +1,3090 @@
+{
+  "at": "2026-10-07T16:15:05.576+08:00",
+  "scope": "w200/200/WYS fixed BF24/TBE24, existing ZFICHK preview only",
+  "acceptance": {
+    "at": "2026-10-07T08:12:43.998Z",
+    "pid": 44884,
+    "readOnly": true,
+    "sourceWrites": 0,
+    "configurationWrites": 0,
+    "transportWrites": 0,
+    "status": "readonly_route_and_existing_product_preview_passed",
+    "remoteCalls": [
+      {
+        "at": "2026-10-07T08:12:46.224Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TSTC",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "TCODE = 'BF24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PGMNA"
+              },
+              {
+                "FIELDNAME": "DYPNO"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PGMNA"
+              },
+              {
+                "FIELDNAME": "DYPNO"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "BF24                |                                        |0000"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:46.647Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TSTCP",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "TCODE = 'BF24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PARAM"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PARAM"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "BF24                |/*SM30 VIEWNAME=TBE24;UPDATE=X;"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:47.100Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TVDIR",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "TABNAME = 'TBE24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "AREA"
+              },
+              {
+                "FIELDNAME": "DEVCLASS"
+              },
+              {
+                "FIELDNAME": "TYPE"
+              },
+              {
+                "FIELDNAME": "LISTE"
+              },
+              {
+                "FIELDNAME": "DETAIL"
+              },
+              {
+                "FIELDNAME": "OCCURS"
+              },
+              {
+                "FIELDNAME": "CLTCODE"
+              },
+              {
+                "FIELDNAME": "BASTAB"
+              },
+              {
+                "FIELDNAME": "NEWGENER"
+              },
+              {
+                "FIELDNAME": "GENDATE"
+              },
+              {
+                "FIELDNAME": "GENTIME"
+              },
+              {
+                "FIELDNAME": "FLAG"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "AREA"
+              },
+              {
+                "FIELDNAME": "DEVCLASS"
+              },
+              {
+                "FIELDNAME": "TYPE"
+              },
+              {
+                "FIELDNAME": "LISTE"
+              },
+              {
+                "FIELDNAME": "DETAIL"
+              },
+              {
+                "FIELDNAME": "OCCURS"
+              },
+              {
+                "FIELDNAME": "CLTCODE"
+              },
+              {
+                "FIELDNAME": "BASTAB"
+              },
+              {
+                "FIELDNAME": "NEWGENER"
+              },
+              {
+                "FIELDNAME": "GENDATE"
+              },
+              {
+                "FIELDNAME": "GENTIME"
+              },
+              {
+                "FIELDNAME": "FLAG"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "TBE24                         |BFTM                      |FIBF                          |1|0090|0000|0000|                    |X| |19970505|142459|"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:47.525Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TVIMF",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "65",
+            "OPTIONS": [
+              {
+                "TEXT": "TABNAME = 'TBE24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "FORMNAME"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "FORMNAME"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "TBE24                         |02|CONTEXT_BUFFER_DELETE_CUS"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:47.958Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TBE24",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "201",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "200|IS-BEV  |                                |"
+              },
+              {
+                "WA": "200|SEDUNN  |                                |"
+              },
+              {
+                "WA": "200|ZFICHK  |                                |X"
+              },
+              {
+                "WA": "200|ZWMS_MM |                                |X"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:50.198Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TSTC",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "TCODE = 'BF24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PGMNA"
+              },
+              {
+                "FIELDNAME": "DYPNO"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PGMNA"
+              },
+              {
+                "FIELDNAME": "DYPNO"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "BF24                |                                        |0000"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:50.643Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TSTCP",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "TCODE = 'BF24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PARAM"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TCODE"
+              },
+              {
+                "FIELDNAME": "PARAM"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "BF24                |/*SM30 VIEWNAME=TBE24;UPDATE=X;"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:51.085Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TVDIR",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "TABNAME = 'TBE24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "AREA"
+              },
+              {
+                "FIELDNAME": "DEVCLASS"
+              },
+              {
+                "FIELDNAME": "TYPE"
+              },
+              {
+                "FIELDNAME": "LISTE"
+              },
+              {
+                "FIELDNAME": "DETAIL"
+              },
+              {
+                "FIELDNAME": "OCCURS"
+              },
+              {
+                "FIELDNAME": "CLTCODE"
+              },
+              {
+                "FIELDNAME": "BASTAB"
+              },
+              {
+                "FIELDNAME": "NEWGENER"
+              },
+              {
+                "FIELDNAME": "GENDATE"
+              },
+              {
+                "FIELDNAME": "GENTIME"
+              },
+              {
+                "FIELDNAME": "FLAG"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "AREA"
+              },
+              {
+                "FIELDNAME": "DEVCLASS"
+              },
+              {
+                "FIELDNAME": "TYPE"
+              },
+              {
+                "FIELDNAME": "LISTE"
+              },
+              {
+                "FIELDNAME": "DETAIL"
+              },
+              {
+                "FIELDNAME": "OCCURS"
+              },
+              {
+                "FIELDNAME": "CLTCODE"
+              },
+              {
+                "FIELDNAME": "BASTAB"
+              },
+              {
+                "FIELDNAME": "NEWGENER"
+              },
+              {
+                "FIELDNAME": "GENDATE"
+              },
+              {
+                "FIELDNAME": "GENTIME"
+              },
+              {
+                "FIELDNAME": "FLAG"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "TBE24                         |BFTM                      |FIBF                          |1|0090|0000|0000|                    |X| |19970505|142459|"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:51.566Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TVIMF",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "65",
+            "OPTIONS": [
+              {
+                "TEXT": "TABNAME = 'TBE24'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "FORMNAME"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "TABNAME"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "FORMNAME"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "TBE24                         |02|CONTEXT_BUFFER_DELETE_CUS"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:52.053Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TBE24",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "201",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "200|IS-BEV  |                                |"
+              },
+              {
+                "WA": "200|SEDUNN  |                                |"
+              },
+              {
+                "WA": "200|ZFICHK  |                                |X"
+              },
+              {
+                "WA": "200|ZWMS_MM |                                |X"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:54.141Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TBE24",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              },
+              {
+                "TEXT": "AND PRDKT = 'ZFICHK'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "200|ZFICHK  |                                |X"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:54.580Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TBE34",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "201",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              },
+              {
+                "TEXT": "AND PRDKT = 'ZFICHK'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "200|00001025|ZFICHK  |   |      |ZSAMPLE_INTERFACE_00001025    |"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:55.014Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TPS34",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "201",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              },
+              {
+                "TEXT": "AND PRDKT = 'ZFICHK'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PROCS"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PROCS"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": []
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:56.751Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TBE24",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "2",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              },
+              {
+                "TEXT": "AND PRDKT = 'ZFICHK'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "RFCDS"
+              },
+              {
+                "FIELDNAME": "AKTIV"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "200|ZFICHK  |                                |X"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:57.201Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TBE34",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "201",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              },
+              {
+                "TEXT": "AND PRDKT = 'ZFICHK'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "EVENT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": [
+              {
+                "WA": "200|00001025|ZFICHK  |   |      |ZSAMPLE_INTERFACE_00001025    |"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "at": "2026-10-07T08:12:57.651Z",
+        "request": {
+          "functionName": "RFC_READ_TABLE",
+          "inputParameters": {
+            "QUERY_TABLE": "TPS34",
+            "DELIMITER": "|",
+            "NO_DATA": "",
+            "ROWSKIPS": "0",
+            "ROWCOUNT": "201",
+            "OPTIONS": [
+              {
+                "TEXT": "MANDT = '200'"
+              },
+              {
+                "TEXT": "AND PRDKT = 'ZFICHK'"
+              }
+            ],
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PROCS"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": []
+          },
+          "outputParameters": [
+            {
+              "name": "FIELDS",
+              "kind": "table",
+              "fields": [
+                "FIELDNAME"
+              ]
+            },
+            {
+              "name": "DATA",
+              "kind": "table",
+              "fields": [
+                "WA"
+              ]
+            }
+          ]
+        },
+        "result": {
+          "outputs": {
+            "FIELDS": [
+              {
+                "FIELDNAME": "MANDT"
+              },
+              {
+                "FIELDNAME": "PROCS"
+              },
+              {
+                "FIELDNAME": "LAND"
+              },
+              {
+                "FIELDNAME": "APPLK"
+              },
+              {
+                "FIELDNAME": "FUNCT"
+              },
+              {
+                "FIELDNAME": "PRDKT"
+              },
+              {
+                "FIELDNAME": "MONIT"
+              }
+            ],
+            "DATA": []
+          }
+        }
+      }
+    ],
+    "metadataCalls": [
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TSTC"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TSTCP"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TVDIR"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TVIMF"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE24"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE24T"
+      },
+      {
+        "channel": "callSapRepository",
+        "operation": "READ_FUNCTION_INTERFACE",
+        "objectName": "VIEW_MAINTENANCE_NO_DIALOG"
+      },
+      {
+        "channel": "callSapRepository",
+        "operation": "READ_FUNCTION_INTERFACE",
+        "objectName": "RFC_READ_TABLE"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TSTC"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TSTCP"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TVDIR"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TVIMF"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE24"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE24T"
+      },
+      {
+        "channel": "callSapRepository",
+        "operation": "READ_FUNCTION_INTERFACE",
+        "objectName": "VIEW_MAINTENANCE_NO_DIALOG"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE24"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE34"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TPS34"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_DOMAIN",
+        "objectName": "CUSTP_BF"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_DOMAIN",
+        "objectName": "XFELD"
+      },
+      {
+        "channel": "callSapRepository",
+        "operation": "READ_FUNCTION_INTERFACE",
+        "objectName": "VIEW_MAINTENANCE_NO_DIALOG"
+      },
+      {
+        "channel": "callSapRepository",
+        "operation": "READ_FUNCTION_INTERFACE",
+        "objectName": "RFC_READ_TABLE"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE24"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TBE34"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_TRANSPARENT_TABLE",
+        "objectName": "TPS34"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_DOMAIN",
+        "objectName": "CUSTP_BF"
+      },
+      {
+        "channel": "callSapDdic",
+        "operation": "READ_DOMAIN",
+        "objectName": "XFELD"
+      },
+      {
+        "channel": "callSapRepository",
+        "operation": "READ_FUNCTION_INTERFACE",
+        "objectName": "VIEW_MAINTENANCE_NO_DIALOG"
+      },
+      {
+        "channel": "callSapRepository",
+        "operation": "READ_FUNCTION_INTERFACE",
+        "objectName": "ZSAMPLE_INTERFACE_00001025"
+      }
+    ],
+    "queries": [
+      {
+        "sql": "SELECT TCODE, PGMNA, DYPNO FROM TSTC WHERE TCODE = 'BF24'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT TCODE, PARAM FROM TSTCP WHERE TCODE = 'BF24'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT TABNAME, AREA, DEVCLASS, TYPE, LISTE, DETAIL, OCCURS, CLTCODE, BASTAB, NEWGENER, GENDATE, GENTIME, FLAG FROM TVDIR WHERE TABNAME = 'TBE24'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT TABNAME, EVENT, FORMNAME FROM TVIMF WHERE TABNAME = 'TBE24'",
+        "limit": 65
+      },
+      {
+        "sql": "SELECT MANDT, PRDKT, RFCDS, AKTIV FROM TBE24 WHERE MANDT = '200'",
+        "limit": 201
+      },
+      {
+        "sql": "SELECT TCODE, PGMNA, DYPNO FROM TSTC WHERE TCODE = 'BF24'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT TCODE, PARAM FROM TSTCP WHERE TCODE = 'BF24'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT TABNAME, AREA, DEVCLASS, TYPE, LISTE, DETAIL, OCCURS, CLTCODE, BASTAB, NEWGENER, GENDATE, GENTIME, FLAG FROM TVDIR WHERE TABNAME = 'TBE24'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT TABNAME, EVENT, FORMNAME FROM TVIMF WHERE TABNAME = 'TBE24'",
+        "limit": 65
+      },
+      {
+        "sql": "SELECT MANDT, PRDKT, RFCDS, AKTIV FROM TBE24 WHERE MANDT = '200'",
+        "limit": 201
+      },
+      {
+        "sql": "SELECT MANDT, PRDKT, RFCDS, AKTIV FROM TBE24 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT MANDT, EVENT, PRDKT, LAND, APPLK, FUNCT, MONIT FROM TBE34 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+        "limit": 201
+      },
+      {
+        "sql": "SELECT MANDT, PROCS, LAND, APPLK, FUNCT, PRDKT, MONIT FROM TPS34 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+        "limit": 201
+      },
+      {
+        "sql": "SELECT MANDT, PRDKT, RFCDS, AKTIV FROM TBE24 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+        "limit": 2
+      },
+      {
+        "sql": "SELECT MANDT, EVENT, PRDKT, LAND, APPLK, FUNCT, MONIT FROM TBE34 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+        "limit": 201
+      },
+      {
+        "sql": "SELECT MANDT, PROCS, LAND, APPLK, FUNCT, PRDKT, MONIT FROM TPS34 WHERE MANDT = '200' AND PRDKT = 'ZFICHK'",
+        "limit": 201
+      }
+    ],
+    "publicCalls": [
+      {
+        "name": "inspect_configuration_bte_maintenance_route",
+        "args": {
+          "connectionId": "w200",
+          "maxProducts": 200
+        },
+        "result": {
+          "connectionId": "w200",
+          "client": "200",
+          "readOnly": true,
+          "executable": false,
+          "writeAvailable": false,
+          "status": "standard_product_maintenance_route_observed",
+          "fingerprint": "3b91c6769b33338377e81ff96a66147f434501b036160b6af1d7257718a36b6f",
+          "transaction": {
+            "code": "BF24",
+            "definition": {
+              "TCODE": "BF24",
+              "PGMNA": "",
+              "DYPNO": "0000"
+            },
+            "parameters": "/*SM30 VIEWNAME=TBE24;UPDATE=X;",
+            "recognised": {
+              "transaction": "SM30",
+              "tableName": "TBE24",
+              "mode": "update"
+            }
+          },
+          "maintenance": {
+            "tableName": "TBE24",
+            "directory": {
+              "TABNAME": "TBE24",
+              "AREA": "BFTM",
+              "DEVCLASS": "FIBF",
+              "TYPE": "1",
+              "LISTE": "0090",
+              "DETAIL": "0000",
+              "OCCURS": "0000",
+              "CLTCODE": "",
+              "BASTAB": "X",
+              "NEWGENER": "",
+              "GENDATE": "19970505",
+              "GENTIME": "142459",
+              "FLAG": ""
+            },
+            "events": [
+              {
+                "TABNAME": "TBE24",
+                "EVENT": "02",
+                "FORMNAME": "CONTEXT_BUFFER_DELETE_CUS"
+              }
+            ],
+            "relatedTextTable": "TBE24T",
+            "textValuesInspected": false,
+            "generatedFunctionCandidate": "TABLEPROC_BFTM",
+            "generatedSourcesReviewed": false,
+            "controlBlocksInspected": false,
+            "authorityChecked": false,
+            "enqueueChecked": false,
+            "commitOwnershipVerified": false,
+            "ctsVerified": false
+          },
+          "products": {
+            "complete": true,
+            "returnedCount": 4,
+            "maximum": 200,
+            "supportedCustomerProducts": [
+              {
+                "MANDT": "200",
+                "PRDKT": "ZFICHK",
+                "RFCDS": "",
+                "AKTIV": "X"
+              },
+              {
+                "MANDT": "200",
+                "PRDKT": "ZWMS_MM",
+                "RFCDS": "",
+                "AKTIV": "X"
+              }
+            ],
+            "namespace": "existing Z/Y only; other customer-table rows are excluded from candidate listing"
+          },
+          "standardApiCandidate": {
+            "functionName": "VIEW_MAINTENANCE_NO_DIALOG",
+            "functionGroup": "SVIM",
+            "source": "aef8ff0659768c8c723583f7d084449063afc5980060f4c45b3c5641a499b861",
+            "interface": "096a143263b04e39e651e1f42a8038df2193fca019eaf41b7e34d1829d72816b",
+            "invoked": false,
+            "remoteEnabled": false,
+            "requiresCustomerAdapter": true
+          },
+          "executionBlockers": [
+            "BTE_NATIVE_CONTROL_BLOCKS_PENDING",
+            "BTE_CALLBACKS_AND_TEXT_PRESERVATION_PENDING",
+            "BTE_PRODUCT_WRITE_ADAPTER_PENDING"
+          ],
+          "coverage": {
+            "twoReadAgreement": true,
+            "atomicSnapshot": false,
+            "allProducts": true,
+            "bothAssignmentKindsInspected": false
+          },
+          "sources": [
+            {
+              "table": "TSTC",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TSTCP",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TVDIR",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TVIMF",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TBE24",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 4,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TSTC",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TSTCP",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TVDIR",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TVIMF",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TBE24",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 4,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            }
+          ],
+          "warnings": []
+        },
+        "isError": false,
+        "elapsedMs": 8080,
+        "remoteCalls": 10
+      },
+      {
+        "name": "preview_configuration_bte_product",
+        "args": {
+          "connectionId": "w200",
+          "productName": "ZFICHK",
+          "active": false,
+          "maxAssignmentsPerKind": 200
+        },
+        "result": {
+          "connectionId": "w200",
+          "client": "200",
+          "action": "set_bte_product_active",
+          "productName": "ZFICHK",
+          "readOnly": true,
+          "executable": false,
+          "writeAvailable": false,
+          "status": "preview_only",
+          "executionBlocker": "BTE_PRODUCT_WRITE_ADAPTER_PENDING",
+          "fingerprint": "897d0d24253496a064b090964fc22003455436a26bfabbf35af72a51bb509f50",
+          "change": {
+            "tableName": "TBE24",
+            "key": {
+              "MANDT": "200",
+              "PRDKT": "ZFICHK"
+            },
+            "before": {
+              "MANDT": "200",
+              "PRDKT": "ZFICHK",
+              "RFCDS": "",
+              "AKTIV": "X"
+            },
+            "after": {
+              "MANDT": "200",
+              "PRDKT": "ZFICHK",
+              "RFCDS": "",
+              "AKTIV": ""
+            },
+            "changedFields": [
+              "AKTIV"
+            ],
+            "noOp": false
+          },
+          "assignments": {
+            "events": [
+              {
+                "MANDT": "200",
+                "EVENT": "00001025",
+                "PRDKT": "ZFICHK",
+                "LAND": "",
+                "APPLK": "",
+                "FUNCT": "ZSAMPLE_INTERFACE_00001025",
+                "MONIT": ""
+              }
+            ],
+            "processes": []
+          },
+          "impact": {
+            "eventCount": 1,
+            "processCount": 0,
+            "assignmentCount": 1,
+            "sharedProduct": false,
+            "activationChanged": true,
+            "externalDestination": ""
+          },
+          "standardApiCandidate": {
+            "functionName": "VIEW_MAINTENANCE_NO_DIALOG",
+            "functionGroup": "SVIM",
+            "source": "aef8ff0659768c8c723583f7d084449063afc5980060f4c45b3c5641a499b861",
+            "interface": "096a143263b04e39e651e1f42a8038df2193fca019eaf41b7e34d1829d72816b",
+            "remoteEnabled": false,
+            "invoked": false,
+            "requiresCustomerAdapter": true,
+            "genericRfcExecutionSupported": false,
+            "prerequisites": [
+              "maintenance control blocks and typed TOTAL/EXTRACT",
+              "explicit authorization and enqueue",
+              "reviewed generated product maintenance path and key-level CTS",
+              "single commit ownership, failure rollback and recovery"
+            ]
+          },
+          "coverage": {
+            "productRead": true,
+            "bothAssignmentKindsRead": true,
+            "completeWithinBound": true,
+            "twoReadAgreement": true,
+            "handlerInterfacesInspected": false,
+            "effectiveExecutionOrderInspected": false,
+            "authorizedForWrite": false,
+            "runtimeInspected": false,
+            "atomicSnapshot": false
+          },
+          "sources": [
+            {
+              "table": "TBE24",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TBE34",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TPS34",
+              "status": "empty",
+              "method": "rfc_read_table",
+              "returnedCount": 0,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TBE24",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TBE34",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "TPS34",
+              "status": "empty",
+              "method": "rfc_read_table",
+              "returnedCount": 0,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            }
+          ],
+          "warnings": [
+            "TPS34: empty",
+            "TPS34: empty"
+          ]
+        },
+        "isError": false,
+        "elapsedMs": 5595,
+        "remoteCalls": 6
+      },
+      {
+        "name": "read_function_module_interface",
+        "args": {
+          "connectionId": "w200",
+          "functionName": "ZSAMPLE_INTERFACE_00001025"
+        },
+        "result": {
+          "connectionId": "w200",
+          "functionName": "ZSAMPLE_INTERFACE_00001025",
+          "functionGroup": "ZFI_CHECK",
+          "shortText": "Schnittstellenbeschreibung zum Event 00001025",
+          "remoteMode": "",
+          "updateTask": false,
+          "updateTaskMode": "",
+          "globalInterface": false,
+          "remoteEnabled": false,
+          "importParameters": [
+            {
+              "name": "I_BKDF",
+              "typeName": "BKDF",
+              "optional": true,
+              "passByValue": true,
+              "description": "Dauerbuchungsdaten"
+            }
+          ],
+          "exportParameters": [],
+          "changingParameters": [],
+          "tableParameters": [
+            {
+              "name": "T_AUSZ1",
+              "typeName": "AUSZ1",
+              "optional": true,
+              "passByValue": false,
+              "description": "Auszugleichende Positionen"
+            },
+            {
+              "name": "T_AUSZ2",
+              "typeName": "AUSZ2",
+              "optional": true,
+              "passByValue": false,
+              "description": "Ausgleichsaktionen"
+            },
+            {
+              "name": "T_AUSZ3",
+              "typeName": "AUSZ_CLR",
+              "optional": true,
+              "passByValue": false,
+              "description": "Ausgleichsinformationen"
+            },
+            {
+              "name": "T_BKP1",
+              "typeName": "BKP1",
+              "optional": false,
+              "passByValue": false,
+              "description": "Zusatzinformationen pro Belegkopf"
+            },
+            {
+              "name": "T_BKPF",
+              "typeName": "BKPF",
+              "optional": false,
+              "passByValue": false,
+              "description": "Belegköpfe"
+            },
+            {
+              "name": "T_BSEC",
+              "typeName": "BSEC",
+              "optional": false,
+              "passByValue": false,
+              "description": "CPD-Daten"
+            },
+            {
+              "name": "T_BSED",
+              "typeName": "BSED",
+              "optional": false,
+              "passByValue": false,
+              "description": "Wechseldaten"
+            },
+            {
+              "name": "T_BSEG",
+              "typeName": "BSEG",
+              "optional": false,
+              "passByValue": false,
+              "description": "Belegzeilen"
+            },
+            {
+              "name": "T_BSET",
+              "typeName": "BSET",
+              "optional": false,
+              "passByValue": false,
+              "description": "Steuerdaten"
+            },
+            {
+              "name": "T_BSEU",
+              "typeName": "BSEU",
+              "optional": true,
+              "passByValue": false,
+              "description": "Verbuchungsinformation pro Belegzeile"
+            }
+          ],
+          "exceptions": [],
+          "source": [
+            "FUNCTION zsample_interface_00001025.",
+            "*\"--------------------------------------------------------------------",
+            "*\"*\"局部接口：",
+            "*\"  IMPORTING",
+            "*\"     VALUE(I_BKDF) LIKE  BKDF STRUCTURE  BKDF OPTIONAL",
+            "*\"  TABLES",
+            "*\"      T_AUSZ1 STRUCTURE  AUSZ1 OPTIONAL",
+            "*\"      T_AUSZ2 STRUCTURE  AUSZ2 OPTIONAL",
+            "*\"      T_AUSZ3 STRUCTURE  AUSZ_CLR OPTIONAL",
+            "*\"      T_BKP1 STRUCTURE  BKP1",
+            "*\"      T_BKPF STRUCTURE  BKPF",
+            "*\"      T_BSEC STRUCTURE  BSEC",
+            "*\"      T_BSED STRUCTURE  BSED",
+            "*\"      T_BSEG STRUCTURE  BSEG",
+            "*\"      T_BSET STRUCTURE  BSET",
+            "*\"      T_BSEU STRUCTURE  BSEU OPTIONAL",
+            "*\"--------------------------------------------------------------------",
+            "",
+            "  DATA: lw_ausz3 TYPE ausz_clr.",
+            "  DATA: lw_bseg TYPE bseg.",
+            "  DATA: lw_faglflexa TYPE faglflexa.",
+            "  DATA: l_lines TYPE i.",
+            "  DATA: l_docln TYPE faglflexa-docln.",
+            "",
+            "  DATA: BEGIN OF t_procen OCCURS 0,",
+            "        prctr TYPE prctr,",
+            "       END OF t_procen.",
+            "",
+            "  CHECK sy-tcode = 'FB1K' OR sy-tcode = 'FB1D' OR",
+            "     sy-tcode = 'FBZ1' OR sy-tcode = 'FBZ2' .",
+            "  LOOP AT t_bseg INTO lw_bseg WHERE prctr IS NOT INITIAL.",
+            "    t_procen-prctr = lw_bseg-prctr.",
+            "    APPEND t_procen.",
+            "  ENDLOOP.",
+            "",
+            "  LOOP AT t_ausz3 INTO lw_ausz3.",
+            "    CLEAR lw_faglflexa.",
+            "    CLEAR l_docln.",
+            "    l_docln = lw_ausz3-buzei.",
+            "",
+            "    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'",
+            "      EXPORTING",
+            "        input  = l_docln",
+            "      IMPORTING",
+            "        output = l_docln.",
+            "",
+            "",
+            "    SELECT SINGLE * FROM faglflexa INTO lw_faglflexa",
+            "      WHERE ryear = lw_ausz3-gjahr",
+            "        AND docnr = lw_ausz3-belnr",
+            "        AND rbukrs = lw_ausz3-bukrs",
+            "        AND docln = l_docln.",
+            "    IF lw_faglflexa-prctr IS NOT INITIAL.",
+            "      t_procen-prctr = lw_faglflexa-prctr.",
+            "      APPEND t_procen.",
+            "    ENDIF.",
+            "  ENDLOOP.",
+            "",
+            "  SORT t_procen.",
+            "  DELETE ADJACENT DUPLICATES FROM t_procen COMPARING ALL FIELDS.",
+            "  DESCRIBE TABLE t_procen LINES l_lines.",
+            "  IF l_lines GT 1.",
+            "    MESSAGE '请选择相同利润中心的凭证！'  TYPE 'W'.",
+            "  ENDIF.",
+            "",
+            "",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "76e74862c7498ab15b22d259eaafd6b98fcc8ad3f93dd3f46b0682fc8ab6acd7",
+          "interfaceFingerprint": "5ffd446e7438047a466f9e51d82bf260c303bbf5ec68557100630100f5973976",
+          "sourceFingerprint": "0b4c099d937a027e3681933d2662f9d488d62c6193d55060830aa0397717e31d"
+        },
+        "isError": false,
+        "elapsedMs": 240,
+        "remoteCalls": 0
+      }
+    ],
+    "route": {
+      "connectionId": "w200",
+      "client": "200",
+      "readOnly": true,
+      "executable": false,
+      "writeAvailable": false,
+      "status": "standard_product_maintenance_route_observed",
+      "fingerprint": "3b91c6769b33338377e81ff96a66147f434501b036160b6af1d7257718a36b6f",
+      "transaction": {
+        "code": "BF24",
+        "definition": {
+          "TCODE": "BF24",
+          "PGMNA": "",
+          "DYPNO": "0000"
+        },
+        "parameters": "/*SM30 VIEWNAME=TBE24;UPDATE=X;",
+        "recognised": {
+          "transaction": "SM30",
+          "tableName": "TBE24",
+          "mode": "update"
+        }
+      },
+      "maintenance": {
+        "tableName": "TBE24",
+        "directory": {
+          "TABNAME": "TBE24",
+          "AREA": "BFTM",
+          "DEVCLASS": "FIBF",
+          "TYPE": "1",
+          "LISTE": "0090",
+          "DETAIL": "0000",
+          "OCCURS": "0000",
+          "CLTCODE": "",
+          "BASTAB": "X",
+          "NEWGENER": "",
+          "GENDATE": "19970505",
+          "GENTIME": "142459",
+          "FLAG": ""
+        },
+        "events": [
+          {
+            "TABNAME": "TBE24",
+            "EVENT": "02",
+            "FORMNAME": "CONTEXT_BUFFER_DELETE_CUS"
+          }
+        ],
+        "relatedTextTable": "TBE24T",
+        "textValuesInspected": false,
+        "generatedFunctionCandidate": "TABLEPROC_BFTM",
+        "generatedSourcesReviewed": false,
+        "controlBlocksInspected": false,
+        "authorityChecked": false,
+        "enqueueChecked": false,
+        "commitOwnershipVerified": false,
+        "ctsVerified": false
+      },
+      "products": {
+        "complete": true,
+        "returnedCount": 4,
+        "maximum": 200,
+        "supportedCustomerProducts": [
+          {
+            "MANDT": "200",
+            "PRDKT": "ZFICHK",
+            "RFCDS": "",
+            "AKTIV": "X"
+          },
+          {
+            "MANDT": "200",
+            "PRDKT": "ZWMS_MM",
+            "RFCDS": "",
+            "AKTIV": "X"
+          }
+        ],
+        "namespace": "existing Z/Y only; other customer-table rows are excluded from candidate listing"
+      },
+      "standardApiCandidate": {
+        "functionName": "VIEW_MAINTENANCE_NO_DIALOG",
+        "functionGroup": "SVIM",
+        "source": "aef8ff0659768c8c723583f7d084449063afc5980060f4c45b3c5641a499b861",
+        "interface": "096a143263b04e39e651e1f42a8038df2193fca019eaf41b7e34d1829d72816b",
+        "invoked": false,
+        "remoteEnabled": false,
+        "requiresCustomerAdapter": true
+      },
+      "executionBlockers": [
+        "BTE_NATIVE_CONTROL_BLOCKS_PENDING",
+        "BTE_CALLBACKS_AND_TEXT_PRESERVATION_PENDING",
+        "BTE_PRODUCT_WRITE_ADAPTER_PENDING"
+      ],
+      "coverage": {
+        "twoReadAgreement": true,
+        "atomicSnapshot": false,
+        "allProducts": true,
+        "bothAssignmentKindsInspected": false
+      },
+      "sources": [
+        {
+          "table": "TSTC",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TSTCP",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TVDIR",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TVIMF",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TBE24",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 4,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TSTC",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TSTCP",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TVDIR",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TVIMF",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TBE24",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 4,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        }
+      ],
+      "warnings": []
+    },
+    "selectedExistingProduct": "ZFICHK",
+    "preview": {
+      "connectionId": "w200",
+      "client": "200",
+      "action": "set_bte_product_active",
+      "productName": "ZFICHK",
+      "readOnly": true,
+      "executable": false,
+      "writeAvailable": false,
+      "status": "preview_only",
+      "executionBlocker": "BTE_PRODUCT_WRITE_ADAPTER_PENDING",
+      "fingerprint": "897d0d24253496a064b090964fc22003455436a26bfabbf35af72a51bb509f50",
+      "change": {
+        "tableName": "TBE24",
+        "key": {
+          "MANDT": "200",
+          "PRDKT": "ZFICHK"
+        },
+        "before": {
+          "MANDT": "200",
+          "PRDKT": "ZFICHK",
+          "RFCDS": "",
+          "AKTIV": "X"
+        },
+        "after": {
+          "MANDT": "200",
+          "PRDKT": "ZFICHK",
+          "RFCDS": "",
+          "AKTIV": ""
+        },
+        "changedFields": [
+          "AKTIV"
+        ],
+        "noOp": false
+      },
+      "assignments": {
+        "events": [
+          {
+            "MANDT": "200",
+            "EVENT": "00001025",
+            "PRDKT": "ZFICHK",
+            "LAND": "",
+            "APPLK": "",
+            "FUNCT": "ZSAMPLE_INTERFACE_00001025",
+            "MONIT": ""
+          }
+        ],
+        "processes": []
+      },
+      "impact": {
+        "eventCount": 1,
+        "processCount": 0,
+        "assignmentCount": 1,
+        "sharedProduct": false,
+        "activationChanged": true,
+        "externalDestination": ""
+      },
+      "standardApiCandidate": {
+        "functionName": "VIEW_MAINTENANCE_NO_DIALOG",
+        "functionGroup": "SVIM",
+        "source": "aef8ff0659768c8c723583f7d084449063afc5980060f4c45b3c5641a499b861",
+        "interface": "096a143263b04e39e651e1f42a8038df2193fca019eaf41b7e34d1829d72816b",
+        "remoteEnabled": false,
+        "invoked": false,
+        "requiresCustomerAdapter": true,
+        "genericRfcExecutionSupported": false,
+        "prerequisites": [
+          "maintenance control blocks and typed TOTAL/EXTRACT",
+          "explicit authorization and enqueue",
+          "reviewed generated product maintenance path and key-level CTS",
+          "single commit ownership, failure rollback and recovery"
+        ]
+      },
+      "coverage": {
+        "productRead": true,
+        "bothAssignmentKindsRead": true,
+        "completeWithinBound": true,
+        "twoReadAgreement": true,
+        "handlerInterfacesInspected": false,
+        "effectiveExecutionOrderInspected": false,
+        "authorizedForWrite": false,
+        "runtimeInspected": false,
+        "atomicSnapshot": false
+      },
+      "sources": [
+        {
+          "table": "TBE24",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TBE34",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TPS34",
+          "status": "empty",
+          "method": "rfc_read_table",
+          "returnedCount": 0,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TBE24",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TBE34",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "TPS34",
+          "status": "empty",
+          "method": "rfc_read_table",
+          "returnedCount": 0,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        }
+      ],
+      "warnings": [
+        "TPS34: empty",
+        "TPS34: empty"
+      ]
+    },
+    "handlerInterfaces": [
+      {
+        "connectionId": "w200",
+        "functionName": "ZSAMPLE_INTERFACE_00001025",
+        "functionGroup": "ZFI_CHECK",
+        "shortText": "Schnittstellenbeschreibung zum Event 00001025",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "I_BKDF",
+            "typeName": "BKDF",
+            "optional": true,
+            "passByValue": true,
+            "description": "Dauerbuchungsdaten"
+          }
+        ],
+        "exportParameters": [],
+        "changingParameters": [],
+        "tableParameters": [
+          {
+            "name": "T_AUSZ1",
+            "typeName": "AUSZ1",
+            "optional": true,
+            "passByValue": false,
+            "description": "Auszugleichende Positionen"
+          },
+          {
+            "name": "T_AUSZ2",
+            "typeName": "AUSZ2",
+            "optional": true,
+            "passByValue": false,
+            "description": "Ausgleichsaktionen"
+          },
+          {
+            "name": "T_AUSZ3",
+            "typeName": "AUSZ_CLR",
+            "optional": true,
+            "passByValue": false,
+            "description": "Ausgleichsinformationen"
+          },
+          {
+            "name": "T_BKP1",
+            "typeName": "BKP1",
+            "optional": false,
+            "passByValue": false,
+            "description": "Zusatzinformationen pro Belegkopf"
+          },
+          {
+            "name": "T_BKPF",
+            "typeName": "BKPF",
+            "optional": false,
+            "passByValue": false,
+            "description": "Belegköpfe"
+          },
+          {
+            "name": "T_BSEC",
+            "typeName": "BSEC",
+            "optional": false,
+            "passByValue": false,
+            "description": "CPD-Daten"
+          },
+          {
+            "name": "T_BSED",
+            "typeName": "BSED",
+            "optional": false,
+            "passByValue": false,
+            "description": "Wechseldaten"
+          },
+          {
+            "name": "T_BSEG",
+            "typeName": "BSEG",
+            "optional": false,
+            "passByValue": false,
+            "description": "Belegzeilen"
+          },
+          {
+            "name": "T_BSET",
+            "typeName": "BSET",
+            "optional": false,
+            "passByValue": false,
+            "description": "Steuerdaten"
+          },
+          {
+            "name": "T_BSEU",
+            "typeName": "BSEU",
+            "optional": true,
+            "passByValue": false,
+            "description": "Verbuchungsinformation pro Belegzeile"
+          }
+        ],
+        "exceptions": [],
+        "source": [
+          "FUNCTION zsample_interface_00001025.",
+          "*\"--------------------------------------------------------------------",
+          "*\"*\"局部接口：",
+          "*\"  IMPORTING",
+          "*\"     VALUE(I_BKDF) LIKE  BKDF STRUCTURE  BKDF OPTIONAL",
+          "*\"  TABLES",
+          "*\"      T_AUSZ1 STRUCTURE  AUSZ1 OPTIONAL",
+          "*\"      T_AUSZ2 STRUCTURE  AUSZ2 OPTIONAL",
+          "*\"      T_AUSZ3 STRUCTURE  AUSZ_CLR OPTIONAL",
+          "*\"      T_BKP1 STRUCTURE  BKP1",
+          "*\"      T_BKPF STRUCTURE  BKPF",
+          "*\"      T_BSEC STRUCTURE  BSEC",
+          "*\"      T_BSED STRUCTURE  BSED",
+          "*\"      T_BSEG STRUCTURE  BSEG",
+          "*\"      T_BSET STRUCTURE  BSET",
+          "*\"      T_BSEU STRUCTURE  BSEU OPTIONAL",
+          "*\"--------------------------------------------------------------------",
+          "",
+          "  DATA: lw_ausz3 TYPE ausz_clr.",
+          "  DATA: lw_bseg TYPE bseg.",
+          "  DATA: lw_faglflexa TYPE faglflexa.",
+          "  DATA: l_lines TYPE i.",
+          "  DATA: l_docln TYPE faglflexa-docln.",
+          "",
+          "  DATA: BEGIN OF t_procen OCCURS 0,",
+          "        prctr TYPE prctr,",
+          "       END OF t_procen.",
+          "",
+          "  CHECK sy-tcode = 'FB1K' OR sy-tcode = 'FB1D' OR",
+          "     sy-tcode = 'FBZ1' OR sy-tcode = 'FBZ2' .",
+          "  LOOP AT t_bseg INTO lw_bseg WHERE prctr IS NOT INITIAL.",
+          "    t_procen-prctr = lw_bseg-prctr.",
+          "    APPEND t_procen.",
+          "  ENDLOOP.",
+          "",
+          "  LOOP AT t_ausz3 INTO lw_ausz3.",
+          "    CLEAR lw_faglflexa.",
+          "    CLEAR l_docln.",
+          "    l_docln = lw_ausz3-buzei.",
+          "",
+          "    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'",
+          "      EXPORTING",
+          "        input  = l_docln",
+          "      IMPORTING",
+          "        output = l_docln.",
+          "",
+          "",
+          "    SELECT SINGLE * FROM faglflexa INTO lw_faglflexa",
+          "      WHERE ryear = lw_ausz3-gjahr",
+          "        AND docnr = lw_ausz3-belnr",
+          "        AND rbukrs = lw_ausz3-bukrs",
+          "        AND docln = l_docln.",
+          "    IF lw_faglflexa-prctr IS NOT INITIAL.",
+          "      t_procen-prctr = lw_faglflexa-prctr.",
+          "      APPEND t_procen.",
+          "    ENDIF.",
+          "  ENDLOOP.",
+          "",
+          "  SORT t_procen.",
+          "  DELETE ADJACENT DUPLICATES FROM t_procen COMPARING ALL FIELDS.",
+          "  DESCRIBE TABLE t_procen LINES l_lines.",
+          "  IF l_lines GT 1.",
+          "    MESSAGE '请选择相同利润中心的凭证！'  TYPE 'W'.",
+          "  ENDIF.",
+          "",
+          "",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "76e74862c7498ab15b22d259eaafd6b98fcc8ad3f93dd3f46b0682fc8ab6acd7",
+        "interfaceFingerprint": "5ffd446e7438047a466f9e51d82bf260c303bbf5ec68557100630100f5973976",
+        "sourceFingerprint": "0b4c099d937a027e3681933d2662f9d488d62c6193d55060830aa0397717e31d"
+      }
+    ],
+    "finishedAt": "2026-10-07T08:12:58.089Z"
+  },
+  "processExit": {
+    "PasswordEnvironmentCleared": true,
+    "ExitCode": 0,
+    "FinishedAt": "2026-10-07T16:12:58.1288213+08:00"
+  },
+  "frozen": {
+    "at": "2026-10-07T08:00:35.843Z",
+    "readOnly": true,
+    "files": {
+      "readonly.mjs": "432900ccc1ce90c024acc2b3aeeab81c63042735ea06c114d5ae07cdb012a465",
+      "../start-configuration-bte-r73-read.ps1": "4b9654e861309dd01ee20326270164ffae3325d228563d2fe7c8ba17026e1a90",
+      "runtime/.cache/d6-probe4.txt": "a87b9689cd000d20578be609a6456b0217efa788d56598a7f3d2a9770ea6e7da",
+      "runtime/.cache/r119-runtime-verify.txt": "fb8819a7178f2145ee5b9b846817e4788f5247622f8027cd55f59e30d2471e52",
+      "runtime/.doc/atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json": "a16082b7bb639c0d08368443316dd427dbe44b71e2a75eed58d186f19d4f3883",
+      "runtime/.doc/atc-remote-readiness-2026-09-09T07-47-21.555Z.json": "11171bef4cd916667967386e106e665b28eaf94af01514927a6c8f971554fb94",
+      "runtime/.doc/code-update-20260827-173838.md": "84d4cff062639e785feb2e32c9974d2f1f33cfaa466264de10502812cf130a2f",
+      "runtime/.doc/code-update-20260908-091820.md": "ed1a705c269fed5067aa17269561017428aa44c6e3b60a58928e577a505145d4",
+      "runtime/.doc/code-update-20260908-163230.md": "80e67ea5e4aa405a46dd6f2c6d90238fd7af3862346c5d026a73bf38f4275911",
+      "runtime/.doc/code-update-20260909-084306.md": "1b03cb885d4cbf7967659873f81a9004f1b2dd5e00de176d7091a7a313aa3950",
+      "runtime/.doc/code-update-20260924-125930.md": "a5cec25aaa9c83c1f4a6a5a8a997654d380974640f18af64e8d8e14128778bfc",
+      "runtime/.doc/code-update-20260924-165500.md": "aed1d4085e63aa4bb03882bfaefd25a80a2d3c76f5d1fe11a0c677e8af27ab46",
+      "runtime/.doc/code-update-20260925-142324.md": "1e21e7d86981c643c423fb7c925832a6d497a5eef71c9ff0d41e78a317844ee4",
+      "runtime/.doc/code-update-20260925-221900.md": "0ae5f94141e86da77c94a027a0496b6dbab1d083824c2e416d38f3762fa745a3",
+      "runtime/.doc/code-update-20260927-084500.md": "84e0638e02cb7641215699eb629dccebbccdc66efdd8d56ab03b5f59cc0edd56",
+      "runtime/.doc/code-update-20260928-105549.md": "e0f205d184eb5ee651cedd9eef53e934f9c762704645e3fc8519d876d47a8233",
+      "runtime/.doc/code-update-20260928-142711.md": "683210853dbc92f582a255f26b67006556c5b55b22f039db6a962c558ea0faca",
+      "runtime/.doc/code-update-20260928-155820.md": "050f35a5c37ed395a454c2945cf4b7ea8c62ff963b3e61b2ce73c5f00bcafdc1",
+      "runtime/.doc/code-update-20260928-162050.md": "84aa80ab5dfdea2339488e92dae1db12b48e5d83579f47b11c61f161c9c93542",
+      "runtime/.doc/code-update-20260929-084029.md": "0839fc2f7929d4ca2bc9dc06c648ea62f41bb53ede5aec7fc961e06eff997048",
+      "runtime/.doc/code-update-20260929-131440.md": "860e1af8d1dbbef0053af138bbd70e19f100f24e5d8e4b90e43aa6888de96c3d",
+      "runtime/.doc/code-update-20260929-152335.md": "a4f18599725fc81fac5e1ad4844c474efaff32062fb8518820e3bd08361a17d4",
+      "runtime/.doc/code-update-20260929-192300.md": "270dae6816cd14426f1a1c9e56c9107d3eef47e47fe3ea785f1b5d7be4595e3e",
+      "runtime/.doc/code-update-20260930-090003.md": "0ce21be4531503d8d185a245c4e39f866b5da545fd2fa8084aba396735ffc8b2",
+      "runtime/.doc/code-update-20260930-125503.md": "881886c35b43470b09aaf06e1eb981cc173ec1e4f48c4573360fb7624a217778",
+      "runtime/.doc/code-update-20260930-130913.md": "5a361d92eb1e47122023f7c12d816d7e094c8a014c18bfa65eb4ae1291caf6d7",
+      "runtime/.doc/code-update-20260930-133604.md": "9142e8cf47c53e5339c58ef6c9f05a6910425932f2b74ef25231cde6996f46ae",
+      "runtime/.doc/code-update-20260930-143501.md": "8b40105527ec82121f8a18544a9fbfdd170bbda39f77996a2aac582c515f3300",
+      "runtime/.doc/code-update-20260930-211934.md": "f1c142cc38dd5eedef4d0c9833a555202a822985a6c871a9926dfaddeaa2a0e2",
+      "runtime/.doc/code-update-20261001-135303.md": "ce5e591057a167339b0af70a2f926fe8ecf819d6b7c30a16b14254c3a76cc0db",
+      "runtime/.doc/code-update-20261001-213823.md": "3d037e8c1c4860e96d6330f834f5f41615c66a401566605ffe888d4459e2adc3",
+      "runtime/.doc/code-update-20261002-173827.md": "89b57f1104f353c5b6fe211181aadf7c8a84561454a1528e5bdbeb06da38d63c",
+      "runtime/.doc/d7-d9-acceptance-20260924.json": "deb7efb383421a0efa5434e3ad6aa409695b5b09e8cf4275aadfb352e1a2f454",
+      "runtime/.doc/d9-0-transport-forensics-20260922.json": "37a85da83f41c79c0edc330e4c97e3fc8456df1778f99caf537df48b09abbd33",
+      "runtime/.doc/ddic-compatibility-0363-deploy-20260907.json": "8871702d81fe41415e871d451605bae781ba836354494901d3b89b98d50a2224",
+      "runtime/.doc/log-joint-acceptance-20260908-121025.md": "e4a77990a983c145afb21fd1228f775376f0e4710c04428087e0b6f5cc806ca8",
+      "runtime/.doc/m1-function-interface-20260907-105329.json": "8520b5eeb7849c4cd9467d3fd8381f840217c8d576ad6e3c3cfdd25258fca33d",
+      "runtime/.doc/m2-daily-development-20260907-111512.json": "dcb4d305261037d7f9378e2622ac5d99e013eb711a6a55fb0825822152c9fa2d",
+      "runtime/.doc/m3-live-rfc-20260907-113636.json": "46e9b7a6db388faef07b42d0a7a4efc22de8eb75abacfa94beba6b1ccab2a9ad",
+      "runtime/.doc/m64-cap-preflight-2026-09-10T01-33-05-459Z.json": "40909a9154585a5c973b825fca5ee0b324b80ba95d2a0103fd6bd6f0422c665d",
+      "runtime/.doc/m7-existing-detail-result-1789019622375.json": "384339902609a763170ef110dea3f93e05a2d9896afed7970a3cc6e8d2d00564",
+      "runtime/.doc/orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json": "adbc48e2cfac7849ea54f9bfd52bf7a0a61a0c256cc9a0cb6990d3e8cf5cf73e",
+      "runtime/.doc/orvanta-configuration-activity-acceptance-20261002T174332.json": "56bfa5f7d3b016f40df9ba0c86aa7e12101eb4f90636b6ad9fdc2fc8fc8069c8",
+      "runtime/.doc/orvanta-configuration-bc-audit-acceptance-20261003-r6-recheck.json": "501badf7f3f36ebe3916ecdc7384dd4e460d93520e70bfcf7a8c5c9616d365db",
+      "runtime/.doc/orvanta-configuration-bc-before-state-acceptance-20261005-212401-r54.json": "b575fc1c94a9f8235214c1b1d9956c34d54f427f8fd73dd2977894e3ff9aa2cd",
+      "runtime/.doc/orvanta-configuration-bc-candidate-acceptance-20261003-r4.json": "ccd6b2311695a7ca00aab76bb055c98d203fd9952cbd54a48332e712f37716a5",
+      "runtime/.doc/orvanta-configuration-bc-comparison-acceptance-20261003-r5.json": "e8cf68f65c0cc484fda5cb7354820a95da70fe5c57cf6764defb8988a8b368af",
+      "runtime/.doc/orvanta-configuration-bc-cts-acceptance-20261005-182434-r51.json": "988a3ecc16e4799c43f64673033d3ca42a68bb7e284a0a53cf5bec32a5db303f",
+      "runtime/.doc/orvanta-configuration-bc-guard-acceptance-20261005-r49-repair.json": "adee1917e210b2c7134a22e5daffa7ebf50a22e7c1f95643dac93e5a1ea87cb3",
+      "runtime/.doc/orvanta-configuration-bc-native-acceptance-20261004-r45.json": "485a555dab61398d3ea2a2c9cf7cc7811fc4d6ff0503522c521833cb03593f81",
+      "runtime/.doc/orvanta-configuration-bc-preflight-acceptance-20261005-152756-r50.json": "cb0ade77fbc78868e6d3255080242c073df49beb5f25ffd5142ba7c5a6d1c551",
+      "runtime/.doc/orvanta-configuration-bc-preview-acceptance-20261005-r46.json": "2fbb1d764374c078b586bcddf8ded39a035ad0021c1dd575b1b3cc4bb78edb05",
+      "runtime/.doc/orvanta-configuration-bc-route-acceptance-20261005-r47.json": "06f1df9d2b96d8ed9742ec2bd162da1207af34e6a10cf747e393205c4ef4fe30",
+      "runtime/.doc/orvanta-configuration-bc-type-pool-read-20261006-142528-r63.json": "8279cf56acbd8196c7a33beeb73e92b9ca0cb9774cab3eeb4fbb2983fb0406f1",
+      "runtime/.doc/orvanta-configuration-bc-unit-payload-20261003-r4.json": "51081b7cadefd9c14ee6c0bc82b8db37096916fbd72dc345cba564253c687773",
+      "runtime/.doc/orvanta-configuration-cts-key-acceptance-20261003-r20.json": "ebe4e239f81760127d86837b308cd86daedf739eb5fa3ae53642fecc92afe46d",
+      "runtime/.doc/orvanta-configuration-documentation-acceptance-20261003-r2.json": "27bec5c73e712da5baa472c00e38217952a991ac3e728399ef9334dddf9bdc9d",
+      "runtime/.doc/orvanta-configuration-img-details-acceptance-20261003-004629.json": "016f8b5675f0c2e053ca6e1ac49567f5b68f9d4e6047c304e3a547fc9009c65d",
+      "runtime/.doc/orvanta-configuration-maintenance-acceptance-20261003-r16.json": "9eb5e3a517e50719f873493d7185d5be02d150595d1726932e2a536438178718",
+      "runtime/.doc/orvanta-configuration-number-range-annual-preview-acceptance-20261003-r13.json": "c165c4ee357d288e9e42d049232cd44e326bc79eb2d4d21115067d2676354f7f",
+      "runtime/.doc/orvanta-configuration-number-range-boundary-acceptance-20261003-r11-recheck.json": "623611d461978910c0fd7c258645de4160f60e42624cac6fec1c5537d7e4d4fb",
+      "runtime/.doc/orvanta-configuration-unit-text-entry-acceptance-20261003-r17.json": "a277185376d6f17bb402d02f1ea4266ec062b6ee1326ff75c69e5c066b98957e",
+      "runtime/.doc/orvanta-ddic-resume-table-activation-ztpayment-2026-10-01T15-13-56-721Z.json": "ce84401fb562f0e03036801d4489b5f5b573b9a949269c2174a749e70985df8d",
+      "runtime/.doc/orvanta-enhancement-manage-classic-badi-activate-zacc-document-2026-10-01T15-15-19-751Z.json": "3a8e2315fd54df67223b649854772bc6e391ee2a41c2215dd88da49de5ccd767",
+      "runtime/.doc/orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json": "dcf7971fc4c4d9e70e7dd24296d9d5533f072169fe6cdb34dc8c111c56c38dd3",
+      "runtime/.doc/orvanta-enhancement-read-enhancement-implementation-2026-10-01T15-01-05-986Z.json": "36fd46f2da72f959e4324b7a68b3734aa10261968de2232ce76bf5e47ebb1a1b",
+      "runtime/.doc/orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json": "637e78a3b14a8e92d36f1266869a867b3a51883b9b4447a68e4e031543daa121",
+      "runtime/.doc/orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json": "30fabfc34943e67e493c3b3c718f83874e7771315d09bb961f546bebd5cc2346",
+      "runtime/.doc/orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json": "aa5f0e69a736914d46a12a5493215d08a8c39111a960c24c2d7ee781bcf0eb74",
+      "runtime/.doc/orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json": "d99cdfa488c1fb4d04100b8fe25aaf2aa0e4ec376aa1cc70322537e9cc9b21f4",
+      "runtime/.doc/orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json": "c68fa6b99d23baf6971b613dbac770e8ad887abf0d4699749141feff84ff1578",
+      "runtime/.doc/orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json": "100fe735824155feaed286285bb1fce82742a0d18cabeefee056e136c72ea2c5",
+      "runtime/.doc/orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json": "cc04ca813ea274aad4780cd30115f9109b28176febde70e8edab1c1d41ce9449",
+      "runtime/.doc/orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json": "eb27b63b3a2adf72dc5dd8bdccb1a9ed043698195e9eec38b3de13c4a1b0a53a",
+      "runtime/.doc/orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json": "38a2319d9f05c7c0b1b997bf7c14ec9af209d7e3922e3ea4b4fca7494b1a1425",
+      "runtime/.doc/orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json": "18d468a8ad3298c1878d1da3e655b70eeb95df950cf7d4d08149d8b825c01282",
+      "runtime/.doc/orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json": "331c47d6757f0c2cbda98a9312727c9af5ee6e670e0040d2c0af93fe16ca6ed9",
+      "runtime/.doc/orvanta-unit-api-only-acceptance-20261003-r22-recheck.json": "76e55e3d75e76a68d4913683a0c1dd464368b285f3d8277b3638c75f95333401",
+      "runtime/.doc/orvanta-unit-read-api-acceptance-20261004-r27.json": "724546ec2d0692b51f26a3e3f05ed898d7c09ef0af5088eae2ef72fae831911b",
+      "runtime/.doc/orvanta-unit-text-api-preview-acceptance-20261004-r29.json": "4563c27e2644f48a7d152d4f4b98482daa1435ed973298ab5a9f59567ec6d6a3",
+      "runtime/.doc/orvanta-unit-text-apply-save-restore-acceptance-20261004-r34.json": "4f8144a5e8d2ca0c54eb00f8659261524190781ada76ac00510b3e2cb0f0e814",
+      "runtime/.doc/orvanta-unit-text-reconciliation-acceptance-20261004-r35-recheck.json": "ae6022c9c449ab3616d9b094511f5d23494d2fa2deb099c7bf1d29fafdfda2b8",
+      "runtime/.doc/orvanta-where-used-endpoint-2026-09-20T02-13-01.989Z.json": "13299c671fc57e4eed703093c6744e511ede901e62d7ab888d28103b732de2f3",
+      "runtime/.doc/orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json": "7327f4fe42f20d47a404f5804041cd2c61e9f1a1436919153435ad011c6a12ef",
+      "runtime/.doc/runtime-reads-deploy-1790742189882.json": "4278327afa1ea4b989d4b47acbff20248a31de7beef64461c42e18b59eb5ff86",
+      "runtime/.doc/runtime-reads-deploy-1790749923642.json": "c50fc3f55af9dbd8bfe47a3ef2a846ec6d69ea6498e53df5bde24a9874df3147",
+      "runtime/.doc/sci-e1-live-tool-2026-09-09T09-14-44-188Z.json": "7d93b3c1eac814b341c494a031726b660e0b424ce82536d162573db8d21f0d97",
+      "runtime/.doc/sci-e2-acceptance-2026-09-09T09-46-34-294Z.json": "569be103758984ceaab368919de7b3057799c075375c03a303cc4bc9834330d9",
+      "runtime/.doc/sci-e2-dependencies-2026-09-09T09-27-34-795Z.json": "f40bda752629916752ec505d5a8c87966d8a20435ce881ef9caebffb02afd67f",
+      "runtime/.doc/sci-e2-readback-2026-09-09T09-40-22-034Z.json": "b13276bc027b8639d260dede09335117c95ba40e7f0106426147342a6f5c5994",
+      "runtime/.doc/sci-schema-review-2026-09-09T08-05-57.106Z.json": "495c8de23ff88dfa05679903b3d3e59464f04611f6c65e1cd293216eee9fc154",
+      "runtime/.doc/sf-draft-isolation-20260914.json": "cac5338259914c40c865989606861972892c86deaebf0fec9d2f5c31c017b06d",
+      "runtime/.doc/sf-final-activate-20260914.json": "c14c590e1c4a18aa82db65143ccdb3b0533c5eb41a5fa9a9b35147223354ebb8",
+      "runtime/.logs/mcp-incident-20260922-105659-808-resume-ddic-operation-not-supported.md": "8867044fd98b72a9dffb7cf970510d39e467996c148781039efe09bc9362cd79",
+      "runtime/.logs/mcp-incident-20260926-091500-007-abap-download-overwrite.md": "63e12e6218693152d9dcd0cc38a274d7416977c3aedef83ae442ccdff4271c35",
+      "runtime/contracts/tool-index.json": "679f0dcb0ccc929662cfceba22198650239afbd5c45affc5a475a85e6eaf4d0a",
+      "runtime/contracts/verification-registry.json": "7d809831a264008c6eb811445b90115d5d55d6ff6795c8a421b7a4f0b1d2d959",
+      "runtime/.cache/evidence-ops-r42/read_lock_object.json": "7735688e5e693a889470b543cce4647076861f2988d1ac29592c1ebc727811eb",
+      "runtime/.cache/evidence-ops-r75/get_runtime_info.json": "8ce61f2ce5c6f457d1c306155f4d1262e174ca6fa353944ec43d818c66f2e115",
+      "runtime/.cache/evidence-ops-r78/sap_helper_status.json": "3ba36c0fb4901e4fdf5d0a858f7c8921fe79f570fc8c1c7d6a0720a3b6a411e4",
+      "runtime/.cache/evidence-runtime-resources-20260930/perf-31-sql-syntax-contract.txt": "96bda9bcba5d199d05bc7750814e5449d8b9ec83b48f2e70b23c646fdbe682ac",
+      "runtime/.cache/r7b-state-enh/01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json": "685c0673d6211efe38b34eecf2db4c777efc85ce795ca0e3e59081d55e8663ff",
+      "runtime/.cache/r7b-state-enh/02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json": "4512b3441587e30da96327c38326d0d3317897d111c0c4f9278eb68f740d0806",
+      "runtime/.cache/r7b-state-enh/03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json": "5e9aa4456fc916f6d7dee9a27c2ff1f4949a09d64dd30feea80fe7d2f4bc5bb5",
+      "runtime/.cache/r7b-state-enh/04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json": "204b5e5b2118a5305df0e93df1bb21ec42ce29a5311deda17e25c214f52e734a",
+      "runtime/.cache/r7b-state-enh/05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json": "368a682ea04a2569a7d3003defd046004874b8143b749632d38196c293571957",
+      "runtime/.cache/r7b-state-enh/06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json": "68217080f8b2a1ab2eb53e4ba58c26c2376aa35358bdfcfae4e00d6c7f17af71",
+      "runtime/.cache/r7b-state-enh/07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json": "5ad3c964cbf68d32666d09f2d7ff0004246d83efdc4db65ed4c9f48443a84164",
+      "runtime/.cache/r7b-state-enh/08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json": "42b34185e3b76f19fc0a5bb4606eecd3dd301d2aea5c8b9656f8a9c357ac161a",
+      "runtime/.cache/r7b-state-enh/10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json": "a6da2e2ef9382f00b3c105378bb46efcd092a2c18fc6d628bbb4c5ec82c78964",
+      "runtime/.cache/r7b-state-enh/12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json": "eb52dc71207afa92cf2f11ad6d1ca908cadc8c4e675134fce8f6f4b7576fc9f4",
+      "runtime/.cache/r7b-state-enh/13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json": "c8ec735f7624a02f5c9f9968ebf85ce2fa5fade2b0cd59647042630e117c8c00",
+      "runtime/.cache/r7b-state-srcplat/01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json": "74bce065d3d0910de3b00e54426c0603b78ab6f6295782bbd690d392d5b33570",
+      "runtime/.cache/r7b-state-srcplat/02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json": "3960b58f881c634bba670651626c4f26508837be9e228e19d51c2ccdbaedf4e6",
+      "runtime/.cache/r7b-state-srcplat/03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json": "109e6851bd7d50bb8fa5aa013032a7703e2adcb6bd175c1a19127f478db2bfe9",
+      "runtime/.cache/r7b-state-srcplat/04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json": "f82cdb5d4d41480354d7d63be05acc747d118ba164029800a9e87f393ea0c4fb",
+      "runtime/.cache/r7b-state-srcplat/09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json": "4274678bfa8d21db3c26711a701d32fdfe7627f4988a7791ba1719153a178580",
+      "runtime/.cache/r7b-state-srcplat/10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json": "7042a240e470772668c7bb81be82af98b7ff5619572e8b539c01ba3c3c90ee20",
+      "runtime/.cache/r7b-state-srcplat/11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json": "4c6e0d13e1476bd9bcc68d45a6aa7a6ef7d886faf9cf8b6e812e2b852f844ca9",
+      "runtime/.cache/r7b-state-uidata/01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json": "ecbdf8531c612bee81b63910d24bcb76a860ccb182f95a38eb4e4cd9c06c4dde",
+      "runtime/.cache/r7b-state-uidata/02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json": "9f1ee9a9e91d59c034cd8816cf8289dd96f3773d8f99dd7962a37f40cd0e4dcb",
+      "runtime/.cache/r7b-state-uidata/03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json": "b0c7f4aee96464caa4e6402bc25cbc435153ba627e280a509232d8b795b29e22",
+      "runtime/.cache/r7b-state-uidata/04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json": "f82913cfdf3980d987caaac94b932471d1ae2adb22a27d4a496b73db731a197b",
+      "runtime/.cache/r7b-state-uidata/06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json": "85f05b0988bfc96cd449ca6d5ee60af0cfb0897de356a4d9b429028ac9f967a6",
+      "runtime/.cache/r7e2-state/orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json": "67e3bb80bf275f6e1c69bcd5b2f8631161bf61dd31f6a54fbe58012fa389c0e9",
+      "runtime/.cache/runtime-regression/105-view-upsert-e4-retest.out.json": "0f9dd587d6baaf0b57603115bc882d471b89ed51c88d924ee51470a7d7b13d3d",
+      "runtime/.cache/runtime-regression/107b-read-view.out.json": "45dc9e2c40a872982715ee58d325bd1f7ffdeb0ae79ad5f5b95afc899faad0d3",
+      "runtime/.cache/runtime-regression/109-nrob-create-g-retest.out.json": "f8348db5b0b729b15c62f0f22ac59395e584ffe71a4da6838fb5c27f048340a8",
+      "runtime/.cache/runtime-regression/21-delete-table.out.json": "ac8d009c6a78af9fd68efb1171d2a06ae51c99ec162504418d27910642e1bdc3",
+      "runtime/.cache/runtime-regression/24-create-table-retry.out.json": "eddfe7cf7c4241660c8256e1c7db96f7dd7c8c43a65b3bb0895a2828464120e3",
+      "runtime/.cache/runtime-regression/58-read-nrob-notfound.out.json": "2bb78e25e792ab117165a4954f9f30d0321bbceac83ac689f2dbf77036f35655",
+      "runtime/.cache/runtime-regression/r11-activate-receipt.txt": "b038e23af48509192a7d41e20e8797258926ed0c1b38375e8c096b69cf5a0cd2",
+      "runtime/.doc/mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a/result.json": "70663d4351abe22b14cf97b64d85230ab05a4a2d33880f77eb15cf490fcfbdab",
+      "runtime/.doc/mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07/result.json": "cac2bad95a8420ae892ec327ae90da96aace1a9ca38f17e1f3feb63df3f63f2e",
+      "runtime/dist/src/adt-backend.js": "e54afbbb3c64b2bc4779485b03647e65d64321aeca37c6af9a1f7a391c9bba1c",
+      "runtime/dist/src/application-logs.js": "b50be6c2db5510c9611a5ece518410a3ba0073da39992d1249cc116293c40090",
+      "runtime/dist/src/auth-trace-status.js": "e0fa25065c999fd9a2dbf20ac9364480d4976ec273d9aa68fcb352bd2f92b87d",
+      "runtime/dist/src/backend.js": "ad131f76a01056d873c2114cdda41a8744ad43f0cbc7d23f6b2a969a1e6234fc",
+      "runtime/dist/src/background-jobs.js": "f2fac203d505c014f899c9fc8a3257be61fe3ec6b74ee12f08cf0d1fb0864f1e",
+      "runtime/dist/src/capabilities.js": "f9fa72785e44108ac87261519128a537687babe73d16424ae9bcd5ca2a36a663",
+      "runtime/dist/src/ccms-alerts.js": "43835ec59fa04c14cb5c6e7ef833825ce0d35bd8d767a992fbb5a21baf077e32",
+      "runtime/dist/src/change-impact.js": "64c9edae5a8f13fee9fdc06cf8d524264e3782a5ac238fdf4d2b2846d1be1559",
+      "runtime/dist/src/config.js": "f965c10496572c1390ced8fa0346143eb938430b01caa25eaf2c5ae68f5f1738",
+      "runtime/dist/src/configuration-activity.js": "77d28e02a460208e38484f2d8592c0c770fc056dcbd14fa80ad06175a435cf42",
+      "runtime/dist/src/configuration-bc-audit.js": "4d6df26f964bb84b06d1d161f83a499a8c349d35022e997abc032aaa8db15478",
+      "runtime/dist/src/configuration-bc-before-state-store.js": "1efe4c28d28a9fb51676e116e492ed8bff48b53e1c918fa6a1eb3d848bdedf01",
+      "runtime/dist/src/configuration-bc-command-contract.js": "c37be308a144d7575c45431914a4153860ded7859371da00299cb0593c59b835",
+      "runtime/dist/src/configuration-bc-command-preparation.js": "4862a44ec2f7ae017596a95f60d17793cd20eb3d8a2a5c9a35462ea07d21d8b9",
+      "runtime/dist/src/configuration-bc-command.js": "29cae3635a0442b3a44e6473fe81da1cac90f37fd8abdf527392710992bc39ff",
+      "runtime/dist/src/configuration-bc-compare.js": "7d93e53d5f2be243298b0216079068d1d724561d6bb9eafa13328af0befd94b8",
+      "runtime/dist/src/configuration-bc-cts-api.js": "1195269b7d651a9d9262fa390c5696020b525323bbf7d629c2341a911a00aa98",
+      "runtime/dist/src/configuration-bc-cts.js": "cc5dd03ab71d0a562a92f22f4e483db28aba6be5d516ee8de26002a221841ad9",
+      "runtime/dist/src/configuration-bc-effects-api.js": "24353748135b4a73af447310e01d9313db79766d0a4de660c276ba951c7e4294",
+      "runtime/dist/src/configuration-bc-effects.js": "7c03ed038e0e43e2e1de2d388bf76391d81e55a679adfd37bf3747feeeafc74b",
+      "runtime/dist/src/configuration-bc-execution-store.js": "2419944ee60c7854bd26c8522ab3b0ccebf7652775b8058d2db077d5c1377f11",
+      "runtime/dist/src/configuration-bc-guard-api.js": "24c4a009ed2f318cb9ed73d780da0bb1b295de09c2a8cc2428a995eb9ebe618f",
+      "runtime/dist/src/configuration-bc-guard.js": "f6fcb1ca4037414614199771d6b6b0e2435aff225acd7db98299e49bf961c1e7",
+      "runtime/dist/src/configuration-bc-impact.js": "873b08b73cc36f1f0e686bbd1311055560eaec14f34590a8c504b0dad4f624a0",
+      "runtime/dist/src/configuration-bc-metadata.js": "9bb2318bbc7dd58d68386e779ac7501c4a09d873256dcdcb0abc8090594e222c",
+      "runtime/dist/src/configuration-bc-native-api.js": "ba4a0a4dd6d5dcadf612a41dd8cc30d12f9df16c829550a02ef1088c06819130",
+      "runtime/dist/src/configuration-bc-native-types.js": "3ac3f54df03b3099bb809bbced2c1ea1361c195906dd9d7a46d9faf26b6c1f75",
+      "runtime/dist/src/configuration-bc-native.js": "08c07b8235e17e37caa33bf3c1b20a399450af0096be8aef5c02f03a088e1e63",
+      "runtime/dist/src/configuration-bc-owner-api.js": "04fcc6383e7de24b3778a3a9d4782c830f5836c5390ca48f3ac4089bf3d2f118",
+      "runtime/dist/src/configuration-bc-owner-pins.js": "ae14e379b7d3da477483ade5256e8e34f7686e450d1650ad728fa15ba02fe877",
+      "runtime/dist/src/configuration-bc-preflight.js": "b8ee45704f632eda6ba2ef307bc0e078159fc3eb4466332c416f7f3a13e705c2",
+      "runtime/dist/src/configuration-bc-preview-api.js": "fc60366f903b2b802c16030f70a5bdddcf2e188bfbcf554a2db0bfbbae660c73",
+      "runtime/dist/src/configuration-bc-preview-pins.js": "a5b5ad44c2dc046f898b2f44d640cf54040c9ee73163d04b7818ea7fa82ae844",
+      "runtime/dist/src/configuration-bc-preview.js": "d9e87d28230528fa9144377bfe259e341d07d67e0233c060edf6cdac7ef8918e",
+      "runtime/dist/src/configuration-bc-read-cancellation.js": "3479d1da09cbd84bc0de59ee8203da516f1e0a95d060ba0caac4c311852eee7e",
+      "runtime/dist/src/configuration-bc-record-kernel.js": "3008b462cb16f8dc36dcc3846f1d42f7b1f0cf965601708b7d7f0e26a90671e1",
+      "runtime/dist/src/configuration-bc-recovery-check-api.js": "adbd10a1cca98c3b9bb4cad8a342e1a2d05d325b00784fe6026747c4914a966a",
+      "runtime/dist/src/configuration-bc-recovery-check.js": "63f0230c93dcfa372418164cc743633d97fbc88aa8edc97f17efd04cc3a92c2d",
+      "runtime/dist/src/configuration-bc-route-api.js": "bc8a3391289f8542a2829834060e14ab4d6c08bdcdcd80be9dcc0c15eab1026a",
+      "runtime/dist/src/configuration-bc-route.js": "c57cc5ad4ee282e8657a1ffe7f7bdc041ee08885982827b77ae88bacff396f68",
+      "runtime/dist/src/configuration-bc-set.js": "2a8118556e3aacef3f3b64457dde536d3bedd954f52c96397dc23f59115fa15e",
+      "runtime/dist/src/configuration-bc-source-scope.js": "c9f95d45cd025fb1e3a87d387812b7f07bbb4d7e994a53d2d0467b20dda11b3f",
+      "runtime/dist/src/configuration-bc-state-api.js": "4673e86d9eaee2977e0568a2fac1c36b9bd7f36f4c27f61851c3d1b79d2fc89a",
+      "runtime/dist/src/configuration-bc-state.js": "452e9eb72073ff19f3cbed9f245c3f6484a3415795562713986e356ceac377e8",
+      "runtime/dist/src/configuration-bc-type-pool.js": "b5e3c250a7bf46ff925aa7e27cbd39030a9a4e359240070c56dc159c60c79823",
+      "runtime/dist/src/configuration-bte-product.js": "7a358a4af2ed3a6cae1d0c0c01af1de51be11d167ae3f28d54f976b02e6dd3b5",
+      "runtime/dist/src/configuration-bte-route.js": "339a9776f24c45e6783f6dce9e597221c6ffaf9fbb88e9ecfdc2b63dc9c83eb8",
+      "runtime/dist/src/configuration-compare.js": "14d3f2eb2513ad598315009499daa776ae1df2dce511a46404bae01e2e951e32",
+      "runtime/dist/src/configuration-documentation.js": "bfab10af62ca8a2ee9d22d94c7f73d32bc8bae78892ccf32be3f75dc637c777d",
+      "runtime/dist/src/configuration-fi-rule.js": "e4891621e1c952b97eafba2a065182d9b76e5524775168ac0d775cc11c4992c7",
+      "runtime/dist/src/configuration-img-details.js": "a4555601e13a2e84ea0fb5ad453e6a175bc1d787b8c55f761532c51d1efe7699",
+      "runtime/dist/src/configuration-img.js": "bf2784da8653802817bfcc36c7b22251e223a70d0c3479e34022d8e9237136b4",
+      "runtime/dist/src/configuration-number-range-api.js": "97f4134bf61674a152501a3c96495f622f8b76d24b9c6b8f347c3abc50643432",
+      "runtime/dist/src/configuration-number-range-command.js": "02776a034add72699008636f95ff57cbd2a5a61660c17e790876255a8902d40e",
+      "runtime/dist/src/configuration-number-range-native.js": "b2560abfb9225143eba921bf5b15e83eb71bfa6ce2fdbe81f0d9b1bfb2b6bac6",
+      "runtime/dist/src/configuration-number-range-preview.js": "5dd4123c9cd422e9088c940f7877e9a2ea92cbfaaa46e785cad5c013db945dfc",
+      "runtime/dist/src/configuration-number-range-receipt.js": "7172cd8fe36bf95e58db4f8074edd3940b4b8ff6827447654bc2615fd43aaf48",
+      "runtime/dist/src/configuration-number-range-reconcile.js": "48e0147acd4bc5be7c40049acb9e9259536aeb8b6fdf7a57cb6d02b34f6c9964",
+      "runtime/dist/src/configuration-number-range-scope.js": "a9a84e3b4f2dc371536ff4c624e59f4ca40dff65b06d71cbcc2d4d3006262c17",
+      "runtime/dist/src/configuration-number-range.js": "bd4f1676cdc4f1a4f338e53fd67e0107d104d00c37aee3f4c78b6ac45e029166",
+      "runtime/dist/src/configuration-object.js": "d4dc96ac74573e0023861ba4173a6163ec85d7bba1a43699072159a3649dbe7c",
+      "runtime/dist/src/configuration-preview.js": "e07758dd6b3f07f42cd2bc2f7ad9dca48f5175fe5d6b4a897d16419321c3dd9b",
+      "runtime/dist/src/configuration-transport.js": "1918c692d2d8f4f2b5fd31088c253ec15b25438756a03cab0459c3e9dc1bbc8e",
+      "runtime/dist/src/configuration-unit-api.js": "bca0cdd6fbd649e88b2e76181e7d37d024b8530f64572d24661b1ed1c391cae3",
+      "runtime/dist/src/configuration-unit-apply-api.js": "70a889d3028f1b2e517cdb81ef4a80762540a9a776af1285f3fcb8cb00239519",
+      "runtime/dist/src/configuration-unit-apply.js": "98a70d64a7b178f5cf3f9e6251e0383fb1ffb1337c75d7a2e7fecf31a717e3f9",
+      "runtime/dist/src/configuration-unit-native-safety.js": "0ab5f593ee3bf982ef6095910b9d0445e8177e920b0be93382c180f484809b83",
+      "runtime/dist/src/configuration-unit-reconcile.js": "8fe3e5b0003effe09bd74065b229185ca4288d68d17e38fbf703aa5c2d8d9a6e",
+      "runtime/dist/src/configuration-unit.js": "61233cc2405a46aec0feec3e968b374df0d317e5c6e8a39aa056a20adbe607d7",
+      "runtime/dist/src/contracts.js": "dedebb7e1da19a228781fd989941681876c00ed12775fa855a98daffaad600f5",
+      "runtime/dist/src/customer-scope.js": "7ce02b91ec2995216f435105ca1cc82164d0d8bc36337c1aebe7c11a124ab56d",
+      "runtime/dist/src/data-query.js": "4a910eb53fc9d0b98ab656e4568e6c52d5bcf803f1da299ddd7a275280f763c5",
+      "runtime/dist/src/debug-manager.js": "d86b7f5de5d3bf709cdf0f0da98b30e311f3da10d6c0bfa50150604ff1cf9313",
+      "runtime/dist/src/debug-precheck.js": "432692729755e55446564fd2a0a089030e1e077c3c6aa1591a9428d1b0eb9572",
+      "runtime/dist/src/durable-json-file.js": "29422f2729c4e0aad1bbe446bb1372badd2b17fa164d0d04ec432e6aad4a6b92",
+      "runtime/dist/src/export.js": "ddc9db961e398b85b3cca1141d5a4d263c64b483925399f826b3d0e8253ea84c",
+      "runtime/dist/src/helper-carriers.js": "895bd76a933d47d41db8dda1139ea8ba7728d2586491c6ec11a7a208e0de0be3",
+      "runtime/dist/src/helper-operation-limits.js": "39ac614e46943f13429a2eed479046b712c0e7a0be9790dd17c476d9676f5aed",
+      "runtime/dist/src/http.js": "18eb71ecb5d381ba20ee1e61a76acbdd47c5d382d5155e690c5eaca12b88bdcf",
+      "runtime/dist/src/idoc-status.js": "c41db2d7d3a1f2d561f2ac4c3c516dceefc33abc64ee0387622cdba0dbf4a244",
+      "runtime/dist/src/inactive-inventory.js": "21b9fa16cb904186d8d873fb61ac3a287d0c6d49725cf8eb56c9dadb1836d1f2",
+      "runtime/dist/src/index.js": "4782c56e7608fdeb8e9e9f34abf6cb85bfd6f04cf1f673f7fd89335a0bc6f1c1",
+      "runtime/dist/src/invocation-receipts.js": "c238f1ddc3362702d87bd929d522562c62a615fe63a1d823486d8e8696db9001",
+      "runtime/dist/src/job-spool.js": "7336bb9237f38a866c59925b3311d3cbd1cbf4edeb5752172ab082d1f982e176",
+      "runtime/dist/src/landscape.js": "63166c172bd5b57d02f66d7e1da37c36c66202393bde8baa2b2d60be40ff1bc8",
+      "runtime/dist/src/legacy-where-used.js": "5ed0b171eec39f58f4e5103821d72c8e38af0de113cdb3588ba45bb7a91a6da2",
+      "runtime/dist/src/lock-delete.js": "8a0511fcf97271946fa4d7b074e68e053b1913e6f34050fbb72579b7877abb9d",
+      "runtime/dist/src/log-correlation.js": "5ea2f372013e04d7a9fcdd7d94b662168a8cd597c81a7da8e478c242b96512da",
+      "runtime/dist/src/logon-diagnostic.js": "e916e702004b8e10c469c0b1c4bef3f2fdb57f9775262ba9f6f61bb789da54a9",
+      "runtime/dist/src/maintenance-diagnostics.js": "d9d116596a9485d9db1a5365809fb4ba65bcba410c03e49e398ef89bda65b72b",
+      "runtime/dist/src/mcp.js": "23c3e2ca38ae0ec36f1bbbbbd8ab560f3c304e0521cfae7a6dcac20176adbdc8",
+      "runtime/dist/src/native-atc.js": "8737730f0db89fae5b7f4c5a3abf24c840088dbfba5e08c5948babea3a2831a0",
+      "runtime/dist/src/object-types.js": "24d3876e226659b0a351588c153e134761d8fe09666e5151bfd1ed9afeabc36d",
+      "runtime/dist/src/operational-logs.js": "cd8b88525b0d63d4c9a56a3f62960a5cf90132107c69ac5320c62d15292e6a8b",
+      "runtime/dist/src/ops-coverage.js": "5d2930b67af1bc43e8ef995404792dda569e1ce1cccb8da513863cbf5fb19c00",
+      "runtime/dist/src/pre-sap-validation.js": "7d2eaf699dfadc72cccfed31a4868bffb1dd6c2a1ea67633adffbef6009fa460",
+      "runtime/dist/src/qrfc-queues.js": "25bca6ed4b8742dc8828f3bf820b3705ff0cf558d229d31e7d017a6a338e6aa2",
+      "runtime/dist/src/quality-checks.js": "1859939cf28a0891f5c05abd95c465a945b9016ba0966ffbe0d370be99552050",
+      "runtime/dist/src/quality-gate.js": "bd284066585a1fbe2fe46b9656e5bb966b92f3a0c194d6c5b76f5486c156b367",
+      "runtime/dist/src/report-parameters.js": "791f175fcd7e1baae49064e9ad971981bc2741b99dcd7fa9ccb8652998797e39",
+      "runtime/dist/src/report-variants.js": "27c72fca307edd183dc5241c9fc642e1ef0926ee8ab372072f126c6d6f21b6f0",
+      "runtime/dist/src/reviewed-table-reader.js": "4ebe20adb38ec81897937a1e5218cab95225b5ec0e8ef7c9dd42633d4fb2b70d",
+      "runtime/dist/src/rfc-values.js": "d9a2cc563b4f3216b5bd24e2d82c90c06d9ebf4f6d73e5e45eef5e95246b951f",
+      "runtime/dist/src/role-authorizations.js": "c63d7d6b28b200449706a32c8885fe27d6cd8e3011a6dede772eed219ddb10ff",
+      "runtime/dist/src/runtime-diagnostics.js": "e0879d040f8f2df407facc1c84d59bdb73b5885054ed24c8cff3a94f89daaa00",
+      "runtime/dist/src/runtime-info.js": "c9884b9f67f2b87ae7f64198e9c9b7980a10813512272fdd8e7a0b9c1b342521",
+      "runtime/dist/src/runtime-resources.js": "9836b3bd59f625c5b02c41bdfd6c81577c1e30db94d14542aa6ab6af0808c1d5",
+      "runtime/dist/src/sci-v2.js": "a71f3bcca2071c9c597d34c48c478ea9c072cb80de40470b8754546516703132",
+      "runtime/dist/src/sci.js": "83a90b64cf4b173d4c3134c6f4acd2fccf756fb17678c4c0e63f158786996eec",
+      "runtime/dist/src/scoped-query.js": "11683c50bf13cc27aadcbdfb2f4f58782a29090eccf320644f1dd37deed79565",
+      "runtime/dist/src/server-facts.js": "fbe3cac2e1b9a92ea04a2637d2b6f10140cc5e83b7b277de9c05dac41700971f",
+      "runtime/dist/src/settings-index.js": "bbbd50bdd02f4b77867f00545f4905036ffa606ab0dba703a48d50e0dc2eb029",
+      "runtime/dist/src/settings-server.js": "f61be6640bbf8968185a77f15f2fa527e4b47820b0ccc470b1b8fc85a99a5a1d",
+      "runtime/dist/src/smartforms.js": "7511a6a41652e463b1691be8c30bb1601eb2ac121cc4baea02d5ecdfbce47c09",
+      "runtime/dist/src/source-edit.js": "48eab3584ee7d31ccb0745903631e1636e5a6ba9986162674fa250a36d45a6ce",
+      "runtime/dist/src/source-preflight.js": "7c418cfd0a5e26941871b606fc2c4843418d8e50822d4ecc2fc7d3f34e686db3",
+      "runtime/dist/src/source-write-outcome.js": "60b27e744e55ac132e2084cf6f6122871bc111c221a86fd6fd0364fe8384aa79",
+      "runtime/dist/src/system-info.js": "0c0c16c3bfac180e75c36177e6d11e8d8ff6de7cbdd2fc60d2a9c8b9382235f0",
+      "runtime/dist/src/system-parameters.js": "8c2a11e4ea1c4bec09f0f8de8b7d7d620e51943dbfe8d0baf4015031bc576d5f",
+      "runtime/dist/src/table-allowlist.js": "86f663aa35508ce6147a22280e0358b455142593be37ee96e0502dcf0d36f2e3",
+      "runtime/dist/src/table-expression.js": "e38f27ee563bf7cdeff170bfaa58dcd0dc687123ebb82d74ebc71672223a4c10",
+      "runtime/dist/src/table-query.js": "122d2360167dca6d9d1929cf77f8b25c1f20ec08e1c68dc5ebc680869247d7a2",
+      "runtime/dist/src/text-elements.js": "7ef2c15a283aa4a5bdd673f36561659681226c374a7c22cda04275d3b28e408a",
+      "runtime/dist/src/tool-profile.js": "cd75a69bde829712bda10de3b38f5d9e2eef934a47d778734ca953f0f437c9dd",
+      "runtime/dist/src/tool-registry.js": "ee2ba73d115a92248e26e910b68be8e7c71891815dc1654bd9bb04f747badcf4",
+      "runtime/dist/src/tools.js": "0526813fc2137c17d5bb189c0144c9a047d491afb41caf9d16045846e581b6d1",
+      "runtime/dist/src/transport-delivery.js": "3389dde789a999a2c0863657fa233ab2cd80f440e316170597c984c3fd49c92e",
+      "runtime/dist/src/transport-import.js": "600e7eedc8ce824343ee17872291953094530565954b85a4b4315acfba5732ab",
+      "runtime/dist/src/transport-release.js": "fbe02d7bd7436f5db5643859681aee9295d4795ea1743e925cd3a3b4a3fba270",
+      "runtime/dist/src/trfc-error-entries.js": "6299ca848ee0d123b71ebe768b419652a1c856467bac5d0f750df4cc74e764ee",
+      "runtime/dist/src/user-authorizations.js": "94fc732cfdc19cb639bd55d1ae8ea83dd8418a981f0dbe9ae436c7bcbbe94418",
+      "runtime/dist/src/verification-registry.js": "3f9e6cf3bfe14e7011a6d22168001f34d05f9ccfa8c78ce5b218b824127e09bc",
+      "runtime/dist/src/version.js": "759cc057da6c8788876bd9120bd047ca38f8a23d908b4998375ef904560738b6",
+      "runtime/dist/src/where-used-request.js": "3eee58873258b63b844bdc10eeaf1028a3b0741443d3611c8072fb8bcd979c49",
+      "runtime/dist/src/where-used.js": "e242a217947ad0bc5f2d3c463b20d3f0e99693154b30c3f859499c7930121ced",
+      "runtime/dist/src/write-operation-receipts.js": "542d3dff9caa55a416c3bd4e39e04db5046be70acaad70a54d9fac315d0bc797",
+      "runtime/dist/src/write-prechange-evidence.js": "361c88aecf0d00216d1ef93b59df0c3b3edb3208b753ffebeee60aa88102754c",
+      "runtime/dist/test/adt-trace.test.js": "98fc1b0700a58913be3af39890480ffaaeffe6f9641754e95a6e555dc9a95903",
+      "runtime/dist/test/application-log-source.test.js": "67602573ca10a6e8bd4e4fbee753325eb9ec1ead0cbaab52250e70763e0146d6",
+      "runtime/dist/test/application-logs.test.js": "4f4143aaedfb39755994f7a21191ed8deaa03d9a6b1016cea38f24216d245d3f",
+      "runtime/dist/test/auth-trace-status.test.js": "f2b6b7aa222af1dcd41323b7d6d554a16974d6a07a9ee776bd5b1777e8be6022",
+      "runtime/dist/test/background-jobs.test.js": "ab99895799230465fc731fbf33a10592d85f878de6be25d32636d6418ce36e3b",
+      "runtime/dist/test/capabilities-attestation.test.js": "f7cb165bb187a1920584ad933dd3097c19b1a35629e7f1faf32c02659bb8df92",
+      "runtime/dist/test/ccms-alerts.test.js": "90155b6c3ff907030d5324f2cf334ae63a135992c4531c226abd230e66559016",
+      "runtime/dist/test/change-impact.test.js": "8c909a20f646819359145ab9c454fcee42735cb5430c45c7bbe2e10a1da4adf8",
+      "runtime/dist/test/config.test.js": "4d694e3278e04282e6e66978ddd897bea00612820fe275a61a49ba1db5948760",
+      "runtime/dist/test/configuration-activity.test.js": "75d71b164b1e222f290e168e9104b988629b7a4a53655681fdf3ad06a2210657",
+      "runtime/dist/test/configuration-bc-audit.test.js": "1ba4d22d983900c1a1be0e105196db137195a06b47588a2d41b6bbb3f92aea42",
+      "runtime/dist/test/configuration-bc-before-state-store.test.js": "cbc166bebf17e9211e36875c0acc2ec600ffbf1f9ea086ae863114608d5ec53e",
+      "runtime/dist/test/configuration-bc-command-contract.test.js": "0ae2b2c2ebfaa3bf5c7c26533f41186d7a30c4e55d29669fcdbbe19decdb43c2",
+      "runtime/dist/test/configuration-bc-command-fixture.js": "09f1488d4a631e4a254eb0c2a009190107063ea003bafda2cde1199254e62176",
+      "runtime/dist/test/configuration-bc-command-mcp.test.js": "a5315ca97691319161de1751011de2e13313c6aa8599d7fcb7983e70a34930ae",
+      "runtime/dist/test/configuration-bc-command-preparation.test.js": "5b92bbc5a968ccfe3b42b52d8f063f5f5d28314e0d310fbe5abbd7f216280eb9",
+      "runtime/dist/test/configuration-bc-command.test.js": "dee7cbce4172e0359e864f65d20f420667988092c7c9562dc088412a07ab59e1",
+      "runtime/dist/test/configuration-bc-compare.test.js": "57b78f7b58b8f898b92509d422b5341d8a059d8727f0a166a8542129a13accfb",
+      "runtime/dist/test/configuration-bc-cts-fixture.js": "6b530d834741842ac3fd484a6c0307424693e907ef27f4a38f9c33399f6887ef",
+      "runtime/dist/test/configuration-bc-cts-mcp.test.js": "ba4a99e7f5b2951ae82bee2c4905d7c61ee0ae0a4c401da7da6dbe157d7733a1",
+      "runtime/dist/test/configuration-bc-cts.test.js": "7d176b331b43ca4a5b40d2d815603d1aef884f7927f9c961c9986ebc2f56ac66",
+      "runtime/dist/test/configuration-bc-effects.test.js": "0cc4a96aadf454d7b3c2392a6beb84b3ad3df2affb9247e4cdf7512c2877861f",
+      "runtime/dist/test/configuration-bc-guard-mcp.test.js": "b1e08e6315965a751638890634cd106aa481f6d7797072385394403b4439df74",
+      "runtime/dist/test/configuration-bc-guard.test.js": "d272e913b4822590551c5ddcd3748c40c0ed93aa7de18eaeefa8f8f59f808326",
+      "runtime/dist/test/configuration-bc-impact.test.js": "acf76255ecdf1f2d6d9bcc3534f6efac0598c869cab80ae1c720bbc41e72679f",
+      "runtime/dist/test/configuration-bc-mcp.test.js": "3f59e0d5e82efb81122564e5a5dac214ee79ab4ef13d5a4f7f4c8a9b5a353ca0",
+      "runtime/dist/test/configuration-bc-metadata.test.js": "3c51d16927ab5f74835f09ba4426d354c998597cd61d487aa3c6b405e9d84dab",
+      "runtime/dist/test/configuration-bc-native.test.js": "3cd0439285bc95ccacb3f882167a43b5cbd88665db2b12e6854d08e815f9b7ed",
+      "runtime/dist/test/configuration-bc-owner-source-compatibility.test.js": "b26204cd25ef6ba62762ebbb2057890e316bc891ac0408465a07356594dbe85b",
+      "runtime/dist/test/configuration-bc-preflight-fixture.js": "4e9a28ab819365ffaecde55258bd0fd6020e1c5c02f50ff8b11d0230052e7f08",
+      "runtime/dist/test/configuration-bc-preflight-mcp.test.js": "f370e697965d8684610195cff6c346b2672ee63efecaf55c01927f9d298231a9",
+      "runtime/dist/test/configuration-bc-preflight.test.js": "5f866d4fa448598961fec0cc8629f4ed1dd6d15804b3c38a9893cf606bf131f2",
+      "runtime/dist/test/configuration-bc-preview.test.js": "d08a8ff3d9bcf8085d283b649e5392deed414b3cc6137f9078e7c8459eaf0433",
+      "runtime/dist/test/configuration-bc-protocol-header.test.js": "ad04c22ab413efa049b6f4000b257354d3b5f0146683efaf0afe3f4e639d15dc",
+      "runtime/dist/test/configuration-bc-read-cancellation.test.js": "e73256eb9299624113a631fdde61538afd88ec2713a9c4efdc02be46199bc1fb",
+      "runtime/dist/test/configuration-bc-record-kernel.test.js": "9f9978b6de2c7ce491a21c454bae3a06aeddfc53a31b71b35feccaa6cb583aaf",
+      "runtime/dist/test/configuration-bc-recovery-check.test.js": "590a931630fbe12c9b7af8ee5168629cdf6da5d8e99cb6ee553af8558de231c7",
+      "runtime/dist/test/configuration-bc-route-version.test.js": "a1c88624d1d09e524901fa4b4a75c6c7dba574b42ad4c2d3816ef6fe8734dd97",
+      "runtime/dist/test/configuration-bc-route.test.js": "db90bd3ca30e9a9557ff566905966d82a9d83ff1c2ebc76387bcfd5758992d83",
+      "runtime/dist/test/configuration-bc-source-scope.test.js": "15a44543844ac343235c4077971390233fb1086d63ee21116c54998f684e107b",
+      "runtime/dist/test/configuration-bc-state-fixture.js": "6addfdb20b5b4e88532d2ed4a7b01634cce8b40d39ba1d3d83613e531ccf12d6",
+      "runtime/dist/test/configuration-bc-state-mcp.test.js": "3eb29439dd516a63cc471a8c0d8eef45432b34d00b69ebb4f5f46bad0d964942",
+      "runtime/dist/test/configuration-bc-state.test.js": "80e395e9177d8461826bf6766092c6059fc4c729a4ca558b3c539b77a15f4704",
+      "runtime/dist/test/configuration-bc-type-pool.test.js": "71f27edd9a2bb2435b390e73e3203e52cd258348fd92e527ee5c8c80c8837a26",
+      "runtime/dist/test/configuration-bte-product-mcp.test.js": "f64a448605314b9fc45a8ad2e887d4778842fc6249fc72e48b3b6630923f2d4b",
+      "runtime/dist/test/configuration-bte-product.test.js": "d307dac8b14f271e8d867c949a61d7f114a2f2bf7beaad9eab615bf9fc30b1a9",
+      "runtime/dist/test/configuration-bte-route-mcp.test.js": "dfc758c306af10f6761bee00b81fe2a7f94954630b259d140b29252a7b10c06d",
+      "runtime/dist/test/configuration-bte-route.test.js": "0d32e4f24f323b9aa7ac2503188d0d8ea610567ff909788c1359cd743eb1f667",
+      "runtime/dist/test/configuration-compare-schema.test.js": "b2f4f7de4cffd4917d0b289e9ef342710a2ea2093fcf7afa1f6eb18e3df03b6b",
+      "runtime/dist/test/configuration-documentation.test.js": "ff2b05a84711d746b7620c32cbd1b622666fca5be450f3e6e8eb0558bd08b150",
+      "runtime/dist/test/configuration-domains.test.js": "e4c734ef912891381447e651913a4866e0633d3ec19354517a3856f2012319df",
+      "runtime/dist/test/configuration-img-details.test.js": "8a7033604d54bbf2909b9f3eefe23d697d7d8ac1690e7a4e893550e5dc2936b0",
+      "runtime/dist/test/configuration-img.test.js": "873aeb86132e981f518442d0a35c3c7a5a50f94003b9fc0b85974de04285592a",
+      "runtime/dist/test/configuration-number-range-command.test.js": "716c12a40eef2316a1a163b95ce5406ddb3a24d0618e0598853d6f2f9750ba75",
+      "runtime/dist/test/configuration-number-range-mcp.test.js": "496514e393a1f9ff724c028666e6f55f578930814b3a076e18cebe53d83b72ee",
+      "runtime/dist/test/configuration-number-range-native.test.js": "af71419b01fe7709a24ac16f132aaf6dd5ade92a6d676ffca1f75d0eb382fe0d",
+      "runtime/dist/test/configuration-number-range-object-language.test.js": "a762f1c4474e75ccec89109c44047aea72cdffdd462e61d75a846f0f9487ceff",
+      "runtime/dist/test/configuration-number-range-preview.test.js": "4cdf9c008183fcfd160e0c81e822b4f919db757d2f9d32b2772d61cb25128d9e",
+      "runtime/dist/test/configuration-number-range-receipt.test.js": "8fa0d544a5c531c9f56a06a3c6298d627e529620e5a8fd098df0a6de799ed5a9",
+      "runtime/dist/test/configuration-number-range-reconcile.test.js": "8152db658c42725d961dd4e08c83eede650159e800bf1ff92fc9e3e17da2ffdd",
+      "runtime/dist/test/configuration-number-range-scope.test.js": "5c060fda2af5e1fe2846ce0f7981b9d3d6c412531f1a5a67efd05a70c421dc2e",
+      "runtime/dist/test/configuration-object.test.js": "d6fdb3566095b58ae841351ca0df23bea39993845b962e7a6a7291cb2a79e6b4",
+      "runtime/dist/test/configuration-preview.test.js": "f266a3c46fac364cffd8772f57bdf942b9928df19383078029964a16ff627cd7",
+      "runtime/dist/test/configuration-unit-api.test.js": "2999e71baf7798e635a6764aff9df00a712f498e0d3c02adf6ce6cc6dc80fc4f",
+      "runtime/dist/test/configuration-unit-apply.test.js": "8ae68a10e2883232be1774865d24f99360edf3fe04ed86caad91cb45f37fac52",
+      "runtime/dist/test/configuration-unit-native-safety.test.js": "acdccb23edf7c679fc7a1be12a6e22f367a818ae377f68c98213da1ae7c8da16",
+      "runtime/dist/test/configuration-unit-reconcile-schema.test.js": "36a00b08e3482ea26c5defcd4539a46d5b0dcca10ca021fe83b80b74f7e32dc5",
+      "runtime/dist/test/configuration-unit-reconcile.test.js": "4cdd9ba798143e2dfb5a768aa108f1af8231fa3204a712b4b2df2b53600c3649",
+      "runtime/dist/test/configuration-unit-schema.test.js": "930dff1e3e7683d83ac5c6679f89daca443544c0e8956612caa84b0ec032e9a5",
+      "runtime/dist/test/configuration-unit-soap-key.test.js": "bc9b6e4512e764d35df6bec0baeba34131d744ba87594fdc028a825b14091602",
+      "runtime/dist/test/configuration-unit.test.js": "6b70fd5b6d3df684c83676eb485d4398472c7599256075846796fa80d0b9fb49",
+      "runtime/dist/test/data-query-allowlist.test.js": "82570ecc1bba75d94e0c0a6067c813dfa4f696cffbc2dfeb16c506f24368e60f",
+      "runtime/dist/test/data-query.test.js": "fd765b8feb947ed75d699a0a5f7517e64a3ca6940fafda887317ff50d8f727f2",
+      "runtime/dist/test/ddic-field-reference.test.js": "67b6d2fc7f091f512cabbbaf5b0cfd5786f4414d0ed24ffadcb578f0c4a30ddd",
+      "runtime/dist/test/ddic-resume-tool-contract.test.js": "f5b74ee0f18ef9610c7a1463659b3b7c358c7c91d76871ace4964f322f102f41",
+      "runtime/dist/test/ddic-table-layout.test.js": "2af0b6dec98b7b64af4b3992f41090cc181f0304169670789c63620dc6e2ff73",
+      "runtime/dist/test/ddic-write-verification-fidelity.test.js": "e22661d1cb13220cae802e7f0946b9dec92d8538786510429a4a5c00fba2e9e7",
+      "runtime/dist/test/debug-acceptance.test.js": "f10f98712a103f18b9b5ece8a9377cd1cc4e74deeef7bbccdd33402aa5f04310",
+      "runtime/dist/test/debug-manager.test.js": "1e8209219b5779c17a3bef562367e8d906f7e28bd3195c11f27cb1efc1e370a7",
+      "runtime/dist/test/debug-precheck.test.js": "939618c07d758ba83d13a5eab2da1022158530b02cf6a77fc2653c8b708d1e4d",
+      "runtime/dist/test/evaluate-refactoring.test.js": "f2830a57885601eedca31fc4ebcffce54479b57117caf0f3f14a10bad2c2ba90",
+      "runtime/dist/test/export-semantics.test.js": "335ebc399605271a6879f0f6b9083c60ddc2cbc57f43026447d9439b7f340016",
+      "runtime/dist/test/failure-process.test.js": "87b422a670483eb2e6956f94c6fc363793a5246c4a48571c62c1e779c735750a",
+      "runtime/dist/test/failure-worker.js": "a49b3a7a4e356fd6a1044cb2075d3774be913fec5c58a535c85fb7c211ca3c54",
+      "runtime/dist/test/format-abap-source.test.js": "9fc731b66c29221abc2fdbd46831e8b9ca89576dd8295cf8bb7ccb682fe8f3c7",
+      "runtime/dist/test/function-body-boundary.test.js": "2aba88e97fe290ead7626fe5227fb73e7b253d78fa9b39ea8569f0b3ab5e5bac",
+      "runtime/dist/test/function-create-source-width.test.js": "acc39a0bcdcdd2aeeb138e6387534649d914f7bbe333b6fad3c124e8a27bd5ce",
+      "runtime/dist/test/helper-capabilities-evidence.test.js": "d99efd8bcaf86cf7309911b3056b9b51caf1646ca52720af92bfa403a0e65cdf",
+      "runtime/dist/test/helper-capabilities-generators.test.js": "e3ebcd54db0254b0557e84b5319fe41985f0578b33a6a18da62f83da51a36d3e",
+      "runtime/dist/test/helper-capabilities-payload.test.js": "450cba9dd0d4fc93b691cd4713ff0df9725f3aa3760db3b42fd57383e3717921",
+      "runtime/dist/test/helper-carriers.test.js": "2342e471a346ff784c330184c643c2f67cad341c5054a6720a83eb0d9b9b61e3",
+      "runtime/dist/test/helper-customer-name.test.js": "b176706e9a097e9288e66a03adfe8b92fbbd831470f1572c57ece37bbb1147fe",
+      "runtime/dist/test/helper-operation-attestation.test.js": "9ae3ff1f30893f705224b2b7d69634a3a4fb42025ac6b9eda4bddd78ce6f6548",
+      "runtime/dist/test/helper-operation-limits.test.js": "c74334f0bc48c730626b7f712e58fa329ece3d291810b028cb1bc32c5dd30d46",
+      "runtime/dist/test/helper-probe-trace.test.js": "788cfda467a2eb2bbef64db1de27dbb24b676b3adf574ae8a35740c370f5ab90",
+      "runtime/dist/test/http-ports.test.js": "bb2e8c33c2bb2c3617e0e800b82a742f84406e60974a6da22f11b5e02adaf65e",
+      "runtime/dist/test/http-preflight-stream.test.js": "ba41799996c24cd897126a6a1b5b90d5b65e1e87a91e7d5acec9355e0ff98a22",
+      "runtime/dist/test/inactive-http.js": "4ffb9ab7eb995de51c9c2d9b09fbd45e46b7dfadc4a409172ebe33de3ee651d4",
+      "runtime/dist/test/inactive-inventory.test.js": "2be9debe2d08c25440e623aacfca726b7e5ec5d5144dd493cac6f315f1a6a8e9",
+      "runtime/dist/test/include-activation.test.js": "c5361c5f452b98ccc611379986cadcb6e4583af3c69ee88eeb6c69f688ada5bf",
+      "runtime/dist/test/interface-queues.test.js": "481505ccfb5182bd08bcb37afeddd1983e5bb629aa92373d56c332f7a3529de4",
+      "runtime/dist/test/invocation-receipts.test.js": "54f0a520d822d9559f39fab6ccbb0bf5cf1370ff8071a9577f086da5d69a125b",
+      "runtime/dist/test/job-spool.test.js": "cf0f3d3c539f28e6dff17c7ced33c0f7601baec6168633013021fd390a1f50c3",
+      "runtime/dist/test/landscape.test.js": "3e3a672b4eb69614d9811beee1de573a375a246ec06b834b39a01fc2d4b3dbf9",
+      "runtime/dist/test/legacy-where-used.test.js": "193c327c5d6047bfab6e51366a7a74dd513a510b2a5e40241f53fb917a5550b6",
+      "runtime/dist/test/log-body-acceptance.test.js": "5d790e832de89f95c6893b120667772a99d3818a0e4e1e8b69e747c08e0d58f0",
+      "runtime/dist/test/log-correlation.test.js": "b9ed5bf6c6abdf26cf9c420e8f6001e0ab3970af35ada21b3aaa291c1fa70cfc",
+      "runtime/dist/test/logon-diagnostic.test.js": "e14245c16de340ee8cd2c2caa081661b5c4fb0dd4a96fdc238985a5df6b651fd",
+      "runtime/dist/test/loopback-port.js": "f52538c92d7700dee497c3f5eecc10711f49b45b517e6d9df476ebcc2772085f",
+      "runtime/dist/test/maintenance-acceptance.test.js": "b1ce92c18c83df7b999e0fc2986348b7de6aab81a84f0b6b51291406cd1b66d7",
+      "runtime/dist/test/maintenance-diagnostics.test.js": "f47a78168bfaea494f2b184e7798a602637a222395100e1baa0fc183261bab49",
+      "runtime/dist/test/mock-backend.js": "0b140ec31aa5b4e3f485138a5f91c1d4a4f43812a0c02b5277b99875526c8e8b",
+      "runtime/dist/test/mvp-protocol.test.js": "c915099f1bba38d59fc448af20e4a16ebf9ef4d2f4633000864cb9aedfc704fa",
+      "runtime/dist/test/native-atc.test.js": "a41c2dada0f2fde80624818676065026e7205e94430a2eab326bbf773e4a1778",
+      "runtime/dist/test/object-types.test.js": "5272994d5edea6b0e228f1b9faf67dea83c7e7471996a89bc0f6e0fd2581de93",
+      "runtime/dist/test/operational-logs.test.js": "be2537f107aa7871c9acf6feb0194671137f01238d6919ba617cd14964fcfc40",
+      "runtime/dist/test/ops-coverage.test.js": "ce227847c211295c7dbb208f3ab5ad57863a0ba60c5071d0a078c8a99437919a",
+      "runtime/dist/test/ops-runbooks.test.js": "2696a15cba1a7bcb6b49eb4f74f0db6adeeb93c1c0736f0c75812fa1d6e7de16",
+      "runtime/dist/test/protocol.test.js": "c833e707e56b2e3405293ffa9e24c47d9566680ac4ee298fe8344f7fa63a9927",
+      "runtime/dist/test/quality-checks.test.js": "91ac48513c3705122c0f8a768a886273d05362b5783120b28eb42299d26dbad2",
+      "runtime/dist/test/quality-gate.test.js": "ceb627900880a87ac3e9d92f8dafc38a5efb7e8fc600e5e84f20982b38148f0e",
+      "runtime/dist/test/quick-fix-proposals.test.js": "cdddb3b6bc736501db0d7f5cdff856c63a790c18662752929bd6722ae9ab473b",
+      "runtime/dist/test/report-parameters.test.js": "a107a82d3bb9efa722177701cefc5d3d15582e804554eda5ff07581d307d4108",
+      "runtime/dist/test/report-variants.test.js": "1e8e4dc6d54a75166bf879a45f669966d795e3d863fcf71a0cee0b82e4823b2e",
+      "runtime/dist/test/reviewed-table-reader.test.js": "f91c786152bc1093aa977b244316ca232d83178864f52d8042c41585746ec211",
+      "runtime/dist/test/rfc-compatibility.test.js": "488f368d08cc6644eff27df88e874348109432512b610648a3de85b4708a4a14",
+      "runtime/dist/test/rfc-domainless-element.test.js": "52aca54e747f339890e87a86e58bcac59a41f6df9226cf7dd87c6c61aaccd621",
+      "runtime/dist/test/rfc-field-limit.test.js": "5233a0a3e48be43a71924ce9357f4ff60e488aa6130ff8eec15a2703ac267108",
+      "runtime/dist/test/rfc-field-reference.test.js": "faa761ce4ff27e7f8b4f26f03d54a6e8abd4c644eb08fa07b4c4f44437161ec0",
+      "runtime/dist/test/rfc-interface-directions.test.js": "9db6bf9686060a811ae34ee7785609e1acb51b524e6bf4c396cf08a2dd5194b2",
+      "runtime/dist/test/rfc-values.test.js": "3613ceeadc7668d3a7a085bbc5a4be2ea1b48bb38c7650167a18f8e7882307bf",
+      "runtime/dist/test/role-authorizations.test.js": "a46df3d049bd8da24771664d9aacfdd005381182e6f24bd47976913b57b92c69",
+      "runtime/dist/test/run-abap-program.test.js": "944dc9959615b0c6fc1d88aa11149a2ceb033f5e7eb49179bad72972c2b07b0f",
+      "runtime/dist/test/runtime-diagnostics.test.js": "fbfc5a4041632e85573b867efac4e278839a9b979b0f57b2cdcc0213de2a218b",
+      "runtime/dist/test/runtime-info.test.js": "41c553a156bdee3bd376ba1975d4db68714f1e431362485d1e2fc89f7713b489",
+      "runtime/dist/test/runtime-resources.test.js": "7ba9161d6c94b0616d4097efc91ff533e4ed2bc748b3be156ddba4d7b5c8f610",
+      "runtime/dist/test/sci-carrier-source.test.js": "0bdf4ad9e84b4169b2c503be372e0f2eec9935ceb7131a9d2885d1839e8378b6",
+      "runtime/dist/test/sci-e2.test.js": "3b2a32d60d46298178344044d113941e175b3e194de8fdeecae19d4b4a97daf8",
+      "runtime/dist/test/sci-v2.test.js": "48f40022ace798d0df5495106fdce7c39dee5641b68b2258ea2b49cb350fbcfc",
+      "runtime/dist/test/sci.test.js": "d0a2fbeec174a9136ad7c3b2b671e898912b4830cbc76dad0923e79bd613dfb4",
+      "runtime/dist/test/scoped-query.test.js": "f061e87558b521f50e26da40af120bd5eb0aa468146d95fcce8ec10d607ba149",
+      "runtime/dist/test/settings.test.js": "a1e3b0961752ca63085b2723ff211faa4bdf39183aa1c1425025f23c59f43c1b",
+      "runtime/dist/test/smartforms.test.js": "097e70af48f2f951b7cf7ec4a504ddb30b90275bca627f1bf34ef22ce3a6890a",
+      "runtime/dist/test/source-edit.test.js": "e72cb7ff83bf421c976b5bef3d5d2cbe86732fbbdd9c435615a40978d6af017f",
+      "runtime/dist/test/source-preflight.test.js": "38ab2e2ce00aaa19aff3d54a63d07c1ca7b985fcb8f385b1d5cd65f716f0308a",
+      "runtime/dist/test/source-write-outcome.test.js": "306b90e94cf62f42672f81a4edf157d95d7648f9d9215b3d63b58c7b6531022a",
+      "runtime/dist/test/system-info.test.js": "e32b341c59e378855e987b1ae4b585e1839e91fff19769380d501227f95e5b6a",
+      "runtime/dist/test/system-parameters.test.js": "555fb75082f68ed27dc864f599177ee1804263c38e51a5d3e3c85288652bb007",
+      "runtime/dist/test/table-allowlist.test.js": "b03c686effe54978104e1ccf124fce71ef9ce03d1d03a7ce691175870e8690fe",
+      "runtime/dist/test/table-expression-projection.test.js": "c62b007ceda7dbd215a3d1723850bdd75bf57c1ccfeb57a0c05bf467958fb68a",
+      "runtime/dist/test/table-expression-wiring.test.js": "097febf264229de83ac97e8bae8a9ff357ce6880b0fd2a7478286ee05a9ae28b",
+      "runtime/dist/test/table-expression.test.js": "71b1586a4c893c7d0252180b312c0c6262c130cea8de700babbcbe8d458bbe14",
+      "runtime/dist/test/table-join-expression.test.js": "aaab304863e02d62f0a0c5107f78b9117bed84da68ad8c57fce18dae5a33c828",
+      "runtime/dist/test/table-join.test.js": "d91960a2924c57be8052256779f366571529d6c060fbb5de0641e7042e92170d",
+      "runtime/dist/test/table-query-compatibility.test.js": "464ab2b7de7dce61c79b87769f9daca8e4880b32493c482f6537174332c73c01",
+      "runtime/dist/test/table-query-dialect.test.js": "294b1c390e6e04e0620c6bd902a969235e6ee50ead62921d71c368b058727a56",
+      "runtime/dist/test/table-query-full-rows.test.js": "9c46b9508dd4d1d897ed2680abfa63ad2cd4fccd48f2c7d1e5ec83ba7a0f2e73",
+      "runtime/dist/test/table-query-where-expression.test.js": "ba1cf34b370545b1c80afe57fe1485ec357bfee74a0630dac46699b7ee0dbdd9",
+      "runtime/dist/test/table-query.test.js": "b0fcd808bf9b355cf77548d1aeb5cc73523e933788901376a1bfe6de07c6a43b",
+      "runtime/dist/test/table-scalar.test.js": "1eae09fdcfe0a8823013b5c3cbacbaf429ae828f852ab51e02d624dda62a85b4",
+      "runtime/dist/test/table-subquery.test.js": "744596da0336de86d9ff99113e945b7133b344995a7670e72c3f5b339d0325ce",
+      "runtime/dist/test/text-element-selection.test.js": "2d984e46e95f32758d0aec738a02e5659c767fe00b0ab1939d68ff8a6399cece",
+      "runtime/dist/test/tool-profile.test.js": "1d6c5bace517f370087c3fd9a315aae839e5f0fed19441df3a77ab9c4caea72a",
+      "runtime/dist/test/tools.test.js": "6f2f5a9751a255502e3f99c2bb198f52f262d854eee461590a9bed33d99bbd53",
+      "runtime/dist/test/transport-delivery.test.js": "395c4ea77ef250ec7b685a0d6dba47d9bee5a642b0ac2170894103abeb395803",
+      "runtime/dist/test/transport-import.test.js": "8914dd6eadd65a0825b311c5ac583f85eeb9e37e70020508962cbc706525b709",
+      "runtime/dist/test/transport-object-addition.test.js": "2e5d84147d5e82b3983c874012a44484bd9c16bb857408557aa5848f892e2cc0",
+      "runtime/dist/test/transport-request-creation.test.js": "67486ed4ca768e226ec7de64a5404edac403b0a250f83896d09199fcaa972eb5",
+      "runtime/dist/test/unit-reporting.test.js": "529ee5b42b9ddb8396154e00762e379059ae705b14dec5b1570f7f82203a49fd",
+      "runtime/dist/test/user-authorizations.test.js": "de3989fe0fb5c1a2b81e8ce493f59e34a2bcf252872d0b619903f5ab6b5ecba9",
+      "runtime/dist/test/user-transports-listing.test.js": "9e740ad8256252d2499e34c6e0cecdcb5f965d37549acafcd1a27e0ec827873e",
+      "runtime/dist/test/verification-registry.test.js": "f883edf63eb12edd7269ab98d573aada7d5596080ea2546017b6828d08bca6d5",
+      "runtime/dist/test/version-history.test.js": "880c3cbc62e59b9d584356b75d1aae7377d7990c40c48e56c727829aa57d2672",
+      "runtime/dist/test/where-used-request.test.js": "8a1e8d3883811cea226cbe0e3d82b2f4f4466138fbfac3921a57de558d801ae3",
+      "runtime/dist/test/where-used.test.js": "d9004edd10867ef774b89a5788a33268e3ec40dc3e1da0a5df1a744f33b96be9",
+      "runtime/dist/test/write-operation-receipts.test.js": "34503bdb05f728520ff3e0c799ba8e8139985cc402ba68b2d20cc5d383df2903",
+      "runtime/dist/test/write-prechange-evidence.test.js": "02c97e6efef28ba6f5ae468ff766cf950da250b8bd86cadc13d04756f5cad28c",
+      "runtime/dist/test/write-transport-task-resolution.test.js": "c2f48fa30fda60106ec23bde289e7972f717841664af788fa27c4ba58e86316f",
+      "runtime/dist/test/fixtures/bc-route-w200-r71.json": "588bf36227d2ded7b590b0ed6446d1b6aee34e9ae5a02fbbfbbf999690351851",
+      "runtime/dist/test/fixtures/configuration-bc-owner-w200-r65.json": "2255501fc0d1269cb8752c27911721408b1c03775f934db39603a05d34545c8a",
+      "runtime/dist/test/fixtures/configuration-bc-record-w200-r64.json": "efc54d2c17bcfa9c578e98b484961837768c6b35cca3ec8943430d3125cb5112",
+      "runtime/dist/test/fixtures/scpr-activ-protocol-write-w200-r69.json": "5d6a41c37333a83001fc9c1dccb851beacb6f696c64c7efe1f8a231314adb337",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-acceptance-20261003-r14.json": "2058a2d105ced23d791799a494279a27fecb51e21709e265bfbe5bef873c5b95",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-boundaries-20261005-r48-readonly.json": "d53dce48a8c0f55b7274b4ac93241d4289e7e2ffac170b3ea82698231e739458",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-chain-20261003-r13.json": "6a19f911a9cde8806db3497aabe29938dd7e695e293d4a59ac027a469124e840",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-discovery-20261003-r13.json": "0e7594f53fd3b646b83e95c1c5bb98cfb82143dcc9974b4ee4a98f725f8b0ba8",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-function-discovery-20261003-r13.json": "90868f0c8f9e542aaef86191c30d8b93ccd4b8ce1b757fa461785df5c13c8b93",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-source-refresh-20261005-r49.json": "fa8c8559a8be5b5390c9fcdbc82ae205c1a473c979bc795815481d501626f2b6",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-sources-20261003-r13.json": "9e6b68d782765e0bcb4736957c68061e8ab675287635e15140c01b01da899409",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-audit-acceptance-20261003-r6-recheck.json": "501badf7f3f36ebe3916ecdc7384dd4e460d93520e70bfcf7a8c5c9616d365db",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-before-state-acceptance-20261005-212401-r54.json": "b575fc1c94a9f8235214c1b1d9956c34d54f427f8fd73dd2977894e3ff9aa2cd",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-candidate-acceptance-20261003-r4.json": "ccd6b2311695a7ca00aab76bb055c98d203fd9952cbd54a48332e712f37716a5",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-command-preparation-evidence-20261005-213622-r54.json": "69966c6b9284e0bf3920792cf728088a84e8b9ecbaf7b1f11da22879738538aa",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-comparison-acceptance-20261003-r5.json": "e8cf68f65c0cc484fda5cb7354820a95da70fe5c57cf6764defb8988a8b368af",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-acceptance-20261005-182434-r51.json": "988a3ecc16e4799c43f64673033d3ca42a68bb7e284a0a53cf5bec32a5db303f",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-append-source-20261005-154752-r50.json": "892e2ef591221c808d9b1bbe73668e5fef02dc758d15bfa2f71292ba11ae910a",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-checks-20261005-180838-r51.json": "7d59acb8a7e80823d117d6cd2e090daf58e306f08ce224da87cb87e48d8c3616",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-deployment-20261005-180838-r51.json": "1c19cbee9ac6008e51c513ca9a9cee887e4be55f9af1c8cc5b812729af34ff0d",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-final-state-20261005-1810-r51.json": "a7dd374fc55007cd3633cba9529f7aa7c65bd0be239a53b3765c0f28fe66168e",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-owner-review-20261006-095346-r59.json": "f0660ab9e521cf85d3012aadf49cdef83e7baaca9010b0fe04522fa91f77b5eb",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-purpose-headers-20261005-154752-r50.json": "65951a28c1fd3d7a84530eaf76d38162e7e61f5f110798405c65d104d7f0b2b5",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-registration-checks-20261005-183156-r51.json": "83409b8caca1d083fe765d170a09d4300ce53c66c55d3af3fb42dbadd0f97523",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cts-standard-source-20261005-r51.json": "8a82622248a032a93efefcdf17dc5d13b719caf3304bd0f5b461b496142bd081",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-cuni-members-20261005-r48.json": "19e46cd13d6ee2214147d0abedd23cbd0b6a89d5519b116341c01714967f065a",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-distribution-chain-20261005-180838-r51.json": "b36a6613f362ca2e93eba0783a7758fb3a3f045ff12717726280c216c91c069a",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-effects-deployment-20261006-095900-r59.json": "aa5f3fb9413c43529b1c7d003dd5a81d690a49138546036382a742e78a519342",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-effects-development-20261006-091423-r58.json": "26487ed89e06a0b6a4e2920623f8e9cd6f32ca7e8030c2f51d87227aa80b1d4d",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-effects-public-integration-20261006-131208-r60.json": "f7e83fa6d57c156ee369f600660df86d2856b9c8266c6247d651a75e6d2a621b",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-acceptance-20261005-r49-repair.json": "adee1917e210b2c7134a22e5daffa7ebf50a22e7c1f95643dac93e5a1ea87cb3",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-active-definition-20261005-r49.json": "7babd58a253bfe8d6f0b7075c585d8910c0e66e5fd03e34afd5f6661a81e86ce",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-candidate-20261005-r48.json": "027a6206763fadb55a3a7bc3da4134d3c2b5eed673df30ab944d512473557c52",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-deployment-20261005-r49.json": "473283c672275ec91d9acdbc3bd523ea7f3735adb08f3a49e1f1c58a610caed0",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-deployment-manifest-20261005-122850-r49.json": "f3b7d21be92afd19904ed616f5c984fbba8b4ddf005f41ba6e38aaded80bedd1",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-document-manifest-20261005-r48.json": "62ea69c26bf3f52722f9d1e97e58960666d13d62df8eac6fb7441287df13eba8",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-post-acceptance-20261005-133345-r49.json": "be8640c972bed73a6358371914c0c5be41aaf2f9030bbce51633788b2286d10a",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-prechange-20261005T035944-r49.json": "8f5d8b0460c6ab9dfe3172c15d0330a591bd775d0247305901983a41455648b7",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-preparation-20261005-r48.json": "5e231d43ea2edd07caa87717c4c02997725306966d7c1ef0b0ea04449ce3f78e",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-repair-prechange-20261005T045247-r49.json": "029cade931995f6c3e5635c41ec983e7566d751ef0ffd08e6063e6a04a0b109e",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-repair-write-baseline-20261005T045744-r49.json": "48b690f7aac954519357ad4a680dacaeea9e2b1d963a3281bc24f0d8a330941d",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-repair-write-baseline-20261005T045957-r49.json": "e38423f16fde0968024ff1ec2644cc6e2a8cdba6bdedb4e4e94f7d1080bd9f97",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-syntax-repair-active-20261005-130938-r49.json": "41b62547172a62ed72b7fd2db303cb54ff5f3f1b721a059478d3857918bdd1e6",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-guard-syntax-repair-evidence-20261005-130938-r49.json": "bbedf74392963380cc7787a3724690bf45d61b15e4f1bf32410cf8986b68e548",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-impact-acceptance-20261003-r7.json": "26628369af5de8dc5cf5bbca2d5458a20afa83f2423a3877c53ec48234e5709b",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-inventory-acceptance-20261004-r43.json": "85218659028bb8ff2bbc3974c2dd676573e9cc8a75456b579d738914e62cbe73",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-knm-pilot-values-20261007-075424-r69.json": "6d0f7546c34d1699c5014773d909a0e47ca6774a0d609fcabbe4f2d8c4abccec",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-knm-recovery-20261007-093404-r71-evidence.json": "bd4885de0e96af10b286899d2f7930a14689998d2548ec3517f76fd5437df9e9",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-knm-takeover-values-20261007-090320-r71.json": "6d0f7546c34d1699c5014773d909a0e47ca6774a0d609fcabbe4f2d8c4abccec",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-linked-command-preparation-20261006-133232-r61.json": "36b8d5f045c8a8efcd7bc61471d67bd453316ed09676692a402c3892b07fe98b",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-maintenance-content-acceptance-20261004-r44.json": "0b9aa2fac7a2a3f85d318bd39786f06ae5db1ee5a9d2812bd2ab21ecdf0164d6",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-native-acceptance-20261004-r45.json": "485a555dab61398d3ea2a2c9cf7cc7811fc4d6ff0503522c521833cb03593f81",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-native-before-create-20261004-r45.json": "5ff3aa9678661596b04d669f2025e536128696785d1e510516273872ff42f69c",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-native-final-audit-20261004-r45.json": "516e298c8e8c236436b02ed5148e9ea550b3209b6ad0df8d8677b55f44ec0a81",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-native-pilot-values-20261006-221243-r67.json": "c59dc79f8df93130d0d054e11363f708cab985179f082e578c61e792bcb2dcba",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-options-acceptance-20261003-r15.json": "a89a7c226c9b306bacf1c0739da2cfe63a36ec93613c68a043056d5c06c3efa6",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-options-constants-20261003-r14.json": "259e3d79d2b6e90a3aad465363d26f8ef515550c8b71cac4684ecf1d5b26c0e5",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-options-discovery-20261003-r14.json": "a173bdaaa789c80c2f4bfbf23f0a148b5e61b2a239a1591b85b123245b17c3e7",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-options-flags-20261003-r14.json": "5bda6dc97d92a3fd4e59c871b51492e9eb8369181cdd40820472580126e3ba9d",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-options-includes-20261003-r14.json": "5a35f96417db09bdc1ac8452f7a42d2451a8053e249459ca8a037cf7514ba796",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-deployment-20261006-184410-r66-candidate.json": "cceecd49970d4939d9e302b96a2dbc67936b1f69b23799aa4bb13bc2dc0a8ff3",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-deployment-20261006-184410-r66-evidence.json": "014ea6adc854bce119d9b039b997eeaa0ef62091c5397d5d62fafc9192da4b54",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-deployment-candidate-20261006-175703-r65.json": "a1983bbf952dcf81cafe3609178154cf438fbef434c3b58cdebf333b4f2d3229",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-deployment-completion-20261006-221243-r66-evidence.json": "e658abde5ee2d8bd7105e4c3e595a5bda92847d4e55cc46eab375fa63b78495d",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-evidence-20261006-175703-r65.json": "ed29d37c42ed3ad52ab39f9bc52ba2b4fe4eb4ff9d21269e19122d633516635a",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-owner-final-verification-20261006-180335-r65.json": "9a864e7d0d95a0ad3c89475ca5f44d29284e25d2366d5bec1ef5e2e67b0e853e",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preflight-acceptance-20261005-152756-r50.json": "cb0ade77fbc78868e6d3255080242c073df49beb5f25ffd5142ba7c5a6d1c551",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preflight-closing-checks-20261005-154752-r50.json": "258763e948f69be460fb6e639b240ef192ce23f0bd526b20fb85c804de5ff2bf",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preflight-http-live-20261005-154752-r50.json": "06171f9030d905d91297097bb9c5bf8513171c1ba46993ccb725c95ff4d06f93",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preflight-local-checks-20261005-r50.json": "65c283dd5e7fed61d4108857d017e7c44af30111a1c961e0921ab6a42c0a9c16",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preflight-local-replay-20261005-r50.json": "2a3a7507222af22309846e046b707b6d35794f328eb04259646f068a4acedd82",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preflight-standard-sources-20261005-r50.json": "af665a78117899a8fc1e406456a09b2036827d31d64cabbb466e3bb8fea3ccb3",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preview-acceptance-20261005-r46.json": "2fbb1d764374c078b586bcddf8ded39a035ad0021c1dd575b1b3cc4bb78edb05",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preview-before-create-20261004225017-r46.json": "a85da0445cf3fbdcf1c02b2b553cdb4ad8e6565d58bb81b0bff74cb325df794a",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preview-before-repair-20261004232451-r46.json": "cb24d8f33c9bb5bef86e11e0355728babb6f230ee39b016509ece98defe721b4",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-preview-runtime-evidence-20261005-r46.json": "671e8f7acadccbfa61ef0897b96b8fe2c278448659f825465dc1263d2e862609",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-protocol-deployment-20261007-090320-r70-evidence.json": "ae405b10b657b38531c3b6bc56203e3e2c531cde19ff93165fe279964199af79",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-protocol-fix-20261007-084027-r69-evidence.json": "f9ebf2e155ac263d7e2df181e2946f06cbc163043f1a2b58dc5255276b793c0c",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-protocol-fix-20261007-084027-r70-candidate.json": "b31fc57170cfb6494eda6bb6da118187760a565a63e66a48a4dbf8edbac70cd8",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-protocol-fix-readiness-20261007-084427-r70.json": "fc2e44349defc9a0b5e991d6eafe42b3491a1b09d177af5a94acf84375412c70",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-readonly-20261007-075424-r68-evidence.json": "cb2d4139a94c1e45aa24b24b6158f13c570fe42ac1c7eb0bfbeb78c3d915e0dc",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-record-kernel-evidence-20261006-160748-r64.json": "c8dad06370dad77a3ce2d05b3346219d797bf85c8fda68511382207dda508b86",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-recovery-check-acceptance-20261006-084606-r57.json": "662d119539b7bc132796fcb6a7d756118d1f1a22adc297adaa541253a5cf5d15",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-recovery-check-candidate-20261005-231944-r55.json": "48b841e35ebeff2c5f4c35d6713f6953dd00eab7e8078a0871ef68a246936190",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-recovery-check-deployment-20261006-074219-r56.json": "6f5e082041a8c493475214cce4f6eab245553fd6ce2a392e371209bfe1d1ce87",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-recovery-check-evidence-20261005-231944-r55.json": "4e8e663a71715368665f61ba88cc7cc1c434a58e6359c85228e60b426f86f24d",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-recovery-check-repair-20261006-084143-r57.json": "4cbce72952897e37a73dfea6b586a470d7e8540561524ac89c4ef79ecd7a1baf",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-acceptance-20261005-r47.json": "06f1df9d2b96d8ed9742ec2bd162da1207af34e6a10cf747e393205c4ef4fe30",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-active-definition-20261005-r47.json": "4f2be4cfc3c36e7af3a0d5b5bd94291ecbce76212871a3e02219a32ba6d2ba3e",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-audit-refusal-20261005-r47.json": "8b323cea7122319c0c5896a821efb02ed6277d219c85ee474b02e3bda6597bc4",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-candidate-20261005-r47.json": "d583957eb7c4ab2de598e7b49352b07875791c36b153af46ea4c76faf1a59a6c",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-deployment-20261005-r47.json": "555e6a5210d56488546759c2dac8b8f64ca48f52e32b98516b6ee0273b4bce8e",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-prechange-20261005-r47-014500.json": "97f7ca4910ff4011d106777561e427eae9f1f9dd34f64432ae7035c78b74ec19",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-repair-20261007-092500-r71-evidence.json": "2f6f01c32021e6462444ef9e0bb59c1318970b43433f48ff51a2b4b085e0c79d",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-route-research-20261005-r47.json": "4c14344de996fc57d1ee7d56f775e70caa2e9c6ea2eface6611779da20f26bec",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-source-scope-20261007-073513-r67-evidence.json": "60d2325d706544cf8331216530465f4443fec5a8baef09f0524894096df8f144",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-standard-type-source-20261006-134410-r62.json": "ee233f864d06fe2d5e063552a4e6533897bedb9475e48e1fb556d964ee80bda3",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-state-acceptance-20261007-132506-r72-evidence.json": "c980c78a0123e8b3df5d3d233d2464a4b7b2edda99d81c12bbe68ef7dbc392ec",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-state-candidate-20261005-200446-r52.json": "cf7685e7c7ee187625a0a65a089beeb14e576cb8641692ee19801f015339e553",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-state-deployment-evidence-20261005-203329-r53.json": "90246a703601c79899bdbc5cad6613a77075239d82f27d7ebac29e803d83b6a9",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-state-evidence-20261005-200446-r52.json": "58b3b9358fc6d8c76b371ed70f207994d733bbeb9d9c587ee97d157ddadaa6ac",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-type-pool-final-20261006-143208-r63.json": "7be6c6c5c48aa908f00c052c04969b4964c76dabdd6a33846730596c20a2db73",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-type-pool-read-20261006-142528-r63.json": "8279cf56acbd8196c7a33beeb73e92b9ca0cb9774cab3eeb4fbb2983fb0406f1",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-bc-unit-payload-20261003-r4.json": "51081b7cadefd9c14ee6c0bc82b8db37096916fbd72dc345cba564253c687773",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-number-range-api-acceptance-20261004-r41.json": "831957ef34a13048129f0e95d7be666b64e688a9c6dd4bdc770305b625f02b6b",
+      "runtime/docs/workspace-evidence/.doc/orvanta-configuration-number-range-api-acceptance-20261004-r42.json": "6737b1f73a15e3e4eb0f6d1933efa24888efec744fb8b8c2b689f988f1173e0b"
+    }
+  },
+  "frozenSha256": "6586fc67018c383a124726b923c4bf66e511c8e9404dc3c3c4f4feef3ee12764",
+  "limitations": [
+    "native control blocks not observed",
+    "no product save or recovery adapter",
+    "no write authority or atomic locked state",
+    "business handler not invoked",
+    "no effective runtime order proof"
+  ]
+}

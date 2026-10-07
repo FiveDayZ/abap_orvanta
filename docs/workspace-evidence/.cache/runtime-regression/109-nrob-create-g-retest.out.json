@@ -1,0 +1,85 @@
+{
+  "connectionId": "w200",
+  "objectKind": "numberRangeObject",
+  "objectName": "ZORVMCPNR1",
+  "packageName": "ZABAP",
+  "version": "590D652DB64FEB64467F07B19331D2F95D1CE3FF",
+  "fingerprint": "387d78768bcdf30d9853510930b0867b1f4a3d18cb606c410ba7fe89af95cff5",
+  "definition": {
+    "description": "ORVANTA MCP runtime regression number range object",
+    "helperLanguage": "1",
+    "intervalExists": false,
+    "properties": {
+      "OBJECT": "ZORVMCPNR1",
+      "DTELSOBJ": "",
+      "NRTAB": "",
+      "NRINTFLD": "",
+      "NREXTFLD": "",
+      "NRFLD": "",
+      "NRSOBJFLD": "",
+      "NRELEFLD": "",
+      "YEARIND": "",
+      "DOMLEN": "NUMC10",
+      "PERCENTAGE": "10.0",
+      "CODE": "",
+      "TEXTIND": "",
+      "NRELTXTTAB": "",
+      "NRELTXTSOB": "",
+      "NRELTXTELE": "",
+      "NRELTXTTXT": "",
+      "NRELTXTLNG": "",
+      "BUFFER": "",
+      "NOIVBUFFER": "00000000",
+      "NONRSWAP": "",
+      "RFCDEST": "",
+      "NRCHECKASCII": ""
+    },
+    "texts": [
+      {
+        "language": "M",
+        "text": "ORVANTA MCP runtime regression number range object",
+        "shortText": "ORVANTA NR"
+      }
+    ]
+  },
+  "status": "NUMBER_RANGE_OBJECT_SAVED",
+  "recordedRequest": "GR2K923473",
+  "operationReceipt": {
+    "operationId": "regr-r16-nrob-create-02",
+    "version": 2,
+    "status": "completed",
+    "connectionId": "w200",
+    "toolName": "upsert_number_range_object",
+    "operationIdHash": "7cba940e0c76d0f01efb2aa8f6bc45d611e16cc9fd06bd031ed1588b64b5ccbe",
+    "targetKeyHash": "ea22ed323045264112bcee8938994fa3d6f1de5c30960e23a167323b5e2e30a5",
+    "inputHash": "4f63a7e63e9248d92cbc05219ad7e907c44bac12925d3ec28cd113135dfb0f14",
+    "preChangeSummary": "{\"target\":\"object object ZORVMCPNR1\",\"requestedOperation\":\"upsert_number_range_object\",\"concurrencyGuard\":\"tool-specific SAP readback and lock checks\",\"transportNumber\":\"GR2K923472\",\"automaticRollback\":false}",
+    "sapPreChangeEvidence": {
+      "observedAt": "2026-09-22T09:22:52.023Z",
+      "target": "object object ZORVMCPNR1",
+      "exists": false,
+      "active": null,
+      "version": null,
+      "fingerprint": null,
+      "packageName": null,
+      "requestNumber": null,
+      "taskNumber": null,
+      "observationStatus": "complete",
+      "sources": [
+        "sap_ddic_read"
+      ],
+      "warnings": []
+    },
+    "sapInvocationStarted": true,
+    "resultHash": "b40b0c0224b73b29b3992557da537b27c6cefebf50761b439c012f6cc11df12f",
+    "startedAt": "2026-09-22T09:22:51.998Z",
+    "finishedAt": "2026-09-22T09:22:52.094Z",
+    "durationMs": 92,
+    "receiptHash": "fea213dcb3412e51eb63aaeee5005befdcf61f46638282e8c9200d9c82ed2fe2",
+    "automaticRetry": false,
+    "automaticRollback": false,
+    "outcomeMayBeUnknown": false,
+    "localLockReleased": true,
+    "manualRecovery": "Read back object object ZORVMCPNR1 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+  }
+}

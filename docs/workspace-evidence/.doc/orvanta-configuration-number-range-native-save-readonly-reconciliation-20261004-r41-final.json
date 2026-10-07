@@ -1,0 +1,48 @@
+{
+  "at": "2026-10-04T11:06:02.353Z",
+  "calls": [
+    {
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "objectName": "ZORVCFGNR"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"objectName\": \"ZORVCFGNR\",\n  \"readOnly\": true,\n  \"versionScope\": \"complete_TNRO_and_current_client_NRIV\",\n  \"snapshot\": {\n    \"EV_CODE\": \"READ_OK\",\n    \"EV_SYSTEM\": \"GR2\",\n    \"EV_CLIENT\": \"200\",\n    \"EV_VERSION\": \"22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5\",\n    \"ES_DEFINITION\": {\n      \"OBJECT\": \"ZORVCFGNR\",\n      \"DTELSOBJ\": \"\",\n      \"NRTAB\": \"\",\n      \"NRINTFLD\": \"\",\n      \"NREXTFLD\": \"\",\n      \"NRFLD\": \"\",\n      \"NRSOBJFLD\": \"\",\n      \"NRELEFLD\": \"\",\n      \"YEARIND\": \"\",\n      \"DOMLEN\": \"NUMC20\",\n      \"PERCENTAGE\": \"10.0\",\n      \"CODE\": \"\",\n      \"TEXTIND\": \"\",\n      \"NRELTXTTAB\": \"\",\n      \"NRELTXTSOB\": \"\",\n      \"NRELTXTELE\": \"\",\n      \"NRELTXTTXT\": \"\",\n      \"NRELTXTLNG\": \"\",\n      \"BUFFER\": \"\",\n      \"NOIVBUFFER\": \"00000000\",\n      \"NONRSWAP\": \"\",\n      \"RFCDEST\": \"\",\n      \"NRCHECKASCII\": \"\"\n    },\n    \"ET_INTERVALS\": []\n  }\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "reconcile_configuration_number_range",
+      "args": {
+        "objectName": "ZORVCFGNR",
+        "operationId": "r41b-public-create-01-fixed-include"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"readOnly\": true,\n  \"objectName\": \"ZORVCFGNR\",\n  \"operationId\": \"r41b-public-create-01-fixed-include\",\n  \"operationReceipt\": {\n    \"version\": 2,\n    \"status\": \"failed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"apply_configuration_number_range\",\n    \"operationIdHash\": \"80eb7337faf6cfc66ca40cb03fe621bddc2cb1b6f0eed44beef00e327676c9a2\",\n    \"targetKeyHash\": \"3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3\",\n    \"inputHash\": \"7d17f8efbad6bde8b264eac5eb34daaf1f2b39c14e8f46cd257286b023e012f3\",\n    \"preChangeSummary\": \"Complete ZORVCFGNR/200 version 7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d; create interval 01.\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-04T11:05:00.009Z\",\n      \"target\": \"NRIV:ZORVCFGNR:200\",\n      \"exists\": true,\n      \"active\": null,\n      \"version\": \"7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d\",\n      \"fingerprint\": \"7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d\",\n      \"packageName\": null,\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"Z_ORVANTA_CFG_NR_READ\",\n        \"TNRO\",\n        \"NRIV\"\n      ],\n      \"warnings\": [\n        \"NRIV intervals are local client only; no CTS recording.\"\n      ]\n    },\n    \"sapInvocationStarted\": true,\n    \"errorHash\": \"4c54ad5edde5ea30945c0d5cade8ea67d1c8802889fe3581e2ddd9ca2e9363b2\",\n    \"startedAt\": \"2026-10-04T11:04:52.133Z\",\n    \"finishedAt\": \"2026-10-04T11:05:01.334Z\",\n    \"durationMs\": 9202,\n    \"receiptHash\": \"d6970bf9e1e237852fcab515b85fe78b3e0d08eafc3fd2f56f1ed117fc7fee2e\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": true,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release.\"\n  },\n  \"retryAvailable\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"locks\": \"unverified\",\n  \"snapshot\": {\n    \"EV_CODE\": \"READ_OK\",\n    \"EV_SYSTEM\": \"GR2\",\n    \"EV_CLIENT\": \"200\",\n    \"EV_VERSION\": \"22eb77b22bff571d3c7fde9bc3744a24397782fb0cb567e5625c2fa7f13f83b5\",\n    \"ES_DEFINITION\": {\n      \"OBJECT\": \"ZORVCFGNR\",\n      \"DTELSOBJ\": \"\",\n      \"NRTAB\": \"\",\n      \"NRINTFLD\": \"\",\n      \"NREXTFLD\": \"\",\n      \"NRFLD\": \"\",\n      \"NRSOBJFLD\": \"\",\n      \"NRELEFLD\": \"\",\n      \"YEARIND\": \"\",\n      \"DOMLEN\": \"NUMC20\",\n      \"PERCENTAGE\": \"10.0\",\n      \"CODE\": \"\",\n      \"TEXTIND\": \"\",\n      \"NRELTXTTAB\": \"\",\n      \"NRELTXTSOB\": \"\",\n      \"NRELTXTELE\": \"\",\n      \"NRELTXTTXT\": \"\",\n      \"NRELTXTLNG\": \"\",\n      \"BUFFER\": \"\",\n      \"NOIVBUFFER\": \"00000000\",\n      \"NONRSWAP\": \"\",\n      \"RFCDEST\": \"\",\n      \"NRCHECKASCII\": \"\"\n    },\n    \"ET_INTERVALS\": []\n  },\n  \"status\": \"partial\",\n  \"stateComparison\": \"changed_since_before\",\n  \"semantics\": \"Current state comparison does not prove who wrote, committed or restored it. Historical outcome and retry prohibition remain unchanged.\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_write_operation_status",
+      "args": {
+        "operationId": "r41b-public-create-01-fixed-include"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"operationId\": \"r41b-public-create-01-fixed-include\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"apply_configuration_number_range\",\n  \"operationIdHash\": \"80eb7337faf6cfc66ca40cb03fe621bddc2cb1b6f0eed44beef00e327676c9a2\",\n  \"targetKeyHash\": \"3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3\",\n  \"inputHash\": \"7d17f8efbad6bde8b264eac5eb34daaf1f2b39c14e8f46cd257286b023e012f3\",\n  \"preChangeSummary\": \"Complete ZORVCFGNR/200 version 7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d; create interval 01.\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-04T11:05:00.009Z\",\n    \"target\": \"NRIV:ZORVCFGNR:200\",\n    \"exists\": true,\n    \"active\": null,\n    \"version\": \"7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d\",\n    \"fingerprint\": \"7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d\",\n    \"packageName\": null,\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"Z_ORVANTA_CFG_NR_READ\",\n      \"TNRO\",\n      \"NRIV\"\n    ],\n    \"warnings\": [\n      \"NRIV intervals are local client only; no CTS recording.\"\n    ]\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"4c54ad5edde5ea30945c0d5cade8ea67d1c8802889fe3581e2ddd9ca2e9363b2\",\n  \"startedAt\": \"2026-10-04T11:04:52.133Z\",\n  \"finishedAt\": \"2026-10-04T11:05:01.334Z\",\n  \"durationMs\": 9202,\n  \"receiptHash\": \"d6970bf9e1e237852fcab515b85fe78b3e0d08eafc3fd2f56f1ed117fc7fee2e\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release.\"\n}"
+          }
+        ]
+      }
+    }
+  ]
+}

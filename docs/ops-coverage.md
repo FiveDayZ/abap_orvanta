@@ -173,7 +173,11 @@ Retry safety here is not a retry loop, it is an identity. A tool that changes SA
   unknown, because a fingerprint that was never read cannot prove anything.
 - A per-target lock makes a second concurrent operation on the same object answer `target_busy`
   instead of interleaving. `protection_failed` means the receipt or lock layer itself could not be
-  established, and the operation is refused rather than sent unprotected.
+  established, and the operation is refused rather than sent unprotected. That receipt carries the
+  errno code and the error class of the local failure (`errorCode` and `errorName`, both bounded and
+  without the raw message, which would embed the absolute state path), so a refusal by the operating
+  system can be told apart from a defect in the guard; the message itself stays out of the receipt
+  and only `errorHash` is kept.
 - The same state root holds the RFC-level invocation receipts (request-id hash, input hash, output
   hash, interface and definition fingerprints) and the pre-change evidence captured before a write
   (existence, active state, version, fingerprint, package, request and task). A receipt written

@@ -1,0 +1,12 @@
+{
+  "tool": "get_version_history",
+  "arguments": {
+    "connectionId": "w200",
+    "objectName": "ZORVANTA_MAINT_DEPLOY_R04",
+    "objectType": "PROG",
+    "action": "list_versions",
+    "maxVersions": 20
+  },
+  "isError": false,
+  "responseText": "Version History for ZORVANTA_MAINT_DEPLOY_R04 (PROG/P)\nTotal Versions: 1\n\n| # | Date | Author | Transport | Title |\n|---|------|--------|-----------|-------|\n| 1 | Sep 28, 2026, 02:16 PM | WYS | GR2K923492 | ZABAP_ORVANTA_MCP_WYS_20260917_01 |\n"
+}

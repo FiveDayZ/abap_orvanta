@@ -1,0 +1,79 @@
+{
+  "observedAt": "2026-10-04T04:57:41.512Z",
+  "documentationRoot": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc",
+  "mirrorRoot": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc",
+  "recordName": "code-update-20261004-125741.md",
+  "requiredSections": [
+    "## Result",
+    "## Changed Objects",
+    "## Verification",
+    "## Runtime Evidence",
+    "## Remaining Risks",
+    "## Documentation"
+  ],
+  "requiredSectionsPresent": true,
+  "sameBytes": true,
+  "files": [
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/code-update-20261004-125741.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/code-update-20261004-125741.md",
+      "size": 11897,
+      "sha256": "b4e4b2368015f3365d8ff64d7106379787457d092b84c372692e9758f4239d01"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-native-safety-plan-20261004-r36.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-native-safety-plan-20261004-r36.md",
+      "size": 4939,
+      "sha256": "eb3e9f88b2d2a2b489aab1040638ca14b595293ea1fc0434f865ed9205fdcc79"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-version-ddic-20261004-r35.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-version-ddic-20261004-r35.json",
+      "size": 31407,
+      "sha256": "24232032e34e2221bbe1ba65b0f41fe5f533ee40c3c25399f4e5e2273aeafe08"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-regression-20261004-r35.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-regression-20261004-r35.txt",
+      "size": 50624,
+      "sha256": "ebc062fd50447a1c28310295ab20a2e991c7f43c7b450fc7f0e0f7cc1c8361a5"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-registry-check-20261004-r35.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-registry-check-20261004-r35.txt",
+      "size": 5334,
+      "sha256": "7a09a0542fc44be3d1f132a7f49cfba8bf9543bb769cd88d705c4163080a0b6d"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-audit-20261004-r35.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-audit-20261004-r35.json",
+      "size": 14477,
+      "sha256": "0a24ea6333e321c49ecefd900814a79723193e85f09a22b1e8e3a6ef11b22627"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-closure-20261004-r35.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-closure-20261004-r35.json",
+      "size": 347,
+      "sha256": "ce8bc831de650975d979be9cfeeb2ce8a11102a0505dc669731063b002ec9791"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-acceptance-20261004-r35.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-acceptance-20261004-r35.json",
+      "size": 36084,
+      "sha256": "33512f94719055c926bbbd10ede8ae54d9e6e8a6a4f11839e01d30f42ce1a5f3"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-acceptance-20261004-r35-recheck.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-acceptance-20261004-r35-recheck.json",
+      "size": 274171,
+      "sha256": "ae6022c9c449ab3616d9b094511f5d23494d2fa2deb099c7bf1d29fafdfda2b8"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-text-reconciliation-guide-20261004-r35.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-text-reconciliation-guide-20261004-r35.md",
+      "size": 5689,
+      "sha256": "462a665102133f9fad0bff21bb9423571b02584df36c7db32f2e5f07158ce884"
+    }
+  ],
+  "unrelatedWorkspaceWrites": false
+}

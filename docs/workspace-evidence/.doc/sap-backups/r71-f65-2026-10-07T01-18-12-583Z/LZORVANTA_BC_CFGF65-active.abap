@@ -1,0 +1,1269 @@
+TYPE-POOLS: scpr, scp1, trwbo.
+TYPES: BEGIN OF ty_orv_bc_args,
+  operation_hash TYPE string,
+  before_reference TYPE string,
+  state_base64 TYPE string,
+  state_version TYPE string,
+  source_version TYPE string,
+  target_version TYPE string,
+  candidate_version TYPE string,
+  metadata_version TYPE string,
+  guard_version TYPE string,
+  cts_version TYPE string,
+  effects_base64 TYPE string,
+  effects_version TYPE string,
+  cts_base64 TYPE string,
+  frame_base64 TYPE string,
+  frame_version TYPE string,
+  command TYPE c, END OF ty_orv_bc_args.
+TYPES: BEGIN OF ty_orv_bc_result,
+  code TYPE string,
+  system TYPE string,
+  client TYPE string,
+  user TYPE string,
+  operation_hash TYPE string,
+  before_reference TYPE string,
+  commit TYPE string,
+  phase TYPE string,
+  configuration TYPE string,
+  protected TYPE string,
+  cts TYPE string,
+  effects TYPE string,
+  locks TYPE string,
+  protocol TYPE string,
+  act_id TYPE string,
+  frame_base64 TYPE string,
+  frame_version TYPE string,
+  msgid TYPE string,
+  msgno TYPE string,
+  msgv1 TYPE string,
+  msgv2 TYPE string,
+  msgv3 TYPE string,
+  msgv4 TYPE string,
+END OF ty_orv_bc_result.
+TYPES: BEGIN OF ty_orv_bc_image,
+  t006 TYPE STANDARD TABLE OF t006 WITH DEFAULT KEY,
+  t006a TYPE STANDARD TABLE OF t006a WITH DEFAULT KEY,
+  t006b TYPE STANDARD TABLE OF t006b WITH DEFAULT KEY,
+  t006c TYPE STANDARD TABLE OF t006c WITH DEFAULT KEY,
+  t006d TYPE STANDARD TABLE OF t006d WITH DEFAULT KEY,
+  t006i TYPE STANDARD TABLE OF t006i WITH DEFAULT KEY,
+  t006j TYPE STANDARD TABLE OF t006j WITH DEFAULT KEY,
+  t006t TYPE STANDARD TABLE OF t006t WITH DEFAULT KEY,
+  t006_oib TYPE STANDARD TABLE OF t006_oib WITH DEFAULT KEY,
+END OF ty_orv_bc_image.
+TYPES: BEGIN OF ty_orv_bc_effect,
+  matched TYPE scpractrtab, allocation TYPE scpractrtab,
+  records TYPE scpractrtab, headers TYPE scpractptab,
+  variables TYPE scpractxtab, links TYPE scpractxltab,
+END OF ty_orv_bc_effect.
+TYPES: BEGIN OF ty_orv_bc_scope, tablename TYPE scpractr-tablename,
+  tabkey TYPE scpractr-tabkey, END OF ty_orv_bc_scope.
+TYPES ty_orv_bc_scopes TYPE STANDARD TABLE OF ty_orv_bc_scope WITH DEFAULT KEY.
+TYPES ty_orv_bc_locks TYPE STANDARD TABLE OF rstable-tabname WITH DEFAULT KEY.
+TYPES ty_orv_bc_headers TYPE STANDARD TABLE OF e070 WITH DEFAULT KEY.
+TYPES ty_orv_bc_clients TYPE STANDARD TABLE OF e070c WITH DEFAULT KEY.
+
+FORM orv_bc_owner_rows CHANGING p_image TYPE ty_orv_bc_image p_code TYPE string.
+CLEAR: p_image, p_code.
+SELECT * FROM t006 BYPASSING BUFFER
+  INTO TABLE p_image-t006 UP TO 2 ROWS
+  WHERE msehi = 'KNM'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006 ) > 1.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006 BY mandt msehi.
+SELECT * FROM t006a BYPASSING BUFFER
+  INTO TABLE p_image-t006a UP TO 4 ROWS
+  WHERE msehi = 'KNM' AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006a ) > 3.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006a BY mandt spras msehi.
+SELECT * FROM t006b BYPASSING BUFFER
+  INTO TABLE p_image-t006b UP TO 4 ROWS
+  WHERE mseh3 = 'KNM' AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006b ) > 3.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006b BY mandt spras mseh3.
+SELECT * FROM t006c BYPASSING BUFFER
+  INTO TABLE p_image-t006c UP TO 4 ROWS
+  WHERE mseh6 = 'kN/m2' AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006c ) > 3.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006c BY mandt spras mseh6.
+SELECT * FROM t006d BYPASSING BUFFER
+  INTO TABLE p_image-t006d UP TO 2 ROWS
+  WHERE dimid = 'PRESS'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006d ) > 1.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006d BY mandt dimid.
+SELECT * FROM t006i BYPASSING BUFFER
+  INTO TABLE p_image-t006i UP TO 2 ROWS
+  WHERE isocode = 'KPA'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006i ) > 1.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006i BY client isocode.
+SELECT * FROM t006j BYPASSING BUFFER
+  INTO TABLE p_image-t006j UP TO 4 ROWS
+  WHERE isocode = 'KPA' AND ( langu = '1' OR langu = 'D' OR langu = 'E' ).
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006j ) > 3.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006j BY client langu isocode.
+SELECT * FROM t006t BYPASSING BUFFER
+  INTO TABLE p_image-t006t UP TO 4 ROWS
+  WHERE dimid = 'PRESS' AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006t ) > 3.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006t BY mandt spras dimid.
+SELECT * FROM t006_oib BYPASSING BUFFER
+  INTO TABLE p_image-t006_oib UP TO 2 ROWS
+  WHERE msehi = 'KNM'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_image-t006_oib ) > 1.
+  p_code = 'ROW_SCOPE_INVALID'. RETURN. ENDIF.
+SORT p_image-t006_oib BY mandt msehi.
+p_code = 'ROWS_READ'. ENDFORM.
+
+FORM orv_bc_owner_effects USING p_scope TYPE ty_orv_bc_scopes
+  CHANGING p_effect TYPE ty_orv_bc_effect p_code TYPE string.
+CLEAR: p_effect, p_code.
+IF lines( p_scope ) <> 19. p_code = 'EFFECT_SCOPE_INVALID'. RETURN. ENDIF.
+" 无VIEWNAME过滤；拒绝同键其他view/profile，保护正式分配的完整现存行。
+SELECT * FROM scpractr BYPASSING BUFFER INTO TABLE p_effect-matched
+  UP TO 513 ROWS FOR ALL ENTRIES IN p_scope
+  WHERE tablename = p_scope-tablename AND tabkey = p_scope-tabkey.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+SELECT * FROM scpractr BYPASSING BUFFER INTO TABLE p_effect-allocation
+  UP TO 8193 ROWS WHERE tablename = 'T006' OR tablename = 'T006A'
+  OR tablename = 'T006B' OR tablename = 'T006C'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+SELECT * FROM scpractr BYPASSING BUFFER INTO TABLE p_effect-records
+  UP TO 513 ROWS WHERE profid = 'EHS_CUNI_KNM'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+SELECT * FROM scpractp BYPASSING BUFFER INTO TABLE p_effect-headers
+  UP TO 513 ROWS WHERE profid = 'EHS_CUNI_KNM'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+SELECT * FROM scpractx BYPASSING BUFFER INTO TABLE p_effect-variables
+  UP TO 513 ROWS WHERE profid = 'EHS_CUNI_KNM'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+SELECT * FROM scpractxl BYPASSING BUFFER INTO TABLE p_effect-links
+  UP TO 513 ROWS WHERE bcset = 'EHS_CUNI_KNM'.
+IF sy-subrc <> 0 AND sy-subrc <> 4. p_code = 'READ_FAILED'. RETURN. ENDIF.
+IF lines( p_effect-allocation ) > 8192 OR lines( p_effect-matched ) > 512
+OR lines( p_effect-records ) > 512 OR lines( p_effect-headers ) > 512
+OR lines( p_effect-variables ) > 512 OR lines( p_effect-links ) > 512.
+  p_code = 'LIMIT_EXCEEDED'. RETURN. ENDIF.
+SORT p_effect-matched BY client tablename tabrecnumb.
+SORT p_effect-allocation BY client tablename tabrecnumb.
+SORT p_effect-records BY client tablename tabrecnumb.
+SORT p_effect-headers BY client profid modifier.
+SORT p_effect-variables BY client profid moddate modtime dataelem oldvalue.
+SORT p_effect-links BY client bcset moddate modtime tablename recnumber fieldname langu.
+p_code = 'EFFECTS_READ'. ENDFORM.
+
+" 只读取当前用户的锁，拒绝同用户既有目标锁；不输出owner句柄。
+FORM orv_bc_owner_lock_read CHANGING p_count TYPE i p_code TYPE string.
+DATA: lt_enq TYPE STANDARD TABLE OF seqg3, ls_enq TYPE seqg3,
+      lv_subrc TYPE sy-subrc, lv_number TYPE sy-tabix, lv_table TYPE rstable-tabname.
+CLEAR: p_count, p_code.
+CALL FUNCTION 'ENQUEUE_READ' EXPORTING gclient = sy-mandt guname = sy-uname
+  IMPORTING subrc = lv_subrc number = lv_number TABLES enq = lt_enq
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_subrc <> 0 OR lv_number > 512.
+  p_code = 'LOCK_READ_FAILED'. RETURN. ENDIF.
+LOOP AT lt_enq INTO ls_enq.
+  IF ls_enq-gname = 'E070' AND
+     ( ls_enq-garg(10) = 'GR2K923429' OR ls_enq-garg(10) = 'GR2K923430' ).
+    ADD 1 TO p_count.
+  ELSEIF ls_enq-gname = 'SCPRATTR' AND ls_enq-garg(32) = 'EHS_CUNI_KNM'.
+    ADD 1 TO p_count.
+  ELSEIF ls_enq-gname = 'RSTABLE'.
+    lv_table = ls_enq-garg(30).
+    CASE lv_table.
+      WHEN 'T006'. ADD 1 TO p_count.
+      WHEN 'T006A'. ADD 1 TO p_count.
+      WHEN 'T006B'. ADD 1 TO p_count.
+      WHEN 'T006C'. ADD 1 TO p_count.
+      WHEN 'T006D'. ADD 1 TO p_count.
+      WHEN 'T006I'. ADD 1 TO p_count.
+      WHEN 'T006J'. ADD 1 TO p_count.
+      WHEN 'T006T'. ADD 1 TO p_count.
+      WHEN 'T006_OIB'. ADD 1 TO p_count.
+      WHEN 'SCPRACTR'. ADD 1 TO p_count.
+      WHEN 'SCPRACTP'. ADD 1 TO p_count.
+      WHEN 'SCPRACTX'. ADD 1 TO p_count.
+      WHEN 'SCPRACTXL'. ADD 1 TO p_count.
+      WHEN 'SCPRATTR'. ADD 1 TO p_count.
+      WHEN 'SCPRRECA'. ADD 1 TO p_count.
+      WHEN 'SCPRVALS'. ADD 1 TO p_count.
+      WHEN 'SCPRVALL'. ADD 1 TO p_count.
+      WHEN 'SCPRPPRL'. ADD 1 TO p_count.
+      WHEN 'OBJH'. ADD 1 TO p_count.
+      WHEN 'OBJS'. ADD 1 TO p_count.
+      WHEN 'OBJM'. ADD 1 TO p_count.
+      WHEN 'T000'. ADD 1 TO p_count.
+      WHEN 'TBD05'. ADD 1 TO p_count.
+      WHEN 'TBD72'. ADD 1 TO p_count.
+      WHEN 'SCDTSYNC'. ADD 1 TO p_count.
+    ENDCASE.
+  ENDIF.
+ENDLOOP.
+p_code = 'LOCKS_READ'. ENDFORM.
+
+" 标准协议独立R/3*提交，保留历史；不写标准协议表。
+FORM orv_bc_owner_protocol USING p_opts TYPE scpractopt p_flag TYPE c
+  p_marker TYPE string CHANGING p_code TYPE string.
+DATA: lt_log TYPE STANDARD TABLE OF scpracterp, ls_log TYPE scpracterp,
+      ls_header TYPE scpracpp.
+CLEAR: p_code, ls_log.
+ls_log-act_id = p_opts-act_id. ls_log-bcset_id = 'EHS_CUNI_KNM'.
+ls_log-act_date = p_opts-act_date. ls_log-act_time = p_opts-act_time.
+ls_log-modifier = sy-uname. ls_log-sysid = sy-sysid.
+ls_log-trno_cust = 'GR2K923430'. ls_log-protoflag = p_flag.
+ls_log-actoptions = p_marker. APPEND ls_log TO lt_log.
+" 标准新建头不复制TRNO_CUST；同批第二行从已有头分支回填任务。
+IF p_flag = 'H'. APPEND ls_log TO lt_log. ENDIF.
+CALL FUNCTION 'SCPR_ACTIV_PROTOCOL_WRITE' TABLES scprerrprt = lt_log
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0. p_code = 'PROTOCOL_UNCERTAIN'. RETURN. ENDIF.
+SELECT SINGLE * FROM scpracpp CONNECTION R/3* INTO ls_header
+  WHERE act_id = p_opts-act_id.
+IF sy-subrc <> 0 OR ls_header-modifier <> sy-uname
+OR ls_header-t_sid <> sy-sysid OR ls_header-t_mandt <> sy-mandt
+OR ls_header-actoptions <> p_marker OR ls_header-trno_cust <> 'GR2K923430'.
+  p_code = 'PROTOCOL_UNCERTAIN'. RETURN. ENDIF.
+IF p_flag = 'E' AND ls_header-act_end IS INITIAL.
+  p_code = 'PROTOCOL_UNCERTAIN'. RETURN. ENDIF.
+p_code = 'PROTOCOL_WRITTEN'. ENDFORM.
+
+FORM orv_bc_owner USING p_readonly TYPE c a TYPE ty_orv_bc_args
+  CHANGING r TYPE ty_orv_bc_result.
+DATA: lv_code TYPE string, lv_hash TYPE string, lv_buffer TYPE xstring,
+      lv_old_effect TYPE xstring, lv_frame TYPE xstring, lv_roundtrip TYPE xstring,
+      lv_system TYPE string, lv_client TYPE string, lv_user TYPE string,
+      lv_source TYPE string, lv_target TYPE string, lv_candidate TYPE string,
+      lv_data TYPE string, lv_effects TYPE string, lv_cts TYPE string,
+      lv_count TYPE i, lv_index TYPE i, lv_failed TYPE i, lv_staged TYPE i,
+      lv_held TYPE i, lv_table TYPE rstable-tabname, lv_group TYPE tddat-cclass,
+      lv_delete TYPE c, lv_commit_started TYPE c, lv_logged TYPE c,
+      lv_bc_locked TYPE c, lv_parent_locked TYPE c, lv_task_locked TYPE c,
+      lv_marker TYPE string, lv_prefix TYPE string, lv_expected_marker TYPE string,
+      lv_metadata TYPE string,
+      ls_opts TYPE scpractopt, ls_history TYPE scpracpp,
+      lt_history TYPE STANDARD TABLE OF scpracpp,
+      before TYPE ty_orv_bc_image, current TYPE ty_orv_bc_image, desired TYPE ty_orv_bc_image,
+      checked_image TYPE ty_orv_bc_image, checked_effect TYPE ty_orv_bc_effect,
+      prior_effect TYPE ty_orv_bc_effect, after_effect TYPE ty_orv_bc_effect,
+      current_effect TYPE ty_orv_bc_effect, ls_link TYPE scpractr, ls_scope TYPE ty_orv_bc_scope,
+      ls_effect_header TYPE scpractp,
+      lt_scope TYPE ty_orv_bc_scopes, lt_new_scope TYPE ty_orv_bc_scopes,
+      lt_locks TYPE ty_orv_bc_locks, lt_prepared TYPE ty_orv_bc_records,
+      ls_prepared TYPE ty_orv_bc_record, ls_attr TYPE scprreca,
+      lt_attrs TYPE STANDARD TABLE OF scprreca, lt_errors TYPE scp1_general_errors,
+      lt_objh TYPE STANDARD TABLE OF objh, lt_objs TYPE STANDARD TABLE OF objs, lt_objm TYPE STANDARD TABLE OF objm,
+      ls_error TYPE scp1_general_error, lt_mappings TYPE scp1_recnr_mappings,
+      lt_objects TYPE tr_objects, lt_keys TYPE tr_keys, lt_delta TYPE tr_keys,
+      old_objects TYPE tr_objects, old_keys TYPE tr_keys, old_strings TYPE e071k_strtyp,
+      old_headers TYPE ty_orv_bc_headers, old_clients TYPE ty_orv_bc_clients,
+      ls_object TYPE e071, ls_checked TYPE e071, ls_key TYPE e071k, ls_checked_key TYPE e071k,
+      ls_header TYPE trwbo_request_header, lv_not_lockable TYPE trpari-s_locktype,
+      lv_locktype TYPE trpari-s_locktype, lv_req TYPE trkorr VALUE 'GR2K923429',
+      lv_task TYPE trkorr VALUE 'GR2K923430'.
+DATA b_namespace TYPE string.
+DATA b_system TYPE string.
+DATA b_client TYPE string.
+DATA b_user TYPE string.
+DATA b_bcset TYPE string.
+DATA b_version TYPE string.
+DATA b_request TYPE string.
+DATA b_task TYPE string.
+DATA b_layout TYPE string.
+DATA b_source TYPE string.
+DATA b_target TYPE string.
+DATA b_candidate TYPE string.
+DATA b_metadata TYPE string.
+DATA b_guard TYPE string.
+DATA b_cts TYPE string.
+DATA: e_namespace TYPE string, e_system TYPE string, e_client TYPE string, e_user TYPE string,
+      e_bcset TYPE string, e_version TYPE string, e_request TYPE string, e_task TYPE string,
+      e_cts TYPE string, e_scope TYPE string, e_matched TYPE scpractrtab,
+      e_records TYPE scpractrtab, e_headers TYPE scpractptab,
+      e_variables TYPE scpractxtab, e_links TYPE scpractxltab,
+      f_namespace TYPE string, f_operation TYPE string, f_reference TYPE string,
+      f_state TYPE string, f_effects TYPE string, f_cts TYPE string,
+      f_act_id TYPE scpr_handl, f_date TYPE scpr_date, f_time TYPE scpr_time,
+      f_desired TYPE ty_orv_bc_image, f_prior TYPE ty_orv_bc_effect,
+      f_after TYPE ty_orv_bc_effect, f_delta TYPE tr_keys,
+      f_objects TYPE tr_objects, f_keys TYPE tr_keys, f_strings TYPE e071k_strtyp.
+FIELD-SYMBOLS <row> TYPE any.
+CLEAR r. r-system = sy-sysid. r-client = sy-mandt. r-user = sy-uname.
+r-operation_hash = a-operation_hash. r-before_reference = a-before_reference.
+r-commit = 'not_started'. r-phase = 'precheck'. r-configuration = 'unknown'.
+r-protected = 'unknown'. r-cts = 'unknown'. r-effects = 'unknown'.
+r-locks = 'unknown'. r-protocol = 'unknown'.
+DO 1 TIMES.
+IF sy-sysid <> 'GR2' OR sy-mandt <> '200'.
+  r-code = 'SCOPE_UNSUPPORTED'. EXIT.
+ENDIF.
+IF ( a-command <> 'A' AND a-command <> 'R' ) OR ( p_readonly <> space AND p_readonly <> 'X' ).
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-operation_hash ) <> 64 OR a-operation_hash CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-before_reference ) <> 64 OR a-before_reference CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-state_version ) <> 64 OR a-state_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-source_version ) <> 64 OR a-source_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-target_version ) <> 64 OR a-target_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-candidate_version ) <> 64 OR a-candidate_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-metadata_version ) <> 64 OR a-metadata_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-guard_version ) <> 64 OR a-guard_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-cts_version ) <> 64 OR a-cts_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-effects_version ) <> 64 OR a-effects_version CN '0123456789abcdef'.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-state_base64 ) < 4 OR strlen( a-state_base64 ) > 699052.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-effects_base64 ) < 4 OR strlen( a-effects_base64 ) > 699052.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-cts_base64 ) < 4 OR strlen( a-cts_base64 ) > 699052.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF strlen( a-frame_base64 ) > 2097152.
+  r-code = 'INPUT_INVALID'. EXIT.
+ENDIF.
+IF p_readonly = space.
+  CALL FUNCTION 'SCPR_AUTHORITY_CHECK' EXPORTING task = 'ACTIVATE' id = 'EHS_CUNI_KNM'
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'AUTHORIZATION_DENIED'. EXIT.
+ENDIF.
+ENDIF.
+" 配置、关联、策略表均单独校验；认证不替代写权限。
+DO 25 TIMES.
+  CASE sy-index.
+    WHEN 1. lv_table = 'T006'.
+    WHEN 2. lv_table = 'T006A'.
+    WHEN 3. lv_table = 'T006B'.
+    WHEN 4. lv_table = 'T006C'.
+    WHEN 5. lv_table = 'T006D'.
+    WHEN 6. lv_table = 'T006I'.
+    WHEN 7. lv_table = 'T006J'.
+    WHEN 8. lv_table = 'T006T'.
+    WHEN 9. lv_table = 'T006_OIB'.
+    WHEN 10. lv_table = 'SCPRACTR'.
+    WHEN 11. lv_table = 'SCPRACTP'.
+    WHEN 12. lv_table = 'SCPRACTX'.
+    WHEN 13. lv_table = 'SCPRACTXL'.
+    WHEN 14. lv_table = 'SCPRATTR'.
+    WHEN 15. lv_table = 'SCPRRECA'.
+    WHEN 16. lv_table = 'SCPRVALS'.
+    WHEN 17. lv_table = 'SCPRVALL'.
+    WHEN 18. lv_table = 'SCPRPPRL'.
+    WHEN 19. lv_table = 'OBJH'.
+    WHEN 20. lv_table = 'OBJS'.
+    WHEN 21. lv_table = 'OBJM'.
+    WHEN 22. lv_table = 'T000'.
+    WHEN 23. lv_table = 'TBD05'.
+    WHEN 24. lv_table = 'TBD72'.
+    WHEN 25. lv_table = 'SCDTSYNC'.
+  ENDCASE.
+  CLEAR lv_group. SELECT SINGLE cclass FROM tddat INTO lv_group WHERE tabname = lv_table.
+  IF sy-subrc <> 0 OR lv_group IS INITIAL. lv_group = '&NC&'. ENDIF.
+  AUTHORITY-CHECK OBJECT 'S_TABU_DIS' ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.
+  IF sy-subrc <> 0.
+    AUTHORITY-CHECK OBJECT 'S_TABU_NAM' ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.
+  ENDIF.
+IF sy-subrc <> 0.
+  r-code = 'AUTHORIZATION_DENIED'. EXIT.
+ENDIF.
+  IF p_readonly = space AND
+     ( sy-index <= 4 OR ( sy-index >= 10 AND sy-index <= 13 ) ).
+    AUTHORITY-CHECK OBJECT 'S_TABU_DIS' ID 'ACTVT' FIELD '02' ID 'DICBERCLS' FIELD lv_group.
+    IF sy-subrc <> 0.
+      AUTHORITY-CHECK OBJECT 'S_TABU_NAM' ID 'ACTVT' FIELD '02' ID 'TABLE' FIELD lv_table.
+    ENDIF.
+IF sy-subrc <> 0.
+  r-code = 'AUTHORIZATION_DENIED'. EXIT.
+ENDIF.
+  ENDIF.
+ENDDO.
+IF r-code = 'AUTHORIZATION_DENIED'.
+  r-code = 'AUTHORIZATION_DENIED'. EXIT.
+ENDIF.
+PERFORM orv_bc_owner_lock_read CHANGING lv_held lv_code.
+IF lv_code <> 'LOCKS_READ'.
+  r-code = 'LOCK_READ_FAILED'. EXIT.
+ENDIF.
+IF p_readonly = space.
+IF lv_held <> 0.
+  r-code = 'PREEXISTING_LOCK_UNSUPPORTED'. EXIT.
+ENDIF.
+  CALL FUNCTION 'ENQUEUE_E_SCPR' EXPORTING id = 'EHS_CUNI_KNM' _scope = '1' _wait = space
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'BCSET_LOCK_FAILED'. EXIT.
+ENDIF.
+  lv_bc_locked = 'X'.
+  DO 25 TIMES.
+    CASE sy-index.
+      WHEN 1. lv_table = 'T006'.
+      WHEN 2. lv_table = 'T006A'.
+      WHEN 3. lv_table = 'T006B'.
+      WHEN 4. lv_table = 'T006C'.
+      WHEN 5. lv_table = 'T006D'.
+      WHEN 6. lv_table = 'T006I'.
+      WHEN 7. lv_table = 'T006J'.
+      WHEN 8. lv_table = 'T006T'.
+      WHEN 9. lv_table = 'T006_OIB'.
+      WHEN 10. lv_table = 'SCPRACTR'.
+      WHEN 11. lv_table = 'SCPRACTP'.
+      WHEN 12. lv_table = 'SCPRACTX'.
+      WHEN 13. lv_table = 'SCPRACTXL'.
+      WHEN 14. lv_table = 'SCPRATTR'.
+      WHEN 15. lv_table = 'SCPRRECA'.
+      WHEN 16. lv_table = 'SCPRVALS'.
+      WHEN 17. lv_table = 'SCPRVALL'.
+      WHEN 18. lv_table = 'SCPRPPRL'.
+      WHEN 19. lv_table = 'OBJH'.
+      WHEN 20. lv_table = 'OBJS'.
+      WHEN 21. lv_table = 'OBJM'.
+      WHEN 22. lv_table = 'T000'.
+      WHEN 23. lv_table = 'TBD05'.
+      WHEN 24. lv_table = 'TBD72'.
+      WHEN 25. lv_table = 'SCDTSYNC'.
+    ENDCASE.
+    CALL FUNCTION 'ENQUEUE_E_TABLE' EXPORTING tabname = lv_table varkey = space _scope = '1' _wait = space
+      EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'TABLE_LOCK_FAILED'. EXIT.
+ENDIF.
+    APPEND lv_table TO lt_locks.
+  ENDDO.
+IF r-code = 'TABLE_LOCK_FAILED'.
+  r-code = 'TABLE_LOCK_FAILED'. EXIT.
+ENDIF.
+  CALL FUNCTION 'ENQUEUE_E_TRKORR' EXPORTING trkorr = lv_req _scope = '1' _wait = space
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'CTS_LOCK_FAILED'. EXIT.
+ENDIF.
+  lv_parent_locked = 'X'.
+  CALL FUNCTION 'ENQUEUE_E_TRKORR' EXPORTING trkorr = lv_task _scope = '1' _wait = space
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'CTS_LOCK_FAILED'. EXIT.
+ENDIF.
+  lv_task_locked = 'X'.
+ENDIF.
+TRY.
+" RCHECK校验原生前态全部成员、SHA、scope、用户、版本和无损转换。
+CALL FUNCTION 'Z_ORVANTA_CFG_BC_RCHECK'
+  EXPORTING iv_bc_set = 'EHS_CUNI_KNM' iv_version = 'N' iv_request = 'GR2K923429' iv_task = 'GR2K923430'
+    iv_source_version = a-source_version
+    iv_target_version = a-target_version
+    iv_candidate_version = a-candidate_version
+    iv_metadata_version = a-metadata_version
+    iv_guard_version = a-guard_version
+    iv_cts_version = a-cts_version
+    iv_state_version = a-state_version
+    iv_data_base64 = a-state_base64 IMPORTING ev_code = lv_code
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_code <> 'RECOVERY_CHECK_OK'.
+  r-code = 'READ_PRECONDITION_FAILED'. EXIT.
+ENDIF.
+CALL FUNCTION 'SCMS_BASE64_DECODE_STR'
+  EXPORTING input = a-state_base64 unescape = space IMPORTING output = lv_buffer
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR xstrlen( lv_buffer ) = 0 OR xstrlen( lv_buffer ) > 1572864.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'
+  EXPORTING alg = 'SHA2' data = lv_buffer
+  IMPORTING hashstring = lv_hash
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'HASH_FAILED'. EXIT.
+ENDIF.
+TRANSLATE lv_hash TO LOWER CASE.
+IF lv_hash <> a-state_version.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+IMPORT
+  namespace = b_namespace
+  system = b_system
+  client = b_client
+  user = b_user
+  bcset = b_bcset
+  version = b_version
+  request = b_request
+  task = b_task
+  layout = b_layout
+  source = b_source
+  target = b_target
+  candidate = b_candidate
+  metadata = b_metadata
+  guard = b_guard
+  cts = b_cts
+  t006 = before-t006
+  t006a = before-t006a
+  t006b = before-t006b
+  t006c = before-t006c
+  t006d = before-t006d
+  t006i = before-t006i
+  t006j = before-t006j
+  t006t = before-t006t
+  t006_oib = before-t006_oib
+  FROM DATA BUFFER lv_buffer.
+IF sy-subrc <> 0.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+IF before-t006 IS NOT INITIAL OR before-t006a IS NOT INITIAL OR before-t006b IS NOT INITIAL OR before-t006c IS NOT INITIAL OR lines( before-t006d ) <> 1.
+  r-code = 'PILOT_BEFORE_INVALID'. EXIT.
+ENDIF.
+CALL FUNCTION 'SCMS_BASE64_DECODE_STR'
+  EXPORTING input = a-effects_base64 unescape = space IMPORTING output = lv_buffer
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR xstrlen( lv_buffer ) = 0 OR xstrlen( lv_buffer ) > 1572864.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'
+  EXPORTING alg = 'SHA2' data = lv_buffer
+  IMPORTING hashstring = lv_hash
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'HASH_FAILED'. EXIT.
+ENDIF.
+TRANSLATE lv_hash TO LOWER CASE.
+IF lv_hash <> a-effects_version.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+IMPORT namespace = e_namespace system = e_system client = e_client user = e_user
+  bcset = e_bcset version = e_version request = e_request task = e_task cts = e_cts scope = e_scope
+  keys = lt_scope matched = e_matched records = e_records headers = e_headers
+  variables = e_variables links = e_links FROM DATA BUFFER lv_buffer.
+IF sy-subrc <> 0.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+EXPORT namespace = e_namespace system = e_system client = e_client user = e_user
+  bcset = e_bcset version = e_version request = e_request task = e_task cts = e_cts scope = e_scope
+  keys = lt_scope matched = e_matched records = e_records headers = e_headers
+  variables = e_variables links = e_links TO DATA BUFFER lv_roundtrip.
+IF lv_roundtrip <> lv_buffer OR e_namespace <> 'ORVANTA_CUNI_EFFECTS_V1' OR e_system <> sy-sysid OR e_client <> sy-mandt OR e_user <> sy-uname OR e_bcset <> 'EHS_CUNI_KNM' OR e_version <> 'N' OR e_request <> 'GR2K923429' OR e_task <> 'GR2K923430' OR
+e_cts <> a-cts_version OR lines( lt_scope ) <> 19 OR e_matched IS NOT INITIAL OR e_records IS NOT INITIAL OR e_headers IS NOT INITIAL OR e_variables IS NOT INITIAL OR e_links IS NOT INITIAL.
+  r-code = 'EFFECTS_BEFORE_INVALID'. EXIT.
+ENDIF.
+CALL FUNCTION 'SCMS_BASE64_DECODE_STR'
+  EXPORTING input = a-cts_base64 unescape = space IMPORTING output = lv_buffer
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR xstrlen( lv_buffer ) = 0 OR xstrlen( lv_buffer ) > 1572864.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'
+  EXPORTING alg = 'SHA2' data = lv_buffer
+  IMPORTING hashstring = lv_hash
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'HASH_FAILED'. EXIT.
+ENDIF.
+TRANSLATE lv_hash TO LOWER CASE.
+IF lv_hash <> a-cts_version.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+IMPORT headers = old_headers clients = old_clients objects = old_objects keys = old_keys string_keys = old_strings FROM DATA BUFFER lv_buffer.
+IF sy-subrc <> 0.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+" 标准现有CUNI对象必须保持；首轮禁止新增/删除CTS对象或宽泛现存键。
+READ TABLE old_objects INTO ls_object WITH KEY trkorr = lv_task pgmid = 'R3TR' object = 'TDAT' obj_name = 'CUNI' objfunc = 'K'.
+IF sy-subrc <> 0.
+  r-code = 'CTS_PILOT_CONTAINER_MISSING'. EXIT.
+ENDIF.
+lt_new_scope = lt_scope. DELETE lt_new_scope FROM 11.
+LOOP AT old_keys INTO ls_key WHERE mastertype = 'TDAT' AND mastername = 'CUNI'.
+  LOOP AT lt_new_scope INTO ls_scope.
+    IF ls_key-objname = ls_scope-tablename AND ( ls_scope-tabkey CP ls_key-tabkey OR ls_key-tabkey = ls_scope-tabkey ).
+      r-code = 'CTS_EXISTING_KEY_OVERLAP'. EXIT. ENDIF.
+  ENDLOOP.
+  IF r-code IS NOT INITIAL. EXIT. ENDIF.
+ENDLOOP.
+IF r-code IS NOT INITIAL.
+  r-code = 'CTS_EXISTING_KEY_OVERLAP'. EXIT.
+ENDIF.
+CALL FUNCTION 'Z_ORVANTA_CFG_BC_READ' EXPORTING iv_bc_set = 'EHS_CUNI_KNM' iv_version = 'N'
+  IMPORTING ev_code = lv_code ev_source_version = lv_source ev_target_version = lv_target
+  TABLES et_t006 = current-t006 et_t006a = current-t006a et_t006b = current-t006b et_t006c = current-t006c et_t006d = current-t006d
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_code <> 'READ_OK'.
+  r-code = 'READ_PRECONDITION_FAILED'. EXIT.
+ENDIF.
+IF lv_source <> a-source_version.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+CALL FUNCTION 'Z_ORVANTA_CFG_BC_ROUTE' EXPORTING iv_bc_set = 'EHS_CUNI_KNM' iv_version = 'N'
+  iv_source_version = lv_source iv_target_version = lv_target
+  IMPORTING ev_code = lv_code ev_metadata_version = lv_metadata TABLES et_objh = lt_objh et_objs = lt_objs et_objm = lt_objm
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_code <> 'ROUTE_READ_OK'.
+  r-code = 'READ_PRECONDITION_FAILED'. EXIT.
+ENDIF.
+IF lv_metadata <> a-metadata_version.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+CALL FUNCTION 'Z_ORVANTA_CFG_BC_PREVIEW' EXPORTING iv_bc_set = 'EHS_CUNI_KNM' iv_version = 'N'
+  iv_source_version = lv_source iv_target_version = lv_target
+  IMPORTING ev_code = lv_code ev_candidate_version = lv_candidate
+  TABLES et_t006 = desired-t006 et_t006a = desired-t006a et_t006b = desired-t006b
+    et_t006c = desired-t006c et_t006d = desired-t006d EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_code <> 'PREVIEW_OK'.
+  r-code = 'READ_PRECONDITION_FAILED'. EXIT.
+ENDIF.
+desired-t006i = before-t006i.
+desired-t006j = before-t006j.
+desired-t006t = before-t006t.
+desired-t006_oib = before-t006_oib.
+IF p_readonly = space.
+" 零分发/零after-import是执行前置条件，不调用含MESSAGE I/远程调用的resolver。
+  SELECT COUNT( * ) FROM scdtsync BYPASSING BUFFER INTO lv_count.
+IF lv_count <> 0.
+  r-code = 'DISTRIBUTION_POLICY_UNSUPPORTED'. EXIT.
+ENDIF.
+  SELECT COUNT( * ) FROM tbd72 BYPASSING BUFFER INTO lv_count WHERE objekttyp = 'T' AND objektname = 'CUNI'.
+IF lv_count <> 0.
+  r-code = 'ALE_POLICY_UNSUPPORTED'. EXIT.
+ENDIF.
+  SELECT COUNT( * ) FROM tbd05 BYPASSING BUFFER INTO lv_count WHERE mestyp = 'CONDAT'.
+IF lv_count <> 0.
+  r-code = 'ALE_POLICY_UNSUPPORTED'. EXIT.
+ENDIF.
+  SELECT COUNT( * ) FROM objm BYPASSING BUFFER INTO lv_count WHERE objectname = 'CUNI' AND objecttype = 'T'.
+IF lv_count <> 0.
+  r-code = 'AFTER_IMPORT_UNSUPPORTED'. EXIT.
+ENDIF.
+ENDIF.
+PERFORM orv_bc_owner_rows CHANGING current lv_code.
+IF lv_code <> 'ROWS_READ'.
+  r-code = 'READ_FAILED'. EXIT.
+ENDIF.
+PERFORM orv_bc_owner_effects USING lt_scope CHANGING current_effect lv_code.
+IF lv_code <> 'EFFECTS_READ'.
+  r-code = 'READ_FAILED'. EXIT.
+ENDIF.
+IF a-command = 'A' AND a-frame_base64 IS INITIAL AND p_readonly = space.
+" 持锁重新读取STATE及effects，与不可变前态精确比较。
+  CALL FUNCTION 'Z_ORVANTA_CFG_BC_STATE' EXPORTING iv_bc_set = 'EHS_CUNI_KNM' iv_version = 'N'
+    iv_request = 'GR2K923429' iv_task = 'GR2K923430'
+    iv_source_version = a-source_version
+    iv_target_version = a-target_version
+    iv_candidate_version = a-candidate_version
+    iv_metadata_version = a-metadata_version
+    iv_guard_version = a-guard_version
+    iv_cts_version = a-cts_version
+    IMPORTING ev_code = lv_code ev_state_version = lv_hash ev_data_base64 = lv_data
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_code <> 'STATE_READ_OK'.
+  r-code = 'READ_PRECONDITION_FAILED'. EXIT.
+ENDIF.
+IF lv_hash <> a-state_version OR lv_data <> a-state_base64 OR current <> before.
+  r-code = 'BEFORE_CHANGED'. EXIT.
+ENDIF.
+  CALL FUNCTION 'Z_ORVANTA_CFG_BC_EFFECTS' EXPORTING iv_bc_set = 'EHS_CUNI_KNM' iv_version = 'N'
+    iv_request = 'GR2K923429' iv_task = 'GR2K923430' iv_cts_version = a-cts_version
+    IMPORTING ev_code = lv_code ev_effects_version = lv_hash ev_data_base64 = lv_data
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_code <> 'EFFECTS_READ_OK'.
+  r-code = 'READ_PRECONDITION_FAILED'. EXIT.
+ENDIF.
+IF lv_hash <> a-effects_version OR lv_data <> a-effects_base64 OR current_effect-matched IS NOT INITIAL OR current_effect-records IS NOT INITIAL OR current_effect-headers IS NOT INITIAL OR current_effect-variables IS NOT INITIAL OR current_effect-links
+IS NOT INITIAL.
+  r-code = 'BEFORE_CHANGED'. EXIT.
+ENDIF.
+  prior_effect = current_effect.
+ELSEIF p_readonly = 'X' AND a-command = 'A' AND a-frame_base64 IS INITIAL.
+" 丢失回应时按协议GUID/原生完整现态重建frame；不匹配就保持未知，不重放。
+  CONCATENATE 'A:_:' a-operation_hash(32) ':%' INTO lv_prefix.
+  SELECT * FROM scpracpp CONNECTION R/3* INTO TABLE lt_history UP TO 2 ROWS
+    WHERE modifier = sy-uname AND t_sid = sy-sysid AND t_mandt = sy-mandt AND actoptions LIKE lv_prefix.
+IF lines( lt_history ) <> 1 OR current <> desired OR current_effect-records <> current_effect-matched OR lines( current_effect-matched ) <> 10 OR lines( current_effect-headers ) <> 1 OR current_effect-variables IS NOT INITIAL OR current_effect-links IS
+NOT INITIAL.
+  r-code = 'HISTORY_UNPROVEN'. EXIT.
+ENDIF.
+  READ TABLE lt_history INTO ls_history INDEX 1.
+  after_effect = current_effect. prior_effect = current_effect.
+  CLEAR: prior_effect-matched, prior_effect-records, prior_effect-headers, prior_effect-variables, prior_effect-links.
+  READ TABLE current_effect-matched INTO ls_link INDEX 1. f_date = ls_link-moddate. f_time = ls_link-modtime.
+  READ TABLE current_effect-headers INTO ls_effect_header INDEX 1.
+IF sy-subrc <> 0 OR ls_effect_header-client <> sy-mandt OR ls_effect_header-profid <> 'EHS_CUNI_KNM' OR ls_effect_header-modifier <> sy-uname OR ls_effect_header-systemid <> sy-sysid OR ls_effect_header-moddate <> f_date OR ls_effect_header-modtime <>
+f_time.
+  r-code = 'HISTORY_UNPROVEN'. EXIT.
+ENDIF.
+  LOOP AT lt_new_scope INTO ls_scope.
+    READ TABLE current_effect-matched INTO ls_link WITH KEY tablename = ls_scope-tablename tabkey = ls_scope-tabkey.
+IF sy-subrc <> 0 OR ls_link-client <> sy-mandt OR ls_link-profid <> 'EHS_CUNI_KNM' OR ls_link-recnumber <> 1 OR ls_link-viewname IS NOT INITIAL OR ls_link-viewvar IS NOT INITIAL OR ls_link-operation <> 'INS' OR ls_link-moddate <> f_date OR
+ls_link-modtime <> f_time.
+  r-code = 'HISTORY_UNPROVEN'. EXIT.
+ENDIF.
+    DELETE prior_effect-allocation WHERE client = ls_link-client AND tablename = ls_link-tablename AND tabrecnumb = ls_link-tabrecnumb.
+  ENDLOOP.
+IF r-code IS NOT INITIAL.
+  r-code = 'HISTORY_UNPROVEN'. EXIT.
+ENDIF.
+  PERFORM orv_bc_owner_cts USING old_objects old_keys old_strings old_headers old_clients lt_new_scope CHANGING lt_delta lv_code.
+IF lv_code <> 'CTS_DELTA_VERIFIED'.
+  r-code = 'HISTORY_UNPROVEN'. EXIT.
+ENDIF.
+  f_namespace = 'ORVANTA_CUNI_COMMAND_V1'. f_operation = a-operation_hash. f_reference = a-before_reference.
+  f_state = a-state_version. f_effects = a-effects_version. f_cts = a-cts_version. f_act_id = ls_history-act_id.
+  f_desired = desired. f_prior = prior_effect. f_after = after_effect. f_delta = lt_delta.
+  f_objects = old_objects. f_keys = old_keys. f_strings = old_strings.
+EXPORT namespace = f_namespace operation = f_operation reference = f_reference
+  state = f_state effects = f_effects cts = f_cts act_id = f_act_id date = f_date time = f_time
+  desired = f_desired prior = f_prior after = f_after delta = f_delta
+  objects = f_objects keys = f_keys strings = f_strings TO DATA BUFFER lv_frame.
+CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'
+  EXPORTING alg = 'SHA2' data = lv_frame
+  IMPORTING hashstring = r-frame_version
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'HASH_FAILED'. EXIT.
+ENDIF.
+TRANSLATE r-frame_version TO LOWER CASE.
+  CONCATENATE 'A:E:' a-operation_hash(32) ':' r-frame_version(32) INTO lv_expected_marker.
+IF ls_history-actoptions <> lv_expected_marker OR ls_history-act_end IS INITIAL.
+  r-code = 'HISTORY_UNPROVEN'. EXIT.
+ENDIF.
+  r-configuration = 'candidate'.
+ELSE.
+IF a-frame_base64 IS INITIAL OR strlen( a-frame_version ) <> 64 OR a-frame_version CN '0123456789abcdef'.
+  r-code = 'FRAME_REQUIRED'. EXIT.
+ENDIF.
+CALL FUNCTION 'SCMS_BASE64_DECODE_STR'
+  EXPORTING input = a-frame_base64 unescape = space IMPORTING output = lv_frame
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR xstrlen( lv_frame ) = 0 OR xstrlen( lv_frame ) > 1572864.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'
+  EXPORTING alg = 'SHA2' data = lv_frame
+  IMPORTING hashstring = lv_hash
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'HASH_FAILED'. EXIT.
+ENDIF.
+TRANSLATE lv_hash TO LOWER CASE.
+IF lv_hash <> a-frame_version.
+  r-code = 'BUFFER_INVALID'. EXIT.
+ENDIF.
+  IMPORT namespace = f_namespace operation = f_operation reference = f_reference
+    state = f_state effects = f_effects cts = f_cts act_id = f_act_id date = f_date time = f_time
+    desired = f_desired prior = f_prior after = f_after delta = f_delta
+    objects = f_objects keys = f_keys strings = f_strings FROM DATA BUFFER lv_frame.
+IF sy-subrc <> 0 OR f_namespace <> 'ORVANTA_CUNI_COMMAND_V1' OR f_reference <> a-before_reference OR f_state <> a-state_version OR f_effects <> a-effects_version OR f_cts <> a-cts_version OR f_objects <> old_objects OR f_keys <> old_keys OR f_strings <>
+old_strings OR lines( f_delta ) <> 10.
+  r-code = 'FRAME_INVALID'. EXIT.
+ENDIF.
+  SELECT SINGLE * FROM scpracpp CONNECTION R/3* INTO ls_history WHERE act_id = f_act_id.
+  CONCATENATE 'A:E:' f_operation(32) ':' a-frame_version(32) INTO lv_expected_marker.
+IF sy-subrc <> 0 OR ls_history-act_end IS INITIAL OR ls_history-actoptions <> lv_expected_marker OR ls_history-modifier <> sy-uname OR ls_history-t_sid <> sy-sysid OR ls_history-t_mandt <> sy-mandt.
+  r-code = 'APPLY_HISTORY_UNPROVEN'. EXIT.
+ENDIF.
+IF desired-t006 <> f_desired-t006.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006a <> f_desired-t006a.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006b <> f_desired-t006b.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006c <> f_desired-t006c.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006d <> f_desired-t006d.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006i <> f_desired-t006i.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006j <> f_desired-t006j.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006t <> f_desired-t006t.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF desired-t006_oib <> f_desired-t006_oib.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+  desired = f_desired. prior_effect = f_prior. after_effect = f_after. lt_delta = f_delta.
+  IF current = desired. r-configuration = 'candidate'.
+  ELSEIF current = before. r-configuration = 'before'. ELSE. r-configuration = 'other'. ENDIF.
+ENDIF.
+" 九个保护键含缺行按完整原生结构比较。
+IF current-t006d <> before-t006d.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006i <> before-t006i.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006j <> before-t006j.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006t <> before-t006t.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006_oib <> before-t006_oib.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+r-protected = 'preserved'.
+IF p_readonly = 'X'.
+  r-commit = 'unknown'. r-phase = 'observed'. r-code = 'RECONCILED'.
+  IF current_effect = after_effect. r-effects = 'recorded'.
+  ELSEIF current_effect = prior_effect. r-effects = 'before'. ELSE. r-effects = 'changed'. ENDIF.
+  IF r-frame_version IS INITIAL. r-frame_version = a-frame_version. ENDIF. r-act_id = f_act_id.
+  PERFORM orv_bc_owner_cts USING old_objects old_keys old_strings old_headers old_clients lt_new_scope CHANGING lt_delta lv_code.
+  IF lv_code = 'CTS_DELTA_VERIFIED' AND lt_delta = f_delta. r-cts = 'recorded'.
+  ELSEIF lv_code = 'CTS_BEFORE_VERIFIED'. r-cts = 'before'. ELSE. r-cts = 'changed'. ENDIF.
+  PERFORM orv_bc_owner_rows CHANGING checked_image lv_code.
+IF lv_code <> 'ROWS_READ' OR checked_image <> current.
+  r-code = 'READ_CHANGED'. EXIT.
+ENDIF.
+  PERFORM orv_bc_owner_effects USING lt_scope CHANGING checked_effect lv_code.
+IF lv_code <> 'EFFECTS_READ' OR checked_effect <> current_effect.
+  r-code = 'READ_CHANGED'. EXIT.
+ENDIF.
+  IF a-command = 'A' AND r-configuration = 'candidate' AND r-effects = 'recorded' AND r-cts = 'recorded'.
+    r-commit = 'committed'. r-protocol = 'complete'.
+  ELSEIF a-command = 'R'.
+    CONCATENATE 'R:E:' a-operation_hash(32) ':' a-frame_version(32) INTO lv_expected_marker.
+    SELECT * FROM scpracpp CONNECTION R/3* INTO TABLE lt_history UP TO 2 ROWS
+      WHERE modifier = sy-uname AND t_sid = sy-sysid AND t_mandt = sy-mandt AND actoptions = lv_expected_marker.
+    IF lines( lt_history ) = 1 AND r-configuration = 'before' AND r-effects = 'before' AND r-cts = 'before'.
+      READ TABLE lt_history INTO ls_history INDEX 1.
+      IF ls_history-act_end IS NOT INITIAL. r-commit = 'committed'. r-protocol = 'complete'. r-act_id = ls_history-act_id. ENDIF.
+    ENDIF.
+  ENDIF.
+  EXIT.
+ENDIF.
+IF a-command = 'A'.
+  CALL FUNCTION 'Z_ORVANTA_CFG_BC_PREVIEW' EXPORTING iv_bc_set = 'EHS_CUNI_KNM' iv_version = 'N'
+    iv_source_version = a-source_version iv_target_version = a-target_version
+    IMPORTING ev_code = lv_code ev_candidate_version = lv_candidate
+    TABLES et_t006 = desired-t006 et_t006a = desired-t006a et_t006b = desired-t006b
+      et_t006c = desired-t006c et_t006d = desired-t006d EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_code <> 'PREVIEW_OK'.
+  r-code = 'READ_PRECONDITION_FAILED'. EXIT.
+ENDIF.
+IF lv_candidate <> a-candidate_version OR desired-t006d <> before-t006d.
+  r-code = 'CANDIDATE_CHANGED'. EXIT.
+ENDIF.
+  desired-t006i = before-t006i.
+  desired-t006j = before-t006j.
+  desired-t006t = before-t006t.
+  desired-t006_oib = before-t006_oib.
+ELSE.
+IF current <> desired OR current_effect <> after_effect.
+  r-code = 'RECOVERY_CURRENT_CHANGED'. EXIT.
+ENDIF.
+  lv_delete = 'X'.
+ENDIF.
+SELECT * FROM scprreca BYPASSING BUFFER INTO TABLE lt_attrs UP TO 6 ROWS WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.
+IF sy-subrc <> 0 OR lines( lt_attrs ) <> 5.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+IF lines( desired-t006 ) <> 1. r-code = 'CANDIDATE_SCOPE_INVALID'. EXIT. ENDIF.
+LOOP AT desired-t006 ASSIGNING <row>.
+  READ TABLE lt_attrs INTO ls_attr WITH KEY tablename = 'T006'.
+IF sy-subrc <> 0.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+  ADD 1 TO lv_index.
+  PERFORM orv_bc_record_prepare USING lv_index ls_attr <row> lv_delete CHANGING ls_prepared lv_code.
+IF lv_code <> 'RECORD_PREPARED'.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+  APPEND ls_prepared TO lt_prepared.
+ENDLOOP.
+IF r-code IS NOT INITIAL.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+IF lines( desired-t006a ) <> 3. r-code = 'CANDIDATE_SCOPE_INVALID'. EXIT. ENDIF.
+LOOP AT desired-t006a ASSIGNING <row>.
+  READ TABLE lt_attrs INTO ls_attr WITH KEY tablename = 'T006A'.
+IF sy-subrc <> 0.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+  ADD 1 TO lv_index.
+  PERFORM orv_bc_record_prepare USING lv_index ls_attr <row> lv_delete CHANGING ls_prepared lv_code.
+IF lv_code <> 'RECORD_PREPARED'.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+  APPEND ls_prepared TO lt_prepared.
+ENDLOOP.
+IF r-code IS NOT INITIAL.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+IF lines( desired-t006b ) <> 3. r-code = 'CANDIDATE_SCOPE_INVALID'. EXIT. ENDIF.
+LOOP AT desired-t006b ASSIGNING <row>.
+  READ TABLE lt_attrs INTO ls_attr WITH KEY tablename = 'T006B'.
+IF sy-subrc <> 0.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+  ADD 1 TO lv_index.
+  PERFORM orv_bc_record_prepare USING lv_index ls_attr <row> lv_delete CHANGING ls_prepared lv_code.
+IF lv_code <> 'RECORD_PREPARED'.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+  APPEND ls_prepared TO lt_prepared.
+ENDLOOP.
+IF r-code IS NOT INITIAL.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+IF lines( desired-t006c ) <> 3. r-code = 'CANDIDATE_SCOPE_INVALID'. EXIT. ENDIF.
+LOOP AT desired-t006c ASSIGNING <row>.
+  READ TABLE lt_attrs INTO ls_attr WITH KEY tablename = 'T006C'.
+IF sy-subrc <> 0.
+  r-code = 'SOURCE_CHANGED'. EXIT.
+ENDIF.
+  ADD 1 TO lv_index.
+  PERFORM orv_bc_record_prepare USING lv_index ls_attr <row> lv_delete CHANGING ls_prepared lv_code.
+IF lv_code <> 'RECORD_PREPARED'.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+  APPEND ls_prepared TO lt_prepared.
+ENDLOOP.
+IF r-code IS NOT INITIAL.
+  r-code = 'RECORD_PREPARATION_FAILED'. EXIT.
+ENDIF.
+IF lines( lt_prepared ) <> 10.
+  r-code = 'BATCH_SCOPE_INVALID'. EXIT.
+ENDIF.
+" 全部CTS检查先于标准维护；没有跳过标准校验的标志。
+ls_header-trkorr = lv_task.
+CALL FUNCTION 'TRINT_READ_REQUEST_HEADER' EXPORTING iv_read_e070 = 'X' iv_read_e070c = 'X'
+  CHANGING cs_request = ls_header EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR ls_header-trfunction <> 'Q' OR ls_header-trstatus <> 'D' OR ls_header-strkorr <> lv_req OR ls_header-as4user <> sy-uname OR ls_header-client <> sy-mandt.
+  r-code = 'CTS_CONTAINER_INVALID'. EXIT.
+ENDIF.
+CALL FUNCTION 'TR_REQ_CHECK_OBJECT' EXPORTING is_object = ls_object is_request_header = ls_header
+  iv_check_lockability = 'X' iv_dialog = space iv_release_checks = space
+  IMPORTING es_object = ls_checked ev_object_not_lockable = lv_not_lockable ev_locktype = lv_locktype
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR lv_not_lockable <> 'X' OR lv_locktype <> space OR ls_checked-pgmid <> 'R3TR' OR ls_checked-object <> 'TDAT' OR ls_checked-obj_name <> 'CUNI' OR ls_checked-objfunc <> 'K'.
+  r-code = 'CTS_OBJECT_UNSUPPORTED'. EXIT.
+ENDIF.
+IF a-command = 'A'.
+  LOOP AT lt_new_scope INTO ls_scope.
+    CLEAR ls_key. ls_key-pgmid = 'R3TR'. ls_key-object = 'TABU'. ls_key-objname = ls_scope-tablename.
+    ls_key-mastertype = 'TDAT'. ls_key-mastername = 'CUNI'. ls_key-tabkey = ls_scope-tabkey.
+    CALL FUNCTION 'TR_REQ_CHECK_KEY' EXPORTING is_key = ls_key is_request_header = ls_header
+      IMPORTING es_key = ls_checked_key EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR ls_checked_key-pgmid <> ls_key-pgmid OR ls_checked_key-object <> ls_key-object OR ls_checked_key-objname <> ls_key-objname OR ls_checked_key-mastertype <> ls_key-mastertype OR ls_checked_key-mastername <> ls_key-mastername OR
+ls_checked_key-tabkey <> ls_key-tabkey.
+  r-code = 'CTS_KEY_UNSUPPORTED'. EXIT.
+ENDIF.
+    APPEND ls_key TO lt_keys.
+  ENDLOOP.
+IF r-code IS NOT INITIAL.
+  r-code = 'CTS_KEY_UNSUPPORTED'. EXIT.
+ENDIF.
+ENDIF.
+CONCATENATE a-command ':_:' a-operation_hash(32) ':%' INTO lv_prefix.
+SELECT * FROM scpracpp CONNECTION R/3* INTO TABLE lt_history UP TO 2 ROWS
+  WHERE modifier = sy-uname AND t_sid = sy-sysid AND t_mandt = sy-mandt
+    AND actoptions LIKE lv_prefix.
+IF lt_history IS NOT INITIAL.
+  r-code = 'DUPLICATE_NATIVE_OPERATION'. EXIT.
+ENDIF.
+CALL FUNCTION 'GUID_CREATE' IMPORTING ev_guid_32 = ls_opts-act_id EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR ls_opts-act_id IS INITIAL.
+  r-code = 'GUID_FAILED'. EXIT.
+ENDIF.
+ls_opts-act_user = sy-uname. ls_opts-act_system = sy-sysid. ls_opts-act_client = sy-mandt.
+ls_opts-act_date = sy-datum. ls_opts-act_time = sy-uzeit.
+ls_opts-dialog = 'N'. ls_opts-simulat_on = 'N'. ls_opts-no_standrd = 'N'.
+ls_opts-actlinks = 'W'. ls_opts-no_commit = 'X'.
+r-act_id = ls_opts-act_id.
+CONCATENATE a-command ':B:' a-operation_hash(32) ':' INTO lv_marker.
+PERFORM orv_bc_owner_protocol USING ls_opts 'H' lv_marker CHANGING lv_code.
+IF lv_code <> 'PROTOCOL_WRITTEN'.
+  r-code = 'PROTOCOL_UNCERTAIN'. EXIT.
+ENDIF.
+lv_logged = 'X'. r-protocol = 'started'.
+PERFORM orv_bc_records_stage USING lt_prepared lv_delete CHANGING ls_opts lv_code lt_errors lv_staged lv_failed.
+IF lv_code <> 'BATCH_STAGED'.
+  r-code = lv_code. READ TABLE lt_errors INDEX 1 INTO ls_error.
+  IF sy-subrc = 0. r-msgid = ls_error-msgid. r-msgno = ls_error-msgno.
+    r-msgv1 = ls_error-msgv1. r-msgv2 = ls_error-msgv2. r-msgv3 = ls_error-msgv3. r-msgv4 = ls_error-msgv4. ENDIF.
+  EXIT. ENDIF.
+IF a-command = 'A'.
+  CALL FUNCTION 'SCPR_HI_ACTLINKS_UPDATE' EXPORTING actopts = ls_opts task_number = space recnr_mappings = lt_mappings
+    CHANGING it_e071 = lt_objects it_e071k = lt_keys EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'LINK_UPDATE_FAILED'. EXIT.
+ENDIF.
+  REFRESH lt_objects. APPEND ls_object TO lt_objects.
+  CALL FUNCTION 'TRINT_APPEND_TO_COMM_ARRAYS' EXPORTING wi_trkorr = lv_task iv_dialog = space
+    TABLES wt_e071 = lt_objects wt_e071k = lt_keys EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'CTS_APPEND_FAILED'. EXIT.
+ENDIF.
+ELSE.
+" 不使用会再写DEL关联的ACTLINKS_UPDATE；精确删除本次已证明的关联/header/variables。
+  current_effect = after_effect.
+  CALL FUNCTION 'SCPR_HI_ACTLINKS_DELETE_UPD' EXPORTING task_number = space
+    CHANGING scpractr_del = current_effect-records EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'LINK_DELETE_FAILED'. EXIT.
+ENDIF.
+ENDIF.
+PERFORM orv_bc_owner_rows CHANGING current lv_code.
+IF lv_code <> 'ROWS_READ'.
+  r-code = 'READBACK_FAILED'. EXIT.
+ENDIF.
+IF current-t006d <> before-t006d.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006i <> before-t006i.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006j <> before-t006j.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006t <> before-t006t.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF current-t006_oib <> before-t006_oib.
+  r-code = 'PROTECTION_CHANGED'. EXIT.
+ENDIF.
+IF a-command = 'A'.
+IF current <> desired.
+  r-code = 'READBACK_FAILED'. EXIT.
+ENDIF.
+ELSE.
+IF current <> before.
+  r-code = 'READBACK_FAILED'. EXIT.
+ENDIF.
+ENDIF.
+PERFORM orv_bc_owner_effects USING lt_scope CHANGING current_effect lv_code.
+IF lv_code <> 'EFFECTS_READ'.
+  r-code = 'READBACK_FAILED'. EXIT.
+ENDIF.
+IF a-command = 'A'.
+IF lines( current_effect-matched ) <> 10 OR current_effect-records <> current_effect-matched OR lines( current_effect-headers ) <> 1 OR current_effect-variables IS NOT INITIAL OR current_effect-links IS NOT INITIAL.
+  r-code = 'EFFECTS_READBACK_FAILED'. EXIT.
+ENDIF.
+  READ TABLE current_effect-headers INTO ls_effect_header INDEX 1.
+IF sy-subrc <> 0 OR ls_effect_header-client <> sy-mandt OR ls_effect_header-profid <> 'EHS_CUNI_KNM' OR ls_effect_header-modifier <> sy-uname OR ls_effect_header-systemid <> sy-sysid OR ls_effect_header-moddate <> ls_opts-act_date OR
+ls_effect_header-modtime <> ls_opts-act_time.
+  r-code = 'EFFECTS_READBACK_FAILED'. EXIT.
+ENDIF.
+  after_effect = current_effect.
+  LOOP AT lt_new_scope INTO ls_scope.
+    READ TABLE current_effect-matched INTO ls_link WITH KEY tablename = ls_scope-tablename tabkey = ls_scope-tabkey.
+IF sy-subrc <> 0 OR ls_link-client <> sy-mandt OR ls_link-profid <> 'EHS_CUNI_KNM' OR ls_link-recnumber <> 1 OR ls_link-viewname IS NOT INITIAL OR ls_link-viewvar IS NOT INITIAL OR ls_link-operation <> 'INS' OR ls_link-moddate <> ls_opts-act_date OR
+ls_link-modtime <> ls_opts-act_time.
+  r-code = 'EFFECTS_READBACK_FAILED'. EXIT.
+ENDIF.
+    DELETE current_effect-allocation WHERE client = ls_link-client AND tablename = ls_link-tablename AND tabrecnumb = ls_link-tabrecnumb.
+  ENDLOOP.
+IF r-code IS NOT INITIAL OR current_effect-allocation <> prior_effect-allocation.
+  r-code = 'EFFECTS_READBACK_FAILED'. EXIT.
+ENDIF.
+ELSE.
+IF current_effect <> prior_effect.
+  r-code = 'EFFECTS_READBACK_FAILED'. EXIT.
+ENDIF.
+ENDIF.
+" CTS全量差异校验：既有对象、所有键和字符串键必须逐字段保留，新增只有十键。
+PERFORM orv_bc_owner_cts USING old_objects old_keys old_strings old_headers old_clients lt_new_scope
+  CHANGING lt_delta lv_code.
+IF lv_code <> 'CTS_DELTA_VERIFIED'.
+  r-code = 'CTS_READBACK_FAILED'. EXIT.
+ENDIF.
+IF a-command = 'R'.
+IF lt_delta <> f_delta.
+  r-code = 'CTS_DELTA_CHANGED'. EXIT.
+ENDIF.
+ENDIF.
+IF a-command = 'A'.
+  f_namespace = 'ORVANTA_CUNI_COMMAND_V1'. f_operation = a-operation_hash. f_reference = a-before_reference.
+  f_state = a-state_version. f_effects = a-effects_version. f_cts = a-cts_version.
+  f_act_id = ls_opts-act_id. f_date = ls_opts-act_date. f_time = ls_opts-act_time.
+  f_desired = desired. f_prior = prior_effect. f_after = after_effect. f_delta = lt_delta.
+  f_objects = old_objects. f_keys = old_keys. f_strings = old_strings.
+EXPORT namespace = f_namespace operation = f_operation reference = f_reference
+  state = f_state effects = f_effects cts = f_cts act_id = f_act_id date = f_date time = f_time
+  desired = f_desired prior = f_prior after = f_after delta = f_delta
+  objects = f_objects keys = f_keys strings = f_strings TO DATA BUFFER lv_frame.
+CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'
+  EXPORTING alg = 'SHA2' data = lv_frame
+  IMPORTING hashstring = r-frame_version
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'HASH_FAILED'. EXIT.
+ENDIF.
+TRANSLATE r-frame_version TO LOWER CASE.
+  CALL FUNCTION 'SCMS_BASE64_ENCODE_STR' EXPORTING input = lv_frame IMPORTING output = r-frame_base64
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0 OR xstrlen( lv_frame ) > 1572864.
+  r-code = 'ENCODING_FAILED'. EXIT.
+ENDIF.
+ELSE. r-frame_version = a-frame_version. ENDIF.
+r-phase = 'configuration_commit'. lv_commit_started = 'X'. r-commit = 'unknown'.
+COMMIT WORK AND WAIT.
+IF sy-subrc <> 0.
+  r-code = 'COMMIT_UNCERTAIN'. EXIT.
+ENDIF.
+r-commit = 'committed'. r-phase = 'configuration_committed'.
+CONCATENATE a-command ':C:' a-operation_hash(32) ':' r-frame_version(32) INTO lv_marker.
+" C协议只证明配置提交阶段完成；E标记才证明所有后续阶段完成。
+PERFORM orv_bc_owner_protocol USING ls_opts 'E' lv_marker CHANGING lv_code.
+IF lv_code <> 'PROTOCOL_WRITTEN'.
+  r-code = 'PROTOCOL_UNCERTAIN'. EXIT.
+ENDIF.
+IF a-command = 'R'.
+" 清理API内部DB_COMMIT：配置已恢复后才清理十个已持久化的精确delta。
+  r-phase = 'cts_cleanup'.
+  CALL FUNCTION 'TRINT_DELETE_COMM_KEYS' EXPORTING wi_e071 = ls_object wi_trkorr = lv_task
+    TABLES wt_e071k = lt_delta EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc <> 0.
+  r-code = 'CTS_CLEANUP_UNCERTAIN'. EXIT.
+ENDIF.
+  PERFORM orv_bc_owner_cts USING old_objects old_keys old_strings old_headers old_clients lt_new_scope CHANGING lt_delta lv_code.
+IF lv_code <> 'CTS_BEFORE_VERIFIED' OR lt_delta IS NOT INITIAL.
+  r-code = 'CTS_CLEANUP_READBACK_FAILED'. EXIT.
+ENDIF.
+ENDIF.
+PERFORM orv_bc_owner_rows CHANGING current lv_code.
+IF lv_code <> 'ROWS_READ'.
+  r-code = 'COMMITTED_READBACK_FAILED'. EXIT.
+ENDIF.
+PERFORM orv_bc_owner_effects USING lt_scope CHANGING current_effect lv_code.
+IF lv_code <> 'EFFECTS_READ'.
+  r-code = 'COMMITTED_READBACK_FAILED'. EXIT.
+ENDIF.
+IF a-command = 'A'.
+IF current_effect <> after_effect.
+  r-code = 'COMMITTED_READBACK_FAILED'. EXIT.
+ENDIF.
+ELSE.
+IF current_effect <> prior_effect.
+  r-code = 'COMMITTED_READBACK_FAILED'. EXIT.
+ENDIF.
+ENDIF.
+IF a-command = 'A'.
+IF current <> desired.
+  r-code = 'COMMITTED_READBACK_FAILED'. EXIT.
+ENDIF.
+r-configuration = 'candidate'. r-cts = 'recorded'. r-effects = 'recorded'.
+ELSE.
+IF current <> before.
+  r-code = 'COMMITTED_READBACK_FAILED'. EXIT.
+ENDIF.
+r-configuration = 'before'. r-cts = 'before'. r-effects = 'before'. ENDIF.
+CONCATENATE a-command ':E:' a-operation_hash(32) ':' r-frame_version(32) INTO lv_marker.
+PERFORM orv_bc_owner_protocol USING ls_opts 'E' lv_marker CHANGING lv_code.
+IF lv_code <> 'PROTOCOL_WRITTEN'.
+  r-code = 'PROTOCOL_UNCERTAIN'. EXIT.
+ENDIF.
+r-protocol = 'complete'. r-phase = 'complete'.
+IF a-command = 'A'. r-code = 'APPLIED'. ELSE. r-code = 'RECOVERED'. ENDIF.
+CATCH cx_root.
+  IF lv_commit_started = 'X'. r-code = 'COMMIT_UNCERTAIN'. ELSE. r-code = 'EXECUTION_FAILED'. ENDIF.
+ENDTRY.
+ENDDO.
+IF p_readonly = space AND lv_commit_started IS INITIAL.
+  ROLLBACK WORK.
+  r-commit = 'rolled_back'. r-phase = 'rolled_back'. CLEAR: r-frame_base64, r-frame_version.
+  IF lv_logged = 'X'.
+    CONCATENATE a-command ':B:' a-operation_hash(32) ':' INTO lv_marker.
+    PERFORM orv_bc_owner_protocol USING ls_opts 'R' lv_marker CHANGING lv_code.
+    r-protocol = 'retained_unfinished'.
+  ENDIF.
+ENDIF.
+" 仅释放自己成功取得的scope1锁；再读取确认，无DEQUEUE_ALL。
+IF lv_task_locked = 'X'. CALL FUNCTION 'DEQUEUE_E_TRKORR' EXPORTING trkorr = lv_task _scope = '1' _synchron = 'X'. ENDIF.
+IF lv_parent_locked = 'X'. CALL FUNCTION 'DEQUEUE_E_TRKORR' EXPORTING trkorr = lv_req _scope = '1' _synchron = 'X'. ENDIF.
+SORT lt_locks DESCENDING.
+LOOP AT lt_locks INTO lv_table.
+  CALL FUNCTION 'DEQUEUE_E_TABLE' EXPORTING tabname = lv_table varkey = space _scope = '1' _synchron = 'X'.
+ENDLOOP.
+IF lv_bc_locked = 'X'. CALL FUNCTION 'DEQUEUE_E_SCPR' EXPORTING id = 'EHS_CUNI_KNM' _scope = '1' _synchron = 'X'. ENDIF.
+PERFORM orv_bc_owner_lock_read CHANGING lv_held lv_code.
+IF lv_code = 'LOCKS_READ'. IF lv_held = 0. r-locks = 'released'. ELSE. r-locks = 'held'. ENDIF. ENDIF.
+IF r-code IS INITIAL. r-code = 'EXECUTION_FAILED'. ENDIF.
+ENDFORM.
+
+FORM orv_bc_owner_cts USING p_objects TYPE tr_objects p_keys TYPE tr_keys
+  p_strings TYPE e071k_strtyp p_headers TYPE ty_orv_bc_headers p_clients TYPE ty_orv_bc_clients p_scope TYPE ty_orv_bc_scopes
+  CHANGING p_delta TYPE tr_keys p_code TYPE string.
+DATA: ls_request TYPE trwbo_request, lv_root TYPE trkorr,
+      lt_objects TYPE tr_objects, lt_keys TYPE tr_keys, lt_strings TYPE e071k_strtyp,
+      ls_key TYPE e071k, ls_actual_key TYPE e071k, ls_scope TYPE ty_orv_bc_scope,
+      ls_header TYPE e070, ls_actual_header TYPE e070, ls_client TYPE e070c, ls_actual_client TYPE e070c.
+CLEAR p_code. REFRESH p_delta.
+IF lines( p_headers ) <> 2 OR lines( p_clients ) <> 2. p_code = 'CTS_HEADER_CHANGED'. RETURN. ENDIF.
+LOOP AT p_headers INTO ls_header.
+  SELECT SINGLE * FROM e070 BYPASSING BUFFER INTO ls_actual_header WHERE trkorr = ls_header-trkorr.
+  IF sy-subrc <> 0. p_code = 'CTS_HEADER_CHANGED'. RETURN. ENDIF.
+" 正式CTS追加/清理会更新时间，其他头字段全部受保护。
+  ls_actual_header-as4date = ls_header-as4date. ls_actual_header-as4time = ls_header-as4time.
+  IF ls_actual_header <> ls_header. p_code = 'CTS_HEADER_CHANGED'. RETURN. ENDIF.
+ENDLOOP.
+LOOP AT p_clients INTO ls_client.
+  SELECT SINGLE * FROM e070c BYPASSING BUFFER INTO ls_actual_client WHERE trkorr = ls_client-trkorr.
+  IF sy-subrc <> 0 OR ls_actual_client <> ls_client. p_code = 'CTS_CLIENT_CHANGED'. RETURN. ENDIF.
+ENDLOOP.
+DO 2 TIMES.
+  IF sy-index = 1. lv_root = 'GR2K923429'. ELSE. lv_root = 'GR2K923430'. ENDIF.
+  CLEAR ls_request.
+  CALL FUNCTION 'TR_READ_REQUEST' EXPORTING iv_read_e070 = 'X' iv_read_e070c = 'X'
+    iv_read_objs_keys = 'X' iv_trkorr = lv_root CHANGING cs_request = ls_request
+    EXCEPTIONS error_message = 1 OTHERS = 2.
+  IF sy-subrc <> 0 OR lines( ls_request-objects ) > 128 OR lines( ls_request-keys ) > 128
+  OR lines( ls_request-keys_str ) > 128. p_code = 'CTS_READ_FAILED'. RETURN. ENDIF.
+  APPEND LINES OF ls_request-objects TO lt_objects. APPEND LINES OF ls_request-keys TO lt_keys.
+  APPEND LINES OF ls_request-keys_str TO lt_strings.
+ENDDO.
+IF lt_objects <> p_objects OR lt_strings <> p_strings. p_code = 'CTS_PROTECTION_CHANGED'. RETURN. ENDIF.
+LOOP AT p_keys INTO ls_key.
+  READ TABLE lt_keys FROM ls_key INTO ls_actual_key.
+  IF sy-subrc <> 0 OR ls_actual_key <> ls_key. p_code = 'CTS_PROTECTION_CHANGED'. RETURN. ENDIF.
+  DELETE lt_keys INDEX sy-tabix.
+ENDLOOP.
+IF lt_keys IS INITIAL. p_code = 'CTS_BEFORE_VERIFIED'. RETURN. ENDIF.
+IF lines( lt_keys ) <> 10. p_code = 'CTS_DELTA_INVALID'. RETURN. ENDIF.
+LOOP AT p_scope INTO ls_scope.
+  READ TABLE lt_keys INTO ls_key WITH KEY trkorr = 'GR2K923430' pgmid = 'R3TR' object = 'TABU'
+    objname = ls_scope-tablename mastertype = 'TDAT' mastername = 'CUNI' tabkey = ls_scope-tabkey.
+  IF sy-subrc <> 0 OR ls_key-viewname IS NOT INITIAL OR ls_key-activity IS NOT INITIAL OR ls_key-lang IS NOT INITIAL.
+    p_code = 'CTS_DELTA_INVALID'. RETURN. ENDIF.
+  DELETE lt_keys INDEX sy-tabix. APPEND ls_key TO p_delta.
+ENDLOOP.
+IF lt_keys IS NOT INITIAL OR lines( p_delta ) <> 10. p_code = 'CTS_DELTA_INVALID'. RETURN. ENDIF.
+p_code = 'CTS_DELTA_VERIFIED'. ENDFORM.

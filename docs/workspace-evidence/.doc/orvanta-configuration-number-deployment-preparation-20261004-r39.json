@@ -1,0 +1,22 @@
+{
+  "status": "passed_preparation_only",
+  "artifactManifest": [
+    {
+      "file": "orvanta-configuration-number-range-deployment-20261004-r39.json",
+      "size": 24265,
+      "sha256": "ef522c74a6d150f1771e1df72c7adc987827320ee531eac12af90d112ba05bee"
+    },
+    {
+      "file": "z_orvanta_cfg_nr_read-20261004-r39.abap",
+      "size": 2432,
+      "sha256": "787a759036650e9d156843c55e4a927663c22d1e7e6cfdb3127cc304eac9bb13"
+    },
+    {
+      "file": "z_orvanta_cfg_nr_apply-20261004-r39.abap",
+      "size": 8023,
+      "sha256": "6a87e3f686b54fc39274e38b870351a7ea79e4248ceb320d63f3c6a5434698c0"
+    }
+  ],
+  "validatedArguments": 4,
+  "nativeCalls": 0
+}

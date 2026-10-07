@@ -1,4 +1,29 @@
 import { z } from "zod"
+import { configurationBteChangeSchema } from "./configuration-bte-change.js"
+import { configurationBteProductSchema } from "./configuration-bte-product.js"
+import { configurationBteRouteSchema } from "./configuration-bte-route.js"
+import { configurationBteMetadataSchema } from "./configuration-bte-metadata.js"
+import { configurationUnitTextApplySchema } from "./configuration-unit-apply.js"
+import { configurationUnitTextReconcileSchema } from "./configuration-unit-reconcile.js"
+import { configurationBcImpactSchema } from "./configuration-bc-impact.js"
+import { configurationBcNativeSchema } from "./configuration-bc-native.js"
+import { configurationBcPreviewSchema } from "./configuration-bc-preview.js"
+import { configurationBcRouteSchema } from "./configuration-bc-route.js"
+import { configurationBcGuardSchema } from "./configuration-bc-guard.js"
+import { configurationBcPreflightSchema } from "./configuration-bc-preflight.js"
+import { configurationBcCtsSchema } from "./configuration-bc-cts.js"
+import { configurationBcStateSchema } from "./configuration-bc-state.js"
+import { configurationBcCommandRequestSchema } from "./configuration-bc-command-contract.js"
+import {
+  configurationBcApplySchema,
+  configurationBcRecoverSchema,
+  configurationBcReconcileSchema
+} from "./configuration-bc-command.js"
+import {
+  configurationBcDependenciesSchema,
+  configurationBcLogsSchema
+} from "./configuration-bc-audit.js"
+import { configurationBcSetCompareSchema } from "./configuration-bc-compare.js"
 import { TABLE_NEVER_ALLOWED, listAllowedTables } from "./table-allowlist.js"
 import {
   readSmartformSchema,
@@ -12,9 +37,27 @@ import {
   inactiveTargetSchema,
   transportNumberSchema
 } from "./transport-delivery.js"
+import { configurationFiRuleSchema } from "./configuration-fi-rule.js"
+import { configurationTransportInputSchema } from "./configuration-transport.js"
+import { configurationUnitCompareInputSchema } from "./configuration-compare.js"
+import { configurationNumberRangePreviewSchema } from "./configuration-number-range-preview.js"
+import { configurationNumberRangeApiReadInputSchema } from "./configuration-number-range-native.js"
+import { configurationNumberRangeCommandInputSchema } from "./configuration-number-range-command.js"
+import { configurationNumberRangeReconcileInputSchema } from "./configuration-number-range-reconcile.js"
+import {
+  configurationNumberRangeScopeSchema,
+  configurationNumberRangeSchema
+} from "./configuration-number-range.js"
+import { configurationBcSetSchema, configurationBcSetSearchSchema } from "./configuration-bc-set.js"
 import { configurationPreviewSchema } from "./configuration-preview.js"
 import { configurationDescriptorSchema } from "./configuration-object.js"
 import { configurationActivitiesSchema } from "./configuration-img.js"
+import { configurationActivitySchema } from "./configuration-activity.js"
+import { configurationDocumentationSchema } from "./configuration-documentation.js"
+import {
+  configurationUnitReadInputSchema,
+  configurationUnitTextPreviewSchema
+} from "./configuration-unit.js"
 import { withRegistryAnnotations } from "./tool-registry.js"
 import { DEFAULT_OBJECT_TYPES } from "./backend.js"
 import { SEARCHABLE_OBJECT_TYPE_TOKENS } from "./object-types.js"
@@ -792,7 +835,7 @@ const toolContractsBase = {
   },
   read_function_module_interface: {
     description:
-      "Read one active function module interface and source through the SAP repository helper. Read-only and allowed for customer or standard function modules. Returns a deterministic SHA-256 fingerprint; includeExecutionSupport additionally resolves scalar, flat-structure, and table parameter shapes through DDIC.",
+      "Read one active function module interface and source through the SAP repository helper. Read-only and allowed for customer or standard function modules. Preserves raw updateTaskMode; updateTask is true for any noninitial update mode, including numeric SAP modes, not only X. Mode validity/meaning is not inferred. Returns a deterministic SHA-256 fingerprint; includeExecutionSupport additionally resolves scalar, flat-structure, and table parameter shapes through DDIC.",
     inputSchema: {
       functionName: z.string(),
       includeExecutionSupport: z.boolean().default(false).optional(),
@@ -1477,6 +1520,30 @@ const toolContractsBase = {
       maxResultsPerKind: z.number().int().min(1).max(50).default(20).optional(),
       connectionId: z.string()
     },
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  preview_configuration_bte_product: {
+    description:
+      "Preview one prospective activation flag change for an existing Z/Y customer BTE product on w200/200. Reads the full product and both Event and Process assignment sets twice, pins live DDIC/domain/API versions, refuses truncation, drift, duplicate keys or stale expectedFingerprint. Reports shared-product impact and the standard VIEW_MAINTENANCE_NO_DIALOG candidate. No write adapter, authorization grant, CTS recording, handler execution or GUI automation is provided. executable and writeAvailable remain false.",
+    inputSchema: configurationBteProductSchema.shape,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  prepare_configuration_bte_product_change: {
+    description:
+      "Prepare a read-only change and recovery review bundle for one existing Z/Y BTE product on w200/200. Only prospective AKTIV changes; protects all language texts, both assignment kinds and CP_INFO cache state with complete repeated reads and pinned DDIC. Reads source/ABI identities of seven standard SAVE, lock, CTS and cache APIs before one attested native metadata read; never retries. Prepares 109-character TOTAL save/recovery rows as separate language alternatives, to be selected and rebuilt by the future native worker after its locked read. Rejects unsupported layouts and callbacks. Includes session and commit requirements; native serialization and CTS/LUW execution remain unverified. No approval grant, save/recover, CTS write/cleanup, handler execution or release; executable and writeAvailable stay false.",
+    inputSchema: configurationBteChangeSchema.shape,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  inspect_configuration_bte_native_metadata: {
+    description:
+      "Read fixed TBE24 native control blocks on w200/200 through the separately deployed read-only Z_ORVANTA_CFG_BTE_META. Requires attested source, complete ABI and DDIC plus recognised BF24/BFTM route before/after; makes exactly one native metadata call and never retries. Standard display authorization and cached VIMDESC/VIMNAMTAB/events only. Does not invoke product maintenance, handlers, locks, configuration/CTS writes or release. EV_FRESH stays blank; metadata is not a write permit.",
+    inputSchema: configurationBteMetadataSchema.shape,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  inspect_configuration_bte_maintenance_route: {
+    description:
+      "Read the fixed BF24/TBE24 product maintenance route on w200/200: exact parameter transaction, generated directory, maintenance events and a bounded existing customer-product inventory. Pins dictionary and standard API identities, repeats complete reads, refuses drift or malformed responses; marks inventory truncation. Recognises only SM30/TBE24/update and BFTM. Does not execute maintenance, acquire locks, grant write authority, or read handler/business runtime. All write and execution flags stay false; native control blocks, callbacks, text preservation and CTS remain pending.",
+    inputSchema: configurationBteRouteSchema.shape,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },
   read_bte_configuration: {
@@ -2223,6 +2290,198 @@ const toolContractsBase = {
     inputSchema: configurationPreviewSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },
+  apply_configuration_unit_text: {
+    description:
+      "Apply one nonempty description patch to an existing w200/200 T006A language row through the separately deployed and source/interface-attested Z_ORVANTA_CFG_UNIT_APPLY. Only MSEHT/MSEHL; exact case-sensitive internal unit key, explicit ISO language, both preview fingerprints, caller operationId, explicit GR2 Customizing request/task and acknowledgeConfigurationWrite=true required. Omitted fields preserve keys/aliases/text; clearing and creation are refused. Native command owns one LUW: S_TABU_DIS, conservative client/ALE policy, generic T006 lock, parent/task locks, locked full-row version, standard CUNI object/key/owner checks and exact key observation, synchronous UPDATE_T006A, unbuffered readback, one commit. No UI, task creation, request release or generic table-write fallback. Local receipts block reused operationIds/concurrent unit commands; mark dispatch only after guards. Unknown/failed post-commit readback requires reconciliation, never automatic retry. Tool registration is not deployment or business acceptance; native absence/drift fails closed.",
+    inputSchema: configurationUnitTextApplySchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
+  },
+  reconcile_configuration_unit_text: {
+    description:
+      "Read-only reconciliation of one prior apply_configuration_unit_text operation on w200/200. Requires its originalInput (including the historical acknowledgeConfigurationWrite value), operationId and full beforeText row; no new write is authorized or dispatched. Verify local receipt identity/input/target hashes and old SAP full-row version before any SAP reads. Re-read the attested native full row around one existing bounded CTS inspection and recheck the original receipt. Report current requested/original/conflicting/unknown values separately from the original receipt's historical uncertainty. Later restoration cannot prove an earlier operation did not commit. CTS observations are trimmed bounded projections, not raw key/import proof. Optional includeLocks uses only the existing approved maintenance read route for the configured user/current client; unavailable/truncated lock reads remain unknown. Never updates receipts, acquires/releases locks, retries, restores, appends/removes/releases CTS or executes generic SQL/GUI.",
+    inputSchema: configurationUnitTextReconcileSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  preview_configuration_unit_text: {
+    description:
+      "Build a display-only patch draft for an existing w200/200 unit text in one language. Requires an exact internal case-sensitive unitKey and expectedReadFingerprint from read_configuration_unit for that language. Only MSEHT (CHAR 10) and MSEHL (CHAR 30) descriptions may be proposed; omitted fields are preserved, empty strings explicitly propose clearing, outer spaces are trimmed, control characters and extra fields are refused. Pins/rechecks actual field data elements/domains and reuses the unit reader's layout/value checks; stale values, missing unit/translation and unavailable reads block the draft. Optional includeMaintenanceBoundary=true reuses the exact T006A text-maintenance descriptor, then rechecks target values against the supplied fingerprint (at most one descriptor and two unit-reader invocations). Source-attested evidence can produce a manual-only handoff for the exact MANDT/SPRAS/MSEHI row, proposed descriptions and unchanged omitted fields; unavailable/changed/unreviewed evidence or stale values cannot produce a handoff. Translation opens screen 1000, full-row writers and dialog CTS are explicit limitations. Default performs no descriptor audit. Returns before/after and changed fields without saving. Character lengths are verified; business rules, maintenance API and CTS remain unknown. Always executable=false/saveAvailable=false; no approval token, create/delete, CUNIT alias changes, numeric settings, configuration writes or generic SQL/allowlist expansion. Existing preview_configuration is unchanged. Optional transport={requestNumber,taskNumber} requires includeMaintenanceBoundary=true and explicit ISO language. Calls the existing inspector once with this unit/language; excludes transport controls from nested unit reads. Shows bounded table-level CTS observations and manual checks, never exact-row recording/import success. Unit-version mismatch retracts the draft/handoff; blocked or unavailable CTS cannot produce the selected-task handoff. Default adds no transport reads. Optional expectedTextVersion requires explicit ISO language and a 64-character lowercase SAP-produced textVersion from read_configuration_unit(includeApiSnapshot=true). Performs one final native snapshot read after optional maintenance/CTS observations (two unit-reader invocations by default, three with maintenance boundary); compares the opaque full-row version and exact row/projection binding. Stale, missing, unattested or changed native observations retract before/after, changes, handoff and native tokens. Default adds no native API calls or output fields. A match remains an unlocked observation with lockedComparisonVerified=false; no post-patch version is reconstructed and apply remains unavailable.",
+    inputSchema: configurationUnitTextPreviewSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_fi_rule: {
+    description:
+      "Audit one exact w200/200 FI validation/substitution rule (7-character SAP ID), company code, application area and 4-digit callup point. Reads reviewed GB93/GB931 or GB92/GB921 headers/step references, T001D/T001Q assignment/activation level and GB31 class. Distinguishes missing definition, other assigned rule, inactive, active, active-except-batch-input and unknown level. Rechecks metadata and bounded values; failure/change/truncation cannot yield a complete read fingerprint. Partial audit only: formula content, substitution actions, generated code, shared exits and other organizations are not covered. Provides GGB0/OB28 or GGB1/OBBH manual workflow/readback; no rule mutation, generation, activation or business trigger.",
+    inputSchema: configurationFiRuleSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  inspect_configuration_transport: {
+    description:
+      "Inspect one explicit Customizing request/task pair on w200/200. Reviewed E070/E070C and TRFUNCTION/TRSTATUS/TRCATEG metadata are rechecked. W=request, Q=task; checks exact parent, open D status, configured-user task owner, recorded source client, CUST category and nonempty transport target. Missing records stay unknown; no client inheritance is guessed. Optional unitText={unitKey,language} requires an explicit ISO language and reuses exact unit reads twice. Only matching container metadata permits bounded E071 R3TR/TDAT/CUNI and E071K R3TR/TABU/T006A projections for this pair (32 rows each, eight entry-reader calls maximum); pins/rechecks both layouts, values and unit version, discarding drift/failure/truncation. Default performs no unit/key reads. Reports table_entries_observed/no_table_entries/master_mismatch/master_unresolved or blocked/unavailable/changed/truncated; these are table-level observations, never exact-row linkage. TABKEY remains trimmed opaque text; original key encoding, wildcard semantics and row recording require manual verification. No arbitrary table/key input, generated TABKEY, CTS claim or standard TR_READ_COMM call is accepted. Changed/failed reads cannot produce an admission. Metadata matches still leave writeAdmission=blocked: no authority check, official E071K encoding, exact row recording, import, lock, maintenance API or release is attested or executed.",
+    inputSchema: configurationTransportInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_number_range_api: {
+    description:
+      "Read one exact customer number range's complete TNRO definition and all client 200 NRIV intervals (at most 100), through the separately deployed and source/interface-attested Z_ORVANTA_CFG_NR_READ API. w200/GR2/200 only. Recheck pinned full DDIC layouts and reader/hash source; absent, changed, unauthorized or failed reads never supply a version. snapshot.EV_VERSION is an opaque SHA-256 of complete native state for apply_configuration_number_range, distinct from read_number_range_object's SHA-1 definition version. No lock, writer, allocator, GUI, CTS or global table allowlist change. SAP deployment and positive native acceptance remain pending.",
+    inputSchema: configurationNumberRangeApiReadInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  apply_configuration_number_range: {
+    description:
+      "Create or update one unused customer NUMC20 number range interval through separately deployed and attested Z_ORVANTA_CFG_NR_APPLY; w200/GR2/200 only, nonannual, unbuffered, no subobjects/group/text/remote/ASCII scope. Requires read_configuration_number_range_api.snapshot.EV_VERSION, exact 20-digit bounds, unchanged internal/external mode, zero levels throughout, explicit write/local-client acknowledgments and operationId. Native standard lock, complete version guard, one top-level commit, full readback and session cleanup. Protected durable receipt before dispatch; all intervals of one object share a local target lock. Unknown commit/transport/readback/cleanup results never become success or automatic retries. Intervals remain local client only, with no CTS recording/migration/release, deletion, level reset, number allocation, direct table write or GUI. SAP deployment and positive native acceptance remain pending.",
+    inputSchema: configurationNumberRangeCommandInputSchema,
+    annotations: { readOnlyHint: false, destructiveHint: false }
+  },
+  reconcile_configuration_number_range: {
+    description:
+      "Read-only reconciliation of one protected apply_configuration_number_range operation and the attested current complete native snapshot. w200/200 only; verifies exact operation/whole-object receipt identity and rechecks its hash around reading. Missing or mismatched receipts never imply success; a not-dispatched receipt skips SAP. Same/changed current state never proves who wrote/committed/restored it and never resolves historical unknown outcomes. Does not rewrite receipts, retry, rollback, unlock, save, allocate or perform CTS; SAP locks remain unverified.",
+    inputSchema: configurationNumberRangeReconcileInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  compare_configuration_unit: {
+    description:
+      "Compare one exact case-sensitive internal MSEHI unit key and explicit ISO language between w200/200 and w300/300. Each target must match reviewed T006/T006A/T002/key metadata and RFC reader before use. Reuses value rechecks; unavailable, changed or unverified sides are incomparable. Aligns by MSEHI plus ISO language, reports exact string differences; client and local SPRAS are explicitly excluded. Optional ignoreFields accept projected non-key fields only. TEMP_VALUE/PRESS_VAL and other languages are omitted, so equality is equal_projection and overall coverage stays partial. No sync, configuration write, transport or global allowlist expansion; current w300 authentication/metadata acceptance is pending.",
+    inputSchema: configurationUnitCompareInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  preview_configuration_number_range: {
+    description:
+      "Read-only proposed create/update interval preflight for exact Z/Y objects on w200/200. Default exact mode requires top-level year and forbids change-level years; remains limited to nonannual year 0000. Explicit yearScope=all requires an annual object, no top-level year, and a 4-digit year >1900 in every change. Reads all years for one literal subobject; interval number plus year identifies each change. Derives effective start as previous TOYEAR+1 per interval number, first 0000; compares inclusive number ranges only where effective years intersect. Inserting a year can change existing coverage; nonzero persisted levels block that change. Digit strings of exact reviewed CHAR4/CHAR20/NUMC20 width only, BigInt bounds, level versus shrink/lower bound and mode-switch checks. Refuses unreviewed domains, subobject/group, remote and buffered definitions. Rechecks domain, standard source and full observations without executing any stateful API. Missing, incomplete, changed and unsupported observations cannot produce findings/fingerprints; scoped checks stay partial and cannot authorize writes. No allocation, maintenance execution, level reset, delete, CTS or business-use safety claim.",
+    inputSchema: configurationNumberRangePreviewSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_number_range_scope: {
+    description:
+      "Read bounded all-year NRIV intervals for one exact Z/Y object and literal subobject on w200/200. Empty subobject is an exact empty value, never a wildcard. Reuses layout/definition/value confirmations and keys interval number plus year; same interval number in different years is valid. Pins standard list/init/update/close/enqueue/dequeue and subobject FORM sources but never executes them. Derives effective annual start as previous TOYEAR+1 per interval number, initial 0000. Reads and rechecks DTELSOBJ element/domain/value-table key metadata. Resolves the first key with the same domain in DDIC position order for flat keys of transparent tables; inherited/include/direct-type keys remain unreviewed. No source-table rows, master-data existence assertion or conversion exits. Reports blocked maintenance boundaries including stateful APIs, caller commit, buffer reset and missing authorization/CTS/rollback evidence. Incomplete, changed and truncated observations discard all interval/year projections. Scoped coverage stays partial; no proposed maintenance, buffered-number, usage, lock, CTS or write-authorization claim.",
+    inputSchema: configurationNumberRangeScopeSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_number_range: {
+    description:
+      "Read exact customer Z/Y number-range intervals on w200/client 200 using reviewed NRIV layout and active object definition. Explicit subobject (at most 6 characters) and year; string endpoints and 20-digit NRLEVEL preserve precision. No allocation API is called. Rechecks definition and values; failed, changed, absent and truncated reads remain distinct, with no fingerprint for incomplete observations. Persisted NRLEVEL is not a buffered next number. No interval creation, current-level reset, maintenance API, transport or general allowlist expansion.",
+    inputSchema: configurationNumberRangeSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  inspect_configuration_bc_impact: {
+    description:
+      "Compose a partial read-only BC Set impact report on w200/200, explicit N version and ISO language. Reuses the bounded dependency graph, T006/T006A content reader and guarded CHAR comparator; at most five visited nodes and a global unit-reader invocation budget (including confirmations). Reports stored unit key cells, scoped comparison rows, field counts and unresolved/limited references. Rechecks graph/content linkage across calls; source changes or unavailable confirmations discard observations. No other target tables, whole-target snapshot, complete BC Set, activation-key/order resolution, language/numeric conversion, historical logs, activation, configuration write or CTS claim. Optional includeRecordInventory reads bounded whole-set SCPRRECA metadata once per visited node through the existing content reader, rechecks separate inventory fingerprints across composition and lists unsupported table references without querying their values. maxRecords also bounds total record inventory per set; missing, truncated, changed or incomplete inventories cannot yield a trusted report fingerprint. Record metadata completeness does not resolve whole values, keys or activation. A fingerprint covers selected observations only and cannot authorize writes. Optional includeActivationBoundary adds separately fingerprinted, twice-pinned definitions of twenty-one reviewed activation/authority/import/CTS/log functions and four exact option/constant includes, with at most 50 definition-reader calls. Source-derived option/auth definitions and the existing-row direct-table update policy stay independent of current authorization, target comparison and write approval; unchecked imports clearing readonly/subset flags are explicit hazards. Reports source-level conditional commits and independent log commits; does not execute activation, simulation or authorization checks and cannot prove a headless route, rollback, overwrite policy or CTS outcome.",
+    inputSchema: configurationBcImpactSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_dependencies: {
+    description:
+      "Audit bounded stored classic N-version BC Set child references on w200/200. Pins SCPRATTR/SCPRPPRL and reviewed standard source, preserves PROF_POSIT, reports missing selected-version nodes, cycles and explicit node/depth/row limits. Rechecks every selected slice, including empty reads; changed or unavailable rechecks discard the graph. No reverse references, target-table impact, resolved activation order, other version substitution, switch hierarchy, activation, configuration write or generic allowlist expansion.",
+    inputSchema: configurationBcDependenciesSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_logs: {
+    description:
+      "Read bounded classic BC Set historical references on w200/200 for a currently stored N-version classic header. Pins SCPRACPM/SCPRACPP and standard sources; selects BCSET_ID and PARENT_ID references, deduplicates by ACT_ID/LINE_NR and requires headers recording T_MANDT=200 before exposing selected messages. History has no version binding; no latest activation, full process log, completion/success verdict, message rendering, target-system identity, current configuration, CTS result, switch log or activation claim. Rechecks all selected slices and metadata; unavailable/changed results discard observations. No activation or writes.",
+    inputSchema: configurationBcLogsSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  compare_configuration_bc_set: {
+    description:
+      "Compare stored classic BC Set fields with w200/200 target observations for approved T006/T006A and explicit ISO language. Requires repeated untruncated content, pinned CHAR metadata/conversion sources and complete non-delete/non-generic records with literal UKY MSEHI. Reuses exact unit reads (10 distinct unit limit) and rechecks content/targets. T006 DIMID/ISOCODE and T006A MSEHT/MSEHL/MSEH3/MSEH6 only; numeric/binary/unknown fields, required variable values and unresolved keys stay incomparable. SCPRVALL LANGU selects stored translation cells, not a variable SPRAS activation key; conflicting ordinary/language cells are not merged. Equality concerns trimmed field observations only, not complete rows or activation outcomes. Changed/unavailable rechecks discard comparisons. No activation, configuration write, CTS, language fallback or generic allowlist expansion.",
+    inputSchema: configurationBcSetCompareSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  find_configuration_bc_sets: {
+    description:
+      "Find bounded classic BC Set candidates containing exact T006/T006A/T006B/T006C/T006D record metadata in an explicit C/O/N version on w200/200. Pins SCPRRECA and the reviewed fallback reader, checks duplicate record keys and repeats the selection. IDs are candidate references only: read the exact header/content separately. Missing records do not prove a BC Set is absent. Truncation remains partial, with no trusted fingerprint, stable pagination or complete catalogue claim. No switch storage, recursive dependencies, target comparison, activation, configuration write or generic allowlist expansion.",
+    inputSchema: configurationBcSetSearchSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  preflight_configuration_bc_activation: {
+    description:
+      "Read-only unified API preflight for fixed EHS_CUNI_KNM/N on w200/GR2/200. Requires reviewed SAP native source/target/candidate/CUNI metadata/related guard versions. Reuses the READ/PREVIEW/ROUTE/GUARD tools with their full source/layout attestations, binds the same authenticated user and four deployed API source/interface identities before/after, and retracts the entire result on any failed read, stale version, identity/payload drift, missing/duplicate/out-of-scope key or nonempty CUNI method list. Returns complete before and hypothetical USE after values and SAP typed field differences for eleven keys, plus unchanged or named-missing protection for eight KPA/PRESS/KNM keys: nine tables, nineteen fixed keys only. Source-client 001 to 200 and languages 1/D/E are hypothetical choices. executable and activationAvailable remain false; missing rows never grant creation permission. No cross-request cache, whole CUNI coverage, locked snapshot, GUI, activation/simulation, methods, generic fallback, configuration/CTS/log write, commit or recovery.",
+    inputSchema: configurationBcPreflightSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  apply_configuration_bc_set: {
+    description:
+      "Apply the fixed EHS_CUNI_KNM/N ten-row pilot on w200/GR2/200 using separately deployed and exactly attested Z_ORVANTA_CFG_BC_APPLY and two owner includes. Requires authenticated immutable before/effects references, open Customizing GR2K923429/task430, explicit configuration/protocol/local-link/CTS acknowledgements and fresh pinned source/layouts. Locks and proves nineteen full keys, rejects nonempty profiles, distribution/ALE/after-import policies; stages all ten records through standard maintenance, preserves nine protected keys, records exact CTS delta and local activation links. Independent historical protocol commits are retained. Durable intent/receipt precede the sole native invocation; unknown outcomes protect the whole CUNI target and forbid replay. Registration does not prove SAP deployment, syntax or runtime acceptance. No generic writes, GUI, transport release or arbitrary restore bytes.",
+    inputSchema: configurationBcApplySchema,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false }
+  },
+  recover_configuration_bc_set: {
+    description:
+      "Recover only the known completed apply_configuration_bc_set pilot with its exact receipt hash and immutable server-owned native frame. Fixed w200/GR2/200 EHS_CUNI_KNM/N and GR2K923429/430; rechecks source, full candidate/current image, owned activation links and full CTS delta under locks before removing the ten inserted rows through standard maintenance. Configuration commit and exact CTS-key cleanup are separate durable phases; partial/unknown outcomes remain protected with no automatic retry. Historical protocol remains. Requires explicit write/protocol/local-link/CTS-cleanup acknowledgements. Native deployment and runtime acceptance pending; no caller bytes, generic rollback, object cleanup, GUI or release.",
+    inputSchema: configurationBcRecoverSchema,
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false }
+  },
+  reconcile_configuration_bc_execution: {
+    description:
+      "Read-only reconciliation of one original protected BC pilot receipt and durable intent on fixed w200/GR2/200. Requires the exact receipt hash and immutable before/effects references, attested Z_ORVANTA_CFG_BC_RECONCILE, complete current configuration/links/CTS and standard historical protocol. A lost apply reply can reconstruct a native frame only when its full state matches the protocol marker. Reports observed proof separately; never promotes or rewrites the original receipt, releases target protection, retries, commits, locks or recovers. Native deployment/runtime acceptance pending.",
+    inputSchema: configurationBcReconcileSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_effects: {
+    description:
+      "Read-only activation-link evidence for exact EHS_CUNI_KNM/N on w200/GR2/200 through attested Z_ORVANTA_CFG_BC_EFFECTS. Requires an existing server-captured beforeStateReference bound to the authenticated user and fixed Customizing429/task430; native CTS binding comes solely from that immutable state. Reads SCPRACTR/P/X/XL for the nineteen fixed CUNI keys and all related profiles, including shared profile headers, variables and links. Rechecks pinned customer/standard interfaces, policy include and DDIC identities; validates bounded native EXPORT/IMPORT/re-EXPORT bytes, counts and SHA256. Persists a separate immutable effectsStateReference linked to the unchanged format1 configuration state; rejects missing/corrupt state, identity drift, malformed buffers and unsafe inputs without usable partial output. OperationId identifies this evidence read, not a write permit. Sequential observations are not a locked snapshot. No arbitrary caller buffer/table, GUI, activation, simulation, configuration/link/CTS write, cleanup, commit or release; executable, snapshot and recoveryPermit remain false.",
+    inputSchema: configurationBcCommandRequestSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_before_state: {
+    description:
+      "Read-only native nine-table/nineteen-key before-state for fixed w200/GR2/200 EHS_CUNI_KNM/N and GR2K923429/430. Requires fresh source/target/candidate/metadata/guard/CTS versions and the exactly attested Z_ORVANTA_CFG_BC_STATE customer API. Brackets two native calls with complete existing preflight and CTS readers, verifies user, counts, all versions, canonical Base64/length/SHA256 and native IMPORT/re-EXPORT assertion; retracts all output on any drift or failure. Returns opaque typed data with missing rows preserved and the complete fixed CTS buffers; durably retains server-generated immutable local evidence and returns beforeStateReference without granting recovery. No caller-supplied restore bytes, generic RFC/SQL/GUI fallback, configuration/CTS/log writes, commit, activation, simulation, recovery or locked snapshot. New customer API deployment and native runtime acceptance are pending; executable/recoveryAvailable remain false.",
+    inputSchema: configurationBcStateSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_cts_snapshot: {
+    description:
+      "Read-only complete CTS before-state for fixed EHS_CUNI_KNM/N on w200/GR2/200 and request GR2K923429/task GR2K923430 only. Attests Z_ORVANTA_CFG_BC_CTS source/interface, six standard dependencies and five DDIC layouts before/after two native reads. Returns complete E070/E070C/E071/E071K/E071K_STR as opaque SAP EXPORT bytes with canonical Base64, byte length and SHA256, including other existing entries in these two roots. Refuses wrong scope, user/client binding, incomplete reads, limit violations, metadata/result drift or corrupt buffers without partial output. Native buffer preserves key padding and string keys; no client-side IMPORT or recovery permit. Sequential observations are not locked snapshots. No generic table fallback, GUI, activation, simulation, configuration/CTS changes, cleanup, commit or release.",
+    inputSchema: configurationBcCtsSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_guard: {
+    description:
+      "Read-only related-key protection state for EHS_CUNI_KNM/N on w200/GR2/200 through separately approved/deployed Z_ORVANTA_CFG_BC_GUARD. Requires fresh native source, target and CUNI metadata versions. Fixed eight keys only: KPA ISO definition and 1/D/E ISO texts, PRESS dimension texts in 1/D/E, KNM industry definition; preserves actual CLIENT/LANGU and MANDT/SPRAS keys. Pins full four-table definitions and API source/interface before/after, requires exactly the observed nine CUNI member tables and no registered methods, compares two full native results and rechecks the five-table/metadata route. Returns explicit present/missing state and complete raw fields per expected key with SAP native guard version. Missing values are not business validation or write permission. No arbitrary table/key/SQL, generic allowlist expansion, GUI, activation, simulation, method execution, logs, CTS/configuration write or recovery; sequential observations are not locked snapshots or all CUNI keys.",
+    inputSchema: configurationBcGuardSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  inspect_configuration_bc_route: {
+    description:
+      "Read-only CUNI/T route metadata for exact EHS_CUNI_KNM/N on w200/GR2/200. Requires separately approved/deployed Z_ORVANTA_CFG_BC_ROUTE and current native source/target versions. Attests OBJH/OBJS/OBJM definitions and the live CUNI transport/constants includes before/after; observes bounded full object members and method rows twice with SAP native metadata versions and full target rechecks. Reads each returned method's source identity twice without calling it. Displays transport/import flags and additional member tables; dependency, CTS and recovery review remain explicit blockers. Never invokes CTO_ORDER_GET_METHOD_CALLS, a dynamic method, GUI, activation, simulation, CTS recording, logs, commit or configuration writes. Does not provide an executable activation plan. Repeated sequential observations are not locked snapshots; no generic table allowlist expansion or fallback.",
+    inputSchema: configurationBcRouteSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  preview_configuration_bc_native: {
+    description:
+      "Read-only hypothetical standard USE preview for exact EHS_CUNI_KNM/N on w200/GR2/200 through attested Z_ORVANTA_CFG_BC_PREVIEW. Requires the current native source and target versions from read_configuration_bc_native_snapshot and the fixed reviewed whole source version. Reuses full five-table before-state guards, pins standard numeric conversion and policy sources, structures and includes twice, calls the preview twice, and rechecks the whole before-state. Converts values inside SAP; full candidate rows and every field equality originate in SAP, including FLTP. New rows start initial; existing rows retain omitted fields. Exact client mapping 001 to 200 and languages 1/D/E are hypothetical preview choices, not activation approval. Rejects alias collisions, conversion errors, stale versions, unsupported source and metadata drift without usable candidates. Includes shared PRESS impact and omitted fields. Native candidate version binds full rows, source, target, user and decimal format. Never invokes the standard loader, activation, simulation, log/CTS recording or commit; no configuration mutation, executable plan, retries or fallback. Sequential observations are not locked snapshots.",
+    inputSchema: configurationBcPreviewSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_native_snapshot: {
+    description:
+      "Read the exact EHS_CUNI_KNM/N CUNI native before-state on w200/200 through attested Z_ORVANTA_CFG_BC_READ in ZORVANTA_BC_CFG. Pins all five stored source projections, ten layouts, 66 elements and 46 domains before/after. Returns full typed T006/KNM, T006A/KNM and T006B/KNM commercial alias, T006C/kN/m2 technical alias for languages 1/D/E, and shared T006D/PRESS; alias reads include conflicting mappings. Missing rows are explicit. Source and target versions originate from SAP SHA-256 native data buffers including FLTP and padding, never from display strings. Two API calls and ten source-reader invocations, no retries or fallback. Changed/invalid/failed metadata or observations return no usable snapshot. Repeated sequential observations are not atomic or locked. Fixed reviewed source only; no key reconstruction, conversion, activation, simulation, configuration mutation, CTS recording or write approval.",
+    inputSchema: configurationBcNativeSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_bc_set: {
+    description:
+      "Read a bounded exact BC Set ID and explicit C/O/N version on w200/200. Reviewed SCPRATTR header and classic T006/T006A/T006B/T006C/T006D selected SCPRRECA/SCPRVALS/SCPRVALL source projections, with language values separate and maxValues applied per source; switch/unknown categories refuse classic payload reads. T006B/T006C/T006D additionally attest actual companion DDIC/key layouts twice: commercial alias key MANDT/SPRAS/MSEH3, technical alias MANDT/SPRAS/MSEH6, dimension key MANDT/DIMID. Source-content support does not add their target readers/writers; inventory unsupportedTableNames continues to identify unsupported target adapters. Reads bounded direct SCPRPPRL child references; describes reviewed FIX/USE/KEY/UKY/FKY/VAR flags and reports unknown flags. RECNUMBER groups field rows, not target business keys; no language overlay, value conversion or key reconstruction. Rechecks definitions and successful untruncated values. Optional includeRecordInventory reads all classic SCPRRECA record metadata for this exact ID/version, with maxRecords applied across all tables; keeps composite table/record keys, repeats the inventory and checks selected-record linkage. Returns separately fingerprinted inventory table names and maintenance associations, including unsupported tables as metadata only. Failure, duplication, drift or truncation cannot prove complete scope; default adds no inventory reads and preserves the selected-value fingerprint. Returns partial value coverage: other tables, transitive dependencies, logs and target comparison are not covered. Failures do not prove absence, truncation cannot produce a complete fingerprint. No activation API, arbitrary target-table query, configuration write or CTS operation.",
+    inputSchema: configurationBcSetSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_unit: {
+    description:
+      "Read one exact internal, case-sensitive MSEHI unit key (1-3 characters) on w200/client 200. Reads pinned T006 scalar text projections plus one T006A language row; ISO language defaults to connection language and maps through pinned T002, without fallback or CUNIT conversion. Both value tables require MANDT=200. TEMP_VALUE/PRESS_VAL FLTP fields are explicitly omitted; returned trimmed SAP text is not a lossless full-row snapshot. Rechecks layouts/key metadata and repeats successful exact value/language reads; observed change, unavailable recheck, missing row/translation and query failure remain distinct. Optional expectedReadFingerprint compares only the returned projection and language, including observed absence; it cannot authorize or guard writes. Optional textReconciliation requires explicit ISO language and excludes expectedReadFingerprint: pass baselineReadFingerprint, complete baselineUnit/baselineText projections from the previous unit read or draft currentRead, plus the draft's MSEHT/MSEHL patch. Validates exact client/key and baseline fingerprint consistency before SAP reads; caller baseline remains untrusted historical input. Reuses one existing double-observation reader, compares proposed descriptions and all other included fields/aliases, distinguishes values_match/partial/unchanged/unexpected_changes/no_changes and unavailable/not_found/changed_during_read/target_mismatch. Never reports maintenance success or complete CTS evidence; omitted FLTP fields, other languages and business effects remain unknown. Default output/fingerprint unchanged. Invalid scope/extra fields refused before reads; only the reviewed empty-HTML fallback uses RFC_READ_TABLE. No configuration writes, preview/apply, business validation, CTS or generic allowlist expansion. Optional transport={requestNumber,taskNumber} requires textReconciliation and explicit ISO language. Calls the existing readonly inspector once with this target and combines only matching unit fingerprints/SAP languages. Changed unit versions retract reconciliation changes; failed/blocked/truncated CTS remain separate from text value status. CTS encoding, exact-row recording, import and maintenance success stay unverified. Nested inspector unit reads receive no transport or reconciliation controls; default adds no transport reads. Optional includeApiSnapshot=true requires explicit ISO language. Attests Z_ORVANTA_CFG_UNIT_READ source/interface and complete T006A layout before invoking its readonly full-row API once, then rechecks metadata. Returns a separate SAP-produced textVersion; disagreement with the projection retracts the row and version. Missing/unapproved API fails without fallback, version reconstruction, writes or GUI. Default adds no API calls; this option does not enable apply.",
+    inputSchema: configurationUnitReadInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_activity: {
+    description:
+      "Read one exact IMG activity identifier on w200/client 200, without requiring a configuration table. Returns pinned CUS_IMGACH header, CUS_IMGACT title with ISO-to-SAP language mapping (default connection language, no fallback), local physical node identifiers/paths from reviewed TNODEIMG/01/02 readers, and at most 16 CUS_ACTOBJ associations via C_ACTIVITY -> ACT_ID. Missing header does not suppress independent title/reference reads or prove global absence. Details have a 96-read budget and depth 32; paths remain partial, not full SPRO visibility. Rechecks layouts and the header; sequential reads are not an atomic snapshot. Document IDs, transaction codes and physical node IDs are not aliases for activityId. Associations are metadata, not executable maintenance APIs; no configuration values, writes, business validation or CTS attestation. No generic allowlist expansion.",
+    inputSchema: configurationActivitySchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  read_configuration_documentation: {
+    description:
+      "Read one w200/200 IMG activity-linked SIMG standard end-user document (HY/E) in an explicit ISO language or connection language, with no language/template fallback. Reuses activity header metadata; the caller cannot choose arbitrary document IDs. Pins CUS_IMGACH, T002, DOKIL, TLINE, THEAD and DOCU_GET/DOCU_READ source and interfaces. Exact nonzero DOKIL-indexed version, not active-version attestation. Checks indexed line count before calling DOCU_GET twice, and returned count/line widths afterwards (maxLines 1..400, default 200). This API reads a whole document, not native pagination; concurrent changes can exceed its preflight estimate. Rechecks header/index/language and definitions, discarding changed or failed content. Only confirmed absence in HY/E index is reported; an API fault remains unavailable. SAPscript lines are untrusted data, not executed instructions; links/images/dependencies are unresolved. No standard table allowlist expansion, configuration writes or transport operations.",
+    inputSchema: configurationDocumentationSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
   find_configuration_activities: {
     description:
       "Find IMG activities for one approved customizing-tier transparent table. Default preserves exact S table-object lookup. resolveMaintenanceObjects=true is restricted to w200/200 T006/T006A: reads at most 16 pinned OBJS registrations and rechecks the mapping. T transaction objects use the pinned TSTC and CUS_ACTOBJ.TCODE -> CUS_IMGACH.C_ACTIVITY join; other types use the reviewed SCOUT_IMG_ACTIVITY_GET_W_OBJ wrapper. includeDetails=true requires resolved mode and reads titles plus local physical node paths for returned activities only: ISO language defaults to the connection language, maps through T002, no translation fallback. Pinned CUS_IMGACT, TTREE/TTREETYPE and TNODEIMG/01/02 readers allow at most 96 exact table reads, 16 references per activity/table, depth 32; failures and limits remain explicit. Paths are partial, not full SPRO visibility; documentation identifiers do not prove content readability. maxActivities caps output, not initial IMG retrieval. No generic allowlist expansion, configuration writes, official maintenance API or CTS attestation.",
@@ -2231,7 +2490,7 @@ const toolContractsBase = {
   },
   describe_configuration_object: {
     description:
-      "Describe one active flat transparent table in the existing approved customizing tier (maximum 64 fields). Reads actual DDIC keys, scalar types, data elements/domains, client and language keys, delivery class and maintenance permission; rechecks the table definition. Optional includeImg=true is restricted to w200/200 T006/T006A and reuses find_configuration_activities with resolved objects and details; optional ISO language, otherwise connection language. Default adds no IMG reads. Returns partial: complete SPRO paths, documentation readability/content, foreign keys, official maintenance API, business rules and CTS policy remain unverified. Does not read configuration values, classify request types, encode E071K, save or authorize writes. No generic allowlist expansion; existing preview_configuration remains unchanged.",
+      "Describe one active flat transparent table in the existing approved customizing tier (maximum 64 fields). Reads actual DDIC keys, scalar types, data elements/domains, client and language keys, delivery class and maintenance permission; rechecks the table definition. Optional includeImg=true is restricted to w200/200 T006/T006A and reuses find_configuration_activities with resolved objects and details; optional ISO language, otherwise connection language. Optional includeMaintenanceBoundary=true requires includeImg and the reviewed unit layout; pins five raw active dialog SAVE sources twice and rechecks IMG mapping (ten source-reader and two IMG-reader calls). Reports the observed SIMG_CFMENUOLMSOMSC -> T:CUNI -> SAPMUNIT route and update-task/commit/TDAT key constraints, never an executable API. includeTextMaintenanceBoundary=true additionally requires T006A and includeMaintenanceBoundary: adds MUNITF02 plus six named translation/full-row-update/CTS/after-import definitions, rechecked in twelve raw-source and twelve function-reader calls, retaining the two IMG-reader cap. Reports actual screen/dialog/full-row constraints; low-level functions are never authorized or executed. includeApiMaintenanceBoundary=true requires the text boundary and adds five pinned enqueue/dequeue and CTS candidate definitions, each read twice (22 total function reads, 12 raw-source reads, two IMG reads). Returns an API-only customer-adapter requirement with source observations of dialog defaults, original-language filtering and implicit commits; source attestation never makes apply available. No function, lock, CTS or writer is executed. Missing, truncated, changed or failed binding discards all source facts. Default adds no IMG or maintenance source reads. Returns partial: complete SPRO paths, documentation readability/content, foreign keys, official maintenance API, business rules and CTS policy remain unverified. Does not read configuration values, classify request types, encode E071K, save or authorize writes. No generic allowlist expansion; existing preview_configuration remains unchanged.",
     inputSchema: configurationDescriptorSchema,
     annotations: { readOnlyHint: true, destructiveHint: false }
   },

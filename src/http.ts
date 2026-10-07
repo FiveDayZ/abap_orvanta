@@ -95,6 +95,19 @@ export async function startHttpServer(
           })
           return
         }
+        if (
+          body &&
+          typeof body === "object" &&
+          "method" in body &&
+          body.method === "tools/call" &&
+          "params" in body &&
+          body.params &&
+          typeof body.params === "object" &&
+          "name" in body.params &&
+          (body.params.name === "preflight_configuration_bc_activation" ||
+            body.params.name === "read_configuration_bc_before_state")
+        )
+          keepSseStreamAlive(response)
         await transport.handleRequest(request, response, body)
         return
       }
@@ -143,6 +156,46 @@ export async function startHttpServer(
     }
   }
   return running
+}
+
+/** Keep long readonly configuration reads observable without changing RPC results or deadlines. */
+export function keepSseStreamAlive(response: http.ServerResponse, intervalMs = 15_000): () => void {
+  const writeHead = response.writeHead
+  let contentType: string | undefined
+  const observeHeaders = ((...args: unknown[]) => {
+    // writeHead-only headers are not exposed by getHeader on Node ServerResponse.
+    const headers = typeof args[1] === "string" ? args[2] : args[1]
+    if (headers && typeof headers === "object") {
+      const entries = Array.isArray(headers)
+        ? headers.flatMap((value, index) => (index % 2 === 0 ? [[value, headers[index + 1]]] : []))
+        : Object.entries(headers)
+      const value = entries.find(([name]) => String(name).toLowerCase() === "content-type")?.[1]
+      if (value !== undefined) contentType = String(value)
+    }
+    return Reflect.apply(writeHead, response, args)
+  }) as http.ServerResponse["writeHead"]
+  response.writeHead = observeHeaders
+  const stop = () => {
+    clearInterval(timer)
+    if (response.writeHead === observeHeaders) response.writeHead = writeHead
+    response.off("finish", stop)
+    response.off("close", stop)
+  }
+  const timer = setInterval(() => {
+    if (response.destroyed || response.writableEnded) return stop()
+    if (!response.headersSent) return
+    if (
+      !String(contentType ?? response.getHeader("content-type") ?? "").startsWith(
+        "text/event-stream"
+      )
+    )
+      return stop()
+    response.write(": keep-alive\n\n")
+  }, intervalMs)
+  timer.unref()
+  response.once("finish", stop)
+  response.once("close", stop)
+  return stop
 }
 
 async function listen(server: http.Server, port: number): Promise<void> {

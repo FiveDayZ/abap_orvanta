@@ -1,0 +1,206 @@
+{
+  "startedAt": "2026-10-04T00:49:28.429Z",
+  "readOnly": true,
+  "candidateOnly": true,
+  "businessTransportUseApproved": false,
+  "calls": [
+    {
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "filters": [
+          {
+            "column": "STRKORR",
+            "operator": "EQ",
+            "value": "GR2K923429"
+          },
+          {
+            "column": "AS4USER",
+            "operator": "EQ",
+            "value": "WYS"
+          },
+          {
+            "column": "TRSTATUS",
+            "operator": "EQ",
+            "value": "D"
+          }
+        ],
+        "maxRows": 10
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"tableName\": \"E070\",\n  \"columns\": [\n    \"TRKORR\",\n    \"TRFUNCTION\",\n    \"TRSTATUS\",\n    \"AS4USER\",\n    \"STRKORR\"\n  ],\n  \"maxRows\": 10,\n  \"readOnly\": true,\n  \"order\": \"unspecified\",\n  \"clientHandling\": \"sap_session_default\",\n  \"snapshot\": false,\n  \"status\": \"ok\",\n  \"method\": \"rfc_read_table\",\n  \"definitionSource\": \"adt_ddic\",\n  \"tableClassVerified\": true,\n  \"definitionFingerprint\": \"8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1\",\n  \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\",\n  \"representation\": \"sap_text_trimmed\",\n  \"fieldMetadata\": [\n    {\n      \"FIELDNAME\": \"TRKORR\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000020\",\n      \"OFFSET\": \"000000\"\n    },\n    {\n      \"FIELDNAME\": \"TRFUNCTION\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000001\",\n      \"OFFSET\": \"000021\"\n    },\n    {\n      \"FIELDNAME\": \"TRSTATUS\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000001\",\n      \"OFFSET\": \"000023\"\n    },\n    {\n      \"FIELDNAME\": \"AS4USER\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000012\",\n      \"OFFSET\": \"000025\"\n    },\n    {\n      \"FIELDNAME\": \"STRKORR\",\n      \"TYPE\": \"C\",\n      \"LENGTH\": \"000020\",\n      \"OFFSET\": \"000038\"\n    }\n  ],\n  \"returnedCount\": 1,\n  \"truncated\": false,\n  \"data\": [\n    {\n      \"TRKORR\": \"GR2K923430\",\n      \"TRFUNCTION\": \"Q\",\n      \"TRSTATUS\": \"D\",\n      \"AS4USER\": \"WYS\",\n      \"STRKORR\": \"GR2K923429\"\n    }\n  ]\n}"
+    },
+    {
+      "name": "inspect_configuration_transport",
+      "args": {
+        "connectionId": "w200",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430"
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"requestNumber\": \"GR2K923429\",\n  \"taskNumber\": \"GR2K923430\",\n  \"status\": \"metadata_matches\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"observed\": {\n    \"request\": [\n      {\n        \"TRKORR\": \"GR2K923429\",\n        \"TRFUNCTION\": \"W\",\n        \"TRSTATUS\": \"D\",\n        \"TARSYSTEM\": \"GR3\",\n        \"KORRDEV\": \"CUST\",\n        \"AS4USER\": \"WYS\",\n        \"AS4DATE\": \"20260901\",\n        \"AS4TIME\": \"110244\",\n        \"STRKORR\": \"\"\n      }\n    ],\n    \"requestClient\": [\n      {\n        \"TRKORR\": \"GR2K923429\",\n        \"CLIENT\": \"200\",\n        \"TARCLIENT\": \"\",\n        \"EXTENDED_STATE\": \"\",\n        \"OVERTAKER\": \"\"\n      }\n    ],\n    \"task\": [\n      {\n        \"TRKORR\": \"GR2K923430\",\n        \"TRFUNCTION\": \"Q\",\n        \"TRSTATUS\": \"D\",\n        \"TARSYSTEM\": \"\",\n        \"KORRDEV\": \"CUST\",\n        \"AS4USER\": \"WYS\",\n        \"AS4DATE\": \"20260908\",\n        \"AS4TIME\": \"091645\",\n        \"STRKORR\": \"GR2K923429\"\n      }\n    ],\n    \"taskClient\": [\n      {\n        \"TRKORR\": \"GR2K923430\",\n        \"CLIENT\": \"200\",\n        \"TARCLIENT\": \"\",\n        \"EXTENDED_STATE\": \"\",\n        \"OVERTAKER\": \"\"\n      }\n    ]\n  },\n  \"checks\": {\n    \"requestType\": true,\n    \"taskType\": true,\n    \"requestOpen\": true,\n    \"taskOpen\": true,\n    \"requestIsRoot\": true,\n    \"taskParent\": true,\n    \"taskOwnerMatchesConfiguredUser\": true,\n    \"requestClient\": true,\n    \"taskClient\": true,\n    \"requestCategory\": true,\n    \"taskCategory\": true,\n    \"transportTarget\": true\n  },\n  \"readFingerprint\": \"c2ba33fdf473524f6bdce39a59a23ee5c270e0b7f9d8ff3ff42f344569c5b83a\",\n  \"keyRecording\": {\n    \"status\": \"unknown\",\n    \"officialEncoding\": \"not_verified\",\n    \"E071KReadback\": \"not_performed\"\n  },\n  \"authorization\": \"not_attested\",\n  \"maintenanceApi\": \"not_verified\",\n  \"writeAdmission\": \"blocked\",\n  \"evidence\": {\n    \"startedAt\": \"2026-10-04T00:49:28.830Z\",\n    \"finishedAt\": \"2026-10-04T00:49:30.277Z\",\n    \"sources\": [\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"W is a Customizing request, Q is a Customizing task; K is Workbench. Protected/releasing/released, local-target and other types are not admitted.\",\n    \"Only exact request/task metadata is compared twice. Missing client records remain unknown; no inheritance is guessed. Owner match is against configured user, not an authority check.\",\n    \"Metadata matches do not attest object recording, E071K encoding, locks, business validation or an executable maintenance API. No request/task creation, release or recording.\"\n  ]\n}"
+    }
+  ],
+  "candidate": {
+    "requestNumber": "GR2K923429",
+    "taskNumber": "GR2K923430"
+  },
+  "container": {
+    "connectionId": "w200",
+    "client": "200",
+    "requestNumber": "GR2K923429",
+    "taskNumber": "GR2K923430",
+    "status": "metadata_matches",
+    "readOnly": true,
+    "saveAvailable": false,
+    "observed": {
+      "request": [
+        {
+          "TRKORR": "GR2K923429",
+          "TRFUNCTION": "W",
+          "TRSTATUS": "D",
+          "TARSYSTEM": "GR3",
+          "KORRDEV": "CUST",
+          "AS4USER": "WYS",
+          "AS4DATE": "20260901",
+          "AS4TIME": "110244",
+          "STRKORR": ""
+        }
+      ],
+      "requestClient": [
+        {
+          "TRKORR": "GR2K923429",
+          "CLIENT": "200",
+          "TARCLIENT": "",
+          "EXTENDED_STATE": "",
+          "OVERTAKER": ""
+        }
+      ],
+      "task": [
+        {
+          "TRKORR": "GR2K923430",
+          "TRFUNCTION": "Q",
+          "TRSTATUS": "D",
+          "TARSYSTEM": "",
+          "KORRDEV": "CUST",
+          "AS4USER": "WYS",
+          "AS4DATE": "20260908",
+          "AS4TIME": "091645",
+          "STRKORR": "GR2K923429"
+        }
+      ],
+      "taskClient": [
+        {
+          "TRKORR": "GR2K923430",
+          "CLIENT": "200",
+          "TARCLIENT": "",
+          "EXTENDED_STATE": "",
+          "OVERTAKER": ""
+        }
+      ]
+    },
+    "checks": {
+      "requestType": true,
+      "taskType": true,
+      "requestOpen": true,
+      "taskOpen": true,
+      "requestIsRoot": true,
+      "taskParent": true,
+      "taskOwnerMatchesConfiguredUser": true,
+      "requestClient": true,
+      "taskClient": true,
+      "requestCategory": true,
+      "taskCategory": true,
+      "transportTarget": true
+    },
+    "readFingerprint": "c2ba33fdf473524f6bdce39a59a23ee5c270e0b7f9d8ff3ff42f344569c5b83a",
+    "keyRecording": {
+      "status": "unknown",
+      "officialEncoding": "not_verified",
+      "E071KReadback": "not_performed"
+    },
+    "authorization": "not_attested",
+    "maintenanceApi": "not_verified",
+    "writeAdmission": "blocked",
+    "evidence": {
+      "startedAt": "2026-10-04T00:49:28.830Z",
+      "finishedAt": "2026-10-04T00:49:30.277Z",
+      "sources": [
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        }
+      ],
+      "warnings": [],
+      "definitionsRechecked": true,
+      "snapshot": false
+    },
+    "warnings": [
+      "W is a Customizing request, Q is a Customizing task; K is Workbench. Protected/releasing/released, local-target and other types are not admitted.",
+      "Only exact request/task metadata is compared twice. Missing client records remain unknown; no inheritance is guessed. Owner match is against configured user, not an authority check.",
+      "Metadata matches do not attest object recording, E071K encoding, locks, business validation or an executable maintenance API. No request/task creation, release or recording."
+    ]
+  },
+  "status": "prepared_no_cts_write",
+  "finishedAt": "2026-10-04T00:49:30.281Z"
+}

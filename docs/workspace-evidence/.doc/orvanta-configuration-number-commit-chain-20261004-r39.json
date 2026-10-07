@@ -1,0 +1,312 @@
+{
+  "startedAt": "2026-10-04T07:39:48.012Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "FSNR1CDC",
+        "objectType": "PROG",
+        "startLine": 1,
+        "lineCount": 1000
+      },
+      "isError": false,
+      "data": {
+        "text": "Source from FSNR1CDC (lines 1-44 of 44, 44 lines retrieved):\n\n```abap\nFORM CD_CALL_NRINTERVAL.\n  IF   ( UPD_INRG1 NE SPACE )\n    OR ( UPD_INRIV NE SPACE )\n    OR ( UPD_TNRGT NE SPACE )\n  .\n    CALL FUNCTION 'SWE_REQUESTER_TO_UPDATE'.\n    CALL FUNCTION 'NRINTERVAL_WRITE_DOCUMENT' IN UPDATE TASK\n        EXPORTING\n          OBJECTID                = OBJECTID\n          TCODE                   = TCODE\n          UTIME                   = UTIME\n          UDATE                   = UDATE\n          USERNAME                = USERNAME\n          PLANNED_CHANGE_NUMBER   = PLANNED_CHANGE_NUMBER\n          OBJECT_CHANGE_INDICATOR = CDOC_UPD_OBJECT\n          PLANNED_OR_REAL_CHANGES = CDOC_PLANNED_OR_REAL\n          NO_CHANGE_POINTERS      = CDOC_NO_CHANGE_POINTERS\n* updateflag of INRG1\n          UPD_INRG1\n                      = UPD_INRG1\n* updateflag of INRIV\n          UPD_INRIV\n                      = UPD_INRIV\n* updateflag of TNRGT\n          UPD_TNRGT\n                      = UPD_TNRGT\n        TABLES\n          XINRG1\n                      = XINRG1\n          YINRG1\n                      = YINRG1\n          XINRIV\n                      = XINRIV\n          YINRIV\n                      = YINRIV\n          XTNRGT\n                      = XTNRGT\n          YTNRGT\n                      = YTNRGT\n    .\n  ENDIF.\n  CLEAR PLANNED_CHANGE_NUMBER.\nENDFORM.\n\n```\n\nFull Source SHA-256: b960fd138a503d22f1d81b5978b250579920b5a52d95ae6114fde17628dc5219\nURI: /sap/bc/adt/programs/includes/fsnr1cdc/source/main\n\nEnhancement metadata unavailable (unsupported)."
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "LSNR1F99",
+        "objectType": "PROG",
+        "startLine": 1,
+        "lineCount": 1000
+      },
+      "isError": false,
+      "data": {
+        "text": "Source from LSNR1F99 (lines 1-397 of 397, 397 lines retrieved):\n\n```abap\n************************************************************\n* INCLUDE LSNR1F99                                         *\n* Interne Unterroutinen für Funktionsgruppe SNR1           *\n* Schmutz-Routinen                                         *\n************************************************************\n\nFORM COPY_TABLE TABLES TABLE_FROM TABLE_TO.\n* Die Routine kopiert die interne Tabelle TABLE_FROM in die\n* interne Tabelle TABLE_TO. TABLE_TO wird vorher gelöscht.\n  REFRESH TABLE_TO.\n  LOOP AT TABLE_FROM.\n    TABLE_TO = TABLE_FROM.\n    APPEND TABLE_TO.\n  ENDLOOP.\nENDFORM.\n\nFORM GET_NEXT_NUMBER USING NR SUBOBJ.\n* nächste freie numerische Nummernkreisnummer bestimmen\n\nDATA: NR_OLD TYPE I VALUE 0,\n      NR_NEW TYPE I VALUE 0,\n      l_X    TYPE I VALUE 0.\n  IF IOBJECT-type NE '5' and iobject-type ne '6'.\n     LOOP AT XNRIV WHERE SUBOBJECT = SUBOBJ.\n       IF XNRIV-NRRANGENR <> SPACE AND XNRIV-NRRANGENR CO '0123456789'.\n          NR_NEW = XNRIV-NRRANGENR.\n          l_X    = NR_NEW - NR_OLD.\n          IF l_X > 1.\n             NR_OLD = NR_OLD + 1.\n             NR = NR_OLD.\n             EXIT.\n          ENDIF.\n          NR_OLD = NR_NEW.\n       ENDIF.\n     ENDLOOP.\n  ELSE.\n*    In den Fällen 5 und 6 sind die Gruppen unabh. und die Intervalle\n*    abh. vom Unterobjekt. Deshalb muß die Nummer Unterobjekt-unabh.\n*    vergeben werden, also aus der Gruppentabelle gewonnen werden.\n*    Der Einbau aus der Gruppentabelle erfolgt später.\n     SORT XNRIV BY NRRANGENR.\n     LOOP AT XNRIV.\n       IF XNRIV-NRRANGENR <> SPACE AND XNRIV-NRRANGENR CO '0123456789'.\n          NR_NEW = XNRIV-NRRANGENR.\n          l_X    = NR_NEW - NR_OLD.\n          IF l_X > 1.\n             NR_OLD = NR_OLD + 1.\n             NR = NR_OLD.\n             EXIT.\n          ENDIF.\n          NR_OLD = NR_NEW.\n       ENDIF.\n     ENDLOOP.\n     SORT XNRIV.\n  ENDIF.\n  IF l_X < 2.\n*    keine Lücke gefunden\n     l_X = NR_NEW + 1.\n     NR  = l_X.\n  ENDIF.\n  IF l_X > 99.\n     PERFORM GET_NEXT_ALPHA_NUMBER USING NR SUBOBJ.\n*    MESSAGE A790.\n  ENDIF.\n  SORT XNRIV.\nENDFORM.\n\nFORM GET_NEXT_ALPHA_NUMBER USING NR_I SUBOBJ.\n* nächste freie numerische Nummernkreisnummer bestimmen\n\nDATA: ALPHA_VECTOR(26) TYPE C VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',\n      C_LOW            TYPE C VALUE 'A',\n      C_HIGH           TYPE C VALUE 'Z',\n      NR_OLD(2)        TYPE C VALUE 'A0',\n      NR_NEW(2)        TYPE C VALUE 'A0',\n      l_X              TYPE I VALUE 0,\n      NR(2)            TYPE C.\nFIELD-SYMBOLS: <I>.\n  IF IOBJECT-type <> '5' AND IOBJECT-type <> '6'.\n     LOOP AT XNRIV WHERE SUBOBJECT = SUBOBJ.\n       IF XNRIV-NRRANGENR <> SPACE AND\n          XNRIV-NRRANGENR(1) NA '0123456789'.\n          NR_NEW = XNRIV-NRRANGENR.\n          PERFORM CHECK_AND_GET_NEXT_ALPHA USING NR_NEW NR_OLD NR.\n          IF NR <> SPACE.\n             EXIT.\n          ENDIF.\n          NR_OLD = NR_NEW.\n       ENDIF.\n     ENDLOOP.\n  ELSE.\n*    In den Fällen 5 und 6 sind die Gruppen unabh. und die Intervalle\n*    abh. vom Unterobjekt. Deshalb muß die Nummer Unterobjekt-unabh.\n*    vergeben werden, also aus der Gruppentabelle gewonnen werden.\n*    Der Einbau aus der Gruppentabelle erfolgt später.\n     SORT XNRIV BY NRRANGENR.\n     LOOP AT XNRIV.\n       IF XNRIV-NRRANGENR <> SPACE AND\n          XNRIV-NRRANGENR(1) NA '0123456789'.\n          NR_NEW = XNRIV-NRRANGENR.\n          PERFORM CHECK_AND_GET_NEXT_ALPHA USING NR_NEW NR_OLD NR.\n          IF NR <> SPACE.\n             EXIT.\n          ENDIF.\n          NR_OLD = NR_NEW.\n       ENDIF.\n     ENDLOOP.\n     SORT XNRIV.\n  ENDIF.\n  IF NR = SPACE.\n*    keine Lücke gefunden\n     IF NR_NEW(1) = C_HIGH AND NR_NEW+1(1) = C_HIGH.\n*       MESSAGE A790.\n        PERFORM GET_NEXT_META_NUMBER USING NR_I SUBOBJ.\n     ELSE.\n        IF NR_NEW+1(1) < C_HIGH.\n           IF ALPHA_VECTOR CS NR_NEW+1(1).\n              l_X = SY-FDPOS + 1.\n           ENDIF.\n           ASSIGN ALPHA_VECTOR+l_X(1) TO <I>.\n           NR      = NR_NEW.\n           NR+1(1) = <I>.\n        ELSE.\n           IF ALPHA_VECTOR CS NR_NEW(1).\n              l_X = SY-FDPOS + 1.\n           ENDIF.\n           ASSIGN ALPHA_VECTOR+l_X(1) TO <I>.\n           NR(1)   = <I>.\n           NR+1(1) = C_LOW.\n        ENDIF.\n     ENDIF.\n  ENDIF.\n  SORT XNRIV.\n  NR_I = NR.\nENDFORM.\n\nFORM CHECK_AND_GET_NEXT_ALPHA USING INEW IOLD INR.\n* Die Routine prüft, ob zwischen NEW und OLD eine Lücke liegt und\n* bestimmt ggf. die neue Nummer NR. Wenn keine gefunden wird,\n* wird NR = SPACE zurückgeliefert.\nDATA: ALPHA_VECTOR(26) TYPE C VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',\n      IND1_NEW         TYPE I,\n      IND1_OLD         TYPE I,\n      IND2_NEW         TYPE I,\n      IND2_OLD         TYPE I,\n      DIST1_NEW_OLD    TYPE I,\n      DIST2_NEW_OLD    TYPE I,\n      C_LOW            TYPE C VALUE 'A',\n      C_HIGH           TYPE C VALUE 'Z',\n      NEW(2)           TYPE C,\n      OLD(2)           TYPE C,\n      NR(2)            TYPE C,\n      l_X              TYPE I.\nFIELD-SYMBOLS: <X>.\n  NEW = INEW.\n  OLD = IOLD.\n  INR = SPACE.\n\n  IF ALPHA_VECTOR CS NEW(1).\n     IND1_NEW = SY-FDPOS.\n  ENDIF.\n  IF ALPHA_VECTOR CS OLD(1).\n     IND1_OLD = SY-FDPOS.\n  ENDIF.\n  DIST1_NEW_OLD = IND1_NEW - IND1_OLD.\n\n  IF ALPHA_VECTOR CS NEW+1(1).\n     IND2_NEW = SY-FDPOS.\n  ENDIF.\n  IF ALPHA_VECTOR CS OLD+1(1).\n     IND2_OLD = SY-FDPOS.\n  ENDIF.\n  DIST2_NEW_OLD = IND2_NEW - IND2_OLD.\n\n  IF NEW(1) = OLD(1).\n*    NEW und OLD stimmen im ersten Buchstaben überein\n     IF DIST2_NEW_OLD > 1.\n*       die zweiten Stellen liegen mehr als einen Buchstaben\n*       auseinander ==> Lücke gefunden\n*       Beispiel CB CH ==> NR = CC\n        l_X = IND2_OLD + 1.\n        ASSIGN ALPHA_VECTOR+l_X(1) TO <X>.\n        NR      = OLD.\n        NR+1(1) = <X>.\n     ENDIF.\n  ELSE.\n     IF OLD+1(1) < C_HIGH.\n*       OLD und NEW sind verschieden. OLD kann in der zweiten Stelle\n*       noch erhöht werden.\n*       Beispiel CB DH ==> NR = CC\n        l_X = IND2_OLD + 1.\n        ASSIGN ALPHA_VECTOR+l_X(1) TO <X>.\n        NR      = OLD.\n        NR+1(1) = <X>.\n     ELSEIF NEW+1(1) > C_LOW.\n*       OLD und NEW sind verschieden. OLD kann in der zweiten Stelle\n*       nicht mehr erhöht werden, aber NEW hat in der zweiten Stelle\n*       einen höheren Wert als C_LOW, der erste Wert des ALPHA-VECTORS.\n*       Beispiel CZ DH ==> NR = DA\n        NR      = NEW.\n        NR+1(1) = C_LOW.\n     ELSE.\n*       OLD und NEW sind verschieden. OLD kann in der zweiten Stelle\n*       nicht mehr erhöht werden und NEW hat in der zweiten Stelle\n*       keinen höheren Wert als C_LOW, der erste Wert des ALPHA-VECTORS.\n*       Prüfen, ob die ersten Stellen mehr als einen Buchstaben ausein-\n*       ander liegen.\n*       Beispiel CZ EA ==> NR = DA\n        IF DIST1_NEW_OLD > 1.\n           l_X = IND1_OLD + 1.\n           ASSIGN ALPHA_VECTOR+l_X(1) TO <X>.\n           NR(1)   = <X>.\n           NR+1(1) = C_LOW.\n        ENDIF.\n     ENDIF.\n  ENDIF.\n  INR = NR.\nENDFORM.\n*&---------------------------------------------------------------------*\n*&      Form  SET_CHECK_IV_AT_ALL_EVENTS\n*&---------------------------------------------------------------------*\n*       text                                                           *\n*----------------------------------------------------------------------*\n*  -->  p1        text\n*  <--  p2        text\n*----------------------------------------------------------------------*\n*FORM SET_CHECK_IV_AT_ALL_EVENTS.\n*  CHECK_IV_AT_ALL_EVENTS = YES.\n*ENDFORM.                    \" SET_CHECK_IV_AT_ALL_EVENTS\n\n*&---------------------------------------------------------------------*\n*&      Form  RESET_CHECK_IV_AT_ALL_EVENTS\n*&---------------------------------------------------------------------*\n*       text                                                           *\n*----------------------------------------------------------------------*\n*  -->  p1        text\n*  <--  p2        text\n*----------------------------------------------------------------------*\n*FORM RESET_CHECK_IV_AT_ALL_EVENTS.\n*  CHECK_IV_AT_ALL_EVENTS = NO.\n*ENDFORM.                    \" RESET_CHECK_IV_AT_ALL_EVENTS\nFORM GET_NEXT_META_NUMBER USING NR_I SUBOBJ.\n* nächste freie numerische Nummernkreisnummer bestimmen\n\nDATA: META_VECTOR(26) TYPE C VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',\n      C_LOW            TYPE C VALUE '(',\n      C_HIGH           TYPE C VALUE ';',\n      NR_OLD(2)        TYPE C VALUE '(0',\n      NR_NEW(2)        TYPE C VALUE '(0',\n      l_X              TYPE I VALUE 0,\n      NR(2)            TYPE C.\nFIELD-SYMBOLS: <I>.\n  IF IOBJECT-type <> '5' AND IOBJECT-type <> '6'.\n     LOOP AT XNRIV WHERE SUBOBJECT = SUBOBJ.\n       IF XNRIV-NRRANGENR <> SPACE AND\n          XNRIV-NRRANGENR(1) NA 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.\n          NR_NEW = XNRIV-NRRANGENR.\n          PERFORM CHECK_AND_GET_NEXT_META USING NR_NEW NR_OLD NR.\n          IF NR <> SPACE.\n             EXIT.\n          ENDIF.\n          NR_OLD = NR_NEW.\n       ENDIF.\n     ENDLOOP.\n  ELSE.\n*    In den Fällen 5 und 6 sind die Gruppen unabh. und die Intervalle\n*    abh. vom Unterobjekt. Deshalb muß die Nummer Unterobjekt-unabh.\n*    vergeben werden, also aus der Gruppentabelle gewonnen werden.\n*    Der Einbau aus der Gruppentabelle erfolgt später.\n     SORT XNRIV BY NRRANGENR.\n     LOOP AT XNRIV.\n       IF XNRIV-NRRANGENR <> SPACE AND\n          XNRIV-NRRANGENR(1) NA 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.\n          NR_NEW = XNRIV-NRRANGENR.\n          PERFORM CHECK_AND_GET_NEXT_ALPHA USING NR_NEW NR_OLD NR.\n          IF NR <> SPACE.\n             EXIT.\n          ENDIF.\n          NR_OLD = NR_NEW.\n       ENDIF.\n     ENDLOOP.\n     SORT XNRIV.\n  ENDIF.\n  IF NR = SPACE.\n*    keine Lücke gefunden\n     IF NR_NEW(1) = C_HIGH AND NR_NEW+1(1) = C_HIGH.\n        MESSAGE A790.\n     ELSE.\n        IF NR_NEW+1(1) < C_HIGH.\n           IF META_VECTOR CS NR_NEW+1(1).\n              l_X = SY-FDPOS + 1.\n           ENDIF.\n           ASSIGN META_VECTOR+l_X(1) TO <I>.\n           NR      = NR_NEW.\n           NR+1(1) = <I>.\n        ELSE.\n           IF META_VECTOR CS NR_NEW(1).\n              l_X = SY-FDPOS + 1.\n           ENDIF.\n           ASSIGN META_VECTOR+l_X(1) TO <I>.\n           NR(1)   = <I>.\n           NR+1(1) = C_LOW.\n        ENDIF.\n     ENDIF.\n  ENDIF.\n  SORT XNRIV.\n  NR_I = NR.\nENDFORM.\n\nFORM CHECK_AND_GET_NEXT_META USING INEW IOLD INR.\n* Die Routine prüft, ob zwischen NEW und OLD eine Lücke liegt und\n* bestimmt ggf. die neue Nummer NR. Wenn keine gefunden wird,\n* wird NR = SPACE zurückgeliefert.\n* unfortunately '&' is not accepted by numberic_check\nDATA: META_VECTOR(7) TYPE C VALUE '(),./:;',\n      IND1_NEW         TYPE I,\n      IND1_OLD         TYPE I,\n      IND2_NEW         TYPE I,\n      IND2_OLD         TYPE I,\n      DIST1_NEW_OLD    TYPE I,\n      DIST2_NEW_OLD    TYPE I,\n      C_LOW            TYPE C VALUE '(',\n      C_HIGH           TYPE C VALUE ';',\n      NEW(2)           TYPE C,\n      OLD(2)           TYPE C,\n      NR(2)            TYPE C,\n      MAXLEN           TYPE I VALUE 8,\n      l_X              TYPE I.\nFIELD-SYMBOLS: <X>.\n  NEW = INEW.\n  OLD = IOLD.\n  INR = SPACE.\n\n  IF META_VECTOR CS NEW(1).\n     IND1_NEW = SY-FDPOS.\n  ENDIF.\n  IF META_VECTOR CS OLD(1).\n     IND1_OLD = SY-FDPOS.\n  ENDIF.\n  DIST1_NEW_OLD = IND1_NEW - IND1_OLD.\n\n  IF META_VECTOR CS NEW+1(1).\n     IND2_NEW = SY-FDPOS.\n  ENDIF.\n  IF META_VECTOR CS OLD+1(1).\n     IND2_OLD = SY-FDPOS.\n  ENDIF.\n  DIST2_NEW_OLD = IND2_NEW - IND2_OLD.\n\n  IF NEW(1) = OLD(1).\n*    NEW und OLD stimmen im ersten Sonderzeichen überein\n     IF DIST2_NEW_OLD > 1.\n*       die zweiten Stellen liegen mehr als einen Sonderzeichen\n*       auseinander ==> Lücke gefunden\n*       Beispiel CB CH ==> NR = CC\n        l_X = IND2_OLD + 1.\n        ASSIGN META_VECTOR+l_X(1) TO <X>.\n        NR      = OLD.\n        NR+1(1) = <X>.\n     ENDIF.\n  ELSE.\n     IF OLD+1(1) CS META_VECTOR.\n        IF SY-FDPOS < MAXLEN.\n*       OLD und NEW sind verschieden. OLD kann in der zweiten Stelle\n*       noch erhöht werden.\n*       Beispiel CB DH ==> NR = CC\n           l_X = IND2_OLD + 1.\n           ASSIGN META_VECTOR+l_X(1) TO <X>.\n           NR      = OLD.\n           NR+1(1) = <X>.\n        ENDIF.\n     ELSEIF META_VECTOR CS NEW+1(1).\n\n*       OLD und NEW sind verschieden. OLD kann in der zweiten Stelle\n*       nicht mehr erhöht werden, aber NEW hat in der zweiten Stelle\n*       einen Wert aus dem META_VECTOR.\n*       Beispiel CZ DH ==> NR = DA\n        NR      = NEW.\n        NR+1(1) = C_LOW.\n     ELSE.\n*       OLD und NEW sind verschieden. OLD kann in der zweiten Stelle\n*       nicht mehr erhöht werden und NEW hat in der zweiten Stelle\n*       keinen höheren Wert als C_LOW, der erste Wert des ALPHA-VECTORS.\n*       Prüfen, ob die ersten Stellen mehr als einen Buchstaben ausein-\n*       ander liegen.\n*       Beispiel CZ EA ==> NR = DA\n        IF DIST1_NEW_OLD > 1.\n           l_X = IND1_OLD + 1.\n           ASSIGN META_VECTOR+l_X(1) TO <X>.\n           NR(1)   = <X>.\n           NR+1(1) = C_LOW.\n        ENDIF.\n     ENDIF.\n  ENDIF.\n  INR = NR.\nENDFORM.\n\n```\n\nFull Source SHA-256: b83dc310fbd17583edfa87b4b0fa01f1668bd2be6639f0622340231490a80bfd\nURI: /sap/bc/adt/functions/groups/snr1/includes/lsnr1f99/source/main\n\nEnhancement metadata unavailable (unsupported)."
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "functionName": "NRINTERVAL_WRITE_DOCUMENT"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "NRINTERVAL_WRITE_DOCUMENT",
+        "functionGroup": "SNR6",
+        "shortText": "CHDO NRINTERVAL => Gen. by RSSCD000",
+        "remoteMode": "",
+        "updateTask": true,
+        "updateTaskMode": "1",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "OBJECTID",
+            "typeName": "CDHDR-OBJECTID",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "TCODE",
+            "typeName": "CDHDR-TCODE",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "UTIME",
+            "typeName": "CDHDR-UTIME",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "UDATE",
+            "typeName": "CDHDR-UDATE",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "USERNAME",
+            "typeName": "CDHDR-USERNAME",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "PLANNED_CHANGE_NUMBER",
+            "typeName": "CDHDR-PLANCHNGNR",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "OBJECT_CHANGE_INDICATOR",
+            "typeName": "CDHDR-CHANGE_IND",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "PLANNED_OR_REAL_CHANGES",
+            "typeName": "CDHDR-CHANGE_IND",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "NO_CHANGE_POINTERS",
+            "typeName": "CDHDR-CHANGE_IND",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "UPD_INRG1",
+            "typeName": "CDPOS-CHNGIND",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "UPD_INRIV",
+            "typeName": "CDPOS-CHNGIND",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          },
+          {
+            "name": "UPD_TNRGT",
+            "typeName": "CDPOS-CHNGIND",
+            "optional": false,
+            "passByValue": true,
+            "description": ""
+          }
+        ],
+        "exportParameters": [],
+        "changingParameters": [],
+        "tableParameters": [
+          {
+            "name": "XINRG1",
+            "typeName": "VINRG1",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "YINRG1",
+            "typeName": "VINRG1",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "XINRIV",
+            "typeName": "VINRIV",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "YINRIV",
+            "typeName": "VINRIV",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "XTNRGT",
+            "typeName": "VTNRGT",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "YTNRGT",
+            "typeName": "VTNRGT",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exceptions": [],
+        "source": [
+          "FUNCTION NRINTERVAL_WRITE_DOCUMENT.",
+          "",
+          "* THIS FILE IS GENERATED. NEVER CHANGE IT MANUALLY, PLEASE!",
+          "",
+          "  CALL FUNCTION 'CHANGEDOCUMENT_OPEN'",
+          "    EXPORTING",
+          "      OBJECTCLASS             = 'NRINTERVAL'",
+          "      OBJECTID                = OBJECTID",
+          "      PLANNED_CHANGE_NUMBER   = PLANNED_CHANGE_NUMBER",
+          "      PLANNED_OR_REAL_CHANGES = PLANNED_OR_REAL_CHANGES",
+          "    EXCEPTIONS",
+          "      SEQUENCE_INVALID        = 1",
+          "      OTHERS                  = 2.",
+          "",
+          "  CASE SY-SUBRC.",
+          "    WHEN 0.                                   \"OK.",
+          "    WHEN 1. MESSAGE A600 WITH 'SEQUENCE INVALID'.",
+          "    WHEN 2. MESSAGE A600 WITH 'OPEN ERROR'.",
+          "  ENDCASE.",
+          "",
+          "  IF UPD_INRG1 NE SPACE.",
+          "    CALL FUNCTION 'CHANGEDOCUMENT_MULTIPLE_CASE'",
+          "      EXPORTING",
+          "        TABLENAME              = 'INRG1'",
+          "        CHANGE_INDICATOR       = UPD_INRG1",
+          "        DOCU_DELETE            = ''",
+          "        DOCU_INSERT            = ''",
+          "      TABLES",
+          "        TABLE_OLD              = YINRG1",
+          "        TABLE_NEW              = XINRG1",
+          "      EXCEPTIONS",
+          "        NAMETAB_ERROR          = 1",
+          "        OPEN_MISSING           = 2",
+          "        POSITION_INSERT_FAILED = 3",
+          "        OTHERS                 = 4.",
+          "",
+          "    CASE SY-SUBRC.",
+          "      WHEN 0.                                \"OK.",
+          "      WHEN 1. MESSAGE A600 WITH 'NAMETAB-ERROR'.",
+          "      WHEN 2. MESSAGE A600 WITH 'OPEN MISSING'.",
+          "      WHEN 3. MESSAGE A600 WITH 'INSERT ERROR'.",
+          "      WHEN 4. MESSAGE A600 WITH 'MULTIPLE ERROR'.",
+          "    ENDCASE.",
+          "  ENDIF.",
+          "",
+          "  IF UPD_INRIV NE SPACE.",
+          "    CALL FUNCTION 'CHANGEDOCUMENT_MULTIPLE_CASE'",
+          "      EXPORTING",
+          "        TABLENAME              = 'INRIV'",
+          "        CHANGE_INDICATOR       = UPD_INRIV",
+          "        DOCU_DELETE            = ''",
+          "        DOCU_INSERT            = ''",
+          "      TABLES",
+          "        TABLE_OLD              = YINRIV",
+          "        TABLE_NEW              = XINRIV",
+          "      EXCEPTIONS",
+          "        NAMETAB_ERROR          = 1",
+          "        OPEN_MISSING           = 2",
+          "        POSITION_INSERT_FAILED = 3",
+          "        OTHERS                 = 4.",
+          "",
+          "    CASE SY-SUBRC.",
+          "      WHEN 0.                                \"OK.",
+          "      WHEN 1. MESSAGE A600 WITH 'NAMETAB-ERROR'.",
+          "      WHEN 2. MESSAGE A600 WITH 'OPEN MISSING'.",
+          "      WHEN 3. MESSAGE A600 WITH 'INSERT ERROR'.",
+          "      WHEN 4. MESSAGE A600 WITH 'MULTIPLE ERROR'.",
+          "    ENDCASE.",
+          "  ENDIF.",
+          "",
+          "  IF UPD_TNRGT NE SPACE.",
+          "    CALL FUNCTION 'CHANGEDOCUMENT_MULTIPLE_CASE'",
+          "      EXPORTING",
+          "        TABLENAME              = 'TNRGT'",
+          "        CHANGE_INDICATOR       = UPD_TNRGT",
+          "        DOCU_DELETE            = ''",
+          "        DOCU_INSERT            = ''",
+          "      TABLES",
+          "        TABLE_OLD              = YTNRGT",
+          "        TABLE_NEW              = XTNRGT",
+          "      EXCEPTIONS",
+          "        NAMETAB_ERROR          = 1",
+          "        OPEN_MISSING           = 2",
+          "        POSITION_INSERT_FAILED = 3",
+          "        OTHERS                 = 4.",
+          "",
+          "    CASE SY-SUBRC.",
+          "      WHEN 0.                                \"OK.",
+          "      WHEN 1. MESSAGE A600 WITH 'NAMETAB-ERROR'.",
+          "      WHEN 2. MESSAGE A600 WITH 'OPEN MISSING'.",
+          "      WHEN 3. MESSAGE A600 WITH 'INSERT ERROR'.",
+          "      WHEN 4. MESSAGE A600 WITH 'MULTIPLE ERROR'.",
+          "    ENDCASE.",
+          "  ENDIF.",
+          "",
+          "  CALL FUNCTION 'CHANGEDOCUMENT_CLOSE'",
+          "    EXPORTING",
+          "      OBJECTCLASS             = 'NRINTERVAL'",
+          "      OBJECTID                = OBJECTID",
+          "      DATE_OF_CHANGE          = UDATE",
+          "      TIME_OF_CHANGE          = UTIME",
+          "      TCODE                   = TCODE",
+          "      USERNAME                = USERNAME",
+          "      OBJECT_CHANGE_INDICATOR = OBJECT_CHANGE_INDICATOR",
+          "      NO_CHANGE_POINTERS      = NO_CHANGE_POINTERS",
+          "    EXCEPTIONS",
+          "      HEADER_INSERT_FAILED    = 1",
+          "      OBJECT_INVALID          = 2",
+          "      OPEN_MISSING            = 3",
+          "      NO_POSITION_INSERTED    = 4",
+          "      OTHERS                  = 5.",
+          "",
+          "  CASE SY-SUBRC.",
+          "    WHEN 0.                                   \"OK.",
+          "    WHEN 1. MESSAGE A600 WITH 'INSERT HEADER FAILED'.",
+          "    WHEN 2. MESSAGE A600 WITH 'OBJECT INVALID'.",
+          "    WHEN 3. MESSAGE A600 WITH 'OPEN MISSING'.",
+          "*    WHEN 4. MESSAGE A600 WITH 'NO_POSITION_INSERTED'.",
+          "* do not abort, if positions are not inserted!!!",
+          "    WHEN 5. MESSAGE A600 WITH 'CLOSE ERROR'.",
+          "  ENDCASE.",
+          "",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "89f113eb9e29b8378bb1652561c749b7a2670d74de5e7ed5aba2eb4ab9950881",
+        "interfaceFingerprint": "75ca7fd15c3acebe80db1e8df4659153bda593df2d7667e4c3a421edcf9924a1",
+        "sourceFingerprint": "0379d962902a1fc2e8c8a82151d94aaf18db125db75c99a71e6bbb26abbf36b2"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-04T07:39:48.986Z"
+}

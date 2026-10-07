@@ -1,0 +1,60 @@
+{
+  "startedAt": "2026-10-03T08:58:55.253Z",
+  "server": {
+    "pid": 55488,
+    "url": "http://127.0.0.1:12240/mcp",
+    "revision": "r13",
+    "startedAt": "2026-10-03T08:46:03.233Z",
+    "readOnly": true,
+    "connections": [
+      {
+        "id": "w200",
+        "client": "200"
+      }
+    ],
+    "manifestFingerprint": "a89204b6bb8e19cde14d1bf0d90bdf46d6b251adaf415f5b4c7bf8c2c4b9cfdf"
+  },
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "connectionId": "w200",
+        "pattern": "SCPR*ACT*",
+        "types": [
+          "FUGR/F"
+        ],
+        "maxResults": 30
+      },
+      "isError": false,
+      "response": "Found 1 ABAP objects matching \"SCPR*ACT*\":\n\n• SCPRACTL (FUGR/F)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scpractl\n  ADT: adt://w200/sap/bc/adt/functions/groups/scpractl"
+    },
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "connectionId": "w200",
+        "pattern": "SCPR*AUTH*",
+        "types": [
+          "FUGR/F"
+        ],
+        "maxResults": 30
+      },
+      "isError": false,
+      "response": "No ABAP objects found matching pattern: SCPR*AUTH*"
+    },
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "connectionId": "w200",
+        "pattern": "SCPR*TRANSP*",
+        "types": [
+          "FUGR/F"
+        ],
+        "maxResults": 30
+      },
+      "isError": false,
+      "response": "Found 1 ABAP objects matching \"SCPR*TRANSP*\":\n\n• SCPRSTRANSP (FUGR/F)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprstransp\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprstransp"
+    }
+  ],
+  "finishedAt": "2026-10-03T08:58:55.612Z"
+}

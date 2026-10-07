@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-04T16:01:11.7706340+08:00",
+  "privateProcesses": [],
+  "privateListeners": [],
+  "shared": [
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 4849,
+      "OwningProcess": 28364
+    }
+  ]
+}

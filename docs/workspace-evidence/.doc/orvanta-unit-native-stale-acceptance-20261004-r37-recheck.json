@@ -1,0 +1,298 @@
+{
+  "revision": "r37",
+  "startedAt": "2026-10-04T06:23:11.029Z",
+  "mode": "approved_single_native_stale_rejection",
+  "publicWriteTools": 0,
+  "maximumNativeCalls": 1,
+  "automaticRetry": false,
+  "automaticRestore": false,
+  "runtime": {
+    "pid": 51404,
+    "url": "http://127.0.0.1:9855/mcp",
+    "startedAt": "2026-10-04T06:22:29.207Z",
+    "revision": "r37",
+    "allowedTools": [
+      "get_runtime_info",
+      "read_function_module_interface",
+      "read_configuration_unit",
+      "inspect_configuration_transport"
+    ],
+    "manifestFingerprint": "d550a5d847c02f7ae70bf1b1b2329a4b6fcb3764d5a21f03787e7f451894213c",
+    "nativeLimit": 1,
+    "publicWriteTools": 0
+  },
+  "tools": [
+    {
+      "name": "get_runtime_info",
+      "description": "Read running module version and startup/current on-disk artifact fingerprints. Compare with an explicitly supplied candidate version/fingerprint. Never probes SAP or changes the service or state directory. Code fingerprint excludes UI assets and installed dependency contents, and is not a proof of SAP availability.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "expectedArtifactFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "description": "Read one active function module interface and source through the SAP repository helper. Read-only and allowed for customer or standard function modules. Preserves raw updateTaskMode; updateTask is true for any noninitial update mode, including numeric SAP modes, not only X. Mode validity/meaning is not inferred. Returns a deterministic SHA-256 fingerprint; includeExecutionSupport additionally resolves scalar, flat-structure, and table parameter shapes through DDIC.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "functionName": {
+            "type": "string"
+          },
+          "includeExecutionSupport": {
+            "type": "boolean",
+            "default": false
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "functionName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "inspect_configuration_transport",
+      "description": "Inspect one explicit Customizing request/task pair on w200/200. Reviewed E070/E070C and TRFUNCTION/TRSTATUS/TRCATEG metadata are rechecked. W=request, Q=task; checks exact parent, open D status, configured-user task owner, recorded source client, CUST category and nonempty transport target. Missing records stay unknown; no client inheritance is guessed. Optional unitText={unitKey,language} requires an explicit ISO language and reuses exact unit reads twice. Only matching container metadata permits bounded E071 R3TR/TDAT/CUNI and E071K R3TR/TABU/T006A projections for this pair (32 rows each, eight entry-reader calls maximum); pins/rechecks both layouts, values and unit version, discarding drift/failure/truncation. Default performs no unit/key reads. Reports table_entries_observed/no_table_entries/master_mismatch/master_unresolved or blocked/unavailable/changed/truncated; these are table-level observations, never exact-row linkage. TABKEY remains trimmed opaque text; original key encoding, wildcard semantics and row recording require manual verification. No arbitrary table/key input, generated TABKEY, CTS claim or standard TR_READ_COMM call is accepted. Changed/failed reads cannot produce an admission. Metadata matches still leave writeAdmission=blocked: no authority check, official E071K encoding, exact row recording, import, lock, maintenance API or release is attested or executed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "read_configuration_unit",
+      "description": "Read one exact internal, case-sensitive MSEHI unit key (1-3 characters) on w200/client 200. Reads pinned T006 scalar text projections plus one T006A language row; ISO language defaults to connection language and maps through pinned T002, without fallback or CUNIT conversion. Both value tables require MANDT=200. TEMP_VALUE/PRESS_VAL FLTP fields are explicitly omitted; returned trimmed SAP text is not a lossless full-row snapshot. Rechecks layouts/key metadata and repeats successful exact value/language reads; observed change, unavailable recheck, missing row/translation and query failure remain distinct. Optional expectedReadFingerprint compares only the returned projection and language, including observed absence; it cannot authorize or guard writes. Optional textReconciliation requires explicit ISO language and excludes expectedReadFingerprint: pass baselineReadFingerprint, complete baselineUnit/baselineText projections from the previous unit read or draft currentRead, plus the draft's MSEHT/MSEHL patch. Validates exact client/key and baseline fingerprint consistency before SAP reads; caller baseline remains untrusted historical input. Reuses one existing double-observation reader, compares proposed descriptions and all other included fields/aliases, distinguishes values_match/partial/unchanged/unexpected_changes/no_changes and unavailable/not_found/changed_during_read/target_mismatch. Never reports maintenance success or complete CTS evidence; omitted FLTP fields, other languages and business effects remain unknown. Default output/fingerprint unchanged. Invalid scope/extra fields refused before reads; only the reviewed empty-HTML fallback uses RFC_READ_TABLE. No configuration writes, preview/apply, business validation, CTS or generic allowlist expansion. Optional transport={requestNumber,taskNumber} requires textReconciliation and explicit ISO language. Calls the existing readonly inspector once with this target and combines only matching unit fingerprints/SAP languages. Changed unit versions retract reconciliation changes; failed/blocked/truncated CTS remain separate from text value status. CTS encoding, exact-row recording, import and maintenance success stay unverified. Nested inspector unit reads receive no transport or reconciliation controls; default adds no transport reads. Optional includeApiSnapshot=true requires explicit ISO language. Attests Z_ORVANTA_CFG_UNIT_READ source/interface and complete T006A layout before invoking its readonly full-row API once, then rechecks metadata. Returns a separate SAP-produced textVersion; disagreement with the projection retracts the row and version. Missing/unapproved API fails without fallback, version reconstruction, writes or GUI. Default adds no API calls; this option does not enable apply.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "prepared": {
+    "plan": {
+      "connectionId": "w200",
+      "unitKey": "KG",
+      "language": "ZH",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "operationId": "unit-native-stale-20261004062311091-r37",
+      "scenario": "native_locked_stale_version",
+      "functionName": "Z_ORVANTA_CFG_UNIT_APPLY",
+      "sourceFingerprint": "3c911f81bcb8910f8a74c049954f2ebf99e5a391a21dae20da85043cac3e4db5",
+      "interfaceFingerprint": "380294aeff5d634906c6ae4987f20bfda5d4feb58b9eab98e98a1068ef8ec62a",
+      "bodyFingerprint": "6063655e06ee6f25976bef89c10f75eb695843989913922ec04ee6f724e86588",
+      "beforeText": {
+        "MANDT": "200",
+        "SPRAS": "1",
+        "MSEHI": "KG",
+        "MSEH3": "KG",
+        "MSEH6": "公斤",
+        "MSEHT": "公斤",
+        "MSEHL": "千克"
+      },
+      "originalVersion": "42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+      "readFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+      "cts": {
+        "observed": {
+          "request": [
+            {
+              "TRKORR": "GR2K923429",
+              "TRFUNCTION": "W",
+              "TRSTATUS": "D",
+              "TARSYSTEM": "GR3",
+              "KORRDEV": "CUST",
+              "AS4USER": "WYS",
+              "AS4DATE": "20260901",
+              "AS4TIME": "110244",
+              "STRKORR": ""
+            }
+          ],
+          "requestClient": [
+            {
+              "TRKORR": "GR2K923429",
+              "CLIENT": "200",
+              "TARCLIENT": "",
+              "EXTENDED_STATE": "",
+              "OVERTAKER": ""
+            }
+          ],
+          "task": [
+            {
+              "TRKORR": "GR2K923430",
+              "TRFUNCTION": "Q",
+              "TRSTATUS": "D",
+              "TARSYSTEM": "",
+              "KORRDEV": "CUST",
+              "AS4USER": "WYS",
+              "AS4DATE": "20261004",
+              "AS4TIME": "100032",
+              "STRKORR": "GR2K923429"
+            }
+          ],
+          "taskClient": [
+            {
+              "TRKORR": "GR2K923430",
+              "CLIENT": "200",
+              "TARCLIENT": "",
+              "EXTENDED_STATE": "",
+              "OVERTAKER": ""
+            }
+          ]
+        },
+        "keys": {
+          "requestE071": [],
+          "requestE071K": [],
+          "taskE071": [
+            {
+              "TRKORR": "GR2K923430",
+              "AS4POS": "000002",
+              "PGMID": "R3TR",
+              "OBJECT": "TDAT",
+              "OBJ_NAME": "CUNI"
+            }
+          ],
+          "taskE071K": [
+            {
+              "TRKORR": "GR2K923430",
+              "PGMID": "R3TR",
+              "OBJECT": "TABU",
+              "OBJNAME": "T006A",
+              "AS4POS": "000001",
+              "MASTERTYPE": "TDAT",
+              "MASTERNAME": "CUNI",
+              "VIEWNAME": "",
+              "TABKEY": "2001KG"
+            }
+          ]
+        }
+      },
+      "inputParameters": {
+        "IV_UNIT_KEY": "KG",
+        "IV_LANGUAGE": "1",
+        "IV_EXPECTED_VERSION": "02a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+        "IV_SET_MSEHT": "",
+        "IV_MSEHT": "",
+        "IV_SET_MSEHL": "X",
+        "IV_MSEHL": "千克",
+        "IV_REQUEST": "GR2K923429",
+        "IV_TASK": "GR2K923430"
+      },
+      "expectedCode": "TEXT_VERSION_CHANGED",
+      "maximumNativeCalls": 1,
+      "planFingerprint": "6742a7077efa5f1b3e06ca43c5f24107312058897588b79281cab787507dfca2",
+      "observedAt": "2026-10-04T06:23:22.058Z",
+      "nativeInvoked": false,
+      "executionAuthorized": false,
+      "locks": [
+        {
+          "argument": "*T006*",
+          "status": "no_observed_locks",
+          "code": null
+        },
+        {
+          "argument": "*GR2K923429*",
+          "status": "no_observed_locks",
+          "code": null
+        },
+        {
+          "argument": "*GR2K923430*",
+          "status": "no_observed_locks",
+          "code": null
+        }
+      ],
+      "warnings": [
+        "Preparation never authorizes a native command.",
+        "CTS is a bounded trimmed projection, not raw key/import proof.",
+        "Rechecked reads are not an atomic snapshot; later execution rechecks all preconditions."
+      ]
+    },
+    "dependencies": [
+      {
+        "functionName": "Z_ORVANTA_CFG_UNIT_APPLY",
+        "sourceFingerprint": "3c911f81bcb8910f8a74c049954f2ebf99e5a391a21dae20da85043cac3e4db5",
+        "interfaceFingerprint": "380294aeff5d634906c6ae4987f20bfda5d4feb58b9eab98e98a1068ef8ec62a"
+      },
+      {
+        "functionName": "Z_ORVANTA_CFG_UNIT_READ",
+        "sourceFingerprint": "8bf1eed7706b7ef4ab75a704febc77cd5fe91d619e63b69732652f8794d5e611",
+        "interfaceFingerprint": "0d68032d874fec10f48427070bb1120c46a0f1aa3bf5492c706f07a1bc0b8617"
+      },
+      {
+        "functionName": "UPDATE_T006A",
+        "sourceFingerprint": "b0b061b0ab46cc8b190e9ee33b5ef1e999955339a3776a8bbb9e49c6a741b1ac",
+        "interfaceFingerprint": "69ecde3d00ae343c5d84e09c0ba5f357e5890aced1840a525a0cdc87753f172b"
+      },
+      {
+        "functionName": "TR_REQ_CHECK_OBJECT",
+        "sourceFingerprint": "f63a79b41344d49023eb459031f27935322cc87e8d46279fc74911f6e3cda8db",
+        "interfaceFingerprint": "25fa14abfc543afcbb1cdc5595647e3e71fe9b9f6f584f921f6f27dd79cb51aa"
+      },
+      {
+        "functionName": "TRINT_APPEND_TO_COMM_ARRAYS",
+        "sourceFingerprint": "34a6d758f83c9460821ff95a74e9565bd89b4d6b548c7ea5a9d522fbd49a7611",
+        "interfaceFingerprint": "c834dc05f0a221e952fc3dec5c524c3c1b82186826a67b93819d40909f5f9fe7"
+      },
+      {
+        "functionName": "TR_REQ_CHECK_KEY",
+        "sourceFingerprint": "7229d95e82820ea4234517932fd1204c98ecca7b2a665d179baac8c3173739c8",
+        "interfaceFingerprint": "ab37b317e147fc297d0500bd74def2a19def5daf616d5ec79d0bc448ccb09738"
+      },
+      {
+        "functionName": "CALCULATE_HASH_FOR_CHAR",
+        "sourceFingerprint": "d6df1059f3e68d905f2577b097cca80177e04b04b1baa640f5719ff73a3bdd1b",
+        "interfaceFingerprint": "f1ba5060063ab3cb25cba923a58ec9ce8a36e0918a91d03a9fa8f681da90bad6"
+      }
+    ],
+    "manifestFingerprint": "d550a5d847c02f7ae70bf1b1b2329a4b6fcb3764d5a21f03787e7f451894213c"
+  },
+  "status": "Partially Verified",
+  "error": "NATIVE_SAFETY_NATIVE_READER_SCHEMA_UNAVAILABLE",
+  "finishedAt": "2026-10-04T06:23:22.192Z"
+}

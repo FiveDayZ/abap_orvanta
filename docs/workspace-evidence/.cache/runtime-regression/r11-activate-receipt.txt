@@ -1,0 +1,42 @@
+ok
+Activation successful for adt://w200/sap/bc/adt/programs/programs/zorvanta_mcp_ddic_lock_deploy
+
+Operation Receipt
+{
+  "operationId": "eb174526-ae68-4e25-a89c-a400ad71523b",
+  "version": 2,
+  "status": "completed",
+  "connectionId": "w200",
+  "toolName": "abap_activate",
+  "operationIdHash": "964b843f651fb6e397f6c99bbef12ea1545999729a7a308e87eaf6fb63e4873e",
+  "targetKeyHash": "2636e7bac407bf2c2d251968e06dc27d03763efeb1cd8a8c76744fd2a0f7ec4a",
+  "inputHash": "a38d53a3350caef8bfde50ee2c855e8f78f3430533e860b232c72fca3fea6b2d",
+  "preChangeSummary": "{\"target\":\"prog ZORVANTA_MCP_DDIC_LOCK_DEPLOY\",\"requestedOperation\":\"abap_activate\",\"concurrencyGuard\":\"tool-specific SAP readback and lock checks\",\"transportNumber\":\"existing assignment\",\"automaticRollback\":false}",
+  "sapPreChangeEvidence": {
+    "observedAt": "2026-09-22T07:41:21.667Z",
+    "target": "prog ZORVANTA_MCP_DDIC_LOCK_DEPLOY",
+    "exists": true,
+    "active": true,
+    "version": null,
+    "fingerprint": "9bb8c91713ac698d5bfc312a13ccb78c8303ce5596e9cbad256f251bd286d2da",
+    "packageName": null,
+    "requestNumber": null,
+    "taskNumber": null,
+    "observationStatus": "partial",
+    "sources": [
+      "active_source"
+    ],
+    "warnings": []
+  },
+  "sapInvocationStarted": true,
+  "resultHash": "6d4ebc7bf6fb89fbfd58f5551b4e184562986421f8000524fdcd2d8818cdf46b",
+  "startedAt": "2026-09-22T07:41:21.233Z",
+  "finishedAt": "2026-09-22T07:41:22.691Z",
+  "durationMs": 1454,
+  "receiptHash": "6cd3324837c0360137c6a411a256aa89df68b66d880b65767be86a8eea7d76b5",
+  "automaticRetry": false,
+  "automaticRollback": false,
+  "outcomeMayBeUnknown": false,
+  "localLockReleased": true,
+  "manualRecovery": "Read back prog ZORVANTA_MCP_DDIC_LOCK_DEPLOY from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+}

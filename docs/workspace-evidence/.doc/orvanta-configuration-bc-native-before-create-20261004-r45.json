@@ -1,0 +1,131 @@
+{
+  "at": "2026-10-04T13:48:06.898Z",
+  "scope": {
+    "connectionId": "w200",
+    "system": "GR2",
+    "client": "200",
+    "functionGroup": "ZORVANTA_BC_CFG",
+    "functionName": "Z_ORVANTA_CFG_BC_READ",
+    "packageName": "ZABAP",
+    "transport": "GR2K923472",
+    "configurationWrites": 0
+  },
+  "sourceBackup": "Both exact new customer objects absent; no existing source or draft can be backed up. Authoritative negative receipts retained before creation.",
+  "receipts": [
+    {
+      "at": "2026-10-04T13:48:06.498Z",
+      "name": "inspect_repository_assignment",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVANTA_BC_CFG",
+        "objectType": "FUGR/F"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking inspect_repository_assignment: Error: SAP repository helper rejected the operation: REPOSITORY_OBJECT_NOT_FOUND: Repository object does not exist"
+      }
+    },
+    {
+      "at": "2026-10-04T13:48:06.562Z",
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "Z_ORVANTA_CFG_BC_READ"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_CFG_BC_READ 不存在"
+      }
+    },
+    {
+      "at": "2026-10-04T13:48:06.896Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "filters": [
+          {
+            "column": "TRKORR",
+            "operator": "EQ",
+            "value": "GR2K923472"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "maxRows": 2,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "TRFUNCTION",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "TRSTATUS",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000023"
+          },
+          {
+            "FIELDNAME": "AS4USER",
+            "TYPE": "C",
+            "LENGTH": "000012",
+            "OFFSET": "000025"
+          },
+          {
+            "FIELDNAME": "STRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000038"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923472",
+            "TRFUNCTION": "K",
+            "TRSTATUS": "D",
+            "AS4USER": "WYS",
+            "STRKORR": ""
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -41,7 +41,7 @@ const nodeFields = [
   "REFTREE_ID"
 ]
 
-/** Headers are supplied only by the verified unit-domain IMG lookup, never by public input. */
+/** Preserve the approved table-domain entry point used by configuration descriptors. */
 export async function readConfigurationImgDetails(
   connectionId: string,
   objectName: string,
@@ -53,6 +53,29 @@ export async function readConfigurationImgDetails(
   readFunction: (name: string) => Promise<unknown>
 ) {
   if (connectionId !== "w200" || client !== "200" || !["T006", "T006A"].includes(objectName))
+    throw new Error("CONFIGURATION_IMG_DETAIL_SCOPE_UNSUPPORTED")
+  return readConfigurationImgActivityDetails(
+    connectionId,
+    client,
+    requestedLanguage,
+    headers,
+    backend,
+    readTable,
+    readFunction
+  )
+}
+
+/** Exact activity headers/identifiers only; callers cannot choose metadata tables or predicates. */
+export async function readConfigurationImgActivityDetails(
+  connectionId: string,
+  client: string,
+  requestedLanguage: string,
+  headers: { ACTIVITY: string; DOCU_ID: string }[],
+  backend: Pick<SapBackend, "runQuery" | "callRemoteFunction">,
+  readTable: (name: string) => Promise<unknown>,
+  readFunction: (name: string) => Promise<unknown>
+) {
+  if (connectionId !== "w200" || client !== "200")
     throw new Error("CONFIGURATION_IMG_DETAIL_SCOPE_UNSUPPORTED")
   const language = configurationImgDetailLanguage.parse(requestedLanguage)
   z.array(z.object({ ACTIVITY: z.string().min(1).max(20), DOCU_ID: z.string() }))
@@ -171,6 +194,7 @@ export async function readConfigurationImgDetails(
       structureId: string
       table: string
       extKey: string
+      extension: string
       status: string
       reason: string | null
       nodes: Record<string, unknown>[]
@@ -279,6 +303,7 @@ export async function readConfigurationImgDetails(
               structureId,
               table,
               extKey: ref.EXT_KEY!,
+              extension: ref.EXTENSION!,
               status: reason ? "partial" : "read",
               reason,
               nodes

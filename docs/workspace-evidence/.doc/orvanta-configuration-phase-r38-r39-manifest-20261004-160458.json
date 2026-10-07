@@ -1,0 +1,176 @@
+{
+  "createdAt": "2026-10-04T08:06:01.064Z",
+  "status": "passed_document_integrity",
+  "record": "code-update-20261004-160458.md",
+  "files": [
+    {
+      "file": "code-update-20261004-160458.md",
+      "size": 10310,
+      "sha256": "3ffbafe92935f687f8c8e3844ee4c4894dbb5ae0be713a0055feaa155f89ebca"
+    },
+    {
+      "file": "orvanta-configuration-api-discovery-20261004-r39.json",
+      "size": 162373,
+      "sha256": "ba42cbbf63389e4d47ea1b0f2b6cc2b38914633bdfe474235e3cbcedd646e2f4"
+    },
+    {
+      "file": "orvanta-configuration-compare-schema-acceptance-20261004-r38.json",
+      "size": 38480,
+      "sha256": "5dd5c75b084abef0fca90bca809c20c467fc644e763bdbabf43c86c2b9128537"
+    },
+    {
+      "file": "orvanta-configuration-compare-schema-fixed-build-20261004-r38.json",
+      "size": 11369,
+      "sha256": "0c3ca73a81baed94b4c5c3a15880d20605d194198c314e61e98420c4ed949505"
+    },
+    {
+      "file": "orvanta-configuration-compare-schema-initial-failure-20261004-r38.json",
+      "size": 8040,
+      "sha256": "f386872fb8c2993c95582c752de38218dcca70103885cf2c76309b2f303e1223"
+    },
+    {
+      "file": "orvanta-configuration-compare-shared-baseline-20261004-r38.json",
+      "size": 13279,
+      "sha256": "34bd457a995b4322996442b5124444212d79797b0e5d365551c5a5fc0674c0ae"
+    },
+    {
+      "file": "orvanta-configuration-complete-format-20261004-r38-r39.log",
+      "size": 68,
+      "sha256": "f20510a9da4717c51c4cffee6d0dd88d6c9a723d0a83711d01216f5b48961283"
+    },
+    {
+      "file": "orvanta-configuration-complete-headless-20261004-r38-r39.log",
+      "size": 68,
+      "sha256": "fc281cdf9761e8cc9b43d7dfc050a77fb3d73d15af2996accc62048bf9a2ffa9"
+    },
+    {
+      "file": "orvanta-configuration-deployment-context-20261004-r39.json",
+      "size": 15101,
+      "sha256": "05faee73d91292549489b6f7c5a76d82cb292a4aa4821e96ffc0ce222ffbf02d"
+    },
+    {
+      "file": "orvanta-configuration-guard-tests-20261004-r38-r39.log",
+      "size": 315,
+      "sha256": "84cad88cb0dcc1fdad6bef1aa7e63e9ed15b425840137bded9da54196e0528ac"
+    },
+    {
+      "file": "orvanta-configuration-number-closure-20261004-r39.json",
+      "size": 14779,
+      "sha256": "2682fa0bbcdc90ae1fdf798c50d8fc8a456de1dac41093b63a17c66ac1d69c3e"
+    },
+    {
+      "file": "orvanta-configuration-number-closure-regression-20261004-r38-r39.log",
+      "size": 5527,
+      "sha256": "d14deb0a7a7cdfb108489f5783f228f0d05b08a0dde65e7be0ce105bbe012996"
+    },
+    {
+      "file": "orvanta-configuration-number-commit-chain-20261004-r39.json",
+      "size": 25820,
+      "sha256": "2bebf650a17b334097702dca0ed0d9974e6cb17130fcb93dd46647bc47cbe4c7"
+    },
+    {
+      "file": "orvanta-configuration-number-compile-initial-20261004-r38-r39.log",
+      "size": 848,
+      "sha256": "69889a2abd6131605837cec8c1bed3c033aa0ef780157adc09a74d993a16a72e"
+    },
+    {
+      "file": "orvanta-configuration-number-deployment-preparation-20261004-r39.json",
+      "size": 661,
+      "sha256": "5760c21a6699e8bec45c13196111f1f3692b811ff284819e67da4a76567fe9dc"
+    },
+    {
+      "file": "orvanta-configuration-number-details-20261004-r39.json",
+      "size": 26764,
+      "sha256": "5d8fc2d7594dea34da6800716ef2b044612d80491816e4532c46c9025a21d23e"
+    },
+    {
+      "file": "orvanta-configuration-number-final-20261004-r39.json",
+      "size": 4395,
+      "sha256": "560fd1b5f1a05ea0c38ccfe18c252b65eeb0112da7334df6747c49c050483296"
+    },
+    {
+      "file": "orvanta-configuration-number-layout-20261004-r39.json",
+      "size": 11365,
+      "sha256": "c2349fabedb2edf90ec94693d09ce5c9fc905bf317e967cb735ed5d4b6487fbf"
+    },
+    {
+      "file": "orvanta-configuration-number-owner-20261004-r39.json",
+      "size": 25685,
+      "sha256": "e7c6031829ca3e10514d3d3262d54bcac4c3ccdb3ba19724a0cd17dea773cf19"
+    },
+    {
+      "file": "orvanta-configuration-number-permissions-20261004-r39.json",
+      "size": 5201,
+      "sha256": "5872e1c6b46d6a298dabd55816cdd2781953dcd98f4c56f39015a502454e89a6"
+    },
+    {
+      "file": "orvanta-configuration-number-range-api-plan-20261004-r39.md",
+      "size": 6142,
+      "sha256": "0f6a8206c33c29aac055580b09a98c7f22e4291752679ae2c39cdba651aaa07e"
+    },
+    {
+      "file": "orvanta-configuration-number-range-deployment-20261004-r39.json",
+      "size": 24265,
+      "sha256": "ef522c74a6d150f1771e1df72c7adc987827320ee531eac12af90d112ba05bee"
+    },
+    {
+      "file": "orvanta-configuration-number-receipt-compile-20261004-r38-r39.log",
+      "size": 1018,
+      "sha256": "5cb2badf6823b51439151f4621266db285284020c0eb40f1a8327d7844796a7d"
+    },
+    {
+      "file": "orvanta-configuration-number-receipt-evidence-compile-20261004-r38-r39.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "orvanta-configuration-number-receipt-evidence-regression-20261004-r38-r39.log",
+      "size": 3182,
+      "sha256": "a3a34f8d4aba9d27fb3af4891f8c39d395e2a0ead897ee9e2cb67e8c691f121e"
+    },
+    {
+      "file": "orvanta-configuration-ops-20261004-r38-r39.log",
+      "size": 56,
+      "sha256": "b63615c100a97572f14a19a6b9d18d5169454764c6f0a00e3182624b7930cbfd"
+    },
+    {
+      "file": "orvanta-configuration-regression-green-20261004-r38-r39.log",
+      "size": 6096,
+      "sha256": "3ac0b6a4371ff1997f4b67426b98f5a804e7dbbc79a6fc6b39d70c413f10dead"
+    },
+    {
+      "file": "orvanta-configuration-runtime-cleanup-20261004-r38-r39.json",
+      "size": 232,
+      "sha256": "e378c43375aae624f7403ccf8da8ac2d8f46e9adebb65239af41b7eed2917007"
+    },
+    {
+      "file": "orvanta-configuration-schema-red-20261004-r38-r39.log",
+      "size": 3062,
+      "sha256": "481466b6db7ff9c60661fa0ef17a7e9a070efa3e647989a2d54f0ef5c511c314"
+    },
+    {
+      "file": "orvanta-configuration-source-audit-20261004-r38-r39.json",
+      "size": 846,
+      "sha256": "fc7442e58ba1d0e8cd269f67acb4ab0887888e99f510573f3329dc8f13a3f18f"
+    },
+    {
+      "file": "orvanta-configuration-tool-index-20261004-r38-r39.log",
+      "size": 298,
+      "sha256": "aee36efaae215b2436010e65faad422145b2a0ab506adb1c8789367d26e96268"
+    },
+    {
+      "file": "z_orvanta_cfg_nr_apply-20261004-r39.abap",
+      "size": 8023,
+      "sha256": "6a87e3f686b54fc39274e38b870351a7ea79e4248ceb320d63f3c6a5434698c0"
+    },
+    {
+      "file": "z_orvanta_cfg_nr_read-20261004-r39.abap",
+      "size": 2432,
+      "sha256": "787a759036650e9d156843c55e4a927663c22d1e7e6cfdb3127cc304eac9bb13"
+    }
+  ],
+  "productDistinctTests": 148,
+  "harnessTests": 2,
+  "sapWrites": 0,
+  "documentCheckCorrection": "First check incorrectly required a successful compilation log to be nonempty. Empty log is expected with compiler exit 0; all actual documents and records are nonempty."
+}

@@ -1,0 +1,676 @@
+{
+  "at": "2026-10-05T10:35:52+08:00",
+  "system": "w200/GR2/200",
+  "status": "Review Only",
+  "methodExecution": false,
+  "configurationWrites": 0,
+  "coverage": {
+    "LSCPRACF01": "239-367 of 1145: activation options (previous plus current)",
+    "LSCTS_EXE_EXPF02": "1-459 of 980: sort and both after-import dispatch FORMs",
+    "LSCTS_EXE_EXPTOP": "1-138 complete",
+    "SAPLSCTS_EXE_EXP": "1-18 complete",
+    "SCPR_PR_UUID_CREATE": "1-13 complete",
+    "SCPR_PR_DB_GET_DATA_ACPP": "1-46 complete",
+    "SCPR_PR_DB_GET_ERROR_MESSAGES": "1-29 complete",
+    "SYSTEM_UUID_C_CREATE": "1-28 complete"
+  },
+  "calls": [
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCPRACF01",
+        "objectType": "PROG/I",
+        "startLine": 339,
+        "lineCount": 100
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LSCPRACF01 (lines 339-438 of 1145, 100 lines retrieved):\n\n```abap\n    else.\n      actopts-upgr_mode = answer_yes.\n    endif.\n* cus_status: 0=customizing transport active\n*             1=customizing transport deactivated (default)\n* sys_status: 0=system transport active\n*             1=system transport deactivated (default)\n    if actopts-transp_off = answer_yes.\n      actopts-cus_status = '1'.\n      actopts-sys_status = '1'.\n    else.\n      actopts-cus_status = '0'.\n      actopts-sys_status = '0'.\n    endif.\n* varbls_off: Y=variables are ignored\n*             N=variables are used (default)\n    actopts-varbls_off = variables_off.\n* after_imp: Y=after-import-methods are performed (default)\n*            N=after-import-methods are ignored\n    actopts-after_imp = after_imp.\n* langu_only: Y=activate only languages\n*             N=activate all data\n    actopts-langu_only = langu_only.\n* category: ' ' = classical BC-Sets\n*           'S' = Switch BC-Sets\n    actopts-category = category.\n\n    actopts-no_commit = no_commit.\n  ENDFORM.                    \" fill_activation_options\n\n\n*&---------------------------------------------------------------------*\n*&      Form  dequeue_bcsets\n*&---------------------------------------------------------------------*\n*       text\n*----------------------------------------------------------------------*\n*  -->  p1        text\n*  <--  p2        text\n*----------------------------------------------------------------------*\n  FORM dequeue_bcsets\n     using bcsets_attrs type scpr_attr_tab.\n\n    data attr_temp type scprattr.\n\n    loop at bcsets_attrs into attr_temp.\n      CALL FUNCTION 'SCPR_SV_DEQUEUE_BCSET'\n        EXPORTING\n          BCSET_ID = attr_temp-id.\n    endloop.\n\n  ENDFORM.                    \" dequeue_bcsets\n\n\n*&---------------------------------------------------------------------*\n*&      Form  Remove_OBJECT_FROM_DATA\n*&---------------------------------------------------------------------*\n*       text\n*----------------------------------------------------------------------*\n*  -->  p1        text\n*  <--  p2        text\n*----------------------------------------------------------------------*\n  FORM REMOVE_OBJECT_FROM_DATA\n         using     p_bcset           type scpr_id\n                   p_activity        type scprreca-activity\n                   p_objectname      type scprreca-objectname\n                   p_objecttype      type scprreca-objecttype\n         changing  recattr           type scpr_reca_tab\n                   values            type scpr_vals_tab\n                   valuesl           type scpr_vall_tab\n                   act_objects       type SCP1_ACT_OBJECTS\n                   objvalues         type scpr_objvals\n                   bcsets_attrs      type scpr_attr_tab.\n* this form removes all data of a certain customizing object\n* (objectname, objecttype) from all relevant activation tables\n* (recattr, values, valuesl, act_objects, objvalues, bcsets_attrs).\n* following calls are possible (using parameters):\n*\n* loop at recattr may be slower than binary search but is used her\n* by intention to be independent on sort order of recattr!!!\n*\n* values must be sorted by id version tablename recnumber\n* valuesl must be sorted by id version tablename recnumber\n*\n* p_bcset   |p_activity| p_objectname/-type | result: remove...\n*-----------------------------------------------------------------------\n*  initial  | initial  | objectname + -type | object from all bcsets\n*  initial  | activity | objectname + -type | object/act from all bcsets\n* BC-Set ID | initial  | objectname + -type | object from given bcset\n* BC-Set ID | activity | objectname + -type | object/activity from bcset\n\n    data act_objects_temp  type scp1_act_objects.\n\n    field-symbols <act_object>  type scp1_act_object.\n    field-symbols <wa_recattr>  type scprreca.\n    field-symbols <wa_value>    type scprvals.\n    field-symbols <wa_valuel>   type scprvall.\n\n\n* update recattr, values and valuesl\n    loop at recattr assigning <wa_recattr>\n```\n\nFull Source SHA-256: 96da3cfb66db7edabdb8cda11e7d2e30e06b38886651c17243949ea14c232cdb\nURI: /sap/bc/adt/functions/groups/scprac/includes/lscpracf01/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+      },
+      "sourceEvidence": "activation-context.json"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SAPSCTS_EXE_EXP",
+        "objectType": "PROG/P",
+        "startLine": 1,
+        "lineCount": 100
+      },
+      "isError": false,
+      "data": {
+        "message": "Could not find ABAP object: SAPSCTS_EXE_EXP of type PROG/P. The object may not exist or may not be accessible."
+      },
+      "sourceEvidence": "activation-context.json"
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SCPR_HANDL"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "dataElement",
+        "objectName": "SCPR_HANDL",
+        "packageName": "SCPR",
+        "version": "20040719103647",
+        "fingerprint": "debff79285ae05be9de04904bb5bcdf3ce518a7174105d75dc36e678c8c9586c",
+        "definition": {
+          "description": "业务配置集：32 字符 GUID 的容器",
+          "domainName": "SCPR_GUID",
+          "heading": "GUID",
+          "short": "GUID",
+          "medium": "GUID",
+          "long": "GUID"
+        }
+      },
+      "sourceEvidence": "activation-context.json"
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "SYSTEM_UUID_C_CREATE"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "SYSTEM_UUID_C_CREATE",
+        "functionGroup": "SYST",
+        "shortText": "以特性格式生成UUID",
+        "remoteMode": "R",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": true,
+        "importParameters": [],
+        "exportParameters": [
+          {
+            "name": "UUID",
+            "typeName": "SYSUUID-C",
+            "optional": false,
+            "passByValue": true,
+            "description": "UUID in character form"
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "source": [
+          "FUNCTION SYSTEM_UUID_C_CREATE.",
+          "*\"----------------------------------------------------------------------",
+          "*\"*\"Lokale Schnittstelle:",
+          "*\"  EXPORTING",
+          "*\"     VALUE(UUID) LIKE  SYSUUID-C",
+          "*\"----------------------------------------------------------------------",
+          "* NOW this function has been replaced, see note 935047",
+          "*",
+          "* 28.6.2006 The function module has been switched to the new UUID methods",
+          "*           which exist in the class cl_system_uuid",
+          "*           - due to compatibility reasons we catch the exceptions",
+          "*           - sy-subrc not touched manually",
+          "*             (sy-subrc was set in case of an error when calling the former",
+          "*             'RFCControl' kernel-call, but it wasn't evaluated and finally",
+          "*             overwritten when leaving this function)",
+          "*\"----------------------------------------------------------------------",
+          "",
+          "  DATA: l_uuid_x16 TYPE sysuuid_x16.",
+          "",
+          "  TRY.",
+          "      l_uuid_x16 = cl_system_uuid=>create_uuid_x16_static( ). \" create uuid_x16",
+          "    CATCH cx_uuid_error.                                      \" catch error",
+          "      l_uuid_x16 = 0.",
+          "  ENDTRY.",
+          "",
+          "  uuid = l_uuid_x16.",
+          "",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "41a9aaade428e2d8fd87ce744d527361548ab7f205d2c531f46ff6dba5c82c2f",
+        "interfaceFingerprint": "f77ea8d7a8051f36128a8c6fa6204df3dbfbe7e5aa0bce4bdd9ff218fd5fa4f9",
+        "sourceFingerprint": "ba7f3050368161e47a6177741129730ea9ae40a71077d3f8d09c0e6b1b2ec244"
+      },
+      "sourceEvidence": "activation-context.json"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SAPLSCTS_EXE_EXP",
+        "objectType": "PROG/P",
+        "startLine": 1,
+        "lineCount": 100
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from SAPLSCTS_EXE_EXP (lines 1-18 of 18, 18 lines retrieved):\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LSCTS_EXE_EXPTOP.                  \" Global Data\n  INCLUDE LSCTS_EXE_EXPUXX.                  \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n* INCLUDE LSCTS_EXE_EXPF...                  \" Subprograms\n* INCLUDE LSCTS_EXE_EXPO...                  \" PBO-Modules\n* INCLUDE LSCTS_EXE_EXPI...                  \" PAI-Modules\n\nINCLUDE LSCTS_EXE_EXPF01.\nINCLUDE LSCTS_EXE_EXPF02.\n\nINCLUDE LSCTS_EXE_EXPF03.\n\n```\n\nFull Source SHA-256: 4033e2c7ae46cb417dab7a447e4f9d89705868bddd55d7219ddd327096fdd0e7\nURI: /sap/bc/adt/functions/groups/scts_exe_exp/source/main\n\nEnhancement metadata unavailable (unsupported)."
+      },
+      "sourceEvidence": "dispatch-context.json"
+    },
+    {
+      "name": "search_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SAPLSCTS_EXE_EXP",
+        "searchTerm": "FORM call_imp_methods|FORM CALL_IMP_METHODS|iv_no_commit_work",
+        "isRegexp": true,
+        "contextLines": 5,
+        "maxObjects": 8
+      },
+      "isError": false,
+      "data": {
+        "message": "No base-source matches for \"FORM call_imp_methods|FORM CALL_IMP_METHODS|iv_no_commit_work\". Enhancement metadata was unavailable for 1 object(s).\n\nObjects searched:\n• SCTS_EXE_EXP (FUGR/I)"
+      },
+      "sourceEvidence": "dispatch-context.json"
+    },
+    {
+      "name": "read_ddic_domain",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SCPR_GUID"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "domain",
+        "objectName": "SCPR_GUID",
+        "packageName": "SCPR",
+        "version": "20001108191447",
+        "fingerprint": "d5476f80ace51fa0ea92d5fe24ef59e5397fc28fa241c3f16ae5226078891c06",
+        "definition": {
+          "description": "BC Sets: GUID",
+          "dataType": "CHAR",
+          "length": 32,
+          "outputLength": 32,
+          "decimals": 0,
+          "lowercase": false,
+          "signFlag": false,
+          "valueTable": "",
+          "conversionExit": "",
+          "fixedValues": []
+        }
+      },
+      "sourceEvidence": "dispatch-context.json"
+    },
+    {
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCTS_EXE_EXPF01",
+        "searchTerm": "call_imp_methods|iv_no_commit_work|no_commit",
+        "isRegexp": true,
+        "contextLines": 4
+      },
+      "isError": false,
+      "data": {
+        "message": "No base-source matches for \"call_imp_methods|iv_no_commit_work|no_commit\". Enhancement metadata was unavailable for 1 object(s)."
+      },
+      "sourceEvidence": "dispatch-search.json"
+    },
+    {
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCTS_EXE_EXPF02",
+        "searchTerm": "call_imp_methods|iv_no_commit_work|no_commit",
+        "isRegexp": true,
+        "contextLines": 4
+      },
+      "isError": false,
+      "data": {
+        "message": "Found 19 matches for \"call_imp_methods|iv_no_commit_work|no_commit\" in LSCTS_EXE_EXPF02:\nBase: 19 | Enhancement: 0\n\n\n## LSCTS_EXE_EXPF02 (FUGR/I)\n\nBase Source Matches (19):\n\nLine 39:\n```abap\n  \r\n  ENDFORM.         \" SORT_METHOD_CALLS\r\n  \r\n  *&---------------------------------------------------------------------*\r\n> *&      Form  CALL_IMP_METHODS\r\n  *&---------------------------------------------------------------------*\r\n  *       Execution of a AI method\r\n  *       - find clients, in which method has to be executed\r\n  *       - invoke method for each client\r\n```\n\nLine 46:\n```abap\n  *       - find clients, in which method has to be executed\r\n  *       - invoke method for each client\r\n  *       - set execution result per client\r\n  *----------------------------------------------------------------------*\r\n> FORM call_imp_methods\r\n                USING    pv_trkorr          LIKE e070-trkorr\r\n                         pv_update_lockflag LIKE trpari-w_valid\r\n                         pv_no_commit_work  LIKE trpari-w_valid\r\n                         pv_ctc             LIKE trpari-flag\r\n```\n\nLine 49:\n```abap\n  *----------------------------------------------------------------------*\r\n  FORM call_imp_methods\r\n                USING    pv_trkorr          LIKE e070-trkorr\r\n                         pv_update_lockflag LIKE trpari-w_valid\r\n>                        pv_no_commit_work  LIKE trpari-w_valid\r\n                         pv_ctc             LIKE trpari-flag\r\n                         pv_sfw_call        TYPE trpari-flag\r\n                         pv_statlog_file    LIKE tstrf01-file\r\n                         ps_method_call     TYPE trmtd_method_call\r\n```\n\nLine 88:\n```abap\n          CLEAR pv_no_work_found.\r\n          EXIT.\r\n        ENDIF.\r\n        READ TABLE pt_client INDEX 1 INTO ls_client_h.\r\n>       PERFORM call_imp_methods_in_client\r\n                                 USING    pv_trkorr\r\n                                          pv_update_lockflag\r\n                                          pv_no_commit_work\r\n                                          pv_ctc\r\n```\n\nLine 91:\n```abap\n        READ TABLE pt_client INDEX 1 INTO ls_client_h.\r\n        PERFORM call_imp_methods_in_client\r\n                                 USING    pv_trkorr\r\n                                          pv_update_lockflag\r\n>                                         pv_no_commit_work\r\n                                          pv_ctc\r\n                                          pv_statlog_file\r\n                                          ps_method_call\r\n                                          pv_is_upgrade\r\n```\n\nLine 106:\n```abap\n  * distinguish client dependent and independent methods\r\n        IF ps_method_call-clidep EQ space  OR\r\n           ps_spec_pars-with_cl_results EQ 'X'.\r\n          CLEAR ls_client_h.\r\n>         PERFORM call_imp_methods_in_client\r\n                                   USING    pv_trkorr\r\n                                            pv_update_lockflag\r\n                                            pv_no_commit_work\r\n                                            pv_ctc\r\n```\n\nLine 109:\n```abap\n          CLEAR ls_client_h.\r\n          PERFORM call_imp_methods_in_client\r\n                                   USING    pv_trkorr\r\n                                            pv_update_lockflag\r\n>                                           pv_no_commit_work\r\n                                            pv_ctc\r\n                                            pv_statlog_file\r\n                                            ps_method_call\r\n                                            pv_is_upgrade\r\n```\n\nLine 120:\n```abap\n                                            ls_client_h\r\n                                            ps_spec_pars.\r\n        ELSE.\r\n          LOOP AT pt_client INTO ls_client_h.\r\n>           PERFORM call_imp_methods_in_client\r\n                                     USING    pv_trkorr\r\n                                              pv_update_lockflag\r\n                                              pv_no_commit_work\r\n                                              pv_ctc\r\n```\n\nLine 123:\n```abap\n          LOOP AT pt_client INTO ls_client_h.\r\n            PERFORM call_imp_methods_in_client\r\n                                     USING    pv_trkorr\r\n                                              pv_update_lockflag\r\n>                                             pv_no_commit_work\r\n                                              pv_ctc\r\n                                              pv_statlog_file\r\n                                              ps_method_call\r\n                                              pv_is_upgrade\r\n```\n\nLine 162:\n```abap\n            WHERE success <> trexe_c_success_err.\r\n          EXIT.\r\n        ENDIF.\r\n        READ TABLE pt_client INDEX 1 ASSIGNING <ls_client>.\r\n>       PERFORM call_imp_methods_in_client\r\n                                 USING    pv_trkorr\r\n                                          pv_update_lockflag\r\n                                          pv_no_commit_work\r\n                                          pv_ctc\r\n```\n\nLine 165:\n```abap\n        READ TABLE pt_client INDEX 1 ASSIGNING <ls_client>.\r\n        PERFORM call_imp_methods_in_client\r\n                                 USING    pv_trkorr\r\n                                          pv_update_lockflag\r\n>                                         pv_no_commit_work\r\n                                          pv_ctc\r\n                                          pv_statlog_file\r\n                                          ps_method_call\r\n                                          pv_is_upgrade\r\n```\n\nLine 176:\n```abap\n                                          <ls_client>\r\n                                          ps_spec_pars.\r\n      ELSE.\r\n        LOOP AT pt_client ASSIGNING <ls_client>.\r\n>         PERFORM call_imp_methods_in_client\r\n                                   USING    pv_trkorr\r\n                                            pv_update_lockflag\r\n                                            pv_no_commit_work\r\n                                            pv_ctc\r\n```\n\nLine 179:\n```abap\n        LOOP AT pt_client ASSIGNING <ls_client>.\r\n          PERFORM call_imp_methods_in_client\r\n                                   USING    pv_trkorr\r\n                                            pv_update_lockflag\r\n>                                           pv_no_commit_work\r\n                                            pv_ctc\r\n                                            pv_statlog_file\r\n                                            ps_method_call\r\n                                            pv_is_upgrade\r\n```\n\nLine 192:\n```abap\n        ENDLOOP.\r\n      ENDIF.\r\n    ENDIF.\r\n  \r\n> ENDFORM.                    \" CALL_IMP_METHODS\r\n  \r\n  *&---------------------------------------------------------------------*\r\n  *&      Form  CALL_IMP_METHODS_IN_CLIENT\r\n  *&---------------------------------------------------------------------*\r\n```\n\nLine 195:\n```abap\n  \r\n  ENDFORM.                    \" CALL_IMP_METHODS\r\n  \r\n  *&---------------------------------------------------------------------*\r\n> *&      Form  CALL_IMP_METHODS_IN_CLIENT\r\n  *&---------------------------------------------------------------------*\r\n  *       Execution of a AI method in one client\r\n  *       - find objects, for which method still has to be executed\r\n  *       - invoke method\r\n```\n\nLine 202:\n```abap\n  *       - find objects, for which method still has to be executed\r\n  *       - invoke method\r\n  *       - analize errors and update LOCKFLAGs, if desired\r\n  *----------------------------------------------------------------------*\r\n> FORM call_imp_methods_in_client\r\n                USING    pv_trkorr          LIKE e070-trkorr\r\n                         pv_update_lockflag LIKE trpari-w_valid\r\n                         pv_no_commit_work  LIKE trpari-w_valid\r\n                         pv_ctc             LIKE trpari-flag\r\n```\n\nLine 205:\n```abap\n  *----------------------------------------------------------------------*\r\n  FORM call_imp_methods_in_client\r\n                USING    pv_trkorr          LIKE e070-trkorr\r\n                         pv_update_lockflag LIKE trpari-w_valid\r\n>                        pv_no_commit_work  LIKE trpari-w_valid\r\n                         pv_ctc             LIKE trpari-flag\r\n                         pv_statlog_file    LIKE tstrf01-file\r\n                         ps_method_call     TYPE trmtd_method_call\r\n                         pv_is_upgrade      LIKE trpari-w_upgrade\r\n```\n\nLine 455:\n```abap\n                              ls_obj-objecttype\r\n                              lv_date_time.\r\n    PERFORM write_log.\r\n    CALL FUNCTION 'MESSAGE_ERROR_GET_AND_RESET'.\r\n>   IF pv_no_commit_work <> 'X'.\r\n      COMMIT WORK.\r\n    ENDIF.\r\n  \r\n  ENDFORM.                    \" CALL_IMP_METHODS_IN_CLIENT\r\n```\n\nLine 459:\n```abap\n    IF pv_no_commit_work <> 'X'.\r\n      COMMIT WORK.\r\n    ENDIF.\r\n  \r\n> ENDFORM.                    \" CALL_IMP_METHODS_IN_CLIENT\r\n  \r\n  * find out objects, that are already imported and not yet 'generated'\r\n  FORM analize_lockflags\r\n                USING    pv_ctc             LIKE trpari-flag\r\n```\n\nEnhancement Metadata: Unavailable (unsupported)\n\nURI: /sap/bc/adt/functions/groups/scts_exe_exp/includes/lscts_exe_expf02/source/main (980 lines total)\n\n"
+      },
+      "sourceEvidence": "dispatch-search.json"
+    },
+    {
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCTS_EXE_EXPF03",
+        "searchTerm": "call_imp_methods|iv_no_commit_work|no_commit",
+        "isRegexp": true,
+        "contextLines": 4
+      },
+      "isError": false,
+      "data": {
+        "message": "No base-source matches for \"call_imp_methods|iv_no_commit_work|no_commit\". Enhancement metadata was unavailable for 1 object(s)."
+      },
+      "sourceEvidence": "dispatch-search.json"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCTS_EXE_EXPF02",
+        "objectType": "PROG/I",
+        "startLine": 1,
+        "lineCount": 200
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LSCTS_EXE_EXPF02 (lines 1-200 of 980, 200 lines retrieved):\n\n```abap\n*----------------------------------------------------------------------*\n***INCLUDE LSCTS_EXE_EXPF02 .\n*----------------------------------------------------------------------*\n*&---------------------------------------------------------------------*\n*&      Form  SORT_METHOD_CALLS\n*&---------------------------------------------------------------------*\n*       Sort lt_method_calls in a way, that methods contained in\n*       lt_leads are executed first.\n*----------------------------------------------------------------------*\nFORM sort_method_calls\n              USING    lt_leads           TYPE cts_aims\n              CHANGING lt_method_calls    TYPE trmtd_method_calls.\n\n  DATA: lv_leads_ind      TYPE i,\n        ls_lead           TYPE cts_aim,\n        ls_method_call    TYPE trmtd_method_call.\n\n  DESCRIBE TABLE lt_leads LINES lv_leads_ind.\n\n* loop at lt_leads in inverse order.\n* Do not generally sort table lt_method_calls, since there is some\n* pre-ordering in CTO_ORDER_GET_METHOD_CALLS.\n  WHILE lv_leads_ind GT 0.\n    READ TABLE lt_leads INDEX lv_leads_ind INTO ls_lead.\n    READ TABLE lt_method_calls WITH KEY\n      method    = trmtd_after_imp\n      method_fb = ls_lead-name\n      INTO ls_method_call.\n    IF sy-subrc = 0.  \"entry exists: shift to first place.\n      DELETE lt_method_calls INDEX sy-tabix.\n      INSERT ls_method_call INTO lt_method_calls INDEX 1.\n    ENDIF.\n    SUBTRACT 1 FROM lv_leads_ind.\n  ENDWHILE.\n\nENDFORM.         \" SORT_METHOD_CALLS\n\n*&---------------------------------------------------------------------*\n*&      Form  CALL_IMP_METHODS\n*&---------------------------------------------------------------------*\n*       Execution of a AI method\n*       - find clients, in which method has to be executed\n*       - invoke method for each client\n*       - set execution result per client\n*----------------------------------------------------------------------*\nFORM call_imp_methods\n              USING    pv_trkorr          LIKE e070-trkorr\n                       pv_update_lockflag LIKE trpari-w_valid\n                       pv_no_commit_work  LIKE trpari-w_valid\n                       pv_ctc             LIKE trpari-flag\n                       pv_sfw_call        TYPE trpari-flag\n                       pv_statlog_file    LIKE tstrf01-file\n                       ps_method_call     TYPE trmtd_method_call\n                       pv_is_upgrade      LIKE trpari-w_upgrade\n                       pv_top_level       TYPE sprot_u-level\n              CHANGING pv_no_work_found   LIKE trpari-flag\n                       pt_client          TYPE scts_cl_results\n                       ps_spec_pars       TYPE gty_spec_pars.\n\n  DATA: lv_cl_count    TYPE i,\n        ls_client_h    TYPE scts_cl_result.\n  FIELD-SYMBOLS: <ls_client> TYPE scts_cl_result.\n\n  DESCRIBE TABLE pt_client LINES lv_cl_count.\n\n* table of clients must not be empty\n  IF lv_cl_count EQ 0.\n    PERFORM log_message USING '2' 'E' '181' ' '\n            pv_trkorr space space space.\n    CLEAR pv_no_work_found.\n    EXIT.\n  ENDIF.\n\n  IF pv_sfw_call NE 'X'.\n* No inner call of activations from switch framework\n* In this case we do not store the client specific result of\n* execution in PT_CLIENT\n    IF pv_ctc NE 'X'.\n* extended transport control not active\n* PT_CLIENT must contain exactly one entry\n      IF lv_cl_count GT 1.\n        PERFORM log_message USING '2' 'E' '190' ' '\n                pv_trkorr space space space.\n        CLEAR pv_no_work_found.\n        EXIT.\n      ENDIF.\n      READ TABLE pt_client INDEX 1 INTO ls_client_h.\n      PERFORM call_imp_methods_in_client\n                               USING    pv_trkorr\n                                        pv_update_lockflag\n                                        pv_no_commit_work\n                                        pv_ctc\n                                        pv_statlog_file\n                                        ps_method_call\n                                        pv_is_upgrade\n                                        pv_top_level\n                               CHANGING pv_no_work_found\n                                        ls_client_h\n                                        ps_spec_pars.\n    ELSE.\n* extended transport control active\n* distinguish client dependent and independent methods\n      IF ps_method_call-clidep EQ space  OR\n         ps_spec_pars-with_cl_results EQ 'X'.\n        CLEAR ls_client_h.\n        PERFORM call_imp_methods_in_client\n                                 USING    pv_trkorr\n                                          pv_update_lockflag\n                                          pv_no_commit_work\n                                          pv_ctc\n                                          pv_statlog_file\n                                          ps_method_call\n                                          pv_is_upgrade\n                                          pv_top_level\n                                 CHANGING pv_no_work_found\n                                          ls_client_h\n                                          ps_spec_pars.\n      ELSE.\n        LOOP AT pt_client INTO ls_client_h.\n          PERFORM call_imp_methods_in_client\n                                   USING    pv_trkorr\n                                            pv_update_lockflag\n                                            pv_no_commit_work\n                                            pv_ctc\n                                            pv_statlog_file\n                                            ps_method_call\n                                            pv_is_upgrade\n                                            pv_top_level\n                                   CHANGING pv_no_work_found\n                                            ls_client_h\n                                            ps_spec_pars.\n        ENDLOOP.\n      ENDIF.\n    ENDIF.\n  ELSE.\n* Inner call of activations from switch framework\n* No recursive call of methods from switch framework allowed.\n    IF ps_spec_pars-with_cl_results EQ 'X'.\n      PERFORM log_message USING '2' 'E' '191' ' '\n              pv_trkorr ps_method_call-method_fb space space.\n      CLEAR pv_no_work_found.\n* Set all client results on error\n      ls_client_h-success = trexe_c_success_err.\n      MODIFY pt_client FROM ls_client_h TRANSPORTING success\n        WHERE success <> trexe_c_success_err.\n      EXIT.\n    ENDIF.\n* distinguish client dependent and independent methods\n    IF ps_method_call-clidep EQ space.\n* PT_CLIENT must contain exactly one entry\n      IF lv_cl_count GT 1.\n        PERFORM log_message USING '2' 'E' '190' ' '\n                pv_trkorr space space space.\n        CLEAR pv_no_work_found.\n* Set all client results on error\n        ls_client_h-success = trexe_c_success_err.\n        MODIFY pt_client FROM ls_client_h TRANSPORTING success\n          WHERE success <> trexe_c_success_err.\n        EXIT.\n      ENDIF.\n      READ TABLE pt_client INDEX 1 ASSIGNING <ls_client>.\n      PERFORM call_imp_methods_in_client\n                               USING    pv_trkorr\n                                        pv_update_lockflag\n                                        pv_no_commit_work\n                                        pv_ctc\n                                        pv_statlog_file\n                                        ps_method_call\n                                        pv_is_upgrade\n                                        pv_top_level\n                               CHANGING pv_no_work_found\n                                        <ls_client>\n                                        ps_spec_pars.\n    ELSE.\n      LOOP AT pt_client ASSIGNING <ls_client>.\n        PERFORM call_imp_methods_in_client\n                                 USING    pv_trkorr\n                                          pv_update_lockflag\n                                          pv_no_commit_work\n                                          pv_ctc\n                                          pv_statlog_file\n                                          ps_method_call\n                                          pv_is_upgrade\n                                          pv_top_level\n                                 CHANGING pv_no_work_found\n                                          <ls_client>\n                                          ps_spec_pars.\n      ENDLOOP.\n    ENDIF.\n  ENDIF.\n\nENDFORM.                    \" CALL_IMP_METHODS\n\n*&---------------------------------------------------------------------*\n*&      Form  CALL_IMP_METHODS_IN_CLIENT\n*&---------------------------------------------------------------------*\n*       Execution of a AI method in one client\n*       - find objects, for which method still has to be executed\n*       - invoke method\n*       - analize errors and update LOCKFLAGs, if desired\n```\n\nFull Source SHA-256: b1169d36ed172f1e9b5b88fb40cc72ff12c67274ebd3e48c8859c7700d032cf8\nURI: /sap/bc/adt/functions/groups/scts_exe_exp/includes/lscts_exe_expf02/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+      },
+      "sourceEvidence": "dispatch-body.json"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCTS_EXE_EXPF02",
+        "objectType": "PROG/I",
+        "startLine": 201,
+        "lineCount": 200
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LSCTS_EXE_EXPF02 (lines 201-400 of 980, 200 lines retrieved):\n\n```abap\n*----------------------------------------------------------------------*\nFORM call_imp_methods_in_client\n              USING    pv_trkorr          LIKE e070-trkorr\n                       pv_update_lockflag LIKE trpari-w_valid\n                       pv_no_commit_work  LIKE trpari-w_valid\n                       pv_ctc             LIKE trpari-flag\n                       pv_statlog_file    LIKE tstrf01-file\n                       ps_method_call     TYPE trmtd_method_call\n                       pv_is_upgrade      LIKE trpari-w_upgrade\n                       pv_top_level       TYPE sprot_u-level\n              CHANGING pv_no_work_found   LIKE trpari-flag\n                       ps_client          TYPE scts_cl_result\n                       ps_spec_pars       TYPE gty_spec_pars.\n\n  DATA: lt_e071     TYPE trwbo_t_e071        ,\n        lt_e071_sav TYPE trwbo_t_e071        ,\n        lt_e071_ok  TYPE trwbo_t_e071        ,\n        lt_e071k    TYPE trwbo_t_e071k       .\n\n  DATA: ls_obj      TYPE trmtd_object_name   ,\n        ls_e071     TYPE trwbo_s_e071        ,\n        ls_client   TYPE scts_cl_result      ,\n        ls_tfdir    LIKE tfdir               .\n\n  DATA: lv_cnt        TYPE i                   ,\n        lv_date_time(14)   TYPE c              ,\n        lv_old_value  LIKE sprot-severity      ,\n        lv_ok         LIKE trpari-flag         ,\n        lv_success    TYPE scts_result         .\n\n  FIELD-SYMBOLS: <ls_client>   TYPE scts_cl_result.\n\n* read first entry of PS_METHOD_CALL-OBJNAMES for log messages\n  READ TABLE ps_method_call-objnames INDEX 1 INTO ls_obj .\n* After import method for object & of type Typ & started,\n*                                            Date and Time &\n  PERFORM get_date_and_time CHANGING lv_date_time.\n  PERFORM log_message USING pv_top_level ' ' '122' 'X'\n                            ps_method_call-method_fb\n                            ls_obj-objectname\n                            ls_obj-objecttype\n                            lv_date_time.\n  IF ps_method_call-clidep EQ 'X'         AND\n     ps_client-client NE space            AND\n     ps_spec_pars-with_cl_results NE 'X'      .\n* announce client\n    PERFORM log_message USING pv_top_level ' ' '186' ' '\n            ps_method_call-method_fb ps_client-client space space.\n  ENDIF.\n\n  IF pv_update_lockflag NE space.\n* Only take objects, that are already imported and not yet 'generated'\n* Rules for handling lockflags in case of client dependent methods\n* of switch framework:\n* - Only take objects, that were imported successfully into all clients,\n*   but not yet generated in at least one client\n* - Eliminate clients, for which all objects are already generated\n* This logic is identical to logic for other objects if ctc is switched off,\n* and very near to logic for other objects if ctc is switched on.\n    PERFORM analize_lockflags\n              USING    pv_ctc\n                       ps_method_call\n                       ps_client-client\n              CHANGING pv_no_work_found\n                       lt_e071\n                       lt_e071k\n                       ps_spec_pars.\n  ELSE.\n    lt_e071  = ps_method_call-objects.\n    lt_e071k = ps_method_call-keys.\n  ENDIF.\n\n  DESCRIBE TABLE lt_e071 LINES lv_cnt.\n  IF lv_cnt EQ 0.\n* nothing to do\n  ELSE.\n    CLEAR pv_no_work_found.\n* save a sorted copy of the object list\n    lt_e071_sav = lt_e071           .\n    SORT lt_e071_sav BY trkorr as4pos.\n* remove identical entries for different IMG activities\n    PERFORM clear_img_activity CHANGING lt_e071 lt_e071k.\n\n* read first entry of LT_E071 for statistic messages\n* (may be improved)\n    READ TABLE lt_e071                 INDEX 1 INTO ls_e071.\n\n* Check, if function module of method exists\n    SELECT SINGLE * FROM tfdir INTO ls_tfdir\n           WHERE funcname = ps_method_call-method_fb.\n    IF sy-subrc NE 0.\n* change result for current client:\n* This is only relevant for inner calls of switch framework, so not relevant\n* for methods of switch framework itself.\n      ps_client-success = trexe_c_success_err.\n      PERFORM log_message USING '2' 'E' '124' 'X'\n              ps_method_call-method_fb ls_obj-objectname\n              ls_obj-objecttype space.\n      EXIT.\n    ENDIF.\n\n* Write log (if function aborts)\n    PERFORM write_log.\n\n* write start time to statistic file\n    PERFORM write_statlog    USING '('\n                                   ls_e071-object\n                                   ls_e071-obj_name\n                                   pv_statlog_file\n                                   pv_trkorr.\n\n* reset error flag\n    CALL FUNCTION 'MESSAGE_ERROR_GET_AND_RESET' .\n* Store info on called method in memory. This info will be used,\n* if the method destroys the current internal mode by\n* SUBMITting reports or CALLing TRANSACTIONs without RETURN.\n    CALL FUNCTION 'TRINT_SET_STACK_KILLER'\n      EXPORTING\n        iv_trkorr     = pv_trkorr\n        iv_method     = trmtd_after_imp\n        iv_methodname = ps_method_call-method_fb.\n\n*---------------------------------------call method---------------------\n*   Clear message vars so that badly programmed methods cannot send our\n*   messages (this saves many hours of debugging, since now we receive\n*   a short dump indicating exactly the position where the erroneous\n*   message is sent!)\n    CLEAR: sy-msgid, sy-msgty, sy-msgno.\n\n    IF ps_spec_pars-with_data_file EQ 'X'.\n      CALL FUNCTION ps_method_call-method_fb\n        EXPORTING\n          iv_tarclient  = ps_client-client\n          iv_is_upgrade = pv_is_upgrade\n          iv_datafile   = ps_spec_pars-data_file\n        TABLES\n          tt_e071       = lt_e071\n          tt_e071k      = lt_e071k.\n    ELSEIF ps_spec_pars-with_asynch_mode EQ 'X'.\n      CALL FUNCTION ps_method_call-method_fb\n        EXPORTING\n          iv_tarclient    = ps_client-client\n          iv_is_upgrade   = pv_is_upgrade\n          iv_asynchronous = ps_spec_pars-asynch_mode\n        TABLES\n          tt_e071         = lt_e071\n          tt_e071k        = lt_e071k.\n    ELSEIF ps_spec_pars-with_cl_results EQ 'X'.\n      CALL FUNCTION ps_method_call-method_fb\n        EXPORTING\n          iv_trkorr     = pv_trkorr\n          iv_is_upgrade = pv_is_upgrade\n          it_e071       = lt_e071\n          it_e071k      = lt_e071k\n        CHANGING\n          it_client     = ps_spec_pars-clients.\n    ELSE.\n      CALL FUNCTION ps_method_call-method_fb\n        EXPORTING\n          iv_tarclient  = ps_client-client\n          iv_is_upgrade = pv_is_upgrade\n        TABLES\n          tt_e071       = lt_e071\n          tt_e071k      = lt_e071k.\n    ENDIF.\n*-----------------------------------------------------------------------\n\n* reset info on called method in memory.\n    CALL FUNCTION 'TRINT_RESET_STACK_KILLER'.\n* check if method call has deleted variables in global memory\n* and set those variables again\n    CALL FUNCTION 'TRINT_CHECK_VARS_IN_MEMORY'\n      IMPORTING\n        ev_ok = lv_ok.\n    IF lv_ok = ' '.\n* memory destroyed: set all clients to errornous for security\n* for methods of switch framework\n      IF ps_spec_pars-with_cl_results EQ 'X'.\n        ls_client-success = trexe_c_success_err.\n        MODIFY ps_spec_pars-clients FROM ls_client TRANSPORTING success\n          WHERE success <> trexe_c_success_err.\n      ENDIF.\n* for other methods it suffices to send an error message\n      PERFORM log_message USING '2' 'E' '104' ' '\n                                ps_method_call-method_fb\n                                space space space.\n      PERFORM write_log.\n    ENDIF.\n\n* Set OK-flag for correctly activated objects\n    CALL FUNCTION 'MESSAGE_ERROR_GET_AND_RESET'\n      IMPORTING\n        old_value = lv_old_value.\n    IF NOT pv_update_lockflag IS INITIAL.\n      IF ps_spec_pars-with_cl_results EQ 'X'.\n* Set OK-Flags accordingly to client specific results\n        lt_e071_ok = lt_e071_sav.\n      ELSEIF lv_old_value NA gc_bad_rc.\n* No error reported: set OK-flag for all objects\n        lt_e071_ok = lt_e071_sav.\n```\n\nFull Source SHA-256: b1169d36ed172f1e9b5b88fb40cc72ff12c67274ebd3e48c8859c7700d032cf8\nURI: /sap/bc/adt/functions/groups/scts_exe_exp/includes/lscts_exe_expf02/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+      },
+      "sourceEvidence": "dispatch-body.json"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCTS_EXE_EXPF02",
+        "objectType": "PROG/I",
+        "startLine": 401,
+        "lineCount": 59
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LSCTS_EXE_EXPF02 (lines 401-459 of 980, 59 lines retrieved):\n\n```abap\n      ELSE.\n        CLEAR lt_e071_ok.\n      ENDIF.\n      PERFORM update_lockflags\n                USING    pv_ctc\n                         ps_method_call\n                         ps_client-client\n                         lt_e071_ok\n                         ps_spec_pars.\n    ENDIF.\n\n    IF ps_spec_pars-with_cl_results EQ 'X'.\n      lv_success = trexe_c_success_ok.\n      LOOP AT ps_spec_pars-clients ASSIGNING <ls_client>\n         WHERE success EQ trexe_c_success_err.\n        lv_success = trexe_c_success_err.\n      ENDLOOP.\n      IF lv_success EQ trexe_c_success_err.\n* log method name\n        PERFORM tell_nok USING ps_method_call-method_fb\n                               ls_obj-objectname\n                               ls_obj-objecttype\n                               lv_success.\n      ENDIF.\n    ELSE.\n      IF lv_old_value CA gc_bad_rc.\n* change result for current client\n        ps_client-success = trexe_c_success_err.\n* log method name\n        PERFORM tell_nok USING ps_method_call-method_fb\n                               ls_obj-objectname\n                               ls_obj-objecttype\n                               lv_old_value.\n      ENDIF.\n    ENDIF.\n\n* write end time to statistic file\n    PERFORM write_statlog    USING ')'\n                                   ls_e071-object\n                                   ls_e071-obj_name\n                                   pv_statlog_file\n                                   pv_trkorr.\n  ENDIF.\n\n* After import method for object & of type Typ & finished,\n*                                            Date and Time &\n  PERFORM get_date_and_time CHANGING lv_date_time.\n  PERFORM log_message USING '3' ' ' '123' ' '\n                            ps_method_call-method_fb\n                            ls_obj-objectname\n                            ls_obj-objecttype\n                            lv_date_time.\n  PERFORM write_log.\n  CALL FUNCTION 'MESSAGE_ERROR_GET_AND_RESET'.\n  IF pv_no_commit_work <> 'X'.\n    COMMIT WORK.\n  ENDIF.\n\nENDFORM.                    \" CALL_IMP_METHODS_IN_CLIENT\n```\n\nFull Source SHA-256: b1169d36ed172f1e9b5b88fb40cc72ff12c67274ebd3e48c8859c7700d032cf8\nURI: /sap/bc/adt/functions/groups/scts_exe_exp/includes/lscts_exe_expf02/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+      },
+      "sourceEvidence": "dispatch-body.json"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCTS_EXE_EXPTOP",
+        "objectType": "PROG/I",
+        "startLine": 1,
+        "lineCount": 200
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LSCTS_EXE_EXPTOP (lines 1-138 of 138, 138 lines retrieved):\n\n```abap\nFUNCTION-POOL scts_exe_exp.\n\n* type-pools\nTYPE-POOLS: trexe,              \" ABAP transport tools\n            trlck,              \" LOCKFLAG handling\n            trmtd,              \" OBJH/M handling\n            trwbo.              \" CTO\n\n* types\n* special parameters for some transport methods\nTYPES: BEGIN OF gty_spec_pars,\n         with_data_file   TYPE trparflag,\n         data_file        LIKE tstrf01-file,\n         with_asynch_mode TYPE trparflag,\n         asynch_mode      TYPE trparflag,\n         not_during_upgrade TYPE trparflag,\n         with_cl_results  TYPE trparflag,\n         clients          TYPE scts_cl_results,\n       END OF gty_spec_pars,\n* Table of method names\n       BEGIN OF gty_method,\n         name             TYPE trmtd_method_fb,\n       END OF gty_method,\n       gty_methods        TYPE STANDARD TABLE OF gty_method\n                          WITH KEY name,\n* Table of object status (e071-lockflag)\n       BEGIN OF gty_objstat,\n         trkorr          TYPE e071c-trkorr,\n         as4pos          TYPE e071c-as4pos,\n         client          TYPE e071c-client,\n         lockflag        TYPE e071c-lockflag,\n         symb_value      TYPE trlck_symb_value,\n       END OF gty_objstat,\n       gty_objstats      TYPE STANDARD TABLE OF gty_objstat.\n\n* includes\nINCLUDE rddkorri.\nINCLUDE ltmspcon. \"TMS tp Profile Manager: Constants\n\n* constants\n* standard application area for log messages\nCONSTANTS: gc_log_ag      LIKE t100-arbgb       VALUE 'PU',\n           gc_langu       LIKE sprot_u-langu    VALUE 'E',\n* 4th letter of log file name for before export methods\n           gc_acttype(1) VALUE 'e',\n* return codes for TRBAT\n           gc_ok         LIKE trbat-retcode VALUE '0000',\n           gc_warning    LIKE trbat-retcode VALUE '0004',\n           gc_error      LIKE trbat-retcode VALUE '0008',\n           gc_cancel     LIKE trbat-retcode VALUE '0012',\n* severities for log messages\n           gc_sev_ok      LIKE sprot-severity VALUE ' ',    \"#EC NEEDED\n           gc_sev_warning LIKE sprot-severity VALUE 'W',\n           gc_sev_error   LIKE sprot-severity VALUE 'E',\n           gc_sev_cancel  LIKE sprot-severity VALUE 'A',\n           gc_bad_rc(2)   TYPE c              VALUE 'EA',\n* object types\n           gc_r3tr        TYPE pgmid          VALUE 'R3TR',\n           gc_xpra        TYPE trobjtype      VALUE 'XPRA',\n           gc_prog        TYPE trobjtype      VALUE 'PROG',\n* values for parameter PI_ACTION of form LOG_HANDLING\n           gc_action_append(1) VALUE 'A',\n           gc_action_write(1)  VALUE 'W',\n* constants for execution of special methods before others\n           gc_func_nspc  TYPE trmtd_method_fb\n                VALUE 'TRINT_AFTER_IMP_NSPC' ,\n           gc_func_enhs  TYPE trmtd_method_fb\n                VALUE 'ENHS_AFTER_IMPORT',\n           gc_func_enho  TYPE trmtd_method_fb\n                VALUE 'ENHO_AFTER_IMPORT' ,\n           gc_func_xslt  TYPE trmtd_method_fb\n                VALUE 'O2_XSLT_AFTER_IMPORT',\n           gc_func_scp2  TYPE trmtd_method_fb\n                VALUE 'SCPR_SCP2_AFTER_IMPORT',\n           gc_func_sf02  TYPE trmtd_method_fb\n                VALUE 'SFW_AFTERIMPORT',\n           gc_func_sf01  TYPE trmtd_method_fb\n                VALUE 'SFW_AFTERIMPORT_SF01',\n* constants for handling objects of Knowledge Provider (Info Repository)\n           gc_ir_before_exp TYPE trmtd_method_fb\n                            VALUE 'SDOK_FILE_TRANSFER_BEFORE_EXP',\n           gc_ir_after_imp  TYPE trmtd_method_fb\n                            VALUE 'SDOK_FILE_TRANSFER_AFTER_IMP' ,\n           gc_ir_transp LIKE tstrf01-transp VALUE 'I'            ,\n* constants for handling IAC objects (Internet Application Components)\n           gc_iac_after_imp TYPE trmtd_method_fb\n                            VALUE 'IAC_TR_AFTER_IMPORT'          ,\n* constants for handling methods of switch framework\n           gc_scp2_after_imp TYPE trmtd_method_fb\n                            VALUE 'SCPR_SCP2_AFTER_IMPORT'       ,\n           gc_sfw_after_imp TYPE trmtd_method_fb\n                            VALUE 'SFW_AFTERIMPORT'              ,\n           gc_sf01_after_imp TYPE trmtd_method_fb\n                            VALUE 'SFW_AFTERIMPORT_SF01'         ,\n* constants for handling execution of XPRA programs\n           gc_xpra_completed TYPE scts_result VALUE 'C',\n           gc_xpra_active    TYPE sfw_xpra_reports_line-execute VALUE 'T',\n           gc_xpra_inactive  TYPE scts_result VALUE 'I'.\n* GTABKEY_SERVER .\nCONSTANTS:  gc_gtabkey_server  TYPE rfcdes-rfcdest\n            VALUE          'GTABKEY_SERVER' .\n* global data\n\n* macros\n* - general macros\nDEFINE current_message_raising.\n  message id     sy-msgid\n          type   sy-msgty\n          number sy-msgno\n          with   sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4\n          raising  &1.\nEND-OF-DEFINITION.\n* - macros for TRINT_CALL_BEFORE_EXP_METHOD\nDEFINE error_exit.\n* attention: use it only in the function module itself because of the\n* exit!\n  perform exit_on_error using     lv_enqueued\n                                  lv_trkorr_access\n                        changing  ev_retcode\n                                  lv_exit_flag\n                                  is_e070       .\n  if lv_exit_flag eq 'X'.\n    exit.\n  endif.\nEND-OF-DEFINITION.\nDEFINE current_warning_message.\n  perform log_message_with_ag using '3' 'W' sy-msgid sy-msgno ' '\n          sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.\nEND-OF-DEFINITION.\nDEFINE current_error_message.\n  perform log_message_with_ag using '2' 'E' sy-msgid sy-msgno ' '\n          sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.\nEND-OF-DEFINITION.\nDEFINE current_cancel_message.\n  perform log_message_with_ag using '1' 'A' sy-msgid sy-msgno ' '\n          sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.\nEND-OF-DEFINITION.\n\n```\n\nFull Source SHA-256: 73e2763955a7c1d578863c737be56b7d8773fb2ec24dd567d75e22c4816631e7\nURI: /sap/bc/adt/functions/groups/scts_exe_exp/includes/lscts_exe_exptop/source/main\n\nEnhancement metadata unavailable (unsupported)."
+      },
+      "sourceEvidence": "dispatch-body.json"
+    },
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "connectionId": "w200",
+        "pattern": "SCPR_PR*",
+        "types": [
+          "FUNC"
+        ],
+        "maxResults": 80
+      },
+      "isError": false,
+      "data": {
+        "message": "Found 68 ABAP objects matching \"SCPR_PR*\":\n\n• SCPR_PROFILE_EXISTS (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scpr/fmodules/scpr_profile_exists\n  ADT: adt://w200/sap/bc/adt/functions/groups/scpr/fmodules/scpr_profile_exists\n\n• SCPR_PROT_DATA_WRITE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scpr/fmodules/scpr_prot_data_write\n  ADT: adt://w200/sap/bc/adt/functions/groups/scpr/fmodules/scpr_prot_data_write\n\n• SCPR_PRSET_COMPARE_DATA (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_compare_data\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_compare_data\n\n• SCPR_PRSET_COMPARISON_DISPLAY (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_comparison_display\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_comparison_display\n\n• SCPR_PRSET_COMP_B2C_SELECTION (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_comp_b2c_selection\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_comp_b2c_selection\n\n• SCPR_PRSET_CT_COMP_CUST_AKTUA (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_comp_cust_aktua\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_comp_cust_aktua\n\n• SCPR_PRSET_CT_COPY (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_copy\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_copy\n\n• SCPR_PRSET_CT_FATHERS_CLEAN (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_fathers_clean\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_fathers_clean\n\n• SCPR_PRSET_CT_FKEY_DEPENDANCE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_fkey_dependance\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_fkey_dependance\n\n• SCPR_PRSET_CT_IMPORT_INDUSTRY (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_import_industry\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_import_industry\n\n• SCPR_PRSET_CT_KEY_CONFLICTS2 (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_key_conflicts2\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_key_conflicts2\n\n• SCPR_PRSET_CT_ONE_TABLE_LOAD (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_one_table_load\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_one_table_load\n\n• SCPR_PRSET_CT_RECS_INTO_OBJECT (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_recs_into_object\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_ct_recs_into_object\n\n• SCPR_PRSET_DB_COMP_CUST_FILL (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_comp_cust_fill\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_comp_cust_fill\n\n• SCPR_PRSET_DB_DELETE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_delete\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_delete\n\n• SCPR_PRSET_DB_DELETE_ALL (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_delete_all\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_delete_all\n\n• SCPR_PRSET_DB_FLDDESCRS_GET (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_flddescrs_get\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_flddescrs_get\n\n• SCPR_PRSET_DB_GET_DETAIL (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_detail\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_detail\n\n• SCPR_PRSET_DB_GET_ORIG_TABLES (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_orig_tables\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_orig_tables\n\n• SCPR_PRSET_DB_GET_SCPRSVALS_OP (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_scprsvals_op\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_scprsvals_op\n\n• SCPR_PRSET_DB_GET_SUBPROFS (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_subprofs\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_get_subprofs\n\n• SCPR_PRSET_DB_RECORDS_GET (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_records_get\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_records_get\n\n• SCPR_PRSET_DB_SAVE_ORIG_TABLES (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_save_orig_tables\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_save_orig_tables\n\n• SCPR_PRSET_DB_STORE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_store\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_store\n\n• SCPR_PRSET_DB_SUBP_DELETE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_delete\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_delete\n\n• SCPR_PRSET_DB_SUBP_EXIST (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_exist\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_exist\n\n• SCPR_PRSET_DB_SUBP_GET_DETAIL (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_get_detail\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_get_detail\n\n• SCPR_PRSET_DB_SUBP_STORE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_store\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_subp_store\n\n• SCPR_PRSET_DB_USED_IN (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_used_in\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_db_used_in\n\n• SCPR_PRSET_IF_COMP_CUST_LIST (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_comp_cust_list\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_comp_cust_list\n\n• SCPR_PRSET_IF_KEY_CONFLICTS2 (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_key_conflicts2\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_key_conflicts2\n\n• SCPR_PRSET_IF_KEY_CONFL_LIST2 (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_key_confl_list2\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_key_confl_list2\n\n• SCPR_PRSET_IF_LEGEND (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_legend\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_legend\n\n• SCPR_PRSET_IF_LEGEND_701 (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_legend_701\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_legend_701\n\n• SCPR_PRSET_IF_PROFILE_LIST (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profile_list\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profile_list\n\n• SCPR_PRSET_IF_PROFILE_LIST_SEL (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profile_list_sel\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profile_list_sel\n\n• SCPR_PRSET_IF_PROFNAME_ASK (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profname_ask\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profname_ask\n\n• SCPR_PRSET_IF_PROFNAME_GET (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profname_get\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_profname_get\n\n• SCPR_PRSET_IF_SELECT (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_select\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_select\n\n• SCPR_PRSET_IF_SHOW (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_show\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_if_show\n\n• SCPR_PRSET_MN_BCSET_SAVE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_bcset_save\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_bcset_save\n\n• SCPR_PRSET_MN_COMBINABLE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_combinable\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_combinable\n\n• SCPR_PRSET_MN_COMP_CUST_TABLE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_comp_cust_table\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_comp_cust_table\n\n• SCPR_PRSET_MN_DELETE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_delete\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_delete\n\n• SCPR_PRSET_MN_KEY_CONFLICTS (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_key_conflicts\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_key_conflicts\n\n• SCPR_PRSET_MN_KEY_CONFLICT_SUB (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_key_conflict_sub\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_key_conflict_sub\n\n• SCPR_PRSET_MN_MODIFY (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_modify\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_modify\n\n• SCPR_PRSET_MN_MODIFY_SET (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_modify_set\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_modify_set\n\n• SCPR_PRSET_MN_SHOW (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_show\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_show\n\n• SCPR_PRSET_MN_USED_IN (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_used_in\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_used_in\n\n• SCPR_PRSET_MN_USED_IN_WARNING (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_used_in_warning\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprps/fmodules/scpr_prset_mn_used_in_warning\n\n• SCPR_PR_ACT_LANGUAGES_GET (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_act_languages_get\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_act_languages_get\n\n• SCPR_PR_ACT_MSG_GET_AND_CLEAR (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_act_msg_get_and_clear\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_act_msg_get_and_clear\n\n• SCPR_PR_DATA_WRITE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_data_write\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_data_write\n\n• SCPR_PR_DB_DATA_WRITE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_data_write\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_data_write\n\n• SCPR_PR_DB_GET_DATA_ACPP (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_get_data_acpp\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_get_data_acpp\n\n• SCPR_PR_DB_GET_ERROR_MESSAGES (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_get_error_messages\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_get_error_messages\n\n• SCPR_PR_DB_PROTOCOL_END (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_protocol_end\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_protocol_end\n\n• SCPR_PR_DB_UPDATE_END_ENTRY (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_update_end_entry\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_db_update_end_entry\n\n• SCPR_PR_GET_ACT_DATA_LOCAL (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_get_act_data_local\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_get_act_data_local\n\n• SCPR_PR_GET_BCSETS_BY_CHECKRES (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_get_bcsets_by_checkres\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_get_bcsets_by_checkres\n\n• SCPR_PR_MESSAGE_DISPLAY (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_message_display\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_message_display\n\n• SCPR_PR_MESSAGE_DOCU_CHECK (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_message_docu_check\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_message_docu_check\n\n• SCPR_PR_MN_PROTOCOL (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_mn_protocol\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_mn_protocol\n\n• SCPR_PR_PROTSTRG (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_protstrg\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_protstrg\n\n• SCPR_PR_REPLACE_MSG_VAR (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_replace_msg_var\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_replace_msg_var\n\n• SCPR_PR_SELECTION_SCREEN_100 (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_selection_screen_100\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_selection_screen_100\n\n• SCPR_PR_UUID_CREATE (FUGR/FF)\n  \n  Package: \n  URI: /sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_uuid_create\n  ADT: adt://w200/sap/bc/adt/functions/groups/scprprot/fmodules/scpr_pr_uuid_create"
+      },
+      "sourceEvidence": "protocol-api-discovery.json"
+    },
+    {
+      "name": "search_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCPRACF01",
+        "searchTerm": "FORM FILL_ACTIVATION_OPTIONS",
+        "contextLines": 25
+      },
+      "isError": false,
+      "data": {
+        "message": "Found 1 matches for \"FORM FILL_ACTIVATION_OPTIONS\" in LSCPRACF01:\nBase: 1 | Enhancement: 0\n\n\n## LSCPRACF01 (FUGR/I)\n\nBase Source Matches (1):\n\nLine 239:\n```abap\n              sys_setting-no_transport = 'X'.\r\n            endif.\r\n          when others.\r\n            sys_setting-category = tcategory_syst.\r\n            sys_setting-clidep = 'X'.\r\n            if systemedit = 'N' or sys_cliinddep_edit = '2'\r\n                                or sys_cliinddep_edit = '3'.\r\n              sys_setting-no_activation = 'X'.\r\n              sys_setting-no_transport = 'X'.\r\n            endif.\r\n        endcase.\r\n        append sys_setting to sys_settings.\r\n      enddo.\r\n  \r\n    ENDFORM.                    \" fill_sys_settings\r\n  \r\n  \r\n  *&---------------------------------------------------------------------*\r\n  *&      Form  fill_activation_options\r\n  *&---------------------------------------------------------------------*\r\n  *       text\r\n  *----------------------------------------------------------------------*\r\n  *  -->  p1        text\r\n  *  <--  p2        text\r\n  *----------------------------------------------------------------------*\r\n>   FORM fill_activation_options\r\n       using    proto_handle     type scpr_handl\r\n                control_user     like sy-uname\r\n                act_date         like sy-datum\r\n                act_time         like sy-uzeit\r\n                act_system       like sy-sysid\r\n                act_client       like sy-mandt\r\n                control_system   like sy-sysid\r\n                rc_activ         type scpracst\r\n                activation_type  type i\r\n                with_message     type char1\r\n                task_number_syst type trkorr\r\n                task_number_cust type trkorr\r\n                simulation_on    type char1\r\n                complete_only    type i\r\n                actlinks         type SCPRACTLNK\r\n                no_standard      type SCPRACSDOW\r\n                transport_off    type char1\r\n                sysedit_off      type char1\r\n                safety           type char1\r\n                call_from        type char1\r\n                upgrade_mode     type char1\r\n                variables_off    type char1\r\n                after_imp        type char1\r\n                langu_only       type char1\r\n                category         type scpr_ctgry\r\n```\n\nEnhancement Metadata: Unavailable (unsupported)\n\nURI: /sap/bc/adt/functions/groups/scprac/includes/lscpracf01/source/main (1145 lines total)\n\n"
+      },
+      "sourceEvidence": "protocol-api-discovery.json"
+    },
+    {
+      "name": "search_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "SCPRCONST",
+        "searchTerm": "(act_all|act_fix|cf_unknown|answer_yes|answer_no|pcat_classic)",
+        "isRegexp": true,
+        "contextLines": 1
+      },
+      "isError": false,
+      "data": {
+        "message": "No base-source matches for \"(act_all|act_fix|cf_unknown|answer_yes|answer_no|pcat_classic)\". Enhancement metadata was unavailable for 1 object(s)."
+      },
+      "sourceEvidence": "protocol-api-discovery.json"
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "SCPR_PR_UUID_CREATE"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "SCPR_PR_UUID_CREATE",
+        "functionGroup": "SCPRPROT",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [],
+        "exportParameters": [
+          {
+            "name": "PROTO_HANDLE",
+            "typeName": "SCPR_HANDL",
+            "optional": false,
+            "passByValue": false,
+            "description": "BC Sets: Activation Log and Links Key"
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "source": [
+          "FUNCTION SCPR_PR_UUID_CREATE.",
+          "*\"----------------------------------------------------------------------",
+          "*\"*\"Lokale Schnittstelle:",
+          "*\"  EXPORTING",
+          "*\"     REFERENCE(PROTO_HANDLE) TYPE  SCPR_HANDL",
+          "*\"----------------------------------------------------------------------",
+          "",
+          "    call function 'SYSTEM_UUID_C_CREATE'",
+          "       importing uuid = PROTO_HANDLE.",
+          "",
+          "    Export PROTO_HANDLE to memory id 'SCPRPROTHANDL'.",
+          "",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "3fd3101bbe8a512253acc85cce483dab33ad9b6882353f235c628a7c6816e618",
+        "interfaceFingerprint": "23c41bb73c76a68b5619ecc19721ed613122e394548a14f1f73b1574fb63351d",
+        "sourceFingerprint": "0a86d59ce77d016c5ae9093bd74fbacbfca4ca610be40ba7bfa4d0754e4b5e88"
+      },
+      "sourceEvidence": "protocol-api-sources.json"
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "SCPR_PR_DB_GET_DATA_ACPP"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "SCPR_PR_DB_GET_DATA_ACPP",
+        "functionGroup": "SCPRPROT",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "ACT_ID",
+            "typeName": "SCPR_HANDL",
+            "optional": false,
+            "passByValue": true,
+            "description": "BC Sets: Activation Log and Links Key"
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "ACT_DATE",
+            "typeName": "SCPR_DATE",
+            "optional": false,
+            "passByValue": true,
+            "description": "BC Set: Changed on"
+          },
+          {
+            "name": "ACT_TIME",
+            "typeName": "SCPR_TIME",
+            "optional": false,
+            "passByValue": true,
+            "description": "BC Set: Last changed at"
+          },
+          {
+            "name": "MODIFIER",
+            "typeName": "SCPR_MODIF",
+            "optional": false,
+            "passByValue": true,
+            "description": "BC Set: Changed by"
+          },
+          {
+            "name": "ACT_START",
+            "typeName": "TIMESTAMP",
+            "optional": false,
+            "passByValue": true,
+            "description": "UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"
+          },
+          {
+            "name": "ACT_END",
+            "typeName": "TIMESTAMP",
+            "optional": false,
+            "passByValue": true,
+            "description": "UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"
+          },
+          {
+            "name": "ACT_TYPE",
+            "typeName": "SCPR_NUMB",
+            "optional": false,
+            "passByValue": true,
+            "description": "Numbering for internal purposes"
+          },
+          {
+            "name": "SIM_TYPE",
+            "typeName": "SCPR_AFLAG",
+            "optional": false,
+            "passByValue": true,
+            "description": "BC Set: Additional activation behavior information"
+          },
+          {
+            "name": "TRNO_SYST",
+            "typeName": "TRKORR",
+            "optional": false,
+            "passByValue": true,
+            "description": "Request/Task"
+          },
+          {
+            "name": "TRNO_CUST",
+            "typeName": "TRKORR",
+            "optional": false,
+            "passByValue": true,
+            "description": "Request/Task"
+          },
+          {
+            "name": "LANGVECTOR",
+            "typeName": "CHAR40",
+            "optional": false,
+            "passByValue": true,
+            "description": "Character Field of Length 40"
+          },
+          {
+            "name": "SYSID",
+            "typeName": "SYSYSID",
+            "optional": false,
+            "passByValue": true,
+            "description": "Name of SAP R/3 System"
+          },
+          {
+            "name": "T_SID",
+            "typeName": "SYSYSID",
+            "optional": false,
+            "passByValue": true,
+            "description": "Name of SAP R/3 System"
+          },
+          {
+            "name": "T_MANDT",
+            "typeName": "MANDT",
+            "optional": false,
+            "passByValue": true,
+            "description": "Client"
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [
+          {
+            "name": "ACT_ID_DONT_EXIST",
+            "description": "Activation ID Does Not Exist"
+          }
+        ],
+        "source": [
+          "FUNCTION scpr_pr_db_get_data_acpp.",
+          "*\"----------------------------------------------------------------------",
+          "*\"*\"Lokale Schnittstelle:",
+          "*\"  IMPORTING",
+          "*\"     VALUE(ACT_ID) TYPE  SCPR_HANDL",
+          "*\"  EXPORTING",
+          "*\"     VALUE(ACT_DATE) TYPE  SCPR_DATE",
+          "*\"     VALUE(ACT_TIME) TYPE  SCPR_TIME",
+          "*\"     VALUE(MODIFIER) TYPE  SCPR_MODIF",
+          "*\"     VALUE(ACT_START) TYPE  TIMESTAMP",
+          "*\"     VALUE(ACT_END) TYPE  TIMESTAMP",
+          "*\"     VALUE(ACT_TYPE) TYPE  SCPR_NUMB",
+          "*\"     VALUE(SIM_TYPE) TYPE  SCPR_AFLAG",
+          "*\"     VALUE(TRNO_SYST) TYPE  TRKORR",
+          "*\"     VALUE(TRNO_CUST) TYPE  TRKORR",
+          "*\"     VALUE(LANGVECTOR) TYPE  CHAR40",
+          "*\"     VALUE(SYSID) TYPE  SYSYSID",
+          "*\"     VALUE(T_SID) TYPE  SYSYSID",
+          "*\"     VALUE(T_MANDT) TYPE  MANDT",
+          "*\"  EXCEPTIONS",
+          "*\"      ACT_ID_DONT_EXIST",
+          "*\"----------------------------------------------------------------------",
+          "",
+          "  DATA: wa_acpp TYPE scpracpp .",
+          "",
+          "  CLEAR wa_acpp.",
+          "",
+          "  SELECT SINGLE * FROM scpracpp INTO wa_acpp WHERE act_id = act_id .",
+          "  IF sy-subrc = 0.",
+          "    act_date = wa_acpp-act_date .",
+          "    act_time = wa_acpp-act_time .",
+          "    modifier = wa_acpp-modifier.",
+          "    act_start = wa_acpp-act_start.",
+          "    act_end = wa_acpp-act_end.",
+          "    act_type = wa_acpp-act_type.",
+          "    sim_type = wa_acpp-sim_type.",
+          "    trno_syst = wa_acpp-trno_syst.",
+          "    trno_cust = wa_acpp-trno_cust.",
+          "    langvector = wa_acpp-langvector.",
+          "    sysid = wa_acpp-sysid.",
+          "    t_sid = wa_acpp-t_sid.",
+          "    t_mandt = wa_acpp-t_mandt.",
+          "  ELSE.",
+          "    MESSAGE e676 RAISING act_id_dont_exist.",
+          "  ENDIF.",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "48c74bcdc57dc599fd138f69a7c3525e9fd28d1ae6679192bd2184e78adde3e5",
+        "interfaceFingerprint": "c65102bdb9a128dc20de2125de235f36051be54121c7ba239d7e689719db73e5",
+        "sourceFingerprint": "00c385cc423830460c7c38eb66b47282d0639b2215d242f8d130446523aec145"
+      },
+      "sourceEvidence": "protocol-api-sources.json"
+    },
+    {
+      "name": "read_function_module_interface",
+      "args": {
+        "connectionId": "w200",
+        "functionName": "SCPR_PR_DB_GET_ERROR_MESSAGES"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "functionName": "SCPR_PR_DB_GET_ERROR_MESSAGES",
+        "functionGroup": "SCPRPROT",
+        "shortText": "",
+        "remoteMode": "",
+        "updateTask": false,
+        "updateTaskMode": "",
+        "globalInterface": false,
+        "remoteEnabled": false,
+        "importParameters": [
+          {
+            "name": "IV_ACT_ID",
+            "typeName": "SCPR_HANDL",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          },
+          {
+            "name": "IV_BCSET_ID",
+            "typeName": "SCPR_ID",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "exportParameters": [
+          {
+            "name": "ET_DIAGNOSTIC_MESSAGES",
+            "typeName": "BAPIRET2_T",
+            "optional": false,
+            "passByValue": false,
+            "description": ""
+          }
+        ],
+        "changingParameters": [],
+        "tableParameters": [],
+        "exceptions": [],
+        "source": [
+          "FUNCTION SCPR_PR_DB_GET_ERROR_MESSAGES.",
+          "*\"----------------------------------------------------------------------",
+          "*\"*\"Local Interface:",
+          "*\"  IMPORTING",
+          "*\"     REFERENCE(IV_ACT_ID) TYPE  SCPR_HANDL",
+          "*\"     REFERENCE(IV_BCSET_ID) TYPE  SCPR_ID",
+          "*\"  EXPORTING",
+          "*\"     REFERENCE(ET_DIAGNOSTIC_MESSAGES) TYPE  BAPIRET2_T",
+          "*\"----------------------------------------------------------------------",
+          "  DATA log_message TYPE scpracpm.",
+          "  DATA diagnostic_message TYPE BAPIRET2.",
+          "  SELECT * FROM scpracpm INTO log_message WHERE",
+          "    act_id = iv_act_id AND",
+          "    bcset_id = iv_bcset_id AND",
+          "    msgid <> 'SCPR'",
+          "    .",
+          "    diagnostic_message-type = log_message-msgty.",
+          "    diagnostic_message-id = log_message-msgid.",
+          "    diagnostic_message-number = log_message-msgno.",
+          "    diagnostic_message-message_v1 = log_message-var1.",
+          "    diagnostic_message-message_v2 = log_message-var2.",
+          "    diagnostic_message-message_v3 = log_message-var3.",
+          "    diagnostic_message-message_v4 = log_message-var4.",
+          "    APPEND diagnostic_message TO et_diagnostic_messages.",
+          "  ENDSELECT.",
+          "",
+          "",
+          "",
+          "ENDFUNCTION."
+        ],
+        "fingerprint": "babefcb0ba6c4ae175bc7a8b69ca48fc648ab4ff8a7de7c344284ce13f63668d",
+        "interfaceFingerprint": "a5b1f4731f947ccfb6fd2df919a32394ee74223a2d547627723f1d56d55a8e6b",
+        "sourceFingerprint": "f0a0e879e5f39b36b5f07aed0689dcd0682d2e50e43f417af9f57d8bbfa7e1a6"
+      },
+      "sourceEvidence": "protocol-api-sources.json"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "LSCPRACF01",
+        "objectType": "FUGR/I",
+        "startLine": 239,
+        "lineCount": 100
+      },
+      "isError": false,
+      "data": {
+        "message": "Source from LSCPRACF01 (lines 239-338 of 1145, 100 lines retrieved):\n\n```abap\n  FORM fill_activation_options\n     using    proto_handle     type scpr_handl\n              control_user     like sy-uname\n              act_date         like sy-datum\n              act_time         like sy-uzeit\n              act_system       like sy-sysid\n              act_client       like sy-mandt\n              control_system   like sy-sysid\n              rc_activ         type scpracst\n              activation_type  type i\n              with_message     type char1\n              task_number_syst type trkorr\n              task_number_cust type trkorr\n              simulation_on    type char1\n              complete_only    type i\n              actlinks         type SCPRACTLNK\n              no_standard      type SCPRACSDOW\n              transport_off    type char1\n              sysedit_off      type char1\n              safety           type char1\n              call_from        type char1\n              upgrade_mode     type char1\n              variables_off    type char1\n              after_imp        type char1\n              langu_only       type char1\n              category         type scpr_ctgry\n              no_commit        type sap_bool\n     changing actopts          type scpractopt.\n\n    clear: actopts.\n* act_id: id of activation process (guid)\n    actopts-act_id = proto_handle.\n* act_user: username\n    actopts-act_user = control_user.\n* act_date: date of activation\n    actopts-act_date = act_date.\n* act_time: time of activation\n    actopts-act_time = act_time.\n* act_system: system id of activation system\n    actopts-act_system = act_system.\n* act_client: client id of activation client\n    actopts-act_client = act_client.\n* contr_syst: system id of system where the activation was startet from\n    actopts-contr_syst = control_system.\n* rc_activ: status of activation process\n    actopts-rc_activ = rc_activ.\n* dialog: Y=dialog, N=background (default)\n    if activation_type = 0.\n      actopts-dialog = answer_yes.\n    else.\n      actopts-dialog = answer_no.\n    endif.\n* with_messg: ' '=do not write status messages at end of activation\n*             'E'=write status messages at end of activation except\n*                 of 'e'-type messages\n    actopts-with_messg = with_message.\n* task_syst: transport number of system transport\n    actopts-task_syst = task_number_syst.\n* task_cust: transport number of customizing transport\n    actopts-task_cust = task_number_cust.\n* simulat_on: Y=simulation, N=activation (default)\n    if simulation_on is initial.\n      actopts-simulat_on = answer_no.\n    else.\n      actopts-simulat_on = answer_yes.\n    endif.\n* unchecked: Y=expert mode, N=standard mode (default)\n    if complete_only = 2.\n      actopts-unchecked = answer_yes.\n    else.\n      actopts-unchecked = answer_no.\n    endif.\n* actlinks: Y=write+transport , W=write only ,N=nothing\n    actopts-actlinks = actlinks.\n* no_standrd: N=activate all data (default), F=activate fix values only\n    if no_standard is initial.\n      actopts-no_standrd = act_all.\n    else.\n      actopts-no_standrd = no_standard.\n    endif.\n* transp_off: Y=write all data and transport no data at all,\n*             N=data activation and transport due to system and client\n*               settings (default)\n    actopts-transp_off = transport_off.\n* sysedt_off: Y=ignore productive system/client check\n*             N=consider productive system/client check (default)\n    actopts-sysedt_off = sysedit_off.\n* safety: Y=activate data only if bcsets and objects do not show errors\n*         N=activate as much data as possible (default)\n    actopts-safety = safety.\n* call_from: flag describing the caller (see SCPREXTCONST)\n    if call_from is initial.\n      actopts-call_from = cf_unknown.\n    else.\n      actopts-call_from = call_from.\n    endif.\n* upgr_mode: Y=system is in upgrade mode\n*            N=system is not in upgrade mode (default)\n    if upgrade_mode is initial.\n      actopts-upgr_mode = answer_no.\n```\n\nFull Source SHA-256: 96da3cfb66db7edabdb8cda11e7d2e30e06b38886651c17243949ea14c232cdb\nURI: /sap/bc/adt/functions/groups/scprac/includes/lscpracf01/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+      },
+      "sourceEvidence": "protocol-api-sources.json"
+    }
+  ]
+}

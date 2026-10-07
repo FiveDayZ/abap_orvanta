@@ -1,0 +1,3956 @@
+{
+  "provenance": "Actual w200 read-only tool replies; no owner/record/CTS/protocol command called.",
+  "functions": [
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_ACTIV_RUN_AFTER_IMP",
+      "functionGroup": "SCPRAC",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [],
+      "exportParameters": [
+        {
+          "name": "MESSAGES",
+          "typeName": "SCP1_GENERAL_ERRORS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [
+        {
+          "name": "E071_AFTIMP",
+          "typeName": "TR_OBJECTS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "E071K_AFTIMP",
+          "typeName": "TR_KEYS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "c58bbe9bf22f84dba163a4e39e2f4de75b2b51f4b0b2921eb60c80895e13d915",
+      "interfaceFingerprint": "081408cfd32b4f870d4d7d89c07bae9c410fc87b4f46f5858587a32f87dc06ae",
+      "sourceFingerprint": "90adadde8791259b02f27e7971c08c895fd5c2cf280ec0a01f4b6955f2a45fbb"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_ACTIV_PROTOCOL_WRITE",
+      "functionGroup": "SCPRAC",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "CATEGORY",
+          "typeName": "SCPR_CTGRY",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "SCPRERRPRT",
+          "typeName": "SCPRACTERP",
+          "optional": false,
+          "passByValue": false,
+          "description": "BC Sets: BC Set Activation Error Log"
+        }
+      ],
+      "exceptions": [],
+      "fingerprint": "1f29465a49e3e66954ca0c2bb02837e49b23a9241f9a7a824a9342baf47a3bd0",
+      "interfaceFingerprint": "d1bb8eaf7372ef2b71727bfa2389c752218313602607a7f2457f7bcd96c59e3a",
+      "sourceFingerprint": "71be29a573260efa559d3fc42f150e12f56187ae44e8569d7eeddb55656f52f7"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "TRINT_DELETE_COMM_KEYS",
+      "functionGroup": "STRI",
+      "shortText": "Internal: Delete Request/Task Object Keys for Object",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "WI_E071",
+          "typeName": "E071",
+          "optional": false,
+          "passByValue": true,
+          "description": "E071 Input (Master for WT_E071K Entries)"
+        },
+        {
+          "name": "WI_TRKORR",
+          "typeName": "E070-TRKORR",
+          "optional": false,
+          "passByValue": true,
+          "description": "Number of Request/Task"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "WT_E071K",
+          "typeName": "E071K",
+          "optional": false,
+          "passByValue": false,
+          "description": "E071K entries to be deleted"
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "E070_UPDATE_ERROR",
+          "description": "Error when saving request/task header"
+        },
+        {
+          "name": "KEYS_PROTECTED",
+          "description": "Key deletion rejected; E071 master protected"
+        },
+        {
+          "name": "ORDER_ALREADY_RELEASED",
+          "description": "Request/task already released"
+        },
+        {
+          "name": "UNALLOWED_ORDERTYP",
+          "description": "Invalid request/task type"
+        },
+        {
+          "name": "USER_NOT_OWNER",
+          "description": "Request/task only modifiable by owner"
+        },
+        {
+          "name": "WRONG_CLIENT",
+          "description": "Editing in invalid client"
+        }
+      ],
+      "fingerprint": "abd8d37dec5e051c7e4ece29051b474da690fd8eb900a6794d5798f25b5af9ed",
+      "interfaceFingerprint": "3632e365a859e5f14e88239d1c116635d6c50b39c42e60e0a2ef8dd27fa45408",
+      "sourceFingerprint": "4890269c4dab18d32cc8e66ec77bcc4fae8db9fd46f11f80191274b8f52e4b40"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "TR_REQ_CHECK_OBJECT",
+      "functionGroup": "SCTS_REQUEST_CHECK",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "IS_OBJECT",
+          "typeName": "E071",
+          "optional": false,
+          "passByValue": true,
+          "description": "Change & Transport System: Key Entries of Requests/Tasks"
+        },
+        {
+          "name": "IS_REQUEST_HEADER",
+          "typeName": "TRWBO_REQUEST_HEADER",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "IV_COLLECT_MODE",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": false,
+          "description": "Boolean"
+        },
+        {
+          "name": "IV_TRANSLATE_OBJNAME",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "IV_CHECK_LOCKABILITY",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": false,
+          "description": "Boolean"
+        },
+        {
+          "name": "IV_ACCEPT_MISSING_TADIR",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": false,
+          "description": "Boolean"
+        },
+        {
+          "name": "IV_DIALOG",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "IV_RELEASE_CHECKS",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "ES_OBJECT",
+          "typeName": "E071",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "EV_LOCKTYPE",
+          "typeName": "TRPARI-S_LOCKTYPE",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "ES_TADIR",
+          "typeName": "TADIR",
+          "optional": false,
+          "passByValue": false,
+          "description": "Directory of Repository Objects"
+        },
+        {
+          "name": "ES_TLOCK",
+          "typeName": "TLOCK",
+          "optional": false,
+          "passByValue": false,
+          "description": "Change and Transport System: Lock Table"
+        },
+        {
+          "name": "EV_OBJECT_NOT_LOCKABLE",
+          "typeName": "TRPARI-S_LOCKTYPE",
+          "optional": false,
+          "passByValue": true,
+          "description": "Flag ( 'X' or ' ' )"
+        }
+      ],
+      "changingParameters": [
+        {
+          "name": "CT_MESSAGES",
+          "typeName": "CTSGERRMSGS",
+          "optional": true,
+          "passByValue": false,
+          "description": "Generic Table for Error Messages"
+        },
+        {
+          "name": "CS_TRPAR_INT",
+          "typeName": "TRPAR_INT",
+          "optional": true,
+          "passByValue": false,
+          "description": "Results of Transport Type Check"
+        },
+        {
+          "name": "CS_LOCKKEY",
+          "typeName": "TLOCK_INT",
+          "optional": true,
+          "passByValue": false,
+          "description": "Program Structure for Lock Entries"
+        }
+      ],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "INVALID_REQUEST",
+          "description": ""
+        },
+        {
+          "name": "INVALID_SYNTAX",
+          "description": ""
+        },
+        {
+          "name": "INVALID_OBJECT",
+          "description": ""
+        },
+        {
+          "name": "INVALID_TRANSPORT_PROPERTIES",
+          "description": ""
+        },
+        {
+          "name": "INVALID_LOCKS",
+          "description": ""
+        },
+        {
+          "name": "WRONG_CALL",
+          "description": ""
+        }
+      ],
+      "fingerprint": "74c38f523560e66bf94000204867914733d333200183206fb23e01971d51a954",
+      "interfaceFingerprint": "25fa14abfc543afcbb1cdc5595647e3e71fe9b9f6f584f921f6f27dd79cb51aa",
+      "sourceFingerprint": "f63a79b41344d49023eb459031f27935322cc87e8d46279fc74911f6e3cda8db"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "TR_REQ_CHECK_KEY",
+      "functionGroup": "SCTS_REQUEST_CHECK",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "IS_KEY",
+          "typeName": "E071K",
+          "optional": false,
+          "passByValue": true,
+          "description": "Change & Transport System: Key Entries of Requests/Tasks"
+        },
+        {
+          "name": "IS_REQUEST_HEADER",
+          "typeName": "TRWBO_REQUEST_HEADER",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "IV_COLLECT_MODE",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": false,
+          "description": "Boolean"
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "ES_KEY",
+          "typeName": "E071K",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [
+        {
+          "name": "CT_MESSAGES",
+          "typeName": "CTSGERRMSGS",
+          "optional": true,
+          "passByValue": false,
+          "description": "Generic Table for Error Messages"
+        }
+      ],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "INVALID_SYNTAX",
+          "description": ""
+        },
+        {
+          "name": "INVALID_TABLE",
+          "description": ""
+        },
+        {
+          "name": "INVALID_KEY",
+          "description": ""
+        },
+        {
+          "name": "WRONG_CALL",
+          "description": ""
+        }
+      ],
+      "fingerprint": "fdf3d463d4c213de8058bfe4e2113c5345c59c37702b5d8aa2d26fc2da1258f3",
+      "interfaceFingerprint": "ab37b317e147fc297d0500bd74def2a19def5daf616d5ec79d0bc448ccb09738",
+      "sourceFingerprint": "7229d95e82820ea4234517932fd1204c98ecca7b2a665d179baac8c3173739c8"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "TRINT_APPEND_TO_COMM_ARRAYS",
+      "functionGroup": "STRD",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "WI_ERROR_TABLE",
+          "typeName": "TRPARI-W_CHCK_ERR",
+          "optional": true,
+          "passByValue": true,
+          "description": "' ' exception, X-error in the error table"
+        },
+        {
+          "name": "WI_SIMULATION",
+          "typeName": "TRPARI-W_SIMULAT",
+          "optional": true,
+          "passByValue": true,
+          "description": "Flag, 'X' - no database update"
+        },
+        {
+          "name": "WI_SUPPRESS_KEY_CHECK",
+          "typeName": "TRPARI-W_NO_CHECK",
+          "optional": true,
+          "passByValue": true,
+          "description": "Flag whether key syntax check is suppressed"
+        },
+        {
+          "name": "WI_TRKORR",
+          "typeName": "E070-TRKORR",
+          "optional": false,
+          "passByValue": true,
+          "description": "Task to which to add"
+        },
+        {
+          "name": "WI_TRPAR_INT_FILLED",
+          "typeName": "TRPARI-W_CHCK_FUL",
+          "optional": true,
+          "passByValue": true,
+          "description": "Flag, WT_TRPAR_INT contains type check results"
+        },
+        {
+          "name": "WI_LOCKKEY_FILLED",
+          "typeName": "TRPARI-S_CHECKED",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IV_APPEND_AT_ORDER",
+          "typeName": "TRPARI-S_CHECKED",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IV_APPEND_AT_ORDER_WITH_LOCK",
+          "typeName": "TRPARI-S_CHECKED",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IV_NO_OWNER_CHECK",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IT_E071K_STR",
+          "typeName": "E071K_STRTYP",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IV_DIALOG",
+          "typeName": "TRBOOLEAN",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "WT_E071",
+          "typeName": "E071",
+          "optional": false,
+          "passByValue": false,
+          "description": "Table of objects to be added"
+        },
+        {
+          "name": "WT_E071K",
+          "typeName": "E071K",
+          "optional": true,
+          "passByValue": false,
+          "description": "Table of keys to be added"
+        },
+        {
+          "name": "WT_TRMESS_INT",
+          "typeName": "TRMESS_INT",
+          "optional": true,
+          "passByValue": false,
+          "description": "Error table from E071 object check"
+        },
+        {
+          "name": "WT_TRPAR_INT",
+          "typeName": "TRPAR_INT",
+          "optional": true,
+          "passByValue": false,
+          "description": "Type check results checked, TADIR same sort."
+        },
+        {
+          "name": "WT_LOCKKEY",
+          "typeName": "TLOCK_INT",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "KEY_CHECK_KEYSYNTAX_ERROR",
+          "description": "Syntax error in an E071K entry (-> message)"
+        },
+        {
+          "name": "OB_CHECK_OBJ_ERROR",
+          "description": "Syntax error in E071 entry (see message table)"
+        },
+        {
+          "name": "TR_LOCKMOD_FAILED",
+          "description": "TLOCK modification not possible"
+        },
+        {
+          "name": "TR_LOCK_ENQUEUE_FAILED",
+          "description": "Error in competing TLOCK access"
+        },
+        {
+          "name": "TR_WRONG_ORDER_TYPE",
+          "description": "Incorrect task type"
+        },
+        {
+          "name": "TR_ORDER_UPDATE_ERROR",
+          "description": "Error saving the task header E070"
+        },
+        {
+          "name": "FILE_ACCESS_ERROR",
+          "description": ""
+        },
+        {
+          "name": "OB_NO_SYSTEMNAME",
+          "description": "System name cannot be determined or invalid length"
+        }
+      ],
+      "fingerprint": "7c6f8f2b4b19481ab4af9dfaca53ca001c2cb65b2c0e1fb00376a5cb8de8ca15",
+      "interfaceFingerprint": "c834dc05f0a221e952fc3dec5c524c3c1b82186826a67b93819d40909f5f9fe7",
+      "sourceFingerprint": "34a6d758f83c9460821ff95a74e9565bd89b4d6b548c7ea5a9d522fbd49a7611"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "GUID_CREATE",
+      "functionGroup": "SYGU",
+      "shortText": "Create GUID ('globally unique ID')",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [],
+      "exportParameters": [
+        {
+          "name": "EV_GUID_16",
+          "typeName": "GUID_16",
+          "optional": false,
+          "passByValue": true,
+          "description": "GUID of length 16 (RAW  Format)"
+        },
+        {
+          "name": "EV_GUID_22",
+          "typeName": "GUID_22",
+          "optional": false,
+          "passByValue": true,
+          "description": "GUID of length 22 (CHAR Format) Upper/Lower Case (!)"
+        },
+        {
+          "name": "EV_GUID_32",
+          "typeName": "GUID_32",
+          "optional": false,
+          "passByValue": true,
+          "description": "Guid of length 32 (CHAR Format) Uppper Case"
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "99e32616859c9b5e65aa1cacaa2c1754cb7a20f1ab2483349fb908ff29786d7b",
+      "interfaceFingerprint": "9c2a193b87f1bead8b4ef701af043a934b15db96330bd7610d715b3bf9af8daa",
+      "sourceFingerprint": "2516fea41aa60f597a44deeb7467fb7c6f5b5f4426fc6a34e2f8764de2ad9ec8"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_HI_ACTLINKS_UPDATE",
+      "functionGroup": "SCPRHI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "ACTOPTS",
+          "typeName": "SCPRACTOPT",
+          "optional": false,
+          "passByValue": false,
+          "description": "BC Sets: Activation Options"
+        },
+        {
+          "name": "TASK_NUMBER",
+          "typeName": "E070-TRKORR",
+          "optional": false,
+          "passByValue": true,
+          "description": "Request/Task"
+        },
+        {
+          "name": "RECNR_MAPPINGS",
+          "typeName": "SCP1_RECNR_MAPPINGS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [
+        {
+          "name": "IT_E071",
+          "typeName": "TR_OBJECTS",
+          "optional": false,
+          "passByValue": false,
+          "description": "Objects"
+        },
+        {
+          "name": "IT_E071K",
+          "typeName": "TR_KEYS",
+          "optional": false,
+          "passByValue": false,
+          "description": "Table Keys"
+        }
+      ],
+      "tableParameters": [
+        {
+          "name": "FIELDDESCR",
+          "typeName": "SCPR_FLDDESCRS",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "NO_DATA",
+          "description": ""
+        },
+        {
+          "name": "INTERNAL_ERROR",
+          "description": "Internal Error"
+        }
+      ],
+      "fingerprint": "72a41ea468dec18635652d1f9de83facae9471db53e2ed2ab2a94557f7fd52ea",
+      "interfaceFingerprint": "7861bdba142906cf16f856aa0e5860aabd3731aed7fd457abdcaa556f7641b7b",
+      "sourceFingerprint": "28bc168a7f7844c04668ecf49eaba5b26218be164d2bd3d1c2f782b23ce9462c"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_HIST_DB_VARIABLES_WRITE",
+      "functionGroup": "SCPRHI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "VARIABLES_NEW",
+          "typeName": "SCPRVART",
+          "optional": false,
+          "passByValue": false,
+          "description": "BC Sets: Table of Variables with Language Information"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [
+        {
+          "name": "E071_TEMP",
+          "typeName": "TR_OBJECTS",
+          "optional": true,
+          "passByValue": false,
+          "description": "Objects"
+        },
+        {
+          "name": "E071K_TEMP",
+          "typeName": "TR_KEYS",
+          "optional": true,
+          "passByValue": false,
+          "description": "Table Keys"
+        }
+      ],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "dfa4dead34ba550b5482bc792fdba387cfe8ee2f529adc4c19ab13702eb1af99",
+      "interfaceFingerprint": "d3af46f000913b9ad1a8395a82cf2219b08153cb119a6029495936155e3fdfb5",
+      "sourceFingerprint": "2941739fb066d140a3f3c58e7f3c3008c914d72a1e4e47cf59b0a9a8776afa2d"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCTM_BCSET_ACTIVATION_FRAME",
+      "functionGroup": "SCTM",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "IV_ACT_ID",
+          "typeName": "SCPR_HANDL",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "IV_END_OF_ACTIVATION",
+          "typeName": "OAX",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "42dc3dca216ec3053be5ac9086acedf89c9acdf4af98f2d6914409c5fc325c46",
+      "interfaceFingerprint": "767c42448040735211a4454a31a0f8897603c09893e2358c764f77bee6424169",
+      "sourceFingerprint": "9672ace13ac7b869100c6b1511d01d6e5a098e58faa14bc2ca8a838fba33c252"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCDC_DISTRIBUTE_TABLE_KEYS",
+      "functionGroup": "SCTM",
+      "shortText": "Start Distribution in Solution Manager",
+      "remoteMode": "",
+      "updateTask": true,
+      "updateTaskMode": "1",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "PROJECT_ID",
+          "typeName": "PROJECT_ID",
+          "optional": true,
+          "passByValue": true,
+          "description": "Project Name"
+        },
+        {
+          "name": "TRKORR",
+          "typeName": "E070-TRKORR",
+          "optional": false,
+          "passByValue": true,
+          "description": "Request/Task"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "E071_TAB",
+          "typeName": "E071",
+          "optional": false,
+          "passByValue": false,
+          "description": "Change & Transport System: Object Entries of Requests/Tasks"
+        },
+        {
+          "name": "E071K_TAB",
+          "typeName": "E071K",
+          "optional": true,
+          "passByValue": false,
+          "description": "Change & Transport System: Key Entries of Requests/Tasks"
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "NO_PROJECT",
+          "description": ""
+        }
+      ],
+      "fingerprint": "d03fb1bce50b9925eee7c3c3fd57e0367cc83a10449497ffbd3b176889b44415",
+      "interfaceFingerprint": "3f464367510f487d78c9254e50500e46d0c25d03f1c14269df72b1b6a3d825bc",
+      "sourceFingerprint": "ca62ca3242daf71cd2cc031ad87963482fa706716544b557cc2b10a44b623c3e"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_HI_ACTLINKS_DELETE_UPD",
+      "functionGroup": "SCPRHI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TASK_NUMBER",
+          "typeName": "E070-TRKORR",
+          "optional": true,
+          "passByValue": false,
+          "description": "Request/Task"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [
+        {
+          "name": "SCPRACTR_DEL",
+          "typeName": "SCPRACTRTAB",
+          "optional": false,
+          "passByValue": false,
+          "description": "BC Sets: Activation Links at Data Record Level"
+        },
+        {
+          "name": "IT_E071",
+          "typeName": "TR_OBJECTS",
+          "optional": true,
+          "passByValue": false,
+          "description": "Objects"
+        },
+        {
+          "name": "IT_E071K",
+          "typeName": "TR_KEYS",
+          "optional": true,
+          "passByValue": false,
+          "description": "Table Keys"
+        }
+      ],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "9db40221067061a597defbbf8c62101e83ba922dfae07128967886e21665ffb2",
+      "interfaceFingerprint": "5290c657366f429f09c4c8f9ed2fae7d1b631e43e6f53b98b98bae2cfa013a55",
+      "sourceFingerprint": "ee04981404e61a909394434f272275f4a99ef4028ad5d69fc6a80cf56789440a"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCDC_GET_WORKPLACE",
+      "functionGroup": "SCTM",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "PROJECT_ID",
+          "typeName": "PROJECT_ID",
+          "optional": false,
+          "passByValue": false,
+          "description": "Project Name"
+        },
+        {
+          "name": "INCL_XX",
+          "typeName": "OAX",
+          "optional": true,
+          "passByValue": false,
+          "description": "Yes/No (X/ )"
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "WORKPLACE",
+          "typeName": "RFCDEST",
+          "optional": false,
+          "passByValue": false,
+          "description": "Logical Destination (Specified in Function Call)"
+        },
+        {
+          "name": "WORK_PROJECT",
+          "typeName": "PROJECT_ID",
+          "optional": false,
+          "passByValue": false,
+          "description": "Project Name"
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "NO_REFERENCE",
+          "description": ""
+        }
+      ],
+      "fingerprint": "10630da676de39e38410f028b515ac7db8f6efa856b4cd96567284ab7ac0e4ff",
+      "interfaceFingerprint": "6c260cf09b6cc451fd06e832e28fa0ae52650c7747b21b13944b961df0ee15ef",
+      "sourceFingerprint": "b1ef5d3608ed5afd2fb561af2d528b1d37cfea0ecb3d07cb53d7709aba4e7fe9"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "ENQUEUE_READ",
+      "functionGroup": "SENT",
+      "shortText": "Read lock entries from lock table",
+      "remoteMode": "R",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": true,
+      "importParameters": [
+        {
+          "name": "GCLIENT",
+          "typeName": "SEQG3-GCLIENT",
+          "optional": true,
+          "passByValue": true,
+          "description": "Client"
+        },
+        {
+          "name": "GNAME",
+          "typeName": "SEQG3-GNAME",
+          "optional": true,
+          "passByValue": true,
+          "description": "Granularity name (-> table name)"
+        },
+        {
+          "name": "GARG",
+          "typeName": "SEQG3-GARG",
+          "optional": true,
+          "passByValue": true,
+          "description": "Granularity value(->values of key fields)"
+        },
+        {
+          "name": "GUNAME",
+          "typeName": "SEQG3-GUNAME",
+          "optional": true,
+          "passByValue": true,
+          "description": "User name"
+        },
+        {
+          "name": "LOCAL",
+          "typeName": "SY-CTYPE",
+          "optional": true,
+          "passByValue": true,
+          "description": "Single-Character Flag"
+        },
+        {
+          "name": "FAST",
+          "typeName": "SY-CTYPE",
+          "optional": true,
+          "passByValue": true,
+          "description": "Redundant table fields are not fully filled"
+        },
+        {
+          "name": "GARGNOWC",
+          "typeName": "SY-CTYPE",
+          "optional": true,
+          "passByValue": true,
+          "description": "All characters in GARG are literals"
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "NUMBER",
+          "typeName": "SY-TABIX",
+          "optional": false,
+          "passByValue": true,
+          "description": "Number of chosen lock entries"
+        },
+        {
+          "name": "SUBRC",
+          "typeName": "SY-SUBRC",
+          "optional": false,
+          "passByValue": true,
+          "description": "Error code of the enqueue call"
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "ENQ",
+          "typeName": "SEQG3",
+          "optional": false,
+          "passByValue": false,
+          "description": "List of the chosen lock entries"
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "COMMUNICATION_FAILURE",
+          "description": "See RFC documentation"
+        },
+        {
+          "name": "SYSTEM_FAILURE",
+          "description": "See RFC documentation"
+        }
+      ],
+      "fingerprint": "3a287c2f582246c844058890eb2a7aeadb32bc74762056035052dc9cf176f289",
+      "interfaceFingerprint": "2ddf7e0342c71c3d7658cf8e2aaf98adc30efa762da3c9d24a1bca9504097c26",
+      "sourceFingerprint": "3864dbe076c11ea120338345d0e275f6a662f22e4bfc1fbd8f7c765d28e28a34"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_AUTHORITY_CHECK",
+      "functionGroup": "SCPR",
+      "shortText": "BC Sets: Check Authorization",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TASK",
+          "typeName": "SCPRAUTH",
+          "optional": false,
+          "passByValue": true,
+          "description": "BC Sets: Authorization Check Data Element"
+        },
+        {
+          "name": "ID",
+          "typeName": "SCPR_ID",
+          "optional": true,
+          "passByValue": true,
+          "description": "Business Configuration Set"
+        },
+        {
+          "name": "CATEGORY",
+          "typeName": "SCPR_CTGRY",
+          "optional": true,
+          "passByValue": true,
+          "description": "BC Set: Category"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "WRONG_PARAMETERS",
+          "description": "FM Call with Invalid Parameters"
+        },
+        {
+          "name": "NO_AUTHORITY",
+          "description": "You are not authorized to perform this action"
+        }
+      ],
+      "fingerprint": "8cbee3b3cfc60d3e44b392c91568dd694448161fb0c7d68d077f12af30d03ae9",
+      "interfaceFingerprint": "b6db12d125987322207fc075bd6df6ae465fe82a21d37fd622df69b6dbbe542d",
+      "sourceFingerprint": "11eaa6006acfa9933f3bbb614b088587899ed2d67260da8238b15308085e2170"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "ENQUEUE_E_TRKORR",
+      "functionGroup": "/1BCDWBEN/SENQ06",
+      "shortText": "Request lock for object E_TRKORR",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "MODE_E070",
+          "typeName": "ENQMODE",
+          "optional": true,
+          "passByValue": true,
+          "description": "Lock mode for table E070"
+        },
+        {
+          "name": "TRKORR",
+          "typeName": "E070-TRKORR",
+          "optional": true,
+          "passByValue": true,
+          "description": "01th enqueue argument"
+        },
+        {
+          "name": "X_TRKORR",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": "Fill argument 01 with initial value?"
+        },
+        {
+          "name": "_SCOPE",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_WAIT",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_COLLECT",
+          "typeName": "DDENQCOLL",
+          "optional": true,
+          "passByValue": true,
+          "description": "Initially only collect lock"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "FOREIGN_LOCK",
+          "description": "Object already locked"
+        },
+        {
+          "name": "SYSTEM_FAILURE",
+          "description": "Internal error from enqueue server"
+        }
+      ],
+      "fingerprint": "14499f993cd5afff5052741aff9f470d34c86d75aa689be1fab8599f3034826b",
+      "interfaceFingerprint": "e2cdeefb8e23d072b5a4f327ae3a3e776958d123bfb6f91cd53c7dee4a3cbaa1",
+      "sourceFingerprint": "1e7e61889844a74ead568bae37d771b9a2312025f56431303db03f85b9b47c21"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "ENQUEUE_E_TABLE",
+      "functionGroup": "/1BCDWBEN/SEN4",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "MODE_RSTABLE",
+          "typeName": "DD26E-ENQMODE",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "TABNAME",
+          "typeName": "RSTABLE-TABNAME",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "VARKEY",
+          "typeName": "RSTABLE-VARKEY",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "X_TABNAME",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "X_VARKEY",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_SCOPE",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_WAIT",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_COLLECT",
+          "typeName": "DDENQ_LIKE-COLLECT",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "FOREIGN_LOCK",
+          "description": ""
+        },
+        {
+          "name": "SYSTEM_FAILURE",
+          "description": ""
+        }
+      ],
+      "fingerprint": "923052d5f8acfbf47297438a8484b48aac42752e75c9f5a6f2fde4612b3e891f",
+      "interfaceFingerprint": "76bd7c20e487f96d8b3ddc97861863ec4cff89d90848867c9c76f3d82861aec7",
+      "sourceFingerprint": "78f1c959b16c20315776e17aa622cadd47cebc9ac93d93712d90cf1e7a808517"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "ENQUEUE_E_SCPR",
+      "functionGroup": "/1BCDWBEN/SEN0009",
+      "shortText": "Request lock for object E_SCPR",
+      "remoteMode": "R",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": true,
+      "importParameters": [
+        {
+          "name": "MODE_SCPRATTR",
+          "typeName": "ENQMODE",
+          "optional": true,
+          "passByValue": true,
+          "description": "Lock mode for table SCPRATTR"
+        },
+        {
+          "name": "ID",
+          "typeName": "SCPRATTR-ID",
+          "optional": true,
+          "passByValue": true,
+          "description": "01th enqueue argument"
+        },
+        {
+          "name": "X_ID",
+          "typeName": "DDENQXPAR",
+          "optional": true,
+          "passByValue": true,
+          "description": "Fill argument 01 with initial value?"
+        },
+        {
+          "name": "_SCOPE",
+          "typeName": "DDENQSCOPE",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_WAIT",
+          "typeName": "DDENQWAIT",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_COLLECT",
+          "typeName": "DDENQCOLL",
+          "optional": true,
+          "passByValue": true,
+          "description": "Initially only collect lock"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "FOREIGN_LOCK",
+          "description": "Object already locked"
+        },
+        {
+          "name": "SYSTEM_FAILURE",
+          "description": "Internal error from enqueue server"
+        }
+      ],
+      "fingerprint": "55374ec8246ca6aed16bdc3518f8ad4ccd0ffa1909a921673ea643d8b791c729",
+      "interfaceFingerprint": "e696d4fe90bf0e9402d31625bd82b2375a30a6683514917ce7960e65039996b5",
+      "sourceFingerprint": "45377b555b21630e5d28177215f2b1819151b50ef781729f8f685adf5747f428"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "DEQUEUE_E_SCPR",
+      "functionGroup": "/1BCDWBEN/SEN0009",
+      "shortText": "Release lock on object E_SCPR",
+      "remoteMode": "R",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": true,
+      "importParameters": [
+        {
+          "name": "MODE_SCPRATTR",
+          "typeName": "ENQMODE",
+          "optional": true,
+          "passByValue": true,
+          "description": "Lock mode for table SCPRATTR"
+        },
+        {
+          "name": "ID",
+          "typeName": "SCPRATTR-ID",
+          "optional": true,
+          "passByValue": true,
+          "description": "01th enqueue argument"
+        },
+        {
+          "name": "X_ID",
+          "typeName": "DDENQXPAR",
+          "optional": true,
+          "passByValue": true,
+          "description": "Fill argument 01 with initial value?"
+        },
+        {
+          "name": "_SCOPE",
+          "typeName": "DDENQSCOPE",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_SYNCHRON",
+          "typeName": "DDENQSYNC",
+          "optional": true,
+          "passByValue": true,
+          "description": "Synchonous unlock"
+        },
+        {
+          "name": "_COLLECT",
+          "typeName": "DDENQCOLL",
+          "optional": true,
+          "passByValue": true,
+          "description": "Initially only collect lock"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "a0e50b3913114f068563a42d16335d31ba662a4ba03bdc818cd5448bce4aa26c",
+      "interfaceFingerprint": "f3d73467e7dba59701657dc6e6fd4ddc4dc49222d21ac26da528b83e6dea552d",
+      "sourceFingerprint": "515a9eb37646e88546b03a56b449713093b0ece5e440617a7f07de1b9c9ee0fc"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "DEQUEUE_E_TABLE",
+      "functionGroup": "/1BCDWBEN/SEN4",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "MODE_RSTABLE",
+          "typeName": "DD26E-ENQMODE",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "TABNAME",
+          "typeName": "RSTABLE-TABNAME",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "VARKEY",
+          "typeName": "RSTABLE-VARKEY",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "X_TABNAME",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "X_VARKEY",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_SCOPE",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_SYNCHRON",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_COLLECT",
+          "typeName": "DDENQ_LIKE-COLLECT",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "92be6499780eae4c5053a7904e7734fc0cf192d3e2bd792dbbc3d7bcdaddee0b",
+      "interfaceFingerprint": "281a0dc40c8b9a57adcbd52d777ec53475724280aa9d5f574419e58199c5ea5b",
+      "sourceFingerprint": "319f85fac630b1390e72f77f44c49e77c65fcecd18dddf9a7badfbcdadf409c8"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "DEQUEUE_E_TRKORR",
+      "functionGroup": "/1BCDWBEN/SENQ06",
+      "shortText": "Release lock on object E_TRKORR",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "MODE_E070",
+          "typeName": "ENQMODE",
+          "optional": true,
+          "passByValue": true,
+          "description": "Lock mode for table E070"
+        },
+        {
+          "name": "TRKORR",
+          "typeName": "E070-TRKORR",
+          "optional": true,
+          "passByValue": true,
+          "description": "01th enqueue argument"
+        },
+        {
+          "name": "X_TRKORR",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": "Fill argument 01 with initial value?"
+        },
+        {
+          "name": "_SCOPE",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "_SYNCHRON",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": "Synchonous unlock"
+        },
+        {
+          "name": "_COLLECT",
+          "typeName": "DDENQCOLL",
+          "optional": true,
+          "passByValue": true,
+          "description": "Initially only collect lock"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "0431e4e0f3139ff99ceec7f4e5e0793e49949f41c3b6c742e41f9d581fbb6207",
+      "interfaceFingerprint": "938faa32e28154d440fe3cc563ceeedd61d842f6338c62df143dc88ec773c06d",
+      "sourceFingerprint": "8d2c7f2b731e4be83b069612f2c636007e3d97500cffbf748c65a423d6877b98"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_SV_ENQUEUE_BCSET",
+      "functionGroup": "SCPRSV",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "BCSET_ID",
+          "typeName": "SCPR_ID",
+          "optional": false,
+          "passByValue": false,
+          "description": "Business Configuration Set"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "IS_ALREADY_LOCKED",
+          "description": ""
+        },
+        {
+          "name": "SYSTEM_FAILURE",
+          "description": ""
+        }
+      ],
+      "fingerprint": "206e282b4035c851d123a7786e3387571dc3507aa547ad60634f448436b57b4d",
+      "interfaceFingerprint": "71f613bee2269d4182cc716f50ea49ce9ef5067f3b0d028a803238ec8c7fb518",
+      "sourceFingerprint": "60783125d75a0c1bf06e96338b0b89d95bb992a20b1cb2e16a2db8fa21d5d89e"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_SV_DEQUEUE_BCSET",
+      "functionGroup": "SCPRSV",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "BCSET_ID",
+          "typeName": "SCPR_ID",
+          "optional": false,
+          "passByValue": false,
+          "description": "Business Configuration Set"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "3fc553f21d24b53889fe1f842c7568a344fa11470cc65d13d930817860e64472",
+      "interfaceFingerprint": "9eb8ecaa97ad322e10c7a5b996a62dbfff02b60fdaf7e13bb135f221c11c1beb",
+      "sourceFingerprint": "ed70501d87a41058cb2f8671cb4e7f8a77d5f260ab9495c3bd54351d1ff415c4"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_DB_TABLE_TYPE_GET",
+      "functionGroup": "SCPRVI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TABNAME",
+          "typeName": "SCPR_TABL",
+          "optional": false,
+          "passByValue": false,
+          "description": "Table Name"
+        },
+        {
+          "name": "OBJNAME",
+          "typeName": "OB_OBJECT",
+          "optional": true,
+          "passByValue": false,
+          "description": "Customizing Obj"
+        },
+        {
+          "name": "OBJTYPE",
+          "typeName": "OB_TYP",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "TABTYPE",
+          "typeName": "C",
+          "optional": false,
+          "passByValue": false,
+          "description": "Table Type: V=View, S=Table"
+        },
+        {
+          "name": "NEW_OBJNAME",
+          "typeName": "OB_OBJECT",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "NEW_OBJTYPE",
+          "typeName": "OB_TYP",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "9ec3950db57ba834b13f780324055a82220bf5daaf59bccf8c47aeea5625f62d",
+      "interfaceFingerprint": "9c3034b039d8076b88f80d81743e49f1e64086fa948a500b55107582a81c8adf",
+      "sourceFingerprint": "ca9126c0f3a3ba2d9d7c5709baf1d3c4f6161a2b03ab7610f47d871548c742cb"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_DB_TABLE_FIELDDEF_GET",
+      "functionGroup": "SCPRVI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TABNAME",
+          "typeName": "SCPRVALS-TABLENAME",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "TABTYPE",
+          "typeName": "OBJH-OBJECTTYPE",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "FLDDESCR_REDUC",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "ENTITIES_VARIABLE",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "TABLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": false,
+          "description": "Table Width"
+        },
+        {
+          "name": "KEYLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": false,
+          "description": "Length of key"
+        },
+        {
+          "name": "CKEYLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "FLDDESCR_REDUCED",
+          "typeName": "C",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "CLIENT_FIELD",
+          "typeName": "SCPR_FLD",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "DELIVERY_CLASS",
+          "typeName": "CONTFLAG",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "SELLIST",
+          "typeName": "VIMSELLIST",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "HEADER",
+          "typeName": "VIMDESC",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "NAMTAB",
+          "typeName": "VIMNAMTAB",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "FIELDDESCR",
+          "typeName": "SCPR_FLDDESCRS",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "NO_TABLE_NAME",
+          "description": ""
+        },
+        {
+          "name": "NO_TVDIR_ENTRY",
+          "description": "No Entry in Table TVDIR"
+        },
+        {
+          "name": "TABLE_NOT_FOUND",
+          "description": "Table not found"
+        },
+        {
+          "name": "TABLE_TO_LARGE",
+          "description": ""
+        },
+        {
+          "name": "DDIF_INTERNAL_ERROR",
+          "description": "Internal DDIC Interface Error"
+        },
+        {
+          "name": "TABLE_UNSUITABLE",
+          "description": ""
+        }
+      ],
+      "fingerprint": "a215d78b89d0b8f212ecd7a5074206a0330f5205dcad8fa67f376d42541c442e",
+      "interfaceFingerprint": "62ce109ea23ec89e6cd3e19b2972a9bec907e7b1470ffbd25ea7e270ea6bf27d",
+      "sourceFingerprint": "1149814756b0fa079c9da76e899ff6ca4ab2065e023cc24ef0f8348601c976db"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_PRSET_CT_ONE_TABLE_LOAD",
+      "functionGroup": "SCPRPS",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TABLENAME",
+          "typeName": "SCPRDATA-TABLENAME",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "OBJECTNAME",
+          "typeName": "OBJH-OBJECTNAME",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "DELETEFLAG",
+          "typeName": "SCPRRECA-DELETEFLAG",
+          "optional": false,
+          "passByValue": false,
+          "description": "BC Sets: Data Record Deletion Flag"
+        },
+        {
+          "name": "ACTOPTS",
+          "typeName": "SCPRACTOPT",
+          "optional": false,
+          "passByValue": false,
+          "description": "BC Sets: Activation Options"
+        },
+        {
+          "name": "TABLEDESCR",
+          "typeName": "SCPR_RECORD2",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "VALUES",
+          "typeName": "SCPR_VALS_TAB",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "VALUES_IN_INT_FORMAT",
+          "typeName": "ABAP_BOOL",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "ERRORS",
+          "typeName": "SCP1_GENERAL_ERRORS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "ff8951ab01a2fc0521e183125b876b01cdaa0392c470e26a570cd96747bfa6ca",
+      "interfaceFingerprint": "1a7fffc46553344866b70356f44c8e788c071419431c2198bb98fc642448bef4",
+      "sourceFingerprint": "a7d73a3bcb86ad66ede551553568139222f45c29bfa1767e9d257a1d8e11cacb"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_DB_TABLE_RECORDS_GET",
+      "functionGroup": "SCPRVI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TABNAME",
+          "typeName": "DD02L-TABNAME",
+          "optional": false,
+          "passByValue": true,
+          "description": "Table Name"
+        },
+        {
+          "name": "KEY",
+          "typeName": "ANY",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "KEYLNG",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "RECORDS",
+          "typeName": "",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "DB_ERROR",
+          "description": ""
+        },
+        {
+          "name": "NOT_FOUND",
+          "description": ""
+        },
+        {
+          "name": "WRONG_PARAM",
+          "description": "Incorrect Parameter Transfer"
+        }
+      ],
+      "fingerprint": "f85defb1a597935bf2463b642b79b8b6018a6d170ea1e0d5db290d7de381367e",
+      "interfaceFingerprint": "6c14adf1b11a0455f9281eb3330b83b00add6f3f67b38c9d7663664e3e1a2547",
+      "sourceFingerprint": "c5eaea2b89708b4cc4d5980b1b9a880984405d9112bb1bd19553f1a7463b7cdd"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_DB_TABLE_TABFLDDEF_GET",
+      "functionGroup": "SCPRVI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TABNAME",
+          "typeName": "SCPRDATA-TABLENAME",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "TABLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": true,
+          "description": "Table Width"
+        },
+        {
+          "name": "KEYLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": true,
+          "description": "Key Length"
+        },
+        {
+          "name": "CKEYLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "CLIENT_FIELD",
+          "typeName": "SCPR_FLD",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "DELIVERY_CLASS",
+          "typeName": "CONTFLAG",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "FIELDDESCR",
+          "typeName": "SCPR_FLDDESCRS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "TABLE_NOT_FOUND",
+          "description": "Table not found"
+        },
+        {
+          "name": "DDIF_INTERNAL_ERROR",
+          "description": "Internal DDIC Interface Error"
+        }
+      ],
+      "fingerprint": "8aa88ba51860718cb250d7f6b2532bd1733a788ec17b2c963c5141d257b56582",
+      "interfaceFingerprint": "dca5f484468d333a60c097a44ead101729b065fd2891f608dbb8bcbafa6f14d4",
+      "sourceFingerprint": "032368671c7e8816fa3a97710a5795ababa9811c416d70425b1f0c4db7af5ba0"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_CTRL_PREDEFINE_FLAGS",
+      "functionGroup": "SCPRCTRL",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TABTYPE",
+          "typeName": "OB_TYP",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "ENTITIES_VARIABLE",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [
+        {
+          "name": "WA_TAB_FLDNAMES",
+          "typeName": "SCPR_FLDDESCR",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "tableParameters": [
+        {
+          "name": "TAB_FLDNAMES",
+          "typeName": "SCPR_FLDDESCRS",
+          "optional": true,
+          "passByValue": false,
+          "description": "Field Descriptions"
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "TAB_UNSUITABLE",
+          "description": ""
+        }
+      ],
+      "fingerprint": "50d186dbe82055e168249efdfb508764cedffbf65f01a99becdfa1fd47e59555",
+      "interfaceFingerprint": "d7ca0917509c302bc472d66b8bb4949bd260b5decae587af9498a2692d6708b6",
+      "sourceFingerprint": "4f280905e9bbe79c2be79442513089b80763976ab5ca83f6d59a7144071030c5"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_CT_VALUE_CONVERT_INT_EXT",
+      "functionGroup": "SCPRPR",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "FIELDDESCR",
+          "typeName": "SCPR_FLDDESCR",
+          "optional": false,
+          "passByValue": true,
+          "description": "Field Descriptions"
+        },
+        {
+          "name": "VALUE_INTERN",
+          "typeName": "",
+          "optional": false,
+          "passByValue": true,
+          "description": "Value in Internal Format"
+        },
+        {
+          "name": "CURRKEY",
+          "typeName": "TCURX-CURRKEY",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "WITH_CONVEXIT",
+          "typeName": "",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "VALUE_EXTERN",
+          "typeName": "",
+          "optional": false,
+          "passByValue": true,
+          "description": "Value in External Format"
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "24ea322872b489734139d7a0768b7d1cd40f4716af1d867c60d3cb48e45a016c",
+      "interfaceFingerprint": "7a61d6cf41159fe5810f10b9ca73daca75ead478e6e578cdb11c8dfe505a5ddf",
+      "sourceFingerprint": "db76d20610890412f3caa9df80316689d3cad88170097087a068e2cb935be8c0"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_CPROF_CT_PROFDATA_CONVERT",
+      "functionGroup": "SCPRCP",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "TABNAME",
+          "typeName": "SCPRDATA-TABLENAME",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "ONLY_KEY",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "RECNUMBER",
+          "typeName": "SCPRVALS-RECNUMBER",
+          "optional": false,
+          "passByValue": false,
+          "description": "Data record number"
+        },
+        {
+          "name": "KEYLEN",
+          "typeName": "I",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "UNCOMPLETE",
+          "typeName": "SCPR_UNCPL",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "DELETEFLAG",
+          "typeName": "SCPR_DELET",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "VALUES_IN_INT_FORMAT",
+          "typeName": "SAP_BOOL",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "RAW_RECORD",
+          "typeName": "SCPR_RAW",
+          "optional": false,
+          "passByValue": false,
+          "description": "Compressed Data"
+        },
+        {
+          "name": "LINE",
+          "typeName": "",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "RAW_XRECORD",
+          "typeName": "",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "GENKEYLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "GENKEYFIELD",
+          "typeName": "SCPR_FLD",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "PROFVALUES",
+          "typeName": "SCPRVALS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "TABLEDESCR",
+          "typeName": "SCPR_FLDDESCRS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exceptions": [],
+      "fingerprint": "6a123467e35d39b31ecb5d18b482b10cd61ae198a8c8918808430a50000081cf",
+      "interfaceFingerprint": "678844a691d83ea076f1c72c74d62daa7b68846bfe20300c57c7af597f00dfdc",
+      "sourceFingerprint": "58e7119821a8ec1fb3b94f756f2ea6f8705d391d671e92d8951b689981b29123"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_HI_SET_GLOBAL_ACTOPTS",
+      "functionGroup": "SCPRHI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "ACTLINKS",
+          "typeName": "SCPRACTOPT-ACTLINKS",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "NO_STANDRD",
+          "typeName": "SCPRACTOPT-NO_STANDRD",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "85b5d5cfa3d04bcefd3c1c77e2be4da2ab3129c53ac0a66e15b56d6c8f039f20",
+      "interfaceFingerprint": "30b0fd4e4cab7d4af920a0ec5133a52478614499f902399830ee955a999c3881",
+      "sourceFingerprint": "2e276a8451c13c733145bfe058e2d0f59446dc3992b01b0136de404734023616"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCPR_HIST_CT_REMEMBER_TIME",
+      "functionGroup": "SCPRHI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "MODDATE",
+          "typeName": "SCPRACTP-MODDATE",
+          "optional": false,
+          "passByValue": false,
+          "description": "Activation Date"
+        },
+        {
+          "name": "MODTIME",
+          "typeName": "SCPRACTP-MODTIME",
+          "optional": false,
+          "passByValue": false,
+          "description": "Activation date"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "1c578ef5aad8b2f4b81cf924537cae0cca3d2a1623bbd8ee10c855594e4dd542",
+      "interfaceFingerprint": "98309435bd303f8f1e1a38819080c1d14190e028e4d4f5f6dcb8e2feacd626c8",
+      "sourceFingerprint": "27a7667cabebbac6e8c88246f29fbdae8d1e3e5ca8dc43d216d255449e1ba79e"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "CALCULATE_HASH_FOR_RAW",
+      "functionGroup": "SECH",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "ALG",
+          "typeName": "HASHALG",
+          "optional": true,
+          "passByValue": true,
+          "description": "Hash Algorithm:"
+        },
+        {
+          "name": "DATA",
+          "typeName": "XSTRING",
+          "optional": false,
+          "passByValue": false,
+          "description": "Data"
+        },
+        {
+          "name": "LENGTH",
+          "typeName": "I",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "HASH",
+          "typeName": "HASH160",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "HASHLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "HASHX",
+          "typeName": "HASH160X",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "HASHXLEN",
+          "typeName": "I",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "HASHSTRING",
+          "typeName": "STRING",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "HASHXSTRING",
+          "typeName": "XSTRING",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "HASHB64STRING",
+          "typeName": "STRING",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "UNKNOWN_ALG",
+          "description": ""
+        },
+        {
+          "name": "PARAM_ERROR",
+          "description": "Parameter Error"
+        },
+        {
+          "name": "INTERNAL_ERROR",
+          "description": "Unknown Error"
+        }
+      ],
+      "fingerprint": "981ff0b5c608e75f0392c7839d4da9a08b6b9b24bd8687b007e1bec74872562c",
+      "interfaceFingerprint": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779",
+      "sourceFingerprint": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCMS_BASE64_ENCODE_STR",
+      "functionGroup": "SCMS_URL",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "INPUT",
+          "typeName": "XSTRING",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "OUTPUT",
+          "typeName": "STRING",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "fingerprint": "b41fda4514b45f37e52b7f3725104e72b385256a90280b0e1dfe8a8d781fbee9",
+      "interfaceFingerprint": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9",
+      "sourceFingerprint": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "SCMS_BASE64_DECODE_STR",
+      "functionGroup": "SCMS_URL",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "INPUT",
+          "typeName": "STRING",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        },
+        {
+          "name": "UNESCAPE",
+          "typeName": "STRING",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "OUTPUT",
+          "typeName": "XSTRING",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "FAILED",
+          "description": ""
+        }
+      ],
+      "fingerprint": "99314464c828cde0e7ec7cfbee86d0198e12fc1ae0ff59c6e647a736070145f0",
+      "interfaceFingerprint": "b3ddf62cc52f0db74d95634b3899f72acaebf361cf13bf52052abfe16c696dff",
+      "sourceFingerprint": "0e7c53df677028244972a57dd7e64fb70399dd8da630165860f8dddb65795bbb"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "TR_READ_REQUEST",
+      "functionGroup": "SCTS_REQUEST_SELECTION",
+      "shortText": "Read Individual Parts of a Request (Subsequently)",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "IV_READ_E070",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request header information"
+        },
+        {
+          "name": "IV_READ_E07T",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request short text"
+        },
+        {
+          "name": "IV_READ_E070C",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request client"
+        },
+        {
+          "name": "IV_READ_E070M",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request client"
+        },
+        {
+          "name": "IV_READ_OBJS_KEYS",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read objects and key of the request"
+        },
+        {
+          "name": "IV_READ_ATTRIBUTES",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request attributes"
+        },
+        {
+          "name": "IV_TRKORR",
+          "typeName": "TRKORR",
+          "optional": true,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [
+        {
+          "name": "CS_REQUEST",
+          "typeName": "TRWBO_REQUEST",
+          "optional": true,
+          "passByValue": true,
+          "description": "Complete request"
+        }
+      ],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "ERROR_OCCURED",
+          "description": "Error during reading"
+        },
+        {
+          "name": "NO_AUTHORIZATION",
+          "description": "No read or display authorization"
+        }
+      ],
+      "fingerprint": "24313ce8f5ee7efc00e583c4ac745dc01f30f68f24b2dfc186aaede1dbfe3f04",
+      "interfaceFingerprint": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c",
+      "sourceFingerprint": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718"
+    },
+    {
+      "connectionId": "w200",
+      "functionName": "TRINT_READ_REQUEST_HEADER",
+      "functionGroup": "SCTS_REQUEST_SELECTION",
+      "shortText": "Read Individual Parts of a Request (Subsequently)",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "IV_READ_E070",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request header information"
+        },
+        {
+          "name": "IV_READ_E07T",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request short text"
+        },
+        {
+          "name": "IV_READ_E070C",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request client"
+        },
+        {
+          "name": "IV_READ_E070M",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": "'X': Read request client"
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "EV_E07T_DOESNT_EXIST",
+          "typeName": "C",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "EV_E070C_DOESNT_EXIST",
+          "typeName": "C",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "EV_E070M_DOESNT_EXIST",
+          "typeName": "C",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "changingParameters": [
+        {
+          "name": "CS_REQUEST",
+          "typeName": "TRWBO_REQUEST_HEADER",
+          "optional": false,
+          "passByValue": false,
+          "description": "Complete request"
+        }
+      ],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "EMPTY_TRKORR",
+          "description": ""
+        },
+        {
+          "name": "NOT_EXIST_E070",
+          "description": ""
+        }
+      ],
+      "fingerprint": "8ea0a0f60ea62d48e805357f91cbfd59d7803b95ce473f9d21f16deda1497266",
+      "interfaceFingerprint": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813",
+      "sourceFingerprint": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090"
+    }
+  ],
+  "layouts": [
+    {
+      "connectionId": "w200",
+      "objectKind": "structure",
+      "objectName": "SCPRACTERP",
+      "packageName": "SCPR",
+      "version": "20110901123904",
+      "fingerprint": "ec92447bfd061155a649afe39131ac0272a8734cb7ecbf159ad3f940e4b21a30",
+      "definition": {
+        "description": "BC Sets: BC Set Activation Error Log",
+        "tableClass": "INTTAB",
+        "baseTable": "",
+        "fields": [
+          {
+            "name": "ACT_ID",
+            "position": 1,
+            "dataElement": "SCPR_HANDL",
+            "description": "业务配置集：32 字符 GUID 的容器"
+          },
+          {
+            "name": "BCSET_ID",
+            "position": 2,
+            "dataElement": "SCPR_ID",
+            "description": "业务配置集"
+          },
+          {
+            "name": "PARENT_ID",
+            "position": 3,
+            "dataElement": "SCPR_ID",
+            "description": "业务配置集"
+          },
+          {
+            "name": "CATEGORY",
+            "position": 4,
+            "dataElement": "SCPR_CTGRY",
+            "description": "业务配置集：类别"
+          },
+          {
+            "name": "ACT_DATE",
+            "position": 5,
+            "dataElement": "SCPR_DATE",
+            "description": "BC 设置: 更改于"
+          },
+          {
+            "name": "ACT_TIME",
+            "position": 6,
+            "dataElement": "SCPR_TIME",
+            "description": "业务配置集：上次更改时间"
+          },
+          {
+            "name": "ACT_START",
+            "position": 7,
+            "dataElement": "TIMESTAMP",
+            "description": "简短格式的 UTC 时戳 (YYYYMMDDhhmmss)"
+          },
+          {
+            "name": "ACT_END",
+            "position": 8,
+            "dataElement": "TIMESTAMP",
+            "description": "简短格式的 UTC 时戳 (YYYYMMDDhhmmss)"
+          },
+          {
+            "name": "MODIFIER",
+            "position": 9,
+            "dataElement": "SCPR_MODIF",
+            "description": "BC 设置: 修改者"
+          },
+          {
+            "name": "ACT_TYPE",
+            "position": 10,
+            "dataElement": "SCPR_NUMB",
+            "description": "内部目的编码"
+          },
+          {
+            "name": "SIM_TYPE",
+            "position": 11,
+            "dataElement": "SCPR_AFLAG",
+            "description": "业务配置集：标记复制特殊定制"
+          },
+          {
+            "name": "LANGVECTOR",
+            "position": 12,
+            "dataElement": "CHAR40",
+            "description": "长度为 40 的字符型字段"
+          },
+          {
+            "name": "LINE_NR",
+            "position": 13,
+            "dataElement": "SCPR_RECNR",
+            "description": "业务配置集：模板记录编号"
+          },
+          {
+            "name": "OBJECTNAME",
+            "position": 14,
+            "dataElement": "OB_OBJECT",
+            "description": "对象名称"
+          },
+          {
+            "name": "TABLENAME",
+            "position": 15,
+            "dataElement": "SCPR_TABL",
+            "description": "业务配置集：表/视图名称"
+          },
+          {
+            "name": "TABLETYPE",
+            "position": 16,
+            "dataElement": "OB_TYP",
+            "description": "对象类型"
+          },
+          {
+            "name": "TABLEKEY",
+            "position": 17,
+            "dataElement": "SCPR_TABKY",
+            "description": "业务配置集：业务配置集活动错误表代码"
+          },
+          {
+            "name": "MSGID",
+            "position": 18,
+            "dataElement": "ARBGB",
+            "description": "应用程序区域"
+          },
+          {
+            "name": "MSGTY",
+            "position": 19,
+            "dataElement": "ERRORTYP",
+            "description": "错误严重性 (&#39; &#39;，W（警告）,E（错误）,A（非正常终止））"
+          },
+          {
+            "name": "MSGNO",
+            "position": 20,
+            "dataElement": "MSGNR",
+            "description": "消息编号"
+          },
+          {
+            "name": "VAR1",
+            "position": 21,
+            "dataElement": "SYMSGV",
+            "description": "消息变量"
+          },
+          {
+            "name": "VAR2",
+            "position": 22,
+            "dataElement": "SYMSGV",
+            "description": "消息变量"
+          },
+          {
+            "name": "VAR3",
+            "position": 23,
+            "dataElement": "SYMSGV",
+            "description": "消息变量"
+          },
+          {
+            "name": "VAR4",
+            "position": 24,
+            "dataElement": "SYMSGV",
+            "description": "消息变量"
+          },
+          {
+            "name": "PROTOFLAG",
+            "position": 25,
+            "dataElement": "SCPR_AFLAG",
+            "description": "业务配置集：标记复制特殊定制"
+          },
+          {
+            "name": "TRNO_SYST",
+            "position": 26,
+            "dataElement": "TRKORR",
+            "description": "请求/任务"
+          },
+          {
+            "name": "TRNO_CUST",
+            "position": 27,
+            "dataElement": "TRKORR",
+            "description": "请求/任务"
+          },
+          {
+            "name": "SYSID",
+            "position": 28,
+            "dataElement": "SYSYSID",
+            "description": "SAP 系统名称"
+          },
+          {
+            "name": "T_SID",
+            "position": 29,
+            "dataElement": "SYSYSID",
+            "description": "SAP 系统名称"
+          },
+          {
+            "name": "T_MANDT",
+            "position": 30,
+            "dataElement": "MANDT",
+            "description": "客户端"
+          },
+          {
+            "name": "ACTOPTIONS",
+            "position": 31,
+            "dataElement": "CHAR80",
+            "description": "80字符"
+          },
+          {
+            "name": "OBJECTTYPE",
+            "position": 32,
+            "dataElement": "OB_TYP",
+            "description": "对象类型"
+          }
+        ]
+      }
+    },
+    {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "SCPRACTR",
+      "packageName": "SCPR",
+      "version": "20031106190139",
+      "fingerprint": "eee9c8994fbb082f7019d7f8f61c9f890e4652d4e55c56d27bacbb6c76ac9619",
+      "definition": {
+        "description": "业务配置集：在本地系统中激活记录",
+        "tableClass": "TRANSP",
+        "deliveryClass": "C",
+        "dataBrowserMaintenance": "notAllowed",
+        "sizeCategory": 2,
+        "dataClass": "APPL2",
+        "buffering": "generic",
+        "genericKeyFields": 2,
+        "logDataChanges": false,
+        "fields": [
+          {
+            "name": "CLIENT",
+            "position": 1,
+            "dataElement": "SCPR_CLNT",
+            "description": "业务配置集：激活客户端",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "TABLENAME",
+            "position": 2,
+            "dataElement": "SCPR_TABL",
+            "description": "业务配置集：表/视图名称",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "TABRECNUMB",
+            "position": 3,
+            "dataElement": "SCPR_RECNR",
+            "description": "业务配置集：模板记录编号",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "TABKEY",
+            "position": 4,
+            "dataElement": "SCPR_TABKY",
+            "description": "业务配置集：业务配置集活动错误表代码",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "PROFID",
+            "position": 5,
+            "dataElement": "SCPR_ID",
+            "description": "业务配置集",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "RECNUMBER",
+            "position": 6,
+            "dataElement": "SCPR_RECNR",
+            "description": "业务配置集：模板记录编号",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "VIEWNAME",
+            "position": 7,
+            "dataElement": "SCPR_TABL",
+            "description": "业务配置集：表/视图名称",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MODDATE",
+            "position": 8,
+            "dataElement": "SCPR_DATE",
+            "description": "BC 设置: 更改于",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MODTIME",
+            "position": 9,
+            "dataElement": "SCPR_TIME",
+            "description": "业务配置集：上次更改时间",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "VIEWVAR",
+            "position": 10,
+            "dataElement": "SCPR_TABL",
+            "description": "业务配置集：表/视图名称",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "OPERATION",
+            "position": 11,
+            "dataElement": "SCPRACOP",
+            "description": "业务配置集：数据记录级别的激活操作",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "SCPRACTP",
+      "packageName": "SCPR",
+      "version": "20110901123904",
+      "fingerprint": "7449a52bd3293c31ad419f2fd357d9974878b7a1a577406ca9f05947695946ff",
+      "definition": {
+        "description": "BC 设置: 在本地系统中激活",
+        "tableClass": "TRANSP",
+        "deliveryClass": "C",
+        "dataBrowserMaintenance": "allowed",
+        "sizeCategory": 2,
+        "dataClass": "APPL2",
+        "buffering": "notAllowed",
+        "genericKeyFields": 0,
+        "logDataChanges": false,
+        "fields": [
+          {
+            "name": "CLIENT",
+            "position": 1,
+            "dataElement": "SCPR_CLNT",
+            "description": "业务配置集：激活客户端",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "PROFID",
+            "position": 2,
+            "dataElement": "SCPR_ID",
+            "description": "业务配置集",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "MODIFIER",
+            "position": 3,
+            "dataElement": "SCPR_MODIF",
+            "description": "BC 设置: 修改者",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "MODDATE",
+            "position": 4,
+            "dataElement": "SCPR_DATE",
+            "description": "BC 设置: 更改于",
+            "key": false,
+            "notNull": true
+          },
+          {
+            "name": "MODTIME",
+            "position": 5,
+            "dataElement": "SCPR_TIME",
+            "description": "业务配置集：上次更改时间",
+            "key": false,
+            "notNull": true
+          },
+          {
+            "name": "SYSTEMID",
+            "position": 6,
+            "dataElement": "SCPR_SYSID",
+            "description": "业务配置集：业务配置集激活所在系统的标识",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "SCPRVALS",
+      "packageName": "SCPR",
+      "version": "20031106190140",
+      "fingerprint": "cb9bbce6821a09c25d775ec1bc46c19a87aa77f6455e44f5760b977f0b6979da",
+      "definition": {
+        "description": "BC 设置: 值",
+        "tableClass": "TRANSP",
+        "deliveryClass": "W",
+        "dataBrowserMaintenance": "notAllowed",
+        "sizeCategory": 4,
+        "dataClass": "APPL2",
+        "buffering": "notAllowed",
+        "genericKeyFields": 0,
+        "logDataChanges": false,
+        "fields": [
+          {
+            "name": "ID",
+            "position": 1,
+            "dataElement": "SCPR_ID",
+            "description": "业务配置集",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "VERSION",
+            "position": 2,
+            "dataElement": "SCPR_VERS",
+            "description": "BC 设置: 版本",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "TABLENAME",
+            "position": 3,
+            "dataElement": "SCPR_TABL",
+            "description": "业务配置集：表/视图名称",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "RECNUMBER",
+            "position": 4,
+            "dataElement": "SCPR_RECNR",
+            "description": "业务配置集：模板记录编号",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "FIELDNAME",
+            "position": 5,
+            "dataElement": "SCPR_FLD",
+            "description": "BC 设置: 字段名称",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "FLAG",
+            "position": 6,
+            "dataElement": "SCPR_FLAG",
+            "description": "BC 设置: 附加信息",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "VALUE",
+            "position": 7,
+            "dataElement": "SCPR_VALUE",
+            "description": "BC 设置: 值",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "SCPRVALL",
+      "packageName": "SCPR",
+      "version": "20080612102353",
+      "fingerprint": "e87e898cc060fc1d2d3355a57640a592e16640ab318ae49ba0d7427a33e5991d",
+      "definition": {
+        "description": "BC Set: Values (language-dependent)",
+        "tableClass": "TRANSP",
+        "deliveryClass": "W",
+        "dataBrowserMaintenance": "notAllowed",
+        "sizeCategory": 4,
+        "dataClass": "APPL2",
+        "buffering": "notAllowed",
+        "genericKeyFields": 0,
+        "logDataChanges": false,
+        "fields": [
+          {
+            "name": "ID",
+            "position": 1,
+            "dataElement": "SCPR_ID",
+            "description": "业务配置集",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "VERSION",
+            "position": 2,
+            "dataElement": "SCPR_VERS",
+            "description": "BC 设置: 版本",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "TABLENAME",
+            "position": 3,
+            "dataElement": "SCPR_TABL",
+            "description": "业务配置集：表/视图名称",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "RECNUMBER",
+            "position": 4,
+            "dataElement": "SCPR_RECNR",
+            "description": "业务配置集：模板记录编号",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "FIELDNAME",
+            "position": 5,
+            "dataElement": "SCPR_FLD",
+            "description": "BC 设置: 字段名称",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "LANGU",
+            "position": 6,
+            "dataElement": "SPRAS",
+            "description": "语言代码",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "FLAG",
+            "position": 7,
+            "dataElement": "SCPR_FLAG",
+            "description": "BC 设置: 附加信息",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "VALUE",
+            "position": 8,
+            "dataElement": "SCPR_VALUE",
+            "description": "BC 设置: 值",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "SCDTSYNC",
+      "packageName": "S_CUSTOMIZING_LISINTERFACE",
+      "version": "20110901121235",
+      "fingerprint": "7e32510ebae3ce833a91a74733f7c9720338cdd578cb9131e501e1c5636918a6",
+      "definition": {
+        "description": "Synchronization Settings",
+        "tableClass": "TRANSP",
+        "deliveryClass": "W",
+        "dataBrowserMaintenance": "allowed",
+        "sizeCategory": 0,
+        "dataClass": "APPL2",
+        "buffering": "full",
+        "genericKeyFields": 0,
+        "logDataChanges": true,
+        "fields": [
+          {
+            "name": "MANDT",
+            "position": 1,
+            "dataElement": "MANDT",
+            "description": "客户端",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "PROJECT_ID",
+            "position": 2,
+            "dataElement": "PROJECT_ID",
+            "description": "项目名称",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "LOGSYSCORE",
+            "position": 3,
+            "dataElement": "LOGSYS",
+            "description": "逻辑系统",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "TRIGMETHOD",
+            "position": 4,
+            "dataElement": "SCDTTRIG",
+            "description": "定制分配的触发",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "SYSTEM_WP",
+            "position": 5,
+            "dataElement": "SYSYSID",
+            "description": "SAP 系统名称",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MANDT_WP",
+            "position": 6,
+            "dataElement": "SYMANDT",
+            "description": "当前用户的客户端标识",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "RFCDEST",
+            "position": 7,
+            "dataElement": "RFCDEST",
+            "description": "逻辑目标（在函数调用中指定）",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "SCPRACPP",
+      "packageName": "SCPR",
+      "version": "20110901123904",
+      "fingerprint": "1ff356ca4b41d8a6580902d47965b688296e50b98998914a36c9c4fe0e3b116a",
+      "definition": {
+        "description": "BC Sets: Activation Logs (BC Set Names)",
+        "tableClass": "TRANSP",
+        "deliveryClass": "L",
+        "dataBrowserMaintenance": "allowed",
+        "sizeCategory": 2,
+        "dataClass": "APPL1",
+        "buffering": "notAllowed",
+        "genericKeyFields": 0,
+        "logDataChanges": false,
+        "fields": [
+          {
+            "name": "ACT_ID",
+            "position": 1,
+            "dataElement": "SCPR_HANDL",
+            "description": "业务配置集：32 字符 GUID 的容器",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "ACT_DATE",
+            "position": 2,
+            "dataElement": "SCPR_DATE",
+            "description": "BC 设置: 更改于",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ACT_TIME",
+            "position": 3,
+            "dataElement": "SCPR_TIME",
+            "description": "业务配置集：上次更改时间",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MODIFIER",
+            "position": 4,
+            "dataElement": "SCPR_MODIF",
+            "description": "BC 设置: 修改者",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ACT_START",
+            "position": 5,
+            "dataElement": "TIMESTAMP",
+            "description": "简短格式的 UTC 时戳 (YYYYMMDDhhmmss)",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ACT_END",
+            "position": 6,
+            "dataElement": "TIMESTAMP",
+            "description": "简短格式的 UTC 时戳 (YYYYMMDDhhmmss)",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ACT_TYPE",
+            "position": 7,
+            "dataElement": "SCPR_NUMB",
+            "description": "内部目的编码",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "SIM_TYPE",
+            "position": 8,
+            "dataElement": "SCPR_AFLAG",
+            "description": "业务配置集：标记复制特殊定制",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "TRNO_SYST",
+            "position": 9,
+            "dataElement": "TRKORR",
+            "description": "请求/任务",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "TRNO_CUST",
+            "position": 10,
+            "dataElement": "TRKORR",
+            "description": "请求/任务",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "LANGVECTOR",
+            "position": 11,
+            "dataElement": "CHAR40",
+            "description": "长度为 40 的字符型字段",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "SYSID",
+            "position": 12,
+            "dataElement": "SYSYSID",
+            "description": "SAP 系统名称",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "T_SID",
+            "position": 13,
+            "dataElement": "SYSYSID",
+            "description": "SAP 系统名称",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "T_MANDT",
+            "position": 14,
+            "dataElement": "MANDT",
+            "description": "客户端",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ACTOPTIONS",
+            "position": 15,
+            "dataElement": "CHAR80",
+            "description": "80字符",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    {
+      "connectionId": "w200",
+      "objectKind": "structure",
+      "objectName": "SEQG3",
+      "packageName": "SENQ",
+      "version": "20001108195631",
+      "fingerprint": "c2fc418cfd35d03e0b7364331ff961aee094c57b31e0745bdc0668a10ee234c7",
+      "definition": {
+        "description": "用于锁住显示/删除SM12的会话字段",
+        "tableClass": "INTTAB",
+        "baseTable": "",
+        "fields": [
+          {
+            "name": "GNAME",
+            "position": 1,
+            "dataElement": "EQEGRANAME",
+            "description": "锁条目的基本锁（表名称）"
+          },
+          {
+            "name": "GARG",
+            "position": 2,
+            "dataElement": "EQEGRAARG",
+            "description": "锁条目的参数字符串（=关键字段）"
+          },
+          {
+            "name": "GMODE",
+            "position": 3,
+            "dataElement": "EQEGRAMODE",
+            "description": "锁条目的锁模式（共享/独占）"
+          },
+          {
+            "name": "GUSR",
+            "position": 4,
+            "dataElement": "EQEUSR",
+            "description": "锁所有者，逻辑工作单元 (LUW) 的标识"
+          },
+          {
+            "name": "GUSRVB",
+            "position": 5,
+            "dataElement": "EQEUSRVB",
+            "description": "锁所有者，逻辑工作单元 (LUW)/更新任务的标识"
+          },
+          {
+            "name": "GUSE",
+            "position": 6,
+            "dataElement": "EQEUSE",
+            "description": "锁条目/对话的累计计数器"
+          },
+          {
+            "name": "GUSEVB",
+            "position": 7,
+            "dataElement": "EQEUSEVB",
+            "description": "锁条目/更新任务的累计计数器"
+          },
+          {
+            "name": "GOBJ",
+            "position": 8,
+            "dataElement": "EQEOBJ",
+            "description": "锁条目中的锁对象名称"
+          },
+          {
+            "name": "GCLIENT",
+            "position": 9,
+            "dataElement": "EQECLIENT",
+            "description": "锁定表项中的集团"
+          },
+          {
+            "name": "GUNAME",
+            "position": 10,
+            "dataElement": "EQEUNAME",
+            "description": "锁条目中的用户名称"
+          },
+          {
+            "name": "GTARG",
+            "position": 11,
+            "dataElement": "EQEGTARG",
+            "description": "锁条目的参数字符串（表关键字段）"
+          },
+          {
+            "name": "GTCODE",
+            "position": 12,
+            "dataElement": "EQETCODE",
+            "description": "锁条目中的事务代码"
+          },
+          {
+            "name": "GBCKTYPE",
+            "position": 13,
+            "dataElement": "EQEBCKTYPE",
+            "description": "锁定条目的备份标记"
+          },
+          {
+            "name": "GTHOST",
+            "position": 14,
+            "dataElement": "EQEHOST",
+            "description": "锁所有者标识中的主机名"
+          },
+          {
+            "name": "GTWP",
+            "position": 15,
+            "dataElement": "EQEWP",
+            "description": "锁所有者标识中的工作进程编号"
+          },
+          {
+            "name": "GTSYSNR",
+            "position": 16,
+            "dataElement": "EQESYSNR",
+            "description": "锁所有者标识中的 SAP 系统编号"
+          },
+          {
+            "name": "GTDATE",
+            "position": 17,
+            "dataElement": "EQEDATE",
+            "description": "锁所有者标识内的日期"
+          },
+          {
+            "name": "GTTIME",
+            "position": 18,
+            "dataElement": "EQETIME",
+            "description": "锁所有者标识中的时间"
+          },
+          {
+            "name": "GTUSEC",
+            "position": 19,
+            "dataElement": "EQEUSEC",
+            "description": "锁所有者标识中共享的时间/微秒"
+          },
+          {
+            "name": "GTMARK",
+            "position": 20,
+            "dataElement": "EQEMARK",
+            "description": "锁条目的选择指示器"
+          },
+          {
+            "name": "GUSETXT",
+            "position": 21,
+            "dataElement": "EQEUSETXT",
+            "description": "锁条目/对话的累计计数器"
+          },
+          {
+            "name": "GUSEVBT",
+            "position": 22,
+            "dataElement": "EQEUSEVBT",
+            "description": "锁条目/更新任务的累计计数器"
+          }
+        ]
+      }
+    }
+  ],
+  "includes": {
+    "LSCPRHIF01": [
+      "*----------------------------------------------------------------------*",
+      "***INCLUDE LSCPRHIF01 .",
+      "*----------------------------------------------------------------------*",
+      "",
+      "data: tablename_temp  type scpr_tabl,",
+      "      tabrecnumbi     type i.",
+      "",
+      "data: it_scpractr_old type scpractrtab.",
+      "",
+      "field-symbols: <wa_scpractr_new>  type scpractr,",
+      "               <wa_scpractr_old>  type scpractr,",
+      "               <wa_scpractr_temp> type scpractr.",
+      "",
+      "",
+      "*&---------------------------------------------------------------------*",
+      "*&      Form  free_contols",
+      "*&---------------------------------------------------------------------*",
+      "*       text",
+      "*----------------------------------------------------------------------*",
+      "*  -->  p1        text",
+      "*  <--  p2        text",
+      "*----------------------------------------------------------------------*",
+      "FORM free_contols .",
+      "",
+      "  if not cp200_alvobject is initial.",
+      "    call method cp200_alvobject->free.",
+      "    free: cp200_alvobject.",
+      "  endif.",
+      "",
+      "  if not cp200_container1 is initial.",
+      "    call method cp200_container1->free.",
+      "    free: cp200_container1.",
+      "  endif.",
+      "",
+      "ENDFORM.                    \" free_contols",
+      "",
+      "",
+      "*&---------------------------------------------------------------------*",
+      "*&      Form  write_legend",
+      "*&---------------------------------------------------------------------*",
+      "*       text",
+      "*----------------------------------------------------------------------*",
+      "*  -->  p1        text",
+      "*  <--  p2        text",
+      "*----------------------------------------------------------------------*",
+      "FORM write_legend .",
+      "",
+      "  constants: vline1 type i value 20,",
+      "             vline2 type i value 22,",
+      "             vline3 type i value 84.",
+      "",
+      "  new-page no-topofpage line-size 100.",
+      "  skip.",
+      "* write table header",
+      "  write at 2 'Spaltenname'(023).",
+      "  write at vline1 sy-vline as line.",
+      "  write at vline2 'Inhalt'(024).",
+      "  write at vline3 sy-vline as line.",
+      "  write at 86 'Hilfe'(042).",
+      "  new-line.",
+      "  write at 2(90) sy-uline as line.",
+      "  new-line.",
+      "* write table body",
+      "  loop at cp200_it_fieldcat into cp200_wa_fieldcat",
+      "        where fieldname <> 'MODTIME'.",
+      "    clear message_id.",
+      "    write  at 2 cp200_wa_fieldcat-coltext.",
+      "    write at vline1 sy-vline as line.",
+      "    case cp200_wa_fieldcat-fieldname.",
+      "",
+      "      when 'FIELDNAME'.",
+      "        write at vline2 'Bezeichnung des Tabellenfeldes'(027).",
+      "",
+      "      when 'KEYFLAG'.",
+      "        write at vline2",
+      "                 'Feld ist Schlüsselfeld (X) oder Datenfeld ( )'(026).",
+      "",
+      "      when 'VALUE'.",
+      "        write at vline2 'blau:'(044) color col_key intensified off.",
+      "        write",
+      "        'aktueller Wert des Tabellenfeldes im System'(025).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write at vline2 'gelb:'(048)",
+      "                              color col_total intensified off.",
+      "        write 'Datensatz im System nicht vorhanden.'(046).",
+      "        write at vline3 sy-vline as line.",
+      "",
+      "      when 'STATUS'.",
+      "        write at vline2 'Status des Feldwertes:'(032).",
+      "        write at vline3 sy-vline as line.",
+      "        write at 87 icon_system_help as icon hotspot.",
+      "        message_id = '407'.",
+      "        hide: message_id.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write: at vline2 '  ',",
+      "            'keine Aktivierungsinformationen zum Feld gefunden'(043).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write: at vline2 icon_led_green as icon,",
+      "                 'Feldwert stimmt mit Aktivierungswert überein'(034).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write: at vline2 icon_led_yellow as icon,",
+      "           'Feldwert stimmt nicht mit Aktivierungswert überein'(035).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write: at vline2 icon_led_red as icon,",
+      "                          'Fixwert wurde manuell überschrieben'(036).",
+      "        write at vline3 sy-vline as line.",
+      "",
+      "      when 'VAR_VALUE'.",
+      "        write at vline2",
+      "          'optionale Spalte: Variablenwert bei der Aktivierung'(037).",
+      "",
+      "      when 'BC_VALUE'.",
+      "        write at vline2 'aktueller Wert im BC-Set'(010).",
+      "",
+      "      when 'FIELDATTRS'.",
+      "        write at vline2 'aktuelles Feldattribut im BC-Set:'(038).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write: at vline2 take_over_icon as icon,",
+      "      'Feld ist im BC-Set aktuell als \"STANDARD\" gekennzeichnet'(039).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write: at vline2 take_fix_icon as icon,",
+      "          'Feld ist im BC-Set aktuell als \"FIX\" gekennzeichnet'(040).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write: at vline2 take_var_icon as icon,",
+      "      'Feld ist im BC-Set aktuell als \"VARIABEL\" gekennzeichnet'(041).",
+      "",
+      "      when 'BCSET'.",
+      "        write at vline2 'Name des BC-Sets'(008).",
+      "",
+      "      when 'MODDATE'.",
+      "        write at vline2 'ohne:'(047).",
+      "        write 'Datum der letzten Änderung des BC-Sets'(029).",
+      "        write at vline3 sy-vline as line.",
+      "        new-line.",
+      "        write at vline1 sy-vline.",
+      "        write at vline2 'rot:'(045) color col_negative intensified off.",
+      "        write 'BC-Set wurde nach Aktivierung geändert'(033).",
+      "",
+      "      when 'MODIFIER'.",
+      "        write at vline2 'Name des BC-Set Aktivierers'(020).",
+      "",
+      "      when 'ACTDATE'.",
+      "        write at vline2 'Datum der Aktivierung'(012).",
+      "",
+      "      when 'ACTTIME'.",
+      "        write at vline2 'Uhrzeit der Aktivierung'(014).",
+      "",
+      "      when others.",
+      "    endcase.",
+      "    write at vline3 sy-vline as line.",
+      "    new-line. write at vline1 sy-vline as line.",
+      "    write at vline3 sy-vline as line. new-line.",
+      "  endloop.",
+      "",
+      "ENDFORM.                    \" write_legend",
+      "",
+      "",
+      "*&---------------------------------------------------------------------*",
+      "*&      Form  get_descr_and_keylng",
+      "*&---------------------------------------------------------------------*",
+      "*       text",
+      "*----------------------------------------------------------------------*",
+      "*  -->  p1        text",
+      "*  <--  p2        text",
+      "*----------------------------------------------------------------------*",
+      "FORM get_descr_and_keylng",
+      "  using    tablename       type scpr_tabl",
+      "           tabledescr      type scpr_descs",
+      "  changing linkkeylng      type i",
+      "           tab_tabledescr  type scpr_descs",
+      "           link_tabledescr type scpr_descs",
+      "           rc              like sy-subrc.",
+      "",
+      "  rc = 0.",
+      "  read table g_linkdescrs into g_linkdescr",
+      "                              with table key tablename = tablename.",
+      "  if sy-subrc = 0.",
+      "* get table descriptions from global data",
+      "    linkkeylng = g_linkdescr-keylng.",
+      "    tab_tabledescr = g_linkdescr-tab_tabledescr.",
+      "    link_tabledescr = g_linkdescr-link_tabledescr.",
+      "  else.",
+      "* calculate global table descriptions",
+      "    clear: g_position, g_link_flddescr, linkkeylng.",
+      "    refresh: tab_tabledescr.",
+      "    append lines of tabledescr[] to tab_tabledescr.",
+      "    if not tab_tabledescr is initial.",
+      "      read table tab_tabledescr with key bastabname = ' '",
+      "                                    transporting no fields.",
+      "      if sy-subrc <> 0.",
+      "        loop at tab_tabledescr transporting no fields",
+      "                              where bastabname <> tablename.",
+      "        endloop.",
+      "        if sy-subrc = 0.",
+      "* descriptions of s-table inclusive descriptions of texttable",
+      "* -> get new descriptions of bastab only",
+      "          refresh: tab_tabledescr.",
+      "        endif.",
+      "      endif.",
+      "    endif.",
+      "    if tab_tabledescr is initial.",
+      "      CALL FUNCTION 'SCPR_DB_TABLE_TABFLDDEF_GET'",
+      "        EXPORTING",
+      "          TABNAME             = tablename",
+      "        TABLES",
+      "          FIELDDESCR          = tab_tabledescr",
+      "        EXCEPTIONS",
+      "          TABLE_NOT_FOUND     = 1",
+      "          DDIF_INTERNAL_ERROR = 2",
+      "          OTHERS              = 3.",
+      "      IF SY-SUBRC <> 0.",
+      "        rc = 1.",
+      "      ENDIF.",
+      "    endif.",
+      "    sort tab_tabledescr by position.",
+      "    delete tab_tabledescr where keyflag is initial.",
+      "* calculate global table descriptions for actlinks",
+      "    loop at tab_tabledescr assigning <g_flddescr>.",
+      "      move <g_flddescr> to g_link_flddescr.",
+      "      g_link_flddescr-position = g_position.",
+      "      append g_link_flddescr to link_tabledescr.",
+      "      if <g_flddescr>-vtype = 'X' or <g_flddescr>-vtype = 'I' or",
+      "         <g_flddescr>-vtype = 'F' or <g_flddescr>-vtype = 'P' or",
+      "         <g_flddescr>-vtype = 'b' or <g_flddescr>-vtype = 's'.",
+      "* rel. >= 610:  different coding in different releases   ************",
+      "        g_position = g_position +",
+      "          <g_flddescr>-outputlen * cl_abap_char_utilities=>charsize.",
+      "* rel. >= 610:  end of different coding in different releases   *****",
+      "      else.",
+      "        g_position = g_position + <g_flddescr>-intlen.",
+      "      endif.",
+      "    endloop.",
+      "* calculate keylength in characters",
+      "* rel. >= 610:  different coding in different releases   ************",
+      "    linkkeylng = linkkeylng +",
+      "           g_position / cl_abap_char_utilities=>charsize.",
+      "* rel. >= 610:  end of different coding in different releases   *****",
+      "* keep global descriptions",
+      "    clear g_linkdescr.",
+      "    g_linkdescr-tablename = tablename.",
+      "    g_linkdescr-keylng = linkkeylng.",
+      "    g_linkdescr-tab_tabledescr = tab_tabledescr.",
+      "    g_linkdescr-link_tabledescr = link_tabledescr.",
+      "    insert g_linkdescr into table g_linkdescrs.",
+      "    sort g_linkdescrs by tablename.",
+      "  endif.",
+      "",
+      "ENDFORM.                    \" get_descr_and_keylng",
+      "",
+      "",
+      "*&---------------------------------------------------------------------*",
+      "*&      Form  actlinks_get_recnumber",
+      "*&---------------------------------------------------------------------*",
+      "*       text",
+      "*----------------------------------------------------------------------*",
+      "*  -->  p1        text",
+      "*  <--  p2        text",
+      "*----------------------------------------------------------------------*",
+      "FORM actlinks_get_recnumber",
+      "      changing it_scpractr_new type scpractrtab",
+      "               it_scpractr_del type scpractrtab.",
+      "* it_scpractr_new are the new links of the activation. these links must",
+      "* get proper tabrecnum-values.",
+      "* it_scpractr_del are the old links (from DB) which must be deleted due",
+      "* to the update process.",
+      "",
+      "",
+      "  sort it_scpractr_new by tablename viewname tabkey.",
+      "  clear: tablename_temp, tabrecnumbi.",
+      "  refresh: it_scpractr_del.",
+      "",
+      "  loop at it_scpractr_new assigning <wa_scpractr_new>.",
+      "* read all links of table from DB into it_scpractr_old",
+      "    if <wa_scpractr_new>-tablename <> tablename_temp.",
+      "      tablename_temp = <wa_scpractr_new>-tablename.",
+      "      refresh: it_scpractr_old.",
+      "* rel.>46C  *** different coding in different releases   ************",
+      "      CALL FUNCTION 'SCPR_HI_DB_SCPRACTR_READ'",
+      "        EXPORTING",
+      "          TABLENAME     = <wa_scpractr_new>-tablename",
+      "        IMPORTING",
+      "          ACTKEYS       = it_scpractr_old",
+      "        EXCEPTIONS",
+      "          NO_DATA_FOUND = 1",
+      "          OTHERS        = 2.",
+      "* rel.>46C  *** end of different coding in different releases   *****",
+      "      IF SY-SUBRC <> 0.",
+      "        refresh: it_scpractr_old.",
+      "        clear: tabrecnumbi.",
+      "      else.",
+      "        sort it_scpractr_old by tabrecnumb descending.",
+      "        read table it_scpractr_old index 1 assigning <wa_scpractr_temp>.",
+      "        move <wa_scpractr_temp>-tabrecnumb to tabrecnumbi.",
+      "      endif.",
+      "    endif.",
+      "",
+      "* set new tabrecnumbers in new activation links (it_scpractr_new)",
+      "    tabrecnumbi = tabrecnumbi + 1.",
+      "    move tabrecnumbi to <wa_scpractr_new>-tabrecnumb.",
+      "",
+      "* all old links of the same view and the same key must be deleted",
+      "    loop at it_scpractr_old assigning <wa_scpractr_old>",
+      "                    where tablename = <wa_scpractr_new>-tablename",
+      "                    and   viewname  = <wa_scpractr_new>-viewname",
+      "                    and   tabkey    = <wa_scpractr_new>-tabkey.",
+      "      append <wa_scpractr_old> to it_scpractr_del.",
+      "    endloop.",
+      "",
+      "  endloop.",
+      "",
+      "",
+      "ENDFORM.                    \" actlinks_get_recnumber",
+      ""
+    ],
+    "LSCPRHITOP": [
+      "function-pool scprhi message-id scpr.",
+      "",
+      "type-pools: scpr, scp1, icon.",
+      "",
+      "include: scprconst, scprcontainers.",
+      "",
+      "tables: scpractr, scpractx. \"scpractp.",
+      "",
+      "* class definitions",
+      "class: cl_abap_char_utilities definition load.",
+      "",
+      "* local class definitions",
+      "class loc_alv_event_handler definition.",
+      "  public section.",
+      "    class-methods: on_hotspot_click",
+      "                   for event hotspot_click of cl_gui_alv_grid",
+      "                   importing E_COLUMN_ID ES_ROW_NO.",
+      "endclass.",
+      "",
+      "* fields",
+      "data: g_position(4) type n.",
+      "",
+      "* structures",
+      "data: g_link_flddescr type scpr_descr.",
+      "",
+      "* field-symbols",
+      "field-symbols: <g_flddescr>  type scpr_descr.",
+      "",
+      "* keep the activation link tables of a subobject global",
+      "data: g_scpractr     type scpractrtab,",
+      "      g_scpractr_del type scpractrtab.",
+      "",
+      "* keep activation date and time and setting for activation links global",
+      "* since these data must be available also from view maintenance and",
+      "* activation protocols",
+      "data: cp_date      like sy-datum,",
+      "      cp_time      like sy-uzeit,",
+      "      g_actlinks   type scpractopt-actlinks,",
+      "      g_no_standrd type scpractopt-no_standrd.",
+      "",
+      "",
+      "* keep the special internal lengths of tables for activation links",
+      "* global due to performance at activation",
+      "data: g_linkdescr  type scp1_linkdescr,",
+      "      g_linkdescrs type hashed table of scp1_linkdescr",
+      "                                          with unique key tablename.",
+      "",
+      "data: fcode(30) type c.",
+      "",
+      "",
+      "* dynpro 200",
+      "data: cp200_container1 type ref to cl_gui_custom_container,",
+      "      cp200_alvobject  type ref to cl_gui_alv_grid.",
+      "",
+      "data: cp200_fcode        like fcode,",
+      "      cp200_msgnum       type symsgno,",
+      "      cp200_not_in_table type c,",
+      "      cp200_tabname      type scpr_tabl,",
+      "      cp200_tabtype      type objh-objecttype.",
+      "",
+      "data: cp200_layout      type lvc_s_layo,",
+      "      cp200_recinfo     type scprfldact,",
+      "      cp200_wa_fieldcat type lvc_s_fcat.",
+      "",
+      "data: cp200_it_fieldcat type lvc_t_fcat,",
+      "      cp200_recinfos    type tt_scprfldact.",
+      "",
+      "* dynpro 300",
+      "data: message_id type char3.",
+      "",
+      "* dynpro 400",
+      "types: begin of cp400,",
+      "         sel_button1(1) type c,",
+      "         sel_button2(1) type c,",
+      "         sel_button3(1) type c,",
+      "         sel_button4(1) type c,",
+      "         bcset          type scpr_id,",
+      "         table          type scpr_tabl,",
+      "         view           type scpr_tabl,",
+      "         act_date       type scpractr-moddate,",
+      "         act_time       type scpractr-modtime,",
+      "         transp_flag(1) type c,",
+      "       end of cp400.",
+      "",
+      "data: cp400          type cp400,",
+      "      cp400_fcode    like fcode.",
+      ""
+    ]
+  }
+}

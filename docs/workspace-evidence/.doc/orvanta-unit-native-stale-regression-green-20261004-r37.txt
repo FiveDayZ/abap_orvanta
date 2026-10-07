@@ -1,0 +1,2332 @@
+TAP version 13
+# Subtest: exact indexed version and ISO language, preserved raw lines and double observation
+ok 1 - exact indexed version and ISO language, preserved raw lines and double observation
+  ---
+  duration_ms: 9.0845
+  type: 'test'
+  ...
+# Subtest: five-digit head version must equal the exact four-digit indexed version
+ok 2 - five-digit head version must equal the exact four-digit indexed version
+  ---
+  duration_ms: 5.5125
+  type: 'test'
+  ...
+# Subtest: unknown header, empty reference and absent indexed type do not call content API
+ok 3 - unknown header, empty reference and absent indexed type do not call content API
+  ---
+  duration_ms: 12.8037
+  type: 'test'
+  ...
+# Subtest: line limit is enforced before whole-document call and after unexpected growth
+ok 4 - line limit is enforced before whole-document call and after unexpected growth
+  ---
+  duration_ms: 6.1261
+  type: 'test'
+  ...
+# Subtest: API failure remains unavailable with its fault name, even if index also changes
+ok 5 - API failure remains unavailable with its fault name, even if index also changes
+  ---
+  duration_ms: 1.6346
+  type: 'test'
+  ...
+# Subtest: changed body or index and wrong document identity discard content
+ok 6 - changed body or index and wrong document identity discard content
+  ---
+  duration_ms: 3.6504
+  type: 'test'
+  ...
+# Subtest: query failure, metadata drift and ambiguity cannot become absence
+ok 7 - query failure, metadata drift and ambiguity cannot become absence
+  ---
+  duration_ms: 2.9107
+  type: 'test'
+  ...
+# Subtest: scope, unknown fields and invalid limits fail before metadata access
+ok 8 - scope, unknown fields and invalid limits fail before metadata access
+  ---
+  duration_ms: 0.818
+  type: 'test'
+  ...
+# Subtest: SOAP preserves document LINE whitespace without changing other table defaults
+ok 9 - SOAP preserves document LINE whitespace without changing other table defaults
+  ---
+  duration_ms: 4.3465
+  type: 'test'
+  ...
+# Subtest: documentation tool is read-only in config, readonly and full profiles
+ok 10 - documentation tool is read-only in config, readonly and full profiles
+  ---
+  duration_ms: 0.4363
+  type: 'test'
+  ...
+# Subtest: native API retains fixed-width row and opaque SAP version with bounded attestation
+ok 11 - native API retains fixed-width row and opaque SAP version with bounded attestation
+  ---
+  duration_ms: 19.1424
+  type: 'test'
+  ...
+# Subtest: API refuses write inserted before invocation
+ok 12 - API refuses write inserted before invocation
+  ---
+  duration_ms: 0.8297
+  type: 'test'
+  ...
+# Subtest: API refuses wrong function header before invocation
+ok 13 - API refuses wrong function header before invocation
+  ---
+  duration_ms: 0.5315
+  type: 'test'
+  ...
+# Subtest: API refuses wrong import type before invocation
+ok 14 - API refuses wrong import type before invocation
+  ---
+  duration_ms: 0.5643
+  type: 'test'
+  ...
+# Subtest: API refuses duplicate parameter before invocation
+ok 15 - API refuses duplicate parameter before invocation
+  ---
+  duration_ms: 3.0045
+  type: 'test'
+  ...
+# Subtest: API refuses update task before invocation
+ok 16 - API refuses update task before invocation
+  ---
+  duration_ms: 0.9837
+  type: 'test'
+  ...
+# Subtest: API refuses not remotable before invocation
+ok 17 - API refuses not remotable before invocation
+  ---
+  duration_ms: 0.4785
+  type: 'test'
+  ...
+# Subtest: API discards row/version after source drift
+ok 18 - API discards row/version after source drift
+  ---
+  duration_ms: 0.8859
+  type: 'test'
+  ...
+# Subtest: API discards row/version after interface drift
+ok 19 - API discards row/version after interface drift
+  ---
+  duration_ms: 0.8306
+  type: 'test'
+  ...
+# Subtest: API discards row/version after layout drift
+ok 20 - API discards row/version after layout drift
+  ---
+  duration_ms: 0.8638
+  type: 'test'
+  ...
+# Subtest: API refuses wrong client response
+ok 21 - API refuses wrong client response
+  ---
+  duration_ms: 1.3461
+  type: 'test'
+  ...
+# Subtest: API refuses wrong SID response
+ok 22 - API refuses wrong SID response
+  ---
+  duration_ms: 0.8686
+  type: 'test'
+  ...
+# Subtest: API refuses wrong unit response
+ok 23 - API refuses wrong unit response
+  ---
+  duration_ms: 0.7173
+  type: 'test'
+  ...
+# Subtest: API refuses wrong language response
+ok 24 - API refuses wrong language response
+  ---
+  duration_ms: 0.7261
+  type: 'test'
+  ...
+# Subtest: API refuses invalid version response
+ok 25 - API refuses invalid version response
+  ---
+  duration_ms: 0.832
+  type: 'test'
+  ...
+# Subtest: API refuses oversized text response
+ok 26 - API refuses oversized text response
+  ---
+  duration_ms: 0.9419
+  type: 'test'
+  ...
+# Subtest: API refuses control character response
+ok 27 - API refuses control character response
+  ---
+  duration_ms: 2.078
+  type: 'test'
+  ...
+# Subtest: API refuses unknown code response
+ok 28 - API refuses unknown code response
+  ---
+  duration_ms: 0.7038
+  type: 'test'
+  ...
+# Subtest: SAP rejection and declared fault never expose row/version
+ok 29 - SAP rejection and declared fault never expose row/version
+  ---
+  duration_ms: 1.1464
+  type: 'test'
+  ...
+# Subtest: metadata and transport failures retain original error rather than fabricate a snapshot
+ok 30 - metadata and transport failures retain original error rather than fabricate a snapshot
+  ---
+  duration_ms: 0.9927
+  type: 'test'
+  ...
+# Subtest: invalid target/key/language rejected before any dependency read
+ok 31 - invalid target/key/language rejected before any dependency read
+  ---
+  duration_ms: 0.3497
+  type: 'test'
+  ...
+# Subtest: unverified DDIC blocks all function reads and calls
+ok 32 - unverified DDIC blocks all function reads and calls
+  ---
+  duration_ms: 0.4944
+  type: 'test'
+  ...
+# Subtest: apply dispatches once after receipt gate and requires native row/version plus readback
+ok 33 - apply dispatches once after receipt gate and requires native row/version plus readback
+  ---
+  duration_ms: 25.9007
+  type: 'test'
+  ...
+# Subtest: apply rejects missing operation ID before any SAP read
+ok 34 - apply rejects missing operation ID before any SAP read
+  ---
+  duration_ms: 1.4358
+  type: 'test'
+  ...
+# Subtest: apply rejects missing write acknowledgment before any SAP read
+ok 35 - apply rejects missing write acknowledgment before any SAP read
+  ---
+  duration_ms: 0.7646
+  type: 'test'
+  ...
+# Subtest: apply rejects other connection before any SAP read
+ok 36 - apply rejects other connection before any SAP read
+  ---
+  duration_ms: 0.6375
+  type: 'test'
+  ...
+# Subtest: apply rejects generic unit key before any SAP read
+ok 37 - apply rejects generic unit key before any SAP read
+  ---
+  duration_ms: 1.1452
+  type: 'test'
+  ...
+# Subtest: apply rejects key whitespace before any SAP read
+ok 38 - apply rejects key whitespace before any SAP read
+  ---
+  duration_ms: 0.5345
+  type: 'test'
+  ...
+# Subtest: apply rejects empty patch before any SAP read
+ok 39 - apply rejects empty patch before any SAP read
+  ---
+  duration_ms: 0.4205
+  type: 'test'
+  ...
+# Subtest: apply rejects undefined patch field before any SAP read
+ok 40 - apply rejects undefined patch field before any SAP read
+  ---
+  duration_ms: 1.2311
+  type: 'test'
+  ...
+# Subtest: apply rejects clear description before any SAP read
+ok 41 - apply rejects clear description before any SAP read
+  ---
+  duration_ms: 1.6109
+  type: 'test'
+  ...
+# Subtest: apply rejects whitespace description before any SAP read
+ok 42 - apply rejects whitespace description before any SAP read
+  ---
+  duration_ms: 0.9527
+  type: 'test'
+  ...
+# Subtest: apply rejects oversized description before any SAP read
+ok 43 - apply rejects oversized description before any SAP read
+  ---
+  duration_ms: 0.6567
+  type: 'test'
+  ...
+# Subtest: apply rejects control character before any SAP read
+ok 44 - apply rejects control character before any SAP read
+  ---
+  duration_ms: 0.7579
+  type: 'test'
+  ...
+# Subtest: apply rejects alias edit before any SAP read
+ok 45 - apply rejects alias edit before any SAP read
+  ---
+  duration_ms: 0.4992
+  type: 'test'
+  ...
+# Subtest: apply rejects same containers before any SAP read
+ok 46 - apply rejects same containers before any SAP read
+  ---
+  duration_ms: 0.6395
+  type: 'test'
+  ...
+# Subtest: apply rejects foreign task before any SAP read
+ok 47 - apply rejects foreign task before any SAP read
+  ---
+  duration_ms: 0.2616
+  type: 'test'
+  ...
+# Subtest: apply rejects no explicit language before any SAP read
+ok 48 - apply rejects no explicit language before any SAP read
+  ---
+  duration_ms: 0.292
+  type: 'test'
+  ...
+# Subtest: apply rejects legacy token as native token before any SAP read
+ok 49 - apply rejects legacy token as native token before any SAP read
+  ---
+  duration_ms: 0.2455
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks source mutation
+ok 50 - writer attestation blocks source mutation
+  ---
+  duration_ms: 1.2711
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks wrong import
+ok 51 - writer attestation blocks wrong import
+  ---
+  duration_ms: 8.4957
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks duplicate import
+ok 52 - writer attestation blocks duplicate import
+  ---
+  duration_ms: 0.9852
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks update-task wrapper
+ok 53 - writer attestation blocks update-task wrapper
+  ---
+  duration_ms: 0.583
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks nonremote wrapper
+ok 54 - writer attestation blocks nonremote wrapper
+  ---
+  duration_ms: 0.5017
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks wrong header
+ok 55 - writer attestation blocks wrong header
+  ---
+  duration_ms: 0.3823
+  type: 'test'
+  ...
+# Subtest: missing writer and active source drift never reach receipt dispatch mark
+ok 56 - missing writer and active source drift never reach receipt dispatch mark
+  ---
+  duration_ms: 1.8892
+  type: 'test'
+  ...
+# Subtest: apply blocks stale native version before dispatch
+ok 57 - apply blocks stale native version before dispatch
+  ---
+  duration_ms: 1.1494
+  type: 'test'
+  ...
+# Subtest: apply blocks blocked draft before dispatch
+ok 58 - apply blocks blocked draft before dispatch
+  ---
+  duration_ms: 0.9308
+  type: 'test'
+  ...
+# Subtest: apply blocks wrong SAP language before dispatch
+ok 59 - apply blocks wrong SAP language before dispatch
+  ---
+  duration_ms: 0.7906
+  type: 'test'
+  ...
+# Subtest: apply blocks altered alias before dispatch
+ok 60 - apply blocks altered alias before dispatch
+  ---
+  duration_ms: 0.7764
+  type: 'test'
+  ...
+# Subtest: apply blocks wrong client before dispatch
+ok 61 - apply blocks wrong client before dispatch
+  ---
+  duration_ms: 0.7409
+  type: 'test'
+  ...
+# Subtest: failed receipt persistence stops the sole command
+ok 62 - failed receipt persistence stops the sole command
+  ---
+  duration_ms: 1.2261
+  type: 'test'
+  ...
+# Subtest: native declined command returns blocked, not applied, and exposes no row/version
+ok 63 - native declined command returns blocked, not applied, and exposes no row/version
+  ---
+  duration_ms: 1.7578
+  type: 'test'
+  ...
+# Subtest: post-dispatch unrecognized code remains uncertain with no retry
+ok 64 - post-dispatch unrecognized code remains uncertain with no retry
+  ---
+  duration_ms: 1.3875
+  type: 'test'
+  ...
+# Subtest: post-dispatch missing commit remains uncertain with no retry
+ok 65 - post-dispatch missing commit remains uncertain with no retry
+  ---
+  duration_ms: 1.1054
+  type: 'test'
+  ...
+# Subtest: post-dispatch unchanged after version remains uncertain with no retry
+ok 66 - post-dispatch unchanged after version remains uncertain with no retry
+  ---
+  duration_ms: 1.2352
+  type: 'test'
+  ...
+# Subtest: post-dispatch wrong task remains uncertain with no retry
+ok 67 - post-dispatch wrong task remains uncertain with no retry
+  ---
+  duration_ms: 1.311
+  type: 'test'
+  ...
+# Subtest: post-dispatch generic key remains uncertain with no retry
+ok 68 - post-dispatch generic key remains uncertain with no retry
+  ---
+  duration_ms: 1.2309
+  type: 'test'
+  ...
+# Subtest: post-dispatch changed alias remains uncertain with no retry
+ok 69 - post-dispatch changed alias remains uncertain with no retry
+  ---
+  duration_ms: 1.7823
+  type: 'test'
+  ...
+# Subtest: post-dispatch old before version remains uncertain with no retry
+ok 70 - post-dispatch old before version remains uncertain with no retry
+  ---
+  duration_ms: 1.3337
+  type: 'test'
+  ...
+# Subtest: post-dispatch wrong response scope remains uncertain with no retry
+ok 71 - post-dispatch wrong response scope remains uncertain with no retry
+  ---
+  duration_ms: 1.4618
+  type: 'test'
+  ...
+# Subtest: SOAP fault and post-commit readback mismatch remain uncertain
+ok 72 - SOAP fault and post-commit readback mismatch remain uncertain
+  ---
+  duration_ms: 2.9031
+  type: 'test'
+  ...
+# Subtest: no-change is still confirmed by the locked native command; it records no CTS key
+ok 73 - no-change is still confirmed by the locked native command; it records no CTS key
+  ---
+  duration_ms: 2.0043
+  type: 'test'
+  ...
+# Subtest: receipt target keeps case and serializes different languages of the same unit
+ok 74 - receipt target keeps case and serializes different languages of the same unit
+  ---
+  duration_ms: 1.6812
+  type: 'test'
+  ...
+# Subtest: real MCP registration advertises write schema and protects rejected/unknown dispatches with receipts
+ok 75 - real MCP registration advertises write schema and protects rejected/unknown dispatches with receipts
+  ---
+  duration_ms: 339.3532
+  type: 'test'
+  ...
+# Subtest: schema trims description only; active body is ECC candidate with no UI/generic writer
+ok 76 - schema trims description only; active body is ECC candidate with no UI/generic writer
+  ---
+  duration_ms: 1.22
+  type: 'test'
+  ...
+# Subtest: stale plan uses the actual native row and pins one no-value-change command
+ok 77 - stale plan uses the actual native row and pins one no-value-change command
+  ---
+  duration_ms: 28.4197
+  type: 'test'
+  ...
+# Subtest: other keys, fields, containers and hidden execute flags refuse before reads
+ok 78 - other keys, fields, containers and hidden execute flags refuse before reads
+  ---
+  duration_ms: 2.2848
+  type: 'test'
+  ...
+# Subtest: drifting native body refuses preparation before table reads
+ok 79 - drifting native body refuses preparation before table reads
+  ---
+  duration_ms: 1.904
+  type: 'test'
+  ...
+# Subtest: missing native snapshot, mismatched full-row version and reader scope refuse
+ok 80 - missing native snapshot, mismatched full-row version and reader scope refuse
+  ---
+  duration_ms: 3.6048
+  type: 'test'
+  ...
+# Subtest: wrong or truncated CTS projections cannot create a stale plan
+ok 81 - wrong or truncated CTS projections cannot create a stale plan
+  ---
+  duration_ms: 4.381
+  type: 'test'
+  ...
+# Subtest: unavailable lock diagnostics remain explicit and do not authorize dispatch
+ok 82 - unavailable lock diagnostics remain explicit and do not authorize dispatch
+  ---
+  duration_ms: 33.446
+  type: 'test'
+  ...
+# Subtest: wrong, absent, expired or broadened grants dispatch zero times
+ok 83 - wrong, absent, expired or broadened grants dispatch zero times
+  ---
+  duration_ms: 11.0031
+  type: 'test'
+  ...
+# Subtest: tampered parameters and changed evidence block before native call
+ok 84 - tampered parameters and changed evidence block before native call
+  ---
+  duration_ms: 15.1017
+  type: 'test'
+  ...
+# Subtest: valid rejection persists invocation evidence before its only bounded dispatch
+ok 85 - valid rejection persists invocation evidence before its only bounded dispatch
+  ---
+  duration_ms: 127.1392
+  type: 'test'
+  ...
+# Subtest: lost native response remains unknown even when readonly observations match
+ok 86 - lost native response remains unknown even when readonly observations match
+  ---
+  duration_ms: 82.4235
+  type: 'test'
+  ...
+# Subtest: unexpected native success or another refusal is never accepted as the stale sample
+ok 87 - unexpected native success or another refusal is never accepted as the stale sample
+  ---
+  duration_ms: 374.569
+  type: 'test'
+  ...
+# Subtest: post-dispatch observation failure preserves the original first cause
+ok 88 - post-dispatch observation failure preserves the original first cause
+  ---
+  duration_ms: 73.4807
+  type: 'test'
+  ...
+# Subtest: scope or commit flags in an otherwise matching native refusal remain uncertain
+ok 89 - scope or commit flags in an otherwise matching native refusal remain uncertain
+  ---
+  duration_ms: 239.7584
+  type: 'test'
+  ...
+# Subtest: readonly MCP preparation rejects older schemas without calling any SAP tool
+ok 90 - readonly MCP preparation rejects older schemas without calling any SAP tool
+  ---
+  duration_ms: 5.4809
+  type: 'test'
+  ...
+# Subtest: CLI endpoint cannot expose credentials or use a remote MCP service
+ok 91 - CLI endpoint cannot expose credentials or use a remote MCP service
+  ---
+  duration_ms: 0.4073
+  type: 'test'
+  ...
+# Subtest: actual loopback MCP preparation makes only the five pinned reader calls
+ok 92 - actual loopback MCP preparation makes only the five pinned reader calls
+  ---
+  duration_ms: 92.2575
+  type: 'test'
+  ...
+# Subtest: receipt persistence failure prevents dispatch and leaves SAP invocation false
+ok 93 - receipt persistence failure prevents dispatch and leaves SAP invocation false
+  ---
+  duration_ms: 24.7841
+  type: 'test'
+  ...
+# Subtest: native failure text is preserved by hash while a later read failure cannot replace it
+ok 94 - native failure text is preserved by hash while a later read failure cannot replace it
+  ---
+  duration_ms: 21.4281
+  type: 'test'
+  ...
+# Subtest: changed CTS after a genuine rejection keeps the receipt unknown
+ok 95 - changed CTS after a genuine rejection keeps the receipt unknown
+  ---
+  duration_ms: 23.5016
+  type: 'test'
+  ...
+# Subtest: MCP advertises read-only reconciliation and refuses missing context or hidden writes before SAP
+ok 96 - MCP advertises read-only reconciliation and refuses missing context or hidden writes before SAP
+  ---
+  duration_ms: 214.1157
+  type: 'test'
+  ...
+# Subtest: GR2 fixed-width encoding matches four real native snapshots and the existing target identity
+ok 97 - GR2 fixed-width encoding matches four real native snapshots and the existing target identity
+  ---
+  duration_ms: 1.7987
+  type: 'test'
+  ...
+# Subtest: desired full row and retained CTS projection are observed without changing the original receipt
+ok 98 - desired full row and retained CTS projection are observed without changing the original receipt
+  ---
+  duration_ms: 23.5885
+  type: 'test'
+  ...
+# Subtest: real r33 unknown receipt stays unresolved when later restoration makes the current row original
+ok 99 - real r33 unknown receipt stays unresolved when later restoration makes the current row original
+  ---
+  duration_ms: 2.0606
+  type: 'test'
+  ...
+# Subtest: matching requested description does not conceal changes to an omitted protected field
+ok 100 - matching requested description does not conceal changes to an omitted protected field
+  ---
+  duration_ms: 1.6228
+  type: 'test'
+  ...
+# Subtest: missing or mismatched local receipt/input/target context is refused before all SAP reads
+ok 101 - missing or mismatched local receipt/input/target context is refused before all SAP reads
+  ---
+  duration_ms: 4.8275
+  type: 'test'
+  ...
+# Subtest: invented old rows, stale hashes and unsupported client fail before SAP reads
+ok 102 - invented old rows, stale hashes and unsupported client fail before SAP reads
+  ---
+  duration_ms: 2.9907
+  type: 'test'
+  ...
+# Subtest: empty patch, hidden writes and extra old-row fields remain strict input errors
+ok 103 - empty patch, hidden writes and extra old-row fields remain strict input errors
+  ---
+  duration_ms: 3.3547
+  type: 'test'
+  ...
+# Subtest: changed, unsupported or false native snapshots cannot produce a stable current-value verdict
+ok 104 - changed, unsupported or false native snapshots cannot produce a stable current-value verdict
+  ---
+  duration_ms: 7.6224
+  type: 'test'
+  ...
+# Subtest: changed or unreadable receipt during observation keeps all write conclusions unknown
+ok 105 - changed or unreadable receipt during observation keeps all write conclusions unknown
+  ---
+  duration_ms: 3.5965
+  type: 'test'
+  ...
+# Subtest: missing, truncated, changed, released or wrong-scope CTS never becomes a successful observation
+ok 106 - missing, truncated, changed, released or wrong-scope CTS never becomes a successful observation
+  ---
+  duration_ms: 7.6811
+  type: 'test'
+  ...
+# Subtest: absent projection is not no-write proof, and duplicate or parent keys remain explicit
+ok 107 - absent projection is not no-write proof, and duplicate or parent keys remain explicit
+  ---
+  duration_ms: 12.2096
+  type: 'test'
+  ...
+# Subtest: unavailable/truncated/wrong-user lock evidence is not treated as an empty lock list
+ok 108 - unavailable/truncated/wrong-user lock evidence is not treated as an empty lock list
+  ---
+  duration_ms: 6.031
+  type: 'test'
+  ...
+# Subtest: a reader failure retains its safe code, with no automatic retry or receipt modification
+ok 109 - a reader failure retains its safe code, with no automatic retry or receipt modification
+  ---
+  duration_ms: 1.0899
+  type: 'test'
+  ...
+# Subtest: MCP advertises unit reader and CTS inputs without dropping service cross-field rules
+ok 110 - MCP advertises unit reader and CTS inputs without dropping service cross-field rules
+  ---
+  duration_ms: 248.8009
+  type: 'test'
+  ...
+# Subtest: MCP advertises unit text preview fields and still enforces cross-field and strict input rules
+ok 111 - MCP advertises unit text preview fields and still enforces cross-field and strict input rules
+  ---
+  duration_ms: 122.0316
+  type: 'test'
+  ...
+# Subtest: unit CTS key retains wire padding through the actual SOAP backend route
+ok 112 - unit CTS key retains wire padding through the actual SOAP backend route
+  ---
+  duration_ms: 62.3246
+  type: 'test'
+  ...
+# Subtest: scalar padding preservation stays selective and preserves encoded blanks and key case
+ok 113 - scalar padding preservation stays selective and preserves encoded blanks and key case
+  ---
+  duration_ms: 0.7602
+  type: 'test'
+  ...
+# Subtest: preserving one scalar does not turn a SOAP fault into output success
+ok 114 - preserving one scalar does not turn a SOAP fault into output success
+  ---
+  duration_ms: 0.4469
+  type: 'test'
+  ...
+# Subtest: text reconciliation distinguishes proposed, partial, absent and unexpected changes without claiming CTS success
+ok 115 - text reconciliation distinguishes proposed, partial, absent and unexpected changes without claiming CTS success
+  ---
+  duration_ms: 30.3582
+  type: 'test'
+  ...
+# Subtest: text reconciliation rejects malformed and cross-scope baselines before reads and discards unstable observations
+ok 116 - text reconciliation rejects malformed and cross-scope baselines before reads and discards unstable observations
+  ---
+  duration_ms: 16.0251
+  type: 'test'
+  ...
+# Subtest: comparison uses reviewed target metadata and refuses w200 pins or later target drift
+ok 117 - comparison uses reviewed target metadata and refuses w200 pins or later target drift
+  ---
+  duration_ms: 3.2105
+  type: 'test'
+  ...
+# Subtest: unit read keeps internal key case, client and language, omits floats and rechecks exact values
+ok 118 - unit read keeps internal key case, client and language, omits floats and rechecks exact values
+  ---
+  duration_ms: 6.8019
+  type: 'test'
+  ...
+# Subtest: missing translation differs from missing unit or unavailable language; no fallback
+ok 119 - missing translation differs from missing unit or unavailable language; no fallback
+  ---
+  duration_ms: 3.4699
+  type: 'test'
+  ...
+# Subtest: other systems/clients, arbitrary fields and invalid keys are rejected before SAP
+ok 120 - other systems/clients, arbitrary fields and invalid keys are rejected before SAP
+  ---
+  duration_ms: 1.1817
+  type: 'test'
+  ...
+# Subtest: quotes in a short internal key are escaped, not interpolated into SQL
+ok 121 - quotes in a short internal key are escaped, not interpolated into SQL
+  ---
+  duration_ms: 1.6928
+  type: 'test'
+  ...
+# Subtest: stale expected fingerprint and changing base/text/language discard returned values
+ok 122 - stale expected fingerprint and changing base/text/language discard returned values
+  ---
+  duration_ms: 5.2096
+  type: 'test'
+  ...
+# Subtest: recheck or permission failure is unavailable, never absence or an invented change
+ok 123 - recheck or permission failure is unavailable, never absence or an invented change
+  ---
+  duration_ms: 2.2665
+  type: 'test'
+  ...
+# Subtest: duplicate rows, out-of-scope rows and key/layout drift are refused
+ok 124 - duplicate rows, out-of-scope rows and key/layout drift are refused
+  ---
+  duration_ms: 3.524
+  type: 'test'
+  ...
+# Subtest: reviewed RFC fallback requests only fixed projections and exact client/key predicates
+ok 125 - reviewed RFC fallback requests only fixed projections and exact client/key predicates
+  ---
+  duration_ms: 3.545
+  type: 'test'
+  ...
+# Subtest: unit service and config/full/readonly tool profiles expose read-only contract
+ok 126 - unit service and config/full/readonly tool profiles expose read-only contract
+  ---
+  duration_ms: 9.2837
+  type: 'test'
+  ...
+# Subtest: unit service opts into native API once and retracts a mismatched projection
+ok 127 - unit service opts into native API once and retracts a mismatched projection
+  ---
+  duration_ms: 38.8626
+  type: 'test'
+  ...
+# Subtest: native text-version preview is opt-in, bounded and preserves omitted fields and explicit clearing
+ok 128 - native text-version preview is opt-in, bounded and preserves omitted fields and explicit clearing
+  ---
+  duration_ms: 18.7732
+  type: 'test'
+  ...
+# Subtest: stale opaque text version retracts draft and nested native token even when display values match
+ok 129 - stale opaque text version retracts draft and nested native token even when display values match
+  ---
+  duration_ms: 6.8303
+  type: 'test'
+  ...
+# Subtest: native preview rejects untrusted scope, keys, flags, incomplete rows and unavailable API observations
+ok 130 - native preview rejects untrusted scope, keys, flags, incomplete rows and unavailable API observations
+  ---
+  duration_ms: 51.2784
+  type: 'test'
+  ...
+# Subtest: native version inputs fail before reads and final metadata or legacy drift cannot be rescued by a matching token
+ok 131 - native version inputs fail before reads and final metadata or legacy drift cannot be rescued by a matching token
+  ---
+  duration_ms: 11.5667
+  type: 'test'
+  ...
+# Subtest: native preview performs its final API read after CTS and preserves earlier rejection
+ok 132 - native preview performs its final API read after CTS and preserves earlier rejection
+  ---
+  duration_ms: 9.9023
+  type: 'test'
+  ...
+# Subtest: ToolService preview routes the optional version through the attested readonly native API
+ok 133 - ToolService preview routes the optional version through the attested readonly native API
+  ---
+  duration_ms: 8.6107
+  type: 'test'
+  ...
+# Subtest: unit text handoff combines CTS once and retracts incompatible versions or task admission
+ok 134 - unit text handoff combines CTS once and retracts incompatible versions or task admission
+  ---
+  duration_ms: 49.7109
+  type: 'test'
+  ...
+# Subtest: unit reconciliation service reuses inspector without forwarding recursive controls
+ok 135 - unit reconciliation service reuses inspector without forwarding recursive controls
+  ---
+  duration_ms: 14.9693
+  type: 'test'
+  ...
+# Subtest: optional text handoff reuses the descriptor and rechecks current values without expanding patch fields
+ok 136 - optional text handoff reuses the descriptor and rechecks current values without expanding patch fields
+  ---
+  duration_ms: 7.7027
+  type: 'test'
+  ...
+# Subtest: text handoff cannot survive failed/cross-scope source evidence or stale target confirmation
+ok 137 - text handoff cannot survive failed/cross-scope source evidence or stale target confirmation
+  ---
+  duration_ms: 28.5257
+  type: 'test'
+  ...
+# Subtest: text draft preserves omitted fields and keys, normalizes padding and never grants execution
+ok 138 - text draft preserves omitted fields and keys, normalizes padding and never grants execution
+  ---
+  duration_ms: 7.2441
+  type: 'test'
+  ...
+# Subtest: text draft blocks stale, missing and unavailable values without inventing a translation row
+ok 139 - text draft blocks stale, missing and unavailable values without inventing a translation row
+  ---
+  duration_ms: 7.6041
+  type: 'test'
+  ...
+# Subtest: text draft rejects invalid patch/version/scope before metadata or value reads
+ok 140 - text draft rejects invalid patch/version/scope before metadata or value reads
+  ---
+  duration_ms: 1.2086
+  type: 'test'
+  ...
+# Subtest: text draft refuses description domain drift and routes through existing unit reads
+ok 141 - text draft refuses description domain drift and routes through existing unit reads
+  ---
+  duration_ms: 5.9515
+  type: 'test'
+  ...
+# Subtest: streamable HTTP exposes the implemented standalone tool waves
+ok 142 - streamable HTTP exposes the implemented standalone tool waves
+  ---
+  duration_ms: 544.0995
+  type: 'test'
+  ...
+# Subtest: full source baseline freezes and classifies every original tool contract
+ok 143 - full source baseline freezes and classifies every original tool contract
+  ---
+  duration_ms: 1.4847
+  type: 'test'
+  ...
+# Subtest: 0.30 lifecycle writes return version 2 operation receipts
+ok 144 - 0.30 lifecycle writes return version 2 operation receipts
+  ---
+  duration_ms: 204.0442
+  type: 'test'
+  ...
+# Subtest: failed SAP pre-change observation prevents the write action
+ok 145 - failed SAP pre-change observation prevents the write action
+  ---
+  duration_ms: 30.94
+  type: 'test'
+  ...
+# Subtest: health endpoint responds without an MCP session
+ok 146 - health endpoint responds without an MCP session
+  ---
+  duration_ms: 3.8304
+  type: 'test'
+  ...
+# Subtest: an argument the contract does not declare is rejected, not discarded
+ok 147 - an argument the contract does not declare is rejected, not discarded
+  ---
+  duration_ms: 23.2449
+  type: 'test'
+  ...
+# Subtest: RFC SOAP numeric entities decode once in JSON, structures, tables and faults
+ok 148 - RFC SOAP numeric entities decode once in JSON, structures, tables and faults
+  ---
+  duration_ms: 9.4408
+  type: 'test'
+  ...
+# Subtest: function source chunks preserve 73-255 characters, escapes and boundary spaces
+ok 149 - function source chunks preserve 73-255 characters, escapes and boundary spaces
+  ---
+  duration_ms: 9.1356
+  type: 'test'
+  ...
+# Subtest: numeric SOAP entities decode once before validating source chunk lengths
+ok 150 - numeric SOAP entities decode once before validating source chunk lengths
+  ---
+  duration_ms: 4.5025
+  type: 'test'
+  ...
+# Subtest: direct DDIC field DATS/8/E support=true
+ok 151 - direct DDIC field DATS/8/E support=true
+  ---
+  duration_ms: 2.7014
+  type: 'test'
+  ...
+# Subtest: direct DDIC field TIMS/6/E support=true
+ok 152 - direct DDIC field TIMS/6/E support=true
+  ---
+  duration_ms: 1.4339
+  type: 'test'
+  ...
+# Subtest: direct DDIC field CHAR/12/E support=true
+ok 153 - direct DDIC field CHAR/12/E support=true
+  ---
+  duration_ms: 1.9921
+  type: 'test'
+  ...
+# Subtest: direct DDIC field NUMC/3/E support=true
+ok 154 - direct DDIC field NUMC/3/E support=true
+  ---
+  duration_ms: 1.0727
+  type: 'test'
+  ...
+# Subtest: direct DDIC field INT4/10/E support=true
+ok 155 - direct DDIC field INT4/10/E support=true
+  ---
+  duration_ms: 0.929
+  type: 'test'
+  ...
+# Subtest: direct DDIC field STRG/12/E support=false
+ok 156 - direct DDIC field STRG/12/E support=false
+  ---
+  duration_ms: 1.1963
+  type: 'test'
+  ...
+# Subtest: direct DDIC field CHAR/12/S support=false
+ok 157 - direct DDIC field CHAR/12/S support=false
+  ---
+  duration_ms: 0.9512
+  type: 'test'
+  ...
+# Subtest: direct DDIC field CHAR/0/E support=false
+ok 158 - direct DDIC field CHAR/0/E support=false
+  ---
+  duration_ms: 0.7747
+  type: 'test'
+  ...
+# Subtest: direct DDIC field DATS/4/E support=false
+ok 159 - direct DDIC field DATS/4/E support=false
+  ---
+  duration_ms: 0.7838
+  type: 'test'
+  ...
+# Subtest: direct DDIC field // support=false
+ok 160 - direct DDIC field // support=false
+  ---
+  duration_ms: 0.729
+  type: 'test'
+  ...
+# Subtest: function source fails closed for missing source line
+ok 161 - function source fails closed for missing source line
+  ---
+  duration_ms: 1.8018
+  type: 'test'
+  ...
+# Subtest: function source fails closed for missing chunk
+ok 162 - function source fails closed for missing chunk
+  ---
+  duration_ms: 2.1948
+  type: 'test'
+  ...
+# Subtest: function source fails closed for duplicate chunk
+ok 163 - function source fails closed for duplicate chunk
+  ---
+  duration_ms: 2.0969
+  type: 'test'
+  ...
+# Subtest: function source fails closed for invalid length
+ok 164 - function source fails closed for invalid length
+  ---
+  duration_ms: 1.2566
+  type: 'test'
+  ...
+# Subtest: function source fails closed for unknown format
+ok 165 - function source fails closed for unknown format
+  ---
+  duration_ms: 1.6075
+  type: 'test'
+  ...
+# Subtest: the helper-backed interface patch accepts source lines wider than 72 columns
+ok 166 - the helper-backed interface patch accepts source lines wider than 72 columns
+  ---
+  duration_ms: 6.0941
+  type: 'test'
+  ...
+# Subtest: flat transparent records resolve for structures and TABLES, and execute with exact shapes
+ok 167 - flat transparent records resolve for structures and TABLES, and execute with exact shapes
+  ---
+  duration_ms: 4.0698
+  type: 'test'
+  ...
+# Subtest: DDIC table types also accept a verified transparent-table row type
+ok 168 - DDIC table types also accept a verified transparent-table row type
+  ---
+  duration_ms: 1.3214
+  type: 'test'
+  ...
+# Subtest: transparent row type rejects unsafe fallback {"error":"NO_AUTHORITY"}
+ok 169 - transparent row type rejects unsafe fallback {"error":"NO_AUTHORITY"}
+  ---
+  duration_ms: 2.1695
+  type: 'test'
+  ...
+# Subtest: transparent row type rejects unsafe fallback {"tableError":true}
+ok 170 - transparent row type rejects unsafe fallback {"tableError":true}
+  ---
+  duration_ms: 2.1631
+  type: 'test'
+  ...
+# Subtest: transparent row type rejects unsafe fallback {"complex":true}
+ok 171 - transparent row type rejects unsafe fallback {"complex":true}
+  ---
+  duration_ms: 2.6639
+  type: 'test'
+  ...
+# Subtest: transparent row type rejects unsafe fallback {"wrongClass":true}
+ok 172 - transparent row type rejects unsafe fallback {"wrongClass":true}
+  ---
+  duration_ms: 0.7132
+  type: 'test'
+  ...
+# Subtest: RFC 110-field structure and table row pass metadata, inputs, expected and actual outputs
+ok 173 - RFC 110-field structure and table row pass metadata, inputs, expected and actual outputs
+  ---
+  duration_ms: 25.9777
+  type: 'test'
+  ...
+# Subtest: RFC 500-field structure and table row pass metadata, inputs, expected and actual outputs
+ok 174 - RFC 500-field structure and table row pass metadata, inputs, expected and actual outputs
+  ---
+  duration_ms: 28.2432
+  type: 'test'
+  ...
+# Subtest: RFC 110-field allowlisted invocation uses the same expanded limit
+ok 175 - RFC 110-field allowlisted invocation uses the same expanded limit
+  ---
+  duration_ms: 41.3692
+  type: 'test'
+  ...
+# Subtest: RFC rejects 501-field metadata and request/assertion records before invocation
+ok 176 - RFC rejects 501-field metadata and request/assertion records before invocation
+  ---
+  duration_ms: 3.4901
+  type: 'test'
+  ...
+# Subtest: RFC wider records retain total payload, row, single-value and unknown-field guards
+ok 177 - RFC wider records retain total payload, row, single-value and unknown-field guards
+  ---
+  duration_ms: 13.1024
+  type: 'test'
+  ...
+# Subtest: RFC refuses oversized actual output without silently dropping fields
+ok 178 - RFC refuses oversized actual output without silently dropping fields
+  ---
+  duration_ms: 10.0096
+  type: 'test'
+  ...
+# Subtest: RFC MCP client can submit a 110-field header and receives every returned field
+ok 179 - RFC MCP client can submit a 110-field header and receives every returned field
+  ---
+  duration_ms: 167.2865
+  type: 'test'
+  ...
+# Subtest: RFC SOAP preserves all 110 structure and table fields including the last field
+ok 180 - RFC SOAP preserves all 110 structure and table fields including the last field
+  ---
+  duration_ms: 6.6324
+  type: 'test'
+  ...
+# Subtest: five complete 110-field rows preserve compound keys, exact numeric text and embedded delimiters
+ok 181 - five complete 110-field rows preserve compound keys, exact numeric text and embedded delimiters
+  ---
+  duration_ms: 29.9225
+  type: 'test'
+  ...
+# Subtest: 1024 fields are accepted without dropping columns; 1025 and mixed wildcard are rejected
+ok 182 - 1024 fields are accepted without dropping columns; 1025 and mixed wildcard are rejected
+  ---
+  duration_ms: 68.7202
+  type: 'test'
+  ...
+# Subtest: numeric-only projection keeps leading buffer padding and full decimal precision
+ok 183 - numeric-only projection keeps leading buffer padding and full decimal precision
+  ---
+  duration_ms: 2.5192
+  type: 'test'
+  ...
+# Subtest: complete rows retain empty fields separately from exact zero and negative numeric text
+ok 184 - complete rows retain empty fields separately from exact zero and negative numeric text
+  ---
+  duration_ms: 9.8371
+  type: 'test'
+  ...
+# Subtest: complete rows keep a 500-character field without repeating keys in its output
+ok 185 - complete rows keep a 500-character field without repeating keys in its output
+  ---
+  duration_ms: 10.9634
+  type: 'test'
+  ...
+# Subtest: complete rows keep a 512-character field without repeating keys in its output
+ok 186 - complete rows keep a 512-character field without repeating keys in its output
+  ---
+  duration_ms: 11.4578
+  type: 'test'
+  ...
+# Subtest: standalone long-field reads reject missing, duplicate and changed rows
+ok 187 - standalone long-field reads reject missing, duplicate and changed rows
+  ---
+  duration_ms: 6.0511
+  type: 'test'
+  ...
+# Subtest: definition drift after wide reads rejects the entire response
+ok 188 - definition drift after wide reads rejects the entire response
+  ---
+  duration_ms: 6.4252
+  type: 'test'
+  ...
+# Subtest: full-row reader returns genuine empty data and refuses missing keys, oversized fields and byte output
+ok 189 - full-row reader returns genuine empty data and refuses missing keys, oversized fields and byte output
+  ---
+  duration_ms: 5.4151
+  type: 'test'
+  ...
+# Subtest: numeric overflow, duplicate keys, deleted rows and edits never return partial success
+ok 190 - numeric overflow, duplicate keys, deleted rows and edits never return partial success
+  ---
+  duration_ms: 7.8096
+  type: 'test'
+  ...
+# Subtest: the numeric decode guard refuses replacement text by name and keeps accepted decimal forms verbatim
+ok 191 - the numeric decode guard refuses replacement text by name and keeps accepted decimal forms verbatim
+  ---
+  duration_ms: 58.1795
+  type: 'test'
+  ...
+# Subtest: a numeric refusal names the column, the untrimmed text and the row it came from
+ok 192 - a numeric refusal names the column, the untrimmed text and the row it came from
+  ---
+  duration_ms: 0.577
+  type: 'test'
+  ...
+# Subtest: a refusal with no key column in the projection says nothing about the row rather than guessing
+ok 193 - a refusal with no key column in the projection says nothing about the row rather than guessing
+  ---
+  duration_ms: 0.4866
+  type: 'test'
+  ...
+# Subtest: request budget rejects large wide fetches before per-key reads
+ok 194 - request budget rejects large wide fetches before per-key reads
+  ---
+  duration_ms: 2.9835
+  type: 'test'
+  ...
+# Subtest: table-reader SOAP preserves WA leading padding while ordinary RFC responses retain trimming
+ok 195 - table-reader SOAP preserves WA leading padding while ordinary RFC responses retain trimming
+  ---
+  duration_ms: 4.532
+  type: 'test'
+  ...
+# Subtest: finite SELECT fallback accepts escaped literals and rejects unsupported SQL
+ok 196 - finite SELECT fallback accepts escaped literals and rejects unsupported SQL
+  ---
+  duration_ms: 7.4164
+  type: 'test'
+  ...
+# Subtest: execute_data_query routes full rows through the shared reader without repeating native ADT
+ok 197 - execute_data_query routes full rows through the shared reader without repeating native ADT
+  ---
+  duration_ms: 18.3569
+  type: 'test'
+  ...
+# Subtest: execute_data_query clamps the fallback read to the allowlist ceiling instead of failing
+ok 198 - execute_data_query clamps the fallback read to the allowlist ceiling instead of failing
+  ---
+  duration_ms: 1.4619
+  type: 'test'
+  ...
+# Subtest: execute_data_query reads each disjunct on the server and merges what comes back
+ok 199 - execute_data_query reads each disjunct on the server and merges what comes back
+  ---
+  duration_ms: 1.8155
+  type: 'test'
+  ...
+# Subtest: execute_data_query refuses an ordering it cannot compute over the whole match set
+ok 200 - execute_data_query refuses an ordering it cannot compute over the whole match set
+  ---
+  duration_ms: 13.2533
+  type: 'test'
+  ...
+# Subtest: execute_data_query aggregates over a complete read and refuses a sample
+ok 201 - execute_data_query aggregates over a complete read and refuses a sample
+  ---
+  duration_ms: 3.8318
+  type: 'test'
+  ...
+# Subtest: tool profile defaults to the full surface
+ok 202 - tool profile defaults to the full surface
+  ---
+  duration_ms: 1.7035
+  type: 'test'
+  ...
+# Subtest: readonly profile exposes exactly the read-only tools
+ok 203 - readonly profile exposes exactly the read-only tools
+  ---
+  duration_ms: 0.512
+  type: 'test'
+  ...
+# Subtest: deny list subtracts tools from the selected profile
+ok 204 - deny list subtracts tools from the selected profile
+  ---
+  duration_ms: 0.401
+  type: 'test'
+  ...
+# Subtest: invalid profile and unknown deny entries fail loudly
+ok 205 - invalid profile and unknown deny entries fail loudly
+  ---
+  duration_ms: 0.6112
+  type: 'test'
+  ...
+# Subtest: deny list parsing ignores separators, blanks and duplicates
+ok 206 - deny list parsing ignores separators, blanks and duplicates
+  ---
+  duration_ms: 0.203
+  type: 'test'
+  ...
+# Subtest: a tool withheld by a platform boundary is out of every non-full profile and names why
+ok 207 - a tool withheld by a platform boundary is out of every non-full profile and names why
+  ---
+  duration_ms: 0.8504
+  type: 'test'
+  ...
+# Subtest: readonly profile withholds write tools from tools/list and refuses tools/call
+ok 208 - readonly profile withholds write tools from tools/list and refuses tools/call
+  ---
+  duration_ms: 188.8356
+  type: 'test'
+  ...
+# Subtest: every tool in the index has exactly one verification entry, with no unknown names
+not ok 209 - every tool in the index has exactly one verification entry, with no unknown names
+  ---
+  duration_ms: 91.5382
+  type: 'test'
+  location: 'C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\dist\\test\\verification-registry.test.js:15:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/runtime-regression/r11-activate-receipt.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\r11-activate-receipt.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\r11-activate-receipt.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\r11-activate-receipt.txt)',
+    +     tool: 'abap_activate'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-srcplat/09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json)',
+    +     tool: 'abap_debug_stack'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-srcplat/11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json)',
+    +     tool: 'abap_debug_status'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-srcplat/10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json)',
+    +     tool: 'abap_debug_variable'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .logs/mcp-incident-20260926-091500-007-abap-download-overwrite.md (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.logs\\mcp-incident-20260926-091500-007-abap-download-overwrite.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.logs\\mcp-incident-20260926-091500-007-abap-download-overwrite.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.logs\\mcp-incident-20260926-091500-007-abap-download-overwrite.md)',
+    +     tool: 'abap_download'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sf-final-activate-20260914.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sf-final-activate-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sf-final-activate-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sf-final-activate-20260914.json)',
+    +     tool: 'activate_smartform'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json)',
+    +     tool: 'adt_discovery_export'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-srcplat/02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json)',
+    +     tool: 'analyze_change_impact'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/runtime-regression/24-create-table-retry.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\24-create-table-retry.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\24-create-table-retry.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\24-create-table-retry.out.json)',
+    +     tool: 'create_ddic_transparent_table'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)',
+    +     tool: 'create_function_module_with_interface'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)',
+    +     tool: 'create_object_programmatically'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m1-function-interface-20260907-105329.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m1-function-interface-20260907-105329.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m1-function-interface-20260907-105329.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m1-function-interface-20260907-105329.json)',
+    +     tool: 'delete_abap_source_object'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/runtime-regression/21-delete-table.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\21-delete-table.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\21-delete-table.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\21-delete-table.out.json)',
+    +     tool: 'delete_ddic_object'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json)',
+    +     tool: 'format_abap_source'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json)',
+    +     tool: 'get_quick_fix_proposals'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json)',
+    +     tool: 'evaluate_refactoring'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sci-e2-readback-2026-09-09T09-40-22-034Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e2-readback-2026-09-09T09-40-22-034Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e2-readback-2026-09-09T09-40-22-034Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e2-readback-2026-09-09T09-40-22-034Z.json)',
+    +     tool: 'get_abap_diagnostics'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)',
+    +     tool: 'get_abap_object_info'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json)',
+    +     tool: 'get_abap_object_lines'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790742189882.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790742189882.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790742189882.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790742189882.json)',
+    +     tool: 'get_abap_object_workspace_uri'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/evidence-runtime-resources-20260930/perf-31-sql-syntax-contract.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-runtime-resources-20260930\\perf-31-sql-syntax-contract.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-runtime-resources-20260930\\perf-31-sql-syntax-contract.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-runtime-resources-20260930\\perf-31-sql-syntax-contract.txt)',
+    +     tool: 'get_abap_sql_syntax'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-srcplat/01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json)',
+    +     tool: 'get_batch_lines'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790749923642.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790749923642.json)',
+    +     tool: 'get_capability_report'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/atc-remote-readiness-2026-09-09T07-47-21.555Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json)',
+    +     tool: 'get_connected_systems'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m7-existing-detail-result-1789019622375.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m7-existing-detail-result-1789019622375.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m7-existing-detail-result-1789019622375.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m7-existing-detail-result-1789019622375.json)',
+    +     tool: 'get_customer_function_call_status'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790743322822.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790743322822.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790743322822.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790743322822.json)',
+    +     tool: 'get_object_by_uri'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/evidence-ops-r75/get_runtime_info.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-ops-r75\\get_runtime_info.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-ops-r75\\get_runtime_info.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-ops-r75\\get_runtime_info.json)',
+    +     tool: 'get_runtime_info'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-srcplat/03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json)',
+    +     tool: 'get_version_history'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)',
+    +     tool: 'get_write_operation_status'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json)',
+    +     tool: 'inspect_customer_function_exits'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json)',
+    +     tool: 'inspect_customer_screen_menu_exits'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json)',
+    +     tool: 'inspect_enhancement_framework'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json)',
+    +     tool: 'inspect_fico_rule_exit_program'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/ddic-compatibility-0363-deploy-20260907.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\ddic-compatibility-0363-deploy-20260907.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\ddic-compatibility-0363-deploy-20260907.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\ddic-compatibility-0363-deploy-20260907.json)',
+    +     tool: 'inspect_repository_assignment'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json)',
+    +     tool: 'inspect_source_enhancements'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m3-live-rfc-20260907-113636.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m3-live-rfc-20260907-113636.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m3-live-rfc-20260907-113636.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m3-live-rfc-20260907-113636.json)',
+    +     tool: 'invoke_customer_function_module'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sci-e2-dependencies-2026-09-09T09-27-34-795Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e2-dependencies-2026-09-09T09-27-34-795Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e2-dependencies-2026-09-09T09-27-34-795Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e2-dependencies-2026-09-09T09-27-34-795Z.json)',
+    +     tool: 'manage_text_elements'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7e2-state/orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7e2-state\\orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7e2-state\\orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7e2-state\\orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json)',
+    +     tool: 'patch_ddic_transparent_table_fields'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/code-update-20261002-173827.md (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\code-update-20261002-173827.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\code-update-20261002-173827.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\code-update-20261002-173827.md)',
+    +     tool: 'patch_function_module_interface'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json)',
+    +     tool: 'prepare_enhancement_configuration_workflow'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a/result.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a\\result.json)',
+    +     tool: 'preview_configuration'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-srcplat/04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json)',
+    +     tool: 'preview_source_changes'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-uidata/02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json)',
+    +     tool: 'read_abap_gui_definition'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json)',
+    +     tool: 'read_abap_message_class'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-uidata/01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json)',
+    +     tool: 'read_abap_screen'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json)',
+    +     tool: 'read_bte_configuration'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json)',
+    +     tool: 'read_classic_badi_definition'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json)',
+    +     tool: 'read_customer_exit_definition'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json)',
+    +     tool: 'read_customer_exit_project'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/m64-cap-preflight-2026-09-10T01-33-05-459Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m64-cap-preflight-2026-09-10T01-33-05-459Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m64-cap-preflight-2026-09-10T01-33-05-459Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m64-cap-preflight-2026-09-10T01-33-05-459Z.json)',
+    +     tool: 'read_ddic_data_element'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json)',
+    +     tool: 'read_ddic_domain'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sci-schema-review-2026-09-09T08-05-57.106Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-schema-review-2026-09-09T08-05-57.106Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-schema-review-2026-09-09T08-05-57.106Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-schema-review-2026-09-09T08-05-57.106Z.json)',
+    +     tool: 'read_ddic_structure'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json)',
+    +     tool: 'read_ddic_table_conversion_status'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json)',
+    +     tool: 'read_ddic_table_type'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/evidence-ops-r42/read_lock_object.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-ops-r42\\read_lock_object.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-ops-r42\\read_lock_object.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-ops-r42\\read_lock_object.json)',
+    +     tool: 'read_lock_object'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/runtime-regression/107b-read-view.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\107b-read-view.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\107b-read-view.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\107b-read-view.out.json)',
+    +     tool: 'read_maintenance_view'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/runtime-regression/58-read-nrob-notfound.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\58-read-nrob-notfound.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\58-read-nrob-notfound.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\58-read-nrob-notfound.out.json)',
+    +     tool: 'read_number_range_object'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json)',
+    +     tool: 'read_report_parameters'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-uidata/06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json)',
+    +     tool: 'read_report_variants'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/d6-probe4.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\d6-probe4.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\d6-probe4.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\d6-probe4.txt)',
+    +     tool: 'read_search_help'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sf-draft-isolation-20260914.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sf-draft-isolation-20260914.json)',
+    +     tool: 'read_smartform'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-uidata/03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json)',
+    +     tool: 'read_transaction_code'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790749923642.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790749923642.json)',
+    +     tool: 'replace_string_in_abap_object'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sci-e1-live-tool-2026-09-09T09-14-44-188Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e1-live-tool-2026-09-09T09-14-44-188Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e1-live-tool-2026-09-09T09-14-44-188Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e1-live-tool-2026-09-09T09-14-44-188Z.json)',
+    +     tool: 'run_sci_analysis'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07/result.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07\\result.json)',
+    +     tool: 'run_unit_tests'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/evidence-ops-r78/sap_helper_status.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-ops-r78\\sap_helper_status.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-ops-r78\\sap_helper_status.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-ops-r78\\sap_helper_status.json)',
+    +     tool: 'sap_helper_status'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sf-draft-isolation-20260914.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sf-draft-isolation-20260914.json)',
+    +     tool: 'save_smartform'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json)',
+    +     tool: 'search_abap_object_lines'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/atc-remote-readiness-2026-09-09T07-47-21.555Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json)',
+    +     tool: 'search_abap_objects'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json)',
+    +     tool: 'search_badi_objects'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json)',
+    +     tool: 'search_bte_dispatchers'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-enh/01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json)',
+    +     tool: 'search_customer_exit_objects'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json)',
+    +     tool: 'search_enhancement_objects'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/sci-e2-acceptance-2026-09-09T09-46-34-294Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e2-acceptance-2026-09-09T09-46-34-294Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e2-acceptance-2026-09-09T09-46-34-294Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e2-acceptance-2026-09-09T09-46-34-294Z.json)',
+    +     tool: 'test_remote_function_module'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/runtime-regression/105-view-upsert-e4-retest.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\105-view-upsert-e4-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\105-view-upsert-e4-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\105-view-upsert-e4-retest.out.json)',
+    +     tool: 'upsert_maintenance_view'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/runtime-regression/109-nrob-create-g-retest.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\109-nrob-create-g-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\109-nrob-create-g-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\109-nrob-create-g-retest.out.json)',
+    +     tool: 'upsert_number_range_object'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r119-runtime-verify.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r119-runtime-verify.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r119-runtime-verify.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r119-runtime-verify.txt)',
+    +     tool: 'upsert_search_help'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .cache/r7b-state-uidata/04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json)',
+    +     tool: 'validate_dynpro_application'
+    +   },
+    +   {
+    +     field: 'evidence',
+    +     message: 'evidence file does not exist: .doc/orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json)',
+    +     tool: 'write_function_module_source'
+    +   }
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0:
+      tool: 'abap_activate'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/runtime-regression/r11-activate-receipt.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\r11-activate-receipt.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\r11-activate-receipt.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\r11-activate-receipt.txt)'
+    1:
+      tool: 'abap_debug_stack'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-srcplat/09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json)'
+    2:
+      tool: 'abap_debug_status'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-srcplat/11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\11-capability-get_capability_report-2026-10-02T15-27-25-970Z.json)'
+    3:
+      tool: 'abap_debug_variable'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-srcplat/10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\10-dbg-variable-abap_debug_variable-2026-10-02T15-27-08-546Z.json)'
+    4:
+      tool: 'abap_download'
+      field: 'evidence'
+      message: 'evidence file does not exist: .logs/mcp-incident-20260926-091500-007-abap-download-overwrite.md (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.logs\\mcp-incident-20260926-091500-007-abap-download-overwrite.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.logs\\mcp-incident-20260926-091500-007-abap-download-overwrite.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.logs\\mcp-incident-20260926-091500-007-abap-download-overwrite.md)'
+    5:
+      tool: 'activate_smartform'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sf-final-activate-20260914.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sf-final-activate-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sf-final-activate-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sf-final-activate-20260914.json)'
+    6:
+      tool: 'adt_discovery_export'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-adt-discovery-export-2026-10-02T10-36-03-314Z.json)'
+    7:
+      tool: 'analyze_change_impact'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-srcplat/02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\02-impact-clas-analyze_change_impact-2026-10-02T15-27-03-703Z.json)'
+    8:
+      tool: 'create_ddic_transparent_table'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/runtime-regression/24-create-table-retry.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\24-create-table-retry.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\24-create-table-retry.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\24-create-table-retry.out.json)'
+    9:
+      tool: 'create_function_module_with_interface'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)'
+    10:
+      tool: 'create_object_programmatically'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)'
+    11:
+      tool: 'delete_abap_source_object'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m1-function-interface-20260907-105329.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m1-function-interface-20260907-105329.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m1-function-interface-20260907-105329.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m1-function-interface-20260907-105329.json)'
+    12:
+      tool: 'delete_ddic_object'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/runtime-regression/21-delete-table.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\21-delete-table.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\21-delete-table.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\21-delete-table.out.json)'
+    13:
+      tool: 'format_abap_source'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json)'
+    14:
+      tool: 'get_quick_fix_proposals'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-get-quick-fix-proposals-2026-10-02T14-52-47-000Z.json)'
+    15:
+      tool: 'evaluate_refactoring'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-evaluate-refactoring-2026-10-02T14-52-47-000Z.json)'
+    16:
+      tool: 'get_abap_diagnostics'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sci-e2-readback-2026-09-09T09-40-22-034Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e2-readback-2026-09-09T09-40-22-034Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e2-readback-2026-09-09T09-40-22-034Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e2-readback-2026-09-09T09-40-22-034Z.json)'
+    17:
+      tool: 'get_abap_object_info'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)'
+    18:
+      tool: 'get_abap_object_lines'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\atc-native-readonly-evidence-2026-09-09T07-41-09.757Z.json)'
+    19:
+      tool: 'get_abap_object_workspace_uri'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790742189882.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790742189882.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790742189882.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790742189882.json)'
+    20:
+      tool: 'get_abap_sql_syntax'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/evidence-runtime-resources-20260930/perf-31-sql-syntax-contract.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-runtime-resources-20260930\\perf-31-sql-syntax-contract.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-runtime-resources-20260930\\perf-31-sql-syntax-contract.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-runtime-resources-20260930\\perf-31-sql-syntax-contract.txt)'
+    21:
+      tool: 'get_batch_lines'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-srcplat/01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\01-batch-2obj-get_batch_lines-2026-10-02T15-26-54-811Z.json)'
+    22:
+      tool: 'get_capability_report'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790749923642.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790749923642.json)'
+    23:
+      tool: 'get_connected_systems'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/atc-remote-readiness-2026-09-09T07-47-21.555Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json)'
+    24:
+      tool: 'get_customer_function_call_status'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m7-existing-detail-result-1789019622375.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m7-existing-detail-result-1789019622375.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m7-existing-detail-result-1789019622375.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m7-existing-detail-result-1789019622375.json)'
+    25:
+      tool: 'get_object_by_uri'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790743322822.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790743322822.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790743322822.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790743322822.json)'
+    26:
+      tool: 'get_runtime_info'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/evidence-ops-r75/get_runtime_info.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-ops-r75\\get_runtime_info.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-ops-r75\\get_runtime_info.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-ops-r75\\get_runtime_info.json)'
+    27:
+      tool: 'get_version_history'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-srcplat/03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\03-versions-prog-get_version_history-2026-10-02T15-27-04-395Z.json)'
+    28:
+      tool: 'get_write_operation_status'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m2-daily-development-20260907-111512.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m2-daily-development-20260907-111512.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m2-daily-development-20260907-111512.json)'
+    29:
+      tool: 'inspect_customer_function_exits'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\06-final-funcexit-SAPMF02K-inspect_customer_function_exits-2026-10-02T15-25-06-798Z.json)'
+    30:
+      tool: 'inspect_customer_screen_menu_exits'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\07-final-screen-SAPMV45A-inspect_customer_screen_menu_exits-2026-10-02T15-25-11-745Z.json)'
+    31:
+      tool: 'inspect_enhancement_framework'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\04-final-enhfw-SAPMV45A-inspect_enhancement_framework-2026-10-02T15-24-34-189Z.json)'
+    32:
+      tool: 'inspect_fico_rule_exit_program'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\08-final-fico-RGGBR000-inspect_fico_rule_exit_program-2026-10-02T15-25-12-343Z.json)'
+    33:
+      tool: 'inspect_repository_assignment'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/ddic-compatibility-0363-deploy-20260907.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\ddic-compatibility-0363-deploy-20260907.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\ddic-compatibility-0363-deploy-20260907.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\ddic-compatibility-0363-deploy-20260907.json)'
+    34:
+      tool: 'inspect_source_enhancements'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\05-final-srcenh-SAPMV45A-inspect_source_enhancements-2026-10-02T15-24-35-140Z.json)'
+    35:
+      tool: 'invoke_customer_function_module'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m3-live-rfc-20260907-113636.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m3-live-rfc-20260907-113636.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m3-live-rfc-20260907-113636.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m3-live-rfc-20260907-113636.json)'
+    36:
+      tool: 'manage_text_elements'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sci-e2-dependencies-2026-09-09T09-27-34-795Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e2-dependencies-2026-09-09T09-27-34-795Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e2-dependencies-2026-09-09T09-27-34-795Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e2-dependencies-2026-09-09T09-27-34-795Z.json)'
+    37:
+      tool: 'patch_ddic_transparent_table_fields'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7e2-state/orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7e2-state\\orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7e2-state\\orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7e2-state\\orvanta-patch-ddic-transparent-table-fields-2026-10-02T16-17-12-118Z.json)'
+    38:
+      tool: 'patch_function_module_interface'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/code-update-20261002-173827.md (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\code-update-20261002-173827.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\code-update-20261002-173827.md, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\code-update-20261002-173827.md)'
+    39:
+      tool: 'prepare_enhancement_configuration_workflow'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\13-final-wf-cmod-ZVENDOR-prepare_enhancement_configuration_workflow-2026-10-02T15-25-14-381Z.json)'
+    40:
+      tool: 'preview_configuration'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a/result.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\mvp-batch3-sap-user-2026-09-11T01-31-39-014Z-d32ac24a\\result.json)'
+    41:
+      tool: 'preview_source_changes'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-srcplat/04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-srcplat\\04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-srcplat\\04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-srcplat\\04-preview-prog-preview_source_changes-2026-10-02T15-27-05-837Z.json)'
+    42:
+      tool: 'read_abap_gui_definition'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-uidata/02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\02-guidef-read_abap_gui_definition-2026-10-02T15-30-54-550Z.json)'
+    43:
+      tool: 'read_abap_message_class'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-abap-message-class-2026-10-02T07-45-57-408Z.json)'
+    44:
+      tool: 'read_abap_screen'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-uidata/01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\01-screen-read_abap_screen-2026-10-02T15-30-54-313Z.json)'
+    45:
+      tool: 'read_bte_configuration'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\10-final-bte-process-00001020-read_bte_configuration-2026-10-02T15-25-13-198Z.json)'
+    46:
+      tool: 'read_classic_badi_definition'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-enhancement-read-classic-badi-def-acc-document-2026-10-01T15-03-36-234Z.json)'
+    47:
+      tool: 'read_customer_exit_definition'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\03-final-def-MM06E005-read_customer_exit_definition-2026-10-02T15-24-33-588Z.json)'
+    48:
+      tool: 'read_customer_exit_project'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\02-final-proj-ZVENDOR-read_customer_exit_project-2026-10-02T15-24-33-261Z.json)'
+    49:
+      tool: 'read_ddic_data_element'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/m64-cap-preflight-2026-09-10T01-33-05-459Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\m64-cap-preflight-2026-09-10T01-33-05-459Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\m64-cap-preflight-2026-09-10T01-33-05-459Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\m64-cap-preflight-2026-09-10T01-33-05-459Z.json)'
+    50:
+      tool: 'read_ddic_domain'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-ddic-domain-2026-10-02T04-35-20-700Z.json)'
+    51:
+      tool: 'read_ddic_structure'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sci-schema-review-2026-09-09T08-05-57.106Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-schema-review-2026-09-09T08-05-57.106Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-schema-review-2026-09-09T08-05-57.106Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-schema-review-2026-09-09T08-05-57.106Z.json)'
+    52:
+      tool: 'read_ddic_table_conversion_status'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-ddic-table-conversion-status-2026-10-02T11-39-12-870Z.json)'
+    53:
+      tool: 'read_ddic_table_type'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-ddic-table-type-2026-10-02T04-41-06-372Z.json)'
+    54:
+      tool: 'read_lock_object'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/evidence-ops-r42/read_lock_object.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-ops-r42\\read_lock_object.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-ops-r42\\read_lock_object.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-ops-r42\\read_lock_object.json)'
+    55:
+      tool: 'read_maintenance_view'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/runtime-regression/107b-read-view.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\107b-read-view.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\107b-read-view.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\107b-read-view.out.json)'
+    56:
+      tool: 'read_number_range_object'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/runtime-regression/58-read-nrob-notfound.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\58-read-nrob-notfound.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\58-read-nrob-notfound.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\58-read-nrob-notfound.out.json)'
+    57:
+      tool: 'read_report_parameters'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-read-report-parameters-2026-10-02T17-22-01-139Z.json)'
+    58:
+      tool: 'read_report_variants'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-uidata/06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\06-rptvar-read_report_variants-2026-10-02T15-30-55-634Z.json)'
+    59:
+      tool: 'read_search_help'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/d6-probe4.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\d6-probe4.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\d6-probe4.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\d6-probe4.txt)'
+    60:
+      tool: 'read_smartform'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sf-draft-isolation-20260914.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sf-draft-isolation-20260914.json)'
+    61:
+      tool: 'read_transaction_code'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-uidata/03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\03-tran-z-read_transaction_code-2026-10-02T15-30-54-599Z.json)'
+    62:
+      tool: 'replace_string_in_abap_object'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/runtime-reads-deploy-1790749923642.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\runtime-reads-deploy-1790749923642.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\runtime-reads-deploy-1790749923642.json)'
+    63:
+      tool: 'run_sci_analysis'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sci-e1-live-tool-2026-09-09T09-14-44-188Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e1-live-tool-2026-09-09T09-14-44-188Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e1-live-tool-2026-09-09T09-14-44-188Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e1-live-tool-2026-09-09T09-14-44-188Z.json)'
+    64:
+      tool: 'run_unit_tests'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07/result.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07\\result.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\mvp-batch3-sap-user-2026-09-11T01-43-51-312Z-414e3c07\\result.json)'
+    65:
+      tool: 'sap_helper_status'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/evidence-ops-r78/sap_helper_status.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\evidence-ops-r78\\sap_helper_status.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\evidence-ops-r78\\sap_helper_status.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\evidence-ops-r78\\sap_helper_status.json)'
+    66:
+      tool: 'save_smartform'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sf-draft-isolation-20260914.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sf-draft-isolation-20260914.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sf-draft-isolation-20260914.json)'
+    67:
+      tool: 'search_abap_object_lines'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-search-abap-object-lines-2026-10-02T04-08-06-881Z.json)'
+    68:
+      tool: 'search_abap_objects'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/atc-remote-readiness-2026-09-09T07-47-21.555Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\atc-remote-readiness-2026-09-09T07-47-21.555Z.json)'
+    69:
+      tool: 'search_badi_objects'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-enhancement-search-classic-badi-impls-2026-10-01T15-01-49-755Z.json)'
+    70:
+      tool: 'search_bte_dispatchers'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\12-final-bte-star-search_bte_dispatchers-2026-10-02T15-25-14-079Z.json)'
+    71:
+      tool: 'search_customer_exit_objects'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-enh/01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-enh\\01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-enh\\01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-enh\\01-final-cex-V45A-search_customer_exit_objects-2026-10-02T15-24-32-941Z.json)'
+    72:
+      tool: 'search_enhancement_objects'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-enhancement-search-enho-candidates-2026-10-01T15-00-57-498Z.json)'
+    73:
+      tool: 'test_remote_function_module'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/sci-e2-acceptance-2026-09-09T09-46-34-294Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\sci-e2-acceptance-2026-09-09T09-46-34-294Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\sci-e2-acceptance-2026-09-09T09-46-34-294Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\sci-e2-acceptance-2026-09-09T09-46-34-294Z.json)'
+    74:
+      tool: 'upsert_maintenance_view'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/runtime-regression/105-view-upsert-e4-retest.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\105-view-upsert-e4-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\105-view-upsert-e4-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\105-view-upsert-e4-retest.out.json)'
+    75:
+      tool: 'upsert_number_range_object'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/runtime-regression/109-nrob-create-g-retest.out.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\runtime-regression\\109-nrob-create-g-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\runtime-regression\\109-nrob-create-g-retest.out.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\runtime-regression\\109-nrob-create-g-retest.out.json)'
+    76:
+      tool: 'upsert_search_help'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r119-runtime-verify.txt (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r119-runtime-verify.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r119-runtime-verify.txt, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r119-runtime-verify.txt)'
+    77:
+      tool: 'validate_dynpro_application'
+      field: 'evidence'
+      message: 'evidence file does not exist: .cache/r7b-state-uidata/04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.cache\\r7b-state-uidata\\04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.cache\\r7b-state-uidata\\04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.cache\\r7b-state-uidata\\04-validate-validate_dynpro_application-2026-10-02T15-30-54-965Z.json)'
+    78:
+      tool: 'write_function_module_source'
+      field: 'evidence'
+      message: 'evidence file does not exist: .doc/orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json (tried C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\.doc\\orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\.doc\\orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json, C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\docs\\workspace-evidence\\.doc\\orvanta-write-function-module-source-2026-10-02T06-53-32-093Z.json)'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/unit-native-stale-r37-schema/runtime/dist/test/verification-registry.test.js:28:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1106:25)
+    Test.start (node:internal/test_runner/test:1003:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+  ...
+# Subtest: the registry declares only known field values
+ok 210 - the registry declares only known field values
+  ---
+  duration_ms: 0.627
+  type: 'test'
+  ...
+# Subtest: verified and failed entries cite evidence that actually exists on disk
+not ok 211 - verified and failed entries cite evidence that actually exists on disk
+  ---
+  duration_ms: 5.7375
+  type: 'test'
+  location: 'C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\dist\\test\\verification-registry.test.js:42:1'
+  failureType: 'testCodeFailure'
+  error: 'abap_activate: evidence file missing at .cache/runtime-regression/r11-activate-receipt.txt'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/unit-native-stale-r37-schema/runtime/dist/test/verification-registry.test.js:52:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1106:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+    Test.postRun (node:internal/test_runner/test:1235:19)
+    Test.run (node:internal/test_runner/test:1163:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+  ...
+# Subtest: unverified entries claim neither evidence nor an attempt time
+ok 212 - unverified entries claim neither evidence nor an attempt time
+  ---
+  duration_ms: 0.3038
+  type: 'test'
+  ...
+# Subtest: a runtime failure is an observation and a static failure is a proof
+ok 213 - a runtime failure is an observation and a static failure is a proof
+  ---
+  duration_ms: 0.4128
+  type: 'test'
+  ...
+# Subtest: R-20's four tools stay recorded with the state their evidence supports
+ok 214 - R-20's four tools stay recorded with the state their evidence supports
+  ---
+  duration_ms: 0.2293
+  type: 'test'
+  ...
+# Subtest: a length fix alone never counts as evidence of success
+ok 215 - a length fix alone never counts as evidence of success
+  ---
+  duration_ms: 0.2439
+  type: 'test'
+  ...
+# Subtest: controlled writes must name the object they were written to
+ok 216 - controlled writes must name the object they were written to
+  ---
+  duration_ms: 66.5216
+  type: 'test'
+  ...
+# Subtest: unit description write evidence contains completed save and restoration with real key readback
+ok 217 - unit description write evidence contains completed save and restoration with real key readback
+  ---
+  duration_ms: 4.8968
+  type: 'test'
+  ...
+# Subtest: unit reconciliation evidence retains real unknown receipts and performs no native writes
+ok 218 - unit reconciliation evidence retains real unknown receipts and performs no native writes
+  ---
+  duration_ms: 5.9193
+  type: 'test'
+  ...
+# Subtest: the method states what kind of SAP operation the tool actually performs
+ok 219 - the method states what kind of SAP operation the tool actually performs
+  ---
+  duration_ms: 31.9846
+  type: 'test'
+  ...
+# Subtest: the availability-without-evidence metric is derived, not asserted
+ok 220 - the availability-without-evidence metric is derived, not asserted
+  ---
+  duration_ms: 1.0762
+  type: 'test'
+  ...
+# Subtest: notes and availabilityBasis agree about the protocol-only weakness, in both directions
+ok 221 - notes and availabilityBasis agree about the protocol-only weakness, in both directions
+  ---
+  duration_ms: 0.6652
+  type: 'test'
+  ...
+# Subtest: MUTATION: notes contradicting the basis are caught in both directions
+ok 222 - MUTATION: notes contradicting the basis are caught in both directions
+  ---
+  duration_ms: 0.4292
+  type: 'test'
+  ...
+# Subtest: platform-unsupported is a claim too, and must carry evidence
+not ok 223 - platform-unsupported is a claim too, and must carry evidence
+  ---
+  duration_ms: 3.4908
+  type: 'test'
+  location: 'C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\unit-native-stale-r37-schema\\runtime\\dist\\test\\verification-registry.test.js:289:1'
+  failureType: 'testCodeFailure'
+  error: 'abap_debug_stack: platform-unsupported evidence missing at .cache/r7b-state-srcplat/09-dbg-stack-abap_debug_stack-2026-10-02T15-27-08-282Z.json'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/unit-native-stale-r37-schema/runtime/dist/test/verification-registry.test.js:298:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1106:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+    Test.postRun (node:internal/test_runner/test:1235:19)
+    Test.run (node:internal/test_runner/test:1163:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+  ...
+# Subtest: availability and verification status stay orthogonal
+ok 224 - availability and verification status stay orthogonal
+  ---
+  duration_ms: 0.7856
+  type: 'test'
+  ...
+# Subtest: no entry claims protocol-only without a helper to carry that protocol
+ok 225 - no entry claims protocol-only without a helper to carry that protocol
+  ---
+  duration_ms: 0.376
+  type: 'test'
+  ...
+# Subtest: the protocol-only residual stays visible and countable
+ok 226 - the protocol-only residual stays visible and countable
+  ---
+  duration_ms: 0.3032
+  type: 'test'
+  ...
+# Subtest: MUTATION: a verified entry pointing at a missing file must be rejected
+ok 227 - MUTATION: a verified entry pointing at a missing file must be rejected
+  ---
+  duration_ms: 12.5358
+  type: 'test'
+  ...
+# Subtest: MUTATION: a duplicate and an unknown tool are both rejected
+ok 228 - MUTATION: a duplicate and an unknown tool are both rejected
+  ---
+  duration_ms: 1.2447
+  type: 'test'
+  ...
+# Subtest: MUTATION: an unverified entry claiming an attempt time is rejected
+ok 229 - MUTATION: an unverified entry claiming an attempt time is rejected
+  ---
+  duration_ms: 0.1946
+  type: 'test'
+  ...
+# Subtest: MUTATION: a static failure claiming an attempt time is rejected
+ok 230 - MUTATION: a static failure claiming an attempt time is rejected
+  ---
+  duration_ms: 0.7023
+  type: 'test'
+  ...
+# Subtest: MUTATION: a runtime failure without an attempt time is rejected
+ok 231 - MUTATION: a runtime failure without an attempt time is rejected
+  ---
+  duration_ms: 0.4082
+  type: 'test'
+  ...
+# Subtest: MUTATION: a failed entry without a failure basis is rejected
+ok 232 - MUTATION: a failed entry without a failure basis is rejected
+  ---
+  duration_ms: 0.3943
+  type: 'test'
+  ...
+# Subtest: the registry records the honest gap rather than inflating it
+ok 233 - the registry records the honest gap rather than inflating it
+  ---
+  duration_ms: 127.647
+  type: 'test'
+  ...
+# Subtest: write receipts serialize one target, retain hashes, and release the lock
+ok 234 - write receipts serialize one target, retain hashes, and release the lock
+  ---
+  duration_ms: 133.8071
+  type: 'test'
+  ...
+# Subtest: write target keys align transaction operations and distinguish DDIC namespaces
+ok 235 - write target keys align transaction operations and distinguish DDIC namespaces
+  ---
+  duration_ms: 1.3076
+  type: 'test'
+  ...
+# Subtest: a complete function module source replacement builds a context without oldString
+ok 236 - a complete function module source replacement builds a context without oldString
+  ---
+  duration_ms: 0.5008
+  type: 'test'
+  ...
+# Subtest: exact source replacement receipts keep hashing the supplied oldString
+ok 237 - exact source replacement receipts keep hashing the supplied oldString
+  ---
+  duration_ms: 0.3102
+  type: 'test'
+  ...
+# Subtest: a completed action remains completed when local lock cleanup needs recovery
+ok 238 - a completed action remains completed when local lock cleanup needs recovery
+  ---
+  duration_ms: 38.8912
+  type: 'test'
+  ...
+# Subtest: write receipt operation IDs are idempotent and conflicting reuse fails closed
+ok 239 - write receipt operation IDs are idempotent and conflicting reuse fails closed
+  ---
+  duration_ms: 28.7901
+  type: 'test'
+  ...
+# Subtest: service restart reports interrupted writes and preserves the target lock
+ok 240 - service restart reports interrupted writes and preserves the target lock
+  ---
+  duration_ms: 130.1566
+  type: 'test'
+  ...
+# Subtest: recovery listing is bounded and includes stale completed locks
+ok 241 - recovery listing is bounded and includes stale completed locks
+  ---
+  duration_ms: 84.8335
+  type: 'test'
+  ...
+# Subtest: version 1 write receipts remain readable
+ok 242 - version 1 write receipts remain readable
+  ---
+  duration_ms: 5.7376
+  type: 'test'
+  ...
+# Subtest: legacy owner identity and interrupted recovery remain fail closed
+ok 243 - legacy owner identity and interrupted recovery remain fail closed
+  ---
+  duration_ms: 12.5447
+  type: 'test'
+  ...
+# Subtest: a preflight rejection is not reported as an unknown outcome
+ok 244 - a preflight rejection is not reported as an unknown outcome
+  ---
+  duration_ms: 42.9896
+  type: 'test'
+  ...
+# Subtest: a local protection failure names the errno that refused the lock create
+ok 245 - a local protection failure names the errno that refused the lock create
+  ---
+  duration_ms: 9.6756
+  type: 'test'
+  ...
+# Subtest: a local protection failure without an errno still records the error class
+ok 246 - a local protection failure without an errno still records the error class
+  ---
+  duration_ms: 8.7592
+  type: 'test'
+  ...
+# Subtest: a failed receipt create propagates instead of pretending a reservation exists
+ok 247 - a failed receipt create propagates instead of pretending a reservation exists
+  ---
+  duration_ms: 5.4888
+  type: 'test'
+  ...
+# Subtest: a concurrent reader does not break the owner's receipt update
+ok 248 - a concurrent reader does not break the owner's receipt update
+  ---
+  duration_ms: 42.3081
+  type: 'test'
+  ...
+# Subtest: a reader that never releases the receipt leaves the stored receipt intact
+ok 249 - a reader that never releases the receipt leaves the stored receipt intact
+  ---
+  duration_ms: 200.2581
+  type: 'test'
+  ...
+# Subtest: pre-change observation covers repository, DDIC, message, and source targets
+ok 250 - pre-change observation covers repository, DDIC, message, and source targets
+  ---
+  duration_ms: 27.4219
+  type: 'test'
+  ...
+# Subtest: pre-change observation treats an explicitly missing function module as absent
+ok 251 - pre-change observation treats an explicitly missing function module as absent
+  ---
+  duration_ms: 1.0677
+  type: 'test'
+  ...
+# Subtest: pre-change observation labels an inactive source as inactive
+ok 252 - pre-change observation labels an inactive source as inactive
+  ---
+  duration_ms: 0.6741
+  type: 'test'
+  ...
+# Subtest: pre-change observation treats a missing transaction and assignment as absent
+ok 253 - pre-change observation treats a missing transaction and assignment as absent
+  ---
+  duration_ms: 0.9021
+  type: 'test'
+  ...
+# Subtest: source deletion observation reads a function module as FUNC source
+ok 254 - source deletion observation reads a function module as FUNC source
+  ---
+  duration_ms: 0.9207
+  type: 'test'
+  ...
+# Subtest: pre-change observation reads the DDIC definition when resuming an activation
+ok 255 - pre-change observation reads the DDIC definition when resuming an activation
+  ---
+  duration_ms: 0.6519
+  type: 'test'
+  ...
+# Subtest: pre-change observation reports an inactive definition as inactive
+ok 256 - pre-change observation reports an inactive definition as inactive
+  ---
+  duration_ms: 0.6956
+  type: 'test'
+  ...
+# Subtest: a localised not-found is recognised as the target being absent
+ok 257 - a localised not-found is recognised as the target being absent
+  ---
+  duration_ms: 0.6905
+  type: 'test'
+  ...
+# Subtest: pre-change observation covers CTS request creation and object addition
+ok 258 - pre-change observation covers CTS request creation and object addition
+  ---
+  duration_ms: 2.9921
+  type: 'test'
+  ...
+# Subtest: pre-change observation reads the SM12 row a lock release is about to remove
+ok 259 - pre-change observation reads the SM12 row a lock release is about to remove
+  ---
+  duration_ms: 0.9543
+  type: 'test'
+  ...
+# Subtest: pre-change observation reads the TBTCO row a job write is about to move
+ok 260 - pre-change observation reads the TBTCO row a job write is about to move
+  ---
+  duration_ms: 3.9777
+  type: 'test'
+  ...
+1..260
+# tests 260
+# suites 0
+# pass 257
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4595.0222

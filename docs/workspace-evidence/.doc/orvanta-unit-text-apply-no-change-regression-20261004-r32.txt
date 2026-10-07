@@ -1,0 +1,952 @@
+TAP version 13
+# Subtest: native API retains fixed-width row and opaque SAP version with bounded attestation
+ok 1 - native API retains fixed-width row and opaque SAP version with bounded attestation
+  ---
+  duration_ms: 15.6678
+  type: 'test'
+  ...
+# Subtest: API refuses write inserted before invocation
+ok 2 - API refuses write inserted before invocation
+  ---
+  duration_ms: 0.7801
+  type: 'test'
+  ...
+# Subtest: API refuses wrong function header before invocation
+ok 3 - API refuses wrong function header before invocation
+  ---
+  duration_ms: 0.5513
+  type: 'test'
+  ...
+# Subtest: API refuses wrong import type before invocation
+ok 4 - API refuses wrong import type before invocation
+  ---
+  duration_ms: 0.5147
+  type: 'test'
+  ...
+# Subtest: API refuses duplicate parameter before invocation
+ok 5 - API refuses duplicate parameter before invocation
+  ---
+  duration_ms: 1.5131
+  type: 'test'
+  ...
+# Subtest: API refuses update task before invocation
+ok 6 - API refuses update task before invocation
+  ---
+  duration_ms: 1.0701
+  type: 'test'
+  ...
+# Subtest: API refuses not remotable before invocation
+ok 7 - API refuses not remotable before invocation
+  ---
+  duration_ms: 0.6442
+  type: 'test'
+  ...
+# Subtest: API discards row/version after source drift
+ok 8 - API discards row/version after source drift
+  ---
+  duration_ms: 0.9221
+  type: 'test'
+  ...
+# Subtest: API discards row/version after interface drift
+ok 9 - API discards row/version after interface drift
+  ---
+  duration_ms: 0.8288
+  type: 'test'
+  ...
+# Subtest: API discards row/version after layout drift
+ok 10 - API discards row/version after layout drift
+  ---
+  duration_ms: 0.7896
+  type: 'test'
+  ...
+# Subtest: API refuses wrong client response
+ok 11 - API refuses wrong client response
+  ---
+  duration_ms: 0.6202
+  type: 'test'
+  ...
+# Subtest: API refuses wrong SID response
+ok 12 - API refuses wrong SID response
+  ---
+  duration_ms: 0.6067
+  type: 'test'
+  ...
+# Subtest: API refuses wrong unit response
+ok 13 - API refuses wrong unit response
+  ---
+  duration_ms: 0.602
+  type: 'test'
+  ...
+# Subtest: API refuses wrong language response
+ok 14 - API refuses wrong language response
+  ---
+  duration_ms: 0.8052
+  type: 'test'
+  ...
+# Subtest: API refuses invalid version response
+ok 15 - API refuses invalid version response
+  ---
+  duration_ms: 0.6364
+  type: 'test'
+  ...
+# Subtest: API refuses oversized text response
+ok 16 - API refuses oversized text response
+  ---
+  duration_ms: 0.7305
+  type: 'test'
+  ...
+# Subtest: API refuses control character response
+ok 17 - API refuses control character response
+  ---
+  duration_ms: 1.7654
+  type: 'test'
+  ...
+# Subtest: API refuses unknown code response
+ok 18 - API refuses unknown code response
+  ---
+  duration_ms: 0.4265
+  type: 'test'
+  ...
+# Subtest: SAP rejection and declared fault never expose row/version
+ok 19 - SAP rejection and declared fault never expose row/version
+  ---
+  duration_ms: 0.9095
+  type: 'test'
+  ...
+# Subtest: metadata and transport failures retain original error rather than fabricate a snapshot
+ok 20 - metadata and transport failures retain original error rather than fabricate a snapshot
+  ---
+  duration_ms: 0.7624
+  type: 'test'
+  ...
+# Subtest: invalid target/key/language rejected before any dependency read
+ok 21 - invalid target/key/language rejected before any dependency read
+  ---
+  duration_ms: 0.2363
+  type: 'test'
+  ...
+# Subtest: unverified DDIC blocks all function reads and calls
+ok 22 - unverified DDIC blocks all function reads and calls
+  ---
+  duration_ms: 0.3598
+  type: 'test'
+  ...
+# Subtest: apply dispatches once after receipt gate and requires native row/version plus readback
+ok 23 - apply dispatches once after receipt gate and requires native row/version plus readback
+  ---
+  duration_ms: 14.0938
+  type: 'test'
+  ...
+# Subtest: apply rejects missing operation ID before any SAP read
+ok 24 - apply rejects missing operation ID before any SAP read
+  ---
+  duration_ms: 1.3477
+  type: 'test'
+  ...
+# Subtest: apply rejects missing write acknowledgment before any SAP read
+ok 25 - apply rejects missing write acknowledgment before any SAP read
+  ---
+  duration_ms: 0.5348
+  type: 'test'
+  ...
+# Subtest: apply rejects other connection before any SAP read
+ok 26 - apply rejects other connection before any SAP read
+  ---
+  duration_ms: 0.3408
+  type: 'test'
+  ...
+# Subtest: apply rejects generic unit key before any SAP read
+ok 27 - apply rejects generic unit key before any SAP read
+  ---
+  duration_ms: 0.7116
+  type: 'test'
+  ...
+# Subtest: apply rejects key whitespace before any SAP read
+ok 28 - apply rejects key whitespace before any SAP read
+  ---
+  duration_ms: 0.2544
+  type: 'test'
+  ...
+# Subtest: apply rejects empty patch before any SAP read
+ok 29 - apply rejects empty patch before any SAP read
+  ---
+  duration_ms: 0.1974
+  type: 'test'
+  ...
+# Subtest: apply rejects undefined patch field before any SAP read
+ok 30 - apply rejects undefined patch field before any SAP read
+  ---
+  duration_ms: 0.1799
+  type: 'test'
+  ...
+# Subtest: apply rejects clear description before any SAP read
+ok 31 - apply rejects clear description before any SAP read
+  ---
+  duration_ms: 0.2488
+  type: 'test'
+  ...
+# Subtest: apply rejects whitespace description before any SAP read
+ok 32 - apply rejects whitespace description before any SAP read
+  ---
+  duration_ms: 0.2476
+  type: 'test'
+  ...
+# Subtest: apply rejects oversized description before any SAP read
+ok 33 - apply rejects oversized description before any SAP read
+  ---
+  duration_ms: 0.2054
+  type: 'test'
+  ...
+# Subtest: apply rejects control character before any SAP read
+ok 34 - apply rejects control character before any SAP read
+  ---
+  duration_ms: 0.1484
+  type: 'test'
+  ...
+# Subtest: apply rejects alias edit before any SAP read
+ok 35 - apply rejects alias edit before any SAP read
+  ---
+  duration_ms: 0.1848
+  type: 'test'
+  ...
+# Subtest: apply rejects same containers before any SAP read
+ok 36 - apply rejects same containers before any SAP read
+  ---
+  duration_ms: 0.1608
+  type: 'test'
+  ...
+# Subtest: apply rejects foreign task before any SAP read
+ok 37 - apply rejects foreign task before any SAP read
+  ---
+  duration_ms: 0.156
+  type: 'test'
+  ...
+# Subtest: apply rejects no explicit language before any SAP read
+ok 38 - apply rejects no explicit language before any SAP read
+  ---
+  duration_ms: 0.1334
+  type: 'test'
+  ...
+# Subtest: apply rejects legacy token as native token before any SAP read
+ok 39 - apply rejects legacy token as native token before any SAP read
+  ---
+  duration_ms: 0.1193
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks source mutation
+ok 40 - writer attestation blocks source mutation
+  ---
+  duration_ms: 0.726
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks wrong import
+ok 41 - writer attestation blocks wrong import
+  ---
+  duration_ms: 0.3991
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks duplicate import
+ok 42 - writer attestation blocks duplicate import
+  ---
+  duration_ms: 0.3905
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks update-task wrapper
+ok 43 - writer attestation blocks update-task wrapper
+  ---
+  duration_ms: 4.4593
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks nonremote wrapper
+ok 44 - writer attestation blocks nonremote wrapper
+  ---
+  duration_ms: 0.2622
+  type: 'test'
+  ...
+# Subtest: writer attestation blocks wrong header
+ok 45 - writer attestation blocks wrong header
+  ---
+  duration_ms: 0.2403
+  type: 'test'
+  ...
+# Subtest: missing writer and active source drift never reach receipt dispatch mark
+ok 46 - missing writer and active source drift never reach receipt dispatch mark
+  ---
+  duration_ms: 0.9481
+  type: 'test'
+  ...
+# Subtest: apply blocks stale native version before dispatch
+ok 47 - apply blocks stale native version before dispatch
+  ---
+  duration_ms: 0.636
+  type: 'test'
+  ...
+# Subtest: apply blocks blocked draft before dispatch
+ok 48 - apply blocks blocked draft before dispatch
+  ---
+  duration_ms: 0.4794
+  type: 'test'
+  ...
+# Subtest: apply blocks wrong SAP language before dispatch
+ok 49 - apply blocks wrong SAP language before dispatch
+  ---
+  duration_ms: 0.6076
+  type: 'test'
+  ...
+# Subtest: apply blocks altered alias before dispatch
+ok 50 - apply blocks altered alias before dispatch
+  ---
+  duration_ms: 0.3657
+  type: 'test'
+  ...
+# Subtest: apply blocks wrong client before dispatch
+ok 51 - apply blocks wrong client before dispatch
+  ---
+  duration_ms: 0.3367
+  type: 'test'
+  ...
+# Subtest: failed receipt persistence stops the sole command
+ok 52 - failed receipt persistence stops the sole command
+  ---
+  duration_ms: 0.5527
+  type: 'test'
+  ...
+# Subtest: native declined command returns blocked, not applied, and exposes no row/version
+ok 53 - native declined command returns blocked, not applied, and exposes no row/version
+  ---
+  duration_ms: 0.8254
+  type: 'test'
+  ...
+# Subtest: post-dispatch unrecognized code remains uncertain with no retry
+ok 54 - post-dispatch unrecognized code remains uncertain with no retry
+  ---
+  duration_ms: 0.8284
+  type: 'test'
+  ...
+# Subtest: post-dispatch missing commit remains uncertain with no retry
+ok 55 - post-dispatch missing commit remains uncertain with no retry
+  ---
+  duration_ms: 0.4897
+  type: 'test'
+  ...
+# Subtest: post-dispatch unchanged after version remains uncertain with no retry
+ok 56 - post-dispatch unchanged after version remains uncertain with no retry
+  ---
+  duration_ms: 0.7722
+  type: 'test'
+  ...
+# Subtest: post-dispatch wrong task remains uncertain with no retry
+ok 57 - post-dispatch wrong task remains uncertain with no retry
+  ---
+  duration_ms: 0.9021
+  type: 'test'
+  ...
+# Subtest: post-dispatch generic key remains uncertain with no retry
+ok 58 - post-dispatch generic key remains uncertain with no retry
+  ---
+  duration_ms: 0.997
+  type: 'test'
+  ...
+# Subtest: post-dispatch changed alias remains uncertain with no retry
+ok 59 - post-dispatch changed alias remains uncertain with no retry
+  ---
+  duration_ms: 1.1692
+  type: 'test'
+  ...
+# Subtest: post-dispatch old before version remains uncertain with no retry
+ok 60 - post-dispatch old before version remains uncertain with no retry
+  ---
+  duration_ms: 1.1594
+  type: 'test'
+  ...
+# Subtest: post-dispatch wrong response scope remains uncertain with no retry
+ok 61 - post-dispatch wrong response scope remains uncertain with no retry
+  ---
+  duration_ms: 1.143
+  type: 'test'
+  ...
+# Subtest: SOAP fault and post-commit readback mismatch remain uncertain
+ok 62 - SOAP fault and post-commit readback mismatch remain uncertain
+  ---
+  duration_ms: 2.6251
+  type: 'test'
+  ...
+# Subtest: no-change is still confirmed by the locked native command; it records no CTS key
+ok 63 - no-change is still confirmed by the locked native command; it records no CTS key
+  ---
+  duration_ms: 1.4585
+  type: 'test'
+  ...
+# Subtest: receipt target keeps case and serializes different languages of the same unit
+ok 64 - receipt target keeps case and serializes different languages of the same unit
+  ---
+  duration_ms: 1.3349
+  type: 'test'
+  ...
+# Subtest: real MCP registration advertises write schema and protects rejected/unknown dispatches with receipts
+ok 65 - real MCP registration advertises write schema and protects rejected/unknown dispatches with receipts
+  ---
+  duration_ms: 215.3559
+  type: 'test'
+  ...
+# Subtest: schema trims description only; active body is ECC candidate with no UI/generic writer
+ok 66 - schema trims description only; active body is ECC candidate with no UI/generic writer
+  ---
+  duration_ms: 1.1388
+  type: 'test'
+  ...
+# Subtest: MCP advertises unit text preview fields and still enforces cross-field and strict input rules
+ok 67 - MCP advertises unit text preview fields and still enforces cross-field and strict input rules
+  ---
+  duration_ms: 152.6426
+  type: 'test'
+  ...
+# Subtest: text reconciliation distinguishes proposed, partial, absent and unexpected changes without claiming CTS success
+ok 68 - text reconciliation distinguishes proposed, partial, absent and unexpected changes without claiming CTS success
+  ---
+  duration_ms: 28.0527
+  type: 'test'
+  ...
+# Subtest: text reconciliation rejects malformed and cross-scope baselines before reads and discards unstable observations
+ok 69 - text reconciliation rejects malformed and cross-scope baselines before reads and discards unstable observations
+  ---
+  duration_ms: 9.7737
+  type: 'test'
+  ...
+# Subtest: comparison uses reviewed target metadata and refuses w200 pins or later target drift
+ok 70 - comparison uses reviewed target metadata and refuses w200 pins or later target drift
+  ---
+  duration_ms: 3.9597
+  type: 'test'
+  ...
+# Subtest: unit read keeps internal key case, client and language, omits floats and rechecks exact values
+ok 71 - unit read keeps internal key case, client and language, omits floats and rechecks exact values
+  ---
+  duration_ms: 6.2411
+  type: 'test'
+  ...
+# Subtest: missing translation differs from missing unit or unavailable language; no fallback
+ok 72 - missing translation differs from missing unit or unavailable language; no fallback
+  ---
+  duration_ms: 2.2289
+  type: 'test'
+  ...
+# Subtest: other systems/clients, arbitrary fields and invalid keys are rejected before SAP
+ok 73 - other systems/clients, arbitrary fields and invalid keys are rejected before SAP
+  ---
+  duration_ms: 0.8678
+  type: 'test'
+  ...
+# Subtest: quotes in a short internal key are escaped, not interpolated into SQL
+ok 74 - quotes in a short internal key are escaped, not interpolated into SQL
+  ---
+  duration_ms: 0.969
+  type: 'test'
+  ...
+# Subtest: stale expected fingerprint and changing base/text/language discard returned values
+ok 75 - stale expected fingerprint and changing base/text/language discard returned values
+  ---
+  duration_ms: 4.4205
+  type: 'test'
+  ...
+# Subtest: recheck or permission failure is unavailable, never absence or an invented change
+ok 76 - recheck or permission failure is unavailable, never absence or an invented change
+  ---
+  duration_ms: 1.348
+  type: 'test'
+  ...
+# Subtest: duplicate rows, out-of-scope rows and key/layout drift are refused
+ok 77 - duplicate rows, out-of-scope rows and key/layout drift are refused
+  ---
+  duration_ms: 3.0129
+  type: 'test'
+  ...
+# Subtest: reviewed RFC fallback requests only fixed projections and exact client/key predicates
+ok 78 - reviewed RFC fallback requests only fixed projections and exact client/key predicates
+  ---
+  duration_ms: 1.8871
+  type: 'test'
+  ...
+# Subtest: unit service and config/full/readonly tool profiles expose read-only contract
+ok 79 - unit service and config/full/readonly tool profiles expose read-only contract
+  ---
+  duration_ms: 4.0217
+  type: 'test'
+  ...
+# Subtest: unit service opts into native API once and retracts a mismatched projection
+ok 80 - unit service opts into native API once and retracts a mismatched projection
+  ---
+  duration_ms: 23.616
+  type: 'test'
+  ...
+# Subtest: native text-version preview is opt-in, bounded and preserves omitted fields and explicit clearing
+ok 81 - native text-version preview is opt-in, bounded and preserves omitted fields and explicit clearing
+  ---
+  duration_ms: 6.4056
+  type: 'test'
+  ...
+# Subtest: stale opaque text version retracts draft and nested native token even when display values match
+ok 82 - stale opaque text version retracts draft and nested native token even when display values match
+  ---
+  duration_ms: 2.807
+  type: 'test'
+  ...
+# Subtest: native preview rejects untrusted scope, keys, flags, incomplete rows and unavailable API observations
+ok 83 - native preview rejects untrusted scope, keys, flags, incomplete rows and unavailable API observations
+  ---
+  duration_ms: 29.989
+  type: 'test'
+  ...
+# Subtest: native version inputs fail before reads and final metadata or legacy drift cannot be rescued by a matching token
+ok 84 - native version inputs fail before reads and final metadata or legacy drift cannot be rescued by a matching token
+  ---
+  duration_ms: 4.4361
+  type: 'test'
+  ...
+# Subtest: native preview performs its final API read after CTS and preserves earlier rejection
+ok 85 - native preview performs its final API read after CTS and preserves earlier rejection
+  ---
+  duration_ms: 6.9508
+  type: 'test'
+  ...
+# Subtest: ToolService preview routes the optional version through the attested readonly native API
+ok 86 - ToolService preview routes the optional version through the attested readonly native API
+  ---
+  duration_ms: 3.3801
+  type: 'test'
+  ...
+# Subtest: unit text handoff combines CTS once and retracts incompatible versions or task admission
+ok 87 - unit text handoff combines CTS once and retracts incompatible versions or task admission
+  ---
+  duration_ms: 35.0414
+  type: 'test'
+  ...
+# Subtest: unit reconciliation service reuses inspector without forwarding recursive controls
+ok 88 - unit reconciliation service reuses inspector without forwarding recursive controls
+  ---
+  duration_ms: 7.1464
+  type: 'test'
+  ...
+# Subtest: optional text handoff reuses the descriptor and rechecks current values without expanding patch fields
+ok 89 - optional text handoff reuses the descriptor and rechecks current values without expanding patch fields
+  ---
+  duration_ms: 4.0042
+  type: 'test'
+  ...
+# Subtest: text handoff cannot survive failed/cross-scope source evidence or stale target confirmation
+ok 90 - text handoff cannot survive failed/cross-scope source evidence or stale target confirmation
+  ---
+  duration_ms: 16.2225
+  type: 'test'
+  ...
+# Subtest: text draft preserves omitted fields and keys, normalizes padding and never grants execution
+ok 91 - text draft preserves omitted fields and keys, normalizes padding and never grants execution
+  ---
+  duration_ms: 4.8895
+  type: 'test'
+  ...
+# Subtest: text draft blocks stale, missing and unavailable values without inventing a translation row
+ok 92 - text draft blocks stale, missing and unavailable values without inventing a translation row
+  ---
+  duration_ms: 7.652
+  type: 'test'
+  ...
+# Subtest: text draft rejects invalid patch/version/scope before metadata or value reads
+ok 93 - text draft rejects invalid patch/version/scope before metadata or value reads
+  ---
+  duration_ms: 0.5952
+  type: 'test'
+  ...
+# Subtest: text draft refuses description domain drift and routes through existing unit reads
+ok 94 - text draft refuses description domain drift and routes through existing unit reads
+  ---
+  duration_ms: 2.9864
+  type: 'test'
+  ...
+# Subtest: streamable HTTP exposes the implemented standalone tool waves
+ok 95 - streamable HTTP exposes the implemented standalone tool waves
+  ---
+  duration_ms: 399.9304
+  type: 'test'
+  ...
+# Subtest: full source baseline freezes and classifies every original tool contract
+ok 96 - full source baseline freezes and classifies every original tool contract
+  ---
+  duration_ms: 1.2969
+  type: 'test'
+  ...
+# Subtest: 0.30 lifecycle writes return version 2 operation receipts
+ok 97 - 0.30 lifecycle writes return version 2 operation receipts
+  ---
+  duration_ms: 180.4989
+  type: 'test'
+  ...
+# Subtest: failed SAP pre-change observation prevents the write action
+ok 98 - failed SAP pre-change observation prevents the write action
+  ---
+  duration_ms: 28.8745
+  type: 'test'
+  ...
+# Subtest: health endpoint responds without an MCP session
+ok 99 - health endpoint responds without an MCP session
+  ---
+  duration_ms: 3.7004
+  type: 'test'
+  ...
+# Subtest: an argument the contract does not declare is rejected, not discarded
+ok 100 - an argument the contract does not declare is rejected, not discarded
+  ---
+  duration_ms: 13.5785
+  type: 'test'
+  ...
+# Subtest: tool profile defaults to the full surface
+ok 101 - tool profile defaults to the full surface
+  ---
+  duration_ms: 1.4419
+  type: 'test'
+  ...
+# Subtest: readonly profile exposes exactly the read-only tools
+ok 102 - readonly profile exposes exactly the read-only tools
+  ---
+  duration_ms: 0.367
+  type: 'test'
+  ...
+# Subtest: deny list subtracts tools from the selected profile
+ok 103 - deny list subtracts tools from the selected profile
+  ---
+  duration_ms: 0.3087
+  type: 'test'
+  ...
+# Subtest: invalid profile and unknown deny entries fail loudly
+ok 104 - invalid profile and unknown deny entries fail loudly
+  ---
+  duration_ms: 0.4463
+  type: 'test'
+  ...
+# Subtest: deny list parsing ignores separators, blanks and duplicates
+ok 105 - deny list parsing ignores separators, blanks and duplicates
+  ---
+  duration_ms: 0.1528
+  type: 'test'
+  ...
+# Subtest: a tool withheld by a platform boundary is out of every non-full profile and names why
+ok 106 - a tool withheld by a platform boundary is out of every non-full profile and names why
+  ---
+  duration_ms: 0.709
+  type: 'test'
+  ...
+# Subtest: readonly profile withholds write tools from tools/list and refuses tools/call
+ok 107 - readonly profile withholds write tools from tools/list and refuses tools/call
+  ---
+  duration_ms: 125.426
+  type: 'test'
+  ...
+# Subtest: every tool in the index has exactly one verification entry, with no unknown names
+ok 108 - every tool in the index has exactly one verification entry, with no unknown names
+  ---
+  duration_ms: 18.903
+  type: 'test'
+  ...
+# Subtest: the registry declares only known field values
+ok 109 - the registry declares only known field values
+  ---
+  duration_ms: 0.4386
+  type: 'test'
+  ...
+# Subtest: verified and failed entries cite evidence that actually exists on disk
+ok 110 - verified and failed entries cite evidence that actually exists on disk
+  ---
+  duration_ms: 32.2517
+  type: 'test'
+  ...
+# Subtest: unverified entries claim neither evidence nor an attempt time
+ok 111 - unverified entries claim neither evidence nor an attempt time
+  ---
+  duration_ms: 0.225
+  type: 'test'
+  ...
+# Subtest: a runtime failure is an observation and a static failure is a proof
+ok 112 - a runtime failure is an observation and a static failure is a proof
+  ---
+  duration_ms: 0.2865
+  type: 'test'
+  ...
+# Subtest: R-20's four tools stay recorded with the state their evidence supports
+ok 113 - R-20's four tools stay recorded with the state their evidence supports
+  ---
+  duration_ms: 0.1539
+  type: 'test'
+  ...
+# Subtest: a length fix alone never counts as evidence of success
+ok 114 - a length fix alone never counts as evidence of success
+  ---
+  duration_ms: 0.1573
+  type: 'test'
+  ...
+# Subtest: controlled writes must name the object they were written to
+ok 115 - controlled writes must name the object they were written to
+  ---
+  duration_ms: 14.9455
+  type: 'test'
+  ...
+# Subtest: the method states what kind of SAP operation the tool actually performs
+ok 116 - the method states what kind of SAP operation the tool actually performs
+  ---
+  duration_ms: 0.3495
+  type: 'test'
+  ...
+# Subtest: the availability-without-evidence metric is derived, not asserted
+ok 117 - the availability-without-evidence metric is derived, not asserted
+  ---
+  duration_ms: 0.5658
+  type: 'test'
+  ...
+# Subtest: notes and availabilityBasis agree about the protocol-only weakness, in both directions
+ok 118 - notes and availabilityBasis agree about the protocol-only weakness, in both directions
+  ---
+  duration_ms: 0.5057
+  type: 'test'
+  ...
+# Subtest: MUTATION: notes contradicting the basis are caught in both directions
+ok 119 - MUTATION: notes contradicting the basis are caught in both directions
+  ---
+  duration_ms: 0.276
+  type: 'test'
+  ...
+# Subtest: platform-unsupported is a claim too, and must carry evidence
+ok 120 - platform-unsupported is a claim too, and must carry evidence
+  ---
+  duration_ms: 1.8623
+  type: 'test'
+  ...
+# Subtest: availability and verification status stay orthogonal
+ok 121 - availability and verification status stay orthogonal
+  ---
+  duration_ms: 0.5582
+  type: 'test'
+  ...
+# Subtest: no entry claims protocol-only without a helper to carry that protocol
+ok 122 - no entry claims protocol-only without a helper to carry that protocol
+  ---
+  duration_ms: 0.2958
+  type: 'test'
+  ...
+# Subtest: the protocol-only residual stays visible and countable
+ok 123 - the protocol-only residual stays visible and countable
+  ---
+  duration_ms: 0.3874
+  type: 'test'
+  ...
+# Subtest: MUTATION: a verified entry pointing at a missing file must be rejected
+ok 124 - MUTATION: a verified entry pointing at a missing file must be rejected
+  ---
+  duration_ms: 0.7948
+  type: 'test'
+  ...
+# Subtest: MUTATION: a duplicate and an unknown tool are both rejected
+ok 125 - MUTATION: a duplicate and an unknown tool are both rejected
+  ---
+  duration_ms: 0.4045
+  type: 'test'
+  ...
+# Subtest: MUTATION: an unverified entry claiming an attempt time is rejected
+ok 126 - MUTATION: an unverified entry claiming an attempt time is rejected
+  ---
+  duration_ms: 0.1264
+  type: 'test'
+  ...
+# Subtest: MUTATION: a static failure claiming an attempt time is rejected
+ok 127 - MUTATION: a static failure claiming an attempt time is rejected
+  ---
+  duration_ms: 0.3697
+  type: 'test'
+  ...
+# Subtest: MUTATION: a runtime failure without an attempt time is rejected
+ok 128 - MUTATION: a runtime failure without an attempt time is rejected
+  ---
+  duration_ms: 0.204
+  type: 'test'
+  ...
+# Subtest: MUTATION: a failed entry without a failure basis is rejected
+ok 129 - MUTATION: a failed entry without a failure basis is rejected
+  ---
+  duration_ms: 0.1848
+  type: 'test'
+  ...
+# Subtest: the registry records the honest gap rather than inflating it
+ok 130 - the registry records the honest gap rather than inflating it
+  ---
+  duration_ms: 140.5727
+  type: 'test'
+  ...
+# Subtest: write receipts serialize one target, retain hashes, and release the lock
+ok 131 - write receipts serialize one target, retain hashes, and release the lock
+  ---
+  duration_ms: 56.3899
+  type: 'test'
+  ...
+# Subtest: write target keys align transaction operations and distinguish DDIC namespaces
+ok 132 - write target keys align transaction operations and distinguish DDIC namespaces
+  ---
+  duration_ms: 0.8702
+  type: 'test'
+  ...
+# Subtest: a complete function module source replacement builds a context without oldString
+ok 133 - a complete function module source replacement builds a context without oldString
+  ---
+  duration_ms: 0.4085
+  type: 'test'
+  ...
+# Subtest: exact source replacement receipts keep hashing the supplied oldString
+ok 134 - exact source replacement receipts keep hashing the supplied oldString
+  ---
+  duration_ms: 0.3166
+  type: 'test'
+  ...
+# Subtest: a completed action remains completed when local lock cleanup needs recovery
+ok 135 - a completed action remains completed when local lock cleanup needs recovery
+  ---
+  duration_ms: 20.9822
+  type: 'test'
+  ...
+# Subtest: write receipt operation IDs are idempotent and conflicting reuse fails closed
+ok 136 - write receipt operation IDs are idempotent and conflicting reuse fails closed
+  ---
+  duration_ms: 23.1965
+  type: 'test'
+  ...
+# Subtest: service restart reports interrupted writes and preserves the target lock
+ok 137 - service restart reports interrupted writes and preserves the target lock
+  ---
+  duration_ms: 110.6884
+  type: 'test'
+  ...
+# Subtest: recovery listing is bounded and includes stale completed locks
+ok 138 - recovery listing is bounded and includes stale completed locks
+  ---
+  duration_ms: 88.655
+  type: 'test'
+  ...
+# Subtest: version 1 write receipts remain readable
+ok 139 - version 1 write receipts remain readable
+  ---
+  duration_ms: 6.3802
+  type: 'test'
+  ...
+# Subtest: legacy owner identity and interrupted recovery remain fail closed
+ok 140 - legacy owner identity and interrupted recovery remain fail closed
+  ---
+  duration_ms: 14.4604
+  type: 'test'
+  ...
+# Subtest: a preflight rejection is not reported as an unknown outcome
+ok 141 - a preflight rejection is not reported as an unknown outcome
+  ---
+  duration_ms: 39.1974
+  type: 'test'
+  ...
+# Subtest: a local protection failure names the errno that refused the lock create
+ok 142 - a local protection failure names the errno that refused the lock create
+  ---
+  duration_ms: 7.9727
+  type: 'test'
+  ...
+# Subtest: a local protection failure without an errno still records the error class
+ok 143 - a local protection failure without an errno still records the error class
+  ---
+  duration_ms: 7.0613
+  type: 'test'
+  ...
+# Subtest: a failed receipt create propagates instead of pretending a reservation exists
+ok 144 - a failed receipt create propagates instead of pretending a reservation exists
+  ---
+  duration_ms: 4.9211
+  type: 'test'
+  ...
+# Subtest: a concurrent reader does not break the owner's receipt update
+ok 145 - a concurrent reader does not break the owner's receipt update
+  ---
+  duration_ms: 30.9104
+  type: 'test'
+  ...
+# Subtest: a reader that never releases the receipt leaves the stored receipt intact
+ok 146 - a reader that never releases the receipt leaves the stored receipt intact
+  ---
+  duration_ms: 201.6786
+  type: 'test'
+  ...
+# Subtest: pre-change observation covers repository, DDIC, message, and source targets
+ok 147 - pre-change observation covers repository, DDIC, message, and source targets
+  ---
+  duration_ms: 22.8588
+  type: 'test'
+  ...
+# Subtest: pre-change observation treats an explicitly missing function module as absent
+ok 148 - pre-change observation treats an explicitly missing function module as absent
+  ---
+  duration_ms: 0.7128
+  type: 'test'
+  ...
+# Subtest: pre-change observation labels an inactive source as inactive
+ok 149 - pre-change observation labels an inactive source as inactive
+  ---
+  duration_ms: 0.5614
+  type: 'test'
+  ...
+# Subtest: pre-change observation treats a missing transaction and assignment as absent
+ok 150 - pre-change observation treats a missing transaction and assignment as absent
+  ---
+  duration_ms: 3.2286
+  type: 'test'
+  ...
+# Subtest: source deletion observation reads a function module as FUNC source
+ok 151 - source deletion observation reads a function module as FUNC source
+  ---
+  duration_ms: 0.5314
+  type: 'test'
+  ...
+# Subtest: pre-change observation reads the DDIC definition when resuming an activation
+ok 152 - pre-change observation reads the DDIC definition when resuming an activation
+  ---
+  duration_ms: 0.4294
+  type: 'test'
+  ...
+# Subtest: pre-change observation reports an inactive definition as inactive
+ok 153 - pre-change observation reports an inactive definition as inactive
+  ---
+  duration_ms: 0.3045
+  type: 'test'
+  ...
+# Subtest: a localised not-found is recognised as the target being absent
+ok 154 - a localised not-found is recognised as the target being absent
+  ---
+  duration_ms: 0.1846
+  type: 'test'
+  ...
+# Subtest: pre-change observation covers CTS request creation and object addition
+ok 155 - pre-change observation covers CTS request creation and object addition
+  ---
+  duration_ms: 1.1561
+  type: 'test'
+  ...
+# Subtest: pre-change observation reads the SM12 row a lock release is about to remove
+ok 156 - pre-change observation reads the SM12 row a lock release is about to remove
+  ---
+  duration_ms: 0.4952
+  type: 'test'
+  ...
+# Subtest: pre-change observation reads the TBTCO row a job write is about to move
+ok 157 - pre-change observation reads the TBTCO row a job write is about to move
+  ---
+  duration_ms: 2.4467
+  type: 'test'
+  ...
+1..157
+# tests 157
+# suites 0
+# pass 157
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3895.5376

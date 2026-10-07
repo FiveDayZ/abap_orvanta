@@ -8,7 +8,14 @@
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
+import { createHash } from "node:crypto"
 import test from "node:test"
+import { configurationBcPreflightKeys } from "../src/configuration-bc-preflight.js"
+import { configurationBcNativeLayouts } from "../src/configuration-bc-native-api.js"
+import { configurationBcGuardLayouts } from "../src/configuration-bc-guard-api.js"
+import { configurationBcGuardKeys } from "../src/configuration-bc-guard.js"
+import type { readConfigurationBcBeforeState } from "../src/configuration-bc-state.js"
+import { hashWriteInput } from "../src/write-operation-receipts.js"
 import {
   AVAILABILITY_BASES,
   FAILURE_BASES,
@@ -228,6 +235,121 @@ test("controlled writes must name the object they were written to", () => {
     ),
     []
   )
+})
+
+test("number range runtime evidence proves fresh create and prior update while preserving historical unknown", () => {
+  const entry = findVerificationEntry(registry, "apply_configuration_number_range")!
+  assert.equal(entry.status, "verified")
+  const evidencePath = resolveEvidencePath(entry)
+  assert.ok(evidencePath)
+  const fresh = JSON.parse(readFileSync(evidencePath, "utf8"))
+  assert.equal(fresh.create.data.status, "completed")
+  assert.equal(fresh.create.data.operationReceipt.status, "completed")
+  assert.equal(fresh.create.data.failure, null)
+  for (const field of ["EV_COMMITTED", "EV_SESSION_RESET", "EV_UNLOCKED"])
+    assert.equal(fresh.create.data.native[field], "X")
+  assert.deepEqual(fresh.create.data.native.ET_INTERVALS, fresh.finalSnapshot.ET_INTERVALS)
+  assert.equal(fresh.finalSnapshot.ET_INTERVALS.length, 2)
+  assert.deepEqual(
+    fresh.finalSnapshot.ET_INTERVALS.find((r: { NRRANGENR: string }) => r.NRRANGENR === "01"),
+    fresh.before.ET_INTERVALS[0]
+  )
+  const created = fresh.finalSnapshot.ET_INTERVALS.find(
+    (r: { NRRANGENR: string }) => r.NRRANGENR === "02"
+  )
+  assert.equal(created.FROMNUMBER, "00000000000000000201")
+  assert.equal(created.TONUMBER, "00000000000000000300")
+  for (const row of fresh.finalSnapshot.ET_INTERVALS) assert.match(row.NRLEVEL, /^0{1,20}$/)
+  assert.equal(fresh.metrics.nativeWrites, 1)
+  assert.equal(fresh.metrics.committedWrites, 1)
+  assert.equal(fresh.repeat.data.status, "protection_refused")
+  assert.equal(fresh.closure.privateListenerPresent, false)
+  assert.equal(fresh.finalReadOnly.historicalReceipt.unchanged, true)
+  const priorPath = resolveEvidencePath({ ...entry, evidence: fresh.r41Evidence })
+  assert.ok(priorPath)
+  const evidence = JSON.parse(readFileSync(priorPath, "utf8"))
+  assert.equal(evidence.update.name, "apply_configuration_number_range")
+  assert.equal(evidence.update.data.status, "completed")
+  assert.equal(evidence.update.data.operationReceipt.status, "completed")
+  assert.equal(evidence.update.data.native.EV_COMMITTED, "X")
+  assert.equal(evidence.sameValue.data.status, "no_changes")
+  assert.equal(evidence.sameValue.data.native.EV_COMMITTED, "")
+  assert.equal(evidence.nativeOldVersion.result.outputs.EV_CODE, "VERSION_CHANGED")
+  assert.equal(evidence.metrics.nativeWrites, 4)
+  assert.equal(evidence.metrics.committedWrites, 2)
+  assert.equal(evidence.finalSnapshot.ET_INTERVALS.length, 1)
+  assert.equal(evidence.finalSnapshot.ET_INTERVALS[0].OBJECT, "ZORVCFGNR")
+  assert.equal(evidence.finalSnapshot.ET_INTERVALS[0].TONUMBER, "00000000000000000200")
+  assert.match(evidence.finalSnapshot.ET_INTERVALS[0].NRLEVEL, /^0{1,20}$/)
+  assert.equal(evidence.historicalCreateUnknown.data.operationReceipt.outcomeMayBeUnknown, true)
+  assert.equal(
+    evidence.reconcileHistoricalUnknown.data.operationReceipt.receiptHash,
+    evidence.historicalCreateUnknown.data.operationReceipt.receiptHash
+  )
+})
+
+test("unit description write evidence contains completed save and restoration with real key readback", () => {
+  const entry = registry.entries.find((item) => item.tool === "apply_configuration_unit_text")!
+  assert.equal(entry.status, "verified")
+  assert.equal(entry.method, "controlled-write")
+  const evidencePath = resolveEvidencePath(entry)
+  assert.ok(evidencePath)
+  const evidence = JSON.parse(readFileSync(evidencePath, "utf8"))
+  for (const phase of ["save", "restore"]) {
+    const outcome = evidence[`${phase}Outcome`]
+    const receipt = evidence[`${phase}Receipt`]
+    assert.equal(outcome.code, "APPLIED")
+    assert.equal(outcome.committed, true)
+    assert.equal(outcome.tabkey, "2001KG ")
+    assert.equal(outcome.readbackVerified, true)
+    assert.equal(receipt.status, "completed")
+    assert.equal(receipt.sapInvocationStarted, true)
+    assert.equal(receipt.outcomeMayBeUnknown, false)
+  }
+  assert.equal(evidence.afterSaveObserved.apiSnapshot.data.MSEHL, "千克（API验收）")
+  assert.notEqual(
+    evidence.afterSaveObserved.apiSnapshot.textVersion,
+    evidence.before.apiSnapshot.textVersion
+  )
+  assert.deepEqual(evidence.finalZh.apiSnapshot.data, evidence.before.apiSnapshot.data)
+  assert.deepEqual(evidence.finalEn.apiSnapshot.data, evidence.beforeEn.apiSnapshot.data)
+  assert.equal(evidence.finalZh.apiSnapshot.textVersion, evidence.before.apiSnapshot.textVersion)
+  assert.equal(evidence.finalRecordedKey.TRKORR, "GR2K923430")
+  assert.equal(evidence.finalRecordedKey.TABKEY, "2001KG")
+  assert.deepEqual(evidence.errors, [])
+})
+
+test("unit reconciliation evidence retains real unknown receipts and performs no native writes", () => {
+  const entry = registry.entries.find((item) => item.tool === "reconcile_configuration_unit_text")!
+  assert.equal(entry.status, "verified")
+  assert.equal(entry.method, "read-only")
+  const path = resolveEvidencePath(entry)
+  assert.ok(path)
+  const evidence = JSON.parse(readFileSync(path, "utf8"))
+  assert.equal(evidence.cases.length, 4)
+  assert.equal(evidence.historicalReceiptFilesUnchanged, true)
+  assert.equal(evidence.invalidInputsRejectedBeforeNativeReads, true)
+  assert.equal(evidence.metrics.nativeWriterCalls, 0)
+  assert.equal(evidence.metrics.blockedFunctionCalls, 0)
+  for (const item of evidence.cases) {
+    assert.equal(item.result.readOnly, true)
+    assert.equal(item.result.receiptModified, false)
+    assert.equal(item.result.automaticRetry, false)
+    assert.equal(item.result.evidence.receiptRechecked, true)
+    assert.equal(item.result.value.valuesRechecked, true)
+    assert.equal(item.result.cts.status, "target_projection_observed")
+    assert.deepEqual(item.receiptAfter, item.receiptBefore)
+    if (item.revision === "r33") {
+      assert.equal(item.result.historicalOutcome.status, "unresolved")
+      assert.equal(item.result.historicalOutcome.outcomeMayBeUnknown, true)
+    }
+  }
+  assert.deepEqual(evidence.final.apiSnapshot.data, evidence.baseline.apiSnapshot.data)
+  assert.equal(evidence.final.apiSnapshot.textVersion, evidence.baseline.apiSnapshot.textVersion)
+  if (evidence.optionalLocks.locks.status === "unavailable") {
+    assert.equal(evidence.optionalLocks.status, "unknown")
+  }
+  assert.deepEqual(evidence.errors, [])
 })
 
 test("the method states what kind of SAP operation the tool actually performs", () => {
@@ -596,6 +718,714 @@ test("MUTATION: a failed entry without a failure basis is rejected", () => {
   )
 })
 
+test("native BC before-state evidence contains named public reads and empty native rejections", () => {
+  const entry = findVerificationEntry(registry, "read_configuration_bc_native_snapshot")!
+  assert.equal(entry.status, "verified")
+  const evidence = JSON.parse(readFileSync(resolveEvidencePath(entry)!, "utf8"))
+  assert.equal(evidence.scope.functionName, "Z_ORVANTA_CFG_BC_READ")
+  assert.equal(evidence.scope.configurationWrites, 0)
+  const reads = evidence.publicReadonlyAcceptance.calls.filter(
+    (call: { name: string; isError: boolean }) => call.name === entry.tool && !call.isError
+  )
+  assert.equal(reads.length, 2)
+  assert.deepEqual(reads[0].data.native, reads[1].data.native)
+  assert.equal(reads[0].data.states.length, 11)
+  assert.equal(
+    reads[0].data.states.filter((row: { status: string }) => row.status === "missing").length,
+    10
+  )
+  assert.equal(reads[0].data.native.ET_T006D[0].DIMID, "PRESS")
+  assert.equal(evidence.nativeRejections.status, "passed")
+  assert.equal(evidence.nativeRejections.calls.length, 2)
+  for (const call of evidence.nativeRejections.calls) {
+    assert.equal(call.response.outputs.EV_CODE, "INPUT_INVALID")
+    assert.equal(call.response.outputs.EV_SOURCE_VERSION, "")
+    assert.equal(call.response.outputs.EV_TARGET_VERSION, "")
+    for (const table of ["T006", "T006A", "T006B", "T006C", "T006D"]) {
+      assert.deepEqual(call.response.outputs[`ET_${table}`], [])
+    }
+  }
+  assert.ok(evidence.unverified.some((item: string) => /unauthorized/.test(item)))
+  assert.ok(evidence.unverified.some((item: string) => /float/.test(item)))
+})
+
+test("native BC preview evidence proves conversion, empty refusals and unchanged target", () => {
+  const entry = findVerificationEntry(registry, "preview_configuration_bc_native")!
+  assert.equal(entry.status, "verified")
+  const evidence = JSON.parse(readFileSync(resolveEvidencePath(entry)!, "utf8"))
+  assert.equal(evidence.status, "passed")
+  assert.equal(evidence.configurationWrites, 0)
+  const previews = evidence.calls.filter(
+    (call: { name: string; isError: boolean }) => call.name === entry.tool && !call.isError
+  )
+  assert.equal(previews.length, 2)
+  assert.deepEqual(previews[0].data.native, previews[1].data.native)
+  const preview = previews[0].data
+  assert.equal(preview.rows.length, 11)
+  assert.equal(preview.rows.filter((r: { status: string }) => r.status === "create").length, 10)
+  assert.equal(preview.native.ET_T006[0].ZAEHL, "1000")
+  assert.equal(preview.native.ET_T006D[0].LENG, "-1")
+  assert.equal(preview.native.ET_T006D[0].TIMEX, "-2")
+  assert.equal(
+    preview.rows.find((r: { tableName: string }) => r.tableName === "T006D").status,
+    "unchanged"
+  )
+  assert.equal(preview.executable, false)
+  assert.equal(preview.activationAvailable, false)
+  assert.equal(preview.saveAvailable, false)
+  assert.equal(evidence.beforeAfterUnchanged, true)
+  assert.equal(evidence.publicSchemaRefusals, 4)
+  assert.equal(evidence.staleTargetRefusedBeforePreview, true)
+  assert.equal(evidence.nativeRejections.status, "passed")
+  assert.equal(evidence.nativeRejections.calls.length, 2)
+  for (const call of evidence.nativeRejections.calls) {
+    assert.ok(["SOURCE_NOT_ATTESTED", "VERSION_CONFLICT"].includes(call.response.outputs.EV_CODE))
+    for (const name of [
+      "EV_SOURCE_VERSION",
+      "EV_TARGET_VERSION",
+      "EV_CANDIDATE_VERSION",
+      "EV_DIFFERENCES"
+    ])
+      assert.equal(call.response.outputs[name], "")
+    for (const table of ["T006", "T006A", "T006B", "T006C", "T006D"])
+      assert.deepEqual(call.response.outputs[`ET_${table}`], [])
+  }
+})
+
+test("native CUNI route evidence proves metadata scope without activation", () => {
+  const entry = findVerificationEntry(registry, "inspect_configuration_bc_route")!
+  assert.equal(entry.status, "verified")
+  const evidence = JSON.parse(readFileSync(resolveEvidencePath(entry)!, "utf8"))
+  assert.equal(evidence.status, "passed")
+  assert.equal(evidence.configurationWrites, 0)
+  assert.equal(evidence.metrics.configurationWrites, 0)
+  assert.equal(evidence.beforeAfterUnchanged, true)
+  assert.equal(evidence.publicSchemaRefusals, 4)
+  assert.equal(evidence.staleTargetRefusedBeforeRoute, true)
+  const routes = evidence.calls.filter(
+    (call: { name: string; isError: boolean }) => call.name === entry.tool && !call.isError
+  )
+  assert.equal(routes.length, 2)
+  assert.deepEqual(routes[0].data.native, routes[1].data.native)
+  assert.deepEqual(routes[0].data.methodSources, routes[1].data.methodSources)
+  const route = routes[0].data
+  assert.deepEqual(route.object, { name: "CUNI", type: "T", transportType: "TDAT" })
+  assert.deepEqual(
+    route.members.map((row: { TABNAME: string }) => row.TABNAME),
+    ["T006", "T006A", "T006B", "T006C", "T006D", "T006I", "T006J", "T006T", "T006_OIB"]
+  )
+  assert.deepEqual(route.otherMemberTables, ["T006I", "T006J", "T006T", "T006_OIB"])
+  assert.deepEqual(route.methods, [])
+  assert.deepEqual(route.methodSources, [])
+  assert.equal(route.importHandling, "unknown")
+  assert.equal(route.transportHandling, "automatic")
+  assert.equal(route.native.ET_OBJH[0].CLIDEP, "X")
+  assert.equal(route.native.ET_OBJH[0].LANGDEP, "X")
+  assert.equal(route.native.ET_OBJH[0].LUSER, "")
+  assert.equal(route.native.ET_OBJH[0].LDATE, "0000-00-00")
+  for (const flag of ["executable", "activationAvailable", "methodExecutionAvailable", "snapshot"])
+    assert.equal(route[flag], false)
+  assert.equal(route.evidence.apiInvocations, 2)
+  assert.ok(route.evidence.metadataReads <= route.evidence.metadataReadLimit)
+  assert.match(route.metadataVersion, /^[a-f0-9]{64}$/)
+  const observations = evidence.nativeObservations.filter(
+    (call: { outputs: { EV_CODE: string } }) => call.outputs.EV_CODE === "ROUTE_READ_OK"
+  )
+  assert.equal(observations.length, 4)
+  for (const call of observations) {
+    assert.equal(call.outputs.ET_OBJH[0].LUSER, "")
+    assert.equal(call.outputs.ET_OBJH[0].LDATE, "0000-00-00")
+  }
+  assert.equal(evidence.nativeRejections.status, "passed")
+  assert.equal(evidence.nativeRejections.calls.length, 2)
+  for (const call of evidence.nativeRejections.calls) {
+    assert.ok(["SOURCE_NOT_ATTESTED", "VERSION_CONFLICT"].includes(call.response.outputs.EV_CODE))
+    for (const field of ["EV_SOURCE_VERSION", "EV_TARGET_VERSION", "EV_METADATA_VERSION"])
+      assert.equal(call.response.outputs[field], "")
+    for (const table of ["ET_OBJH", "ET_OBJS", "ET_OBJM"])
+      assert.deepEqual(call.response.outputs[table], [])
+  }
+  assert.equal(evidence.previousFailure.beforeAfterUnchanged, true)
+})
+
+test("native CUNI guard evidence binds eight related keys without configuration writes", () => {
+  const entry = findVerificationEntry(registry, "read_configuration_bc_guard")!
+  assert.equal(entry.status, "verified")
+  const evidence = JSON.parse(readFileSync(resolveEvidencePath(entry)!, "utf8"))
+  assert.equal(evidence.status, "passed")
+  assert.equal(evidence.configurationWrites, 0)
+  assert.equal(evidence.metrics.configurationWrites, 0)
+  assert.equal(evidence.schemaRefusalsBeforeBackend, 4)
+  assert.equal(evidence.staleRefusalsBeforeNativeGuard, 2)
+  assert.equal(evidence.fixedEightKeyProtectionUnchanged, true)
+  assert.equal(evidence.fiveTableBeforeAfterUnchanged, true)
+  assert.equal(evidence.routeBeforeAfterUnchanged, true)
+  const reads = evidence.calls.filter(
+    (call: { name: string; isError: boolean }) => call.name === entry.tool && !call.isError
+  )
+  assert.equal(reads.length, 2)
+  assert.deepEqual(reads[0].data.native, reads[1].data.native)
+  assert.deepEqual(reads[0].data.states, reads[1].data.states)
+  const guard = reads[0].data
+  assert.equal(guard.readOnly, true)
+  for (const flag of ["executable", "activationAvailable", "methodExecutionAvailable", "snapshot"])
+    assert.equal(guard[flag], false)
+  assert.equal(guard.scope.keyCount, 8)
+  assert.equal(guard.scope.allCuniKeys, false)
+  assert.deepEqual(
+    guard.states.map((state: { tableName: string; key: Record<string, string> }) => ({
+      tableName: state.tableName,
+      key: state.key
+    })),
+    configurationBcGuardKeys
+  )
+  for (const state of guard.states) {
+    if (state.status !== "present") continue
+    const table = state.tableName as keyof typeof configurationBcGuardLayouts
+    assert.deepEqual(Object.keys(state.values), configurationBcGuardLayouts[table].fields)
+  }
+  assert.equal(
+    guard.states.filter((state: { status: string }) => state.status === "present").length,
+    7
+  )
+  const industry = guard.states.find(
+    (state: { tableName: string }) => state.tableName === "T006_OIB"
+  )
+  assert.deepEqual(industry.key, { MANDT: "200", MSEHI: "KNM" })
+  assert.equal(industry.status, "missing")
+  assert.equal(industry.values, null)
+  assert.match(guard.guardVersion, /^[a-f0-9]{64}$/)
+  assert.equal(guard.guardVersion, guard.native.EV_GUARD_VERSION)
+  assert.equal(guard.evidence.apiInvocations, 2)
+  assert.equal(guard.evidence.metadataReads, 10)
+  assert.equal(guard.evidence.routeReads, 2)
+  const native = evidence.nativeObservations.filter(
+    (call: { outputs: { EV_CODE: string } }) => call.outputs.EV_CODE === "GUARD_READ_OK"
+  )
+  assert.equal(native.length, 4)
+  for (const call of native) assert.deepEqual(call.outputs, guard.native)
+  assert.equal(evidence.nativeRejections.status, "passed")
+  assert.deepEqual(
+    evidence.nativeRejections.calls.map(
+      (call: { response: { outputs: { EV_CODE: string } } }) => call.response.outputs.EV_CODE
+    ),
+    ["INPUT_INVALID", "INPUT_INVALID", "SOURCE_NOT_ATTESTED", "VERSION_CONFLICT"]
+  )
+  for (const call of evidence.nativeRejections.calls) {
+    for (const field of [
+      "EV_SOURCE_VERSION",
+      "EV_TARGET_VERSION",
+      "EV_METADATA_VERSION",
+      "EV_GUARD_VERSION"
+    ])
+      assert.equal(call.response.outputs[field], "")
+    for (const table of ["ET_T006I", "ET_T006J", "ET_T006T", "ET_T006_OIB"])
+      assert.deepEqual(call.response.outputs[table], [])
+  }
+})
+
+test("unified BC preflight evidence covers nineteen complete fixed keys without activation", () => {
+  const entry = findVerificationEntry(registry, "preflight_configuration_bc_activation")!
+  assert.equal(entry.status, "verified")
+  assert.equal(entry.method, "read-only")
+  const evidencePath = resolveEvidencePath(entry)
+  assert.ok(evidencePath)
+  const evidence = JSON.parse(readFileSync(evidencePath, "utf8"))
+  assert.equal(evidence.status, "passed")
+  assert.equal(evidence.configurationWrites, 0)
+  assert.equal(evidence.metrics.configurationWrites, 0)
+  assert.equal(evidence.schemaRefusalsBeforeBackend, true)
+  assert.equal(evidence.staleRefusalsBeforeCandidateAndGuard, true)
+  assert.equal(evidence.fiveTableBeforeAfterUnchanged, true)
+  assert.equal(evidence.fixedProtectionPreserved, true)
+  assert.equal(evidence.calls.length, 12)
+  const calls = evidence.calls.filter((call: { name: string }) => call.name === entry.tool)
+  assert.equal(calls.length, 7)
+  const positives = calls.filter((call: { isError: boolean }) => !call.isError)
+  assert.equal(positives.length, 1)
+  for (const refused of calls.filter((call: { isError: boolean }) => call.isError)) {
+    assert.equal("rows" in refused.data, false)
+    assert.equal("versions" in refused.data, false)
+  }
+  const result = positives[0].data
+  assert.equal(result.readOnly, true)
+  for (const flag of [
+    "executable",
+    "activationAvailable",
+    "simulation",
+    "methodExecutionAvailable",
+    "snapshot"
+  ])
+    assert.equal(result[flag], false)
+  assert.equal(result.scope.allCuniKeys, false)
+  assert.deepEqual(
+    result.rows.map((row: { tableName: string; key: Record<string, string> }) => ({
+      tableName: row.tableName,
+      key: row.key
+    })),
+    configurationBcPreflightKeys
+  )
+  assert.equal(new Set(result.rows.map((row: { tableName: string }) => row.tableName)).size, 9)
+  assert.equal(result.rows.filter((row: { action: string }) => row.action === "create").length, 10)
+  assert.equal(
+    result.rows.filter((row: { action: string }) => row.action === "unchanged").length,
+    1
+  )
+  const protectedRows = result.rows.filter((row: { role: string }) => row.role === "preserve")
+  assert.equal(protectedRows.length, 8)
+  assert.equal(
+    protectedRows.filter((row: { presence: string }) => row.presence === "present").length,
+    7
+  )
+  for (const row of result.rows) {
+    const fields =
+      row.role === "preserve"
+        ? configurationBcGuardLayouts[row.tableName as keyof typeof configurationBcGuardLayouts]
+            .fields
+        : configurationBcNativeLayouts[row.tableName as keyof typeof configurationBcNativeLayouts]
+            .fields
+    for (const values of [row.before, row.after])
+      if (values !== null) assert.deepEqual(Object.keys(values), fields)
+    if (row.role === "preserve") {
+      assert.deepEqual(row.before, row.after)
+      assert.deepEqual(row.differences, [])
+    } else {
+      assert.deepEqual(
+        row.differences.map((diff: { field: string }) => diff.field),
+        fields
+      )
+      for (const diff of row.differences) {
+        assert.ok(["NEW", "CHG", "EQL"].includes(diff.status))
+        assert.equal(diff.comparisonOrigin, "sap_typed_field_comparison")
+        assert.equal(diff.before, row.before?.[diff.field] ?? null)
+        assert.equal(diff.after, row.after[diff.field])
+      }
+    }
+  }
+  const industry = protectedRows.find((row: { tableName: string }) => row.tableName === "T006_OIB")
+  assert.equal(industry.presence, "missing")
+  assert.equal(industry.before, null)
+  assert.equal(industry.after, null)
+  for (const [name, version] of Object.entries(result.versions)) {
+    assert.match(version as string, /^[a-f0-9]{64}$/)
+    assert.equal(version, evidence.input[`native${name[0]!.toUpperCase()}${name.slice(1)}Version`])
+  }
+  assert.deepEqual(
+    result.apiIdentities.map((api: { functionName: string }) => api.functionName),
+    [
+      "Z_ORVANTA_CFG_BC_READ",
+      "Z_ORVANTA_CFG_BC_PREVIEW",
+      "Z_ORVANTA_CFG_BC_ROUTE",
+      "Z_ORVANTA_CFG_BC_GUARD"
+    ]
+  )
+  const initial = evidence.calls[0].data.native
+  assert.deepEqual(result.evidence.native.before, initial)
+  assert.deepEqual(evidence.calls.at(-1).data.native, initial)
+  assert.deepEqual(result.evidence.native.route, evidence.calls[1].data.native)
+  assert.deepEqual(result.evidence.native.guard, evidence.calls[2].data.native)
+  assert.deepEqual(result.evidence.native.candidate, evidence.calls[3].data.native)
+})
+
+test("native CTS evidence binds complete repeated buffers without claiming recovery or string-key coverage", () => {
+  const entry = findVerificationEntry(registry, "read_configuration_bc_cts_snapshot")
+  assert.ok(entry)
+  assert.equal(entry.status, "verified")
+  const path = resolveEvidencePath(entry)
+  assert.ok(path)
+  const record = JSON.parse(readFileSync(path, "utf8")) as {
+    status: string
+    configurationWrites: number
+    configurationCtsWrites: number
+    schemaRefusalsBeforeBackend: number
+    nativeRejections: {
+      status: string
+      calls: Array<{ result: { outputs: Record<string, string> } }>
+    }
+    calls: Array<{
+      name: string
+      isError: boolean
+      arguments: Record<string, unknown>
+      data: {
+        connectionId: string
+        bcSetId: string
+        version: string
+        requestNumber: string
+        taskNumber: string
+        system: string
+        client: string
+        user: string
+        ctsVersion: string
+        buffer: {
+          data: string
+          bytes: number
+          clientSideImportAvailable: boolean
+          recoveryPermit: boolean
+        }
+        counts: { objects: number; keys: number; stringKeys: number }
+        identities: unknown[]
+        evidence: { apiInvocations: number; identityPasses: number }
+        readOnly: boolean
+        executable: boolean
+        snapshot: boolean
+        recoveryAvailable: boolean
+      }
+      metricsBefore: { nativeReads: number }
+      metricsAfter: { nativeReads: number; configurationWrites: number }
+    }>
+  }
+  assert.equal(record.status, "passed")
+  assert.equal(record.configurationWrites, 0)
+  assert.equal(record.configurationCtsWrites, 0)
+  assert.equal(record.schemaRefusalsBeforeBackend, 4)
+  const positive = record.calls.filter((call) => !call.isError)
+  assert.equal(positive.length, 2)
+  assert.deepEqual(positive[0]!.data, positive[1]!.data)
+  for (const call of positive) {
+    assert.equal(call.name, entry.tool)
+    const d = call.data,
+      bytes = Buffer.from(d.buffer.data, "base64")
+    assert.deepEqual(call.arguments, {
+      connectionId: "w200",
+      bcSetId: "EHS_CUNI_KNM",
+      version: "N",
+      requestNumber: "GR2K923429",
+      taskNumber: "GR2K923430"
+    })
+    for (const [field, value] of Object.entries(call.arguments))
+      assert.equal(d[field as "connectionId"], value)
+    assert.equal(d.system, "GR2")
+    assert.equal(d.client, "200")
+    assert.equal(d.user, "WYS")
+    assert.equal(bytes.length, d.buffer.bytes)
+    assert.equal(bytes.toString("base64"), d.buffer.data)
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), d.ctsVersion)
+    assert.deepEqual(d.counts, { objects: 2, keys: 2, stringKeys: 0 })
+    assert.equal(d.identities.length, 12)
+    assert.equal(d.evidence.apiInvocations, 2)
+    assert.equal(d.evidence.identityPasses, 2)
+    assert.equal(d.readOnly, true)
+    for (const flag of [
+      d.executable,
+      d.snapshot,
+      d.recoveryAvailable,
+      d.buffer.clientSideImportAvailable,
+      d.buffer.recoveryPermit
+    ])
+      assert.equal(flag, false)
+    assert.equal(call.metricsAfter.nativeReads - call.metricsBefore.nativeReads, 2)
+    assert.equal(call.metricsAfter.configurationWrites, 0)
+  }
+  assert.equal(record.nativeRejections.status, "passed")
+  assert.equal(record.nativeRejections.calls.length, 4)
+  for (const call of record.nativeRejections.calls) {
+    assert.equal(call.result.outputs.EV_CODE, "INPUT_INVALID")
+    for (const [name, value] of Object.entries(call.result.outputs))
+      if (name !== "EV_CODE") assert.equal(value, "")
+  }
+  assert.match(entry.notes, /roundtrip.*unverified/)
+})
+
+test("native before-state verification requires the real roundtrip response and preserves the timeout distinction", () => {
+  const entry = findVerificationEntry(registry, "read_configuration_bc_before_state")!
+  assert.equal(entry.status, "verified")
+  assert.equal(entry.method, "read-only")
+  assert.equal(entry.helper, "Z_ORVANTA_CFG_BC_STATE")
+  const path = resolveEvidencePath(entry)!
+  type State = Awaited<ReturnType<typeof readConfigurationBcBeforeState>>
+  const record = JSON.parse(readFileSync(path, "utf8")) as {
+    status: string
+    configurationWrites: number
+    configurationCtsWrites: number
+    activationCalls: number
+    schemaRefusalsBeforeBackend: number
+    defaultClientTimedOut: boolean
+    publicResponsesReceived: number
+    publicExecutionsCompleted: number
+    nativePositiveCalls: number
+    reference: string
+    priorServerCompleted: { reference: string; stateVersion: string }
+    immutableFile: { secondCaptureDidNotOverwrite: boolean }
+    publicCall: {
+      name: string
+      isError: boolean
+      arguments: Record<string, string>
+      data: State & {
+        beforeStateReference: string
+        beforeStatePersistence: { immutable: boolean; executable: boolean; recoveryPermit: boolean }
+      }
+    }
+    commandPreparation: {
+      readOnly: boolean
+      executable: boolean
+      recoveryAvailable: boolean
+      nativeBeforeStateRechecked: boolean
+      lockedSnapshot: boolean
+      beforeState: { reference: string }
+    }
+    nativeRefusals: Array<{ result: { outputs: Record<string, string> } }>
+    metrics: {
+      nativeStateReads: number
+      nativeRefusals: number
+      configurationWrites: number
+      configurationCtsWrites: number
+    }
+  }
+  assert.equal(record.status, "passed")
+  assert.equal(record.defaultClientTimedOut, true)
+  assert.equal(record.publicResponsesReceived, 1)
+  assert.equal(record.publicExecutionsCompleted, 2)
+  assert.equal(record.nativePositiveCalls, 4)
+  assert.equal(record.schemaRefusalsBeforeBackend, 4)
+  const call = record.publicCall,
+    d = call.data
+  assert.equal(call.name, entry.tool)
+  assert.equal(call.isError, false)
+  for (const [field, value] of Object.entries(call.arguments))
+    assert.equal(d[field as "connectionId"], value)
+  assert.equal(d.system, "GR2")
+  assert.equal(d.client, "200")
+  assert.equal(d.user, "WYS")
+  assert.deepEqual(d.scope, { object: "CUNI", tableCount: 9, keyCount: 19, allCuniKeys: false })
+  assert.deepEqual(d.counts, {
+    T006: 0,
+    T006A: 0,
+    T006B: 0,
+    T006C: 0,
+    T006D: 1,
+    T006I: 1,
+    T006J: 3,
+    T006T: 3,
+    T006_OIB: 0
+  })
+  for (const [buffer, version] of [
+    [d.buffer, d.versions.state],
+    [d.cts.buffer, d.versions.cts]
+  ] as const) {
+    const bytes = Buffer.from(buffer.data, "base64")
+    assert.equal(bytes.length, buffer.bytes)
+    assert.equal(bytes.toString("base64"), buffer.data)
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), version)
+    assert.equal(buffer.clientSideImportAvailable, false)
+    assert.equal(buffer.recoveryPermit, false)
+  }
+  assert.equal(d.buffer.nativeRoundtrip, true)
+  assert.equal(d.buffer.bytes, 3402)
+  assert.equal(d.cts.buffer.bytes, 3548)
+  assert.deepEqual(d.cts.counts, { objects: 2, keys: 2, stringKeys: 0 })
+  assert.deepEqual(d.evidence, {
+    apiInvocations: 2,
+    preflightPasses: 2,
+    ctsPasses: 2,
+    identityPasses: 2
+  })
+  assert.equal(d.readOnly, true)
+  for (const flag of [d.executable, d.activationAvailable, d.snapshot, d.recoveryAvailable])
+    assert.equal(flag, false)
+  const { beforeStateReference, beforeStatePersistence, ...state } = d
+  assert.equal(hashWriteInput(state), beforeStateReference)
+  assert.equal(beforeStateReference, record.reference)
+  assert.equal(record.priorServerCompleted.reference, record.reference)
+  assert.equal(record.priorServerCompleted.stateVersion, d.versions.state)
+  assert.deepEqual(beforeStatePersistence, {
+    immutable: true,
+    recoveryPermit: false,
+    executable: false
+  })
+  assert.equal(record.immutableFile.secondCaptureDidNotOverwrite, true)
+  const prepared = record.commandPreparation
+  assert.equal(prepared.beforeState.reference, record.reference)
+  assert.equal(prepared.nativeBeforeStateRechecked, true)
+  assert.equal(prepared.readOnly, true)
+  for (const flag of [prepared.executable, prepared.recoveryAvailable, prepared.lockedSnapshot])
+    assert.equal(flag, false)
+  assert.equal(record.nativeRefusals.length, 4)
+  for (const probe of record.nativeRefusals) {
+    assert.equal(probe.result.outputs.EV_CODE, "INPUT_INVALID")
+    for (const [name, value] of Object.entries(probe.result.outputs))
+      if (name !== "EV_CODE") assert.equal(value, "")
+  }
+  assert.equal(record.metrics.nativeStateReads, 4)
+  assert.equal(record.metrics.nativeRefusals, 4)
+  for (const value of [
+    record.configurationWrites,
+    record.configurationCtsWrites,
+    record.activationCalls,
+    record.metrics.configurationWrites,
+    record.metrics.configurationCtsWrites
+  ])
+    assert.equal(value, 0)
+  assert.match(entry.notes, /default client timed out/)
+  assert.match(entry.notes, /Not a locked snapshot/)
+})
+
+test("BTE route and product verification require actual frozen public reads without native maintenance", () => {
+  const routeEntry = findVerificationEntry(registry, "inspect_configuration_bte_maintenance_route")!
+  const previewEntry = findVerificationEntry(registry, "preview_configuration_bte_product")!
+  for (const entry of [routeEntry, previewEntry]) {
+    assert.equal(entry.status, "verified")
+    assert.equal(entry.method, "read-only")
+    assert.equal(entry.helper, null)
+    assert.equal(entry.availabilityBasis, "target-specific")
+    assert(entry.lastAttemptAt)
+  }
+  assert.equal(routeEntry.evidence, previewEntry.evidence)
+  const record = JSON.parse(readFileSync(resolveEvidencePath(routeEntry)!, "utf8"))
+  const actual = record.acceptance
+  assert.equal(actual.status, "readonly_route_and_existing_product_preview_passed")
+  assert.equal(actual.configurationWrites, 0)
+  assert.equal(actual.transportWrites, 0)
+  assert.equal(actual.sourceWrites, 0)
+  assert.equal(record.processExit.ExitCode, 0)
+  assert.equal(record.processExit.PasswordEnvironmentCleared, true)
+  assert.match(record.frozen.files["runtime/dist/src/configuration-bte-route.js"], /^[a-f0-9]{64}$/)
+  assert.match(
+    record.frozen.files["runtime/dist/src/configuration-bte-product.js"],
+    /^[a-f0-9]{64}$/
+  )
+  const call = (name: string) => {
+    const found = actual.publicCalls.filter((x: { name: string }) => x.name === name)
+    assert.equal(found.length, 1)
+    assert.equal(found[0].isError, false)
+    return found[0]
+  }
+  const route = call(routeEntry.tool).result
+  assert.equal(route.status, "standard_product_maintenance_route_observed")
+  assert.equal(route.transaction.code, "BF24")
+  assert.deepEqual(route.transaction.recognised, {
+    transaction: "SM30",
+    tableName: "TBE24",
+    mode: "update"
+  })
+  assert.equal(route.maintenance.directory.AREA, "BFTM")
+  assert.equal(route.maintenance.directory.LISTE, "0090")
+  assert.deepEqual(route.maintenance.events, [
+    { TABNAME: "TBE24", EVENT: "02", FORMNAME: "CONTEXT_BUFFER_DELETE_CUS" }
+  ])
+  assert.equal(route.products.complete, true)
+  assert.equal(route.products.returnedCount, 4)
+  assert.deepEqual(
+    route.products.supportedCustomerProducts.map((x: { PRDKT: string }) => x.PRDKT),
+    ["ZFICHK", "ZWMS_MM"]
+  )
+  const previewCall = call(previewEntry.tool),
+    preview = previewCall.result
+  assert.equal(previewCall.args.productName, "ZFICHK")
+  assert.equal(previewCall.args.active, false)
+  assert.deepEqual(preview.change.changedFields, ["AKTIV"])
+  assert.deepEqual(preview.change.after, { ...preview.change.before, AKTIV: "" })
+  assert.equal(preview.change.before.AKTIV, "X")
+  assert.deepEqual(preview.assignments.processes, [])
+  assert.equal(preview.assignments.events.length, 1)
+  assert.equal(preview.assignments.events[0].EVENT, "00001025")
+  assert.equal(preview.assignments.events[0].FUNCT, "ZSAMPLE_INTERFACE_00001025")
+  for (const result of [route, preview]) {
+    assert.equal(result.connectionId, "w200")
+    assert.equal(result.client, "200")
+    assert.equal(result.readOnly, true)
+    assert.equal(result.executable, false)
+    assert.equal(result.writeAvailable, false)
+    assert.equal(result.coverage.twoReadAgreement, true)
+    assert.equal(result.coverage.atomicSnapshot, false)
+    assert(result.sources.every((s: { method: string }) => s.method === "rfc_read_table"))
+  }
+  assert.equal(preview.coverage.runtimeInspected, false)
+  assert.equal(preview.coverage.effectiveExecutionOrderInspected, false)
+  assert.equal(actual.remoteCalls.length, 16)
+  assert(
+    actual.remoteCalls.every(
+      (r: { request: { functionName: string }; result: { fault?: unknown } }) =>
+        r.request.functionName === "RFC_READ_TABLE" && !r.result.fault
+    )
+  )
+  assert.equal(
+    call("read_function_module_interface").args.functionName,
+    "ZSAMPLE_INTERFACE_00001025"
+  )
+})
+
+test("BTE preparation verification binds one public review and unchanged complete protected state", () => {
+  const entry = findVerificationEntry(registry, "prepare_configuration_bte_product_change")!
+  assert.equal(entry.status, "verified")
+  assert.equal(entry.method, "read-only")
+  const record = JSON.parse(readFileSync(resolveEvidencePath(entry)!, "utf8"))
+  const actual = record.acceptance
+  assert.equal(actual.status, "bte_change_public_readonly_acceptance_passed")
+  assert.equal(actual.nativeMetadataCalls, 1)
+  assert.equal(actual.priorNativeMetadataCalls, 1)
+  assert.equal(actual.nativeMetadataBudgetTotal, 2)
+  assert.equal(entry.lastAttemptAt, actual.finishedAt)
+  assert.equal(actual.publicCalls.length, 1)
+  const call = actual.publicCalls[0]
+  assert.equal(call.name, entry.tool)
+  assert.equal(call.isError, false)
+  assert.deepEqual(call.args, {
+    connectionId: "w200",
+    productName: "ZFICHK",
+    active: false,
+    maxAssignmentsPerKind: 200
+  })
+  const result = call.result
+  assert.equal(result.status, "change_review_prepared")
+  assert.equal(result.readOnly, true)
+  assert.equal(result.executable, false)
+  assert.equal(result.writeAvailable, false)
+  assert.equal(result.coverage.atomicSnapshot, false)
+  assert.equal(result.coverage.authorizedForWrite, false)
+  assert.deepEqual(result.change.before, actual.before.TBE24[0])
+  assert.equal(result.change.before.AKTIV, "X")
+  assert.deepEqual(result.change.after, { ...result.change.before, AKTIV: "" })
+  assert.deepEqual(result.preserved.languageTexts, actual.before.TBE24T)
+  assert.deepEqual(result.preserved.assignments.events, actual.before.TBE34)
+  assert.deepEqual(result.preserved.assignments.processes, actual.before.TPS34)
+  assert.deepEqual(result.cacheBefore, actual.before.TCONT)
+  assert.deepEqual(actual.before, actual.after)
+  assert.deepEqual(actual.ctsBefore, actual.ctsAfter)
+  assert.equal(result.recovery.restoreCacheTimestamp, false)
+  assert.equal(result.recovery.retryAfterUnknownOutcome, false)
+  const native = actual.remoteCalls.filter(
+    (x: { request: { functionName: string } }) =>
+      x.request.functionName === "Z_ORVANTA_CFG_BTE_META"
+  )
+  assert.equal(native.length, 1)
+  const outputs = native[0].result.outputs
+  assert.equal(outputs.EV_CODE, "METADATA_READ_OK")
+  assert.equal(outputs.EV_READ_ONLY, "X")
+  assert.equal(outputs.EV_FRESH, "")
+  assert.equal(outputs.ET_HEADER.length, 1)
+  assert.equal(outputs.ET_NAMTAB.length, 8)
+  assert.deepEqual(outputs.ET_EVENTS, [
+    { TABNAME: "TBE24", EVENT: "02", FORMNAME: "CONTEXT_BUFFER_DELETE_CUS" }
+  ])
+  for (const [name, count] of [
+    ["ET_HEADER", 92],
+    ["ET_NAMTAB", 33],
+    ["ET_EVENTS", 3]
+  ] as const) {
+    const fields = native[0].request.outputParameters.find(
+      (x: { name: string }) => x.name === name
+    ).fields
+    assert.equal(fields.length, count)
+    for (const row of outputs[name]) assert.deepEqual(Object.keys(row).sort(), [...fields].sort())
+  }
+  for (const value of [actual.configurationWrites, actual.sourceWrites, actual.transportWrites])
+    assert.equal(value, 0)
+  assert.equal(record.processExit.ExitCode, 0)
+  assert.equal(record.processExit.PasswordEnvironmentCleared, true)
+  assert.equal(record.windowClosed.windowClosed, true)
+  assert.equal(record.previousNativeFailure.status, "failed")
+  assert.equal(record.boundaries.fullSproAutomationVerified, false)
+  assert.equal(record.boundaries.remainingNativeMetadataBudget, 0)
+  assert.match(
+    record.frozen.files["runtime/dist/src/configuration-bte-change.js"],
+    /^[a-f0-9]{64}$/
+  )
+  const standalone = findVerificationEntry(registry, "inspect_configuration_bte_native_metadata")!
+  assert.equal(standalone.status, "unverified")
+  assert.equal(standalone.lastAttemptAt, null)
+  assert.equal(standalone.evidence, null)
+})
+
 test("the registry records the honest gap rather than inflating it", () => {
   const totals = verificationTotals(registry)
   assert.equal(totals.total, registry.entries.length)
@@ -830,6 +1660,62 @@ test("the registry records the honest gap rather than inflating it", () => {
     // the first real w200 success, after the operator approved the REPORT_PARAMETERS source and the
     // real reply exposed two defects the local gate had hidden - the entry named the wrong helper and
     // the reply schema capped the CHAR 4 RSSCR-DTYP dictionary type at one character.
+    // Raised from 127 to 128 on 2026-10-03 (CFG-05 direct activity): read_configuration_activity
+    // passed named w200/200 calls on a frozen isolated readonly instance. The raw receipt
+    // .doc/orvanta-configuration-activity-acceptance-20261002T174332.json records OML4's Chinese
+    // title, five physical paths and V_T3010/SM30, plus the known unit activity and negative cases.
+    // Complete SPRO visibility and executable configuration maintenance remain unverified.
+    // Raised to 129 after read_configuration_unit passed 19 frozen readonly calls:
+    // .doc/orvanta-configuration-unit-acceptance-20261002T232201.json (KG values and draft-independent guards).
+    // Raised to 130 after preview_configuration_unit_text passed 21 frozen readonly calls:
+    // .doc/orvanta-configuration-unit-text-acceptance-20261002T233457.json (draft-only and unchanged SAP readback).
+    // Raised to 131 after read_configuration_documentation passed frozen r2 read-only calls:
+    // .doc/orvanta-configuration-documentation-acceptance-20261003-r2.json (EN bodies, repeat identity and limits).
+    // Raised to 134 after named frozen CFG-04 read-only acceptances:
+    // orvanta-configuration-bc-candidate-acceptance-20261003-r4.json (find_configuration_bc_sets),
+    // orvanta-configuration-bc-unit-payload-20261003-r4.json (read_configuration_bc_set),
+    // orvanta-configuration-bc-comparison-acceptance-20261003-r5.json (compare_configuration_bc_set).
+    // These attest selected content/field observations, not activation or complete-row equality.
+    // Raised to 136 for two scoped empty-audit named r6 tools in
+    // orvanta-configuration-bc-audit-acceptance-20261003-r6-recheck.json.
+    // Nonempty hierarchy/history remain pending; no activation verdict.
+    // Raised to 137 for inspect_configuration_bc_impact from named frozen r7 calls:
+    // orvanta-configuration-bc-impact-acceptance-20261003-r7.json.
+    // Selected partial observations and shared budgets, not activation or whole-target snapshots.
+    // Raised to 138 for preview_configuration_number_range from named frozen r8 calls:
+    // orvanta-configuration-number-range-preview-acceptance-20261003-r8.json.
+    // Numeric preflight only; persisted level unchanged; no maintenance or allocation.
+    // Raised to 139 for read_configuration_number_range_scope from named r9 calls:
+    // orvanta-configuration-number-range-scope-acceptance-20261003-r9-recheck.json.
+    // Exact literal subobject, partial all-year projection, no maintenance.
+    // Raised to 140 for inspect_configuration_transport from named frozen r20 calls:
+    // orvanta-configuration-cts-key-acceptance-20261003-r20.json.
+    // Rechecked metadata and empty bounded CUNI/T006A projections, not exact-row recording/import.
+    // Raised to 141 for the named r34 KG/ZH MSEHL save/restore controlled-write sample.
+    // Completed APPLIED receipts and retained CTS key; native concurrency/failure paths remain pending.
+    // Raised to 142 for the named r35 readonly reconciliation of four original receipt copies;
+    // current-value classifications preserve historical uncertainty and perform no native writes.
+    // r41 adds three individually cited native number range calls, with their scope limits.
+    // r45 adds one named five-table native before-state read, with successful public
+    // calls and native source/version rejection receipts; authorization/float drift remain pending.
+    // r46 adds one named frozen readonly USE preview, with native conversion,
+    // empty refusals and full unchanged before/after; no activation verdict.
+    // r47 adds one named CUNI/T metadata-only acceptance. Nine members and no
+    // registered methods do not prove activation or coverage of the extra four tables.
+    // r49 adds read_configuration_bc_guard, backed by two frozen public positives,
+    // four native refusals and unchanged eight-key/five-table/route observations:
+    // .doc/orvanta-configuration-bc-guard-acceptance-20261005-r49-repair.json.
+    // Seven present related rows and missing KNM industry data do not prove activation.
+    // r50 adds one actual named nine-table/nineteen-key readonly preflight,
+    // with full before/candidate/route/guard payloads and unchanged final readback.
+    // Its immutable acceptance is checked by the dedicated evidence test above.
+    // r51 adds only the named fixed CTS receipt checked above; no recovery/string-key claim.
+    // r54 adds the native before-state response checked above, preserving the first client timeout.
+    // EXPORT/IMPORT roundtrip and immutable reference do not authorize APPLY/RECOVER.
+    // r73 adds exactly two named frozen readonly BTE observations, checked above.
+    // They attest route/inventory and one populated preview, never SAVE or business execution.
+    // r75 adds one named public change preparation observation, checked above against the
+    // repaired native response and complete unchanged state. Standalone metadata remains unverified.
     // Raised from 127 to 129 on 2026-10-04 (R57d): patch_abap_screen and upsert_abap_screen moved off
     // `unverified` on real w200 writes, not on code changes. patch_abap_screen changed one native D021S
     // row (BTN_CLEAR.STXT) and put it back - the independent read showed only that key moved, and the
@@ -841,7 +1727,8 @@ test("the registry records the honest gap rather than inflating it", () => {
     // not released. What remains unestablished - whether the restored function codes fire at runtime,
     // and whether omitting `header` should have defaulted instead of zeroing D020S - is recorded in each
     // entry's notes rather than absorbed into this bound.
-    totals.verified <= 129,
+    // Preserve both independently verified Dynpro tools while checkpointing SPRO progress.
+    totals.verified <= 157,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

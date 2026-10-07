@@ -1,0 +1,82 @@
+{
+  "startedAt": "2026-10-04T06:05:20.907Z",
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "nativeWriterCalls": 0,
+  "observations": [
+    {
+      "argument": "*T006*",
+      "data": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T06:05:21.031Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    },
+    {
+      "argument": "*GR2K923429*",
+      "data": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T06:05:21.236Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    },
+    {
+      "argument": "*GR2K923430*",
+      "data": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T06:05:21.374Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    }
+  ],
+  "toolCount": 189,
+  "status": "existing_approved_lock_route_available",
+  "finishedAt": "2026-10-04T06:05:21.502Z"
+}

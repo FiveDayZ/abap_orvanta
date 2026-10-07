@@ -1,0 +1,16 @@
+{
+  "observedAt": "2026-10-04T10:41:40.773Z",
+  "head": "775ae25980f2988e1f84f11d71409592d8bc4063",
+  "branch": "main",
+  "changedSourceFiles": [
+    "src/tools.ts"
+  ],
+  "addedSourceFiles": [
+    "test/configuration-number-range-object-language.test.ts"
+  ],
+  "compiledSourcesMatch": true,
+  "fullStagedDiffUnchanged": true,
+  "defaultDistWrite": "2026-10-04T01:20:51.009Z",
+  "frozenFilesUnchanged": 213,
+  "status": "passed_scope_staged_and_frozen_preservation"
+}

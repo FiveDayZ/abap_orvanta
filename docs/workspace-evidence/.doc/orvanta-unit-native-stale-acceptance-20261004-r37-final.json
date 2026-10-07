@@ -1,0 +1,1630 @@
+{
+  "revision": "r37",
+  "startedAt": "2026-10-04T06:36:17.059Z",
+  "mode": "approved_single_native_stale_rejection",
+  "publicWriteTools": 0,
+  "maximumNativeCalls": 1,
+  "automaticRetry": false,
+  "automaticRestore": false,
+  "runtime": {
+    "pid": 31412,
+    "url": "http://127.0.0.1:9678/mcp",
+    "startedAt": "2026-10-04T06:35:32.013Z",
+    "revision": "r37",
+    "allowedTools": [
+      "get_runtime_info",
+      "read_function_module_interface",
+      "read_configuration_unit",
+      "inspect_configuration_transport"
+    ],
+    "manifestFingerprint": "5a8716ac134854a01bb661c7c8c75707f61bf6c12832eb1d3989d2627c8f09d8",
+    "nativeLimit": 1,
+    "publicWriteTools": 0
+  },
+  "tools": [
+    {
+      "name": "get_runtime_info",
+      "description": "Read running module version and startup/current on-disk artifact fingerprints. Compare with an explicitly supplied candidate version/fingerprint. Never probes SAP or changes the service or state directory. Code fingerprint excludes UI assets and installed dependency contents, and is not a proof of SAP availability.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "expectedArtifactFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "description": "Read one active function module interface and source through the SAP repository helper. Read-only and allowed for customer or standard function modules. Preserves raw updateTaskMode; updateTask is true for any noninitial update mode, including numeric SAP modes, not only X. Mode validity/meaning is not inferred. Returns a deterministic SHA-256 fingerprint; includeExecutionSupport additionally resolves scalar, flat-structure, and table parameter shapes through DDIC.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "functionName": {
+            "type": "string"
+          },
+          "includeExecutionSupport": {
+            "type": "boolean",
+            "default": false
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "functionName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "inspect_configuration_transport",
+      "description": "Inspect one explicit Customizing request/task pair on w200/200. Reviewed E070/E070C and TRFUNCTION/TRSTATUS/TRCATEG metadata are rechecked. W=request, Q=task; checks exact parent, open D status, configured-user task owner, recorded source client, CUST category and nonempty transport target. Missing records stay unknown; no client inheritance is guessed. Optional unitText={unitKey,language} requires an explicit ISO language and reuses exact unit reads twice. Only matching container metadata permits bounded E071 R3TR/TDAT/CUNI and E071K R3TR/TABU/T006A projections for this pair (32 rows each, eight entry-reader calls maximum); pins/rechecks both layouts, values and unit version, discarding drift/failure/truncation. Default performs no unit/key reads. Reports table_entries_observed/no_table_entries/master_mismatch/master_unresolved or blocked/unavailable/changed/truncated; these are table-level observations, never exact-row linkage. TABKEY remains trimmed opaque text; original key encoding, wildcard semantics and row recording require manual verification. No arbitrary table/key input, generated TABKEY, CTS claim or standard TR_READ_COMM call is accepted. Changed/failed reads cannot produce an admission. Metadata matches still leave writeAdmission=blocked: no authority check, official E071K encoding, exact row recording, import, lock, maintenance API or release is attested or executed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,100}$"
+          },
+          "requestNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{3}K[A-Z0-9]{6}$"
+          },
+          "taskNumber": {
+            "$ref": "#/properties/requestNumber"
+          },
+          "unitText": {
+            "type": "object",
+            "properties": {
+              "unitKey": {
+                "type": "string"
+              },
+              "language": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              }
+            },
+            "required": [
+              "unitKey",
+              "language"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "connectionId",
+          "requestNumber",
+          "taskNumber"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "read_configuration_unit",
+      "description": "Read one exact internal, case-sensitive MSEHI unit key (1-3 characters) on w200/client 200. Reads pinned T006 scalar text projections plus one T006A language row; ISO language defaults to connection language and maps through pinned T002, without fallback or CUNIT conversion. Both value tables require MANDT=200. TEMP_VALUE/PRESS_VAL FLTP fields are explicitly omitted; returned trimmed SAP text is not a lossless full-row snapshot. Rechecks layouts/key metadata and repeats successful exact value/language reads; observed change, unavailable recheck, missing row/translation and query failure remain distinct. Optional expectedReadFingerprint compares only the returned projection and language, including observed absence; it cannot authorize or guard writes. Optional textReconciliation requires explicit ISO language and excludes expectedReadFingerprint: pass baselineReadFingerprint, complete baselineUnit/baselineText projections from the previous unit read or draft currentRead, plus the draft's MSEHT/MSEHL patch. Validates exact client/key and baseline fingerprint consistency before SAP reads; caller baseline remains untrusted historical input. Reuses one existing double-observation reader, compares proposed descriptions and all other included fields/aliases, distinguishes values_match/partial/unchanged/unexpected_changes/no_changes and unavailable/not_found/changed_during_read/target_mismatch. Never reports maintenance success or complete CTS evidence; omitted FLTP fields, other languages and business effects remain unknown. Default output/fingerprint unchanged. Invalid scope/extra fields refused before reads; only the reviewed empty-HTML fallback uses RFC_READ_TABLE. No configuration writes, preview/apply, business validation, CTS or generic allowlist expansion. Optional transport={requestNumber,taskNumber} requires textReconciliation and explicit ISO language. Calls the existing readonly inspector once with this target and combines only matching unit fingerprints/SAP languages. Changed unit versions retract reconciliation changes; failed/blocked/truncated CTS remain separate from text value status. CTS encoding, exact-row recording, import and maintenance success stay unverified. Nested inspector unit reads receive no transport or reconciliation controls; default adds no transport reads. Optional includeApiSnapshot=true requires explicit ISO language. Attests Z_ORVANTA_CFG_UNIT_READ source/interface and complete T006A layout before invoking its readonly full-row API once, then rechecks metadata. Returns a separate SAP-produced textVersion; disagreement with the projection retracts the row and version. Missing/unapproved API fails without fallback, version reconstruction, writes or GUI. Default adds no API calls; this option does not enable apply.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,100}$"
+          },
+          "unitKey": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "expectedReadFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "includeApiSnapshot": {
+            "type": "boolean"
+          },
+          "transport": {
+            "type": "object",
+            "properties": {
+              "requestNumber": {
+                "type": "string",
+                "pattern": "^[A-Z0-9]{3}K[A-Z0-9]{6}$"
+              },
+              "taskNumber": {
+                "$ref": "#/properties/transport/properties/requestNumber"
+              }
+            },
+            "required": [
+              "requestNumber",
+              "taskNumber"
+            ],
+            "additionalProperties": false
+          },
+          "textReconciliation": {
+            "type": "object",
+            "properties": {
+              "baselineReadFingerprint": {
+                "$ref": "#/properties/expectedReadFingerprint"
+              },
+              "baselineUnit": {
+                "type": "object",
+                "properties": {
+                  "MANDT": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "MSEHI": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "KZEX3": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "KZEX6": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "ANDEC": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "KZKEH": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "KZWOB": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "KZ1EH": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "KZ2EH": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "DIMID": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "ZAEHL": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "NENNR": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "EXP10": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "ADDKO": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "EXPON": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "DECAN": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "ISOCODE": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "PRIMARY": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "TEMP_UNIT": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "FAMUNIT": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "PRESS_UNIT": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "MANDT",
+                  "MSEHI",
+                  "KZEX3",
+                  "KZEX6",
+                  "ANDEC",
+                  "KZKEH",
+                  "KZWOB",
+                  "KZ1EH",
+                  "KZ2EH",
+                  "DIMID",
+                  "ZAEHL",
+                  "NENNR",
+                  "EXP10",
+                  "ADDKO",
+                  "EXPON",
+                  "DECAN",
+                  "ISOCODE",
+                  "PRIMARY",
+                  "TEMP_UNIT",
+                  "FAMUNIT",
+                  "PRESS_UNIT"
+                ],
+                "additionalProperties": false
+              },
+              "baselineText": {
+                "type": "object",
+                "properties": {
+                  "MANDT": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "SPRAS": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "MSEHI": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "MSEH3": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "MSEH6": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "MSEHT": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "MSEHL": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "MANDT",
+                  "SPRAS",
+                  "MSEHI",
+                  "MSEH3",
+                  "MSEH6",
+                  "MSEHT",
+                  "MSEHL"
+                ],
+                "additionalProperties": false
+              },
+              "patch": {
+                "type": "object",
+                "properties": {
+                  "MSEHT": {
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "MSEHL": {
+                    "type": "string",
+                    "maxLength": 30
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "baselineReadFingerprint",
+              "baselineUnit",
+              "baselineText",
+              "patch"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "connectionId",
+          "unitKey"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "prepared": {
+    "plan": {
+      "connectionId": "w200",
+      "unitKey": "KG",
+      "language": "ZH",
+      "requestNumber": "GR2K923429",
+      "taskNumber": "GR2K923430",
+      "operationId": "unit-native-stale-20261004063617121-r37",
+      "scenario": "native_locked_stale_version",
+      "functionName": "Z_ORVANTA_CFG_UNIT_APPLY",
+      "sourceFingerprint": "3c911f81bcb8910f8a74c049954f2ebf99e5a391a21dae20da85043cac3e4db5",
+      "interfaceFingerprint": "380294aeff5d634906c6ae4987f20bfda5d4feb58b9eab98e98a1068ef8ec62a",
+      "bodyFingerprint": "6063655e06ee6f25976bef89c10f75eb695843989913922ec04ee6f724e86588",
+      "beforeText": {
+        "MANDT": "200",
+        "SPRAS": "1",
+        "MSEHI": "KG",
+        "MSEH3": "KG",
+        "MSEH6": "公斤",
+        "MSEHT": "公斤",
+        "MSEHL": "千克"
+      },
+      "originalVersion": "42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+      "readFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+      "cts": {
+        "observed": {
+          "request": [
+            {
+              "TRKORR": "GR2K923429",
+              "TRFUNCTION": "W",
+              "TRSTATUS": "D",
+              "TARSYSTEM": "GR3",
+              "KORRDEV": "CUST",
+              "AS4USER": "WYS",
+              "AS4DATE": "20260901",
+              "AS4TIME": "110244",
+              "STRKORR": ""
+            }
+          ],
+          "requestClient": [
+            {
+              "TRKORR": "GR2K923429",
+              "CLIENT": "200",
+              "TARCLIENT": "",
+              "EXTENDED_STATE": "",
+              "OVERTAKER": ""
+            }
+          ],
+          "task": [
+            {
+              "TRKORR": "GR2K923430",
+              "TRFUNCTION": "Q",
+              "TRSTATUS": "D",
+              "TARSYSTEM": "",
+              "KORRDEV": "CUST",
+              "AS4USER": "WYS",
+              "AS4DATE": "20261004",
+              "AS4TIME": "100032",
+              "STRKORR": "GR2K923429"
+            }
+          ],
+          "taskClient": [
+            {
+              "TRKORR": "GR2K923430",
+              "CLIENT": "200",
+              "TARCLIENT": "",
+              "EXTENDED_STATE": "",
+              "OVERTAKER": ""
+            }
+          ]
+        },
+        "keys": {
+          "requestE071": [],
+          "requestE071K": [],
+          "taskE071": [
+            {
+              "TRKORR": "GR2K923430",
+              "AS4POS": "000002",
+              "PGMID": "R3TR",
+              "OBJECT": "TDAT",
+              "OBJ_NAME": "CUNI"
+            }
+          ],
+          "taskE071K": [
+            {
+              "TRKORR": "GR2K923430",
+              "PGMID": "R3TR",
+              "OBJECT": "TABU",
+              "OBJNAME": "T006A",
+              "AS4POS": "000001",
+              "MASTERTYPE": "TDAT",
+              "MASTERNAME": "CUNI",
+              "VIEWNAME": "",
+              "TABKEY": "2001KG"
+            }
+          ]
+        }
+      },
+      "inputParameters": {
+        "IV_UNIT_KEY": "KG",
+        "IV_LANGUAGE": "1",
+        "IV_EXPECTED_VERSION": "02a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+        "IV_SET_MSEHT": "",
+        "IV_MSEHT": "",
+        "IV_SET_MSEHL": "X",
+        "IV_MSEHL": "千克",
+        "IV_REQUEST": "GR2K923429",
+        "IV_TASK": "GR2K923430"
+      },
+      "expectedCode": "TEXT_VERSION_CHANGED",
+      "maximumNativeCalls": 1,
+      "planFingerprint": "8b6010d5e3fc99980ebd83543579d9b703eed698909481c88244972a455d82df",
+      "observedAt": "2026-10-04T06:36:28.442Z",
+      "nativeInvoked": false,
+      "executionAuthorized": false,
+      "locks": [
+        {
+          "argument": "*T006*",
+          "status": "no_observed_locks",
+          "code": null
+        },
+        {
+          "argument": "*GR2K923429*",
+          "status": "no_observed_locks",
+          "code": null
+        },
+        {
+          "argument": "*GR2K923430*",
+          "status": "no_observed_locks",
+          "code": null
+        }
+      ],
+      "warnings": [
+        "Preparation never authorizes a native command.",
+        "CTS is a bounded trimmed projection, not raw key/import proof.",
+        "Rechecked reads are not an atomic snapshot; later execution rechecks all preconditions."
+      ]
+    },
+    "dependencies": [
+      {
+        "functionName": "Z_ORVANTA_CFG_UNIT_APPLY",
+        "sourceFingerprint": "3c911f81bcb8910f8a74c049954f2ebf99e5a391a21dae20da85043cac3e4db5",
+        "interfaceFingerprint": "380294aeff5d634906c6ae4987f20bfda5d4feb58b9eab98e98a1068ef8ec62a"
+      },
+      {
+        "functionName": "Z_ORVANTA_CFG_UNIT_READ",
+        "sourceFingerprint": "8bf1eed7706b7ef4ab75a704febc77cd5fe91d619e63b69732652f8794d5e611",
+        "interfaceFingerprint": "0d68032d874fec10f48427070bb1120c46a0f1aa3bf5492c706f07a1bc0b8617"
+      },
+      {
+        "functionName": "UPDATE_T006A",
+        "sourceFingerprint": "b0b061b0ab46cc8b190e9ee33b5ef1e999955339a3776a8bbb9e49c6a741b1ac",
+        "interfaceFingerprint": "69ecde3d00ae343c5d84e09c0ba5f357e5890aced1840a525a0cdc87753f172b"
+      },
+      {
+        "functionName": "TR_REQ_CHECK_OBJECT",
+        "sourceFingerprint": "f63a79b41344d49023eb459031f27935322cc87e8d46279fc74911f6e3cda8db",
+        "interfaceFingerprint": "25fa14abfc543afcbb1cdc5595647e3e71fe9b9f6f584f921f6f27dd79cb51aa"
+      },
+      {
+        "functionName": "TRINT_APPEND_TO_COMM_ARRAYS",
+        "sourceFingerprint": "34a6d758f83c9460821ff95a74e9565bd89b4d6b548c7ea5a9d522fbd49a7611",
+        "interfaceFingerprint": "c834dc05f0a221e952fc3dec5c524c3c1b82186826a67b93819d40909f5f9fe7"
+      },
+      {
+        "functionName": "TR_REQ_CHECK_KEY",
+        "sourceFingerprint": "7229d95e82820ea4234517932fd1204c98ecca7b2a665d179baac8c3173739c8",
+        "interfaceFingerprint": "ab37b317e147fc297d0500bd74def2a19def5daf616d5ec79d0bc448ccb09738"
+      },
+      {
+        "functionName": "CALCULATE_HASH_FOR_CHAR",
+        "sourceFingerprint": "d6df1059f3e68d905f2577b097cca80177e04b04b1baa640f5719ff73a3bdd1b",
+        "interfaceFingerprint": "f1ba5060063ab3cb25cba923a58ec9ce8a36e0918a91d03a9fa8f681da90bad6"
+      }
+    ],
+    "manifestFingerprint": "5a8716ac134854a01bb661c7c8c75707f61bf6c12832eb1d3989d2627c8f09d8"
+  },
+  "mcpPlan": {
+    "connectionId": "w200",
+    "unitKey": "KG",
+    "language": "ZH",
+    "requestNumber": "GR2K923429",
+    "taskNumber": "GR2K923430",
+    "operationId": "unit-native-stale-20261004063617121-r37",
+    "scenario": "native_locked_stale_version",
+    "functionName": "Z_ORVANTA_CFG_UNIT_APPLY",
+    "sourceFingerprint": "3c911f81bcb8910f8a74c049954f2ebf99e5a391a21dae20da85043cac3e4db5",
+    "interfaceFingerprint": "380294aeff5d634906c6ae4987f20bfda5d4feb58b9eab98e98a1068ef8ec62a",
+    "bodyFingerprint": "6063655e06ee6f25976bef89c10f75eb695843989913922ec04ee6f724e86588",
+    "beforeText": {
+      "MANDT": "200",
+      "SPRAS": "1",
+      "MSEHI": "KG",
+      "MSEH3": "KG",
+      "MSEH6": "公斤",
+      "MSEHT": "公斤",
+      "MSEHL": "千克"
+    },
+    "originalVersion": "42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+    "readFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+    "cts": {
+      "observed": {
+        "request": [
+          {
+            "TRKORR": "GR2K923429",
+            "TRFUNCTION": "W",
+            "TRSTATUS": "D",
+            "TARSYSTEM": "GR3",
+            "KORRDEV": "CUST",
+            "AS4USER": "WYS",
+            "AS4DATE": "20260901",
+            "AS4TIME": "110244",
+            "STRKORR": ""
+          }
+        ],
+        "requestClient": [
+          {
+            "TRKORR": "GR2K923429",
+            "CLIENT": "200",
+            "TARCLIENT": "",
+            "EXTENDED_STATE": "",
+            "OVERTAKER": ""
+          }
+        ],
+        "task": [
+          {
+            "TRKORR": "GR2K923430",
+            "TRFUNCTION": "Q",
+            "TRSTATUS": "D",
+            "TARSYSTEM": "",
+            "KORRDEV": "CUST",
+            "AS4USER": "WYS",
+            "AS4DATE": "20261004",
+            "AS4TIME": "100032",
+            "STRKORR": "GR2K923429"
+          }
+        ],
+        "taskClient": [
+          {
+            "TRKORR": "GR2K923430",
+            "CLIENT": "200",
+            "TARCLIENT": "",
+            "EXTENDED_STATE": "",
+            "OVERTAKER": ""
+          }
+        ]
+      },
+      "keys": {
+        "requestE071": [],
+        "requestE071K": [],
+        "taskE071": [
+          {
+            "TRKORR": "GR2K923430",
+            "AS4POS": "000002",
+            "PGMID": "R3TR",
+            "OBJECT": "TDAT",
+            "OBJ_NAME": "CUNI"
+          }
+        ],
+        "taskE071K": [
+          {
+            "TRKORR": "GR2K923430",
+            "PGMID": "R3TR",
+            "OBJECT": "TABU",
+            "OBJNAME": "T006A",
+            "AS4POS": "000001",
+            "MASTERTYPE": "TDAT",
+            "MASTERNAME": "CUNI",
+            "VIEWNAME": "",
+            "TABKEY": "2001KG"
+          }
+        ]
+      }
+    },
+    "inputParameters": {
+      "IV_UNIT_KEY": "KG",
+      "IV_LANGUAGE": "1",
+      "IV_EXPECTED_VERSION": "02a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+      "IV_SET_MSEHT": "",
+      "IV_MSEHT": "",
+      "IV_SET_MSEHL": "X",
+      "IV_MSEHL": "千克",
+      "IV_REQUEST": "GR2K923429",
+      "IV_TASK": "GR2K923430"
+    },
+    "expectedCode": "TEXT_VERSION_CHANGED",
+    "maximumNativeCalls": 1,
+    "planFingerprint": "8b6010d5e3fc99980ebd83543579d9b703eed698909481c88244972a455d82df",
+    "observedAt": "2026-10-04T06:36:38.836Z",
+    "nativeInvoked": false,
+    "executionAuthorized": false,
+    "locks": [
+      {
+        "argument": "*T006*",
+        "status": "not_requested",
+        "code": null
+      },
+      {
+        "argument": "*GR2K923429*",
+        "status": "not_requested",
+        "code": null
+      },
+      {
+        "argument": "*GR2K923430*",
+        "status": "not_requested",
+        "code": null
+      }
+    ],
+    "warnings": [
+      "Preparation never authorizes a native command.",
+      "CTS is a bounded trimmed projection, not raw key/import proof.",
+      "Rechecked reads are not an atomic snapshot; later execution rechecks all preconditions."
+    ]
+  },
+  "execution": {
+    "result": {
+      "status": "native_stale_rejection_verified",
+      "nativeCalls": 1,
+      "nativeCode": "TEXT_VERSION_CHANGED",
+      "firstCause": null,
+      "automaticRetry": false,
+      "automaticRestore": false,
+      "valueUnchanged": true,
+      "ctsProjectionUnchanged": true,
+      "locksRechecked": true,
+      "rawReply": {
+        "outputs": {
+          "EV_CODE": "TEXT_VERSION_CHANGED",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_COMMITTED": "",
+          "EV_BEFORE_VERSION": "",
+          "EV_TEXT_VERSION": "",
+          "EV_TASK": "",
+          "EV_TABKEY": "",
+          "EV_MSGID": "",
+          "EV_MSGNO": "",
+          "ES_TEXT": {
+            "MANDT": "",
+            "SPRAS": "",
+            "MSEHI": "",
+            "MSEH3": "",
+            "MSEH6": "",
+            "MSEHT": "",
+            "MSEHL": ""
+          }
+        }
+      },
+      "receipt": {
+        "version": 2,
+        "status": "completed",
+        "connectionId": "w200",
+        "toolName": "probe_configuration_unit_native_stale",
+        "operationIdHash": "e2e40d75fdcaab8f3495780c16aa5cb3227c07bf6747dbfa8ad805a6a7931857",
+        "targetKeyHash": "7e69a2b31a65ca92605d62467cf0aa8ebf0e8ccdacf431856ae2e5e3563566c4",
+        "inputHash": "e05b5b62e45885eef409c7ae53d26f963153bc9e891546da8bb5243b21d8f038",
+        "preChangeSummary": "One approved native stale rejection probe; KG/ZH MSEHL remains the current value",
+        "sapPreChangeEvidence": {
+          "observedAt": "2026-10-04T06:36:48.999Z",
+          "target": "CONFIG:T006A:200:KG:ZH",
+          "exists": true,
+          "active": true,
+          "version": "42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+          "fingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+          "packageName": null,
+          "requestNumber": "GR2K923429",
+          "taskNumber": "GR2K923430",
+          "observationStatus": "complete",
+          "sources": [
+            "native_full_T006A",
+            "bounded_CTS_projection",
+            "approved_user_client_locks"
+          ],
+          "warnings": [
+            "Preparation never authorizes a native command.",
+            "CTS is a bounded trimmed projection, not raw key/import proof.",
+            "Rechecked reads are not an atomic snapshot; later execution rechecks all preconditions."
+          ]
+        },
+        "sapInvocationStarted": true,
+        "resultHash": "532579cdd211e8f4c6efa096a6c1f072230cea25aa4d81dd27b96729bbf5df9c",
+        "startedAt": "2026-10-04T06:36:49.003Z",
+        "finishedAt": "2026-10-04T06:36:59.192Z",
+        "durationMs": 10186,
+        "receiptHash": "22072691b124ee7a265ff2b19216e4476930e62ba48a76eb38b65284fd1dbb94",
+        "automaticRetry": false,
+        "automaticRollback": false,
+        "outcomeMayBeUnknown": false,
+        "localLockReleased": true,
+        "manualRecovery": "Read full row, CTS and locks independently; never retry or restore automatically"
+      }
+    },
+    "manifestFingerprint": "5a8716ac134854a01bb661c7c8c75707f61bf6c12832eb1d3989d2627c8f09d8",
+    "metrics": {
+      "startedAt": "2026-10-04T06:35:31.936Z",
+      "events": [
+        {
+          "at": "2026-10-04T06:36:18.595Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:18.745Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:18.891Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:19.034Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:19.185Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:19.357Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:19.737Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        },
+        {
+          "at": "2026-10-04T06:36:20.375Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:20.521Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:20.681Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:20.859Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:21.294Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:21.490Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:21.653Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:21.796Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:21.955Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:22.122Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:22.499Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:22.657Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:22.799Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:22.959Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:23.103Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:23.251Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:23.395Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:23.561Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:24.016Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:24.177Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:24.341Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:24.505Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:24.689Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:24.855Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:25.268Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:25.429Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:25.585Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:25.728Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:26.947Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:27.094Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:27.237Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:27.425Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:27.571Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:27.716Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:28.121Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        },
+        {
+          "at": "2026-10-04T06:36:29.788Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:29.942Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:30.101Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:30.259Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:30.402Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:30.545Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:30.919Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        },
+        {
+          "at": "2026-10-04T06:36:31.486Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:31.629Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:31.767Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:31.916Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:32.388Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:32.536Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:32.679Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:32.842Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:33.006Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:33.175Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:33.544Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:33.705Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:33.859Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:34.003Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:34.162Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:34.305Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:34.466Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:34.627Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:35.055Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:35.199Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:35.350Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:35.492Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:35.641Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:35.787Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:36.187Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:36.350Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:36.492Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:36.642Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:37.431Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:37.597Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:37.744Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:37.894Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:38.055Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:38.201Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:38.601Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        },
+        {
+          "at": "2026-10-04T06:36:39.385Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:39.534Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:39.682Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:39.841Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:40.001Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:40.142Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:40.514Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        },
+        {
+          "at": "2026-10-04T06:36:41.149Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:41.295Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:41.439Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:41.581Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:42.004Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:42.151Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:42.294Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:42.451Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:42.619Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:42.763Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:43.148Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:43.297Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:43.447Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:43.594Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:43.742Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:43.888Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:44.044Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:44.201Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:44.642Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:44.790Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:44.932Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:45.073Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:45.236Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:45.393Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:45.795Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:45.965Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:46.121Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:46.275Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:47.576Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:47.734Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:47.893Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:48.052Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:48.204Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:48.350Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:48.724Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        },
+        {
+          "at": "2026-10-04T06:36:49.047Z",
+          "kind": "native",
+          "functionName": "Z_ORVANTA_CFG_UNIT_APPLY",
+          "calls": 1
+        },
+        {
+          "at": "2026-10-04T06:36:49.586Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:49.731Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:49.873Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:50.019Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:50.167Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:50.307Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:50.680Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        },
+        {
+          "at": "2026-10-04T06:36:51.295Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:51.450Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:51.597Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:51.755Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:52.235Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:52.381Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:52.532Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:52.675Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:52.825Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:52.992Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:53.375Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:53.538Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:53.698Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:53.845Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:54.005Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:54.160Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:54.301Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:54.461Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:54.904Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:55.089Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:55.252Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:55.394Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:55.541Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:55.686Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:56.037Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:56.182Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:56.327Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:56.466Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:57.686Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:57.831Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:57.974Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:58.128Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:58.334Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:58.493Z",
+          "kind": "read",
+          "functionName": "RFC_READ_TABLE"
+        },
+        {
+          "at": "2026-10-04T06:36:58.897Z",
+          "kind": "read",
+          "functionName": "Z_ORVANTA_CFG_UNIT_READ"
+        }
+      ],
+      "nativeWriterCalls": 1
+    }
+  },
+  "status": "native_stale_rejection_verified",
+  "finishedAt": "2026-10-04T06:37:00.028Z"
+}

@@ -1,0 +1,303 @@
+{
+  "startedAt": "2026-10-04T04:39:19.983Z",
+  "ready": {
+    "pid": 58352,
+    "url": "http://127.0.0.1:1479/mcp",
+    "startedAt": "2026-10-04T04:35:46.051Z",
+    "revision": "r35",
+    "readOnly": true,
+    "allowedTools": [
+      "reconcile_configuration_unit_text",
+      "get_write_operation_status",
+      "get_runtime_info",
+      "read_configuration_unit"
+    ],
+    "manifestFingerprint": "7272807f52ea93581044ed7df932f8c601a54eb351ba726efea2aa31258fa477",
+    "historicalReceiptCopies": "r33/r34 exact bytes; originals remain unchanged"
+  },
+  "calls": [
+    {
+      "at": "2026-10-04T04:39:21.968Z",
+      "name": "read_configuration_unit",
+      "args": {
+        "connectionId": "w200",
+        "unitKey": "KG",
+        "language": "ZH",
+        "includeApiSnapshot": true
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"unitKey\": \"KG\",\n  \"keyFormat\": \"internal_MSEHI\",\n  \"status\": \"partial\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"unit\": {\n    \"table\": \"T006\",\n    \"status\": \"read\",\n    \"code\": null,\n    \"data\": {\n      \"MANDT\": \"200\",\n      \"MSEHI\": \"KG\",\n      \"KZEX3\": \"X\",\n      \"KZEX6\": \"X\",\n      \"ANDEC\": \"3\",\n      \"KZKEH\": \"X\",\n      \"KZWOB\": \"\",\n      \"KZ1EH\": \"\",\n      \"KZ2EH\": \"\",\n      \"DIMID\": \"MASS\",\n      \"ZAEHL\": \"1\",\n      \"NENNR\": \"1\",\n      \"EXP10\": \"0\",\n      \"ADDKO\": \"0.000000\",\n      \"EXPON\": \"0\",\n      \"DECAN\": \"0\",\n      \"ISOCODE\": \"KGM\",\n      \"PRIMARY\": \"X\",\n      \"TEMP_UNIT\": \"\",\n      \"FAMUNIT\": \"\",\n      \"PRESS_UNIT\": \"\"\n    }\n  },\n  \"text\": {\n    \"table\": \"T006A\",\n    \"status\": \"read\",\n    \"code\": null,\n    \"data\": {\n      \"MANDT\": \"200\",\n      \"SPRAS\": \"1\",\n      \"MSEHI\": \"KG\",\n      \"MSEH3\": \"KG\",\n      \"MSEH6\": \"公斤\",\n      \"MSEHT\": \"公斤\",\n      \"MSEHL\": \"千克\"\n    },\n    \"requestedLanguage\": \"ZH\",\n    \"sapLanguage\": \"1\",\n    \"fallbackUsed\": false\n  },\n  \"readFingerprint\": \"b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\n  \"comparison\": \"not_requested\",\n  \"coverage\": {\n    \"complete\": false,\n    \"includedFields\": {\n      \"T006\": [\n        \"MANDT\",\n        \"MSEHI\",\n        \"KZEX3\",\n        \"KZEX6\",\n        \"ANDEC\",\n        \"KZKEH\",\n        \"KZWOB\",\n        \"KZ1EH\",\n        \"KZ2EH\",\n        \"DIMID\",\n        \"ZAEHL\",\n        \"NENNR\",\n        \"EXP10\",\n        \"ADDKO\",\n        \"EXPON\",\n        \"DECAN\",\n        \"ISOCODE\",\n        \"PRIMARY\",\n        \"TEMP_UNIT\",\n        \"FAMUNIT\",\n        \"PRESS_UNIT\"\n      ],\n      \"T006A\": [\n        \"MANDT\",\n        \"SPRAS\",\n        \"MSEHI\",\n        \"MSEH3\",\n        \"MSEH6\",\n        \"MSEHT\",\n        \"MSEHL\"\n      ]\n    },\n    \"omittedFields\": {\n      \"T006\": [\n        \"TEMP_VALUE\",\n        \"PRESS_VAL\"\n      ],\n      \"T006A\": []\n    },\n    \"reason\": \"FLTP value decoding is not verified; no binary/numeric lossless snapshot is attested.\"\n  },\n  \"representation\": \"sap_text_trimmed\",\n  \"usableForWritePrecondition\": false,\n  \"evidence\": {\n    \"startedAt\": \"2026-10-04T04:39:20.100Z\",\n    \"finishedAt\": \"2026-10-04T04:39:21.691Z\",\n    \"sources\": [\n      {\n        \"table\": \"T006\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T002\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T006A\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T006\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T002\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T006A\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"definitionFingerprints\": {\n      \"T006\": \"f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7\",\n      \"T006A\": \"4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d\",\n      \"T002\": \"f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307\"\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"Internal case-sensitive unit key only; external display units and ISO codes are not converted through CUNIT.\",\n    \"Both value tables are constrained to client 200. Missing translation does not mean missing unit; read failures do not mean absence.\",\n    \"Read fingerprint covers returned text projections and one language only, including observed absence. It is not a complete row version, business validation or CTS/write authorization.\"\n  ],\n  \"apiSnapshot\": {\n    \"status\": \"read\",\n    \"code\": \"READ\",\n    \"readOnly\": true,\n    \"executable\": false,\n    \"saveAvailable\": false,\n    \"functionName\": \"Z_ORVANTA_CFG_UNIT_READ\",\n    \"data\": {\n      \"MANDT\": \"200\",\n      \"SPRAS\": \"1\",\n      \"MSEHI\": \"KG\",\n      \"MSEH3\": \"KG\",\n      \"MSEH6\": \"公斤\",\n      \"MSEHT\": \"公斤\",\n      \"MSEHL\": \"千克\"\n    },\n    \"textVersion\": \"42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734\",\n    \"versionScope\": \"SAP_GR2_200_full_T006A_row_v1\",\n    \"versionOrigin\": \"sap_sha256_fixed_width_utf8\",\n    \"bodyFingerprint\": \"2bd7a8f48be1f663cf04b4f821630981e9564dae09f8832f4973a75a48c9e60d\",\n    \"evidence\": {\n      \"functionReaderInvocations\": 2,\n      \"functionReaderInvocationLimit\": 2,\n      \"apiInvocations\": 1,\n      \"apiInvocationLimit\": 1\n    },\n    \"warning\": \"Text version is separate from the legacy readFingerprint; it neither authorizes writes nor proves CTS, locks or maintenance success.\"\n  }\n}"
+    },
+    {
+      "at": "2026-10-04T04:39:21.977Z",
+      "name": "get_write_operation_status",
+      "args": {
+        "connectionId": "w200",
+        "operationId": "spro-unit-save-20261004-r33"
+      },
+      "isError": false,
+      "response": "{\n  \"operationId\": \"spro-unit-save-20261004-r33\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"apply_configuration_unit_text\",\n  \"operationIdHash\": \"08577ef1656478ffad2ffce13f9727c0b867c695f793ea7fa7fd950b0d78cdd7\",\n  \"targetKeyHash\": \"7e69a2b31a65ca92605d62467cf0aa8ebf0e8ccdacf431856ae2e5e3563566c4\",\n  \"inputHash\": \"3d980d77aab352371a38f76c04896a3865d7c52fd0a5e1ec2aa171a2fed403b0\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"unit KG text in language ZH (client 200)\\\",\\\"requestedOperation\\\":\\\"apply_configuration_unit_text\\\",\\\"concurrencyGuard\\\":\\\"SAP full-row text version 42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734 and projection fingerprint b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\\\",\\\"transportNumber\\\":\\\"GR2K923429\\\",\\\"taskNumber\\\":\\\"GR2K923430\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-04T01:42:14.552Z\",\n    \"target\": \"unit KG text in language ZH (client 200)\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": \"42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734\",\n    \"fingerprint\": \"b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\n    \"packageName\": null,\n    \"requestNumber\": \"GR2K923429\",\n    \"taskNumber\": \"GR2K923430\",\n    \"observationStatus\": \"partial\",\n    \"sources\": [\n      \"read_function_module_interface\",\n      \"read_configuration_unit_native_snapshot\"\n    ],\n    \"warnings\": [\n      \"Pre-change read does not verify SAP modification authority, locks or exact CTS recording; the native command must check them.\"\n    ]\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"4095a40f5f4d97b4707ea566b5f962d14de983d402fe133af542a88ecf4bc203\",\n  \"startedAt\": \"2026-10-04T01:42:12.949Z\",\n  \"finishedAt\": \"2026-10-04T01:42:21.118Z\",\n  \"durationMs\": 8165,\n  \"receiptHash\": \"a0aae330365894a985af2ea47ee8723fbb9a9acd20b55bddc6889c57c8e6ebba\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back unit KG text in language ZH (client 200) from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+    },
+    {
+      "at": "2026-10-04T04:39:32.619Z",
+      "name": "reconcile_configuration_unit_text",
+      "args": {
+        "connectionId": "w200",
+        "operationId": "spro-unit-save-20261004-r33",
+        "originalInput": {
+          "unitKey": "KG",
+          "language": "ZH",
+          "expectedReadFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+          "expectedTextVersion": "42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+          "patch": {
+            "MSEHL": "千克（API验收）"
+          },
+          "requestNumber": "GR2K923429",
+          "taskNumber": "GR2K923430",
+          "acknowledgeConfigurationWrite": true
+        },
+        "beforeText": {
+          "MANDT": "200",
+          "SPRAS": "1",
+          "MSEHI": "KG",
+          "MSEH3": "KG",
+          "MSEH6": "公斤",
+          "MSEHT": "公斤",
+          "MSEHL": "千克"
+        },
+        "includeLocks": false
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"operationId\": \"spro-unit-save-20261004-r33\",\n  \"unitKey\": \"KG\",\n  \"language\": \"ZH\",\n  \"status\": \"observed_original\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"receiptModified\": false,\n  \"originalReceipt\": {\n    \"status\": \"failed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"apply_configuration_unit_text\",\n    \"operationIdHash\": \"08577ef1656478ffad2ffce13f9727c0b867c695f793ea7fa7fd950b0d78cdd7\",\n    \"targetKeyHash\": \"7e69a2b31a65ca92605d62467cf0aa8ebf0e8ccdacf431856ae2e5e3563566c4\",\n    \"inputHash\": \"3d980d77aab352371a38f76c04896a3865d7c52fd0a5e1ec2aa171a2fed403b0\",\n    \"receiptHash\": \"a0aae330365894a985af2ea47ee8723fbb9a9acd20b55bddc6889c57c8e6ebba\",\n    \"sapInvocationStarted\": true,\n    \"outcomeMayBeUnknown\": true,\n    \"sapPreChangeEvidence\": {\n      \"version\": \"42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734\",\n      \"fingerprint\": \"b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\n      \"requestNumber\": \"GR2K923429\",\n      \"taskNumber\": \"GR2K923430\",\n      \"observedAt\": \"2026-10-04T01:42:14.552Z\",\n      \"target\": \"unit KG text in language ZH (client 200)\",\n      \"exists\": true,\n      \"active\": true,\n      \"packageName\": null,\n      \"observationStatus\": \"partial\",\n      \"sources\": [\n        \"read_function_module_interface\",\n        \"read_configuration_unit_native_snapshot\"\n      ],\n      \"warnings\": [\n        \"Pre-change read does not verify SAP modification authority, locks or exact CTS recording; the native command must check them.\"\n      ]\n    },\n    \"version\": 2,\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"unit KG text in language ZH (client 200)\\\",\\\"requestedOperation\\\":\\\"apply_configuration_unit_text\\\",\\\"concurrencyGuard\\\":\\\"SAP full-row text version 42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734 and projection fingerprint b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\\\",\\\"transportNumber\\\":\\\"GR2K923429\\\",\\\"taskNumber\\\":\\\"GR2K923430\\\",\\\"automaticRollback\\\":false}\",\n    \"errorHash\": \"4095a40f5f4d97b4707ea566b5f962d14de983d402fe133af542a88ecf4bc203\",\n    \"startedAt\": \"2026-10-04T01:42:12.949Z\",\n    \"finishedAt\": \"2026-10-04T01:42:21.118Z\",\n    \"durationMs\": 8165,\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back unit KG text in language ZH (client 200) from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  },\n  \"historicalOutcome\": {\n    \"status\": \"unresolved\",\n    \"outcomeMayBeUnknown\": true,\n    \"warning\": \"Current original/requested values cannot prove whether this operation committed earlier or a later operation restored/changed them. The original receipt remains authoritative and unchanged.\"\n  },\n  \"value\": {\n    \"status\": \"observed_original\",\n    \"comparisonScope\": \"full_T006A_row\",\n    \"beforeVersion\": \"42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734\",\n    \"requestedVersion\": \"6c839c799686627eee0d15d3ef57f22f3f1fe1c7041bf04e34af8721e828d24a\",\n    \"current\": {\n      \"data\": {\n        \"MANDT\": \"200\",\n        \"SPRAS\": \"1\",\n        \"MSEHI\": \"KG\",\n        \"MSEH3\": \"KG\",\n        \"MSEH6\": \"公斤\",\n        \"MSEHT\": \"公斤\",\n        \"MSEHL\": \"千克\"\n      },\n      \"textVersion\": \"42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734\"\n    },\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"cts\": {\n    \"status\": \"target_projection_observed\",\n    \"taskMatches\": 1,\n    \"requestMatches\": 0,\n    \"requestNumber\": \"GR2K923429\",\n    \"taskNumber\": \"GR2K923430\",\n    \"representation\": \"bounded_trimmed_projection\",\n    \"exactRowRecording\": \"not_verified\",\n    \"importStatus\": \"not_checked\",\n    \"observation\": {\n      \"connectionId\": \"w200\",\n      \"client\": \"200\",\n      \"requestNumber\": \"GR2K923429\",\n      \"taskNumber\": \"GR2K923430\",\n      \"status\": \"metadata_matches\",\n      \"readOnly\": true,\n      \"saveAvailable\": false,\n      \"observed\": {\n        \"request\": [\n          {\n            \"TRKORR\": \"GR2K923429\",\n            \"TRFUNCTION\": \"W\",\n            \"TRSTATUS\": \"D\",\n            \"TARSYSTEM\": \"GR3\",\n            \"KORRDEV\": \"CUST\",\n            \"AS4USER\": \"WYS\",\n            \"AS4DATE\": \"20260901\",\n            \"AS4TIME\": \"110244\",\n            \"STRKORR\": \"\"\n          }\n        ],\n        \"requestClient\": [\n          {\n            \"TRKORR\": \"GR2K923429\",\n            \"CLIENT\": \"200\",\n            \"TARCLIENT\": \"\",\n            \"EXTENDED_STATE\": \"\",\n            \"OVERTAKER\": \"\"\n          }\n        ],\n        \"task\": [\n          {\n            \"TRKORR\": \"GR2K923430\",\n            \"TRFUNCTION\": \"Q\",\n            \"TRSTATUS\": \"D\",\n            \"TARSYSTEM\": \"\",\n            \"KORRDEV\": \"CUST\",\n            \"AS4USER\": \"WYS\",\n            \"AS4DATE\": \"20261004\",\n            \"AS4TIME\": \"100032\",\n            \"STRKORR\": \"GR2K923429\"\n          }\n        ],\n        \"taskClient\": [\n          {\n            \"TRKORR\": \"GR2K923430\",\n            \"CLIENT\": \"200\",\n            \"TARCLIENT\": \"\",\n            \"EXTENDED_STATE\": \"\",\n            \"OVERTAKER\": \"\"\n          }\n        ]\n      },\n      \"checks\": {\n        \"requestType\": true,\n        \"taskType\": true,\n        \"requestOpen\": true,\n        \"taskOpen\": true,\n        \"requestIsRoot\": true,\n        \"taskParent\": true,\n        \"taskOwnerMatchesConfiguredUser\": true,\n        \"requestClient\": true,\n        \"taskClient\": true,\n        \"requestCategory\": true,\n        \"taskCategory\": true,\n        \"transportTarget\": true\n      },\n      \"readFingerprint\": \"189a34a2bca5a9afcc78bbfee6316e95f6eb966ac1942494b9ee205806c9986d\",\n      \"keyRecording\": {\n        \"status\": \"table_entries_observed\",\n        \"code\": null,\n        \"officialEncoding\": \"not_verified\",\n        \"exactRowRecording\": \"not_verified\",\n        \"importStatus\": \"not_checked\",\n        \"target\": {\n          \"client\": \"200\",\n          \"unitKey\": \"KG\",\n          \"language\": \"ZH\",\n          \"sapLanguage\": \"1\"\n        },\n        \"E071KReadback\": \"bounded_trimmed_projection\",\n        \"representation\": \"sap_text_trimmed\",\n        \"observed\": {\n          \"requestE071\": [],\n          \"requestE071K\": [],\n          \"taskE071\": [\n            {\n              \"TRKORR\": \"GR2K923430\",\n              \"AS4POS\": \"000002\",\n              \"PGMID\": \"R3TR\",\n              \"OBJECT\": \"TDAT\",\n              \"OBJ_NAME\": \"CUNI\"\n            }\n          ],\n          \"taskE071K\": [\n            {\n              \"TRKORR\": \"GR2K923430\",\n              \"PGMID\": \"R3TR\",\n              \"OBJECT\": \"TABU\",\n              \"OBJNAME\": \"T006A\",\n              \"AS4POS\": \"000001\",\n              \"MASTERTYPE\": \"TDAT\",\n              \"MASTERNAME\": \"CUNI\",\n              \"VIEWNAME\": \"\",\n              \"TABKEY\": \"2001KG\"\n            }\n          ]\n        },\n        \"readFingerprint\": \"d2d93741c6553c0c0362f9abc9a7ee7f9476bcb349b5d6709dfaac8fb493331c\",\n        \"unitReadFingerprint\": \"b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\n        \"readerLimits\": {\n          \"entryReaderInvocations\": 8,\n          \"entryReaderInvocationLimit\": 8,\n          \"maximumRowsPerProjection\": 32,\n          \"unitReaderInvocations\": 2,\n          \"unitReaderInvocationLimit\": 2\n        },\n        \"manualChecks\": [\n          \"Compare original untrimmed E071K TABKEY in the SAP transport organizer with the exact client/SAP language/internal unit key; no key encoder or decoder is attested.\",\n          \"Verify E071 R3TR/TDAT/CUNI and E071K TABU/T006A master linkage, wildcard/generalized keys and update-task result. A trimmed key or table-level entry is not exact-row recording proof.\",\n          \"Verify actual import and target values separately; request/task or key entry existence does not prove target configuration took effect.\"\n        ]\n      },\n      \"authorization\": \"not_attested\",\n      \"maintenanceApi\": \"not_verified\",\n      \"writeAdmission\": \"blocked\",\n      \"evidence\": {\n        \"startedAt\": \"2026-10-04T04:39:23.792Z\",\n        \"finishedAt\": \"2026-10-04T04:39:30.830Z\",\n        \"sources\": [\n          {\n            \"table\": \"E070\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E070C\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E070\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E070C\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071\",\n            \"status\": \"empty\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 0,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071K\",\n            \"status\": \"empty\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 0,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071K\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071\",\n            \"status\": \"empty\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 0,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071K\",\n            \"status\": \"empty\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 0,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E071K\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E070\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E070C\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E070\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          },\n          {\n            \"table\": \"E070C\",\n            \"status\": \"ok\",\n            \"method\": \"rfc_read_table\",\n            \"returnedCount\": 1,\n            \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n          }\n        ],\n        \"warnings\": [\n          \"E071: empty\",\n          \"E071K: empty\",\n          \"E071: empty\",\n          \"E071K: empty\"\n        ],\n        \"definitionsRechecked\": true,\n        \"snapshot\": false\n      },\n      \"warnings\": [\n        \"W is a Customizing request, Q is a Customizing task; K is Workbench. Protected/releasing/released, local-target and other types are not admitted.\",\n        \"Only exact request/task metadata is compared twice. Missing client records remain unknown; no inheritance is guessed. Owner match is against configured user, not an authority check.\",\n        \"Metadata matches do not attest object recording, E071K encoding, locks, business validation or an executable maintenance API. No request/task creation, release or recording.\"\n      ]\n    }\n  },\n  \"locks\": {\n    \"status\": \"not_requested\",\n    \"configuredUsername\": \"wys\",\n    \"scope\": \"configured_user_current_client_three_argument_filters\",\n    \"observations\": [],\n    \"warning\": \"These optional observations do not prove system-wide contention absence and do not acquire or release locks.\"\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-04T04:39:21.984Z\",\n    \"finishedAt\": \"2026-10-04T04:39:32.616Z\",\n    \"receiptRechecked\": true,\n    \"unitReaderInvocations\": 2,\n    \"ctsReaderInvocations\": 1,\n    \"lockReaderInvocations\": 0,\n    \"observations\": [\n      {\n        \"reader\": \"unit_before\",\n        \"startedAt\": \"2026-10-04T04:39:21.984Z\",\n        \"finishedAt\": \"2026-10-04T04:39:23.791Z\",\n        \"status\": \"returned\",\n        \"code\": null\n      },\n      {\n        \"reader\": \"cts\",\n        \"startedAt\": \"2026-10-04T04:39:23.791Z\",\n        \"finishedAt\": \"2026-10-04T04:39:30.830Z\",\n        \"status\": \"returned\",\n        \"code\": null\n      },\n      {\n        \"reader\": \"unit_after\",\n        \"startedAt\": \"2026-10-04T04:39:30.830Z\",\n        \"finishedAt\": \"2026-10-04T04:39:32.614Z\",\n        \"status\": \"returned\",\n        \"code\": null\n      },\n      {\n        \"reader\": \"receipt_after\",\n        \"startedAt\": \"2026-10-04T04:39:32.614Z\",\n        \"finishedAt\": \"2026-10-04T04:39:32.616Z\",\n        \"status\": \"returned\",\n        \"code\": null\n      }\n    ]\n  },\n  \"warnings\": [\n    \"Rechecked observations are not an atomic SAP snapshot or commit/rollback proof.\",\n    \"CTS projection absence does not exclude generalized/wildcard keys or prove that no historical recording occurred.\",\n    \"No retry, restoration, CTS append/removal/release or receipt update was performed.\"\n  ]\n}"
+    },
+    {
+      "at": "2026-10-04T04:39:32.628Z",
+      "name": "get_write_operation_status",
+      "args": {
+        "connectionId": "w200",
+        "operationId": "spro-unit-save-20261004-r33"
+      },
+      "isError": false,
+      "response": "{\n  \"operationId\": \"spro-unit-save-20261004-r33\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"apply_configuration_unit_text\",\n  \"operationIdHash\": \"08577ef1656478ffad2ffce13f9727c0b867c695f793ea7fa7fd950b0d78cdd7\",\n  \"targetKeyHash\": \"7e69a2b31a65ca92605d62467cf0aa8ebf0e8ccdacf431856ae2e5e3563566c4\",\n  \"inputHash\": \"3d980d77aab352371a38f76c04896a3865d7c52fd0a5e1ec2aa171a2fed403b0\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"unit KG text in language ZH (client 200)\\\",\\\"requestedOperation\\\":\\\"apply_configuration_unit_text\\\",\\\"concurrencyGuard\\\":\\\"SAP full-row text version 42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734 and projection fingerprint b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\\\",\\\"transportNumber\\\":\\\"GR2K923429\\\",\\\"taskNumber\\\":\\\"GR2K923430\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-04T01:42:14.552Z\",\n    \"target\": \"unit KG text in language ZH (client 200)\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": \"42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734\",\n    \"fingerprint\": \"b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\n    \"packageName\": null,\n    \"requestNumber\": \"GR2K923429\",\n    \"taskNumber\": \"GR2K923430\",\n    \"observationStatus\": \"partial\",\n    \"sources\": [\n      \"read_function_module_interface\",\n      \"read_configuration_unit_native_snapshot\"\n    ],\n    \"warnings\": [\n      \"Pre-change read does not verify SAP modification authority, locks or exact CTS recording; the native command must check them.\"\n    ]\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"4095a40f5f4d97b4707ea566b5f962d14de983d402fe133af542a88ecf4bc203\",\n  \"startedAt\": \"2026-10-04T01:42:12.949Z\",\n  \"finishedAt\": \"2026-10-04T01:42:21.118Z\",\n  \"durationMs\": 8165,\n  \"receiptHash\": \"a0aae330365894a985af2ea47ee8723fbb9a9acd20b55bddc6889c57c8e6ebba\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back unit KG text in language ZH (client 200) from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+    }
+  ],
+  "cases": [],
+  "assertions": [],
+  "errors": [
+    "Expected values to be strictly deep-equal:\n+ actual - expected\n... Skipped lines\n\n  {\n    automaticRetry: false,\n    automaticRollback: false,\n    connectionId: 'w200',\n    durationMs: 8165,\n...\n    manualRecovery: 'Read back unit KG text in language ZH (client 200) from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.',\n-   operationId: 'spro-unit-save-20261004-r33',\n    operationIdHash: '08577ef1656478ffad2ffce13f9727c0b867c695f793ea7fa7fd950b0d78cdd7',\n    outcomeMayBeUnknown: true,\n    preChangeSummary: '{\"target\":\"unit KG text in language ZH (client 200)\",\"requestedOperation\":\"apply_configuration_unit_text\",\"concurrencyGuard\":\"SAP full-row text version 42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734 and projection fingerprint b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\"transportNumber\":\"GR2K923429\",\"taskNumber\":\"GR2K923430\",\"automaticRollback\":false}',\n    receiptHash: 'a0aae330365894a985af2ea47ee8723fbb9a9acd20b55bddc6889c57c8e6ebba',\n    sapInvocationStarted: true,\n"
+  ],
+  "nativeWriterCalls": 0,
+  "surface": [
+    {
+      "name": "get_runtime_info",
+      "readOnly": true
+    },
+    {
+      "name": "get_write_operation_status",
+      "readOnly": true
+    },
+    {
+      "name": "reconcile_configuration_unit_text",
+      "readOnly": true
+    },
+    {
+      "name": "read_configuration_unit",
+      "readOnly": true
+    }
+  ],
+  "baseline": {
+    "connectionId": "w200",
+    "client": "200",
+    "unitKey": "KG",
+    "keyFormat": "internal_MSEHI",
+    "status": "partial",
+    "readOnly": true,
+    "saveAvailable": false,
+    "unit": {
+      "table": "T006",
+      "status": "read",
+      "code": null,
+      "data": {
+        "MANDT": "200",
+        "MSEHI": "KG",
+        "KZEX3": "X",
+        "KZEX6": "X",
+        "ANDEC": "3",
+        "KZKEH": "X",
+        "KZWOB": "",
+        "KZ1EH": "",
+        "KZ2EH": "",
+        "DIMID": "MASS",
+        "ZAEHL": "1",
+        "NENNR": "1",
+        "EXP10": "0",
+        "ADDKO": "0.000000",
+        "EXPON": "0",
+        "DECAN": "0",
+        "ISOCODE": "KGM",
+        "PRIMARY": "X",
+        "TEMP_UNIT": "",
+        "FAMUNIT": "",
+        "PRESS_UNIT": ""
+      }
+    },
+    "text": {
+      "table": "T006A",
+      "status": "read",
+      "code": null,
+      "data": {
+        "MANDT": "200",
+        "SPRAS": "1",
+        "MSEHI": "KG",
+        "MSEH3": "KG",
+        "MSEH6": "公斤",
+        "MSEHT": "公斤",
+        "MSEHL": "千克"
+      },
+      "requestedLanguage": "ZH",
+      "sapLanguage": "1",
+      "fallbackUsed": false
+    },
+    "readFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+    "comparison": "not_requested",
+    "coverage": {
+      "complete": false,
+      "includedFields": {
+        "T006": [
+          "MANDT",
+          "MSEHI",
+          "KZEX3",
+          "KZEX6",
+          "ANDEC",
+          "KZKEH",
+          "KZWOB",
+          "KZ1EH",
+          "KZ2EH",
+          "DIMID",
+          "ZAEHL",
+          "NENNR",
+          "EXP10",
+          "ADDKO",
+          "EXPON",
+          "DECAN",
+          "ISOCODE",
+          "PRIMARY",
+          "TEMP_UNIT",
+          "FAMUNIT",
+          "PRESS_UNIT"
+        ],
+        "T006A": [
+          "MANDT",
+          "SPRAS",
+          "MSEHI",
+          "MSEH3",
+          "MSEH6",
+          "MSEHT",
+          "MSEHL"
+        ]
+      },
+      "omittedFields": {
+        "T006": [
+          "TEMP_VALUE",
+          "PRESS_VAL"
+        ],
+        "T006A": []
+      },
+      "reason": "FLTP value decoding is not verified; no binary/numeric lossless snapshot is attested."
+    },
+    "representation": "sap_text_trimmed",
+    "usableForWritePrecondition": false,
+    "evidence": {
+      "startedAt": "2026-10-04T04:39:20.100Z",
+      "finishedAt": "2026-10-04T04:39:21.691Z",
+      "sources": [
+        {
+          "table": "T006",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T002",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T006A",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T006",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T002",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T006A",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        }
+      ],
+      "warnings": [],
+      "definitionFingerprints": {
+        "T006": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7",
+        "T006A": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d",
+        "T002": "f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307"
+      },
+      "definitionsRechecked": true,
+      "valuesRechecked": true,
+      "snapshot": false
+    },
+    "warnings": [
+      "Internal case-sensitive unit key only; external display units and ISO codes are not converted through CUNIT.",
+      "Both value tables are constrained to client 200. Missing translation does not mean missing unit; read failures do not mean absence.",
+      "Read fingerprint covers returned text projections and one language only, including observed absence. It is not a complete row version, business validation or CTS/write authorization."
+    ],
+    "apiSnapshot": {
+      "status": "read",
+      "code": "READ",
+      "readOnly": true,
+      "executable": false,
+      "saveAvailable": false,
+      "functionName": "Z_ORVANTA_CFG_UNIT_READ",
+      "data": {
+        "MANDT": "200",
+        "SPRAS": "1",
+        "MSEHI": "KG",
+        "MSEH3": "KG",
+        "MSEH6": "公斤",
+        "MSEHT": "公斤",
+        "MSEHL": "千克"
+      },
+      "textVersion": "42a282a178d6bf505fa25a2883ab727c11914746623d0b3c86845f1fa70c6734",
+      "versionScope": "SAP_GR2_200_full_T006A_row_v1",
+      "versionOrigin": "sap_sha256_fixed_width_utf8",
+      "bodyFingerprint": "2bd7a8f48be1f663cf04b4f821630981e9564dae09f8832f4973a75a48c9e60d",
+      "evidence": {
+        "functionReaderInvocations": 2,
+        "functionReaderInvocationLimit": 2,
+        "apiInvocations": 1,
+        "apiInvocationLimit": 1
+      },
+      "warning": "Text version is separate from the legacy readFingerprint; it neither authorizes writes nor proves CTS, locks or maintenance success."
+    }
+  },
+  "status": "failed",
+  "finishedAt": "2026-10-04T04:39:32.630Z"
+}

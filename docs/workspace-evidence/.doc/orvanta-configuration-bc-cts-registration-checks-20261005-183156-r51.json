@@ -1,0 +1,84 @@
+{
+  "at": "2026-10-05T18:31:56+08:00",
+  "status": "Passed",
+  "scope": "CTS readonly acceptance and evidence registration only",
+  "head": "775ae25980f2988e1f84f11d71409592d8bc4063",
+  "branch": "main",
+  "commands": [
+    {
+      "at": "2026-10-05T10:27:39.999Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "node_modules/typescript/bin/tsc",
+        "--outDir",
+        "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r51\\verification-runtime/dist"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T10:27:40.436Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/generate-tool-index.mjs",
+        "--check"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r51\\verification-runtime",
+      "exitCode": 0,
+      "stdout": "helper capabilities consistent: 38 capabilities over 67 tools\nhelper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool\nbootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared\ntool index consistent: 199 tools, 130 read-only, 12 groups\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T10:27:40.503Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/generate-ops-matrix.mjs",
+        "--check"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r51\\verification-runtime",
+      "exitCode": 0,
+      "stdout": "docs/ops-acceptance-matrix.md is current (15 families)\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T10:27:40.628Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "scripts/verify-headless.mjs",
+        "--source-only"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone",
+      "exitCode": 0,
+      "stdout": "Headless verification PASS (1 tree(s), no VS Code host dependency)\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-05T10:27:41.046Z",
+      "cmd": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "dist/test/verification-registry.test.js"
+      ],
+      "cwd": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\.cache\\spro-r51\\verification-runtime",
+      "exitCode": 0,
+      "stdout": "✔ every tool in the index has exactly one verification entry, with no unknown names (25.1618ms)\n✔ the registry declares only known field values (0.6163ms)\n✔ verified and failed entries cite evidence that actually exists on disk (37.273ms)\n✔ unverified entries claim neither evidence nor an attempt time (0.3384ms)\n✔ a runtime failure is an observation and a static failure is a proof (0.2945ms)\n✔ R-20's four tools stay recorded with the state their evidence supports (0.1437ms)\n✔ a length fix alone never counts as evidence of success (0.1455ms)\n✔ controlled writes must name the object they were written to (19.5996ms)\n✔ number range runtime evidence proves fresh create and prior update while preserving historical unknown (3.6455ms)\n✔ unit description write evidence contains completed save and restoration with real key readback (2.9828ms)\n✔ unit reconciliation evidence retains real unknown receipts and performs no native writes (2.1917ms)\n✔ the method states what kind of SAP operation the tool actually performs (0.4319ms)\n✔ the availability-without-evidence metric is derived, not asserted (0.4769ms)\n✔ notes and availabilityBasis agree about the protocol-only weakness, in both directions (0.7808ms)\n✔ MUTATION: notes contradicting the basis are caught in both directions (0.3554ms)\n✔ platform-unsupported is a claim too, and must carry evidence (2.0998ms)\n✔ availability and verification status stay orthogonal (0.4587ms)\n✔ no entry claims protocol-only without a helper to carry that protocol (0.222ms)\n✔ the protocol-only residual stays visible and countable (0.162ms)\n✔ MUTATION: a verified entry pointing at a missing file must be rejected (0.6924ms)\n✔ MUTATION: a duplicate and an unknown tool are both rejected (0.4929ms)\n✔ MUTATION: an unverified entry claiming an attempt time is rejected (0.0867ms)\n✔ MUTATION: a static failure claiming an attempt time is rejected (0.44ms)\n✔ MUTATION: a runtime failure without an attempt time is rejected (0.286ms)\n✔ MUTATION: a failed entry without a failure basis is rejected (0.2811ms)\n✔ native BC before-state evidence contains named public reads and empty native rejections (3.4674ms)\n✔ native BC preview evidence proves conversion, empty refusals and unchanged target (1.4824ms)\n✔ native CUNI route evidence proves metadata scope without activation (1.3016ms)\n✔ native CUNI guard evidence binds eight related keys without configuration writes (1.3514ms)\n✔ unified BC preflight evidence covers nineteen complete fixed keys without activation (2.9662ms)\n✔ native CTS evidence binds complete repeated buffers without claiming recovery or string-key coverage (1.2323ms)\n✔ the registry records the honest gap rather than inflating it (105.9786ms)\nℹ tests 32\nℹ suites 0\nℹ pass 32\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 365.4916\n",
+      "stderr": ""
+    }
+  ],
+  "configurationWrites": 0,
+  "configurationCtsWrites": 0,
+  "stagedPreserved": true,
+  "sharedServiceRestarted": false,
+  "defaultDistPreserved": true,
+  "ctsRuntimeRetained": {
+    "pid": 61280,
+    "url": "http://127.0.0.1:1280/mcp",
+    "allowedTools": [
+      "read_configuration_bc_cts_snapshot"
+    ],
+    "manifestFingerprint": "2144ccc34bacf2945c4fbdbef76d1581b8d14cfeb0542823bd6713af21b052ec",
+    "at": "2026-10-05T10:20:10.128Z"
+  }
+}

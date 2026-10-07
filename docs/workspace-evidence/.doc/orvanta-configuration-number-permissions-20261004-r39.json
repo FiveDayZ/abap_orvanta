@@ -1,0 +1,50 @@
+{
+  "startedAt": "2026-10-04T07:08:56.389Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "pattern": "*SNUM*",
+        "types": [
+          "PROG"
+        ],
+        "maxResults": 30
+      },
+      "isError": false,
+      "response": "Found 17 ABAP objects matching \"*SNUM*\":\n\n• %H_SNUM (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/%25h_snum\n  ADT: adt://w200/sap/bc/adt/programs/programs/%25h_snum\n\n• FM06PF03_LESEN_ADRESSNUMMER (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/fm06pf03_lesen_adressnummer\n  ADT: adt://w200/sap/bc/adt/programs/includes/fm06pf03_lesen_adressnummer\n\n• MM03MFK0_KALKULATIONSNUMMER (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/mm03mfk0_kalkulationsnummer\n  ADT: adt://w200/sap/bc/adt/programs/includes/mm03mfk0_kalkulationsnummer\n\n• MM61XF20_READ_SNUM (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/mm61xf20_read_snum\n  ADT: adt://w200/sap/bc/adt/programs/includes/mm61xf20_read_snum\n\n• MSNUMF01 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumf01\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumf01\n\n• MSNUMH10 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumh10\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumh10\n\n• MSNUMI10 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumi10\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumi10\n\n• MSNUMI99 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumi99\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumi99\n\n• MSNUMLST (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumlst\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumlst\n\n• MSNUMO10 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumo10\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumo10\n\n• MSNUMO99 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumo99\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumo99\n\n• MSNUMTOP (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumtop\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumtop\n\n• MSNUMV10 (PROG/I)\n  \n  Package: \n  URI: /sap/bc/adt/programs/includes/msnumv10\n  ADT: adt://w200/sap/bc/adt/programs/includes/msnumv10\n\n• REPORT_VIEW_MODPERSNUM (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/report_view_modpersnum\n  ADT: adt://w200/sap/bc/adt/programs/programs/report_view_modpersnum\n\n• RSNUMCCM (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/rsnumccm\n  ADT: adt://w200/sap/bc/adt/programs/programs/rsnumccm\n\n• RSNUMHOT (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/rsnumhot\n  ADT: adt://w200/sap/bc/adt/programs/programs/rsnumhot\n\n• SAPMSNUM (PROG/P)\n  \n  Package: \n  URI: /sap/bc/adt/programs/programs/sapmsnum\n  ADT: adt://w200/sap/bc/adt/programs/programs/sapmsnum"
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "SAPMSNUM",
+        "objectType": "PROG",
+        "startLine": 1,
+        "lineCount": 1000
+      },
+      "isError": false,
+      "response": "Source from SAPMSNUM (lines 1-14 of 14, 14 lines retrieved):\n\n```abap\n************************************************************\n* Programm SAPMSNUM                                        *\n* Nummernkreispflege                                       *\n* parametrisierbare Transaktion zum Aufruf der Pflege      *\n* von Nummernkreise beliebiger Objekte                     *\n************************************************************\nINCLUDE MSNUMTOP.\ninclude szn_common_forms.\nINCLUDE MSNUMO10.             \"Dynpro 100 Einstiegsbild\nINCLUDE MSNUMI10.             \"Dynpro 100 Einstiegsbild\nINCLUDE MSNUMH10.             \" OHP Online Help für Unterobjekte\nINCLUDE MSNUMV10.             \" OVP Online Values für Unterobjekte\nINCLUDE MSNUMF01.             \"Formroutinen\n\n```\n\nFull Source SHA-256: ca385aad703daa441476b9e13070a124e2ea6be6b6b004aea00d9d3de6010276\nURI: /sap/bc/adt/programs/programs/sapmsnum/source/main\n\nEnhancement metadata unavailable (unsupported)."
+    },
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "pattern": "NUMBER_RANGE*AUTH*",
+        "types": [
+          "FUNC"
+        ],
+        "maxResults": 20
+      },
+      "isError": false,
+      "response": "No ABAP objects found matching pattern: NUMBER_RANGE*AUTH*"
+    },
+    {
+      "name": "read_ddic_data_element",
+      "args": {
+        "objectName": "NRBUFFER"
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"dataElement\",\n  \"objectName\": \"NRBUFFER\",\n  \"packageName\": \"SZN\",\n  \"version\": \"19931130084205\",\n  \"fingerprint\": \"a8b76554d52e255a1600bd1691b3721a69e382c8dd1b8b552a9874c5cd86b521\",\n  \"definition\": {\n    \"description\": \"缓冲区标志\",\n    \"domainName\": \"CHAR1\",\n    \"heading\": \"\",\n    \"short\": \"缓冲\",\n    \"medium\": \"缓冲\",\n    \"long\": \"缓冲\"\n  }\n}"
+    }
+  ],
+  "finishedAt": "2026-10-04T07:09:00.142Z"
+}

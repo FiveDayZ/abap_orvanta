@@ -1,0 +1,79 @@
+{
+  "startedAt": "2026-09-09T07:47:21.555Z",
+  "scope": "Read-only inventory; no RFC execution, configuration or installation",
+  "checks": [
+    {
+      "name": "get_connected_systems",
+      "args": {},
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Connected SAP systems: w200"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "connectionId": "w200",
+        "pattern": "SABP_COMP_PROCS_E",
+        "types": [
+          "FUGR"
+        ],
+        "maxResults": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No ABAP objects found matching pattern: SABP_COMP_PROCS_E"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "connectionId": "w200",
+        "pattern": "SCA_REMOTE_DATA_ACCESS",
+        "types": [
+          "FUGR"
+        ],
+        "maxResults": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No ABAP objects found matching pattern: SCA_REMOTE_DATA_ACCESS"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_abap_objects",
+      "args": {
+        "connectionId": "w200",
+        "pattern": "SCA_REMOTE*",
+        "types": [
+          "FUNC"
+        ],
+        "maxResults": 20
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No ABAP objects found matching pattern: SCA_REMOTE*"
+          }
+        ]
+      }
+    }
+  ],
+  "server": {
+    "name": "orvanta",
+    "version": "0.36.24"
+  }
+}

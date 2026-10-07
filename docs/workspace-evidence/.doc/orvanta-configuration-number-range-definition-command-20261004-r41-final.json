@@ -1,0 +1,26 @@
+{
+  "connectionId": "w200",
+  "packageName": "ZABAP",
+  "transportNumber": "GR2K923472",
+  "operationId": "cfg-r41-create-test-number-range-with-percentage",
+  "objectName": "ZORVCFGNR",
+  "description": "ORVANTA configuration API acceptance only",
+  "properties": {
+    "DOMLEN": "NUMC20",
+    "YEARIND": "",
+    "BUFFER": "",
+    "DTELSOBJ": "",
+    "NRTAB": "",
+    "TEXTIND": "",
+    "RFCDEST": "",
+    "NRCHECKASCII": "",
+    "PERCENTAGE": "10"
+  },
+  "texts": [
+    {
+      "language": "1",
+      "text": "ORVANTA配置API专用验收号码范围",
+      "shortText": "配置API验收"
+    }
+  ]
+}

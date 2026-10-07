@@ -1,0 +1,56 @@
+{
+  "observedAt": "2026-10-04T11:39:15.965Z",
+  "workdir": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone",
+  "commands": [
+    {
+      "command": "node node_modules/typescript/bin/tsc -p .cache/spro-r41b/runtime/tsconfig.json",
+      "exitCode": 0,
+      "evidence": "compile-table-final.txt; compile-registry-final.txt"
+    },
+    {
+      "command": "node --test .cache/spro-r41b/runtime/dist/test/configuration-number-range-command.test.js .cache/spro-r41b/runtime/dist/test/configuration-number-range-mcp.test.js .cache/spro-r41b/runtime/dist/test/configuration-number-range-native.test.js .cache/spro-r41b/runtime/dist/test/configuration-number-range-receipt.test.js .cache/spro-r41b/runtime/dist/test/configuration-number-range-reconcile.test.js .cache/spro-r41b/runtime/dist/test/configuration-number-range-object-language.test.js",
+      "exitCode": 0,
+      "result": "38/38",
+      "evidence": "table-final-tests.txt"
+    },
+    {
+      "command": "node --test .cache/spro-r41b/runtime/dist/test/tools.test.js .cache/spro-r41b/runtime/dist/test/protocol.test.js .cache/spro-r41b/runtime/dist/test/write-operation-receipts.test.js .cache/spro-r41b/runtime/dist/test/tool-profile.test.js .cache/spro-r41b/runtime/dist/test/verification-registry.test.js",
+      "exitCode": 0,
+      "result": "216/216 before final registry update",
+      "evidence": "regression-final-tests.txt"
+    },
+    {
+      "command": "node --test .cache/spro-r41b/runtime/dist/test/verification-registry.test.js .cache/spro-r41b/runtime/dist/test/tool-profile.test.js",
+      "environment": {
+        "ORVANTA_EVIDENCE_ROOT": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone"
+      },
+      "exitCode": 0,
+      "result": "33/33 after registry update; overlaps prior tests",
+      "evidence": "registry-final-tests.txt"
+    },
+    {
+      "command": "node --test .cache/spro-r41b/guard.test.mjs",
+      "exitCode": 0,
+      "result": "6/6",
+      "evidence": "guard-final-tests.txt"
+    },
+    {
+      "command": "node .cache/spro-r41b/runtime/scripts/generate-tool-index.mjs --check",
+      "exitCode": 0,
+      "evidence": "index-check.txt"
+    },
+    {
+      "command": "node scripts/verify-headless.mjs --source-only",
+      "exitCode": 0,
+      "evidence": "headless-check.txt"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "evidence": "diff-check.txt"
+    }
+  ],
+  "distinctProductTests": 255,
+  "independentHarnessTests": 6,
+  "omittedWindowsShellRedirections": "Logs capture actual output; red/fixture/harness assertion failures retained in r41-final manifest."
+}

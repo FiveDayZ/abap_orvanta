@@ -1,10 +1,141 @@
+import { readConfigurationNumberRangeScope } from "./configuration-number-range-scope.js"
+import {
+  prepareConfigurationBteProductChange,
+  configurationBteChangeSchema
+} from "./configuration-bte-change.js"
+import {
+  inspectConfigurationBteMetadata,
+  configurationBteMetadataSchema
+} from "./configuration-bte-metadata.js"
+import {
+  inspectConfigurationBteRoute,
+  configurationBteRouteSchema
+} from "./configuration-bte-route.js"
+import {
+  previewConfigurationBteProduct,
+  configurationBteProductSchema
+} from "./configuration-bte-product.js"
+import { readConfigurationNumberRangeApi } from "./configuration-number-range-native.js"
+import { applyConfigurationNumberRange } from "./configuration-number-range-command.js"
+import { protectConfigurationNumberRangeCommand } from "./configuration-number-range-receipt.js"
+import { reconcileConfigurationNumberRange } from "./configuration-number-range-reconcile.js"
+import type { WriteOperationReceiptStore } from "./write-operation-receipts.js"
+import {
+  previewConfigurationBcNative,
+  configurationBcPreviewSchema
+} from "./configuration-bc-preview.js"
+import { configurationBcPreviewIncludes } from "./configuration-bc-preview-pins.js"
+import {
+  inspectConfigurationBcRoute,
+  configurationBcRouteSchema,
+  configurationBcRouteIncludes
+} from "./configuration-bc-route.js"
+import { readConfigurationBcGuard, configurationBcGuardSchema } from "./configuration-bc-guard.js"
+import { configurationBcSourceScope } from "./configuration-bc-source-scope.js"
+import {
+  preflightConfigurationBcActivation,
+  configurationBcPreflightSchema
+} from "./configuration-bc-preflight.js"
+import { configurationBcMetadataScope } from "./configuration-bc-metadata.js"
+import { readConfigurationBcCts, configurationBcCtsSchema } from "./configuration-bc-cts.js"
+import {
+  readConfigurationBcBeforeState,
+  configurationBcStateSchema
+} from "./configuration-bc-state.js"
+import { configurationBcStateApi } from "./configuration-bc-state-api.js"
+import { ConfigurationBcBeforeStateStore } from "./configuration-bc-before-state-store.js"
+import {
+  readConfigurationBcEffects,
+  configurationBcEffectsInclude
+} from "./configuration-bc-effects.js"
+import { configurationBcCommandRequestSchema } from "./configuration-bc-command-contract.js"
+import {
+  configurationBcApplySchema,
+  configurationBcRecoverSchema,
+  configurationBcReconcileSchema,
+  executeConfigurationBcCommand,
+  reconcileConfigurationBcExecution,
+  type ConfigurationBcCommandEnvironment
+} from "./configuration-bc-command.js"
+import { ConfigurationBcExecutionStore } from "./configuration-bc-execution-store.js"
+import { configurationBcRecordKernel } from "./configuration-bc-record-kernel.js"
+import {
+  isConfigurationBcTypePoolUri,
+  readConfigurationBcTypePool
+} from "./configuration-bc-type-pool.js"
+import {
+  readConfigurationBcNative,
+  configurationBcNativeSchema
+} from "./configuration-bc-native.js"
+import {
+  applyConfigurationUnitText,
+  configurationUnitTextApplySchema
+} from "./configuration-unit-apply.js"
+import { configurationUnitApplyApi } from "./configuration-unit-apply-api.js"
+import {
+  configurationUnitTextReconcileSchema,
+  reconcileConfigurationUnitText
+} from "./configuration-unit-reconcile.js"
+import {
+  configurationNumberRangePreviewSchema,
+  previewConfigurationNumberRange
+} from "./configuration-number-range-preview.js"
+import {
+  configurationBcImpactSchema,
+  configurationBcActivationIncludes,
+  inspectConfigurationBcImpact
+} from "./configuration-bc-impact.js"
+import {
+  configurationBcDependenciesSchema,
+  configurationBcLogsSchema,
+  readConfigurationBcDependencies,
+  readConfigurationBcLogs
+} from "./configuration-bc-audit.js"
 import { resolve } from "node:path"
+import {
+  configurationBcSetCompareSchema,
+  compareConfigurationBcSet
+} from "./configuration-bc-compare.js"
 import { CUSTOMER_CONNECTION_ID } from "./customer-scope.js"
 import {
   configurationDescriptorSchema,
+  configurationUnitMaintenanceSources,
+  configurationUnitTextMaintenanceIncludes,
   describeConfigurationObject
 } from "./configuration-object.js"
+import { configurationFiRuleSchema, readConfigurationFiRule } from "./configuration-fi-rule.js"
+import {
+  configurationTransportSchema,
+  inspectConfigurationTransport
+} from "./configuration-transport.js"
+import {
+  configurationUnitCompareSchema,
+  compareConfigurationUnit
+} from "./configuration-compare.js"
+import {
+  configurationNumberRangeScopeSchema,
+  configurationNumberRangeSchema,
+  readConfigurationNumberRange
+} from "./configuration-number-range.js"
+import {
+  configurationBcSetSchema,
+  readConfigurationBcSet,
+  configurationBcSetSearchSchema,
+  findConfigurationBcSets
+} from "./configuration-bc-set.js"
 import { readConfigurationImgDetails } from "./configuration-img-details.js"
+import { configurationActivitySchema, readConfigurationActivity } from "./configuration-activity.js"
+import {
+  configurationDocumentationSchema,
+  readConfigurationDocumentation
+} from "./configuration-documentation.js"
+import {
+  configurationUnitReadSchema,
+  readConfigurationUnit,
+  readConfigurationUnitProjection,
+  configurationUnitTextPreviewSchema,
+  previewConfigurationUnitText
+} from "./configuration-unit.js"
 import {
   configurationActivitiesSchema,
   findConfigurationActivities,
@@ -18,6 +149,10 @@ import {
   searchTypeCodes
 } from "./object-types.js"
 import { preSapValidation } from "./pre-sap-validation.js"
+import {
+  configurationUnitReadApi,
+  readConfigurationUnitApiSnapshot
+} from "./configuration-unit-api.js"
 import { describesLogonRejection } from "./logon-diagnostic.js"
 import { findAndReplaceSource, sameSourceText } from "./source-edit.js"
 import {
@@ -1681,7 +1816,8 @@ export class ToolService {
      * with an exception.
      */
     private readonly runtimeRead: (connectionId: string) => RuntimeHelperRead = () =>
-      NO_RUNTIME_HELPER_READER
+      NO_RUNTIME_HELPER_READER,
+    private readonly bcSourceRead?: (input: unknown) => Promise<unknown>
   ) {
     this.exportRoot = resolve(exportRoot)
   }
@@ -4436,17 +4572,26 @@ export class ToolService {
   }
 
   async upsertNumberRangeObject(input: UpsertNumberRangeObjectInput): Promise<string> {
-    const objectName = numberRangeObjectName(input.objectName)
-    validateDescription(input.description)
-    const properties = numberRangeProperties(input.properties)
-    const texts = numberRangeTexts(input.texts)
+    const { objectName, properties, texts, packageName, transportNumber, expectedVersion } =
+      preSapValidation(() => {
+        const objectName = numberRangeObjectName(input.objectName)
+        validateDescription(input.description)
+        return {
+          objectName,
+          properties: numberRangeProperties(input.properties),
+          texts: numberRangeTexts(input.texts),
+          packageName: ddicPackageName(input.packageName),
+          transportNumber: ddicTransport(input.transportNumber),
+          expectedVersion: numberRangeObjectVersion(input.expectedVersion)
+        }
+      })
     const result = await this.backend.callSapDdic(input.connectionId.toLowerCase(), {
       operation: "UPSERT_NUMBER_RANGE_OBJECT",
       objectName,
       description: input.description,
-      packageName: ddicPackageName(input.packageName),
-      transportNumber: ddicTransport(input.transportNumber),
-      expectedVersion: numberRangeObjectVersion(input.expectedVersion),
+      packageName,
+      transportNumber,
+      expectedVersion,
       header: properties,
       numberRangeTexts: texts
     })
@@ -5833,7 +5978,21 @@ export class ToolService {
   async getObjectByUri(input: UriInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     try {
-      const { source, uriUsed } = await this.backend.readSourceByUri(connectionId, input.uri)
+      const typePool = isConfigurationBcTypePoolUri(input.uri)
+        ? await readConfigurationBcTypePool(connectionId, input.uri, this.backend, {
+            definition: async () =>
+              JSON.parse(
+                await this.readFunctionModuleInterface({
+                  connectionId,
+                  functionName: "RPY_PROGRAM_READ"
+                })
+              ),
+            structure: async (objectName) =>
+              JSON.parse(await this.readDdicStructure({ connectionId, objectName }))
+          })
+        : undefined
+      const { source, uriUsed } =
+        typePool ?? (await this.backend.readSourceByUri(connectionId, input.uri))
       if (!source && /\/enhancements\//i.test(input.uri)) {
         return (
           `Direct URI Access Successful\nOriginal URI: ${input.uri}\nURI Used: ${uriUsed}\n` +
@@ -5850,6 +6009,11 @@ export class ToolService {
         `Direct URI Access Successful\n` +
         `Original URI: ${input.uri}\n` +
         `URI Used: ${uriUsed}\n` +
+        (typePool
+          ? `Source Provider: ${typePool.provider}\nSource Version: ${typePool.sourceVersion}\n` +
+            `Program: ${typePool.programName}\nRepresentation: ${typePool.representation}\n` +
+            `Full Source SHA-256: ${typePool.sourceFingerprint}\n`
+          : "") +
         `Lines: ${startLine}-${endLine} of ${lines.length} (${selected.length} retrieved)\n\n` +
         `\`\`\`abap\n${joinSourceLines(selected)}\n\`\`\``
       )
@@ -6590,6 +6754,129 @@ export class ToolService {
     )
   }
 
+  async previewConfigurationBteProduct(raw: unknown): Promise<string> {
+    const input = configurationBteProductSchema.parse(raw)
+    return JSON.stringify(
+      await previewConfigurationBteProduct(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        {
+          table: async (objectName) =>
+            JSON.parse(
+              await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+            ),
+          domain: async (objectName) =>
+            JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+          definition: async (functionName) =>
+            JSON.parse(
+              await this.readFunctionModuleInterface({
+                connectionId: input.connectionId,
+                functionName
+              })
+            )
+        }
+      ),
+      null,
+      2
+    )
+  }
+
+  async inspectConfigurationBteMaintenanceRoute(raw: unknown): Promise<string> {
+    const input = configurationBteRouteSchema.parse(raw)
+    return JSON.stringify(
+      await inspectConfigurationBteRoute(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        {
+          table: async (objectName) =>
+            JSON.parse(
+              await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+            ),
+          definition: async (functionName) =>
+            JSON.parse(
+              await this.readFunctionModuleInterface({
+                connectionId: input.connectionId,
+                functionName
+              })
+            )
+        }
+      ),
+      null,
+      2
+    )
+  }
+
+  async inspectConfigurationBteNativeMetadata(raw: unknown): Promise<string> {
+    const input = configurationBteMetadataSchema.parse(raw)
+    return JSON.stringify(
+      await inspectConfigurationBteMetadata(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        {
+          definition: async (functionName) =>
+            JSON.parse(
+              await this.readFunctionModuleInterface({
+                connectionId: input.connectionId,
+                functionName
+              })
+            ),
+          layout: async (objectName) =>
+            JSON.parse(
+              objectName === "TVIMF"
+                ? await this.readDdicTransparentTable({
+                    connectionId: input.connectionId,
+                    objectName
+                  })
+                : await this.readDdicStructure({ connectionId: input.connectionId, objectName })
+            ),
+          route: async () =>
+            JSON.parse(
+              await this.inspectConfigurationBteMaintenanceRoute({
+                connectionId: input.connectionId,
+                maxProducts: 200
+              })
+            )
+        }
+      ),
+      null,
+      2
+    )
+  }
+
+  async prepareConfigurationBteProductChange(raw: unknown): Promise<string> {
+    const input = configurationBteChangeSchema.parse(raw)
+    return JSON.stringify(
+      await prepareConfigurationBteProductChange(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        {
+          preview: async (args) => JSON.parse(await this.previewConfigurationBteProduct(args)),
+          metadata: async () =>
+            JSON.parse(
+              await this.inspectConfigurationBteNativeMetadata({ connectionId: input.connectionId })
+            ),
+          table: async (objectName) =>
+            JSON.parse(
+              await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+            ),
+          definition: async (functionName) =>
+            JSON.parse(
+              await this.readFunctionModuleInterface({
+                connectionId: input.connectionId,
+                functionName
+              })
+            )
+        }
+      ),
+      null,
+      2
+    )
+  }
+
   async readBteConfiguration(input: ReadBteConfigurationInput): Promise<string> {
     const connectionId = input.connectionId.toLowerCase()
     const identifier = input.identifier.trim().toUpperCase()
@@ -6731,12 +7018,22 @@ export class ToolService {
             this.inspectFicoRuleExitProgram({ programName: exitProgram, connectionId })
           )
         : { status: "not_requested" as const }
+      const ruleRead = configurationFiRuleSchema.safeParse({
+        connectionId,
+        kind: input.kind,
+        ruleName: targetName,
+        companyCode: input.organizationalUnit,
+        applicationArea: input.applicationArea,
+        callupPoint: input.callupPoint
+      })
       currentState = {
-        ruleConfiguration: {
-          status: "manual_read_required",
-          reason:
-            "The current GGB0/GGB1 rule and OB28/OBBH activation are not exposed by an approved headless maintenance API."
-        },
+        ruleConfiguration: ruleRead.success
+          ? await controlledWorkflowRead(() => this.readConfigurationFiRule(ruleRead.data))
+          : {
+              status: "manual_read_required",
+              reason:
+                "The current GGB0/GGB1 rule and OB28/OBBH activation are not exposed by an approved headless maintenance API."
+            },
         exitProgram: exitEvidence
       }
       requiredInputs = [
@@ -8990,6 +9287,1036 @@ export class ToolService {
     )
   }
 
+  async applyConfigurationUnitText(
+    raw: unknown,
+    beforeInvoke: () => Promise<void>
+  ): Promise<string> {
+    const input = configurationUnitTextApplySchema.parse(raw)
+    return JSON.stringify(
+      await applyConfigurationUnitText(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async () =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName: configurationUnitApplyApi.functionName
+            })
+          ),
+        async (request) => JSON.parse(await this.previewConfigurationUnitText(request)),
+        async (request) => JSON.parse(await this.readConfigurationUnit(request)),
+        beforeInvoke
+      ),
+      null,
+      2
+    )
+  }
+
+  async reconcileConfigurationUnitText(
+    raw: unknown,
+    readReceipt: (connectionId: string, operationId: string) => Promise<unknown>,
+    readLocks?: (argument: string) => Promise<unknown>
+  ): Promise<string> {
+    const input = configurationUnitTextReconcileSchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    return JSON.stringify(
+      await reconcileConfigurationUnitText(
+        input,
+        connection.client,
+        connection.username,
+        readReceipt,
+        async (request) => JSON.parse(await this.readConfigurationUnit(request)),
+        async (request) => JSON.parse(await this.inspectConfigurationTransport(request)),
+        readLocks
+      ),
+      null,
+      2
+    )
+  }
+
+  async previewConfigurationUnitText(raw: unknown): Promise<string> {
+    const input = configurationUnitTextPreviewSchema.parse(raw)
+    return JSON.stringify(
+      await previewConfigurationUnitText(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        async (request) => JSON.parse(await this.readConfigurationUnit(request)),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicDataElement({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async () =>
+          JSON.parse(
+            await this.describeConfigurationObject({
+              connectionId: input.connectionId,
+              objectName: "T006A",
+              includeImg: true,
+              includeMaintenanceBoundary: true,
+              includeTextMaintenanceBoundary: true,
+              language: input.language
+            })
+          ),
+        async (request) => JSON.parse(await this.inspectConfigurationTransport(request))
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationFiRule(raw: unknown): Promise<string> {
+    const input = configurationFiRuleSchema.parse(raw)
+    return JSON.stringify(
+      await readConfigurationFiRule(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async inspectConfigurationTransport(raw: unknown): Promise<string> {
+    const input = configurationTransportSchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    return JSON.stringify(
+      await inspectConfigurationTransport(
+        input,
+        connection.client,
+        connection.username,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        async (request) => JSON.parse(await this.readConfigurationUnit(request))
+      ),
+      null,
+      2
+    )
+  }
+
+  async compareConfigurationUnit(raw: unknown): Promise<string> {
+    const input = configurationUnitCompareSchema.parse(raw)
+    return JSON.stringify(
+      await compareConfigurationUnit(input, async (connectionId, unitKey, language) => {
+        const connection = this.backend.connectionDetails(connectionId)
+        return readConfigurationUnitProjection(
+          { connectionId, unitKey, language },
+          connection.client,
+          connection.language,
+          this.backend,
+          async (objectName) =>
+            JSON.parse(await this.readDdicTransparentTable({ connectionId, objectName })),
+          async (objectName) =>
+            JSON.parse(await this.readDdicDataElement({ connectionId, objectName })),
+          async (objectName) => JSON.parse(await this.readDdicDomain({ connectionId, objectName })),
+          async (functionName) =>
+            JSON.parse(await this.readFunctionModuleInterface({ connectionId, functionName }))
+        )
+      }),
+      null,
+      2
+    )
+  }
+
+  async previewConfigurationNumberRange(raw: unknown): Promise<string> {
+    const input = configurationNumberRangePreviewSchema.parse(raw)
+    return JSON.stringify(
+      await previewConfigurationNumberRange(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        async (value, allYears) =>
+          JSON.parse(await this.readConfigurationNumberRange(value, allYears)),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationNumberRangeScope(raw: unknown): Promise<string> {
+    const input = configurationNumberRangeScopeSchema.parse(raw)
+    return JSON.stringify(
+      await readConfigurationNumberRangeScope(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        async (value) =>
+          JSON.parse(await this.readConfigurationNumberRange({ ...value, year: "0000" }, true)),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicDataElement({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        async (objectName) =>
+          this.getObjectLines({
+            connectionId: input.connectionId,
+            objectName,
+            objectType: "FUGR/I",
+            startLine: 1,
+            lineCount: 3000
+          }),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationNumberRangeApi(raw: unknown): Promise<string> {
+    return JSON.stringify(
+      await readConfigurationNumberRangeApi(
+        raw,
+        this.backend.connectionDetails("w200").client,
+        this.backend,
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({ connectionId: "w200", functionName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicTransparentTable({ connectionId: "w200", objectName }))
+      ),
+      null,
+      2
+    )
+  }
+
+  async applyConfigurationNumberRange(
+    raw: unknown,
+    receipts: WriteOperationReceiptStore
+  ): Promise<string> {
+    return JSON.stringify(
+      await protectConfigurationNumberRangeCommand(raw, receipts, async (input, beforeInvoke) =>
+        applyConfigurationNumberRange(
+          input,
+          this.backend.connectionDetails(input.connectionId).client,
+          this.backend,
+          async (functionName) =>
+            JSON.parse(
+              await this.readFunctionModuleInterface({
+                connectionId: input.connectionId,
+                functionName
+              })
+            ),
+          async (objectName) =>
+            JSON.parse(
+              await this.readConfigurationNumberRangeApi({
+                connectionId: input.connectionId,
+                objectName
+              })
+            ).snapshot,
+          beforeInvoke,
+          async (objectName) =>
+            this.getObjectLines({
+              connectionId: input.connectionId,
+              objectName,
+              objectType: "FUGR/I",
+              startLine: 1,
+              lineCount: 3000
+            })
+        )
+      ),
+      null,
+      2
+    )
+  }
+
+  async reconcileConfigurationNumberRange(
+    raw: unknown,
+    receipts: WriteOperationReceiptStore
+  ): Promise<string> {
+    return JSON.stringify(
+      await reconcileConfigurationNumberRange(
+        raw,
+        this.backend.connectionDetails("w200").client,
+        (connectionId, operationId) => receipts.status(connectionId, operationId),
+        async (objectName) =>
+          JSON.parse(
+            await this.readConfigurationNumberRangeApi({ connectionId: "w200", objectName })
+          ).snapshot
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationNumberRange(raw: unknown, allYears = false): Promise<string> {
+    const input = configurationNumberRangeSchema.parse(raw)
+    return JSON.stringify(
+      await readConfigurationNumberRange(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readNumberRangeObject({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        allYears
+      ),
+      null,
+      2
+    )
+  }
+
+  async inspectConfigurationBcImpact(raw: unknown): Promise<string> {
+    const input = configurationBcImpactSchema.parse(raw)
+    return JSON.stringify(
+      await inspectConfigurationBcImpact(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        async (value) => JSON.parse(await this.readConfigurationBcDependencies(value)),
+        async (value) => JSON.parse(await this.readConfigurationBcSet(value)),
+        async (value, beforeUnitRead) =>
+          JSON.parse(await this.compareConfigurationBcSet(value, beforeUnitRead)),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        async (objectName) => {
+          const pin =
+            configurationBcActivationIncludes[
+              objectName as keyof typeof configurationBcActivationIncludes
+            ]
+          if (!pin) throw Error("BC_ACTIVATION_INCLUDE_UNREVIEWED")
+          const result = await this.backend.readSourceByUri(input.connectionId, pin.sourceUri)
+          return {
+            connectionId: input.connectionId,
+            objectName,
+            sourceUri: result.uriUsed,
+            sourceFingerprint: createHash("sha256").update(result.source).digest("hex"),
+            lineCount: result.source.split("\n").length
+          }
+        }
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcDependencies(raw: unknown): Promise<string> {
+    const input = configurationBcDependenciesSchema.parse(raw)
+    return JSON.stringify(
+      await readConfigurationBcDependencies(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcLogs(raw: unknown): Promise<string> {
+    const input = configurationBcLogsSchema.parse(raw)
+    return JSON.stringify(
+      await readConfigurationBcLogs(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async compareConfigurationBcSet(raw: unknown, beforeUnitRead?: () => void): Promise<string> {
+    const input = configurationBcSetCompareSchema.parse(raw)
+    return JSON.stringify(
+      await compareConfigurationBcSet(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        async (value) => JSON.parse(await this.readConfigurationBcSet(value)),
+        async (value) => {
+          beforeUnitRead?.()
+          return JSON.parse(await this.readConfigurationUnit(value))
+        },
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicDataElement({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async findConfigurationBcSets(raw: unknown): Promise<string> {
+    const input = configurationBcSetSearchSchema.parse(raw)
+    return JSON.stringify(
+      await findConfigurationBcSets(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async preflightConfigurationBcActivation(raw: unknown): Promise<string> {
+    const input = configurationBcPreflightSchema.parse(raw)
+    const metadata = configurationBcMetadataScope(this.backend)
+    const sources = configurationBcSourceScope(async (value) =>
+      JSON.parse(await this.readConfigurationBcSet(value))
+    )
+    const service = new ToolService(
+      metadata.backend,
+      this.exportRoot,
+      this.invocationReceipts,
+      this.disabledToolNames,
+      this.runtimeRead,
+      sources.read
+    )
+    const { nativeCandidateVersion: _candidate, nativeGuardVersion: _guard, ...guardInput } = input
+    const { nativeMetadataVersion: _metadata, ...previewInput } = guardInput
+    const {
+      nativeSourceVersion: _source,
+      nativeTargetVersion: _target,
+      ...snapshotInput
+    } = previewInput
+    const result = await preflightConfigurationBcActivation(
+      input,
+      this.backend.connectionDetails(input.connectionId).client,
+      {
+        snapshot: async () =>
+          JSON.parse(await service.readConfigurationBcNativeSnapshot(snapshotInput)),
+        preview: async () => JSON.parse(await service.previewConfigurationBcNative(previewInput)),
+        route: async () => JSON.parse(await service.inspectConfigurationBcRoute(previewInput)),
+        guard: async () => JSON.parse(await service.readConfigurationBcGuard(guardInput)),
+        definition: async (functionName) =>
+          JSON.parse(
+            await service.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      }
+    )
+    // Source projections and shared definitions both need independent fresh closing reads.
+    const sourceReuse = await sources.verify()
+    const metadataReuse = await metadata.verify()
+    return JSON.stringify(
+      { ...result, evidence: { ...result.evidence, sourceReuse, metadataReuse } },
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcBeforeState(raw: unknown): Promise<string> {
+    const input = configurationBcStateSchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    const result = await readConfigurationBcBeforeState(
+      input,
+      connection.client,
+      connection.username,
+      this.backend,
+      {
+        definition: async () =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName: configurationBcStateApi.functionName
+            })
+          ),
+        preflight: async (value) =>
+          JSON.parse(await this.preflightConfigurationBcActivation(value)),
+        cts: async (value) => JSON.parse(await this.readConfigurationBcCtsSnapshot(value))
+      }
+    )
+    const persisted = await new ConfigurationBcBeforeStateStore(this.exportRoot).capture(
+      async () => result
+    )
+    return JSON.stringify(
+      {
+        ...result,
+        beforeStateReference: persisted.reference,
+        beforeStatePersistence: { immutable: true, recoveryPermit: false, executable: false }
+      },
+      null,
+      2
+    )
+  }
+
+  private configurationBcCommandEnvironment(
+    receipts: WriteOperationReceiptStore
+  ): ConfigurationBcCommandEnvironment {
+    const connection = this.backend.connectionDetails("w200")
+    if (connection.client !== "200") throw Error("CONFIGURATION_BC_COMMAND_BINDING_INVALID")
+    return {
+      binding: {
+        connectionId: "w200",
+        system: "GR2",
+        client: "200",
+        user: connection.username.toUpperCase(),
+        bcSetId: "EHS_CUNI_KNM",
+        version: "N",
+        requestNumber: "GR2K923429",
+        taskNumber: "GR2K923430"
+      },
+      before: new ConfigurationBcBeforeStateStore(this.exportRoot),
+      executions: new ConfigurationBcExecutionStore(this.exportRoot),
+      receipts,
+      backend: this.backend,
+      readers: {
+        definition: async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({ connectionId: "w200", functionName })
+          ),
+        table: async (objectName) =>
+          JSON.parse(
+            await (objectName === "SEQG3" || objectName === "SCPRACTERP"
+              ? this.readDdicStructure({ connectionId: "w200", objectName })
+              : this.readDdicTransparentTable({ connectionId: "w200", objectName }))
+          ),
+        include: async (objectName) => {
+          const lookup = await this.getWorkspaceUri({
+            connectionId: "w200",
+            objectName,
+            objectType: objectName === configurationBcRecordKernel.includeName ? "PROG/I" : "FUGR/I"
+          })
+          const uri = /^ADT URI: (\/sap\/bc\/adt\/[^\r\n]+)$/m.exec(lookup)?.[1]
+          if (!uri) throw Error("CONFIGURATION_BC_OWNER_INCLUDE_URI_UNAVAILABLE")
+          const sourceUri = uri.endsWith("/source/main")
+            ? uri
+            : `${uri.replace(/\/$/, "")}/source/main`
+          const read = await this.backend.readSourceByUri("w200", sourceUri)
+          if (read.uriUsed !== sourceUri) throw Error("CONFIGURATION_BC_OWNER_INCLUDE_URI_INVALID")
+          return read.source.split(/\r?\n/)
+        }
+      }
+    }
+  }
+
+  async applyConfigurationBcSet(
+    raw: unknown,
+    receipts: WriteOperationReceiptStore
+  ): Promise<string> {
+    const input = configurationBcApplySchema.parse(raw)
+    return JSON.stringify(
+      await executeConfigurationBcCommand(
+        "apply",
+        input,
+        this.configurationBcCommandEnvironment(receipts)
+      ),
+      null,
+      2
+    )
+  }
+
+  async recoverConfigurationBcSet(
+    raw: unknown,
+    receipts: WriteOperationReceiptStore
+  ): Promise<string> {
+    const input = configurationBcRecoverSchema.parse(raw)
+    return JSON.stringify(
+      await executeConfigurationBcCommand(
+        "recover",
+        input,
+        this.configurationBcCommandEnvironment(receipts)
+      ),
+      null,
+      2
+    )
+  }
+
+  async reconcileConfigurationBcExecution(
+    raw: unknown,
+    receipts: WriteOperationReceiptStore
+  ): Promise<string> {
+    const input = configurationBcReconcileSchema.parse(raw)
+    return JSON.stringify(
+      await reconcileConfigurationBcExecution(
+        input,
+        this.configurationBcCommandEnvironment(receipts)
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcEffects(raw: unknown): Promise<string> {
+    const input = configurationBcCommandRequestSchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    if (connection.client !== "200") throw Error("CONFIGURATION_BC_EFFECTS_BINDING_INVALID")
+    const binding = {
+      ...input,
+      system: "GR2" as const,
+      client: "200" as const,
+      user: connection.username.toUpperCase()
+    }
+    const store = new ConfigurationBcBeforeStateStore(this.exportRoot)
+    let effects: Awaited<ReturnType<typeof readConfigurationBcEffects>> | undefined
+    const captured = await store.captureEffects(input.beforeStateReference, binding, async () => {
+      effects = await readConfigurationBcEffects(input, binding, store, this.backend, {
+        definition: async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        table: async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({
+              connectionId: input.connectionId,
+              objectName
+            })
+          ),
+        include: async () => {
+          const result = await this.backend.readSourceByUri(
+            input.connectionId,
+            configurationBcEffectsInclude.sourceUri
+          )
+          if (result.uriUsed !== configurationBcEffectsInclude.sourceUri)
+            throw Error("CONFIGURATION_BC_EFFECTS_INCLUDE_URI_INVALID")
+          return {
+            connectionId: input.connectionId,
+            ...configurationBcEffectsInclude,
+            sourceFingerprint: createHash("sha256").update(result.source).digest("hex")
+          }
+        }
+      })
+      return effects
+    })
+    return JSON.stringify(
+      {
+        ...effects,
+        effectsStateReference: captured.reference,
+        effectsStatePersistence: {
+          immutable: true,
+          beforeStateReference: input.beforeStateReference,
+          recoveryPermit: false,
+          executable: false,
+          snapshot: false
+        }
+      },
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcCtsSnapshot(raw: unknown): Promise<string> {
+    const input = configurationBcCtsSchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    return JSON.stringify(
+      await readConfigurationBcCts(input, connection.client, connection.username, this.backend, {
+        definition: async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        table: async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          )
+      }),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcGuard(raw: unknown): Promise<string> {
+    const input = configurationBcGuardSchema.parse(raw)
+    return JSON.stringify(
+      await readConfigurationBcGuard(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async () =>
+          JSON.parse(
+            await this.inspectConfigurationBcRoute({
+              connectionId: input.connectionId,
+              bcSetId: input.bcSetId,
+              version: input.version,
+              nativeSourceVersion: input.nativeSourceVersion,
+              nativeTargetVersion: input.nativeTargetVersion
+            })
+          ),
+        async () =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName: "Z_ORVANTA_CFG_BC_GUARD"
+            })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({
+              connectionId: input.connectionId,
+              objectName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async inspectConfigurationBcRoute(raw: unknown): Promise<string> {
+    const input = configurationBcRouteSchema.parse(raw)
+    return JSON.stringify(
+      await inspectConfigurationBcRoute(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async () =>
+          JSON.parse(
+            await this.readConfigurationBcNativeSnapshot({
+              connectionId: input.connectionId,
+              bcSetId: input.bcSetId,
+              version: input.version
+            })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) => {
+          const pin = configurationBcRouteIncludes[objectName]
+          const result = await this.backend.readSourceByUri(input.connectionId, pin.sourceUri)
+          return {
+            connectionId: input.connectionId,
+            objectName,
+            sourceUri: result.uriUsed,
+            sourceFingerprint: createHash("sha256").update(result.source).digest("hex"),
+            lineCount: result.source.split("\n").length
+          }
+        }
+      ),
+      null,
+      2
+    )
+  }
+
+  async previewConfigurationBcNative(raw: unknown): Promise<string> {
+    const input = configurationBcPreviewSchema.parse(raw)
+    const nativeInput = {
+      connectionId: input.connectionId,
+      bcSetId: input.bcSetId,
+      version: input.version
+    }
+    return JSON.stringify(
+      await previewConfigurationBcNative(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async () => JSON.parse(await this.readConfigurationBcNativeSnapshot(nativeInput)),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicStructure({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) => {
+          const pin = configurationBcPreviewIncludes[objectName]
+          const result = await this.backend.readSourceByUri(input.connectionId, pin.sourceUri)
+          return {
+            connectionId: input.connectionId,
+            objectName,
+            sourceUri: result.uriUsed,
+            sourceFingerprint: createHash("sha256").update(result.source).digest("hex"),
+            lineCount: result.source.split("\n").length
+          }
+        }
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcNativeSnapshot(raw: unknown): Promise<string> {
+    const input = configurationBcNativeSchema.parse(raw)
+    return JSON.stringify(
+      await readConfigurationBcNative(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (kind, objectName) =>
+          JSON.parse(
+            await (kind === "domain"
+              ? this.readDdicDomain({ connectionId: input.connectionId, objectName })
+              : this.readDdicDataElement({ connectionId: input.connectionId, objectName }))
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readConfigurationBcSet({
+              ...input,
+              objectName,
+              maxRecords: 50,
+              maxValues: 100,
+              maxDependencies: 32,
+              includeRecordInventory: true
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationBcSet(raw: unknown): Promise<string> {
+    const input = configurationBcSetSchema.parse(raw)
+    if (this.bcSourceRead) return JSON.stringify(await this.bcSourceRead(input), null, 2)
+    return JSON.stringify(
+      await readConfigurationBcSet(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationUnit(raw: unknown): Promise<string> {
+    const input = configurationUnitReadSchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    return JSON.stringify(
+      await readConfigurationUnit(
+        input,
+        connection.client,
+        connection.language,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicDataElement({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(await this.readDdicDomain({ connectionId: input.connectionId, objectName })),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          ),
+        async (request) => JSON.parse(await this.inspectConfigurationTransport(request)),
+        async ({ unitKey, sapLanguage }) =>
+          readConfigurationUnitApiSnapshot(
+            input.connectionId,
+            connection.client,
+            unitKey,
+            sapLanguage,
+            this.backend,
+            async () =>
+              JSON.parse(
+                await this.readFunctionModuleInterface({
+                  connectionId: input.connectionId,
+                  functionName: configurationUnitReadApi.functionName
+                })
+              ),
+            async () =>
+              JSON.parse(
+                await this.readDdicTransparentTable({
+                  connectionId: input.connectionId,
+                  objectName: "T006A"
+                })
+              )
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationActivity(raw: unknown): Promise<string> {
+    const input = configurationActivitySchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    return JSON.stringify(
+      await readConfigurationActivity(
+        input,
+        connection.client,
+        connection.language,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
+  async readConfigurationDocumentation(raw: unknown): Promise<string> {
+    const input = configurationDocumentationSchema.parse(raw)
+    const connection = this.backend.connectionDetails(input.connectionId)
+    return JSON.stringify(
+      await readConfigurationDocumentation(
+        input,
+        connection.client,
+        connection.language,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicStructure({ connectionId: input.connectionId, objectName })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
   async findConfigurationActivities(raw: unknown): Promise<string> {
     const input = configurationActivitiesSchema.parse(raw)
     const connection = this.backend.connectionDetails(input.connectionId)
@@ -9083,6 +10410,33 @@ export class ToolService {
               resolveMaintenanceObjects: true,
               includeDetails: true,
               language: input.language
+            })
+          ),
+        async (objectName) => {
+          const pin =
+            configurationUnitMaintenanceSources[
+              objectName as keyof typeof configurationUnitMaintenanceSources
+            ] ??
+            (input.includeTextMaintenanceBoundary
+              ? configurationUnitTextMaintenanceIncludes[
+                  objectName as keyof typeof configurationUnitTextMaintenanceIncludes
+                ]
+              : undefined)
+          if (!pin) throw new Error("CONFIGURATION_MAINTENANCE_SOURCE_SCOPE_UNSUPPORTED")
+          const result = await this.backend.readSourceByUri(input.connectionId, pin.sourceUri)
+          return {
+            connectionId: input.connectionId,
+            objectName,
+            sourceUri: result.uriUsed,
+            sourceFingerprint: createHash("sha256").update(result.source).digest("hex"),
+            lineCount: result.source.split("\n").length
+          }
+        },
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
             })
           )
       ),
@@ -13607,7 +14961,8 @@ function numberRangeTexts(
   const seen = new Set<string>()
   return texts.map((entry) => {
     const language = entry.language.trim().toUpperCase()
-    if (!/^[A-Z]$/.test(language)) {
+    // SAP language keys include digits: live T002 maps Chinese to SPRAS=1.
+    if (!/^[A-Z0-9]$/.test(language)) {
       throw new Error(`texts language must be a one-character SAP language: ${entry.language}`)
     }
     if (seen.has(language)) throw new Error(`texts carries language ${language} more than once`)
@@ -14713,8 +16068,12 @@ function functionModuleDefinition(input: CreateFunctionModuleInput): FunctionMod
     if (/^\s*(?:FUNCTION|ENDFUNCTION)\b/i.test(line)) {
       throw new Error("source must contain only the function body, without FUNCTION/ENDFUNCTION")
     }
-    if (line.length > 200)
-      throw new Error("Function module source lines must not exceed 200 characters")
+    // RPY_FUNCTIONMODULE_INSERT receives RSSOURCE (CHAR72); longer lines are silently
+    // truncated before the post-save comparison can detect the damage.
+    if (line.length > 72)
+      throw new Error(
+        "Function module creation source lines must not exceed 72 characters (RSSOURCE)"
+      )
     return line
   })
   return {
@@ -14882,7 +16241,7 @@ function functionModuleResult(
     functionGroup: payload.metadata.FUNCTION_GROUP ?? "",
     shortText: payload.metadata.SHORT_TEXT ?? "",
     remoteMode: payload.metadata.REMOTE_ENABLED ?? "",
-    updateTask: payload.metadata.UPDATE_TASK === "X",
+    updateTask: Boolean(payload.metadata.UPDATE_TASK?.trim()),
     updateTaskMode: payload.metadata.UPDATE_TASK ?? "",
     globalInterface: payload.metadata.GLOBAL_INTERFACE === "X",
     ...definition,

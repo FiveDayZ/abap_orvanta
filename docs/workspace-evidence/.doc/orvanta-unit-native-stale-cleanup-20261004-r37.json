@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-10-04T14:43:33.8927679+08:00",
+  "ownProcessesRemaining": 0,
+  "ownListenersRemaining": 0,
+  "shared": [
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 4849,
+      "OwningProcess": 28364
+    }
+  ],
+  "sharedPidAtPhaseStart": 28364,
+  "sharedPidUnchanged": true
+}

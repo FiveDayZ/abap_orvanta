@@ -1893,7 +1893,6 @@ test("Dynpro application tools validate customer scope and preserve structured r
     /mixes the D021S and RPY_DYFATC vocabularies/
   )
 })
-
 test("an upsert that omits the header keeps the screen's own D020S instead of rebuilding it", async () => {
   const backend = new MockBackend()
   const tools = new ToolService(backend)
@@ -2773,6 +2772,33 @@ test("controlled deletion rejects wrong package, parent, and DDIC dependencies",
     }),
     /deletion verification still found/
   )
+})
+
+test("function interface preserves raw update modes and identifies noninitial numeric modes", async () => {
+  const backend = new MockBackend(),
+    tools = new ToolService(backend)
+  const modules = (backend as unknown as { functionModules: Map<string, string[]> }).functionModules
+  const original = [...modules.get("ZCMCP_FM_1501")!]
+  let sourceFingerprint: string | undefined
+  for (const mode of ["", "1", "2", "3", "X"]) {
+    modules.set(
+      "ZCMCP_FM_1501",
+      original.map((line) =>
+        line.startsWith("M|1|UPDATE_TASK|") ? `M|1|UPDATE_TASK|${mode}` : line
+      )
+    )
+    const r = JSON.parse(
+      await tools.readFunctionModuleInterface({
+        connectionId: "w200",
+        functionName: "ZCMCP_FM_1501"
+      })
+    )
+    assert.equal(r.updateTaskMode, mode)
+    assert.equal(r.updateTask, mode !== "")
+    if (sourceFingerprint) assert.equal(r.sourceFingerprint, sourceFingerprint)
+    sourceFingerprint = r.sourceFingerprint
+    assert.equal(backend.lastRepositoryRequest?.operation, "READ_FUNCTION_INTERFACE")
+  }
 })
 
 test("function module tools create, read, fingerprint, inspect, and reject unsafe inputs", async () => {

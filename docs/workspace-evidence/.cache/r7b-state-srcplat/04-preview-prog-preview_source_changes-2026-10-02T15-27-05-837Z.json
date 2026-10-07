@@ -1,0 +1,16 @@
+{
+  "tool": "preview_source_changes",
+  "arguments": {
+    "changes": [
+      {
+        "fileUri": "adt://w200/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04",
+        "oldString": "* ORVANTA-MAINT-BODY-CARRIER",
+        "newString": "* ORVANTA-MAINT-BODY-CARRIER (R7-B read-only preview probe)",
+        "packageName": "ZABAP",
+        "transportNumber": "GR2K923472"
+      }
+    ]
+  },
+  "isError": false,
+  "responseText": "{\n  \"status\": \"ready_for_review\",\n  \"readOnly\": true,\n  \"atomic\": false,\n  \"executionAuthorized\": false,\n  \"sapLocksAcquired\": false,\n  \"planFingerprint\": \"341e16fc052cf0d41491ae67d97f5235e757b728cad2a94b9441619645c5caf3\",\n  \"objects\": [\n    {\n      \"fileUri\": \"adt://w200/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04\",\n      \"objectName\": \"ZORVANTA_MAINT_DEPLOY_R04\",\n      \"observedAt\": \"2026-10-02T15:27:05.835Z\",\n      \"status\": \"ready_for_review\",\n      \"blockers\": [],\n      \"assignment\": {\n        \"connectionId\": \"w200\",\n        \"objectName\": \"ZORVANTA_MAINT_DEPLOY_R04\",\n        \"objectType\": \"PROG/P\",\n        \"parentObject\": \"\",\n        \"packageName\": \"ZABAP\",\n        \"requestNumber\": \"GR2K923472\",\n        \"taskNumber\": \"GR2K923492\",\n        \"transportStatus\": \"D\",\n        \"active\": true,\n        \"generated\": false,\n        \"originalSystem\": \"GR2\"\n      },\n      \"activeFingerprint\": \"3827485f24d75459eb5918301b862664c27eab8d22b762342c69f17852b2716e\",\n      \"proposedFingerprint\": \"9ee7a6297888fdfb765dfff586e86181e3ee7b5ddec6dcf0e42e59ad042a29a0\",\n      \"diff\": {\n        \"startLine\": 4,\n        \"removedLineCount\": 1,\n        \"addedLineCount\": 1,\n        \"before\": \"* ORVANTA-MAINT-BODY-CARRIER\",\n        \"after\": \"* ORVANTA-MAINT-BODY-CARRIER (R7-B read-only preview probe)\",\n        \"truncated\": false,\n        \"lineEndingsOnly\": false\n      },\n      \"inactiveFingerprint\": null,\n      \"inactiveDiff\": null,\n      \"writePrecondition\": {\n        \"fileUri\": \"adt://w200/sap/bc/adt/programs/programs/zorvanta_maint_deploy_r04\",\n        \"expectedSourceFingerprint\": \"3827485f24d75459eb5918301b862664c27eab8d22b762342c69f17852b2716e\",\n        \"transportNumber\": \"GR2K923472\"\n      }\n    }\n  ],\n  \"limitations\": [\n    \"Observations are not a transaction snapshot or an authorization to write.\",\n    \"Use expectedSourceFingerprint on each later write; SAP rechecks it under its native lock.\",\n    \"Transport and package observations are not a reservation or a multi-object rollback guarantee.\",\n    \"Diffs exceeding the display limit are marked truncated; inspect the complete sources before approval.\"\n  ]\n}"
+}

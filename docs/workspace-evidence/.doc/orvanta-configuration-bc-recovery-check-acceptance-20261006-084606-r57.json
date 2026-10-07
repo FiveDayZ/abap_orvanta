@@ -1,0 +1,1244 @@
+{
+  "at": "2026-10-06T08:46:06+08:00",
+  "status": "Passed",
+  "readOnly": true,
+  "result": {
+    "startedAt": "2026-10-06T00:43:42.081Z",
+    "system": "GR2",
+    "client": "200",
+    "user": "WYS",
+    "reference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+    "manifestSha256": "fc0398fe4051081fbe2e09c4846ae13191916462b355179b1f6283022aac3b29",
+    "normal": [
+      {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430",
+        "operationId": "r57-int2-readonly-recovery-check-0",
+        "beforeStateReference": "c73130af1434697327f6c601a7f1bf2870dde52bf1c6f686b43dd89bd1dccb95",
+        "system": "GR2",
+        "client": "200",
+        "user": "WYS",
+        "readOnly": true,
+        "executable": false,
+        "recoveryAvailable": false,
+        "snapshot": false,
+        "nativeValueRoundtrip": true,
+        "currentStateRechecked": false,
+        "missingRowDeletionExecuted": false,
+        "ctsRecoveryChecked": false,
+        "identity": {
+          "source": "2ba9e704bc5f8f0bfeccd02f567e58c88fd5fba57a95fefafbc3890e08f1fb7a",
+          "interface": "e5bd977a4a7dfd66c63cabf9aef7e69035e5705cb26c219d0e2627b4525ba17f"
+        },
+        "dependencyIdentities": [
+          {
+            "functionName": "SCPR_DB_TABLE_TABFLDDEF_GET",
+            "source": "032368671c7e8816fa3a97710a5795ababa9811c416d70425b1f0c4db7af5ba0",
+            "interface": "dca5f484468d333a60c097a44ead101729b065fd2891f608dbb8bcbafa6f14d4"
+          },
+          {
+            "functionName": "SCPR_CT_VALUE_CONVERT_INT_EXT",
+            "source": "db76d20610890412f3caa9df80316689d3cad88170097087a068e2cb935be8c0",
+            "interface": "7a61d6cf41159fe5810f10b9ca73daca75ead478e6e578cdb11c8dfe505a5ddf"
+          },
+          {
+            "functionName": "SCPR_CPROF_CT_PROFDATA_CONVERT",
+            "source": "58e7119821a8ec1fb3b94f756f2ea6f8705d391d671e92d8951b689981b29123",
+            "interface": "678844a691d83ea076f1c72c74d62daa7b68846bfe20300c57c7af597f00dfdc"
+          },
+          {
+            "functionName": "SCPR_CT_VALUE_CONV_EXT_INT_STR",
+            "source": "c530a0980390a563a3f5a7d660ad0380b3c675502f5ddf6ee9a321069ab28d33",
+            "interface": "828900ac2f81c1c04c2f9c23eee356a4cc7c7dfd27bf1c41d8705faaaaf02480"
+          },
+          {
+            "functionName": "SCPR_CT_CURRKEY_GET",
+            "source": "77331397170134c73ccce879147cc72de168108a65f2b36fcaddbb6a88fb8748",
+            "interface": "483f4a27cc888c674d3cdc58a893857e2d221c3aecc69e1e168aa8d3e720b222"
+          },
+          {
+            "functionName": "VIEW_CONVERSION_OUTPUT",
+            "source": "cabbcb4e1a6f89ef529b47e85b069b9ef51d7c724d22b57935283d40b2d9bb63",
+            "interface": "06ce9aa72c7f3fa1dd3296af5f5a80dfe9243285b5b143451af94f6063becc6f"
+          },
+          {
+            "functionName": "RS_CONV_EX_2_IN_NO_DD",
+            "source": "2a31f6057d9ed394bc208305e13e4c439e43cb71d648734f9fe5d5093340d009",
+            "interface": "5c937657853f9497ec3de103841aad8a7f125f4ff0e758a5f021879c0aeeb0c7"
+          },
+          {
+            "functionName": "SCMS_BASE64_DECODE_STR",
+            "source": "0e7c53df677028244972a57dd7e64fb70399dd8da630165860f8dddb65795bbb",
+            "interface": "b3ddf62cc52f0db74d95634b3899f72acaebf361cf13bf52052abfe16c696dff"
+          },
+          {
+            "functionName": "SCMS_BASE64_ENCODE_STR",
+            "source": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0",
+            "interface": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9"
+          },
+          {
+            "functionName": "CALCULATE_HASH_FOR_RAW",
+            "source": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458",
+            "interface": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779"
+          }
+        ],
+        "layoutIdentities": [
+          {
+            "tableName": "T006",
+            "fingerprint": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7"
+          },
+          {
+            "tableName": "T006A",
+            "fingerprint": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d"
+          },
+          {
+            "tableName": "T006B",
+            "fingerprint": "ab70255e75a3137279fe7138aecba6dea563ad9886455ecb6d28534a69bbd286"
+          },
+          {
+            "tableName": "T006C",
+            "fingerprint": "b0b1f805571a82c34ee6ce4c157e6b4a5dacdfe76ed29da5805e8699ac6b8521"
+          },
+          {
+            "tableName": "T006D",
+            "fingerprint": "b8c3a7317ae77355313a75ff37216a2899338b0b45c4753772810b9815e4b95f"
+          },
+          {
+            "tableName": "T006I",
+            "fingerprint": "cb0bff534a1644ff32d10d071c5b4753fe584487720a9f4cfb6b61edc5e88644"
+          },
+          {
+            "tableName": "T006J",
+            "fingerprint": "f90e52e900704080f4c37351b5147ec0711eeeb36ba473b9a3e663e6a78eaeb0"
+          },
+          {
+            "tableName": "T006T",
+            "fingerprint": "1f44b60866c9c9b181f4a4a8147c74d6212fd0fb2fc5ac7b6e20447790ba21b0"
+          },
+          {
+            "tableName": "T006_OIB",
+            "fingerprint": "c6cbe2e2de45048f2f380bac738e8ad33400cd69506d74529d410f791674e4d6"
+          }
+        ],
+        "bodyFingerprint": "f9e8d5e3dd5a3d1717c521fe8220a81074518d573dd60ad001d0baad87524ced",
+        "stateVersion": "0d07309bf86d5cbfb93ddb0d62fbeb34efa9338d35d0c9e12d32fffadbb42663",
+        "layoutFingerprint": "da348eaef777b1a459779cb49688d39169ebfc8516af05a3baaf8a492b3f77c5",
+        "counts": {
+          "T006": 0,
+          "T006A": 0,
+          "T006B": 0,
+          "T006C": 0,
+          "T006D": 1,
+          "T006I": 1,
+          "T006J": 3,
+          "T006T": 3,
+          "T006_OIB": 0
+        },
+        "rows": [
+          {
+            "index": 1,
+            "tableName": "T006",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "0b171f4f5b7cea89425bddac671dc0e102b9335b16327e8c342baca63ea4ec97"
+          },
+          {
+            "index": 2,
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "782457d752897e09ac59047fe02c397c0d63dec064a63a4998f143aa92182f48"
+          },
+          {
+            "index": 3,
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "dfc8d40deb6bea95b6c01d192df0a3f8f70876ff9dd8494739758115343e02a8"
+          },
+          {
+            "index": 4,
+            "tableName": "T006A",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "a68a436477a4161569a1cd701fd60f8ffe7e4f8adbb17fa94598deb9727a9c1e"
+          },
+          {
+            "index": 5,
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "26e3daae00c4467e2610a727230e61481933eb7dda3e85f566609db106c60870"
+          },
+          {
+            "index": 6,
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "b95bbe634670f2a598a1fc942ddd16fe0f6dcbf67b3006c56a185e3b41e12a29"
+          },
+          {
+            "index": 7,
+            "tableName": "T006B",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "6500e80847abc5c70fe8d1a4e8869d31ba03c9aa7811774e53784c19814b7834"
+          },
+          {
+            "index": 8,
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2"
+            },
+            "presence": "missing",
+            "rowVersion": "d3d37977536d2d7ff9b8a66a2b2006f50a99cd0b61cc6050daff9c8ac088cc83"
+          },
+          {
+            "index": 9,
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2"
+            },
+            "presence": "missing",
+            "rowVersion": "651be1a03f9e739b66a4bab13d0819b8c5c85278b4289d407698a086b82ddcf8"
+          },
+          {
+            "index": 10,
+            "tableName": "T006C",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2"
+            },
+            "presence": "missing",
+            "rowVersion": "2096706a65b2c17d9d6d012d9aab44c53ecb682b587c61dd3b89604a457cd862"
+          },
+          {
+            "index": 11,
+            "tableName": "T006D",
+            "key": {
+              "MANDT": "200",
+              "DIMID": "PRESS"
+            },
+            "presence": "present",
+            "rowVersion": "1bb1cc771705efa0d9b66cc7aaff78bbad04d00f50f6e6b6f6c301481b61576f"
+          },
+          {
+            "index": 12,
+            "tableName": "T006I",
+            "key": {
+              "CLIENT": "200",
+              "ISOCODE": "KPA"
+            },
+            "presence": "present",
+            "rowVersion": "c115982e5c70f3380499d8dc49ef9139716c9fd0e996641c2321b46bf480d3c5"
+          },
+          {
+            "index": 13,
+            "tableName": "T006J",
+            "key": {
+              "CLIENT": "200",
+              "LANGU": "1",
+              "ISOCODE": "KPA"
+            },
+            "presence": "present",
+            "rowVersion": "cec9fe6bc5797aff99b9f9837c576a4ed4846a77ace0b66463e2ecdc034bcd55"
+          },
+          {
+            "index": 14,
+            "tableName": "T006J",
+            "key": {
+              "CLIENT": "200",
+              "LANGU": "D",
+              "ISOCODE": "KPA"
+            },
+            "presence": "present",
+            "rowVersion": "8dc1d1589bf6182ccf6b65a4fcfdcc6060de6b03644fcc44fbc54eafbc3623b9"
+          },
+          {
+            "index": 15,
+            "tableName": "T006J",
+            "key": {
+              "CLIENT": "200",
+              "LANGU": "E",
+              "ISOCODE": "KPA"
+            },
+            "presence": "present",
+            "rowVersion": "950bd4d67ee384eacca8813838b1fd97d30f4843ab2bb2a1325e94f21d579822"
+          },
+          {
+            "index": 16,
+            "tableName": "T006T",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "DIMID": "PRESS"
+            },
+            "presence": "present",
+            "rowVersion": "76a8e34493159412ae31b0bbe8faa7e5e82ea64ae168c3abea64dcfffca69dce"
+          },
+          {
+            "index": 17,
+            "tableName": "T006T",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "DIMID": "PRESS"
+            },
+            "presence": "present",
+            "rowVersion": "d2f0c12b6b67820871a208dd17152710338adb2e0360191297f8a6196cdc1963"
+          },
+          {
+            "index": 18,
+            "tableName": "T006T",
+            "key": {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "DIMID": "PRESS"
+            },
+            "presence": "present",
+            "rowVersion": "4cabff457a12d20053f7f051d5861bb50489d503a19929f3e8f78118ec94ccb6"
+          },
+          {
+            "index": 19,
+            "tableName": "T006_OIB",
+            "key": {
+              "MANDT": "200",
+              "MSEHI": "KNM"
+            },
+            "presence": "missing",
+            "rowVersion": "c981a745b4f800be23a7a71f7a84830fca01a54973c8dcd58bc1ca021180eb2a"
+          }
+        ],
+        "proof": {
+          "version": "7d9e524d152d0fe652bddc3409543792883c06fe094b1f1b3ba7a7bd6d3db735",
+          "bytes": 6121
+        },
+        "blockedBy": [
+          "sap_locked_before_state_not_established",
+          "configuration_and_cts_recovery_not_executed",
+          "specific_configuration_and_cts_write_authorization"
+        ]
+      }
+    ],
+    "nativeRefusals": [
+      {
+        "field": "IV_TASK",
+        "result": {
+          "outputs": {
+            "EV_CODE": "INPUT_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_STATE_VERSION": "",
+            "EV_LAYOUT_VERSION": "",
+            "EV_ROW_COUNTS": "",
+            "EV_ROW_PROOFS": "",
+            "EV_PROOF_BASE64": "",
+            "EV_PROOF_VERSION": "",
+            "EV_ROUNDTRIP": ""
+          }
+        }
+      },
+      {
+        "field": "IV_VERSION",
+        "result": {
+          "outputs": {
+            "EV_CODE": "INPUT_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_STATE_VERSION": "",
+            "EV_LAYOUT_VERSION": "",
+            "EV_ROW_COUNTS": "",
+            "EV_ROW_PROOFS": "",
+            "EV_PROOF_BASE64": "",
+            "EV_PROOF_VERSION": "",
+            "EV_ROUNDTRIP": ""
+          }
+        }
+      },
+      {
+        "field": "IV_STATE_VERSION",
+        "result": {
+          "outputs": {
+            "EV_CODE": "BUFFER_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_STATE_VERSION": "",
+            "EV_LAYOUT_VERSION": "",
+            "EV_ROW_COUNTS": "",
+            "EV_ROW_PROOFS": "",
+            "EV_PROOF_BASE64": "",
+            "EV_PROOF_VERSION": "",
+            "EV_ROUNDTRIP": ""
+          }
+        }
+      },
+      {
+        "field": "IV_DATA_BASE64",
+        "result": {
+          "outputs": {
+            "EV_CODE": "BUFFER_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_STATE_VERSION": "",
+            "EV_LAYOUT_VERSION": "",
+            "EV_ROW_COUNTS": "",
+            "EV_ROW_PROOFS": "",
+            "EV_PROOF_BASE64": "",
+            "EV_PROOF_VERSION": "",
+            "EV_ROUNDTRIP": ""
+          }
+        }
+      }
+    ],
+    "schemaRefusals": [
+      {
+        "fields": [
+          "connectionId"
+        ],
+        "dispatched": false
+      },
+      {
+        "fields": [
+          "beforeStateReference"
+        ],
+        "dispatched": false
+      },
+      {
+        "fields": [
+          "IV_DATA_BASE64"
+        ],
+        "dispatched": false
+      },
+      {
+        "fields": [
+          "execute"
+        ],
+        "dispatched": false
+      }
+    ],
+    "configurationWrites": 0,
+    "configurationCtsWrites": 0,
+    "previousFailedNormalCall": 1,
+    "before": {
+      "Z_ORVANTA_CFG_BC_READ": {
+        "outputs": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "ET_T006": [],
+          "ET_T006A": [],
+          "ET_T006B": [],
+          "ET_T006C": [],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        }
+      },
+      "Z_ORVANTA_CFG_BC_PREVIEW": {
+        "outputs": {
+          "EV_CODE": "PREVIEW_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_CANDIDATE_VERSION": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+          "EV_DIFFERENCES": "T006:1:MANDT:NEW;T006:1:MSEHI:NEW;T006:1:KZEX3:NEW;T006:1:KZEX6:NEW;T006:1:ANDEC:NEW;T006:1:KZKEH:NEW;T006:1:KZWOB:NEW;T006:1:KZ1EH:NEW;T006:1:KZ2EH:NEW;T006:1:DIMID:NEW;T006:1:ZAEHL:NEW;T006:1:NENNR:NEW;T006:1:EXP10:NEW;T006:1:ADDKO:NEW;T006:1:EXPON:NEW;T006:1:DECAN:NEW;T006:1:ISOCODE:NEW;T006:1:PRIMARY:NEW;T006:1:TEMP_VALUE:NEW;T006:1:TEMP_UNIT:NEW;T006:1:FAMUNIT:NEW;T006:1:PRESS_VAL:NEW;T006:1:PRESS_UNIT:NEW;T006A:1:MANDT:NEW;T006A:1:SPRAS:NEW;T006A:1:MSEHI:NEW;T006A:1:MSEH3:NEW;T006A:1:MSEH6:NEW;T006A:1:MSEHT:NEW;T006A:1:MSEHL:NEW;T006A:2:MANDT:NEW;T006A:2:SPRAS:NEW;T006A:2:MSEHI:NEW;T006A:2:MSEH3:NEW;T006A:2:MSEH6:NEW;T006A:2:MSEHT:NEW;T006A:2:MSEHL:NEW;T006A:3:MANDT:NEW;T006A:3:SPRAS:NEW;T006A:3:MSEHI:NEW;T006A:3:MSEH3:NEW;T006A:3:MSEH6:NEW;T006A:3:MSEHT:NEW;T006A:3:MSEHL:NEW;T006B:1:MANDT:NEW;T006B:1:SPRAS:NEW;T006B:1:MSEH3:NEW;T006B:1:MSEHI:NEW;T006B:2:MANDT:NEW;T006B:2:SPRAS:NEW;T006B:2:MSEH3:NEW;T006B:2:MSEHI:NEW;T006B:3:MANDT:NEW;T006B:3:SPRAS:NEW;T006B:3:MSEH3:NEW;T006B:3:MSEHI:NEW;T006C:1:MANDT:NEW;T006C:1:SPRAS:NEW;T006C:1:MSEH6:NEW;T006C:1:MSEHI:NEW;T006C:2:MANDT:NEW;T006C:2:SPRAS:NEW;T006C:2:MSEH6:NEW;T006C:2:MSEHI:NEW;T006C:3:MANDT:NEW;T006C:3:SPRAS:NEW;T006C:3:MSEH6:NEW;T006C:3:MSEHI:NEW;T006D:1:MANDT:EQL;T006D:1:DIMID:EQL;T006D:1:LENG:EQL;T006D:1:MASS:EQL;T006D:1:TIMEX:EQL;T006D:1:ECURR:EQL;T006D:1:TEMP:EQL;T006D:1:MOLQU:EQL;T006D:1:LIGHT:EQL;T006D:1:MSSIE:EQL;T006D:1:TEMP_DEP:EQL;T006D:1:PRESS_DEP:EQL;",
+          "EV_ERROR_FIELD": "",
+          "ET_T006": [
+            {
+              "MANDT": "200",
+              "MSEHI": "KNM",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "0",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "PRESS",
+              "ZAEHL": "1000",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "3",
+              "ISOCODE": "KPA",
+              "PRIMARY": "",
+              "TEMP_VALUE": "0",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_VAL": "0",
+              "PRESS_UNIT": ""
+            }
+          ],
+          "ET_T006A": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "每平方米千牛顿"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton pro Quadratmeter"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton per square meter"
+            }
+          ],
+          "ET_T006B": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006C": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        }
+      },
+      "Z_ORVANTA_CFG_BC_ROUTE": {
+        "outputs": {
+          "EV_CODE": "ROUTE_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+          "ET_OBJH": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "CLIDEP": "X",
+              "LANGDEP": "X",
+              "ALEDEP": "",
+              "OBJCATEG": "CUST",
+              "TRCOMPLETE": "",
+              "TRDISJUNCT": "",
+              "PHASELEVEL": "0",
+              "LOCKMETH": "",
+              "TADIRCMETH": "",
+              "CHECKID": "",
+              "OBJNAMELEN": "00",
+              "PROTECT": "",
+              "OBJTRANSP": "2",
+              "LUSER": "",
+              "LDATE": "0000-00-00",
+              "OBJNAMECLS": "",
+              "CURSETTING": "",
+              "OBJHASADDR": "",
+              "IMPORTABLE": "",
+              "OBJCHARSET": "",
+              "MCCATEGORY": "",
+              "MCDOCUID": ""
+            }
+          ],
+          "ET_OBJS": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006A",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006B",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006C",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006D",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006I",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006J",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006T",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006_OIB",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            }
+          ],
+          "ET_OBJM": []
+        }
+      },
+      "Z_ORVANTA_CFG_BC_GUARD": {
+        "outputs": {
+          "EV_CODE": "GUARD_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+          "EV_GUARD_VERSION": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+          "ET_T006I": [
+            {
+              "CLIENT": "200",
+              "ISOCODE": "KPA"
+            }
+          ],
+          "ET_T006J": [
+            {
+              "CLIENT": "200",
+              "LANGU": "1",
+              "ISOCODE": "KPA",
+              "ISOTXT": "千帕"
+            },
+            {
+              "CLIENT": "200",
+              "LANGU": "D",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            },
+            {
+              "CLIENT": "200",
+              "LANGU": "E",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            }
+          ],
+          "ET_T006T": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "DIMID": "PRESS",
+              "TXDIM": "压力"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "DIMID": "PRESS",
+              "TXDIM": "Druck"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "DIMID": "PRESS",
+              "TXDIM": "Pressure"
+            }
+          ],
+          "ET_T006_OIB": []
+        }
+      },
+      "Z_ORVANTA_CFG_BC_CTS": {
+        "outputs": {
+          "EV_CODE": "CTS_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_REQUEST": "GR2K923429",
+          "EV_TASK": "GR2K923430",
+          "EV_CTS_VERSION": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+          "EV_DATA_BASE64": "/wYBAQECgAA0MTAyAAAAAAEAAAAAABAAAABCBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNvAAAABAARwBSADIAIAAgACAAIAAgvQEAAAAAAAYAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAEMATABJAEUATgBUvAAAAAYAMgAwADC9AQAAAAAAGAAAAEYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVQBTAEUAUrwAAAAYAFcAWQBTACAAIAAgACAAIAAgACAAIAAgvQcTAAAAAAgAAABKBgAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAQwBfAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLAw4AAAAApAAAAdkHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKSqAAAAAAAoqgAAAAAAAqoAAAAAAAKqAAAAAAAUqgAAAAAACKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACkvgAAAKQAAAACvAAAAKQARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgAFcARABHAFIAMwAgACAAIAAgACAAIAAgAEMAVQBTAFQAVwBZAFMAIAAgACAAIAAgACAAIAAgACAAMgAwADIANgAwADkAMAAxADEAMQAwADIANAA0ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAAApABHAFIAMgBLADkAMgAzADQAMwAwACAAIAAgACAAIAAgACAAIAAgACAAUQBEACAAIAAgACAAIAAgACAAIAAgACAAQwBVAFMAVABXAFkAUwAgACAAIAAgACAAIAAgACAAIAAyADAAMgA2ADEAMAAwADQAMQAwADAAMAAzADIARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAA4AAAA5QcAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVABTrQ4AAAAAOKoAAAAAACiqAAAAAAAGqgAAAAAABqoAAAAAAAKqAAAAAAACrg4AAAAAOL4AAAA4AAAAArwAAAA4AEcAUgAyAEsAOQAyADMANAAyADkAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAgACAAIAAgACC9vAAAADgARwBSADIASwA5ADIAMwA0ADMAMAAgACAAIAAgACAAIAAgACAAIAAgADIAMAAwACAAIAAgACAAIL2/Aw4AAAABaAAAA2gHAAAAAAAAAAAAAAAAAAAAAAAAAAAATwBCAEoARQBDAFQAU60OAAAAAWiqAAAAAAAoqgYAAAAADKoAAAAAAAiqAAAAAAAIqgAAAAAA8KoAAAAAAAKqAAAAAAACqgAAAAAABqoAAAAAAAKqAAAAAAAorg4AAAABaL4AAAFoAAAAArwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMQBSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMgBSADMAVABSAFQARABBAFQAQwBVAE4ASQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAI0AAAFFgQAAAAAAAAAAAAAAAAAAAAAAAAAAABLAEUAWQBTrQ4AAAACNKoAAAAAACiqAAAAAAAIqgAAAAAACKoAAAAAADyqBgAAAAAMqgAAAAAACKoAAAAAAFCqAAAAAAA8qgAAAAAAAqoAAAAAAPCqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorg4AAAACNL4AAAI0AAAAArwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAVAAwADAANgBBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABEAEEAVABDAFUATgBJACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAMQBLAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABBAEIAVQBaAFQAUABNAEMAXwBUAFAAQwBGAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAOAAwADkAUAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8GDwAAAAFYAAAAxQsAAAAAAAAAAAAAAAAAAAAAAAAAAABTAFQAUgBJAE4ARwBfAEsARQBZAFOtDwAAAAFYqgAAAAAAKKoAAAAAAAiqAAAAAAAIqgAAAAAAPKoGAAAAAAyqAAAAAAAIqgAAAAAAUKoAAAAAADyqAAAAAAACrwQAAAAAAqoTAAAAAAiqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorwQAAAAAAqoTAAAAAAiuDwAAAAFYvgAAAVgAAAAAvwQ=",
+          "EV_DATA_BYTES": "3548",
+          "EV_OBJECT_COUNT": "2",
+          "EV_KEY_COUNT": "2",
+          "EV_STRING_KEY_COUNT": "0"
+        }
+      }
+    },
+    "nativeResult": {
+      "outputs": {
+        "EV_CODE": "RECOVERY_CHECK_OK",
+        "EV_SYSTEM": "GR2",
+        "EV_CLIENT": "200",
+        "EV_USER": "WYS",
+        "EV_STATE_VERSION": "0d07309bf86d5cbfb93ddb0d62fbeb34efa9338d35d0c9e12d32fffadbb42663",
+        "EV_LAYOUT_VERSION": "da348eaef777b1a459779cb49688d39169ebfc8516af05a3baaf8a492b3f77c5",
+        "EV_ROW_COUNTS": "T006=0;T006A=0;T006B=0;T006C=0;T006D=1;T006I=1;T006J=3;T006T=3;T006_OIB=0;",
+        "EV_ROW_PROOFS": "1|T006| |0b171f4f5b7cea89425bddac671dc0e102b9335b16327e8c342baca63ea4ec97|0b171f4f5b7cea89425bddac671dc0e102b9335b16327e8c342baca63ea4ec97\n2|T006A| |782457d752897e09ac59047fe02c397c0d63dec064a63a4998f143aa92182f48|782457d752897e09ac59047fe02c397c0d63dec064a63a4998f143aa92182f48\n3|T006A| |dfc8d40deb6bea95b6c01d192df0a3f8f70876ff9dd8494739758115343e02a8|dfc8d40deb6bea95b6c01d192df0a3f8f70876ff9dd8494739758115343e02a8\n4|T006A| |a68a436477a4161569a1cd701fd60f8ffe7e4f8adbb17fa94598deb9727a9c1e|a68a436477a4161569a1cd701fd60f8ffe7e4f8adbb17fa94598deb9727a9c1e\n5|T006B| |26e3daae00c4467e2610a727230e61481933eb7dda3e85f566609db106c60870|26e3daae00c4467e2610a727230e61481933eb7dda3e85f566609db106c60870\n6|T006B| |b95bbe634670f2a598a1fc942ddd16fe0f6dcbf67b3006c56a185e3b41e12a29|b95bbe634670f2a598a1fc942ddd16fe0f6dcbf67b3006c56a185e3b41e12a29\n7|T006B| |6500e80847abc5c70fe8d1a4e8869d31ba03c9aa7811774e53784c19814b7834|6500e80847abc5c70fe8d1a4e8869d31ba03c9aa7811774e53784c19814b7834\n8|T006C| |d3d37977536d2d7ff9b8a66a2b2006f50a99cd0b61cc6050daff9c8ac088cc83|d3d37977536d2d7ff9b8a66a2b2006f50a99cd0b61cc6050daff9c8ac088cc83\n9|T006C| |651be1a03f9e739b66a4bab13d0819b8c5c85278b4289d407698a086b82ddcf8|651be1a03f9e739b66a4bab13d0819b8c5c85278b4289d407698a086b82ddcf8\n10|T006C| |2096706a65b2c17d9d6d012d9aab44c53ecb682b587c61dd3b89604a457cd862|2096706a65b2c17d9d6d012d9aab44c53ecb682b587c61dd3b89604a457cd862\n11|T006D|X|1bb1cc771705efa0d9b66cc7aaff78bbad04d00f50f6e6b6f6c301481b61576f|1bb1cc771705efa0d9b66cc7aaff78bbad04d00f50f6e6b6f6c301481b61576f\n12|T006I|X|c115982e5c70f3380499d8dc49ef9139716c9fd0e996641c2321b46bf480d3c5|c115982e5c70f3380499d8dc49ef9139716c9fd0e996641c2321b46bf480d3c5\n13|T006J|X|cec9fe6bc5797aff99b9f9837c576a4ed4846a77ace0b66463e2ecdc034bcd55|cec9fe6bc5797aff99b9f9837c576a4ed4846a77ace0b66463e2ecdc034bcd55\n14|T006J|X|8dc1d1589bf6182ccf6b65a4fcfdcc6060de6b03644fcc44fbc54eafbc3623b9|8dc1d1589bf6182ccf6b65a4fcfdcc6060de6b03644fcc44fbc54eafbc3623b9\n15|T006J|X|950bd4d67ee384eacca8813838b1fd97d30f4843ab2bb2a1325e94f21d579822|950bd4d67ee384eacca8813838b1fd97d30f4843ab2bb2a1325e94f21d579822\n16|T006T|X|76a8e34493159412ae31b0bbe8faa7e5e82ea64ae168c3abea64dcfffca69dce|76a8e34493159412ae31b0bbe8faa7e5e82ea64ae168c3abea64dcfffca69dce\n17|T006T|X|d2f0c12b6b67820871a208dd17152710338adb2e0360191297f8a6196cdc1963|d2f0c12b6b67820871a208dd17152710338adb2e0360191297f8a6196cdc1963\n18|T006T|X|4cabff457a12d20053f7f051d5861bb50489d503a19929f3e8f78118ec94ccb6|4cabff457a12d20053f7f051d5861bb50489d503a19929f3e8f78118ec94ccb6\n19|T006_OIB| |c981a745b4f800be23a7a71f7a84830fca01a54973c8dcd58bc1ca021180eb2a|c981a745b4f800be23a7a71f7a84830fca01a54973c8dcd58bc1ca021180eb2a",
+        "EV_PROOF_BASE64": "/wYBAQECgAA0MTAyAAAAAAcTAAAAAAgAAACwBQAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAVABBAFQARcoAAACAADAAZAAwADcAMwAwADkAYgBmADgANgBkADUAYwBiAGYAYgA5ADMAZABkAGIAMABkADYAMgBmAGIAZQBiADMANABlAGYAYQA5ADMAMwA4AGQAMwA1AGQAMABjADkAZQAxADIAZAAzADIAZgBmAGYAYQBkAGIAYgA0ADIANgA2ADPLBxMAAAAACAAAALIGAAAAAAAAAAAAAAAAAAAAAAAAAAAATABBAFkATwBVAFTKAAAAgABkAGEAMwA0ADgAZQBhAGUAZgA3ADcANwBiADEAYQA0ADUAOQA3ADcAOQBjAGIANAA5ADYAOAA4AGQAMwA5ADEANgA5AGUAYgBmAGMAOAA1ADEANgBhAGYAMAA1AGEAMwBiAGEAYQBmADgAYQA0ADkAMgBiADMAZgA3ADcAYwA1ywcTAAAAAAgAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNygAAAAYARwBSADLLBxMAAAAACAAAADgGAAAAAAAAAAAAAAAAAAAAAAAAAAAAQwBMAEkARQBOAFTKAAAABgAyADAAMMsHEwAAAAAIAAAANAQAAAAAAAAAAAAAAAAAAAAAAAAAAABVAFMARQBSygAAAAYAVwBZAFPLBxMAAAAACAAAFQwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBPAFcAU8oAABTeADEAfABUADAAMAA2AHwAIAB8ADAAYgAxADcAMQBmADQAZgA1AGIANwBjAGUAYQA4ADkANAAyADUAYgBkAGQAYQBjADYANwAxAGQAYwAwAGUAMQAwADIAYgA5ADMAMwA1AGIAMQA2ADMAMgA3AGUAOABjADMANAAyAGIAYQBjAGEANgAzAGUAYQA0AGUAYwA5ADcAfAAwAGIAMQA3ADEAZgA0AGYANQBiADcAYwBlAGEAOAA5ADQAMgA1AGIAZABkAGEAYwA2ADcAMQBkAGMAMABlADEAMAAyAGIAOQAzADMANQBiADEANgAzADIANwBlADgAYwAzADQAMgBiAGEAYwBhADYAMwBlAGEANABlAGMAOQA3AAoAMgB8AFQAMAAwADYAQQB8ACAAfAA3ADgAMgA0ADUANwBkADcANQAyADgAOQA3AGUAMAA5AGEAYwA1ADkAMAA0ADcAZgBlADAAMgBjADMAOQA3AGMAMABkADYAMwBkAGUAYwAwADYANABhADYAMwBhADQAOQA5ADgAZgAxADQAMwBhAGEAOQAyADEAOAAyAGYANAA4AHwANwA4ADIANAA1ADcAZAA3ADUAMgA4ADkANwBlADAAOQBhAGMANQA5ADAANAA3AGYAZQAwADIAYwAzADkANwBjADAAZAA2ADMAZABlAGMAMAA2ADQAYQA2ADMAYQA0ADkAOQA4AGYAMQA0ADMAYQBhADkAMgAxADgAMgBmADQAOAAKADMAfABUADAAMAA2AEEAfAAgAHwAZABmAGMAOABkADQAMABkAGUAYgA2AGIAZQBhADkANQBiADYAYwAwADEAZAAxADkAMgBkAGYAMABhADMAZgA4AGYANwAwADgANwA2AGYAZgA5AGQAZAA4ADQAOQA0ADcAMwA5ADcANQA4ADEAMQA1ADMANAAzAGUAMAAyAGEAOAB8AGQAZgBjADgAZAA0ADAAZABlAGIANgBiAGUAYQA5ADUAYgA2AGMAMAAxAGQAMQA5ADIAZABmADAAYQAzAGYAOABmADcAMAA4ADcANgBmAGYAOQBkAGQAOAA0ADkANAA3ADMAOQA3ADUAOAAxADEANQAzADQAMwBlADAAMgBhADgACgA0AHwAVAAwADAANgBBAHwAIAB8AGEANgA4AGEANAAzADYANAA3ADcAYQA0ADEANgAxADUANgA5AGEAMQBjAGQANwAwADEAZgBkADYAMABmADgAZgBmAGUANwBlADQAZgA4AGEAZABiAGIAMQA3AGYAYQA5ADQANQA5ADgAZABlAGIAOQA3ADIANwBhADkAYwAxAGUAfABhADYAOABhADQAMwA2ADQANwA3AGEANAAxADYAMQA1ADYAOQBhADEAYwBkADcAMAAxAGYAZAA2ADAAZgA4AGYAZgBlADcAZQA0AGYAOABhAGQAYgBiADEANwBmAGEAOQA0ADUAOQA4AGQAZQBiADkANwAyADcAYQA5AGMAMQBlAAoANQB8AFQAMAAwADYAQgB8ACAAfAAyADYAZQAzAGQAYQBhAGUAMAAwAGMANAA0ADYANwBlADIANgAxADAAYQA3ADIANwAyADMAMABlADYAMQA0ADgAMQA5ADMAMwBlAGIANwBkAGQAYQAzAGUAOAA1AGYANQA2ADYANgAwADkAZABiADEAMAA2AGMANgAwADgANwAwAHwAMgA2AGUAMwBkAGEAYQBlADAAMABjADQANAA2ADcAZQAyADYAMQAwAGEANwAyADcAMgAzADAAZQA2ADEANAA4ADEAOQAzADMAZQBiADcAZABkAGEAMwBlADgANQBmADUANgA2ADYAMAA5AGQAYgAxADAANgBjADYAMAA4ADcAMAAKADYAfABUADAAMAA2AEIAfAAgAHwAYgA5ADUAYgBiAGUANgAzADQANgA3ADAAZgAyAGEANQA5ADgAYQAxAGYAYwA5ADQAMgBkAGQAZAAxADYAZgBlADAAZgA2AGQAYwBiAGYANgA3AGIAMwAwADAANgBjADUANgBhADEAOAA1AGUAMwBiADQAMQBlADEAMgBhADIAOQB8AGIAOQA1AGIAYgBlADYAMwA0ADYANwAwAGYAMgBhADUAOQA4AGEAMQBmAGMAOQA0ADIAZABkAGQAMQA2AGYAZQAwAGYANgBkAGMAYgBmADYANwBiADMAMAAwADYAYwA1ADYAYQAxADgANQBlADMAYgA0ADEAZQAxADIAYQAyADkACgA3AHwAVAAwADAANgBCAHwAIAB8ADYANQAwADAAZQA4ADAAOAA0ADcAYQBiAGMANQBjADcAMABmAGUAOABkADEAYQA0AGUAOAA4ADYAOQBkADMAMQBiAGEAMAAzAGMAOQBhAGEANwA4ADEAMQA3ADcANABlADUAMwA3ADgANABjADEAOQA4ADEANABiADcAOAAzADQAfAA2ADUAMAAwAGUAOAAwADgANAA3AGEAYgBjADUAYwA3ADAAZgBlADgAZAAxAGEANABlADgAOAA2ADkAZAAzADEAYgBhADAAMwBjADkAYQBhADcAOAAxADEANwA3ADQAZQA1ADMANwA4ADQAYwAxADkAOAAxADQAYgA3ADgAMwA0AAoAOAB8AFQAMAAwADYAQwB8ACAAfABkADMAZAAzADcAOQA3ADcANQAzADYAZAAyAGQANwBmAGYAOQBiADgAYQA2ADYAYQAyAGIAMgAwADAANgBmADUAMABhADkAOQBjAGQAMABiADYAMQBjAGMANgAwADUAMABkAGEAZgBmADkAYwA4AGEAYwAwADgAOABjAGMAOAAzAHwAZAAzAGQAMwA3ADkANwA3ADUAMwA2AGQAMgBkADcAZgBmADkAYgA4AGEANgA2AGEAMgBiADIAMAAwADYAZgA1ADAAYQA5ADkAYwBkADAAYgA2ADEAYwBjADYAMAA1ADAAZABhAGYAZgA5AGMAOABhAGMAMAA4ADgAYwBjADgAMwAKADkAfABUADAAMAA2AEMAfAAgAHwANgA1ADEAYgBlADEAYQAwADMAZgA5AGUANwAzADkAYgA2ADYAYQA0AGIAYQBiADEAMwBkADAAOAAxADkAYgA4AGMANQBjADgANQAyADcAOABiADQAMgA4ADkAZAA0ADAANwA2ADkAOABhADAAOAA2AGIAOAAyAGQAZABjAGYAOAB8ADYANQAxAGIAZQAxAGEAMAAzAGYAOQBlADcAMwA5AGIANgA2AGEANABiAGEAYgAxADMAZAAwADgAMQA5AGIAOABjADUAYwA4ADUAMgA3ADgAYgA0ADIAOAA5AGQANAAwADcANgA5ADgAYQAwADgANgBiADgAMgBkAGQAYwBmADgACgAxADAAfABUADAAMAA2AEMAfAAgAHwAMgAwADkANgA3ADAANgBhADYANQBiADIAYwAxADcAZAA5AGQANgBkADAAMQAyAGQAOQBhAGEAYgA0ADQAYwA1ADMAZQBjAGIANgA4ADIAYgA1ADgANwBjADYAMQBkAGQAMwBiADgAOQA2ADAANABhADQANQA3AGMAZAA4ADYAMgB8ADIAMAA5ADYANwAwADYAYQA2ADUAYgAyAGMAMQA3AGQAOQBkADYAZAAwADEAMgBkADkAYQBhAGIANAA0AGMANQAzAGUAYwBiADYAOAAyAGIANQA4ADcAYwA2ADEAZABkADMAYgA4ADkANgAwADQAYQA0ADUANwBjAGQAOAA2ADIACgAxADEAfABUADAAMAA2AEQAfABYAHwAMQBiAGIAMQBjAGMANwA3ADEANwAwADUAZQBmAGEAMABkADkAYgA2ADYAYwBjADcAYQBhAGYAZgA3ADgAYgBiAGEAZAAwADQAZAAwADAAZgA1ADAAZgA2AGUANgBiADYAZgA2AGMAMwAwADEANAA4ADEAYgA2ADEANQA3ADYAZgB8ADEAYgBiADEAYwBjADcANwAxADcAMAA1AGUAZgBhADAAZAA5AGIANgA2AGMAYwA3AGEAYQBmAGYANwA4AGIAYgBhAGQAMAA0AGQAMAAwAGYANQAwAGYANgBlADYAYgA2AGYANgBjADMAMAAxADQAOAAxAGIANgAxADUANwA2AGYACgAxADIAfABUADAAMAA2AEkAfABYAHwAYwAxADEANQA5ADgAMgBlADUAYwA3ADAAZgAzADMAOAAwADQAOQA5AGQAOABkAGMANAA5AGUAZgA5ADEAMwA5ADcAMQA2AGMAOQBmAGQAMABlADkAOQA2ADYANAAxAGMAMgAzADIAMQBiADQANgBiAGYANAA4ADAAZAAzAGMANQB8AGMAMQAxADUAOQA4ADIAZQA1AGMANwAwAGYAMwAzADgAMAA0ADkAOQBkADgAZABjADQAOQBlAGYAOQAxADMAOQA3ADEANgBjADkAZgBkADAAZQA5ADkANgA2ADQAMQBjADIAMwAyADEAYgA0ADYAYgBmADQAOAAwAGQAMwBjADUACgAxADMAfABUADAAMAA2AEoAfABYAHwAYwBlAGMAOQBmAGUANgBiAGMANQA3ADkANwBhAGYAZgA5ADkAYgA5AGYAOQA4ADMANwBjADUANwA2AGEANABlAGQANAA4ADQANgBhADcANwBhAGMAZQAwAGIANgA2ADQANgAzAGUAMgBlAGMAZABjADAAMwA0AGIAYwBkADUANQB8AGMAZQBjADkAZgBlADYAYgBjADUANwA5ADcAYQBmAGYAOQA5AGIAOQBmADkAOAAzADcAYwA1ADcANgBhADQAZQBkADQAOAA0ADYAYQA3ADcAYQBjAGUAMABiADYANgA0ADYAMwBlADIAZQBjAGQAYwAwADMANABiAGMAZAA1ADUACgAxADQAfABUADAAMAA2AEoAfABYAHwAOABkAGMAMQBkADEANQA4ADkAYgBmADYAMQA4ADIAYwBjAGYANgBiADYANQBhADQAZgBjAGYAZABjAGMANgAwADYAMABkAGUANgBiADAAMwA2ADQANABmAGMAYwA0ADQAZgBiAGMANQA0AGUAYQBmAGIAYwAzADYAMgAzAGIAOQB8ADgAZABjADEAZAAxADUAOAA5AGIAZgA2ADEAOAAyAGMAYwBmADYAYgA2ADUAYQA0AGYAYwBmAGQAYwBjADYAMAA2ADAAZABlADYAYgAwADMANgA0ADQAZgBjAGMANAA0AGYAYgBjADUANABlAGEAZgBiAGMAMwA2ADIAMwBiADkACgAxADUAfABUADAAMAA2AEoAfABYAHwAOQA1ADAAYgBkADQAZAA2ADcAZQBlADMAOAA0AGUAYQBjAGMAYQA4ADgAMQAzADgAMwA4AGIAMQBmAGQAOQA3AGQAMwAwAGYANAA4ADQAMwBhAGIAMgBiAGIAMgBhADEAMwAyADUAZQA5ADQAZgAyADEAZAA1ADcAOQA4ADIAMgB8ADkANQAwAGIAZAA0AGQANgA3AGUAZQAzADgANABlAGEAYwBjAGEAOAA4ADEAMwA4ADMAOABiADEAZgBkADkANwBkADMAMABmADQAOAA0ADMAYQBiADIAYgBiADIAYQAxADMAMgA1AGUAOQA0AGYAMgAxAGQANQA3ADkAOAAyADIACgAxADYAfABUADAAMAA2AFQAfABYAHwANwA2AGEAOABlADMANAA0ADkAMwAxADUAOQA0ADEAMgBhAGUAMwAxAGIAMABiAGIAZQA4AGYAYQBhADcAZQA1AGUAOAAyAGUAYQA2ADQAYQBlADEANgA4AGMAMwBhAGIAZQBhADYANABkAGMAZgBmAGYAYwBhADYAOQBkAGMAZQB8ADcANgBhADgAZQAzADQANAA5ADMAMQA1ADkANAAxADIAYQBlADMAMQBiADAAYgBiAGUAOABmAGEAYQA3AGUANQBlADgAMgBlAGEANgA0AGEAZQAxADYAOABjADMAYQBiAGUAYQA2ADQAZABjAGYAZgBmAGMAYQA2ADkAZABjAGUACgAxADcAfABUADAAMAA2AFQAfABYAHwAZAAyAGYAMABjADEAMgBiADYAYgA2ADcAOAAyADAAOAA3ADEAYQAyADAAOABkAGQAMQA3ADEANQAyADcAMQAwADMAMwA4AGEAZABiADIAZQAwADMANgAwADEAOQAxADIAOQA3AGYAOABhADYAMQA5ADYAYwBkAGMAMQA5ADYAMwB8AGQAMgBmADAAYwAxADIAYgA2AGIANgA3ADgAMgAwADgANwAxAGEAMgAwADgAZABkADEANwAxADUAMgA3ADEAMAAzADMAOABhAGQAYgAyAGUAMAAzADYAMAAxADkAMQAyADkANwBmADgAYQA2ADEAOQA2AGMAZABjADEAOQA2ADMACgAxADgAfABUADAAMAA2AFQAfABYAHwANABjAGEAYgBmAGYANAA1ADcAYQAxADIAZAAyADAAMAA1ADMAZgA3AGYAMAA1ADEAZAA1ADgANgAxAGIAYgA1ADAANAA4ADkAZAA1ADAAMwBhADEAOQA5ADIAOQBmADMAZQA4AGYANwA4ADEAMQA4AGUAYwA5ADQAYwBjAGIANgB8ADQAYwBhAGIAZgBmADQANQA3AGEAMQAyAGQAMgAwADAANQAzAGYANwBmADAANQAxAGQANQA4ADYAMQBiAGIANQAwADQAOAA5AGQANQAwADMAYQAxADkAOQAyADkAZgAzAGUAOABmADcAOAAxADEAOABlAGMAOQA0AGMAYwBiADYACgAxADkAfABUADAAMAA2AF8ATwBJAEIAfAAgAHwAYwA5ADgAMQBhADcANAA1AGIANABmADgAMAAwAGIAZQAyADMAYQA3AGEANwAxAGYANwBhADgANAA4ADMAMABmAGMAYQAwADEAYQA1ADQAOQA3ADMAYwA4AGQAYwBkADUAOABiAGMAMQBjAGEAMAAyADEAMQA4ADAAZQBiADIAYQB8AGMAOQA4ADEAYQA3ADQANQBiADQAZgA4ADAAMABiAGUAMgAzAGEANwBhADcAMQBmADcAYQA4ADQAOAAzADAAZgBjAGEAMAAxAGEANQA0ADkANwAzAGMAOABkAGMAZAA1ADgAYgBjADEAYwBhADAAMgAxADEAOAAwAGUAYgAyAGHLBxMAAAAACAAAAMYGAAAAAAAAAAAAAAAAAAAAAAAAAAAAQwBPAFUATgBUAFPKAAAAlABUADAAMAA2AD0AMAA7AFQAMAAwADYAQQA9ADAAOwBUADAAMAA2AEIAPQAwADsAVAAwADAANgBDAD0AMAA7AFQAMAAwADYARAA9ADEAOwBUADAAMAA2AEkAPQAxADsAVAAwADAANgBKAD0AMwA7AFQAMAAwADYAVAA9ADMAOwBUADAAMAA2AF8ATwBJAEIAPQAwADvLBA==",
+        "EV_PROOF_VERSION": "7d9e524d152d0fe652bddc3409543792883c06fe094b1f1b3ba7a7bd6d3db735",
+        "EV_ROUNDTRIP": "X"
+      }
+    },
+    "after": {
+      "Z_ORVANTA_CFG_BC_READ": {
+        "outputs": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "ET_T006": [],
+          "ET_T006A": [],
+          "ET_T006B": [],
+          "ET_T006C": [],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        }
+      },
+      "Z_ORVANTA_CFG_BC_PREVIEW": {
+        "outputs": {
+          "EV_CODE": "PREVIEW_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_CANDIDATE_VERSION": "1fd8fcbe40506af29645a4c216c3ff2e3439197142c453b71d90f31adc1c3a18",
+          "EV_DIFFERENCES": "T006:1:MANDT:NEW;T006:1:MSEHI:NEW;T006:1:KZEX3:NEW;T006:1:KZEX6:NEW;T006:1:ANDEC:NEW;T006:1:KZKEH:NEW;T006:1:KZWOB:NEW;T006:1:KZ1EH:NEW;T006:1:KZ2EH:NEW;T006:1:DIMID:NEW;T006:1:ZAEHL:NEW;T006:1:NENNR:NEW;T006:1:EXP10:NEW;T006:1:ADDKO:NEW;T006:1:EXPON:NEW;T006:1:DECAN:NEW;T006:1:ISOCODE:NEW;T006:1:PRIMARY:NEW;T006:1:TEMP_VALUE:NEW;T006:1:TEMP_UNIT:NEW;T006:1:FAMUNIT:NEW;T006:1:PRESS_VAL:NEW;T006:1:PRESS_UNIT:NEW;T006A:1:MANDT:NEW;T006A:1:SPRAS:NEW;T006A:1:MSEHI:NEW;T006A:1:MSEH3:NEW;T006A:1:MSEH6:NEW;T006A:1:MSEHT:NEW;T006A:1:MSEHL:NEW;T006A:2:MANDT:NEW;T006A:2:SPRAS:NEW;T006A:2:MSEHI:NEW;T006A:2:MSEH3:NEW;T006A:2:MSEH6:NEW;T006A:2:MSEHT:NEW;T006A:2:MSEHL:NEW;T006A:3:MANDT:NEW;T006A:3:SPRAS:NEW;T006A:3:MSEHI:NEW;T006A:3:MSEH3:NEW;T006A:3:MSEH6:NEW;T006A:3:MSEHT:NEW;T006A:3:MSEHL:NEW;T006B:1:MANDT:NEW;T006B:1:SPRAS:NEW;T006B:1:MSEH3:NEW;T006B:1:MSEHI:NEW;T006B:2:MANDT:NEW;T006B:2:SPRAS:NEW;T006B:2:MSEH3:NEW;T006B:2:MSEHI:NEW;T006B:3:MANDT:NEW;T006B:3:SPRAS:NEW;T006B:3:MSEH3:NEW;T006B:3:MSEHI:NEW;T006C:1:MANDT:NEW;T006C:1:SPRAS:NEW;T006C:1:MSEH6:NEW;T006C:1:MSEHI:NEW;T006C:2:MANDT:NEW;T006C:2:SPRAS:NEW;T006C:2:MSEH6:NEW;T006C:2:MSEHI:NEW;T006C:3:MANDT:NEW;T006C:3:SPRAS:NEW;T006C:3:MSEH6:NEW;T006C:3:MSEHI:NEW;T006D:1:MANDT:EQL;T006D:1:DIMID:EQL;T006D:1:LENG:EQL;T006D:1:MASS:EQL;T006D:1:TIMEX:EQL;T006D:1:ECURR:EQL;T006D:1:TEMP:EQL;T006D:1:MOLQU:EQL;T006D:1:LIGHT:EQL;T006D:1:MSSIE:EQL;T006D:1:TEMP_DEP:EQL;T006D:1:PRESS_DEP:EQL;",
+          "EV_ERROR_FIELD": "",
+          "ET_T006": [
+            {
+              "MANDT": "200",
+              "MSEHI": "KNM",
+              "KZEX3": "X",
+              "KZEX6": "X",
+              "ANDEC": "0",
+              "KZKEH": "X",
+              "KZWOB": "",
+              "KZ1EH": "",
+              "KZ2EH": "",
+              "DIMID": "PRESS",
+              "ZAEHL": "1000",
+              "NENNR": "1",
+              "EXP10": "0",
+              "ADDKO": "0.000000",
+              "EXPON": "0",
+              "DECAN": "3",
+              "ISOCODE": "KPA",
+              "PRIMARY": "",
+              "TEMP_VALUE": "0",
+              "TEMP_UNIT": "",
+              "FAMUNIT": "",
+              "PRESS_VAL": "0",
+              "PRESS_UNIT": ""
+            }
+          ],
+          "ET_T006A": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "每平方米千牛顿"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton pro Quadratmeter"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEHI": "KNM",
+              "MSEH3": "KNM",
+              "MSEH6": "kN/m2",
+              "MSEHT": "kN/m2",
+              "MSEHL": "Kilonewton per square meter"
+            }
+          ],
+          "ET_T006B": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH3": "KNM",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006C": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "MSEH6": "kN/m2",
+              "MSEHI": "KNM"
+            }
+          ],
+          "ET_T006D": [
+            {
+              "MANDT": "200",
+              "DIMID": "PRESS",
+              "LENG": "-1",
+              "MASS": "1",
+              "TIMEX": "-2",
+              "ECURR": "0",
+              "TEMP": "0",
+              "MOLQU": "0",
+              "LIGHT": "0",
+              "MSSIE": "PA",
+              "TEMP_DEP": "",
+              "PRESS_DEP": ""
+            }
+          ]
+        }
+      },
+      "Z_ORVANTA_CFG_BC_ROUTE": {
+        "outputs": {
+          "EV_CODE": "ROUTE_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+          "ET_OBJH": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "CLIDEP": "X",
+              "LANGDEP": "X",
+              "ALEDEP": "",
+              "OBJCATEG": "CUST",
+              "TRCOMPLETE": "",
+              "TRDISJUNCT": "",
+              "PHASELEVEL": "0",
+              "LOCKMETH": "",
+              "TADIRCMETH": "",
+              "CHECKID": "",
+              "OBJNAMELEN": "00",
+              "PROTECT": "",
+              "OBJTRANSP": "2",
+              "LUSER": "",
+              "LDATE": "0000-00-00",
+              "OBJNAMECLS": "",
+              "CURSETTING": "",
+              "OBJHASADDR": "",
+              "IMPORTABLE": "",
+              "OBJCHARSET": "",
+              "MCCATEGORY": "",
+              "MCDOCUID": ""
+            }
+          ],
+          "ET_OBJS": [
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006A",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006B",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006C",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006D",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006I",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "X",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006J",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006T",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            },
+            {
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "TABNAME": "T006_OIB",
+              "COVER": "",
+              "CANDIDATE": "",
+              "DDIC": "",
+              "PRIM_TABLE": "",
+              "VIEWGRANT": "",
+              "TAB_FILLED": ""
+            }
+          ],
+          "ET_OBJM": []
+        }
+      },
+      "Z_ORVANTA_CFG_BC_GUARD": {
+        "outputs": {
+          "EV_CODE": "GUARD_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_SOURCE_VERSION": "73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b",
+          "EV_TARGET_VERSION": "23a193a37f81d4b208829c647d8e3058c47312cd49727343f9cdebe581148477",
+          "EV_METADATA_VERSION": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+          "EV_GUARD_VERSION": "1c4e09257f3b2699e7cb25834b3f398291706757008a6087f8d4118e1cc4ab9f",
+          "ET_T006I": [
+            {
+              "CLIENT": "200",
+              "ISOCODE": "KPA"
+            }
+          ],
+          "ET_T006J": [
+            {
+              "CLIENT": "200",
+              "LANGU": "1",
+              "ISOCODE": "KPA",
+              "ISOTXT": "千帕"
+            },
+            {
+              "CLIENT": "200",
+              "LANGU": "D",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            },
+            {
+              "CLIENT": "200",
+              "LANGU": "E",
+              "ISOCODE": "KPA",
+              "ISOTXT": "Kilopascal"
+            }
+          ],
+          "ET_T006T": [
+            {
+              "MANDT": "200",
+              "SPRAS": "1",
+              "DIMID": "PRESS",
+              "TXDIM": "压力"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "D",
+              "DIMID": "PRESS",
+              "TXDIM": "Druck"
+            },
+            {
+              "MANDT": "200",
+              "SPRAS": "E",
+              "DIMID": "PRESS",
+              "TXDIM": "Pressure"
+            }
+          ],
+          "ET_T006_OIB": []
+        }
+      },
+      "Z_ORVANTA_CFG_BC_CTS": {
+        "outputs": {
+          "EV_CODE": "CTS_READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_USER": "WYS",
+          "EV_REQUEST": "GR2K923429",
+          "EV_TASK": "GR2K923430",
+          "EV_CTS_VERSION": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+          "EV_DATA_BASE64": "/wYBAQECgAA0MTAyAAAAAAEAAAAAABAAAABCBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNvAAAABAARwBSADIAIAAgACAAIAAgvQEAAAAAAAYAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAEMATABJAEUATgBUvAAAAAYAMgAwADC9AQAAAAAAGAAAAEYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVQBTAEUAUrwAAAAYAFcAWQBTACAAIAAgACAAIAAgACAAIAAgvQcTAAAAAAgAAABKBgAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAQwBfAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLAw4AAAAApAAAAdkHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKSqAAAAAAAoqgAAAAAAAqoAAAAAAAKqAAAAAAAUqgAAAAAACKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACkvgAAAKQAAAACvAAAAKQARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgAFcARABHAFIAMwAgACAAIAAgACAAIAAgAEMAVQBTAFQAVwBZAFMAIAAgACAAIAAgACAAIAAgACAAMgAwADIANgAwADkAMAAxADEAMQAwADIANAA0ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAAApABHAFIAMgBLADkAMgAzADQAMwAwACAAIAAgACAAIAAgACAAIAAgACAAUQBEACAAIAAgACAAIAAgACAAIAAgACAAQwBVAFMAVABXAFkAUwAgACAAIAAgACAAIAAgACAAIAAyADAAMgA2ADEAMAAwADQAMQAwADAAMAAzADIARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAA4AAAA5QcAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVABTrQ4AAAAAOKoAAAAAACiqAAAAAAAGqgAAAAAABqoAAAAAAAKqAAAAAAACrg4AAAAAOL4AAAA4AAAAArwAAAA4AEcAUgAyAEsAOQAyADMANAAyADkAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAgACAAIAAgACC9vAAAADgARwBSADIASwA5ADIAMwA0ADMAMAAgACAAIAAgACAAIAAgACAAIAAgADIAMAAwACAAIAAgACAAIL2/Aw4AAAABaAAAA2gHAAAAAAAAAAAAAAAAAAAAAAAAAAAATwBCAEoARQBDAFQAU60OAAAAAWiqAAAAAAAoqgYAAAAADKoAAAAAAAiqAAAAAAAIqgAAAAAA8KoAAAAAAAKqAAAAAAACqgAAAAAABqoAAAAAAAKqAAAAAAAorg4AAAABaL4AAAFoAAAAArwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMQBSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMgBSADMAVABSAFQARABBAFQAQwBVAE4ASQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAI0AAAFFgQAAAAAAAAAAAAAAAAAAAAAAAAAAABLAEUAWQBTrQ4AAAACNKoAAAAAACiqAAAAAAAIqgAAAAAACKoAAAAAADyqBgAAAAAMqgAAAAAACKoAAAAAAFCqAAAAAAA8qgAAAAAAAqoAAAAAAPCqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorg4AAAACNL4AAAI0AAAAArwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAVAAwADAANgBBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABEAEEAVABDAFUATgBJACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAMQBLAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABBAEIAVQBaAFQAUABNAEMAXwBUAFAAQwBGAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAOAAwADkAUAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8GDwAAAAFYAAAAxQsAAAAAAAAAAAAAAAAAAAAAAAAAAABTAFQAUgBJAE4ARwBfAEsARQBZAFOtDwAAAAFYqgAAAAAAKKoAAAAAAAiqAAAAAAAIqgAAAAAAPKoGAAAAAAyqAAAAAAAIqgAAAAAAUKoAAAAAADyqAAAAAAACrwQAAAAAAqoTAAAAAAiqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorwQAAAAAAqoTAAAAAAiuDwAAAAFYvgAAAVgAAAAAvwQ=",
+          "EV_DATA_BYTES": "3548",
+          "EV_OBJECT_COUNT": "2",
+          "EV_KEY_COUNT": "2",
+          "EV_STRING_KEY_COUNT": "0"
+        }
+      }
+    },
+    "observationSha256": "8db1c57248516873b9f068a133e16761cf705a90f37096169ec3b840ded8e1ed",
+    "status": "readonly_native_recovery_conversion_passed",
+    "finishedAt": "2026-10-06T00:43:46.030Z"
+  },
+  "metrics": {
+    "startedAt": "2026-10-06T00:43:42.081Z",
+    "normalCalls": 2,
+    "nativeRefusals": 4,
+    "schemaRefusals": 4,
+    "configurationWrites": 0,
+    "configurationCtsWrites": 0,
+    "observations": {
+      "Z_ORVANTA_CFG_BC_READ": 2,
+      "Z_ORVANTA_CFG_BC_PREVIEW": 2,
+      "Z_ORVANTA_CFG_BC_ROUTE": 2,
+      "Z_ORVANTA_CFG_BC_GUARD": 2,
+      "Z_ORVANTA_CFG_BC_CTS": 2
+    },
+    "definitionReads": 22,
+    "ddicReads": 18,
+    "finishedAt": "2026-10-06T00:43:46.030Z"
+  }
+}

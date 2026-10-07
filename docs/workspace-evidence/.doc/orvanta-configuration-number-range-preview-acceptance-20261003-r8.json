@@ -1,0 +1,302 @@
+{
+  "startedAt": "2026-10-03T06:33:17.148Z",
+  "server": {
+    "pid": 29124,
+    "url": "http://127.0.0.1:11150/mcp",
+    "revision": "r8",
+    "startedAt": "2026-10-03T06:32:14.507Z",
+    "readOnly": true,
+    "connections": [
+      {
+        "id": "w200",
+        "client": "200"
+      }
+    ],
+    "manifestFingerprint": "fbae78b923d68ec6263ae675f0a4ce0d1145aeaa3825a4690430ca65742fa1cc"
+  },
+  "readOnly": true,
+  "calls": [
+    {
+      "label": "before",
+      "name": "read_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000"
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"read\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"intervals\": [\n    {\n      \"CLIENT\": \"200\",\n      \"OBJECT\": \"ZBATCH04\",\n      \"SUBOBJECT\": \"\",\n      \"NRRANGENR\": \"01\",\n      \"TOYEAR\": \"0000\",\n      \"FROMNUMBER\": \"0001\",\n      \"TONUMBER\": \"9999\",\n      \"NRLEVEL\": \"00000000000000000001\",\n      \"EXTERNIND\": \"\"\n    }\n  ],\n  \"definition\": {\n    \"properties\": {\n      \"OBJECT\": \"ZBATCH04\",\n      \"DTELSOBJ\": \"\",\n      \"NRTAB\": \"\",\n      \"NRINTFLD\": \"\",\n      \"NREXTFLD\": \"\",\n      \"NRFLD\": \"\",\n      \"NRSOBJFLD\": \"\",\n      \"NRELEFLD\": \"\",\n      \"YEARIND\": \"\",\n      \"DOMLEN\": \"CHAR4\",\n      \"PERCENTAGE\": \"95.0\",\n      \"CODE\": \"\",\n      \"TEXTIND\": \"\",\n      \"NRELTXTTAB\": \"\",\n      \"NRELTXTSOB\": \"\",\n      \"NRELTXTELE\": \"\",\n      \"NRELTXTTXT\": \"\",\n      \"NRELTXTLNG\": \"\",\n      \"BUFFER\": \"\",\n      \"NOIVBUFFER\": \"00000000\",\n      \"NONRSWAP\": \"\",\n      \"RFCDEST\": \"\",\n      \"NRCHECKASCII\": \"\"\n    }\n  },\n  \"definitionFingerprint\": \"7b0a788e69683728077c0f2cf2ba2cbbb5caad2a393ed35a42c2271ffcf0cc18\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"complete\": true,\n  \"truncated\": false,\n  \"representation\": \"sap_text_trimmed\",\n  \"currentLevelMeaning\": \"persisted_NRIV_NRLEVEL_only\",\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:17.240Z\",\n    \"finishedAt\": \"2026-10-03T06:33:17.813Z\",\n    \"sources\": [\n      {\n        \"table\": \"NRIV\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"NRIV\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No number allocation API is called. Persisted NRLEVEL does not attest buffered next numbers or availability; no Number conversion is applied.\",\n    \"Exact customer object, subobject and year only. Reads are sequential; limits and changes do not establish a complete snapshot. No interval maintenance, current-level reset or transport operation.\"\n  ]\n}"
+    },
+    {
+      "label": "unchanged",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "0001",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"partial\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"external\": false,\n      \"currentLevel\": \"00000000000000000001\"\n    }\n  ],\n  \"preflightFingerprint\": \"0544e6d48840acf98f08a5a5ac82fd6fbe5641c2a2d2cb886f61f50ba75e7d5a\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:17.819Z\",\n    \"finishedAt\": \"2026-10-03T06:33:20.127Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:17.819Z\",\n      \"finishedAt\": \"2026-10-03T06:33:19.291Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:19.447Z\",\n      \"finishedAt\": \"2026-10-03T06:33:19.937Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "overlap",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "create",
+            "intervalNumber": "02",
+            "fromNumber": "9000",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"blocked\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"create\",\n      \"intervalNumber\": \"02\",\n      \"fromNumber\": \"9000\",\n      \"toNumber\": \"9999\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"INTERVAL_OVERLAP\",\n      \"intervalNumber\": \"01\",\n      \"relatedIntervalNumber\": \"02\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"currentLevel\": \"00000000000000000001\",\n      \"external\": false\n    },\n    {\n      \"intervalNumber\": \"02\",\n      \"fromNumber\": \"9000\",\n      \"toNumber\": \"9999\",\n      \"external\": false,\n      \"currentLevel\": \"00000000000000000000\"\n    }\n  ],\n  \"preflightFingerprint\": \"bab8f1486800caf7716599e05ad756b9543d391654c0de8fc50d36f6099d78e5\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:20.130Z\",\n    \"finishedAt\": \"2026-10-03T06:33:21.508Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:20.130Z\",\n      \"finishedAt\": \"2026-10-03T06:33:20.618Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:20.844Z\",\n      \"finishedAt\": \"2026-10-03T06:33:21.295Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "shrink-above-level",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "0001",
+            "toNumber": "0002",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"partial\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"0002\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"risk\",\n      \"code\": \"UPPER_BOUND_SHRINK\",\n      \"intervalNumber\": \"01\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"0002\",\n      \"external\": false,\n      \"currentLevel\": \"00000000000000000001\"\n    }\n  ],\n  \"preflightFingerprint\": \"fa8a0977d866dc01c78c27d39bf3413f86d4ff2e0fc9386914057641c1c41aa2\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:21.512Z\",\n    \"finishedAt\": \"2026-10-03T06:33:22.883Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:21.512Z\",\n      \"finishedAt\": \"2026-10-03T06:33:21.956Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:22.181Z\",\n      \"finishedAt\": \"2026-10-03T06:33:22.679Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "shrink-below-level",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "0001",
+            "toNumber": "0000",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"blocked\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"0000\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"LOWER_NOT_LESS_THAN_UPPER\",\n      \"intervalNumber\": \"01\"\n    },\n    {\n      \"severity\": \"error\",\n      \"code\": \"CURRENT_LEVEL_OUTSIDE_PROPOSED_INTERVAL\",\n      \"intervalNumber\": \"01\"\n    },\n    {\n      \"severity\": \"risk\",\n      \"code\": \"UPPER_BOUND_SHRINK\",\n      \"intervalNumber\": \"01\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"0000\",\n      \"external\": false,\n      \"currentLevel\": \"00000000000000000001\"\n    }\n  ],\n  \"preflightFingerprint\": \"7f19a885611a596968d225f6ffca4562f9561223ffedb388f5c928ce73dc3303\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:22.886Z\",\n    \"finishedAt\": \"2026-10-03T06:33:24.212Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:22.886Z\",\n      \"finishedAt\": \"2026-10-03T06:33:23.346Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:23.534Z\",\n      \"finishedAt\": \"2026-10-03T06:33:24.004Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "used-lower-bound",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "0002",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"blocked\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0002\",\n      \"toNumber\": \"9999\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"LOWER_BOUND_IN_USE\",\n      \"intervalNumber\": \"01\"\n    },\n    {\n      \"severity\": \"error\",\n      \"code\": \"CURRENT_LEVEL_OUTSIDE_PROPOSED_INTERVAL\",\n      \"intervalNumber\": \"01\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0002\",\n      \"toNumber\": \"9999\",\n      \"external\": false,\n      \"currentLevel\": \"00000000000000000001\"\n    }\n  ],\n  \"preflightFingerprint\": \"5d92637840713a108e0b007a02689dcbf633c629d1aa6b9097e6ceda561b8c05\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:24.217Z\",\n    \"finishedAt\": \"2026-10-03T06:33:25.459Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:24.217Z\",\n      \"finishedAt\": \"2026-10-03T06:33:24.647Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:24.840Z\",\n      \"finishedAt\": \"2026-10-03T06:33:25.298Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "mode-switch",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "0001",
+            "toNumber": "9999",
+            "external": true
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"blocked\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"external\": true\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"EXTERNAL_REQUIRES_INITIAL_LEVEL\",\n      \"intervalNumber\": \"01\"\n    },\n    {\n      \"severity\": \"risk\",\n      \"code\": \"INTERNAL_EXTERNAL_SWITCH\",\n      \"intervalNumber\": \"01\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"external\": true,\n      \"currentLevel\": \"00000000000000000001\"\n    }\n  ],\n  \"preflightFingerprint\": \"f06d763c1ab8fd04d32d73fd88ed8d27b8bab324655ea0e98d7f378c199a7fa1\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:25.462Z\",\n    \"finishedAt\": \"2026-10-03T06:33:26.690Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:25.462Z\",\n      \"finishedAt\": \"2026-10-03T06:33:25.901Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:26.077Z\",\n      \"finishedAt\": \"2026-10-03T06:33:26.517Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "duplicate-create",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "create",
+            "intervalNumber": "01",
+            "fromNumber": "0001",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"blocked\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"create\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"INTERVAL_ALREADY_EXISTS\",\n      \"intervalNumber\": \"01\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"currentLevel\": \"00000000000000000001\",\n      \"external\": false\n    }\n  ],\n  \"preflightFingerprint\": \"96c26bd274b3f4b5ddbe1412c4d0af1dcf3c8e0535e6ad2ae88c466436e421a9\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:26.693Z\",\n    \"finishedAt\": \"2026-10-03T06:33:28.062Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:26.693Z\",\n      \"finishedAt\": \"2026-10-03T06:33:27.172Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:27.384Z\",\n      \"finishedAt\": \"2026-10-03T06:33:27.834Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "missing-update",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "02",
+            "fromNumber": "0001",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"blocked\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"02\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"INTERVAL_NOT_FOUND\",\n      \"intervalNumber\": \"02\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"currentLevel\": \"00000000000000000001\",\n      \"external\": false\n    }\n  ],\n  \"preflightFingerprint\": \"a9c71a511adff53790ed2d33b265953e4a2625269b232edb5049753923106c65\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:28.064Z\",\n    \"finishedAt\": \"2026-10-03T06:33:29.353Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:28.064Z\",\n      \"finishedAt\": \"2026-10-03T06:33:28.530Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:28.728Z\",\n      \"finishedAt\": \"2026-10-03T06:33:29.158Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "wrong-domain-width",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "1",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"blocked\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"1\",\n      \"toNumber\": \"9999\",\n      \"external\": false\n    }\n  ],\n  \"findings\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"DOMAIN_LENGTH_MISMATCH\",\n      \"intervalNumber\": \"01\"\n    }\n  ],\n  \"projectedIntervals\": [\n    {\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"currentLevel\": \"00000000000000000001\",\n      \"external\": false\n    }\n  ],\n  \"preflightFingerprint\": \"c49c000bf4fc56ceb161afe610195f0ebc69f4d8fd2a71d33366bb002050b0e7\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": true,\n    \"domainName\": \"CHAR4\",\n    \"domainLength\": 4,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:29.357Z\",\n    \"finishedAt\": \"2026-10-03T06:33:30.668Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:29.357Z\",\n      \"finishedAt\": \"2026-10-03T06:33:29.814Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"confirmation\": {\n      \"startedAt\": \"2026-10-03T06:33:30.023Z\",\n      \"finishedAt\": \"2026-10-03T06:33:30.494Z\",\n      \"sources\": [\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        },\n        {\n          \"table\": \"NRIV\",\n          \"status\": \"ok\",\n          \"method\": \"rfc_read_table\",\n          \"returnedCount\": 1,\n          \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n        }\n      ],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": true,\n      \"snapshot\": false\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "absent-approved-test-object",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGN1",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "0001",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZORVCFGN1\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"not_found\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"usableForWritePrecondition\": false,\n  \"changes\": [\n    {\n      \"action\": \"update\",\n      \"intervalNumber\": \"01\",\n      \"fromNumber\": \"0001\",\n      \"toNumber\": \"9999\",\n      \"external\": false\n    }\n  ],\n  \"findings\": null,\n  \"projectedIntervals\": null,\n  \"preflightFingerprint\": null,\n  \"readFingerprint\": null,\n  \"coverage\": {\n    \"complete\": false,\n    \"checksComplete\": false,\n    \"domainName\": \"\",\n    \"domainLength\": null,\n    \"unsupported\": [],\n    \"included\": [\n      \"numeric bounds\",\n      \"inclusive overlap across all observed intervals\",\n      \"persisted current level\",\n      \"mode switch risk\"\n    ],\n    \"omitted\": [\n      \"business usage\",\n      \"locks and atomic snapshot\",\n      \"buffered allocation state\",\n      \"group/subobject and annual semantics\",\n      \"alphanumeric ranges\",\n      \"SAP maintenance authorization and CTS\"\n    ]\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:30.670Z\",\n    \"finishedAt\": \"2026-10-03T06:33:30.815Z\",\n    \"initial\": {\n      \"startedAt\": \"2026-10-03T06:33:30.670Z\",\n      \"finishedAt\": \"2026-10-03T06:33:30.814Z\",\n      \"sources\": [],\n      \"warnings\": [],\n      \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n      \"definitionsRechecked\": true,\n      \"valuesRechecked\": false,\n      \"snapshot\": false\n    },\n    \"confirmation\": null,\n    \"definitionsRechecked\": false,\n    \"valuesRechecked\": false,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No allocation, maintenance, current-level reset or transport operation. Standard NUMBER_RANGE_INTERVAL_UPDATE source is read only; even its checking path can mutate SAP session state.\",\n    \"Digit-only, exact domain-width projection for reviewed nonannual, unbuffered objects without subobjects/groups. No padding or Number conversion. Fingerprints do not attest business safety or authorize writes.\"\n  ]\n}"
+    },
+    {
+      "label": "forbidden-interval-filter",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "intervalNumber": "01",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "0001",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": true,
+      "response": "MCP error -32602: Input validation error: Invalid arguments for tool preview_configuration_number_range: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"intervalNumber\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'intervalNumber'\"\n  }\n]"
+    },
+    {
+      "label": "non-numeric-boundary",
+      "name": "preview_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000",
+        "changes": [
+          {
+            "action": "update",
+            "intervalNumber": "01",
+            "fromNumber": "ABCD",
+            "toNumber": "9999",
+            "external": false
+          }
+        ]
+      },
+      "isError": true,
+      "response": "MCP error -32602: Input validation error: Invalid arguments for tool preview_configuration_number_range: [\n  {\n    \"validation\": \"regex\",\n    \"code\": \"invalid_string\",\n    \"message\": \"Invalid\",\n    \"path\": [\n      \"changes\",\n      0,\n      \"fromNumber\"\n    ]\n  }\n]"
+    },
+    {
+      "label": "after",
+      "name": "read_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZBATCH04",
+        "subobject": "",
+        "year": "0000"
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"objectName\": \"ZBATCH04\",\n  \"subobject\": \"\",\n  \"year\": \"0000\",\n  \"status\": \"read\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"intervals\": [\n    {\n      \"CLIENT\": \"200\",\n      \"OBJECT\": \"ZBATCH04\",\n      \"SUBOBJECT\": \"\",\n      \"NRRANGENR\": \"01\",\n      \"TOYEAR\": \"0000\",\n      \"FROMNUMBER\": \"0001\",\n      \"TONUMBER\": \"9999\",\n      \"NRLEVEL\": \"00000000000000000001\",\n      \"EXTERNIND\": \"\"\n    }\n  ],\n  \"definition\": {\n    \"properties\": {\n      \"OBJECT\": \"ZBATCH04\",\n      \"DTELSOBJ\": \"\",\n      \"NRTAB\": \"\",\n      \"NRINTFLD\": \"\",\n      \"NREXTFLD\": \"\",\n      \"NRFLD\": \"\",\n      \"NRSOBJFLD\": \"\",\n      \"NRELEFLD\": \"\",\n      \"YEARIND\": \"\",\n      \"DOMLEN\": \"CHAR4\",\n      \"PERCENTAGE\": \"95.0\",\n      \"CODE\": \"\",\n      \"TEXTIND\": \"\",\n      \"NRELTXTTAB\": \"\",\n      \"NRELTXTSOB\": \"\",\n      \"NRELTXTELE\": \"\",\n      \"NRELTXTTXT\": \"\",\n      \"NRELTXTLNG\": \"\",\n      \"BUFFER\": \"\",\n      \"NOIVBUFFER\": \"00000000\",\n      \"NONRSWAP\": \"\",\n      \"RFCDEST\": \"\",\n      \"NRCHECKASCII\": \"\"\n    }\n  },\n  \"definitionFingerprint\": \"7b0a788e69683728077c0f2cf2ba2cbbb5caad2a393ed35a42c2271ffcf0cc18\",\n  \"readFingerprint\": \"53037fea7658412a32a5b18657afc0ffbe121955be8a09c440f07d5d3aa085ad\",\n  \"complete\": true,\n  \"truncated\": false,\n  \"representation\": \"sap_text_trimmed\",\n  \"currentLevelMeaning\": \"persisted_NRIV_NRLEVEL_only\",\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T06:33:30.822Z\",\n    \"finishedAt\": \"2026-10-03T06:33:31.292Z\",\n    \"sources\": [\n      {\n        \"table\": \"NRIV\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"NRIV\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"layoutFingerprint\": \"a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105\",\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"No number allocation API is called. Persisted NRLEVEL does not attest buffered next numbers or availability; no Number conversion is applied.\",\n    \"Exact customer object, subobject and year only. Reads are sequential; limits and changes do not establish a complete snapshot. No interval maintenance, current-level reset or transport operation.\"\n  ]\n}"
+    }
+  ],
+  "readonlyToolCount": 120,
+  "currentLevelBefore": "00000000000000000001",
+  "currentLevelAfter": "00000000000000000001",
+  "status": "passed_partial_readonly_preflight",
+  "finishedAt": "2026-10-03T06:33:31.293Z"
+}

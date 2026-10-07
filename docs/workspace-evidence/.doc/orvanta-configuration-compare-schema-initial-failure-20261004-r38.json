@@ -1,0 +1,251 @@
+{
+  "startedAt": "2026-10-04T07:15:29.708Z",
+  "ready": {
+    "pid": 43508,
+    "url": "http://127.0.0.1:2261/mcp",
+    "startedAt": "2026-10-04T07:12:54.561Z",
+    "allowedTools": [
+      "get_runtime_info",
+      "compare_configuration_unit",
+      "read_configuration_unit"
+    ],
+    "revision": "r38",
+    "readOnly": true
+  },
+  "readOnly": true,
+  "nativeWriterCalls": 0,
+  "calls": [
+    {
+      "at": "2026-10-04T07:15:32.934Z",
+      "name": "compare_configuration_unit",
+      "args": {
+        "from": "w200",
+        "to": "w300",
+        "unitKey": "KG",
+        "language": "ZH",
+        "ignoreFields": []
+      },
+      "isError": false,
+      "data": {
+        "from": "w200",
+        "to": "w300",
+        "unitKey": "KG",
+        "language": "ZH",
+        "status": "incomparable",
+        "readOnly": true,
+        "saveAvailable": false,
+        "rows": [
+          {
+            "table": "T006",
+            "key": {
+              "MSEHI": "KG"
+            },
+            "status": "incomparable",
+            "differences": []
+          },
+          {
+            "table": "T006A",
+            "key": {
+              "MSEHI": "KG",
+              "language": "ZH"
+            },
+            "status": "incomparable",
+            "differences": []
+          }
+        ],
+        "observations": {
+          "from": {
+            "status": "observed",
+            "result": {
+              "connectionId": "w200",
+              "client": "200",
+              "unitKey": "KG",
+              "keyFormat": "internal_MSEHI",
+              "status": "unavailable",
+              "readOnly": true,
+              "saveAvailable": false,
+              "unit": {
+                "table": "T006",
+                "status": "unavailable",
+                "code": "CONFIGURATION_UNIT_QUERY_FAILED",
+                "data": null
+              },
+              "text": {
+                "table": "T006A",
+                "status": "unavailable",
+                "code": "CONFIGURATION_UNIT_QUERY_FAILED",
+                "data": null,
+                "requestedLanguage": "ZH",
+                "sapLanguage": null,
+                "fallbackUsed": false
+              },
+              "readFingerprint": null,
+              "comparison": "not_requested",
+              "coverage": {
+                "complete": false,
+                "includedFields": {
+                  "T006": [
+                    "MANDT",
+                    "MSEHI",
+                    "KZEX3",
+                    "KZEX6",
+                    "ANDEC",
+                    "KZKEH",
+                    "KZWOB",
+                    "KZ1EH",
+                    "KZ2EH",
+                    "DIMID",
+                    "ZAEHL",
+                    "NENNR",
+                    "EXP10",
+                    "ADDKO",
+                    "EXPON",
+                    "DECAN",
+                    "ISOCODE",
+                    "PRIMARY",
+                    "TEMP_UNIT",
+                    "FAMUNIT",
+                    "PRESS_UNIT"
+                  ],
+                  "T006A": [
+                    "MANDT",
+                    "SPRAS",
+                    "MSEHI",
+                    "MSEH3",
+                    "MSEH6",
+                    "MSEHT",
+                    "MSEHL"
+                  ]
+                },
+                "omittedFields": {
+                  "T006": [
+                    "TEMP_VALUE",
+                    "PRESS_VAL"
+                  ],
+                  "T006A": []
+                },
+                "reason": "FLTP value decoding is not verified; no binary/numeric lossless snapshot is attested."
+              },
+              "representation": "sap_text_trimmed",
+              "usableForWritePrecondition": false,
+              "evidence": {
+                "startedAt": "2026-10-04T07:15:29.788Z",
+                "finishedAt": "2026-10-04T07:15:32.928Z",
+                "sources": [
+                  {
+                    "table": "T006",
+                    "status": "unavailable",
+                    "method": "rfc_read_table",
+                    "returnedCount": 0,
+                    "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+                    "code": "CONFIGURATION_UNIT_QUERY_FAILED"
+                  },
+                  {
+                    "table": "T002",
+                    "status": "unavailable",
+                    "method": "rfc_read_table",
+                    "returnedCount": 0,
+                    "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+                    "code": "CONFIGURATION_UNIT_QUERY_FAILED"
+                  }
+                ],
+                "warnings": [
+                  "T006: CONFIGURATION_UNIT_QUERY_FAILED",
+                  "T002: CONFIGURATION_UNIT_QUERY_FAILED"
+                ],
+                "definitionFingerprints": {
+                  "T006": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7",
+                  "T006A": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d",
+                  "T002": "f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307"
+                },
+                "definitionsRechecked": true,
+                "valuesRechecked": false,
+                "snapshot": false
+              },
+              "warnings": [
+                "Internal case-sensitive unit key only; external display units and ISO codes are not converted through CUNIT.",
+                "Both value tables are constrained to client 200. Missing translation does not mean missing unit; read failures do not mean absence.",
+                "Read fingerprint covers returned text projections and one language only, including observed absence. It is not a complete row version, business validation or CTS/write authorization."
+              ]
+            }
+          },
+          "to": {
+            "status": "unavailable",
+            "result": null,
+            "code": "CONFIGURATION_COMPARE_SIDE_UNAVAILABLE"
+          }
+        },
+        "rules": {
+          "key": "internal_case_sensitive_MSEHI_plus_ISO_language_for_text",
+          "client": "each_connection_client_filter; MANDT_not_compared",
+          "language": "explicit_ISO_language; local_SPRAS_not_compared; no_fallback",
+          "ignoredFields": [],
+          "derivedFields": [],
+          "omittedFields": {
+            "T006": [
+              "TEMP_VALUE",
+              "PRESS_VAL"
+            ],
+            "T006A": []
+          },
+          "representation": "sap_text_trimmed"
+        },
+        "evidence": {
+          "startedAt": "2026-10-04T07:15:29.787Z",
+          "finishedAt": "2026-10-04T07:15:32.930Z",
+          "snapshot": false,
+          "complete": false
+        },
+        "warnings": [
+          "Only one exact internal unit key and one explicit language are compared. Equality covers projected fields only; FLTP fields and other languages are omitted.",
+          "Sequential reads are not an atomic cross-system snapshot. Failed or changed reads remain incomparable; no synchronization or transport is performed."
+        ]
+      }
+    }
+  ],
+  "schema": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string",
+        "enum": [
+          "w200",
+          "w300"
+        ]
+      },
+      "to": {
+        "type": "string",
+        "enum": [
+          "w200",
+          "w300"
+        ]
+      },
+      "unitKey": {
+        "type": "string"
+      },
+      "language": {
+        "type": "string",
+        "pattern": "^[A-Z]{2}$"
+      },
+      "ignoreFields": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 23,
+        "default": []
+      }
+    },
+    "required": [
+      "from",
+      "to",
+      "unitKey",
+      "language"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "status": "failed_or_blocked",
+  "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'incomparable'\n- 'partial'\n",
+  "finishedAt": "2026-10-04T07:15:32.939Z"
+}

@@ -1,0 +1,677 @@
+{
+  "at": "2026-10-05T18:08:38+08:00",
+  "readOnly": true,
+  "executedFunctions": [],
+  "localStart": {
+    "startedAt": "2026-10-05T08:19:43.254Z",
+    "readOnly": true,
+    "writes": 0,
+    "calls": [
+      {
+        "at": "2026-10-05T08:19:43.747Z",
+        "name": "get_abap_object_lines",
+        "arguments": {
+          "connectionId": "w200",
+          "objectName": "LSCTMF01",
+          "objectType": "FUGR/I",
+          "startLine": 1,
+          "lineCount": 111
+        },
+        "isError": false,
+        "data": {
+          "text": "Source from LSCTMF01 (lines 1-111 of 111, 111 lines retrieved):\n\n```abap\n*----------------------------------------------------------------------*\n***INCLUDE LSCTMF01 .\n*----------------------------------------------------------------------*\n\n*&---------------------------------------------------------------------*\n*&      Form  local_start\n*&---------------------------------------------------------------------*\nFORM LOCAL_START.\n  DATA: LT_E071_TAB      LIKE E071 OCCURS 0 WITH HEADER LINE,\n        LT_E071K_TAB     LIKE E071K OCCURS 0 WITH HEADER LINE.\n  DATA: I                TYPE I.\n  DATA: LV_TRSTATUS      TYPE TRSTATUS.\n  DATA: LT_E071_TRIGG    TYPE TABLE OF SCDT_E071_TRIGG WITH HEADER LINE.\n  DATA: LT_E071K_TRIGG   TYPE TABLE OF SCDT_E071K_TRIGG WITH HEADER LINE.\n  DATA: LT_GUID          TYPE TABLE OF SYSUUID_22 WITH HEADER LINE.\n\n  CHECK GV_SUPPRESS_ON_COMMIT IS INITIAL.\n\n  SORT IT_START_TAB DESCENDING.\n  DELETE ADJACENT DUPLICATES FROM IT_START_TAB COMPARING TRKORR.\n  LOOP AT IT_START_TAB.\n    CLEAR LV_TRSTATUS.\n    SELECT SINGLE TRSTATUS FROM E070 INTO LV_TRSTATUS\n                           WHERE TRKORR = IT_START_TAB-TRKORR.\n    LOOP AT IT_E071_TAB INTO LT_E071_TAB\n            WHERE TRKORR = IT_START_TAB-TRKORR.\n      APPEND LT_E071_TAB.\n      DELETE IT_E071_TAB.\n    ENDLOOP.\n    LOOP AT IT_E071K_TAB INTO LT_E071K_TAB\n            WHERE TRKORR = IT_START_TAB-TRKORR.\n      APPEND LT_E071K_TAB.\n      DELETE IT_E071K_TAB.\n    ENDLOOP.\n    IF LV_TRSTATUS <> 'D'.\n*request was released -> collect all entries for TRKORR\n      SELECT DISTINCT GUID FROM SCDT_E071_TRIGG INTO TABLE LT_GUID\n                          WHERE TRKORR = IT_START_TAB-TRKORR.\n      IF SY-SUBRC = 0.\n        LOOP AT LT_GUID.\n          SELECT * FROM SCDT_E071K_TRIGG INTO TABLE LT_E071K_TRIGG\n                   WHERE GUID = LT_GUID.\n          LOOP AT LT_E071K_TRIGG.\n            MOVE-CORRESPONDING LT_E071K_TRIGG TO LT_E071K_TAB.\n            LT_E071K_TAB-TRKORR = IT_START_TAB-TRKORR.\n            APPEND LT_E071K_TAB.\n          ENDLOOP.\n          DELETE SCDT_E071K_TRIGG FROM TABLE LT_E071K_TRIGG.\n        ENDLOOP.\n        FREE LT_E071K_TRIGG.\n        FREE LT_GUID.\n\n        SELECT * FROM SCDT_E071_TRIGG INTO TABLE LT_E071_TRIGG\n                            WHERE TRKORR = IT_START_TAB-TRKORR.\n\n        LOOP AT LT_E071_TRIGG.\n          MOVE-CORRESPONDING LT_E071_TRIGG TO LT_E071_TAB.\n          APPEND LT_E071_TAB.\n        ENDLOOP.\n        DELETE SCDT_E071_TRIGG FROM TABLE LT_E071_TRIGG.\n        FREE LT_E071_TRIGG.\n        CALL FUNCTION 'DB_COMMIT'.\n        WAIT UP TO 2 SECONDS.\n      ENDIF.\n    ENDIF.\n\n    CALL FUNCTION 'SCDC_DISTRIBUTE_TABLE_KEYS'\n               EXPORTING\n                 PROJECT_ID        = IT_START_TAB-PROJECT_ID\n                 TRKORR            = IT_START_TAB-TRKORR\n               TABLES\n                 E071_TAB          = LT_E071_TAB\n                 E071K_TAB         = LT_E071K_TAB\n               EXCEPTIONS\n                 NO_PROJECT        = 0\n                 OTHERS            = 0.\n    IF LV_TRSTATUS = 'D' AND GV_GUID_22 <> SPACE.\n    LOOP AT LT_E071K_TAB.\n      I = STRLEN( LT_E071K_TAB-TABKEY ).\n      IF I > 0.\n        I = I - 1.\n        IF LT_E071K_TAB-TABKEY+I(1) = '*'.\n          CONTINUE.\n        ENDIF.\n      ENDIF.\n      DELETE FROM SCDT_E071K_TRIGG\n          WHERE GUID    = GV_GUID_22\n            AND OBJECT  = LT_E071K_TAB-OBJECT\n            AND OBJNAME = LT_E071K_TAB-OBJNAME\n            AND TABKEY  = LT_E071K_TAB-TABKEY.\n        IF LT_E071K_TAB-OBJECT = 'TABU'.\n          SELECT SINGLE * FROM SCDT_E071K_TRIGG INTO LT_E071K_TRIGG\n              WHERE GUID    = GV_GUID_22\n                AND OBJECT  = LT_E071K_TAB-OBJECT\n                AND OBJNAME = LT_E071K_TAB-OBJNAME.\n          IF SY-SUBRC <> 0.\n            DELETE FROM SCDT_E071_TRIGG\n                WHERE GUID     = GV_GUID_22\n                  AND OBJECT   = LT_E071K_TAB-OBJECT\n                  AND OBJ_NAME = LT_E071K_TAB-OBJNAME.\n          ENDIF.\n        ENDIF.\n      ENDLOOP.\n      CALL FUNCTION 'DB_COMMIT'.\n    ENDIF.\n    REFRESH: LT_E071_TAB,\n             LT_E071K_TAB.\n    DELETE IT_START_TAB.\n  ENDLOOP.\nENDFORM.                    \" local_start\n\n```\n\nFull Source SHA-256: ad5e4b0cbec97baa300de70d0d5fa264a90d0c6d01124393decb29adedbed236\nURI: /sap/bc/adt/functions/groups/sctm/includes/lsctmf01/source/main\n\nEnhancement metadata unavailable (unsupported)."
+        }
+      },
+      {
+        "at": "2026-10-05T08:19:44.136Z",
+        "name": "get_abap_object_lines",
+        "arguments": {
+          "connectionId": "w200",
+          "objectName": "LSCTMTOP",
+          "objectType": "FUGR/I",
+          "startLine": 1,
+          "lineCount": 100
+        },
+        "isError": false,
+        "data": {
+          "text": "Source from LSCTMTOP (lines 1-100 of 111, 100 lines retrieved):\n\n```abap\nFUNCTION-POOL SCTM.                         \"MESSAGE-ID ..\n\nTYPE-POOLS: CTSLG.\n\nDATA:  BEGIN OF SCDT_SYNCOBJ,\n         SYNC_OBJECT   TYPE SCDT_ID,\n         TABNAME       TYPE OB_OBJECT,\n         TABTYPE       TYPE OB_TYP,\n         IMG_ACT_SRC   TYPE CUS_IMG_AC,\n         IMG_ACT_TRG   TYPE CUS_IMG_AC,\n         sourcesys     type logsys,\n         KEYSELECT.\nDATA  END   OF SCDT_SYNCOBJ.\n\nDATA: IT_SYNC_TABLES   LIKE SCDT_SYNCOBJ OCCURS 0 WITH HEADER LINE.\n\n* Variablen für Verbucher\nDATA: IT_E071_TAB      LIKE E071 OCCURS 0 WITH HEADER LINE,\n      IT_E071K_TAB     LIKE E071K OCCURS 0 WITH HEADER LINE.\nDATA: BEGIN OF IT_START_TAB OCCURS 0,\n        TRKORR         LIKE E070-TRKORR,\n        PROJECT_ID     LIKE TPROJECT-PROJECT_ID,\n      END OF IT_START_TAB.\n\n*data for solar_ta_status_get\nDATA: GV_IMPORTED(30)       VALUE 'IMPORTED',\n      GV_IMPORT_WARNING(30) VALUE 'IMPORT_WARNING',\n      GV_IMPORT_FAILED(30)  VALUE 'IMPORT_FAILED'.\nDATA: GV_SUPPRESS_ON_COMMIT TYPE OAX,\n      GV_COLLECT_KEYS  TYPE OAX,\n      GV_GUID_22       TYPE GUID_22,\n      GV_AS4POS_K      TYPE DDPOSITION,\n      GV_AS4POS        TYPE DDPOSITION.\nDATA  GV_LOCAL_LOCKS.\n\nINCLUDE SCPRCONST.\n\nCONSTANTS:\n      GC_ACTIVE        TYPE SCDTVERS VALUE 'ACTIVE',\n      GC_SETUP         TYPE SCDTVERS VALUE 'SETUP',\n      GC_LOCK          TYPE PROJECT_ID VALUE '/SCDT_LOCK'.\n\nTABLES: SCPRATTR,\n        T000,\n        OBJS,\n        SCDTSYNC,\n        E070,\n        RFCDES.\nTABLES: SCDTLOCK.\n\nDEFINE APND_SY_MSG.\n  CLEAR MSGLIST.\n  ADD 1 TO MSG_COUNTER.\n  MSGLIST-MANDANT   = SY-MANDT.\n  MSGLIST-LOGNUMBER = 0.\n  MSGLIST-MSGNUMBER = MSG_COUNTER.\n  MSGLIST-MSGTY     = SY-MSGTY.\n  MSGLIST-MSGID     = SY-MSGID.\n  MSGLIST-MSGNO     = SY-MSGNO.\n  MSGLIST-MSGV1     = SY-MSGV1.\n  MSGLIST-MSGV2     = SY-MSGV2.\n  MSGLIST-MSGV3     = SY-MSGV3.\n  MSGLIST-MSGV4     = SY-MSGV4.\n  MSGLIST-TABNAME   = &1.\n  APPEND MSGLIST.\nEND-OF-DEFINITION.\n\n* ----------------------------------------------------------------------\n* Add message: apnd_msg <typ> <id> <no> <v1> <v2> <v3> <v4> <obj-name>\n* ----------------------------------------------------------------------\nDEFINE APND_MSG.\n  CLEAR MSGLIST.\n  ADD 1 TO MSG_COUNTER.\n  MSGLIST-MANDANT   = SY-MANDT.\n  MSGLIST-LOGNUMBER = 0.\n  MSGLIST-MSGNUMBER = MSG_COUNTER.\n  MSGLIST-MSGTY     = &1.\n  MSGLIST-MSGID     = &2.\n  MSGLIST-MSGNO     = &3.\n  MSGLIST-MSGV1     = &4.\n  MSGLIST-MSGV2     = &5.\n  MSGLIST-MSGV3     = &6.\n  MSGLIST-MSGV4     = &7.\n  MSGLIST-TABNAME   = &8.\n  APPEND MSGLIST.\nEND-OF-DEFINITION.\n\nDEFINE MACRO_FILL_GV_LOCAL_LOCKS.\n  IF GV_LOCAL_LOCKS IS INITIAL.\n    SELECT SINGLE * FROM SCDTLOCK\n                    WHERE TABNAME   = GC_SETUP\n                      AND TABTYPE   = SPACE\n                      AND VERSION   = GC_SETUP\n                      AND SCENARIO  = SPACE.\n    IF SY-SUBRC = 0.\n      CASE SCDTLOCK-LOCKTYPE.\n        WHEN 'N'.\n          GV_LOCAL_LOCKS = 'N'. \"default is: 'Not locked'\n        WHEN 'L'.\n          GV_LOCAL_LOCKS = 'L'. \"default is: 'Locked'\n```\n\nFull Source SHA-256: 088ebaa5bbd35d72ac915c79659f9d46a9b17868069843b7206788ac937ffc64\nURI: /sap/bc/adt/functions/groups/sctm/includes/lsctmtop/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+        }
+      },
+      {
+        "at": "2026-10-05T08:19:44.225Z",
+        "name": "get_object_by_uri",
+        "arguments": {
+          "connectionId": "w200",
+          "uri": "/sap/bc/adt/typepools/trwbo/source/main"
+        },
+        "isError": true,
+        "data": {
+          "text": "Error invoking get_object_by_uri: Error: Failed to access object by URI: Error: Source content is empty"
+        }
+      },
+      {
+        "at": "2026-10-05T08:19:44.266Z",
+        "name": "read_function_module_interface",
+        "arguments": {
+          "connectionId": "w200",
+          "functionName": "SCTM_START_CONSISTENCY_CHECK"
+        },
+        "isError": true,
+        "data": {
+          "text": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 SCTM_START_CONSISTENCY_CHECK 不存在"
+        }
+      }
+    ],
+    "status": "read_complete",
+    "finishedAt": "2026-10-05T08:19:44.266Z"
+  },
+  "authorityForm": {
+    "at": "2026-10-05T09:44:24.141Z",
+    "calls": [
+      {
+        "at": "2026-10-05T09:44:24.180Z",
+        "name": "get_object_by_uri",
+        "arguments": {
+          "connectionId": "w200",
+          "uri": "/sap/bc/adt/functions/groups/str9/includes/lstr9f01/source/main",
+          "startLine": 152,
+          "lineCount": 60
+        },
+        "isError": false,
+        "data": {
+          "text": "Direct URI Access Successful\nOriginal URI: /sap/bc/adt/functions/groups/str9/includes/lstr9f01/source/main\nURI Used: /sap/bc/adt/functions/groups/str9/includes/lstr9f01/source/main\nLines: 152-212 of 273 (60 retrieved)\n\n```abap\nform check_local_users_authority using pv_ttype type c\n                                       pv_actvt type c\n                                       pv_domain type tmsdomnam\n                                       pv_system type tmssysnam.\n* Perform checks for current user and local system\n  if pv_actvt = '03'. \" special handling for display\n    authority-check object 'S_TRANSPRT'\n             id 'TTYPE' dummy\n             id 'ACTVT' field pv_actvt.\n  else.\n    authority-check object 'S_TRANSPRT'\n             id 'TTYPE' field pv_ttype\n             id 'ACTVT' field pv_actvt.\n  endif.\n  if sy-subrc = 0.\n    return.\n  endif.\n* Perform checks for current user and other system\n  if pv_actvt = '03'. \" special handling for display\n    authority-check object 'S_SYS_RWBO'\n               id 'DOMAIN'  field pv_domain\n               id 'DESTSYS' field pv_system\n               id 'TTYPE'   dummy\n               id 'ACTVT'   field pv_actvt.\n  else.\n    authority-check object 'S_SYS_RWBO'\n               id 'DOMAIN'  field pv_domain\n               id 'DESTSYS' field pv_system\n               id 'TTYPE'   field pv_ttype\n               id 'ACTVT'   field pv_actvt.\n  endif.\n  if sy-subrc = 0.\n    return.\n  endif.\n  perform exit_with_error using sy-uname pv_actvt.\n\n\nendform.                    \" check_local_users_authority\n*&---------------------------------------------------------------------*\n*&      Form  check_others_users_authority\n*&---------------------------------------------------------------------*\n*       text\n*----------------------------------------------------------------------*\n*      -->PV_USER  user to be checked\n*      -->PV_TTYPE  internal request type (4chars)\n*      -->PV_ACTVT  internal activity - 2 digits\n*      -->PV_DOMAIN  tms domain\n*      -->PV_SYSTEM  tms system\n*----------------------------------------------------------------------*\nform check_others_users_authority using pv_user like sy-uname\n                                        pv_ttype type c\n                                        pv_actvt type c\n                                        pv_domain type tmsdomnam\n                                        pv_system type tmssysnam.\n\n  data: lv_user   like usr04-bname,\n        lv_ttypef like ust12-field,\n        lv_ttype  like xu180-value,\n        lv_actvt  like xu180-value,\n        lv_domain like xu180-value,\n```"
+        }
+      }
+    ],
+    "status": "complete",
+    "finishedAt": "2026-10-05T09:44:24.352Z"
+  },
+  "followup": {
+    "at": "2026-10-05T09:59:07.490Z",
+    "calls": [
+      {
+        "at": "2026-10-05T09:59:07.529Z",
+        "name": "read_function_module_interface",
+        "arguments": {
+          "connectionId": "w200",
+          "functionName": "SCDC_DISTRIBUTE_TABLE_KEYS"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "functionName": "SCDC_DISTRIBUTE_TABLE_KEYS",
+          "functionGroup": "SCTM",
+          "shortText": "Start Distribution in Solution Manager",
+          "remoteMode": "",
+          "updateTask": true,
+          "updateTaskMode": "1",
+          "globalInterface": false,
+          "remoteEnabled": false,
+          "importParameters": [
+            {
+              "name": "PROJECT_ID",
+              "typeName": "PROJECT_ID",
+              "optional": true,
+              "passByValue": true,
+              "description": "Project Name"
+            },
+            {
+              "name": "TRKORR",
+              "typeName": "E070-TRKORR",
+              "optional": false,
+              "passByValue": true,
+              "description": "Request/Task"
+            }
+          ],
+          "exportParameters": [],
+          "changingParameters": [],
+          "tableParameters": [
+            {
+              "name": "E071_TAB",
+              "typeName": "E071",
+              "optional": false,
+              "passByValue": false,
+              "description": "Change & Transport System: Object Entries of Requests/Tasks"
+            },
+            {
+              "name": "E071K_TAB",
+              "typeName": "E071K",
+              "optional": true,
+              "passByValue": false,
+              "description": "Change & Transport System: Key Entries of Requests/Tasks"
+            }
+          ],
+          "exceptions": [
+            {
+              "name": "NO_PROJECT",
+              "description": ""
+            }
+          ],
+          "source": [
+            "FUNCTION SCDC_DISTRIBUTE_TABLE_KEYS.",
+            "*\"----------------------------------------------------------------------",
+            "*\"*\"Verbuchungsfunktionsbaustein:",
+            "*\"",
+            "*\"*\"Lokale Schnittstelle:",
+            "*\"  IMPORTING",
+            "*\"     VALUE(PROJECT_ID) TYPE  PROJECT_ID OPTIONAL",
+            "*\"     VALUE(TRKORR) TYPE  E070-TRKORR",
+            "*\"  TABLES",
+            "*\"      E071_TAB STRUCTURE  E071",
+            "*\"      E071K_TAB STRUCTURE  E071K OPTIONAL",
+            "*\"  EXCEPTIONS",
+            "*\"      NO_PROJECT",
+            "*\"----------------------------------------------------------------------",
+            "",
+            "  DATA: WP_SYST        TYPE RFCDEST,",
+            "        RELEASE        LIKE SY-SAPRL,",
+            "        PROJECT        LIKE PROJECT_ID,",
+            "        LV_TRKORR      LIKE E070-TRKORR,",
+            "        TEXT(80),",
+            "        PROGRESS_TEXT  LIKE SY-UCOMM,",
+            "        VAR            TYPE SYMSGV.",
+            "  DATA: LT_E071        TYPE TABLE OF E071  WITH HEADER LINE.",
+            "  DATA: LT_E071K       TYPE TABLE OF E071K WITH HEADER LINE.",
+            "",
+            "  LT_E071[]  = E071_TAB[].",
+            "  LT_E071K[] = E071K_TAB[].",
+            "",
+            "  IF PROJECT_ID IS INITIAL.",
+            "    CALL FUNCTION 'SCTM_GET_PROJECT_FOR_TRKORR'",
+            "      EXPORTING",
+            "        IV_TRKORR                  = TRKORR",
+            "      IMPORTING",
+            "        EV_PROJECT_ID              = PROJECT",
+            "        EV_STRKORR                 = LV_TRKORR",
+            "      EXCEPTIONS",
+            "        NO_REQUEST_SPECIFIED       = 1",
+            "        NO_PROJECT_FOUND           = 2",
+            "        OTHERS                     = 3.",
+            "    CASE SY-SUBRC.",
+            "      WHEN 0.",
+            "      WHEN 1.",
+            "      WHEN 2 OR 3.",
+            "        SELECT SINGLE STRKORR FROM E070 INTO LV_TRKORR",
+            "                             WHERE TRKORR = TRKORR.",
+            "    ENDCASE.",
+            "  ELSE.",
+            "    PROJECT = PROJECT_ID.",
+            "  ENDIF.",
+            "",
+            "  IF LV_TRKORR IS INITIAL.",
+            "    LV_TRKORR = TRKORR.",
+            "  ENDIF.",
+            "",
+            "  CALL FUNCTION 'TRINT_SORT_OBJECT_AND_KEY_LIST'",
+            "    EXPORTING",
+            "      IV_SPECIAL_MODE = 'X'",
+            "    CHANGING",
+            "      CT_OBJECTS      = LT_E071[]",
+            "      CT_KEYS         = LT_E071K[].",
+            "",
+            "  IF GV_COLLECT_KEYS = 'X'.",
+            "* BC-Set activation",
+            "    CALL FUNCTION 'SCDC_DISTRIBUTE_TABLE_KEYS_VB'",
+            "      EXPORTING",
+            "        PROJECT_ID            = PROJECT_ID",
+            "        TRKORR                = LV_TRKORR",
+            "      TABLES",
+            "        E071_TAB              = LT_E071",
+            "        E071K_TAB             = LT_E071K",
+            "      EXCEPTIONS",
+            "        NO_PROJECT            = 0",
+            "        OTHERS                = 0.",
+            "    EXIT.",
+            "*   Explicit start of distribution via SCTM_BCSET_ACTIVATION_FRAME",
+            "  ENDIF.",
+            "",
+            "* get central system",
+            "  CALL FUNCTION 'SCDC_GET_WORKPLACE'",
+            "    EXPORTING",
+            "      PROJECT_ID   = PROJECT",
+            "    IMPORTING",
+            "      WORKPLACE    = WP_SYST",
+            "      WORK_PROJECT = PROJECT",
+            "    EXCEPTIONS",
+            "      OTHERS       = 1.",
+            "  IF SY-SUBRC <> 0.",
+            "*   raise no_project.",
+            "    EXIT.",
+            "  ENDIF.",
+            "",
+            "  RELEASE = SY-SAPRL.",
+            "",
+            "* start distribution",
+            "  PROGRESS_TEXT = 'Rufe Zentralsystem der Verteilung: &'(S03).",
+            "  REPLACE '&' WITH WP_SYST INTO PROGRESS_TEXT.",
+            "  CALL FUNCTION 'SAPGUI_PROGRESS_INDICATOR'",
+            "    EXPORTING",
+            "      TEXT = PROGRESS_TEXT.",
+            "",
+            "  CALL FUNCTION 'SCDT_DISTRIB_TRANSPORT_ORDER'",
+            "    DESTINATION WP_SYST",
+            "    EXPORTING",
+            "      RELEASE               = RELEASE",
+            "      PROJECT               = PROJECT",
+            "      TRKORR                = LV_TRKORR",
+            "    TABLES",
+            "      E071_TAB              = LT_E071",
+            "      E071K_TAB             = LT_E071K",
+            "*       ET_SCDTTABC           = It_SCDTTABC",
+            "    EXCEPTIONS",
+            "      DATA_ERROR            = 1",
+            "      SYSTEM_FAILURE        = 2 MESSAGE TEXT",
+            "      COMMUNICATION_FAILURE = 3 MESSAGE TEXT",
+            "      OTHERS                = 4.",
+            "  IF SY-SUBRC <> 0.",
+            "    CASE SY-SUBRC.",
+            "      WHEN 1 OR 4.",
+            "        MESSAGE I000(TB) WITH",
+            "           'Fehler bei Synchronisation -> Trace im'(S01)",
+            "           'Zentralsystem der Verteilung'(S05)",
+            "           SCDTSYNC-SYSTEM_WP SCDTSYNC-MANDT_WP.",
+            "*       & & & &",
+            "      WHEN 2 OR 3.",
+            "        VAR = '(System &1 Mandant &2):'(S04).",
+            "        REPLACE '&1' WITH SCDTSYNC-SYSTEM_WP INTO VAR.",
+            "        REPLACE '&2' WITH SCDTSYNC-MANDT_WP INTO VAR.",
+            "        MESSAGE I000(TB) WITH 'RFC-Fehler bei Synchronisation'(S02)",
+            "                              VAR TEXT(50) TEXT+50(30).",
+            "*       & & & &",
+            "    ENDCASE.",
+            "  ENDIF.",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "d03fb1bce50b9925eee7c3c3fd57e0367cc83a10449497ffbd3b176889b44415",
+          "interfaceFingerprint": "3f464367510f487d78c9254e50500e46d0c25d03f1c14269df72b1b6a3d825bc",
+          "sourceFingerprint": "ca62ca3242daf71cd2cc031ad87963482fa706716544b557cc2b10a44b623c3e"
+        }
+      },
+      {
+        "at": "2026-10-05T09:59:07.640Z",
+        "name": "get_abap_object_lines",
+        "arguments": {
+          "connectionId": "w200",
+          "objectName": "LSCTMTOP",
+          "objectType": "FUGR/I",
+          "startLine": 101,
+          "lineCount": 30
+        },
+        "isError": false,
+        "data": {
+          "text": "Source from LSCTMTOP (lines 101-111 of 111, 11 lines retrieved):\n\n```abap\n        WHEN 'D'.\n          GV_LOCAL_LOCKS = 'D'. \"deleted\n        WHEN 'V'.\n          GV_LOCAL_LOCKS = 'O'. \"functionality switched off\n      ENDCASE.\n    ELSE.\n      GV_LOCAL_LOCKS = 'O'. \"functionality not yet active\n    ENDIF.\n  ENDIF.\nEND-OF-DEFINITION.\n\n```\n\nFull Source SHA-256: 088ebaa5bbd35d72ac915c79659f9d46a9b17868069843b7206788ac937ffc64\nURI: /sap/bc/adt/functions/groups/sctm/includes/lsctmtop/source/main\n\nEnhancement metadata unavailable (unsupported)."
+        }
+      }
+    ],
+    "status": "complete",
+    "finishedAt": "2026-10-05T09:59:08.093Z"
+  },
+  "distribution": {
+    "at": "2026-10-05T10:00:22.285Z",
+    "calls": [
+      {
+        "at": "2026-10-05T10:00:22.325Z",
+        "name": "read_function_module_interface",
+        "arguments": {
+          "connectionId": "w200",
+          "functionName": "SCTM_BCSET_ACTIVATION_FRAME"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "functionName": "SCTM_BCSET_ACTIVATION_FRAME",
+          "functionGroup": "SCTM",
+          "shortText": "",
+          "remoteMode": "",
+          "updateTask": false,
+          "updateTaskMode": "",
+          "globalInterface": false,
+          "remoteEnabled": false,
+          "importParameters": [
+            {
+              "name": "IV_ACT_ID",
+              "typeName": "SCPR_HANDL",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "IV_END_OF_ACTIVATION",
+              "typeName": "OAX",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            }
+          ],
+          "exportParameters": [],
+          "changingParameters": [],
+          "tableParameters": [],
+          "exceptions": [],
+          "source": [
+            "FUNCTION SCTM_BCSET_ACTIVATION_FRAME.",
+            "*\"----------------------------------------------------------------------",
+            "*\"*\"Lokale Schnittstelle:",
+            "*\"  IMPORTING",
+            "*\"     REFERENCE(IV_ACT_ID) TYPE  SCPR_HANDL",
+            "*\"     REFERENCE(IV_END_OF_ACTIVATION) TYPE  OAX DEFAULT SPACE",
+            "*\"----------------------------------------------------------------------",
+            "",
+            "  IF IV_END_OF_ACTIVATION = SPACE.",
+            "    GV_SUPPRESS_ON_COMMIT = 'X'.",
+            "    GV_COLLECT_KEYS       = 'X'.",
+            "  ELSE.",
+            "    CLEAR GV_COLLECT_KEYS.",
+            "    CLEAR GV_SUPPRESS_ON_COMMIT.",
+            "    PERFORM LOCAL_START.",
+            "  ENDIF.",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "42dc3dca216ec3053be5ac9086acedf89c9acdf4af98f2d6914409c5fc325c46",
+          "interfaceFingerprint": "767c42448040735211a4454a31a0f8897603c09893e2358c764f77bee6424169",
+          "sourceFingerprint": "9672ace13ac7b869100c6b1511d01d6e5a098e58faa14bc2ca8a838fba33c252"
+        }
+      },
+      {
+        "at": "2026-10-05T10:00:22.407Z",
+        "name": "read_function_module_interface",
+        "arguments": {
+          "connectionId": "w200",
+          "functionName": "SCDC_DISTRIBUTE_TABLE_KEYS_VB"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "functionName": "SCDC_DISTRIBUTE_TABLE_KEYS_VB",
+          "functionGroup": "SCTM",
+          "shortText": "",
+          "remoteMode": "",
+          "updateTask": false,
+          "updateTaskMode": "",
+          "globalInterface": false,
+          "remoteEnabled": false,
+          "importParameters": [
+            {
+              "name": "PROJECT_ID",
+              "typeName": "PROJECT_ID",
+              "optional": false,
+              "passByValue": false,
+              "description": "Project Name"
+            },
+            {
+              "name": "TRKORR",
+              "typeName": "E070-TRKORR",
+              "optional": false,
+              "passByValue": false,
+              "description": "Request/Task"
+            }
+          ],
+          "exportParameters": [],
+          "changingParameters": [],
+          "tableParameters": [
+            {
+              "name": "E071_TAB",
+              "typeName": "E071",
+              "optional": false,
+              "passByValue": false,
+              "description": "Change & Transport System: Object Entries of Requests/Tasks"
+            },
+            {
+              "name": "E071K_TAB",
+              "typeName": "E071K",
+              "optional": true,
+              "passByValue": false,
+              "description": "Change & Transport System: Key Entries of Requests/Tasks"
+            }
+          ],
+          "exceptions": [
+            {
+              "name": "NO_PROJECT",
+              "description": ""
+            }
+          ],
+          "source": [
+            "FUNCTION SCDC_DISTRIBUTE_TABLE_KEYS_VB.",
+            "*\"----------------------------------------------------------------------",
+            "*\"*\"Lokale Schnittstelle:",
+            "*\"  IMPORTING",
+            "*\"     REFERENCE(PROJECT_ID) TYPE  PROJECT_ID",
+            "*\"     REFERENCE(TRKORR) TYPE  E070-TRKORR",
+            "*\"  TABLES",
+            "*\"      E071_TAB STRUCTURE  E071",
+            "*\"      E071K_TAB STRUCTURE  E071K OPTIONAL",
+            "*\"  EXCEPTIONS",
+            "*\"      NO_PROJECT",
+            "*\"----------------------------------------------------------------------",
+            "",
+            "  DATA T_E071_TRIGG    TYPE TABLE OF SCDT_E071_TRIGG  WITH HEADER LINE.",
+            "  DATA T_E071K_TRIGG   TYPE TABLE OF SCDT_E071K_TRIGG WITH HEADER LINE.",
+            "  DATA VARKEY          LIKE RSTABLE-VARKEY.",
+            "  DATA TASKNAME(8).",
+            "  DATA LV_OBJTYPE      LIKE OBJH-OBJECTTYPE.",
+            "",
+            "  LOOP AT E071_TAB INTO IT_E071_TAB.",
+            "    IT_E071_TAB-TRKORR = TRKORR.",
+            "    APPEND IT_E071_TAB.",
+            "  ENDLOOP.",
+            "  LOOP AT E071K_TAB INTO IT_E071K_TAB.",
+            "    IT_E071K_TAB-TRKORR = TRKORR.",
+            "    APPEND IT_E071K_TAB.",
+            "  ENDLOOP.",
+            "  IT_START_TAB-PROJECT_ID = PROJECT_ID.",
+            "  IT_START_TAB-TRKORR     = TRKORR.",
+            "  APPEND IT_START_TAB.",
+            "",
+            "  IF GV_SUPPRESS_ON_COMMIT = SPACE.",
+            "    IF GV_GUID_22 IS INITIAL.",
+            "      CALL FUNCTION 'GUID_CREATE'",
+            "        IMPORTING",
+            "          EV_GUID_22 = GV_GUID_22.",
+            "      VARKEY = GV_GUID_22.",
+            "      CALL FUNCTION 'ENQUEUE_E_TABLE'",
+            "        EXPORTING",
+            "          TABNAME        = 'SCDT_POLL'",
+            "          VARKEY         = VARKEY",
+            "        EXCEPTIONS",
+            "          FOREIGN_LOCK   = 1",
+            "          SYSTEM_FAILURE = 2",
+            "          OTHERS         = 3.",
+            "      IF SY-SUBRC <> 0.",
+            "        MESSAGE ID SY-MSGID TYPE 'I' NUMBER SY-MSGNO",
+            "                WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.",
+            "      ENDIF.",
+            "    ENDIF.",
+            "",
+            "    GET TIME.",
+            "    LOOP AT E071_TAB.",
+            "      IF E071_TAB-OBJECT = 'TABU' OR",
+            "         E071_TAB-OBJECT = 'VDAT' OR",
+            "         E071_TAB-OBJECT = 'CDAT' OR",
+            "         E071_TAB-OBJECT = 'TDAT'.",
+            "        MOVE-CORRESPONDING E071_TAB TO T_E071_TRIGG.",
+            "        T_E071_TRIGG-GUID      = GV_GUID_22.",
+            "        T_E071_TRIGG-TRKORR    = TRKORR.",
+            "        T_E071_TRIGG-TSTAMP(8) = SY-DATUM.",
+            "        T_E071_TRIGG-TSTAMP+8  = SY-UZEIT.",
+            "        T_E071_TRIGG-AS4POS    = GV_AS4POS.",
+            "        ADD 1 TO GV_AS4POS.",
+            "        APPEND T_E071_TRIGG.",
+            "      ELSE.",
+            "        SELECT SINGLE OBJECTTYPE FROM OBJH INTO LV_OBJTYPE",
+            "                              WHERE OBJECTNAME = E071_TAB-OBJECT",
+            "                                AND OBJECTTYPE = 'L'.",
+            "        IF SY-SUBRC = 0.",
+            "          MOVE-CORRESPONDING E071_TAB TO T_E071_TRIGG.",
+            "          T_E071_TRIGG-GUID      = GV_GUID_22.",
+            "          T_E071_TRIGG-TRKORR    = TRKORR.",
+            "          T_E071_TRIGG-TSTAMP(8) = SY-DATUM.",
+            "          T_E071_TRIGG-TSTAMP+8  = SY-UZEIT.",
+            "          T_E071_TRIGG-AS4POS    = GV_AS4POS.",
+            "          ADD 1 TO GV_AS4POS.",
+            "          APPEND T_E071_TRIGG.",
+            "        ENDIF.",
+            "      ENDIF.",
+            "    ENDLOOP.",
+            "    MODIFY SCDT_E071_TRIGG FROM TABLE T_E071_TRIGG.",
+            "",
+            "    LOOP AT E071K_TAB.",
+            "      MOVE-CORRESPONDING E071K_TAB TO T_E071K_TRIGG.",
+            "      T_E071K_TRIGG-GUID   = GV_GUID_22.",
+            "      T_E071K_TRIGG-TRKORR = TRKORR.",
+            "      T_E071K_TRIGG-AS4POS = GV_AS4POS_K.",
+            "      ADD 1 TO GV_AS4POS_K.",
+            "      APPEND T_E071K_TRIGG.",
+            "    ENDLOOP.",
+            "    MODIFY SCDT_E071K_TRIGG FROM TABLE T_E071K_TRIGG.",
+            "",
+            "    READ TABLE T_E071K_TRIGG INDEX 1 TRANSPORTING NO FIELDS.",
+            "    IF SY-SUBRC <> 0.",
+            "      READ TABLE T_E071_TRIGG INDEX 1 TRANSPORTING NO FIELDS.",
+            "    ENDIF.",
+            "    IF SY-SUBRC = 0.",
+            "      TASKNAME = 'SCDTPOLL'.",
+            "      CALL FUNCTION 'SCTM_POLL_START_POLLING'",
+            "             STARTING NEW TASK TASKNAME",
+            "        EXPORTING",
+            "          IV_GUID           = GV_GUID_22",
+            "        EXCEPTIONS",
+            "          RESOURCE_FAILURE  = 1.",
+            "      IF SY-SUBRC = 1.",
+            "        CALL FUNCTION 'SCTM_POLL_START_POLLING'",
+            "               STARTING NEW TASK TASKNAME",
+            "               DESTINATION IN GROUP DEFAULT",
+            "          EXPORTING",
+            "            IV_GUID           = GV_GUID_22",
+            "          EXCEPTIONS",
+            "            RESOURCE_FAILURE  = 1.",
+            "      ENDIF.",
+            "      IF SY-SUBRC <> 0.",
+            "        MESSAGE ID SY-MSGID TYPE 'I' NUMBER SY-MSGNO",
+            "                WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.",
+            "      ENDIF.",
+            "    ENDIF.",
+            "",
+            "    PERFORM LOCAL_START  ON COMMIT.",
+            "  ENDIF.",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "43485eeacb2aaa72fcabc4749b31004bab07e293de806273a49981aa1a6697d3",
+          "interfaceFingerprint": "aa231f3e541ca9a840c8c225a11f309d95ed84ca1c3fc68f66f1557da9d9b19a",
+          "sourceFingerprint": "cf3cb41dae3dad0de8b9c1c0015ffe238c9d7bb0c5bf92b38fcdece96dd3e345"
+        }
+      },
+      {
+        "at": "2026-10-05T10:00:22.474Z",
+        "name": "read_function_module_interface",
+        "arguments": {
+          "connectionId": "w200",
+          "functionName": "SCTM_GET_PROJECT_FOR_TRKORR"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "functionName": "SCTM_GET_PROJECT_FOR_TRKORR",
+          "functionGroup": "SCTM",
+          "shortText": "",
+          "remoteMode": "R",
+          "updateTask": false,
+          "updateTaskMode": "",
+          "globalInterface": false,
+          "remoteEnabled": true,
+          "importParameters": [
+            {
+              "name": "IV_TRKORR",
+              "typeName": "TRKORR",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "exportParameters": [
+            {
+              "name": "EV_PROJECT_ID",
+              "typeName": "PROJECT_ID",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_STRKORR",
+              "typeName": "STRKORR",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "changingParameters": [],
+          "tableParameters": [],
+          "exceptions": [
+            {
+              "name": "NO_REQUEST_SPECIFIED",
+              "description": ""
+            },
+            {
+              "name": "NO_PROJECT_FOUND",
+              "description": ""
+            }
+          ],
+          "source": [
+            "FUNCTION SCTM_GET_PROJECT_FOR_TRKORR.",
+            "*\"----------------------------------------------------------------------",
+            "*\"*\"Lokale Schnittstelle:",
+            "*\"  IMPORTING",
+            "*\"     VALUE(IV_TRKORR) TYPE  TRKORR",
+            "*\"  EXPORTING",
+            "*\"     VALUE(EV_PROJECT_ID) TYPE  PROJECT_ID",
+            "*\"     VALUE(EV_STRKORR) TYPE  STRKORR",
+            "*\"  EXCEPTIONS",
+            "*\"      NO_REQUEST_SPECIFIED",
+            "*\"      NO_PROJECT_FOUND",
+            "*\"----------------------------------------------------------------------",
+            "",
+            "  CALL FUNCTION 'SPROJECT_TR_GET_PROJECT'",
+            "    EXPORTING",
+            "      TRKORR               = IV_TRKORR",
+            "    IMPORTING",
+            "      PROJECT_ID           = EV_PROJECT_ID",
+            "    EXCEPTIONS",
+            "      NO_REQUEST_SPECIFIED = 1",
+            "      NO_PROJECT_FOUND     = 2",
+            "      OTHERS               = 3.",
+            "  IF SY-SUBRC <> 0.",
+            "    SELECT SINGLE STRKORR FROM E070 INTO EV_STRKORR",
+            "                         WHERE TRKORR = IV_TRKORR.",
+            "    IF SY-SUBRC = 0 AND EV_STRKORR <> ' '.",
+            "      CALL FUNCTION 'SPROJECT_TR_GET_PROJECT'",
+            "        EXPORTING",
+            "          TRKORR               = EV_STRKORR",
+            "        IMPORTING",
+            "          PROJECT_ID           = EV_PROJECT_ID",
+            "        EXCEPTIONS",
+            "          NO_REQUEST_SPECIFIED = 1",
+            "          NO_PROJECT_FOUND     = 2",
+            "          OTHERS               = 3.",
+            "    ENDIF.",
+            "  ENDIF.",
+            "  CASE SY-SUBRC.",
+            "    WHEN 0.",
+            "    WHEN 1.",
+            "      RAISE NO_REQUEST_SPECIFIED.",
+            "    WHEN 2 OR 3.",
+            "      RAISE NO_PROJECT_FOUND.",
+            "  ENDCASE.",
+            "  IF EV_STRKORR IS INITIAL.",
+            "    EV_STRKORR = IV_TRKORR.",
+            "  ENDIF.",
+            "",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "ee26a14f3406e95b3cca42fb296c011b5e795c54f58faf07bb372115ba8b217c",
+          "interfaceFingerprint": "9c83ba431979a48933c91cc9532505c3f8c5b4c07d7a6d80a17b0ba577577e6a",
+          "sourceFingerprint": "04a027a90dce7013a174f45c90d7d15a280671688d4d790c168131c854bee77a"
+        }
+      }
+    ],
+    "status": "complete",
+    "finishedAt": "2026-10-05T10:00:22.520Z"
+  }
+}

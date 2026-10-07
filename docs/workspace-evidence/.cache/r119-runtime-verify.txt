@@ -1,0 +1,95 @@
+probe description (45 chars): "ORVANTA MCP truncation probe 1234567890ABCDEF"
+target: ZORVANTA_MCP_DESC_TEST / package ZABAP / transport GR2K923472
+
+=== delete_ddic_object contract ===
+  required: objectType, objectName, expectedVersion, packageName, transportNumber, confirmation, connectionId
+  props   : operationId, objectType, objectName, expectedVersion, packageName, transportNumber, confirmation, acknowledgeDataLoss, connectionId
+
+=== 1. create test search help ===
+{
+  "connectionId": "w200",
+  "objectKind": "searchHelp",
+  "objectName": "ZORVANTA_MCP_DESC_TEST",
+  "packageName": "ZABAP",
+  "version": "20260920161534",
+  "fingerprint": "cc1a184b906d2c03d7dc834df6680ceba013f1de114ae490cb71e4548376cb2f",
+  "definition": {
+    "description": "ORVANTA MCP truncation probe 1234567890ABCDEF",
+    "issimple": false,
+    "selectionMethod": "",
+    "selectionMethodType": "",
+    "textTable": "",
+    "selectionExit": "",
+    "hotkey": "",
+    "dialogType": "",
+    "selectionMethods": [],
+    "parameters": [],
+    "fieldAssignments": []
+  },
+  "status": "DDIC_OBJECT_SAVED",
+  "recordedRequest": "GR2K923472",
+  "operationReceipt": {
+    "operationId": "d61-runtime-1789892135282",
+    "version": 2,
+    "status": "completed",
+    "connectionId": "w200",
+    "toolName": "upsert_search_help",
+    "operationIdHash": "f20b5b0e7a42c42500d4fa8b95ef2d03be1ceab1dba6b42b888b82f67608244e",
+    "targetKeyHash": "957670b4711b197619ec57529e48ea401c2bb5a9077392da4f27adf88a0f336d",
+    "inputHash": "606f9740079499c4bf4d8a26ad1c4cc761fb4e1d9f316497a85328e09261123d",
+    "preChangeSummary": "{\"target\":\"shlp object ZORVANTA_MCP_DESC_TEST\",\"requestedOperation\":\"upsert_search_help\",\"concurrencyGuard\":\"tool-specific SAP readback and lock checks\",\"transportNumber\":\"GR2K923472\",\"automaticRollback\":false}",
+    "sapPreChangeEvidence": {
+      "observedAt": "2026-09-20T08:15:35.349Z",
+      "target": "shlp object ZORVANTA_MCP_DESC_TEST",
+      "exists": false,
+      "active": null,
+      "version": null,
+      "fingerprint": null,
+      "packageName": null,
+      "requestNumber": null,
+      "taskNumber": null,
+      "observationStatus": "complete",
+      "sources": [
+        "adt_object_search"
+      ],
+      "warnings": []
+    },
+    "sapInvocationStarted": true,
+    "resultHash": "d1bad266dc44f24184fffeedf91500732c4adf8de0e4c45e48da1d02d752a6bb",
+    "startedAt": "2026-09-20T08:15:35.285Z",
+    "finishedAt": "2026-09-20T08:15:35.571Z",
+    "durationMs": 282,
+    "receiptHash": "d75f0206e8e3ef16ccd7b064342872f56696908d01d48ad7099a0a512ed9aae2",
+    "automaticRetry": false,
+    "automaticRollback": false,
+    "outcomeMayBeUnknown": false,
+    "localLockReleased": true,
+    "manualRecovery": "Read back shlp object ZORVANTA_MCP_DESC_TEST from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+  }
+}
+
+=== 2. read back the description ===
+{
+  "connectionId": "w200",
+  "objectKind": "searchHelp",
+  "objectName": "ZORVANTA_MCP_DESC_TEST",
+  "packageName": "ZABAP",
+  "version": "20260920161534",
+  "fingerprint": "cc1a184b906d2c03d7dc834df6680ceba013f1de114ae490cb71e4548376cb2f",
+  "definition": {
+    "description": "ORVANTA MCP truncation probe 1234567890ABCDEF",
+    "issimple": false,
+    "selectionMethod": "",
+    "selectionMethodType": "",
+    "textTable": "",
+    "selectionExit": "",
+    "hotkey": "",
+    "dialogType": "",
+    "selectionMethods": [],
+    "parameters": [],
+    "fieldAssignments": []
+  }
+}
+
+=== 3. VERDICT ===
+  could not parse the description automatically -- inspect the raw read-back above

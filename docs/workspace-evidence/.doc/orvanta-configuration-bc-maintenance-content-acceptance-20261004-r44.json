@@ -1,0 +1,4233 @@
+{
+  "stage": "r44",
+  "at": "2026-10-04T13:17:39.399Z",
+  "status": "Passed - CUNI five-table stored source projections only",
+  "scope": {
+    "connectionId": "w200",
+    "system": "GR2",
+    "client": "200",
+    "bcSetId": "EHS_CUNI_KNM",
+    "version": "N"
+  },
+  "acceptance": {
+    "startedAt": "2026-10-04T13:04:01.183Z",
+    "runtime": {
+      "pid": 36760,
+      "url": "http://127.0.0.1:6152/mcp",
+      "allowedTools": [
+        "read_configuration_bc_set",
+        "inspect_configuration_bc_impact",
+        "compare_configuration_bc_set",
+        "read_function_module_interface"
+      ],
+      "manifestFingerprint": "5b706c3c330d01ce6383be4e4a426a2d6cd0a150a36d31456dba095241ea64a9",
+      "startedAt": "2026-10-04T13:02:32.158Z"
+    },
+    "calls": [
+      {
+        "at": "2026-10-04T13:04:08.872Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006",
+          "maintenanceTable": null,
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ADDKO",
+              "FLAG": "USE",
+              "VALUE": "0,000000",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ANDEC",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "DECAN",
+              "FLAG": "USE",
+              "VALUE": "3",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "DIMID",
+              "FLAG": "USE",
+              "VALUE": "PRESS",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "EXP10",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "EXPON",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "FAMUNIT",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ISOCODE",
+              "FLAG": "USE",
+              "VALUE": "KPA",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZ1EH",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZ2EH",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZEX3",
+              "FLAG": "USE",
+              "VALUE": "X",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZEX6",
+              "FLAG": "USE",
+              "VALUE": "X",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZKEH",
+              "FLAG": "USE",
+              "VALUE": "X",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZWOB",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "FLAG": "UKY",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "NENNR",
+              "FLAG": "USE",
+              "VALUE": "1",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "PRIMARY",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP_UNIT",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP_VALUE",
+              "FLAG": "USE",
+              "VALUE": "0,0000000000000000E+00",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ZAEHL",
+              "FLAG": "USE",
+              "VALUE": "1.000",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "languageValues": [],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "68445907a7e02498cba125b359631f8121b8f411f1651f6b8a32cbab27d1cbb1",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:01.253Z",
+            "finishedAt": "2026-10-04T13:04:08.870Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 21,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 21,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty",
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:04:15.996Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006A",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006A",
+          "maintenanceTable": null,
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "FLAG": "UKY",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "SPRAS",
+              "FLAG": "KEY",
+              "VALUE": "D",
+              "flagMeaning": "key_required"
+            }
+          ],
+          "languageValues": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHL",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "每平方米千牛顿",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHL",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "Kilonewton pro Quadratmeter",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHL",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "Kilonewton per square meter",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHT",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHT",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHT",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "b3adb6899b5fe95f18838d2bf2eec361f3359d20fcb6d7b9d5f10f6e33df0c2b",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:08.876Z",
+            "finishedAt": "2026-10-04T13:04:15.994Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 12,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 12,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRPPRL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:04:23.233Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006B",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006B",
+          "maintenanceTable": {
+            "tableName": "T006B",
+            "fingerprint": "ab70255e75a3137279fe7138aecba6dea563ad9886455ecb6d28534a69bbd286",
+            "keyFields": [
+              "MANDT",
+              "SPRAS",
+              "MSEH3"
+            ],
+            "role": "commercial_unit_alias",
+            "targetReadAvailable": false,
+            "targetWriteAvailable": false,
+            "keyReconstruction": "not_performed"
+          },
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "FLAG": "UKY",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "SPRAS",
+              "FLAG": "KEY",
+              "VALUE": "D",
+              "flagMeaning": "key_required"
+            }
+          ],
+          "languageValues": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "41f208bfc3d3a11116fd4d102ee064541ecab5dedcc3fca1024cf6c87d9bad51",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:16.003Z",
+            "finishedAt": "2026-10-04T13:04:23.230Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRPPRL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:04:30.498Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006C",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006C",
+          "maintenanceTable": {
+            "tableName": "T006C",
+            "fingerprint": "b0b1f805571a82c34ee6ce4c157e6b4a5dacdfe76ed29da5805e8699ac6b8521",
+            "keyFields": [
+              "MANDT",
+              "SPRAS",
+              "MSEH6"
+            ],
+            "role": "technical_unit_alias",
+            "targetReadAvailable": false,
+            "targetWriteAvailable": false,
+            "keyReconstruction": "not_performed"
+          },
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "FLAG": "UKY",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "SPRAS",
+              "FLAG": "KEY",
+              "VALUE": "D",
+              "flagMeaning": "key_required"
+            }
+          ],
+          "languageValues": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "6ca82a7a54b68e4e0dfa81d93ff428b37461463719cd31748155feb7f3b01d0f",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:23.239Z",
+            "finishedAt": "2026-10-04T13:04:30.496Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRPPRL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:04:37.826Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006D",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006D",
+          "maintenanceTable": {
+            "tableName": "T006D",
+            "fingerprint": "b8c3a7317ae77355313a75ff37216a2899338b0b45c4753772810b9815e4b95f",
+            "keyFields": [
+              "MANDT",
+              "DIMID"
+            ],
+            "role": "measurement_dimension",
+            "targetReadAvailable": false,
+            "targetWriteAvailable": false,
+            "keyReconstruction": "not_performed"
+          },
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "DIMID",
+              "FLAG": "UKY",
+              "VALUE": "PRESS",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ECURR",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "LENG",
+              "FLAG": "USE",
+              "VALUE": "1-",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "LIGHT",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MASS",
+              "FLAG": "USE",
+              "VALUE": "1",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MOLQU",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSSIE",
+              "FLAG": "USE",
+              "VALUE": "PA",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP_DEP",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TIMEX",
+              "FLAG": "USE",
+              "VALUE": "2-",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "languageValues": [],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "f71a3ed75487b48a905e0a79c7bf0f5569e3114dad901c12fca34899cb90057c",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:30.505Z",
+            "finishedAt": "2026-10-04T13:04:37.823Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 11,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 11,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty",
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:04:44.805Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006",
+          "maintenanceTable": null,
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ADDKO",
+              "FLAG": "USE",
+              "VALUE": "0,000000",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ANDEC",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "DECAN",
+              "FLAG": "USE",
+              "VALUE": "3",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "DIMID",
+              "FLAG": "USE",
+              "VALUE": "PRESS",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "EXP10",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "EXPON",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "FAMUNIT",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ISOCODE",
+              "FLAG": "USE",
+              "VALUE": "KPA",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZ1EH",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZ2EH",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZEX3",
+              "FLAG": "USE",
+              "VALUE": "X",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZEX6",
+              "FLAG": "USE",
+              "VALUE": "X",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZKEH",
+              "FLAG": "USE",
+              "VALUE": "X",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "KZWOB",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "FLAG": "UKY",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "NENNR",
+              "FLAG": "USE",
+              "VALUE": "1",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "PRIMARY",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP_UNIT",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP_VALUE",
+              "FLAG": "USE",
+              "VALUE": "0,0000000000000000E+00",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ZAEHL",
+              "FLAG": "USE",
+              "VALUE": "1.000",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "languageValues": [],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "68445907a7e02498cba125b359631f8121b8f411f1651f6b8a32cbab27d1cbb1",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:37.833Z",
+            "finishedAt": "2026-10-04T13:04:44.802Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 21,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 21,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty",
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:04:54.435Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006A",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006A",
+          "maintenanceTable": null,
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "FLAG": "UKY",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "SPRAS",
+              "FLAG": "KEY",
+              "VALUE": "D",
+              "flagMeaning": "key_required"
+            }
+          ],
+          "languageValues": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHL",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "每平方米千牛顿",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHL",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "Kilonewton pro Quadratmeter",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHL",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "Kilonewton per square meter",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHT",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHT",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006A",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHT",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "b3adb6899b5fe95f18838d2bf2eec361f3359d20fcb6d7b9d5f10f6e33df0c2b",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:44.813Z",
+            "finishedAt": "2026-10-04T13:04:54.433Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 12,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 12,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRPPRL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:05:01.712Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006B",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006B",
+          "maintenanceTable": {
+            "tableName": "T006B",
+            "fingerprint": "ab70255e75a3137279fe7138aecba6dea563ad9886455ecb6d28534a69bbd286",
+            "keyFields": [
+              "MANDT",
+              "SPRAS",
+              "MSEH3"
+            ],
+            "role": "commercial_unit_alias",
+            "targetReadAvailable": false,
+            "targetWriteAvailable": false,
+            "keyReconstruction": "not_performed"
+          },
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH3",
+              "FLAG": "UKY",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "SPRAS",
+              "FLAG": "KEY",
+              "VALUE": "D",
+              "flagMeaning": "key_required"
+            }
+          ],
+          "languageValues": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006B",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "41f208bfc3d3a11116fd4d102ee064541ecab5dedcc3fca1024cf6c87d9bad51",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:04:54.443Z",
+            "finishedAt": "2026-10-04T13:05:01.711Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRPPRL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:05:08.944Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006C",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006C",
+          "maintenanceTable": {
+            "tableName": "T006C",
+            "fingerprint": "b0b1f805571a82c34ee6ce4c157e6b4a5dacdfe76ed29da5805e8699ac6b8521",
+            "keyFields": [
+              "MANDT",
+              "SPRAS",
+              "MSEH6"
+            ],
+            "role": "technical_unit_alias",
+            "targetReadAvailable": false,
+            "targetWriteAvailable": false,
+            "keyReconstruction": "not_performed"
+          },
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEH6",
+              "FLAG": "UKY",
+              "VALUE": "kN/m2",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "SPRAS",
+              "FLAG": "KEY",
+              "VALUE": "D",
+              "flagMeaning": "key_required"
+            }
+          ],
+          "languageValues": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "1",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "D",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006C",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSEHI",
+              "LANGU": "E",
+              "FLAG": "USE",
+              "VALUE": "KNM",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "6ca82a7a54b68e4e0dfa81d93ff428b37461463719cd31748155feb7f3b01d0f",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:05:01.718Z",
+            "finishedAt": "2026-10-04T13:05:08.943Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 3,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRPPRL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:05:16.181Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006D",
+          "maxRecords": 50,
+          "maxValues": 100,
+          "maxDependencies": 32,
+          "includeRecordInventory": true
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "client": "200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006D",
+          "maintenanceTable": {
+            "tableName": "T006D",
+            "fingerprint": "b8c3a7317ae77355313a75ff37216a2899338b0b45c4753772810b9815e4b95f",
+            "keyFields": [
+              "MANDT",
+              "DIMID"
+            ],
+            "role": "measurement_dimension",
+            "targetReadAvailable": false,
+            "targetWriteAvailable": false,
+            "keyReconstruction": "not_performed"
+          },
+          "status": "partial",
+          "readOnly": true,
+          "activationAvailable": false,
+          "saveAvailable": false,
+          "header": {
+            "ID": "EHS_CUNI_KNM",
+            "VERSION": "N",
+            "MODDATE": "20001120",
+            "MODTIME": "142836",
+            "TYPE": "TMV",
+            "CATEGORY": "",
+            "CLI_DEP": "",
+            "CLI_CAS": "",
+            "REFTYPE": "",
+            "REFNAME": "",
+            "ORGID": "/0SAP/",
+            "COMPONENT": "",
+            "MINRELEASE": "46C",
+            "MAXRELEASE": "",
+            "STATE": "",
+            "ACT_INFO": ""
+          },
+          "records": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "OBJECTNAME": "CUNI",
+              "OBJECTTYPE": "T",
+              "ACTIVITY": "",
+              "CLUSTNAME": "",
+              "UNCOMPLETE": "",
+              "DELETEFLAG": "",
+              "GENREF": ""
+            }
+          ],
+          "values": [
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "DIMID",
+              "FLAG": "UKY",
+              "VALUE": "PRESS",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "ECURR",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "LENG",
+              "FLAG": "USE",
+              "VALUE": "1-",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "LIGHT",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MANDT",
+              "FLAG": "UKY",
+              "VALUE": "001",
+              "flagMeaning": "copy_key"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MASS",
+              "FLAG": "USE",
+              "VALUE": "1",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MOLQU",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "MSSIE",
+              "FLAG": "USE",
+              "VALUE": "PA",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP",
+              "FLAG": "USE",
+              "VALUE": "0",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TEMP_DEP",
+              "FLAG": "USE",
+              "VALUE": "",
+              "flagMeaning": "copy_on_activation"
+            },
+            {
+              "ID": "EHS_CUNI_KNM",
+              "VERSION": "N",
+              "TABLENAME": "T006D",
+              "RECNUMBER": "1",
+              "FIELDNAME": "TIMEX",
+              "FLAG": "USE",
+              "VALUE": "2-",
+              "flagMeaning": "copy_on_activation"
+            }
+          ],
+          "languageValues": [],
+          "dependencies": [],
+          "recordInventory": {
+            "status": "read",
+            "complete": true,
+            "fingerprint": "d9653312beab7ac191387dbd41ae7ee5e87e010a14d7b4c2432c08565c3aecce",
+            "records": [
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006A",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006B",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006C",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              },
+              {
+                "ID": "EHS_CUNI_KNM",
+                "VERSION": "N",
+                "TABLENAME": "T006D",
+                "RECNUMBER": "1",
+                "OBJECTNAME": "CUNI",
+                "OBJECTTYPE": "T",
+                "ACTIVITY": "",
+                "CLUSTNAME": "",
+                "UNCOMPLETE": "",
+                "DELETEFLAG": "",
+                "GENREF": ""
+              }
+            ],
+            "tableNames": [
+              "T006",
+              "T006A",
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "unsupportedTableNames": [
+              "T006B",
+              "T006C",
+              "T006D"
+            ],
+            "maintenanceObjects": [
+              {
+                "objectName": "CUNI",
+                "objectType": "T",
+                "activity": "",
+                "clusterName": ""
+              }
+            ],
+            "valueCoverage": "selected_table_only",
+            "snapshot": false
+          },
+          "readFingerprint": "f71a3ed75487b48a905e0a79c7bf0f5569e3114dad901c12fca34899cb90057c",
+          "coverage": {
+            "complete": false,
+            "selectedTableOnly": true,
+            "wholeSetRecordInventory": "read_rechecked",
+            "truncated": false,
+            "records": "read",
+            "values": "read",
+            "languageValues": "read_all_stored_languages",
+            "languageOverlayApplied": false,
+            "recordNumberIsBusinessKey": false,
+            "keyReconstruction": "not_performed",
+            "valueEncoding": "BC_Set_field_text_not_a_DDIC_internal_row",
+            "category": "classic",
+            "dependencies": "direct_references_only",
+            "activationLogs": "not_read",
+            "targetValueComparison": "not_performed",
+            "unknownFlags": 0,
+            "unknownLanguageFlags": 0
+          },
+          "evidence": {
+            "startedAt": "2026-10-04T13:05:08.951Z",
+            "finishedAt": "2026-10-04T13:05:16.179Z",
+            "sources": [
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 11,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRATTR",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 1,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRRECA",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 5,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALS",
+                "status": "ok",
+                "method": "rfc_read_table",
+                "returnedCount": 11,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRVALL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              },
+              {
+                "table": "SCPRPPRL",
+                "status": "empty",
+                "method": "rfc_read_table",
+                "returnedCount": 0,
+                "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+              }
+            ],
+            "warnings": [
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty",
+              "SCPRVALL: empty",
+              "SCPRPPRL: empty"
+            ],
+            "definitionsRechecked": true,
+            "snapshot": false
+          },
+          "warnings": [
+            "Only the exact BC Set/version and selected T006/T006A/T006B/T006C/T006D source projection are read. Companion definitions and keys are pinned, not reconstructed into activation keys. Their target configuration values are not queried. Direct SCPRPPRL child references are bounded; transitive children, other tables, generated content and activation logs are not covered.",
+            "Optional record inventory reads bounded SCPRRECA metadata for all tables in this exact classic set/version, limited by maxRecords across the whole set. It is rechecked and fingerprinted separately. Complete record metadata does not imply complete values, resolved keys, child-set coverage, maintenance APIs or activation approval; other tables' configuration values are never queried.",
+            "FLAGS are described from reviewed DDIC, not applied. Version C/O/N is explicit; no assumption about a GUI activation state. Values are trimmed source text, not a complete/lossless target snapshot.",
+            "SCPRVALL language rows are separate evidence, not merged over SCPRVALS. RECNUMBER groups BC Set fields; it is not the target business key. Generic/delete records, value conversion, language overlay/version rules and target-value comparison are not interpreted. Switch BC Set storage is unsupported.",
+            "No activation API, arbitrary target-table query, configuration write, CTS recording or number allocation is called."
+          ]
+        }
+      },
+      {
+        "at": "2026-10-04T13:05:16.190Z",
+        "name": "compare_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006B",
+          "language": "ZH"
+        },
+        "isError": true,
+        "data": {
+          "message": "MCP error -32602: Input validation error: Invalid arguments for tool compare_configuration_bc_set: [\n  {\n    \"received\": \"T006B\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"T006\",\n      \"T006A\"\n    ],\n    \"path\": [\n      \"objectName\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'T006' | 'T006A', received 'T006B'\"\n  }\n]"
+        }
+      },
+      {
+        "at": "2026-10-04T13:05:16.195Z",
+        "name": "compare_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006C",
+          "language": "ZH"
+        },
+        "isError": true,
+        "data": {
+          "message": "MCP error -32602: Input validation error: Invalid arguments for tool compare_configuration_bc_set: [\n  {\n    \"received\": \"T006C\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"T006\",\n      \"T006A\"\n    ],\n    \"path\": [\n      \"objectName\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'T006' | 'T006A', received 'T006C'\"\n  }\n]"
+        }
+      },
+      {
+        "at": "2026-10-04T13:05:16.200Z",
+        "name": "compare_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "T006D",
+          "language": "ZH"
+        },
+        "isError": true,
+        "data": {
+          "message": "MCP error -32602: Input validation error: Invalid arguments for tool compare_configuration_bc_set: [\n  {\n    \"received\": \"T006D\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"T006\",\n      \"T006A\"\n    ],\n    \"path\": [\n      \"objectName\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'T006' | 'T006A', received 'T006D'\"\n  }\n]"
+        }
+      },
+      {
+        "at": "2026-10-04T13:05:16.205Z",
+        "name": "read_configuration_bc_set",
+        "args": {
+          "connectionId": "w200",
+          "bcSetId": "EHS_CUNI_KNM",
+          "version": "N",
+          "objectName": "USR02"
+        },
+        "isError": true,
+        "data": {
+          "message": "MCP error -32602: Input validation error: Invalid arguments for tool read_configuration_bc_set: [\n  {\n    \"received\": \"USR02\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"T006\",\n      \"T006A\",\n      \"T006B\",\n      \"T006C\",\n      \"T006D\"\n    ],\n    \"path\": [\n      \"objectName\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'T006' | 'T006A' | 'T006B' | 'T006C' | 'T006D', received 'USR02'\"\n  }\n]"
+        }
+      }
+    ],
+    "configurationWrites": 0,
+    "status": "passed_five_source_projections_distinct_keys_and_target_refusals",
+    "finishedAt": "2026-10-04T13:05:16.209Z"
+  },
+  "metrics": {
+    "startedAt": "2026-10-04T13:02:32.140Z",
+    "nativeQueries": 120,
+    "tableReads": 120,
+    "definitionReads": 192,
+    "repositoryReads": 10,
+    "includeReads": 0,
+    "nativeWrites": 0,
+    "finishedAt": "2026-10-04T13:13:12.852Z"
+  },
+  "closure": {
+    "r43Closed": true,
+    "privateListenerPresent": false,
+    "at": "2026-10-04T21:17:38.5093947+08:00",
+    "serverRunning": false,
+    "sharedListenerProcess": 60128,
+    "loginRunning": false
+  },
+  "audit": {
+    "at": "2026-10-04T13:01:50.361Z",
+    "changedBaselineFiles": [
+      "src/configuration-bc-compare.ts",
+      "src/configuration-bc-set.ts",
+      "src/contracts.ts",
+      "test/configuration-bc-mcp.test.ts",
+      "test/configuration-domains.test.ts"
+    ],
+    "head": "775ae25980f2988e1f84f11d71409592d8bc4063",
+    "stagedDiffUnchanged": true,
+    "defaultDistUnchanged": true,
+    "frozenFiles": 212
+  }
+}

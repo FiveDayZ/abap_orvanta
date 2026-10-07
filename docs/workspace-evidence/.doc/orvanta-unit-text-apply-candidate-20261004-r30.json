@@ -1,0 +1,171 @@
+{
+  "createdAt": "2026-10-04T00:18:25.969Z",
+  "status": "Partially Verified",
+  "deploymentApproved": false,
+  "businessWriteApproved": false,
+  "system": "w200",
+  "sapSystem": "GR2",
+  "client": "200",
+  "targetRelease": "SAP_BASIS 7.31 SP04",
+  "proposedFunctionGroup": "ZORVANTA_CFG_UNIT",
+  "packageName": "ZABAP",
+  "transportNumber": null,
+  "functionName": "Z_ORVANTA_CFG_UNIT_APPLY",
+  "remoteEnabled": true,
+  "updateTask": false,
+  "importParameters": [
+    {
+      "name": "IV_UNIT_KEY",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_LANGUAGE",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_EXPECTED_VERSION",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_SET_MSEHT",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_MSEHT",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_SET_MSEHL",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_MSEHL",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_REQUEST",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "IV_TASK",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    }
+  ],
+  "exportParameters": [
+    {
+      "name": "EV_CODE",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_SYSTEM",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_CLIENT",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_USER",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_COMMITTED",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_BEFORE_VERSION",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_TEXT_VERSION",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_TASK",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_TABKEY",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_MSGID",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "EV_MSGNO",
+      "typeName": "STRING",
+      "optional": false,
+      "passByValue": true
+    },
+    {
+      "name": "ES_TEXT",
+      "typeName": "T006A",
+      "optional": false,
+      "passByValue": true
+    }
+  ],
+  "changingParameters": [],
+  "tableParameters": [],
+  "exceptions": [],
+  "bodyFingerprint": "6063655e06ee6f25976bef89c10f75eb695843989913922ec04ee6f724e86588",
+  "sourceFileSha256": "ffc21abbe43d016434a4ce87b47a4173656e8971f658862e1ae1ba03d59d7d44",
+  "bodyLines": 405,
+  "maxLineWidth": 72,
+  "restrictions": [
+    "existing language row only",
+    "nonempty MSEHT/MSEHL only",
+    "no CUNI ALE group and no CONDAT rule records",
+    "client editing policy 0 or 1 only",
+    "standard object must be not lockable",
+    "generic T006 all-client table lock held briefly",
+    "no business write testing authorized",
+    "local receipts only; no SAP operation log"
+  ],
+  "deploymentSteps": [
+    "Read exact function-group/package/transport and prove proposed group/function absent before creating. If group is occupied, stop and reassess ownership.",
+    "After object-specific approval select an explicit modifiable owned Workbench container; Customizing business containers are separate.",
+    "Create only customer function group and remote function metadata plus full CHAR72-bounded candidate body through guarded repository tools. Do not modify shared core helper or standards.",
+    "Reread active source/interface and compare exact candidate; diagnostics/activation/dependency checks must pass.",
+    "Read-only attestation first. Running APPLY, even NO_CHANGES, needs separate command test scope because it acquires locks.",
+    "Business acceptance requires exact disposable or approved existing unit/language, requested text, Customizing W/Q pair, before/after, cleanup/restoration and CTS/lock/failure checks. No request release."
+  ]
+}

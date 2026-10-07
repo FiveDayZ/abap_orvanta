@@ -1,0 +1,10 @@
+{
+  "tool": "abap_debug_variable",
+  "arguments": {
+    "connectionId": "w200",
+    "threadId": 1,
+    "frameId": 1
+  },
+  "isError": true,
+  "responseText": "Error invoking abap_debug_variable: Error: No active debug session for connection w200"
+}

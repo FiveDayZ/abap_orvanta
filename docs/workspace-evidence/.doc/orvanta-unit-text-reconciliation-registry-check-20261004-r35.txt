@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: every tool in the index has exactly one verification entry, with no unknown names
+ok 1 - every tool in the index has exactly one verification entry, with no unknown names
+  ---
+  duration_ms: 14.8917
+  type: 'test'
+  ...
+# Subtest: the registry declares only known field values
+ok 2 - the registry declares only known field values
+  ---
+  duration_ms: 0.4099
+  type: 'test'
+  ...
+# Subtest: verified and failed entries cite evidence that actually exists on disk
+ok 3 - verified and failed entries cite evidence that actually exists on disk
+  ---
+  duration_ms: 20.5602
+  type: 'test'
+  ...
+# Subtest: unverified entries claim neither evidence nor an attempt time
+ok 4 - unverified entries claim neither evidence nor an attempt time
+  ---
+  duration_ms: 0.2284
+  type: 'test'
+  ...
+# Subtest: a runtime failure is an observation and a static failure is a proof
+ok 5 - a runtime failure is an observation and a static failure is a proof
+  ---
+  duration_ms: 0.2748
+  type: 'test'
+  ...
+# Subtest: R-20's four tools stay recorded with the state their evidence supports
+ok 6 - R-20's four tools stay recorded with the state their evidence supports
+  ---
+  duration_ms: 0.1313
+  type: 'test'
+  ...
+# Subtest: a length fix alone never counts as evidence of success
+ok 7 - a length fix alone never counts as evidence of success
+  ---
+  duration_ms: 0.1506
+  type: 'test'
+  ...
+# Subtest: controlled writes must name the object they were written to
+ok 8 - controlled writes must name the object they were written to
+  ---
+  duration_ms: 9.5756
+  type: 'test'
+  ...
+# Subtest: unit description write evidence contains completed save and restoration with real key readback
+ok 9 - unit description write evidence contains completed save and restoration with real key readback
+  ---
+  duration_ms: 2.7249
+  type: 'test'
+  ...
+# Subtest: unit reconciliation evidence retains real unknown receipts and performs no native writes
+ok 10 - unit reconciliation evidence retains real unknown receipts and performs no native writes
+  ---
+  duration_ms: 2.335
+  type: 'test'
+  ...
+# Subtest: the method states what kind of SAP operation the tool actually performs
+ok 11 - the method states what kind of SAP operation the tool actually performs
+  ---
+  duration_ms: 0.3394
+  type: 'test'
+  ...
+# Subtest: the availability-without-evidence metric is derived, not asserted
+ok 12 - the availability-without-evidence metric is derived, not asserted
+  ---
+  duration_ms: 0.3552
+  type: 'test'
+  ...
+# Subtest: notes and availabilityBasis agree about the protocol-only weakness, in both directions
+ok 13 - notes and availabilityBasis agree about the protocol-only weakness, in both directions
+  ---
+  duration_ms: 0.4113
+  type: 'test'
+  ...
+# Subtest: MUTATION: notes contradicting the basis are caught in both directions
+ok 14 - MUTATION: notes contradicting the basis are caught in both directions
+  ---
+  duration_ms: 0.299
+  type: 'test'
+  ...
+# Subtest: platform-unsupported is a claim too, and must carry evidence
+ok 15 - platform-unsupported is a claim too, and must carry evidence
+  ---
+  duration_ms: 1.0039
+  type: 'test'
+  ...
+# Subtest: availability and verification status stay orthogonal
+ok 16 - availability and verification status stay orthogonal
+  ---
+  duration_ms: 0.3445
+  type: 'test'
+  ...
+# Subtest: no entry claims protocol-only without a helper to carry that protocol
+ok 17 - no entry claims protocol-only without a helper to carry that protocol
+  ---
+  duration_ms: 0.1559
+  type: 'test'
+  ...
+# Subtest: the protocol-only residual stays visible and countable
+ok 18 - the protocol-only residual stays visible and countable
+  ---
+  duration_ms: 0.1524
+  type: 'test'
+  ...
+# Subtest: MUTATION: a verified entry pointing at a missing file must be rejected
+ok 19 - MUTATION: a verified entry pointing at a missing file must be rejected
+  ---
+  duration_ms: 0.5323
+  type: 'test'
+  ...
+# Subtest: MUTATION: a duplicate and an unknown tool are both rejected
+ok 20 - MUTATION: a duplicate and an unknown tool are both rejected
+  ---
+  duration_ms: 0.3423
+  type: 'test'
+  ...
+# Subtest: MUTATION: an unverified entry claiming an attempt time is rejected
+ok 21 - MUTATION: an unverified entry claiming an attempt time is rejected
+  ---
+  duration_ms: 0.0668
+  type: 'test'
+  ...
+# Subtest: MUTATION: a static failure claiming an attempt time is rejected
+ok 22 - MUTATION: a static failure claiming an attempt time is rejected
+  ---
+  duration_ms: 0.2679
+  type: 'test'
+  ...
+# Subtest: MUTATION: a runtime failure without an attempt time is rejected
+ok 23 - MUTATION: a runtime failure without an attempt time is rejected
+  ---
+  duration_ms: 0.1702
+  type: 'test'
+  ...
+# Subtest: MUTATION: a failed entry without a failure basis is rejected
+ok 24 - MUTATION: a failed entry without a failure basis is rejected
+  ---
+  duration_ms: 0.1731
+  type: 'test'
+  ...
+# Subtest: the registry records the honest gap rather than inflating it
+ok 25 - the registry records the honest gap rather than inflating it
+  ---
+  duration_ms: 93.2463
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 230.5231

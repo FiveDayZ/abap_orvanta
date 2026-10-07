@@ -1,0 +1,49 @@
+diff --git a/.cache/spro-r57/before/src/configuration-bc-recovery-check-api.ts b/src/configuration-bc-recovery-check-api.ts
+index f3de75a..941d7de 100644
+--- a/.cache/spro-r57/before/src/configuration-bc-recovery-check-api.ts
++++ b/src/configuration-bc-recovery-check-api.ts
+@@ -42,7 +42,7 @@ const hash = (data: string, output: string) => [
+   "  ENDIF."
+ ]
+ 
+-/** Undeployed ECC 7.31 candidate: converts only, never invokes the record-maintenance API. */
++/** ECC 7.31 read-only conversion check; never invokes the record-maintenance API. */
+ export const configurationBcRecoveryCheckApi = {
+   functionName: "Z_ORVANTA_CFG_BC_RCHECK",
+   functionGroup: "ZORVANTA_BC_CFG",
+@@ -205,15 +205,18 @@ export const configurationBcRecoveryCheckApi = {
+     "  CASE lv_index.",
+     ...configurationBcPreflightKeys.flatMap(({ tableName, key }, i) => {
+       const n = tableName.toLowerCase()
++      const fields = layouts[tableName as keyof typeof layouts].fields.join(",")
++      const parts = fields.match(/.{1,40}/g)!
+       return [
+         `    WHEN ${i + 1}.`,
+         `      lv_table = '${tableName}'.`,
+-        "      CONCATENATE",
+-        ...layouts[tableName as keyof typeof layouts].fields
+-          .join(",")
+-          .match(/.{1,40}/g)!
+-          .map((part) => `        '${part}'`),
+-        "        INTO lv_expected.",
++        ...(parts.length === 1
++          ? [`      lv_expected = '${fields}'.`]
++          : [
++              "      CONCATENATE",
++              ...parts.map((part) => `        '${part}'`),
++              "        INTO lv_expected."
++            ]),
+         `      CLEAR: ls_${n}, lc_${n}.`,
+         `      READ TABLE lt_${n} INTO ls_${n} WITH KEY`,
+         ...Object.entries(key).map(
+@@ -265,7 +268,9 @@ export const configurationBcRecoveryCheckApi = {
+     "      DESCRIBE FIELD <value> TYPE lv_type.",
+     "      DESCRIBE FIELD <value> LENGTH lv_len IN BYTE MODE.",
+     "      IF lv_type <> ls_field-vtype OR lv_len <> ls_field-intlen",
+-    "      OR lv_type NA 'CNDTIPF' OR ls_field-maxbcslen > 255",
++    "      OR lv_type NA 'CNDTIPFs' OR ls_field-maxbcslen > 255",
++    "      OR ( lv_type = 's' AND",
++    "        ( ls_field-datatype <> 'INT2' OR lv_len <> 2 ) )",
+     "      OR ls_field-datatype = 'CURR'",
+     "      OR ls_field-datatype = 'QUAN'",
+     "      OR ls_field-readonly = 'R'.",

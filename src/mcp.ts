@@ -1,8 +1,14 @@
 import { randomUUID } from "node:crypto"
+import {
+  assertConfigurationBcReadActive,
+  configurationBcReadBackend
+} from "./configuration-bc-read-cancellation.js"
 import { z } from "zod"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { SapBackend, SapRepositoryOperation } from "./backend.js"
 import { toolContracts } from "./contracts.js"
+import { configurationUnitTextPreviewInputSchema } from "./configuration-unit.js"
+import { configurationUnitTextApplyInputSchema } from "./configuration-unit-apply.js"
 import type { InvocationReceiptStore } from "./invocation-receipts.js"
 import { ToolService } from "./tools.js"
 import { observeWritePreChange } from "./write-prechange-evidence.js"
@@ -230,6 +236,24 @@ export function createMcpServer(
     }
   }
   const invoke = (...args: Parameters<typeof invokeTool>) => tracked(() => invokeTool(...args))
+  const invokeBcRead = (
+    name: string,
+    signal: AbortSignal,
+    action: (scoped: ToolService) => Promise<string>
+  ) =>
+    invoke(name, async () => {
+      assertConfigurationBcReadActive(signal)
+      const scoped = new ToolService(
+        configurationBcReadBackend(backend, signal),
+        undefined,
+        invocationReceipts,
+        toolProfile.disabled,
+        runtimeRead
+      )
+      const result = await action(scoped)
+      assertConfigurationBcReadActive(signal)
+      return result
+    })
   // The CTS container check rides `read_abap_table`, the one table read that is known to work here:
   // it falls back to `rfc_read_table` when the native ADT data preview answers HTML, which
   // `SapBackend.runQuery` alone does not survive on this ECC 7.31 system.
@@ -832,8 +856,38 @@ export function createMcpServer(
   registerTool("search_bte_dispatchers", toolContracts.search_bte_dispatchers, async (input) =>
     invoke("search_bte_dispatchers", () => tools.searchBteDispatchers(input))
   )
+  registerTool(
+    "preview_configuration_bte_product",
+    toolContracts.preview_configuration_bte_product,
+    async (input) =>
+      invoke("preview_configuration_bte_product", () => tools.previewConfigurationBteProduct(input))
+  )
   registerTool("read_bte_configuration", toolContracts.read_bte_configuration, async (input) =>
     invoke("read_bte_configuration", () => tools.readBteConfiguration(input))
+  )
+  registerTool(
+    "inspect_configuration_bte_maintenance_route",
+    toolContracts.inspect_configuration_bte_maintenance_route,
+    async (input) =>
+      invoke("inspect_configuration_bte_maintenance_route", () =>
+        tools.inspectConfigurationBteMaintenanceRoute(input)
+      )
+  )
+  registerTool(
+    "inspect_configuration_bte_native_metadata",
+    toolContracts.inspect_configuration_bte_native_metadata,
+    async (input) =>
+      invoke("inspect_configuration_bte_native_metadata", () =>
+        tools.inspectConfigurationBteNativeMetadata(input)
+      )
+  )
+  registerTool(
+    "prepare_configuration_bte_product_change",
+    toolContracts.prepare_configuration_bte_product_change,
+    async (input) =>
+      invoke("prepare_configuration_bte_product_change", () =>
+        tools.prepareConfigurationBteProductChange(input)
+      )
   )
   registerTool(
     "prepare_enhancement_configuration_workflow",
@@ -1087,10 +1141,278 @@ export function createMcpServer(
       invoke("describe_configuration_object", () => tools.describeConfigurationObject(input))
   )
   registerTool(
+    "read_configuration_documentation",
+    toolContracts.read_configuration_documentation,
+    async (input) =>
+      invoke("read_configuration_documentation", () => tools.readConfigurationDocumentation(input))
+  )
+  registerTool(
     "find_configuration_activities",
     toolContracts.find_configuration_activities,
     async (input) =>
       invoke("find_configuration_activities", () => tools.findConfigurationActivities(input))
+  )
+  registerTool(
+    "read_configuration_activity",
+    toolContracts.read_configuration_activity,
+    async (input) =>
+      invoke("read_configuration_activity", () => tools.readConfigurationActivity(input))
+  )
+  registerTool(
+    "preview_configuration_unit_text",
+    {
+      ...toolContracts.preview_configuration_unit_text,
+      inputSchema: configurationUnitTextPreviewInputSchema
+    },
+    async (input) =>
+      invoke("preview_configuration_unit_text", () => tools.previewConfigurationUnitText(input))
+  )
+  registerTool(
+    "apply_configuration_unit_text",
+    {
+      ...toolContracts.apply_configuration_unit_text,
+      inputSchema: configurationUnitTextApplyInputSchema
+    },
+    async (input) =>
+      invokeWrite("apply_configuration_unit_text", input, backend, writeReceipts, (beforeInvoke) =>
+        tools.applyConfigurationUnitText(input, beforeInvoke)
+      )
+  )
+  registerTool(
+    "reconcile_configuration_unit_text",
+    toolContracts.reconcile_configuration_unit_text,
+    async (input) =>
+      invoke("reconcile_configuration_unit_text", () =>
+        tools.reconcileConfigurationUnitText(
+          input,
+          (connectionId, operationId) => writeReceipts.status(connectionId, operationId),
+          async (argument) =>
+            JSON.parse(
+              await maintenance.searchLocks({
+                connectionId: "w200",
+                username: backend.connectionDetails("w200").username,
+                argument,
+                maxResults: 100
+              })
+            )
+        )
+      )
+  )
+  registerTool(
+    "read_configuration_fi_rule",
+    toolContracts.read_configuration_fi_rule,
+    async (input) =>
+      invoke("read_configuration_fi_rule", () => tools.readConfigurationFiRule(input))
+  )
+  registerTool(
+    "read_configuration_number_range_api",
+    toolContracts.read_configuration_number_range_api,
+    async (input) =>
+      invoke("read_configuration_number_range_api", () =>
+        tools.readConfigurationNumberRangeApi(input)
+      )
+  )
+  registerTool(
+    "apply_configuration_number_range",
+    toolContracts.apply_configuration_number_range,
+    async (input) => {
+      const result = await invoke("apply_configuration_number_range", () =>
+        tools.applyConfigurationNumberRange(input, writeReceipts)
+      )
+      if ("isError" in result && result.isError) return result
+      const body = JSON.parse(result.content[0]!.text)
+      return {
+        ...result,
+        isError: ["unknown", "declined", "protection_refused"].includes(body.status)
+      }
+    }
+  )
+  registerTool(
+    "reconcile_configuration_number_range",
+    toolContracts.reconcile_configuration_number_range,
+    async (input) =>
+      invoke("reconcile_configuration_number_range", () =>
+        tools.reconcileConfigurationNumberRange(input, writeReceipts)
+      )
+  )
+  registerTool(
+    "inspect_configuration_transport",
+    toolContracts.inspect_configuration_transport,
+    async (input) =>
+      invoke("inspect_configuration_transport", () => tools.inspectConfigurationTransport(input))
+  )
+  registerTool(
+    "compare_configuration_unit",
+    toolContracts.compare_configuration_unit,
+    async (input) =>
+      invoke("compare_configuration_unit", () => tools.compareConfigurationUnit(input))
+  )
+  registerTool(
+    "preview_configuration_number_range",
+    toolContracts.preview_configuration_number_range,
+    async (input) =>
+      invoke("preview_configuration_number_range", () =>
+        tools.previewConfigurationNumberRange(input)
+      )
+  )
+  registerTool(
+    "read_configuration_number_range_scope",
+    toolContracts.read_configuration_number_range_scope,
+    async (input) =>
+      invoke("read_configuration_number_range_scope", () =>
+        tools.readConfigurationNumberRangeScope(input)
+      )
+  )
+  registerTool(
+    "read_configuration_number_range",
+    toolContracts.read_configuration_number_range,
+    async (input) =>
+      invoke("read_configuration_number_range", () => tools.readConfigurationNumberRange(input))
+  )
+  registerTool(
+    "inspect_configuration_bc_impact",
+    toolContracts.inspect_configuration_bc_impact,
+    async (input) =>
+      invoke("inspect_configuration_bc_impact", () => tools.inspectConfigurationBcImpact(input))
+  )
+  registerTool(
+    "read_configuration_bc_dependencies",
+    toolContracts.read_configuration_bc_dependencies,
+    async (input) =>
+      invoke("read_configuration_bc_dependencies", () =>
+        tools.readConfigurationBcDependencies(input)
+      )
+  )
+  registerTool(
+    "read_configuration_bc_logs",
+    toolContracts.read_configuration_bc_logs,
+    async (input) =>
+      invoke("read_configuration_bc_logs", () => tools.readConfigurationBcLogs(input))
+  )
+  registerTool(
+    "find_configuration_bc_sets",
+    toolContracts.find_configuration_bc_sets,
+    async (input) =>
+      invoke("find_configuration_bc_sets", () => tools.findConfigurationBcSets(input))
+  )
+  registerTool(
+    "compare_configuration_bc_set",
+    toolContracts.compare_configuration_bc_set,
+    async (input) =>
+      invoke("compare_configuration_bc_set", () => tools.compareConfigurationBcSet(input))
+  )
+  registerTool(
+    "apply_configuration_bc_set",
+    toolContracts.apply_configuration_bc_set,
+    async (input) => {
+      const result = await invoke("apply_configuration_bc_set", () =>
+        tools.applyConfigurationBcSet(input, writeReceipts)
+      )
+      if ("isError" in result && result.isError) return result
+      const body = JSON.parse(result.content[0]!.text)
+      return {
+        ...result,
+        isError: ["unknown", "declined", "protection_refused"].includes(body.status)
+      }
+    }
+  )
+  registerTool(
+    "recover_configuration_bc_set",
+    toolContracts.recover_configuration_bc_set,
+    async (input) => {
+      const result = await invoke("recover_configuration_bc_set", () =>
+        tools.recoverConfigurationBcSet(input, writeReceipts)
+      )
+      if ("isError" in result && result.isError) return result
+      const body = JSON.parse(result.content[0]!.text)
+      return {
+        ...result,
+        isError: ["unknown", "declined", "protection_refused"].includes(body.status)
+      }
+    }
+  )
+  registerTool(
+    "reconcile_configuration_bc_execution",
+    toolContracts.reconcile_configuration_bc_execution,
+    async (input) =>
+      invoke("reconcile_configuration_bc_execution", () =>
+        tools.reconcileConfigurationBcExecution(input, writeReceipts)
+      )
+  )
+  registerTool(
+    "read_configuration_bc_effects",
+    toolContracts.read_configuration_bc_effects,
+    async (input, extra) =>
+      invokeBcRead("read_configuration_bc_effects", extra.signal, (scoped) =>
+        scoped.readConfigurationBcEffects(input)
+      )
+  )
+  registerTool(
+    "read_configuration_bc_before_state",
+    toolContracts.read_configuration_bc_before_state,
+    async (input, extra) =>
+      invokeBcRead("read_configuration_bc_before_state", extra.signal, (scoped) =>
+        scoped.readConfigurationBcBeforeState(input)
+      )
+  )
+  registerTool(
+    "read_configuration_bc_cts_snapshot",
+    toolContracts.read_configuration_bc_cts_snapshot,
+    async (input, extra) =>
+      invokeBcRead("read_configuration_bc_cts_snapshot", extra.signal, (scoped) =>
+        scoped.readConfigurationBcCtsSnapshot(input)
+      )
+  )
+  registerTool(
+    "read_configuration_bc_guard",
+    toolContracts.read_configuration_bc_guard,
+    async (input, extra) =>
+      invokeBcRead("read_configuration_bc_guard", extra.signal, (scoped) =>
+        scoped.readConfigurationBcGuard(input)
+      )
+  )
+  registerTool(
+    "preflight_configuration_bc_activation",
+    toolContracts.preflight_configuration_bc_activation,
+    async (input, extra) =>
+      invokeBcRead("preflight_configuration_bc_activation", extra.signal, (scoped) =>
+        scoped.preflightConfigurationBcActivation(input)
+      )
+  )
+  registerTool(
+    "inspect_configuration_bc_route",
+    toolContracts.inspect_configuration_bc_route,
+    async (input, extra) =>
+      invokeBcRead("inspect_configuration_bc_route", extra.signal, (scoped) =>
+        scoped.inspectConfigurationBcRoute(input)
+      )
+  )
+  registerTool(
+    "preview_configuration_bc_native",
+    toolContracts.preview_configuration_bc_native,
+    async (input, extra) =>
+      invokeBcRead("preview_configuration_bc_native", extra.signal, (scoped) =>
+        scoped.previewConfigurationBcNative(input)
+      )
+  )
+  registerTool(
+    "read_configuration_bc_native_snapshot",
+    toolContracts.read_configuration_bc_native_snapshot,
+    async (input, extra) =>
+      invokeBcRead("read_configuration_bc_native_snapshot", extra.signal, (scoped) =>
+        scoped.readConfigurationBcNativeSnapshot(input)
+      )
+  )
+  registerTool(
+    "read_configuration_bc_set",
+    toolContracts.read_configuration_bc_set,
+    async (input, extra) =>
+      invokeBcRead("read_configuration_bc_set", extra.signal, (scoped) =>
+        scoped.readConfigurationBcSet(input)
+      )
+  )
+  registerTool("read_configuration_unit", toolContracts.read_configuration_unit, async (input) =>
+    invoke("read_configuration_unit", () => tools.readConfigurationUnit(input))
   )
   registerTool("search_background_jobs", toolContracts.search_background_jobs, async (input) =>
     invoke("search_background_jobs", () => operationalLogs.searchJobs(input))
@@ -1303,6 +1625,7 @@ async function invokeWriteTool<T extends object>(
     if (
       ![
         "test_remote_function_module",
+        "apply_configuration_unit_text",
         "invoke_customer_function_module",
         "create_smartform",
         "save_smartform",
@@ -1506,27 +1829,29 @@ export function writeOperationContext(
   ).toLowerCase()
   const target = writeOperationTarget(name, input, uri)
   const replacementSource = Array.isArray(input.source) ? input.source.join("\n") : ""
-  const guard = input.expectedInterfaceFingerprint
-    ? `interface fingerprint ${String(input.expectedInterfaceFingerprint)} and source fingerprint ${String(input.expectedSourceFingerprint)}`
-    : input.expectedSourceFingerprint
-      ? input.oldString !== undefined
-        ? `${input.recoverInactiveSource === true ? "inactive" : "active"} source fingerprint ${String(input.expectedSourceFingerprint)} and exact source match ${hashWriteInput(input.oldString)}`
-        : `source fingerprint ${String(input.expectedSourceFingerprint)} and complete replacement of ${Array.isArray(input.source) ? input.source.length : 0} lines hashed ${hashWriteInput(replacementSource)}`
-      : input.expectedFingerprint
-        ? `fingerprint ${String(input.expectedFingerprint)}`
-        : input.expectedVersion
-          ? `version ${String(input.expectedVersion)}`
-          : input.oldString !== undefined
-            ? `exact source match ${hashWriteInput(input.oldString)}`
-            : name === "create_transport_request"
-              ? "no modifiable request with the same owner, type and description may already exist"
-              : name === "add_objects_to_transport"
-                ? "the target request must be modifiable and must not already carry the same object"
-                : name.startsWith("create_")
-                  ? "target must not already exist"
-                  : name.startsWith("delete_")
-                    ? "target identity and repository assignment must match"
-                    : "tool-specific SAP readback and lock checks"
+  const guard = input.expectedTextVersion
+    ? `SAP full-row text version ${String(input.expectedTextVersion)} and projection fingerprint ${String(input.expectedReadFingerprint)}`
+    : input.expectedInterfaceFingerprint
+      ? `interface fingerprint ${String(input.expectedInterfaceFingerprint)} and source fingerprint ${String(input.expectedSourceFingerprint)}`
+      : input.expectedSourceFingerprint
+        ? input.oldString !== undefined
+          ? `${input.recoverInactiveSource === true ? "inactive" : "active"} source fingerprint ${String(input.expectedSourceFingerprint)} and exact source match ${hashWriteInput(input.oldString)}`
+          : `source fingerprint ${String(input.expectedSourceFingerprint)} and complete replacement of ${Array.isArray(input.source) ? input.source.length : 0} lines hashed ${hashWriteInput(replacementSource)}`
+        : input.expectedFingerprint
+          ? `fingerprint ${String(input.expectedFingerprint)}`
+          : input.expectedVersion
+            ? `version ${String(input.expectedVersion)}`
+            : input.oldString !== undefined
+              ? `exact source match ${hashWriteInput(input.oldString)}`
+              : name === "create_transport_request"
+                ? "no modifiable request with the same owner, type and description may already exist"
+                : name === "add_objects_to_transport"
+                  ? "the target request must be modifiable and must not already carry the same object"
+                  : name.startsWith("create_")
+                    ? "target must not already exist"
+                    : name.startsWith("delete_")
+                      ? "target identity and repository assignment must match"
+                      : "tool-specific SAP readback and lock checks"
   return {
     connectionId,
     targetKey: target.key,
@@ -1535,7 +1860,8 @@ export function writeOperationContext(
       target: target.summary,
       requestedOperation: name,
       concurrencyGuard: guard,
-      transportNumber: input.transportNumber ?? "existing assignment",
+      transportNumber: input.requestNumber ?? input.transportNumber ?? "existing assignment",
+      ...(name === "apply_configuration_unit_text" ? { taskNumber: input.taskNumber } : {}),
       // Only present when the caller named a task: `transportNumber` above is then the request that
       // owns it, and this records what was actually asked for so the receipt cannot be misread.
       ...(resolution?.requestedTaskNumber
@@ -1559,6 +1885,14 @@ export function writeOperationTarget(
   input: Record<string, unknown>,
   uri: string
 ): { key: string; summary: string } {
+  if (name === "apply_configuration_unit_text") {
+    // Preserve the DDIC key's case; all languages share one unit lock target.
+    const unit = String(input.unitKey)
+    return {
+      key: `CONFIG:T006A:200:${unit}`,
+      summary: `unit ${unit} text in language ${String(input.language)} (client 200)`
+    }
+  }
   if (name === "cleanup_transport_entries") {
     const task = String(input.taskNumber).toUpperCase()
     const parent = String(input.parentTransportNumber).toUpperCase()

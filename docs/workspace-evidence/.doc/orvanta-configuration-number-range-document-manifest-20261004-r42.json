@@ -1,0 +1,42 @@
+{
+  "recordedAt": "2026-10-04T12:15:40.212Z",
+  "workspace": "C:/My/Workplace/Coding/vscode-abap",
+  "files": [
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/code-update-20261004-201540.md",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/code-update-20261004-201540.md",
+      "size": 10513,
+      "sha256": "1c8f0be1559493a509f5df227ac882bf3b92f1fd6dfa146877903a0c52e52201"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-bc-activation-followup-plan-20261004-r43.md",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-bc-activation-followup-plan-20261004-r43.md",
+      "size": 4015,
+      "sha256": "6dd509ca5c74b3879d5f41247d01f4ba3894e626936b50497fe87c65f405f580"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-api-acceptance-20261004-r42.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-number-range-api-acceptance-20261004-r42.json",
+      "size": 64271,
+      "sha256": "6737b1f73a15e3e4eb0f6d1933efa24888efec744fb8b8c2b689f988f1173e0b"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-final-audit-20261004-r42.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-number-range-final-audit-20261004-r42.json",
+      "size": 774,
+      "sha256": "888ff39348157d4b6cdec48c2452874b7997e918c119a7f7b453ecee37337023"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-readonly-harness-first-20261004-r42.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-number-range-readonly-harness-first-20261004-r42.json",
+      "size": 8081,
+      "sha256": "c7ac1c1a26697ee6fbb4ec6e301b27a6ec491469b19d88b25a76e7d60c39d328"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-number-range-local-verification-20261004-r42.txt",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-number-range-local-verification-20261004-r42.txt",
+      "size": 34791,
+      "sha256": "78307c2af885efa3584435e71f18c3f78d616f19713bd5f24dcb1dbf6c88d505"
+    }
+  ]
+}

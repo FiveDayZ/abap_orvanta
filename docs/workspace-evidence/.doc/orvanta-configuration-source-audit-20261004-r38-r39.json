@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-04T07:59:47.619Z",
+  "branch": "main",
+  "head": "775ae25980f2988e1f84f11d71409592d8bc4063",
+  "changedBaselineFiles": [
+    {
+      "file": "src/configuration-compare.ts",
+      "sha256": "a19053737f9122e1712174da4f9e739e5070228dddc489fba76b566d9ce842f0"
+    },
+    {
+      "file": "src/contracts.ts",
+      "sha256": "63c207adcb31fdd66c2b0f1a07dca36771f7572c89f3e5952d1cb13b6253401d"
+    }
+  ],
+  "newSourceAndTestFiles": [
+    "src/configuration-number-range-api.ts",
+    "src/configuration-number-range-command.ts",
+    "src/configuration-number-range-receipt.ts",
+    "test/configuration-compare-schema.test.ts",
+    "test/configuration-number-range-command.test.ts",
+    "test/configuration-number-range-receipt.test.ts"
+  ],
+  "fullStagedDiffUnchanged": true,
+  "status": "passed_no_unrelated_source_or_staged_changes"
+}

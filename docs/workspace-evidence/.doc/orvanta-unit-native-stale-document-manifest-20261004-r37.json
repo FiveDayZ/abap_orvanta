@@ -1,0 +1,101 @@
+{
+  "recordedAt": "2026-10-04T14:48:55+08:00",
+  "documents": [
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-observations-20261004-r37.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-observations-20261004-r37.json",
+      "size": 218129,
+      "sha256": "2c47a3411b776ad8a80dd1e9ed6c3bd95cf471b4b852d61de952562a2185329a"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-receipt-20261004-r37.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-receipt-20261004-r37.json",
+      "size": 1550,
+      "sha256": "49e008255f8223c7cb640b61403947b27d26d2817d1a2aa39bf409ea2ae56aa6"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-audit-20261004-r37.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-audit-20261004-r37.json",
+      "size": 36236,
+      "sha256": "5da222b33fb64618c0219d6dfa11024583461714c4410cebead0c3c670b6d4a3"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-cleanup-20261004-r37.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-cleanup-20261004-r37.json",
+      "size": 314,
+      "sha256": "5276011859e249cd8929b6819908c5b6fadbebd21de1475ef5471a42fc0e7123"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-compile-red-20261004-r37.txt",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-compile-red-20261004-r37.txt",
+      "size": 450,
+      "sha256": "9288faa391b221387b2865579da36e0c47c0d6e891fd5af9f440446b0147d507"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-compile-red-recheck-20261004-r37.txt",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-compile-red-recheck-20261004-r37.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-schema-red-recheck-20261004-r37.txt",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-schema-red-recheck-20261004-r37.txt",
+      "size": 1425,
+      "sha256": "8004541d91f1dad494966f82c24c64dcb0f8e445d7cdae87c387514b8a95a646"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-compile-green-20261004-r37.txt",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-compile-green-20261004-r37.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-regression-green-20261004-r37.txt",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-regression-green-20261004-r37.txt",
+      "size": 178407,
+      "sha256": "f51023223bbbfea9b723c3d413690d7f56f6b69de5345f1bdbf397c0646bb140"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-registry-recheck-20261004-r37.txt",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-registry-recheck-20261004-r37.txt",
+      "size": 5335,
+      "sha256": "3087bbe4d1973c10b2f1059620cf6966c4bb525e0117eef5a0339046fa58d7bc"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-delivery-20261004-r37.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-delivery-20261004-r37.json",
+      "size": 16248,
+      "sha256": "ef33b5941083f9b5e9d39bbeb64e4e5f4617f1ac3883c656da304a3b9fe7a175"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-compare-schema-plan-20261004-r38.md",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-compare-schema-plan-20261004-r38.md",
+      "size": 2723,
+      "sha256": "156d3a6cb8c7cf17a8b7f452e9fb7c55b40bdf2ef281bd9be8002d1f84937417"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/code-update-20261004-144855.md",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/code-update-20261004-144855.md",
+      "size": 10078,
+      "sha256": "a2be76787eda00cf9b7cf907690d20cad20830aa3e62b939a3f8b643ec93fc58"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-acceptance-20261004-r37-final.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-acceptance-20261004-r37-final.json",
+      "size": 52017,
+      "sha256": "13c004c51454a989e6092f1f9e8df3a6ac2101c02d98536011cf05246864aaad"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-unit-native-stale-acceptance-20261004-r37-recheck.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-unit-native-stale-acceptance-20261004-r37-recheck.json",
+      "size": 14269,
+      "sha256": "045c5a00eef580a8a989a16f908f3e0f734dc6f1a64edb63bbce71d91d2eeb0b"
+    },
+    {
+      "path": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-configuration-schema-observation-20261004-r37.json",
+      "mirror": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/docs/workspace-evidence/.doc/orvanta-configuration-schema-observation-20261004-r37.json",
+      "size": 11781,
+      "sha256": "096f06f13df6aea132bbc7735f6ab8ef5d6f8fc9e61e8402def7703f6ac32cd0"
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "startedAt": "2026-10-04T05:35:03.216Z",
+  "nativeWriterCalls": 0,
+  "nativeVersionVerified": false,
+  "raw": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"unitKey\": \"KG\",\n  \"keyFormat\": \"internal_MSEHI\",\n  \"status\": \"partial\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"unit\": {\n    \"table\": \"T006\",\n    \"status\": \"read\",\n    \"code\": null,\n    \"data\": {\n      \"MANDT\": \"200\",\n      \"MSEHI\": \"KG\",\n      \"KZEX3\": \"X\",\n      \"KZEX6\": \"X\",\n      \"ANDEC\": \"3\",\n      \"KZKEH\": \"X\",\n      \"KZWOB\": \"\",\n      \"KZ1EH\": \"\",\n      \"KZ2EH\": \"\",\n      \"DIMID\": \"MASS\",\n      \"ZAEHL\": \"1\",\n      \"NENNR\": \"1\",\n      \"EXP10\": \"0\",\n      \"ADDKO\": \"0.000000\",\n      \"EXPON\": \"0\",\n      \"DECAN\": \"0\",\n      \"ISOCODE\": \"KGM\",\n      \"PRIMARY\": \"X\",\n      \"TEMP_UNIT\": \"\",\n      \"FAMUNIT\": \"\",\n      \"PRESS_UNIT\": \"\"\n    }\n  },\n  \"text\": {\n    \"table\": \"T006A\",\n    \"status\": \"read\",\n    \"code\": null,\n    \"data\": {\n      \"MANDT\": \"200\",\n      \"SPRAS\": \"1\",\n      \"MSEHI\": \"KG\",\n      \"MSEH3\": \"KG\",\n      \"MSEH6\": \"公斤\",\n      \"MSEHT\": \"公斤\",\n      \"MSEHL\": \"千克\"\n    },\n    \"requestedLanguage\": \"ZH\",\n    \"sapLanguage\": \"1\",\n    \"fallbackUsed\": false\n  },\n  \"readFingerprint\": \"b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\n  \"comparison\": \"not_requested\",\n  \"coverage\": {\n    \"complete\": false,\n    \"includedFields\": {\n      \"T006\": [\n        \"MANDT\",\n        \"MSEHI\",\n        \"KZEX3\",\n        \"KZEX6\",\n        \"ANDEC\",\n        \"KZKEH\",\n        \"KZWOB\",\n        \"KZ1EH\",\n        \"KZ2EH\",\n        \"DIMID\",\n        \"ZAEHL\",\n        \"NENNR\",\n        \"EXP10\",\n        \"ADDKO\",\n        \"EXPON\",\n        \"DECAN\",\n        \"ISOCODE\",\n        \"PRIMARY\",\n        \"TEMP_UNIT\",\n        \"FAMUNIT\",\n        \"PRESS_UNIT\"\n      ],\n      \"T006A\": [\n        \"MANDT\",\n        \"SPRAS\",\n        \"MSEHI\",\n        \"MSEH3\",\n        \"MSEH6\",\n        \"MSEHT\",\n        \"MSEHL\"\n      ]\n    },\n    \"omittedFields\": {\n      \"T006\": [\n        \"TEMP_VALUE\",\n        \"PRESS_VAL\"\n      ],\n      \"T006A\": []\n    },\n    \"reason\": \"FLTP value decoding is not verified; no binary/numeric lossless snapshot is attested.\"\n  },\n  \"representation\": \"sap_text_trimmed\",\n  \"usableForWritePrecondition\": false,\n  \"evidence\": {\n    \"startedAt\": \"2026-10-04T05:35:03.263Z\",\n    \"finishedAt\": \"2026-10-04T05:35:04.513Z\",\n    \"sources\": [\n      {\n        \"table\": \"T006\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T002\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T006A\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T006\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T002\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"T006A\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"definitionFingerprints\": {\n      \"T006\": \"f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7\",\n      \"T006A\": \"4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d\",\n      \"T002\": \"f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307\"\n    },\n    \"definitionsRechecked\": true,\n    \"valuesRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"Internal case-sensitive unit key only; external display units and ISO codes are not converted through CUNIT.\",\n    \"Both value tables are constrained to client 200. Missing translation does not mean missing unit; read failures do not mean absence.\",\n    \"Read fingerprint covers returned text projections and one language only, including observed absence. It is not a complete row version, business validation or CTS/write authorization.\"\n  ]\n}",
+  "unit": {
+    "connectionId": "w200",
+    "client": "200",
+    "unitKey": "KG",
+    "keyFormat": "internal_MSEHI",
+    "status": "partial",
+    "readOnly": true,
+    "saveAvailable": false,
+    "unit": {
+      "table": "T006",
+      "status": "read",
+      "code": null,
+      "data": {
+        "MANDT": "200",
+        "MSEHI": "KG",
+        "KZEX3": "X",
+        "KZEX6": "X",
+        "ANDEC": "3",
+        "KZKEH": "X",
+        "KZWOB": "",
+        "KZ1EH": "",
+        "KZ2EH": "",
+        "DIMID": "MASS",
+        "ZAEHL": "1",
+        "NENNR": "1",
+        "EXP10": "0",
+        "ADDKO": "0.000000",
+        "EXPON": "0",
+        "DECAN": "0",
+        "ISOCODE": "KGM",
+        "PRIMARY": "X",
+        "TEMP_UNIT": "",
+        "FAMUNIT": "",
+        "PRESS_UNIT": ""
+      }
+    },
+    "text": {
+      "table": "T006A",
+      "status": "read",
+      "code": null,
+      "data": {
+        "MANDT": "200",
+        "SPRAS": "1",
+        "MSEHI": "KG",
+        "MSEH3": "KG",
+        "MSEH6": "公斤",
+        "MSEHT": "公斤",
+        "MSEHL": "千克"
+      },
+      "requestedLanguage": "ZH",
+      "sapLanguage": "1",
+      "fallbackUsed": false
+    },
+    "readFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+    "comparison": "not_requested",
+    "coverage": {
+      "complete": false,
+      "includedFields": {
+        "T006": [
+          "MANDT",
+          "MSEHI",
+          "KZEX3",
+          "KZEX6",
+          "ANDEC",
+          "KZKEH",
+          "KZWOB",
+          "KZ1EH",
+          "KZ2EH",
+          "DIMID",
+          "ZAEHL",
+          "NENNR",
+          "EXP10",
+          "ADDKO",
+          "EXPON",
+          "DECAN",
+          "ISOCODE",
+          "PRIMARY",
+          "TEMP_UNIT",
+          "FAMUNIT",
+          "PRESS_UNIT"
+        ],
+        "T006A": [
+          "MANDT",
+          "SPRAS",
+          "MSEHI",
+          "MSEH3",
+          "MSEH6",
+          "MSEHT",
+          "MSEHL"
+        ]
+      },
+      "omittedFields": {
+        "T006": [
+          "TEMP_VALUE",
+          "PRESS_VAL"
+        ],
+        "T006A": []
+      },
+      "reason": "FLTP value decoding is not verified; no binary/numeric lossless snapshot is attested."
+    },
+    "representation": "sap_text_trimmed",
+    "usableForWritePrecondition": false,
+    "evidence": {
+      "startedAt": "2026-10-04T05:35:03.263Z",
+      "finishedAt": "2026-10-04T05:35:04.513Z",
+      "sources": [
+        {
+          "table": "T006",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T002",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T006A",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T006",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T002",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "T006A",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        }
+      ],
+      "warnings": [],
+      "definitionFingerprints": {
+        "T006": "f50d5162d3ec4d68c98ac89c4701206ac771cd14d4c2c3303b8e3d7ba280aba7",
+        "T006A": "4c66cca985d3bb01e38b02ff5085f3e595e9da3e22e50bc75b47878940d9383d",
+        "T002": "f3d64b69bf9be805d92657ca047f9164f0662bbc4b07e3f8c944f21ff70fc307"
+      },
+      "definitionsRechecked": true,
+      "valuesRechecked": true,
+      "snapshot": false
+    },
+    "warnings": [
+      "Internal case-sensitive unit key only; external display units and ISO codes are not converted through CUNIT.",
+      "Both value tables are constrained to client 200. Missing translation does not mean missing unit; read failures do not mean absence.",
+      "Read fingerprint covers returned text projections and one language only, including observed absence. It is not a complete row version, business validation or CTS/write authorization."
+    ]
+  },
+  "projectionUnchangedSinceR35": true,
+  "status": "rechecked_text_projection_matches_r35_native_version_still_pending",
+  "finishedAt": "2026-10-04T05:35:04.517Z"
+}

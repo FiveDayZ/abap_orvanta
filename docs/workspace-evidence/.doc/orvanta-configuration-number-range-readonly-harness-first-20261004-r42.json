@@ -1,0 +1,290 @@
+{
+  "startedAt": "2026-10-04T12:05:44.043Z",
+  "calls": [
+    {
+      "at": "2026-10-04T12:05:45.555Z",
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "readOnly": true,
+        "versionScope": "complete_TNRO_and_current_client_NRIV",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "41cba7a64196c14889ce33c527da6f685278426756141ce8234c9f462bccb944",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            },
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "02",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000201",
+              "TONUMBER": "00000000000000000300",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T12:05:45.755Z",
+      "name": "search_sap_locks",
+      "args": {
+        "connectionId": "w200",
+        "username": "WYS",
+        "argument": "ZORVCFGNR",
+        "maxResults": 20
+      },
+      "isError": false,
+      "data": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T12:05:45.563Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    },
+    {
+      "at": "2026-10-04T12:05:46.025Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "filters": [
+          {
+            "column": "TRKORR",
+            "operator": "EQ",
+            "value": "GR2K923472"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "maxRows": 2,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "TRFUNCTION",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "TRSTATUS",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000023"
+          },
+          {
+            "FIELDNAME": "AS4USER",
+            "TYPE": "C",
+            "LENGTH": "000012",
+            "OFFSET": "000025"
+          },
+          {
+            "FIELDNAME": "STRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000038"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923472",
+            "TRFUNCTION": "K",
+            "TRSTATUS": "D",
+            "AS4USER": "WYS",
+            "STRKORR": ""
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-04T12:05:47.695Z",
+      "name": "read_abap_table",
+      "args": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "filters": [
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "ZORVCFGNR"
+          }
+        ],
+        "maxRows": 10
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E071",
+        "columns": [
+          "TRKORR",
+          "PGMID",
+          "OBJECT",
+          "OBJ_NAME",
+          "AS4POS"
+        ],
+        "maxRows": 10,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "PGMID",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "OBJECT",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000026"
+          },
+          {
+            "FIELDNAME": "OBJ_NAME",
+            "TYPE": "C",
+            "LENGTH": "000120",
+            "OFFSET": "000031"
+          },
+          {
+            "FIELDNAME": "AS4POS",
+            "TYPE": "N",
+            "LENGTH": "000006",
+            "OFFSET": "000152"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923472",
+            "PGMID": "R3TR",
+            "OBJECT": "NROB",
+            "OBJ_NAME": "ZORVCFGNR",
+            "AS4POS": "000025"
+          }
+        ]
+      }
+    }
+  ],
+  "status": "stopped",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ undefined\n- false\n",
+  "finishedAt": "2026-10-04T12:05:47.700Z"
+}

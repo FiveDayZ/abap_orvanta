@@ -1,0 +1,93 @@
+{
+  "startedAt": "2026-10-03T03:38:52.599Z",
+  "server": {
+    "pid": 27652,
+    "url": "http://127.0.0.1:6692/mcp",
+    "revision": "r4",
+    "startedAt": "2026-10-03T03:38:15.203Z",
+    "readOnly": true,
+    "connections": [
+      {
+        "id": "w200",
+        "client": "200"
+      }
+    ],
+    "manifestFingerprint": "92b42c3f7c59b28c8b8029cb7654979b590571dd2def3c5cbef62f622356f26b"
+  },
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "find_configuration_bc_sets",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "T006",
+        "version": "N",
+        "maxRecords": 50
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"version\": \"N\",\n  \"objectName\": \"T006\",\n  \"maxRecords\": 50,\n  \"client\": \"200\",\n  \"status\": \"candidates\",\n  \"candidates\": [\n    \"EHS_CUNI_KNM\"\n  ],\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"activationAvailable\": false,\n  \"readFingerprint\": \"9011c2f3bc02c0860508f04f1aba61227e20238d74866028557eca096e75a798\",\n  \"coverage\": {\n    \"complete\": false,\n    \"selectedTableOnly\": true,\n    \"storage\": \"classic_SCPRRECA\",\n    \"truncated\": false,\n    \"headersVerified\": false,\n    \"activationVerified\": false,\n    \"stablePagination\": false\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T03:38:52.683Z\",\n    \"finishedAt\": \"2026-10-03T03:38:54.856Z\",\n    \"sources\": [\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"IDs are candidates from bounded classic record metadata only. Read each exact BC Set header/content separately; no switch storage, recursive dependencies, key reconstruction or activation is covered. Empty results concern this table/version only.\"\n  ]\n}"
+    },
+    {
+      "name": "find_configuration_bc_sets",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "T006",
+        "version": "O",
+        "maxRecords": 50
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"version\": \"O\",\n  \"objectName\": \"T006\",\n  \"maxRecords\": 50,\n  \"client\": \"200\",\n  \"status\": \"no_selected_records\",\n  \"candidates\": [],\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"activationAvailable\": false,\n  \"readFingerprint\": \"85122061843ae2603bf8db87bdc24cd0019adcf46e4fe08fe37b6696c03ec9e6\",\n  \"coverage\": {\n    \"complete\": false,\n    \"selectedTableOnly\": true,\n    \"storage\": \"classic_SCPRRECA\",\n    \"truncated\": false,\n    \"headersVerified\": false,\n    \"activationVerified\": false,\n    \"stablePagination\": false\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T03:38:54.860Z\",\n    \"finishedAt\": \"2026-10-03T03:38:55.392Z\",\n    \"sources\": [\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [\n      \"SCPRRECA: empty\",\n      \"SCPRRECA: empty\"\n    ],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"IDs are candidates from bounded classic record metadata only. Read each exact BC Set header/content separately; no switch storage, recursive dependencies, key reconstruction or activation is covered. Empty results concern this table/version only.\"\n  ]\n}"
+    },
+    {
+      "name": "find_configuration_bc_sets",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "T006",
+        "version": "C",
+        "maxRecords": 50
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"version\": \"C\",\n  \"objectName\": \"T006\",\n  \"maxRecords\": 50,\n  \"client\": \"200\",\n  \"status\": \"candidates\",\n  \"candidates\": [\n    \"EHS_CUNI_KNM\"\n  ],\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"activationAvailable\": false,\n  \"readFingerprint\": \"c0283097d72348f9fe4736f72ce3c21ac70d3678df6b7ce65a345fa6b5d1f03a\",\n  \"coverage\": {\n    \"complete\": false,\n    \"selectedTableOnly\": true,\n    \"storage\": \"classic_SCPRRECA\",\n    \"truncated\": false,\n    \"headersVerified\": false,\n    \"activationVerified\": false,\n    \"stablePagination\": false\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T03:38:55.397Z\",\n    \"finishedAt\": \"2026-10-03T03:38:55.940Z\",\n    \"sources\": [\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"IDs are candidates from bounded classic record metadata only. Read each exact BC Set header/content separately; no switch storage, recursive dependencies, key reconstruction or activation is covered. Empty results concern this table/version only.\"\n  ]\n}"
+    },
+    {
+      "name": "find_configuration_bc_sets",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "T006A",
+        "version": "N",
+        "maxRecords": 50
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"version\": \"N\",\n  \"objectName\": \"T006A\",\n  \"maxRecords\": 50,\n  \"client\": \"200\",\n  \"status\": \"candidates\",\n  \"candidates\": [\n    \"EHS_CUNI_KNM\"\n  ],\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"activationAvailable\": false,\n  \"readFingerprint\": \"b2895f9f869947ef5c05de2255fe4e84f58f914160592c263e432f9034b58114\",\n  \"coverage\": {\n    \"complete\": false,\n    \"selectedTableOnly\": true,\n    \"storage\": \"classic_SCPRRECA\",\n    \"truncated\": false,\n    \"headersVerified\": false,\n    \"activationVerified\": false,\n    \"stablePagination\": false\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T03:38:55.943Z\",\n    \"finishedAt\": \"2026-10-03T03:38:56.544Z\",\n    \"sources\": [\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"IDs are candidates from bounded classic record metadata only. Read each exact BC Set header/content separately; no switch storage, recursive dependencies, key reconstruction or activation is covered. Empty results concern this table/version only.\"\n  ]\n}"
+    },
+    {
+      "name": "find_configuration_bc_sets",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "T006A",
+        "version": "O",
+        "maxRecords": 50
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"version\": \"O\",\n  \"objectName\": \"T006A\",\n  \"maxRecords\": 50,\n  \"client\": \"200\",\n  \"status\": \"no_selected_records\",\n  \"candidates\": [],\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"activationAvailable\": false,\n  \"readFingerprint\": \"82cf80547f78f84d1095c6c47a528c2f952a2bc703afca994f4c83bd73ca3adc\",\n  \"coverage\": {\n    \"complete\": false,\n    \"selectedTableOnly\": true,\n    \"storage\": \"classic_SCPRRECA\",\n    \"truncated\": false,\n    \"headersVerified\": false,\n    \"activationVerified\": false,\n    \"stablePagination\": false\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T03:38:56.549Z\",\n    \"finishedAt\": \"2026-10-03T03:38:57.098Z\",\n    \"sources\": [\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [\n      \"SCPRRECA: empty\",\n      \"SCPRRECA: empty\"\n    ],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"IDs are candidates from bounded classic record metadata only. Read each exact BC Set header/content separately; no switch storage, recursive dependencies, key reconstruction or activation is covered. Empty results concern this table/version only.\"\n  ]\n}"
+    },
+    {
+      "name": "find_configuration_bc_sets",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "T006A",
+        "version": "C",
+        "maxRecords": 50
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"version\": \"C\",\n  \"objectName\": \"T006A\",\n  \"maxRecords\": 50,\n  \"client\": \"200\",\n  \"status\": \"candidates\",\n  \"candidates\": [\n    \"EHS_CUNI_KNM\"\n  ],\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"activationAvailable\": false,\n  \"readFingerprint\": \"c7350d61d3a17a0e764d4e5e33c67fd73b37912d182ed09693ba9624333f731e\",\n  \"coverage\": {\n    \"complete\": false,\n    \"selectedTableOnly\": true,\n    \"storage\": \"classic_SCPRRECA\",\n    \"truncated\": false,\n    \"headersVerified\": false,\n    \"activationVerified\": false,\n    \"stablePagination\": false\n  },\n  \"evidence\": {\n    \"startedAt\": \"2026-10-03T03:38:57.103Z\",\n    \"finishedAt\": \"2026-10-03T03:38:57.647Z\",\n    \"sources\": [\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"SCPRRECA\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"IDs are candidates from bounded classic record metadata only. Read each exact BC Set header/content separately; no switch storage, recursive dependencies, key reconstruction or activation is covered. Empty results concern this table/version only.\"\n  ]\n}"
+    }
+  ],
+  "checks": [
+    "all_approved_tables_and_explicit_versions",
+    "no_header_or_activation_claim",
+    "fingerprint_only_untruncated_repeated_selection"
+  ],
+  "status": "passed_bounded_candidate_projection",
+  "finishedAt": "2026-10-03T03:38:57.648Z"
+}

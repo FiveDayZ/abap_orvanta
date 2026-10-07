@@ -1,0 +1,75 @@
+{
+  "startedAt": "2026-10-04T10:53:46.022Z",
+  "calls": [
+    {
+      "name": "search_abap_object_lines",
+      "args": {
+        "objectName": "SAPLSNR2",
+        "searchTerm": "INCLUDE",
+        "contextLines": 1
+      },
+      "isError": false,
+      "data": {
+        "message": "Found 14 matches for \"INCLUDE\" in SAPLSNR2:\nBase: 14 | Enhancement: 0\n\n\n## SNR2 (FUGR/I)\n\nBase Source Matches (14):\n\nLine 2:\n```abap\n  *******************************************************************\r\n> *   System-defined Include-files.                                 *\r\n  *******************************************************************\r\n```\n\nLine 4:\n```abap\n  *******************************************************************\r\n>   INCLUDE LSNR2TOP.      \" Global Data\r\n    INCLUDE LSNR2UXX .\r\n```\n\nLine 5:\n```abap\n    INCLUDE LSNR2TOP.      \" Global Data\r\n>   INCLUDE LSNR2UXX .\r\n  \r\n```\n\nLine 8:\n```abap\n  *******************************************************************\r\n> *   User-defined Include-files (if necessary).                    *\r\n  *******************************************************************\r\n```\n\nLine 10:\n```abap\n  *******************************************************************\r\n>   include szn_common_forms.\r\n    INCLUDE LSNR2F00.      \" sonstige Routinen\r\n```\n\nLine 11:\n```abap\n    include szn_common_forms.\r\n>   INCLUDE LSNR2F00.      \" sonstige Routinen\r\n    INCLUDE LSNR2F10.      \" Transport- und Korrektursystem\r\n```\n\nLine 12:\n```abap\n    INCLUDE LSNR2F00.      \" sonstige Routinen\r\n>   INCLUDE LSNR2F10.      \" Transport- und Korrektursystem\r\n    INCLUDE LSNR2F30.      \" Prüfroutinen\r\n```\n\nLine 13:\n```abap\n    INCLUDE LSNR2F10.      \" Transport- und Korrektursystem\r\n>   INCLUDE LSNR2F30.      \" Prüfroutinen\r\n    INCLUDE LSNR2O10.      \" PBO-Modules, NrKreisObjektpflege\r\n```\n\nLine 14:\n```abap\n    INCLUDE LSNR2F30.      \" Prüfroutinen\r\n>   INCLUDE LSNR2O10.      \" PBO-Modules, NrKreisObjektpflege\r\n    INCLUDE LSNR2O20.      \" PBO-Modules, NrKreisObjekt erfragen\r\n```\n\nLine 15:\n```abap\n    INCLUDE LSNR2O10.      \" PBO-Modules, NrKreisObjektpflege\r\n>   INCLUDE LSNR2O20.      \" PBO-Modules, NrKreisObjekt erfragen\r\n    INCLUDE LSNR2I10.      \" PAI-Modules, NrKreisObjektpflege\r\n```\n\nLine 16:\n```abap\n    INCLUDE LSNR2O20.      \" PBO-Modules, NrKreisObjekt erfragen\r\n>   INCLUDE LSNR2I10.      \" PAI-Modules, NrKreisObjektpflege\r\n    INCLUDE LSNR2I20.      \" PAI-Modules, NrKreisObjekt erfragen\r\n```\n\nLine 17:\n```abap\n    INCLUDE LSNR2I10.      \" PAI-Modules, NrKreisObjektpflege\r\n>   INCLUDE LSNR2I20.      \" PAI-Modules, NrKreisObjekt erfragen\r\n    INCLUDE FSNR5CDC.      \" Änderungsbelegaufruf\r\n```\n\nLine 18:\n```abap\n    INCLUDE LSNR2I20.      \" PAI-Modules, NrKreisObjekt erfragen\r\n>   INCLUDE FSNR5CDC.      \" Änderungsbelegaufruf\r\n  \r\n```\n\nLine 20:\n```abap\n  \r\n> INCLUDE LSNR2F50.\r\n  \n```\n\nEnhancement Metadata: Unavailable (unsupported)\n\nURI: /sap/bc/adt/functions/groups/snr2/source/main (21 lines total)\n\n"
+      }
+    },
+    {
+      "name": "read_ddic_domain",
+      "args": {
+        "objectName": "NRPERC"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "domain",
+        "objectName": "NRPERC",
+        "packageName": "SZN",
+        "version": "19920609124820",
+        "fingerprint": "f828f22bb09e70fc6500cbaf0b4d219af652f5c62f53fe8986133750df5ce568",
+        "definition": {
+          "description": "编号范围分配的关键区域",
+          "dataType": "DEC",
+          "length": 3,
+          "outputLength": 4,
+          "decimals": 1,
+          "lowercase": false,
+          "signFlag": false,
+          "valueTable": "",
+          "conversionExit": "",
+          "fixedValues": []
+        }
+      }
+    },
+    {
+      "name": "search_sap_locks",
+      "args": {
+        "username": "WYS",
+        "argument": "ZORVCFGNR",
+        "maxResults": 20
+      },
+      "isError": false,
+      "data": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T10:53:46.961Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    }
+  ],
+  "finishedAt": "2026-10-04T10:53:47.106Z"
+}

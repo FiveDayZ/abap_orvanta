@@ -1,0 +1,2093 @@
+{
+  "at": "2026-10-05T03:59:44.839Z",
+  "timezone": "Asia/Shanghai",
+  "connectionId": "w200",
+  "client": "200",
+  "active": true,
+  "scope": "Existing full group main/TOP/UXX and READ/PREVIEW/ROUTE; new GUARD repository interface lookup reports not existing, create tool must guard absence",
+  "uris": [
+    {
+      "name": "Z_ORVANTA_CFG_BC_READ",
+      "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read"
+    },
+    {
+      "name": "Z_ORVANTA_CFG_BC_PREVIEW",
+      "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview"
+    },
+    {
+      "name": "Z_ORVANTA_CFG_BC_ROUTE",
+      "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route"
+    },
+    {
+      "name": "SAPLZORVANTA_BC_CFG",
+      "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main"
+    },
+    {
+      "name": "LZORVANTA_BC_CFGTOP",
+      "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main"
+    },
+    {
+      "name": "LZORVANTA_BC_CFGUXX",
+      "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main"
+    }
+  ],
+  "metadata": {
+    "at": "2026-10-05T03:59:40.302Z",
+    "calls": [
+      {
+        "name": "get_connected_systems",
+        "args": {},
+        "isError": false,
+        "data": {
+          "message": "Connected SAP systems: w200, w300"
+        }
+      },
+      {
+        "name": "read_function_module_interface",
+        "args": {
+          "connectionId": "w200",
+          "functionName": "Z_ORVANTA_CFG_BC_GUARD"
+        },
+        "isError": true,
+        "data": {
+          "message": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 Z_ORVANTA_CFG_BC_GUARD 不存在"
+        }
+      },
+      {
+        "name": "read_function_module_interface",
+        "args": {
+          "connectionId": "w200",
+          "functionName": "Z_ORVANTA_CFG_BC_READ"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "functionName": "Z_ORVANTA_CFG_BC_READ",
+          "functionGroup": "ZORVANTA_BC_CFG",
+          "shortText": "CUNI BC Set full native before state",
+          "remoteMode": "R",
+          "updateTask": false,
+          "updateTaskMode": "",
+          "globalInterface": false,
+          "remoteEnabled": true,
+          "importParameters": [
+            {
+              "name": "IV_BC_SET",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "IV_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "exportParameters": [
+            {
+              "name": "EV_CODE",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_SYSTEM",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_CLIENT",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_USER",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_SOURCE_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_TARGET_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "changingParameters": [],
+          "tableParameters": [
+            {
+              "name": "ET_T006",
+              "typeName": "T006",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006A",
+              "typeName": "T006A",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006B",
+              "typeName": "T006B",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006C",
+              "typeName": "T006C",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006D",
+              "typeName": "T006D",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            }
+          ],
+          "exceptions": [],
+          "source": [
+            "FUNCTION Z_ORVANTA_CFG_BC_READ.",
+            "*\"--------------------------------------------------------------------",
+            "*\"*\"局部接口：",
+            "*\"  IMPORTING",
+            "*\"     VALUE(IV_BC_SET) TYPE  STRING",
+            "*\"     VALUE(IV_VERSION) TYPE  STRING",
+            "*\"  EXPORTING",
+            "*\"     VALUE(EV_CODE) TYPE  STRING",
+            "*\"     VALUE(EV_SYSTEM) TYPE  STRING",
+            "*\"     VALUE(EV_CLIENT) TYPE  STRING",
+            "*\"     VALUE(EV_USER) TYPE  STRING",
+            "*\"     VALUE(EV_SOURCE_VERSION) TYPE  STRING",
+            "*\"     VALUE(EV_TARGET_VERSION) TYPE  STRING",
+            "*\"  TABLES",
+            "*\"      ET_T006 STRUCTURE  T006",
+            "*\"      ET_T006A STRUCTURE  T006A",
+            "*\"      ET_T006B STRUCTURE  T006B",
+            "*\"      ET_T006C STRUCTURE  T006C",
+            "*\"      ET_T006D STRUCTURE  T006D",
+            "*\"--------------------------------------------------------------------",
+            "DATA: ls_header TYPE scprattr,",
+            "      ls_record TYPE scprreca,",
+            "      lt_records TYPE STANDARD TABLE OF scprreca,",
+            "      lt_values TYPE STANDARD TABLE OF scprvals,",
+            "      lt_languages TYPE STANDARD TABLE OF scprvall,",
+            "      lt_dependencies TYPE STANDARD TABLE OF scprpprl,",
+            "      lt_t006 TYPE STANDARD TABLE OF t006,",
+            "      lt_t006a TYPE STANDARD TABLE OF t006a,",
+            "      lt_t006b TYPE STANDARD TABLE OF t006b,",
+            "      lt_t006c TYPE STANDARD TABLE OF t006c,",
+            "      lt_t006d TYPE STANDARD TABLE OF t006d,",
+            "      lv_table TYPE tddat-tabname,",
+            "      lv_group TYPE tddat-cclass,",
+            "      lv_source TYPE xstring,",
+            "      lv_target TYPE xstring,",
+            "      lv_source_first TYPE xstring,",
+            "      lv_target_first TYPE xstring,",
+            "      lv_source_hash TYPE string,",
+            "      lv_target_hash TYPE string,",
+            "      lv_count TYPE i.",
+            "\" 每次初始化全部输出；失败不泄露前次调用的行或版本。",
+            "CLEAR: ev_code, ev_system, ev_client, ev_user,",
+            "       ev_source_version, ev_target_version.",
+            "REFRESH et_t006.",
+            "REFRESH et_t006a.",
+            "REFRESH et_t006b.",
+            "REFRESH et_t006c.",
+            "REFRESH et_t006d.",
+            "ev_system = sy-sysid.",
+            "ev_client = sy-mandt.",
+            "ev_user = sy-uname.",
+            "IF sy-sysid <> 'GR2' OR sy-mandt <> '200'.",
+            "  ev_code = 'SCOPE_UNSUPPORTED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "IF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'.",
+            "  ev_code = 'INPUT_INVALID'.",
+            "  RETURN.",
+            "ENDIF.",
+            "\" 逐表验证读取权限；没有授权组时沿用 &NC&，名称权限可替代组权限。",
+            "DO 10 TIMES.",
+            "  CASE sy-index.",
+            "    WHEN 1. lv_table = 'T006'.",
+            "    WHEN 2. lv_table = 'T006A'.",
+            "    WHEN 3. lv_table = 'T006B'.",
+            "    WHEN 4. lv_table = 'T006C'.",
+            "    WHEN 5. lv_table = 'T006D'.",
+            "    WHEN 6. lv_table = 'SCPRATTR'.",
+            "    WHEN 7. lv_table = 'SCPRRECA'.",
+            "    WHEN 8. lv_table = 'SCPRVALS'.",
+            "    WHEN 9. lv_table = 'SCPRVALL'.",
+            "    WHEN 10. lv_table = 'SCPRPPRL'.",
+            "  ENDCASE.",
+            "  CLEAR lv_group.",
+            "  SELECT SINGLE cclass INTO lv_group FROM tddat",
+            "    WHERE tabname = lv_table.",
+            "  IF sy-subrc <> 0 OR lv_group IS INITIAL.",
+            "    lv_group = '&NC&'.",
+            "  ENDIF.",
+            "  AUTHORITY-CHECK OBJECT 'S_TABU_DIS'",
+            "    ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.",
+            "  IF sy-subrc <> 0.",
+            "    AUTHORITY-CHECK OBJECT 'S_TABU_NAM'",
+            "      ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.",
+            "    IF sy-subrc <> 0.",
+            "      ev_code = 'AUTHORIZATION_DENIED'.",
+            "      RETURN.",
+            "    ENDIF.",
+            "  ENDIF.",
+            "ENDDO.",
+            "\" 两轮完整读取并比较原生缓冲；这是顺序观察，不是加锁快照。",
+            "DO 2 TIMES.",
+            "  SELECT SINGLE * INTO ls_header FROM scprattr",
+            "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+            "  IF sy-subrc <> 0.",
+            "    ev_code = 'SOURCE_NOT_FOUND'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  IF ls_header-category IS NOT INITIAL OR ls_header-type <> 'TMV'.",
+            "    ev_code = 'SOURCE_SCOPE_INVALID'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  SELECT * FROM scprreca INTO TABLE lt_records UP TO 6 ROWS",
+            "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+            "  DESCRIBE TABLE lt_records LINES lv_count.",
+            "  IF lv_count <> 5.",
+            "    ev_code = 'SOURCE_SCOPE_INVALID'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  SORT lt_records BY id version tablename recnumber.",
+            "  LOOP AT lt_records INTO ls_record.",
+            "    CASE sy-tabix.",
+            "      WHEN 1. lv_table = 'T006'.",
+            "      WHEN 2. lv_table = 'T006A'.",
+            "      WHEN 3. lv_table = 'T006B'.",
+            "      WHEN 4. lv_table = 'T006C'.",
+            "      WHEN 5. lv_table = 'T006D'.",
+            "    ENDCASE.",
+            "    IF ls_record-tablename <> lv_table OR ls_record-recnumber <> 1",
+            "    OR ls_record-objectname <> 'CUNI' OR ls_record-objecttype <> 'T'",
+            "    OR ls_record-deleteflag IS NOT INITIAL",
+            "    OR ls_record-uncomplete IS NOT INITIAL",
+            "    OR ls_record-genref IS NOT INITIAL",
+            "    OR ls_record-activity IS NOT INITIAL",
+            "    OR ls_record-clustname IS NOT INITIAL.",
+            "      ev_code = 'SOURCE_SCOPE_INVALID'.",
+            "      RETURN.",
+            "    ENDIF.",
+            "  ENDLOOP.",
+            "  SELECT * FROM scprvals INTO TABLE lt_values UP TO 101 ROWS",
+            "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+            "  DESCRIBE TABLE lt_values LINES lv_count.",
+            "  IF lv_count > 100.",
+            "    ev_code = 'SOURCE_LIMIT_EXCEEDED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  SORT lt_values BY id version tablename recnumber fieldname.",
+            "  SELECT * FROM scprvall INTO TABLE lt_languages UP TO 101 ROWS",
+            "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+            "  DESCRIBE TABLE lt_languages LINES lv_count.",
+            "  IF lv_count > 100.",
+            "    ev_code = 'SOURCE_LIMIT_EXCEEDED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  SORT lt_languages BY id version tablename recnumber fieldname langu.",
+            "  SELECT * FROM scprpprl INTO TABLE lt_dependencies UP TO 1 ROWS",
+            "    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+            "  IF lt_dependencies IS NOT INITIAL.",
+            "    ev_code = 'SOURCE_SCOPE_INVALID'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  SELECT * FROM t006 INTO TABLE lt_t006 WHERE msehi = 'KNM'.",
+            "  SELECT * FROM t006a INTO TABLE lt_t006a WHERE msehi = 'KNM'",
+            "    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).",
+            "  \" 别名按自身键读取；映射到其他单位的冲突也必须返回。",
+            "  SELECT * FROM t006b INTO TABLE lt_t006b WHERE mseh3 = 'KNM'",
+            "    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).",
+            "  SELECT * FROM t006c INTO TABLE lt_t006c WHERE mseh6 = 'kN/m2'",
+            "    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).",
+            "  \" PRESS 是共享维度；这里只读取完整行，不做保存。",
+            "  SELECT * FROM t006d INTO TABLE lt_t006d WHERE dimid = 'PRESS'.",
+            "  SORT lt_t006 BY mandt msehi.",
+            "  SORT lt_t006a BY mandt spras msehi.",
+            "  SORT lt_t006b BY mandt spras mseh3.",
+            "  SORT lt_t006c BY mandt spras mseh6.",
+            "  SORT lt_t006d BY mandt dimid.",
+            "  \" 原生类型序列化包括 FLTP、空格和缺失行；不经显示文本重建。",
+            "  EXPORT namespace = 'ORVANTA_BC_SOURCE_V1'",
+            "    system = sy-sysid client = sy-mandt",
+            "    header = ls_header records = lt_records values = lt_values",
+            "    languages = lt_languages dependencies = lt_dependencies",
+            "    TO DATA BUFFER lv_source.",
+            "  EXPORT namespace = 'ORVANTA_BC_TARGET_V1'",
+            "    system = sy-sysid client = sy-mandt user = sy-uname",
+            "    bc_set = iv_bc_set version = iv_version",
+            "    unit = lt_t006 texts = lt_t006a commercial = lt_t006b",
+            "    technical = lt_t006c dimension = lt_t006d",
+            "    TO DATA BUFFER lv_target.",
+            "  IF sy-index = 1.",
+            "    lv_source_first = lv_source.",
+            "    lv_target_first = lv_target.",
+            "  ELSEIF lv_source <> lv_source_first OR lv_target <> lv_target_first.",
+            "    ev_code = 'READ_CHANGED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "ENDDO.",
+            "CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'",
+            "  EXPORTING alg = 'SHA2' data = lv_source",
+            "  IMPORTING hashstring = lv_source_hash",
+            "  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3",
+            "             error_message = 4 OTHERS = 5.",
+            "IF sy-subrc <> 0.",
+            "  ev_code = 'HASH_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'",
+            "  EXPORTING alg = 'SHA2' data = lv_target",
+            "  IMPORTING hashstring = lv_target_hash",
+            "  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3",
+            "             error_message = 4 OTHERS = 5.",
+            "IF sy-subrc <> 0.",
+            "  ev_code = 'HASH_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "TRANSLATE lv_source_hash TO LOWER CASE.",
+            "TRANSLATE lv_target_hash TO LOWER CASE.",
+            "IF strlen( lv_source_hash ) <> 64 OR strlen( lv_target_hash ) <> 64",
+            "OR lv_source_hash CN '0123456789abcdef'",
+            "OR lv_target_hash CN '0123456789abcdef'.",
+            "  ev_code = 'HASH_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "et_t006[] = lt_t006[].",
+            "et_t006a[] = lt_t006a[].",
+            "et_t006b[] = lt_t006b[].",
+            "et_t006c[] = lt_t006c[].",
+            "et_t006d[] = lt_t006d[].",
+            "ev_source_version = lv_source_hash.",
+            "ev_target_version = lv_target_hash.",
+            "ev_code = 'READ_OK'.",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "ebf8ff8ecacf22fc06defc4232da3a35ea5d99abdc61e113112eecc1d0209b38",
+          "interfaceFingerprint": "8f9b627c30cb74f36bfbafdb2218b8f51c0eddba83471e8dd18ccf7fa14714e7",
+          "sourceFingerprint": "306ddd0f9a75c7e73634d12d82cd713ae536367863a81e0be6cb56e8ab3da880"
+        }
+      },
+      {
+        "name": "read_function_module_interface",
+        "args": {
+          "connectionId": "w200",
+          "functionName": "Z_ORVANTA_CFG_BC_PREVIEW"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "functionName": "Z_ORVANTA_CFG_BC_PREVIEW",
+          "functionGroup": "ZORVANTA_BC_CFG",
+          "shortText": "CUNI BC Set native read only preview",
+          "remoteMode": "R",
+          "updateTask": false,
+          "updateTaskMode": "",
+          "globalInterface": false,
+          "remoteEnabled": true,
+          "importParameters": [
+            {
+              "name": "IV_BC_SET",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "IV_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "IV_SOURCE_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "IV_TARGET_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "exportParameters": [
+            {
+              "name": "EV_CODE",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_SYSTEM",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_CLIENT",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_USER",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_SOURCE_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_TARGET_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_CANDIDATE_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_DIFFERENCES",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_ERROR_FIELD",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "changingParameters": [],
+          "tableParameters": [
+            {
+              "name": "ET_T006",
+              "typeName": "T006",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006A",
+              "typeName": "T006A",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006B",
+              "typeName": "T006B",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006C",
+              "typeName": "T006C",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_T006D",
+              "typeName": "T006D",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            }
+          ],
+          "exceptions": [],
+          "source": [
+            "FUNCTION Z_ORVANTA_CFG_BC_PREVIEW.",
+            "*\"--------------------------------------------------------------------",
+            "*\"*\"局部接口：",
+            "*\"  IMPORTING",
+            "*\"     VALUE(IV_BC_SET) TYPE  STRING",
+            "*\"     VALUE(IV_VERSION) TYPE  STRING",
+            "*\"     VALUE(IV_SOURCE_VERSION) TYPE  STRING",
+            "*\"     VALUE(IV_TARGET_VERSION) TYPE  STRING",
+            "*\"  EXPORTING",
+            "*\"     VALUE(EV_CODE) TYPE  STRING",
+            "*\"     VALUE(EV_SYSTEM) TYPE  STRING",
+            "*\"     VALUE(EV_CLIENT) TYPE  STRING",
+            "*\"     VALUE(EV_USER) TYPE  STRING",
+            "*\"     VALUE(EV_SOURCE_VERSION) TYPE  STRING",
+            "*\"     VALUE(EV_TARGET_VERSION) TYPE  STRING",
+            "*\"     VALUE(EV_CANDIDATE_VERSION) TYPE  STRING",
+            "*\"     VALUE(EV_DIFFERENCES) TYPE  STRING",
+            "*\"     VALUE(EV_ERROR_FIELD) TYPE  STRING",
+            "*\"  TABLES",
+            "*\"      ET_T006 STRUCTURE  T006",
+            "*\"      ET_T006A STRUCTURE  T006A",
+            "*\"      ET_T006B STRUCTURE  T006B",
+            "*\"      ET_T006C STRUCTURE  T006C",
+            "*\"      ET_T006D STRUCTURE  T006D",
+            "*\"--------------------------------------------------------------------",
+            "DATA: lt_values TYPE STANDARD TABLE OF scprvals,",
+            "      lt_languages TYPE STANDARD TABLE OF scprvall,",
+            "      ls_value TYPE scprvals, ls_language TYPE scprvall,",
+            "      lt_fields TYPE STANDARD TABLE OF dfies,",
+            "      ls_field TYPE dfies, ls_convert TYPE rsconvlite,",
+            "      lv_table TYPE ddobjname, lv_lang TYPE spras,",
+            "      lv_value TYPE scprvals-value, lv_code TYPE string,",
+            "      lv_source TYPE string, lv_target TYPE string,",
+            "      lv_system TYPE string, lv_client TYPE string,",
+            "      lv_user TYPE string, lv_diffs TYPE string,",
+            "      lv_status TYPE string, lv_index TYPE c LENGTH 1,",
+            "      lv_layout TYPE string, lv_expected TYPE string,",
+            "      lv_dcpfm TYPE usr01-dcpfm, lv_dcpfm_after TYPE usr01-dcpfm,",
+            "      lv_present TYPE c, lv_found TYPE c, lv_rows TYPE i,",
+            "      lv_count TYPE i, lv_length TYPE i, lv_row_index TYPE i,",
+            "      lv_buffer TYPE xstring, lv_hash TYPE string,",
+            "      lr_row TYPE REF TO data, lr_before TYPE REF TO data.",
+            "FIELD-SYMBOLS: <row> TYPE any, <before> TYPE any,",
+            "               <value> TYPE any, <old> TYPE any.",
+            "DATA: lt_t006 TYPE STANDARD TABLE OF t006,",
+            "      lb_t006 TYPE STANDARD TABLE OF t006,",
+            "      ls_t006 TYPE t006,",
+            "      lo_t006 TYPE t006.",
+            "DATA: lt_t006a TYPE STANDARD TABLE OF t006a,",
+            "      lb_t006a TYPE STANDARD TABLE OF t006a,",
+            "      ls_t006a TYPE t006a,",
+            "      lo_t006a TYPE t006a.",
+            "DATA: lt_t006b TYPE STANDARD TABLE OF t006b,",
+            "      lb_t006b TYPE STANDARD TABLE OF t006b,",
+            "      ls_t006b TYPE t006b,",
+            "      lo_t006b TYPE t006b.",
+            "DATA: lt_t006c TYPE STANDARD TABLE OF t006c,",
+            "      lb_t006c TYPE STANDARD TABLE OF t006c,",
+            "      ls_t006c TYPE t006c,",
+            "      lo_t006c TYPE t006c.",
+            "DATA: lt_t006d TYPE STANDARD TABLE OF t006d,",
+            "      lb_t006d TYPE STANDARD TABLE OF t006d,",
+            "      ls_t006d TYPE t006d,",
+            "      lo_t006d TYPE t006d.",
+            "\" 输出只在所有转换及复读通过后填充；没有配置写入。",
+            "CLEAR: ev_code, ev_system, ev_client, ev_user,",
+            "       ev_source_version, ev_target_version,",
+            "       ev_candidate_version, ev_differences, ev_error_field.",
+            "REFRESH et_t006.",
+            "REFRESH et_t006a.",
+            "REFRESH et_t006b.",
+            "REFRESH et_t006c.",
+            "REFRESH et_t006d.",
+            "ev_system = sy-sysid.",
+            "ev_client = sy-mandt.",
+            "ev_user = sy-uname.",
+            "IF sy-sysid <> 'GR2' OR sy-mandt <> '200'.",
+            "  ev_code = 'SCOPE_UNSUPPORTED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "IF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'",
+            "OR strlen( iv_source_version ) <> 64",
+            "OR strlen( iv_target_version ) <> 64",
+            "OR iv_source_version CN '0123456789abcdef'",
+            "OR iv_target_version CN '0123456789abcdef'.",
+            "  ev_code = 'INPUT_INVALID'.",
+            "  RETURN.",
+            "ENDIF.",
+            "\" 整包原生版本固定，额外值、孤立值、通配键均改变此版本。",
+            "IF iv_source_version <>",
+            "  '73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b'.",
+            "  ev_code = 'SOURCE_NOT_ATTESTED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "CALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'",
+            "  EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version",
+            "  IMPORTING ev_code = lv_code ev_system = lv_system",
+            "    ev_client = lv_client ev_user = lv_user",
+            "    ev_source_version = lv_source ev_target_version = lv_target",
+            "  TABLES et_t006 = lb_t006 et_t006a = lb_t006a",
+            "    et_t006b = lb_t006b et_t006c = lb_t006c et_t006d = lb_t006d",
+            "  EXCEPTIONS error_message = 1 OTHERS = 2.",
+            "IF sy-subrc <> 0 OR lv_code <> 'READ_OK'.",
+            "  ev_code = 'READ_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "IF lv_source <> iv_source_version OR lv_target <> iv_target_version",
+            "OR lv_system <> 'GR2' OR lv_client <> '200' OR lv_user <> sy-uname.",
+            "  ev_code = 'VERSION_CONFLICT'.",
+            "  RETURN.",
+            "ENDIF.",
+            "LOOP AT lb_t006b INTO lo_t006b.",
+            "  IF lo_t006b-msehi <> 'KNM'.",
+            "    ev_code = 'ALIAS_CONFLICT'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "ENDLOOP.",
+            "LOOP AT lb_t006c INTO lo_t006c.",
+            "  IF lo_t006c-msehi <> 'KNM'.",
+            "    ev_code = 'ALIAS_CONFLICT'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "ENDLOOP.",
+            "SELECT SINGLE dcpfm INTO lv_dcpfm FROM usr01",
+            "  WHERE bname = sy-uname.",
+            "IF sy-subrc <> 0.",
+            "  ev_code = 'USER_FORMAT_UNAVAILABLE'.",
+            "  RETURN.",
+            "ENDIF.",
+            "SELECT * FROM scprvals INTO TABLE lt_values UP TO 101 ROWS",
+            "  WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+            "SELECT * FROM scprvall INTO TABLE lt_languages UP TO 101 ROWS",
+            "  WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.",
+            "DESCRIBE TABLE lt_values LINES lv_count.",
+            "IF lv_count <> 41.",
+            "  ev_code = 'SOURCE_CHANGED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "DESCRIBE TABLE lt_languages LINES lv_count.",
+            "IF lv_count <> 18.",
+            "  ev_code = 'SOURCE_CHANGED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "\" 只预览标准 USE 更新策略；不调用装载、激活、日志或传输函数。",
+            "DO 5 TIMES.",
+            "  CASE sy-index.",
+            "    WHEN 1.",
+            "      lv_table = 'T006'.",
+            "      lv_rows = 1.",
+            "      lv_expected =",
+            "        'MANDT|MSEHI|KZEX3|KZEX6|ANDEC|KZKEH|KZWOB|KZ1EH|KZ2' &&",
+            "        'EH|DIMID|ZAEHL|NENNR|EXP10|ADDKO|EXPON|DECAN|ISOCOD' &&",
+            "        'E|PRIMARY|TEMP_VALUE|TEMP_UNIT|FAMUNIT|PRESS_VAL|PR' &&",
+            "        'ESS_UNIT'.",
+            "    WHEN 2.",
+            "      lv_table = 'T006A'.",
+            "      lv_rows = 3.",
+            "      lv_expected =",
+            "        'MANDT|SPRAS|MSEHI|MSEH3|MSEH6|MSEHT|MSEHL'.",
+            "    WHEN 3.",
+            "      lv_table = 'T006B'.",
+            "      lv_rows = 3.",
+            "      lv_expected =",
+            "        'MANDT|SPRAS|MSEH3|MSEHI'.",
+            "    WHEN 4.",
+            "      lv_table = 'T006C'.",
+            "      lv_rows = 3.",
+            "      lv_expected =",
+            "        'MANDT|SPRAS|MSEH6|MSEHI'.",
+            "    WHEN 5.",
+            "      lv_table = 'T006D'.",
+            "      lv_rows = 1.",
+            "      lv_expected =",
+            "        'MANDT|DIMID|LENG|MASS|TIMEX|ECURR|TEMP|MOLQU|LIGHT|' &&",
+            "        'MSSIE|TEMP_DEP|PRESS_DEP'.",
+            "  ENDCASE.",
+            "  REFRESH lt_fields.",
+            "  CALL FUNCTION 'DDIF_NAMETAB_GET'",
+            "    EXPORTING tabname = lv_table",
+            "    TABLES dfies_tab = lt_fields",
+            "    EXCEPTIONS not_found = 1 error_message = 2 OTHERS = 3.",
+            "  IF sy-subrc <> 0 OR lt_fields IS INITIAL.",
+            "    ev_code = 'LAYOUT_UNAVAILABLE'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  CLEAR lv_layout.",
+            "  LOOP AT lt_fields INTO ls_field.",
+            "    IF lv_layout IS INITIAL.",
+            "      lv_layout = ls_field-fieldname.",
+            "    ELSE.",
+            "      CONCATENATE lv_layout ls_field-fieldname",
+            "        INTO lv_layout SEPARATED BY '|'.",
+            "    ENDIF.",
+            "    IF ls_field-inttype NA 'CNIPFsb'",
+            "    OR ls_field-datatype = 'CURR' OR ls_field-datatype = 'CUKY'.",
+            "      ev_code = 'LAYOUT_UNSUPPORTED'.",
+            "      RETURN.",
+            "    ENDIF.",
+            "  ENDLOOP.",
+            "  IF lv_layout <> lv_expected.",
+            "    ev_code = 'LAYOUT_CHANGED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  DO lv_rows TIMES.",
+            "    lv_row_index = sy-index.",
+            "    lv_index = lv_row_index.",
+            "    CLEAR: lv_lang, lv_present.",
+            "    CASE lv_row_index.",
+            "      WHEN 1. lv_lang = '1'.",
+            "      WHEN 2. lv_lang = 'D'.",
+            "      WHEN 3. lv_lang = 'E'.",
+            "    ENDCASE.",
+            "    CASE lv_table.",
+            "      WHEN 'T006'.",
+            "        CLEAR: ls_t006, lo_t006.",
+            "        READ TABLE lb_t006 INTO lo_t006 INDEX 1.",
+            "        IF sy-subrc = 0.",
+            "          lv_present = 'X'.",
+            "          ls_t006 = lo_t006.",
+            "        ENDIF.",
+            "        GET REFERENCE OF ls_t006 INTO lr_row.",
+            "        GET REFERENCE OF lo_t006 INTO lr_before.",
+            "      WHEN 'T006A'.",
+            "        CLEAR: ls_t006a, lo_t006a.",
+            "        READ TABLE lb_t006a INTO lo_t006a",
+            "          WITH KEY spras = lv_lang.",
+            "        IF sy-subrc = 0.",
+            "          lv_present = 'X'.",
+            "          ls_t006a = lo_t006a.",
+            "        ENDIF.",
+            "        GET REFERENCE OF ls_t006a INTO lr_row.",
+            "        GET REFERENCE OF lo_t006a INTO lr_before.",
+            "      WHEN 'T006B'.",
+            "        CLEAR: ls_t006b, lo_t006b.",
+            "        READ TABLE lb_t006b INTO lo_t006b",
+            "          WITH KEY spras = lv_lang.",
+            "        IF sy-subrc = 0.",
+            "          lv_present = 'X'.",
+            "          ls_t006b = lo_t006b.",
+            "        ENDIF.",
+            "        GET REFERENCE OF ls_t006b INTO lr_row.",
+            "        GET REFERENCE OF lo_t006b INTO lr_before.",
+            "      WHEN 'T006C'.",
+            "        CLEAR: ls_t006c, lo_t006c.",
+            "        READ TABLE lb_t006c INTO lo_t006c",
+            "          WITH KEY spras = lv_lang.",
+            "        IF sy-subrc = 0.",
+            "          lv_present = 'X'.",
+            "          ls_t006c = lo_t006c.",
+            "        ENDIF.",
+            "        GET REFERENCE OF ls_t006c INTO lr_row.",
+            "        GET REFERENCE OF lo_t006c INTO lr_before.",
+            "      WHEN 'T006D'.",
+            "        CLEAR: ls_t006d, lo_t006d.",
+            "        READ TABLE lb_t006d INTO lo_t006d INDEX 1.",
+            "        IF sy-subrc = 0.",
+            "          lv_present = 'X'.",
+            "          ls_t006d = lo_t006d.",
+            "        ENDIF.",
+            "        GET REFERENCE OF ls_t006d INTO lr_row.",
+            "        GET REFERENCE OF lo_t006d INTO lr_before.",
+            "    ENDCASE.",
+            "    ASSIGN lr_row->* TO <row>.",
+            "    ASSIGN lr_before->* TO <before>.",
+            "    LOOP AT lt_fields INTO ls_field.",
+            "      ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <row>",
+            "        TO <value>.",
+            "      IF sy-subrc <> 0.",
+            "        ev_code = 'LAYOUT_CHANGED'.",
+            "        RETURN.",
+            "      ENDIF.",
+            "      CLEAR: lv_value, lv_found, ls_value, ls_language.",
+            "      READ TABLE lt_values INTO ls_value WITH KEY",
+            "        tablename = lv_table recnumber = 1",
+            "        fieldname = ls_field-fieldname.",
+            "      IF sy-subrc = 0.",
+            "        lv_found = 'X'.",
+            "        lv_value = ls_value-value.",
+            "      ENDIF.",
+            "      IF lv_rows = 3.",
+            "        READ TABLE lt_languages INTO ls_language WITH KEY",
+            "          tablename = lv_table recnumber = 1",
+            "          fieldname = ls_field-fieldname langu = lv_lang.",
+            "        IF sy-subrc = 0.",
+            "          lv_found = 'X'.",
+            "          lv_value = ls_language-value.",
+            "        ENDIF.",
+            "      ENDIF.",
+            "      IF ls_field-fieldname = 'MANDT'.",
+            "        lv_value = sy-mandt.",
+            "        lv_found = 'X'.",
+            "      ELSEIF ls_field-fieldname = 'SPRAS' AND lv_rows = 3.",
+            "        lv_value = lv_lang.",
+            "        lv_found = 'X'.",
+            "      ENDIF.",
+            "      IF ls_field-keyflag = 'X' AND lv_found IS INITIAL.",
+            "        ev_code = 'KEY_MISSING'.",
+            "        RETURN.",
+            "      ENDIF.",
+            "      IF lv_found = 'X'.",
+            "        IF ls_field-keyflag IS INITIAL",
+            "        AND ( ls_value-flag <> 'USE' AND ls_language-flag <> 'USE' ).",
+            "          ev_code = 'SOURCE_FLAG_UNSUPPORTED'.",
+            "          RETURN.",
+            "        ENDIF.",
+            "        ev_error_field = ls_field-fieldname.",
+            "        TRY.",
+            "          CASE ls_field-inttype.",
+            "            WHEN 'C'.",
+            "              DESCRIBE FIELD <value> LENGTH lv_length",
+            "                IN CHARACTER MODE.",
+            "              IF strlen( lv_value ) > lv_length.",
+            "                ev_code = 'VALUE_TRUNCATED'.",
+            "                RETURN.",
+            "              ENDIF.",
+            "              <value> = lv_value.",
+            "            WHEN 'N'.",
+            "              IF lv_value CN '0123456789 '.",
+            "                ev_code = 'CONVERSION_FAILED'.",
+            "                RETURN.",
+            "              ENDIF.",
+            "              <value> = lv_value.",
+            "            WHEN 'I' OR 'P' OR 'F' OR 's' OR 'b'.",
+            "              IF ls_field-convexit IS NOT INITIAL.",
+            "                ev_code = 'CONVERSION_EXIT_UNREVIEWED'.",
+            "                RETURN.",
+            "              ENDIF.",
+            "              CALL FUNCTION 'SCPR_CT_DECDELIM_CONVERT_ONE'",
+            "                EXPORTING decimals = ls_field-decimals",
+            "                  datatype = ls_field-datatype",
+            "                CHANGING value = lv_value",
+            "                EXCEPTIONS error_message = 1 OTHERS = 2.",
+            "              IF sy-subrc <> 0.",
+            "                ev_code = 'CONVERSION_FAILED'.",
+            "                RETURN.",
+            "              ENDIF.",
+            "              CLEAR ls_convert.",
+            "              ls_convert-active = 'X'.",
+            "              ls_convert-olength = ls_field-outputlen.",
+            "              ls_convert-decimals = ls_field-decimals.",
+            "              ls_convert-sign = ls_field-sign.",
+            "              IF ls_field-inttype = 'F'.",
+            "                ls_convert-sign = 'X'.",
+            "              ENDIF.",
+            "              CALL FUNCTION 'RS_CONV_EX_2_IN_NO_DD'",
+            "                EXPORTING input_external = lv_value",
+            "                  convert = ls_convert",
+            "                IMPORTING output_internal = <value>",
+            "                EXCEPTIONS error_message = 1 OTHERS = 2.",
+            "              IF sy-subrc <> 0.",
+            "                ev_code = 'CONVERSION_FAILED'.",
+            "                RETURN.",
+            "              ENDIF.",
+            "          ENDCASE.",
+            "        CATCH cx_root.",
+            "          ev_code = 'CONVERSION_FAILED'.",
+            "          RETURN.",
+            "        ENDTRY.",
+            "      ENDIF.",
+            "      ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <before>",
+            "        TO <old>.",
+            "      IF sy-subrc <> 0.",
+            "        ev_code = 'LAYOUT_CHANGED'.",
+            "        RETURN.",
+            "      ENDIF.",
+            "      IF lv_present IS INITIAL.",
+            "        lv_status = 'NEW'.",
+            "      ELSEIF <value> = <old>.",
+            "        lv_status = 'EQL'.",
+            "      ELSE.",
+            "        lv_status = 'CHG'.",
+            "      ENDIF.",
+            "      CONCATENATE lv_diffs lv_table ':' lv_index ':'",
+            "        ls_field-fieldname ':' lv_status ';' INTO lv_diffs.",
+            "    ENDLOOP.",
+            "    CASE lv_table.",
+            "      WHEN 'T006'. APPEND ls_t006 TO lt_t006.",
+            "      WHEN 'T006A'. APPEND ls_t006a TO lt_t006a.",
+            "      WHEN 'T006B'. APPEND ls_t006b TO lt_t006b.",
+            "      WHEN 'T006C'. APPEND ls_t006c TO lt_t006c.",
+            "      WHEN 'T006D'. APPEND ls_t006d TO lt_t006d.",
+            "    ENDCASE.",
+            "  ENDDO.",
+            "ENDDO.",
+            "\" 双版本复读拒绝漂移；用户小数格式也绑定到候选版本。",
+            "CALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'",
+            "  EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version",
+            "  IMPORTING ev_code = lv_code ev_system = lv_system",
+            "    ev_client = lv_client ev_user = lv_user",
+            "    ev_source_version = lv_source ev_target_version = lv_target",
+            "  TABLES et_t006 = lb_t006 et_t006a = lb_t006a",
+            "    et_t006b = lb_t006b et_t006c = lb_t006c et_t006d = lb_t006d",
+            "  EXCEPTIONS error_message = 1 OTHERS = 2.",
+            "IF sy-subrc <> 0 OR lv_code <> 'READ_OK'.",
+            "  ev_code = 'READ_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "IF lv_source <> iv_source_version OR lv_target <> iv_target_version",
+            "OR lv_system <> 'GR2' OR lv_client <> '200' OR lv_user <> sy-uname.",
+            "  ev_code = 'VERSION_CONFLICT'.",
+            "  RETURN.",
+            "ENDIF.",
+            "SELECT SINGLE dcpfm INTO lv_dcpfm_after FROM usr01",
+            "  WHERE bname = sy-uname.",
+            "IF sy-subrc <> 0 OR lv_dcpfm_after <> lv_dcpfm.",
+            "  ev_code = 'USER_FORMAT_CHANGED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "EXPORT namespace = 'ORVANTA_BC_PREVIEW_V1'",
+            "  system = sy-sysid client = sy-mandt user = sy-uname",
+            "  source = lv_source target = lv_target format = lv_dcpfm",
+            "  policy = 'CREATE_INITIAL_OR_UPDATE_USE'",
+            "  unit = lt_t006 texts = lt_t006a commercial = lt_t006b",
+            "  technical = lt_t006c dimension = lt_t006d diffs = lv_diffs",
+            "  TO DATA BUFFER lv_buffer.",
+            "CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'",
+            "  EXPORTING alg = 'SHA2' data = lv_buffer",
+            "  IMPORTING hashstring = lv_hash",
+            "  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3",
+            "    error_message = 4 OTHERS = 5.",
+            "IF sy-subrc <> 0.",
+            "  ev_code = 'HASH_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "TRANSLATE lv_hash TO LOWER CASE.",
+            "IF strlen( lv_hash ) <> 64 OR lv_hash CN '0123456789abcdef'.",
+            "  ev_code = 'HASH_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "et_t006[] = lt_t006[].",
+            "et_t006a[] = lt_t006a[].",
+            "et_t006b[] = lt_t006b[].",
+            "et_t006c[] = lt_t006c[].",
+            "et_t006d[] = lt_t006d[].",
+            "ev_source_version = lv_source.",
+            "ev_target_version = lv_target.",
+            "ev_candidate_version = lv_hash.",
+            "ev_differences = lv_diffs.",
+            "CLEAR ev_error_field.",
+            "ev_code = 'PREVIEW_OK'.",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "db0437df79e601a10915431762e50c3cf9e3d4c1ddc66c9a74a7a984b5286d99",
+          "interfaceFingerprint": "fb263b9e2c0292306c786c113e5c6eb3961860bba292295a24caf11e36e7da21",
+          "sourceFingerprint": "78d3bea69bde1ce616881b8b4b301a6c844eeb4be138b114a27539d6d803fbc8"
+        }
+      },
+      {
+        "name": "read_function_module_interface",
+        "args": {
+          "connectionId": "w200",
+          "functionName": "Z_ORVANTA_CFG_BC_ROUTE"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "functionName": "Z_ORVANTA_CFG_BC_ROUTE",
+          "functionGroup": "ZORVANTA_BC_CFG",
+          "shortText": "CUNI BC Set read only route metadata",
+          "remoteMode": "R",
+          "updateTask": false,
+          "updateTaskMode": "",
+          "globalInterface": false,
+          "remoteEnabled": true,
+          "importParameters": [
+            {
+              "name": "IV_BC_SET",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "IV_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "IV_SOURCE_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "IV_TARGET_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "exportParameters": [
+            {
+              "name": "EV_CODE",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_SYSTEM",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_CLIENT",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_USER",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_SOURCE_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_TARGET_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            },
+            {
+              "name": "EV_METADATA_VERSION",
+              "typeName": "STRING",
+              "optional": false,
+              "passByValue": true,
+              "description": ""
+            }
+          ],
+          "changingParameters": [],
+          "tableParameters": [
+            {
+              "name": "ET_OBJH",
+              "typeName": "OBJH",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_OBJS",
+              "typeName": "OBJS",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            },
+            {
+              "name": "ET_OBJM",
+              "typeName": "OBJM",
+              "optional": false,
+              "passByValue": false,
+              "description": ""
+            }
+          ],
+          "exceptions": [],
+          "source": [
+            "FUNCTION Z_ORVANTA_CFG_BC_ROUTE.",
+            "*\"--------------------------------------------------------------------",
+            "*\"*\"局部接口：",
+            "*\"  IMPORTING",
+            "*\"     VALUE(IV_BC_SET) TYPE  STRING",
+            "*\"     VALUE(IV_VERSION) TYPE  STRING",
+            "*\"     VALUE(IV_SOURCE_VERSION) TYPE  STRING",
+            "*\"     VALUE(IV_TARGET_VERSION) TYPE  STRING",
+            "*\"  EXPORTING",
+            "*\"     VALUE(EV_CODE) TYPE  STRING",
+            "*\"     VALUE(EV_SYSTEM) TYPE  STRING",
+            "*\"     VALUE(EV_CLIENT) TYPE  STRING",
+            "*\"     VALUE(EV_USER) TYPE  STRING",
+            "*\"     VALUE(EV_SOURCE_VERSION) TYPE  STRING",
+            "*\"     VALUE(EV_TARGET_VERSION) TYPE  STRING",
+            "*\"     VALUE(EV_METADATA_VERSION) TYPE  STRING",
+            "*\"  TABLES",
+            "*\"      ET_OBJH STRUCTURE  OBJH",
+            "*\"      ET_OBJS STRUCTURE  OBJS",
+            "*\"      ET_OBJM STRUCTURE  OBJM",
+            "*\"--------------------------------------------------------------------",
+            "DATA: ls_header TYPE objh,",
+            "      lt_headers TYPE STANDARD TABLE OF objh,",
+            "      lt_members TYPE STANDARD TABLE OF objs,",
+            "      lt_methods TYPE STANDARD TABLE OF objm,",
+            "      lv_table TYPE tddat-tabname, lv_group TYPE tddat-cclass,",
+            "      lv_code TYPE string, lv_system TYPE string,",
+            "      lv_client TYPE string, lv_user TYPE string,",
+            "      lv_source TYPE string, lv_target TYPE string,",
+            "      lv_buffer TYPE xstring, lv_first TYPE xstring,",
+            "      lv_hash TYPE string, lv_count TYPE i, lv_pass TYPE i,",
+            "      lt_t006 TYPE STANDARD TABLE OF t006,",
+            "      lt_t006a TYPE STANDARD TABLE OF t006a,",
+            "      lt_t006b TYPE STANDARD TABLE OF t006b,",
+            "      lt_t006c TYPE STANDARD TABLE OF t006c,",
+            "      lt_t006d TYPE STANDARD TABLE OF t006d.",
+            "\" 固定 CUNI/T 元数据读取；不调用任何动态方法或配置命令。",
+            "CLEAR: ev_code, ev_system, ev_client, ev_user,",
+            "       ev_source_version, ev_target_version, ev_metadata_version.",
+            "REFRESH: et_objh, et_objs, et_objm.",
+            "ev_system = sy-sysid.",
+            "ev_client = sy-mandt.",
+            "ev_user = sy-uname.",
+            "IF sy-sysid <> 'GR2' OR sy-mandt <> '200'.",
+            "  ev_code = 'SCOPE_UNSUPPORTED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "IF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'",
+            "OR strlen( iv_source_version ) <> 64",
+            "OR iv_source_version CN '0123456789abcdef'",
+            "OR strlen( iv_target_version ) <> 64",
+            "OR iv_target_version CN '0123456789abcdef'.",
+            "  ev_code = 'INPUT_INVALID'.",
+            "  RETURN.",
+            "ENDIF.",
+            "IF iv_source_version <>",
+            "  '73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b'.",
+            "  ev_code = 'SOURCE_NOT_ATTESTED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "\" 表名固定，逐表显示权限；沿用既有 READ 的授权模式。",
+            "DO 3 TIMES.",
+            "  CASE sy-index.",
+            "    WHEN 1. lv_table = 'OBJH'.",
+            "    WHEN 2. lv_table = 'OBJS'.",
+            "    WHEN 3. lv_table = 'OBJM'.",
+            "  ENDCASE.",
+            "  CLEAR lv_group.",
+            "  SELECT SINGLE cclass INTO lv_group FROM tddat",
+            "    WHERE tabname = lv_table.",
+            "  IF sy-subrc <> 0 OR lv_group IS INITIAL.",
+            "    lv_group = '&NC&'.",
+            "  ENDIF.",
+            "  AUTHORITY-CHECK OBJECT 'S_TABU_DIS'",
+            "    ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.",
+            "  IF sy-subrc <> 0.",
+            "    AUTHORITY-CHECK OBJECT 'S_TABU_NAM'",
+            "      ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.",
+            "    IF sy-subrc <> 0.",
+            "      ev_code = 'AUTHORIZATION_DENIED'.",
+            "      RETURN.",
+            "    ENDIF.",
+            "  ENDIF.",
+            "ENDDO.",
+            "\" 顺序双读不是锁定快照；任何变化都不返回可用元数据。",
+            "DO 2 TIMES.",
+            "  lv_pass = sy-index.",
+            "  CALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'",
+            "    EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version",
+            "    IMPORTING ev_code = lv_code ev_system = lv_system",
+            "      ev_client = lv_client ev_user = lv_user",
+            "      ev_source_version = lv_source ev_target_version = lv_target",
+            "    TABLES et_t006 = lt_t006 et_t006a = lt_t006a",
+            "      et_t006b = lt_t006b et_t006c = lt_t006c et_t006d = lt_t006d",
+            "    EXCEPTIONS error_message = 1 OTHERS = 2.",
+            "  IF sy-subrc <> 0 OR lv_code <> 'READ_OK'.",
+            "    ev_code = 'READ_FAILED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  IF lv_system <> sy-sysid OR lv_client <> sy-mandt",
+            "  OR lv_user <> sy-uname OR lv_source <> iv_source_version",
+            "  OR lv_target <> iv_target_version.",
+            "    ev_code = 'VERSION_CONFLICT'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  CLEAR ls_header.",
+            "  SELECT SINGLE * INTO ls_header FROM objh",
+            "    WHERE objectname = 'CUNI' AND objecttype = 'T'.",
+            "  IF sy-subrc <> 0.",
+            "    ev_code = 'OBJECT_NOT_DEFINED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  \" 排除与执行路线无关的维护用户名和日期，避免外传个人信息。",
+            "  CLEAR: ls_header-luser, ls_header-ldate.",
+            "  REFRESH lt_headers.",
+            "  APPEND ls_header TO lt_headers.",
+            "  SELECT * FROM objs INTO TABLE lt_members UP TO 21 ROWS",
+            "    WHERE objectname = 'CUNI' AND objecttype = 'T'.",
+            "  IF sy-subrc <> 0 AND sy-subrc <> 4.",
+            "    ev_code = 'READ_FAILED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  DESCRIBE TABLE lt_members LINES lv_count.",
+            "  IF lv_count > 20.",
+            "    ev_code = 'MEMBER_LIMIT'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  IF lv_count = 0.",
+            "    ev_code = 'MEMBERS_MISSING'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  SELECT * FROM objm INTO TABLE lt_methods UP TO 11 ROWS",
+            "    WHERE objectname = 'CUNI' AND objecttype = 'T'.",
+            "  IF sy-subrc <> 0 AND sy-subrc <> 4.",
+            "    ev_code = 'READ_FAILED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  DESCRIBE TABLE lt_methods LINES lv_count.",
+            "  IF lv_count > 10.",
+            "    ev_code = 'METHOD_LIMIT'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  SORT lt_members BY objectname objecttype tabname.",
+            "  SORT lt_methods BY objectname objecttype method.",
+            "  EXPORT namespace = 'ORVANTA_CUNI_ROUTE_V1'",
+            "    system = sy-sysid client = sy-mandt user = sy-uname",
+            "    source = lv_source target = lv_target",
+            "    headers = lt_headers members = lt_members methods = lt_methods",
+            "    TO DATA BUFFER lv_buffer.",
+            "  IF lv_pass = 1.",
+            "    lv_first = lv_buffer.",
+            "  ELSEIF lv_first <> lv_buffer.",
+            "    ev_code = 'METADATA_CHANGED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "ENDDO.",
+            "\" 双读之后再次核对完整源和目标版本，输出仍未填充。",
+            "CALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'",
+            "    EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version",
+            "    IMPORTING ev_code = lv_code ev_system = lv_system",
+            "      ev_client = lv_client ev_user = lv_user",
+            "      ev_source_version = lv_source ev_target_version = lv_target",
+            "    TABLES et_t006 = lt_t006 et_t006a = lt_t006a",
+            "      et_t006b = lt_t006b et_t006c = lt_t006c et_t006d = lt_t006d",
+            "    EXCEPTIONS error_message = 1 OTHERS = 2.",
+            "  IF sy-subrc <> 0 OR lv_code <> 'READ_OK'.",
+            "    ev_code = 'READ_FAILED'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "  IF lv_system <> sy-sysid OR lv_client <> sy-mandt",
+            "  OR lv_user <> sy-uname OR lv_source <> iv_source_version",
+            "  OR lv_target <> iv_target_version.",
+            "    ev_code = 'VERSION_CONFLICT'.",
+            "    RETURN.",
+            "  ENDIF.",
+            "CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'",
+            "  EXPORTING alg = 'SHA2' data = lv_buffer",
+            "  IMPORTING hashstring = lv_hash",
+            "  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3",
+            "    error_message = 4 OTHERS = 5.",
+            "IF sy-subrc <> 0.",
+            "  ev_code = 'HASH_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "TRANSLATE lv_hash TO LOWER CASE.",
+            "IF strlen( lv_hash ) <> 64 OR lv_hash CN '0123456789abcdef'.",
+            "  ev_code = 'HASH_FAILED'.",
+            "  RETURN.",
+            "ENDIF.",
+            "et_objh[] = lt_headers[].",
+            "et_objs[] = lt_members[].",
+            "et_objm[] = lt_methods[].",
+            "ev_source_version = lv_source.",
+            "ev_target_version = lv_target.",
+            "ev_metadata_version = lv_hash.",
+            "ev_code = 'ROUTE_READ_OK'.",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "ENDFUNCTION."
+          ],
+          "fingerprint": "0877a2e15c01a971fb101e85bb1b56edfbdf09a9dc06b80e6ddc3e32651323cc",
+          "interfaceFingerprint": "6403067b2b9cce0e92d1e40e1c7c2732822f0e06c4ce829ad03294c00d3756ff",
+          "sourceFingerprint": "66a20f9674a43b97e152ab80b7c022a356c9ce69c01a2b10c113bc9df6c87412"
+        }
+      },
+      {
+        "name": "get_abap_object_workspace_uri",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "Z_ORVANTA_CFG_BC_READ",
+          "objectType": "FUGR/FF"
+        },
+        "isError": false,
+        "data": {
+          "message": "ABAP Object Workspace URI\nObject: Z_ORVANTA_CFG_BC_READ\nType: FUGR/FF\nPackage: unknown\nDescription: none\nADT URI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read\nWorkspace URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read\nUse this URI with standalone ABAP MCP tools."
+        }
+      },
+      {
+        "name": "get_abap_object_workspace_uri",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "Z_ORVANTA_CFG_BC_PREVIEW",
+          "objectType": "FUGR/FF"
+        },
+        "isError": false,
+        "data": {
+          "message": "ABAP Object Workspace URI\nObject: Z_ORVANTA_CFG_BC_PREVIEW\nType: FUGR/FF\nPackage: unknown\nDescription: none\nADT URI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview\nWorkspace URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview\nUse this URI with standalone ABAP MCP tools."
+        }
+      },
+      {
+        "name": "get_abap_object_workspace_uri",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "Z_ORVANTA_CFG_BC_ROUTE",
+          "objectType": "FUGR/FF"
+        },
+        "isError": false,
+        "data": {
+          "message": "ABAP Object Workspace URI\nObject: Z_ORVANTA_CFG_BC_ROUTE\nType: FUGR/FF\nPackage: unknown\nDescription: none\nADT URI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route\nWorkspace URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route\nUse this URI with standalone ABAP MCP tools."
+        }
+      },
+      {
+        "name": "get_abap_object_lines",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "SAPLZORVANTA_BC_CFG",
+          "objectType": "PROG/P",
+          "startLine": 1,
+          "lineCount": 500
+        },
+        "isError": false,
+        "data": {
+          "message": "Source from SAPLZORVANTA_BC_CFG (lines 1-14 of 14, 14 lines retrieved):\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LZORVANTA_BC_CFGTOP.               \" Global Data\n  INCLUDE LZORVANTA_BC_CFGUXX.               \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n* INCLUDE LZORVANTA_BC_CFGF...               \" Subroutines\n* INCLUDE LZORVANTA_BC_CFGO...               \" PBO-Modules\n* INCLUDE LZORVANTA_BC_CFGI...               \" PAI-Modules\n* INCLUDE LZORVANTA_BC_CFGE...               \" Events\n* INCLUDE LZORVANTA_BC_CFGP...               \" Local class implement.\n```\n\nFull Source SHA-256: 3cb0bfcfe5cd1f7c8b46f82b0ea660d22d3b7bbbd309ed1f67b28065bc1ac286\nURI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\n\nEnhancement metadata unavailable (unsupported)."
+        }
+      },
+      {
+        "name": "get_abap_object_lines",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "LZORVANTA_BC_CFGTOP",
+          "objectType": "PROG/I",
+          "startLine": 1,
+          "lineCount": 500
+        },
+        "isError": false,
+        "data": {
+          "message": "Source from LZORVANTA_BC_CFGTOP (lines 1-3 of 3, 3 lines retrieved):\n\n```abap\nFUNCTION-POOL ZORVANTA_BC_CFG.              \"MESSAGE-ID ..\n\n* INCLUDE LZORVANTA_BC_CFGD...               \" Local class definition\n```\n\nFull Source SHA-256: dab569b57c9dac5f812ec087e464da45114ffc7556d9f0a16add44e1b4b62349\nURI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\n\nEnhancement metadata unavailable (unsupported)."
+        }
+      },
+      {
+        "name": "get_abap_object_lines",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "LZORVANTA_BC_CFGUXX",
+          "objectType": "PROG/I",
+          "startLine": 1,
+          "lineCount": 500
+        },
+        "isError": false,
+        "data": {
+          "message": "Source from LZORVANTA_BC_CFGUXX (lines 1-10 of 10, 10 lines retrieved):\n\n```abap\n*****************************************************************\n*   THIS FILE IS GENERATED BY THE FUNCTION LIBRARY.             *\n*   NEVER CHANGE IT MANUALLY, PLEASE!                           *\n*****************************************************************\nINCLUDE LZORVANTA_BC_CFGU01.\n                    \"Z_ORVANTA_CFG_BC_READ\nINCLUDE LZORVANTA_BC_CFGU02.\n                    \"Z_ORVANTA_CFG_BC_PREVIEW\nINCLUDE LZORVANTA_BC_CFGU03.\n                    \"Z_ORVANTA_CFG_BC_ROUTE\n```\n\nFull Source SHA-256: 061c6a49641617e15f08d5a49903b3bcaae656e0d5793260d95d4017d392b70a\nURI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\n\nEnhancement metadata unavailable (unsupported)."
+        }
+      },
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006I"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006I",
+          "packageName": "SZME",
+          "version": "19960404123728",
+          "fingerprint": "cb0bff534a1644ff32d10d071c5b4753fe584487720a9f4cfb6b61edc5e88644",
+          "definition": {
+            "description": "计量单位的 ISO 代码",
+            "tableClass": "TRANSP",
+            "deliveryClass": "G",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL0",
+            "buffering": "full",
+            "genericKeyFields": 0,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "CLIENT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "ISOCODE",
+                "position": 2,
+                "dataElement": "ISOCD_UNIT",
+                "description": "计量单位的 ISO 代码",
+                "key": true,
+                "notNull": true
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006J"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006J",
+          "packageName": "SZME",
+          "version": "20031107102810",
+          "fingerprint": "f90e52e900704080f4c37351b5147ec0711eeeb36ba473b9a3e663e6a78eaeb0",
+          "definition": {
+            "description": "ISO 测量文本单位码",
+            "tableClass": "TRANSP",
+            "deliveryClass": "G",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL0",
+            "buffering": "full",
+            "genericKeyFields": 0,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "CLIENT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "LANGU",
+                "position": 2,
+                "dataElement": "SPRAS",
+                "description": "语言代码",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "ISOCODE",
+                "position": 3,
+                "dataElement": "ISOCD_UNIT",
+                "description": "计量单位的 ISO 代码",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "ISOTXT",
+                "position": 4,
+                "dataElement": "ISOCD_TEXT",
+                "description": "度量单位名称的 ISO 代码",
+                "key": false,
+                "notNull": false
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006T"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006T",
+          "packageName": "SZME",
+          "version": "20031107102810",
+          "fingerprint": "1f44b60866c9c9b181f4a4a8147c74d6212fd0fb2fc5ac7b6e20447790ba21b0",
+          "definition": {
+            "description": "维数文本",
+            "tableClass": "TRANSP",
+            "deliveryClass": "C",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL2",
+            "buffering": "generic",
+            "genericKeyFields": 2,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "MANDT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "SPRAS",
+                "position": 2,
+                "dataElement": "SPRAS",
+                "description": "语言代码",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "DIMID",
+                "position": 3,
+                "dataElement": "DIMID",
+                "description": "标注键",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "TXDIM",
+                "position": 4,
+                "dataElement": "TXDIM",
+                "description": "计量单位文本",
+                "key": false,
+                "notNull": false
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006_OIB"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006_OIB",
+          "packageName": "SZME",
+          "version": "20031106185646",
+          "fingerprint": "c6cbe2e2de45048f2f380bac738e8ad33400cd69506d74529d410f791674e4d6",
+          "definition": {
+            "description": "Units of Measurement, Additional Definitions",
+            "tableClass": "TRANSP",
+            "deliveryClass": "C",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL2",
+            "buffering": "generic",
+            "genericKeyFields": 1,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "MANDT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "MSEHI",
+                "position": 2,
+                "dataElement": "MSEHI",
+                "description": "度量单位",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "PRES_VALUE",
+                "position": 3,
+                "dataElement": "PRESS_VAL",
+                "description": "压力值",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "PRES_UNIT",
+                "position": 4,
+                "dataElement": "PRESS_UNIT",
+                "description": "压力单位",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_PRES",
+                "position": 5,
+                "dataElement": "OIB_BPRESH",
+                "description": "用于燃烧的天然气基本压力值（热值）",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_PRES_UNIT",
+                "position": 6,
+                "dataElement": "PRESS_UNIT",
+                "description": "压力单位",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_TEMP",
+                "position": 7,
+                "dataElement": "OIB_BSTMPH",
+                "description": "燃烧的天然气基本温度（热值）",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_TEMP_UNIT",
+                "position": 8,
+                "dataElement": "TEMP_UNIT",
+                "description": "温度单元",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "HVALUE_CLASS",
+                "position": 9,
+                "dataElement": "OIB_HVCLS",
+                "description": "热值类别 (卡路里值类别)",
+                "key": false,
+                "notNull": false
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "read_abap_table",
+        "args": {
+          "connectionId": "w200",
+          "tableName": "E070",
+          "columns": [
+            "TRKORR",
+            "TRFUNCTION",
+            "TRSTATUS",
+            "AS4USER",
+            "STRKORR"
+          ],
+          "filters": [
+            {
+              "column": "TRKORR",
+              "operator": "EQ",
+              "value": "GR2K923472"
+            }
+          ],
+          "maxRows": 2
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "tableName": "E070",
+          "columns": [
+            "TRKORR",
+            "TRFUNCTION",
+            "TRSTATUS",
+            "AS4USER",
+            "STRKORR"
+          ],
+          "maxRows": 2,
+          "readOnly": true,
+          "order": "unspecified",
+          "clientHandling": "sap_session_default",
+          "snapshot": false,
+          "status": "ok",
+          "method": "rfc_read_table",
+          "definitionSource": "adt_ddic",
+          "tableClassVerified": true,
+          "definitionFingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+          "representation": "sap_text_trimmed",
+          "fieldMetadata": [
+            {
+              "FIELDNAME": "TRKORR",
+              "TYPE": "C",
+              "LENGTH": "000020",
+              "OFFSET": "000000"
+            },
+            {
+              "FIELDNAME": "TRFUNCTION",
+              "TYPE": "C",
+              "LENGTH": "000001",
+              "OFFSET": "000021"
+            },
+            {
+              "FIELDNAME": "TRSTATUS",
+              "TYPE": "C",
+              "LENGTH": "000001",
+              "OFFSET": "000023"
+            },
+            {
+              "FIELDNAME": "AS4USER",
+              "TYPE": "C",
+              "LENGTH": "000012",
+              "OFFSET": "000025"
+            },
+            {
+              "FIELDNAME": "STRKORR",
+              "TYPE": "C",
+              "LENGTH": "000020",
+              "OFFSET": "000038"
+            }
+          ],
+          "returnedCount": 1,
+          "truncated": false,
+          "data": [
+            {
+              "TRKORR": "GR2K923472",
+              "TRFUNCTION": "K",
+              "TRSTATUS": "D",
+              "AS4USER": "WYS",
+              "STRKORR": ""
+            }
+          ]
+        }
+      },
+      {
+        "name": "read_abap_table",
+        "args": {
+          "connectionId": "w200",
+          "tableName": "E070",
+          "columns": [
+            "TRKORR",
+            "TRFUNCTION",
+            "TRSTATUS",
+            "AS4USER",
+            "STRKORR"
+          ],
+          "filters": [
+            {
+              "column": "TRKORR",
+              "operator": "EQ",
+              "value": "GR2K923492"
+            }
+          ],
+          "maxRows": 2
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "tableName": "E070",
+          "columns": [
+            "TRKORR",
+            "TRFUNCTION",
+            "TRSTATUS",
+            "AS4USER",
+            "STRKORR"
+          ],
+          "maxRows": 2,
+          "readOnly": true,
+          "order": "unspecified",
+          "clientHandling": "sap_session_default",
+          "snapshot": false,
+          "status": "ok",
+          "method": "rfc_read_table",
+          "definitionSource": "adt_ddic",
+          "tableClassVerified": true,
+          "definitionFingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+          "representation": "sap_text_trimmed",
+          "fieldMetadata": [
+            {
+              "FIELDNAME": "TRKORR",
+              "TYPE": "C",
+              "LENGTH": "000020",
+              "OFFSET": "000000"
+            },
+            {
+              "FIELDNAME": "TRFUNCTION",
+              "TYPE": "C",
+              "LENGTH": "000001",
+              "OFFSET": "000021"
+            },
+            {
+              "FIELDNAME": "TRSTATUS",
+              "TYPE": "C",
+              "LENGTH": "000001",
+              "OFFSET": "000023"
+            },
+            {
+              "FIELDNAME": "AS4USER",
+              "TYPE": "C",
+              "LENGTH": "000012",
+              "OFFSET": "000025"
+            },
+            {
+              "FIELDNAME": "STRKORR",
+              "TYPE": "C",
+              "LENGTH": "000020",
+              "OFFSET": "000038"
+            }
+          ],
+          "returnedCount": 1,
+          "truncated": false,
+          "data": [
+            {
+              "TRKORR": "GR2K923492",
+              "TRFUNCTION": "S",
+              "TRSTATUS": "D",
+              "AS4USER": "WYS",
+              "STRKORR": "GR2K923472"
+            }
+          ]
+        }
+      },
+      {
+        "name": "read_abap_table",
+        "args": {
+          "connectionId": "w200",
+          "tableName": "TADIR",
+          "columns": [
+            "PGMID",
+            "OBJECT",
+            "OBJ_NAME",
+            "DEVCLASS"
+          ],
+          "filters": [
+            {
+              "column": "PGMID",
+              "operator": "EQ",
+              "value": "R3TR"
+            },
+            {
+              "column": "OBJECT",
+              "operator": "EQ",
+              "value": "FUGR"
+            },
+            {
+              "column": "OBJ_NAME",
+              "operator": "EQ",
+              "value": "ZORVANTA_BC_CFG"
+            }
+          ],
+          "maxRows": 2
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "tableName": "TADIR",
+          "columns": [
+            "PGMID",
+            "OBJECT",
+            "OBJ_NAME",
+            "DEVCLASS"
+          ],
+          "maxRows": 2,
+          "readOnly": true,
+          "order": "unspecified",
+          "clientHandling": "sap_session_default",
+          "snapshot": false,
+          "status": "ok",
+          "method": "rfc_read_table",
+          "definitionSource": "adt_ddic",
+          "tableClassVerified": true,
+          "definitionFingerprint": "8eba7bf62aa3432a081e411a58f1965cd689192c46c9720bc9c960c5b36b8c51",
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+          "representation": "sap_text_trimmed",
+          "fieldMetadata": [
+            {
+              "FIELDNAME": "PGMID",
+              "TYPE": "C",
+              "LENGTH": "000004",
+              "OFFSET": "000000"
+            },
+            {
+              "FIELDNAME": "OBJECT",
+              "TYPE": "C",
+              "LENGTH": "000004",
+              "OFFSET": "000005"
+            },
+            {
+              "FIELDNAME": "OBJ_NAME",
+              "TYPE": "C",
+              "LENGTH": "000040",
+              "OFFSET": "000010"
+            },
+            {
+              "FIELDNAME": "DEVCLASS",
+              "TYPE": "C",
+              "LENGTH": "000030",
+              "OFFSET": "000051"
+            }
+          ],
+          "returnedCount": 1,
+          "truncated": false,
+          "data": [
+            {
+              "PGMID": "R3TR",
+              "OBJECT": "FUGR",
+              "OBJ_NAME": "ZORVANTA_BC_CFG",
+              "DEVCLASS": "ZABAP"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "fullExactUriSource": {
+    "at": "2026-10-05T03:59:43.588Z",
+    "calls": [
+      {
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+          "startLine": 0,
+          "lineCount": 800
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read/source/main\nLines: 0-226 of 226 (226 retrieved)\n\n```abap\nFUNCTION Z_ORVANTA_CFG_BC_READ\n  IMPORTING\n    VALUE(IV_BC_SET) TYPE STRING\n    VALUE(IV_VERSION) TYPE STRING\n  EXPORTING\n    VALUE(EV_CODE) TYPE STRING\n    VALUE(EV_SYSTEM) TYPE STRING\n    VALUE(EV_CLIENT) TYPE STRING\n    VALUE(EV_USER) TYPE STRING\n    VALUE(EV_SOURCE_VERSION) TYPE STRING\n    VALUE(EV_TARGET_VERSION) TYPE STRING\n  TABLES\n    ET_T006 LIKE T006\n    ET_T006A LIKE T006A\n    ET_T006B LIKE T006B\n    ET_T006C LIKE T006C\n    ET_T006D LIKE T006D.\n\n\n\nDATA: ls_header TYPE scprattr,\n      ls_record TYPE scprreca,\n      lt_records TYPE STANDARD TABLE OF scprreca,\n      lt_values TYPE STANDARD TABLE OF scprvals,\n      lt_languages TYPE STANDARD TABLE OF scprvall,\n      lt_dependencies TYPE STANDARD TABLE OF scprpprl,\n      lt_t006 TYPE STANDARD TABLE OF t006,\n      lt_t006a TYPE STANDARD TABLE OF t006a,\n      lt_t006b TYPE STANDARD TABLE OF t006b,\n      lt_t006c TYPE STANDARD TABLE OF t006c,\n      lt_t006d TYPE STANDARD TABLE OF t006d,\n      lv_table TYPE tddat-tabname,\n      lv_group TYPE tddat-cclass,\n      lv_source TYPE xstring,\n      lv_target TYPE xstring,\n      lv_source_first TYPE xstring,\n      lv_target_first TYPE xstring,\n      lv_source_hash TYPE string,\n      lv_target_hash TYPE string,\n      lv_count TYPE i.\n\" 每次初始化全部输出；失败不泄露前次调用的行或版本。\nCLEAR: ev_code, ev_system, ev_client, ev_user,\n       ev_source_version, ev_target_version.\nREFRESH et_t006.\nREFRESH et_t006a.\nREFRESH et_t006b.\nREFRESH et_t006c.\nREFRESH et_t006d.\nev_system = sy-sysid.\nev_client = sy-mandt.\nev_user = sy-uname.\nIF sy-sysid <> 'GR2' OR sy-mandt <> '200'.\n  ev_code = 'SCOPE_UNSUPPORTED'.\n  RETURN.\nENDIF.\nIF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'.\n  ev_code = 'INPUT_INVALID'.\n  RETURN.\nENDIF.\n\" 逐表验证读取权限；没有授权组时沿用 &NC&，名称权限可替代组权限。\nDO 10 TIMES.\n  CASE sy-index.\n    WHEN 1. lv_table = 'T006'.\n    WHEN 2. lv_table = 'T006A'.\n    WHEN 3. lv_table = 'T006B'.\n    WHEN 4. lv_table = 'T006C'.\n    WHEN 5. lv_table = 'T006D'.\n    WHEN 6. lv_table = 'SCPRATTR'.\n    WHEN 7. lv_table = 'SCPRRECA'.\n    WHEN 8. lv_table = 'SCPRVALS'.\n    WHEN 9. lv_table = 'SCPRVALL'.\n    WHEN 10. lv_table = 'SCPRPPRL'.\n  ENDCASE.\n  CLEAR lv_group.\n  SELECT SINGLE cclass INTO lv_group FROM tddat\n    WHERE tabname = lv_table.\n  IF sy-subrc <> 0 OR lv_group IS INITIAL.\n    lv_group = '&NC&'.\n  ENDIF.\n  AUTHORITY-CHECK OBJECT 'S_TABU_DIS'\n    ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.\n  IF sy-subrc <> 0.\n    AUTHORITY-CHECK OBJECT 'S_TABU_NAM'\n      ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.\n    IF sy-subrc <> 0.\n      ev_code = 'AUTHORIZATION_DENIED'.\n      RETURN.\n    ENDIF.\n  ENDIF.\nENDDO.\n\" 两轮完整读取并比较原生缓冲；这是顺序观察，不是加锁快照。\nDO 2 TIMES.\n  SELECT SINGLE * INTO ls_header FROM scprattr\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  IF sy-subrc <> 0.\n    ev_code = 'SOURCE_NOT_FOUND'.\n    RETURN.\n  ENDIF.\n  IF ls_header-category IS NOT INITIAL OR ls_header-type <> 'TMV'.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SELECT * FROM scprreca INTO TABLE lt_records UP TO 6 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_records LINES lv_count.\n  IF lv_count <> 5.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SORT lt_records BY id version tablename recnumber.\n  LOOP AT lt_records INTO ls_record.\n    CASE sy-tabix.\n      WHEN 1. lv_table = 'T006'.\n      WHEN 2. lv_table = 'T006A'.\n      WHEN 3. lv_table = 'T006B'.\n      WHEN 4. lv_table = 'T006C'.\n      WHEN 5. lv_table = 'T006D'.\n    ENDCASE.\n    IF ls_record-tablename <> lv_table OR ls_record-recnumber <> 1\n    OR ls_record-objectname <> 'CUNI' OR ls_record-objecttype <> 'T'\n    OR ls_record-deleteflag IS NOT INITIAL\n    OR ls_record-uncomplete IS NOT INITIAL\n    OR ls_record-genref IS NOT INITIAL\n    OR ls_record-activity IS NOT INITIAL\n    OR ls_record-clustname IS NOT INITIAL.\n      ev_code = 'SOURCE_SCOPE_INVALID'.\n      RETURN.\n    ENDIF.\n  ENDLOOP.\n  SELECT * FROM scprvals INTO TABLE lt_values UP TO 101 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_values LINES lv_count.\n  IF lv_count > 100.\n    ev_code = 'SOURCE_LIMIT_EXCEEDED'.\n    RETURN.\n  ENDIF.\n  SORT lt_values BY id version tablename recnumber fieldname.\n  SELECT * FROM scprvall INTO TABLE lt_languages UP TO 101 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  DESCRIBE TABLE lt_languages LINES lv_count.\n  IF lv_count > 100.\n    ev_code = 'SOURCE_LIMIT_EXCEEDED'.\n    RETURN.\n  ENDIF.\n  SORT lt_languages BY id version tablename recnumber fieldname langu.\n  SELECT * FROM scprpprl INTO TABLE lt_dependencies UP TO 1 ROWS\n    WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\n  IF lt_dependencies IS NOT INITIAL.\n    ev_code = 'SOURCE_SCOPE_INVALID'.\n    RETURN.\n  ENDIF.\n  SELECT * FROM t006 INTO TABLE lt_t006 WHERE msehi = 'KNM'.\n  SELECT * FROM t006a INTO TABLE lt_t006a WHERE msehi = 'KNM'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  \" 别名按自身键读取；映射到其他单位的冲突也必须返回。\n  SELECT * FROM t006b INTO TABLE lt_t006b WHERE mseh3 = 'KNM'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  SELECT * FROM t006c INTO TABLE lt_t006c WHERE mseh6 = 'kN/m2'\n    AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n  \" PRESS 是共享维度；这里只读取完整行，不做保存。\n  SELECT * FROM t006d INTO TABLE lt_t006d WHERE dimid = 'PRESS'.\n  SORT lt_t006 BY mandt msehi.\n  SORT lt_t006a BY mandt spras msehi.\n  SORT lt_t006b BY mandt spras mseh3.\n  SORT lt_t006c BY mandt spras mseh6.\n  SORT lt_t006d BY mandt dimid.\n  \" 原生类型序列化包括 FLTP、空格和缺失行；不经显示文本重建。\n  EXPORT namespace = 'ORVANTA_BC_SOURCE_V1'\n    system = sy-sysid client = sy-mandt\n    header = ls_header records = lt_records values = lt_values\n    languages = lt_languages dependencies = lt_dependencies\n    TO DATA BUFFER lv_source.\n  EXPORT namespace = 'ORVANTA_BC_TARGET_V1'\n    system = sy-sysid client = sy-mandt user = sy-uname\n    bc_set = iv_bc_set version = iv_version\n    unit = lt_t006 texts = lt_t006a commercial = lt_t006b\n    technical = lt_t006c dimension = lt_t006d\n    TO DATA BUFFER lv_target.\n  IF sy-index = 1.\n    lv_source_first = lv_source.\n    lv_target_first = lv_target.\n  ELSEIF lv_source <> lv_source_first OR lv_target <> lv_target_first.\n    ev_code = 'READ_CHANGED'.\n    RETURN.\n  ENDIF.\nENDDO.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_source\n  IMPORTING hashstring = lv_source_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n             error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_target\n  IMPORTING hashstring = lv_target_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n             error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nTRANSLATE lv_source_hash TO LOWER CASE.\nTRANSLATE lv_target_hash TO LOWER CASE.\nIF strlen( lv_source_hash ) <> 64 OR strlen( lv_target_hash ) <> 64\nOR lv_source_hash CN '0123456789abcdef'\nOR lv_target_hash CN '0123456789abcdef'.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\net_t006[] = lt_t006[].\net_t006a[] = lt_t006a[].\net_t006b[] = lt_t006b[].\net_t006c[] = lt_t006c[].\net_t006d[] = lt_t006d[].\nev_source_version = lv_source_hash.\nev_target_version = lv_target_hash.\nev_code = 'READ_OK'.\n\n\n\n\n\nENDFUNCTION.\n```"
+        }
+      },
+      {
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview",
+          "startLine": 0,
+          "lineCount": 800
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview/source/main\nLines: 0-441 of 441 (441 retrieved)\n\n```abap\nFUNCTION Z_ORVANTA_CFG_BC_PREVIEW\n  IMPORTING\n    VALUE(IV_BC_SET) TYPE STRING\n    VALUE(IV_VERSION) TYPE STRING\n    VALUE(IV_SOURCE_VERSION) TYPE STRING\n    VALUE(IV_TARGET_VERSION) TYPE STRING\n  EXPORTING\n    VALUE(EV_CODE) TYPE STRING\n    VALUE(EV_SYSTEM) TYPE STRING\n    VALUE(EV_CLIENT) TYPE STRING\n    VALUE(EV_USER) TYPE STRING\n    VALUE(EV_SOURCE_VERSION) TYPE STRING\n    VALUE(EV_TARGET_VERSION) TYPE STRING\n    VALUE(EV_CANDIDATE_VERSION) TYPE STRING\n    VALUE(EV_DIFFERENCES) TYPE STRING\n    VALUE(EV_ERROR_FIELD) TYPE STRING\n  TABLES\n    ET_T006 LIKE T006\n    ET_T006A LIKE T006A\n    ET_T006B LIKE T006B\n    ET_T006C LIKE T006C\n    ET_T006D LIKE T006D.\n\n\n\nDATA: lt_values TYPE STANDARD TABLE OF scprvals,\n      lt_languages TYPE STANDARD TABLE OF scprvall,\n      ls_value TYPE scprvals, ls_language TYPE scprvall,\n      lt_fields TYPE STANDARD TABLE OF dfies,\n      ls_field TYPE dfies, ls_convert TYPE rsconvlite,\n      lv_table TYPE ddobjname, lv_lang TYPE spras,\n      lv_value TYPE scprvals-value, lv_code TYPE string,\n      lv_source TYPE string, lv_target TYPE string,\n      lv_system TYPE string, lv_client TYPE string,\n      lv_user TYPE string, lv_diffs TYPE string,\n      lv_status TYPE string, lv_index TYPE c LENGTH 1,\n      lv_layout TYPE string, lv_expected TYPE string,\n      lv_dcpfm TYPE usr01-dcpfm, lv_dcpfm_after TYPE usr01-dcpfm,\n      lv_present TYPE c, lv_found TYPE c, lv_rows TYPE i,\n      lv_count TYPE i, lv_length TYPE i, lv_row_index TYPE i,\n      lv_buffer TYPE xstring, lv_hash TYPE string,\n      lr_row TYPE REF TO data, lr_before TYPE REF TO data.\nFIELD-SYMBOLS: <row> TYPE any, <before> TYPE any,\n               <value> TYPE any, <old> TYPE any.\nDATA: lt_t006 TYPE STANDARD TABLE OF t006,\n      lb_t006 TYPE STANDARD TABLE OF t006,\n      ls_t006 TYPE t006,\n      lo_t006 TYPE t006.\nDATA: lt_t006a TYPE STANDARD TABLE OF t006a,\n      lb_t006a TYPE STANDARD TABLE OF t006a,\n      ls_t006a TYPE t006a,\n      lo_t006a TYPE t006a.\nDATA: lt_t006b TYPE STANDARD TABLE OF t006b,\n      lb_t006b TYPE STANDARD TABLE OF t006b,\n      ls_t006b TYPE t006b,\n      lo_t006b TYPE t006b.\nDATA: lt_t006c TYPE STANDARD TABLE OF t006c,\n      lb_t006c TYPE STANDARD TABLE OF t006c,\n      ls_t006c TYPE t006c,\n      lo_t006c TYPE t006c.\nDATA: lt_t006d TYPE STANDARD TABLE OF t006d,\n      lb_t006d TYPE STANDARD TABLE OF t006d,\n      ls_t006d TYPE t006d,\n      lo_t006d TYPE t006d.\n\" 输出只在所有转换及复读通过后填充；没有配置写入。\nCLEAR: ev_code, ev_system, ev_client, ev_user,\n       ev_source_version, ev_target_version,\n       ev_candidate_version, ev_differences, ev_error_field.\nREFRESH et_t006.\nREFRESH et_t006a.\nREFRESH et_t006b.\nREFRESH et_t006c.\nREFRESH et_t006d.\nev_system = sy-sysid.\nev_client = sy-mandt.\nev_user = sy-uname.\nIF sy-sysid <> 'GR2' OR sy-mandt <> '200'.\n  ev_code = 'SCOPE_UNSUPPORTED'.\n  RETURN.\nENDIF.\nIF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'\nOR strlen( iv_source_version ) <> 64\nOR strlen( iv_target_version ) <> 64\nOR iv_source_version CN '0123456789abcdef'\nOR iv_target_version CN '0123456789abcdef'.\n  ev_code = 'INPUT_INVALID'.\n  RETURN.\nENDIF.\n\" 整包原生版本固定，额外值、孤立值、通配键均改变此版本。\nIF iv_source_version <>\n  '73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b'.\n  ev_code = 'SOURCE_NOT_ATTESTED'.\n  RETURN.\nENDIF.\nCALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'\n  EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version\n  IMPORTING ev_code = lv_code ev_system = lv_system\n    ev_client = lv_client ev_user = lv_user\n    ev_source_version = lv_source ev_target_version = lv_target\n  TABLES et_t006 = lb_t006 et_t006a = lb_t006a\n    et_t006b = lb_t006b et_t006c = lb_t006c et_t006d = lb_t006d\n  EXCEPTIONS error_message = 1 OTHERS = 2.\nIF sy-subrc <> 0 OR lv_code <> 'READ_OK'.\n  ev_code = 'READ_FAILED'.\n  RETURN.\nENDIF.\nIF lv_source <> iv_source_version OR lv_target <> iv_target_version\nOR lv_system <> 'GR2' OR lv_client <> '200' OR lv_user <> sy-uname.\n  ev_code = 'VERSION_CONFLICT'.\n  RETURN.\nENDIF.\nLOOP AT lb_t006b INTO lo_t006b.\n  IF lo_t006b-msehi <> 'KNM'.\n    ev_code = 'ALIAS_CONFLICT'.\n    RETURN.\n  ENDIF.\nENDLOOP.\nLOOP AT lb_t006c INTO lo_t006c.\n  IF lo_t006c-msehi <> 'KNM'.\n    ev_code = 'ALIAS_CONFLICT'.\n    RETURN.\n  ENDIF.\nENDLOOP.\nSELECT SINGLE dcpfm INTO lv_dcpfm FROM usr01\n  WHERE bname = sy-uname.\nIF sy-subrc <> 0.\n  ev_code = 'USER_FORMAT_UNAVAILABLE'.\n  RETURN.\nENDIF.\nSELECT * FROM scprvals INTO TABLE lt_values UP TO 101 ROWS\n  WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\nSELECT * FROM scprvall INTO TABLE lt_languages UP TO 101 ROWS\n  WHERE id = 'EHS_CUNI_KNM' AND version = 'N'.\nDESCRIBE TABLE lt_values LINES lv_count.\nIF lv_count <> 41.\n  ev_code = 'SOURCE_CHANGED'.\n  RETURN.\nENDIF.\nDESCRIBE TABLE lt_languages LINES lv_count.\nIF lv_count <> 18.\n  ev_code = 'SOURCE_CHANGED'.\n  RETURN.\nENDIF.\n\" 只预览标准 USE 更新策略；不调用装载、激活、日志或传输函数。\nDO 5 TIMES.\n  CASE sy-index.\n    WHEN 1.\n      lv_table = 'T006'.\n      lv_rows = 1.\n      lv_expected =\n        'MANDT|MSEHI|KZEX3|KZEX6|ANDEC|KZKEH|KZWOB|KZ1EH|KZ2' &&\n        'EH|DIMID|ZAEHL|NENNR|EXP10|ADDKO|EXPON|DECAN|ISOCOD' &&\n        'E|PRIMARY|TEMP_VALUE|TEMP_UNIT|FAMUNIT|PRESS_VAL|PR' &&\n        'ESS_UNIT'.\n    WHEN 2.\n      lv_table = 'T006A'.\n      lv_rows = 3.\n      lv_expected =\n        'MANDT|SPRAS|MSEHI|MSEH3|MSEH6|MSEHT|MSEHL'.\n    WHEN 3.\n      lv_table = 'T006B'.\n      lv_rows = 3.\n      lv_expected =\n        'MANDT|SPRAS|MSEH3|MSEHI'.\n    WHEN 4.\n      lv_table = 'T006C'.\n      lv_rows = 3.\n      lv_expected =\n        'MANDT|SPRAS|MSEH6|MSEHI'.\n    WHEN 5.\n      lv_table = 'T006D'.\n      lv_rows = 1.\n      lv_expected =\n        'MANDT|DIMID|LENG|MASS|TIMEX|ECURR|TEMP|MOLQU|LIGHT|' &&\n        'MSSIE|TEMP_DEP|PRESS_DEP'.\n  ENDCASE.\n  REFRESH lt_fields.\n  CALL FUNCTION 'DDIF_NAMETAB_GET'\n    EXPORTING tabname = lv_table\n    TABLES dfies_tab = lt_fields\n    EXCEPTIONS not_found = 1 error_message = 2 OTHERS = 3.\n  IF sy-subrc <> 0 OR lt_fields IS INITIAL.\n    ev_code = 'LAYOUT_UNAVAILABLE'.\n    RETURN.\n  ENDIF.\n  CLEAR lv_layout.\n  LOOP AT lt_fields INTO ls_field.\n    IF lv_layout IS INITIAL.\n      lv_layout = ls_field-fieldname.\n    ELSE.\n      CONCATENATE lv_layout ls_field-fieldname\n        INTO lv_layout SEPARATED BY '|'.\n    ENDIF.\n    IF ls_field-inttype NA 'CNIPFsb'\n    OR ls_field-datatype = 'CURR' OR ls_field-datatype = 'CUKY'.\n      ev_code = 'LAYOUT_UNSUPPORTED'.\n      RETURN.\n    ENDIF.\n  ENDLOOP.\n  IF lv_layout <> lv_expected.\n    ev_code = 'LAYOUT_CHANGED'.\n    RETURN.\n  ENDIF.\n  DO lv_rows TIMES.\n    lv_row_index = sy-index.\n    lv_index = lv_row_index.\n    CLEAR: lv_lang, lv_present.\n    CASE lv_row_index.\n      WHEN 1. lv_lang = '1'.\n      WHEN 2. lv_lang = 'D'.\n      WHEN 3. lv_lang = 'E'.\n    ENDCASE.\n    CASE lv_table.\n      WHEN 'T006'.\n        CLEAR: ls_t006, lo_t006.\n        READ TABLE lb_t006 INTO lo_t006 INDEX 1.\n        IF sy-subrc = 0.\n          lv_present = 'X'.\n          ls_t006 = lo_t006.\n        ENDIF.\n        GET REFERENCE OF ls_t006 INTO lr_row.\n        GET REFERENCE OF lo_t006 INTO lr_before.\n      WHEN 'T006A'.\n        CLEAR: ls_t006a, lo_t006a.\n        READ TABLE lb_t006a INTO lo_t006a\n          WITH KEY spras = lv_lang.\n        IF sy-subrc = 0.\n          lv_present = 'X'.\n          ls_t006a = lo_t006a.\n        ENDIF.\n        GET REFERENCE OF ls_t006a INTO lr_row.\n        GET REFERENCE OF lo_t006a INTO lr_before.\n      WHEN 'T006B'.\n        CLEAR: ls_t006b, lo_t006b.\n        READ TABLE lb_t006b INTO lo_t006b\n          WITH KEY spras = lv_lang.\n        IF sy-subrc = 0.\n          lv_present = 'X'.\n          ls_t006b = lo_t006b.\n        ENDIF.\n        GET REFERENCE OF ls_t006b INTO lr_row.\n        GET REFERENCE OF lo_t006b INTO lr_before.\n      WHEN 'T006C'.\n        CLEAR: ls_t006c, lo_t006c.\n        READ TABLE lb_t006c INTO lo_t006c\n          WITH KEY spras = lv_lang.\n        IF sy-subrc = 0.\n          lv_present = 'X'.\n          ls_t006c = lo_t006c.\n        ENDIF.\n        GET REFERENCE OF ls_t006c INTO lr_row.\n        GET REFERENCE OF lo_t006c INTO lr_before.\n      WHEN 'T006D'.\n        CLEAR: ls_t006d, lo_t006d.\n        READ TABLE lb_t006d INTO lo_t006d INDEX 1.\n        IF sy-subrc = 0.\n          lv_present = 'X'.\n          ls_t006d = lo_t006d.\n        ENDIF.\n        GET REFERENCE OF ls_t006d INTO lr_row.\n        GET REFERENCE OF lo_t006d INTO lr_before.\n    ENDCASE.\n    ASSIGN lr_row->* TO <row>.\n    ASSIGN lr_before->* TO <before>.\n    LOOP AT lt_fields INTO ls_field.\n      ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <row>\n        TO <value>.\n      IF sy-subrc <> 0.\n        ev_code = 'LAYOUT_CHANGED'.\n        RETURN.\n      ENDIF.\n      CLEAR: lv_value, lv_found, ls_value, ls_language.\n      READ TABLE lt_values INTO ls_value WITH KEY\n        tablename = lv_table recnumber = 1\n        fieldname = ls_field-fieldname.\n      IF sy-subrc = 0.\n        lv_found = 'X'.\n        lv_value = ls_value-value.\n      ENDIF.\n      IF lv_rows = 3.\n        READ TABLE lt_languages INTO ls_language WITH KEY\n          tablename = lv_table recnumber = 1\n          fieldname = ls_field-fieldname langu = lv_lang.\n        IF sy-subrc = 0.\n          lv_found = 'X'.\n          lv_value = ls_language-value.\n        ENDIF.\n      ENDIF.\n      IF ls_field-fieldname = 'MANDT'.\n        lv_value = sy-mandt.\n        lv_found = 'X'.\n      ELSEIF ls_field-fieldname = 'SPRAS' AND lv_rows = 3.\n        lv_value = lv_lang.\n        lv_found = 'X'.\n      ENDIF.\n      IF ls_field-keyflag = 'X' AND lv_found IS INITIAL.\n        ev_code = 'KEY_MISSING'.\n        RETURN.\n      ENDIF.\n      IF lv_found = 'X'.\n        IF ls_field-keyflag IS INITIAL\n        AND ( ls_value-flag <> 'USE' AND ls_language-flag <> 'USE' ).\n          ev_code = 'SOURCE_FLAG_UNSUPPORTED'.\n          RETURN.\n        ENDIF.\n        ev_error_field = ls_field-fieldname.\n        TRY.\n          CASE ls_field-inttype.\n            WHEN 'C'.\n              DESCRIBE FIELD <value> LENGTH lv_length\n                IN CHARACTER MODE.\n              IF strlen( lv_value ) > lv_length.\n                ev_code = 'VALUE_TRUNCATED'.\n                RETURN.\n              ENDIF.\n              <value> = lv_value.\n            WHEN 'N'.\n              IF lv_value CN '0123456789 '.\n                ev_code = 'CONVERSION_FAILED'.\n                RETURN.\n              ENDIF.\n              <value> = lv_value.\n            WHEN 'I' OR 'P' OR 'F' OR 's' OR 'b'.\n              IF ls_field-convexit IS NOT INITIAL.\n                ev_code = 'CONVERSION_EXIT_UNREVIEWED'.\n                RETURN.\n              ENDIF.\n              CALL FUNCTION 'SCPR_CT_DECDELIM_CONVERT_ONE'\n                EXPORTING decimals = ls_field-decimals\n                  datatype = ls_field-datatype\n                CHANGING value = lv_value\n                EXCEPTIONS error_message = 1 OTHERS = 2.\n              IF sy-subrc <> 0.\n                ev_code = 'CONVERSION_FAILED'.\n                RETURN.\n              ENDIF.\n              CLEAR ls_convert.\n              ls_convert-active = 'X'.\n              ls_convert-olength = ls_field-outputlen.\n              ls_convert-decimals = ls_field-decimals.\n              ls_convert-sign = ls_field-sign.\n              IF ls_field-inttype = 'F'.\n                ls_convert-sign = 'X'.\n              ENDIF.\n              CALL FUNCTION 'RS_CONV_EX_2_IN_NO_DD'\n                EXPORTING input_external = lv_value\n                  convert = ls_convert\n                IMPORTING output_internal = <value>\n                EXCEPTIONS error_message = 1 OTHERS = 2.\n              IF sy-subrc <> 0.\n                ev_code = 'CONVERSION_FAILED'.\n                RETURN.\n              ENDIF.\n          ENDCASE.\n        CATCH cx_root.\n          ev_code = 'CONVERSION_FAILED'.\n          RETURN.\n        ENDTRY.\n      ENDIF.\n      ASSIGN COMPONENT ls_field-fieldname OF STRUCTURE <before>\n        TO <old>.\n      IF sy-subrc <> 0.\n        ev_code = 'LAYOUT_CHANGED'.\n        RETURN.\n      ENDIF.\n      IF lv_present IS INITIAL.\n        lv_status = 'NEW'.\n      ELSEIF <value> = <old>.\n        lv_status = 'EQL'.\n      ELSE.\n        lv_status = 'CHG'.\n      ENDIF.\n      CONCATENATE lv_diffs lv_table ':' lv_index ':'\n        ls_field-fieldname ':' lv_status ';' INTO lv_diffs.\n    ENDLOOP.\n    CASE lv_table.\n      WHEN 'T006'. APPEND ls_t006 TO lt_t006.\n      WHEN 'T006A'. APPEND ls_t006a TO lt_t006a.\n      WHEN 'T006B'. APPEND ls_t006b TO lt_t006b.\n      WHEN 'T006C'. APPEND ls_t006c TO lt_t006c.\n      WHEN 'T006D'. APPEND ls_t006d TO lt_t006d.\n    ENDCASE.\n  ENDDO.\nENDDO.\n\" 双版本复读拒绝漂移；用户小数格式也绑定到候选版本。\nCALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'\n  EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version\n  IMPORTING ev_code = lv_code ev_system = lv_system\n    ev_client = lv_client ev_user = lv_user\n    ev_source_version = lv_source ev_target_version = lv_target\n  TABLES et_t006 = lb_t006 et_t006a = lb_t006a\n    et_t006b = lb_t006b et_t006c = lb_t006c et_t006d = lb_t006d\n  EXCEPTIONS error_message = 1 OTHERS = 2.\nIF sy-subrc <> 0 OR lv_code <> 'READ_OK'.\n  ev_code = 'READ_FAILED'.\n  RETURN.\nENDIF.\nIF lv_source <> iv_source_version OR lv_target <> iv_target_version\nOR lv_system <> 'GR2' OR lv_client <> '200' OR lv_user <> sy-uname.\n  ev_code = 'VERSION_CONFLICT'.\n  RETURN.\nENDIF.\nSELECT SINGLE dcpfm INTO lv_dcpfm_after FROM usr01\n  WHERE bname = sy-uname.\nIF sy-subrc <> 0 OR lv_dcpfm_after <> lv_dcpfm.\n  ev_code = 'USER_FORMAT_CHANGED'.\n  RETURN.\nENDIF.\nEXPORT namespace = 'ORVANTA_BC_PREVIEW_V1'\n  system = sy-sysid client = sy-mandt user = sy-uname\n  source = lv_source target = lv_target format = lv_dcpfm\n  policy = 'CREATE_INITIAL_OR_UPDATE_USE'\n  unit = lt_t006 texts = lt_t006a commercial = lt_t006b\n  technical = lt_t006c dimension = lt_t006d diffs = lv_diffs\n  TO DATA BUFFER lv_buffer.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_buffer\n  IMPORTING hashstring = lv_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n    error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nTRANSLATE lv_hash TO LOWER CASE.\nIF strlen( lv_hash ) <> 64 OR lv_hash CN '0123456789abcdef'.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\net_t006[] = lt_t006[].\net_t006a[] = lt_t006a[].\net_t006b[] = lt_t006b[].\net_t006c[] = lt_t006c[].\net_t006d[] = lt_t006d[].\nev_source_version = lv_source.\nev_target_version = lv_target.\nev_candidate_version = lv_hash.\nev_differences = lv_diffs.\nCLEAR ev_error_field.\nev_code = 'PREVIEW_OK'.\nENDFUNCTION.\n```"
+        }
+      },
+      {
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route",
+          "startLine": 0,
+          "lineCount": 800
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route/source/main\nLines: 0-202 of 202 (202 retrieved)\n\n```abap\nFUNCTION Z_ORVANTA_CFG_BC_ROUTE\n  IMPORTING\n    VALUE(IV_BC_SET) TYPE STRING\n    VALUE(IV_VERSION) TYPE STRING\n    VALUE(IV_SOURCE_VERSION) TYPE STRING\n    VALUE(IV_TARGET_VERSION) TYPE STRING\n  EXPORTING\n    VALUE(EV_CODE) TYPE STRING\n    VALUE(EV_SYSTEM) TYPE STRING\n    VALUE(EV_CLIENT) TYPE STRING\n    VALUE(EV_USER) TYPE STRING\n    VALUE(EV_SOURCE_VERSION) TYPE STRING\n    VALUE(EV_TARGET_VERSION) TYPE STRING\n    VALUE(EV_METADATA_VERSION) TYPE STRING\n  TABLES\n    ET_OBJH LIKE OBJH\n    ET_OBJS LIKE OBJS\n    ET_OBJM LIKE OBJM.\n\n\n\nDATA: ls_header TYPE objh,\n      lt_headers TYPE STANDARD TABLE OF objh,\n      lt_members TYPE STANDARD TABLE OF objs,\n      lt_methods TYPE STANDARD TABLE OF objm,\n      lv_table TYPE tddat-tabname, lv_group TYPE tddat-cclass,\n      lv_code TYPE string, lv_system TYPE string,\n      lv_client TYPE string, lv_user TYPE string,\n      lv_source TYPE string, lv_target TYPE string,\n      lv_buffer TYPE xstring, lv_first TYPE xstring,\n      lv_hash TYPE string, lv_count TYPE i, lv_pass TYPE i,\n      lt_t006 TYPE STANDARD TABLE OF t006,\n      lt_t006a TYPE STANDARD TABLE OF t006a,\n      lt_t006b TYPE STANDARD TABLE OF t006b,\n      lt_t006c TYPE STANDARD TABLE OF t006c,\n      lt_t006d TYPE STANDARD TABLE OF t006d.\n\" 固定 CUNI/T 元数据读取；不调用任何动态方法或配置命令。\nCLEAR: ev_code, ev_system, ev_client, ev_user,\n       ev_source_version, ev_target_version, ev_metadata_version.\nREFRESH: et_objh, et_objs, et_objm.\nev_system = sy-sysid.\nev_client = sy-mandt.\nev_user = sy-uname.\nIF sy-sysid <> 'GR2' OR sy-mandt <> '200'.\n  ev_code = 'SCOPE_UNSUPPORTED'.\n  RETURN.\nENDIF.\nIF iv_bc_set <> 'EHS_CUNI_KNM' OR iv_version <> 'N'\nOR strlen( iv_source_version ) <> 64\nOR iv_source_version CN '0123456789abcdef'\nOR strlen( iv_target_version ) <> 64\nOR iv_target_version CN '0123456789abcdef'.\n  ev_code = 'INPUT_INVALID'.\n  RETURN.\nENDIF.\nIF iv_source_version <>\n  '73783f69f1bf9805b058fbc9bab0adb8cc8047f85c837ee16c174a9edd0f512b'.\n  ev_code = 'SOURCE_NOT_ATTESTED'.\n  RETURN.\nENDIF.\n\" 表名固定，逐表显示权限；沿用既有 READ 的授权模式。\nDO 3 TIMES.\n  CASE sy-index.\n    WHEN 1. lv_table = 'OBJH'.\n    WHEN 2. lv_table = 'OBJS'.\n    WHEN 3. lv_table = 'OBJM'.\n  ENDCASE.\n  CLEAR lv_group.\n  SELECT SINGLE cclass INTO lv_group FROM tddat\n    WHERE tabname = lv_table.\n  IF sy-subrc <> 0 OR lv_group IS INITIAL.\n    lv_group = '&NC&'.\n  ENDIF.\n  AUTHORITY-CHECK OBJECT 'S_TABU_DIS'\n    ID 'ACTVT' FIELD '03' ID 'DICBERCLS' FIELD lv_group.\n  IF sy-subrc <> 0.\n    AUTHORITY-CHECK OBJECT 'S_TABU_NAM'\n      ID 'ACTVT' FIELD '03' ID 'TABLE' FIELD lv_table.\n    IF sy-subrc <> 0.\n      ev_code = 'AUTHORIZATION_DENIED'.\n      RETURN.\n    ENDIF.\n  ENDIF.\nENDDO.\n\" 顺序双读不是锁定快照；任何变化都不返回可用元数据。\nDO 2 TIMES.\n  lv_pass = sy-index.\n  CALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'\n    EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version\n    IMPORTING ev_code = lv_code ev_system = lv_system\n      ev_client = lv_client ev_user = lv_user\n      ev_source_version = lv_source ev_target_version = lv_target\n    TABLES et_t006 = lt_t006 et_t006a = lt_t006a\n      et_t006b = lt_t006b et_t006c = lt_t006c et_t006d = lt_t006d\n    EXCEPTIONS error_message = 1 OTHERS = 2.\n  IF sy-subrc <> 0 OR lv_code <> 'READ_OK'.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDIF.\n  IF lv_system <> sy-sysid OR lv_client <> sy-mandt\n  OR lv_user <> sy-uname OR lv_source <> iv_source_version\n  OR lv_target <> iv_target_version.\n    ev_code = 'VERSION_CONFLICT'.\n    RETURN.\n  ENDIF.\n  CLEAR ls_header.\n  SELECT SINGLE * INTO ls_header FROM objh\n    WHERE objectname = 'CUNI' AND objecttype = 'T'.\n  IF sy-subrc <> 0.\n    ev_code = 'OBJECT_NOT_DEFINED'.\n    RETURN.\n  ENDIF.\n  \" 排除与执行路线无关的维护用户名和日期，避免外传个人信息。\n  CLEAR: ls_header-luser, ls_header-ldate.\n  REFRESH lt_headers.\n  APPEND ls_header TO lt_headers.\n  SELECT * FROM objs INTO TABLE lt_members UP TO 21 ROWS\n    WHERE objectname = 'CUNI' AND objecttype = 'T'.\n  IF sy-subrc <> 0 AND sy-subrc <> 4.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDIF.\n  DESCRIBE TABLE lt_members LINES lv_count.\n  IF lv_count > 20.\n    ev_code = 'MEMBER_LIMIT'.\n    RETURN.\n  ENDIF.\n  IF lv_count = 0.\n    ev_code = 'MEMBERS_MISSING'.\n    RETURN.\n  ENDIF.\n  SELECT * FROM objm INTO TABLE lt_methods UP TO 11 ROWS\n    WHERE objectname = 'CUNI' AND objecttype = 'T'.\n  IF sy-subrc <> 0 AND sy-subrc <> 4.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDIF.\n  DESCRIBE TABLE lt_methods LINES lv_count.\n  IF lv_count > 10.\n    ev_code = 'METHOD_LIMIT'.\n    RETURN.\n  ENDIF.\n  SORT lt_members BY objectname objecttype tabname.\n  SORT lt_methods BY objectname objecttype method.\n  EXPORT namespace = 'ORVANTA_CUNI_ROUTE_V1'\n    system = sy-sysid client = sy-mandt user = sy-uname\n    source = lv_source target = lv_target\n    headers = lt_headers members = lt_members methods = lt_methods\n    TO DATA BUFFER lv_buffer.\n  IF lv_pass = 1.\n    lv_first = lv_buffer.\n  ELSEIF lv_first <> lv_buffer.\n    ev_code = 'METADATA_CHANGED'.\n    RETURN.\n  ENDIF.\nENDDO.\n\" 双读之后再次核对完整源和目标版本，输出仍未填充。\nCALL FUNCTION 'Z_ORVANTA_CFG_BC_READ'\n    EXPORTING iv_bc_set = iv_bc_set iv_version = iv_version\n    IMPORTING ev_code = lv_code ev_system = lv_system\n      ev_client = lv_client ev_user = lv_user\n      ev_source_version = lv_source ev_target_version = lv_target\n    TABLES et_t006 = lt_t006 et_t006a = lt_t006a\n      et_t006b = lt_t006b et_t006c = lt_t006c et_t006d = lt_t006d\n    EXCEPTIONS error_message = 1 OTHERS = 2.\n  IF sy-subrc <> 0 OR lv_code <> 'READ_OK'.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDIF.\n  IF lv_system <> sy-sysid OR lv_client <> sy-mandt\n  OR lv_user <> sy-uname OR lv_source <> iv_source_version\n  OR lv_target <> iv_target_version.\n    ev_code = 'VERSION_CONFLICT'.\n    RETURN.\n  ENDIF.\nCALL FUNCTION 'CALCULATE_HASH_FOR_RAW'\n  EXPORTING alg = 'SHA2' data = lv_buffer\n  IMPORTING hashstring = lv_hash\n  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3\n    error_message = 4 OTHERS = 5.\nIF sy-subrc <> 0.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\nTRANSLATE lv_hash TO LOWER CASE.\nIF strlen( lv_hash ) <> 64 OR lv_hash CN '0123456789abcdef'.\n  ev_code = 'HASH_FAILED'.\n  RETURN.\nENDIF.\net_objh[] = lt_headers[].\net_objs[] = lt_members[].\net_objm[] = lt_methods[].\nev_source_version = lv_source.\nev_target_version = lv_target.\nev_metadata_version = lv_hash.\nev_code = 'ROUTE_READ_OK'.\n\n\n\n\n\nENDFUNCTION.\n```"
+        }
+      },
+      {
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main",
+          "startLine": 0,
+          "lineCount": 800
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/source/main\nLines: 0-14 of 14 (14 retrieved)\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LZORVANTA_BC_CFGTOP.               \" Global Data\n  INCLUDE LZORVANTA_BC_CFGUXX.               \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n* INCLUDE LZORVANTA_BC_CFGF...               \" Subroutines\n* INCLUDE LZORVANTA_BC_CFGO...               \" PBO-Modules\n* INCLUDE LZORVANTA_BC_CFGI...               \" PAI-Modules\n* INCLUDE LZORVANTA_BC_CFGE...               \" Events\n* INCLUDE LZORVANTA_BC_CFGP...               \" Local class implement.\n```"
+        }
+      },
+      {
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+          "startLine": 0,
+          "lineCount": 800
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main\nLines: 0-3 of 3 (3 retrieved)\n\n```abap\nFUNCTION-POOL ZORVANTA_BC_CFG.              \"MESSAGE-ID ..\n\n* INCLUDE LZORVANTA_BC_CFGD...               \" Local class definition\n```"
+        }
+      },
+      {
+        "name": "get_object_by_uri",
+        "args": {
+          "connectionId": "w200",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+          "startLine": 0,
+          "lineCount": 800
+        },
+        "isError": false,
+        "data": {
+          "message": "Direct URI Access Successful\nOriginal URI: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\nURI Used: /sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main\nLines: 0-10 of 10 (10 retrieved)\n\n```abap\n*****************************************************************\n*   THIS FILE IS GENERATED BY THE FUNCTION LIBRARY.             *\n*   NEVER CHANGE IT MANUALLY, PLEASE!                           *\n*****************************************************************\nINCLUDE LZORVANTA_BC_CFGU01.\n                    \"Z_ORVANTA_CFG_BC_READ\nINCLUDE LZORVANTA_BC_CFGU02.\n                    \"Z_ORVANTA_CFG_BC_PREVIEW\nINCLUDE LZORVANTA_BC_CFGU03.\n                    \"Z_ORVANTA_CFG_BC_ROUTE\n```"
+        }
+      }
+    ]
+  },
+  "inactiveObservation": {
+    "status": "observed",
+    "transportOnlyRecords": 0,
+    "targets": [
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_READ",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_PREVIEW",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_ROUTE",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGTOP",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGUXX",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+        "status": "not_in_returned_list",
+        "matches": []
+      }
+    ],
+    "requestedTargets": [
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_READ",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read"
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_PREVIEW",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview"
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_ROUTE",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route"
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGTOP",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main"
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGUXX",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main"
+      }
+    ]
+  }
+}

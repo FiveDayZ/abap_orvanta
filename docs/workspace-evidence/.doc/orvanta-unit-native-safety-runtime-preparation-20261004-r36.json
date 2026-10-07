@@ -1,0 +1,390 @@
+{
+  "startedAt": "2026-10-04T05:30:39.202Z",
+  "status": "readonly_routes_observed_native_preparation_blocked_by_shared_schema",
+  "nativeWriterCalls": 0,
+  "nativeInvoked": false,
+  "calls": [
+    {
+      "name": "inspect_configuration_transport",
+      "args": {
+        "connectionId": "w200",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430",
+        "unitText": {
+          "unitKey": "KG",
+          "language": "ZH"
+        }
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"requestNumber\": \"GR2K923429\",\n  \"taskNumber\": \"GR2K923430\",\n  \"status\": \"metadata_matches\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"observed\": {\n    \"request\": [\n      {\n        \"TRKORR\": \"GR2K923429\",\n        \"TRFUNCTION\": \"W\",\n        \"TRSTATUS\": \"D\",\n        \"TARSYSTEM\": \"GR3\",\n        \"KORRDEV\": \"CUST\",\n        \"AS4USER\": \"WYS\",\n        \"AS4DATE\": \"20260901\",\n        \"AS4TIME\": \"110244\",\n        \"STRKORR\": \"\"\n      }\n    ],\n    \"requestClient\": [\n      {\n        \"TRKORR\": \"GR2K923429\",\n        \"CLIENT\": \"200\",\n        \"TARCLIENT\": \"\",\n        \"EXTENDED_STATE\": \"\",\n        \"OVERTAKER\": \"\"\n      }\n    ],\n    \"task\": [\n      {\n        \"TRKORR\": \"GR2K923430\",\n        \"TRFUNCTION\": \"Q\",\n        \"TRSTATUS\": \"D\",\n        \"TARSYSTEM\": \"\",\n        \"KORRDEV\": \"CUST\",\n        \"AS4USER\": \"WYS\",\n        \"AS4DATE\": \"20261004\",\n        \"AS4TIME\": \"100032\",\n        \"STRKORR\": \"GR2K923429\"\n      }\n    ],\n    \"taskClient\": [\n      {\n        \"TRKORR\": \"GR2K923430\",\n        \"CLIENT\": \"200\",\n        \"TARCLIENT\": \"\",\n        \"EXTENDED_STATE\": \"\",\n        \"OVERTAKER\": \"\"\n      }\n    ]\n  },\n  \"checks\": {\n    \"requestType\": true,\n    \"taskType\": true,\n    \"requestOpen\": true,\n    \"taskOpen\": true,\n    \"requestIsRoot\": true,\n    \"taskParent\": true,\n    \"taskOwnerMatchesConfiguredUser\": true,\n    \"requestClient\": true,\n    \"taskClient\": true,\n    \"requestCategory\": true,\n    \"taskCategory\": true,\n    \"transportTarget\": true\n  },\n  \"readFingerprint\": \"189a34a2bca5a9afcc78bbfee6316e95f6eb966ac1942494b9ee205806c9986d\",\n  \"keyRecording\": {\n    \"status\": \"table_entries_observed\",\n    \"code\": null,\n    \"officialEncoding\": \"not_verified\",\n    \"exactRowRecording\": \"not_verified\",\n    \"importStatus\": \"not_checked\",\n    \"target\": {\n      \"client\": \"200\",\n      \"unitKey\": \"KG\",\n      \"language\": \"ZH\",\n      \"sapLanguage\": \"1\"\n    },\n    \"E071KReadback\": \"bounded_trimmed_projection\",\n    \"representation\": \"sap_text_trimmed\",\n    \"observed\": {\n      \"requestE071\": [],\n      \"requestE071K\": [],\n      \"taskE071\": [\n        {\n          \"TRKORR\": \"GR2K923430\",\n          \"AS4POS\": \"000002\",\n          \"PGMID\": \"R3TR\",\n          \"OBJECT\": \"TDAT\",\n          \"OBJ_NAME\": \"CUNI\"\n        }\n      ],\n      \"taskE071K\": [\n        {\n          \"TRKORR\": \"GR2K923430\",\n          \"PGMID\": \"R3TR\",\n          \"OBJECT\": \"TABU\",\n          \"OBJNAME\": \"T006A\",\n          \"AS4POS\": \"000001\",\n          \"MASTERTYPE\": \"TDAT\",\n          \"MASTERNAME\": \"CUNI\",\n          \"VIEWNAME\": \"\",\n          \"TABKEY\": \"2001KG\"\n        }\n      ]\n    },\n    \"readFingerprint\": \"d2d93741c6553c0c0362f9abc9a7ee7f9476bcb349b5d6709dfaac8fb493331c\",\n    \"unitReadFingerprint\": \"b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72\",\n    \"readerLimits\": {\n      \"entryReaderInvocations\": 8,\n      \"entryReaderInvocationLimit\": 8,\n      \"maximumRowsPerProjection\": 32,\n      \"unitReaderInvocations\": 2,\n      \"unitReaderInvocationLimit\": 2\n    },\n    \"manualChecks\": [\n      \"Compare original untrimmed E071K TABKEY in the SAP transport organizer with the exact client/SAP language/internal unit key; no key encoder or decoder is attested.\",\n      \"Verify E071 R3TR/TDAT/CUNI and E071K TABU/T006A master linkage, wildcard/generalized keys and update-task result. A trimmed key or table-level entry is not exact-row recording proof.\",\n      \"Verify actual import and target values separately; request/task or key entry existence does not prove target configuration took effect.\"\n    ]\n  },\n  \"authorization\": \"not_attested\",\n  \"maintenanceApi\": \"not_verified\",\n  \"writeAdmission\": \"blocked\",\n  \"evidence\": {\n    \"startedAt\": \"2026-10-04T05:30:39.295Z\",\n    \"finishedAt\": \"2026-10-04T05:30:44.329Z\",\n    \"sources\": [\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071K\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071K\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071K\",\n        \"status\": \"empty\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 0,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E071K\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      },\n      {\n        \"table\": \"E070C\",\n        \"status\": \"ok\",\n        \"method\": \"rfc_read_table\",\n        \"returnedCount\": 1,\n        \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n      }\n    ],\n    \"warnings\": [\n      \"E071: empty\",\n      \"E071K: empty\",\n      \"E071: empty\",\n      \"E071K: empty\"\n    ],\n    \"definitionsRechecked\": true,\n    \"snapshot\": false\n  },\n  \"warnings\": [\n    \"W is a Customizing request, Q is a Customizing task; K is Workbench. Protected/releasing/released, local-target and other types are not admitted.\",\n    \"Only exact request/task metadata is compared twice. Missing client records remain unknown; no inheritance is guessed. Owner match is against configured user, not an authority check.\",\n    \"Metadata matches do not attest object recording, E071K encoding, locks, business validation or an executable maintenance API. No request/task creation, release or recording.\"\n  ]\n}"
+    },
+    {
+      "name": "search_sap_locks",
+      "args": {
+        "connectionId": "w200",
+        "username": "WYS",
+        "argument": "*T006*",
+        "maxResults": 100
+      },
+      "isError": false,
+      "response": "{\"source\":\"SM12\",\"connectionId\":\"w200\",\"client\":\"200\",\"readOnly\":true,\"observedAt\":\"2026-10-04T05:30:44.334Z\",\"transactionSnapshot\":false,\"warnings\":[\"No unlock, retry, delete, cancel or update processing is performed.\",\"Observations are not a transaction snapshot or proof of root cause.\",\"Lock arguments and log metadata may contain sensitive business identifiers.\"],\"status\":\"ok\",\"code\":\"OK\",\"entries\":[],\"hasMore\":false,\"returnedCount\":0,\"coverage\":\"exact_user_current_client_native_selection\",\"ownerTimeSemantics\":\"owner_identifier_time_not_proven_lock_acquisition_time\",\"backendLimit\":\"Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval.\"}"
+    },
+    {
+      "name": "search_sap_locks",
+      "args": {
+        "connectionId": "w200",
+        "username": "WYS",
+        "argument": "*GR2K923429*",
+        "maxResults": 100
+      },
+      "isError": false,
+      "response": "{\"source\":\"SM12\",\"connectionId\":\"w200\",\"client\":\"200\",\"readOnly\":true,\"observedAt\":\"2026-10-04T05:30:44.489Z\",\"transactionSnapshot\":false,\"warnings\":[\"No unlock, retry, delete, cancel or update processing is performed.\",\"Observations are not a transaction snapshot or proof of root cause.\",\"Lock arguments and log metadata may contain sensitive business identifiers.\"],\"status\":\"ok\",\"code\":\"OK\",\"entries\":[],\"hasMore\":false,\"returnedCount\":0,\"coverage\":\"exact_user_current_client_native_selection\",\"ownerTimeSemantics\":\"owner_identifier_time_not_proven_lock_acquisition_time\",\"backendLimit\":\"Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval.\"}"
+    },
+    {
+      "name": "search_sap_locks",
+      "args": {
+        "connectionId": "w200",
+        "username": "WYS",
+        "argument": "*GR2K923430*",
+        "maxResults": 100
+      },
+      "isError": false,
+      "response": "{\"source\":\"SM12\",\"connectionId\":\"w200\",\"client\":\"200\",\"readOnly\":true,\"observedAt\":\"2026-10-04T05:30:44.631Z\",\"transactionSnapshot\":false,\"warnings\":[\"No unlock, retry, delete, cancel or update processing is performed.\",\"Observations are not a transaction snapshot or proof of root cause.\",\"Lock arguments and log metadata may contain sensitive business identifiers.\"],\"status\":\"ok\",\"code\":\"OK\",\"entries\":[],\"hasMore\":false,\"returnedCount\":0,\"coverage\":\"exact_user_current_client_native_selection\",\"ownerTimeSemantics\":\"owner_identifier_time_not_proven_lock_acquisition_time\",\"backendLimit\":\"Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval.\"}"
+    }
+  ],
+  "preparationBlocker": "NATIVE_SAFETY_NATIVE_READER_SCHEMA_UNAVAILABLE",
+  "transport": {
+    "connectionId": "w200",
+    "client": "200",
+    "requestNumber": "GR2K923429",
+    "taskNumber": "GR2K923430",
+    "status": "metadata_matches",
+    "readOnly": true,
+    "saveAvailable": false,
+    "observed": {
+      "request": [
+        {
+          "TRKORR": "GR2K923429",
+          "TRFUNCTION": "W",
+          "TRSTATUS": "D",
+          "TARSYSTEM": "GR3",
+          "KORRDEV": "CUST",
+          "AS4USER": "WYS",
+          "AS4DATE": "20260901",
+          "AS4TIME": "110244",
+          "STRKORR": ""
+        }
+      ],
+      "requestClient": [
+        {
+          "TRKORR": "GR2K923429",
+          "CLIENT": "200",
+          "TARCLIENT": "",
+          "EXTENDED_STATE": "",
+          "OVERTAKER": ""
+        }
+      ],
+      "task": [
+        {
+          "TRKORR": "GR2K923430",
+          "TRFUNCTION": "Q",
+          "TRSTATUS": "D",
+          "TARSYSTEM": "",
+          "KORRDEV": "CUST",
+          "AS4USER": "WYS",
+          "AS4DATE": "20261004",
+          "AS4TIME": "100032",
+          "STRKORR": "GR2K923429"
+        }
+      ],
+      "taskClient": [
+        {
+          "TRKORR": "GR2K923430",
+          "CLIENT": "200",
+          "TARCLIENT": "",
+          "EXTENDED_STATE": "",
+          "OVERTAKER": ""
+        }
+      ]
+    },
+    "checks": {
+      "requestType": true,
+      "taskType": true,
+      "requestOpen": true,
+      "taskOpen": true,
+      "requestIsRoot": true,
+      "taskParent": true,
+      "taskOwnerMatchesConfiguredUser": true,
+      "requestClient": true,
+      "taskClient": true,
+      "requestCategory": true,
+      "taskCategory": true,
+      "transportTarget": true
+    },
+    "readFingerprint": "189a34a2bca5a9afcc78bbfee6316e95f6eb966ac1942494b9ee205806c9986d",
+    "keyRecording": {
+      "status": "table_entries_observed",
+      "code": null,
+      "officialEncoding": "not_verified",
+      "exactRowRecording": "not_verified",
+      "importStatus": "not_checked",
+      "target": {
+        "client": "200",
+        "unitKey": "KG",
+        "language": "ZH",
+        "sapLanguage": "1"
+      },
+      "E071KReadback": "bounded_trimmed_projection",
+      "representation": "sap_text_trimmed",
+      "observed": {
+        "requestE071": [],
+        "requestE071K": [],
+        "taskE071": [
+          {
+            "TRKORR": "GR2K923430",
+            "AS4POS": "000002",
+            "PGMID": "R3TR",
+            "OBJECT": "TDAT",
+            "OBJ_NAME": "CUNI"
+          }
+        ],
+        "taskE071K": [
+          {
+            "TRKORR": "GR2K923430",
+            "PGMID": "R3TR",
+            "OBJECT": "TABU",
+            "OBJNAME": "T006A",
+            "AS4POS": "000001",
+            "MASTERTYPE": "TDAT",
+            "MASTERNAME": "CUNI",
+            "VIEWNAME": "",
+            "TABKEY": "2001KG"
+          }
+        ]
+      },
+      "readFingerprint": "d2d93741c6553c0c0362f9abc9a7ee7f9476bcb349b5d6709dfaac8fb493331c",
+      "unitReadFingerprint": "b8a07ec8b032180d027f9f8edc7f4ab15a7c9902cb516bbfcfbd14cb25614c72",
+      "readerLimits": {
+        "entryReaderInvocations": 8,
+        "entryReaderInvocationLimit": 8,
+        "maximumRowsPerProjection": 32,
+        "unitReaderInvocations": 2,
+        "unitReaderInvocationLimit": 2
+      },
+      "manualChecks": [
+        "Compare original untrimmed E071K TABKEY in the SAP transport organizer with the exact client/SAP language/internal unit key; no key encoder or decoder is attested.",
+        "Verify E071 R3TR/TDAT/CUNI and E071K TABU/T006A master linkage, wildcard/generalized keys and update-task result. A trimmed key or table-level entry is not exact-row recording proof.",
+        "Verify actual import and target values separately; request/task or key entry existence does not prove target configuration took effect."
+      ]
+    },
+    "authorization": "not_attested",
+    "maintenanceApi": "not_verified",
+    "writeAdmission": "blocked",
+    "evidence": {
+      "startedAt": "2026-10-04T05:30:39.295Z",
+      "finishedAt": "2026-10-04T05:30:44.329Z",
+      "sources": [
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071",
+          "status": "empty",
+          "method": "rfc_read_table",
+          "returnedCount": 0,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071K",
+          "status": "empty",
+          "method": "rfc_read_table",
+          "returnedCount": 0,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071K",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071",
+          "status": "empty",
+          "method": "rfc_read_table",
+          "returnedCount": 0,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071K",
+          "status": "empty",
+          "method": "rfc_read_table",
+          "returnedCount": 0,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E071K",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        },
+        {
+          "table": "E070C",
+          "status": "ok",
+          "method": "rfc_read_table",
+          "returnedCount": 1,
+          "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+        }
+      ],
+      "warnings": [
+        "E071: empty",
+        "E071K: empty",
+        "E071: empty",
+        "E071K: empty"
+      ],
+      "definitionsRechecked": true,
+      "snapshot": false
+    },
+    "warnings": [
+      "W is a Customizing request, Q is a Customizing task; K is Workbench. Protected/releasing/released, local-target and other types are not admitted.",
+      "Only exact request/task metadata is compared twice. Missing client records remain unknown; no inheritance is guessed. Owner match is against configured user, not an authority check.",
+      "Metadata matches do not attest object recording, E071K encoding, locks, business validation or an executable maintenance API. No request/task creation, release or recording."
+    ]
+  },
+  "locks": [
+    {
+      "argument": "*T006*",
+      "observation": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T05:30:44.334Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    },
+    {
+      "argument": "*GR2K923429*",
+      "observation": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T05:30:44.489Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    },
+    {
+      "argument": "*GR2K923430*",
+      "observation": {
+        "source": "SM12",
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "observedAt": "2026-10-04T05:30:44.631Z",
+        "transactionSnapshot": false,
+        "warnings": [
+          "No unlock, retry, delete, cancel or update processing is performed.",
+          "Observations are not a transaction snapshot or proof of root cause.",
+          "Lock arguments and log metadata may contain sensitive business identifiers."
+        ],
+        "status": "ok",
+        "code": "OK",
+        "entries": [],
+        "hasMore": false,
+        "returnedCount": 0,
+        "coverage": "exact_user_current_client_native_selection",
+        "ownerTimeSemantics": "owner_identifier_time_not_proven_lock_acquisition_time",
+        "backendLimit": "Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval."
+      }
+    }
+  ],
+  "finishedAt": "2026-10-04T05:30:44.771Z"
+}

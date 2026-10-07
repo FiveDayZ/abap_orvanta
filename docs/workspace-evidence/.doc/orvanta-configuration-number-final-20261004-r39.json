@@ -1,0 +1,46 @@
+{
+  "startedAt": "2026-10-04T07:09:53.777Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "objectName": "SZN_COMMON_FORMS",
+        "objectType": "PROG",
+        "startLine": 1,
+        "lineCount": 1000
+      },
+      "isError": false,
+      "response": "Source from SZN_COMMON_FORMS (lines 1-83 of 83, 83 lines retrieved):\n\n```abap\n*&---------------------------------------------------------------------*\n*&  Include           SZN_COMMON_FORMS\n*&---------------------------------------------------------------------*\nFORM ask_for_delete_object\n     USING    p_object TYPE tnro-object\n     CHANGING p_answer TYPE c.\n\n DATA: l_parameter    TYPE TABLE OF spar,\n       l_parameter_wa TYPE spar.\n\n  l_parameter_wa-param = 'par1'.\n  l_parameter_wa-value = p_object.\n  APPEND l_parameter_wa TO l_parameter.\n\n  CALL FUNCTION 'POPUP_TO_CONFIRM'\n       EXPORTING\n         titlebar       = 'Löschen'(100)\n         text_question  =\n         'Wollen Sie das Nummernkreisobjekt &par1& löschen?'(101)\n       IMPORTING\n         answer         = p_answer\n       TABLES\n         parameter      = l_parameter\n       EXCEPTIONS\n         text_not_found = 1\n         OTHERS         = 2.\n  IF sy-subrc <> 0.\n    MESSAGE ID     sy-msgid\n            TYPE   sy-msgty\n            NUMBER sy-msgno\n            WITH   sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.\n  ENDIF.\n  CASE p_answer.\n    WHEN 'N'.\n      MESSAGE s886 WITH p_object.\n      p_answer = no.\n    WHEN 'A'.\n      MESSAGE s887 WITH p_object.\n      p_answer = no.\n    WHEN 'J'.\n      p_answer = yes.\n  ENDCASE.\nENDFORM.\n\nFORM check_authority\n     USING    p_object     TYPE tnro-object\n     CHANGING p_auth       TYPE c.\n\n* es werden die folgenden Rechte ermittelt:\n* AUTH = 'N'  kein Recht\n* AUTH = 'U'  Pflege\n* AUTH = 'L'  Stand ändern\n* AUTH = 'D'  Anzeige\n  p_auth = 'N'.\n  AUTHORITY-CHECK OBJECT 'S_NUMBER'\n                      ID 'NROBJ' FIELD p_object\n                      ID 'ACTVT' FIELD '*'.\n  if sy-subrc = 0.\n     p_auth = 'A'.\n  else.\n    AUTHORITY-CHECK OBJECT 'S_NUMBER'\n                        ID 'NROBJ' FIELD p_object\n                        ID 'ACTVT' FIELD '02'.\n    if sy-subrc = 0.\n      p_auth = 'U'.\n    else.\n      AUTHORITY-CHECK OBJECT 'S_NUMBER'\n                      ID 'NROBJ' FIELD p_object\n                      ID 'ACTVT' FIELD '11'.\n      if sy-subrc = 0.\n        p_auth = 'L'.\n      else.\n        AUTHORITY-CHECK OBJECT 'S_NUMBER'\n                      ID 'NROBJ' FIELD p_object\n                      ID 'ACTVT' FIELD '03'.\n        if sy-subrc = 0.\n          p_auth = 'D'.\n        endif.\n      endif.\n    endif.\n  endif.\nENDFORM.                    \" authority_check\n\n```\n\nFull Source SHA-256: cf445803edd371b9ba2fabf03cc584c834754c228ab1ec54a23972b63d695f29\nURI: /sap/bc/adt/programs/includes/szn_common_forms/source/main\n\nEnhancement metadata unavailable (unsupported)."
+    },
+    {
+      "name": "search_abap_object_lines",
+      "args": {
+        "objectName": "MSNUMF01",
+        "searchTerm": "AUTHORITY",
+        "contextLines": 10
+      },
+      "isError": false,
+      "response": "No base-source matches for \"AUTHORITY\". Enhancement metadata was unavailable for 1 object(s)."
+    },
+    {
+      "name": "search_abap_object_lines",
+      "args": {
+        "objectName": "MSNUMI10",
+        "searchTerm": "AUTHORITY",
+        "contextLines": 10
+      },
+      "isError": false,
+      "response": "No base-source matches for \"AUTHORITY\". Enhancement metadata was unavailable for 1 object(s)."
+    },
+    {
+      "name": "read_ddic_domain",
+      "args": {
+        "objectName": "CHAR1"
+      },
+      "isError": false,
+      "response": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"domain\",\n  \"objectName\": \"CHAR1\",\n  \"packageName\": \"SZS\",\n  \"version\": \"20030130213547\",\n  \"fingerprint\": \"b92e46ffb73b646e4ee9fb463ad436db264cac4c938b83f4722a25f4019fcc78\",\n  \"definition\": {\n    \"description\": \"没有检验的一个字符字段\",\n    \"dataType\": \"CHAR\",\n    \"length\": 1,\n    \"outputLength\": 1,\n    \"decimals\": 0,\n    \"lowercase\": false,\n    \"signFlag\": false,\n    \"valueTable\": \"\",\n    \"conversionExit\": \"\",\n    \"fixedValues\": []\n  }\n}"
+    }
+  ],
+  "finishedAt": "2026-10-04T07:09:55.423Z"
+}

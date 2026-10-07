@@ -1,0 +1,185 @@
+{
+  "startedAt": "2026-10-04T10:40:55.300Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "read_abap_table",
+      "args": {
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "filters": [
+          {
+            "column": "TRKORR",
+            "operator": "EQ",
+            "value": "GR2K923472"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "E070",
+        "columns": [
+          "TRKORR",
+          "TRFUNCTION",
+          "TRSTATUS",
+          "AS4USER",
+          "STRKORR"
+        ],
+        "maxRows": 2,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "TRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "TRFUNCTION",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000021"
+          },
+          {
+            "FIELDNAME": "TRSTATUS",
+            "TYPE": "C",
+            "LENGTH": "000001",
+            "OFFSET": "000023"
+          },
+          {
+            "FIELDNAME": "AS4USER",
+            "TYPE": "C",
+            "LENGTH": "000012",
+            "OFFSET": "000025"
+          },
+          {
+            "FIELDNAME": "STRKORR",
+            "TYPE": "C",
+            "LENGTH": "000020",
+            "OFFSET": "000038"
+          }
+        ],
+        "returnedCount": 1,
+        "truncated": false,
+        "data": [
+          {
+            "TRKORR": "GR2K923472",
+            "TRFUNCTION": "K",
+            "TRSTATUS": "D",
+            "AS4USER": "WYS",
+            "STRKORR": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "inspect_repository_assignment",
+      "args": {
+        "objectName": "ZORVANTA_CFG_NR",
+        "objectType": "FUGR/F"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVANTA_CFG_NR",
+        "objectType": "FUGR/F",
+        "parentObject": "ZORVANTA_CFG_NR",
+        "packageName": "ZABAP",
+        "requestNumber": "GR2K923472",
+        "taskNumber": "GR2K923492",
+        "transportStatus": "D",
+        "active": true,
+        "generated": false,
+        "originalSystem": "GR2"
+      }
+    },
+    {
+      "name": "inspect_repository_assignment",
+      "args": {
+        "objectName": "Z_ORVANTA_CFG_NR_READ",
+        "objectType": "FUGR/FF"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "Z_ORVANTA_CFG_NR_READ",
+        "objectType": "FUGR/FF",
+        "parentObject": "ZORVANTA_CFG_NR",
+        "packageName": "ZABAP",
+        "requestNumber": "GR2K923472",
+        "taskNumber": "GR2K923492",
+        "transportStatus": "D",
+        "active": true,
+        "generated": false,
+        "originalSystem": "GR2"
+      }
+    },
+    {
+      "name": "inspect_repository_assignment",
+      "args": {
+        "objectName": "Z_ORVANTA_CFG_NR_APPLY",
+        "objectType": "FUGR/FF"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "Z_ORVANTA_CFG_NR_APPLY",
+        "objectType": "FUGR/FF",
+        "parentObject": "ZORVANTA_CFG_NR",
+        "packageName": "ZABAP",
+        "requestNumber": "GR2K923472",
+        "taskNumber": "GR2K923492",
+        "transportStatus": "D",
+        "active": true,
+        "generated": false,
+        "originalSystem": "GR2"
+      }
+    },
+    {
+      "name": "read_number_range_object",
+      "args": {
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "objectType": "numberRangeObject",
+        "status": "not-found",
+        "exists": false,
+        "active": null,
+        "version": null,
+        "fingerprint": null,
+        "packageName": null,
+        "requestNumber": null,
+        "authoritative": true,
+        "readOnly": true,
+        "reason": "The DDIC read completed and SAP answered that this object does not exist. This is a definite answer, not a tool failure and not an inconclusive result: there is nothing to reconcile for this object.",
+        "substitutes": [
+          "read_abap_table(TADIR, filters OBJECT = <object type>, OBJ_NAME = <name>) for the recorded repository entry",
+          "read_abap_table(DD02L or DD25L, filters for the object) for the stored header rows"
+        ]
+      }
+    }
+  ],
+  "status": "confirmed_active_source_and_unreleased_request",
+  "finishedAt": "2026-10-04T10:40:55.828Z"
+}

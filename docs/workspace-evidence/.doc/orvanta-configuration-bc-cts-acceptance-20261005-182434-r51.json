@@ -1,0 +1,538 @@
+{
+  "startedAt": "2026-10-05T10:21:55.854Z",
+  "configurationWrites": 0,
+  "configurationCtsWrites": 0,
+  "ready": {
+    "pid": 61280,
+    "url": "http://127.0.0.1:1280/mcp",
+    "allowedTools": [
+      "read_configuration_bc_cts_snapshot"
+    ],
+    "manifestFingerprint": "2144ccc34bacf2945c4fbdbef76d1581b8d14cfeb0542823bd6713af21b052ec",
+    "at": "2026-10-05T10:20:10.128Z"
+  },
+  "calls": [
+    {
+      "at": "2026-10-05T10:21:55.945Z",
+      "finishedAt": "2026-10-05T10:21:55.950Z",
+      "name": "read_configuration_bc_cts_snapshot",
+      "arguments": {
+        "connectionId": "w300",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool read_configuration_bc_cts_snapshot: [\n  {\n    \"received\": \"w300\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"w200\",\n    \"path\": [\n      \"connectionId\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"w200\\\"\"\n  }\n]"
+      },
+      "metricsBefore": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      },
+      "metricsAfter": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      }
+    },
+    {
+      "at": "2026-10-05T10:21:55.952Z",
+      "finishedAt": "2026-10-05T10:21:55.955Z",
+      "name": "read_configuration_bc_cts_snapshot",
+      "arguments": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923429"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool read_configuration_bc_cts_snapshot: [\n  {\n    \"received\": \"GR2K923429\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"GR2K923430\",\n    \"path\": [\n      \"taskNumber\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"GR2K923430\\\"\"\n  }\n]"
+      },
+      "metricsBefore": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      },
+      "metricsAfter": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      }
+    },
+    {
+      "at": "2026-10-05T10:21:55.957Z",
+      "finishedAt": "2026-10-05T10:21:55.959Z",
+      "name": "read_configuration_bc_cts_snapshot",
+      "arguments": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430",
+        "activate": true
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool read_configuration_bc_cts_snapshot: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"activate\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'activate'\"\n  }\n]"
+      },
+      "metricsBefore": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      },
+      "metricsAfter": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      }
+    },
+    {
+      "at": "2026-10-05T10:21:55.961Z",
+      "finishedAt": "2026-10-05T10:21:55.963Z",
+      "name": "read_configuration_bc_cts_snapshot",
+      "arguments": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "A",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430"
+      },
+      "isError": true,
+      "data": {
+        "message": "MCP error -32602: Input validation error: Invalid arguments for tool read_configuration_bc_cts_snapshot: [\n  {\n    \"received\": \"A\",\n    \"code\": \"invalid_literal\",\n    \"expected\": \"N\",\n    \"path\": [\n      \"version\"\n    ],\n    \"message\": \"Invalid literal value, expected \\\"N\\\"\"\n  }\n]"
+      },
+      "metricsBefore": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      },
+      "metricsAfter": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      }
+    },
+    {
+      "at": "2026-10-05T10:21:55.964Z",
+      "finishedAt": "2026-10-05T10:21:56.662Z",
+      "name": "read_configuration_bc_cts_snapshot",
+      "arguments": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430",
+        "system": "GR2",
+        "client": "200",
+        "user": "WYS",
+        "readOnly": true,
+        "executable": false,
+        "activationAvailable": false,
+        "snapshot": false,
+        "recoveryAvailable": false,
+        "scope": "two_complete_transport_roots_not_a_CUNI_projection",
+        "counts": {
+          "objects": 2,
+          "keys": 2,
+          "stringKeys": 0
+        },
+        "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+        "buffer": {
+          "format": "sap_export_data_buffer_base64",
+          "encoding": "opaque_native_typed_data",
+          "data": "/wYBAQECgAA0MTAyAAAAAAEAAAAAABAAAABCBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNvAAAABAARwBSADIAIAAgACAAIAAgvQEAAAAAAAYAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAEMATABJAEUATgBUvAAAAAYAMgAwADC9AQAAAAAAGAAAAEYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVQBTAEUAUrwAAAAYAFcAWQBTACAAIAAgACAAIAAgACAAIAAgvQcTAAAAAAgAAABKBgAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAQwBfAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLAw4AAAAApAAAAdkHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKSqAAAAAAAoqgAAAAAAAqoAAAAAAAKqAAAAAAAUqgAAAAAACKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACkvgAAAKQAAAACvAAAAKQARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgAFcARABHAFIAMwAgACAAIAAgACAAIAAgAEMAVQBTAFQAVwBZAFMAIAAgACAAIAAgACAAIAAgACAAMgAwADIANgAwADkAMAAxADEAMQAwADIANAA0ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAAApABHAFIAMgBLADkAMgAzADQAMwAwACAAIAAgACAAIAAgACAAIAAgACAAUQBEACAAIAAgACAAIAAgACAAIAAgACAAQwBVAFMAVABXAFkAUwAgACAAIAAgACAAIAAgACAAIAAyADAAMgA2ADEAMAAwADQAMQAwADAAMAAzADIARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAA4AAAA5QcAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVABTrQ4AAAAAOKoAAAAAACiqAAAAAAAGqgAAAAAABqoAAAAAAAKqAAAAAAACrg4AAAAAOL4AAAA4AAAAArwAAAA4AEcAUgAyAEsAOQAyADMANAAyADkAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAgACAAIAAgACC9vAAAADgARwBSADIASwA5ADIAMwA0ADMAMAAgACAAIAAgACAAIAAgACAAIAAgADIAMAAwACAAIAAgACAAIL2/Aw4AAAABaAAAA2gHAAAAAAAAAAAAAAAAAAAAAAAAAAAATwBCAEoARQBDAFQAU60OAAAAAWiqAAAAAAAoqgYAAAAADKoAAAAAAAiqAAAAAAAIqgAAAAAA8KoAAAAAAAKqAAAAAAACqgAAAAAABqoAAAAAAAKqAAAAAAAorg4AAAABaL4AAAFoAAAAArwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMQBSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMgBSADMAVABSAFQARABBAFQAQwBVAE4ASQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAI0AAAFFgQAAAAAAAAAAAAAAAAAAAAAAAAAAABLAEUAWQBTrQ4AAAACNKoAAAAAACiqAAAAAAAIqgAAAAAACKoAAAAAADyqBgAAAAAMqgAAAAAACKoAAAAAAFCqAAAAAAA8qgAAAAAAAqoAAAAAAPCqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorg4AAAACNL4AAAI0AAAAArwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAVAAwADAANgBBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABEAEEAVABDAFUATgBJACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAMQBLAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABBAEIAVQBaAFQAUABNAEMAXwBUAFAAQwBGAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAOAAwADkAUAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8GDwAAAAFYAAAAxQsAAAAAAAAAAAAAAAAAAAAAAAAAAABTAFQAUgBJAE4ARwBfAEsARQBZAFOtDwAAAAFYqgAAAAAAKKoAAAAAAAiqAAAAAAAIqgAAAAAAPKoGAAAAAAyqAAAAAAAIqgAAAAAAUKoAAAAAADyqAAAAAAACrwQAAAAAAqoTAAAAAAiqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorwQAAAAAAqoTAAAAAAiuDwAAAAFYvgAAAVgAAAAAvwQ=",
+          "bytes": 3548,
+          "keyPaddingPreserved": true,
+          "clientSideImportAvailable": false,
+          "recoveryPermit": false
+        },
+        "bodyFingerprint": "b3303da468b0f090a0fff751b1f2b207ae1d2c355740f1146c0f27c22d657113",
+        "identities": [
+          {
+            "source": "0233aa3297bbcee7dbf6377529fa8bd2a50e260accb48e2b17edea2b668e45d7",
+            "interface": "34ee7da0e9c1a2d980956b1b986c20302ae7353e6fac02dc795ab257ae7f45c0"
+          },
+          {
+            "functionName": "TR_READ_REQUEST",
+            "source": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718",
+            "interface": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST",
+            "source": "f5cebb50274f01915d6d5d85a6b058ae417889380db50d44d672d3cbc80094c8",
+            "interface": "ad8a3c8352ef4b4615aef7648b9ffead28751f151789e726ac3007d27d2e555a"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST_HEADER",
+            "source": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090",
+            "interface": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813"
+          },
+          {
+            "functionName": "TR_AUTHORITY_CHECK_DISPLAY",
+            "source": "1bf1f040acd563e46f775fb2c0c354c75ea8cb494379243ec5ff0950b24c2be7",
+            "interface": "6d966c3affd105d7808a659b62fc4356106648016b0ceae864b550182e290574"
+          },
+          {
+            "functionName": "SCMS_BASE64_ENCODE_STR",
+            "source": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0",
+            "interface": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9"
+          },
+          {
+            "functionName": "CALCULATE_HASH_FOR_RAW",
+            "source": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458",
+            "interface": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779"
+          },
+          {
+            "tableName": "E070",
+            "layout": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1"
+          },
+          {
+            "tableName": "E070C",
+            "layout": "e6d5897c0588ee2e1720b7a9bd420c8a75efa6a5b2163266d0fdca864a722632"
+          },
+          {
+            "tableName": "E071",
+            "layout": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1"
+          },
+          {
+            "tableName": "E071K",
+            "layout": "f6da6a1556eaea9b3c3df7e4f065eca401cf53381578d2a7a4e1af518a368000"
+          },
+          {
+            "tableName": "E071K_STR",
+            "layout": "c0ed80a482355e0be761fd3236a5e2e2dc69e14dcf034d792316950657fe66fc"
+          }
+        ],
+        "evidence": {
+          "apiInvocations": 2,
+          "identityPasses": 2,
+          "rawBytesRechecked": true
+        },
+        "warning": "Requires the exact approved customer API. Entire fixed request/task CTS rows include unrelated entries for preservation. Native bytes retain padding and string keys; they are opaque to the client and are not a restore command. Sequential observations are not locked snapshots. No activation, simulation, CTS/configuration write, cleanup, commit or release is performed."
+      },
+      "metricsBefore": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 0,
+        "nativeRefusals": 4,
+        "metadataReads": 0,
+        "definitionReads": 1,
+        "configurationWrites": 0
+      },
+      "metricsAfter": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 2,
+        "nativeRefusals": 4,
+        "metadataReads": 10,
+        "definitionReads": 15,
+        "configurationWrites": 0
+      }
+    },
+    {
+      "at": "2026-10-05T10:21:56.664Z",
+      "finishedAt": "2026-10-05T10:21:57.311Z",
+      "name": "read_configuration_bc_cts_snapshot",
+      "arguments": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "bcSetId": "EHS_CUNI_KNM",
+        "version": "N",
+        "requestNumber": "GR2K923429",
+        "taskNumber": "GR2K923430",
+        "system": "GR2",
+        "client": "200",
+        "user": "WYS",
+        "readOnly": true,
+        "executable": false,
+        "activationAvailable": false,
+        "snapshot": false,
+        "recoveryAvailable": false,
+        "scope": "two_complete_transport_roots_not_a_CUNI_projection",
+        "counts": {
+          "objects": 2,
+          "keys": 2,
+          "stringKeys": 0
+        },
+        "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+        "buffer": {
+          "format": "sap_export_data_buffer_base64",
+          "encoding": "opaque_native_typed_data",
+          "data": "/wYBAQECgAA0MTAyAAAAAAEAAAAAABAAAABCBgAAAAAAAAAAAAAAAAAAAAAAAAAAAFMAWQBTAFQARQBNvAAAABAARwBSADIAIAAgACAAIAAgvQEAAAAAAAYAAAA4BgAAAAAAAAAAAAAAAAAAAAAAAAAAAEMATABJAEUATgBUvAAAAAYAMgAwADC9AQAAAAAAGAAAAEYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVQBTAEUAUrwAAAAYAFcAWQBTACAAIAAgACAAIAAgACAAIAAgvQcTAAAAAAgAAABKBgAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAQwBfAFMARQBUygAAABgARQBIAFMAXwBDAFUATgBJAF8ASwBOAE3LBxMAAAAACAAAADYHAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgBFAFIAUwBJAE8ATsoAAAACAE7LBxMAAAAACAAAAEgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAUgBFAFEAVQBFAFMAVMoAAAAUAEcAUgAyAEsAOQAyADMANAAyADnLBxMAAAAACAAAAEIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAVABBAFMAS8oAAAAUAEcAUgAyAEsAOQAyADMANAAzADDLAw4AAAAApAAAAdkHAAAAAAAAAAAAAAAAAAAAAAAAAAAASABFAEEARABFAFIAU60OAAAAAKSqAAAAAAAoqgAAAAAAAqoAAAAAAAKqAAAAAAAUqgAAAAAACKoAAAAAABiqAQAAAAAQqgMAAAAADKoAAAAAACiuDgAAAACkvgAAAKQAAAACvAAAAKQARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgAFcARABHAFIAMwAgACAAIAAgACAAIAAgAEMAVQBTAFQAVwBZAFMAIAAgACAAIAAgACAAIAAgACAAMgAwADIANgAwADkAMAAxADEAMQAwADIANAA0ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIL28AAAApABHAFIAMgBLADkAMgAzADQAMwAwACAAIAAgACAAIAAgACAAIAAgACAAUQBEACAAIAAgACAAIAAgACAAIAAgACAAQwBVAFMAVABXAFkAUwAgACAAIAAgACAAIAAgACAAIAAyADAAMgA2ADEAMAAwADQAMQAwADAAMAAzADIARwBSADIASwA5ADIAMwA0ADIAOQAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAA4AAAA5QcAAAAAAAAAAAAAAAAAAAAAAAAAAABDAEwASQBFAE4AVABTrQ4AAAAAOKoAAAAAACiqAAAAAAAGqgAAAAAABqoAAAAAAAKqAAAAAAACrg4AAAAAOL4AAAA4AAAAArwAAAA4AEcAUgAyAEsAOQAyADMANAAyADkAIAAgACAAIAAgACAAIAAgACAAIAAyADAAMAAgACAAIAAgACC9vAAAADgARwBSADIASwA5ADIAMwA0ADMAMAAgACAAIAAgACAAIAAgACAAIAAgADIAMAAwACAAIAAgACAAIL2/Aw4AAAABaAAAA2gHAAAAAAAAAAAAAAAAAAAAAAAAAAAATwBCAEoARQBDAFQAU60OAAAAAWiqAAAAAAAoqgYAAAAADKoAAAAAAAiqAAAAAAAIqgAAAAAA8KoAAAAAAAKqAAAAAAACqgAAAAAABqoAAAAAAAKqAAAAAAAorg4AAAABaL4AAAFoAAAAArwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMQBSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAFoAEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIAAwADAAMAAwADAAMgBSADMAVABSAFQARABBAFQAQwBVAE4ASQAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAASwAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8DDgAAAAI0AAAFFgQAAAAAAAAAAAAAAAAAAAAAAAAAAABLAEUAWQBTrQ4AAAACNKoAAAAAACiqAAAAAAAIqgAAAAAACKoAAAAAADyqBgAAAAAMqgAAAAAACKoAAAAAAFCqAAAAAAA8qgAAAAAAAqoAAAAAAPCqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorg4AAAACNL4AAAI0AAAAArwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAVAAwADAANgBBACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABEAEEAVABDAFUATgBJACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAMQBLAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvbwAAAI0AEcAUgAyAEsAOQAyADMANAAzADAAIAAgACAAIAAgACAAIAAgACAAIABSADMAVABSAFQAQQBCAFUAWgBUAFAATQBDAF8AVABQAEMARgBHACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMAAwADAAMAAwADEAVABBAEIAVQBaAFQAUABNAEMAXwBUAFAAQwBGAEcAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAwADAAOAAwADkAUAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAMgAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgvb8GDwAAAAFYAAAAxQsAAAAAAAAAAAAAAAAAAAAAAAAAAABTAFQAUgBJAE4ARwBfAEsARQBZAFOtDwAAAAFYqgAAAAAAKKoAAAAAAAiqAAAAAAAIqgAAAAAAPKoGAAAAAAyqAAAAAAAIqgAAAAAAUKoAAAAAADyqAAAAAAACrwQAAAAAAqoTAAAAAAiqAAAAAAACqgAAAAAAAqoAAAAAAAKqAAAAAAAorwQAAAAAAqoTAAAAAAiuDwAAAAFYvgAAAVgAAAAAvwQ=",
+          "bytes": 3548,
+          "keyPaddingPreserved": true,
+          "clientSideImportAvailable": false,
+          "recoveryPermit": false
+        },
+        "bodyFingerprint": "b3303da468b0f090a0fff751b1f2b207ae1d2c355740f1146c0f27c22d657113",
+        "identities": [
+          {
+            "source": "0233aa3297bbcee7dbf6377529fa8bd2a50e260accb48e2b17edea2b668e45d7",
+            "interface": "34ee7da0e9c1a2d980956b1b986c20302ae7353e6fac02dc795ab257ae7f45c0"
+          },
+          {
+            "functionName": "TR_READ_REQUEST",
+            "source": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718",
+            "interface": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST",
+            "source": "f5cebb50274f01915d6d5d85a6b058ae417889380db50d44d672d3cbc80094c8",
+            "interface": "ad8a3c8352ef4b4615aef7648b9ffead28751f151789e726ac3007d27d2e555a"
+          },
+          {
+            "functionName": "TRINT_READ_REQUEST_HEADER",
+            "source": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090",
+            "interface": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813"
+          },
+          {
+            "functionName": "TR_AUTHORITY_CHECK_DISPLAY",
+            "source": "1bf1f040acd563e46f775fb2c0c354c75ea8cb494379243ec5ff0950b24c2be7",
+            "interface": "6d966c3affd105d7808a659b62fc4356106648016b0ceae864b550182e290574"
+          },
+          {
+            "functionName": "SCMS_BASE64_ENCODE_STR",
+            "source": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0",
+            "interface": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9"
+          },
+          {
+            "functionName": "CALCULATE_HASH_FOR_RAW",
+            "source": "874f8e777eda4b72aecd34ab11153af0fe291ca777b8023c96c13c1119bfd458",
+            "interface": "9d0e795153f6118bb966e18c6d4bdbca7e66f927c75bfe8e9fcf22d4fb153779"
+          },
+          {
+            "tableName": "E070",
+            "layout": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1"
+          },
+          {
+            "tableName": "E070C",
+            "layout": "e6d5897c0588ee2e1720b7a9bd420c8a75efa6a5b2163266d0fdca864a722632"
+          },
+          {
+            "tableName": "E071",
+            "layout": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1"
+          },
+          {
+            "tableName": "E071K",
+            "layout": "f6da6a1556eaea9b3c3df7e4f065eca401cf53381578d2a7a4e1af518a368000"
+          },
+          {
+            "tableName": "E071K_STR",
+            "layout": "c0ed80a482355e0be761fd3236a5e2e2dc69e14dcf034d792316950657fe66fc"
+          }
+        ],
+        "evidence": {
+          "apiInvocations": 2,
+          "identityPasses": 2,
+          "rawBytesRechecked": true
+        },
+        "warning": "Requires the exact approved customer API. Entire fixed request/task CTS rows include unrelated entries for preservation. Native bytes retain padding and string keys; they are opaque to the client and are not a restore command. Sequential observations are not locked snapshots. No activation, simulation, CTS/configuration write, cleanup, commit or release is performed."
+      },
+      "metricsBefore": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 2,
+        "nativeRefusals": 4,
+        "metadataReads": 10,
+        "definitionReads": 15,
+        "configurationWrites": 0
+      },
+      "metricsAfter": {
+        "startedAt": "2026-10-05T10:20:09.718Z",
+        "nativeReads": 4,
+        "nativeRefusals": 4,
+        "metadataReads": 20,
+        "definitionReads": 29,
+        "configurationWrites": 0
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "read_configuration_bc_cts_snapshot",
+      "description": "Read-only complete CTS before-state for fixed EHS_CUNI_KNM/N on w200/GR2/200 and request GR2K923429/task GR2K923430 only. Attests Z_ORVANTA_CFG_BC_CTS source/interface, six standard dependencies and five DDIC layouts before/after two native reads. Returns complete E070/E070C/E071/E071K/E071K_STR as opaque SAP EXPORT bytes with canonical Base64, byte length and SHA256, including other existing entries in these two roots. Refuses wrong scope, user/client binding, incomplete reads, limit violations, metadata/result drift or corrupt buffers without partial output. Native buffer preserves key padding and string keys; no client-side IMPORT or recovery permit. Sequential observations are not locked snapshots. No generic table fallback, GUI, activation, simulation, configuration/CTS changes, cleanup, commit or release.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "const": "w200"
+          },
+          "bcSetId": {
+            "type": "string",
+            "const": "EHS_CUNI_KNM"
+          },
+          "version": {
+            "type": "string",
+            "const": "N"
+          },
+          "requestNumber": {
+            "type": "string",
+            "const": "GR2K923429"
+          },
+          "taskNumber": {
+            "type": "string",
+            "const": "GR2K923430"
+          }
+        },
+        "required": [
+          "connectionId",
+          "bcSetId",
+          "version",
+          "requestNumber",
+          "taskNumber"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "schemaRefusalsBeforeBackend": 4,
+  "nativeRejections": {
+    "calls": [
+      {
+        "field": "IV_BC_SET",
+        "result": {
+          "outputs": {
+            "EV_CODE": "INPUT_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_REQUEST": "",
+            "EV_TASK": "",
+            "EV_CTS_VERSION": "",
+            "EV_DATA_BASE64": "",
+            "EV_DATA_BYTES": "",
+            "EV_OBJECT_COUNT": "",
+            "EV_KEY_COUNT": "",
+            "EV_STRING_KEY_COUNT": ""
+          }
+        }
+      },
+      {
+        "field": "IV_VERSION",
+        "result": {
+          "outputs": {
+            "EV_CODE": "INPUT_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_REQUEST": "",
+            "EV_TASK": "",
+            "EV_CTS_VERSION": "",
+            "EV_DATA_BASE64": "",
+            "EV_DATA_BYTES": "",
+            "EV_OBJECT_COUNT": "",
+            "EV_KEY_COUNT": "",
+            "EV_STRING_KEY_COUNT": ""
+          }
+        }
+      },
+      {
+        "field": "IV_REQUEST",
+        "result": {
+          "outputs": {
+            "EV_CODE": "INPUT_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_REQUEST": "",
+            "EV_TASK": "",
+            "EV_CTS_VERSION": "",
+            "EV_DATA_BASE64": "",
+            "EV_DATA_BYTES": "",
+            "EV_OBJECT_COUNT": "",
+            "EV_KEY_COUNT": "",
+            "EV_STRING_KEY_COUNT": ""
+          }
+        }
+      },
+      {
+        "field": "IV_TASK",
+        "result": {
+          "outputs": {
+            "EV_CODE": "INPUT_INVALID",
+            "EV_SYSTEM": "",
+            "EV_CLIENT": "",
+            "EV_USER": "",
+            "EV_REQUEST": "",
+            "EV_TASK": "",
+            "EV_CTS_VERSION": "",
+            "EV_DATA_BASE64": "",
+            "EV_DATA_BYTES": "",
+            "EV_OBJECT_COUNT": "",
+            "EV_KEY_COUNT": "",
+            "EV_STRING_KEY_COUNT": ""
+          }
+        }
+      }
+    ],
+    "status": "passed"
+  },
+  "metrics": {
+    "startedAt": "2026-10-05T10:20:09.718Z",
+    "nativeReads": 4,
+    "nativeRefusals": 4,
+    "metadataReads": 20,
+    "definitionReads": 29,
+    "configurationWrites": 0
+  },
+  "ctsVersion": "7592fcc1736c5b6856f7c702fbf1bcca3c3ff372f71761fdc6fd4ff7ebe63b50",
+  "bufferBytes": 3548,
+  "counts": {
+    "objects": 2,
+    "keys": 2,
+    "stringKeys": 0
+  },
+  "status": "passed",
+  "finishedAt": "2026-10-05T10:21:57.314Z"
+}

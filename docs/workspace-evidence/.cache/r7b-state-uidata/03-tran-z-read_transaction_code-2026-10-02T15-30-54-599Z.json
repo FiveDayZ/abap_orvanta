@@ -1,0 +1,9 @@
+{
+  "tool": "read_transaction_code",
+  "arguments": {
+    "transactionCode": "ZCODEX_MCP_UI",
+    "connectionId": "w200"
+  },
+  "isError": false,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"transactionCode\": \"ZCODEX_MCP_UI\",\n  \"packageName\": \"ZABAP\",\n  \"transactions\": [\n    {\n      \"TCODE\": \"ZCODEX_MCP_UI\",\n      \"PGMNA\": \"ZCODEX_MCP_DYNPRO\",\n      \"DYPNO\": \"0100\",\n      \"MENUE\": \"\",\n      \"CINFO\": \"AA==\",\n      \"ARBGB\": \"\"\n    }\n  ],\n  \"guiAttributes\": [\n    {\n      \"TCODE\": \"ZCODEX_MCP_UI\",\n      \"S_WEBGUI\": \"1\",\n      \"S_WIN32\": \"X\",\n      \"S_PLATIN\": \"\",\n      \"S_SERVICE\": \"\",\n      \"S_PERVAS\": \"\",\n      \"S_DUMMY\": \"\",\n      \"S_DUMMY1\": \"\",\n      \"S_DUMMY2\": \"\"\n    }\n  ],\n  \"fingerprint\": \"20e490a395122a7c4d74e6fe4a86f55a64d8b4356223f8cb8ba4e733e2d68075\"\n}"
+}

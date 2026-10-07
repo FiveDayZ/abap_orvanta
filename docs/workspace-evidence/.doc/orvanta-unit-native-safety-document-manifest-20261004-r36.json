@@ -1,0 +1,103 @@
+{
+  "observedAt": "2026-10-04T05:43:03.037Z",
+  "documentationRoot": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc",
+  "mirrorRoot": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc",
+  "recordName": "code-update-20261004-134302.md",
+  "requiredSections": [
+    "## Result",
+    "## Changed Objects",
+    "## Verification",
+    "## Runtime Evidence",
+    "## Remaining Risks",
+    "## Documentation"
+  ],
+  "requiredSectionsPresent": true,
+  "sameBytes": true,
+  "unrelatedWorkspaceWrites": false,
+  "files": [
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/code-update-20261004-134302.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/code-update-20261004-134302.md",
+      "size": 10625,
+      "sha256": "fc9fca45bbc798bdb6fcc4eb5d44059a5c6faad8893faa2257fea6c3d99aaa55"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-guide-20261004-r36.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-guide-20261004-r36.md",
+      "size": 6851,
+      "sha256": "b6ea1011f618edae64098efd130f1db7f037c3979d600e7a9f5d91adc4e642cd"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-stale-acceptance-plan-20261004-r37.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-stale-acceptance-plan-20261004-r37.md",
+      "size": 3621,
+      "sha256": "47d1cf5f3d7f1daac85325b50d50ae86aa90765865e510393c9cc463b507391e"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-regression-20261004-r36.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-regression-20261004-r36.txt",
+      "size": 55106,
+      "sha256": "b73100f6bb07e1f1b7ccf20153979f2a640d358f232d807225acd23e8d12a7c0"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-compile-initial-failure-20261004-r36.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-compile-initial-failure-20261004-r36.txt",
+      "size": 447,
+      "sha256": "0cd1a0d61557de1a3385d72c0661eb86da4110c0d100dcf6492b8de33fc1310d"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-loopback-initial-failure-20261004-r36.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-loopback-initial-failure-20261004-r36.txt",
+      "size": 5533,
+      "sha256": "ff311f9c0f862fefa28982a0897a4f337e5c9df0b82479b2e833d3d53811dfaa"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-static-20261004-r36.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-static-20261004-r36.txt",
+      "size": 417,
+      "sha256": "72944e771f7dc19cbe958e1726deed1d279e4d87781eff229c56031a375eb126"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-format-20261004-r36.txt",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-format-20261004-r36.txt",
+      "size": 68,
+      "sha256": "f20510a9da4717c51c4cffee6d0dd88d6c9a723d0a83711d01216f5b48961283"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-audit-20261004-r36.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-audit-20261004-r36.json",
+      "size": 13425,
+      "sha256": "6e1cbed03b5e1a60343258f7216f326a14cf6aae3e8f3b199ce610f5ef2e961c"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-source-drift-20261004-r36.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-source-drift-20261004-r36.json",
+      "size": 86,
+      "sha256": "a15d55e469125f7524cab7f30d7244e924ad1ad8e08e0e3a3de27a8ab621add2"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-source-preflight-20261004-r36.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-source-preflight-20261004-r36.json",
+      "size": 8541,
+      "sha256": "f35622f7f1319afe9ab258e746dd7d46807174b1dc63ea1de128f12902975811"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-source-preflight-recheck-20261004-r36.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-source-preflight-recheck-20261004-r36.json",
+      "size": 149958,
+      "sha256": "a980958bd44fa03671642d8399e2ca3e5fd0363e5ee6b1143ef365236ab2f0dd"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-runtime-preparation-20261004-r36.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-runtime-preparation-20261004-r36.json",
+      "size": 22859,
+      "sha256": "b3903bb25bd9e29d876486622382aebe3cf4585be79396eaec38e459cc10d87b"
+    },
+    {
+      "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc/orvanta-unit-native-safety-value-readonly-20261004-r36.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc/orvanta-unit-native-safety-value-readonly-20261004-r36.json",
+      "size": 9581,
+      "sha256": "3fc99d37859ec930381b8aeaae700e9ad36b29c1afc14b006ac205c4b1222057"
+    }
+  ]
+}

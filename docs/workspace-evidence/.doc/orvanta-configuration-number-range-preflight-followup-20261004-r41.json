@@ -1,0 +1,377 @@
+{
+  "startedAt": "2026-10-04T10:21:04.803Z",
+  "readOnly": true,
+  "calls": [
+    {
+      "name": "inspect_repository_assignment",
+      "args": {
+        "objectName": "ZORVANTA_CFG_NR",
+        "objectType": "FUGR/F"
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking inspect_repository_assignment: Error: SAP repository helper rejected the operation: REPOSITORY_OBJECT_NOT_FOUND: Repository object does not exist"
+      }
+    },
+    {
+      "name": "read_abap_table",
+      "args": {
+        "tableName": "TADIR",
+        "columns": [
+          "OBJECT",
+          "OBJ_NAME",
+          "DEVCLASS"
+        ],
+        "filters": [
+          {
+            "column": "PGMID",
+            "operator": "EQ",
+            "value": "R3TR"
+          },
+          {
+            "column": "OBJECT",
+            "operator": "EQ",
+            "value": "FUGR"
+          },
+          {
+            "column": "OBJ_NAME",
+            "operator": "EQ",
+            "value": "ZORVANTA_CFG_NR"
+          }
+        ],
+        "maxRows": 2
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "tableName": "TADIR",
+        "columns": [
+          "OBJECT",
+          "OBJ_NAME",
+          "DEVCLASS"
+        ],
+        "maxRows": 2,
+        "readOnly": true,
+        "order": "unspecified",
+        "clientHandling": "sap_session_default",
+        "snapshot": false,
+        "status": "ok",
+        "method": "rfc_read_table",
+        "definitionSource": "adt_ddic",
+        "tableClassVerified": true,
+        "definitionFingerprint": "8eba7bf62aa3432a081e411a58f1965cd689192c46c9720bc9c960c5b36b8c51",
+        "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID",
+        "representation": "sap_text_trimmed",
+        "fieldMetadata": [
+          {
+            "FIELDNAME": "OBJECT",
+            "TYPE": "C",
+            "LENGTH": "000004",
+            "OFFSET": "000000"
+          },
+          {
+            "FIELDNAME": "OBJ_NAME",
+            "TYPE": "C",
+            "LENGTH": "000040",
+            "OFFSET": "000005"
+          },
+          {
+            "FIELDNAME": "DEVCLASS",
+            "TYPE": "C",
+            "LENGTH": "000030",
+            "OFFSET": "000046"
+          }
+        ],
+        "returnedCount": 0,
+        "truncated": false,
+        "data": []
+      }
+    },
+    {
+      "name": "inspect_repository_assignment",
+      "args": {
+        "objectName": "ZORVANTA_CFG_UNIT",
+        "objectType": "FUGR/F"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVANTA_CFG_UNIT",
+        "objectType": "FUGR/F",
+        "parentObject": "ZORVANTA_CFG_UNIT",
+        "packageName": "ZABAP",
+        "requestNumber": "GR2K923472",
+        "taskNumber": "GR2K923492",
+        "transportStatus": "D",
+        "active": true,
+        "generated": false,
+        "originalSystem": "GR2"
+      }
+    },
+    {
+      "name": "read_ddic_structure",
+      "args": {
+        "objectName": "INRIV"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "structure",
+        "objectName": "INRIV",
+        "packageName": "SZN",
+        "version": "20110901120709",
+        "fingerprint": "b492238ac489db1f68c8b70a8b85eca98060b57a4e74c6f7baec28bfef1ba08c",
+        "guardToken": "F4F6BAF1ED289373EFD41DFB5FEF74347F063DCD",
+        "definition": {
+          "description": "编号范围间隔结构，功能模块的传输",
+          "tableClass": "INTTAB",
+          "baseTable": "",
+          "fields": [
+            {
+              "name": "SUBOBJECT",
+              "position": 1,
+              "dataElement": "NRSOBJ",
+              "description": "编号范围对象的子对象的值"
+            },
+            {
+              "name": "NRRANGENR",
+              "position": 2,
+              "dataElement": "NRNR",
+              "description": "序号区间编号"
+            },
+            {
+              "name": "TOYEAR",
+              "position": 3,
+              "dataElement": "NRYEAR",
+              "description": "到会计年度"
+            },
+            {
+              "name": "FROMNUMBER",
+              "position": 4,
+              "dataElement": "NRFROM",
+              "description": "起始号"
+            },
+            {
+              "name": "TONUMBER",
+              "position": 5,
+              "dataElement": "NRTO",
+              "description": "终止号"
+            },
+            {
+              "name": "NRLEVEL",
+              "position": 6,
+              "dataElement": "NRLEVEL",
+              "description": "编号范围状态"
+            },
+            {
+              "name": "EXTERNIND",
+              "position": 7,
+              "dataElement": "NRIND",
+              "description": "内部 (&#39; &#39;) 或 外部  (&#39;X&#39;) 编号范围的标志"
+            },
+            {
+              "name": "PROCIND",
+              "position": 8,
+              "dataElement": "PROCIND",
+              "description": "处理标记（I=插入，D=删除，U=更新，‘ ’=不修改）"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_ddic_structure",
+      "args": {
+        "objectName": "INRER"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "structure",
+        "objectName": "INRER",
+        "packageName": "SZN",
+        "version": "19970506190247",
+        "fingerprint": "a8a904524f7ad1de0365fa22f92134650f9feeacd2ec5b2fc8b5c52e643e6704",
+        "guardToken": "39ACB873436C8FD77F4B816525865B15ECEDF174",
+        "definition": {
+          "description": "编号范围更新函数模块的错误信息表",
+          "tableClass": "INTTAB",
+          "baseTable": "",
+          "fields": [
+            {
+              "name": "MSGNR",
+              "position": 1,
+              "dataElement": "MSGNR",
+              "description": "消息编号"
+            },
+            {
+              "name": "TABLENAME",
+              "position": 2,
+              "dataElement": "PARAMETER",
+              "description": "参数名称"
+            },
+            {
+              "name": "FIELDNAME",
+              "position": 3,
+              "dataElement": "FIELDNAME",
+              "description": "字段名"
+            },
+            {
+              "name": "TABIX",
+              "position": 4,
+              "dataElement": "NRTABIX",
+              "description": "错误行索引"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_ddic_domain",
+      "args": {
+        "objectName": "NUMC20"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectKind": "domain",
+        "objectName": "NUMC20",
+        "packageName": "SZN",
+        "version": "19920609124821",
+        "fingerprint": "ede35c77ca5120310e371bbaa1c122ad4fc55e73326a987b31a55cb9841ce405",
+        "definition": {
+          "description": "二十位数字字段，无检查",
+          "dataType": "NUMC",
+          "length": 20,
+          "outputLength": 20,
+          "decimals": 0,
+          "lowercase": false,
+          "signFlag": false,
+          "valueTable": "",
+          "conversionExit": "",
+          "fixedValues": []
+        }
+      }
+    }
+  ],
+  "schemas": [
+    {
+      "name": "read_ddic_structure",
+      "description": "Read one active SAP Dictionary structure, including component data elements, package, concurrency version, and SHA-256 definition fingerprint. An append structure is a structure whose tableClass is APPEND; for it the response also carries baseTable, the table it is attached to (empty for a plain structure). Read-only and allowed for customer or standard objects. A read that completes and finds nothing answers with status \"not-found\", exists false and authoritative true instead of failing, so a missing object is distinguishable from a broken helper; every other failure is still reported as an error.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string"
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "objectName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "read_abap_table",
+      "description": "Read a bounded single active transparent DDIC table with up to 1024 explicit columns or columns=[\"*\"] for all fields, and structured AND filters. For compatibility with existing Classic BAdI diagnostics, tableName=SXCI is an explicit repository projection rather than a physical DDIC table: it exposes EXIT_NAME, IMP_NAME, CLASS_NAME, and INTER_NAME through read_classic_badi_definition, and an EXIT_NAME EQ filter uses an exact definition read. A confirmed DDIC_OBJECT_NOT_FOUND result for every other name fails as TABLE_QUERY_TABLE_NOT_FOUND and never falls through to an RFC reader. No joins, aggregates, paging, sorting, client override or writes. ADT first; only known empty HTML permits fingerprint-verified RFC readers. If the ADT dictionary endpoint itself is unavailable, a fingerprint-verified RFC metadata path is limited to explicit <=512-character projections and character/date/time fields; when the legacy reader cannot supply whole-layout metadata or reports DATA_BUFFER_EXCEEDED, the separately fingerprint-verified aligned reader is tried once. Authorization failures never retry, and an aligned-reader failure closes the path. columns=[\"*\"], numeric, byte, deep and wide projections fail closed, and tableClassVerified=false makes the missing independent table-class proof explicit. Mixed flat layouts with ADT metadata support character, date, time and numeric text output; numeric values remain SAP strings without JavaScript precision loss. Filters and keys must be character-like; byte/deep projections are rejected, never omitted. Wide rows use <=512-character chunks joined by the entire DDIC primary key and two equal observations; changed/missing/duplicate rows or numeric overflow fail without partial data. Whole-row bounds and a 256-data-call budget apply; reduce maxRows if exceeded. Maximum 500 rows, ordering unspecified and snapshot=false. Authorization and SAP session client handling apply. tableName must be in the D5-2 allowlist (default deny); the allowed tables are ADMI_FILES, ADMI_RUN, AGR_1251, AGR_1252, AGR_PROF, AGR_TCODES, AGR_USERS, ALALERTDB, ARFCSSTATE, D010INC, DD01L, DD02L, DD03L, DD04L, DD07L, DD30L, DD30V, DD31S, DD31V, DD32P, DD32S, DD33S, DD33V, E070, E071, E07T, EDIDC, EDIDS, FPINTERFACE, FPINTERFACET, FPLAYOUT, FPLAYOUTT, SOST, STXH, STXL, STXSCHAR, STXSHEAD, STXSPARA, STXSTAB, SXCI, T000, T001, T001W, T002, T005, T005T, T006, T006A, TADIR, TBATG, TBTCO, TBTCP, TFDIR, TPFHT, TPFYPROPTY, TRFCQIN, TRFCQOUT, TRFCQSTATE, TSP01, TSP02, TSTC, TSTCT, USOBT, USOBT_C, USOBX, USOBX_C, UST04, UST10C, UST10S, VARID, VBHDR, ZTPMC_BZWL. Any other tableName fails as TABLE_NOT_ALLOWED before any SAP access, and the sensitive tables USR02, USR01, PA0001, PA0008, BSEG, CDHRS are never allowed. This bounded reader does not mean unrestricted native free-form querying is available.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,100}$"
+          },
+          "tableName": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,29}$"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/properties/tableName"
+                },
+                {
+                  "type": "string",
+                  "const": "*"
+                }
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 1024
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column": {
+                  "$ref": "#/properties/tableName"
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "EQ",
+                    "NE",
+                    "LT",
+                    "LE",
+                    "GT",
+                    "GE"
+                  ]
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "required": [
+                "column",
+                "operator",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 8,
+            "default": []
+          },
+          "maxRows": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "default": 100
+          }
+        },
+        "required": [
+          "connectionId",
+          "tableName",
+          "columns"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-04T10:21:05.436Z"
+}

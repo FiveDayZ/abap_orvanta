@@ -1,0 +1,14 @@
+{
+  "tool": "search_customer_exit_objects",
+  "arguments": {
+    "pattern": "V45A*",
+    "types": [
+      "SMOD",
+      "CMOD"
+    ],
+    "maxResultsPerType": 50,
+    "connectionId": "w200"
+  },
+  "isError": false,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"pattern\": \"V45A*\",\n  \"results\": [\n    {\n      \"requestedType\": \"SMOD\",\n      \"repositoryKind\": \"customer_exit_definition\",\n      \"status\": \"available\",\n      \"count\": 4,\n      \"objects\": [\n        {\n          \"name\": \"V45A0001\",\n          \"type\": \"SMOD/XE\",\n          \"description\": \"\",\n          \"package\": \"\",\n          \"systemType\": \"STANDARD\",\n          \"uri\": \"/sap/bc/adt/vit/wb/object_type/smodxe/object_name/V45A0001\"\n        },\n        {\n          \"name\": \"V45A0002\",\n          \"type\": \"SMOD/XE\",\n          \"description\": \"\",\n          \"package\": \"\",\n          \"systemType\": \"STANDARD\",\n          \"uri\": \"/sap/bc/adt/vit/wb/object_type/smodxe/object_name/V45A0002\"\n        },\n        {\n          \"name\": \"V45A0003\",\n          \"type\": \"SMOD/XE\",\n          \"description\": \"\",\n          \"package\": \"\",\n          \"systemType\": \"STANDARD\",\n          \"uri\": \"/sap/bc/adt/vit/wb/object_type/smodxe/object_name/V45A0003\"\n        },\n        {\n          \"name\": \"V45A0004\",\n          \"type\": \"SMOD/XE\",\n          \"description\": \"\",\n          \"package\": \"\",\n          \"systemType\": \"STANDARD\",\n          \"uri\": \"/sap/bc/adt/vit/wb/object_type/smodxe/object_name/V45A0004\"\n        }\n      ]\n    },\n    {\n      \"requestedType\": \"CMOD\",\n      \"repositoryKind\": \"customer_exit_project\",\n      \"status\": \"available\",\n      \"count\": 0,\n      \"objects\": []\n    }\n  ],\n  \"summary\": {\n    \"requestedTypeCount\": 2,\n    \"availableTypeCount\": 2,\n    \"unavailableTypeCount\": 0,\n    \"objectCount\": 4\n  },\n  \"coverage\": {\n    \"repositorySearchOnly\": true,\n    \"componentsInspected\": false,\n    \"projectAssignmentsInspected\": false,\n    \"activationStatusInspected\": false\n  }\n}"
+}

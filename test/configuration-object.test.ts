@@ -1,11 +1,19 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { describeConfigurationObject } from "../src/configuration-object.js"
+import {
+  describeConfigurationObject,
+  configurationUnitMaintenanceSources,
+  configurationUnitTextMaintenanceIncludes,
+  configurationUnitTextMaintenanceFunctions,
+  configurationUnitApiMaintenanceFunctions
+} from "../src/configuration-object.js"
+import { readFile } from "node:fs/promises"
 import { configurationImgReaders, findConfigurationActivities } from "../src/configuration-img.js"
 import { toolNamesForProfile } from "../src/tool-registry.js"
 import { toolContracts } from "../src/contracts.js"
 import { ToolService } from "../src/tools.js"
 import { MockBackend } from "./mock-backend.js"
+import { configurationUnitLayouts } from "../src/configuration-unit.js"
 
 // Synthetic metadata only; these values do not assert the target system's T001 definition.
 const input = { connectionId: "w200", objectName: "T001" }
@@ -82,6 +90,451 @@ const describe = (
   elements: (name: string) => Promise<unknown> = async (name) => element(name),
   domains: (name: string) => Promise<unknown> = async (name) => domain(name)
 ) => describeConfigurationObject(raw, "200", definition, types, elements, domains)
+
+async function maintenanceFixture(objectName: "T006" | "T006A" = "T006") {
+  const proof = JSON.parse(
+    await readFile(
+      new URL(
+        "../../docs/workspace-evidence/.doc/orvanta-configuration-maintenance-discovery-20261003-r15.json",
+        import.meta.url
+      ),
+      "utf8"
+    )
+  )
+  const img: Awaited<ReturnType<typeof findConfigurationActivities>> = JSON.parse(
+    proof.calls.find(
+      (c: { name: string; args: { objectName?: string } }) =>
+        c.name === "find_configuration_activities" && c.args.objectName === objectName
+    ).response
+  )
+  const raw = { ...input, objectName, includeImg: true, includeMaintenanceBoundary: true }
+  const source = async (name: string) => ({
+    connectionId: "w200",
+    objectName: name,
+    ...(configurationUnitMaintenanceSources[
+      name as keyof typeof configurationUnitMaintenanceSources
+    ] ??
+      configurationUnitTextMaintenanceIncludes[
+        name as keyof typeof configurationUnitTextMaintenanceIncludes
+      ])
+  })
+  const run = (
+    options: unknown = raw,
+    readSource: (name: string) => Promise<unknown> = source,
+    readImg = async () => img,
+    readFunction?: (name: string) => Promise<unknown>
+  ) =>
+    describeConfigurationObject(
+      options,
+      "200",
+      async () => ({ ...table(), objectName, fingerprint: configurationUnitLayouts[objectName] }),
+      async () => ({
+        ...metadata(),
+        data: metadata().data.map((v) => ({ ...v, TABNAME: objectName }))
+      }),
+      async (name) => element(name),
+      async (name) => domain(name),
+      readImg,
+      readSource,
+      readFunction
+    )
+  return { raw, img, source, run }
+}
+
+const textFunction = async (functionName: string) => {
+  const pin =
+    configurationUnitTextMaintenanceFunctions[
+      functionName as keyof typeof configurationUnitTextMaintenanceFunctions
+    ] ??
+    configurationUnitApiMaintenanceFunctions[
+      functionName as keyof typeof configurationUnitApiMaintenanceFunctions
+    ]
+  return {
+    connectionId: "w200",
+    functionName,
+    ...pin,
+    source: Array(pin.lineCount).fill("synthetic source")
+  }
+}
+
+test("API-only boundary binds CTS/lock candidates without treating them as an executable maintenance route", async () => {
+  const f = await maintenanceFixture("T006A"),
+    calls: string[] = [],
+    raw = { ...f.raw, includeTextMaintenanceBoundary: true, includeApiMaintenanceBoundary: true }
+  const r = await f.run(
+    raw,
+    f.source,
+    async () => f.img,
+    async (name) => {
+      calls.push(name)
+      return textFunction(name)
+    }
+  )
+  const b = r.maintenanceRoute
+  assert.ok("route" in b)
+  assert.equal(b.status, "source_attested")
+  assert.equal(b.evidence.functionReaderInvocations, 22)
+  assert.equal(b.evidence.functionReaderInvocationLimit, 22)
+  assert.equal(b.evidence.sourceReaderInvocations, 12)
+  assert.deepEqual(calls.slice(0, 11), calls.slice(11))
+  assert.equal(b.apiMaintenanceBoundary!.executionMode, "api_only")
+  assert.equal(b.apiMaintenanceBoundary!.functions.length, 5)
+  assert.equal(b.apiMaintenanceBoundary!.status, "customer_adapter_required")
+  assert.equal(b.apiMaintenanceBoundary!.guiAutomationAllowed, false)
+  assert.equal(b.apiMaintenanceBoundary!.directSqlAllowed, false)
+  assert.equal(b.apiMaintenanceBoundary!.atomicRollbackProved, false)
+  assert.equal(b.apiMaintenanceBoundary!.runtimeExecuted, false)
+  assert.equal(r.saveAvailable, false)
+  assert.equal(r.capabilities.apply, false)
+  const base = await f.run(
+    { ...raw, includeApiMaintenanceBoundary: false },
+    f.source,
+    async () => f.img,
+    textFunction
+  )
+  assert.ok("sourceFingerprint" in base.maintenanceRoute)
+  assert.notEqual(b.sourceFingerprint, base.maintenanceRoute.sourceFingerprint)
+  assert.notEqual(r.descriptorFingerprint, base.descriptorFingerprint)
+  assert.equal(base.maintenanceRoute.evidence.functionReaderInvocations, 12)
+  assert.equal(base.maintenanceRoute.apiMaintenanceBoundary, undefined)
+})
+
+test("every API candidate drift or read failure retracts the entire maintenance binding", async () => {
+  const f = await maintenanceFixture("T006A"),
+    raw = { ...f.raw, includeTextMaintenanceBoundary: true, includeApiMaintenanceBoundary: true }
+  for (const candidate of Object.keys(configurationUnitApiMaintenanceFunctions)) {
+    for (const mode of ["unreviewed", "changed", "unavailable"] as const) {
+      let reads = 0
+      const r = await f.run(
+        raw,
+        f.source,
+        async () => f.img,
+        async (name) => {
+          const value = await textFunction(name)
+          if (name !== candidate) return value
+          reads++
+          if (mode === "unavailable" && reads === 2) throw Error("read failed")
+          return {
+            ...value,
+            ...(mode === "unreviewed" || reads === 2 ? { sourceFingerprint: "0".repeat(64) } : {})
+          }
+        }
+      )
+      const b = r.maintenanceRoute
+      assert.ok("route" in b)
+      assert.equal(b.status, mode)
+      assert.equal(b.failedFunction, candidate)
+      assert.equal(b.apiMaintenanceBoundary, null)
+      assert.equal(b.textMaintenanceBoundary, null)
+      assert.equal(b.sources, null)
+      assert.equal(b.sourceFingerprint, null)
+      assert.equal(b.route, null)
+      assert.ok(b.evidence.functionReaderInvocations! <= 22)
+    }
+  }
+})
+
+test("API boundary rejects missing text boundary and unsupported scope before any SAP read", async () => {
+  const never = async () => assert.fail("invalid API options must not read SAP")
+  for (const raw of [
+    { ...input, includeApiMaintenanceBoundary: true },
+    {
+      ...input,
+      objectName: "T006",
+      includeImg: true,
+      includeMaintenanceBoundary: true,
+      includeTextMaintenanceBoundary: true,
+      includeApiMaintenanceBoundary: true
+    },
+    {
+      ...input,
+      objectName: "T006A",
+      connectionId: "w300",
+      includeImg: true,
+      includeMaintenanceBoundary: true,
+      includeTextMaintenanceBoundary: true,
+      includeApiMaintenanceBoundary: true
+    },
+    { ...input, objectName: "T006A", includeImg: true, includeApiMaintenanceBoundary: "true" }
+  ])
+    await assert.rejects(describeConfigurationObject(raw, "200", never, never, never, never))
+})
+
+test("text maintenance binds translation screens, full-row update modes and dialog CTS without authorizing calls", async () => {
+  const f = await maintenanceFixture("T006A"),
+    calls: string[] = []
+  const r = await f.run(
+    { ...f.raw, includeTextMaintenanceBoundary: true },
+    f.source,
+    async () => f.img,
+    async (name) => {
+      calls.push(name)
+      return textFunction(name)
+    }
+  )
+  const b = r.maintenanceRoute
+  assert.ok("route" in b)
+  assert.equal(b.status, "source_attested")
+  assert.equal(b.sources!.length, 6)
+  assert.equal(b.evidence.sourceReaderInvocations, 12)
+  assert.equal(b.evidence.functionReaderInvocations, 12)
+  assert.deepEqual(calls.slice(0, 6), calls.slice(6))
+  assert.equal(
+    b.textMaintenanceBoundary!.functions.find((v) => v.functionName === "UPDATE_T006A")!.updateTask,
+    true
+  )
+  assert.equal(
+    b.textMaintenanceBoundary!.functions.find((v) => v.functionName === "INSERT_T006A")!
+      .updateTaskMode,
+    "1"
+  )
+  assert.equal(b.textMaintenanceBoundary!.translation.screen, "1000")
+  assert.equal(b.textMaintenanceBoundary!.persistence.input, "full_T006A_rows")
+  assert.equal(b.textMaintenanceBoundary!.cts.withDialog, "X")
+  assert.equal(b.executable, false)
+  assert.equal(r.saveAvailable, false)
+})
+
+test("text maintenance withholds all binding facts for wrong function mode/source or failed confirmations", async () => {
+  const f = await maintenanceFixture("T006A"),
+    raw = { ...f.raw, includeTextMaintenanceBoundary: true }
+  for (const patch of [
+    { connectionId: "w300" },
+    { functionName: "OTHER" },
+    { remoteEnabled: true },
+    { sourceFingerprint: "0".repeat(64) },
+    { interfaceFingerprint: "0".repeat(64) },
+    { source: [] },
+    { updateTaskMode: "X" },
+    { updateTask: true }
+  ]) {
+    const r = await f.run(
+      raw,
+      f.source,
+      async () => f.img,
+      async (name) => ({ ...(await textFunction(name)), ...patch })
+    )
+    const b = r.maintenanceRoute
+    assert.ok("route" in b)
+    assert.equal(b.status, "unreviewed")
+    assert.equal(b.sources, null)
+    assert.equal(b.route, null)
+    assert.equal(b.textMaintenanceBoundary, null)
+    assert.equal(b.sourceFingerprint, null)
+  }
+  for (const mode of ["changed", "unavailable"]) {
+    let reads = 0
+    const r = await f.run(
+      raw,
+      f.source,
+      async () => f.img,
+      async (name) => {
+        reads++
+        if (reads === 7 && mode === "unavailable") throw Error("unavailable")
+        return {
+          ...(await textFunction(name)),
+          ...(reads === 7 ? { sourceFingerprint: "0".repeat(64) } : {})
+        }
+      }
+    )
+    const b = r.maintenanceRoute
+    assert.ok("route" in b)
+    assert.equal(b.status, mode)
+    assert.equal(b.textMaintenanceBoundary, null)
+  }
+  const noReader = await f.run(raw)
+  assert.equal(noReader.maintenanceRoute.status, "unavailable")
+  await assert.rejects(
+    f.run({ ...raw, includeMaintenanceBoundary: false }),
+    /TEXT_MAINTENANCE_SCOPE_UNSUPPORTED/
+  )
+  await assert.rejects(
+    (await maintenanceFixture()).run({ ...raw, objectName: "T006" }),
+    /TEXT_MAINTENANCE_SCOPE_UNSUPPORTED/
+  )
+})
+
+test("unit SAVE audit binds only the observed transaction mapping and rechecked dialog sources", async () => {
+  const f = await maintenanceFixture(),
+    names: string[] = []
+  let imgReads = 0
+  const r = await f.run(
+    f.raw,
+    async (name) => {
+      names.push(name)
+      return f.source(name)
+    },
+    async () => {
+      imgReads++
+      return f.img
+    }
+  )
+  const b = r.maintenanceRoute
+  assert.ok("route" in b)
+  assert.equal(b.status, "source_attested")
+  assert.equal(b.route!.transaction, "CUNI")
+  assert.equal(b.route!.program, "SAPMUNIT")
+  assert.equal(b.route!.kind, "dialog_module_pool")
+  assert.equal(b.sources!.length, 5)
+  assert.equal(names.length, 10)
+  assert.deepEqual(names.slice(0, 5), names.slice(5))
+  assert.equal(imgReads, 2)
+  assert.equal(b.evidence.mappingRechecked, true)
+  assert.equal(b.executable, false)
+  assert.equal(b.coverage.bcSetRouteBound, false)
+  assert.equal(b.coverage.atomicRollbackProved, false)
+  assert.equal(r.capabilities.apply, false)
+  assert.equal(r.saveAvailable, false)
+  let reads = 0
+  const legacy = await f.run({ ...f.raw, includeMaintenanceBoundary: false }, async (name) => {
+    reads++
+    return f.source(name)
+  })
+  assert.equal(reads, 0)
+  assert.equal(legacy.maintenanceRoute.status, "unknown")
+})
+
+test("unit SAVE evidence fails closed on source identity, truncation, drift, failures and mapping changes", async () => {
+  const f = await maintenanceFixture()
+  for (const patch of [
+    { connectionId: "w300" },
+    { objectName: "OTHER" },
+    { sourceUri: "/other" },
+    { sourceFingerprint: "0".repeat(64) },
+    { lineCount: 1 }
+  ]) {
+    const r = await f.run(f.raw, async (name) => ({ ...(await f.source(name)), ...patch }))
+    const b = r.maintenanceRoute
+    assert.ok("route" in b)
+    assert.equal(b.status, "unreviewed")
+    assert.equal(b.route, null)
+    assert.equal(b.observations, null)
+    assert.equal(b.sourceFingerprint, null)
+    assert.equal(b.evidence.sourceReaderInvocations, 1)
+  }
+  for (const mode of ["changed", "unavailable"]) {
+    let reads = 0
+    const r = await f.run(f.raw, async (name) => {
+      reads++
+      if (reads === 6 && mode === "unavailable") throw Error("unavailable")
+      return {
+        ...(await f.source(name)),
+        ...(reads === 6 ? { sourceFingerprint: "0".repeat(64) } : {})
+      }
+    })
+    const b = r.maintenanceRoute
+    assert.ok("route" in b)
+    assert.equal(b.status, mode)
+    assert.equal(b.sources, null)
+    assert.equal(b.mappingFingerprint, null)
+    assert.equal(b.evidence.sourcesRechecked, false)
+  }
+  let calls = 0
+  const drift = await f.run(f.raw, f.source, async () => {
+    calls++
+    return { ...f.img, ...(calls === 2 ? { definitionFingerprint: "b".repeat(64) } : {}) }
+  })
+  assert.equal(drift.maintenanceRoute.status, "changed")
+  for (const img of [
+    { ...f.img, truncated: true },
+    { ...f.img, maintenanceObjects: [] },
+    {
+      ...f.img,
+      lookups: f.img.lookups.map((v) => ({ ...v, transaction: { TCODE: "CUNI", PGMNA: "OTHER" } }))
+    }
+  ]) {
+    let reads = 0
+    const r = await f.run(
+      f.raw,
+      async (name) => {
+        reads++
+        return f.source(name)
+      },
+      async () => img
+    )
+    assert.equal(r.maintenanceRoute.status, "mapping_unresolved")
+    assert.equal(reads, 0)
+  }
+})
+
+test("unit SAVE audit rejects unscoped or hidden execution inputs before reading SAP", async () => {
+  const never = async () => assert.fail("invalid scope must not read SAP")
+  for (const raw of [
+    { ...input, includeMaintenanceBoundary: true },
+    {
+      connectionId: "w300",
+      objectName: "T006",
+      includeImg: true,
+      includeMaintenanceBoundary: true
+    },
+    { ...input, includeImg: true, includeMaintenanceBoundary: true },
+    { ...input, includeMaintenanceBoundary: "true" },
+    { ...input, execute: true }
+  ])
+    await assert.rejects(describeConfigurationObject(raw, "200", never, never, never, never))
+})
+
+test("unit value route requires the reviewed layout, exact keys and client", async () => {
+  const names = ["MANDT", "SPRAS", "MSEHI", "MSEH3", "MSEH6", "MSEHT", "MSEHL"]
+  const lengths = [3, 1, 3, 3, 6, 10, 30]
+  const definition = async () => ({
+    ...table(),
+    objectName: "T006A",
+    fingerprint: configurationUnitLayouts.T006A,
+    definition: {
+      ...table().definition,
+      fields: names.map((name, i) => field(name, i + 1, i < 3, ""))
+    }
+  })
+  const types = async () => ({
+    ...metadata(),
+    returnedCount: names.length,
+    data: names.map((name, i) => ({
+      TABNAME: "T006A",
+      AS4LOCAL: "A",
+      FIELDNAME: name,
+      DATATYPE: ["CLNT", "LANG", "UNIT"][i] ?? "CHAR",
+      LENG: String(lengths[i]),
+      DECIMALS: "0"
+    }))
+  })
+  for (const [client, fingerprint, keyChange, expected] of [
+    ["200", configurationUnitLayouts.T006A, false, true],
+    ["100", configurationUnitLayouts.T006A, false, false],
+    ["200", hash, false, false],
+    ["200", configurationUnitLayouts.T006A, true, false]
+  ] as const) {
+    const result = await describeConfigurationObject(
+      { connectionId: "w200", objectName: "T006A" },
+      client,
+      async () => {
+        const value = await definition()
+        return {
+          ...value,
+          fingerprint,
+          definition: {
+            ...value.definition,
+            fields: value.definition.fields.map((f) => ({
+              ...f,
+              key: keyChange && f.name === "MSEHI" ? false : f.key
+            }))
+          }
+        }
+      },
+      types,
+      async (name) => element(name),
+      async (name) => domain(name)
+    )
+    assert.equal(result.capabilities.readValues, expected)
+    assert.equal(result.capabilities.apply, false)
+    assert.equal(result.saveAvailable, false)
+    if (expected) {
+      assert.equal(result.valueRead.tool, "read_configuration_unit")
+      assert.equal(result.valueRead.textDraft?.tool, "preview_configuration_unit_text")
+      assert.equal(result.valueRead.textDraft?.executable, false)
+    }
+  }
+})
 
 test("descriptor IMG attachment is opt-in, scoped, fingerprinted and cannot grant maintenance", async () => {
   const unit = { ...input, objectName: "T006" }

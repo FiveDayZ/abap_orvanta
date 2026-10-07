@@ -1,0 +1,391 @@
+{
+  "at": "2026-10-05T10:51:38+08:00",
+  "status": "Review Only",
+  "configurationWrites": 0,
+  "routeEvidence": ".doc/orvanta-configuration-bc-route-acceptance-20261005-r47.json",
+  "metadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+  "object": {
+    "name": "CUNI",
+    "type": "T",
+    "transportType": "TDAT"
+  },
+  "members": [
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "X",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006A",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006B",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006C",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006D",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "X",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006I",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "X",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006J",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006T",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    },
+    {
+      "OBJECTNAME": "CUNI",
+      "OBJECTTYPE": "T",
+      "TABNAME": "T006_OIB",
+      "COVER": "",
+      "CANDIDATE": "",
+      "DDIC": "",
+      "PRIM_TABLE": "",
+      "VIEWGRANT": "",
+      "TAB_FILLED": ""
+    }
+  ],
+  "methods": [],
+  "memberDdic": {
+    "at": "2026-10-05T02:41:22.425Z",
+    "connectionId": "w200",
+    "configurationWrites": 0,
+    "routeMetadataVersion": "b9f1b672cc742718e967dff5f48d545bd8dbdbee58ed13cd9204e0e366211d6d",
+    "calls": [
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006I"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006I",
+          "packageName": "SZME",
+          "version": "19960404123728",
+          "fingerprint": "cb0bff534a1644ff32d10d071c5b4753fe584487720a9f4cfb6b61edc5e88644",
+          "definition": {
+            "description": "计量单位的 ISO 代码",
+            "tableClass": "TRANSP",
+            "deliveryClass": "G",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL0",
+            "buffering": "full",
+            "genericKeyFields": 0,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "CLIENT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "ISOCODE",
+                "position": 2,
+                "dataElement": "ISOCD_UNIT",
+                "description": "计量单位的 ISO 代码",
+                "key": true,
+                "notNull": true
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006J"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006J",
+          "packageName": "SZME",
+          "version": "20031107102810",
+          "fingerprint": "f90e52e900704080f4c37351b5147ec0711eeeb36ba473b9a3e663e6a78eaeb0",
+          "definition": {
+            "description": "ISO 测量文本单位码",
+            "tableClass": "TRANSP",
+            "deliveryClass": "G",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL0",
+            "buffering": "full",
+            "genericKeyFields": 0,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "CLIENT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "LANGU",
+                "position": 2,
+                "dataElement": "SPRAS",
+                "description": "语言代码",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "ISOCODE",
+                "position": 3,
+                "dataElement": "ISOCD_UNIT",
+                "description": "计量单位的 ISO 代码",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "ISOTXT",
+                "position": 4,
+                "dataElement": "ISOCD_TEXT",
+                "description": "度量单位名称的 ISO 代码",
+                "key": false,
+                "notNull": false
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006T"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006T",
+          "packageName": "SZME",
+          "version": "20031107102810",
+          "fingerprint": "1f44b60866c9c9b181f4a4a8147c74d6212fd0fb2fc5ac7b6e20447790ba21b0",
+          "definition": {
+            "description": "维数文本",
+            "tableClass": "TRANSP",
+            "deliveryClass": "C",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL2",
+            "buffering": "generic",
+            "genericKeyFields": 2,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "MANDT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "SPRAS",
+                "position": 2,
+                "dataElement": "SPRAS",
+                "description": "语言代码",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "DIMID",
+                "position": 3,
+                "dataElement": "DIMID",
+                "description": "标注键",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "TXDIM",
+                "position": 4,
+                "dataElement": "TXDIM",
+                "description": "计量单位文本",
+                "key": false,
+                "notNull": false
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "read_ddic_transparent_table",
+        "args": {
+          "connectionId": "w200",
+          "objectName": "T006_OIB"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "objectKind": "transparentTable",
+          "objectName": "T006_OIB",
+          "packageName": "SZME",
+          "version": "20031106185646",
+          "fingerprint": "c6cbe2e2de45048f2f380bac738e8ad33400cd69506d74529d410f791674e4d6",
+          "definition": {
+            "description": "Units of Measurement, Additional Definitions",
+            "tableClass": "TRANSP",
+            "deliveryClass": "C",
+            "dataBrowserMaintenance": "notAllowed",
+            "sizeCategory": 0,
+            "dataClass": "APPL2",
+            "buffering": "generic",
+            "genericKeyFields": 1,
+            "logDataChanges": true,
+            "fields": [
+              {
+                "name": "MANDT",
+                "position": 1,
+                "dataElement": "MANDT",
+                "description": "客户端",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "MSEHI",
+                "position": 2,
+                "dataElement": "MSEHI",
+                "description": "度量单位",
+                "key": true,
+                "notNull": true
+              },
+              {
+                "name": "PRES_VALUE",
+                "position": 3,
+                "dataElement": "PRESS_VAL",
+                "description": "压力值",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "PRES_UNIT",
+                "position": 4,
+                "dataElement": "PRESS_UNIT",
+                "description": "压力单位",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_PRES",
+                "position": 5,
+                "dataElement": "OIB_BPRESH",
+                "description": "用于燃烧的天然气基本压力值（热值）",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_PRES_UNIT",
+                "position": 6,
+                "dataElement": "PRESS_UNIT",
+                "description": "压力单位",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_TEMP",
+                "position": 7,
+                "dataElement": "OIB_BSTMPH",
+                "description": "燃烧的天然气基本温度（热值）",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "COMB_TEMP_UNIT",
+                "position": 8,
+                "dataElement": "TEMP_UNIT",
+                "description": "温度单元",
+                "key": false,
+                "notNull": false
+              },
+              {
+                "name": "HVALUE_CLASS",
+                "position": 9,
+                "dataElement": "OIB_HVCLS",
+                "description": "热值类别 (卡路里值类别)",
+                "key": false,
+                "notNull": false
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "limit": "Four extra member DDIC definitions only; values, full nine-table protection, activation, CTS and recovery are not verified."
+}

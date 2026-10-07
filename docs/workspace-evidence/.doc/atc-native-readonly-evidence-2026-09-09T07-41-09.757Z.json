@@ -1,0 +1,131 @@
+{
+  "startedAt": "2026-09-09T07:41:09.757Z",
+  "connectionId": "w200",
+  "scope": "read-only native ATC implementation and capability diagnosis; no run or configuration change",
+  "checks": [
+    {
+      "name": "get_sap_system_info",
+      "args": {
+        "connectionId": "w200",
+        "includeComponents": false
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "SAP System: W200\n- Status: ok\n- Type: ECC\n- Release: 731\n- Client: 200 (DEVE - Development Client)\n- Timezone: UTC+8 (UTC+08), UTC+8 (standard time)\n{\n  \"status\": \"ok\",\n  \"connectionId\": \"w200\",\n  \"configuredClient\": \"200\",\n  \"readOnly\": true,\n  \"sapRelease\": \"731\",\n  \"releaseSource\": \"CVERS.SAP_BASIS.RELEASE\",\n  \"systemType\": \"ECC\",\n  \"currentClient\": {\n    \"clientNumber\": \"200\",\n    \"clientName\": \"DEVE - Development Client\",\n    \"category\": \"Customizing\",\n    \"logicalSystem\": \"GR2CLNT200\",\n    \"changeProtection\": \"Changes to Repository and cross-client Customizing allowed\",\n    \"categoryCode\": \"C\",\n    \"changeProtectionCode\": \"\",\n    \"changeProtectionScope\": \"Repository and cross-client Customizing\"\n  },\n  \"softwareComponents\": [],\n  \"componentsComplete\": true,\n  \"timezone\": {\n    \"timezone\": \"UTC+8\",\n    \"description\": \"UTC+08\",\n    \"utcOffset\": \"UTC+8\",\n    \"dstRule\": \"NONE\",\n    \"rawOffset\": \"P0800\",\n    \"offsetKind\": \"standard_time\"\n  },\n  \"sources\": [\n    {\n      \"table\": \"T000\",\n      \"status\": \"ok\",\n      \"method\": \"rfc_read_table\",\n      \"returnedCount\": 1,\n      \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n    },\n    {\n      \"table\": \"CVERS\",\n      \"status\": \"ok\",\n      \"method\": \"rfc_read_table\",\n      \"returnedCount\": 114,\n      \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n    },\n    {\n      \"table\": \"TTZCU\",\n      \"status\": \"ok\",\n      \"method\": \"rfc_read_table\",\n      \"returnedCount\": 1,\n      \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n    },\n    {\n      \"table\": \"TTZZ\",\n      \"status\": \"ok\",\n      \"method\": \"rfc_read_table\",\n      \"returnedCount\": 1,\n      \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n    },\n    {\n      \"table\": \"TTZR\",\n      \"status\": \"ok\",\n      \"method\": \"rfc_read_table\",\n      \"returnedCount\": 1,\n      \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n    },\n    {\n      \"table\": \"TTZZT\",\n      \"status\": \"ok\",\n      \"method\": \"rfc_read_table\",\n      \"returnedCount\": 1,\n      \"nativeCode\": \"SAP_DATA_QUERY_RESPONSE_INVALID\"\n    }\n  ],\n  \"queryTimestamp\": \"2026-09-09T07:41:10.421Z\",\n  \"queryWarnings\": [],\n  \"componentsIncluded\": false\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_SATC_ADT_RES_APP",
+        "objectType": "CLAS",
+        "startLine": 1,
+        "lineCount": 150
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from CL_SATC_ADT_RES_APP (lines 1-53 of 53, 53 lines retrieved):\n\n```abap\nclass CL_SATC_ADT_RES_APP definition\r\n  public\r\n  inheriting from cl_adt_disc_res_app_base\r\n  final\r\n  create public .\r\n\r\npublic section.\r\n\r\n  constants co_scheme type string value 'http://www.sap.com/adt/categories/atc' ##NO_TEXT .\r\n\r\n  protected section.\r\n    methods:\r\n      get_application_title redefinition,\r\n      register_resources    redefinition.\r\n\r\n  private section.\r\nENDCLASS.\r\n\r\n\r\n\r\nCLASS CL_SATC_ADT_RES_APP IMPLEMENTATION.\r\n\r\n\r\n  method get_application_title.\r\n    result = 'ABAP Test Cockpit' ##no_text .\r\n  endmethod.\r\n\r\n\r\n  method register_resources.\r\n    if ( abap_False eq cl_Satc_Permission_Control=>is_Enabled_In_System( ) or\r\n         abap_False eq cl_Satc_Permission_Control=>is_Authorized_To_Use_Ide( ) ).\r\n      return.\r\n    endif.\r\n\r\n    if ( abap_False eq cl_Satc_Permission_Control=>is_Sap_System( ) ).\r\n      return.\r\n    endif.\r\n\r\n    registry->register_discoverable_resource(\r\n      exporting\r\n        url             = cl_satc_adt_res_atc_run=>co_namespace          \"/atc/runs\r\n        handler_class   = cl_satc_adt_res_atc_run=>co_class_name  \"CL_SATC_ADT_RES_ATC_RUN\r\n        description     = 'ATC runs' ##no_text\r\n        category_scheme = co_scheme\r\n        category_term   = 'atcruns' ).\r\n\r\n    registry->register_resource(\r\n      exporting\r\n        template        = cl_satc_adt_res_verdicts=>co_namespace          \"/atc/feeds/verdicts\r\n        handler_class   = cl_satc_adt_res_verdicts=>co_class_name ). \"CL_SATC_ADT_RES_VERDICTS\r\n\r\n  endmethod.\r\nENDCLASS.\n```\n\nFull Source SHA-256: 677fcecac996c7138ecaafecc05203493a4dd1558d3152e92718adee9abd1909\nURI: /sap/bc/adt/oo/classes/cl_satc_adt_res_app/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_SATC_PERMISSION_CONTROL",
+        "objectType": "CLAS",
+        "startLine": 1,
+        "lineCount": 150
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from CL_SATC_PERMISSION_CONTROL (lines 1-123 of 123, 123 lines retrieved):\n\n```abap\nclass CL_SATC_PERMISSION_CONTROL definition\r\n  public\r\n  final\r\n  create private .\r\n\r\npublic section.\r\n\r\n  type-pools ABAP .\r\n  class-methods IS_SAP_SYSTEM\r\n    returning\r\n      value(RESULT) type ABAP_BOOL .\r\n  class-methods IS_PRODUCTIVE_CUSTOMER_CLIENT\r\n    returning\r\n      value(RESULT) type ABAP_BOOL .\r\n  class-methods IS_AUTHORIZED_TO_USE_IDE\r\n    importing\r\n      !OBJ_TYPE type TROBJTYPE optional\r\n      !OBJ_NAME type CSEQUENCE optional\r\n    returning\r\n      value(RESULT) type ABAP_BOOL .\r\n  class-methods IS_ENABLED_IN_SYSTEM\r\n    returning\r\n      value(RESULT) type ABAP_BOOL .\r\n*\"* protected components of class CL_SAUNIT_MISC_TOOLS\r\n*\"* do not include other source files here!!!\r\nprotected section.\r\nprivate section.\r\n*\"* private components of class CL_SATC_PERMISSION_CONTROL\r\n*\"* do not include other source files here!!!\r\n\r\n  class-data __FG_IS_SAP_SYSTEM type ABAP_BOOL value 'I'. \"#EC NOTEXT .\r\n  class-data __FG_IS_TEST_ENABLED type ABAP_BOOL value 'I'. \"#EC NOTEXT .\r\n  class-data __FG_IS_PRODUCTIVE_CLIENT type ABAP_BOOL value 'I'. \"#EC NOTEXT .\r\nENDCLASS.\r\n\r\n\r\n\r\nCLASS CL_SATC_PERMISSION_CONTROL IMPLEMENTATION.\r\n\r\n\r\nmethod IS_AUTHORIZED_TO_USE_IDE.\r\n  if ( obj_Type is initial or obj_Name is initial ).\r\n    authority-check object 'S_DEVELOP'\r\n      id 'DEVCLASS' dummy\r\n      id 'OBJTYPE'  field obj_Type\r\n      id 'OBJNAME'  field obj_Name\r\n      id 'P_GROUP'  dummy\r\n      id 'ACTVT'    field '03'.            \" display\r\n  else.\r\n    authority-check object 'S_DEVELOP'\r\n      id 'DEVCLASS' dummy\r\n      id 'OBJNAME'  dummy\r\n      id 'OBJTYPE'  dummy\r\n      id 'P_GROUP'  dummy\r\n      id 'ACTVT'    field '03'.            \" display would be fine\r\n  endif.\r\n  if ( 0 ne sy-subrc ).\r\n    result = abap_False.\r\n  else.\r\n    result = abap_True.\r\n  endif.\r\n\r\nendmethod.\r\n\r\n\r\nmethod IS_ENABLED_IN_SYSTEM .\r\n  result = is_Sap_System( ).\r\n\r\nendmethod.\r\n\r\n\r\nmethod is_Productive_Customer_Client .\r\n  data:\r\n    clt_Category   type t000-cccategory.\r\n\r\n  \" check cache\r\n  if ( 'I' ne __Fg_Is_Productive_Client ).\r\n    result = __Fg_Is_Productive_Client.\r\n    return.\r\n  endif.\r\n\r\n  \" SAP internal systems are always test enabled\r\n  if ( abap_True eq is_Sap_System( ) ).\r\n    result = __Fg_Is_Productive_Client = abap_False.\r\n    return.\r\n  endif.\r\n\r\n  \" deny tests for productive and reference systems !!\r\n  select single\r\n    cccategory\r\n    from t000 client specified\r\n    into\r\n      clt_Category\r\n    where\r\n      mandt = sy-mandt.\r\n\r\n  if ( 0 eq sy-subrc        and       \" client configurated\r\n       (\r\n         'P' eq clt_Category  or      \" (P)roductive\r\n         'S' eq clt_Category          \" (S)AP Reference System\r\n      ) ).\r\n    result = __Fg_Is_Productive_Client = abap_True.\r\n  else.\r\n    result = __Fg_Is_Productive_Client = abap_False.\r\n  endif.\r\n\r\nendmethod.\r\n\r\n\r\nmethod is_Sap_System .\r\n  \" result already known ?\r\n  case __Fg_Is_Sap_System.\r\n    when abap_True or abap_False.\r\n      result = __Fg_Is_Sap_System.\r\n      return.\r\n    when others.\r\n      \" not known\r\n  endcase.\r\n\r\n  result = __Fg_Is_Sap_System = lcl_Obfuscate=>is_Sap_System( ).\r\n\r\nendmethod.\r\nENDCLASS.\n```\n\nFull Source SHA-256: ed66a358de81a434dbc234aa74e2a312d11c76c44295d8f6bb8c72e8e2048b56\nURI: /sap/bc/adt/oo/classes/cl_satc_permission_control/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_SATC_ADT_CH_FACTORY",
+        "objectType": "CLAS",
+        "startLine": 1,
+        "lineCount": 150
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Source from CL_SATC_ADT_CH_FACTORY (lines 1-84 of 84, 84 lines retrieved):\n\n```abap\nclass cl_satc_adt_ch_factory definition public final create private .\r\n\r\n  public section.\r\n    constants:\r\n      begin of c_exemption_type,\r\n        no type string value 'no',\r\n        db type string value 'db',\r\n        source type string value 'source',\r\n      end of c_exemption_type.\r\n    types:\r\n      begin of ty_atc_option,\r\n        name type string,\r\n        value type string,\r\n      end of ty_atc_option,\r\n      begin of ty_atc_object_set,\r\n        kind type string,\r\n        options type standard table of ty_atc_option with default key,\r\n        object_references type if_adt_tools_core_types=>ty_object_references,\r\n      end of ty_atc_object_set,\r\n      begin of ty_atc_run_request,\r\n        maximum_verdicts type i,\r\n        with_db_exemptions type xsdboolean,\r\n        object_sets type standard table of ty_atc_object_set with default key,\r\n      end of ty_atc_run_request,\r\n\r\n    begin of ty_atc_object_attributes.\r\n            include type if_adt_tools_core_types=>ty_object_reference as object_reference.\r\n    types:\r\n      author type string,\r\n    end of ty_atc_object_attributes,\r\n\r\n    begin of ty_atc_verdict.\r\n      include type if_adt_tools_core_types=>ty_object_reference as verdict_id.\r\n    types:\r\n      check_title type string,\r\n      message_title type string,\r\n      priority type i,\r\n      object_attributes type ty_atc_object_attributes,\r\n      docu_atom_link type if_atom_types=>link_s,\r\n      exemption_type type string,\r\n    end of ty_atc_verdict,\r\n\r\n    begin of ty_atc_info,\r\n      description type string,\r\n      type        type string,\r\n    end of ty_atc_info,\r\n\r\n\r\n    begin of ty_atc_run_response,\r\n      number_of_verdicts type i.\r\n      include type if_adt_tools_core_types=>ty_object_reference as result_id.\r\n    types:\r\n      verdicts  type standard table of ty_atc_verdict with default key,\r\n      infos     type standard table of ty_atc_info with default key,\r\n    end of ty_atc_run_response.\r\n\r\n    class-methods:\r\n      create_atc_run_req_ch\r\n        returning value(result) type ref to if_adt_rest_content_handler,\r\n      create_atc_run_res_ch\r\n        returning value(result) type ref to if_adt_rest_content_handler.\r\n\r\n  private section.\r\n    constants:\r\n      co_st_name_atc_run_req type string value 'SATC_RUN_REQ',\r\n      co_st_root_atc_run_req type string value 'ATC_RUN_REQ',\r\n      co_st_name_atc_run_res type string value 'SATC_RUN_RES',\r\n      co_st_root_atc_run_res type string value 'ATC_RUN_RES'.\r\nENDCLASS.\r\n\r\n\r\n\r\nCLASS CL_SATC_ADT_CH_FACTORY IMPLEMENTATION.\r\n\r\n\r\n  method create_atc_run_req_ch.\r\n    result = cl_adt_rest_st_handler=>create_instance( st_name = co_st_name_atc_run_req root_name = co_st_root_atc_run_req ).\r\n  endmethod.\r\n\r\n\r\n  method create_atc_run_res_ch.\r\n    result = cl_adt_rest_st_handler=>create_instance( st_name = co_st_name_atc_run_res root_name = co_st_root_atc_run_res ).\r\n  endmethod.\r\nENDCLASS.\n```\n\nFull Source SHA-256: 50d54705ff8ddeb7637755a6d7c80b33f7a8ae65af36163964abea7308592554\nURI: /sap/bc/adt/oo/classes/cl_satc_adt_ch_factory/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_SATC_ADT_RES_ATC_RUN",
+        "objectType": "CLAS",
+        "methodName": "EXECUTE_ATC_RUN"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Method EXECUTE_ATC_RUN from class CL_SATC_ADT_RES_ATC_RUN (lines 349-384 of 639, 36 method lines):\n\n```abap\n  method execute_atc_run.\r\n    data:\r\n      r3tr_keys    type satc_t_r3tr_keys,\r\n      check_ids    type satc_t_ids,\r\n      atc_project  type ref to if_satc_md_project,\r\n      execution_id type satc_d_id.\r\n\r\n    get_r3tr_keys(\r\n      exporting\r\n        atc_request = atc_request\r\n      importing\r\n        r3tr_keys   = r3tr_keys  ).\r\n\r\n    get_standard_check_ids( importing check_ids = check_ids ).\r\n\r\n    atc_project = me->build_atc_project(\r\n      r3tr_keys = r3tr_keys\r\n      check_ids = check_ids ).\r\n\r\n    execute_atc_project(\r\n      exporting\r\n        atc_project = atc_project\r\n      importing\r\n        execution_id = execution_id ).\r\n\r\n    atc_response = me->retrieve_atc_results(\r\n      execution_id = execution_id\r\n      atc_request  = atc_request ).\r\n\r\n    add_additional_info(\r\n      exporting\r\n        r3tr_keys = r3tr_keys\r\n      changing\r\n        atc_response = atc_response ).\r\n\r\n  endmethod.\r\n```\n\nFull Source SHA-256: a7ad985d4908a48dd472979f832cc0258e57986fb658200b67f3532e88800d43\nURI: /sap/bc/adt/oo/classes/cl_satc_adt_res_atc_run/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_SATC_ADT_RES_ATC_RUN",
+        "objectType": "CLAS",
+        "methodName": "POST"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Method POST from class CL_SATC_ADT_RES_ATC_RUN (lines 569-588 of 639, 20 method lines):\n\n```abap\n  method post.\r\n* ===========\r\n    data:\r\n      atc_run_request  type cl_satc_adt_ch_factory=>ty_atc_run_request,\r\n      atc_run_response type cl_satc_adt_ch_factory=>ty_atc_run_response.\r\n\r\n    request->get_body_data(\r\n      exporting\r\n        content_handler = cl_satc_adt_ch_factory=>create_atc_run_req_ch( )\r\n      importing\r\n        data             = atc_run_request ).\r\n\r\n    execute_atc_run( exporting atc_request = atc_run_request\r\n                     importing atc_response = atc_run_response ).\r\n\r\n    response->set_body_data(\r\n        data            = atc_run_response\r\n        content_handler = cl_satc_adt_ch_factory=>create_atc_run_res_ch( ) ).\r\n\r\n  endmethod.\r\n```\n\nFull Source SHA-256: a7ad985d4908a48dd472979f832cc0258e57986fb658200b67f3532e88800d43\nURI: /sap/bc/adt/oo/classes/cl_satc_adt_res_atc_run/source/main"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_abap_object_lines",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "CL_SATC_ADT_RES_ATC_RUN",
+        "objectType": "CLAS",
+        "methodName": "EXECUTE_ATC_PROJECT"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Method EXECUTE_ATC_PROJECT from class CL_SATC_ADT_RES_ATC_RUN (lines 329-346 of 639, 18 method lines):\n\n```abap\n  method execute_atc_project.\r\n    data success type abap_bool.\r\n\r\n    try.\r\n        call function 'SATC_EXECUTE_PROJECT'\r\n          exporting\r\n            i_max_processes = 4\r\n            i_project       = atc_project\r\n          importing\r\n            e_exec_id       = execution_id\r\n            e_success       = success.\r\n        if success is initial.\r\n          clear execution_id.\r\n        endif.\r\n      catch cx_satc_root.\r\n        clear execution_id.\r\n    endtry.\r\n  endmethod.\r\n```\n\nFull Source SHA-256: a7ad985d4908a48dd472979f832cc0258e57986fb658200b67f3532e88800d43\nURI: /sap/bc/adt/oo/classes/cl_satc_adt_res_atc_run/source/main"
+          }
+        ]
+      }
+    }
+  ],
+  "server": {
+    "name": "orvanta",
+    "version": "0.36.24"
+  }
+}

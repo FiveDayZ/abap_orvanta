@@ -1,0 +1,141 @@
+{
+  "startedAt": "2026-10-04T05:20:52.591Z",
+  "mode": "read_only_source_preflight",
+  "nativeWriterCalls": 0,
+  "calls": [
+    {
+      "name": "get_connected_systems",
+      "args": {},
+      "isError": false,
+      "response": "Connected SAP systems: w200, w300"
+    }
+  ],
+  "dependencies": [],
+  "status": "read_only_preflight_failed",
+  "schemas": [
+    {
+      "name": "search_sap_locks",
+      "description": "Read current-client SM12 lock entries for an exact user through a separately deployed and fingerprint-approved helper. Optional exact table, lock object and literal argument filters; at most 100 returned rows. Native selection above 2000 rejects after retrieval (not a native memory limit). Owner timestamp is not guaranteed acquisition time. Never deletes locks; local MCP receipts are distinct from SAP locks.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+$"
+          },
+          "username": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]{1,12}$"
+          },
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$"
+          },
+          "tableName": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_/]+$",
+            "maxLength": 30
+          },
+          "lockObject": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_/]+$",
+            "maxLength": 16
+          },
+          "argument": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "maxResults": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          }
+        },
+        "required": [
+          "connectionId",
+          "username"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "read_function_module_interface",
+      "description": "Read one active function module interface and source through the SAP repository helper. Read-only and allowed for customer or standard function modules. Preserves raw updateTaskMode; updateTask is true for any noninitial update mode, including numeric SAP modes, not only X. Mode validity/meaning is not inferred. Returns a deterministic SHA-256 fingerprint; includeExecutionSupport additionally resolves scalar, flat-structure, and table parameter shapes through DDIC.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "functionName": {
+            "type": "string"
+          },
+          "includeExecutionSupport": {
+            "type": "boolean",
+            "default": false
+          },
+          "connectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "functionName",
+          "connectionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "inspect_configuration_transport",
+      "description": "Inspect one explicit Customizing request/task pair on w200/200. Reviewed E070/E070C and TRFUNCTION/TRSTATUS/TRCATEG metadata are rechecked. W=request, Q=task; checks exact parent, open D status, configured-user task owner, recorded source client, CUST category and nonempty transport target. Missing records stay unknown; no client inheritance is guessed. Optional unitText={unitKey,language} requires an explicit ISO language and reuses exact unit reads twice. Only matching container metadata permits bounded E071 R3TR/TDAT/CUNI and E071K R3TR/TABU/T006A projections for this pair (32 rows each, eight entry-reader calls maximum); pins/rechecks both layouts, values and unit version, discarding drift/failure/truncation. Default performs no unit/key reads. Reports table_entries_observed/no_table_entries/master_mismatch/master_unresolved or blocked/unavailable/changed/truncated; these are table-level observations, never exact-row linkage. TABKEY remains trimmed opaque text; original key encoding, wildcard semantics and row recording require manual verification. No arbitrary table/key input, generated TABKEY, CTS claim or standard TR_READ_COMM call is accepted. Changed/failed reads cannot produce an admission. Metadata matches still leave writeAdmission=blocked: no authority check, official E071K encoding, exact row recording, import, lock, maintenance API or release is attested or executed.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "read_configuration_unit",
+      "description": "Read one exact internal, case-sensitive MSEHI unit key (1-3 characters) on w200/client 200. Reads pinned T006 scalar text projections plus one T006A language row; ISO language defaults to connection language and maps through pinned T002, without fallback or CUNIT conversion. Both value tables require MANDT=200. TEMP_VALUE/PRESS_VAL FLTP fields are explicitly omitted; returned trimmed SAP text is not a lossless full-row snapshot. Rechecks layouts/key metadata and repeats successful exact value/language reads; observed change, unavailable recheck, missing row/translation and query failure remain distinct. Optional expectedReadFingerprint compares only the returned projection and language, including observed absence; it cannot authorize or guard writes. Optional textReconciliation requires explicit ISO language and excludes expectedReadFingerprint: pass baselineReadFingerprint, complete baselineUnit/baselineText projections from the previous unit read or draft currentRead, plus the draft's MSEHT/MSEHL patch. Validates exact client/key and baseline fingerprint consistency before SAP reads; caller baseline remains untrusted historical input. Reuses one existing double-observation reader, compares proposed descriptions and all other included fields/aliases, distinguishes values_match/partial/unchanged/unexpected_changes/no_changes and unavailable/not_found/changed_during_read/target_mismatch. Never reports maintenance success or complete CTS evidence; omitted FLTP fields, other languages and business effects remain unknown. Default output/fingerprint unchanged. Invalid scope/extra fields refused before reads; only the reviewed empty-HTML fallback uses RFC_READ_TABLE. No configuration writes, preview/apply, business validation, CTS or generic allowlist expansion. Optional transport={requestNumber,taskNumber} requires textReconciliation and explicit ISO language. Calls the existing readonly inspector once with this target and combines only matching unit fingerprints/SAP languages. Changed unit versions retract reconciliation changes; failed/blocked/truncated CTS remain separate from text value status. CTS encoding, exact-row recording, import and maintenance success stay unverified. Nested inspector unit reads receive no transport or reconciliation controls; default adds no transport reads. Optional includeApiSnapshot=true requires explicit ISO language. Attests Z_ORVANTA_CFG_UNIT_READ source/interface and complete T006A layout before invoking its readonly full-row API once, then rechecks metadata. Returns a separate SAP-produced textVersion; disagreement with the projection retracts the row and version. Missing/unapproved API fails without fallback, version reconstruction, writes or GUI. Default adds no API calls; this option does not enable apply.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "nativeReaderSchemaAvailable": false,
+  "error": "Unexpected token 'C', \"Connected \"... is not valid JSON",
+  "finishedAt": "2026-10-04T05:20:52.724Z"
+}

@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-05T04:28:50.311Z",
+  "record": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\code-update-20261005-122850.md",
+  "status": "Partially Verified",
+  "documents": [
+    {
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-deployment-20261005-r49.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-deployment-20261005-r49.json",
+      "size": 340508,
+      "sha256": "473283c672275ec91d9acdbc3bd523ea7f3735adb08f3a49e1f1c58a610caed0"
+    },
+    {
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-guard-active-definition-20261005-r49.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-guard-active-definition-20261005-r49.json",
+      "size": 13039,
+      "sha256": "7babd58a253bfe8d6f0b7075c585d8910c0e66e5fd03e34afd5f6661a81e86ce"
+    },
+    {
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-activation-source-refresh-20261005-r49.json",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-activation-source-refresh-20261005-r49.json",
+      "size": 242246,
+      "sha256": "fa8c8559a8be5b5390c9fcdbc82ae205c1a473c979bc795815481d501626f2b6"
+    },
+    {
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-nine-table-readiness-plan-20261005-r50.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-nine-table-readiness-plan-20261005-r50.md",
+      "size": 4059,
+      "sha256": "50725ef4fb2ef8dd5583fd5a6a2bdc27df1c09359285954f398019ebdcd326c1"
+    },
+    {
+      "absolutePath": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\code-update-20261005-122850.md",
+      "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\code-update-20261005-122850.md",
+      "size": 6330,
+      "sha256": "f918751813a2e70b7b44cf9ebf3a0ffbec1a8da451f062de11aa1381f8fb48f1"
+    }
+  ],
+  "defaultDistUnchanged": true,
+  "stagingPreserved": true,
+  "configurationWrites": 0
+}

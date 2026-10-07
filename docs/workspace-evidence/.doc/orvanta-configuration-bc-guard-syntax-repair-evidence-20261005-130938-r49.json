@@ -1,0 +1,239 @@
+{
+  "at": "2026-10-05T13:09:38.969+08:00",
+  "status": "Partially Verified",
+  "system": "w200/GR2/200",
+  "configurationWrites": 0,
+  "originalFailure": {
+    "startedAt": "2026-10-05T04:34:49.035Z",
+    "configurationWrites": 0,
+    "definition": {
+      "source": "66a283c97c6490cd87310edcf82ccb89306207dd8fc819e0aad3771c4002c366",
+      "interface": "5c9d25ad9d41f163e6a92bbd5486b18be98898e022ca4ca66561c6de4fbc22f2"
+    },
+    "calls": [],
+    "status": "failed",
+    "error": "Error: SAP SOAP request returned HTTP 500: 500 SAP Internal Server Error 500 SAP Internal Server Error ERROR: Syntax error in program SAPLZORVANTA_BC_CFG . (termination: RABAX_STATE)"
+  },
+  "subsequentDump": {
+    "at": "2026-10-05T04:51:36.401Z",
+    "calls": [
+      {
+        "name": "analyze_abap_dumps",
+        "args": {
+          "connectionId": "w200",
+          "action": "analyze_dump",
+          "dumpId": "/sap/bc/adt/vit/runtime/dumps/20261005123447GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205",
+          "includeFullContent": true
+        },
+        "isError": false,
+        "data": {
+          "message": "ABAP Dump Analysis\nSystem: w200\nDump ID: /sap/bc/adt/vit/runtime/dumps/20261005123447GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\nError Type: SYNTAX_ERROR\nContent Size: 7KB HTML\nContains tabular data\nContains code blocks\nContains navigation links\n\nFull Dump Content:\n```html\n<h6 align=\"right\"><a href=\"adt://GR2/sap/bc/adt/vit/runtime/dumps/20261005123447GRAPP2_GR2_00%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WYS%20%20%20%20%20%20%20%20%20200%20%20%20%20%20%20%20%205\">Show in SAP GUI</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"adt://GR2/sap/bc/adt/programs/includes/soapincl_krnproc_impl/source/main?context=%2fsap%2fbc%2fadt%2foo%2fclasses%2fcl_http_ext_soaphandler_rfc#start=601\">Show where terminated</a></h6><h4 id=\"OVERVIEW\">Contents</h4><a href=\"#HEADER\">Header Information</a><br><a href=\"#ERROR\">Error analysis</a><br><a href=\"#TERMINATION\">Information on where terminated</a><br><a href=\"#SOURCE\">Source Code Extract</a><br><a href=\"#STACK\">Active Calls/Events</a><h4 id=\"HEADER\">Header Information</h4><table cellspacing=\"3\"><tr><td><b>Short Text</b></td><td> Syntax error in program \"SAPLZORVANTA_BC_CFG\". </td></tr><tr><td><b>Runtime Error</b></td><td> SYNTAX_ERROR </td></tr><tr><td><b>Program</b></td><td> SAPLZORVANTA_BC_CFG </td></tr><tr><td><b>Date/Time</b></td><td> 2026-10-05 12:34:47 (System) </td></tr><tr><td><b>User</b></td><td> WYS </td></tr><tr><td><b>Client</b></td><td> 200 </td></tr><tr><td><b>Host</b></td><td> GRAPP2_GR2_00 </td></tr></table><h4 id=\"ERROR\">Error analysis</h4>The&nbsp;following&nbsp;syntax&nbsp;error&nbsp;was&nbsp;found&nbsp;in&nbsp;the&nbsp;program&nbsp;SAPLZORVANTA_BC_CFG:\n\"没有附加项&nbsp;\"CLIENT&nbsp;SPECIFIED\"，则不能指定&nbsp;WHERE&nbsp;条件中的客户端字段&nbsp;\"CLIENT\"。&nbsp;\"CLIENT\"&nbsp;in&nbsp;t\"\n\"he&nbsp;WHERE&nbsp;condition.\"\n\n<h4 id=\"TERMINATION\">Information on where terminated</h4>Termination&nbsp;occurred&nbsp;in&nbsp;the&nbsp;ABAP&nbsp;program&nbsp;\"CL_HTTP_EXT_SOAPHANDLER_RFC===CP\"&nbsp;-&nbsp;in&nbsp;\"PREPARE_CALL\".\nThe&nbsp;main&nbsp;program&nbsp;was&nbsp;\"SAPMHTTP\".\n\nIn&nbsp;the&nbsp;source&nbsp;code&nbsp;you&nbsp;have&nbsp;the&nbsp;termination&nbsp;point&nbsp;in&nbsp;line&nbsp;601\nof&nbsp;the&nbsp;(Include)&nbsp;program&nbsp;\"SOAPINCL_KRNPROC_IMPL\".\n<h4 id=\"SOURCE\">Source Code Extract</h4><TABLE><TR><TD><code>591</code></TD><TD><code>&nbsp;&nbsp;ENDMETHOD.</code></TD></TR><TR><TD><code>592</code></TD><TD><code>*&nbsp;set_call_environment</code></TD></TR><TR><TD><code>593</code></TD><TD><code></code></TD></TR><TR><TD><code>594</code></TD><TD><code>*&nbsp;private&nbsp;void&nbsp;prepare_call&nbsp;(</code></TD></TR><TR><TD><code>595</code></TD><TD><code>*&nbsp;&nbsp;[in]&nbsp;&nbsp;string&nbsp;&nbsp;method</code></TD></TR><TR><TD><code>596</code></TD><TD><code>*&nbsp;)</code></TD></TR><TR><TD><code>597</code></TD><TD><code>*&nbsp;throws&nbsp;CSoapExceptionInternal</code></TD></TR><TR><TD><code>598</code></TD><TD><code>*</code></TD></TR><TR><TD><code>599</code></TD><TD><code>&nbsp;&nbsp;METHOD&nbsp;prepare_call.</code></TD></TR><TR><TD><code>600</code></TD><TD><code></code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/programs/includes/soapincl_krnproc_impl/source/main?context=%2fsap%2fbc%2fadt%2foo%2fclasses%2fcl_http_ext_soaphandler_rfc#start=601\">>>>>></a></code></TD><TD><code>&nbsp;&nbsp;&nbsp;&nbsp;CALL&nbsp;'XRfcConverter'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\"&nbsp;EC&nbsp;CI_CCALL</code></TD></TR><TR><TD><code>602</code></TD><TD><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ID&nbsp;'METHOD'&nbsp;&nbsp;&nbsp;FIELD&nbsp;ic_method_preparecall</code></TD></TR><TR><TD><code>603</code></TD><TD><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ID&nbsp;'%_XP_REF'&nbsp;FIELD&nbsp;my_krn_ref</code></TD></TR><TR><TD><code>604</code></TD><TD><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ID&nbsp;'FB_NAME'&nbsp;&nbsp;FIELD&nbsp;method.</code></TD></TR><TR><TD><code>605</code></TD><TD><code>&nbsp;&nbsp;&nbsp;&nbsp;my_krn_rc&nbsp;=&nbsp;SY-SUBRC.</code></TD></TR><TR><TD><code>606</code></TD><TD><code></code></TD></TR><TR><TD><code>607</code></TD><TD><code>&nbsp;&nbsp;&nbsp;&nbsp;ASSERT_ZERO_THROW2</code></TD></TR><TR><TD><code>608</code></TD><TD><code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my_krn_rc&nbsp;CSoapExceptionInternal&nbsp;1010&nbsp;my_krn_rc.</code></TD></TR><TR><TD><code>609</code></TD><TD><code></code></TD></TR><TR><TD><code>610</code></TD><TD><code>&nbsp;&nbsp;ENDMETHOD.</code></TD></TR><TR><TD><code>611</code></TD><TD><code>*&nbsp;prepare_call</code></TD></TR></TABLE><h4 id=\"STACK\">Active Calls/Events</h4><TABLE cellspacing=\"5\"><TR><TH align=\"left\">No.</TH><TH align=\"left\">Event</TH><TH align=\"left\">Program</TH><TH align=\"left\">Include</TH><TH align=\"left\">Line</TH></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/programs/includes/soapincl_krnproc_impl/source/main?context=%2fsap%2fbc%2fadt%2foo%2fclasses%2fcl_http_ext_soaphandler_rfc start=601\">8</a></code></TD><TD><code>PREPARE_CALL</code></TD><TD><code>CL_HTTP_EXT_SOAPHANDLER_RFC===CP</code></TD><TD><code>SOAPINCL_KRNPROC_IMPL</code></TD><TD><code>601</code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/programs/includes/soapincs_document/source/main?context=%2fsap%2fbc%2fadt%2foo%2fclasses%2fcl_http_ext_soaphandler_rfc start=1183\">7</a></code></TD><TD><code>CALL_FUNCTION</code></TD><TD><code>CL_HTTP_EXT_SOAPHANDLER_RFC===CP</code></TD><TD><code>SOAPINCS_DOCUMENT</code></TD><TD><code>1183</code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/programs/includes/soapincs_reqproc/source/main?context=%2fsap%2fbc%2fadt%2foo%2fclasses%2fcl_http_ext_soaphandler_rfc start=386\">6</a></code></TD><TD><code>ISOAPREQUESTPLUGIN~PROCESS_PAYLOAD</code></TD><TD><code>CL_HTTP_EXT_SOAPHANDLER_RFC===CP</code></TD><TD><code>SOAPINCS_REQPROC</code></TD><TD><code>386</code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/programs/includes/soapincs_reqproc/source/main?context=%2fsap%2fbc%2fadt%2foo%2fclasses%2fcl_http_ext_soaphandler_rfc start=277\">5</a></code></TD><TD><code>PROCESS_REQUEST</code></TD><TD><code>CL_HTTP_EXT_SOAPHANDLER_RFC===CP</code></TD><TD><code>SOAPINCS_REQPROC</code></TD><TD><code>277</code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/oo/classes/cl_http_ext_soaphandler_rfc/source/main start=111\">4</a></code></TD><TD><code>IF_HTTP_EXTENSION~HANDLE_REQUEST</code></TD><TD><code>CL_HTTP_EXT_SOAPHANDLER_RFC===CP</code></TD><TD><code>CL_HTTP_EXT_SOAPHANDLER_RFC===CM001</code></TD><TD><code>87</code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/oo/classes/cl_http_server/source/main start=2589\">3</a></code></TD><TD><code>EXECUTE_REQUEST</code></TD><TD><code>CL_HTTP_SERVER================CP</code></TD><TD><code>CL_HTTP_SERVER================CM00D</code></TD><TD><code>594</code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/functions/groups/http_runtime/fmodules/http_dispatch_request/source/main start=1216\">2</a></code></TD><TD><code>HTTP_DISPATCH_REQUEST</code></TD><TD><code>SAPLHTTP_RUNTIME</code></TD><TD><code>LHTTP_RUNTIMEU02</code></TD><TD><code>1216</code></TD></TR><TR><TD><code><a href=\"adt://GR2/sap/bc/adt/programs/programs/sapmhttp/source/main start=13\">1</a></code></TD><TD><code>%_HTTP_START</code></TD><TD><code>SAPMHTTP</code></TD><TD><code>SAPMHTTP</code></TD><TD><code>13</code></TD></TR></TABLE>\n```\n"
+        }
+      },
+      {
+        "name": "get_abap_diagnostics",
+        "args": {
+          "fileUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg"
+        },
+        "isError": false,
+        "data": {
+          "message": "No diagnostics found for adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg. The active SAP source has no syntax errors or warnings."
+        }
+      }
+    ]
+  },
+  "sourceRepair": {
+    "at": "2026-10-05T04:59:59.141Z",
+    "name": "replace_string_in_abap_object",
+    "args": {
+      "operationId": "spro-r49-guard-client-syntax-repair-adt",
+      "fileUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard",
+      "oldString": "  IF lv_pass = 3.\n    EXIT.\n  ENDIF.\n\" 缺失允许，但数量、键和完整字段必须有界且保留原生值。\n  TRY.\n    SELECT * FROM t006i INTO TABLE lt_t006i UP TO 2 ROWS\n      WHERE client = sy-mandt AND isocode = 'KPA'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006j INTO TABLE lt_t006j UP TO 4 ROWS\n      WHERE client = sy-mandt AND isocode = 'KPA'\n      AND ( langu = '1' OR langu = 'D' OR langu = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006t INTO TABLE lt_t006t UP TO 4 ROWS\n      WHERE mandt = sy-mandt AND dimid = 'PRESS'\n      AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006_oib INTO TABLE lt_t006_oib UP TO 2 ROWS\n      WHERE mandt = sy-mandt AND msehi = 'KNM'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n  CATCH cx_sy_open_sql_db.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDTRY.\n  DESCRIBE TABLE lt_t006i LINES lv_count.\n  IF lv_count > 1.\n    ev_code = 'PROTECTION_LIMIT'.",
+      "newString": "  IF lv_pass = 3.\n    EXIT.\n  ENDIF.\n\" 隐式客户端处理限定当前客户端；保留有界完整行与原生值。\n  TRY.\n    SELECT * FROM t006i INTO TABLE lt_t006i UP TO 2 ROWS\n      WHERE isocode = 'KPA'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006j INTO TABLE lt_t006j UP TO 4 ROWS\n      WHERE isocode = 'KPA'\n      AND ( langu = '1' OR langu = 'D' OR langu = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006t INTO TABLE lt_t006t UP TO 4 ROWS\n      WHERE dimid = 'PRESS'\n      AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006_oib INTO TABLE lt_t006_oib UP TO 2 ROWS\n      WHERE msehi = 'KNM'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n  CATCH cx_sy_open_sql_db.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDTRY.\n  DESCRIBE TABLE lt_t006i LINES lv_count.\n  IF lv_count > 1.\n    ev_code = 'PROTECTION_LIMIT'.",
+      "transportNumber": "GR2K923472",
+      "expectedSourceFingerprint": "7bd01a891c1700fc33f2e75349c3c56316e6343f631c4b018018a506a36385db"
+    },
+    "isError": false,
+    "data": {
+      "message": "Successfully replaced 38 line(s) with 38 line(s) in adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard.\nSaved and activated Z_ORVANTA_CFG_BC_GUARD in SAP through the SAP side function write. No ADT lock was taken and no ADT source PUT was sent: SAP_BASIS 7.31 refuses that PUT with HTTP 423.\nFunction implementation body SHA-256 before: 7ff50ec06d805a134f6d3e6236b1fab7f135115f9c903ecb0ce4bfef4fb8eb73\nFunction implementation body SHA-256 after: 0573be1ce34b5352f9d37a58f37b9cf7b6d67f9ed6750ec87fac73ba140dea0b\nInterface fingerprint (unchanged): 5c9d25ad9d41f163e6a92bbd5486b18be98898e022ca4ca66561c6de4fbc22f2\nTransport: GR2K923472\n\nOperation Receipt\n{\n  \"operationId\": \"spro-r49-guard-client-syntax-repair-adt\",\n  \"version\": 2,\n  \"status\": \"completed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"replace_string_in_abap_object\",\n  \"operationIdHash\": \"c250649fb64168c894aa077142e8f02da734721e638a6d46a329d74825ce016f\",\n  \"targetKeyHash\": \"eecfed9c416a51ab59f4671dbf47210bffe7c11323ce79a50646730b85778656\",\n  \"inputHash\": \"02bf6c8b44d4c13af195563feb8d466ce648772aa2a0215a0ebc488a6e7931b0\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr ZORVANTA_BC_CFG\\\",\\\"requestedOperation\\\":\\\"replace_string_in_abap_object\\\",\\\"concurrencyGuard\\\":\\\"active source fingerprint 7bd01a891c1700fc33f2e75349c3c56316e6343f631c4b018018a506a36385db and exact source match 0e4f4ba11f76a18a73e42d420a25848f443d49f7cabea99821a93a57a1df32d3\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-05T04:59:58.596Z\",\n    \"target\": \"fugr ZORVANTA_BC_CFG\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"7bd01a891c1700fc33f2e75349c3c56316e6343f631c4b018018a506a36385db\",\n    \"packageName\": null,\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"partial\",\n    \"sources\": [\n      \"active_source\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"resultHash\": \"ee6ae82a34e205f7a337f86fc8dd44e884c50bfd93d42696905175981306f8a4\",\n  \"startedAt\": \"2026-10-05T04:59:58.009Z\",\n  \"finishedAt\": \"2026-10-05T04:59:59.134Z\",\n  \"durationMs\": 1121,\n  \"receiptHash\": \"1fee35313db1e5074b0e3f9588c31e7de090d51a59fb7634f295f2b215f0d1cc\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back fugr ZORVANTA_BC_CFG from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+    }
+  },
+  "fingerprintRefusal": {
+    "at": "2026-10-05T04:57:45.849Z",
+    "name": "replace_string_in_abap_object",
+    "args": {
+      "operationId": "spro-r49-guard-client-syntax-repair",
+      "fileUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard",
+      "oldString": "  IF lv_pass = 3.\n    EXIT.\n  ENDIF.\n\" 缺失允许，但数量、键和完整字段必须有界且保留原生值。\n  TRY.\n    SELECT * FROM t006i INTO TABLE lt_t006i UP TO 2 ROWS\n      WHERE client = sy-mandt AND isocode = 'KPA'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006j INTO TABLE lt_t006j UP TO 4 ROWS\n      WHERE client = sy-mandt AND isocode = 'KPA'\n      AND ( langu = '1' OR langu = 'D' OR langu = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006t INTO TABLE lt_t006t UP TO 4 ROWS\n      WHERE mandt = sy-mandt AND dimid = 'PRESS'\n      AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006_oib INTO TABLE lt_t006_oib UP TO 2 ROWS\n      WHERE mandt = sy-mandt AND msehi = 'KNM'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n  CATCH cx_sy_open_sql_db.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDTRY.\n  DESCRIBE TABLE lt_t006i LINES lv_count.\n  IF lv_count > 1.\n    ev_code = 'PROTECTION_LIMIT'.",
+      "newString": "  IF lv_pass = 3.\n    EXIT.\n  ENDIF.\n\" 隐式客户端处理限定当前客户端；保留有界完整行与原生值。\n  TRY.\n    SELECT * FROM t006i INTO TABLE lt_t006i UP TO 2 ROWS\n      WHERE isocode = 'KPA'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006j INTO TABLE lt_t006j UP TO 4 ROWS\n      WHERE isocode = 'KPA'\n      AND ( langu = '1' OR langu = 'D' OR langu = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006t INTO TABLE lt_t006t UP TO 4 ROWS\n      WHERE dimid = 'PRESS'\n      AND ( spras = '1' OR spras = 'D' OR spras = 'E' ).\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n    SELECT * FROM t006_oib INTO TABLE lt_t006_oib UP TO 2 ROWS\n      WHERE msehi = 'KNM'.\n    IF sy-subrc <> 0 AND sy-subrc <> 4.\n      ev_code = 'READ_FAILED'.\n      RETURN.\n    ENDIF.\n  CATCH cx_sy_open_sql_db.\n    ev_code = 'READ_FAILED'.\n    RETURN.\n  ENDTRY.\n  DESCRIBE TABLE lt_t006i LINES lv_count.\n  IF lv_count > 1.\n    ev_code = 'PROTECTION_LIMIT'.",
+      "transportNumber": "GR2K923472",
+      "expectedSourceFingerprint": "66a283c97c6490cd87310edcf82ccb89306207dd8fc819e0aad3771c4002c366"
+    },
+    "isError": true,
+    "data": {
+      "message": "Error invoking replace_string_in_abap_object: Error: SOURCE_FINGERPRINT_CONFLICT: expected 66a283c97c6490cd87310edcf82ccb89306207dd8fc819e0aad3771c4002c366, current 7bd01a891c1700fc33f2e75349c3c56316e6343f631c4b018018a506a36385db\n\nOperation Receipt\n{\n  \"operationId\": \"spro-r49-guard-client-syntax-repair\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"replace_string_in_abap_object\",\n  \"operationIdHash\": \"8f1c030a4fb4f771bc2125c375832a3f558e29874367954e24b6129695074001\",\n  \"targetKeyHash\": \"eecfed9c416a51ab59f4671dbf47210bffe7c11323ce79a50646730b85778656\",\n  \"inputHash\": \"b195623d7643ba0e3a7df22a6d830a83b9477f7f23ebfeeca4d1db1ef9e4f651\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"fugr ZORVANTA_BC_CFG\\\",\\\"requestedOperation\\\":\\\"replace_string_in_abap_object\\\",\\\"concurrencyGuard\\\":\\\"active source fingerprint 66a283c97c6490cd87310edcf82ccb89306207dd8fc819e0aad3771c4002c366 and exact source match 0e4f4ba11f76a18a73e42d420a25848f443d49f7cabea99821a93a57a1df32d3\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-05T04:57:45.559Z\",\n    \"target\": \"fugr ZORVANTA_BC_CFG\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"7bd01a891c1700fc33f2e75349c3c56316e6343f631c4b018018a506a36385db\",\n    \"packageName\": null,\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"partial\",\n    \"sources\": [\n      \"active_source\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"f094c934abc6bfa711a6016cb1bdb61a0a50646bd3a50b155e1f0a717e0a49d1\",\n  \"startedAt\": \"2026-10-05T04:57:44.963Z\",\n  \"finishedAt\": \"2026-10-05T04:57:45.842Z\",\n  \"durationMs\": 876,\n  \"receiptHash\": \"b80c6a3d31b72aa02a2cd10ee846713d2026e0a34929c25163aebca91b852137\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back fugr ZORVANTA_BC_CFG from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+    }
+  },
+  "fingerprintReconciliation": {
+    "at": "2026-10-05T04:59:28.999Z",
+    "status": "readback_reconciled_unchanged",
+    "priorOperationId": "spro-r49-guard-client-syntax-repair",
+    "fullGuardAndGroupSourcesUnchanged": true,
+    "interfaceUnchanged": true,
+    "localLockReleased": true,
+    "sourceViewDistinction": {
+      "repository": "66a283c97c6490cd87310edcf82ccb89306207dd8fc819e0aad3771c4002c366",
+      "adt": "7bd01a891c1700fc33f2e75349c3c56316e6343f631c4b018018a506a36385db"
+    },
+    "configurationWrites": 0,
+    "transport": [
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_BC_CFG",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      }
+    ]
+  },
+  "deployment": {
+    "at": "2026-10-05T05:01:44.683Z",
+    "status": "repaired_active_readback_runtime_pending",
+    "definition": {
+      "source": "e1bc88c375d6c4c215b9fae9b6cbaac1c32fcc145994ed0bebff953c23055139",
+      "interface": "5c9d25ad9d41f163e6a92bbd5486b18be98898e022ca4ca66561c6de4fbc22f2"
+    },
+    "adtSourceFingerprint": "8a72f53633667fc23efaf9800ad7632a20c1e52b1cf71b96736c520f306ae222",
+    "exactWorkspaceUri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard",
+    "sourceAudit": {
+      "priorMainTopAndUxxUnchanged": true,
+      "priorThreeApisUnchanged": true,
+      "interfaceUnchanged": true,
+      "changedBodyIsExactReviewedPatch": true,
+      "trailingBlankEdgeNormalization": "SAP helper removed exactly five blank lines before ENDFUNCTION; all other ADT source and exact attested implementation compared"
+    },
+    "configurationWrites": 0,
+    "transport": [
+      {
+        "pgmid": "R3TR",
+        "type": "FUGR",
+        "name": "ZORVANTA_BC_CFG",
+        "occurrences": [
+          "GR2K923492"
+        ]
+      }
+    ],
+    "inactiveCheck": {
+      "status": "observed",
+      "transportOnlyRecords": 0,
+      "targets": [
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_GUARD",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard",
+          "status": "not_in_returned_list",
+          "matches": []
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_READ",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+          "status": "not_in_returned_list",
+          "matches": []
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_PREVIEW",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview",
+          "status": "not_in_returned_list",
+          "matches": []
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_ROUTE",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route",
+          "status": "not_in_returned_list",
+          "matches": []
+        },
+        {
+          "objectName": "LZORVANTA_BC_CFGTOP",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+          "status": "not_in_returned_list",
+          "matches": []
+        },
+        {
+          "objectName": "LZORVANTA_BC_CFGUXX",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+          "status": "not_in_returned_list",
+          "matches": []
+        }
+      ],
+      "requestedTargets": [
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_GUARD",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard"
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_READ",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read"
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_PREVIEW",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview"
+        },
+        {
+          "objectName": "Z_ORVANTA_CFG_BC_ROUTE",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route"
+        },
+        {
+          "objectName": "LZORVANTA_BC_CFGTOP",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main"
+        },
+        {
+          "objectName": "LZORVANTA_BC_CFGUXX",
+          "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main"
+        }
+      ]
+    }
+  },
+  "incidents": [
+    {
+      "file": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.logs/mcp-incident-20261005-125405-119-bc-guard-syntax.md",
+      "bytes": 12647,
+      "sha256": "5c3dddf14146abffed0656f22b4992ee1b5fbd04500be950df8a03aa4bbd1e2e",
+      "category": "CALL_ERROR"
+    },
+    {
+      "file": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.logs/mcp-incident-20261005-125843-996-bc-guard-fingerprint-receipt.md",
+      "bytes": 7117,
+      "sha256": "21b1f66530756cbe5f78a1ed2633336869576d40786b9124c59748bcefe6c34c",
+      "category": "OUTCOME_UNCERTAIN"
+    }
+  ],
+  "atc": {
+    "at": "2026-10-05T05:06:30.293Z",
+    "calls": [
+      {
+        "name": "run_atc_analysis",
+        "args": {
+          "connectionId": "w200",
+          "action": "precheck_atc"
+        },
+        "isError": false,
+        "data": {
+          "connectionId": "w200",
+          "engine": "ATC",
+          "endpoint": "/sap/bc/adt/atc/customizing",
+          "method": "GET",
+          "status": "unavailable",
+          "category": "unsupported-endpoint",
+          "stage": "customizing",
+          "worklistCreationAttempted": false,
+          "runCreationAttempted": false,
+          "message": "atc capability unsupported-endpoint (HTTP 404): Request failed with status code 404",
+          "variantValidated": false,
+          "qualityGate": "not_evaluated",
+          "gateReason": "not_run"
+        }
+      }
+    ]
+  },
+  "nativeReadOnlyAcceptance": "pending manual login to frozen isolated instance; no positive receipt yet"
+}

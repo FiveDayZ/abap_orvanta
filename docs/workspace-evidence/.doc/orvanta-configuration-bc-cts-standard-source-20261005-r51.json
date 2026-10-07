@@ -1,0 +1,1882 @@
+{
+  "at": "2026-10-05T08:34:20.320Z",
+  "readOnly": true,
+  "configurationWrites": 0,
+  "ctsWrites": 0,
+  "sourceFiles": [
+    "standard-cts-api.json",
+    "cts-dependencies.json",
+    "cts-source-types.json",
+    "local-start-source.json"
+  ],
+  "observations": {
+    "standardCts": {
+      "startedAt": "2026-10-05T08:06:06.963Z",
+      "readOnly": true,
+      "writes": 0,
+      "calls": [
+        {
+          "at": "2026-10-05T08:06:07.116Z",
+          "functionName": "TR_READ_REQUEST_WITH_TASKS",
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "functionName": "TR_READ_REQUEST_WITH_TASKS",
+            "functionGroup": "STRH",
+            "shortText": "Read request with its tasks",
+            "remoteMode": "",
+            "updateTask": false,
+            "updateTaskMode": "",
+            "globalInterface": false,
+            "remoteEnabled": false,
+            "importParameters": [
+              {
+                "name": "IV_TRKORR",
+                "typeName": "TRKORR",
+                "optional": false,
+                "passByValue": true,
+                "description": "Request or task"
+              }
+            ],
+            "exportParameters": [
+              {
+                "name": "ET_REQUEST_HEADERS",
+                "typeName": "TRWBO_REQUEST_HEADERS",
+                "optional": false,
+                "passByValue": true,
+                "description": "Request including tasks (header data only)"
+              },
+              {
+                "name": "ET_REQUESTS",
+                "typeName": "TRWBO_REQUESTS",
+                "optional": false,
+                "passByValue": true,
+                "description": "Request including tasks"
+              }
+            ],
+            "changingParameters": [],
+            "tableParameters": [],
+            "exceptions": [
+              {
+                "name": "INVALID_INPUT",
+                "description": "Invalid entry"
+              }
+            ],
+            "source": [
+              "FUNCTION tr_read_request_with_tasks.",
+              "*\"----------------------------------------------------------------------",
+              "*\"*\"Lokale Schnittstelle:",
+              "*\"       IMPORTING",
+              "*\"             VALUE(IV_TRKORR) TYPE  TRKORR",
+              "*\"       EXPORTING",
+              "*\"             VALUE(ET_REQUEST_HEADERS) TYPE  TRWBO_REQUEST_HEADERS",
+              "*\"             VALUE(ET_REQUESTS) TYPE  TRWBO_REQUESTS",
+              "*\"       EXCEPTIONS",
+              "*\"              INVALID_INPUT",
+              "*\"----------------------------------------------------------------------",
+              "  DATA: ls_request_header    TYPE trwbo_request_header,",
+              "        ls_request           TYPE trwbo_request.",
+              "",
+              "",
+              "  ls_request_header-trkorr = iv_trkorr.",
+              "  CALL FUNCTION 'TRINT_READ_REQUEST_HEADER'",
+              "       EXPORTING",
+              "            iv_read_e070  = 'X'",
+              "            iv_read_e07t  = 'X'",
+              "            iv_read_e070c = 'X'",
+              "            iv_read_e070m = 'X'",
+              "       CHANGING",
+              "            cs_request    = ls_request_header",
+              "       EXCEPTIONS",
+              "            OTHERS        = 1.",
+              "  IF sy-subrc <> 0.",
+              "    current_message_raising invalid_input.",
+              "  ENDIF.",
+              "",
+              "  CLEAR et_request_headers.",
+              "  APPEND ls_request_header TO et_request_headers.",
+              "",
+              "  CALL FUNCTION 'TRINT_FOLLOW_STRKORR_FORWARD'",
+              "       CHANGING",
+              "            ct_requests = et_request_headers.",
+              "  CALL FUNCTION 'TRINT_FOLLOW_STRKORR_BACKWARD'",
+              "       CHANGING",
+              "            ct_requests = et_request_headers.",
+              "",
+              "  IF et_requests IS REQUESTED.",
+              "    LOOP AT et_request_headers INTO ls_request_header.",
+              "      ls_request-h = ls_request_header.",
+              "",
+              "      CALL FUNCTION 'TR_READ_REQUEST'",
+              "           EXPORTING",
+              "                iv_read_objs_keys  = 'X'",
+              "*               IV_READ_ATTRIBUTES = ' '",
+              "           CHANGING",
+              "                cs_request         = ls_request",
+              "           EXCEPTIONS",
+              "                OTHERS             = 1.",
+              "      IF sy-subrc <> 0.",
+              "        current_message_raising invalid_input.",
+              "      ENDIF.",
+              "",
+              "      APPEND ls_request TO et_requests.",
+              "    ENDLOOP.",
+              "  ENDIF.",
+              "ENDFUNCTION."
+            ],
+            "fingerprint": "761fe980597b819c23d90780463203e4912a7320a0875a0f797341af2479e3f4",
+            "interfaceFingerprint": "b2bd3b20ccd8ed939a09984c1064c30f2673de81dcfd83308f7ffaa1c819e696",
+            "sourceFingerprint": "a19e4086bfb4dfd1504dfedb3a5ad444f99e1a5a7ced4b63d3dc9f0a7f37876a"
+          }
+        },
+        {
+          "at": "2026-10-05T08:06:07.179Z",
+          "functionName": "TR_READ_REQUEST",
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "functionName": "TR_READ_REQUEST",
+            "functionGroup": "SCTS_REQUEST_SELECTION",
+            "shortText": "Read Individual Parts of a Request (Subsequently)",
+            "remoteMode": "",
+            "updateTask": false,
+            "updateTaskMode": "",
+            "globalInterface": false,
+            "remoteEnabled": false,
+            "importParameters": [
+              {
+                "name": "IV_READ_E070",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request header information"
+              },
+              {
+                "name": "IV_READ_E07T",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request short text"
+              },
+              {
+                "name": "IV_READ_E070C",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request client"
+              },
+              {
+                "name": "IV_READ_E070M",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request client"
+              },
+              {
+                "name": "IV_READ_OBJS_KEYS",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read objects and key of the request"
+              },
+              {
+                "name": "IV_READ_ATTRIBUTES",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request attributes"
+              },
+              {
+                "name": "IV_TRKORR",
+                "typeName": "TRKORR",
+                "optional": true,
+                "passByValue": false,
+                "description": ""
+              }
+            ],
+            "exportParameters": [],
+            "changingParameters": [
+              {
+                "name": "CS_REQUEST",
+                "typeName": "TRWBO_REQUEST",
+                "optional": true,
+                "passByValue": true,
+                "description": "Complete request"
+              }
+            ],
+            "tableParameters": [],
+            "exceptions": [
+              {
+                "name": "ERROR_OCCURED",
+                "description": "Error during reading"
+              },
+              {
+                "name": "NO_AUTHORIZATION",
+                "description": "No read or display authorization"
+              }
+            ],
+            "source": [
+              "FUNCTION TR_READ_REQUEST.",
+              "*\"----------------------------------------------------------------------",
+              "*\"*\"Lokale Schnittstelle:",
+              "*\"  IMPORTING",
+              "*\"     VALUE(IV_READ_E070) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_E07T) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_E070C) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_E070M) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_OBJS_KEYS) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_ATTRIBUTES) TYPE  C DEFAULT ' '",
+              "*\"     REFERENCE(IV_TRKORR) TYPE  TRKORR OPTIONAL",
+              "*\"  CHANGING",
+              "*\"     VALUE(CS_REQUEST) TYPE  TRWBO_REQUEST OPTIONAL",
+              "*\"  EXCEPTIONS",
+              "*\"      ERROR_OCCURED",
+              "*\"      NO_AUTHORIZATION",
+              "*\"----------------------------------------------------------------------",
+              "",
+              "*---Authority check ---------------------------------------------------*",
+              "  CALL FUNCTION 'TR_AUTHORITY_CHECK_DISPLAY'",
+              "       EXCEPTIONS OTHERS = 1.",
+              "  IF SY-SUBRC >< 0.",
+              "    CURRENT_MESSAGE_RAISING NO_AUTHORIZATION.",
+              "  ENDIF.",
+              "",
+              "  if not iv_trkorr is initial.",
+              "    cs_request-h-trkorr = IV_TRKORR.",
+              "  endif.",
+              "",
+              "  CALL FUNCTION 'TRINT_READ_REQUEST'",
+              "       EXPORTING",
+              "            IV_READ_E070       = IV_READ_E070",
+              "            IV_READ_E07T       = IV_READ_E07T",
+              "            IV_READ_E070C      = IV_READ_E070C",
+              "            IV_READ_E070M      = IV_READ_E070M",
+              "            IV_READ_OBJS_KEYS  = IV_READ_OBJS_KEYS",
+              "            IV_READ_ATTRIBUTES = IV_READ_ATTRIBUTES",
+              "       CHANGING",
+              "            CS_REQUEST         = CS_REQUEST",
+              "       EXCEPTIONS",
+              "            ERROR_OCCURED      = 1.",
+              "  IF SY-SUBRC <> 0.",
+              "    CURRENT_MESSAGE_RAISING ERROR_OCCURED.",
+              "  ENDIF.",
+              "",
+              "ENDFUNCTION."
+            ],
+            "fingerprint": "24313ce8f5ee7efc00e583c4ac745dc01f30f68f24b2dfc186aaede1dbfe3f04",
+            "interfaceFingerprint": "8f04a178b0d749f9e30c7d914c2ccf5a5e04c533acba1fd3c349436d4652fe7c",
+            "sourceFingerprint": "d3b3b7c7d5b2c89a515fc758baa30ddbcad623e8733e6c35d5fc460d04b6c718"
+          }
+        },
+        {
+          "at": "2026-10-05T08:06:07.244Z",
+          "functionName": "TRINT_READ_REQUEST",
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "functionName": "TRINT_READ_REQUEST",
+            "functionGroup": "SCTS_REQUEST_SELECTION",
+            "shortText": "Read Individual Parts of a Request (Subsequently)",
+            "remoteMode": "",
+            "updateTask": false,
+            "updateTaskMode": "",
+            "globalInterface": false,
+            "remoteEnabled": false,
+            "importParameters": [
+              {
+                "name": "IV_READ_E070",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request header information"
+              },
+              {
+                "name": "IV_READ_E07T",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request short text"
+              },
+              {
+                "name": "IV_READ_E070C",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request client"
+              },
+              {
+                "name": "IV_READ_E070M",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request client"
+              },
+              {
+                "name": "IV_READ_OBJS_KEYS",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read objects and key of the request"
+              },
+              {
+                "name": "IV_READ_OBJS",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": ""
+              },
+              {
+                "name": "IV_READ_ATTRIBUTES",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request attributes"
+              },
+              {
+                "name": "IV_SUPPRESS_LOCKFLAG_HANDLING",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": ""
+              }
+            ],
+            "exportParameters": [
+              {
+                "name": "EV_E07T_DOESNT_EXIST",
+                "typeName": "C",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              },
+              {
+                "name": "EV_E070C_DOESNT_EXIST",
+                "typeName": "C",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              },
+              {
+                "name": "EV_E070M_DOESNT_EXIST",
+                "typeName": "C",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              }
+            ],
+            "changingParameters": [
+              {
+                "name": "CS_REQUEST",
+                "typeName": "TRWBO_REQUEST",
+                "optional": false,
+                "passByValue": true,
+                "description": "Complete request"
+              }
+            ],
+            "tableParameters": [],
+            "exceptions": [
+              {
+                "name": "ERROR_OCCURED",
+                "description": "Error during reading"
+              }
+            ],
+            "source": [
+              "FUNCTION trint_read_request.",
+              "*\"----------------------------------------------------------------------",
+              "*\"*\"Lokale Schnittstelle:",
+              "*\"  IMPORTING",
+              "*\"     VALUE(IV_READ_E070) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_E07T) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_E070C) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_E070M) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_OBJS_KEYS) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_OBJS) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_READ_ATTRIBUTES) TYPE  C DEFAULT ' '",
+              "*\"     VALUE(IV_SUPPRESS_LOCKFLAG_HANDLING) TYPE  C DEFAULT ' '",
+              "*\"  EXPORTING",
+              "*\"     VALUE(EV_E07T_DOESNT_EXIST) TYPE  C",
+              "*\"     VALUE(EV_E070C_DOESNT_EXIST) TYPE  C",
+              "*\"     VALUE(EV_E070M_DOESNT_EXIST) TYPE  C",
+              "*\"  CHANGING",
+              "*\"     VALUE(CS_REQUEST) TYPE  TRWBO_REQUEST",
+              "*\"  EXCEPTIONS",
+              "*\"      ERROR_OCCURED",
+              "*\"----------------------------------------------------------------------",
+              "",
+              "*  request must not be space",
+              "  IF cs_request-h-trkorr = space.",
+              "    MESSAGE e773(tk)",
+              "            RAISING error_occured.",
+              "  ENDIF.",
+              "",
+              "*  additional selects are necessary if object list is to be selected",
+              "  IF iv_suppress_lockflag_handling IS INITIAL",
+              "  AND (   iv_read_objs_keys = 'X'",
+              "       OR iv_read_objs      = 'X' ).",
+              "    iv_read_e070 = 'X'.",
+              "    IF iv_read_e070c = ' ' AND cs_request-h-trkorr(3) = sy-sysid.",
+              "      iv_read_e070c = 'X'.",
+              "    ENDIF.",
+              "  ENDIF.",
+              "  IF  iv_read_attributes = 'X'",
+              "  AND iv_read_e070       = ' '.",
+              "    iv_read_e070 = 'X'.",
+              "  ENDIF.",
+              "",
+              "",
+              "*  Read request header",
+              "  IF iv_read_e070  <> space",
+              "  OR iv_read_e07t  <> space",
+              "  OR iv_read_e070c <> space",
+              "  OR iv_read_e070m <> space.",
+              "    CALL FUNCTION 'TRINT_READ_REQUEST_HEADER'",
+              "         EXPORTING",
+              "              iv_read_e070          = iv_read_e070",
+              "              iv_read_e07t          = iv_read_e07t",
+              "              iv_read_e070c         = iv_read_e070c",
+              "              iv_read_e070m         = iv_read_e070m",
+              "         IMPORTING",
+              "              ev_e07t_doesnt_exist  = ev_e07t_doesnt_exist",
+              "              ev_e070c_doesnt_exist = ev_e070c_doesnt_exist",
+              "              ev_e070m_doesnt_exist = ev_e070m_doesnt_exist",
+              "         CHANGING",
+              "              cs_request            = cs_request-h",
+              "         EXCEPTIONS",
+              "              OTHERS                = 1.",
+              "    IF sy-subrc <> 0.",
+              "      current_message_raising error_occured.",
+              "    ENDIF.",
+              "  ENDIF.",
+              "",
+              "* Read objects and keys",
+              "  IF iv_read_objs_keys = 'X'",
+              "  OR iv_read_objs      = 'X'.",
+              "    SELECT * FROM  e071 INTO TABLE cs_request-objects",
+              "           WHERE  trkorr = cs_request-h-trkorr",
+              "           ORDER BY PRIMARY KEY.",
+              "    IF iv_suppress_lockflag_handling IS INITIAL.",
+              "*     Read lockflag from e071c if request is released",
+              "      IF cs_request-h-trstatus = 'R'.",
+              "        PERFORM lockflag_handling CHANGING cs_request.",
+              "      ENDIF.",
+              "",
+              "      cs_request-objects_filled = 'X'.",
+              "    ENDIF.",
+              "",
+              "  ENDIF.",
+              "",
+              "  IF iv_read_objs_keys = 'X'.",
+              "    SELECT * FROM  e071k INTO TABLE cs_request-keys",
+              "           WHERE  trkorr = cs_request-h-trkorr",
+              "           ORDER BY PRIMARY KEY.",
+              "",
+              "* string key",
+              "    SELECT * FROM  e071k_str INTO TABLE  cs_request-keys_str",
+              "           WHERE  trkorr = cs_request-h-trkorr",
+              "           ORDER BY PRIMARY KEY.",
+              "",
+              "    cs_request-objects_filled = 'X'.",
+              "",
+              "  ENDIF.",
+              "",
+              "*  Read attributes",
+              "  IF iv_read_attributes = 'X'.",
+              "    IF  cs_request-h-trfunction CA sctsc_types_projects.",
+              "      CALL FUNCTION 'TR_READ_ATTRIBUTES'",
+              "           EXPORTING",
+              "                iv_request    = cs_request-h-trkorr",
+              "           IMPORTING",
+              "                et_attributes = cs_request-attributes",
+              "           EXCEPTIONS",
+              "                OTHERS        = 1.",
+              "      IF sy-subrc <> 0.",
+              "        current_message_raising error_occured.",
+              "      ELSE.",
+              "        cs_request-attributes_filled = 'X'.",
+              "      ENDIF.",
+              "    ENDIF.",
+              "  ENDIF.",
+              "ENDFUNCTION."
+            ],
+            "fingerprint": "2737c3ff4f2278c0e5186adba84d608f028da537a21e58caf43071a595445945",
+            "interfaceFingerprint": "ad8a3c8352ef4b4615aef7648b9ffead28751f151789e726ac3007d27d2e555a",
+            "sourceFingerprint": "f5cebb50274f01915d6d5d85a6b058ae417889380db50d44d672d3cbc80094c8"
+          }
+        },
+        {
+          "at": "2026-10-05T08:06:07.289Z",
+          "functionName": "TRINT_READ_COMM",
+          "isError": true,
+          "data": {
+            "message": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 TRINT_READ_COMM 不存在"
+          }
+        }
+      ],
+      "status": "read_complete",
+      "finishedAt": "2026-10-05T08:06:07.290Z"
+    },
+    "dependencies": {
+      "startedAt": "2026-10-05T08:15:36.701Z",
+      "readOnly": true,
+      "writes": 0,
+      "calls": [
+        {
+          "at": "2026-10-05T08:15:36.844Z",
+          "name": "read_function_module_interface",
+          "arguments": {
+            "connectionId": "w200",
+            "functionName": "TR_AUTHORITY_CHECK_DISPLAY"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "functionName": "TR_AUTHORITY_CHECK_DISPLAY",
+            "functionGroup": "STR9",
+            "shortText": "Check display authorization for requests and tasks",
+            "remoteMode": "",
+            "updateTask": false,
+            "updateTaskMode": "",
+            "globalInterface": false,
+            "remoteEnabled": false,
+            "importParameters": [
+              {
+                "name": "IV_USER",
+                "typeName": "E070-AS4USER",
+                "optional": true,
+                "passByValue": true,
+                "description": "User to be checked"
+              },
+              {
+                "name": "IV_SYSTEM",
+                "typeName": "TMSSYSNAM",
+                "optional": true,
+                "passByValue": true,
+                "description": ""
+              },
+              {
+                "name": "IV_DOMAIN",
+                "typeName": "TMSDOMNAM",
+                "optional": true,
+                "passByValue": true,
+                "description": ""
+              }
+            ],
+            "exportParameters": [],
+            "changingParameters": [],
+            "tableParameters": [],
+            "exceptions": [
+              {
+                "name": "E_NO_AUTHORITY",
+                "description": "The user does not have the required authorization"
+              },
+              {
+                "name": "E_INVALID_USER",
+                "description": "This user does not exist, or is locked."
+              }
+            ],
+            "source": [
+              "FUNCTION tr_authority_check_display.",
+              "*\"----------------------------------------------------------------------",
+              "*\"*\"Lokale Schnittstelle:",
+              "*\"  IMPORTING",
+              "*\"     VALUE(IV_USER) LIKE  E070-AS4USER DEFAULT SY-UNAME",
+              "*\"     VALUE(IV_SYSTEM) TYPE  TMSSYSNAM DEFAULT SY-SYSID",
+              "*\"     VALUE(IV_DOMAIN) TYPE  TMSDOMNAM OPTIONAL",
+              "*\"  EXCEPTIONS",
+              "*\"      E_NO_AUTHORITY",
+              "*\"      E_INVALID_USER",
+              "*\"----------------------------------------------------------------------",
+              "  constants: lc_show   like tact-actvt  value '03',",
+              "             lc_dummy  type c value space.",
+              "",
+              "  if iv_user = sy-uname. \"#EC USER_OK",
+              "    perform check_local_users_authority using lc_dummy lc_show iv_domain iv_system.",
+              "  else.",
+              "    perform check_others_users_authority using iv_user lc_dummy lc_show iv_domain iv_system.",
+              "  ENDIF.",
+              "ENDFUNCTION."
+            ],
+            "fingerprint": "42b1f4c936dc21bfb618b380a4dc61a177a26ca2f45dc809bd5112e62e9ebb57",
+            "interfaceFingerprint": "6d966c3affd105d7808a659b62fc4356106648016b0ceae864b550182e290574",
+            "sourceFingerprint": "1bf1f040acd563e46f775fb2c0c354c75ea8cb494379243ec5ff0950b24c2be7"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.859Z",
+          "name": "read_function_module_interface",
+          "arguments": {
+            "connectionId": "w200",
+            "functionName": "TRINT_READ_REQUEST_HEADER"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "functionName": "TRINT_READ_REQUEST_HEADER",
+            "functionGroup": "SCTS_REQUEST_SELECTION",
+            "shortText": "Read Individual Parts of a Request (Subsequently)",
+            "remoteMode": "",
+            "updateTask": false,
+            "updateTaskMode": "",
+            "globalInterface": false,
+            "remoteEnabled": false,
+            "importParameters": [
+              {
+                "name": "IV_READ_E070",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request header information"
+              },
+              {
+                "name": "IV_READ_E07T",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request short text"
+              },
+              {
+                "name": "IV_READ_E070C",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request client"
+              },
+              {
+                "name": "IV_READ_E070M",
+                "typeName": "C",
+                "optional": true,
+                "passByValue": true,
+                "description": "'X': Read request client"
+              }
+            ],
+            "exportParameters": [
+              {
+                "name": "EV_E07T_DOESNT_EXIST",
+                "typeName": "C",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              },
+              {
+                "name": "EV_E070C_DOESNT_EXIST",
+                "typeName": "C",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              },
+              {
+                "name": "EV_E070M_DOESNT_EXIST",
+                "typeName": "C",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              }
+            ],
+            "changingParameters": [
+              {
+                "name": "CS_REQUEST",
+                "typeName": "TRWBO_REQUEST_HEADER",
+                "optional": false,
+                "passByValue": false,
+                "description": "Complete request"
+              }
+            ],
+            "tableParameters": [],
+            "exceptions": [
+              {
+                "name": "EMPTY_TRKORR",
+                "description": ""
+              },
+              {
+                "name": "NOT_EXIST_E070",
+                "description": ""
+              }
+            ],
+            "source": [
+              "FUNCTION trint_read_request_header.",
+              "*\"----------------------------------------------------------------------",
+              "*\"*\"Lokale Schnittstelle:",
+              "*\"       IMPORTING",
+              "*\"             VALUE(IV_READ_E070) TYPE  C DEFAULT ' '",
+              "*\"             VALUE(IV_READ_E07T) TYPE  C DEFAULT ' '",
+              "*\"             VALUE(IV_READ_E070C) TYPE  C DEFAULT ' '",
+              "*\"             VALUE(IV_READ_E070M) TYPE  C DEFAULT ' '",
+              "*\"       EXPORTING",
+              "*\"             VALUE(EV_E07T_DOESNT_EXIST) TYPE  C",
+              "*\"             VALUE(EV_E070C_DOESNT_EXIST) TYPE  C",
+              "*\"             VALUE(EV_E070M_DOESNT_EXIST) TYPE  C",
+              "*\"       CHANGING",
+              "*\"             REFERENCE(CS_REQUEST) TYPE  TRWBO_REQUEST_HEADER",
+              "*\"       EXCEPTIONS",
+              "*\"              EMPTY_TRKORR",
+              "*\"              NOT_EXIST_E070",
+              "*\"----------------------------------------------------------------------",
+              "  DATA: ls_e070    TYPE trwbo_s_e070,",
+              "        ls_e07t    TYPE trwbo_s_e07t,",
+              "        ls_e070c   TYPE trwbo_s_e070c,",
+              "        ls_e070m   TYPE trwbo_s_e070m,",
+              "        lv_msgv1   LIKE sy-msgv1.",
+              "",
+              "  IF cs_request-trkorr = space.",
+              "    MESSAGE e773(tk) RAISING empty_trkorr.",
+              "  ENDIF.",
+              "",
+              "*  Read request header header",
+              "  IF iv_read_e070  =  'X'.",
+              "    SELECT SINGLE * FROM e070 INTO  ls_e070",
+              "                              WHERE trkorr = cs_request-trkorr.",
+              "    IF sy-subrc  <>  0.",
+              "      lv_msgv1 = cs_request-trkorr.",
+              "      CLEAR cs_request.",
+              "      MESSAGE e806(tr)  WITH lv_msgv1",
+              "              RAISING   not_exist_e070.",
+              "    ELSE.",
+              "      MOVE-CORRESPONDING ls_e070 TO cs_request.",
+              "    ENDIF.",
+              "  ENDIF.",
+              "",
+              "*  Read request text",
+              "  IF iv_read_e07t  =  'X'.",
+              "    SELECT * FROM e07t INTO  ls_e07t UP TO 1 ROWS",
+              "                       WHERE trkorr = cs_request-trkorr.",
+              "    ENDSELECT.",
+              "",
+              "    IF sy-subrc  <>  0.",
+              "      cs_request-as4text   = space.",
+              "      ev_e07t_doesnt_exist = 'X'.",
+              "    ELSE.",
+              "      cs_request-as4text = ls_e07t-as4text.",
+              "    ENDIF.",
+              "    cs_request-as4text_filled = 'X'.",
+              "  ENDIF.",
+              "",
+              "*  Read request clients",
+              "  IF iv_read_e070c =  'X'.",
+              "    SELECT SINGLE * FROM e070c  INTO ls_e070c",
+              "                                WHERE trkorr = cs_request-trkorr.",
+              "    IF sy-subrc  <>  0.",
+              "      CLEAR: cs_request-client, cs_request-tarclient.",
+              "      ev_e070c_doesnt_exist = 'X'.",
+              "    ELSE.",
+              "      cs_request-client    = ls_e070c-client.",
+              "    ENDIF.",
+              "    cs_request-clients_filled = 'X'.",
+              "  ENDIF.",
+              "",
+              "*  Read target devclass, target transport layer",
+              "  IF  iv_read_e070m =  'X'.",
+              "    IF cs_request-trfunction CA 'EO '. \" MOVE or not filled",
+              "      SELECT SINGLE * FROM  e070m  INTO ls_e070m",
+              "                                   WHERE trkorr = cs_request-trkorr.",
+              "      IF sy-subrc  <>  0.",
+              "        CLEAR: cs_request-tardevcl, cs_request-devclass,",
+              "               cs_request-tarlayer.",
+              "        ev_e070m_doesnt_exist = 'X'.",
+              "      ELSE.",
+              "        cs_request-tardevcl = ls_e070m-tardevcl.",
+              "        cs_request-devclass = ls_e070m-devclass.",
+              "        cs_request-tarlayer = ls_e070m-tarlayer.",
+              "      ENDIF.",
+              "      cs_request-e070m_filled = 'X'.",
+              "    ELSE.",
+              "      ev_e070m_doesnt_exist = 'X'.",
+              "    ENDIF.",
+              "  ENDIF.",
+              "ENDFUNCTION."
+            ],
+            "fingerprint": "8ea0a0f60ea62d48e805357f91cbfd59d7803b95ce473f9d21f16deda1497266",
+            "interfaceFingerprint": "d2633c0da475daf2af3533e586e6a7ef36ec0f4ac84c6c77503b8413923bb813",
+            "sourceFingerprint": "c9d5c7de38ab7c68af82ea2f4cd229d7ba1f7e5cc521738fc322cc65992ee090"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.863Z",
+          "name": "read_function_module_interface",
+          "arguments": {
+            "connectionId": "w200",
+            "functionName": "SCMS_BASE64_ENCODE_STR"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "functionName": "SCMS_BASE64_ENCODE_STR",
+            "functionGroup": "SCMS_URL",
+            "shortText": "",
+            "remoteMode": "",
+            "updateTask": false,
+            "updateTaskMode": "",
+            "globalInterface": false,
+            "remoteEnabled": false,
+            "importParameters": [
+              {
+                "name": "INPUT",
+                "typeName": "XSTRING",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              }
+            ],
+            "exportParameters": [
+              {
+                "name": "OUTPUT",
+                "typeName": "STRING",
+                "optional": false,
+                "passByValue": true,
+                "description": ""
+              }
+            ],
+            "changingParameters": [],
+            "tableParameters": [],
+            "exceptions": [],
+            "source": [
+              "FUNCTION SCMS_BASE64_ENCODE_STR.",
+              "*\"----------------------------------------------------------------------",
+              "*\"*\"Lokale Schnittstelle:",
+              "*\"  IMPORTING",
+              "*\"     VALUE(INPUT) TYPE  XSTRING",
+              "*\"  EXPORTING",
+              "*\"     VALUE(OUTPUT) TYPE  STRING",
+              "*\"----------------------------------------------------------------------",
+              "",
+              "  data:",
+              "    input_length type i,",
+              "    xx(3) type x, x type x, c4(4) type c,",
+              "    i type i, k type i,",
+              "",
+              "    b64tab4(256) type c value",
+              "     'AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMM' &",
+              "     'NNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZ' &",
+              "     'aaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmm' &",
+              "     'nnnnooooppppqqqqrrrrssssttttuuuuvvvvwwwwxxxxyyyyzzzz' &",
+              "     '0000111122223333444455556666777788889999++++///'.",
+              "",
+              "  b64tab4+255(1) = '/'.   \"text literal cannot have more than 255 chars",
+              "",
+              "  input_length = xstrlen( input ).",
+              "  i = 0.",
+              "",
+              "  clear output.",
+              "",
+              "  k = input_length div 3.",
+              "  do k times.",
+              "",
+              "    xx(3) = input+i(3).",
+              "",
+              "    x = xx(1).",
+              "    c4(1) = b64tab4+x(1).",
+              "    xx = xx * 64.",
+              "",
+              "    x = xx(1).",
+              "    c4+1(1) = b64tab4+x(1).",
+              "    xx = xx * 64.",
+              "",
+              "    x = xx(1).",
+              "    c4+2(1) = b64tab4+x(1).",
+              "    xx = xx * 64.",
+              "",
+              "    x = xx(1).",
+              "    c4+3(1) = b64tab4+x(1).",
+              "",
+              "    concatenate output c4 into output.",
+              "    i = i + 3.",
+              "",
+              "  enddo.",
+              "",
+              "",
+              "  if i lt input_length.",
+              "",
+              "    xx(3) = input+i.",
+              "",
+              "    x = xx(1).",
+              "    concatenate output b64tab4+x(1) into output.",
+              "    xx = xx * 64.",
+              "    i = i + 1.",
+              "",
+              "    x = xx(1).",
+              "    concatenate output b64tab4+x(1) into output.",
+              "    xx = xx * 64.",
+              "",
+              "    if i eq input_length.",
+              "      concatenate output '==' into output.",
+              "    else.",
+              "",
+              "      x = xx(1).",
+              "      concatenate output b64tab4+x(1) into output.",
+              "      xx = xx * 64.",
+              "      i = i + 1.",
+              "      if i eq input_length.",
+              "        concatenate output '=' into output.",
+              "      else.",
+              "        x = xx(1).",
+              "        concatenate output b64tab4+x(1) into output.",
+              "      endif.",
+              "    endif.",
+              "  endif.",
+              "",
+              "endfunction."
+            ],
+            "fingerprint": "b41fda4514b45f37e52b7f3725104e72b385256a90280b0e1dfe8a8d781fbee9",
+            "interfaceFingerprint": "d7e534d1aac8fe64eff242d5cff1366e3dbdca88769d7a3f0f405f88a5e919c9",
+            "sourceFingerprint": "4d23ea3348507f29194d3429ba8f9205f159187d38a6ff3cc56295fc295ffbd0"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.906Z",
+          "name": "read_ddic_structure",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "TRWBO_REQUEST_HEADER"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "objectName": "TRWBO_REQUEST_HEADER",
+            "objectType": "structure",
+            "status": "not-found",
+            "exists": false,
+            "active": null,
+            "version": null,
+            "fingerprint": null,
+            "packageName": null,
+            "requestNumber": null,
+            "authoritative": true,
+            "readOnly": true,
+            "reason": "The DDIC read completed and SAP answered that this object does not exist. This is a definite answer, not a tool failure and not an inconclusive result: there is nothing to reconcile for this object.",
+            "substitutes": [
+              "read_abap_table(TADIR, filters OBJECT = <object type>, OBJ_NAME = <name>) for the recorded repository entry",
+              "read_abap_table(DD02L or DD25L, filters for the object) for the stored header rows"
+            ]
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.908Z",
+          "name": "read_ddic_structure",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "TRWBO_REQUEST"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "objectName": "TRWBO_REQUEST",
+            "objectType": "structure",
+            "status": "not-found",
+            "exists": false,
+            "active": null,
+            "version": null,
+            "fingerprint": null,
+            "packageName": null,
+            "requestNumber": null,
+            "authoritative": true,
+            "readOnly": true,
+            "reason": "The DDIC read completed and SAP answered that this object does not exist. This is a definite answer, not a tool failure and not an inconclusive result: there is nothing to reconcile for this object.",
+            "substitutes": [
+              "read_abap_table(TADIR, filters OBJECT = <object type>, OBJ_NAME = <name>) for the recorded repository entry",
+              "read_abap_table(DD02L or DD25L, filters for the object) for the stored header rows"
+            ]
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.915Z",
+          "name": "read_function_module_interface",
+          "arguments": {
+            "connectionId": "w200",
+            "functionName": "SCMS_BASE64_DECODE_STR"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "functionName": "SCMS_BASE64_DECODE_STR",
+            "functionGroup": "SCMS_URL",
+            "shortText": "",
+            "remoteMode": "",
+            "updateTask": false,
+            "updateTaskMode": "",
+            "globalInterface": false,
+            "remoteEnabled": false,
+            "importParameters": [
+              {
+                "name": "INPUT",
+                "typeName": "STRING",
+                "optional": false,
+                "passByValue": false,
+                "description": ""
+              },
+              {
+                "name": "UNESCAPE",
+                "typeName": "STRING",
+                "optional": true,
+                "passByValue": true,
+                "description": ""
+              }
+            ],
+            "exportParameters": [
+              {
+                "name": "OUTPUT",
+                "typeName": "XSTRING",
+                "optional": false,
+                "passByValue": false,
+                "description": ""
+              }
+            ],
+            "changingParameters": [],
+            "tableParameters": [],
+            "exceptions": [
+              {
+                "name": "FAILED",
+                "description": ""
+              }
+            ],
+            "source": [
+              "FUNCTION SCMS_BASE64_DECODE_STR.",
+              "*\"----------------------------------------------------------------------",
+              "*\"*\"Lokale Schnittstelle:",
+              "*\"  IMPORTING",
+              "*\"     REFERENCE(INPUT) TYPE  STRING",
+              "*\"     VALUE(UNESCAPE) TYPE  STRING DEFAULT 'X'",
+              "*\"  EXPORTING",
+              "*\"     REFERENCE(OUTPUT) TYPE  XSTRING",
+              "*\"  EXCEPTIONS",
+              "*\"      FAILED",
+              "*\"----------------------------------------------------------------------",
+              "constants:",
+              "  c_plus(3)  type c value '%2B',",
+              "  c_slash(3) type c value '%2F',",
+              "  c_equal(3) type c value '%3D'.",
+              "",
+              "data:",
+              "  str_in type string.",
+              "",
+              "  str_in = input.",
+              "  if unescape = 'X'.",
+              "    sy-subrc = 0.",
+              "    while sy-subrc = 0.",
+              "      replace c_plus with '+' into str_in.",
+              "    endwhile.",
+              "",
+              "    sy-subrc = 0.",
+              "    while sy-subrc = 0.",
+              "      replace c_slash with '/' into str_in.",
+              "    endwhile.",
+              "",
+              "    sy-subrc = 0.",
+              "    while sy-subrc = 0.",
+              "      replace c_equal with  '=' into str_in.",
+              "    endwhile.",
+              "  endif.",
+              "",
+              "",
+              "  call function 'SSFC_BASE64_DECODE'",
+              "    exporting",
+              "      b64data                        = str_in",
+              "    IMPORTING",
+              "      BINDATA                        = output",
+              "    EXCEPTIONS",
+              "      SSF_KRN_ERROR                  = 1",
+              "      SSF_KRN_NOOP                   = 2",
+              "      SSF_KRN_NOMEMORY               = 3",
+              "      SSF_KRN_OPINV                  = 4",
+              "      SSF_KRN_INPUT_DATA_ERROR       = 5",
+              "      SSF_KRN_INVALID_PAR            = 6",
+              "      SSF_KRN_INVALID_PARLEN         = 7",
+              "      OTHERS                         = 8",
+              "            .",
+              "  if sy-subrc <> 0.",
+              "    sys_message_raising failed.",
+              "  endif.",
+              "",
+              "",
+              "ENDFUNCTION."
+            ],
+            "fingerprint": "99314464c828cde0e7ec7cfbee86d0198e12fc1ae0ff59c6e647a736070145f0",
+            "interfaceFingerprint": "b3ddf62cc52f0db74d95634b3899f72acaebf361cf13bf52052abfe16c696dff",
+            "sourceFingerprint": "0e7c53df677028244972a57dd7e64fb70399dd8da630165860f8dddb65795bbb"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.962Z",
+          "name": "read_ddic_structure",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E071"
+          },
+          "isError": true,
+          "data": {
+            "text": "Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.963Z",
+          "name": "read_ddic_structure",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E071K"
+          },
+          "isError": true,
+          "data": {
+            "text": "Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:36.965Z",
+          "name": "read_ddic_structure",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E071K_STR"
+          },
+          "isError": true,
+          "data": {
+            "text": "Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:37.019Z",
+          "name": "read_ddic_structure",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E070"
+          },
+          "isError": true,
+          "data": {
+            "text": "Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:37.021Z",
+          "name": "read_ddic_structure",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E070C"
+          },
+          "isError": true,
+          "data": {
+            "text": "Error invoking read_ddic_structure: Error: SAP DDIC helper rejected the operation: OBJECT_TYPE_MISMATCH: Dictionary object is not a structure"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:37.461Z",
+          "name": "get_abap_object_info",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "SCTM_BCSET_ACTIVATION_FRAME",
+            "objectType": "FUNC"
+          },
+          "isError": false,
+          "data": {
+            "text": "SCTM_BCSET_ACTIVATION_FRAME Information:\n\n• Object Type: FUGR/FF\n• Description: No description available\n• Package: Unknown\n• System Type: STANDARD\n• Total Lines: 18\n• URI: `/sap/bc/adt/functions/groups/sctm/fmodules/sctm_bcset_activation_frame`\n• URI Used: `/sap/bc/adt/functions/groups/sctm/fmodules/sctm_bcset_activation_frame/source/main`\n• Enhancements: Unavailable (unsupported)"
+          }
+        },
+        {
+          "at": "2026-10-05T08:15:37.565Z",
+          "name": "get_abap_object_info",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "Z_ORVANTA_CFG_BC_CTS",
+            "objectType": "FUNC"
+          },
+          "isError": false,
+          "data": {
+            "text": "Could not find ABAP object: Z_ORVANTA_CFG_BC_CTS. The object may not exist or may not be accessible."
+          }
+        }
+      ],
+      "status": "read_complete",
+      "finishedAt": "2026-10-05T08:15:37.566Z"
+    },
+    "types": {
+      "startedAt": "2026-10-05T08:17:52.527Z",
+      "readOnly": true,
+      "writes": 0,
+      "calls": [
+        {
+          "at": "2026-10-05T08:17:52.650Z",
+          "name": "read_ddic_transparent_table",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E070C"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "objectKind": "transparentTable",
+            "objectName": "E070C",
+            "packageName": "SCTS_REQ",
+            "version": "20110901122513",
+            "fingerprint": "e6d5897c0588ee2e1720b7a9bd420c8a75efa6a5b2163266d0fdca864a722632",
+            "definition": {
+              "description": "CTS: 请求/任务的源/目标集团",
+              "tableClass": "TRANSP",
+              "deliveryClass": "W",
+              "dataBrowserMaintenance": "notAllowed",
+              "sizeCategory": 2,
+              "dataClass": "APPL0",
+              "buffering": "notAllowed",
+              "genericKeyFields": 0,
+              "logDataChanges": false,
+              "fields": [
+                {
+                  "name": "TRKORR",
+                  "position": 1,
+                  "dataElement": "TRKORR",
+                  "description": "请求/任务",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "CLIENT",
+                  "position": 2,
+                  "dataElement": "TRCLIENT",
+                  "description": "请求的源客户",
+                  "key": false,
+                  "notNull": true
+                },
+                {
+                  "name": "TARCLIENT",
+                  "position": 3,
+                  "dataElement": "TRTARCLI",
+                  "description": "请求的目标客户系统",
+                  "key": false,
+                  "notNull": true
+                },
+                {
+                  "name": "EXTENDED_STATE",
+                  "position": 4,
+                  "dataElement": "TRCOLL_STATE",
+                  "description": "更改和传输系统：收集状态",
+                  "key": false,
+                  "notNull": true
+                },
+                {
+                  "name": "OVERTAKER",
+                  "position": 5,
+                  "dataElement": "CHAR01",
+                  "description": "字符字段长度 1",
+                  "key": false,
+                  "notNull": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-05T08:17:52.666Z",
+          "name": "read_ddic_transparent_table",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E070"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "objectKind": "transparentTable",
+            "objectName": "E070",
+            "packageName": "SCTS_REQ",
+            "version": "20110901144523",
+            "fingerprint": "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1",
+            "definition": {
+              "description": "更改 &#38; 运输系统: 请求/任务的抬头",
+              "tableClass": "TRANSP",
+              "deliveryClass": "W",
+              "dataBrowserMaintenance": "notAllowed",
+              "sizeCategory": 3,
+              "dataClass": "APPL0",
+              "buffering": "notAllowed",
+              "genericKeyFields": 0,
+              "logDataChanges": false,
+              "fields": [
+                {
+                  "name": "TRKORR",
+                  "position": 1,
+                  "dataElement": "TRKORR",
+                  "description": "请求/任务",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "TRFUNCTION",
+                  "position": 2,
+                  "dataElement": "TRFUNCTION",
+                  "description": "请求/任务的类型",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "TRSTATUS",
+                  "position": 3,
+                  "dataElement": "TRSTATUS",
+                  "description": "请求/任务状态",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "TARSYSTEM",
+                  "position": 4,
+                  "dataElement": "TR_TARGET",
+                  "description": "请求的传输目标",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "KORRDEV",
+                  "position": 5,
+                  "dataElement": "TRCATEG",
+                  "description": "请求或任务类型",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "AS4USER",
+                  "position": 6,
+                  "dataElement": "TR_AS4USER",
+                  "description": "请求或任务的所有者",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "AS4DATE",
+                  "position": 7,
+                  "dataElement": "AS4DATE",
+                  "description": "最后更改的日期",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "AS4TIME",
+                  "position": 8,
+                  "dataElement": "AS4TIME",
+                  "description": "上次更改时间",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "STRKORR",
+                  "position": 9,
+                  "dataElement": "STRKORR",
+                  "description": "高级别请求",
+                  "key": false,
+                  "notNull": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-05T08:17:52.725Z",
+          "name": "read_ddic_transparent_table",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E071"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "objectKind": "transparentTable",
+            "objectName": "E071",
+            "packageName": "SCTS_REQ",
+            "version": "20110901122514",
+            "fingerprint": "8e687e14b7e96d70a5dc568e95e06d1c00e8a4ac7bd02bd18d634890df2cf9a1",
+            "definition": {
+              "description": "更改 &#38; 的传输系统: 请求/任务的对象条目",
+              "tableClass": "TRANSP",
+              "deliveryClass": "W",
+              "dataBrowserMaintenance": "notAllowed",
+              "sizeCategory": 4,
+              "dataClass": "APPL0",
+              "buffering": "notAllowed",
+              "genericKeyFields": 0,
+              "logDataChanges": false,
+              "fields": [
+                {
+                  "name": "TRKORR",
+                  "position": 1,
+                  "dataElement": "TRKORR",
+                  "description": "请求/任务",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "AS4POS",
+                  "position": 2,
+                  "dataElement": "DDPOSITION",
+                  "description": "字典:行项",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "PGMID",
+                  "position": 3,
+                  "dataElement": "PGMID",
+                  "description": "请求和任务中的程序标识",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "OBJECT",
+                  "position": 4,
+                  "dataElement": "TROBJTYPE",
+                  "description": "对象类型",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "OBJ_NAME",
+                  "position": 5,
+                  "dataElement": "TROBJ_NAME",
+                  "description": "对象列表中的对象名称",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "OBJFUNC",
+                  "position": 6,
+                  "dataElement": "OBJFUNC",
+                  "description": "对象功能",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "LOCKFLAG",
+                  "position": 7,
+                  "dataElement": "LOCKFLAG",
+                  "description": "对象条目的锁定状态或输入状态",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "GENNUM",
+                  "position": 8,
+                  "dataElement": "TRGENNUM",
+                  "description": "传输组织器中对象条目的语言信息",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "LANG",
+                  "position": 9,
+                  "dataElement": "SPRAS",
+                  "description": "语言代码",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "ACTIVITY",
+                  "position": 10,
+                  "dataElement": "TRACTIVITY",
+                  "description": "将条目写入对象列表的活动",
+                  "key": false,
+                  "notNull": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-05T08:17:52.742Z",
+          "name": "read_ddic_transparent_table",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E071K"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "objectKind": "transparentTable",
+            "objectName": "E071K",
+            "packageName": "SCTS_REQ",
+            "version": "20040518101030",
+            "fingerprint": "f6da6a1556eaea9b3c3df7e4f065eca401cf53381578d2a7a4e1af518a368000",
+            "definition": {
+              "description": "更改 &#38; 传输系统: 请求/任务的代码条目",
+              "tableClass": "TRANSP",
+              "deliveryClass": "W",
+              "dataBrowserMaintenance": "notAllowed",
+              "sizeCategory": 4,
+              "dataClass": "APPL0",
+              "buffering": "notAllowed",
+              "genericKeyFields": 0,
+              "logDataChanges": false,
+              "fields": [
+                {
+                  "name": "TRKORR",
+                  "position": 1,
+                  "dataElement": "TRKORR",
+                  "description": "请求/任务",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "PGMID",
+                  "position": 2,
+                  "dataElement": "PGMID",
+                  "description": "请求和任务中的程序标识",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "OBJECT",
+                  "position": 3,
+                  "dataElement": "TROBJTYPE",
+                  "description": "对象类型",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "OBJNAME",
+                  "position": 4,
+                  "dataElement": "TABNAME",
+                  "description": "表名",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "AS4POS",
+                  "position": 5,
+                  "dataElement": "DDPOSITION",
+                  "description": "字典:行项",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "MASTERTYPE",
+                  "position": 6,
+                  "dataElement": "TROBJTYPE",
+                  "description": "对象类型",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "MASTERNAME",
+                  "position": 7,
+                  "dataElement": "SOBJ_NAME",
+                  "description": "对象目录中的对象名称",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "VIEWNAME",
+                  "position": 8,
+                  "dataElement": "VIEWNAME",
+                  "description": "SAP 表视图的名称",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "OBJFUNC",
+                  "position": 9,
+                  "dataElement": "UPDID",
+                  "description": "不要使用",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "TABKEY",
+                  "position": 10,
+                  "dataElement": "TROBJ_NAME",
+                  "description": "对象列表中的对象名称",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "SORTFLAG",
+                  "position": 11,
+                  "dataElement": "FLAG",
+                  "description": "一般标记",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "FLAG",
+                  "position": 12,
+                  "dataElement": "FLAG",
+                  "description": "一般标记",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "LANG",
+                  "position": 13,
+                  "dataElement": "SPRAS",
+                  "description": "语言代码",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "ACTIVITY",
+                  "position": 14,
+                  "dataElement": "TRACTIVITY",
+                  "description": "将条目写入对象列表的活动",
+                  "key": false,
+                  "notNull": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-05T08:17:52.797Z",
+          "name": "read_ddic_transparent_table",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "E071K_STR"
+          },
+          "isError": false,
+          "data": {
+            "connectionId": "w200",
+            "objectKind": "transparentTable",
+            "objectName": "E071K_STR",
+            "packageName": "SCTS_REQ",
+            "version": "20110901122515",
+            "fingerprint": "c0ed80a482355e0be761fd3236a5e2e2dc69e14dcf034d792316950657fe66fc",
+            "definition": {
+              "description": "Key Entries with String Fields of Requests/Tasks",
+              "tableClass": "TRANSP",
+              "deliveryClass": "W",
+              "dataBrowserMaintenance": "notAllowed",
+              "sizeCategory": 4,
+              "dataClass": "APPL0",
+              "buffering": "notAllowed",
+              "genericKeyFields": 0,
+              "logDataChanges": false,
+              "fields": [
+                {
+                  "name": "TRKORR",
+                  "position": 1,
+                  "dataElement": "TRKORR",
+                  "description": "请求/任务",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "PGMID",
+                  "position": 2,
+                  "dataElement": "PGMID",
+                  "description": "请求和任务中的程序标识",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "OBJECT",
+                  "position": 3,
+                  "dataElement": "TROBJTYPE",
+                  "description": "对象类型",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "OBJNAME",
+                  "position": 4,
+                  "dataElement": "TABNAME",
+                  "description": "表名",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "AS4POS",
+                  "position": 5,
+                  "dataElement": "DDPOSITION",
+                  "description": "字典:行项",
+                  "key": true,
+                  "notNull": true
+                },
+                {
+                  "name": "MASTERTYPE",
+                  "position": 6,
+                  "dataElement": "TROBJTYPE",
+                  "description": "对象类型",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "MASTERNAME",
+                  "position": 7,
+                  "dataElement": "SOBJ_NAME",
+                  "description": "对象目录中的对象名称",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "VIEWNAME",
+                  "position": 8,
+                  "dataElement": "VIEWNAME",
+                  "description": "SAP 表视图的名称",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "OBJFUNC",
+                  "position": 9,
+                  "dataElement": "UPDID",
+                  "description": "不要使用",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "TABKEY",
+                  "position": 10,
+                  "dataElement": "CTS_STRING",
+                  "description": "更改和传输系统：字符串",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "SORTFLAG",
+                  "position": 11,
+                  "dataElement": "FLAG",
+                  "description": "一般标记",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "FLAG",
+                  "position": 12,
+                  "dataElement": "FLAG",
+                  "description": "一般标记",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "LANG",
+                  "position": 13,
+                  "dataElement": "SPRAS",
+                  "description": "语言代码",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "ACTIVITY",
+                  "position": 14,
+                  "dataElement": "TRACTIVITY",
+                  "description": "将条目写入对象列表的活动",
+                  "key": false,
+                  "notNull": false
+                },
+                {
+                  "name": "KEY_LENS",
+                  "position": 15,
+                  "dataElement": "CTS_SSTRING",
+                  "description": "更改和传输系统：短字符串",
+                  "key": false,
+                  "notNull": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "at": "2026-10-05T08:17:54.086Z",
+          "name": "get_abap_object_lines",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "SAPLSCTM",
+            "objectType": "PROG",
+            "startLine": 1,
+            "lineCount": 150
+          },
+          "isError": false,
+          "data": {
+            "text": "Source from SAPLSCTM (lines 1-15 of 15, 15 lines retrieved):\n\n```abap\n*******************************************************************\n*   System-defined Include-files.                                 *\n*******************************************************************\n  INCLUDE LSCTMTOP.                          \" Global Data\n  INCLUDE LSCTMUXX.                          \" Function Modules\n\n*******************************************************************\n*   User-defined Include-files (if necessary).                    *\n*******************************************************************\n* INCLUDE LSCTMF...                          \" Subprograms\n* INCLUDE LSCTMO...                          \" PBO-Modules\n* INCLUDE LSCTMI...                          \" PAI-Modules\n\n  INCLUDE LSCTMF01.\n\n```\n\nFull Source SHA-256: 4beb8d8f5d3e127501052d71b0aab6988dbc57785a79e95be09e68f532244608\nURI: /sap/bc/adt/functions/groups/sctm/source/main\n\nEnhancement metadata unavailable (unsupported)."
+          }
+        },
+        {
+          "at": "2026-10-05T08:17:54.090Z",
+          "name": "get_abap_object_lines",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "TRWBO",
+            "objectType": "TYPE",
+            "startLine": 1,
+            "lineCount": 250
+          },
+          "isError": true,
+          "data": {
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool get_abap_object_lines: [\n  {\n    \"received\": \"TYPE\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"FUNC\",\n      \"CLAS\",\n      \"TABL\",\n      \"PROG\",\n      \"INTF\",\n      \"DTEL\",\n      \"DDLS\",\n      \"DOMA\",\n      \"TTYP\",\n      \"SHLP\",\n      \"ENQU\",\n      \"MSAG\",\n      \"FUGR\",\n      \"DEVC\",\n      \"TRAN\",\n      \"VIEW\",\n      \"SICF\",\n      \"WDYN\",\n      \"SPRX\",\n      \"XSLT\",\n      \"TRANSFORMATIONS\",\n      \"SUSH\",\n      \"SUSC\",\n      \"PINF\",\n      \"ENHC\",\n      \"ENHO\",\n      \"ENHS\",\n      \"BADI\",\n      \"BADII\",\n      \"SAMC\",\n      \"SAPC\",\n      \"SFSW\",\n      \"SFBF\",\n      \"SFBS\",\n      \"JOBD\",\n      \"NROB\",\n      \"SUSO\",\n      \"BDEF\",\n      \"SRVB\",\n      \"FUNC/FM\",\n      \"FUNC/FF\",\n      \"FUGR/FF\",\n      \"CLAS/OC\",\n      \"INTF/OI\",\n      \"PROG/P\",\n      \"PROG/I\",\n      \"FUGR/I\",\n      \"FUGR/F\",\n      \"TABL/DT\",\n      \"TABL/DS\"\n    ],\n    \"path\": [\n      \"objectType\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'FUNC' | 'CLAS' | 'TABL' | 'PROG' | 'INTF' | 'DTEL' | 'DDLS' | 'DOMA' | 'TTYP' | 'SHLP' | 'ENQU' | 'MSAG' | 'FUGR' | 'DEVC' | 'TRAN' | 'VIEW' | 'SICF' | 'WDYN' | 'SPRX' | 'XSLT' | 'TRANSFORMATIONS' | 'SUSH' | 'SUSC' | 'PINF' | 'ENHC' | 'ENHO' | 'ENHS' | 'BADI' | 'BADII' | 'SAMC' | 'SAPC' | 'SFSW' | 'SFBF' | 'SFBS' | 'JOBD' | 'NROB' | 'SUSO' | 'BDEF' | 'SRVB' | 'FUNC/FM' | 'FUNC/FF' | 'FUGR/FF' | 'CLAS/OC' | 'INTF/OI' | 'PROG/P' | 'PROG/I' | 'FUGR/I' | 'FUGR/F' | 'TABL/DT' | 'TABL/DS', received 'TYPE'\"\n  }\n]"
+          }
+        },
+        {
+          "at": "2026-10-05T08:17:58.873Z",
+          "name": "search_abap_object_lines",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "LSCTMF*",
+            "searchTerm": "FORM LOCAL_START",
+            "contextLines": 3,
+            "maxObjects": 10
+          },
+          "isError": false,
+          "data": {
+            "text": "Found 1 matches for \"FORM LOCAL_START\" across 1 objects matching LSCTMF*:\nObjects: 1/1 | Base: 1 | Enhancement: 0\n\nObjects searched:\n• LSCTMF01 (FUGR/I)\n\n## LSCTMF01 (FUGR/I)\n\nBase Source Matches (1):\n\nLine 8:\n```abap\n  *&---------------------------------------------------------------------*\r\n  *&      Form  local_start\r\n  *&---------------------------------------------------------------------*\r\n> FORM LOCAL_START.\r\n    DATA: LT_E071_TAB      LIKE E071 OCCURS 0 WITH HEADER LINE,\r\n          LT_E071K_TAB     LIKE E071K OCCURS 0 WITH HEADER LINE.\r\n    DATA: I                TYPE I.\r\n```\n\nEnhancement Metadata: Unavailable (unsupported)\n\nURI: /sap/bc/adt/functions/groups/sctm/includes/lsctmf01/source/main (111 lines total)\n\n"
+          }
+        }
+      ],
+      "status": "read_complete",
+      "finishedAt": "2026-10-05T08:17:58.874Z"
+    },
+    "localStart": {
+      "startedAt": "2026-10-05T08:19:43.254Z",
+      "readOnly": true,
+      "writes": 0,
+      "calls": [
+        {
+          "at": "2026-10-05T08:19:43.747Z",
+          "name": "get_abap_object_lines",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "LSCTMF01",
+            "objectType": "FUGR/I",
+            "startLine": 1,
+            "lineCount": 111
+          },
+          "isError": false,
+          "data": {
+            "text": "Source from LSCTMF01 (lines 1-111 of 111, 111 lines retrieved):\n\n```abap\n*----------------------------------------------------------------------*\n***INCLUDE LSCTMF01 .\n*----------------------------------------------------------------------*\n\n*&---------------------------------------------------------------------*\n*&      Form  local_start\n*&---------------------------------------------------------------------*\nFORM LOCAL_START.\n  DATA: LT_E071_TAB      LIKE E071 OCCURS 0 WITH HEADER LINE,\n        LT_E071K_TAB     LIKE E071K OCCURS 0 WITH HEADER LINE.\n  DATA: I                TYPE I.\n  DATA: LV_TRSTATUS      TYPE TRSTATUS.\n  DATA: LT_E071_TRIGG    TYPE TABLE OF SCDT_E071_TRIGG WITH HEADER LINE.\n  DATA: LT_E071K_TRIGG   TYPE TABLE OF SCDT_E071K_TRIGG WITH HEADER LINE.\n  DATA: LT_GUID          TYPE TABLE OF SYSUUID_22 WITH HEADER LINE.\n\n  CHECK GV_SUPPRESS_ON_COMMIT IS INITIAL.\n\n  SORT IT_START_TAB DESCENDING.\n  DELETE ADJACENT DUPLICATES FROM IT_START_TAB COMPARING TRKORR.\n  LOOP AT IT_START_TAB.\n    CLEAR LV_TRSTATUS.\n    SELECT SINGLE TRSTATUS FROM E070 INTO LV_TRSTATUS\n                           WHERE TRKORR = IT_START_TAB-TRKORR.\n    LOOP AT IT_E071_TAB INTO LT_E071_TAB\n            WHERE TRKORR = IT_START_TAB-TRKORR.\n      APPEND LT_E071_TAB.\n      DELETE IT_E071_TAB.\n    ENDLOOP.\n    LOOP AT IT_E071K_TAB INTO LT_E071K_TAB\n            WHERE TRKORR = IT_START_TAB-TRKORR.\n      APPEND LT_E071K_TAB.\n      DELETE IT_E071K_TAB.\n    ENDLOOP.\n    IF LV_TRSTATUS <> 'D'.\n*request was released -> collect all entries for TRKORR\n      SELECT DISTINCT GUID FROM SCDT_E071_TRIGG INTO TABLE LT_GUID\n                          WHERE TRKORR = IT_START_TAB-TRKORR.\n      IF SY-SUBRC = 0.\n        LOOP AT LT_GUID.\n          SELECT * FROM SCDT_E071K_TRIGG INTO TABLE LT_E071K_TRIGG\n                   WHERE GUID = LT_GUID.\n          LOOP AT LT_E071K_TRIGG.\n            MOVE-CORRESPONDING LT_E071K_TRIGG TO LT_E071K_TAB.\n            LT_E071K_TAB-TRKORR = IT_START_TAB-TRKORR.\n            APPEND LT_E071K_TAB.\n          ENDLOOP.\n          DELETE SCDT_E071K_TRIGG FROM TABLE LT_E071K_TRIGG.\n        ENDLOOP.\n        FREE LT_E071K_TRIGG.\n        FREE LT_GUID.\n\n        SELECT * FROM SCDT_E071_TRIGG INTO TABLE LT_E071_TRIGG\n                            WHERE TRKORR = IT_START_TAB-TRKORR.\n\n        LOOP AT LT_E071_TRIGG.\n          MOVE-CORRESPONDING LT_E071_TRIGG TO LT_E071_TAB.\n          APPEND LT_E071_TAB.\n        ENDLOOP.\n        DELETE SCDT_E071_TRIGG FROM TABLE LT_E071_TRIGG.\n        FREE LT_E071_TRIGG.\n        CALL FUNCTION 'DB_COMMIT'.\n        WAIT UP TO 2 SECONDS.\n      ENDIF.\n    ENDIF.\n\n    CALL FUNCTION 'SCDC_DISTRIBUTE_TABLE_KEYS'\n               EXPORTING\n                 PROJECT_ID        = IT_START_TAB-PROJECT_ID\n                 TRKORR            = IT_START_TAB-TRKORR\n               TABLES\n                 E071_TAB          = LT_E071_TAB\n                 E071K_TAB         = LT_E071K_TAB\n               EXCEPTIONS\n                 NO_PROJECT        = 0\n                 OTHERS            = 0.\n    IF LV_TRSTATUS = 'D' AND GV_GUID_22 <> SPACE.\n    LOOP AT LT_E071K_TAB.\n      I = STRLEN( LT_E071K_TAB-TABKEY ).\n      IF I > 0.\n        I = I - 1.\n        IF LT_E071K_TAB-TABKEY+I(1) = '*'.\n          CONTINUE.\n        ENDIF.\n      ENDIF.\n      DELETE FROM SCDT_E071K_TRIGG\n          WHERE GUID    = GV_GUID_22\n            AND OBJECT  = LT_E071K_TAB-OBJECT\n            AND OBJNAME = LT_E071K_TAB-OBJNAME\n            AND TABKEY  = LT_E071K_TAB-TABKEY.\n        IF LT_E071K_TAB-OBJECT = 'TABU'.\n          SELECT SINGLE * FROM SCDT_E071K_TRIGG INTO LT_E071K_TRIGG\n              WHERE GUID    = GV_GUID_22\n                AND OBJECT  = LT_E071K_TAB-OBJECT\n                AND OBJNAME = LT_E071K_TAB-OBJNAME.\n          IF SY-SUBRC <> 0.\n            DELETE FROM SCDT_E071_TRIGG\n                WHERE GUID     = GV_GUID_22\n                  AND OBJECT   = LT_E071K_TAB-OBJECT\n                  AND OBJ_NAME = LT_E071K_TAB-OBJNAME.\n          ENDIF.\n        ENDIF.\n      ENDLOOP.\n      CALL FUNCTION 'DB_COMMIT'.\n    ENDIF.\n    REFRESH: LT_E071_TAB,\n             LT_E071K_TAB.\n    DELETE IT_START_TAB.\n  ENDLOOP.\nENDFORM.                    \" local_start\n\n```\n\nFull Source SHA-256: ad5e4b0cbec97baa300de70d0d5fa264a90d0c6d01124393decb29adedbed236\nURI: /sap/bc/adt/functions/groups/sctm/includes/lsctmf01/source/main\n\nEnhancement metadata unavailable (unsupported)."
+          }
+        },
+        {
+          "at": "2026-10-05T08:19:44.136Z",
+          "name": "get_abap_object_lines",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "LSCTMTOP",
+            "objectType": "FUGR/I",
+            "startLine": 1,
+            "lineCount": 100
+          },
+          "isError": false,
+          "data": {
+            "text": "Source from LSCTMTOP (lines 1-100 of 111, 100 lines retrieved):\n\n```abap\nFUNCTION-POOL SCTM.                         \"MESSAGE-ID ..\n\nTYPE-POOLS: CTSLG.\n\nDATA:  BEGIN OF SCDT_SYNCOBJ,\n         SYNC_OBJECT   TYPE SCDT_ID,\n         TABNAME       TYPE OB_OBJECT,\n         TABTYPE       TYPE OB_TYP,\n         IMG_ACT_SRC   TYPE CUS_IMG_AC,\n         IMG_ACT_TRG   TYPE CUS_IMG_AC,\n         sourcesys     type logsys,\n         KEYSELECT.\nDATA  END   OF SCDT_SYNCOBJ.\n\nDATA: IT_SYNC_TABLES   LIKE SCDT_SYNCOBJ OCCURS 0 WITH HEADER LINE.\n\n* Variablen für Verbucher\nDATA: IT_E071_TAB      LIKE E071 OCCURS 0 WITH HEADER LINE,\n      IT_E071K_TAB     LIKE E071K OCCURS 0 WITH HEADER LINE.\nDATA: BEGIN OF IT_START_TAB OCCURS 0,\n        TRKORR         LIKE E070-TRKORR,\n        PROJECT_ID     LIKE TPROJECT-PROJECT_ID,\n      END OF IT_START_TAB.\n\n*data for solar_ta_status_get\nDATA: GV_IMPORTED(30)       VALUE 'IMPORTED',\n      GV_IMPORT_WARNING(30) VALUE 'IMPORT_WARNING',\n      GV_IMPORT_FAILED(30)  VALUE 'IMPORT_FAILED'.\nDATA: GV_SUPPRESS_ON_COMMIT TYPE OAX,\n      GV_COLLECT_KEYS  TYPE OAX,\n      GV_GUID_22       TYPE GUID_22,\n      GV_AS4POS_K      TYPE DDPOSITION,\n      GV_AS4POS        TYPE DDPOSITION.\nDATA  GV_LOCAL_LOCKS.\n\nINCLUDE SCPRCONST.\n\nCONSTANTS:\n      GC_ACTIVE        TYPE SCDTVERS VALUE 'ACTIVE',\n      GC_SETUP         TYPE SCDTVERS VALUE 'SETUP',\n      GC_LOCK          TYPE PROJECT_ID VALUE '/SCDT_LOCK'.\n\nTABLES: SCPRATTR,\n        T000,\n        OBJS,\n        SCDTSYNC,\n        E070,\n        RFCDES.\nTABLES: SCDTLOCK.\n\nDEFINE APND_SY_MSG.\n  CLEAR MSGLIST.\n  ADD 1 TO MSG_COUNTER.\n  MSGLIST-MANDANT   = SY-MANDT.\n  MSGLIST-LOGNUMBER = 0.\n  MSGLIST-MSGNUMBER = MSG_COUNTER.\n  MSGLIST-MSGTY     = SY-MSGTY.\n  MSGLIST-MSGID     = SY-MSGID.\n  MSGLIST-MSGNO     = SY-MSGNO.\n  MSGLIST-MSGV1     = SY-MSGV1.\n  MSGLIST-MSGV2     = SY-MSGV2.\n  MSGLIST-MSGV3     = SY-MSGV3.\n  MSGLIST-MSGV4     = SY-MSGV4.\n  MSGLIST-TABNAME   = &1.\n  APPEND MSGLIST.\nEND-OF-DEFINITION.\n\n* ----------------------------------------------------------------------\n* Add message: apnd_msg <typ> <id> <no> <v1> <v2> <v3> <v4> <obj-name>\n* ----------------------------------------------------------------------\nDEFINE APND_MSG.\n  CLEAR MSGLIST.\n  ADD 1 TO MSG_COUNTER.\n  MSGLIST-MANDANT   = SY-MANDT.\n  MSGLIST-LOGNUMBER = 0.\n  MSGLIST-MSGNUMBER = MSG_COUNTER.\n  MSGLIST-MSGTY     = &1.\n  MSGLIST-MSGID     = &2.\n  MSGLIST-MSGNO     = &3.\n  MSGLIST-MSGV1     = &4.\n  MSGLIST-MSGV2     = &5.\n  MSGLIST-MSGV3     = &6.\n  MSGLIST-MSGV4     = &7.\n  MSGLIST-TABNAME   = &8.\n  APPEND MSGLIST.\nEND-OF-DEFINITION.\n\nDEFINE MACRO_FILL_GV_LOCAL_LOCKS.\n  IF GV_LOCAL_LOCKS IS INITIAL.\n    SELECT SINGLE * FROM SCDTLOCK\n                    WHERE TABNAME   = GC_SETUP\n                      AND TABTYPE   = SPACE\n                      AND VERSION   = GC_SETUP\n                      AND SCENARIO  = SPACE.\n    IF SY-SUBRC = 0.\n      CASE SCDTLOCK-LOCKTYPE.\n        WHEN 'N'.\n          GV_LOCAL_LOCKS = 'N'. \"default is: 'Not locked'\n        WHEN 'L'.\n          GV_LOCAL_LOCKS = 'L'. \"default is: 'Locked'\n```\n\nFull Source SHA-256: 088ebaa5bbd35d72ac915c79659f9d46a9b17868069843b7206788ac937ffc64\nURI: /sap/bc/adt/functions/groups/sctm/includes/lsctmtop/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+          }
+        },
+        {
+          "at": "2026-10-05T08:19:44.225Z",
+          "name": "get_object_by_uri",
+          "arguments": {
+            "connectionId": "w200",
+            "uri": "/sap/bc/adt/typepools/trwbo/source/main"
+          },
+          "isError": true,
+          "data": {
+            "text": "Error invoking get_object_by_uri: Error: Failed to access object by URI: Error: Source content is empty"
+          }
+        },
+        {
+          "at": "2026-10-05T08:19:44.266Z",
+          "name": "read_function_module_interface",
+          "arguments": {
+            "connectionId": "w200",
+            "functionName": "SCTM_START_CONSISTENCY_CHECK"
+          },
+          "isError": true,
+          "data": {
+            "text": "Error invoking read_function_module_interface: Error: SAP repository helper rejected the operation: FUNCTION_READ_FAILED: 功能模块 SCTM_START_CONSISTENCY_CHECK 不存在"
+          }
+        }
+      ],
+      "status": "read_complete",
+      "finishedAt": "2026-10-05T08:19:44.266Z"
+    }
+  },
+  "limits": [
+    "Standard function source and DDIC reads only; no activation or CTS API invocation",
+    "TRWBO is not a DDIC structure; TYPE enum/URI reads did not yield its type-pool source",
+    "Candidate customer API not deployed; native CTS padding/serialization runtime remains unverified"
+  ]
+}

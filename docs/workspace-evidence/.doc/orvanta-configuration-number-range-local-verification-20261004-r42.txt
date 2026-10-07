@@ -1,0 +1,467 @@
+r42实际执行记录；故障注入和并发为本地测试，真实SAP为独立单次create02。
+
+### red-tests.log
+✔ number range API attestation rejects changed source, interface and execution mode (13.2346ms)
+✔ invalid number range commands fail before metadata, receipts or SAP (2.083ms)
+✔ number range preflight refuses scope, use, overlap, duplicate and source drift before invocation (8.2084ms)
+✔ number range create calls one attested API after its protected receipt and verifies the complete result (1.2637ms)
+✔ change-document Include uses the observed program route and refuses an unrelated group route (1.7845ms)
+✔ number range comparisons preserve precision above the JavaScript safe integer limit (1.0195ms)
+✔ number range create accepts SAP NUMC20 zero but never masks an allocated level (4.134ms)
+✔ number range update preserves the current level and cannot switch internal/external mode (2.4293ms)
+✔ a missing protected receipt prevents the number range command (0.8505ms)
+✔ number range interrupted or inconsistent outcomes stay unknown and are never retried (8.0672ms)
+✖ native transport and SOAP faults retain the first safe cause when readback also fails (6.0493ms)
+✖ invalid native replies, update rejection, cleanup and readback failures are attributable (1.3891ms)
+✔ native stale rejection retains its code and a valid no-change command requires matching readback (3.0569ms)
+✔ a native authorization refusal is distinguished from an interrupted call (1.0122ms)
+✔ number range deployment candidates contain no direct standard-table writes, allocator or GUI fallback (0.4435ms)
+✔ number range receipt persists invocation before dispatch and blocks same-operation replay (42.1849ms)
+✔ number range unknown result stays failed in the protected receipt (18.3445ms)
+✖ an unknown number range outcome blocks another operation and interval across store instances (18.5362ms)
+✔ wrong client, object or operation prechange identity prevents dispatch (32.0178ms)
+✔ all intervals of a client object share one receipt lock (22.0051ms)
+✔ invalid input and failures before invocation never report an unknown SAP write (12.1195ms)
+✔ receipt marking failure prevents dispatch; finalization failure preserves unknown (30.8684ms)
+✔ unreadable persisted number range receipt withholds success without another SAP dispatch (19.4026ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 20
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 341.8813
+
+✖ failing tests:
+
+test at .cache\spro-r42\runtime\dist\test\configuration-number-range-command.test.js:327:1
+✖ native transport and SOAP faults retain the first safe cause when readback also fails (6.0493ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok("failure" in observed)
+  
+      at TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r42/runtime/dist/test/configuration-number-range-command.test.js:336:16)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at .cache\spro-r42\runtime\dist\test\configuration-number-range-command.test.js:345:1
+✖ invalid native replies, update rejection, cleanup and readback failures are attributable (1.3891ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok("failure" in observed)
+  
+      at TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r42/runtime/dist/test/configuration-number-range-command.test.js:359:16)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at .cache\spro-r42\runtime\dist\test\configuration-number-range-receipt.test.js:75:1
+✖ an unknown number range outcome blocks another operation and interval across store instances (18.5362ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r42/runtime/dist/test/configuration-number-range-receipt.test.js:81:12)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+### final-product-tests.log
+✔ number range API attestation rejects changed source, interface and execution mode (17.4577ms)
+✔ invalid number range commands fail before metadata, receipts or SAP (3.9946ms)
+✔ number range preflight refuses scope, use, overlap, duplicate and source drift before invocation (12.2612ms)
+✔ number range create calls one attested API after its protected receipt and verifies the complete result (2.0544ms)
+✔ change-document Include uses the observed program route and refuses an unrelated group route (3.4566ms)
+✔ number range comparisons preserve precision above the JavaScript safe integer limit (1.6261ms)
+✔ number range create accepts SAP NUMC20 zero but never masks an allocated level (5.134ms)
+✔ number range update preserves the current level and cannot switch internal/external mode (2.0791ms)
+✔ a missing protected receipt prevents the number range command (0.9925ms)
+✔ number range interrupted or inconsistent outcomes stay unknown and are never retried (10.7277ms)
+✔ native transport and SOAP faults retain the first safe cause when readback also fails (3.7873ms)
+✔ invalid native replies, update rejection, cleanup and readback failures are attributable (7.5941ms)
+✔ native stale rejection retains its code and a valid no-change command requires matching readback (4.4979ms)
+✔ a native authorization refusal is distinguished from an interrupted call (0.8809ms)
+✔ number range deployment candidates contain no direct standard-table writes, allocator or GUI fallback (0.3605ms)
+✔ public number range tools expose strict schemas, correct risks and native version (198.9626ms)
+✔ public invalid number range commands never reach metadata or SAP (52.0161ms)
+✔ public number range save has a durable receipt and same-operation replay dispatches once (74.8839ms)
+✔ public number range unknown after-save outcome stays failed, preserves readback and never retries (80.4381ms)
+✔ public missing number range API refuses before native dispatch with an attributed receipt (49.6696ms)
+✔ public change-document Include route drift refuses without starting a SAP write (38.6842ms)
+✔ native number range read exposes complete version only after full layout and source checks (16.4666ms)
+✔ native number range read refuses malformed scope before remote invocation (1.4999ms)
+✔ missing API and changed DDIC layout cannot dispatch even the native reader (1.0787ms)
+✔ wrong object, incomplete definition or other-client rows never provide a native version (2.7911ms)
+✔ native read refusal and transport fault retain a stable rejection without a version (2.6406ms)
+✔ source changes during native reading discard its otherwise valid snapshot (1.0067ms)
+✔ number range object preserves numeric Chinese SAP language and refuses invalid keys before backend (6.4369ms)
+✔ public local number range language rejection never claims SAP dispatch or unknown write (183.5805ms)
+✔ number range receipt persists invocation before dispatch and blocks same-operation replay (56.1051ms)
+✔ number range unknown result stays failed in the protected receipt (18.7885ms)
+✔ an unknown number range outcome blocks another operation and interval across store instances (26.6492ms)
+✔ a legacy released unknown receipt still blocks a new number range command (25.8155ms)
+✔ an unknown object does not block an independent object (29.7459ms)
+✔ foreign persisted receipt identity cannot attest a completed command (19.3941ms)
+✔ receipt persistence failure keeps the earlier native root cause (13.1329ms)
+✔ protected unknown receipt retains the native cause code and hash without raw credentials (17.0659ms)
+✔ wrong client, object or operation prechange identity prevents dispatch (33.8972ms)
+✔ all intervals of a client object share one receipt lock (21.0375ms)
+✔ invalid input and failures before invocation never report an unknown SAP write (15.9865ms)
+✔ receipt marking failure prevents dispatch; finalization failure preserves unknown (33.2263ms)
+✔ unreadable persisted number range receipt withholds success without another SAP dispatch (19.871ms)
+✔ missing and not-dispatched number range receipts skip native reading (3.5294ms)
+✔ number range same or changed current values never resolve the historical unknown receipt (1.3528ms)
+✔ number range receipt identity mismatch cannot query SAP or attribute another operation (2.0092ms)
+✔ number range reader failure and concurrently changed receipt withhold current snapshot (0.5017ms)
+✔ invalid reconciliation scope refuses before receipt access (0.3547ms)
+✔ M3 invalid RFC input reports no invocation and no unknown business outcome (1558.9621ms)
+✔ M3 live cross-process owner cannot be recovered; killed owner remains protected (1397.6356ms)
+✔ M3 completed, conflicting and unknown RFC requests survive real service restart (1286.6698ms)
+✔ M3 simultaneous duplicate requests across processes dispatch at most once (1202.8658ms)
+✔ streamable HTTP exposes the implemented standalone tool waves (530.4771ms)
+✔ full source baseline freezes and classifies every original tool contract (1.7452ms)
+✔ 0.30 lifecycle writes return version 2 operation receipts (202.081ms)
+✔ failed SAP pre-change observation prevents the write action (35.049ms)
+✔ health endpoint responds without an MCP session (7.7565ms)
+✔ an argument the contract does not declare is rejected, not discarded (16.9713ms)
+✔ tool profile defaults to the full surface (1.6078ms)
+✔ readonly profile exposes exactly the read-only tools (0.5116ms)
+✔ deny list subtracts tools from the selected profile (0.3874ms)
+✔ invalid profile and unknown deny entries fail loudly (0.4834ms)
+✔ deny list parsing ignores separators, blanks and duplicates (0.1537ms)
+✔ a tool withheld by a platform boundary is out of every non-full profile and names why (0.8926ms)
+✔ readonly profile withholds write tools from tools/list and refuses tools/call (154.1427ms)
+✔ BAdI subtype validation lists every accepted repository subtype (8.5728ms)
+✔ five headless tool paths preserve representative output behavior (3.6974ms)
+✔ a source read keeps the requested lines verbatim, first line's indentation included (1.4961ms)
+✔ a source read normalises CRLF instead of dropping only the block's last carriage return (0.7225ms)
+✔ dynamic capability report uses only bounded read probes and covers every tool (13.9844ms)
+✔ dynamic capability report distinguishes unsupported endpoints from unknown probe failures (4.748ms)
+✔ headless debugger tools expose deterministic bounded requests (1.2941ms)
+✔ SAP helper status exposes readiness and server-side target rejection (0.5497ms)
+✔ message class XML entries preserve the ADT document contract (4.1097ms)
+✔ legacy invalid message class XML falls back before creation (2.4897ms)
+✔ SAP helper SOAP envelope escapes inputs and parses stable results (1.1282ms)
+✔ SAP helper response keeps the interface patch difference rows (0.6636ms)
+✔ remote function SOAP envelope and response keep scalar values bounded to declared outputs (0.9599ms)
+✔ remote function SOAP serializes and parses flat structures and bounded tables (0.7893ms)
+✔ remote function backend preserves an HTTP 500 SOAP fault for assertion (43.023ms)
+✔ SAP SOAP helper uses a plain Basic-auth HTTP request outside the ADT session (11.0701ms)
+✔ repository helper SOAP separates public write rows from native read rows (1.4105ms)
+✔ repository helper keeps the fixed-width Dynpro tables untrimmed (1.3014ms)
+✔ repository helper SOAP serializes the message-class version guard (0.1983ms)
+✔ repository helper SOAP serializes explicit Dynpro patch operations (0.2745ms)
+✔ repository helper SOAP serializes a complete versioned GUI definition (0.3243ms)
+✔ DDIC helper SOAP serializes definitions and parses metadata rows (0.8294ms)
+✔ an inactive definition keeps the attributes the helper publishes under M (0.6795ms)
+✔ an inactive resume refuses while the helper cannot report technical settings (2.6757ms)
+✔ an inactive definition with no field rows refuses to issue an activation fingerprint (0.5593ms)
+✔ an inactive resume refuses a stored definition with no field rows (0.3781ms)
+✔ a $TMP package is refused locally by every DDIC write (0.7326ms)
+✔ table field writes carry the DD03P reference pair, and an unpaired half is refused (2.0569ms)
+✔ structure and append-structure writes carry the same reference pair, and the read publishes it (2.9284ms)
+✔ an inactive resume with settingsRepair writes the settings, activates, and verifies them (1.2907ms)
+✔ Dynpro application tools validate customer scope and preserve structured rows (17.7729ms)
+✔ GUI definition tools preserve untouched native rows and reject stale fingerprints (3.1572ms)
+✔ GUI verification reports multiple native readback differences (2.0089ms)
+✔ Dynpro validation follows bounded program includes and reports exact coverage (1.4442ms)
+✔ Dynpro validation exposes a missing include without claiming full coverage (1.0679ms)
+✔ Dynpro validation rejects missing static PF-status and Titlebar definitions (0.9235ms)
+✔ Dynpro validation decodes legacy SOAP base64 byte coordinates (0.9756ms)
+✔ report transaction and message class tools reject unsafe requests (0.7902ms)
+✔ message class incremental update preserves untouched messages and enforces versions (1.7253ms)
+✔ message class deletion fails when SAP readback still finds the object (0.5146ms)
+✔ source-object deletion accepts a local $TMP object and no transport (0.6094ms)
+✔ controlled source and DDIC deletion verify package, version, and absence (1.4129ms)
+✔ controlled source deletion resolves an empty ECC search package from TADIR (0.972ms)
+✔ controlled deletion rejects wrong package, parent, and DDIC dependencies (1.5236ms)
+✔ function interface preserves raw update modes and identifies noninitial numeric modes (2.6341ms)
+✔ function module tools create, read, fingerprint, inspect, and reject unsafe inputs (2.9743ms)
+✔ function module verification names the part of the definition SAP did not return (1.046ms)
+✔ function interface patch applies controlled operations and preserves implementation source (2.9798ms)
+✔ function interface patch snapshots the canonical helper row set for every direction (1.7887ms)
+✔ RFC interface patch rejects reference parameters before any source write (1.4796ms)
+✔ function interface patch reports exact helper readback differences (1.311ms)
+✔ a rejected helper patch preserves bounded difference evidence (1.376ms)
+✔ function interface patch rejects an implementation source that changed under the helper (1.4056ms)
+✔ scalar RFC inputs reject DDIC character overflow before test or invocation (4.4694ms)
+✔ remote function test validates the active interface and exact outcomes (2.862ms)
+✔ structured remote function validation resolves DDIC shapes and protects the interface (4.3942ms)
+✔ allowlisted customer RFC invocation supports table-type parameters and receipts (55.6885ms)
+✔ DDIC tools read standard definitions and validate controlled customer writes (4.4458ms)
+✔ DDIC complex-table fields, technical settings, and native conversion recovery stay gated (6.1586ms)
+✔ enhancement source inspection separates native metadata from factual source markers (1.5272ms)
+✔ enhancement source inspection reports unavailable metadata without claiming zero implementations (0.6162ms)
+✔ enhancement implementation containers do not masquerade as empty source (0.3859ms)
+✔ enhancement repository search preserves per-type availability (0.5533ms)
+✔ customer exit repository search keeps SMOD and CMOD evidence separate (0.4598ms)
+✔ customer exit definition read returns exact components and raw type codes (0.8666ms)
+✔ customer exit project read preserves raw status and exact assignments (0.6097ms)
+✔ customer function exit inspection resolves static calls and ZX includes (1.8675ms)
+✔ customer function exit inspection reads beyond the former 32-include boundary (1.8406ms)
+✔ customer screen and menu exit inspection preserves independent evidence (2.4559ms)
+✔ BTE dispatcher search separates event and process evidence (1.5603ms)
+✔ BTE configuration read separates Event handlers and preserves raw activation (1.6831ms)
+✔ BTE configuration read keeps Process configuration independent (0.5223ms)
+✔ controlled CMOD workflow includes exact read evidence and human gates (1.2132ms)
+✔ controlled FIBF workflow never treats product activation as an automatic write (0.6717ms)
+✔ controlled FI rule workflow reports mandatory manual-read inputs (0.7676ms)
+✔ BAdI search distinguishes exact Classic and New repository subtypes (0.6141ms)
+✔ Classic BAdI definition read returns interfaces, filters, classes, and raw activation (1.4731ms)
+✔ SXCI table compatibility projection reads one exact Classic BAdI definition (1.215ms)
+✔ SXCI table compatibility projection supports a bounded wildcard read (0.6727ms)
+✔ Enhancement implementation read keeps every hook source with its owning hook (0.8431ms)
+✔ Enhancement hook lifecycle sends guarded payload and verifies create and delete readback (1.6664ms)
+✔ New BAdI and Classic BAdI create operations preserve implementation metadata (2.3818ms)
+✔ Enhancement hook update replaces one exact hook and verifies activated readback (1.5836ms)
+✔ New BAdI update replaces class, filters, flags, and text (8.7129ms)
+✔ Enhancement state management activates or discards an inactive version (1.5375ms)
+✔ Enhancement Framework inspection separates explicit anchors from implicit candidates (2.5967ms)
+✔ FI rule exit inspection correlates catalog declarations with FORM implementations (1.9088ms)
+✔ read-only migration wave exposes URI, search, metadata and history behavior (14.3217ms)
+✔ an ADT type path resolves like the search code it came from (0.8385ms)
+✔ a failed object lookup is not reported as proof of absence (0.5221ms)
+✔ diagnostic wave is headless, bounded and read-only (4.2602ms)
+✔ controlled write wave performs exact replacement and activation through the backend (0.9198ms)
+✔ a successful activation still reports the notices it carries (0.3335ms)
+✔ a function module replacement goes through the SAP side function write, not the ADT PUT (2.3239ms)
+✔ a function module replacement keeps the caller's ADT anchor and sends only the SAP side body (1.2171ms)
+✔ a function module replacement works when the ADT view answers with CRLF line endings (0.7359ms)
+✔ a function module replacement names the two views' first disagreeing line when they cannot be aligned (0.5387ms)
+✔ a function module replacement that reaches the interface is refused, and nothing is written (0.7639ms)
+✔ a helper success that did not change the function body is not reported as a successful replacement (0.7423ms)
+✔ object creation wave exposes headless create and test-include workflows (0.4282ms)
+✔ text element wave reads and merges customer text symbols (1.1115ms)
+✔ text element wave writes selection texts and keeps the same-named symbol apart (0.6656ms)
+✔ selection text writes enforce their own key and length rules (0.3572ms)
+✔ program text element helper rejects duplicate IDs and invalid create-update states (0.4278ms)
+✔ text element merge distinguishes create from update and preserves unrelated symbols (0.5789ms)
+✔ ADT text element write locks, merges, saves, unlocks, activates, and verifies (4.3717ms)
+✔ ADT text element read returns both pool kinds with their category (0.3318ms)
+✔ ADT selection text write merges only the selections category (0.948ms)
+✔ ADT text element write rejects standard objects before requesting a lock (0.163ms)
+✔ legacy text element lock responses are parsed without exposing the handle (0.2042ms)
+✔ empty legacy text element lock responses fail before a write (0.1491ms)
+✔ transport wave is read-only and covers list, details, objects, and comparison (1.2071ms)
+✔ headless export wave writes bounded local artifacts without editor state (33.7307ms)
+✔ exact replacement rejects stale, duplicate, no-op, and nonblank empty matches (0.4869ms)
+✔ method extraction ignores comments and uses 1-based line numbers (0.1724ms)
+✔ DDIC query names reject SQL metacharacters (0.1931ms)
+✔ DDIC table fallback formats fields and append metadata (0.536ms)
+✔ real ADT include types resolve to source/main (0.0718ms)
+✔ direct ADT URIs are normalized and typed without editor state (0.0827ms)
+✔ empty DDIC source remains a dictionary result (0.1336ms)
+✔ unsupported enhancement endpoints remain unavailable instead of becoming empty results (0.6769ms)
+✔ ADT enhancement reads preserve implementation, element, position, and enhanced-object metadata (0.3644ms)
+✔ ADT enhancement object search reports each repository type independently (0.6711ms)
+✔ source timeouts abort the ADT request and do not retry fallback URIs (0.8175ms)
+✔ class diagnostics bound source and syntax requests independently (0.5808ms)
+✔ ADT write coordination locks, saves, unlocks, and activates the exact customer object (1.5297ms)
+✔ a function module write locks the object, and ABAP_MCP_LOCK_TARGET moves the lock (0.9869ms)
+✔ an ADT request trace reaches disk even when the diagnostic flag is off (15.853ms)
+✔ ADT source deletion compares the fingerprint while holding the SAP lock (0.5914ms)
+✔ source deletion verification accepts legacy not-found responses and falls back to search (0.51ms)
+✔ controlled edit policy covers customer source families and rejects standard ownership (0.6253ms)
+✔ controlled edit policy rejects standard source before requesting an SAP lock (0.1364ms)
+✔ controlled creation policy covers source families and rejects unsafe requests (1.3215ms)
+✔ creation accepts an optional seed source and rejects unusable source (0.5168ms)
+✔ ADT object creation validates capability, creates, verifies, and activates (0.724ms)
+✔ ADT object creation retries a concrete media type and tolerates legacy index delay (0.8023ms)
+✔ legacy ECC function group creation retries v3 conversion failure with v2 (0.4153ms)
+✔ legacy ECC function group creation falls back to the repository helper on HTTP 405 (0.2873ms)
+✔ legacy ECC repository fallbacks cover messages, texts, Includes, and transport details (1.6093ms)
+✔ legacy ECC function group creation does not retry an arbitrary HTTP 400 (0.2846ms)
+✔ legacy ECC function include creation tries the v2 media type first (0.5561ms)
+✔ ADT object creation continues when legacy validation is empty or unavailable (0.558ms)
+✔ test include creation locks, creates, unlocks, verifies, and activates (0.5588ms)
+✔ test include creation rejects an existing include before requesting a lock (0.1206ms)
+✔ customer function-group technical include uses its Z owner policy (0.4895ms)
+✔ ADT write coordination unlocks after save failure (0.2901ms)
+✔ ADT write coordination identifies lock endpoint failures (0.1768ms)
+✔ legacy ECC write sessions stay logged in when login returns cookies without CSRF (0.1619ms)
+✔ all standalone ADT clients identify requests like the original ABAP FS (0.0953ms)
+✔ legacy ECC class revisions retry metadata with an explicit ADT content type (0.816ms)
+✔ ABAP Unit 403 reports whether the legacy server advertises the endpoint (0.2484ms)
+✔ wrapped legacy endpoint errors retain their real capability category (0.0788ms)
+✔ native where-used sends a relative source URI and preserves column zero through the real SDK (1.179ms)
+✔ read_smartstyle surfaces the helper's reason instead of one flattened code (0.5864ms)
+✔ a customer lock object keeps SAP's E prefix and a standard one is still refused (1.2941ms)
+✔ a read of a missing DDIC object answers not-found instead of failing (0.8836ms)
+✔ a lock object create that sends no root table is not reported as a failed verification (0.3488ms)
+✔ a supplied root table is still verified and the mismatch names the field (0.49ms)
+✔ a number range write accepts the zero padding SAP stores in NOIVBUFFER (1.5084ms)
+✔ a search help write accepts the zero padding SAP stores in the DD32P numeric columns (1.1929ms)
+✔ a write the helper could not prove active is reported as a failure, not a completed save (0.3367ms)
+✔ an unreadable inactive version does not claim the object has only an inactive version (2.7372ms)
+✔ every tool in the index has exactly one verification entry, with no unknown names (35.4536ms)
+✔ the registry declares only known field values (0.9795ms)
+✔ verified and failed entries cite evidence that actually exists on disk (45.3456ms)
+✔ unverified entries claim neither evidence nor an attempt time (0.1995ms)
+✔ a runtime failure is an observation and a static failure is a proof (0.2546ms)
+✔ R-20's four tools stay recorded with the state their evidence supports (0.1258ms)
+✔ a length fix alone never counts as evidence of success (0.1141ms)
+✔ controlled writes must name the object they were written to (22.9182ms)
+✔ number range runtime evidence proves the scoped update and preserves the historical unknown create (1.6049ms)
+✔ unit description write evidence contains completed save and restoration with real key readback (3.5162ms)
+✔ unit reconciliation evidence retains real unknown receipts and performs no native writes (2.5114ms)
+✔ the method states what kind of SAP operation the tool actually performs (1.2499ms)
+✔ the availability-without-evidence metric is derived, not asserted (0.5428ms)
+✔ notes and availabilityBasis agree about the protocol-only weakness, in both directions (0.369ms)
+✔ MUTATION: notes contradicting the basis are caught in both directions (0.2501ms)
+✔ platform-unsupported is a claim too, and must carry evidence (3.1923ms)
+✔ availability and verification status stay orthogonal (0.6042ms)
+✔ no entry claims protocol-only without a helper to carry that protocol (0.3589ms)
+✔ the protocol-only residual stays visible and countable (0.1982ms)
+✔ MUTATION: a verified entry pointing at a missing file must be rejected (1.4514ms)
+✔ MUTATION: a duplicate and an unknown tool are both rejected (0.6872ms)
+✔ MUTATION: an unverified entry claiming an attempt time is rejected (0.1395ms)
+✔ MUTATION: a static failure claiming an attempt time is rejected (0.7331ms)
+✔ MUTATION: a runtime failure without an attempt time is rejected (0.4329ms)
+✔ MUTATION: a failed entry without a failure basis is rejected (0.444ms)
+✔ the registry records the honest gap rather than inflating it (138.1146ms)
+✔ write receipts serialize one target, retain hashes, and release the lock (95.746ms)
+✔ write target keys align transaction operations and distinguish DDIC namespaces (3.3507ms)
+✔ a complete function module source replacement builds a context without oldString (2.6793ms)
+✔ exact source replacement receipts keep hashing the supplied oldString (0.4159ms)
+✔ a completed action remains completed when local lock cleanup needs recovery (44.2996ms)
+✔ write receipt operation IDs are idempotent and conflicting reuse fails closed (22.3781ms)
+✔ service restart reports interrupted writes and preserves the target lock (134.6061ms)
+✔ recovery listing is bounded and includes stale completed locks (106.2428ms)
+✔ version 1 write receipts remain readable (8.8126ms)
+✔ legacy owner identity and interrupted recovery remain fail closed (16.6996ms)
+✔ a preflight rejection is not reported as an unknown outcome (48.5376ms)
+✔ a local protection failure names the errno that refused the lock create (10.9234ms)
+✔ a local protection failure without an errno still records the error class (11.2023ms)
+✔ a failed receipt create propagates instead of pretending a reservation exists (4.3085ms)
+✔ a concurrent reader does not break the owner's receipt update (30.5674ms)
+✔ a reader that never releases the receipt leaves the stored receipt intact (204.0282ms)
+ℹ tests 268
+ℹ suites 0
+ℹ pass 268
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8524.9317
+
+### guard-tests.log
+✔ exact approved create consumes its single budget before dispatch and refuses a repeat (5.603ms)
+✔ wrong object, interval, bounds, action, binding or version cannot dispatch (2.1064ms)
+✔ frozen drift and pre-dispatch evidence persistence failure never invoke SAP (0.3402ms)
+✔ transport uncertainty consumes the budget and cannot retry (0.27ms)
+✔ definition writes, helper calls and generic data queries are refused (0.5023ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 90.5795
+
+### delivery-build.log
+
+### delivery-registry-tests.log
+✔ tool profile defaults to the full surface (1.5651ms)
+✔ readonly profile exposes exactly the read-only tools (0.5617ms)
+✔ deny list subtracts tools from the selected profile (0.3447ms)
+✔ invalid profile and unknown deny entries fail loudly (0.3717ms)
+✔ deny list parsing ignores separators, blanks and duplicates (0.0985ms)
+✔ a tool withheld by a platform boundary is out of every non-full profile and names why (0.4593ms)
+✔ readonly profile withholds write tools from tools/list and refuses tools/call (101.3535ms)
+✔ every tool in the index has exactly one verification entry, with no unknown names (62.42ms)
+✔ the registry declares only known field values (0.3775ms)
+✔ verified and failed entries cite evidence that actually exists on disk (108.0826ms)
+✔ unverified entries claim neither evidence nor an attempt time (0.2397ms)
+✔ a runtime failure is an observation and a static failure is a proof (0.2534ms)
+✔ R-20's four tools stay recorded with the state their evidence supports (0.1249ms)
+✔ a length fix alone never counts as evidence of success (0.1205ms)
+✔ controlled writes must name the object they were written to (26.3547ms)
+✔ number range runtime evidence proves fresh create and prior update while preserving historical unknown (4.0773ms)
+✔ unit description write evidence contains completed save and restoration with real key readback (3.0433ms)
+✔ unit reconciliation evidence retains real unknown receipts and performs no native writes (3.0097ms)
+✔ the method states what kind of SAP operation the tool actually performs (0.2933ms)
+✔ the availability-without-evidence metric is derived, not asserted (0.4063ms)
+✔ notes and availabilityBasis agree about the protocol-only weakness, in both directions (0.4056ms)
+✔ MUTATION: notes contradicting the basis are caught in both directions (0.2943ms)
+✔ platform-unsupported is a claim too, and must carry evidence (2.5318ms)
+✔ availability and verification status stay orthogonal (0.4ms)
+✔ no entry claims protocol-only without a helper to carry that protocol (0.208ms)
+✔ the protocol-only residual stays visible and countable (0.2923ms)
+✔ MUTATION: a verified entry pointing at a missing file must be rejected (0.7934ms)
+✔ MUTATION: a duplicate and an unknown tool are both rejected (0.4672ms)
+✔ MUTATION: an unverified entry claiming an attempt time is rejected (0.0822ms)
+✔ MUTATION: a static failure claiming an attempt time is rejected (0.4485ms)
+✔ MUTATION: a runtime failure without an attempt time is rejected (0.3382ms)
+✔ MUTATION: a failed entry without a failure basis is rejected (0.4937ms)
+✔ the registry records the honest gap rather than inflating it (148.6576ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 909.3978
+
+### delivery-format.log
+Checking formatting...
+All matched files use Prettier code style!
+
+### headless.log
+Headless verification PASS (1 tree(s), no VS Code host dependency)
+
+### delivery-tool-index.log
+helper capabilities consistent: 38 capabilities over 67 tools
+helper operation requirements pinned for every Z_ORVANTA_MCP_DDIC_API tool
+bootstrap DDIC capability table declares every required operation: 33 dispatched over 33 declared
+tool index consistent: 193 tools, 124 read-only, 12 groups
+
+### ops-matrix.log
+docs/ops-acceptance-matrix.md is current (15 families)
+
+### accept-create.log
+{"name":"read_configuration_number_range_api","isError":false}
+{"name":"read_configuration_number_range_api","isError":false}
+{"name":"apply_configuration_number_range","isError":false,"status":"completed"}
+{"name":"get_write_operation_status","isError":false,"status":"completed"}
+{"name":"apply_configuration_number_range","isError":true,"status":"protection_refused"}
+{"name":"read_configuration_number_range_api","isError":false}
+{"name":"get_runtime_info","isError":false,"status":"observed"}
+{"status":"passed_public_fresh_create_02_with_full_native_and_readback","calls":7}
+
+### final-readonly-first.log
+{"name":"read_configuration_number_range_api"}
+{"name":"search_sap_locks","status":"ok","rows":0}
+{"name":"read_abap_table","status":"ok","rows":1}
+{"name":"read_abap_table","status":"ok","rows":1}
+{"status":"stopped","error":"AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ undefined\n- false\n","calls":4}
+
+### final-readonly.log
+{"name":"read_configuration_number_range_api"}
+{"name":"search_sap_locks","status":"ok","rows":0}
+{"name":"read_abap_table","status":"ok","rows":1}
+{"name":"read_abap_table","status":"ok","rows":1}
+{"name":"read_function_module_interface"}
+{"name":"read_function_module_interface"}
+{"status":"passed_values_lock_open_transport_and_unchanged_SAP_source","calls":6}

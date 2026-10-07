@@ -1,0 +1,86 @@
+{
+  "at": "2026-10-05T05:27:43.674Z",
+  "status": "passed",
+  "newGuardSourceAndInterfaceUnchanged": true,
+  "priorThreeApisUnchanged": true,
+  "mainTopAndUxxUnchanged": true,
+  "transport": [
+    {
+      "pgmid": "R3TR",
+      "type": "FUGR",
+      "name": "ZORVANTA_BC_CFG",
+      "occurrences": [
+        "GR2K923492"
+      ]
+    }
+  ],
+  "inactiveCheck": {
+    "status": "observed",
+    "transportOnlyRecords": 0,
+    "targets": [
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_GUARD",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_READ",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_PREVIEW",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_ROUTE",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGTOP",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main",
+        "status": "not_in_returned_list",
+        "matches": []
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGUXX",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main",
+        "status": "not_in_returned_list",
+        "matches": []
+      }
+    ],
+    "requestedTargets": [
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_GUARD",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_guard"
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_READ",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_read"
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_PREVIEW",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_preview"
+      },
+      {
+        "objectName": "Z_ORVANTA_CFG_BC_ROUTE",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/fmodules/z_orvanta_cfg_bc_route"
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGTOP",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgtop/source/main"
+      },
+      {
+        "objectName": "LZORVANTA_BC_CFGUXX",
+        "uri": "/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfguxx/source/main"
+      }
+    ]
+  },
+  "configurationWrites": 0
+}

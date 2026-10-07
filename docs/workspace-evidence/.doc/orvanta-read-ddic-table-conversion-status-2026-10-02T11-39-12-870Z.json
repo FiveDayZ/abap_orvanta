@@ -1,0 +1,15 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "read_ddic_table_conversion_status",
+  "arguments": {
+    "connectionId": "w200",
+    "objectName": "ZCEKKO"
+  },
+  "startedAt": "2026-10-02T11:39:12.914Z",
+  "finishedAt": "2026-10-02T11:39:13.251Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectName\": \"ZCEKKO\",\n  \"pending\": false,\n  \"entryCount\": 0,\n  \"worklistFingerprint\": \"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\n  \"entries\": [],\n  \"readOnly\": true,\n  \"snapshot\": false\n}"
+}

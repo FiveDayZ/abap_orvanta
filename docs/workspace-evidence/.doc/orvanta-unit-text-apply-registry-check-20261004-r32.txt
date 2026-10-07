@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: every tool in the index has exactly one verification entry, with no unknown names
+ok 1 - every tool in the index has exactly one verification entry, with no unknown names
+  ---
+  duration_ms: 13.8095
+  type: 'test'
+  ...
+# Subtest: the registry declares only known field values
+ok 2 - the registry declares only known field values
+  ---
+  duration_ms: 0.309
+  type: 'test'
+  ...
+# Subtest: verified and failed entries cite evidence that actually exists on disk
+ok 3 - verified and failed entries cite evidence that actually exists on disk
+  ---
+  duration_ms: 17.4722
+  type: 'test'
+  ...
+# Subtest: unverified entries claim neither evidence nor an attempt time
+ok 4 - unverified entries claim neither evidence nor an attempt time
+  ---
+  duration_ms: 0.22
+  type: 'test'
+  ...
+# Subtest: a runtime failure is an observation and a static failure is a proof
+ok 5 - a runtime failure is an observation and a static failure is a proof
+  ---
+  duration_ms: 0.2678
+  type: 'test'
+  ...
+# Subtest: R-20's four tools stay recorded with the state their evidence supports
+ok 6 - R-20's four tools stay recorded with the state their evidence supports
+  ---
+  duration_ms: 0.1251
+  type: 'test'
+  ...
+# Subtest: a length fix alone never counts as evidence of success
+ok 7 - a length fix alone never counts as evidence of success
+  ---
+  duration_ms: 0.1375
+  type: 'test'
+  ...
+# Subtest: controlled writes must name the object they were written to
+ok 8 - controlled writes must name the object they were written to
+  ---
+  duration_ms: 11.2514
+  type: 'test'
+  ...
+# Subtest: the method states what kind of SAP operation the tool actually performs
+ok 9 - the method states what kind of SAP operation the tool actually performs
+  ---
+  duration_ms: 0.3444
+  type: 'test'
+  ...
+# Subtest: the availability-without-evidence metric is derived, not asserted
+ok 10 - the availability-without-evidence metric is derived, not asserted
+  ---
+  duration_ms: 0.4333
+  type: 'test'
+  ...
+# Subtest: notes and availabilityBasis agree about the protocol-only weakness, in both directions
+ok 11 - notes and availabilityBasis agree about the protocol-only weakness, in both directions
+  ---
+  duration_ms: 0.3724
+  type: 'test'
+  ...
+# Subtest: MUTATION: notes contradicting the basis are caught in both directions
+ok 12 - MUTATION: notes contradicting the basis are caught in both directions
+  ---
+  duration_ms: 0.2593
+  type: 'test'
+  ...
+# Subtest: platform-unsupported is a claim too, and must carry evidence
+ok 13 - platform-unsupported is a claim too, and must carry evidence
+  ---
+  duration_ms: 1.2408
+  type: 'test'
+  ...
+# Subtest: availability and verification status stay orthogonal
+ok 14 - availability and verification status stay orthogonal
+  ---
+  duration_ms: 0.3456
+  type: 'test'
+  ...
+# Subtest: no entry claims protocol-only without a helper to carry that protocol
+ok 15 - no entry claims protocol-only without a helper to carry that protocol
+  ---
+  duration_ms: 0.2283
+  type: 'test'
+  ...
+# Subtest: the protocol-only residual stays visible and countable
+ok 16 - the protocol-only residual stays visible and countable
+  ---
+  duration_ms: 0.1566
+  type: 'test'
+  ...
+# Subtest: MUTATION: a verified entry pointing at a missing file must be rejected
+ok 17 - MUTATION: a verified entry pointing at a missing file must be rejected
+  ---
+  duration_ms: 0.6527
+  type: 'test'
+  ...
+# Subtest: MUTATION: a duplicate and an unknown tool are both rejected
+ok 18 - MUTATION: a duplicate and an unknown tool are both rejected
+  ---
+  duration_ms: 0.3608
+  type: 'test'
+  ...
+# Subtest: MUTATION: an unverified entry claiming an attempt time is rejected
+ok 19 - MUTATION: an unverified entry claiming an attempt time is rejected
+  ---
+  duration_ms: 0.1111
+  type: 'test'
+  ...
+# Subtest: MUTATION: a static failure claiming an attempt time is rejected
+ok 20 - MUTATION: a static failure claiming an attempt time is rejected
+  ---
+  duration_ms: 0.2581
+  type: 'test'
+  ...
+# Subtest: MUTATION: a runtime failure without an attempt time is rejected
+ok 21 - MUTATION: a runtime failure without an attempt time is rejected
+  ---
+  duration_ms: 0.1704
+  type: 'test'
+  ...
+# Subtest: MUTATION: a failed entry without a failure basis is rejected
+ok 22 - MUTATION: a failed entry without a failure basis is rejected
+  ---
+  duration_ms: 0.1679
+  type: 'test'
+  ...
+# Subtest: the registry records the honest gap rather than inflating it
+ok 23 - the registry records the honest gap rather than inflating it
+  ---
+  duration_ms: 92.7836
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 225.4198

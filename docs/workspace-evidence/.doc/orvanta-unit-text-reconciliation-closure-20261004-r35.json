@@ -1,0 +1,16 @@
+{
+  "observedAt": "2026-10-04T12:46:00.9234822+08:00",
+  "pid": 58352,
+  "port": 1479,
+  "listenerGone": true,
+  "processGone": true,
+  "stopRequested": true,
+  "sharedServiceRestartedByThisTask": false,
+  "sharedListener": [
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 4849,
+      "OwningProcess": 16180
+    }
+  ]
+}

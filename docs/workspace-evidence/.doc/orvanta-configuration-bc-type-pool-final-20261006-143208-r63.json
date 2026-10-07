@@ -1,0 +1,116 @@
+{
+  "at": "2026-10-06T14:32:08.410+08:00",
+  "status": "Passed",
+  "scope": "r63 fixed source-read route only",
+  "primaryEvidence": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-type-pool-read-20261006-142528-r63.json",
+  "checks": {
+    "completeFinalCompile": {
+      "command": "node node_modules/typescript/bin/tsc --outDir .cache/spro-r63/final-runtime/dist",
+      "exitCode": 0
+    },
+    "frozenFilesVerified": 131,
+    "compiledSourceAstEquivalence": {
+      "files": 128,
+      "result": "passed",
+      "note": "Final source differs from actual SAP-accepted frozen build only by restoring unrelated formatting; all emitted source JS ASTs identical."
+    },
+    "registry": {
+      "entries": 201,
+      "violations": 0,
+      "unrelatedEntriesUnchanged": 200,
+      "effectsStillUnverified": true,
+      "correctActualEvidence": true
+    },
+    "format": [
+      {
+        "path": "src/configuration-bc-type-pool.ts",
+        "result": "passed",
+        "scope": "complete file"
+      },
+      {
+        "path": "src/tools.ts",
+        "result": "passed",
+        "scope": "complete file"
+      },
+      {
+        "path": "test/configuration-bc-type-pool.test.ts",
+        "result": "passed",
+        "scope": "complete file"
+      },
+      {
+        "path": "contracts/verification-registry.json",
+        "result": "passed",
+        "scope": "complete file"
+      },
+      {
+        "path": "src/adt-backend.ts",
+        "result": "passed",
+        "scope": "changed native-call method only; unrelated existing one-line paddedDocument formatting restored"
+      }
+    ],
+    "documents": [
+      {
+        "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\code-update-20261006-142528.md",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\code-update-20261006-142528.md",
+        "bytes": 7427,
+        "sha256": "d5473bda45ba472fd859de3a405eb31fe86361651a1f3ed13c0a3da02bf80380"
+      },
+      {
+        "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-type-pool-read-20261006-142528-r63.json",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-type-pool-read-20261006-142528-r63.json",
+        "bytes": 589701,
+        "sha256": "8279cf56acbd8196c7a33beeb73e92b9ca0cb9774cab3eeb4fbb2983fb0406f1"
+      },
+      {
+        "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-type-owner-review-20261006-142528-r63.md",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-type-owner-review-20261006-142528-r63.md",
+        "bytes": 7212,
+        "sha256": "5c3b55b824c30adbb259c2ea7883806460dab54a521adeaff0240bf9e4f4d186"
+      },
+      {
+        "path": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-native-command-plan-20261006-142528-r64.md",
+        "mirror": "C:\\My\\Workplace\\Coding\\vscode-abap\\abap-mcp-standalone\\docs\\workspace-evidence\\.doc\\orvanta-configuration-bc-native-command-plan-20261006-142528-r64.md",
+        "bytes": 4364,
+        "sha256": "34e61c17c04ce6e2298c06fd49313a011f81de528942a972b55a0ec9e4e3629a"
+      }
+    ],
+    "stageAuditBeforeFinalDocuments": {
+      "baselineFiles": 932,
+      "currentFiles": 938,
+      "changed": [
+        "contracts/verification-registry.json",
+        "src/adt-backend.ts",
+        "src/tools.ts"
+      ],
+      "added": [
+        "docs/workspace-evidence/.doc/code-update-20261006-142528.md",
+        "docs/workspace-evidence/.doc/orvanta-configuration-bc-native-command-plan-20261006-142528-r64.md",
+        "docs/workspace-evidence/.doc/orvanta-configuration-bc-type-owner-review-20261006-142528-r63.md",
+        "docs/workspace-evidence/.doc/orvanta-configuration-bc-type-pool-read-20261006-142528-r63.json",
+        "src/configuration-bc-type-pool.ts",
+        "test/configuration-bc-type-pool.test.ts"
+      ],
+      "stagedDiffUnchanged": true,
+      "sharedDistUnchanged": true,
+      "sharedDistSha256": "337048373194468491426bf1cffee332e970ca20eaf68d6000b1edcc0af51320"
+    }
+  },
+  "corrections": [
+    {
+      "file": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\orvanta-configuration-bc-type-owner-review-20261006-142528-r63.md",
+      "detail": "SCPR_HI_ACTLINKS_DELETE_UPD nonzero record-read cleanup branch is at lines 50-62, not the earlier approximate line 73; line 73 starts the separate header-read EXCEPTIONS. Root-cause finding is unchanged."
+    },
+    {
+      "file": "C:\\My\\Workplace\\Coding\\vscode-abap\\.doc\\code-update-20261006-142528.md",
+      "detail": "The four-file full Prettier check passed before final diff review. Final review restored pre-existing unrelated paddedDocument one-line formatting; final formatting check covers all owned complete files plus only the changed AdtBackend method, preserving the original baseline elsewhere."
+    }
+  ],
+  "gitDiffSha256": {
+    "tools": "2e55a6ac2066ada800283c172a8808cddafe52739a3ff062f0130669ee5e9048",
+    "backend": "f58595b3f811ec879bd485a8994e061646e5530b7b646cd90bcee41cc261e292",
+    "registry": "b23b8c6e57ea99e11d278fdb327ee7c2afa5bc16ac10919756fec6cdb6572979"
+  },
+  "sapMutations": 0,
+  "sharedServiceRestarts": 0,
+  "commitOrPush": 0
+}

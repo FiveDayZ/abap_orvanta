@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
+import { access, mkdir, mkdtemp, open, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
@@ -21,6 +21,23 @@ const identity = {
   recoveryGuide: "Read back program ZMODULE_POOL before retrying."
 }
 
+const sha256Hex = (value: string) => createHash("sha256").update(value, "utf8").digest("hex")
+
+const preChangeEvidence = {
+  observedAt: "2026-09-03T03:00:00.000Z",
+  target: "program ZMODULE_POOL",
+  exists: true,
+  active: true,
+  version: "20260903030000",
+  fingerprint: "a".repeat(64),
+  packageName: "ZABAP",
+  requestNumber: "GR2K923421",
+  taskNumber: "GR2K923422",
+  observationStatus: "complete" as const,
+  sources: ["repository_assignment", "active_source"],
+  warnings: []
+}
+
 test("write receipts serialize one target, retain hashes, and release the lock", async () => {
   const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
   try {
@@ -28,20 +45,7 @@ test("write receipts serialize one target, retain hashes, and release the lock",
     const first = await store.reserve(identity)
     assert.equal(first.status, "reserved")
     if (first.status !== "reserved") throw new Error("Missing reservation")
-    const evidence = {
-      observedAt: "2026-09-03T03:00:00.000Z",
-      target: "program ZMODULE_POOL",
-      exists: true,
-      active: true,
-      version: "20260903030000",
-      fingerprint: "a".repeat(64),
-      packageName: "ZABAP",
-      requestNumber: "GR2K923421",
-      taskNumber: "GR2K923422",
-      observationStatus: "complete" as const,
-      sources: ["repository_assignment", "active_source"],
-      warnings: []
-    }
+    const evidence = preChangeEvidence
     await store.recordPreChangeEvidence(first.reservation, evidence)
     await store.markSapInvocationStarted(first.reservation)
 
@@ -527,6 +531,167 @@ test("a preflight rejection is not reported as an unknown outcome", async () => 
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test("a local protection failure names the errno that refused the lock create", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+  try {
+    class RefusingLockStore extends WriteOperationReceiptStore {
+      protected override async createExclusive(path: string, value: unknown): Promise<void> {
+        if (path.includes("write-locks")) {
+          throw Object.assign(new Error("EPERM: operation not permitted, open '<state path>'"), {
+            code: "EPERM"
+          })
+        }
+        return super.createExclusive(path, value)
+      }
+    }
+    const store = new RefusingLockStore(root, "write-instance")
+    const result = await store.reserve(identity)
+    assert.equal(result.status, "protection_failed")
+    if (result.status !== "protection_failed") throw new Error("Expected protection failure")
+    // The receipt used to carry `errorHash` alone, so this outcome could not be attributed at all:
+    // the errno is what separates a transient OS refusal from a real defect in the guard.
+    assert.equal(result.receipt.errorCode, "EPERM")
+    assert.equal(result.receipt.errorName, "Error")
+    assert.match(String(result.receipt.errorHash), /^[a-f0-9]{64}$/)
+    assert.equal(result.receipt.status, "failed")
+    assert.equal(result.receipt.localLockReleased, true)
+    assert.equal(result.receipt.sapInvocationStarted, false)
+    assert.equal(result.receipt.automaticRetry, false)
+    // A Node message embeds the absolute state path, so the message itself is still never stored.
+    assert.equal(JSON.stringify(result.receipt).includes("operation not permitted"), false)
+
+    const stored = JSON.parse(
+      await readFile(
+        join(root, "write-receipts", sha256Hex("w200"), `${sha256Hex(identity.operationId)}.json`),
+        "utf8"
+      )
+    )
+    assert.equal(stored.errorCode, "EPERM")
+    assert.equal(stored.errorName, "Error")
+    assert.equal(stored.state, "failed")
+    assert.equal(stored.lockReleased, true)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a local protection failure without an errno still records the error class", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+  try {
+    class RefusingLockStore extends WriteOperationReceiptStore {
+      protected override async createExclusive(path: string, value: unknown): Promise<void> {
+        if (path.includes("write-locks")) throw new TypeError("injected lock create failure")
+        return super.createExclusive(path, value)
+      }
+    }
+    const store = new RefusingLockStore(root, "write-instance")
+    const result = await store.reserve(identity)
+    assert.equal(result.status, "protection_failed")
+    if (result.status !== "protection_failed") throw new Error("Expected protection failure")
+    assert.equal(result.receipt.errorName, "TypeError")
+    assert.equal("errorCode" in result.receipt, false)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a failed receipt create propagates instead of pretending a reservation exists", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+  try {
+    class RefusingReceiptStore extends WriteOperationReceiptStore {
+      protected override async createExclusive(path: string, value: unknown): Promise<void> {
+        if (path.includes("write-receipts")) {
+          throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" })
+        }
+        return super.createExclusive(path, value)
+      }
+    }
+    const store = new RefusingReceiptStore(root, "write-instance")
+    await assert.rejects(store.reserve(identity), /ENOSPC/)
+    // Fail closed: without a receipt there is no operation identity to deduplicate against, so
+    // nothing may be left behind that a later caller could read as a reservation.
+    await assert.rejects(
+      access(
+        join(root, "write-receipts", sha256Hex("w200"), `${sha256Hex(identity.operationId)}.json`)
+      )
+    )
+    await assert.rejects(
+      access(join(root, "write-locks", sha256Hex("w200"), `${sha256Hex(identity.targetKey)}.json`))
+    )
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test("a concurrent reader does not break the owner's receipt update", async () => {
+  const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+  try {
+    const store = new WriteOperationReceiptStore(root, "write-instance")
+    const reserved = await store.reserve(identity)
+    assert.equal(reserved.status, "reserved")
+    if (reserved.status !== "reserved") throw new Error("Missing reservation")
+    const receiptPath = join(
+      root,
+      "write-receipts",
+      sha256Hex("w200"),
+      `${sha256Hex(identity.operationId)}.json`
+    )
+    // A second request reads this file while its owner updates it - that is what the duplicate
+    // check does. Windows refuses to replace a file a reader holds open, so without the retry the
+    // owner fails inside its own pre-change observation and never dispatches (2026-10-03). The
+    // reader here closes after 20 ms, like a real read does.
+    const reader = await open(receiptPath, "r")
+    const closed = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        void reader.close().then(() => resolve())
+      }, 20)
+    })
+    const updated = store.recordPreChangeEvidence(reserved.reservation, preChangeEvidence)
+    await closed
+    await updated
+    const stored = JSON.parse(await readFile(receiptPath, "utf8"))
+    assert.equal(stored.sapPreChangeEvidence.fingerprint, preChangeEvidence.fingerprint)
+    assert.equal(stored.state, "in_progress")
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test(
+  "a reader that never releases the receipt leaves the stored receipt intact",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), "abap-mcp-write-receipts-"))
+    try {
+      const store = new WriteOperationReceiptStore(root, "write-instance")
+      const reserved = await store.reserve(identity)
+      assert.equal(reserved.status, "reserved")
+      if (reserved.status !== "reserved") throw new Error("Missing reservation")
+      const receiptPath = join(
+        root,
+        "write-receipts",
+        sha256Hex("w200"),
+        `${sha256Hex(identity.operationId)}.json`
+      )
+      const before = await readFile(receiptPath, "utf8")
+      const reader = await open(receiptPath, "r")
+      try {
+        // Fail closed after the bounded retries: a persistent sharing violation is still reported,
+        // and because the update never lands, no reader can observe a half-written receipt.
+        await assert.rejects(
+          store.recordPreChangeEvidence(reserved.reservation, preChangeEvidence),
+          /EPERM|operation not permitted/
+        )
+      } finally {
+        await reader.close()
+      }
+      assert.equal(await readFile(receiptPath, "utf8"), before)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }
+)
 
 async function useExitedOwner(reservation: {
   receiptPath: string

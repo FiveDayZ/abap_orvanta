@@ -1,0 +1,49 @@
+{
+  "startedAt": "2026-09-11T01:31:39.014Z",
+  "mode": "preview",
+  "selection": {
+    "name": "preview_configuration",
+    "args": {
+      "connectionId": "w200",
+      "plant": "809P",
+      "changes": {
+        "DATBI": "20261209"
+      },
+      "expectedRowFingerprint": "f054a40edea645724fc3c06248216a606ae30fd18ba5c28d5a6c5fceaef4ea7c"
+    }
+  },
+  "status": "Partially Verified",
+  "selectedChecksPassed": true,
+  "automaticRetry": false,
+  "steps": [
+    {
+      "name": "get_runtime_info",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"observed\",\n  \"readOnly\": true,\n  \"server\": {\n    \"name\": \"orvanta\",\n    \"version\": \"0.36.33\"\n  },\n  \"startedAt\": \"2026-09-11T01:13:15.595Z\",\n  \"nodeVersion\": \"24.8.0\",\n  \"startupArtifact\": {\n    \"status\": \"observed\",\n    \"observedAt\": \"2026-09-11T01:13:15.595Z\",\n    \"packageVersion\": \"0.36.33\",\n    \"artifactFingerprint\": \"4a9a7939ed27c0aab228e2ab33a6b1c8d985a6323f2a2e5e54f2ff443c2b2d0d\",\n    \"fileCount\": 41\n  },\n  \"currentDiskArtifact\": {\n    \"status\": \"observed\",\n    \"observedAt\": \"2026-09-11T01:31:39.076Z\",\n    \"packageVersion\": \"0.36.33\",\n    \"artifactFingerprint\": \"4a9a7939ed27c0aab228e2ab33a6b1c8d985a6323f2a2e5e54f2ff443c2b2d0d\",\n    \"fileCount\": 41\n  },\n  \"checks\": {\n    \"expectedVersion\": \"match\",\n    \"expectedArtifact\": \"match\",\n    \"diskSinceStartup\": \"match\",\n    \"moduleAndPackageVersion\": \"match\"\n  },\n  \"restartRequired\": false,\n  \"sapStatus\": \"not_probed\",\n  \"helperStatus\": \"not_probed; use get_capability_report for separately authorized observations\",\n  \"limitations\": [\n    \"Fingerprint covers service code, package.json and package-lock.json, not every dependency or UI asset.\",\n    \"Startup disk observation is not an attestation of every module already loaded in memory.\",\n    \"Matching artifacts do not prove SAP connectivity, helper compatibility or runtime acceptance.\",\n    \"No service switch, state cleanup, SAP retry or rollback is performed.\"\n  ]\n}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "preview_configuration",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"connectionId\": \"w200\",\n  \"client\": \"200\",\n  \"tableName\": \"ZTPMC_TPCFG\",\n  \"plant\": \"809P\",\n  \"readOnly\": true,\n  \"saveAvailable\": false,\n  \"validation\": \"structural_only\",\n  \"businessValidation\": \"not_verified\",\n  \"snapshot\": false,\n  \"definitionFingerprint\": \"4c617b912277d9d19b9e0bd8760dbfd53c541adb2129b30a5b040bb6cdd537ed\",\n  \"status\": \"preview\",\n  \"data\": {\n    \"MANDT\": \"200\",\n    \"WERKS\": \"809P\",\n    \"ACTIVE\": \"X\",\n    \"TPMODE\": \"S\",\n    \"DATAB\": \"20260908\",\n    \"DATBI\": \"20261208\",\n    \"CFGVERS\": \"000001\",\n    \"AENAM\": \"WYS\",\n    \"AEDAT\": \"20260908\",\n    \"AEZET\": \"091630\"\n  },\n  \"rowFingerprint\": \"f054a40edea645724fc3c06248216a606ae30fd18ba5c28d5a6c5fceaef4ea7c\",\n  \"differences\": [\n    {\n      \"field\": \"DATBI\",\n      \"from\": \"20261208\",\n      \"to\": \"20261209\"\n    }\n  ],\n  \"warnings\": [\n    \"No save, locks, transport or audit changes are performed.\",\n    \"ACTIVE and TPMODE have no DDIC domain; allowed business values and maintenance events are not validated.\",\n    \"Fingerprint covers returned values, not a transaction snapshot or authorization to write.\"\n  ]\n}"
+          }
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "Only the selected case is checked, not full third-batch acceptance.",
+    "No save is requested; preview is not business validation or a transaction snapshot.",
+    "Source preflight is not an atomic lock across Unit execution.",
+    "Timeout is not cancellation; inspect the saved result before deciding next steps."
+  ],
+  "finishedAt": "2026-09-11T01:31:39.326Z"
+}

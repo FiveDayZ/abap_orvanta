@@ -1,0 +1,47 @@
+{
+  "connectionId": "w200",
+  "objectType": "TABL",
+  "objectName": "ZORV_MCP_T01",
+  "packageName": "ZABAP",
+  "recordedRequest": "",
+  "status": "DDIC_OBJECT_DELETED",
+  "absenceVerified": true,
+  "operationReceipt": {
+    "operationId": "regr-r11-delete-table-01",
+    "version": 2,
+    "status": "completed",
+    "connectionId": "w200",
+    "toolName": "delete_ddic_object",
+    "operationIdHash": "ddf0a86e954848908a26e705ec690121646754f85a0df0abf4e7ac77971f96fd",
+    "targetKeyHash": "9111a70f578375cf1924e2efa453d9ec40cbf1761ab8c9b15d3936f774e58d90",
+    "inputHash": "b4bc827341125e2705542bf267ddeb83f2e15d2ed43ba03470e8756b1cecc1c2",
+    "preChangeSummary": "{\"target\":\"tabl object ZORV_MCP_T01\",\"requestedOperation\":\"delete_ddic_object\",\"concurrencyGuard\":\"version 20260922153129\",\"transportNumber\":\"GR2K923472\",\"automaticRollback\":false}",
+    "sapPreChangeEvidence": {
+      "observedAt": "2026-09-22T07:44:10.181Z",
+      "target": "tabl object ZORV_MCP_T01",
+      "exists": true,
+      "active": true,
+      "version": "20260922153129",
+      "fingerprint": "b945e003ab52b9a1d09722874215afe45a42a7f6aa7189c1d9942a297ab17bf0",
+      "packageName": "ZABAP",
+      "requestNumber": "",
+      "taskNumber": null,
+      "observationStatus": "complete",
+      "sources": [
+        "sap_ddic_read"
+      ],
+      "warnings": []
+    },
+    "sapInvocationStarted": true,
+    "resultHash": "f70ffe00d36277b79acfd9eac2b6388a5aeb2ac4ce9e51d81d3b5279415aeffb",
+    "startedAt": "2026-09-22T07:44:10.146Z",
+    "finishedAt": "2026-09-22T07:44:10.323Z",
+    "durationMs": 172,
+    "receiptHash": "0ec675d5244a40dd68a7b5d151b9941a87dec99975251906471f01ba69f8a87e",
+    "automaticRetry": false,
+    "automaticRollback": false,
+    "outcomeMayBeUnknown": false,
+    "localLockReleased": true,
+    "manualRecovery": "Read back tabl object ZORV_MCP_T01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId."
+  }
+}

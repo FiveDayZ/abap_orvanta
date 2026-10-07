@@ -1,0 +1,387 @@
+import { createHash } from "node:crypto"
+
+const parameter = (name: string, typeName = "STRING", passByValue = true) => ({
+  name,
+  typeName,
+  optional: false,
+  passByValue
+})
+
+// Local deployment candidates; public registration does not prove active SAP source.
+export const configurationNumberRangeReadApi = {
+  functionName: "Z_ORVANTA_CFG_NR_READ",
+  remoteEnabled: true,
+  importParameters: [parameter("IV_OBJECT")],
+  exportParameters: [
+    ...["EV_CODE", "EV_SYSTEM", "EV_CLIENT", "EV_VERSION"].map((name) => parameter(name)),
+    parameter("ES_DEFINITION", "TNRO")
+  ],
+  tableParameters: [parameter("ET_INTERVALS", "NRIV", false)],
+  source: `DATA: lv_object TYPE tnro-object,
+      ls_confirmation TYPE tnro,
+      lt_confirmation TYPE STANDARD TABLE OF nriv,
+      lv_count TYPE i,
+      lv_blob TYPE xstring,
+      lv_hash TYPE string.
+CLEAR: ev_code, ev_system, ev_client, ev_version, es_definition.
+REFRESH et_intervals.
+ev_system = sy-sysid.
+ev_client = sy-mandt.
+IF sy-sysid <> 'GR2' OR sy-mandt <> '200'.
+  ev_code = 'SCOPE_UNSUPPORTED'.
+  RETURN.
+ENDIF.
+FIND REGEX '^[ZY][A-Z0-9_]{0,9}$' IN iv_object.
+IF sy-subrc <> 0.
+  ev_code = 'INPUT_INVALID'.
+  RETURN.
+ENDIF.
+lv_object = iv_object.
+AUTHORITY-CHECK OBJECT 'S_NUMBER'
+  ID 'NROBJ' FIELD lv_object ID 'ACTVT' FIELD '03'.
+IF sy-subrc <> 0.
+  ev_code = 'AUTHORIZATION_DENIED'.
+  RETURN.
+ENDIF.
+SELECT SINGLE * INTO es_definition FROM tnro WHERE object = lv_object.
+IF sy-subrc <> 0.
+  ev_code = 'OBJECT_NOT_FOUND'.
+  RETURN.
+ENDIF.
+SELECT * FROM nriv INTO TABLE et_intervals UP TO 101 ROWS
+  WHERE object = lv_object.
+DESCRIBE TABLE et_intervals LINES lv_count.
+IF lv_count > 100.
+  CLEAR es_definition.
+  REFRESH et_intervals.
+  ev_code = 'INTERVAL_LIMIT_EXCEEDED'.
+  RETURN.
+ENDIF.
+SORT et_intervals BY client object subobject nrrangenr toyear.
+SELECT SINGLE * INTO ls_confirmation FROM tnro WHERE object = lv_object.
+IF sy-subrc <> 0 OR ls_confirmation <> es_definition.
+  ev_code = 'READ_CHANGED'.
+ELSE.
+  SELECT * FROM nriv INTO TABLE lt_confirmation UP TO 101 ROWS
+    WHERE object = lv_object.
+  SORT lt_confirmation BY client object subobject nrrangenr toyear.
+  IF lt_confirmation[] <> et_intervals[].
+    ev_code = 'READ_CHANGED'.
+  ENDIF.
+ENDIF.
+IF ev_code IS NOT INITIAL.
+  CLEAR es_definition.
+  REFRESH et_intervals.
+  RETURN.
+ENDIF.
+" Version covers the complete definition and all current-client rows.
+EXPORT system = sy-sysid client = sy-mandt definition = es_definition
+       intervals = et_intervals[] TO DATA BUFFER lv_blob.
+CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'
+  EXPORTING alg = 'SHA2' data = lv_blob
+  IMPORTING hashstring = lv_hash
+  EXCEPTIONS unknown_alg = 1 param_error = 2 internal_error = 3
+             error_message = 4 OTHERS = 5.
+IF sy-subrc <> 0 OR strlen( lv_hash ) <> 64.
+  CLEAR es_definition.
+  REFRESH et_intervals.
+  ev_code = 'HASH_FAILED'.
+  RETURN.
+ENDIF.
+TRANSLATE lv_hash TO LOWER CASE.
+IF lv_hash CN '0123456789abcdef'.
+  CLEAR es_definition.
+  REFRESH et_intervals.
+  ev_code = 'HASH_FAILED'.
+  RETURN.
+ENDIF.
+ev_version = lv_hash.
+ev_code = 'READ_OK'.`
+} as const
+
+export const configurationNumberRangeApplyApi = {
+  functionName: "Z_ORVANTA_CFG_NR_APPLY",
+  remoteEnabled: true,
+  importParameters: [
+    "IV_OBJECT",
+    "IV_EXPECTED_VERSION",
+    "IV_ACTION",
+    "IV_INTERVAL",
+    "IV_FROM_NUMBER",
+    "IV_TO_NUMBER",
+    "IV_EXTERNAL",
+    "IV_ACK_LOCAL_ONLY"
+  ].map((name) => parameter(name)),
+  exportParameters: [
+    ...[
+      "EV_CODE",
+      "EV_SYSTEM",
+      "EV_CLIENT",
+      "EV_USER",
+      "EV_COMMITTED",
+      "EV_BEFORE_VERSION",
+      "EV_VERSION",
+      "EV_SESSION_RESET",
+      "EV_UNLOCKED",
+      "EV_MSGID",
+      "EV_MSGNO"
+    ].map((name) => parameter(name)),
+    parameter("ES_ERROR", "INRER")
+  ],
+  tableParameters: [parameter("ET_INTERVALS", "NRIV", false)],
+  source: `" Self-contained LUW. Numeric, nonannual, unbuffered intervals only.
+DATA: lv_object TYPE tnro-object,
+      lv_interval TYPE nriv-nrrangenr,
+      lv_read_code TYPE string,
+      lv_read_system TYPE string,
+      lv_read_client TYPE string,
+      lv_version TYPE string,
+      lv_error TYPE c,
+      lv_warning TYPE c,
+      lv_commit_started TYPE c,
+      lv_session_started TYPE c,
+      lv_index TYPE sy-tabix,
+      ls_definition TYPE tnro,
+      ls_after_definition TYPE tnro,
+      ls_row TYPE nriv,
+      ls_after TYPE nriv,
+      ls_change TYPE inriv,
+      lt_before TYPE STANDARD TABLE OF nriv,
+      lt_expected TYPE STANDARD TABLE OF nriv,
+      lt_after TYPE STANDARD TABLE OF nriv,
+      lt_changes TYPE STANDARD TABLE OF inriv,
+      lt_errors TYPE STANDARD TABLE OF inriv.
+CLEAR: ev_code, ev_system, ev_client, ev_user, ev_committed,
+       ev_before_version, ev_version, ev_session_reset, ev_unlocked,
+       ev_msgid, ev_msgno, es_error.
+REFRESH et_intervals.
+ev_system = sy-sysid.
+ev_client = sy-mandt.
+ev_user = sy-uname.
+ev_session_reset = 'not_required'.
+ev_unlocked = 'not_required'.
+IF sy-sysid <> 'GR2' OR sy-mandt <> '200'.
+  ev_code = 'SCOPE_UNSUPPORTED'.
+  RETURN.
+ENDIF.
+FIND REGEX '^[ZY][A-Z0-9_]{0,9}$' IN iv_object.
+IF sy-subrc <> 0.
+  ev_code = 'INPUT_INVALID'.
+  RETURN.
+ENDIF.
+FIND REGEX '^[a-f0-9]{64}$' IN iv_expected_version.
+IF sy-subrc <> 0.
+  ev_code = 'INPUT_INVALID'.
+  RETURN.
+ENDIF.
+FIND REGEX '^[A-Z0-9]{2}$' IN iv_interval.
+IF sy-subrc <> 0.
+  ev_code = 'INPUT_INVALID'.
+  RETURN.
+ENDIF.
+FIND REGEX '^[0-9]{20}$' IN iv_from_number.
+IF sy-subrc <> 0.
+  ev_code = 'INPUT_INVALID'.
+  RETURN.
+ENDIF.
+FIND REGEX '^[0-9]{20}$' IN iv_to_number.
+IF sy-subrc <> 0 OR iv_from_number >= iv_to_number
+OR iv_ack_local_only <> 'X'
+OR ( iv_action <> 'I' AND iv_action <> 'U' )
+OR ( iv_external <> space AND iv_external <> 'X' ).
+  ev_code = 'INPUT_INVALID'.
+  RETURN.
+ENDIF.
+lv_object = iv_object.
+lv_interval = iv_interval.
+AUTHORITY-CHECK OBJECT 'S_NUMBER'
+  ID 'NROBJ' FIELD lv_object ID 'ACTVT' FIELD '02'.
+IF sy-subrc <> 0.
+  ev_code = 'AUTHORIZATION_DENIED'.
+  RETURN.
+ENDIF.
+CALL FUNCTION 'NUMBER_RANGE_ENQUEUE'
+  EXPORTING object = lv_object
+  EXCEPTIONS foreign_lock = 1 object_not_found = 2 system_failure = 3
+             error_message = 4 OTHERS = 5.
+IF sy-subrc <> 0.
+  ev_msgid = sy-msgid.
+  ev_msgno = sy-msgno.
+  ev_code = 'LOCK_FAILED'.
+  RETURN.
+ENDIF.
+CLEAR ev_unlocked.
+TRY.
+  DO 1 TIMES.
+    CALL FUNCTION 'Z_ORVANTA_CFG_NR_READ'
+      EXPORTING iv_object = iv_object
+      IMPORTING ev_code = lv_read_code ev_system = lv_read_system
+                ev_client = lv_read_client ev_version = lv_version
+                es_definition = ls_definition
+      TABLES et_intervals = lt_before
+      EXCEPTIONS error_message = 1 OTHERS = 2.
+    IF sy-subrc <> 0 OR lv_read_code <> 'READ_OK'.
+      ev_code = 'READ_PRECONDITION_FAILED'.
+      EXIT.
+    ENDIF.
+    ev_before_version = lv_version.
+    IF lv_version <> iv_expected_version.
+      ev_code = 'VERSION_CHANGED'.
+      EXIT.
+    ENDIF.
+    IF ls_definition-domlen <> 'NUMC20'
+    OR ls_definition-yearind <> space OR ls_definition-buffer <> space
+    OR ls_definition-dtelsobj <> space OR ls_definition-nrtab <> space
+    OR ls_definition-textind <> space OR ls_definition-rfcdest <> space
+    OR ls_definition-nrcheckascii <> space.
+      ev_code = 'DEFINITION_UNSUPPORTED'.
+      EXIT.
+    ENDIF.
+    LOOP AT lt_before INTO ls_row.
+      IF ls_row-subobject <> space OR ls_row-toyear <> '0000'
+      OR ls_row-nrlevel <> 0.
+        ev_code = 'IN_USE_OR_SCOPE_UNSUPPORTED'.
+        EXIT.
+      ENDIF.
+    ENDLOOP.
+    IF ev_code IS NOT INITIAL.
+      EXIT.
+    ENDIF.
+    READ TABLE lt_before INTO ls_row
+      WITH KEY client = sy-mandt object = lv_object subobject = space
+               nrrangenr = lv_interval toyear = '0000'.
+    lv_index = sy-tabix.
+    IF iv_action = 'I' AND sy-subrc = 0.
+      ev_code = 'INTERVAL_ALREADY_EXISTS'.
+      EXIT.
+    ELSEIF iv_action = 'U' AND sy-subrc <> 0.
+      ev_code = 'INTERVAL_NOT_FOUND'.
+      EXIT.
+    ENDIF.
+    CLEAR ls_after.
+    ls_after-client = sy-mandt.
+    ls_after-object = lv_object.
+    ls_after-nrrangenr = lv_interval.
+    ls_after-toyear = '0000'.
+    ls_after-fromnumber = iv_from_number.
+    ls_after-tonumber = iv_to_number.
+    ls_after-externind = iv_external.
+    IF iv_action = 'U'.
+      IF ls_row-externind <> ls_after-externind.
+        ev_code = 'MODE_SWITCH_UNSUPPORTED'.
+        EXIT.
+      ENDIF.
+      ls_after-nrlevel = ls_row-nrlevel.
+      IF ls_row = ls_after.
+        ev_version = lv_version.
+        et_intervals[] = lt_before[].
+        ev_code = 'NO_CHANGES'.
+        EXIT.
+      ENDIF.
+    ENDIF.
+    lt_expected[] = lt_before[].
+    IF iv_action = 'I'.
+      APPEND ls_after TO lt_expected.
+    ELSE.
+      MODIFY lt_expected FROM ls_after INDEX lv_index.
+      IF sy-subrc <> 0.
+        ev_code = 'EXPECTED_STATE_FAILED'.
+        EXIT.
+      ENDIF.
+    ENDIF.
+    SORT lt_expected BY client object subobject nrrangenr toyear.
+    lv_session_started = 'X'.
+    CLEAR ev_session_reset.
+    CALL FUNCTION 'NUMBER_RANGE_UPDATE_INIT'
+      EXPORTING object = lv_object
+      EXCEPTIONS object_not_found = 1 error_message = 2 OTHERS = 3.
+    IF sy-subrc <> 0.
+      ev_msgid = sy-msgid.
+      ev_msgno = sy-msgno.
+      ev_code = 'SESSION_INIT_FAILED'.
+      EXIT.
+    ENDIF.
+    MOVE-CORRESPONDING ls_after TO ls_change.
+    ls_change-procind = iv_action.
+    APPEND ls_change TO lt_changes.
+    CALL FUNCTION 'NUMBER_RANGE_INTERVAL_UPDATE'
+      EXPORTING object = lv_object check_at_all_events = 'X'
+      IMPORTING error = es_error error_occured = lv_error
+                warning_occured = lv_warning
+      TABLES interval = lt_changes error_iv = lt_errors
+      EXCEPTIONS object_not_found = 1 error_message = 2 OTHERS = 3.
+    IF sy-subrc <> 0 OR lv_error <> space OR lv_warning <> space.
+      ev_msgid = sy-msgid.
+      ev_msgno = sy-msgno.
+      ev_code = 'INTERVAL_VALIDATION_FAILED'.
+      EXIT.
+    ENDIF.
+    CALL FUNCTION 'NUMBER_RANGE_UPDATE_CLOSE'
+      EXPORTING object = lv_object
+      EXCEPTIONS no_changes_made = 1 object_not_initialized = 2
+                 error_message = 3 OTHERS = 4.
+    IF sy-subrc <> 0.
+      ev_msgid = sy-msgid.
+      ev_msgno = sy-msgno.
+      ev_code = 'INTERVAL_UPDATE_FAILED'.
+      EXIT.
+    ENDIF.
+    CALL FUNCTION 'Z_ORVANTA_CFG_NR_READ'
+      EXPORTING iv_object = iv_object
+      IMPORTING ev_code = lv_read_code ev_system = lv_read_system
+                ev_client = lv_read_client ev_version = lv_version
+                es_definition = ls_after_definition
+      TABLES et_intervals = lt_after
+      EXCEPTIONS error_message = 1 OTHERS = 2.
+    IF sy-subrc <> 0 OR lv_read_code <> 'READ_OK'
+    OR ls_after_definition <> ls_definition
+    OR lt_after[] <> lt_expected[].
+      ev_code = 'READBACK_FAILED'.
+      EXIT.
+    ENDIF.
+    lv_commit_started = 'X'.
+    COMMIT WORK AND WAIT.
+    IF sy-subrc <> 0.
+      ev_committed = '?'.
+      ev_code = 'COMMIT_OUTCOME_UNKNOWN'.
+      EXIT.
+    ENDIF.
+    ev_committed = 'X'.
+    ev_version = lv_version.
+    et_intervals[] = lt_after[].
+    ev_code = 'SAVED_LOCAL_CLIENT'.
+  ENDDO.
+CATCH cx_root.
+  IF lv_commit_started = 'X'.
+    ev_committed = '?'.
+    ev_code = 'COMMIT_OUTCOME_UNKNOWN'.
+  ELSE.
+    ev_code = 'EXECUTION_FAILED'.
+  ENDIF.
+ENDTRY.
+IF lv_commit_started <> 'X'.
+  ROLLBACK WORK.
+ENDIF.
+" Clear standard work buffers before another request reuses the session.
+IF lv_session_started = 'X'.
+  CALL FUNCTION 'NUMBER_RANGE_UPDATE_INIT'
+    EXPORTING object = lv_object
+    EXCEPTIONS object_not_found = 1 error_message = 2 OTHERS = 3.
+  IF sy-subrc = 0.
+    ev_session_reset = 'X'.
+  ELSEIF ev_committed = 'X'.
+    ev_code = 'SAVED_SESSION_RESET_FAILED'.
+  ENDIF.
+ENDIF.
+CALL FUNCTION 'NUMBER_RANGE_DEQUEUE'
+  EXPORTING object = lv_object
+  EXCEPTIONS error_message = 1 OTHERS = 2.
+IF sy-subrc = 0.
+  ev_unlocked = 'X'.
+ELSEIF ev_code = 'SAVED_LOCAL_CLIENT'.
+  ev_code = 'SAVED_UNLOCK_FAILED'.
+ENDIF.`
+} as const
+
+export const configurationNumberRangeApiBodyFingerprint = (source: string) =>
+  createHash("sha256").update(source.replaceAll("\r\n", "\n").trim(), "utf8").digest("hex")

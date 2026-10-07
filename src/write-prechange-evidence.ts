@@ -6,6 +6,11 @@ import type { ToolService } from "./tools.js"
 import { hashWriteInput, type SapPreChangeEvidence } from "./write-operation-receipts.js"
 import { SmartformService } from "./smartforms.js"
 import { transportEntries, transportFingerprint } from "./transport-delivery.js"
+import { configurationUnitTextApplySchema } from "./configuration-unit-apply.js"
+import {
+  attestConfigurationUnitApplyApi,
+  configurationUnitApplyApi
+} from "./configuration-unit-apply-api.js"
 
 type EvidenceDraft = Omit<SapPreChangeEvidence, "observedAt" | "observationStatus">
 
@@ -31,7 +36,46 @@ export async function observeWritePreChange(
     warnings: []
   }
 
-  if (name === "cleanup_transport_entries") {
+  if (name === "apply_configuration_unit_text") {
+    const value = configurationUnitTextApplySchema.parse(input)
+    attestConfigurationUnitApplyApi(
+      JSON.parse(
+        await tools.readFunctionModuleInterface({
+          connectionId,
+          functionName: configurationUnitApplyApi.functionName
+        })
+      )
+    )
+    const current = parseJson(
+      await tools.readConfigurationUnit({
+        connectionId,
+        unitKey: value.unitKey,
+        language: value.language,
+        includeApiSnapshot: true
+      })
+    )
+    const snapshot = current.apiSnapshot as Record<string, unknown> | undefined
+    if (
+      snapshot?.status !== "read" ||
+      snapshot.textVersion !== value.expectedTextVersion ||
+      current.readFingerprint !== value.expectedReadFingerprint
+    ) {
+      throw Error("CONFIGURATION_UNIT_APPLY_PRECONDITION_FAILED")
+    }
+    evidence.exists = true
+    evidence.active = true
+    evidence.version = value.expectedTextVersion
+    evidence.fingerprint = value.expectedReadFingerprint
+    evidence.requestNumber = value.requestNumber
+    evidence.taskNumber = value.taskNumber
+    evidence.sources.push(
+      "read_function_module_interface",
+      "read_configuration_unit_native_snapshot"
+    )
+    evidence.warnings.push(
+      "Pre-change read does not verify SAP modification authority, locks or exact CTS recording; the native command must check them."
+    )
+  } else if (name === "cleanup_transport_entries") {
     const parentTransportNumber = String(input.parentTransportNumber).toUpperCase()
     const taskNumber = String(input.taskNumber).toUpperCase()
     const request = await backend.transportDetails(connectionId, parentTransportNumber)

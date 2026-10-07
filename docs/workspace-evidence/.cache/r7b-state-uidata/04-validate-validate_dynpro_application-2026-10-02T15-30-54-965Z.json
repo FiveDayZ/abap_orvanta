@@ -1,0 +1,10 @@
+{
+  "tool": "validate_dynpro_application",
+  "arguments": {
+    "programName": "ZCODEX_MCP_DYNPRO",
+    "screenNumber": "0100",
+    "connectionId": "w200"
+  },
+  "isError": false,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"programName\": \"ZCODEX_MCP_DYNPRO\",\n  \"screenNumber\": \"0100\",\n  \"fingerprint\": \"82fca2f52ace63c8dbcbfe6dd052aabad3bab602ed0a7ef70539d54725668bc9\",\n  \"sourceUri\": \"/sap/bc/adt/programs/programs/zcodex_mcp_dynpro/source/main\",\n  \"status\": \"valid\",\n  \"fieldCount\": 5,\n  \"flowLineCount\": 4,\n  \"moduleReferences\": [\n    {\n      \"name\": \"STATUS_0100\",\n      \"event\": \"PBO\",\n      \"line\": 2\n    },\n    {\n      \"name\": \"USER_COMMAND_0100\",\n      \"event\": \"PAI\",\n      \"line\": 4\n    }\n  ],\n  \"moduleDefinitions\": [\n    {\n      \"name\": \"STATUS_0100\",\n      \"directions\": [\n        \"OUTPUT\"\n      ]\n    },\n    {\n      \"name\": \"USER_COMMAND_0100\",\n      \"directions\": [\n        \"INPUT\"\n      ]\n    }\n  ],\n  \"guiReferences\": [],\n  \"guiDefinition\": {\n    \"versionToken\": \"20260902111803\",\n    \"fingerprint\": \"d88e33e3ba79b570cb4e1ccd8bb9fd2b768d7e62b0a5553d51a98bb872d9cbef\",\n    \"statusCount\": 0,\n    \"titleCount\": 0\n  },\n  \"sourceCoverage\": {\n    \"complete\": true,\n    \"includeLimit\": 32,\n    \"maxDepth\": 8,\n    \"sources\": [\n      {\n        \"objectName\": \"ZCODEX_MCP_DYNPRO\",\n        \"objectType\": \"PROG/P\",\n        \"sourceUri\": \"/sap/bc/adt/programs/programs/zcodex_mcp_dynpro/source/main\",\n        \"depth\": 0\n      }\n    ],\n    \"failures\": []\n  },\n  \"errors\": [],\n  \"warnings\": []\n}"
+}

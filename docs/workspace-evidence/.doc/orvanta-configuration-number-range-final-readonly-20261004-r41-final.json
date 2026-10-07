@@ -1,0 +1,198 @@
+{
+  "startedAt": "2026-10-04T11:16:57.791Z",
+  "calls": [
+    {
+      "at": "2026-10-04T11:16:58.830Z",
+      "name": "read_configuration_number_range_api",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR"
+      },
+      "isError": false,
+      "data": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "readOnly": true,
+        "versionScope": "complete_TNRO_and_current_client_NRIV",
+        "snapshot": {
+          "EV_CODE": "READ_OK",
+          "EV_SYSTEM": "GR2",
+          "EV_CLIENT": "200",
+          "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+          "ES_DEFINITION": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          },
+          "ET_INTERVALS": [
+            {
+              "CLIENT": "200",
+              "OBJECT": "ZORVCFGNR",
+              "SUBOBJECT": "",
+              "NRRANGENR": "01",
+              "TOYEAR": "0000",
+              "FROMNUMBER": "00000000000000000001",
+              "TONUMBER": "00000000000000000200",
+              "NRLEVEL": "00000000000000000000",
+              "EXTERNIND": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:16:58.839Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+        "action": "create",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000100",
+        "external": false,
+        "operationId": "r41b-public-create-01-fixed-include",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "status": "protection_refused",
+        "protectionStatus": "duplicate",
+        "operationId": "r41b-public-create-01-fixed-include",
+        "sapInvocationStarted": false,
+        "retryAvailable": false,
+        "operationReceipt": {
+          "version": 2,
+          "status": "failed",
+          "connectionId": "w200",
+          "toolName": "apply_configuration_number_range",
+          "operationIdHash": "80eb7337faf6cfc66ca40cb03fe621bddc2cb1b6f0eed44beef00e327676c9a2",
+          "targetKeyHash": "3d23806c93052e6b81e794248bd0317c4571998abd8889bb68820abb28b696f3",
+          "inputHash": "7d17f8efbad6bde8b264eac5eb34daaf1f2b39c14e8f46cd257286b023e012f3",
+          "preChangeSummary": "Complete ZORVCFGNR/200 version 7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d; create interval 01.",
+          "sapPreChangeEvidence": {
+            "observedAt": "2026-10-04T11:05:00.009Z",
+            "target": "NRIV:ZORVCFGNR:200",
+            "exists": true,
+            "active": null,
+            "version": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+            "fingerprint": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+            "packageName": null,
+            "requestNumber": null,
+            "taskNumber": null,
+            "observationStatus": "complete",
+            "sources": [
+              "Z_ORVANTA_CFG_NR_READ",
+              "TNRO",
+              "NRIV"
+            ],
+            "warnings": [
+              "NRIV intervals are local client only; no CTS recording."
+            ]
+          },
+          "sapInvocationStarted": true,
+          "errorHash": "4c54ad5edde5ea30945c0d5cade8ea67d1c8802889fe3581e2ddd9ca2e9363b2",
+          "startedAt": "2026-10-04T11:04:52.133Z",
+          "finishedAt": "2026-10-04T11:05:01.334Z",
+          "durationMs": 9202,
+          "receiptHash": "d6970bf9e1e237852fcab515b85fe78b3e0d08eafc3fd2f56f1ed117fc7fee2e",
+          "automaticRetry": false,
+          "automaticRollback": false,
+          "outcomeMayBeUnknown": true,
+          "localLockReleased": true,
+          "manualRecovery": "Read the complete number range definition and all client 200 intervals, native commit and cleanup result. Never retry or roll back automatically. Intervals remain local; no CTS import or release."
+        }
+      }
+    },
+    {
+      "at": "2026-10-04T11:16:58.842Z",
+      "name": "apply_configuration_number_range",
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "expectedVersion": "7d9157a9d74ae68008972b91cc218f5aa6ecd5fe2c24338c44a7ebd7e60a493d",
+        "action": "create",
+        "intervalNumber": "01",
+        "fromNumber": "00000000000000000001",
+        "toNumber": "00000000000000000001",
+        "external": false,
+        "operationId": "r41b-invalid-equal-bounds",
+        "acknowledgeConfigurationWrite": true,
+        "acknowledgeLocalClientOnly": true
+      },
+      "isError": true,
+      "data": {
+        "message": "Error invoking apply_configuration_number_range: [\n  {\n    \"code\": \"custom\",\n    \"message\": \"Lower bound must be less than upper bound\",\n    \"path\": []\n  }\n]"
+      }
+    }
+  ],
+  "finalSnapshot": {
+    "EV_CODE": "READ_OK",
+    "EV_SYSTEM": "GR2",
+    "EV_CLIENT": "200",
+    "EV_VERSION": "ee1598fc8a0b130d70babb6ff34ca4b139932b6a908b5279c3e4193020760ab8",
+    "ES_DEFINITION": {
+      "OBJECT": "ZORVCFGNR",
+      "DTELSOBJ": "",
+      "NRTAB": "",
+      "NRINTFLD": "",
+      "NREXTFLD": "",
+      "NRFLD": "",
+      "NRSOBJFLD": "",
+      "NRELEFLD": "",
+      "YEARIND": "",
+      "DOMLEN": "NUMC20",
+      "PERCENTAGE": "10.0",
+      "CODE": "",
+      "TEXTIND": "",
+      "NRELTXTTAB": "",
+      "NRELTXTSOB": "",
+      "NRELTXTELE": "",
+      "NRELTXTTXT": "",
+      "NRELTXTLNG": "",
+      "BUFFER": "",
+      "NOIVBUFFER": "00000000",
+      "NONRSWAP": "",
+      "RFCDEST": "",
+      "NRCHECKASCII": ""
+    },
+    "ET_INTERVALS": [
+      {
+        "CLIENT": "200",
+        "OBJECT": "ZORVCFGNR",
+        "SUBOBJECT": "",
+        "NRRANGENR": "01",
+        "TOYEAR": "0000",
+        "FROMNUMBER": "00000000000000000001",
+        "TONUMBER": "00000000000000000200",
+        "NRLEVEL": "00000000000000000000",
+        "EXTERNIND": ""
+      }
+    ]
+  },
+  "status": "stopped",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ undefined\n- false\n",
+  "finishedAt": "2026-10-04T11:16:58.845Z"
+}

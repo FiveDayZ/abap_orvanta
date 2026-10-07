@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-07T00:51:58.055Z",
+  "system": "w200/GR2/200/WYS",
+  "objectName": "LZORVANTA_BC_CFGF65",
+  "objectType": "FUGR/I",
+  "file": "C:/My/Workplace/Coding/vscode-abap/.doc/sap-backups/r70-f65-2026-10-07T00-51-58-055Z/LZORVANTA_BC_CFGF65-active.abap",
+  "uri": "adt://w200/sap/bc/adt/functions/groups/zorvanta_bc_cfg/includes/lzorvanta_bc_cfgf65",
+  "state": "active",
+  "retrievedAt": "2026-10-07T00:52:00.875Z",
+  "sourceExactlyAsReturned": true,
+  "bytes": 58649,
+  "lineCount": 1267,
+  "sha256": "f2910454687ece39df94a75d1decabd83ff473fa87b8e7f6cc3a815720aae7a9"
+}
