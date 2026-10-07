@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZIMP_ES_SAPLV50I_BADI",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:05:20.899Z",
+ "finishedAt": "2026-10-03T12:05:20.963Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"enhancement_implementation\",\n  \"enhancementName\": \"ZIMP_ES_SAPLV50I_BADI\",\n  \"packageName\": \"ZCC\",\n  \"definition\": {\n    \"name\": \"ZIMP_ES_SAPLV50I_BADI\",\n    \"tool\": \"BADI_IMPL\",\n    \"shortText\": \"Create DN\",\n    \"activeRaw\": \"X\",\n    \"active\": true,\n    \"inactiveRaw\": \"\",\n    \"hasInactiveVersion\": false,\n    \"savedInactiveRaw\": \"\",\n    \"hasSavedInactiveVersion\": false,\n    \"unsavedInactiveRaw\": \"\",\n    \"hasUnsavedInactiveVersion\": false,\n    \"originalObjectType\": \"\",\n    \"originalObjectName\": \"\",\n    \"mainObjectType\": \"\",\n    \"mainObjectName\": \"\",\n    \"programName\": \"\",\n    \"hookImplementations\": [],\n    \"badiImplementations\": [\n      {\n        \"spotName\": \"ES_SAPLV50I_BADI\",\n        \"badiName\": \"BADI_DLV_CREATE_SLS_EXTIN\",\n        \"implementationName\": \"ZIMP_ES_SAPLV50I_BADI\",\n        \"implementationClass\": \"ZCL_ES_SAPLV50I_BADI\",\n        \"activeRaw\": \"X\",\n        \"active\": true,\n        \"defaultRaw\": \"\",\n        \"defaultImplementation\": false,\n        \"shortText\": \"实施： 从 CreateFromSales 处理 ExtensionIn\",\n        \"filters\": []\n      }\n    ],\n    \"filters\": []\n  },\n  \"fingerprint\": \"174891289480bf5a96dbd583a987ae8633c9747f1745a31e44ad169f2f4555e7\"\n}"
+}

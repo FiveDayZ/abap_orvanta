@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "search_sap_locks",
+ "arguments": {
+  "connectionId": "w200",
+  "username": "WYS"
+ },
+ "startedAt": "2026-10-03T11:44:09.353Z",
+ "finishedAt": "2026-10-03T11:44:09.544Z",
+ "isError": false,
+ "responseText": "{\"source\":\"SM12\",\"connectionId\":\"w200\",\"client\":\"200\",\"readOnly\":true,\"observedAt\":\"2026-10-03T11:44:09.357Z\",\"transactionSnapshot\":false,\"warnings\":[\"No unlock, retry, delete, cancel or update processing is performed.\",\"Observations are not a transaction snapshot or proof of root cause.\",\"Lock arguments and log metadata may contain sensitive business identifiers.\"],\"status\":\"ok\",\"code\":\"OK\",\"entries\":[],\"hasMore\":false,\"returnedCount\":0,\"coverage\":\"exact_user_current_client_native_selection\",\"ownerTimeSemantics\":\"owner_identifier_time_not_proven_lock_acquisition_time\",\"backendLimit\":\"Native ENQUEUE_READ has no row-limit parameter; selected result above 2000 is rejected after retrieval.\"}"
+}

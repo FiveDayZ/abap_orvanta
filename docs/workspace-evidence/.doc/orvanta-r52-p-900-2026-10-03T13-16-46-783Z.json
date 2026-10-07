@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 900
+ },
+ "startedAt": "2026-10-03T13:16:46.832Z",
+ "finishedAt": "2026-10-03T13:16:47.374Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 900-949 of 1636, 50 lines retrieved):\n\n```abap\n    R_F_BIT_TO_FIELD    FLG3   FLG3FDU  DICT_I_FKD.  \"FKY unmöglich\n    R_F_BIT_TO_FIELD    FLG3   FLG3VRZ  DICT_I_SGN.  \"Vorzeichen vorges.\n    R_F_BIT_TO_FIELD    FLG3   FLG3VAL  DICT_I_VAL.  \"Werteprüfung vorg.\n  ENDIF.\n\nENDFORM.                    \" R_ASSIGN_FIELD_BIT_TO_FIELD\n\n\n*&---------------------------------------------------------------------*\n*&      Form  R_TYPE_OUT\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       Verarbeiten der internen Angaben zum Typ                       *\n*       Aufbau des externen Typs                                       *\n*----------------------------------------------------------------------*\n*      -->P_FIELD_INT    Dynprofeld intern                             *\n*      <--P_DYNP_FIELD   Dynprofeld extern                             *\n*----------------------------------------------------------------------*\nFORM R_TYPE_OUT\n             USING    VALUE(P_FIELD_INT) TYPE DYNPRO_FIELD\n             CHANGING P_DYNP_FIELD       TYPE RPYTY_DYNP_FIELD.\n\nDATA: F_RES1 LIKE D021S_RES1.\n\n\n  F_RES1 = P_FIELD_INT-RES1.\n\n  CASE P_FIELD_INT-FILL.\n    WHEN SPACE.                          \"nichtgraf.\n      IF P_FIELD_INT-LTYP = 'O'.\n        P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-OKCODE.\n      ELSEIF P_FIELD_INT-FLG1 O FLG1EDT.\n        P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-TEMPLATE.\n      ELSE.\n        P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-TEXT.\n      ENDIF.\n    WHEN '0'.                            \"nichtgraf.; führ. Null\n      IF P_FIELD_INT-FLG1 O FLG1EDT.\n        P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-TEMPLATE.\n      ELSE.\n        P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-TEXT.\n      ENDIF.\n    WHEN 'C'.                            \"Ankreuzfeld\n      P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-CHECK.\n    WHEN 'A'.                            \"Auswahlknopf\n      P_DYNP_FIELD-TYPE = RPYTY_DYNP_FTYPE-RADIO.\n    WHEN 'P'.                            \"Drucktaste\n      if f_res1-infobutton = 'X'.\n        p_dynp_field-type = rpyty_dynp_ftype-infobutton.\n      else.\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

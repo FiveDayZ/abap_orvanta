@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 100
+ },
+ "startedAt": "2026-10-03T13:16:14.355Z",
+ "finishedAt": "2026-10-03T13:16:14.929Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 100-149 of 1636, 50 lines retrieved):\n\n```abap\n* TabStrip Control: eigener Container\n  ELSEIF P_FIELD_INT-FILL = 'I'.\n    CONT-TYPE = RPYTY_DYNP_CTYPE-TABSTRIP_CONTROL.\n    IF P_FIELD_INT-FNAM NE SPACE.\n      CONT-NAME = P_FIELD_INT-FNAM.\n      L_CONT_FOUND = 'X'.\n    ELSE.\n      PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                 CHANGING CONT-NAME.\n      L_CONT_FOUND = 'X'.\n    ENDIF.\n* Custom Control: eigener Container\n  ELSEIF P_FIELD_INT-FILL = 'U'.\n    CONT-TYPE = RPYTY_DYNP_CTYPE-CUSTOM_CONTROL.\n    IF P_FIELD_INT-FNAM NE SPACE.\n      CONT-NAME = P_FIELD_INT-FNAM.\n      L_CONT_FOUND = 'X'.\n    ELSE.\n      PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                 CHANGING CONT-NAME.\n      L_CONT_FOUND = 'X'.\n    ENDIF.\n* Auswahlknopf: entweder Auswahlknopfgruppe\n*               oder Auswahlknopfgruppe innerhalb LOOP/TC\n*               oder separater Auswahlknopf (inner/außerhalb LOOP/TC)\n  ELSEIF P_FIELD_INT-FILL = 'A'.\n    AUTH_COUNT = 0.                    \"Auswahlknöpfe mit AUTH zählen\n    CLEAR L_A_NAME.\n    LOOP AT P_FIELD_LIST_INT WHERE AUTH = P_FIELD_INT-AUTH\n                             AND   FILL = 'A'\n                             AND   FLG1 O FLG1EDT.\n      AUTH_COUNT = AUTH_COUNT + 1.\n      IF AUTH_COUNT > 1.\n        EXIT.\n      ELSE.\n        L_A_NAME = P_FIELD_LIST_INT-FNAM.  \"Name des ersten Radiobuttons\n      ENDIF.\n    ENDLOOP.\n    IF AUTH_COUNT > 1.          \"mehr als ein Radiobutton mit demselben\n                                \"AUTH-Wert: Auswahlknopfgruppe\n      CONT-TYPE = RPYTY_DYNP_CTYPE-RADIOGROUP.\n      IF L_A_NAME NE SPACE.\n        \"Container bekommt den Namen des ersten Auswahlknopfes\n        CONCATENATE '%A_' L_A_NAME  INTO CONT-NAME.\n      ELSE.\n        PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-AUTH\n                                   CHANGING CONT-NAME.\n      ENDIF.\n      L_CONT_FOUND = 'X'.\n    ELSE.                       \"normaler, einzelner Auswahlknopf:\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_enhancement_hook_implementation",
+ "arguments": {
+  "enhancementName": "ZORVANTA_R47_ENH01",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:27:52.414Z",
+ "finishedAt": "2026-10-03T10:27:52.424Z",
+ "isError": true,
+ "responseText": "MCP error -32602: Tool read_enhancement_hook_implementation not found"
+}

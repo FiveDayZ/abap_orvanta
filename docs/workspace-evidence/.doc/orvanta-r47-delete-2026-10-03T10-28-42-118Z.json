@@ -1,0 +1,16 @@
+{
+ "probe": "r47-call",
+ "tool": "delete_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZORVANTA_R47_ENH01",
+  "expectedFingerprint": "99250f2c39f183ea3ee529a3c09742b281298daecb733c6b9b1b9200c488ffe0",
+  "packageName": "ZABAP",
+  "transportNumber": "GR2K923472",
+  "confirmation": "PERMANENT_DELETE",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:28:42.166Z",
+ "finishedAt": "2026-10-03T10:28:42.696Z",
+ "isError": true,
+ "responseText": "Error invoking delete_enhancement_implementation: Error: SAP repository helper rejected the operation: ENHANCEMENT_DELETE_PARTIAL: Enhancement still exists after delete\n\nOperation Receipt\n{\n  \"operationId\": \"f6ddb81e-9825-425b-bd15-7aca8f1d7158\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"delete_enhancement_implementation\",\n  \"operationIdHash\": \"07939b530dd26b33645b0c0e83b59b8e278a7f7b9c49a621391b11444d707b6a\",\n  \"targetKeyHash\": \"dab855743f46d401756a13abdbc5f3784d70f8e69e714b15ef2ecebeb20be8c5\",\n  \"inputHash\": \"c98e4cad9a0c46d7f86ffaaa8c26121f515790439b2b7059967e27d26352ce56\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"enhancement implementation ZORVANTA_R47_ENH01\\\",\\\"requestedOperation\\\":\\\"delete_enhancement_implementation\\\",\\\"concurrencyGuard\\\":\\\"fingerprint 99250f2c39f183ea3ee529a3c09742b281298daecb733c6b9b1b9200c488ffe0\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-03T10:28:42.513Z\",\n    \"target\": \"enhancement implementation ZORVANTA_R47_ENH01\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"99250f2c39f183ea3ee529a3c09742b281298daecb733c6b9b1b9200c488ffe0\",\n    \"packageName\": \"ZABAP\",\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_enhancement_implementation\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"ccaf46a222f63ca14d838b1f113647a6c97160772c596dcb6a86b7cb11cab89d\",\n  \"startedAt\": \"2026-10-03T10:28:42.467Z\",\n  \"finishedAt\": \"2026-10-03T10:28:42.684Z\",\n  \"durationMs\": 214,\n  \"receiptHash\": \"8552833389fcdb32b69e824ca0076204031eec5d4a295fb02e075c269e5b1d47\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back enhancement implementation ZORVANTA_R47_ENH01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+}

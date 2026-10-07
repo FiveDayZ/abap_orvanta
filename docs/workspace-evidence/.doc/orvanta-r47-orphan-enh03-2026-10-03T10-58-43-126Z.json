@@ -1,0 +1,15 @@
+{
+ "probe": "r47-call",
+ "tool": "delete_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZORVANTA_R47_ENH03",
+  "packageName": "ZABAP",
+  "transportNumber": "GR2K923472",
+  "confirmation": "DELETE_ORPHANED_REGISTRATION",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:58:43.171Z",
+ "finishedAt": "2026-10-03T10:58:43.605Z",
+ "isError": true,
+ "responseText": "Error invoking delete_enhancement_implementation: SAP pre-change observation failed; the write was not invoked: Error: ENHANCEMENT_ORPHAN_NOT_CONFIRMED\n\nOperation Receipt\n{\n  \"operationId\": \"6ed57e1e-36f8-4dae-a377-988895dc3209\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"delete_enhancement_implementation\",\n  \"operationIdHash\": \"adeeac1c7c3d4bae08329d507901ee0c34150c519ed3907a2efda37e67294e17\",\n  \"targetKeyHash\": \"29984dba0ee8bca9c6ebff54d6139d6ebb080a76fe56f1026fbac88c1b40c09a\",\n  \"inputHash\": \"ccf90a3c2d4ff02678b87cd3631f94166ca17724ef8bc8c3ec90318c57080d68\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"enhancement implementation ZORVANTA_R47_ENH03\\\",\\\"requestedOperation\\\":\\\"delete_enhancement_implementation\\\",\\\"concurrencyGuard\\\":\\\"target identity and repository assignment must match\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n  \"sapInvocationStarted\": false,\n  \"errorHash\": \"63b986174c40ca533ef911d05d58f165432c0a589fe0c071616c61d42f77f144\",\n  \"startedAt\": \"2026-10-03T10:58:43.548Z\",\n  \"finishedAt\": \"2026-10-03T10:58:43.595Z\",\n  \"durationMs\": 44,\n  \"receiptHash\": \"6109484a57a92fc2a99b975fcf1f15c62c7f988dd3622774a6ec38a48d9fa680\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back enhancement implementation ZORVANTA_R47_ENH03 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+}

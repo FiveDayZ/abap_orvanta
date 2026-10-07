@@ -1,0 +1,21 @@
+{
+ "probe": "r47-call",
+ "tool": "update_new_badi_implementation",
+ "arguments": {
+  "enhancementName": "ZBADI_ACC_DOCUMENT",
+  "expectedFingerprint": "fe06569a9fa2118bc1aa25402d48d6a04883fe1fe6fbbe3abae4f933572386f2",
+  "implementationName": "ZBADI_ACC_DOCUMENT",
+  "implementationClass": "ZCL_IM_ACC_DOCUMENT",
+  "active": true,
+  "defaultImplementation": false,
+  "filters": [],
+  "packageName": "Z001",
+  "transportNumber": "GR2K923472",
+  "confirmation": "UPDATE_ENHANCEMENT_IMPLEMENTATION",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:33:20.865Z",
+ "finishedAt": "2026-10-03T12:33:21.340Z",
+ "isError": true,
+ "responseText": "Error invoking update_new_badi_implementation: Error: ENHANCEMENT_INACTIVE_VERSION_EXISTS\n\nOperation Receipt\n{\n  \"operationId\": \"cef7cadb-3ba7-4cc4-bb46-c990c3ef1bfd\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"update_new_badi_implementation\",\n  \"operationIdHash\": \"0d2cc5e62ad061c100b69dd8e10b5c4c63a1abe01f0b88bfcad97d84c0aec64b\",\n  \"targetKeyHash\": \"67aef0ed94650a92ccea93feb016260c5e3d458f3012df0a90557b3377830c44\",\n  \"inputHash\": \"35bb25d49bdaecc6f9eace61ce5c5be27c54dd10cb1eaf22431ef9b945ca4e7a\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"enhancement implementation ZBADI_ACC_DOCUMENT\\\",\\\"requestedOperation\\\":\\\"update_new_badi_implementation\\\",\\\"concurrencyGuard\\\":\\\"fingerprint fe06569a9fa2118bc1aa25402d48d6a04883fe1fe6fbbe3abae4f933572386f2\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n  \"sapPreChangeEvidence\": {\n    \"observedAt\": \"2026-10-03T12:33:21.248Z\",\n    \"target\": \"enhancement implementation ZBADI_ACC_DOCUMENT\",\n    \"exists\": true,\n    \"active\": true,\n    \"version\": null,\n    \"fingerprint\": \"fe06569a9fa2118bc1aa25402d48d6a04883fe1fe6fbbe3abae4f933572386f2\",\n    \"packageName\": \"Z001\",\n    \"requestNumber\": null,\n    \"taskNumber\": null,\n    \"observationStatus\": \"complete\",\n    \"sources\": [\n      \"read_enhancement_implementation\"\n    ],\n    \"warnings\": []\n  },\n  \"sapInvocationStarted\": true,\n  \"errorHash\": \"d3a8fcfcea504a4a3606d55926701b8fd563975e0817e2845bdd951fd5f1c9ca\",\n  \"startedAt\": \"2026-10-03T12:33:21.198Z\",\n  \"finishedAt\": \"2026-10-03T12:33:21.329Z\",\n  \"durationMs\": 126,\n  \"receiptHash\": \"058334fae244106368d15df4006a81db084eb31199bfb44d0d66d6ca19d149eb\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": true,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back enhancement implementation ZBADI_ACC_DOCUMENT from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+}

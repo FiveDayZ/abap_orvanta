@@ -1,0 +1,21 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "upsert_ddic_table_type",
+  "arguments": {
+    "transportNumber": "GR2K923472",
+    "operationId": "R13-TT-UPDATE-20261003-2",
+    "description": "Orvanta R12 table type (R13 update)",
+    "packageName": "ZABAP",
+    "connectionId": "w200",
+    "expectedVersion": "20261003130948",
+    "rowType": "ZORVANTA_R12_STR01",
+    "objectName": "ZORVANTA_R12_TT01"
+  },
+  "startedAt": "2026-10-03T05:11:46.963Z",
+  "finishedAt": "2026-10-03T05:11:47.372Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"tableType\",\n  \"objectName\": \"ZORVANTA_R12_TT01\",\n  \"packageName\": \"ZABAP\",\n  \"version\": \"20261003131145\",\n  \"fingerprint\": \"b02ec18d4e41d093e7a44f8a0fc996599590de63a944064bef437fb5423637d0\",\n  \"definition\": {\n    \"description\": \"Orvanta R12 table type (R13 update)\",\n    \"rowType\": \"ZORVANTA_R12_STR01\",\n    \"rowKind\": \"S\",\n    \"dataType\": \"STRU\",\n    \"accessMode\": \"T\",\n    \"keyDefinition\": \"D\",\n    \"keyKind\": \"N\"\n  },\n  \"status\": \"DDIC_OBJECT_SAVED\",\n  \"recordedRequest\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"R13-TT-UPDATE-20261003-2\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"upsert_ddic_table_type\",\n    \"operationIdHash\": \"9116f737fdde50211d773d18b98f2fdc327415a2cc16bbec2f3137b782af328b\",\n    \"targetKeyHash\": \"fcf6f43d2a51286604ad48ffb73d644ae76e505a9cb6407ddc5c530f8e5a887b\",\n    \"inputHash\": \"c8f42c2d120a47649e8201f5877f4c9b8ba7aca0ef35f16045fbd53edb31ebe0\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"ttyp object ZORVANTA_R12_TT01\\\",\\\"requestedOperation\\\":\\\"upsert_ddic_table_type\\\",\\\"concurrencyGuard\\\":\\\"version 20261003130948\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T05:11:47.268Z\",\n      \"target\": \"ttyp object ZORVANTA_R12_TT01\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": \"20261003130948\",\n      \"fingerprint\": \"a72de5ceebf7222decf4b186b44747aa2f866714ba1f514a3a953c708a694056\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"\",\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"sap_ddic_read\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"42e22aa53d9acdb68ad4d855832b4f9ded68fac4d14811606006965013192624\",\n    \"startedAt\": \"2026-10-03T05:11:47.230Z\",\n    \"finishedAt\": \"2026-10-03T05:11:47.364Z\",\n    \"durationMs\": 131,\n    \"receiptHash\": \"946fc337c70d1a9faa13fe7059f7b9a909a764fc4203e3a012fc9823087a93ae\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back ttyp object ZORVANTA_R12_TT01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

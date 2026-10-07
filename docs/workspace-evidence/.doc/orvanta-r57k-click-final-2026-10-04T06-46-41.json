@@ -1,0 +1,178 @@
+{
+  "at": "2026-10-04T06:46:41.648Z",
+  "steps": [
+    {
+      "label": "00-baseline",
+      "pageUrl": "http://192.168.88.26:8000/sap/bc/gui/sap/its/webgui?~transaction=ZCODEX_MCP_UI&sap-client=200&sap-language=ZH",
+      "title": "SAP",
+      "inputs": [
+        {
+          "tag": "input",
+          "type": "text",
+          "name": "ToolbarOkCode",
+          "value": ""
+        },
+        {
+          "tag": "input",
+          "type": "text",
+          "name": "__AGIM0:U:::2:15",
+          "value": "ABAP MCP Dynpro ready"
+        }
+      ],
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "SAPITS_MENU",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:D:4_btn"
+        },
+        {
+          "tag": "a",
+          "text": "SAPITS_MENU_SYSTEM",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:D:0_btn"
+        },
+        {
+          "tag": "a",
+          "text": "Clear",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:U:::4:1"
+        },
+        {
+          "tag": "a",
+          "text": "Exit",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:U:::4:15"
+        }
+      ],
+      "bodyText": "SAP | SAPITS_MENU \t\t\tSAPITS_MENU_SYSTEM | Message | Clear | Exit | GR2\t \tGRAPP2",
+      "screenshot": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-r57k-click-00-baseline-2026-10-04T06-46-41.png"
+    },
+    {
+      "label": "01-after-clear",
+      "pageUrl": "http://192.168.88.26:8000/sap/bc/gui/sap/its/webgui?~transaction=ZCODEX_MCP_UI&sap-client=200&sap-language=ZH",
+      "title": "SAP",
+      "inputs": [
+        {
+          "tag": "input",
+          "type": "text",
+          "name": "ToolbarOkCode",
+          "value": ""
+        },
+        {
+          "tag": "input",
+          "type": "text",
+          "name": "__AGIM0:U:::2:15",
+          "value": ""
+        }
+      ],
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "SAPITS_MENU",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:D:4_btn"
+        },
+        {
+          "tag": "a",
+          "text": "SAPITS_MENU_SYSTEM",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:D:0_btn"
+        },
+        {
+          "tag": "a",
+          "text": "Clear",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:U:::4:1"
+        },
+        {
+          "tag": "a",
+          "text": "Exit",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:U:::4:15"
+        }
+      ],
+      "bodyText": "SAP | SAPITS_MENU \t\t\tSAPITS_MENU_SYSTEM | Message | Clear | Exit | GR2\t \tGRAPP2",
+      "screenshot": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-r57k-click-01-after-clear-2026-10-04T06-46-41.png"
+    },
+    {
+      "label": "02-after-exit",
+      "pageUrl": "http://192.168.88.26:8000/sap/bc/gui/sap/its/webgui?~transaction=ZCODEX_MCP_UI&sap-client=200&sap-language=ZH",
+      "title": "SAP",
+      "inputs": [
+        {
+          "tag": "input",
+          "type": "text",
+          "name": "ToolbarOkCode",
+          "value": ""
+        }
+      ],
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "SAPITS_MENU",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:D:4_btn"
+        },
+        {
+          "tag": "a",
+          "text": "退出会话",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:D:0::15_btn"
+        },
+        {
+          "tag": "a",
+          "text": "SAPITS_MENU_SYSTEM",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:D:0_btn"
+        },
+        {
+          "tag": "a",
+          "text": "开始 SAP 轻松入门",
+          "value": "",
+          "name": "",
+          "id": "__AGIM0:U:::3:1"
+        }
+      ],
+      "bodyText": "SAP | SAPITS_MENU \t\t\t退出会话\tSAPITS_MENU_SYSTEM | 开始 SAP 轻松入门 | GR2\t \tGRAPP2",
+      "screenshot": "C:/My/Workplace/Coding/vscode-abap/.doc/orvanta-r57k-click-02-after-exit-2026-10-04T06-46-41.png"
+    }
+  ],
+  "clearClick": {
+    "clicked": true,
+    "index": 0,
+    "candidates": [
+      {
+        "tag": "a",
+        "text": "Clear",
+        "value": "",
+        "name": "",
+        "id": "__AGIM0:U:::4:1"
+      }
+    ]
+  },
+  "exitClick": {
+    "clicked": true,
+    "index": 0,
+    "candidates": [
+      {
+        "tag": "a",
+        "text": "Exit",
+        "value": "",
+        "name": "",
+        "id": "__AGIM0:U:::4:15"
+      }
+    ]
+  }
+}

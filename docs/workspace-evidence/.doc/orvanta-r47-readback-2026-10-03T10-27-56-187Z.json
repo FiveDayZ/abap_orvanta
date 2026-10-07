@@ -1,0 +1,12 @@
+{
+ "probe": "r47-call",
+ "tool": "read_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZORVANTA_R47_ENH01",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:27:56.232Z",
+ "finishedAt": "2026-10-03T10:27:56.313Z",
+ "isError": false,
+ "responseText": "{\n  \"connectionId\": \"w200\",\n  \"repositoryKind\": \"enhancement_implementation\",\n  \"enhancementName\": \"ZORVANTA_R47_ENH01\",\n  \"packageName\": \"ZABAP\",\n  \"definition\": {\n    \"name\": \"ZORVANTA_R47_ENH01\",\n    \"tool\": \"HOOK_IMPL\",\n    \"shortText\": \"ORVANTA R47 updated hook\",\n    \"activeRaw\": \"X\",\n    \"active\": true,\n    \"inactiveRaw\": \"\",\n    \"hasInactiveVersion\": false,\n    \"savedInactiveRaw\": \"\",\n    \"hasSavedInactiveVersion\": false,\n    \"unsavedInactiveRaw\": \"\",\n    \"hasUnsavedInactiveVersion\": false,\n    \"originalObjectType\": \"FUGR\",\n    \"originalObjectName\": \"V60B\",\n    \"mainObjectType\": \"FUGR\",\n    \"mainObjectName\": \"V60B\",\n    \"programName\": \"SAPLV60B\",\n    \"hookImplementations\": [\n      {\n        \"spotName\": \"\",\n        \"programName\": \"SAPLV60B\",\n        \"extId\": \"1\",\n        \"id\": \"1\",\n        \"overwriteRaw\": \"\",\n        \"replacement\": false,\n        \"methodRaw\": \"\",\n        \"method\": false,\n        \"mode\": \"D\",\n        \"fullName\": \"\\\\PR:SAPLV60B\\\\EX:ES_SAPLV60B\\\\EN:SAPLV60B_02\\\\EI\",\n        \"parentFullName\": \"\",\n        \"sourceCount\": 2,\n        \"source\": [\n          \"* ORVANTA R47 acceptance probe\",\n          \"* updated by R47 guard-fix verification\"\n        ]\n      }\n    ],\n    \"badiImplementations\": [],\n    \"filters\": []\n  },\n  \"fingerprint\": \"99250f2c39f183ea3ee529a3c09742b281298daecb733c6b9b1b9200c488ffe0\"\n}"
+}

@@ -1,0 +1,13 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_info",
+ "arguments": {
+  "objectName": "ZCODEX_MCP_PRG_0828",
+  "objectType": "PROG",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:36:18.890Z",
+ "finishedAt": "2026-10-03T12:36:19.294Z",
+ "isError": false,
+ "responseText": "ZCODEX_MCP_PRG_0828 Information:\n\n• Object Type: PROG/P\n• Description: No description available\n• Package: Unknown\n• System Type: CUSTOM\n• Total Lines: 1\n• URI: `/sap/bc/adt/programs/programs/zcodex_mcp_prg_0828`\n• URI Used: `/sap/bc/adt/programs/programs/zcodex_mcp_prg_0828/source/main`\n• Enhancements: Unavailable (unsupported)"
+}

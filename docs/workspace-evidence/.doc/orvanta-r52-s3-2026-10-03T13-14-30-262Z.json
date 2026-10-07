@@ -1,0 +1,16 @@
+{
+ "probe": "r47-call",
+ "tool": "search_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFP*",
+  "searchTerm": "DYNP_FIELD_ATTR",
+  "isRegexp": false,
+  "contextLines": 0,
+  "maxObjects": 10,
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T13:14:30.310Z",
+ "finishedAt": "2026-10-03T13:14:33.196Z",
+ "isError": false,
+ "responseText": "No base-source matches for \"DYNP_FIELD_ATTR\". Enhancement metadata was unavailable for 10 object(s).\n\nObjects searched:\n• LSIFP$01 (FUGR/I)\n• LSIFP$02 (FUGR/I)\n• LSIFP$03 (FUGR/I)\n• LSIFP$04 (FUGR/I)\n• LSIFP$05 (FUGR/I)\n• LSIFP$06 (FUGR/I)\n• LSIFP$07 (FUGR/I)\n• LSIFP$08 (FUGR/I)\n• LSIFP$09 (FUGR/I)\n• LSIFP$10 (FUGR/I)"
+}

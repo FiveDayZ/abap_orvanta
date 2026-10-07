@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 250
+ },
+ "startedAt": "2026-10-03T13:16:16.829Z",
+ "finishedAt": "2026-10-03T13:16:17.303Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 250-299 of 1636, 50 lines retrieved):\n\n```abap\n* äußere Container für LOOP/TC auch erzeugt werden\n  IF P_FIELD_INT-FILL = 'A'\n  AND P_FIELD_INT-LANF NE SPACE\n  AND P_FIELD_INT-FMB1 O FMB1RLP.\n    CONT_S = CONT.                     \"inneren Container merken\n*   äußeren Container bestimmen\n    IF P_FIELD_INT-LTYP = 'T'.     \"Feld im Table Control\n      CONT-TYPE = RPYTY_DYNP_CTYPE-TABLE_CONTROL.\n      LOOP AT P_FIELD_LIST_INT     \"Table Control suchen\n              WHERE FILL = 'T'     \"und dessen Namen\n              AND   LANF = P_FIELD_INT-LANF. \"übernehmen\n        EXIT.\n      ENDLOOP.\n      IF P_FIELD_LIST_INT-FNAM NE SPACE.\n        CONT-NAME = P_FIELD_LIST_INT-FNAM.\n      ELSE.\n        PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                   CHANGING CONT-NAME.\n      ENDIF.\n    ELSE.                          \"Feld im Loop\n      CONT-TYPE = RPYTY_DYNP_CTYPE-LOOP.\n      PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                 CHANGING CONT-NAME.\n    ENDIF.\n*   äußeren Container suchen\n    OK = ' '.\n    LOOP AT P_DYNP_CONTAINERS.\n      CONT_A = P_DYNP_CONTAINERS.\n      CHECK CONT_A-TYPE = CONT-TYPE.\n      CHECK CONT_A-NAME = CONT-NAME.\n      OK = 'X'.\n    ENDLOOP.\n    IF OK = ' '.                       \" nicht gefunden\n*     äußeren Container erzeugen\n      P_DYNP_CONTAINERS = CONT.\n      APPEND P_DYNP_CONTAINERS.\n    ENDIF.\n*   inneren Container mit äußerem verketten\n    READ TABLE P_DYNP_CONTAINERS INDEX RADIO_INDEX.\n    p_dynp_containers-element_of = cont-name.\n    MODIFY P_DYNP_CONTAINERS INDEX RADIO_INDEX.\n  ENDIF.\n\nENDFORM.                               \" R_FIND_CONTAINER_TO_FIELD\n*&---------------------------------------------------------------------*\n*&      Form  R_CONCAT_CONT_NAME\n*&---------------------------------------------------------------------*\n*       RPY_DYNPRO_READ:                                               *\n*       bildet einen Namen für einen Container aus einem festen        *\n*       Präfix und einem variablen Suffix                              *\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

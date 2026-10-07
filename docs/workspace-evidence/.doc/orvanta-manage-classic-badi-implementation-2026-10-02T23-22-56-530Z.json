@@ -1,0 +1,21 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": false,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "manage_classic_badi_implementation",
+  "arguments": {
+    "connectionId": "w200",
+    "action": "activate",
+    "implementationName": "ZACC_DOCUMENT",
+    "definitionName": "ACC_DOCUMENT",
+    "packageName": "ZOA",
+    "transportNumber": "GR2K923472",
+    "expectedFingerprint": "9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0",
+    "confirmation": "CLASSIC_BADI_IMPLEMENTATION_CHANGE"
+  },
+  "startedAt": "2026-10-02T23:22:56.605Z",
+  "finishedAt": "2026-10-02T23:22:57.425Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"status\": \"CLASSIC_BADI_IMPLEMENTATION_CHANGED\",\n  \"connectionId\": \"w200\",\n  \"action\": \"activate\",\n  \"implementationName\": \"ZACC_DOCUMENT\",\n  \"definitionName\": \"ACC_DOCUMENT\",\n  \"previousFingerprint\": \"9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0\",\n  \"fingerprint\": \"9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0\",\n  \"implementation\": {\n    \"assignments\": [\n      {\n        \"implementationName\": \"ZACC_DOCUMENT\",\n        \"filterValue\": \"BKPFF\",\n        \"activeRaw\": \"X\",\n        \"active\": true,\n        \"description\": \"F-02 OA 付款\",\n        \"version\": \"\",\n        \"masterLanguage\": \"1\",\n        \"layer\": \"\",\n        \"packageName\": \"ZOA\",\n        \"migrationEnhancement\": \"ZACC_DOCUMENT\"\n      }\n    ],\n    \"classMappings\": [\n      {\n        \"implementationName\": \"ZACC_DOCUMENT\",\n        \"interfaceName\": \"IF_EX_ACC_DOCUMENT\",\n        \"implementationClass\": \"ZCL_IM_ACC_DOCUMENT\"\n      }\n    ]\n  },\n  \"transportNumber\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"8daa74de-4161-447c-a90b-86307e290def\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"manage_classic_badi_implementation\",\n    \"operationIdHash\": \"8ab2247933649762b084d0c2009415e78518cf0ce9b8d586bc7366c6510a0217\",\n    \"targetKeyHash\": \"3595c02309c48db4bba461498e9f30a53cada1ea3efed57666c34e124a728118\",\n    \"inputHash\": \"d4a1f4e7d6ed89ba86a242de76ccee903a1685a9d496cb1016895857cd526e8a\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"Classic BAdI implementation ZACC_DOCUMENT\\\",\\\"requestedOperation\\\":\\\"manage_classic_badi_implementation\\\",\\\"concurrencyGuard\\\":\\\"fingerprint 9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-02T23:22:57.075Z\",\n      \"target\": \"Classic BAdI implementation ZACC_DOCUMENT\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": null,\n      \"fingerprint\": \"9bd9d65790756e1b3cecebe1594faca5dbb9378657778eebd3becdcc554e65d0\",\n      \"packageName\": \"ZOA\",\n      \"requestNumber\": null,\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"read_classic_badi_definition\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"af91d5f635f5fd0c7931036d8ee00bfaaf2fab8676413716b7d5a18753751ecf\",\n    \"startedAt\": \"2026-10-02T23:22:57.030Z\",\n    \"finishedAt\": \"2026-10-02T23:22:57.413Z\",\n    \"durationMs\": 379,\n    \"receiptHash\": \"f1afbb6f7b0a6b72626123527b265e209ac6af82c1ab68770d28f46d01368f6b\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back Classic BAdI implementation ZACC_DOCUMENT from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

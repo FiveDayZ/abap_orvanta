@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 50
+ },
+ "startedAt": "2026-10-03T13:16:04.034Z",
+ "finishedAt": "2026-10-03T13:16:04.644Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 50-99 of 1636, 50 lines retrieved):\n\n```abap\n  LOCAL: P_FIELD_LIST_INT.\n\n  DATA: CONT   type RPY_DYCATT,\n        CONT_A type RPY_DYCATT,\n        CONT_S type RPY_DYCATT,\n        RADIO_INDEX TYPE I,\n        AUTH_COUNT TYPE I,\n        L_A_NAME LIKE D021S-FNAM,\n        L_CONT_FOUND.\n\n\n* Typ des direkt übergeordneten Containers des Einzelfeldes bestimmen\n  CLEAR CONT.\n  CONT-ELEMENT_OF = CONT_SCREEN_NAME.\n  L_CONT_FOUND = ' '.\n* Subscreen: entweder eigener Container\n*            oder Element im TabStrip Control\n  IF P_FIELD_INT-FILL = 'B'.\n    CONT-TYPE = RPYTY_DYNP_CTYPE-SUBSCREEN.\n    IF P_FIELD_INT-LTYP <> 'I'.\n*     eigener Container\n      CONT-NAME = P_FIELD_INT-FNAM.\n      L_CONT_FOUND = 'X'.\n    ELSE.\n      CONT-NAME = P_FIELD_INT-FNAM.\n*     TabStrip Container suchen\n      LOOP AT P_FIELD_LIST_INT\n               WHERE FILL = 'I'\n               AND   LANF = P_FIELD_INT-LANF.\n        IF P_FIELD_LIST_INT-FNAM NE SPACE.\n          CONT-ELEMENT_OF = P_FIELD_LIST_INT-FNAM.\n        ELSE.\n          PERFORM R_CONCAT_CONT_NAME USING P_FIELD_LIST_INT-LANF\n                                     CHANGING CONT-ELEMENT_OF.\n        ENDIF.\n        L_CONT_FOUND = 'X'.\n        EXIT.\n      ENDLOOP.\n    ENDIF.\n* Table Control: eigener Container\n  ELSEIF P_FIELD_INT-FILL = 'T'.\n    CONT-TYPE = RPYTY_DYNP_CTYPE-TABLE_CONTROL.\n    IF P_FIELD_INT-FNAM NE SPACE.\n      CONT-NAME = P_FIELD_INT-FNAM.\n      L_CONT_FOUND = 'X'.\n    ELSE.\n      PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                 CHANGING CONT-NAME.\n      L_CONT_FOUND = 'X'.\n    ENDIF.\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

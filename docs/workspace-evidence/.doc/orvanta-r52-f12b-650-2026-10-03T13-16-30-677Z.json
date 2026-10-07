@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 650
+ },
+ "startedAt": "2026-10-03T13:16:30.741Z",
+ "finishedAt": "2026-10-03T13:16:31.226Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 650-699 of 1636, 50 lines retrieved):\n\n```abap\n    WHEN RPYTY_DYNP_CTYPE-ROOT.        \"Universalcontainer\n                                        \"nothing to do\n\n    WHEN RPYTY_DYNP_CTYPE-DYNPRO.      \"Universalcontainer\n                                       \"nothing to do\n\n    WHEN RPYTY_DYNP_CTYPE-SCREEN.      \"Universalcontainer\n                                       \"nothing to do\n    when others.\n      LOOP AT P_FIELDLIST_INT_EXTEND\n         WHERE CONT_NAME = P_CONT_ATTR-NAME\n         AND   CONT_TYPE = P_CONT_ATTR-TYPE.\n\n        FIELD_INT = P_FIELDLIST_INT_EXTEND-FIELD.\n        move-corresponding p_cont_attr to s_field.\n        PERFORM R_PROPERTIES_OUT               \"Properties\n                   USING     FIELD_INT\n                             r_property_bag\n                             r_cntcmp\n                   CHANGING  s_field.\n        move-corresponding s_field to p_cont_attr.\n        exit.\n      ENDLOOP.\n    endcase.\n\n*  Switch Framework am Container\n  CASE P_CONT_ATTR-TYPE.\n    WHEN RPYTY_DYNP_CTYPE-ROOT.        \"Universalcontainer\n                                        \"nothing to do\n\n    WHEN RPYTY_DYNP_CTYPE-DYNPRO.      \"Universalcontainer\n                                       \"nothing to do\n\n    WHEN RPYTY_DYNP_CTYPE-SCREEN.      \"Universalcontainer\n                                       \"nothing to do\n    when others.\n      LOOP AT P_FIELDLIST_INT_EXTEND\n         WHERE CONT_NAME = P_CONT_ATTR-NAME\n         AND   CONT_TYPE = P_CONT_ATTR-TYPE.\n\n        FIELD_INT = P_FIELDLIST_INT_EXTEND-FIELD.\n\n        f_res1 = field_int-res1.\n        p_cont_attr-sfw_switchid = f_res1-switchid.\n        p_cont_attr-sfw_showhide = f_res1-showhide.\n        exit.\n      ENDLOOP.\n    endcase.\n\nENDFORM.                               \" R_COMPLETE_CONTAINER_ATTR\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

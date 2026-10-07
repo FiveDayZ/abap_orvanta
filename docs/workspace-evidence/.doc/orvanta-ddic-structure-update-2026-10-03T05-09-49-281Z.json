@@ -1,0 +1,34 @@
+{
+  "probe": "r453-mcp-call",
+  "readOnlyCall": true,
+  "endpoint": "http://127.0.0.1:4849/mcp",
+  "tool": "upsert_ddic_structure",
+  "arguments": {
+    "operationId": "R13-STR-UPDATE-20261003-1",
+    "fields": [
+      {
+        "dataElement": "ZORVANTA_R11_DE01",
+        "name": "FIELD1"
+      },
+      {
+        "dataElement": "CHAR10",
+        "name": "FIELD2"
+      },
+      {
+        "dataElement": "NUMC05",
+        "name": "FIELD4"
+      }
+    ],
+    "expectedVersion": "20261003123857",
+    "objectName": "ZORVANTA_R12_STR01",
+    "connectionId": "w200",
+    "transportNumber": "GR2K923472",
+    "description": "Orvanta R12 acceptance structure (R13 update path)",
+    "packageName": "ZABAP"
+  },
+  "startedAt": "2026-10-03T05:09:49.325Z",
+  "finishedAt": "2026-10-03T05:09:49.834Z",
+  "isError": false,
+  "transportFailure": null,
+  "responseText": "{\n  \"connectionId\": \"w200\",\n  \"objectKind\": \"structure\",\n  \"objectName\": \"ZORVANTA_R12_STR01\",\n  \"packageName\": \"ZABAP\",\n  \"version\": \"20261003130948\",\n  \"fingerprint\": \"b707ad298633d85c3d987d60c6e4a9b65aa96233a83f9fb95206fe2e9c4f6753\",\n  \"guardToken\": \"B45B25FF6E7EB45985E7B798BE286DC82B070B3E\",\n  \"definition\": {\n    \"description\": \"Orvanta R12 acceptance structure (R1\",\n    \"tableClass\": \"INTTAB\",\n    \"baseTable\": \"\",\n    \"fields\": [\n      {\n        \"name\": \"FIELD1\",\n        \"position\": 1,\n        \"dataElement\": \"ZORVANTA_R11_DE01\",\n        \"description\": \"Orvanta R11 acceptance data element\"\n      },\n      {\n        \"name\": \"FIELD2\",\n        \"position\": 2,\n        \"dataElement\": \"CHAR10\",\n        \"description\": \"字符字段长度 = 10\"\n      },\n      {\n        \"name\": \"FIELD4\",\n        \"position\": 3,\n        \"dataElement\": \"NUMC05\",\n        \"description\": \"数字字段长度 5\"\n      }\n    ]\n  },\n  \"status\": \"DDIC_OBJECT_SAVED\",\n  \"recordedRequest\": \"GR2K923472\",\n  \"operationReceipt\": {\n    \"operationId\": \"R13-STR-UPDATE-20261003-1\",\n    \"version\": 2,\n    \"status\": \"completed\",\n    \"connectionId\": \"w200\",\n    \"toolName\": \"upsert_ddic_structure\",\n    \"operationIdHash\": \"ea3c29c3111109ccff897375a053a5a32d2546a31cf5e3ebdfe63aa30420eba9\",\n    \"targetKeyHash\": \"d28c55d992bcfcd96d62886db1da773d5c6b3ebdbb1528d10122d34d45658fe2\",\n    \"inputHash\": \"41a1a0c7d27d82613d6243ffb19234107010eb395409e172a630509513599640\",\n    \"preChangeSummary\": \"{\\\"target\\\":\\\"tabl object ZORVANTA_R12_STR01\\\",\\\"requestedOperation\\\":\\\"upsert_ddic_structure\\\",\\\"concurrencyGuard\\\":\\\"version 20261003123857\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n    \"sapPreChangeEvidence\": {\n      \"observedAt\": \"2026-10-03T05:09:49.643Z\",\n      \"target\": \"tabl object ZORVANTA_R12_STR01\",\n      \"exists\": true,\n      \"active\": true,\n      \"version\": \"20261003123857\",\n      \"fingerprint\": \"9befba0004bbc0c67709dc332803aae60c19841a60dfcdd596d4fa651bc4c1f3\",\n      \"packageName\": \"ZABAP\",\n      \"requestNumber\": \"\",\n      \"taskNumber\": null,\n      \"observationStatus\": \"complete\",\n      \"sources\": [\n        \"sap_ddic_read\"\n      ],\n      \"warnings\": []\n    },\n    \"sapInvocationStarted\": true,\n    \"resultHash\": \"552350c4899478bd142a33ffda77aecc6a946fddcb7ab5114662be46db692079\",\n    \"startedAt\": \"2026-10-03T05:09:49.606Z\",\n    \"finishedAt\": \"2026-10-03T05:09:49.826Z\",\n    \"durationMs\": 216,\n    \"receiptHash\": \"98f10e959b90b1aca44ba54c99e8fad8ae1abd1278ca88a871522043162c6e9d\",\n    \"automaticRetry\": false,\n    \"automaticRollback\": false,\n    \"outcomeMayBeUnknown\": false,\n    \"localLockReleased\": true,\n    \"manualRecovery\": \"Read back tabl object ZORVANTA_R12_STR01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n  }\n}"
+}

@@ -1,0 +1,14 @@
+{
+ "probe": "r47-call",
+ "tool": "get_abap_object_lines",
+ "arguments": {
+  "objectName": "LSIFPF12",
+  "objectType": "PROG/I",
+  "connectionId": "w200",
+  "startLine": 200
+ },
+ "startedAt": "2026-10-03T13:16:15.984Z",
+ "finishedAt": "2026-10-03T13:16:16.545Z",
+ "isError": false,
+ "responseText": "Source from LSIFPF12 (lines 200-249 of 1636, 50 lines retrieved):\n\n```abap\n              AND   LANF = P_FIELD_INT-LANF. \"übernehmen\n        L_CONT_FOUND = 'X'.\n        EXIT.\n      ENDLOOP.\n      IF P_FIELD_LIST_INT-FNAM NE SPACE.\n        CONT-NAME = P_FIELD_LIST_INT-FNAM.\n      ELSE.\n        PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                   CHANGING CONT-NAME.\n      ENDIF.\n\n    ELSE.                              \"Feld im Loop\n      CONT-TYPE = RPYTY_DYNP_CTYPE-LOOP.\n      PERFORM R_CONCAT_CONT_NAME USING P_FIELD_INT-LANF\n                                 CHANGING CONT-NAME.\n      L_CONT_FOUND = 'X'.\n    ENDIF.\n* Restfall\n  ELSE.                                \"Feld im Universalcontainer\n    CONT-TYPE = RPYTY_DYNP_CTYPE-SCREEN.\n    CONT-NAME = CONT_SCREEN_NAME.\n  ENDIF.\n\n  IF L_CONT_FOUND = ' '.       \"notwendiger Container nicht gefunden:\n    CONT-TYPE = RPYTY_DYNP_CTYPE-SCREEN.   \"Universalcontainer\n    CONT-NAME = CONT_SCREEN_NAME.          \"als Ersatz annehmen\n  ENDIF.\n\n\n* Typ des Containers ist jetzt bestimmt.\n* Suche, ob der Container schon angelegt ist.\n  OK = ' '.\n  LOOP AT P_DYNP_CONTAINERS.\n    CONT_A = P_DYNP_CONTAINERS.\n    CHECK CONT_A-TYPE = CONT-TYPE.\n    CHECK CONT_A-NAME = CONT-NAME.\n    OK = 'X'.\n    radio_index = sy-tabix.\n    EXIT.\n  ENDLOOP.\n  IF OK = 'X'.                         \"Container gefunden\n    P_CONT_ATTR = P_DYNP_CONTAINERS.\n  ELSE.                                \"Container nicht gefunden:\n    P_CONT_ATTR = CONT.                \" anlegen\n    P_DYNP_CONTAINERS = CONT.\n    APPEND P_DYNP_CONTAINERS..\n    DESCRIBE TABLE P_DYNP_CONTAINERS LINES RADIO_INDEX.\n  ENDIF.\n\n* Sonderfall Auswahlknopfgruppe im LOOP/TC: gegebenenfalls muß der\n```\n\nFull Source SHA-256: f7b1bf6818b54429a2cc031a04a0093f4c20350b75e4496b6ae740ab989aec06\nURI: /sap/bc/adt/functions/groups/sifp/includes/lsifpf12/source/main\n(more lines available, request next range)\n\nEnhancement metadata unavailable (unsupported)."
+}

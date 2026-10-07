@@ -1,0 +1,15 @@
+{
+ "probe": "r47-call",
+ "tool": "delete_enhancement_implementation",
+ "arguments": {
+  "enhancementName": "ZORVANTA_R17_ENH01",
+  "packageName": "ZABAP",
+  "transportNumber": "GR2K923472",
+  "confirmation": "DELETE_ORPHANED_REGISTRATION",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T10:47:51.391Z",
+ "finishedAt": "2026-10-03T10:47:51.968Z",
+ "isError": true,
+ "responseText": "Error invoking delete_enhancement_implementation: SAP pre-change observation failed; the write was not invoked: Error: SAP repository helper rejected the operation: ENHANCEMENT_READ_FAILED: The enhancement object ENHO ZORVANTA_R17_ENH01 cannot be read\n\nOperation Receipt\n{\n  \"operationId\": \"e3971cd9-50f6-4391-b383-8396a129e2ff\",\n  \"version\": 2,\n  \"status\": \"failed\",\n  \"connectionId\": \"w200\",\n  \"toolName\": \"delete_enhancement_implementation\",\n  \"operationIdHash\": \"cf28088ce9c8fe235c94fd7d4db7141d2f1d619fcd6cfc1fb36c5bb036da5a3b\",\n  \"targetKeyHash\": \"b86034d54ab82f3d0eb1e7fa907c4d377f0eff55af03f8a7a920724dc2aef440\",\n  \"inputHash\": \"c54aa1b28e121c21044c984b2e10802201fe7053d20863a2a969d9900f11a423\",\n  \"preChangeSummary\": \"{\\\"target\\\":\\\"enhancement implementation ZORVANTA_R17_ENH01\\\",\\\"requestedOperation\\\":\\\"delete_enhancement_implementation\\\",\\\"concurrencyGuard\\\":\\\"target identity and repository assignment must match\\\",\\\"transportNumber\\\":\\\"GR2K923472\\\",\\\"automaticRollback\\\":false}\",\n  \"sapInvocationStarted\": false,\n  \"errorHash\": \"4f726f22e9a6128e757e3208a0bc7003779e6032486cc372785b03f3ccd6427f\",\n  \"startedAt\": \"2026-10-03T10:47:51.908Z\",\n  \"finishedAt\": \"2026-10-03T10:47:51.953Z\",\n  \"durationMs\": 40,\n  \"receiptHash\": \"c9e60fd4f17ab4651d8a6800bde317b9c45ec1345d07fe69e36d478d3b327d10\",\n  \"automaticRetry\": false,\n  \"automaticRollback\": false,\n  \"outcomeMayBeUnknown\": false,\n  \"localLockReleased\": true,\n  \"manualRecovery\": \"Read back enhancement implementation ZORVANTA_R17_ENH01 from SAP and compare it with the pre-change summary and requested change. Do not retry automatically. If the state is interrupted or uncertain, resolve locks and transport assignment in SAP before using a new operationId.\"\n}"
+}

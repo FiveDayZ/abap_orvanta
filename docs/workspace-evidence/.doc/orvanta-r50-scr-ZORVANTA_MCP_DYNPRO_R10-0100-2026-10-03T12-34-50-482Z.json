@@ -1,0 +1,13 @@
+{
+ "probe": "r47-call",
+ "tool": "read_abap_screen",
+ "arguments": {
+  "programName": "ZORVANTA_MCP_DYNPRO_R10",
+  "screenNumber": "0100",
+  "connectionId": "w200"
+ },
+ "startedAt": "2026-10-03T12:34:50.532Z",
+ "finishedAt": "2026-10-03T12:34:50.586Z",
+ "isError": true,
+ "responseText": "Error invoking read_abap_screen: Error: SAP repository helper rejected the operation: SCREEN_READ_FAILED: 未找到对象 ZORVANTA_MCP_DYNPRO_R10                 0100"
+}
