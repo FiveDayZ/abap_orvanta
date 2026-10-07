@@ -22,3 +22,8 @@ packaging/windows/connections.local.json
 test-*.cmd
 # 本地 ADT discovery 导出：交接时保留原文件，不提交生成的运行快照
 /adt-discovery_w200_2026-10-02-10-36-03/
+# 配置 BC 的状态目录：`ConfigurationBcBeforeStateStore` 与 `ConfigurationBcExecutionStore` 建在
+# `ABAP_MCP_EXPORT_ROOT` 之下，而该变量未设时默认是工作目录，于是运行测试或服务都会在仓库根
+# 产出它们。属运行产物，与 .cache/ 同类：保留在磁盘，不入库、不提交。
+configuration-bc-before-state/
+configuration-bc-executions/

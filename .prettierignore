@@ -15,6 +15,10 @@ docs/workspace-evidence/
 # 检查就会让「刚导出过 discovery」本身把 format:check 弄红 —— 这是工具的副作用，不是
 # 代码风格问题。与 docs/tool-index.md 同属「生成物不参与格式门」这一类。
 adt-discovery_*/
+# 运行产物：配置 BC 的前置状态与执行记录目录，建在 `ABAP_MCP_EXPORT_ROOT` 之下，未设该变量时
+# 即工作目录。内容由捕获到的 SAP 状态决定，属工具副作用而非代码风格问题，与 adt-discovery_*/ 同类。
+configuration-bc-before-state/
+configuration-bc-executions/
 dist/
 node_modules/
 release/
