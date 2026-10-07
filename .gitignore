@@ -20,3 +20,5 @@ packaging/windows/connections.local.json
 *.bak
 # 本地测试启动脚本（test-*.cmd）：只在开发机上跑，保留在磁盘但不入库、不推送
 test-*.cmd
+# 本地 ADT discovery 导出：交接时保留原文件，不提交生成的运行快照
+/adt-discovery_w200_2026-10-02-10-36-03/
