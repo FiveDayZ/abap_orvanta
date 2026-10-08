@@ -38,6 +38,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { RuntimeIdentity } from "../dist/src/runtime-info.js"
 import { TOOL_COUNT, TOOL_NAMES } from "../dist/src/tool-registry.js"
+import { loadVerificationRegistry, validateEntry } from "../dist/src/verification-registry.js"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = resolve(here, "..")
@@ -383,18 +384,77 @@ try {
   await writeFile(resolve(outputDirectory, "summary.json"), JSON.stringify(summary, null, 2))
 
   // The registry delta is a proposal: verification status is applied after the evidence is read.
-  const delta = results
-    .filter((entry) => entry.outcome === "answered" || entry.outcome === "empty")
-    .map((entry) => ({
+  //
+  // The sweep establishes *verification*, not *availability*. `availabilityBasis`, `method` and
+  // `verificationTarget` say how the tool's availability and its applicable verification route were
+  // established, and a successful read-only call is not evidence about any of them, so they are
+  // carried over from the entry as it stands. The previous version of this delta invented
+  // `availabilityBasis: "runtime-observed"` - not a member of `AVAILABILITY_BASES`, so applying it
+  // verbatim produced an entry its own validator rejects, and it claimed a basis the call had not
+  // established (the R-20 error, this time in the tool that exists to prevent it). It also omitted
+  // `method`, which `validateEntry` requires. What the call did establish is the status, the record
+  // and the time.
+  const registryEntries = loadVerificationRegistry()
+  const byTool = new Map(registryEntries.entries.map((entry) => [entry.tool, entry]))
+  const finishedAt = summary.finishedAt
+  const unrecognised = []
+  const delta = []
+  for (const entry of results) {
+    if (entry.outcome !== "answered" && entry.outcome !== "empty") continue
+    const current = byTool.get(entry.tool)
+    if (!current) {
+      // No entry to extend. Inventing one here would either describe a tool the index does not know
+      // or drop the fields only the registry can supply, so it is reported, not guessed.
+      unrecognised.push(entry.tool)
+      continue
+    }
+    delta.push({
       tool: entry.tool,
       status: "verified",
-      availabilityBasis: "runtime-observed",
+      availabilityBasis: current.availabilityBasis,
+      method: current.method,
+      verificationTarget: current.verificationTarget,
+      failureBasis: null,
+      lastAttemptAt: finishedAt,
       evidence: `.cache/evidence-${label}/${entry.evidenceFile}`,
       note:
         entry.outcome === "empty"
           ? "read-only call succeeded; the system held nothing to return"
           : "read-only call succeeded with rows"
-    }))
+    })
+  }
+
+  // The delta is only useful if it can be applied. Every proposed entry is put through the same
+  // validator the registry uses, so a value the sweep is not entitled to invent cannot leave this
+  // script and turn into a rejected registry on the next `matrix:check`.
+  const inadmissible = delta.flatMap((proposed) =>
+    validateEntry(proposed).map(
+      (violation) => `${proposed.tool}: ${violation.field}: ${violation.message}`
+    )
+  )
+  // `validateEntry` is not the whole contract. A `method: "none"` entry is a purely local tool, and
+  // the registry's own tests force those to stay `unverified` with `evidence: null` - so a call
+  // through SAP cannot promote one, however green it looks. The sweep targets SAP reads, so this
+  // should never fire; it fires if the sweep list is ever pointed at a tool it cannot certify.
+  const uncertifiable = delta
+    .filter((proposed) => proposed.method === "none")
+    .map(
+      (proposed) => `${proposed.tool} uses method none and is permanently unverifiable by a call`
+    )
+  if (inadmissible.length > 0 || uncertifiable.length > 0) {
+    throw new Error(
+      `proposed registry delta is not admissible (${inadmissible.length} violation(s), ` +
+        `${uncertifiable.length} uncertifiable); refusing to print it as applicable: ` +
+        [...inadmissible, ...uncertifiable].join(" | ")
+    )
+  }
+  if (unrecognised.length > 0) {
+    throw new Error(
+      `these tools are not in the verification registry, so no delta can be proposed for them: ` +
+        unrecognised.join(", ")
+    )
+  }
+
   const findings = results
     .filter((entry) => entry.outcome !== "answered" && entry.outcome !== "empty")
     .map((entry) => ({ tool: entry.tool, outcome: entry.outcome, evidence: entry.evidenceFile }))

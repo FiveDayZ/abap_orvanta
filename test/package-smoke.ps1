@@ -72,6 +72,33 @@ foreach ($pair in @(
     }
 }
 Write-Host "Package manifest: version $($buildInfo.version), $($hashEntries.Count) file hashes verified"
+
+# The release must carry the verification contract. `repositoryRoot` resolves from app\dist\src up two
+# levels to app\, so `get_capability_report` reads app\contracts\verification-registry.json. The
+# packager omitted it until 2026-10-08, so the packaged report could only degrade as a whole
+# (registryLoaded=false) and both the capability and the verification dimension were unreadable in
+# the shipped product. Dropping the copy from scripts/package-windows.ps1 must fail here.
+$packagedContracts = Join-Path $packageRoot "app\contracts"
+foreach ($required in @("verification-registry.json", "tool-index.json")) {
+    if (-not (Test-Path -LiteralPath (Join-Path $packagedContracts $required))) {
+        throw "Release archive must contain app\contracts\$required; get_capability_report reads it."
+    }
+}
+$packagedRegistry = Get-Content -Raw -LiteralPath (Join-Path $packagedContracts "verification-registry.json") | ConvertFrom-Json
+$asserting = @($packagedRegistry.entries | Where-Object { $_.status -in @("verified", "failed", "platform-unsupported") })
+if ($asserting.Count -eq 0) {
+    throw "Packaged verification registry asserts nothing; the evidence gate would be vacuous by construction."
+}
+# Evidence records are deliberately NOT shipped: they are workspace-sized and quote internal hostnames
+# and addresses, so releasing them needs its own de-identification decision. Because they are absent,
+# `gateRegistryOnEvidence` must report those entries as `unverified` at runtime instead of publishing
+# the registry's own text as an observation. Shipping the records is a decision, not a detail - so it
+# has to be made deliberately here rather than slipping in through a copy line.
+if (Test-Path -LiteralPath (Join-Path $packageRoot "app\docs\workspace-evidence")) {
+    throw "Release archive ships docs\workspace-evidence; de-identification is an open decision - update this assertion deliberately if it has been made."
+}
+Write-Host "Package contracts: $($asserting.Count) asserting entries shipped without their records, to be gated to unverified at runtime"
+
 $packagedConfig = Join-Path $packageRoot "connections.json"
 if (-not (Test-Path -LiteralPath $packagedConfig)) {
     throw "Release archive must contain connections.json."
