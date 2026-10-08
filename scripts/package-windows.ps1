@@ -170,6 +170,13 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "package-lock.json") -Destination
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "dist") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "dist\src") -Destination (Join-Path $appRoot "dist\src") -Recurse
 Copy-Item -LiteralPath (Join-Path $projectRoot "ui") -Destination (Join-Path $appRoot "ui") -Recurse
+# 验收契约随包发布。`repositoryRoot` 由 dist/src 向上两级解析到 app\，因此
+# `get_capability_report` 读的是 app\contracts\verification-registry.json。此前不打进包，包内该
+# 文件不存在，报告只能整体降级（registryLoaded=false），能力维度与验收维度在发布物里都不可读。
+# 随包发布后两个维度在包内可用，而每条 `verified` 仍受证据存在性约束：证据不在包内时该条降级为
+# unverified，而不是凭登记表原文就宣称已验证——判据只有一份，见
+# src/verification-registry.ts 的 gateRegistryOnEvidence。
+Copy-Item -LiteralPath (Join-Path $projectRoot "contracts") -Destination (Join-Path $appRoot "contracts") -Recurse
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "scripts") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\probe.mjs") -Destination (Join-Path $appRoot "scripts")
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\bootstrap-sap-helper.ps1") -Destination (Join-Path $appRoot "scripts")

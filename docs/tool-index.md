@@ -40,6 +40,14 @@
 | `abap_debug_step` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
 | `abap_debug_variable` | Withheld from the dev/config/ops profiles: ADT discovery on w200 advertises no debugger collection, so the capability report reports debuggerCapability=platform_unsupported and the six abap_debug_* tools cannot succeed. Registered and still callable through the full profile; not deleted. |
 
+## 只读但已声明副作用
+
+`readonly` profile 的含义是**不写 SAP 对象**，不是**调用后目标状态一定不变**。下列工具的注解仍是只读（它们不改对象、不导入、不释放），但其调用的标准函数模块自身会产生状态变化，因此逐条声明：自动按「只读」放行调用的客户端应把这一栏读进决策。要排除某个工具用 `ABAP_MCP_TOOL_DENY`。
+
+| 工具 | 已声明的副作用 |
+| --- | --- |
+| `import_transport_queue` | callee TMS_TP_IMPORT runs TMS_TP_IMPORT_DEQUEUE, which clears stale TMS locks for the system<br>callee messages on the first real calls named tp; no claim is made that no tp process was started<br>simulation mode (SIMULATE_MODE=L) is SAP behaviour and imports nothing, but is not verified here |
+
 ## 工具清单
 
 | 工具 | 分组 | profile | 风险 | 路由 | SAP 助手（最低协议） |

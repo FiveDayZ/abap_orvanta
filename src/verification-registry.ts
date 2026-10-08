@@ -12,16 +12,26 @@
  * The honest default is `available` + `unverified`. That combination is normal, not a defect, and
  * nothing here may present `available` as "verified".
  *
- * PACKAGING CONSEQUENCE (deployment-visible, deliberate, not a bug).
+ * PACKAGING CONSEQUENCE (deployment-visible, and now handled in two places).
  * Most evidence paths point at `.doc/...`, which is the workspace documentation root *beside* this
- * repository rather than inside it (see {@link evidenceRoots}). In a packaged release there is no
- * `.doc` directory next to the binary, so `existsSync` fails for those entries and every `verified`
- * claim degrades to `unverified` at runtime. That is the SAFE direction - the service under-claims
- * rather than over-claims, which is the whole point of this layer - so it is accepted behaviour.
- * The follow-up, deliberately not solved here, is either to package the evidence into the release
- * or to freeze verification status at authoring time. Do not "fix" this by dropping the existence
- * check: the check is what makes a `verified` claim falsifiable, and a registry that asserts
- * success it cannot demonstrate is the R-20 defect returning.
+ * repository rather than inside it (see {@link evidenceRoots}). A packaged release has neither that
+ * directory nor the mirror, so `existsSync` fails for those entries. Two things keep that from
+ * turning into a claim:
+ *
+ *   1. `scripts/package-windows.ps1` ships `contracts/`, so the registry itself is readable in the
+ *      package and the capability/verification dimensions are available there. It deliberately
+ *      ships no evidence records: those are workspace-sized and were never screened for the
+ *      internal hostnames and addresses they quote, so publishing them is a separate decision, not
+ *      a packaging default.
+ *   2. {@link gateRegistryOnEvidence} applies this module's own evidence rule where the claim is
+ *      published, so an entry whose record is absent from the package is reported `unverified`
+ *      instead of `verified`.
+ *
+ * The net effect is the SAFE direction - the service under-claims rather than over-claims, which is
+ * the whole point of this layer - and it now holds per entry rather than only for an unreadable
+ * file. Do not "fix" this by dropping the existence check: the check is what makes a `verified`
+ * claim falsifiable, and a registry that asserts success it cannot demonstrate is the R-20 defect
+ * returning.
  */
 import { existsSync, readFileSync } from "node:fs"
 import { basename, dirname, isAbsolute, join, resolve } from "node:path"
@@ -32,9 +42,10 @@ import { fileURLToPath } from "node:url"
  *
  * The same module is executed from two layouts: `src/` under `tsx`/tests and `dist/src/` after
  * `npm run build`. The build emits into `dist/` and does not copy `contracts/`, so a single `..`
- * resolves to the repository root in the first layout but to `dist/` in the second - which made
- * `contracts/verification-registry.json` unfindable in the packaged/compiled form. Step up one
- * extra level whenever the parent directory is `dist`, the same rule `runtime-info.ts` uses.
+ * resolves to the repository root in the first layout but to `dist/` in the second - which is why
+ * the step-up rule exists at all. `scripts/package-windows.ps1` copies `contracts/` to `app/contracts/`
+ * so the packaged layout resolves through the same rule. Step up one extra level whenever the parent
+ * directory is `dist`, the same rule `runtime-info.ts` uses.
  */
 const moduleDirectory = dirname(fileURLToPath(import.meta.url))
 export const repositoryRoot = resolve(
@@ -342,6 +353,60 @@ export function validateRegistry(
 
   return violations
 }
+
+/**
+ * Entries whose status is an *assertion* that cannot be checked from where the registry was loaded,
+ * degraded to `unverified`.
+ *
+ * `verified`, `failed` and `platform-unsupported` each claim something, and {@link validateEntry}
+ * requires an existing evidence record for every one of them. That requirement has until now only
+ * been enforced by the authoring and CI tooling (`scripts/mirror-workspace-evidence.mjs`,
+ * `scripts/generate-ops-matrix.mjs`, the registry tests). The runtime path was the gap:
+ * {@link loadVerificationRegistry} parses the JSON and the capability report trusts
+ * `entry.status`, so nothing re-checked the citation where the claim is actually *published*.
+ *
+ * That gap stayed invisible for as long as the registry and the evidence travelled together, and a
+ * packaged release is exactly the case where they stop travelling together (see the PACKAGING
+ * CONSEQUENCE note at the top of this module). Shipping `contracts/` without the cited records
+ * would have the report assert every entry's status while not one referenced file exists beside it -
+ * the R-20 substitution returning, this time asserted by a product rather than by a proposal. The
+ * rule is therefore applied where the claim is made: an assertion whose evidence does not resolve
+ * here is reported `unverified`.
+ *
+ * The degrade also nulls `evidence`, `lastAttemptAt` and `failureBasis`, because `unverified` may
+ * carry none of them ({@link validateEntry}). The gated registry is consequently still valid input
+ * to {@link validateRegistry}: the degradation removes a claim, it does not introduce an invalid one.
+ *
+ * `unverified` is the safe direction and cannot over-claim - it says "nothing here demonstrates
+ * this", which is precisely what a missing record demonstrates. The reverse, leaving the status in
+ * place and hoping the reader notices the absent file, is the defect this function exists to prevent.
+ */
+export function gateRegistryOnEvidence(registry: VerificationRegistry): {
+  registry: VerificationRegistry
+  degradedTools: string[]
+} {
+  const degradedTools: string[] = []
+  const entries = registry.entries.map((entry) => {
+    if (!CLAIMING_STATUSES.includes(entry.status)) return entry
+    if (resolveEvidencePath(entry) !== undefined) return entry
+    degradedTools.push(entry.tool)
+    return {
+      ...entry,
+      status: "unverified" as VerificationStatus,
+      evidence: null,
+      lastAttemptAt: null,
+      failureBasis: null
+    }
+  })
+  return { registry: { ...registry, entries }, degradedTools }
+}
+
+/** Statuses that assert something, and therefore require evidence that can be checked. */
+const CLAIMING_STATUSES: readonly VerificationStatus[] = [
+  "verified",
+  "failed",
+  "platform-unsupported"
+]
 
 export function parseVerificationRegistry(text: string): VerificationRegistry {
   const parsed = JSON.parse(text) as VerificationRegistry

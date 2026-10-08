@@ -61,6 +61,15 @@ release/
 
 `release/` 不纳入版本控制；`INDEX.md` 只是本地横向比对用的便利索引，不是证据。**证据是 `BUILD-INFO.json` 与对应的 git 提交/标签。**
 
+### 4.1 包内契约与验收维度
+
+包内 `app/contracts/` 随包发布（`verification-registry.json`、`tool-index.json` 等）。`repositoryRoot` 由 `dist/src` 向上两级解析到 `app/`，因此 `get_capability_report` 在包内能读到验收登记表，能力维度与验收维度都可用。
+
+**包内不随附证据记录**（`.doc/...`、`.cache/...`、`.logs/...` 及其 `docs/workspace-evidence/` 镜像）。理由是那些记录按工作区规模产出，且其中引用了内网主机名与地址，发布前需要独立的脱敏筛查，属单独决定而不是打包默认行为。由此产生一个必须成立的性质：
+
+- 包内每条 `verified` / `failed` / `platform-unsupported` 的引用记录都**不在包内**，因此 `gateRegistryOnEvidence` 会把这些条目降级为 `unverified`，并在报告里列入 `verification.evidenceGatedTools` 与 `evidenceGatedToolCount`；`opsCapability.summary.criterionBasis` 同时说明有多少条因此不能计入闭环。
+- 这是**刻意的降级方向**：缺记录时包内报告 `unverified`，绝不凭登记表原文宣称已验证。若要包内直接看到 `verified`，正确做法是把经脱敏筛查的证据镜像也纳入复制清单，而不是去掉存在性检查。
+
 ## 5. 归档保留
 
 保留窗口是最近 **5** 个 `orvanta-mcp-*-win-x64*.zip` 产物。窗口外的产物**不再只是警告**：打包脚本在写完索引后调用

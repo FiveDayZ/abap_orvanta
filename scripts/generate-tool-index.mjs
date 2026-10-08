@@ -173,6 +173,7 @@ const index = {
     sapHelper: entry.sapHelper,
     minHelperProtocol: entry.minHelperProtocol,
     ...(entry.withheldReason ? { withheldReason: entry.withheldReason } : {}),
+    ...(entry.declaredSideEffects ? { declaredSideEffects: [...entry.declaredSideEffects] } : {}),
     ...(entry.note ? { note: entry.note } : {})
   }))
 }
@@ -214,6 +215,39 @@ if (withheld.length > 0) {
   lines.push("| 工具 | 原因 |")
   lines.push("| --- | --- |")
   for (const entry of withheld) lines.push(`| \`${entry.name}\` | ${entry.withheldReason} |`)
+  lines.push("")
+}
+// Read-only tools whose call can still change something in the target. `readonly` answers "writes no
+// SAP object" and clients auto-approve on that basis, so the exceptions have to be visible here
+// rather than only inside one tool's prose description.
+const declaredSideEffects = sorted.filter((entry) => entry.declaredSideEffects?.length)
+// The field exists for the gap `readOnlyHint` cannot express. A write tool already says "this changes
+// state" in its annotation, so declaring side effects there too would give the same fact two homes.
+const misDeclared = TOOL_REGISTRY.filter(
+  (entry) => entry.declaredSideEffects?.length && entry.annotations.readOnlyHint !== true
+)
+if (misDeclared.length > 0) {
+  fail(
+    `declaredSideEffects belongs on read-only tools only; these are not read-only, so their ` +
+      `annotation already reports the state change: ${misDeclared.map((entry) => entry.name).join(", ")}`
+  )
+}
+if (declaredSideEffects.length > 0) {
+  lines.push("## 只读但已声明副作用")
+  lines.push("")
+  lines.push(
+    "`readonly` profile 的含义是**不写 SAP 对象**，不是**调用后目标状态一定不变**。下列工具的注解仍是" +
+      "只读（它们不改对象、不导入、不释放），但其调用的标准函数模块自身会产生状态变化，因此逐条声明：" +
+      "自动按「只读」放行调用的客户端应把这一栏读进决策。要排除某个工具用 `ABAP_MCP_TOOL_DENY`。"
+  )
+  lines.push("")
+  lines.push("| 工具 | 已声明的副作用 |")
+  lines.push("| --- | --- |")
+  for (const entry of declaredSideEffects) {
+    lines.push(
+      `| \`${entry.name}\` | ${entry.declaredSideEffects.map((effect) => `${effect}`).join("<br>")} |`
+    )
+  }
   lines.push("")
 }
 lines.push("## 工具清单")

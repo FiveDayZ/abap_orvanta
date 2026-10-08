@@ -12,14 +12,19 @@
  *   The runtime merge keeps the contract value when both are present, so existing
  *   explicit annotations are never changed by this file.
  * - `annotations.readOnlyHint === true` is required for every entry reachable from the
- *   `readonly` profile.
+ *   `readonly` profile. It is necessary, and it is deliberately not sufficient to mean "this
+ *   call changes nothing": a read-only tool can still reach a standard function module whose
+ *   own behaviour changes state (see `declaredSideEffects`), and such a tool is listed there
+ *   rather than described as side-effect-free.
  *
  * Profile semantics
  * - `platform`  always enabled, independent of the selected profile
  * - `dev`       ABAP development (source, DDIC, UI, enhancement, forms, quality, debug)
  * - `config`    configuration / customizing work
  * - `ops`       operations, monitoring and diagnostics
- * - `readonly`  derived filter: every tool whose registry annotation is read-only
+ * - `readonly`  derived filter: every tool whose registry annotation is read-only. It means
+ *               "writes no SAP object", NOT "cannot change anything" - the tools in
+ *               `declaredSideEffects` are included, and `ABAP_MCP_TOOL_DENY` excludes one.
  * - `full`      every registered tool (default)
  *
  * `sapHelper` records the deployment target the service uses for that tool family
@@ -81,6 +86,26 @@ export interface ToolRegistryEntry {
    */
   withheldReason?: string
   note?: string
+  /**
+   * State changes this tool can cause in the TARGET even though it writes no SAP object, so
+   * `readOnlyHint` alone would mislead a client.
+   *
+   * `readOnlyHint` answers one question - "does this tool modify the data it is about" - and that
+   * is the question MCP clients use to decide whether a call may be auto-approved. It is not the
+   * same question as "can calling this change anything at all", and for a helper branch that invokes
+   * a standard function module the two answers genuinely differ: the FM can clear locks or start an
+   * operating-system program as its own behaviour, without the tool importing, changing or releasing
+   * anything. Recording only `readOnlyHint: true` for such a tool makes the annotation a claim the
+   * tool's own description contradicts.
+   *
+   * So the exceptions are declared here, in one reviewable place, and rendered into the generated
+   * tool index. An empty or absent value means "nothing beyond what `readOnlyHint` says", which is
+   * the honest default for a read. A tool with entries here is still reachable from `readonly` -
+   * changing a published annotation is a compatibility decision, not a bug fix - but the boundary
+   * between "reads SAP data without changing it" and "changes nothing observable at all" is now
+   * stated rather than assumed. `ABAP_MCP_TOOL_DENY` is the existing way to exclude one.
+   */
+  declaredSideEffects?: readonly string[]
 }
 
 /** Annotation codes used in the compact table below. */
@@ -1117,6 +1142,30 @@ const NOTES: Record<string, string> = {
   abap_debug_step: "单步/继续会驱动被调试程序执行，可能存在业务副作用。"
 }
 
+/**
+ * Read-only tools whose call can still change something in the target, and what.
+ *
+ * Kept out of the compact row table on purpose: this is an exception list that a reviewer has to
+ * read and justify one entry at a time, not a column every row fills in with "none". The reasoning
+ * for the field is on {@link ToolRegistryEntry.declaredSideEffects}; the entries themselves:
+ *
+ * - `import_transport_queue` reaches `TMS_TP_IMPORT` inside the shared helper. The arm passes SAP's
+ *   own simulation mode and imports nothing, which is why the tool is annotated `R` and why its
+ *   `imported`-style reply fields stay empty - but simulation mode is SAP's behaviour, not something
+ *   this project verified: the first real calls on w200 (2026-09-29) came back with the callee's own
+ *   messages naming `tp`, and the callee runs `TMS_TP_IMPORT_DEQUEUE` before its checks. Clearing a
+ *   stale TMS lock is a state change in the target. The tool's own `description` has disclosed both
+ *   since 2.18; this entry is that disclosure in machine-readable form, so a client that auto-selects
+ *   read-only tools can see it without reading prose.
+ */
+const DECLARED_SIDE_EFFECTS: Record<string, readonly string[]> = {
+  import_transport_queue: [
+    "callee TMS_TP_IMPORT runs TMS_TP_IMPORT_DEQUEUE, which clears stale TMS locks for the system",
+    "callee messages on the first real calls named tp; no claim is made that no tp process was started",
+    "simulation mode (SIMULATE_MODE=L) is SAP behaviour and imports nothing, but is not verified here"
+  ]
+}
+
 export const TOOL_MATRIX_VERSION = "2026-09-17"
 export const PROFILE_NAMES = ["readonly", "platform", "dev", "config", "ops", "full"] as const
 export type ProfileName = (typeof PROFILE_NAMES)[number]
@@ -1151,6 +1200,7 @@ export const TOOL_REGISTRY: readonly ToolRegistryEntry[] = ROWS.map(
     requiredHelperOperations: requiredOperations ?? [],
     annotations: { ...ANNOTATIONS[annotation] },
     ...(group === "debug" ? { withheldReason: WITHHELD_DEBUGGER } : {}),
+    ...(DECLARED_SIDE_EFFECTS[name] ? { declaredSideEffects: DECLARED_SIDE_EFFECTS[name] } : {}),
     ...(NOTES[name] ? { note: NOTES[name] } : {})
   })
 )

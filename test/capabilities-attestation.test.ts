@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
 import type { AddressInfo } from "node:net"
 import { tmpdir } from "node:os"
@@ -17,7 +18,7 @@ import {
   rollupVerification
 } from "../src/capabilities.js"
 import { parseConnections } from "../src/config.js"
-import { toolIndexNames } from "../src/verification-registry.js"
+import { loadVerificationRegistry, toolIndexNames } from "../src/verification-registry.js"
 import { listenOnUnblockedPort } from "./loopback-port.js"
 import { MockBackend } from "./mock-backend.js"
 
@@ -1296,4 +1297,48 @@ test("an unreadable registry degrades to unverified instead of claiming evidence
     "platform-unsupported": 0
   })
   assert.equal(rollup.evidence.length, 0)
+})
+
+test("a readable registry whose records are absent degrades per entry instead of claiming evidence", () => {
+  // The packaged-release case, and the one the unreadable-registry test above does not cover: the
+  // registry file ships, the records it cites deliberately do not. Parsing succeeds, so nothing
+  // stops the statuses from being published unless the evidence rule is applied where the claim is
+  // made - which is what `gateRegistryOnEvidence` does.
+  const real = loadVerificationRegistry()
+  const subject = real.entries.find((entry) => entry.status === "verified")
+  assert.ok(subject, "expected a verified entry to build the case from")
+  const other = real.entries.find(
+    (entry) => entry.status === "verified" && entry.tool !== subject.tool
+  )
+  assert.ok(other, "expected a second verified entry to prove the gate is per entry")
+
+  const doctored = {
+    ...real,
+    entries: real.entries.map((entry) =>
+      entry.tool === subject.tool
+        ? { ...entry, evidence: ".doc/no-such-record-for-the-packaged-case-9b31.json" }
+        : entry
+    )
+  }
+  const directory = mkdtempSync(join(tmpdir(), "orvanta-degraded-evidence-"))
+  try {
+    const path = join(directory, "verification-registry.json")
+    writeFileSync(path, JSON.stringify(doctored), "utf8")
+
+    const lookup = loadVerificationLookup(path)
+    // Read successfully: this must not be reported as the unreadable case, or the two causes of a
+    // missing verification would be indistinguishable to a reader.
+    assert.equal(lookup.loaded, true)
+    assert.notEqual(lookup.registry, null)
+    assert.deepEqual([...lookup.evidenceGatedTools], [subject.tool])
+    assert.match(String(lookup.reason), /not resolvable/)
+    assert.match(String(lookup.reason), /unverified rather than assumed verified/)
+
+    // The undeclared entry is reported unverified, and the report says so through the normal rollup.
+    assert.equal(rollupVerification(lookup, [subject.tool]).status, "unverified")
+    // Its neighbour, whose record is present, keeps its status: the gate is not a blanket switch.
+    assert.equal(rollupVerification(lookup, [other.tool]).status, "verified")
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
 })

@@ -13,6 +13,7 @@ import { registryEntry } from "./tool-registry.js"
 import {
   VERIFICATION_REGISTRY_PATH,
   availabilityWithoutEvidence,
+  gateRegistryOnEvidence,
   loadVerificationRegistry,
   protocolOnlyEntries,
   verificationTotals,
@@ -1126,7 +1127,9 @@ export async function buildCapabilityReport(
           : {}),
         protocolOnlyToolCount: protocolOnly.length,
         protocolOnlyTools: protocolOnly,
-        note: "Availability is inferred from the helper protocol version and opcode list; verification is what was actually called on SAP. They are orthogonal: this block never changes an availability verdict, and an available tool with no evidence is reported as unverified rather than presented as verified."
+        evidenceGatedToolCount: verificationLookup.evidenceGatedTools.length,
+        evidenceGatedTools: [...verificationLookup.evidenceGatedTools],
+        note: "Availability is inferred from the helper protocol version and opcode list; verification is what was actually called on SAP. They are orthogonal: this block never changes an availability verdict, and an available tool with no evidence is reported as unverified rather than presented as verified. A status whose cited evidence record cannot be resolved from where this report runs is also reported unverified and named in evidenceGatedTools, so a release that ships contracts/ without the records it cites cannot present an unchecked claim as verified."
       },
       // OP0: the tool list is not a coverage claim. This block files every ops tool into the
       // operational scenario families it serves and derives each family's state from the registry
@@ -1874,8 +1877,14 @@ function compareVersions(left: string, right: string): number {
  *
  * Availability and verification stay orthogonal on purpose. This lookup never feeds an availability
  * verdict, and an unreadable or missing registry degrades every tool to `unverified` instead of
- * failing the report - losing the file must never look like a verified tool. A packaged build does
- * not ship `contracts/`, so that degradation is the expected packaged behaviour, and the safest one.
+ * failing the report - losing the file must never look like a verified tool.
+ *
+ * There are two ways to lose the evidence, and both end in `unverified`, never in a claim: the
+ * registry itself can be missing or unreadable, or the registry can be readable while the records it
+ * cites are not beside it. The second case is what a packaged release looks like, because
+ * `scripts/package-windows.ps1` ships `contracts/` and deliberately ships no evidence records, so
+ * `gateRegistryOnEvidence` applies the registry's own evidence rule before the statuses are
+ * published and `evidenceGatedTools` names what it degraded.
  */
 export interface VerificationLookup {
   loaded: boolean
@@ -1883,6 +1892,12 @@ export interface VerificationLookup {
   reason: string | null
   registry: VerificationRegistry | null
   entries: Map<string, VerificationEntry>
+  /**
+   * Entries that asserted a status whose evidence does not resolve here, reported `unverified`.
+   * Empty in the workspace and in CI, where the records sit beside the registry; populated in a
+   * release that ships the registry without the records it cites.
+   */
+  evidenceGatedTools: readonly string[]
 }
 
 /**
@@ -1891,13 +1906,21 @@ export interface VerificationLookup {
  */
 export function loadVerificationLookup(path?: string): VerificationLookup {
   try {
-    const registry = loadVerificationRegistry(path)
+    const gated = gateRegistryOnEvidence(loadVerificationRegistry(path))
+    const degraded = gated.degradedTools
     return {
       loaded: true,
-      updatedAt: registry.updatedAt,
-      reason: null,
-      registry,
-      entries: new Map(registry.entries.map((entry) => [entry.tool, entry]))
+      updatedAt: gated.registry.updatedAt,
+      reason:
+        degraded.length === 0
+          ? null
+          : `${degraded.length} entr${degraded.length === 1 ? "y" : "ies"} assert a status whose ` +
+            `evidence record is not resolvable from here (${VERIFICATION_REGISTRY_PATH}); each one ` +
+            "is reported unverified rather than assumed verified. This is the expected reading of a " +
+            "release that ships contracts/ without the records it cites.",
+      registry: gated.registry,
+      entries: new Map(gated.registry.entries.map((entry) => [entry.tool, entry])),
+      evidenceGatedTools: degraded
     }
   } catch (error) {
     return {
@@ -1908,7 +1931,8 @@ export function loadVerificationLookup(path?: string): VerificationLookup {
         `${error instanceof Error ? error.message : String(error)}. ` +
         "Every tool is reported unverified rather than assumed verified.",
       registry: null,
-      entries: new Map()
+      entries: new Map(),
+      evidenceGatedTools: []
     }
   }
 }

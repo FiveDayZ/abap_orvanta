@@ -80,6 +80,8 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 
 工具范围同样在启动前用环境变量决定，默认 `full`：`ABAP_MCP_TOOL_PROFILE`取 `full`、`readonly`、`platform`、`dev`、`config`、`ops`之一，`ABAP_MCP_TOOL_DENY`在 profile 之上按名称去掉单个工具（逗号、分号或空白分隔，名称不存在时启动失败）。被收窄的工具不会出现在 `tools/list`，`tools/call`也会被拒绝。给只读用途的客户端配置 `readonly`可以显著减少会话启动时注入的工具定义体积；当前生效值见 `get_runtime_info.toolProfile`。完整清单见仓库 `docs/tool-index.md`。
 
+**`readonly` 的含义是不写 SAP 对象，不是「调用后目标状态一定不变」。** 少数只读工具的注解仍是只读（不改对象、不导入、不释放），但它调用的标准函数模块自身会产生状态变化——例如 `import_transport_queue` 在仿真模式下走 `TMS_TP_IMPORT`，被调用方会执行 `TMS_TP_IMPORT_DEQUEUE` 清理过期 TMS 锁，首次真实调用还出现过点名 `tp` 的被调用方消息。这类工具不靠注解表达，而是逐条声明在 `src/tool-registry.ts` 的 `declaredSideEffects`，并渲染进 `docs/tool-index.md` 的「只读但已声明副作用」一节与 `contracts/tool-index.json` 的同名字段。按工具注解自动放行只读调用的客户端应把这一栏读进决策；要彻底排除某个工具，用 `ABAP_MCP_TOOL_DENY=import_transport_queue`。
+
 ## Codex
 
 便携包内可执行以下命令自动注册，不会覆盖同名但地址不同的现有配置；确需替换时增加 `-Force`：
