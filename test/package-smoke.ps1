@@ -99,6 +99,47 @@ if (Test-Path -LiteralPath (Join-Path $packageRoot "app\docs\workspace-evidence"
 }
 Write-Host "Package contracts: $($asserting.Count) asserting entries shipped without their records, to be gated to unverified at runtime"
 
+# The assertions above only prove the *files* are right. This runs the packaged code: if
+# `gateRegistryOnEvidence` were broken, everything above would still pass while the shipped report
+# went back to publishing 181 entries as observed. The expectation (how many entries assert a status)
+# is read from the packaged JSON, the measured value (how many the code reports as gated) comes from
+# executing the packaged dist - two different sources, so neither side can satisfy the other.
+$degradationProbe = Join-Path $testRoot "degradation-probe.mjs"
+@'
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
+import { pathToFileURL } from "node:url"
+
+const [appRoot, expectedGated] = process.argv.slice(2)
+const capabilities = await import(pathToFileURL(resolve(appRoot, "dist/src/capabilities.js")).href)
+const raw = JSON.parse(readFileSync(resolve(appRoot, "contracts/verification-registry.json"), "utf8"))
+const claiming = ["verified", "failed", "platform-unsupported"]
+
+const lookup = capabilities.loadVerificationLookup()
+const problems = []
+if (lookup.loaded !== true) problems.push(`the packaged registry did not load (loaded=${lookup.loaded})`)
+if (lookup.evidenceGatedTools.length !== Number(expectedGated)) {
+  problems.push(`code gated ${lookup.evidenceGatedTools.length} entries, the packaged registry asserts ${expectedGated}`)
+}
+for (const entry of lookup.registry ? lookup.registry.entries : []) {
+  const { status } = capabilities.rollupVerification(lookup, [entry.tool])
+  if (claiming.includes(status)) {
+    problems.push(`${entry.tool} is still reported ${status} although its record does not ship`)
+    break
+  }
+}
+if (problems.length > 0) {
+  console.error(problems.join("; "))
+  process.exit(1)
+}
+console.log(`packaged code gated ${lookup.evidenceGatedTools.length} asserting entries to unverified`)
+'@ | Set-Content -LiteralPath $degradationProbe -Encoding utf8
+$packagedNode = Join-Path $packageRoot "runtime\node.exe"
+& $packagedNode $degradationProbe (Join-Path $packageRoot "app") $asserting.Count
+if ($LASTEXITCODE -ne 0) {
+    throw "The packaged build does not degrade entries whose evidence is absent; it would publish unverified claims as observations."
+}
+
 $packagedConfig = Join-Path $packageRoot "connections.json"
 if (-not (Test-Path -LiteralPath $packagedConfig)) {
     throw "Release archive must contain connections.json."
