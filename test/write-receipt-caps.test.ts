@@ -4,46 +4,54 @@ import test from "node:test"
 import ts from "typescript"
 
 /**
- * Bind every producer of the receipt's prose fields to the caps the receipt schema declares.
+ * Bind every producer of a capped receipt field to the cap the receipt schema declares.
  *
- * `sapPreChangeEvidence` is the object every write tool returns, and `write-operation-receipts.ts`
- * declares its `sources` and `warnings` as `z.array(z.string().min(n).max(m)).max(k)`. A producer that
- * emits a member longer than `m`, or more members than `k`, does not fail where the member is written:
- * the receipt fails to parse while the tool is building its response - after the SAP-side change has
- * already happened, which turns a completed write into a failed call.
+ * The receipt schemas cap seven fields. A producer that exceeds a cap does not fail where the value is
+ * written: the receipt fails to parse while the tool is building its response - after the SAP-side
+ * change has already happened, which turns a completed write into a failed call.
  *
- * The caps are read from the compiled schema rather than restated here. That is the point: if the
- * schema tightens a cap, this gate must follow it, and a gate that hardcoded the numbers would keep
- * asserting the old ones and pass while the producers no longer fit.
+ * The caps are read from the compiled schema rather than restated here, so tightening a cap moves the
+ * gate with it. A gate that hardcoded the numbers would keep asserting the old ones and pass while the
+ * producers no longer fit.
  *
- * The array cap also has a second, coarser guard: a module that accumulates the field through several
- * `push` sites cannot exceed the cap even if every site runs. That bound is an upper bound, not the
- * per-call count, so it is deliberately the looser of the two.
+ * Two of the seven fields have no statically measurable producer at all, and they are capped at forty
+ * characters. Those producers cannot be checked by reading a literal, so they are **declared** below
+ * and compared in both directions: a new producer must be declared, and a declaration that no longer
+ * has a producer must be removed. Where the declaration names a self-bounding producer, the bound
+ * itself is asserted against the cap from the schema. Declaring is weaker than measuring, and saying so
+ * is the point - an undeclared gap would read as coverage.
  */
 
-const schemaFile = new URL("../src/write-operation-receipts.js", import.meta.url)
+const SCHEMA_MODULE = "write-operation-receipts"
+const schemaFile = new URL(`../src/${SCHEMA_MODULE}.js`, import.meta.url)
 const sourceDirectory = new URL("../src/", import.meta.url)
 
-/** The prose fields whose caps this gate enforces, and the shape of the cap it found for each. */
-type Cap = { perStringMin: number; perStringMax: number; arrayMax: number }
+type Cap = { kind: "array" | "scalar"; min: number; perStringMax: number; arrayMax: number | null }
 
-/**
- * Read the caps out of the schema. A missing field is an error rather than a skip: silently checking
- * nothing is how a gate stops being a gate.
- */
+/** Read every capped field out of the schema. A missing field is an error rather than a skip. */
 function readCaps(): Map<string, Cap> {
   const text = readFileSync(schemaFile, "utf8")
   const caps = new Map<string, Cap>()
-  // `sources: z.array(z.string().min(1).max(100)).max(20)`
-  const pattern =
-    /^\s*(\w+):\s*z\.array\(z\.string\(\)\.min\((\d+)\)\.max\((\d+)\)\)\.max\((\d+)\)/gm
-  for (const match of text.matchAll(pattern)) {
-    const [, field, min, max, arrayMax] = match
-    if (!field || !min || !max || !arrayMax) continue
+  const array = /^\s*(\w+):\s*z\.array\(z\.string\(\)\.min\((\d+)\)\.max\((\d+)\)\)\.max\((\d+)\)/gm
+  const scalar = /^\s*(\w+):\s*z\.string\(\)\.min\((\d+)\)\.max\((\d+)\)/gm
+  for (const match of text.matchAll(array)) {
+    const [, field, min, perStringMax, arrayMax] = match
+    if (!field || !min || !perStringMax || !arrayMax) continue
     caps.set(field, {
-      perStringMin: Number(min),
-      perStringMax: Number(max),
+      kind: "array",
+      min: Number(min),
+      perStringMax: Number(perStringMax),
       arrayMax: Number(arrayMax)
+    })
+  }
+  for (const match of text.matchAll(scalar)) {
+    const [, field, min, perStringMax] = match
+    if (!field || !min || !perStringMax || caps.has(field)) continue
+    caps.set(field, {
+      kind: "scalar",
+      min: Number(min),
+      perStringMax: Number(perStringMax),
+      arrayMax: null
     })
   }
   return caps
@@ -51,16 +59,193 @@ function readCaps(): Map<string, Cap> {
 
 const CAPS = readCaps()
 
-/** The predicate under test: one member against one field's per-string cap. */
-function withinCap(member: string, cap: Cap): boolean {
-  return member.length >= cap.perStringMin && member.length <= cap.perStringMax
+/** The inventory of capped fields, so adding or dropping one is a visible change. */
+const DECLARED_FIELDS: [
+  field: string,
+  kind: Cap["kind"],
+  min: number,
+  perStringMax: number,
+  arrayMax: number | null
+][] = [
+  ["sources", "array", 1, 100, 20],
+  ["warnings", "array", 1, 1000, 20],
+  ["target", "scalar", 1, 500, null],
+  ["preChangeSummary", "scalar", 1, 2000, null],
+  ["recoveryGuide", "scalar", 1, 2000, null],
+  ["errorCode", "scalar", 1, 40, null],
+  ["errorName", "scalar", 1, 40, null]
+]
+
+/**
+ * Every module that produces each capped field. Compared in both directions: a producer in an
+ * undeclared module fails, and a declared module that stopped producing fails. Without this, a
+ * producer added elsewhere would be checked by nothing.
+ */
+const DECLARED_PRODUCER_MODULES: Record<string, string[]> = {
+  sources: [
+    "change-impact",
+    "configuration-activity",
+    "configuration-bc-audit",
+    "configuration-bc-command",
+    "configuration-bc-impact",
+    "configuration-bc-set",
+    "configuration-bte-change",
+    "configuration-bte-product",
+    "configuration-bte-route",
+    "configuration-bte-save-closure",
+    "configuration-documentation",
+    "configuration-fi-activation-route",
+    "configuration-fi-dependencies",
+    "configuration-fi-formula",
+    "configuration-fi-formula-analysis",
+    "configuration-fi-rule",
+    "configuration-fi-rule-discovery",
+    "configuration-img",
+    "configuration-img-details",
+    "configuration-number-range",
+    "configuration-number-range-receipt",
+    "configuration-number-range-scope",
+    "configuration-object",
+    "configuration-transport",
+    "configuration-unit",
+    "configuration-unit-native-safety",
+    "idoc-status",
+    "log-correlation",
+    "qrfc-queues",
+    "role-authorizations",
+    "runtime-resources",
+    "server-facts",
+    "system-info",
+    "system-parameters",
+    "tools",
+    "trfc-error-entries",
+    "user-authorizations",
+    "write-prechange-evidence"
+  ],
+  warnings: [
+    "adt-backend",
+    "application-logs",
+    "background-jobs",
+    "change-impact",
+    "configuration-activity",
+    "configuration-bc-audit",
+    "configuration-bc-command",
+    "configuration-bc-compare",
+    "configuration-bc-impact",
+    "configuration-bc-set",
+    "configuration-bte-change",
+    "configuration-bte-metadata",
+    "configuration-bte-product",
+    "configuration-bte-route",
+    "configuration-bte-save-closure",
+    "configuration-compare",
+    "configuration-documentation",
+    "configuration-fi-activation-route",
+    "configuration-fi-dependencies",
+    "configuration-fi-formula",
+    "configuration-fi-rule",
+    "configuration-fi-rule-discovery",
+    "configuration-img",
+    "configuration-img-details",
+    "configuration-number-range",
+    "configuration-number-range-preview",
+    "configuration-number-range-receipt",
+    "configuration-number-range-scope",
+    "configuration-object",
+    "configuration-preview",
+    "configuration-transport",
+    "configuration-unit",
+    "configuration-unit-native-safety",
+    "configuration-unit-reconcile",
+    "job-spool",
+    "lock-delete",
+    "log-correlation",
+    "maintenance-diagnostics",
+    "operational-logs",
+    "report-parameters",
+    "report-variants",
+    "runtime-diagnostics",
+    "tools",
+    "transport-delivery",
+    "transport-import",
+    "transport-release",
+    "where-used",
+    "write-prechange-evidence"
+  ],
+  target: [
+    "configuration-bc-command",
+    "configuration-bc-preflight",
+    "configuration-bc-preview",
+    "configuration-bc-read-flow",
+    "configuration-bc-state",
+    "configuration-number-range-receipt",
+    "configuration-transport",
+    "configuration-unit-native-safety",
+    "contracts",
+    "mcp",
+    "source-preflight",
+    "tools",
+    "where-used",
+    "write-prechange-evidence"
+  ],
+  preChangeSummary: [
+    "configuration-bc-command",
+    "configuration-bte-command",
+    "configuration-number-range-receipt",
+    "configuration-unit-native-safety",
+    "mcp",
+    "write-operation-receipts"
+  ],
+  recoveryGuide: [
+    "configuration-bc-command",
+    "configuration-bte-command",
+    "configuration-number-range-receipt",
+    "configuration-unit-native-safety",
+    "mcp",
+    "write-operation-receipts"
+  ],
+  errorCode: ["write-operation-receipts"],
+  errorName: ["write-operation-receipts"]
 }
 
-type Member = { module: string; line: number; field: string; text: string }
-type ArraySite = { module: string; line: number; field: string; size: number; key: string | null }
+/**
+ * Fields whose only producer bounds itself with an explicit `slice(0, cap)`. Declaring the module is
+ * not enough for these: the cap is forty characters, the value comes from a thrown error, and the
+ * bound is the single thing standing between an unusual error and an unparseable receipt. So the bound
+ * is asserted, and asserted against the cap read from the schema.
+ */
+const SELF_BOUNDED_BY_SLICE = ["errorCode", "errorName"]
 
-const members: Member[] = []
-const arraySites: ArraySite[] = []
+/** Literal members and literal values found per field, so a shrinking measurement is visible. */
+const DECLARED_LITERAL_COUNTS: Record<string, number> = {
+  sources: 12,
+  warnings: 109,
+  target: 7,
+  preChangeSummary: 1,
+  recoveryGuide: 4,
+  errorCode: 0,
+  errorName: 0
+}
+
+/** A zod chain is a schema declaration, not a producer. */
+function isZodDeclaration(node: ts.Node | undefined): boolean {
+  return node !== undefined && node.getText().startsWith("z.")
+}
+
+type Site = {
+  module: string
+  line: number
+  field: string
+  /** Set when the value is an array literal: how many members it holds. */
+  arraySize: number | null
+  /** Set when the value is a string or a flat template: the text whose length is capped. */
+  literal: string | null
+  /** For a non-literal value, the name the module accumulates on, if it is one. */
+  accumulationKey: string | null
+}
+
+const sites: Site[] = []
+const arrayMembers: { module: string; line: number; field: string; text: string }[] = []
 const accumulationCounts = new Map<string, number>()
 
 for (const name of readdirSync(sourceDirectory).filter((n) => n.endsWith(".js"))) {
@@ -68,7 +253,6 @@ for (const name of readdirSync(sourceDirectory).filter((n) => n.endsWith(".js"))
   const parsed = ts.createSourceFile(name, text, ts.ScriptTarget.ES2022, true)
   const module = name.replace(/\.js$/, "")
 
-  // Every push/unshift in the module, keyed by the name it accumulates on.
   const visitAccumulations = (node: ts.Node): void => {
     if (
       ts.isCallExpression(node) &&
@@ -83,7 +267,7 @@ for (const name of readdirSync(sourceDirectory).filter((n) => n.endsWith(".js"))
   }
   visitAccumulations(parsed)
 
-  const visitDeliveries = (node: ts.Node): void => {
+  const visitProducers = (node: ts.Node): void => {
     const named =
       (ts.isPropertyAssignment(node) || ts.isShorthandPropertyAssignment(node)) &&
       ts.isIdentifier(node.name) &&
@@ -92,114 +276,198 @@ for (const name of readdirSync(sourceDirectory).filter((n) => n.endsWith(".js"))
       const field = node.name.text
       const value = ts.isPropertyAssignment(node) ? node.initializer : undefined
       const { line } = parsed.getLineAndCharacterOfPosition(node.getStart())
+      if (isZodDeclaration(value)) {
+        ts.forEachChild(node, visitProducers)
+        return
+      }
+      const site: Site = {
+        module,
+        line: line + 1,
+        field,
+        arraySize: null,
+        literal: null,
+        accumulationKey: null
+      }
+      // Braces matter here: without them the `else` binds to the inner `if` inside the `for`, and every
+      // non-array value silently goes uncounted.
       if (value && ts.isArrayLiteralExpression(value)) {
-        arraySites.push({ module, line: line + 1, field, size: value.elements.length, key: null })
+        site.arraySize = value.elements.length
         for (const element of value.elements)
           if (ts.isStringLiteral(element))
-            members.push({ module, line: line + 1, field, text: element.text })
+            arrayMembers.push({ module, line: line + 1, field, text: element.text })
+      } else if (
+        value &&
+        (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value))
+      ) {
+        site.literal = value.text
       } else {
         // `warnings,` or `warnings: some.warnings` hands over a name; the module's pushes on that name
         // are what could grow it.
         const key = !value ? field : ts.isIdentifier(value) ? value.text : value.getText()
-        arraySites.push({ module, line: line + 1, field, size: 0, key: `${module}\u0000${key}` })
+        site.accumulationKey = `${module}\u0000${key}`
       }
+      sites.push(site)
     }
-    ts.forEachChild(node, visitDeliveries)
+    ts.forEachChild(node, visitProducers)
   }
-  visitDeliveries(parsed)
+  visitProducers(parsed)
 }
 
+const boundOf = (site: Site): number =>
+  (site.arraySize ?? 0) +
+  (site.accumulationKey ? (accumulationCounts.get(site.accumulationKey) ?? 0) : 0)
+
 test("the caps come from the schema, and the extractor is not vacuous", () => {
-  // Both prose fields must be found. If the schema is rewritten so the extractor no longer matches,
-  // this fails instead of the whole gate quietly checking zero members.
-  assert.ok(CAPS.has("sources"), "the schema no longer declares a capped sources array")
-  assert.ok(CAPS.has("warnings"), "the schema no longer declares a capped warnings array")
+  // The inventory is compared both ways: a new capped field must be declared here, and a declaration
+  // must still correspond to a capped field. Otherwise a field added to the schema would be capped in
+  // name only, checked by nothing.
+  assert.deepEqual(
+    [...CAPS].map(([field, cap]) => [field, cap.kind, cap.min, cap.perStringMax, cap.arrayMax]),
+    DECLARED_FIELDS,
+    "the schema's capped fields changed; declare the new one and check its producers"
+  )
   for (const [field, cap] of CAPS) {
-    assert.ok(cap.perStringMin >= 1, `${field}: per-string minimum must be at least 1`)
-    assert.ok(
-      cap.perStringMax > cap.perStringMin,
-      `${field}: per-string maximum must exceed the minimum`
-    )
-    assert.ok(cap.arrayMax >= 1, `${field}: array maximum must be at least 1`)
+    assert.ok(cap.min >= 1, `${field}: minimum must be at least 1`)
+    assert.ok(cap.perStringMax > cap.min, `${field}: maximum must exceed the minimum`)
+    if (cap.kind === "array")
+      assert.ok((cap.arrayMax ?? 0) >= 1, `${field}: array maximum must be at least 1`)
   }
-  // Positive control: the predicate must reject a member one character over the cap and accept one
-  // exactly at it. A predicate that always answered true would make the check below vacuous.
+  // Positive control: the predicate must reject a value one character over the cap and accept one
+  // exactly at it. A predicate that always answered true would make every check below vacuous.
+  const within = (value: string, cap: Cap) =>
+    value.length >= cap.min && value.length <= cap.perStringMax
   for (const [field, cap] of CAPS) {
     assert.equal(
-      withinCap("x".repeat(cap.perStringMax), cap),
+      within("x".repeat(cap.perStringMax), cap),
       true,
-      `${field}: a member at the cap must be accepted`
+      `${field}: a value at the cap must be accepted`
     )
     assert.equal(
-      withinCap("x".repeat(cap.perStringMax + 1), cap),
+      within("x".repeat(cap.perStringMax + 1), cap),
       false,
-      `${field}: a member over the cap must be rejected`
+      `${field}: a value over the cap must be rejected`
     )
-    assert.equal(withinCap("", cap), false, `${field}: an empty member must be rejected`)
+    assert.equal(within("", cap), false, `${field}: an empty value must be rejected`)
   }
-  // And the measurement must have found producers, or the invariant below proves nothing.
-  assert.ok(members.length > 0, "no literal members of the capped fields were found")
-  assert.ok(arraySites.length > 0, "no producers of the capped fields were found")
+  assert.ok(sites.length > 0, "no producers of the capped fields were found")
+  assert.ok(arrayMembers.length > 0, "no literal array members of the capped fields were found")
 })
 
 test("no producer writes a receipt member outside the schema's per-string cap", () => {
-  const offenders = members
-    .filter((member) => !withinCap(member.text, CAPS.get(member.field)!))
+  const offenders = arrayMembers
+    .filter((member) => {
+      const cap = CAPS.get(member.field)!
+      return member.text.length < cap.min || member.text.length > cap.perStringMax
+    })
     .map((member) => `${member.module}:${member.line} ${member.field} length=${member.text.length}`)
   assert.deepEqual(offenders, [], "these receipt members do not fit the cap the schema declares")
+})
 
-  // Record the headroom, so a producer that grows toward the cap is visible in the failure message
-  // rather than only in the day it crosses.
+test("no producer writes a capped scalar outside the schema's per-string cap", () => {
+  const offenders = sites
+    .filter((site) => site.literal !== null)
+    .filter((site) => {
+      const cap = CAPS.get(site.field)!
+      return site.literal!.length < cap.min || site.literal!.length > cap.perStringMax
+    })
+    .map((site) => `${site.module}:${site.line} ${site.field} length=${site.literal!.length}`)
+  assert.deepEqual(offenders, [], "these scalar values do not fit the cap the schema declares")
+
+  // Record the headroom per field, so a value growing toward the cap is visible in the failure message
+  // rather than only on the day it crosses.
   for (const [field, cap] of CAPS) {
-    const group = members.filter((m) => m.field === field)
-    assert.ok(
-      group.length > 0,
-      `${field}: no literal members found, so the cap is not being enforced`
+    if (cap.kind !== "scalar") continue
+    const measured = sites.filter((site) => site.field === field && site.literal !== null)
+    const longest = measured.reduce<Site | null>(
+      (a, b) => (b.literal!.length > (a?.literal!.length ?? -1) ? b : a),
+      null
     )
-    const longest = group.reduce((a, b) => (b.text.length > a.text.length ? b : a))
     assert.ok(
-      longest.text.length <= cap.perStringMax,
-      `${field}: longest member is ${longest.text.length} against a cap of ${cap.perStringMax} (${longest.module}:${longest.line})`
+      longest === null || longest.literal!.length <= cap.perStringMax,
+      `${field}: longest literal is ${longest?.literal!.length} against a cap of ${cap.perStringMax}`
     )
   }
 })
 
 test("no producer writes more receipt members than the schema's array cap allows", () => {
-  const overInline = arraySites
-    .filter((site) => site.size > CAPS.get(site.field)!.arrayMax)
-    .map((site) => `${site.module}:${site.line} ${site.field} size=${site.size}`)
+  const arrayFields = [...CAPS].filter(([, cap]) => cap.kind === "array").map(([field]) => field)
+  const overInline = sites
+    .filter(
+      (site) =>
+        arrayFields.includes(site.field) && (site.arraySize ?? 0) > CAPS.get(site.field)!.arrayMax!
+    )
+    .map((site) => `${site.module}:${site.line} ${site.field} size=${site.arraySize}`)
   assert.deepEqual(overInline, [], "these inline arrays exceed the schema's array cap")
 
   // Upper bound: an inline array plus every push the module performs on the name it hands over. If
-  // every site ran, the field would still fit.
-  const overBound = arraySites
-    .map((site) => ({
-      site,
-      bound: site.size + (site.key ? (accumulationCounts.get(site.key) ?? 0) : 0)
-    }))
-    .filter(({ site, bound }) => bound > CAPS.get(site.field)!.arrayMax)
-    .map(({ site, bound }) => `${site.module}:${site.line} ${site.field} bound=${bound}`)
+  // every site ran, the field would still fit. This is an upper bound, not a per-call count.
+  const overBound = sites
+    .filter((site) => arrayFields.includes(site.field))
+    .filter((site) => boundOf(site) > CAPS.get(site.field)!.arrayMax!)
+    .map((site) => `${site.module}:${site.line} ${site.field} bound=${boundOf(site)}`)
   assert.deepEqual(overBound, [], "these producers could exceed the schema's array cap")
 })
 
-test("the receipt caps keep the producers they have", () => {
-  // Counted facts, so a producer disappearing is a visible change rather than a smaller check.
-  const byField = new Map<string, number>()
-  for (const member of members) byField.set(member.field, (byField.get(member.field) ?? 0) + 1)
-  const producers = new Set(arraySites.map((site) => `${site.field}\u0000${site.module}`))
+test("every producer of a capped field is declared, and every declaration has a producer", () => {
+  const measured = new Map<string, string[]>()
+  for (const site of sites) {
+    if (!measured.has(site.field)) measured.set(site.field, [])
+    const list = measured.get(site.field)!
+    if (!list.includes(site.module)) list.push(site.module)
+  }
+  for (const field of CAPS.keys()) {
+    assert.deepEqual(
+      (measured.get(field) ?? []).sort(),
+      (DECLARED_PRODUCER_MODULES[field] ?? []).slice().sort(),
+      `${field}: the modules that produce it changed; check the new producer against the cap and declare it`
+    )
+  }
   assert.deepEqual(
-    [...byField].sort(),
-    [
-      ["sources", 12],
-      ["warnings", 109]
-    ],
-    "the literal member counts changed; check the new members against the caps and update this count"
+    Object.keys(DECLARED_PRODUCER_MODULES).sort(),
+    [...CAPS.keys()].sort(),
+    "every capped field must declare its producers, and no declaration may outlive its field"
   )
-  assert.equal(producers.size, arraySites.length > 0 ? producers.size : 0)
-  assert.ok(producers.size > 0)
-  // The loosest bound in the codebase is well inside the cap; state it so the margin is a fact.
-  const loosest = arraySites
-    .map((site) => site.size + (site.key ? (accumulationCounts.get(site.key) ?? 0) : 0))
-    .reduce((a, b) => Math.max(a, b), 0)
-  assert.ok(loosest <= CAPS.get("warnings")!.arrayMax, `loosest accumulation bound is ${loosest}`)
+})
+
+test("a producer that bounds itself with a slice uses the cap the schema declares", () => {
+  for (const field of SELF_BOUNDED_BY_SLICE) {
+    const cap = CAPS.get(field)
+    assert.ok(cap, `${field}: declared self-bounded but no longer capped`)
+    const modules = DECLARED_PRODUCER_MODULES[field] ?? []
+    assert.ok(modules.length > 0, `${field}: declared self-bounded but has no producer`)
+    const bounded = modules.some((module) => {
+      const text = readFileSync(new URL(`${module}.js`, sourceDirectory), "utf8")
+      // The field's value must be an explicit `slice(0, cap)` in the module that produces it.
+      return new RegExp(`${field}:\\s*[^,;\\n}]*\\.slice\\(0,\\s*${cap.perStringMax}\\)`).test(text)
+    })
+    assert.ok(
+      bounded,
+      `${field}: no producer bounds it with slice(0, ${cap.perStringMax}); an unusual error value would not fit the cap`
+    )
+  }
+})
+
+test("the receipt caps keep the producers and literals they have", () => {
+  // Counted facts, so a producer or literal disappearing is a visible change rather than a smaller
+  // check that still passes.
+  const literalCounts = new Map<string, number>()
+  for (const member of arrayMembers)
+    literalCounts.set(member.field, (literalCounts.get(member.field) ?? 0) + 1)
+  for (const site of sites)
+    if (site.literal !== null)
+      literalCounts.set(site.field, (literalCounts.get(site.field) ?? 0) + 1)
+  assert.deepEqual(
+    [...CAPS.keys()].map((field) => [field, literalCounts.get(field) ?? 0]),
+    Object.entries(DECLARED_LITERAL_COUNTS),
+    "the literal counts changed; check the new values against the caps and update this count"
+  )
+  // The loosest array bound must stay inside the tightest array cap; state it so the margin is a fact.
+  const loosest = sites.map(boundOf).reduce((a, b) => Math.max(a, b), 0)
+  const tightestArrayCap = Math.min(
+    ...[...CAPS.values()].filter((cap) => cap.kind === "array").map((cap) => cap.arrayMax!)
+  )
+  assert.ok(
+    loosest <= tightestArrayCap,
+    `loosest accumulation bound is ${loosest} against a cap of ${tightestArrayCap}`
+  )
 })
