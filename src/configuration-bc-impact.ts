@@ -809,6 +809,8 @@ async function inspectBcActivationSources(
       ctsOutcome: "not_checked",
       logsRead: false
     },
+    // Unlike the other results that report blockers, this one reports advice in sentences rather than
+    // identifiers a caller can match. The split is declared in test/configuration-blocker-vocabulary.test.ts.
     blockers: [
       "Review remaining generated maintenance events, cluster internals, converters and actual after-import methods; source option/auth definitions do not prove runtime permissions or complete commit propagation.",
       "Bind a permitted headless route to exact target/client, keys, version, overwrite policy and CTS task; simulation is not authorized as a read-only operation.",

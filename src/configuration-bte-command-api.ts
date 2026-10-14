@@ -47,6 +47,8 @@ export const configurationBteCommandAvailability = {
   deployed: false,
   writeAvailable: false,
   automaticRetry: false,
+  // Matchable identifiers in the lowercase convention, unlike the SCREAMING_SNAKE_CASE convention the
+  // other results use. The split is declared in test/configuration-blocker-vocabulary.test.ts.
   blockers: [
     "native_message_protocol_not_closed",
     "cts_error_rollback_and_lock_continuity_not_accepted",
