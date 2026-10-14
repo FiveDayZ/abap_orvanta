@@ -176,6 +176,14 @@ test("guard returns complete fields and explicit eight-key presence without enab
     routeReads: 2,
     routeReadLimit: 2
   })
+  // The delivered warning names the same count the guard completes. It used to be the word "eight"
+  // written into the template, so a ninth key would have left the sentence behind while the states
+  // grew.
+  assert.equal(r.states.length, keys.length)
+  assert.match(
+    r.warning,
+    new RegExp(`^Complete fields for ${String(keys.length)} fixed related keys`)
+  )
 })
 test("empty native tables mean eight named missing states, never a missing response", async () => {
   const f = fixture()

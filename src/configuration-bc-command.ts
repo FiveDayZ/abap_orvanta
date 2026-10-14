@@ -370,7 +370,13 @@ export async function executeConfigurationBcCommand(
     targetKey: target,
     inputHash: hashWriteInput(input),
     protectUnknownTarget: true,
-    preChangeSummary: `Fixed CUNI ten-row ${command}; nine protected keys; before ${input.beforeStateReference}.`,
+    // One sentence cannot describe both arms: an apply inserts the pilot rows, and the recovery arm
+    // removes what an earlier apply inserted. The shared wording used to read "Fixed CUNI ten-row
+    // recover", which describes neither.
+    preChangeSummary:
+      command === "apply"
+        ? `Apply the fixed CUNI ten-row pilot; nine protected keys; before ${input.beforeStateReference}.`
+        : `Remove the ten rows the recorded apply inserted; nine protected keys untouched; before ${input.beforeStateReference}.`,
     recoveryGuide:
       "Do not replay. Reconcile the original receipt and native protocol/configuration/effects/CTS. Recovery requires the immutable applied frame; CTS cleanup and historical protocol are separate durable phases."
   })

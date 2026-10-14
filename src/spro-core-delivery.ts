@@ -191,6 +191,40 @@ export interface DeliverySurfaceFacts {
   writeTools: readonly string[]
 }
 
+const SCOPE_COUNT_WORDS: Record<string, number> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
+  twenty: 20
+}
+/**
+ * The counts the contract states in words, each with the phrase that identifies it. A word that is
+ * not a number ("one exact rule") is skipped, so only real counts take part.
+ */
+const SCOPE_COUNT_FAMILIES: readonly { readonly describes: string; readonly pattern: RegExp }[] = [
+  { describes: "the CUNI member tables", pattern: /([a-z]+)-table\b/g },
+  { describes: "the CUNI fixed keys", pattern: /([a-z]+)-key\b/g },
+  { describes: "the candidate rows", pattern: /([a-z]+) candidate rows\b/g },
+  { describes: "the protected keys", pattern: /([a-z]+) protected keys\b/g },
+  { describes: "the inserted rows", pattern: /([a-z]+) rows\b/g }
+]
+
 /**
  * Every reason `manifest` would deliver the wrong surface. Empty means the manifest agrees with the
  * registry and profile it is describing. Problems are returned rather than thrown so both the
@@ -436,6 +470,26 @@ export function deliveryManifestProblems(
       `IMG configuration tool ${tool} is delivered but appears in no published scenario and is not ` +
         `declared in supportingReads, so the contract explains nothing about it`
     )
+  }
+  // How large the one pilot that writes CUNI is gets stated in words - "fixed nine-table/nineteen-key
+  // CUNI scope: ten candidate rows and nine protected keys". No field carries those counts and nothing
+  // derives them, so a second sentence in this same file can disagree with the first and the registry's
+  // own record of the run (nine tables there) cannot settle it. A count a reader cannot resolve is
+  // worse than no count, so each family may be spelled exactly one way.
+  const spelled = JSON.stringify(manifest)
+  for (const { describes, pattern } of SCOPE_COUNT_FAMILIES) {
+    const counts = new Map<number, string>()
+    for (const match of spelled.matchAll(pattern)) {
+      const value = SCOPE_COUNT_WORDS[match[1]!]
+      if (value === undefined) continue
+      if (!counts.has(value)) counts.set(value, match[0])
+    }
+    if (counts.size > 1) {
+      problems.push(
+        `the contract gives ${describes} ${String(counts.size)} different counts ` +
+          `(${[...counts.values()].join(", ")}), so a reader cannot tell how large the pilot is`
+      )
+    }
   }
   return problems
 }

@@ -138,6 +138,28 @@ test("the shipped delivery contract is coherent with the registry and the config
   assert.equal(new Set(manifest.requiredTools).size, manifest.requiredTools.length)
 })
 
+test("the contract states the CUNI pilot's size one way, so two sentences cannot disagree", () => {
+  // The counts are prose and nothing derives them, so the only machine check available is that the
+  // file does not say two different things about the same set. It once said nine tables in the
+  // scenario scope and ten in a supportingReads reason.
+  const manifest = loadSproCoreDelivery()
+  assert.deepEqual(deliveryManifestProblems(manifest, facts), [])
+  const disagreeing = structuredClone(manifest)
+  const reason = disagreeing.supportingReads.find(
+    (entry) => entry.tool === "read_configuration_bc_dependencies"
+  )!
+  assert.match(reason.reason, /nine-table/, "the fixture needs the sentence that states the count")
+  reason.reason = reason.reason.replace("nine-table", "ten-table")
+  assert.match(
+    onlyProblem(deliveryManifestProblems(disagreeing, facts)),
+    /the contract gives the CUNI member tables 2 different counts \(nine-table, ten-table\)/
+  )
+  // A count that is not a number word is not a count, so ordinary prose cannot trip the rule.
+  const prose = structuredClone(manifest)
+  prose.supportingReads[0]!.reason = "Read: describes one approved table and one exact row."
+  assert.deepEqual(deliveryManifestProblems(prose, facts), [])
+})
+
 test("the delivered surface covers every IMG configuration tool the config profile enables", () => {
   const manifest = loadSproCoreDelivery()
   const delivered = new Set(manifest.requiredTools)

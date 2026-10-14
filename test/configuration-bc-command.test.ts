@@ -62,6 +62,22 @@ const apis = [
 
 import { bcCommandFixture } from "./configuration-bc-command-fixture.js"
 
+test("each arm's pre-change summary describes the change that arm makes", async (t) => {
+  const f = await bcCommandFixture(t)
+  await f.apply()
+  const applied = await f.env.receipts.status("w200", f.request.operationId)
+  assert.match(String(applied.preChangeSummary), /^Apply the fixed CUNI ten-row pilot/)
+  // The recovery arm removes rows an earlier apply inserted, so it cannot reuse the apply sentence.
+  // The shared wording used to read "Fixed CUNI ten-row recover", which describes neither arm.
+  assert.equal((await f.recover("f".repeat(64))).status, "declined")
+  const recovered = await f.env.receipts.status("w200", "r65-recover-0001")
+  assert.match(
+    String(recovered.preChangeSummary),
+    /^Remove the ten rows the recorded apply inserted/
+  )
+  assert.doesNotMatch(String(recovered.preChangeSummary), /Fixed CUNI ten-row recover/)
+})
+
 test("one durable intent/receipt dispatch, exact applied frame, duplicate never replayed, bound recovery", async (t) => {
   const f = await bcCommandFixture(t),
     applied = await f.apply()

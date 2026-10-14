@@ -182,7 +182,7 @@
     },
     {
       "tool": "read_configuration_bc_dependencies",
-      "reason": "Read: audits stored classic BC Set child references. The bc-knm loop reads its fixed ten-table CUNI scope instead."
+      "reason": "Read: audits stored classic BC Set child references. The bc-knm loop reads its fixed nine-table CUNI scope instead."
     },
     {
       "tool": "read_configuration_bc_logs",

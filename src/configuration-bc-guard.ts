@@ -319,6 +319,9 @@ export async function readConfigurationBcGuard(
       routeReadLimit: 2
     },
     warning:
-      "Complete fields for eight fixed related keys only. Missing rows are observations, not validation or permission to create. Source/target/route versions and sequential reads are bound; no locked snapshot, whole CUNI coverage, activation, methods, configuration/CTS/log writes or recovery is provided."
+      `Complete fields for ${String(configurationBcGuardKeys.length)} fixed related keys only. ` +
+      "Missing rows are observations, not validation or permission to create. Source/target/route " +
+      "versions and sequential reads are bound; no locked snapshot, whole CUNI coverage, activation, " +
+      "methods, configuration/CTS/log writes or recovery is provided."
   }
 }
