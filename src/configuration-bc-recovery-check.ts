@@ -5,7 +5,10 @@ import {
   ConfigurationBcBeforeStateStore,
   type ConfigurationBcStateBinding
 } from "./configuration-bc-before-state-store.js"
-import { configurationBcCommandRequestSchema } from "./configuration-bc-command-contract.js"
+import {
+  configurationBcCommandRequestSchema,
+  configurationBcRecoveryBlockedBy
+} from "./configuration-bc-command-contract.js"
 import { configurationBcPreflightKeys } from "./configuration-bc-preflight.js"
 import { configurationBcStateTables } from "./configuration-bc-state-api.js"
 import { configurationBcRecoveryCheckApi as api } from "./configuration-bc-recovery-check-api.js"
@@ -267,10 +270,6 @@ export async function checkConfigurationBcRecovery(
     counts: { ...state.counts },
     rows,
     proof: { version: v.EV_PROOF_VERSION, bytes: bytes.length },
-    blockedBy: [
-      "sap_locked_before_state_not_established",
-      "configuration_and_cts_recovery_not_executed",
-      "specific_configuration_and_cts_write_authorization"
-    ]
+    blockedBy: [...configurationBcRecoveryBlockedBy]
   }
 }

@@ -6,7 +6,8 @@ import {
 } from "./configuration-bc-before-state-store.js"
 import {
   configurationBcCommandContract,
-  configurationBcCommandRequestSchema
+  configurationBcCommandRequestSchema,
+  configurationBcPreparationBlockedBy
 } from "./configuration-bc-command-contract.js"
 import type { readConfigurationBcBeforeState } from "./configuration-bc-state.js"
 import {
@@ -91,9 +92,6 @@ export async function prepareConfigurationBcCommand(
       layoutFingerprint: before.layoutFingerprint
     },
     requiredNativeChecks: contract.requiredNativeChecks,
-    blockedBy: [
-      ...contract.blockedBy.filter((reason) => reason !== "native_before_state_runtime_acceptance"),
-      "sap_locked_before_state_not_established"
-    ]
+    blockedBy: [...configurationBcPreparationBlockedBy]
   }
 }

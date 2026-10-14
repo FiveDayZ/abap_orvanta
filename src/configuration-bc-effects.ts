@@ -5,7 +5,10 @@ import type {
   ConfigurationBcBeforeStateStore,
   ConfigurationBcStateBinding
 } from "./configuration-bc-before-state-store.js"
-import { configurationBcCommandRequestSchema } from "./configuration-bc-command-contract.js"
+import {
+  configurationBcCommandRequestSchema,
+  configurationBcEffectsBlockedBy
+} from "./configuration-bc-command-contract.js"
 import {
   configurationBcEffectsApi as api,
   configurationBcEffectsLayouts,
@@ -382,10 +385,6 @@ export async function readConfigurationBcEffects(
       clientSideImportAvailable: false as const,
       recoveryPermit: false as const
     },
-    blockedBy: [
-      "sap_locked_before_state_not_established",
-      "standard_save_and_recovery_not_executed",
-      "specific_configuration_and_cts_write_authorization"
-    ]
+    blockedBy: [...configurationBcEffectsBlockedBy]
   }
 }
