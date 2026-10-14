@@ -14,6 +14,150 @@ import {
 
 type EvidenceDraft = Omit<SapPreChangeEvidence, "observedAt" | "observationStatus">
 
+/**
+ * The vocabulary of `sapPreChangeEvidence.sources`, declared once and gated by
+ * `test/write-prechange-evidence.test.ts`.
+ *
+ * The receipt is read by a human who has to decide what to do about a write whose outcome is
+ * unknown, so the sources it names are a claim about what actually answered. The list had grown as
+ * free text mixing four kinds of noun - registered tool names, the snake_case of the backend method
+ * behind an observation, an SAP table, and bespoke phase labels - with nothing tying it to reality.
+ * A label that looked like a tool name was read as one: `read_configuration_unit_native_snapshot`
+ * named neither the tool that answered (`read_configuration_unit`, which returns `apiSnapshot`) nor
+ * the API function that tool wraps, while matching the shape of the real tool
+ * `read_configuration_bc_native_snapshot`. Declaring each label with its kind makes it checkable
+ * that a `tool` label is a registered tool, so a rename cannot leave a phantom source behind.
+ *
+ * The gate is bidirectional: every declared label must appear in the module, and every label the
+ * module can emit must be declared here. Adding an observation means adding its label.
+ */
+export const WRITE_PRE_CHANGE_SOURCES: ReadonlyArray<{
+  label: string
+  kind: "tool" | "backend" | "table" | "phase"
+  note: string
+}> = Object.freeze([
+  {
+    label: "read_configuration_unit",
+    kind: "tool",
+    note: "Read of the configuration unit with includeApiSnapshot; the native snapshot wraps this read, so this tool is what answered."
+  },
+  {
+    label: "read_function_module_interface",
+    kind: "tool",
+    note: "Interface read used both to attest the native API before use and to fingerprint a function module."
+  },
+  {
+    label: "read_enhancement_implementation",
+    kind: "tool",
+    note: "Read of the existing enhancement implementation before changing it."
+  },
+  {
+    label: "read_classic_badi_definition",
+    kind: "tool",
+    note: "Read of the classic BAdI definition before changing its implementation."
+  },
+  {
+    label: "read_abap_screen",
+    kind: "tool",
+    note: "Pre-change read of the screen behind upsert_abap_screen and patch_abap_screen."
+  },
+  {
+    label: "read_abap_gui_definition",
+    kind: "tool",
+    note: "Pre-change read of the GUI status/definition behind patch_abap_gui_definition."
+  },
+  {
+    label: "read_abap_message_class",
+    kind: "tool",
+    note: "Pre-change read of the message class behind the update/delete message-class tools."
+  },
+  {
+    label: "read_transaction_code",
+    kind: "tool",
+    note: "Pre-change read of the transaction behind create/delete_transaction_code."
+  },
+  {
+    label: "read_ddic_transparent_table",
+    kind: "tool",
+    note: "Pre-change read of a transparent table, used before its fields or settings are patched."
+  },
+  {
+    label: "read_ddic_table_conversion_status",
+    kind: "tool",
+    note: "Pre-change read of the conversion/activation status before a conversion is recovered or resumed."
+  },
+  {
+    label: "transport_details",
+    kind: "backend",
+    note: "backend.transportDetails: request header and object entries, for release and object-add observation."
+  },
+  {
+    label: "list_user_transports",
+    kind: "backend",
+    note: "backend.listUserTransports: the request-create retry guard, separating workbench (K) from customizing (W)."
+  },
+  {
+    label: "sap_ddic_read",
+    kind: "backend",
+    note: "The DDIC read path; also marks the inactive version via metadata INACTIVE."
+  },
+  {
+    label: "adt_object_search",
+    kind: "backend",
+    note: "backend.searchObjects: locating the write target when the caller gave no source URI."
+  },
+  {
+    label: "maintenance_lock_search",
+    kind: "backend",
+    note: "Lock search behind the maintenance-lock observation."
+  },
+  {
+    label: "repository_assignment",
+    kind: "backend",
+    note: "Repository assignment observation; a missing assignment is how 'the object does not exist yet' is decided."
+  },
+  {
+    label: "tbtco",
+    kind: "table",
+    note: "SAP table TBTCO: the background-job rows the create/modify/release observations read."
+  },
+  {
+    label: "active_source",
+    kind: "phase",
+    note: "Which source snapshot answered when the caller supplied a URI and only the active version exists."
+  },
+  {
+    label: "inactive_source",
+    kind: "phase",
+    note: "As active_source, but an inactive version exists, so the target is readable yet not active."
+  },
+  {
+    label: "source",
+    kind: "phase",
+    note: "Default before the source identity is known; reaches a warning only, never a claim of what answered."
+  },
+  {
+    label: "smartform_repository_snapshot",
+    kind: "phase",
+    note: "Smart Form repository snapshot behind the pre-change read."
+  },
+  {
+    label: "smartform_explicit_not_found",
+    kind: "phase",
+    note: "Smart Form absent: SAP said so explicitly rather than the read failing."
+  },
+  {
+    label: "enhancement_implementation_unreadable",
+    kind: "phase",
+    note: "Enhancement implementation exists but could not be read; the observation says so instead of guessing."
+  },
+  {
+    label: "enhancement_implementation_explicit_not_found",
+    kind: "phase",
+    note: "Enhancement implementation absent as a positive answer from SAP."
+  }
+])
+
 export async function observeWritePreChange(
   name: string,
   input: Record<string, unknown>,
@@ -68,10 +212,7 @@ export async function observeWritePreChange(
     evidence.fingerprint = value.expectedReadFingerprint
     evidence.requestNumber = value.requestNumber
     evidence.taskNumber = value.taskNumber
-    evidence.sources.push(
-      "read_function_module_interface",
-      "read_configuration_unit_native_snapshot"
-    )
+    evidence.sources.push("read_function_module_interface", "read_configuration_unit")
     evidence.warnings.push(
       "Pre-change read does not verify SAP modification authority, locks or exact CTS recording; the native command must check them."
     )

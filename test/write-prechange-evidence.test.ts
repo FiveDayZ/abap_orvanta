@@ -1,11 +1,125 @@
 import assert from "node:assert/strict"
 import { createHash } from "node:crypto"
+import { readFileSync } from "node:fs"
 import test from "node:test"
+import { fileURLToPath } from "node:url"
 import type { MaintenanceDiagnosticService } from "../src/maintenance-diagnostics.js"
+import { TOOL_NAMES } from "../src/tool-registry.js"
 import { ToolService } from "../src/tools.js"
 import { hashWriteInput } from "../src/write-operation-receipts.js"
-import { isMissing, observeWritePreChange } from "../src/write-prechange-evidence.js"
+import {
+  WRITE_PRE_CHANGE_SOURCES,
+  isMissing,
+  observeWritePreChange
+} from "../src/write-prechange-evidence.js"
 import { MockBackend } from "./mock-backend.js"
+
+/**
+ * The provenance labels the module can put into `sapPreChangeEvidence.sources` (or into a warning
+ * for one that failed). Read off the module text rather than hand-listed, so the declaration and the
+ * code cannot drift apart in either direction.
+ *
+ * Only the label sits in a known position: the `sources.push` argument list, the argument after
+ * `evidence,` in `observeJson`/`recordObservationError`, or the `source`/`sourceEvidence` variable
+ * those two read. Scanning the whole neighbourhood instead collects the tool names of the
+ * `switch (name)` dispatch that happens to sit nearby, so each site is read positionally. A push
+ * argument list is followed until its parentheses balance, because it may be wrapped across lines.
+ */
+function provenanceLabelsIn(source: string): Set<string> {
+  const labels = new Set<string>()
+  const lines = source.split("\n")
+  const take = (text: string) => {
+    for (const candidate of text.matchAll(/"([a-z][a-z0-9_]{2,60})"/g)) labels.add(candidate[1]!)
+  }
+  /** The call text, followed until its parentheses balance, so a wrapped call is read whole. */
+  const callText = (from: number) => {
+    let depth = 0
+    let call = ""
+    for (let next = from; next < Math.min(from + 8, lines.length); next += 1) {
+      call += `${lines[next]!}\n`
+      for (const character of lines[next]!) {
+        if (character === "(") depth += 1
+        else if (character === ")") depth -= 1
+      }
+      if (depth <= 0) break
+    }
+    return call
+  }
+  lines.forEach((line, index) => {
+    if (/sources\.push\(/.test(line)) {
+      take(callText(index).replace(/^[\s\S]*?sources\.push\(/, ""))
+      return
+    }
+    if (/observeJson\(|recordObservationError\(evidence,/.test(line)) {
+      // The label is the literal right after `evidence,`; matching it positionally keeps the tool
+      // names of a nearby `switch (name)` out of the vocabulary.
+      const match = callText(index).match(/evidence,\s*"([a-z][a-z0-9_]{2,60})"/)
+      if (match) labels.add(match[1]!)
+      return
+    }
+    if (/const source = |sourceEvidence = /.test(line)) {
+      // Only a label assigned directly (or as a ternary of labels) counts. `const source = await
+      // backend.readSource(..., { version: "active" })` assigns a source, not the label "active".
+      const assignment = line.match(
+        /=\s*(?:"([a-z][a-z0-9_]{2,60})"|\w+\s*\?\s*"([a-z][a-z0-9_]{2,60})"\s*:\s*"([a-z][a-z0-9_]{2,60})")/
+      )
+      if (assignment) {
+        for (const group of assignment.slice(1)) if (group) labels.add(group)
+      }
+    }
+  })
+  return labels
+}
+
+const modulePath = fileURLToPath(new URL("../src/write-prechange-evidence.js", import.meta.url))
+
+test("the pre-change provenance vocabulary is declared, and every tool it names exists", () => {
+  const declared = new Map(WRITE_PRE_CHANGE_SOURCES.map((entry) => [entry.label, entry]))
+  assert.equal(declared.size, WRITE_PRE_CHANGE_SOURCES.length, "a label is declared twice")
+  for (const entry of WRITE_PRE_CHANGE_SOURCES) {
+    assert.ok(entry.note.trim().length > 20, `${entry.label} needs a real note`)
+    if (entry.kind === "tool") {
+      // A `tool` label is a claim that this tool answered, so a rename must not leave it behind:
+      // the phantom `read_configuration_unit_native_snapshot` matched the shape of the real
+      // `read_configuration_bc_native_snapshot` and was read as a tool that does not exist.
+      assert.ok(
+        (TOOL_NAMES as readonly string[]).includes(entry.label),
+        `${entry.label} is declared as a tool but no tool registry entry implements it`
+      )
+    }
+  }
+
+  const emitted = provenanceLabelsIn(readFileSync(modulePath, "utf8"))
+  const undeclared = [...emitted].filter((label) => !declared.has(label)).sort()
+  assert.deepEqual(undeclared, [], "these provenance labels are emitted but not declared")
+  const unused = [...declared.keys()].filter((label) => !emitted.has(label)).sort()
+  assert.deepEqual(unused, [], "these declared provenance labels are emitted nowhere")
+  assert.equal(
+    emitted.size,
+    24,
+    "the provenance vocabulary changed size; declare the new label and update this count"
+  )
+})
+
+test("the provenance gate fails when a phantom label appears", () => {
+  // The gate above is only worth its cost if a made-up label really turns it red. The detector runs
+  // over the real module text with one injected emission, so this is the same code path.
+  const source = readFileSync(modulePath, "utf8")
+  const clean = provenanceLabelsIn(source)
+  const injected = provenanceLabelsIn(
+    `${source}\nevidence.sources.push("read_imaginary_configuration_snapshot")\n`
+  )
+  assert.deepEqual([...clean].sort(), [...provenanceLabelsIn(source)].sort())
+  assert.ok(
+    !clean.has("read_imaginary_configuration_snapshot"),
+    "the injected label must not already be part of the vocabulary"
+  )
+  const declared = new Set(WRITE_PRE_CHANGE_SOURCES.map((entry) => entry.label))
+  const undeclared = [...injected].filter((label) => !declared.has(label))
+  assert.deepEqual(undeclared, ["read_imaginary_configuration_snapshot"])
+  // And it is exactly the kind of label the tool rule catches: tool-name shaped, not registered.
+  assert.ok(!(TOOL_NAMES as readonly string[]).includes("read_imaginary_configuration_snapshot"))
+})
 
 test("pre-change observation covers repository, DDIC, message, and source targets", async () => {
   const backend = new MockBackend()
