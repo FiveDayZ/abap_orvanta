@@ -268,7 +268,7 @@
 - `apply_configuration_unit_text`：CFG-02 API 保存：仅 w200/200 已有单语言 T006A 非空描述，必需双版本、明确 W/Q 请求任务及 operationId。客户 RFC 未部署/正文漂移即拒绝；注册不代表保存验收。锁内版本、同步 UPDATE_T006A、精确 CTS 和回滚仍待 SAP 实测，无 GUI 或通用写表回退。
 - `cleanup_transport_entries`：移除 CTS 任务条目，不删除、不释放传输；w200 写端点尚未验证。
 - `compare_configuration_bc_set`：CFG-04：BC Set 已存字符字段与 w200/200 单位/明确语言现值比较；变量/通配键、数值转换及语言覆盖不可推断，拒绝激活与写入。
-- `compare_configuration_unit`：CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；stage5 已验收 KG/ZH 双向及 EN 的有限投影，当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。
+- `compare_configuration_unit`：CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；stage5 的 KG/ZH 双向与 EN 有限投影仅有本地回执、未镜像进 contracts/verification-registry.json（该处仍记为 unverified），当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。
 - `correlate_sap_logs`：固定来源的有界关联，不证明因果；各来源失败分别报告。
 - `describe_configuration_object`：CFG-01：现有 customizing 白名单内至多 64 字段的平面透明表元数据；T006/T006A 可选复用 IMG 标题与局部路径读取。业务维护 API/CTS 未知，无配置值读取或写入。
 - `diagnose_sap_failure`：只读 ST22 解析；时间关联是候选证据，不认定根因。
