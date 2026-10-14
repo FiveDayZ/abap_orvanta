@@ -21,11 +21,21 @@ const statusByTool = new Map(registry.entries.map((entry) => [entry.tool, entry.
 const verifiedTools = registry.entries
   .filter((entry) => entry.status === "verified")
   .map((entry) => entry.tool)
+// The registry's own read/write split decides the scenario rules, so the audit asks it rather than
+// inferring intent from tool names.
+const readOnlyTools = registry.entries
+  .filter((entry) => entry.method === "read-only")
+  .map((entry) => entry.tool)
+const writeTools = registry.entries
+  .filter((entry) => entry.method === "controlled-write")
+  .map((entry) => entry.tool)
 const problems = deliveryManifestProblems(manifest, {
   allTools: TOOL_NAMES,
   profileTools,
   profileNames,
-  verifiedTools
+  verifiedTools,
+  readOnlyTools,
+  writeTools
 })
 
 const delivered = manifest.requiredTools ?? []
@@ -51,24 +61,39 @@ console.log(
   `  acceptance disclosure: ${declared.length} of ${unverifiedImg.length} unverified IMG ` +
     `configuration tools declared in unverifiedTools`
 )
-const flowTools = new Set(
-  (manifest.scenarios ?? []).flatMap((scenario) =>
-    Array.isArray(scenario?.flow) ? scenario.flow : []
-  )
+// Both arms count as explaining a tool: a reversing step declared in failurePath is documented by
+// the scenario even though the happy path never runs it.
+const scenarioTools = new Set(
+  (manifest.scenarios ?? []).flatMap((scenario) => [
+    ...(Array.isArray(scenario?.flow) ? scenario.flow : []),
+    ...(Array.isArray(scenario?.failurePath) ? scenario.failurePath : [])
+  ])
 )
-const covered = delivered.filter((tool) => flowTools.has(tool))
+const covered = delivered.filter((tool) => scenarioTools.has(tool))
 const supporting = manifest.supportingReads ?? []
 const supportingTools = new Set(supporting.map((entry) => entry?.tool))
-const uncoveredImg = imgDelivered.filter((tool) => !flowTools.has(tool))
+const uncoveredImg = imgDelivered.filter((tool) => !scenarioTools.has(tool))
 console.log(
   `  scenario coverage: ${covered.length} of ${delivered.length} delivered tools appear in a ` +
-    `published flow, and ${supportingTools.size} of the ${uncoveredImg.length} IMG configuration ` +
-    `tools outside every flow are declared in supportingReads`
+    `published scenario, and ${supportingTools.size} of the ${uncoveredImg.length} IMG configuration ` +
+    `tools outside every scenario are declared in supportingReads`
 )
 const unexplained = uncoveredImg.filter((tool) => !supportingTools.has(tool))
 if (unexplained.length > 0) {
   // Informational: the completeness rule above already fails these; printing them names the work.
-  console.log(`  neither in a flow nor declared: ${unexplained.join(", ")}`)
+  console.log(`  neither in a scenario nor declared: ${unexplained.join(", ")}`)
+}
+// The two arms of every published loop, so a reader can see which steps run on success and which
+// only when the change has to come back.
+for (const scenario of manifest.scenarios ?? []) {
+  const flow = Array.isArray(scenario?.flow) ? scenario.flow : []
+  const writes = flow.filter((tool) => writeTools.includes(tool))
+  const failurePath = Array.isArray(scenario?.failurePath) ? scenario.failurePath : []
+  console.log(
+    `  scenario ${String(scenario?.id)}: ${flow.length} happy-path steps ` +
+      `(${writes.join(", ") || "no write"}), failure arm ` +
+      `${failurePath.length > 0 ? failurePath.join(", ") : "none"}`
+  )
 }
 for (const problem of problems) {
   console.log(`PROBLEM  ${problem}`)

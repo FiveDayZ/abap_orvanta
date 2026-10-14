@@ -70,6 +70,7 @@
         "get_write_operation_status",
         "reconcile_configuration_unit_text"
       ],
+      "failurePath": [],
       "recovery": "Reconcile first. An authorized restoration is a new apply with fresh read/text versions and the original description. Unknown receipts remain protected; no automatic retry or rollback.",
       "cts": "Explicit open Customizing request and child task; exact T006A row key. Restoration does not remove historical CTS entries."
     },
@@ -85,6 +86,7 @@
         "get_write_operation_status",
         "reconcile_configuration_number_range"
       ],
+      "failurePath": [],
       "recovery": "Read-only reconciliation; no interval delete or generic rollback. Any further update requires fresh native version and approval.",
       "cts": "Intervals are explicitly local-client-only; no transport recording or release."
     },
@@ -102,10 +104,10 @@
         "read_configuration_bc_before_state",
         "read_configuration_bc_effects",
         "apply_configuration_bc_set",
-        "reconcile_configuration_bc_execution",
-        "recover_configuration_bc_set"
+        "reconcile_configuration_bc_execution"
       ],
-      "recovery": "Same persistent state directory, immutable before/effects references and original receipt hash. Configuration restore and cleanup of only owned added CTS keys are separate durable phases. Historical activation protocol remains.",
+      "failurePath": ["recover_configuration_bc_set"],
+      "recovery": "Same persistent state directory, immutable before/effects references and original receipt hash. Configuration restore and cleanup of only owned added CTS keys are separate durable phases, run as the failure arm: recover_configuration_bc_set removes the ten rows apply_configuration_bc_set inserted, so it is never part of the happy path above. Historical activation protocol remains.",
       "cts": "Fixed request GR2K923429/task GR2K923430; current ownership/status/source pins must still pass. No release."
     }
   ],
@@ -205,7 +207,8 @@
     "Package creation and tool visibility do not authorize SAP writes, customer-object deployment, CTS cleanup, lock release, service switch or publication.",
     "Historical private-instance acceptance does not prove acceptance of this candidate or the formal service.",
     "FI save/recovery, BTE activation and arbitrary IMG activities are not delivered by M1. Every configuration tool the server implements is exposed; the configuration tools that contracts/verification-registry.json does not verify are declared in unverifiedTools, and the audit also reports unverified non-configuration tools on this surface. SAP acceptance of this surface is not established.",
-    "The published scenarios are the only closed loops this surface promises. Every configuration tool delivered outside them is documented in supportingReads with the role it plays, which is a statement about this contract and not a capability or acceptance claim: it does not mean the loop that tool belongs to is delivered."
+    "The published scenarios are the only closed loops this surface promises. Every configuration tool delivered outside them is documented in supportingReads with the role it plays, which is a statement about this contract and not a capability or acceptance claim: it does not mean the loop that tool belongs to is delivered.",
+    "Each scenario declares its two arms apart: flow is the happy path a caller runs, failurePath carries the tools that reverse the change. A reversing write is never a happy-path step, a tool belongs to exactly one arm, and a flow that writes has to run a read-only step afterwards that observes what the write changed. A closed loop that would undo itself is not a delivered business loop."
   ],
   "unverifiedTools": [
     "apply_configuration_bc_set",

@@ -40,6 +40,16 @@
  * and the audit holds the classification complete in both directions: every delivered configuration
  * tool is either in a published flow or declared here, and a declared tool that later joins a flow
  * has to leave the list.
+ *
+ * Checking the flows against the tools' own descriptions found the next hole, and it was not a
+ * wording problem. `bc-knm` - the one published loop that runs a write - ended its flow with
+ * `recover_configuration_bc_set`, whose own description says it removes the ten rows the apply
+ * inserts. Read literally, that loop applies the pilot and then removes what it applied, while the
+ * same scenario's `recovery` text calls the restore a separate durable phase. A flat list of tool
+ * names cannot say which arm a step belongs to, so the contract now declares the two arms apart:
+ * `flow` is the happy path the customer runs, `failurePath` carries the reversing tools, and the
+ * audit rejects a reversing write in `flow`, a tool declared in both arms, and a flow that writes
+ * without a read-only step observing the result.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -77,16 +87,39 @@ export interface SproCoreDeliveryExclusion {
 
 /**
  * One delivered business closed loop: what it may touch (`scope`), the tool order that closes it
- * (`flow`), how it is undone (`recovery`) and what it records in CTS (`cts`). A scenario is a
- * promise the candidate has to be able to keep, so `flow` may only name tools this surface
- * delivers; the packaged service denies every tool the contract leaves out.
+ * (`flow`), the arm that reverses it (`failurePath`), how it is undone (`recovery`) and what it
+ * records in CTS (`cts`). A scenario is a promise the candidate has to be able to keep, so `flow`
+ * may only name tools this surface delivers; the packaged service denies every tool the contract
+ * leaves out.
  */
 export interface SproCoreDeliveryScenario {
   id: string
   scope: string
+  /**
+   * The happy path, in order: the steps a caller runs when everything works. It never contains the
+   * arm that reverses the change, because a published loop that undoes itself is worse than no loop.
+   */
   flow: string[]
+  /**
+   * The tools that reverse this loop: run only when the change has to be undone or its outcome is
+   * unknown. An empty list is a statement too — it says this loop has no rollback and a failed
+   * change has to be handled by hand — so the field is declared rather than omitted.
+   */
+  failurePath: string[]
   recovery: string
   cts: string
+}
+
+/**
+ * A write that reverses a change another tool made. Publishing one as a happy-path step would hand
+ * the customer a flow that reverses itself, so the audit keeps them in the failure arm. The
+ * vocabulary is name-based and therefore deliberately small: a new reversing tool has to be added
+ * here, and the test that proves the rule fails until it is.
+ */
+const COMPENSATING_WRITE_PATTERN = /^(recover|undo|rollback|revert)_/
+
+export function isCompensatingWrite(name: string): boolean {
+  return COMPENSATING_WRITE_PATTERN.test(name)
 }
 
 /**
@@ -150,6 +183,12 @@ export interface DeliverySurfaceFacts {
    * the manifest itself.
    */
   verifiedTools: readonly string[]
+  /**
+   * The registry's own read/write classification, so the scenario rules can ask "is this step a
+   * write, and does a read-only step observe it" without parsing tool names.
+   */
+  readOnlyTools: readonly string[]
+  writeTools: readonly string[]
 }
 
 /**
@@ -255,8 +294,13 @@ export function deliveryManifestProblems(
   // Scenario flows ship to the customer as the loops this surface promises to run, while the
   // packaged service refuses every tool outside requiredTools. Nothing else reads these fields, so
   // an unusable step or an unstated recovery would otherwise reach the customer unremarked.
+  const reads = new Set(facts.readOnlyTools)
+  const writes = new Set(facts.writeTools)
   const scenarioIds = new Set<string>()
-  const flowTools = new Set<string>()
+  // Every tool a published scenario explains, in either arm. A reversing tool declared in
+  // `failurePath` is explained by the scenario just as much as a happy-path step is, so the
+  // documentation coverage below counts both and does not ask for it to be declared twice.
+  const scenarioTools = new Set<string>()
   for (const entry of manifest.scenarios ?? []) {
     const scenario = (entry ?? {}) as Partial<SproCoreDeliveryScenario>
     const id = typeof scenario.id === "string" ? scenario.id.trim() : ""
@@ -283,7 +327,7 @@ export function deliveryManifestProblems(
         problems.push(`${label} names ${tool} twice in its flow`)
       }
       steps.add(tool)
-      flowTools.add(tool)
+      scenarioTools.add(tool)
       if (!known.has(tool)) {
         problems.push(`${label} runs ${tool}, which no tool registry entry implements`)
       } else if (!seen.has(tool)) {
@@ -293,11 +337,70 @@ export function deliveryManifestProblems(
         )
       }
     }
+    // A published closed loop is the milestone this project delivers: locate, read, preview, run the
+    // official API, observe the result. A flow that never writes promises no such loop, and a flow
+    // that writes and then stops never observes what it changed.
+    if (flow.length > 0) {
+      if (!flow.some((tool) => writes.has(tool))) {
+        problems.push(
+          `${label} publishes a closed loop whose flow never executes a write, so it is not the ` +
+            `business loop this contract presents it as`
+        )
+      }
+      const lastWrite = flow.reduce((at, tool, index) => (writes.has(tool) ? index : at), -1)
+      if (lastWrite >= 0 && !flow.some((tool, index) => index > lastWrite && reads.has(tool))) {
+        problems.push(
+          `${label} runs ${String(flow[lastWrite])} as its last write and then no read-only step, ` +
+            `so its flow never observes what the write changed`
+        )
+      }
+    }
+    // The two arms are separate fields because a flat list cannot say which one a step belongs to,
+    // and the customer runs the happy path. A reversing write left in `flow` would be executed as
+    // step N of a loop the contract publishes as its own success story.
+    for (const tool of flow) {
+      if (!isCompensatingWrite(tool) || reads.has(tool)) continue
+      problems.push(
+        `${label} runs ${tool} in its happy path, and that is the arm which reverses what the loop ` +
+          `applies, so the published flow would undo itself; a reversing write belongs in failurePath`
+      )
+    }
+    const failurePath = scenario.failurePath
+    if (!Array.isArray(failurePath)) {
+      problems.push(
+        `${label} declares no failurePath, so the contract does not say whether its change can be ` +
+          `reversed or has to be handled by hand`
+      )
+    } else {
+      const reversal = new Set<string>()
+      for (const tool of failurePath) {
+        if (reversal.has(tool)) {
+          problems.push(`${label} lists ${tool} twice in its failurePath`)
+        }
+        reversal.add(tool)
+        scenarioTools.add(tool)
+        if (!known.has(tool)) {
+          problems.push(
+            `${label} declares ${tool} in its failurePath, which no tool registry entry implements`
+          )
+        } else if (!seen.has(tool)) {
+          problems.push(
+            `${label} declares ${tool} in its failurePath, which this surface does not deliver`
+          )
+        }
+        if (steps.has(tool)) {
+          problems.push(
+            `${label} runs ${tool} in its flow and also declares it in failurePath, so the ` +
+              `contract does not say which arm it belongs to`
+          )
+        }
+      }
+    }
   }
   // Documentation coverage. The scenarios are the loops this contract publishes; a delivered IMG
   // configuration tool that appears in none of them is either explained here or invisible, and an
   // invisible tool reads as if the surface had nothing to say about it. Both directions are checked
-  // so the list cannot rot: a tool that later joins a flow has to leave the list again.
+  // so the list cannot rot: a tool that later joins a scenario has to leave the list again.
   const supporting = manifest.supportingReads ?? []
   const supportingTools = new Set<string>()
   for (const entry of supporting) {
@@ -318,7 +421,7 @@ export function deliveryManifestProblems(
     if (typeof entry?.reason !== "string" || entry.reason.trim() === "") {
       problems.push(`supportingReads names ${tool} without a reason, so nothing records its role`)
     }
-    if (flowTools.has(tool)) {
+    if (scenarioTools.has(tool)) {
       problems.push(
         `supportingReads names ${tool}, which a published scenario already runs, so the contract ` +
           `describes it twice`
@@ -326,7 +429,9 @@ export function deliveryManifestProblems(
     }
   }
   for (const tool of required) {
-    if (!isImgConfigurationTool(tool) || flowTools.has(tool) || supportingTools.has(tool)) continue
+    if (!isImgConfigurationTool(tool) || scenarioTools.has(tool) || supportingTools.has(tool)) {
+      continue
+    }
     problems.push(
       `IMG configuration tool ${tool} is delivered but appears in no published scenario and is not ` +
         `declared in supportingReads, so the contract explains nothing about it`
