@@ -7,6 +7,7 @@ import {
 } from "./configuration-bc-before-state-store.js"
 import {
   ConfigurationBcExecutionStore,
+  isConfigurationBcExecutionNotFound,
   type ConfigurationBcExecutionIdentity
 } from "./configuration-bc-execution-store.js"
 import { configurationBcCommandRequestSchema } from "./configuration-bc-command-contract.js"
@@ -553,7 +554,8 @@ export async function reconcileConfigurationBcExecution(
       nativeInput.IV_FRAME_VERSION = native.EV_FRAME_VERSION
     }
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+    // Reconcile may run before any native result was recorded; that is not a failure.
+    if (!isConfigurationBcExecutionNotFound(error)) throw error
   }
   const first = await attestConfigurationBcOwner(env.readers)
   const response = await env.backend.callRemoteFunction("w200", {

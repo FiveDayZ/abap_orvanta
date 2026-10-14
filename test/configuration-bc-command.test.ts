@@ -216,6 +216,34 @@ test("unknown result cannot borrow an applied result's frame to authorize recove
     /BINDING_INVALID/
   )
 })
+test("a missing or unparsable immutable execution record is refused by name, not by a raw error", async (t) => {
+  const f = await bcCommandFixture(t)
+  const hash = sha(f.request.operationId)
+  const named = (kind: string) => (error: unknown) => {
+    assert.match(
+      (error as Error).message,
+      new RegExp(
+        `^CONFIGURATION_BC_EXECUTION_NOT_FOUND: [a-f0-9]{64}\\.${kind} is not under .*configuration-bc-executions$`
+      )
+    )
+    return true
+  }
+  await assert.rejects(f.env.executions.readAuthenticated(hash, "WYS", "result"), named("result"))
+  await f.apply()
+  const intent = await f.env.executions.readAuthenticated(hash, "WYS", "intent")
+  await assert.rejects(
+    f.env.executions.read({ ...intent.identity, operationHash: "a".repeat(64) }, "result"),
+    named("result")
+  )
+  const path = join(f.root, "configuration-bc-executions", `${hash}.intent.json`)
+  for (const bytes of ["{", JSON.stringify({ format: 1 })]) {
+    await writeFile(path, bytes)
+    await assert.rejects(
+      f.env.executions.readAuthenticated(hash, "WYS", "intent"),
+      /CONFIGURATION_BC_EXECUTION_CORRUPT/
+    )
+  }
+})
 test("tampered immutable intent is rejected by digest before read-only native dispatch", async (t) => {
   const f = await bcCommandFixture(t)
   await f.apply()

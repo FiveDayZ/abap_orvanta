@@ -34,6 +34,11 @@ export class ConfigurationBcExecutionStore {
     hex.parse(operationHash)
     return join(this.directory, `${operationHash}.${kind}.json`)
   }
+  private missing(kind: "intent" | "result", operationHash: string) {
+    return Error(
+      `CONFIGURATION_BC_EXECUTION_NOT_FOUND: ${operationHash}.${kind} is not under ${this.directory}`
+    )
+  }
   async publish(
     binding: ConfigurationBcExecutionIdentity,
     kind: "intent" | "result",
@@ -70,8 +75,19 @@ export class ConfigurationBcExecutionStore {
   ): Promise<Record<string, unknown>> {
     const checked = identity.parse(binding),
       path = this.path(checked.operationHash, kind)
-    if ((await stat(path)).size > 3000000) throw Error("CONFIGURATION_BC_EXECUTION_LIMIT")
-    const stored = envelope.parse(JSON.parse(await readFile(path, "utf8")))
+    let stored: z.infer<typeof envelope>
+    try {
+      if ((await stat(path)).size > 3000000) throw Error("CONFIGURATION_BC_EXECUTION_LIMIT")
+      stored = envelope.parse(JSON.parse(await readFile(path, "utf8")))
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT")
+        throw this.missing(kind, checked.operationHash)
+      // A stored record that will not parse is corrupt, not a caller mistake: name it like the
+      // sibling evidence stores instead of leaking a JSON or schema error.
+      if (error instanceof SyntaxError || error instanceof z.ZodError)
+        throw Error("CONFIGURATION_BC_EXECUTION_CORRUPT")
+      throw error
+    }
     const { hash, ...payload } = stored
     if (
       hashWriteInput(payload) !== hash ||
@@ -82,8 +98,17 @@ export class ConfigurationBcExecutionStore {
   }
   async readAuthenticated(operationHash: string, user: string, kind: "intent" | "result") {
     const path = this.path(operationHash, kind)
-    if ((await stat(path)).size > 3000000) throw Error("CONFIGURATION_BC_EXECUTION_LIMIT")
-    const stored = envelope.parse(JSON.parse(await readFile(path, "utf8")))
+    let stored: z.infer<typeof envelope>
+    try {
+      if ((await stat(path)).size > 3000000) throw Error("CONFIGURATION_BC_EXECUTION_LIMIT")
+      stored = envelope.parse(JSON.parse(await readFile(path, "utf8")))
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT")
+        throw this.missing(kind, operationHash)
+      if (error instanceof SyntaxError || error instanceof z.ZodError)
+        throw Error("CONFIGURATION_BC_EXECUTION_CORRUPT")
+      throw error
+    }
     const { hash, ...payload } = stored
     if (
       hashWriteInput(payload) !== hash ||
@@ -93,4 +118,12 @@ export class ConfigurationBcExecutionStore {
       throw Error("CONFIGURATION_BC_EXECUTION_BINDING_INVALID")
     return structuredClone(stored)
   }
+}
+
+/**
+ * "No record" is a question, not a failure: reconcile asks whether a prior native result exists, so
+ * the named refusal is decoded in one place instead of by reading a filesystem error code there.
+ */
+export function isConfigurationBcExecutionNotFound(error: unknown): boolean {
+  return error instanceof Error && error.message.startsWith("CONFIGURATION_BC_EXECUTION_NOT_FOUND:")
 }
