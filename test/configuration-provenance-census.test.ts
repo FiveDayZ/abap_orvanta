@@ -36,6 +36,14 @@ import ts from "typescript"
  *
  * This file is excluded from its own census: it names the unread members, and a census that counted its
  * own declaration as a reader would make every declared-unread member look read.
+ *
+ * Readership is counted over code references, not over the member's name as text. A text census cannot
+ * tell a reference from a mention, so one comment naming a member that nothing reads made it look read
+ * and let it stay out of the declaration below with nothing turning red - a false available, in a gate
+ * whose whole purpose is to surface exactly that. Measured: with the real reader renamed away and a
+ * comment naming the member left in a third module, the text census reported one external reader and
+ * passed, while the reference census reported none and reddened. The switch changed no member's measured
+ * readership on the current sources, which is why it needed no declaration edits.
  */
 const repoRoot = new URL("../../", import.meta.url)
 const SELF = "configuration-provenance-census.test.ts"
@@ -231,16 +239,52 @@ function sourceText(module: string): string {
 }
 
 /**
- * Readership of a member: how many times its name is used, split into uses inside its own module and
- * uses anywhere else. The declaration itself is an occurrence, so it is subtracted rather than counted
- * as a read - counting it would report every member as read at least once.
+ * Occurrences of a name as an Identifier node: a reference to the binding in code. A comment or a string
+ * literal is not an identifier, so prose about a member is not a reader of it. Property keys are
+ * identifiers but are not references to the binding, so they are excluded; the declaration's own name is
+ * a binding and is subtracted separately in readership().
+ */
+function identifierCountsOf(text: string, fileName: string): Map<string, number> {
+  const counts = new Map<string, number>()
+  // A JSON file cannot reference a binding: a name in one is a string, not a read.
+  if (!/\.(ts|mjs)$/.test(fileName)) return counts
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.ES2022, true)
+  const visit = (node: ts.Node) => {
+    if (ts.isIdentifier(node)) {
+      const parent = node.parent
+      const isKey =
+        (ts.isPropertyAssignment(parent) || ts.isPropertySignature(parent)) && parent.name === node
+      if (!isKey) counts.set(node.text, (counts.get(node.text) ?? 0) + 1)
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return counts
+}
+
+const identifierCache = new Map<string, Map<string, number>>()
+function identifierCounts(path: string): Map<string, number> {
+  const cached = identifierCache.get(path)
+  if (cached !== undefined) return cached
+  const counts = identifierCountsOf(readFileSync(new URL(path, repoRoot), "utf8"), path)
+  identifierCache.set(path, counts)
+  return counts
+}
+
+/**
+ * Readership of a member: how many times its name is referenced in code, split into references inside
+ * its own module and references anywhere else. The declaration itself is an occurrence, so it is
+ * subtracted rather than counted as a read - counting it would report every member as read at least once.
+ *
+ * A read that went through a string would be invisible here, which errs towards "unread": such a member
+ * is then required to be declared, so the census reddens instead of reporting coverage it cannot see.
  */
 function readership(name: string, module: string): { internalReads: number; external: number } {
   let inModule = 0
   let external = 0
   for (const path of censusFiles()) {
     if (path.endsWith(SELF)) continue
-    const occurrences = countOf(readFileSync(new URL(path, repoRoot), "utf8"), name)
+    const occurrences = identifierCounts(path).get(name) ?? 0
     if (occurrences === 0) continue
     if (path === `src/${module}`) inModule += occurrences
     else external += occurrences
@@ -389,4 +433,47 @@ test("the member that rests on an undeployed candidate is revisited when the can
   )
   // And the candidate marker the anchor points at is the module's own words, not this test's.
   assert.ok(sourceText(candidate).includes("Deployment candidate only"))
+})
+
+test("readership counts code references, so a mention in prose is not a reader", () => {
+  // The census is only as good as this instrument. A text census cannot tell a reference from a mention,
+  // so a single comment naming a member that nothing reads made it look read and let it stay out of the
+  // declaration with nothing turning red - a false available. The specimen is built in memory rather
+  // than by editing a module, so the control cannot leave the tree dirty.
+  const entry = UNREAD.find((candidate) => candidate.internalReads === 0)
+  if (!entry) throw new Error("no member read nowhere, so this control would be vacuous")
+  const text = sourceText(entry.module)
+  const before = identifierCountsOf(text, entry.module).get(entry.name) ?? 0
+  assert.ok(before >= 1, `${entry.name} is not even declared in ${entry.module}`)
+
+  const prose = `${text}\n// ${entry.name} is mentioned here.\nconst mentioned = "${entry.name}"\n`
+  // Discriminating power first: if the specimen does not actually add a mention, the assertion below
+  // proves nothing about the instrument.
+  assert.ok(
+    countOf(prose, entry.name) > countOf(text, entry.name),
+    "the specimen adds no mention, so it cannot show that mentions are ignored"
+  )
+  assert.equal(
+    identifierCountsOf(prose, entry.module).get(entry.name) ?? 0,
+    before,
+    `${entry.name}: a mention in a comment or a string literal was counted as a reader`
+  )
+  // A property key is an identifier but not a reference, so it is not a reader either.
+  const keyOnly = `${text}\nconst keyed = { ${entry.name}: 1 }\n`
+  assert.ok(
+    countOf(keyOnly, entry.name) > countOf(text, entry.name),
+    "the key specimen adds no occurrence, so it cannot show that keys are ignored"
+  )
+  assert.equal(
+    identifierCountsOf(keyOnly, entry.module).get(entry.name) ?? 0,
+    before,
+    `${entry.name}: a property key was counted as a reader`
+  )
+  // And a real reference must still count, else "counts references" would be vacuous.
+  const reference = `${text}\nconst probe = ${entry.name}\n`
+  assert.equal(
+    identifierCountsOf(reference, entry.module).get(entry.name) ?? 0,
+    before + 1,
+    `${entry.name}: a real code reference was not counted`
+  )
 })
