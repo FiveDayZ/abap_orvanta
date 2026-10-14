@@ -891,19 +891,47 @@ export async function describeConfigurationObject(
     valueRead: valueReadAvailable
       ? {
           tool: "read_configuration_unit",
+          arguments: { connectionId: input.connectionId },
+          requiredArguments: ["unitKey"],
           keyField: "MSEHI",
           keyFormat: "internal_case_sensitive",
+          keyLength: { minimum: 1, maximum: 3 },
+          languageFormat: "two_letter_ISO",
           client: "200",
           includedFields: configurationUnitFields[valueObject!],
           fieldCoverageComplete: valueObject === "T006A",
           fingerprintScope: "returned_text_projection_only",
           usableForWritePrecondition: false,
+          nativeTextVersionRead: {
+            tool: "read_configuration_unit",
+            arguments: { connectionId: input.connectionId, includeApiSnapshot: true },
+            requiredArguments: ["unitKey", "language"],
+            requiredStatus: { "apiSnapshot.status": "read" },
+            versionSource: "apiSnapshot.textVersion",
+            optional: true
+          },
           textDraft: {
             tool: "preview_configuration_unit_text",
+            arguments: { connectionId: input.connectionId },
+            requiredArguments: ["unitKey", "expectedReadFingerprint", "patch"],
+            argumentSources: {
+              unitKey: "unitKey",
+              language: "text.requestedLanguage",
+              expectedReadFingerprint: "readFingerprint"
+            },
+            optionalArguments: {
+              expectedTextVersion: {
+                source: "apiSnapshot.textVersion",
+                requiredStatus: { "apiSnapshot.status": "read" },
+                requiresExplicitLanguage: true
+              }
+            },
             fields: ["MSEHT", "MSEHL"],
+            patchLimits: { MSEHT: 10, MSEHL: 30 },
             requiresReadFingerprint: true,
             executable: false
-          }
+          },
+          unsupportedActions: ["create_unit", "delete_unit", "change_conversion", "change_aliases"]
         }
       : { status: "unsupported" },
     writeRefusalReasons: [

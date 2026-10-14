@@ -828,7 +828,18 @@ const ROWS: readonly ToolRow[] = [
   ["find_configuration_activities", "data", CFG, "R", "target-specific", null, null],
   ["read_configuration_activity", "data", CFG, "R", "target-specific", null, null],
   ["read_configuration_documentation", "data", CFG, "R", "target-specific", null, null],
+  ["find_configuration_fi_rules", "enhancement", CFG, "R", "target-specific", null, null],
   ["read_configuration_fi_rule", "enhancement", CFG, "R", "target-specific", null, null],
+  ["preview_configuration_fi_activation", "enhancement", CFG, "R", "target-specific", null, null],
+  [
+    "inspect_configuration_fi_activation_route",
+    "enhancement",
+    CFG,
+    "R",
+    "target-specific",
+    null,
+    null
+  ],
   ["inspect_configuration_transport", "data", CFG, "R", "target-specific", null, null],
   ["compare_configuration_unit", "data", CFG, "R", "target-specific", null, null],
   ["preview_configuration_number_range", "data", CFG, "R", "target-specific", null, null],
@@ -1039,22 +1050,28 @@ const NOTES: Record<string, string> = {
     "CFG-02 文本草案：仅 w200/200 已有单语言 T006A 描述 MSEHT/MSEHL；核对已读投影版本及字段元数据，保留省略字段。可选 expectedTextVersion 最后读取并比较 SAP 完整行版本，旧版本撤回草案；锁内检查及业务规则/API/CTS 未验证，不可执行，无保存 token 或写入。",
   apply_configuration_unit_text:
     "CFG-02 API 保存：仅 w200/200 已有单语言 T006A 非空描述，必需双版本、明确 W/Q 请求任务及 operationId。客户 RFC 未部署/正文漂移即拒绝；注册不代表保存验收。锁内版本、同步 UPDATE_T006A、精确 CTS 和回滚仍待 SAP 实测，无 GUI 或通用写表回退。",
+  find_configuration_fi_rules:
+    "CFG-07：仅 w200/200 的 GB93 验证规则头标识候选，固定字段、上限探测和复读；失败/漂移撤回，截断保留 partial 且无可信指纹。须再精确审计规则和组织/调用点，无公式/启用/维护或业务效果断言。",
   read_configuration_fi_rule:
-    "CFG-07：w200/200 精确 FI 规则头/步骤引用及公司代码/调用点启用等级、应用类回读；生成代码和业务效果未验证，无启停维护。",
+    "CFG-07：w200/200 精确 FI 规则头/步骤引用、组织启用等级和应用类复读；失败、漂移或截断撤回整份值投影。executionPreflight 明确缺记录/分配/等级/类差异及公式、生成物和官方维护路线缺口，始终阻断执行，无启停、生成或业务触发。",
   reconcile_configuration_unit_text:
     "CFG-02：原请求/旧行先绑定本地回执与原生版本，再只读复核现值、CTS 投影及可选获准锁观察；当前值与历史提交不等价，保留未知回执，不自动重试或恢复。",
+  preview_configuration_fi_activation:
+    "CFG-07/M2：FI既有验证分配的ACTIV单字段只读差异预览；要求当前读指纹，复核范围、规则/步骤、分配及类，未知/漂移/截断拒绝。维护API、生成与CTS/LUW未闭环，不能保存或恢复；尚无SAP实际验收。",
+  inspect_configuration_fi_activation_route:
+    "CFG-07/M2：固定OB28参数→实际维护视图/生成组/事件的只读路线候选；复用已有钉住布局，不扩通用表白名单。两轮一致不证明T001D关联、生成源或保存资格；尚无SAP实际验收。",
   inspect_configuration_transport:
     "CFG-01：w200/200 明确请求/任务的 W/Q 类型、归属、状态、客户端及目标复读；未知保持阻断，不认定 E071K/API 可写。",
   compare_configuration_unit:
-    "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；两侧元数据必须实读匹配，失败不可比较，当前 w300 登录验收待完成。",
+    "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；stage5 已验收 KG/ZH 双向及 EN 的有限投影，当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。",
   preview_configuration_number_range:
     "CFG-03：精确数字区间候选的边界、重叠、缩容及模式风险只读预检；复读全部区间和已核实域/API 源码，不调用有会话副作用的维护函数，不认定可写。",
   read_configuration_number_range_api:
-    "Complete native customer TNRO/current-client NRIV version; pinned layout, reader and hash source. Deployment and positive SAP acceptance pending; no mutation.",
+    "Complete native customer TNRO/current-client NRIV version; pinned layout, reader and hash source. Historical w200/200 ZORVCFGNR pilot deployment/reads accepted in r41/r42; current pins required, other scopes unverified; no mutation.",
   apply_configuration_number_range:
-    "Unused NUMC20 client-local interval create/update through attested customer API and protected whole-object receipt. Native deployment/acceptance pending; no allocator, CTS migration or GUI.",
+    "Unused NUMC20 client-local interval create/update through attested customer API and protected whole-object receipt. Historical w200/200 ZORVCFGNR/01 update and /02 creation accepted in r41/r42; current pins required, other scopes unverified; no allocator, CTS migration or GUI.",
   reconcile_configuration_number_range:
-    "Protected receipt and current full number range snapshot read-only comparison; no historical outcome promotion, retry, rollback or unlock. Native positive acceptance pending.",
+    "Protected receipt and current full number range snapshot read-only comparison; r41/r42 observed historical unknown receipts remaining unknown despite persisted pilot values. Current pins required; no historical outcome promotion, retry, rollback or unlock.",
   read_configuration_number_range_scope:
     "CFG-03：精确子对象的跨年度 NRIV 投影与有效年度范围，区分空值和通配；复读子对象元素/域，来源表和存在性未知保持 unknown，不执行标准有状态接口。",
   read_configuration_number_range:

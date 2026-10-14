@@ -2,6 +2,9 @@ import { createHash } from "node:crypto"
 import { z } from "zod"
 import type { SapBackend } from "./backend.js"
 import { createReviewedTableReader, type ReviewedReaderSource } from "./reviewed-table-reader.js"
+import { readConfigurationFiFormulas } from "./configuration-fi-formula.js"
+import { analyzeConfigurationFiFormulas } from "./configuration-fi-formula-analysis.js"
+import { readConfigurationFiDependencies } from "./configuration-fi-dependencies.js"
 
 export const configurationFiRuleSchema = z
   .object({
@@ -26,7 +29,9 @@ export const configurationFiRuleSchema = z
       .toUpperCase()
       .regex(/^[A-Z0-9]{2}$/),
     callupPoint: z.string().regex(/^\d{4}$/),
-    maxSteps: z.number().int().min(2).max(50).default(50)
+    maxSteps: z.number().int().min(2).max(50).default(50),
+    includeFormulaContent: z.boolean().default(false),
+    includeFormulaAnalysis: z.boolean().default(false)
   })
   .strict()
 export const configurationFiRuleLayouts = {
@@ -56,11 +61,19 @@ export async function readConfigurationFiRule(
   backend: Pick<SapBackend, "runQuery" | "callRemoteFunction">,
   readTable: (name: string) => Promise<unknown>,
   readDomain: (name: string) => Promise<unknown>,
-  readFunction: (name: string) => Promise<unknown>
+  readFunction: (name: string) => Promise<unknown>,
+  readStructure?: (name: string) => Promise<unknown>,
+  readSource?: (uri: string) => Promise<{ source: string; uriUsed: string }>,
+  readDataElement?: (name: string) => Promise<unknown>
 ) {
   const input = configurationFiRuleSchema.parse(raw)
   if (input.connectionId !== "w200" || client !== "200")
     throw new Error("FI_RULE_SCOPE_UNSUPPORTED")
+  if (input.includeFormulaContent && input.kind !== "fi_validation")
+    throw new Error("FI_RULE_FORMULA_SCOPE_UNSUPPORTED")
+  if (input.includeFormulaAnalysis && !input.includeFormulaContent)
+    throw Error("FI_RULE_FORMULA_ANALYSIS_REQUIRES_CONTENT")
+  const { includeFormulaContent, includeFormulaAnalysis, ...referenceInput } = input
   const startedAt = new Date().toISOString()
   const validation = input.kind === "fi_validation"
   const headerTable = validation ? "GB93" : "GB92",
@@ -145,12 +158,99 @@ export async function readConfigurationFiRule(
     firstTruncated = sources.some((s) => s.status === "truncated")
   const second = firstTruncated ? null : await read()
   await verify()
-  const unavailable =
+  let unavailable =
     first.some((part) => part === null) || second?.some((part) => part === null) === true
-  const changed =
-    !unavailable && second !== null && JSON.stringify(first) !== JSON.stringify(second)
-  const truncated = sources.some((s) => s.status === "truncated")
-  const usable = !unavailable && !changed
+  let changed = !unavailable && second !== null && JSON.stringify(first) !== JSON.stringify(second)
+  let truncated = sources.some((s) => s.status === "truncated")
+  let usable = !unavailable && !changed && !truncated
+  let formulaContent: Awaited<ReturnType<typeof readConfigurationFiFormulas>> | null = null
+  let formulaAnalysis: Awaited<ReturnType<typeof analyzeConfigurationFiFormulas>> | null = null
+  if (input.includeFormulaContent && usable && first[0]?.[0] && first[1]?.length) {
+    if (!readStructure) throw Error("FI_RULE_FORMULA_STRUCTURE_READER_REQUIRED")
+    formulaContent = await readConfigurationFiFormulas(
+      input.connectionId,
+      client,
+      first[0][0].BOOLCLASS!,
+      first[1],
+      backend,
+      { table: readTable, domain: readDomain, function: readFunction, structure: readStructure }
+    )
+    if (
+      input.includeFormulaAnalysis &&
+      !formulaContent.blockers.includes("FI_RULE_FORMULA_AUTHENTICATION_REJECTED")
+    ) {
+      if (!readSource) throw Error("FI_RULE_FORMULA_ANALYSIS_SOURCE_READER_REQUIRED")
+      if (!readDataElement) throw Error("FI_RULE_FORMULA_ANALYSIS_DATA_ELEMENT_READER_REQUIRED")
+      formulaAnalysis = await analyzeConfigurationFiFormulas(
+        formulaContent,
+        first[0][0].BOOLCLASS!,
+        {
+          source: readSource,
+          function: readFunction,
+          table: readTable,
+          structure: readStructure,
+          dependencies: (fields, booleanClass) =>
+            readConfigurationFiDependencies(fields, booleanClass, backend, {
+              table: readTable,
+              domain: readDomain,
+              dataElement: readDataElement,
+              function: readFunction
+            })
+        }
+      )
+    }
+    if (
+      formulaContent.blockers.includes("FI_RULE_FORMULA_AUTHENTICATION_REJECTED") ||
+      formulaAnalysis?.blockers.includes("FI_RULE_FORMULA_ANALYSIS_AUTHENTICATION_REJECTED")
+    )
+      unavailable = true
+    else {
+      const final = await read()
+      await verify()
+      unavailable ||= final.some((part) => part === null)
+      changed ||= !unavailable && JSON.stringify(first) !== JSON.stringify(final)
+      truncated ||= sources.some((s) => s.status === "truncated")
+    }
+    usable = !unavailable && !changed && !truncated
+    if (!usable) {
+      formulaContent = {
+        ...formulaContent,
+        status: "unavailable",
+        references: [],
+        items: null,
+        readFingerprint: null,
+        blockers: [...formulaContent.blockers, "FI_RULE_FORMULA_PARENT_CHANGED_OR_UNAVAILABLE"],
+        coverage: {
+          ...formulaContent.coverage,
+          storedRowsComplete: false,
+          rowPaddingPreserved: false
+        }
+      }
+      if (formulaAnalysis)
+        formulaAnalysis = {
+          ...formulaAnalysis,
+          status: "unavailable",
+          items: null,
+          dependencies: null,
+          fieldEvidence: null,
+          nativeRoute: null,
+          contentFingerprint: null,
+          readFingerprint: null,
+          blockers: [
+            ...formulaAnalysis.blockers,
+            "FI_RULE_FORMULA_ANALYSIS_PARENT_CHANGED_OR_UNAVAILABLE"
+          ],
+          coverage: {
+            ...formulaAnalysis.coverage,
+            syntaxSubsetComplete: false,
+            fieldDefinitionsComplete: false,
+            classPermissions: "not_checked",
+            literalConversions: "not_checked",
+            nativeFieldRoute: "not_checked"
+          }
+        }
+    }
+  }
   const header = usable ? (first[0]?.[0] ?? null) : null,
     activation = usable ? (first[2]?.[0] ?? null) : null,
     application = usable ? (first[3]?.[0] ?? null) : null
@@ -159,6 +259,36 @@ export async function readConfigurationFiRule(
     "1": "active",
     "2": "active_except_batch_input"
   }
+  const blockers: string[] = []
+  if (unavailable) blockers.push("FI_RULE_READ_UNAVAILABLE")
+  if (changed) blockers.push("FI_RULE_READ_CHANGED")
+  if (truncated) blockers.push("FI_RULE_READ_TRUNCATED")
+  if (usable) {
+    if (!header) blockers.push("FI_RULE_DEFINITION_MISSING")
+    if (!first[1]?.length) blockers.push("FI_RULE_STEPS_NOT_OBSERVED")
+    if (!activation) blockers.push("FI_RULE_ASSIGNMENT_MISSING")
+    else {
+      if (activation[validation ? "VALID" : "SUBST"] !== input.ruleName)
+        blockers.push("FI_RULE_ASSIGNED_TO_OTHER_RULE")
+      if (!Object.hasOwn(activationMeaning, activation.ACTIV!))
+        blockers.push("FI_RULE_ACTIVATION_LEVEL_UNKNOWN")
+    }
+    if (!application) blockers.push("FI_RULE_APPLICATION_NOT_OBSERVED")
+    if (header && application && header.BOOLCLASS !== application.RCLASS)
+      blockers.push("FI_RULE_CLASS_PROJECTION_MISMATCH")
+  }
+  if (formulaContent?.coverage.storedRowsComplete) {
+    blockers.push("FI_RULE_FORMULA_SEMANTICS_UNVERIFIED", "FI_RULE_FORMULA_DEPENDENCIES_UNVERIFIED")
+  } else blockers.push("FI_RULE_FORMULA_CONTENT_UNVERIFIED")
+  if (formulaContent) blockers.push(...formulaContent.blockers)
+  if (formulaAnalysis) blockers.push(...formulaAnalysis.blockers)
+  if (!validation) blockers.push("FI_RULE_SUBSTITUTION_ACTIONS_UNVERIFIED")
+  blockers.push(
+    "FI_RULE_SHARED_EXITS_UNVERIFIED",
+    "FI_RULE_GENERATED_CODE_UNVERIFIED",
+    "FI_RULE_MAINTENANCE_API_UNVERIFIED",
+    "FI_RULE_AUTHORITY_LOCK_CTS_LUW_UNVERIFIED"
+  )
   return {
     connectionId: input.connectionId,
     client,
@@ -170,6 +300,12 @@ export async function readConfigurationFiRule(
     status: unavailable ? "unavailable" : changed ? "changed" : "partial",
     readOnly: true,
     saveAvailable: false,
+    executionPreflight: {
+      status: "blocked",
+      writeAvailable: false,
+      automaticRetry: false,
+      blockers
+    },
     rule: {
       table: headerTable,
       status: !usable ? "unavailable" : header ? "read" : "not_found",
@@ -189,13 +325,21 @@ export async function readConfigurationFiRule(
       data: application,
       classMatches: header && application ? header.BOOLCLASS === application.RCLASS : null
     },
+    ...(input.includeFormulaContent ? { formulaContent } : {}),
+    ...(input.includeFormulaAnalysis ? { formulaAnalysis } : {}),
     readFingerprint:
       usable && !truncated
-        ? createHash("sha256").update(JSON.stringify({ input, first })).digest("hex")
+        ? createHash("sha256")
+            .update(JSON.stringify({ input: referenceInput, first }))
+            .digest("hex")
         : null,
     coverage: {
       complete: false,
-      formulas: "references_only",
+      formulas: formulaAnalysis?.coverage.syntaxSubsetComplete
+        ? "parsed_subset_semantics_unverified"
+        : formulaContent?.coverage.storedRowsComplete
+          ? "raw_stored_rows_semantics_unverified"
+          : "references_only",
       substitutionActions: "not_read",
       generatedCode: "not_checked",
       businessTrigger: "not_performed",

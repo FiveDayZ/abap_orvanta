@@ -1,0 +1,495 @@
+{
+  "originStage": "r83",
+  "currentSapReadPerformed": true,
+  "definition": {
+    "connectionId": "w200",
+    "functionName": "RPY_PROGRAM_READ",
+    "functionGroup": "SIFP",
+    "shortText": "",
+    "remoteMode": "R",
+    "updateTask": false,
+    "updateTaskMode": "",
+    "globalInterface": false,
+    "remoteEnabled": true,
+    "importParameters": [
+      {
+        "name": "LANGUAGE",
+        "typeName": "SY-LANGU",
+        "optional": true,
+        "passByValue": true,
+        "description": ""
+      },
+      {
+        "name": "PROGRAM_NAME",
+        "typeName": "RPY_PROG-PROGNAME",
+        "optional": false,
+        "passByValue": true,
+        "description": ""
+      },
+      {
+        "name": "WITH_INCLUDELIST",
+        "typeName": "RGLIF-WITH_INCL",
+        "optional": true,
+        "passByValue": true,
+        "description": ""
+      },
+      {
+        "name": "ONLY_SOURCE",
+        "typeName": "RGLIF-ONLY_SOURC",
+        "optional": true,
+        "passByValue": true,
+        "description": ""
+      },
+      {
+        "name": "ONLY_TEXTS",
+        "typeName": "RGLIF-ONLY_TEXTS",
+        "optional": true,
+        "passByValue": true,
+        "description": ""
+      },
+      {
+        "name": "READ_LATEST_VERSION",
+        "typeName": "PROGDIR-STATE",
+        "optional": true,
+        "passByValue": true,
+        "description": ""
+      },
+      {
+        "name": "WITH_LOWERCASE",
+        "typeName": "RGLIF-LOWERCASE",
+        "optional": true,
+        "passByValue": true,
+        "description": ""
+      }
+    ],
+    "exportParameters": [
+      {
+        "name": "PROG_INF",
+        "typeName": "RPY_PROG",
+        "optional": false,
+        "passByValue": true,
+        "description": ""
+      }
+    ],
+    "changingParameters": [],
+    "tableParameters": [
+      {
+        "name": "INCLUDE_TAB",
+        "typeName": "RPY_REPO",
+        "optional": true,
+        "passByValue": false,
+        "description": ""
+      },
+      {
+        "name": "SOURCE",
+        "typeName": "ABAPSOURCE",
+        "optional": true,
+        "passByValue": false,
+        "description": "Source Table"
+      },
+      {
+        "name": "SOURCE_EXTENDED",
+        "typeName": "ABAPTXT255",
+        "optional": true,
+        "passByValue": false,
+        "description": ""
+      },
+      {
+        "name": "TEXTELEMENTS",
+        "typeName": "TEXTPOOL",
+        "optional": true,
+        "passByValue": false,
+        "description": ""
+      }
+    ],
+    "exceptions": [
+      {
+        "name": "CANCELLED",
+        "description": ""
+      },
+      {
+        "name": "NOT_FOUND",
+        "description": ""
+      },
+      {
+        "name": "PERMISSION_ERROR",
+        "description": ""
+      }
+    ],
+    "source": [
+      "FUNCTION RPY_PROGRAM_READ.",
+      "*\"----------------------------------------------------------------------",
+      "*\"*\"Lokale Schnittstelle:",
+      "*\"  IMPORTING",
+      "*\"     VALUE(LANGUAGE) LIKE  SY-LANGU DEFAULT SY-LANGU",
+      "*\"     VALUE(PROGRAM_NAME) LIKE  RPY_PROG-PROGNAME",
+      "*\"     VALUE(WITH_INCLUDELIST) LIKE  RGLIF-WITH_INCL DEFAULT 'X'",
+      "*\"     VALUE(ONLY_SOURCE) LIKE  RGLIF-ONLY_SOURC DEFAULT ' '",
+      "*\"     VALUE(ONLY_TEXTS) LIKE  RGLIF-ONLY_TEXTS DEFAULT ' '",
+      "*\"     VALUE(READ_LATEST_VERSION) TYPE  PROGDIR-STATE DEFAULT SPACE",
+      "*\"     VALUE(WITH_LOWERCASE) LIKE  RGLIF-LOWERCASE DEFAULT ' '",
+      "*\"  EXPORTING",
+      "*\"     VALUE(PROG_INF) LIKE  RPY_PROG STRUCTURE  RPY_PROG",
+      "*\"  TABLES",
+      "*\"      INCLUDE_TAB STRUCTURE  RPY_REPO OPTIONAL",
+      "*\"      SOURCE STRUCTURE  ABAPSOURCE OPTIONAL",
+      "*\"      SOURCE_EXTENDED STRUCTURE  ABAPTXT255 OPTIONAL",
+      "*\"      TEXTELEMENTS STRUCTURE  TEXTPOOL OPTIONAL",
+      "*\"  EXCEPTIONS",
+      "*\"      CANCELLED",
+      "*\"      NOT_FOUND",
+      "*\"      PERMISSION_ERROR",
+      "*\"----------------------------------------------------------------------",
+      "  data: wb_source type rswsourcet.",
+      "  CLEAR TRDIR.",
+      "",
+      "    SELECT SINGLE * FROM TRDIR WHERE NAME = PROGRAM_NAME.",
+      "*                             and   subc ne 'I'.",
+      "    IF SY-SUBRC NE 0.                  \"or trdir-subc eq 'I'.",
+      "      MESSAGE E004 WITH PROGRAM_NAME RAISING NOT_FOUND.",
+      "*      Objekt & wurde nicht gefunden",
+      "      EXIT.",
+      "    ENDIF.",
+      "",
+      "  CALL FUNCTION 'RS_ACCESS_PERMISSION'",
+      "       EXPORTING",
+      "            AUTHORITY_CHECK          = 'X'",
+      "            GLOBAL_LOCK              = SPACE",
+      "            MODE                     = 'SHOW'",
+      "            OBJECT                   = PROGRAM_NAME",
+      "            OBJECT_CLASS             = 'ABAP'",
+      "       EXCEPTIONS",
+      "            CANCELED_IN_CORR         = 01",
+      "            ENQUEUED_BY_USER         = 02",
+      "            ENQUEUE_SYSTEM_FAILURE   = 03",
+      "            ILLEGAL_PARAMETER_VALUES = 04",
+      "            LOCKED_BY_AUTHOR         = 05",
+      "            NO_MODIFY_PERMISSION     = 06",
+      "            NO_SHOW_PERMISSION       = 07",
+      "            PERMISSION_FAILURE       = 12.",
+      "  CASE SY-SUBRC.",
+      "    WHEN 0.",
+      "    WHEN 1.",
+      "      MESSAGE ID SY-MSGID TYPE  'S'     NUMBER SY-MSGNO",
+      "              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4",
+      "              RAISING CANCELLED.",
+      "    WHEN 12.",
+      "      MESSAGE ID SY-MSGID TYPE  'S'     NUMBER SY-MSGNO",
+      "              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4",
+      "              RAISING PERMISSION_ERROR.",
+      "    WHEN OTHERS.",
+      "      MESSAGE ID SY-MSGID TYPE  'S'     NUMBER SY-MSGNO",
+      "              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4",
+      "              RAISING PERMISSION_ERROR.",
+      "  ENDCASE.",
+      "",
+      "*--Berechtigungspruefung",
+      "  CALL FUNCTION 'RS_ACCESS_PERMISSION'",
+      "       EXPORTING",
+      "            AUTHORITY_CHECK          = 'X'",
+      "            GLOBAL_LOCK              = SPACE",
+      "            MODE                     = 'SHOW'",
+      "            OBJECT                   = PROGRAM_NAME",
+      "            OBJECT_CLASS             = 'TEXT'",
+      "       EXCEPTIONS",
+      "            CANCELED_IN_CORR         = 01",
+      "            ENQUEUED_BY_USER         = 02",
+      "            ENQUEUE_SYSTEM_FAILURE   = 03",
+      "            ILLEGAL_PARAMETER_VALUES = 04",
+      "            LOCKED_BY_AUTHOR         = 05",
+      "            NO_MODIFY_PERMISSION     = 06",
+      "            NO_SHOW_PERMISSION       = 07",
+      "            PERMISSION_FAILURE       = 12.",
+      "  CASE SY-SUBRC.",
+      "    WHEN 0.",
+      "    WHEN 1.",
+      "      MESSAGE ID SY-MSGID TYPE  'S'     NUMBER SY-MSGNO",
+      "              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4",
+      "              RAISING CANCELLED.",
+      "    WHEN 12.",
+      "      MESSAGE ID SY-MSGID TYPE  'S'     NUMBER SY-MSGNO",
+      "              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4",
+      "              RAISING PERMISSION_ERROR.",
+      "    WHEN OTHERS.",
+      "      MESSAGE ID SY-MSGID TYPE  'S'     NUMBER SY-MSGNO",
+      "              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4",
+      "              RAISING PERMISSION_ERROR.",
+      "  ENDCASE.",
+      "",
+      "  IF ONLY_TEXTS EQ SPACE.",
+      "*--Source lesen",
+      "    IF READ_LATEST_VERSION = SPACE.",
+      "      IF SOURCE_EXTENDED IS REQUESTED.",
+      "        READ REPORT PROGRAM_NAME INTO SOURCE_EXTENDED.",
+      "      ELSE.",
+      "        READ REPORT PROGRAM_NAME INTO SOURCE.",
+      "      ENDIF.",
+      "    ELSE.",
+      "      IF SOURCE_EXTENDED IS REQUESTED.",
+      "        READ REPORT PROGRAM_NAME INTO SOURCE_EXTENDED STATE 'I'.",
+      "      ELSE.",
+      "        READ REPORT PROGRAM_NAME INTO SOURCE STATE 'I'.",
+      "      ENDIF.",
+      "      IF SY-SUBRC <> 0.",
+      "        IF SOURCE_EXTENDED IS REQUESTED.",
+      "          READ REPORT PROGRAM_NAME INTO SOURCE_EXTENDED STATE 'A'.",
+      "        ELSE.",
+      "          READ REPORT PROGRAM_NAME INTO SOURCE STATE 'A'.",
+      "        ENDIF.",
+      "      ELSE.",
+      "        SELECT SINGLE * FROM PROGDIR INTO CORRESPONDING FIELDS OF TRDIR",
+      "                        WHERE NAME = PROGRAM_NAME",
+      "                        AND STATE  = 'I'.",
+      "      ENDIF.",
+      "    ENDIF.",
+      "  ENDIF.",
+      "*--- Umschlüsseln, falls Kleinbuchstaben nicht erlaubt           \"HT9901",
+      "  if WITH_LOWERCASE eq space.",
+      "    IF SOURCE_EXTENDED IS REQUESTED.                             \"HT0203",
+      "      wb_source[] = SOURCE_EXTENDED[].                           \"HT0203",
+      "      CALL FUNCTION 'CREATE_NORMAL_FORMAT'                       \"HT0203",
+      "*          EXPORTING                                             \"HT0203",
+      "*               CONDENSE_REQUIRED = ' '                          \"HT0203",
+      "*               CASE              = 'UPPER'                      \"HT0203",
+      "           TABLES                                                \"HT0203",
+      "                content           = wb_source.                   \"HT0203",
+      "      SOURCE_EXTENDED[] = wb_source[].                           \"HT0203",
+      "    else.                                                        \"HT0203",
+      "      wb_source[] = source[].",
+      "      CALL FUNCTION 'CREATE_NORMAL_FORMAT'",
+      "*          EXPORTING",
+      "*               CONDENSE_REQUIRED = ' '",
+      "*               CASE              = 'UPPER'",
+      "           TABLES",
+      "                content           = wb_source.",
+      "       source[] = wb_source[].",
+      "    endif.                                                       \"HT0203",
+      "  endif.",
+      "*--- Includes lesen",
+      "    IF WITH_INCLUDELIST NE SPACE.",
+      "      CALL FUNCTION 'RS_GET_ALL_INCLUDES'",
+      "           EXPORTING",
+      "                PROGRAM             = PROGRAM_NAME",
+      "                WITH_INACTIVE_INCLS = 'X'",
+      "           TABLES",
+      "                INCLUDETAB          = INCLUDETAB",
+      "           EXCEPTIONS",
+      "                NOT_EXISTENT = 01",
+      "                NO_PROGRAM   = 02.",
+      "      LOOP AT INCLUDETAB.",
+      "        CLEAR INCLUDE_TAB.",
+      "        INCLUDE_TAB-INCLNAME = INCLUDETAB.",
+      "        CLEAR TTAB.",
+      "        READ TEXTPOOL INCLUDETAB-NAME INTO TTAB LANGUAGE LANGUAGE.",
+      "        IF SY-SUBRC = 0.",
+      "          LOOP AT TTAB WHERE ID = 'R'.",
+      "            INCLUDE_TAB-TITLE = TTAB-ENTRY.",
+      "            EXIT.",
+      "          ENDLOOP.",
+      "        ENDIF.",
+      "        APPEND INCLUDE_TAB.",
+      "      ENDLOOP.",
+      "    ENDIF.",
+      "",
+      "    IF ONLY_SOURCE EQ SPACE.",
+      "*--Texte lesen",
+      "      READ TEXTPOOL PROGRAM_NAME INTO TEXTELEMENTS LANGUAGE LANGUAGE.",
+      "    ENDIF.",
+      "",
+      "*--TRDIR Struktur auf RPY_PROG konvertieren",
+      "      refresh program_interface.",
+      "      DESCRIBE TABLE ITGLIF LINES SY-INDEX.",
+      "      IF SY-INDEX = 0.",
+      "* ITGLIF wird nur noch bei PROGRAM_READ benutzt, deshalb kann optimiert",
+      "* werden, Nutzung Tabellenpuffer",
+      "*       SELECT * FROM TGLIF INTO TABLE ITGLIF.                 \"HT9910",
+      "        SELECT * FROM TGLIF INTO TABLE ITGLIF                  \"HT9910",
+      "               where  tab1 = 'TRDIR'.                          \"HT9910",
+      "      ENDIF.",
+      "*     LOOP AT ITGLIF WHERE TAB1 = 'TRDIR' .                    \"HT9910",
+      "      LOOP AT ITGLIF.                                          \"HT9910",
+      "        program_interface = itglif.",
+      "        append program_interface.",
+      "      ENDLOOP.",
+      "      CONVERT1 'TRDIR' 'TRDIR' 'PROG_INF'.",
+      "",
+      "ENDFUNCTION."
+    ],
+    "fingerprint": "aa5b9c513444e9915b130c3b7b425cb3068d816ff626298a7580c687e41bdc5d",
+    "interfaceFingerprint": "8ac3a0e01c72caab33dbbb04fd7e83b5cf3ab85459513399d875c2d037174637",
+    "sourceFingerprint": "ca0eb64fa3caee7e49dfbe5011985576b6b2201bee1e31388eda487613ed6b46",
+    "observedAt": "2026-10-08T06:14:23.891Z"
+  },
+  "structures": {
+    "RPY_PROG": {
+      "connectionId": "w200",
+      "objectKind": "structure",
+      "objectName": "RPY_PROG",
+      "packageName": "SEUX",
+      "version": "20031107101725",
+      "fingerprint": "d1ef5e29561c365fe2d364d72dcd8752d7a5aa4c1bac44284733b2b6810af3c4",
+      "definition": {
+        "description": "程序结构",
+        "tableClass": "INTTAB",
+        "baseTable": "",
+        "fields": [
+          {
+            "name": "PROGNAME",
+            "position": 1,
+            "dataElement": "PROGRAMM",
+            "description": "ABAP 程序名称"
+          },
+          {
+            "name": "PROG_TYPE",
+            "position": 2,
+            "dataElement": "SUBC",
+            "description": "  程序类型"
+          },
+          {
+            "name": "APPL",
+            "position": 3,
+            "dataElement": "RDIR_APPL",
+            "description": "应用程序"
+          },
+          {
+            "name": "CODE_LOCK",
+            "position": 4,
+            "dataElement": "SQLX",
+            "description": "源代码保护"
+          },
+          {
+            "name": "EDIT_LOCK",
+            "position": 5,
+            "dataElement": "EDTX",
+            "description": "编辑锁标志"
+          },
+          {
+            "name": "UPPLOWCASE",
+            "position": 6,
+            "dataElement": "VARCL",
+            "description": "区分大小写"
+          },
+          {
+            "name": "AUTH_GROUP",
+            "position": 7,
+            "dataElement": "SECU",
+            "description": "权限组"
+          },
+          {
+            "name": "DBAPPL",
+            "position": 8,
+            "dataElement": "DBAPL",
+            "description": "应用数据库"
+          },
+          {
+            "name": "DBNAME",
+            "position": 9,
+            "dataElement": "DBNA",
+            "description": "逻辑数据库"
+          },
+          {
+            "name": "SELSCREEN",
+            "position": 10,
+            "dataElement": "RDIR_TYPE",
+            "description": "选择屏幕版本"
+          },
+          {
+            "name": "CREAT_USER",
+            "position": 11,
+            "dataElement": "CNAM",
+            "description": "作者"
+          },
+          {
+            "name": "CREAT_DATE",
+            "position": 12,
+            "dataElement": "RDIR_CDATE",
+            "description": "创建日期"
+          },
+          {
+            "name": "MOD_USER",
+            "position": 13,
+            "dataElement": "UNAM",
+            "description": "最后修改人"
+          },
+          {
+            "name": "MOD_DATE",
+            "position": 14,
+            "dataElement": "RDIR_UDATE",
+            "description": "更改日期"
+          },
+          {
+            "name": "VERSION",
+            "position": 15,
+            "dataElement": "VERN",
+            "description": "版本号"
+          },
+          {
+            "name": "RELEASE",
+            "position": 16,
+            "dataElement": "RDIR_LEVL",
+            "description": "级"
+          },
+          {
+            "name": "STATUS",
+            "position": 17,
+            "dataElement": "RDIR_RSTAT",
+            "description": "状态"
+          },
+          {
+            "name": "MANDANT",
+            "position": 18,
+            "dataElement": "RMAND",
+            "description": "集团"
+          },
+          {
+            "name": "MASTERLANG",
+            "position": 19,
+            "dataElement": "RLOAD",
+            "description": "主语言"
+          },
+          {
+            "name": "FIXP_ARITH",
+            "position": 20,
+            "dataElement": "FIXPT",
+            "description": "定点运算"
+          },
+          {
+            "name": "START_VARI",
+            "position": 21,
+            "dataElement": "SSET",
+            "description": "只启动变异经过"
+          },
+          {
+            "name": "AUTO_GENER",
+            "position": 22,
+            "dataElement": "OCCU",
+            "description": "自动生成的程序"
+          }
+        ]
+      },
+      "observedAt": "2026-10-08T06:17:36.173Z"
+    },
+    "ABAPTXT255": {
+      "connectionId": "w200",
+      "objectKind": "structure",
+      "objectName": "ABAPTXT255",
+      "packageName": "SVRS",
+      "version": "20110901120148",
+      "fingerprint": "b3d36dacbfb3d2cd5bef0f47cad58b05eca8b5d317dc65a1dba05207626212e9",
+      "definition": {
+        "description": "ABAP Text Line with Length 255",
+        "tableClass": "INTTAB",
+        "baseTable": "",
+        "fields": [
+          {
+            "name": "LINE",
+            "position": 1,
+            "dataElement": "TEXT255",
+            "description": "文本，255 字符"
+          }
+        ]
+      },
+      "observedAt": "2026-10-08T06:17:36.291Z"
+    }
+  }
+}

@@ -48,7 +48,9 @@ foreach ($connection in $config.connections) {
 
 $env:ABAP_MCP_CONFIG = $configPath
 $env:ABAP_MCP_PORT = $Port.ToString()
-$env:ABAP_MCP_EXPORT_ROOT = Join-Path $root "exports"
+if ([string]::IsNullOrWhiteSpace($env:ABAP_MCP_EXPORT_ROOT)) {
+    $env:ABAP_MCP_EXPORT_ROOT = Join-Path $root "exports"
+}
 
 try {
     Write-Host "ORVANTA: http://127.0.0.1:$Port/mcp"

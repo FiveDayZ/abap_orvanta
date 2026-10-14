@@ -15,6 +15,13 @@ import {
 const observed = JSON.parse(
   readFileSync(new URL("./fixtures/configuration-bte-vim-w200-r76.json", import.meta.url), "utf8")
 )
+const closure = JSON.parse(
+  readFileSync(
+    new URL("./fixtures/configuration-bte-save-closure-w200-r77.json", import.meta.url),
+    "utf8"
+  )
+)
+Object.assign(observed.definitions, closure.definitions)
 
 function fixture() {
   const input = { connectionId: "w200", productName: "ZDEMO", active: false }
@@ -49,6 +56,19 @@ function fixture() {
     native: structuredClone(observed.metadata)
   } as unknown as Awaited<ReturnType<typeof inspectConfigurationBteMetadata>>
   const rows: Record<string, Record<string, string>[]> = {
+    E070: [
+      {
+        TRKORR: "GR2K923430",
+        STRKORR: "GR2K923429",
+        TRFUNCTION: "Q",
+        TRSTATUS: "D",
+        KORRDEV: "CUST",
+        AS4USER: "WYS",
+        TARSYSTEM: "",
+        AS4DATE: "20261007",
+        AS4TIME: "080000"
+      }
+    ],
     TBE24T: [
       { MANDT: "200", SPRAS: "1", PRDKT: "ZDEMO", TXT50: "示例" },
       { MANDT: "200", SPRAS: "E", PRDKT: "ZDEMO", TXT50: "Example" }
@@ -59,7 +79,7 @@ function fixture() {
   const backend = {
     runQuery: async (_id: string, query: string) => {
       calls.query++
-      const name = /FROM (TBE24T|TCONT) WHERE/.exec(query)![1]!
+      const name = /FROM (TBE24T|TCONT|E070) WHERE/.exec(query)![1]!
       assert.equal(query.includes("SPRAS ="), false)
       return structuredClone(rows[name]!)
     },
@@ -79,6 +99,34 @@ function fixture() {
     }
   }
   const readers = {
+    username: "wys",
+    transport: async (pair: { requestNumber: string; taskNumber: string }): Promise<unknown> => ({
+      connectionId: "w200",
+      client: "200",
+      ...pair,
+      status: "metadata_matches",
+      readOnly: true,
+      saveAvailable: false,
+      readFingerprint: "3".repeat(64),
+      observed: { task: [rows.E070![0]] },
+      checks: Object.fromEntries(
+        [
+          "requestType",
+          "taskType",
+          "requestOpen",
+          "taskOpen",
+          "requestIsRoot",
+          "taskParent",
+          "taskOwnerMatchesConfiguredUser",
+          "requestClient",
+          "taskClient",
+          "requestCategory",
+          "taskCategory",
+          "transportTarget"
+        ].map((k) => [k, true])
+      )
+    }),
+    include: async (name: string) => structuredClone(closure.includes[name]),
     preview: async () => {
       calls.preview++
       return structuredClone(preview)
@@ -88,6 +136,13 @@ function fixture() {
       return structuredClone(metadata)
     },
     table: async (name: string) => {
+      if (name === "E070")
+        return {
+          connectionId: "w200",
+          objectKind: "transparentTable",
+          objectName: name,
+          fingerprint: "8a8e77c5943147bdb77fb9d10afc803e0e3a9e8a2a44f8178defca38c48449f1"
+        }
       const pin = layouts[name as keyof typeof layouts]
       return {
         connectionId: "w200",
@@ -138,7 +193,8 @@ test("preparation protects all languages and both assignment kinds, records shar
   assert.equal(f.calls.remote, 0)
   assert.equal(r.nativeSavePreparation.containers.languageCandidates.length, 2)
   assert.equal(r.nativeSavePreparation.containers.nativeSerializationVerified, false)
-  assert.equal(Object.keys(r.nativeSavePreparation.standardApis).length, 7)
+  assert.equal(Object.keys(r.nativeSavePreparation.standardApis).length, 13)
+  assert.equal(Object.keys(r.nativeSavePreparation.standardIncludes).length, 4)
   assert.equal(
     (await f.run({ ...f.input, expectedFingerprint: r.fingerprint })).fingerprint,
     r.fingerprint
@@ -272,4 +328,86 @@ test("container preparation rejects RFCDS patches and callback additions without
   g.metadata.native.ET_EVENTS.push({ TABNAME: "TBE24", EVENT: "01", FORMNAME: "NEW_CALLBACK" })
   await assert.rejects(g.run(), /LAYOUT_UNSUPPORTED/)
   assert.equal(g.calls.metadata, 1)
+})
+
+test("reached source drift rejects before metadata, and second-read drift refuses a prepared bundle", async () => {
+  for (const phase of ["before", "after"]) {
+    const f = fixture(),
+      read = f.readers.include
+    let reads = 0
+    f.readers.include = async (name: string) => {
+      reads++
+      const source = await read(name)
+      if (name === "LSTRDF50" && (phase === "before" || reads > 4)) source.source += "\r\n* Changed"
+      return source
+    }
+    await assert.rejects(f.run(), /SOURCE_UNVERIFIED/)
+    assert.equal(f.calls.metadata, phase === "before" ? 0 : 1)
+    assert.equal(reads, phase === "before" ? 4 : 8)
+  }
+  const f = fixture(),
+    read = f.readers.definition
+  let calls = 0
+  f.readers.definition = async (name) => {
+    calls++
+    const source = await read(name)
+    if (name === "TRINT_OBJECTS_CHECK_AND_INSERT" && calls > 13)
+      source.interfaceFingerprint = "0".repeat(64)
+    return source
+  }
+  await assert.rejects(f.run(), /API_UNVERIFIED/)
+  assert.equal(f.calls.metadata, 1)
+})
+
+test("explicit transport participates in the fingerprint and ambiguous tasks consume no metadata call", async () => {
+  const f = fixture()
+  const pair = { requestNumber: "GR2K923429", taskNumber: "GR2K923430" }
+  const without = await f.run()
+  const withTransport = await f.run({ ...f.input, transport: pair })
+  assert.notEqual(without.fingerprint, withTransport.fingerprint)
+  assert.equal(withTransport.coverage.ctsInspected, true)
+  assert.equal(withTransport.coverage.ctsRecordingInspected, false)
+  assert.equal(withTransport.transportReview.status, "unique_existing_task_observed")
+  assert.equal(withTransport.transportEvidence?.before.sources[0]?.table, "E070")
+  assert.equal(withTransport.transportEvidence?.after.sources[0]?.status, "ok")
+  assert.equal(without.transportEvidence, null)
+  assert.equal(withTransport.writeAvailable, false)
+  assert.equal(
+    (await f.run({ ...f.input, transport: pair, expectedFingerprint: withTransport.fingerprint }))
+      .fingerprint,
+    withTransport.fingerprint
+  )
+  const ambiguous = fixture()
+  ambiguous.rows.E070!.push({ ...ambiguous.rows.E070![0]!, TRKORR: "GR2K923431" })
+  await assert.rejects(
+    ambiguous.run({ ...ambiguous.input, transport: pair }),
+    /TASK_SELECTION_AMBIGUOUS/
+  )
+  assert.equal(ambiguous.calls.metadata, 0)
+  assert.equal(ambiguous.calls.preview, 0)
+})
+
+test("task inventory, headers or selected task changes during metadata reject without replay", async () => {
+  const pair = { requestNumber: "GR2K923429", taskNumber: "GR2K923430" }
+  for (const change of ["inventory", "row", "headers"]) {
+    const f = fixture(),
+      read = f.readers.metadata
+    f.readers.metadata = async () => {
+      if (change === "inventory") f.rows.E070!.push({ ...f.rows.E070![0]!, TRKORR: "GR2K923431" })
+      if (change === "row") f.rows.E070![0]!.AS4TIME = "080001"
+      if (change === "headers") {
+        const previous = f.readers.transport
+        f.readers.transport = async (pair) => ({
+          ...((await previous(pair)) as object),
+          readFingerprint: "4".repeat(64)
+        })
+      }
+      return read()
+    }
+    await assert.rejects(
+      f.run({ ...f.input, transport: pair }),
+      change === "inventory" ? /TASK_SELECTION_AMBIGUOUS/ : /READ_CHANGED/
+    )
+    assert.equal(f.calls.metadata, 1)
+  }
 })

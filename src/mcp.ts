@@ -11,6 +11,7 @@ import { configurationUnitTextPreviewInputSchema } from "./configuration-unit.js
 import { configurationUnitTextApplyInputSchema } from "./configuration-unit-apply.js"
 import type { InvocationReceiptStore } from "./invocation-receipts.js"
 import { ToolService } from "./tools.js"
+import { configurationBcReadFlow } from "./configuration-bc-read-flow.js"
 import { observeWritePreChange } from "./write-prechange-evidence.js"
 import { hashWriteInput, type WriteOperationReceiptStore } from "./write-operation-receipts.js"
 import { PRODUCT_VERSION } from "./version.js"
@@ -252,7 +253,7 @@ export function createMcpServer(
       )
       const result = await action(scoped)
       assertConfigurationBcReadActive(signal)
-      return result
+      return configurationBcReadFlow(name, result)
     })
   // The CTS container check rides `read_abap_table`, the one table read that is known to work here:
   // it falls back to `rfc_read_table` when the native ADT data preview answers HTML, which
@@ -1199,10 +1200,32 @@ export function createMcpServer(
       )
   )
   registerTool(
+    "find_configuration_fi_rules",
+    toolContracts.find_configuration_fi_rules,
+    async (input) =>
+      invoke("find_configuration_fi_rules", () => tools.findConfigurationFiRules(input))
+  )
+  registerTool(
     "read_configuration_fi_rule",
     toolContracts.read_configuration_fi_rule,
     async (input) =>
       invoke("read_configuration_fi_rule", () => tools.readConfigurationFiRule(input))
+  )
+  registerTool(
+    "preview_configuration_fi_activation",
+    toolContracts.preview_configuration_fi_activation,
+    async (input) =>
+      invoke("preview_configuration_fi_activation", () =>
+        tools.previewConfigurationFiActivation(input)
+      )
+  )
+  registerTool(
+    "inspect_configuration_fi_activation_route",
+    toolContracts.inspect_configuration_fi_activation_route,
+    async (input) =>
+      invoke("inspect_configuration_fi_activation_route", () =>
+        tools.inspectConfigurationFiActivationRoute(input)
+      )
   )
   registerTool(
     "read_configuration_number_range_api",

@@ -12,6 +12,12 @@
  * The third is the one that cannot be asserted by reading the reply, because a tool that wrote and
  * then described itself as read-only would look identical. It is therefore asserted against the
  * backend's own mutation ledger.
+ *
+ * A fourth is asserted beside them because it is the defect this file was extended for: an answer
+ * that carries no usable text is neither of the first two outcomes. The upstream helper folds it into
+ * the input (`(response.body || body).toString()`), which is how "the printer returned nothing" came
+ * to be reported as "already formatted"; `FORMAT_RESULT_EMPTY` and `FORMAT_TARGET_HAS_NO_SOURCE` keep
+ * those three apart.
  */
 import assert from "node:assert/strict"
 import test from "node:test"
@@ -42,7 +48,8 @@ interface ObservedRequest {
  * to the HTTP boundary, so the wire shape and the error classification are real.
  */
 function backendWithRecordingHttp(
-  formatResponse: { body: string } | { status: number; statusText: string }
+  formatResponse: { body: string } | { status: number; statusText: string },
+  options: { sourceBody?: string } = {}
 ): { backend: AdtBackend; requests: ObservedRequest[] } {
   const requests: ObservedRequest[] = []
   const backend = new AdtBackend([
@@ -58,12 +65,12 @@ function backendWithRecordingHttp(
   ])
   const client = {
     httpClient: {
-      async request(url: string, options: Record<string, unknown> = {}) {
+      async request(url: string, options2: Record<string, unknown> = {}) {
         requests.push({
           url,
-          method: String(options.method ?? "GET"),
-          headers: (options.headers ?? {}) as Record<string, string>,
-          body: options.body as string | undefined
+          method: String(options2.method ?? "GET"),
+          headers: (options2.headers ?? {}) as Record<string, string>,
+          body: options2.body as string | undefined
         })
         if (url.includes("prettyprinter")) {
           if ("status" in formatResponse) {
@@ -76,7 +83,12 @@ function backendWithRecordingHttp(
           }
           return { body: formatResponse.body, status: 200, statusText: "OK", headers: {} }
         }
-        return { body: FORMATTED_ZCL_DEMO, status: 200, statusText: "OK", headers: {} }
+        return {
+          body: options.sourceBody ?? FORMATTED_ZCL_DEMO,
+          status: 200,
+          statusText: "OK",
+          headers: {}
+        }
       }
     }
   }
@@ -104,6 +116,7 @@ interface FormatReply {
   originalLineCount: number
   formattedLineCount: number
   lineCountDelta: number
+  formatterHttpStatus: number
   summary: string
   formattedSource: string
   readOnly: boolean
@@ -139,6 +152,9 @@ test("a source the pretty printer rewrites is reported as changed", async () => 
   assert.equal(reply.fileUri, CLASS_URI)
   assert.equal(reply.readOnly, true)
   assert.equal(reply.wroteToSap, false)
+  // The status of the call that produced the text travels with the verdict, so a "changed" answer is
+  // backed by an observable call rather than by the two strings alone.
+  assert.equal(reply.formatterHttpStatus, 200)
   // The formatted text is returned to the caller: the tool's whole point is the text, and a
   // "changed: true" with no text would leave the caller unable to apply anything.
   assert.equal(reply.formattedSource, backend.formatSourceOverride)
@@ -158,6 +174,7 @@ test("a source the printer returns verbatim is reported as unchanged, not as a r
   assert.equal(reply.formattedSource, FORMATTED_ZCL_DEMO)
   assert.equal(reply.originalLineCount, reply.formattedLineCount)
   assert.equal(reply.lineCountDelta, 0)
+  assert.equal(reply.formatterHttpStatus, 200)
   // The critical distinction: an unchanged result must not read as a successful reformat, or a
   // caller cannot tell "already well formatted" from "the formatter did work".
   assert.match(reply.summary, /unchanged/)
@@ -243,6 +260,75 @@ test("a formatter failure is surfaced instead of returning the input as formatte
   assert.deepEqual(backend.mutationCalls, [])
 })
 
+test("an empty printer answer is refused, never reported as 'already formatted'", async () => {
+  // The upstream helper this service used to call answers with `(response.body || body).toString()`,
+  // so an empty response body is replaced by the request text and "the printer returned nothing"
+  // becomes indistinguishable from "the printer returned the source unchanged". The shipped path must
+  // not inherit that: HTTP 200 with no usable text is undeterminable and is named as such.
+  //
+  // The second answer is not hypothetical. The registry entry for this tool records a real call
+  // against a non-source URI that came back as "0 lines in and 1 blank line out": the printer answered
+  // a blank line, which the old path reported as a formatting result. Whitespace-only text is the same
+  // non-answer as an empty body and must be refused the same way.
+  for (const body of ["", "\n"]) {
+    const { backend, requests } = backendWithRecordingHttp({ body })
+
+    await assert.rejects(
+      () => backend.formatSource("w200", CLASS_URI),
+      (error: Error) => {
+        assert.match(error.message, /FORMAT_RESULT_EMPTY/)
+        assert.match(error.message, /HTTP 200/)
+        // The refusal must say what it is not, or a caller will read it as "already formatted".
+        assert.match(error.message, /NOT "already formatted"/)
+        return true
+      }
+    )
+    // The printer was reached exactly once, and with the real source text - so the refusal is an
+    // observation about a genuine call rather than about a request that never happened.
+    const printerCalls = requests.filter((request) => request.url.includes("prettyprinter"))
+    assert.equal(printerCalls.length, 1, `body ${JSON.stringify(body)}: expected one printer call`)
+    assert.equal(printerCalls[0]?.body, FORMATTED_ZCL_DEMO)
+  }
+})
+
+test("the tool refuses a textless answer even if a backend hands one over", async () => {
+  // Second half of the same rule, at the layer that writes the summary a caller reads: the reply may
+  // only call a result "unchanged" when it actually received text that equals the input.
+  const backend = new MockBackend()
+  backend.formatSourceOverride = "\n"
+
+  await assert.rejects(
+    () => format(backend),
+    (error: Error) => {
+      assert.match(error.message, /FORMAT_RESULT_EMPTY/)
+      assert.match(error.message, /HTTP 200/)
+      assert.doesNotMatch(error.message, /already in the formatter/)
+      return true
+    }
+  )
+})
+
+test("a target with no active source text is refused before the printer is called", async () => {
+  // A DDIC object or any target without ABAP source of its own is not a formatting candidate. Sending
+  // an empty body would ask the printer a question it cannot answer, and the answer would then have to
+  // be interpreted - which is exactly the misreading this refusal removes.
+  const { backend, requests } = backendWithRecordingHttp(
+    { body: "FORMATTED BY SAP" },
+    { sourceBody: "" }
+  )
+
+  await assert.rejects(
+    () => backend.formatSource("w200", CLASS_URI),
+    (error: Error) => {
+      assert.match(error.message, /FORMAT_TARGET_HAS_NO_SOURCE/)
+      return true
+    }
+  )
+  // Only the source read happened; the printer was never contacted.
+  assert.equal(requests.filter((request) => request.url.includes("prettyprinter")).length, 0)
+  assert.equal(requests.length, 1)
+})
+
 test("the missing endpoint is classified as an endpoint failure, not an object failure", async () => {
   // The mock above replaces the formatter whole, so it cannot show how a real ADT refusal is
   // attributed. This drives the shipped path to the HTTP boundary: a target without the resource
@@ -284,6 +370,7 @@ test("the formatter is called as a POST of the source text to the library's endp
   assert.equal(result.formattedSource, "FORMATTED BY SAP")
   assert.equal(result.originalSource, FORMATTED_ZCL_DEMO)
   assert.equal(result.sourceUri, SOURCE_PATH)
+  assert.equal(result.formatterHttpStatus, 200)
 })
 
 test("the real backend path reaches no lock, save or activate endpoint", async () => {
@@ -380,6 +467,11 @@ test("the contract says it never writes back, in the text a caller actually read
   assert.match(description, /does not lock, save, activate/)
   // The unchanged-result wording is part of the contract, not just the implementation.
   assert.match(description, /unchanged/)
+  // The two answers that must never be read as "unchanged" are named in the contract as well, with
+  // the evidence field that backs the first of them.
+  assert.match(description, /FORMAT_RESULT_EMPTY/)
+  assert.match(description, /FORMAT_TARGET_HAS_NO_SOURCE/)
+  assert.match(description, /formatterHttpStatus/)
   // The endpoint-unavailable behaviour is promised here too.
   assert.match(description, /pretty-printer resource/)
 })

@@ -31,6 +31,9 @@ const codeOf = (error: unknown) =>
     : "CONFIGURATION_IMG_DETAIL_QUERY_FAILED"
 const unavailable = (error: unknown) => ({ status: "unavailable", code: codeOf(error) })
 const key = z.string().regex(/^[A-Za-z0-9_]{1,32}$/)
+const physicalNodeTables = ["TNODEIMG", "TNODE01", "TNODE02"] as const
+type PhysicalNodeTable = (typeof physicalNodeTables)[number]
+const treeFields = ["ID", "EXT_KEY", "EXTENSION", "TYPE", "NODE_ID"]
 const nodeFields = [
   "TREE_ID",
   "EXT_KEY",
@@ -38,7 +41,8 @@ const nodeFields = [
   "NODE_ID",
   "PARENT_ID",
   "REFNODE_ID",
-  "REFTREE_ID"
+  "REFTREE_ID",
+  "W_SUBNODES"
 ]
 
 /** Preserve the approved table-domain entry point used by configuration descriptors. */
@@ -189,8 +193,92 @@ export async function readConfigurationImgActivityDetails(
       return { ...unavailable(error), requestedLanguage: language }
     }
   }
+  const resolveReference = async (
+    sourceTable: PhysicalNodeTable,
+    sourceNode: Record<string, string>,
+    sourceTree: Record<string, string>
+  ) => {
+    const result = {
+      status: "read",
+      reason: null as string | null,
+      scope: "physical_reference_targets_only",
+      readOnly: true,
+      executable: false,
+      targets: [] as Record<string, unknown>[]
+    }
+    const identity = (table: string, node: Record<string, string>) =>
+      JSON.stringify([table, node.TREE_ID, node.EXT_KEY, node.EXTENSION, node.NODE_ID])
+    const seen = new Set([identity(sourceTable, sourceNode)])
+    const fail = (suffix: string) => new Error(`CONFIGURATION_IMG_DETAIL_REFERENCE_${suffix}`)
+    let node = sourceNode
+    let tree = sourceTree
+    try {
+      for (let depth = 0; node.REFNODE_ID || node.REFTREE_ID; depth++) {
+        if (depth >= 32) throw fail("DEPTH_LIMIT_EXCEEDED")
+        if (
+          !key.safeParse(node.REFTREE_ID).success ||
+          (node.REFNODE_ID ? !key.safeParse(node.REFNODE_ID).success : !node.W_SUBNODES)
+        )
+          throw fail("IDENTITY_INCOMPLETE")
+        if (node.EXTENSION || tree.EXTENSION) throw fail("EXTENSION_UNSUPPORTED")
+        const trees = await read("TTREE", treeFields, { ID: node.REFTREE_ID! }, 1)
+        if (trees.length !== 1) throw fail("TREE_NOT_FOUND")
+        const targetTree = trees[0]!
+        // GENER reads with the source EXT_KEY; cross-extension merging is not proven here.
+        if (targetTree.EXT_KEY !== node.EXT_KEY) throw fail("EXT_KEY_MISMATCH")
+        if (targetTree.EXTENSION) throw fail("EXTENSION_UNSUPPORTED")
+        const types = await read(
+          "TTREETYPE",
+          ["TREE_TYPE", "ACTIVE", "DB_IDENT", "DB_TABLE"],
+          { TREE_TYPE: targetTree.TYPE! },
+          1
+        )
+        if (
+          types.length !== 1 ||
+          types[0]!.ACTIVE !== "X" ||
+          types[0]!.DB_IDENT !== "GENER" ||
+          !physicalNodeTables.some((table) => table === types[0]!.DB_TABLE)
+        )
+          throw fail("STRUCTURE_UNSUPPORTED")
+        const targetTable = types[0]!.DB_TABLE as PhysicalNodeTable
+        // STREE_READ_NODE_GENER derives a tree reference's node from its declared root.
+        const nodeId = node.REFNODE_ID || targetTree.NODE_ID!
+        if (!key.safeParse(nodeId).success) throw fail("NODE_ID_INVALID")
+        const filters = {
+          TREE_ID: targetTree.ID!,
+          EXT_KEY: node.EXT_KEY!,
+          EXTENSION: "",
+          NODE_ID: nodeId
+        }
+        const targetIdentity = identity(targetTable, filters)
+        if (seen.has(targetIdentity)) throw fail("CYCLE_DETECTED")
+        seen.add(targetIdentity)
+        const rows = await read(targetTable, nodeFields, filters, 1)
+        if (rows.length !== 1) throw fail("NODE_NOT_FOUND")
+        const target = rows[0]!
+        result.targets.push({
+          structureId: targetTree.ID,
+          table: targetTable,
+          extKey: target.EXT_KEY,
+          extension: target.EXTENSION,
+          nodeId: target.NODE_ID,
+          parentId: target.PARENT_ID,
+          nodeSelection: node.REFNODE_ID ? "explicit_node" : "declared_root",
+          title: await title(`${targetTable}T`, filters),
+          referenceNodeId: target.REFNODE_ID,
+          referenceTreeId: target.REFTREE_ID
+        })
+        node = target
+        tree = targetTree
+      }
+    } catch (error) {
+      result.status = "partial"
+      result.reason = codeOf(error)
+    }
+    return result
+  }
   const paths = async (activity: string) => {
-    const variants: {
+    type Variant = {
       structureId: string
       table: string
       extKey: string
@@ -198,9 +286,17 @@ export async function readConfigurationImgActivityDetails(
       status: string
       reason: string | null
       nodes: Record<string, unknown>[]
+    }
+    const variants: Variant[] = []
+    const references: {
+      variant: Variant
+      node: Record<string, unknown>
+      source: Record<string, string>
+      tree: Record<string, string>
+      table: PhysicalNodeTable
     }[] = []
     const issues: { code: string; table: string; nodeId?: string }[] = []
-    for (const table of ["TNODEIMG", "TNODE01", "TNODE02"] as const) {
+    for (const table of physicalNodeTables) {
       try {
         // STREE_EXIT_TO_OBJECT_IMGD reads COBJ as the IMG activity; GENER uses table + R/T.
         const refs = await read(
@@ -224,12 +320,7 @@ export async function readConfigurationImgActivityDetails(
             )
             if (leaf.length !== 1) throw new Error("CONFIGURATION_IMG_DETAIL_NODE_NOT_FOUND")
             const structureId = key.parse(leaf[0]!.TREE_ID)
-            const trees = await read(
-              "TTREE",
-              ["ID", "EXT_KEY", "TYPE", "NODE_ID"],
-              { ID: structureId },
-              1
-            )
+            const trees = await read("TTREE", treeFields, { ID: structureId }, 1)
             if (trees.length !== 1 || trees[0]!.EXT_KEY !== ref.EXT_KEY)
               throw new Error("CONFIGURATION_IMG_DETAIL_STRUCTURE_MISMATCH")
             const tree = trees[0]!
@@ -247,6 +338,7 @@ export async function readConfigurationImgActivityDetails(
             )
               throw new Error("CONFIGURATION_IMG_DETAIL_STRUCTURE_UNSUPPORTED")
             const nodes: Record<string, unknown>[] = []
+            const pending: { node: Record<string, unknown>; source: Record<string, string> }[] = []
             const seen = new Set<string>()
             let current = ref.NODE_ID!
             let reason: string | null = null
@@ -276,7 +368,7 @@ export async function readConfigurationImgActivityDetails(
                 break
               }
               const node = rows[0]!
-              nodes.unshift({
+              const descriptor = {
                 nodeId: node.NODE_ID,
                 parentId: node.PARENT_ID,
                 title: await title(`${table}T`, {
@@ -287,11 +379,10 @@ export async function readConfigurationImgActivityDetails(
                 }),
                 referenceNodeId: node.REFNODE_ID,
                 referenceTreeId: node.REFTREE_ID
-              })
-              if (node.REFNODE_ID || node.REFTREE_ID) {
-                reason = "CROSS_STRUCTURE_REFERENCE_UNRESOLVED"
-                break
               }
+              nodes.unshift(descriptor)
+              if (node.REFNODE_ID || node.REFTREE_ID)
+                pending.push({ node: descriptor, source: node })
               if (node.NODE_ID === tree.NODE_ID) break
               if (!node.PARENT_ID) {
                 reason = "DECLARED_ROOT_NOT_REACHED"
@@ -299,7 +390,7 @@ export async function readConfigurationImgActivityDetails(
               }
               current = node.PARENT_ID
             }
-            variants.push({
+            const variant: Variant = {
               structureId,
               table,
               extKey: ref.EXT_KEY!,
@@ -307,13 +398,24 @@ export async function readConfigurationImgActivityDetails(
               status: reason ? "partial" : "read",
               reason,
               nodes
-            })
+            }
+            variants.push(variant)
+            for (const entry of pending) references.push({ ...entry, variant, table, tree })
           } catch (error) {
             issues.push({ code: codeOf(error), table, nodeId: ref.NODE_ID! })
           }
         }
       } catch (error) {
         issues.push({ code: codeOf(error), table })
+      }
+    }
+    // Finish source parent chains/variants before references consume the shared read budget.
+    for (const { variant, node, source, tree, table } of references) {
+      const reference = await resolveReference(table, source, tree)
+      node.physicalReference = reference
+      if (reference.reason) {
+        variant.status = "partial"
+        variant.reason ??= reference.reason
       }
     }
     return {
@@ -343,8 +445,22 @@ export async function readConfigurationImgActivityDetails(
         readability: "unknown",
         content: {
           status: "unknown",
-          reason: "Hypertext-class conversion and a bounded content reader were not verified."
-        }
+          reason: "Documentation content was not read; nextRead describes a separate bounded read."
+        },
+        nextRead:
+          /^[A-Z0-9_/]{1,20}$/.test(header.ACTIVITY) &&
+          /^SIMG[A-Z0-9_/]{1,56}$/.test(header.DOCU_ID)
+            ? {
+                tool: "read_configuration_documentation",
+                arguments: {
+                  connectionId,
+                  activityId: header.ACTIVITY,
+                  language,
+                  maxLines: 200
+                },
+                readOnly: true
+              }
+            : null
       }
     })
   try {

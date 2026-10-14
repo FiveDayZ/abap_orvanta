@@ -312,6 +312,7 @@ export async function readConfigurationNumberRangeScope(
     intervals: rows,
     effectiveIntervals,
     readFingerprint: fingerprint,
+    nativeVersionRead: complete ? first.nativeVersionRead : null,
     coverage: {
       complete: false,
       intervalProjectionComplete: complete,

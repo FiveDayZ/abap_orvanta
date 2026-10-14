@@ -453,6 +453,31 @@ export async function findConfigurationActivities(
       attributeId: row.ATTRIBUTES,
       headerTransaction: row.TCODE,
       maintenanceObjects: [...routes.get(row.ACTIVITY)!].sort(),
+      nextRead:
+        mapping &&
+        input.connectionId === "w200" &&
+        input.objectName === "T006A" &&
+        row.ACTIVITY === "SIMG_CFMENUOLMSOMSC" &&
+        routes.get(row.ACTIVITY)!.has("T:CUNI") &&
+        lookups.some(
+          (lookup) =>
+            lookup.objectType === "T" &&
+            lookup.objectName === "CUNI" &&
+            lookup.status === "read" &&
+            lookup.method === "transaction_metadata_join" &&
+            lookup.transaction?.TCODE === "CUNI" &&
+            lookup.transaction.PGMNA === "SAPMUNIT"
+        )
+          ? {
+              tool: "describe_configuration_object",
+              arguments: {
+                connectionId: input.connectionId,
+                objectName: input.objectName,
+                expectedDefinitionFingerprint: table.fingerprint
+              },
+              readOnly: true
+            }
+          : null,
       title: detailById.get(row.ACTIVITY)?.title ?? { status: "unknown" },
       path: detailById.get(row.ACTIVITY)?.path ?? { status: "unknown" },
       ...(details

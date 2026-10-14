@@ -27,3 +27,4 @@ test-*.cmd
 # 产出它们。属运行产物，与 .cache/ 同类：保留在磁盘，不入库、不提交。
 configuration-bc-before-state/
 configuration-bc-executions/
+docs/workspace-evidence/

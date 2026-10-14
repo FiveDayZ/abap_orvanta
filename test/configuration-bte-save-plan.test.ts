@@ -10,13 +10,20 @@ import {
 const observed = JSON.parse(
   readFileSync(new URL("./fixtures/configuration-bte-vim-w200-r76.json", import.meta.url), "utf8")
 )
+const closure = JSON.parse(
+  readFileSync(
+    new URL("./fixtures/configuration-bte-save-closure-w200-r77.json", import.meta.url),
+    "utf8"
+  )
+)
+Object.assign(observed.definitions, closure.definitions)
 function fixture() {
   const f = structuredClone(observed)
   f.after = { ...f.before, AKTIV: "" }
   return f
 }
 
-test("seven actual standard definitions attest through reads only", async () => {
+test("thirteen actual standard definitions attest through reads only", async () => {
   const calls: string[] = [],
     f = fixture()
   const pins = await attestConfigurationBteSaveApis(async (name) => {
@@ -24,7 +31,7 @@ test("seven actual standard definitions attest through reads only", async () => 
     return f.definitions[name]
   })
   assert.deepEqual(calls.sort(), Object.keys(f.definitions).sort())
-  assert.equal(Object.keys(pins).length, 7)
+  assert.equal(Object.keys(pins).length, 13)
   assert.equal(pins.CONTEXT_BUFFER_DELETE!.updateTask, true)
   assert.equal(pins.VIM_SET_NO_TR_DIALOG!.remoteEnabled, false)
 })
@@ -51,8 +58,8 @@ test("changed source, ABI, group, connection and invocation flags reject and nev
       }),
       /API_UNVERIFIED/
     )
-    assert.equal(calls.length, 7)
-    assert.equal(new Set(calls).size, 7)
+    assert.equal(calls.length, 13)
+    assert.equal(new Set(calls).size, 13)
   }
   await assert.rejects(
     attestConfigurationBteSaveApis(async () => {

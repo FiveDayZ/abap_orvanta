@@ -2,7 +2,8 @@
 
 param(
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$')]
-    [string]$CandidateSuffix
+    [string]$CandidateSuffix,
+    [switch]$PreserveTestArtifacts
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,13 +30,14 @@ if ($expectedHash -notmatch "^[0-9a-fA-F]{64}$" -or $expectedHash -ne $actualHas
 }
 
 $savedEnvironment = @{}
-foreach ($name in @("ABAP_MCP_STATE_DIR", "ABAP_MCP_PORT", "UNSET_PORTABLE_VALIDATION_PASSWORD")) {
+foreach ($name in @("ABAP_MCP_STATE_DIR", "ABAP_MCP_PORT", "UNSET_PORTABLE_VALIDATION_PASSWORD", "ORVANTA_EVIDENCE_ROOT")) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
 }
 $cmdTestRoot = $null
 try {
 New-Item -ItemType Directory -Force -Path $testRoot | Out-Null
 $env:ABAP_MCP_STATE_DIR = Join-Path $testRoot "state"
+$env:ORVANTA_EVIDENCE_ROOT = $null
 $packageRoot = Join-Path $testRoot "Extracted Package"
 Expand-Archive -LiteralPath $archivePath -DestinationPath $packageRoot
 $buildInfo = Get-Content -Raw -LiteralPath (Join-Path $packageRoot "BUILD-INFO.json") | ConvertFrom-Json
@@ -50,7 +52,7 @@ if (Test-Path -LiteralPath (Join-Path $packageRoot "app\dist\test")) {
     throw "Production package must not ship compiled tests or failure workers."
 }
 $hashEntries = @($buildInfo.fileSha256.PSObject.Properties)
-foreach ($required in @("app/dist/src/index.js", "app/dist/src/version.js", "app/scripts/bootstrap-sap-helper.ps1", "app/package-lock.json", "runtime/node.exe")) {
+foreach ($required in @("app/dist/src/index.js", "app/dist/src/version.js", "app/scripts/bootstrap-sap-helper.ps1", "app/package-lock.json", "runtime/node.exe", "app/contracts/tool-index.json", "app/contracts/verification-registry.json", "app/contracts/verification-evidence-manifest.json")) {
     if ($required -notin $hashEntries.Name) { throw "Missing manifest hash: $required" }
 }
 foreach ($entry in $hashEntries) {
@@ -65,12 +67,64 @@ foreach ($entry in $hashEntries) {
 foreach ($pair in @(
     @("scripts\bootstrap-sap-helper.ps1", "app\scripts\bootstrap-sap-helper.ps1"),
     @("dist\src\version.js", "app\dist\src\version.js"),
-    @("package-lock.json", "app\package-lock.json")
+    @("package-lock.json", "app\package-lock.json"),
+    @("contracts\tool-index.json", "app\contracts\tool-index.json"),
+    @("contracts\verification-registry.json", "app\contracts\verification-registry.json")
 )) {
     if ((Get-FileHash (Join-Path $projectRoot $pair[0])).Hash -ne (Get-FileHash (Join-Path $packageRoot $pair[1])).Hash) {
         throw "Package is stale relative to source: $($pair[0])"
     }
 }
+$verificationManifest = Get-Content -Raw -LiteralPath (Join-Path $packageRoot "app\contracts\verification-evidence-manifest.json") | ConvertFrom-Json
+foreach ($verificationFile in $verificationManifest.files) {
+    $verificationPath = "app/$($verificationFile.path)"
+    if ($verificationPath -notin $hashEntries.Name) {
+        throw "Verification evidence is absent from the package hash manifest: $verificationPath"
+    }
+    $verificationAbsolute = Join-Path $packageRoot $verificationPath
+    if ((Get-Item -LiteralPath $verificationAbsolute).Length -ne $verificationFile.size -or
+        (Get-FileHash -LiteralPath $verificationAbsolute -Algorithm SHA256).Hash -ne $verificationFile.sha256) {
+        throw "Verification evidence does not match its source snapshot: $verificationPath"
+    }
+}
+$verificationRegistry = Get-Content -Raw -LiteralPath (Join-Path $packageRoot "app\contracts\verification-registry.json") | ConvertFrom-Json
+foreach ($verificationEntry in $verificationRegistry.entries) {
+    if ($verificationEntry.status -notin @("verified", "failed", "platform-unsupported")) { continue }
+    $verificationRelative = $verificationEntry.evidence.Replace('\', '/')
+    $verificationEvidence = "app/docs/workspace-evidence/$verificationRelative"
+    if ($verificationEvidence -notin $hashEntries.Name -or
+        $verificationRelative -notin @($verificationManifest.files | ForEach-Object { $_.path -replace '^docs/workspace-evidence/', '' })) {
+        throw "Packaged verification claim has no hashed evidence: $($verificationEntry.tool)"
+    }
+}
+$node = Join-Path $packageRoot "runtime\node.exe"
+$verificationLookupCode = @'
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { join, resolve } from "node:path"
+import { pathToFileURL } from "node:url"
+const app = resolve(process.argv[1], "app")
+const load = (name) => import(pathToFileURL(join(app, "dist", "src", name)).href)
+const { loadVerificationLookup } = await load("capabilities.js")
+const { resolveEvidencePath, validateRegistry, verificationTotals } = await load("verification-registry.js")
+const { TOOL_NAMES } = await load("tool-registry.js")
+const expected = JSON.parse(readFileSync(join(app, "contracts", "verification-registry.json"), "utf8"))
+const lookup = loadVerificationLookup()
+assert.equal(lookup.loaded, true, lookup.reason)
+assert.deepEqual(lookup.registry, expected)
+assert.deepEqual(validateRegistry(lookup.registry, { expectedTools: TOOL_NAMES }), [])
+for (const entry of expected.entries) {
+  assert.deepEqual(lookup.entries.get(entry.tool), entry)
+  if (!["verified", "failed", "platform-unsupported"].includes(entry.status)) continue
+  assert.equal(resolveEvidencePath(entry), join(app, "docs", "workspace-evidence", entry.evidence))
+}
+console.log(JSON.stringify({ loaded: lookup.loaded, totals: verificationTotals(lookup.registry) }))
+'@
+$verificationLookupOutput = & $node --input-type=module -e $verificationLookupCode $packageRoot 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "Packaged capability-report verification lookup failed: $($verificationLookupOutput -join [Environment]::NewLine)"
+}
+Write-Host "Capability evidence: $($verificationLookupOutput -join '')"
 Write-Host "Package manifest: version $($buildInfo.version), $($hashEntries.Count) file hashes verified"
 $packagedConfig = Join-Path $packageRoot "connections.json"
 if (-not (Test-Path -LiteralPath $packagedConfig)) {
@@ -107,7 +161,6 @@ $listener.Start()
 $port = ([Net.IPEndPoint]$listener.LocalEndpoint).Port
 $listener.Stop()
 
-$node = Join-Path $packageRoot "runtime\node.exe"
 $probe = Join-Path $packageRoot "app\scripts\probe.mjs"
 $launcher = Join-Path $packageRoot "start.ps1"
 $cmdLauncher = Join-Path $packageRoot "start.cmd"
@@ -303,8 +356,10 @@ try {
     $process.WaitForExit()
     $process.Dispose()
     }
-    Remove-Item -LiteralPath $packagedConfig -Force -ErrorAction SilentlyContinue
-    if (Test-Path -LiteralPath $testRoot) {
+    if (-not $PreserveTestArtifacts) {
+        Remove-Item -LiteralPath $packagedConfig -Force -ErrorAction SilentlyContinue
+    }
+    if (-not $PreserveTestArtifacts -and (Test-Path -LiteralPath $testRoot)) {
         Remove-Item -LiteralPath $testRoot -Recurse -Force
     }
 }
@@ -363,7 +418,9 @@ try {
     $cmdProcess.WaitForExit()
     $cmdProcess.Dispose()
     }
-    Remove-Item -LiteralPath $cmdTestRoot -Recurse -Force -ErrorAction SilentlyContinue
+    if (-not $PreserveTestArtifacts) {
+        Remove-Item -LiteralPath $cmdTestRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 } finally {
     foreach ($name in $savedEnvironment.Keys) {
@@ -371,6 +428,10 @@ try {
     }
     foreach ($root in @($testRoot, $cmdTestRoot)) {
         if ($root -and (Test-Path -LiteralPath $root)) {
+            if ($PreserveTestArtifacts) {
+                Write-Host "Test artifacts retained: $root"
+                continue
+            }
             $resolved = [IO.Path]::GetFullPath($root)
             if (-not $resolved.StartsWith($allowedTempRoot, [StringComparison]::OrdinalIgnoreCase)) {
                 throw "Cleanup directory must stay inside TEMP."

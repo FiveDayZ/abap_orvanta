@@ -37,6 +37,13 @@ pwsh -NoLogo -NoProfile -File scripts/package-windows.ps1
 - **工作树必须干净**。存在未提交改动时脚本会拒绝打包并列出前 10 项改动，因为这样的产物无法由任何提交重建。
 - 只有在明确不需要复现的临时候选包场景下才使用 `-AllowDirty`；此时包内 `BUILD-INFO.json` 会记录 `standaloneSourceDirty = true`，该标记不得在评审中被忽略。
 - 脚本不会修改 SAP，也不会创建或释放传输。
+- 开发、运维及已有配置能力按各自验收结果交付；未完成的 FI/BTE 动作保留原限制，不作为其它已验收能力打包的前置，也不能因打包而提升状态。
+- 包内 `app/contracts/` 保留工具索引、验收登记及证据清单；仅复制登记准确引用的 `.doc`/`.logs`/`.cache`/`docs` 记录到 `app/docs/workspace-evidence/`，不复制整个缓存或工作区。原工作区记录不修改，包内副本和登记文件都进入 `BUILD-INFO.json` 的哈希范围。
+- `scripts/stage-release-evidence.mjs <新 app 目录>` 可独立准备这部分交付文件，不执行测试、SAP 请求或服务启动。引用缺失、路径越界、工具清单不一致或目标已存在时拒绝，不覆盖历史产物。
+- 相关本地回归入口为 `node --test test/package-evidence.test.mjs` 和 `test/package-smoke.ps1`，仍遵循已有测试授权边界。包含内部取证的候选在对外发布前需按实际交付范围审阅。
+- 保留历史的内部候选使用 `-PreserveExisting -CandidateSuffix <唯一后缀> -AllowDirty -SkipRuntimeCheck`：编译及 Node 解压位于新的 `.cache/package-<产物名>/`，共享 `dist/`、Node 缓存、`release/INDEX.md` 和历史产物不改。该模式禁止 `-ReplaceExisting`，任何同名包、归档、校验或构建目录存在即拒绝；失败材料保留，后续使用新后缀。仅使用匹配官方 SHA-256 的已有 Node 缓存，不下载替换它。编译测试源码只用于类型检查，包内仍只携带 `dist/src`，不执行测试或复制测试夹具。
+- `test/package-smoke.ps1 -CandidateSuffix <相同后缀> -PreserveTestArtifacts` 在既有启动、SDK、占位配置及助手替身检查之外，实际调用包内能力报告的登记加载器，并核对全部原状态及证据路径。保留模式仍关闭测试进程、恢复环境，但保留两个临时解压目录、日志和配置；本地测试授权取得前不执行，不连接真实 SAP。
+- 同一候选的 `test/settings-package-smoke.ps1 -CandidateSuffix <相同后缀> -PreserveTestArtifacts` 沿用配置中心的本地 API 回归并保留目录；关闭准确测试目录下的 Node 子进程，不改现有服务或客户端注册。
 
 ## 4. 产物
 
@@ -54,6 +61,7 @@ release/
 | -------------------------------------- | --------------------------------------------------------------------------------- |
 | `version` / `platform` / `nodeVersion` | 版本与运行时                                                                      |
 | `runtimeVersionCheck`                  | 包内 `PRODUCT_VERSION` 与 `package.json` 的一致性检查结果                         |
+| `preserveExisting`                     | 是否采用隔离构建并保留旧产物的候选模式；此模式不追加历史索引或执行归档保留窗口     |
 | `standaloneSourceCommit`               | 打包所用提交                                                                      |
 | `standaloneSourceDirty`                | 该提交之外是否还有未提交改动                                                      |
 | `fileSha256`                           | 除 `node_modules` 外全部打包文件的 SHA-256（依赖由 `app/package-lock.json` 固定） |
@@ -63,7 +71,7 @@ release/
 
 ## 5. 归档保留
 
-保留窗口是最近 **5** 个 `orvanta-mcp-*-win-x64*.zip` 产物。窗口外的产物**不再只是警告**：打包脚本在写完索引后调用
+默认保留窗口是最近 **5** 个 `orvanta-mcp-*-win-x64*.zip` 产物。`-PreserveExisting` 内部候选跳过本节动作和历史索引追加，其它模式在写完索引后调用
 
 ```powershell
 pwsh -NoLogo -NoProfile -File scripts/quarantine-release-artifacts.ps1            # 只报告计划

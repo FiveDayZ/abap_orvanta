@@ -392,7 +392,7 @@ export interface SapBackend {
 }
 ```
 
-（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 的当前实测值（2026-09-25：`verified 21 / unverified 115 / failed 5 / platformUnsupported 2 / total 143`，其中 21 条 verified 与 2 条 platform-unsupported 均逐条指向 `.doc` 记录，见 §4A）；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。`opsCapability` 的数例为 0.50.11 的实测值，随工具面变化，不是常量；证据维度的升级不改变任何族状态，它只改变各族 `verification` 名单。）
+（`totals` 与 `protocolOnlyToolCount` 是 `contracts/verification-registry.json` 在 2026-09-25 的实测值（**此后随验收推进已多次变化，当前值一律以登记表为准**；该日读数：`verified 21 / unverified 115 / failed 5 / platformUnsupported 2 / total 143`，其中 21 条 verified 与 2 条 platform-unsupported 均逐条指向 `.doc` 记录，见 §4A）；`availabilityWithoutEvidence` 由本次报告交叉统计得出，不是常量。`opsCapability` 的数例为 0.50.11 的实测值，随工具面变化，不是常量；证据维度的升级不改变任何族状态，它只改变各族 `verification` 名单。）
 
 ### 4A-0. 上面 `verification.totals` 的来源：OP0-2 证据补登（2026-09-25，0.50.11）
 

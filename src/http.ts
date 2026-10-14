@@ -104,8 +104,20 @@ export async function startHttpServer(
           body.params &&
           typeof body.params === "object" &&
           "name" in body.params &&
-          (body.params.name === "preflight_configuration_bc_activation" ||
-            body.params.name === "read_configuration_bc_before_state")
+          typeof body.params.name === "string" &&
+          [
+            "preflight_configuration_bc_activation",
+            "read_configuration_bc_before_state",
+            "read_configuration_bc_native_snapshot",
+            "preview_configuration_bc_native",
+            "inspect_configuration_bc_route",
+            "read_configuration_bc_guard",
+            "read_configuration_bc_cts_snapshot",
+            "read_configuration_bc_effects",
+            "apply_configuration_bc_set",
+            "recover_configuration_bc_set",
+            "reconcile_configuration_bc_execution"
+          ].includes(body.params.name)
         )
           keepSseStreamAlive(response)
         await transport.handleRequest(request, response, body)

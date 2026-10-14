@@ -1,0 +1,689 @@
+{
+  "historicalObservation": true,
+  "originStage": "r80",
+  "currentSapReadPerformed": false,
+  "definitions": {
+    "INITIALIZE_PROTOCOL": {
+      "connectionId": "w200",
+      "functionName": "INITIALIZE_PROTOCOL",
+      "functionGroup": "SLOG",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "ACTTYPE",
+          "typeName": "TSTRF01-ACTTYPE",
+          "optional": false,
+          "passByValue": true,
+          "description": "传输类型"
+        },
+        {
+          "name": "DIRTYPE",
+          "typeName": "TSTRF01-DIRTYPE",
+          "optional": true,
+          "passByValue": true,
+          "description": "类别目录: T ( 报告 ) , P"
+        },
+        {
+          "name": "SYSNAME",
+          "typeName": "TCESYST-SYSNAME",
+          "optional": false,
+          "passByValue": true,
+          "description": "系统名"
+        },
+        {
+          "name": "TRKORR",
+          "typeName": "E070-TRKORR",
+          "optional": false,
+          "passByValue": true,
+          "description": "传输订单"
+        },
+        {
+          "name": "TRBAT_LOGNAME",
+          "typeName": "TRBAT-LOGNAME",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IV_CHECK_LEVELS",
+          "typeName": "SPROT_I-XFELD",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "FILE",
+          "typeName": "TSTRF01-FILE",
+          "optional": false,
+          "passByValue": true,
+          "description": "文件名"
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "WRONG_CALL",
+          "description": "不承认的调用"
+        }
+      ],
+      "source": [
+        "FUNCTION INITIALIZE_PROTOCOL.",
+        "*\"----------------------------------------------------------------------",
+        "*\"*\"Lokale Schnittstelle:",
+        "*\"       IMPORTING",
+        "*\"             VALUE(ACTTYPE) LIKE  TSTRF01-ACTTYPE",
+        "*\"             VALUE(DIRTYPE) LIKE  TSTRF01-DIRTYPE DEFAULT 'T'",
+        "*\"             VALUE(SYSNAME) LIKE  TCESYST-SYSNAME",
+        "*\"             VALUE(TRKORR) LIKE  E070-TRKORR",
+        "*\"             VALUE(TRBAT_LOGNAME) LIKE  TRBAT-LOGNAME DEFAULT SPACE",
+        "*\"             VALUE(IV_CHECK_LEVELS) LIKE  SPROT_I-XFELD",
+        "*\"                             DEFAULT SPACE",
+        "*\"       EXPORTING",
+        "*\"             VALUE(FILE) LIKE  TSTRF01-FILE",
+        "*\"       EXCEPTIONS",
+        "*\"              WRONG_CALL",
+        "*\"----------------------------------------------------------------------",
+        "",
+        "  CALL FUNCTION 'TR_INITIALIZE_LOG'",
+        "       EXPORTING",
+        "            ACTTYPE         = ACTTYPE",
+        "            DIRTYPE         = DIRTYPE",
+        "            SYSNAME         = SYSNAME",
+        "            TRKORR          = TRKORR",
+        "            TRBAT_LOGNAME   = TRBAT_LOGNAME",
+        "            IV_CHECK_LEVELS = IV_CHECK_LEVELS",
+        "       IMPORTING",
+        "            FILE            = FILE",
+        "       EXCEPTIONS",
+        "            WRONG_CALL      = 1.",
+        "",
+        "  IF SY-SUBRC <> 0.",
+        "    CURRENT_MESSAGE_RAISING WRONG_CALL.",
+        "  ENDIF.",
+        "",
+        "ENDFUNCTION."
+      ],
+      "fingerprint": "8908baf9cdd52b9b683f041a54e1a4c43645e8ae5f935b7a89d900cae2e6d42c",
+      "interfaceFingerprint": "5e22795894cf3c8ad3fce391601797b8426685640b77dd2df8f228693a11c274",
+      "sourceFingerprint": "9fcb79507e5925b1c9f1f85ea04eacd274b0071d18335414c7b10eaff70499c9"
+    },
+    "TR_INITIALIZE_LOG": {
+      "connectionId": "w200",
+      "functionName": "TR_INITIALIZE_LOG",
+      "functionGroup": "SLOG",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "ACTTYPE",
+          "typeName": "TSTRF01-ACTTYPE",
+          "optional": false,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "DIRTYPE",
+          "typeName": "TSTRF01-DIRTYPE",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "SYSNAME",
+          "typeName": "TCESYST-SYSNAME",
+          "optional": false,
+          "passByValue": true,
+          "description": "System Name"
+        },
+        {
+          "name": "TRKORR",
+          "typeName": "E070-TRKORR",
+          "optional": false,
+          "passByValue": true,
+          "description": "Transport Request"
+        },
+        {
+          "name": "TRBAT_LOGNAME",
+          "typeName": "TRBAT-LOGNAME",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IV_CHECK_LEVELS",
+          "typeName": "SPROT_I-XFELD",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [
+        {
+          "name": "FILE",
+          "typeName": "TSTRF01-FILE",
+          "optional": false,
+          "passByValue": true,
+          "description": "File name"
+        }
+      ],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [
+        {
+          "name": "WRONG_CALL",
+          "description": "Invalid call"
+        }
+      ],
+      "source": [
+        "FUNCTION TR_INITIALIZE_LOG.",
+        "*\"----------------------------------------------------------------------",
+        "*\"*\"Lokale Schnittstelle:",
+        "*\"       IMPORTING",
+        "*\"             VALUE(ACTTYPE) LIKE  TSTRF01-ACTTYPE",
+        "*\"             VALUE(DIRTYPE) LIKE  TSTRF01-DIRTYPE DEFAULT 'T'",
+        "*\"             VALUE(SYSNAME) LIKE  TCESYST-SYSNAME",
+        "*\"             VALUE(TRKORR) LIKE  E070-TRKORR",
+        "*\"             VALUE(TRBAT_LOGNAME) LIKE  TRBAT-LOGNAME DEFAULT SPACE",
+        "*\"             VALUE(IV_CHECK_LEVELS) LIKE  SPROT_I-XFELD",
+        "*\"                             DEFAULT SPACE",
+        "*\"       EXPORTING",
+        "*\"             VALUE(FILE) LIKE  TSTRF01-FILE",
+        "*\"       EXCEPTIONS",
+        "*\"              WRONG_CALL",
+        "*\"----------------------------------------------------------------------",
+        "",
+        "  IF   ( ( ACTTYPE     =  SPACE ) OR",
+        "         ( TRKORR+3(1) <> 'K'   ) OR",
+        "         ( SYSNAME     = SPACE  ) )",
+        "    AND    TRBAT_LOGNAME = SPACE.",
+        "*& Messagetyp was changed from 'A' to 'E' and written to protocol.",
+        "*&  30.9.2001",
+        "    MESSAGE E514(TK) WITH 'TR_INITIALIZE_LOG'",
+        "                          'ACTTYPE' 'TRKORR' 'SYSNAME'",
+        "             RAISING WRONG_CALL.",
+        "  ENDIF.",
+        "",
+        "  CALL FUNCTION 'STRF_SETNAME_TEMPPROT'",
+        "       EXPORTING",
+        "            ACTTYPE       = ACTTYPE",
+        "            DIRTYPE       = DIRTYPE",
+        "            SYSNAME       = SYSNAME",
+        "            TRKORR        = TRKORR",
+        "            TRBAT_LOGNAME = TRBAT_LOGNAME",
+        "       IMPORTING",
+        "            FILE          = FILE",
+        "       EXCEPTIONS",
+        "            WRONG_CALL    = 1.",
+        "  IF SY-SUBRC <> 0.",
+        "    CURRENT_MESSAGE_RAISING WRONG_CALL.",
+        "  ENDIF.",
+        "",
+        "  GV_MEM_FILE = FILE.",
+        "  EXPORT GV_MEM_FILE TO MEMORY ID GV_MEM_ID.",
+        "",
+        "* save flag GV_CHECK_LEVELS in memory",
+        "  IF IV_CHECK_LEVELS = 'X'.",
+        "    GV_CHECK_LEVELS = 'Y'.",
+        "  ELSE.",
+        "    GV_CHECK_LEVELS = 'N'.",
+        "  ENDIF.",
+        "  EXPORT GV_CHECK_LEVELS TO MEMORY ID GV_MEM_ID_CHECK_LEVELS.",
+        "",
+        "ENDFUNCTION."
+      ],
+      "fingerprint": "5a524e46be098857677a2e43f517304713064ab6d7fd1748f89bad87fd000d95",
+      "interfaceFingerprint": "153388a1567ac792d130b88eaefed4a86b13475d5c57bc2a49aa0c78d536d33a",
+      "sourceFingerprint": "992a78ebef691137e3b6c66d9d45e764240ac2dae37342d36b69c08e5dd58395"
+    },
+    "APPEND_PROTOCOL": {
+      "connectionId": "w200",
+      "functionName": "APPEND_PROTOCOL",
+      "functionGroup": "SLOG",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "ACCEPT_NOT_INIT",
+          "typeName": "SPROT_I-XFELD",
+          "optional": true,
+          "passByValue": true,
+          "description": "Flag: Avoid exception PROT_NOT_INITIALIZED (X)"
+        },
+        {
+          "name": "CLOSE_FILE",
+          "typeName": "SPROT_I-XFELD",
+          "optional": true,
+          "passByValue": true,
+          "description": "Flag: Close file at end (X)"
+        },
+        {
+          "name": "CONDENSE",
+          "typeName": "SPROT_I-XFELD",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "MASTER_LANGU",
+          "typeName": "T100-SPRSL",
+          "optional": true,
+          "passByValue": true,
+          "description": "Replacement language"
+        },
+        {
+          "name": "OPEN_FILE",
+          "typeName": "SPROT_I-XFELD",
+          "optional": true,
+          "passByValue": true,
+          "description": "Flag: Open file at beginning (X)"
+        },
+        {
+          "name": "IV_SUPPRESS_STATISTICS",
+          "typeName": "SPROT_I-XFELD",
+          "optional": true,
+          "passByValue": true,
+          "description": "Flag: suppress end timestamp"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "XMSG",
+          "typeName": "SPROT_U",
+          "optional": false,
+          "passByValue": false,
+          "description": "Table of messages"
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "FILE_NOT_FOUND",
+          "description": "Access to the file was not possibl"
+        },
+        {
+          "name": "PROT_NOT_INITIALIZED",
+          "description": "INITIALIZE_PROTOCOL was not called"
+        },
+        {
+          "name": "WRONG_CALL",
+          "description": "incorrect call"
+        }
+      ],
+      "source": [
+        "FUNCTION append_protocol.",
+        "*\"----------------------------------------------------------------------",
+        "*\"*\"Lokale Schnittstelle:",
+        "*\"       IMPORTING",
+        "*\"             VALUE(ACCEPT_NOT_INIT) LIKE  SPROT_I-XFELD DEFAULT ' '",
+        "*\"             VALUE(CLOSE_FILE) LIKE  SPROT_I-XFELD DEFAULT 'X'",
+        "*\"             VALUE(CONDENSE) LIKE  SPROT_I-XFELD DEFAULT 'X'",
+        "*\"             VALUE(MASTER_LANGU) LIKE  T100-SPRSL DEFAULT 'E'",
+        "*\"             VALUE(OPEN_FILE) LIKE  SPROT_I-XFELD DEFAULT 'X'",
+        "*\"             VALUE(IV_SUPPRESS_STATISTICS) LIKE  SPROT_I-XFELD",
+        "*\"                             DEFAULT ' '",
+        "*\"       TABLES",
+        "*\"              XMSG STRUCTURE  SPROT_U",
+        "*\"       EXCEPTIONS",
+        "*\"              FILE_NOT_FOUND",
+        "*\"              PROT_NOT_INITIALIZED",
+        "*\"              WRONG_CALL",
+        "*\"----------------------------------------------------------------------",
+        "",
+        "  DATA: lv_trace_err(1)   VALUE 'X',   \"trace errors of XPRAs",
+        "        lv_log_type       TYPE trlog_type,",
+        "        lv_open_output    LIKE trpari-flag,",
+        "        lv_close_output   LIKE trpari-flag,",
+        "        lv_logname_file   LIKE tstrf01-file,",
+        "        lv_logname_memory LIKE tstrf01-filename,",
+        "        lt_xprs           LIKE  ddprs   OCCURS 0   WITH HEADER LINE.",
+        "",
+        "  lv_open_output  = open_file.",
+        "  lv_close_output = close_file.",
+        "  lv_log_type     = trlog_type_file.",
+        "",
+        "  IF gv_mem_file = space.",
+        "    IMPORT gv_mem_file FROM MEMORY ID gv_mem_id.",
+        "    IF sy-subrc <> 0.",
+        "      IF accept_not_init = true.",
+        "*       redirect output from file to screen",
+        "        lv_log_type       = trlog_type_memory.",
+        "        lv_logname_memory = 'APPEND_LOG'.",
+        "      ELSE.",
+        "        MESSAGE a000(to) WITH",
+        "          'Protokolldateiname wurde nicht initialisiert'(021)",
+        "          RAISING prot_not_initialized.",
+        "      ENDIF.",
+        "    ENDIF.",
+        "  ENDIF.",
+        "",
+        "  lv_logname_file = gv_mem_file.",
+        "",
+        "  PERFORM main_writer         TABLES lt_xprs",
+        "                                     xmsg",
+        "                              USING  lv_log_type",
+        "                                     lv_logname_file",
+        "                                     space           \"lv_logname_db",
+        "                                     lv_logname_memory",
+        "                                     lv_open_output",
+        "                                     lv_close_output",
+        "                                     master_langu",
+        "                                     condense",
+        "                                     lv_trace_err.",
+        "",
+        "ENDFUNCTION."
+      ],
+      "fingerprint": "3eefca0e850893b71e530b05c24dc13593488f532396891f0d264899617fc025",
+      "interfaceFingerprint": "c03923319df8ca5859ffb7494393c6671ac4c007f11468b27c7359c7461bfa15",
+      "sourceFingerprint": "767668e2bc19f9c9004cf946b2d87d208695fa26461e2719094bbeb33cd2ae3a"
+    },
+    "LCT_MESSAGE": {
+      "connectionId": "w200",
+      "functionName": "LCT_MESSAGE",
+      "functionGroup": "SCTI",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "IV_MSGID",
+          "typeName": "SY-MSGID",
+          "optional": false,
+          "passByValue": true,
+          "description": "Message ID"
+        },
+        {
+          "name": "IV_MSGTY",
+          "typeName": "SPROT_U-SEVERITY",
+          "optional": false,
+          "passByValue": true,
+          "description": "Output Type"
+        },
+        {
+          "name": "IV_MSGNO",
+          "typeName": "SY-MSGNO",
+          "optional": false,
+          "passByValue": true,
+          "description": "Message number"
+        },
+        {
+          "name": "IV_MSGV1",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": "Variable 1"
+        },
+        {
+          "name": "IV_MSGV2",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": "Variable 2"
+        },
+        {
+          "name": "IV_MSGV3",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": "Variable 3"
+        },
+        {
+          "name": "IV_MSGV4",
+          "typeName": "",
+          "optional": true,
+          "passByValue": true,
+          "description": "Variable 4"
+        },
+        {
+          "name": "IV_DIALOG",
+          "typeName": "C",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [],
+      "exceptions": [],
+      "source": [
+        "FUNCTION LCT_MESSAGE.",
+        "*\"----------------------------------------------------------------------",
+        "*\"*\"Lokale Schnittstelle:",
+        "*\"       IMPORTING",
+        "*\"             VALUE(IV_MSGID) LIKE  SY-MSGID",
+        "*\"             VALUE(IV_MSGTY) LIKE  SPROT_U-SEVERITY",
+        "*\"             VALUE(IV_MSGNO) LIKE  SY-MSGNO",
+        "*\"             VALUE(IV_MSGV1) DEFAULT ' '",
+        "*\"             VALUE(IV_MSGV2) DEFAULT ' '",
+        "*\"             VALUE(IV_MSGV3) DEFAULT ' '",
+        "*\"             VALUE(IV_MSGV4) DEFAULT ' '",
+        "*\"             VALUE(IV_DIALOG) TYPE  C DEFAULT ' '",
+        "*\"----------------------------------------------------------------------",
+        "",
+        "  DATA : LT_PROT     LIKE SPROT_U OCCURS 0.",
+        "  DATA : LS_PROT     LIKE SPROT_U.",
+        "",
+        "*** Write message into protocol ***************************************",
+        "  IF IV_DIALOG IS INITIAL.",
+        "    LS_PROT-SEVERITY = IV_MSGTY.",
+        "    CASE IV_MSGTY.",
+        "    WHEN 'A'.",
+        "       LS_PROT-LEVEL    = 1.",
+        "    WHEN 'E'.",
+        "       LS_PROT-LEVEL    = 2.",
+        "    WHEN 'W'.",
+        "       LS_PROT-LEVEL    = 3.",
+        "    WHEN OTHERS.",
+        "       LS_PROT-LEVEL    = 4.",
+        "    ENDCASE.",
+        "    LS_PROT-LANGU    = SY-LANGU.",
+        "    LS_PROT-AG       = IV_MSGID.",
+        "    LS_PROT-MSGNR    = IV_MSGNO.",
+        "    LS_PROT-VAR1     = IV_MSGV1.",
+        "    LS_PROT-VAR2     = IV_MSGV2.",
+        "    LS_PROT-VAR3     = IV_MSGV3.",
+        "    LS_PROT-VAR4     = IV_MSGV4.",
+        "    APPEND LS_PROT TO LT_PROT.",
+        "",
+        "",
+        "    CALL FUNCTION 'APPEND_PROTOCOL'",
+        "         EXPORTING",
+        "              ACCEPT_NOT_INIT      = GC_NO",
+        "              CLOSE_FILE           = GC_YES",
+        "              CONDENSE             = GC_NO",
+        "              MASTER_LANGU         = SY-LANGU",
+        "              OPEN_FILE            = GC_YES",
+        "         TABLES",
+        "              XMSG                 = LT_PROT",
+        "         EXCEPTIONS",
+        "              OTHERS               = 01.   \"#EC *",
+        "",
+        "*** Issue online message **********************************************",
+        "  ELSE.",
+        "    MESSAGE ID      IV_MSGID",
+        "            TYPE    IV_MSGTY",
+        "            NUMBER  IV_MSGNO",
+        "            WITH    IV_MSGV1 IV_MSGV2 IV_MSGV3 IV_MSGV4.",
+        "  ENDIF.",
+        "",
+        "ENDFUNCTION."
+      ],
+      "fingerprint": "712a83e13dcc819fe63a75712d135b55564517aba43b0cd2f40881b95f731e3d",
+      "interfaceFingerprint": "2518a9016f89cae5846b987df6559091a56e6d46d37678e0054f2a6613c4ff6b",
+      "sourceFingerprint": "a94cc86f2060a0be9dd9e3ecae14725e3064441553bcc4cd57e111af871f01e7"
+    },
+    "TR_READ_LOG": {
+      "connectionId": "w200",
+      "functionName": "TR_READ_LOG",
+      "functionGroup": "SLOG",
+      "shortText": "",
+      "remoteMode": "",
+      "updateTask": false,
+      "updateTaskMode": "",
+      "globalInterface": false,
+      "remoteEnabled": false,
+      "importParameters": [
+        {
+          "name": "IV_LOG_TYPE",
+          "typeName": "TRLOG_TYPE",
+          "optional": true,
+          "passByValue": true,
+          "description": ""
+        },
+        {
+          "name": "IV_LOGNAME_FILE",
+          "typeName": "TSTRF01-FILE",
+          "optional": true,
+          "passByValue": true,
+          "description": "Name of log (file)"
+        },
+        {
+          "name": "IV_LOGNAME_DB",
+          "typeName": "DDPRH-PROTNAME",
+          "optional": true,
+          "passByValue": true,
+          "description": "Name of log (database)"
+        },
+        {
+          "name": "IV_LOGNAME_MEMORY",
+          "typeName": "TSTRF01-FILENAME",
+          "optional": true,
+          "passByValue": true,
+          "description": "Name of log (memory)"
+        },
+        {
+          "name": "IV_TIMESTAMP",
+          "typeName": "TSTAMP",
+          "optional": true,
+          "passByValue": true,
+          "description": "Time stamp of step (only for search)"
+        },
+        {
+          "name": "IV_CLIENT",
+          "typeName": "T000-MANDT",
+          "optional": true,
+          "passByValue": true,
+          "description": "Client"
+        },
+        {
+          "name": "IV_LANGUAGE",
+          "typeName": "SY-LANGU",
+          "optional": true,
+          "passByValue": true,
+          "description": "Display language"
+        }
+      ],
+      "exportParameters": [],
+      "changingParameters": [],
+      "tableParameters": [
+        {
+          "name": "ET_LINES",
+          "typeName": "TRLOG",
+          "optional": false,
+          "passByValue": false,
+          "description": ""
+        }
+      ],
+      "exceptions": [
+        {
+          "name": "INVALID_INPUT",
+          "description": "Invalid entry"
+        },
+        {
+          "name": "ACCESS_ERROR",
+          "description": "Log could not be read"
+        }
+      ],
+      "source": [
+        "FUNCTION TR_READ_LOG.",
+        "*\"----------------------------------------------------------------------",
+        "*\"*\"Lokale Schnittstelle:",
+        "*\"  IMPORTING",
+        "*\"     VALUE(IV_LOG_TYPE) TYPE  TRLOG_TYPE DEFAULT 'FILE'",
+        "*\"     VALUE(IV_LOGNAME_FILE) LIKE  TSTRF01-FILE OPTIONAL",
+        "*\"     VALUE(IV_LOGNAME_DB) LIKE  DDPRH-PROTNAME OPTIONAL",
+        "*\"     VALUE(IV_LOGNAME_MEMORY) LIKE  TSTRF01-FILENAME OPTIONAL",
+        "*\"     VALUE(IV_TIMESTAMP) TYPE  TSTAMP DEFAULT '00000000000000'",
+        "*\"     VALUE(IV_CLIENT) TYPE  T000-MANDT DEFAULT '   '",
+        "*\"     VALUE(IV_LANGUAGE) LIKE  SY-LANGU DEFAULT SYST-LANGU",
+        "*\"  TABLES",
+        "*\"      ET_LINES STRUCTURE  TRLOG",
+        "*\"  EXCEPTIONS",
+        "*\"      INVALID_INPUT",
+        "*\"      ACCESS_ERROR",
+        "*\"----------------------------------------------------------------------",
+        "",
+        "*---------------------------------------------------read log------------",
+        "    PERFORM READ_LOG          TABLES   ET_LINES",
+        "                              USING    IV_LOG_TYPE",
+        "                                       IV_LOGNAME_FILE",
+        "                                       IV_LOGNAME_DB",
+        "                                       IV_LOGNAME_MEMORY",
+        "                                       IV_LANGUAGE",
+        "                                       IV_TIMESTAMP",
+        "                                       IV_CLIENT .",
+        "ENDFUNCTION."
+      ],
+      "fingerprint": "3009a7b73e70b427b454800e54e8d88cf35b79cad063c81879cf34e4cc6ae1d7",
+      "interfaceFingerprint": "ae43b7db73e2e3541af9ecb48f488f4c4a8f74cc5c684a704445dd854a9f646f",
+      "sourceFingerprint": "9fc226ed70b744b22c969e350548f63e2af9a5aa327f6679058133a47307c5e9"
+    }
+  },
+  "includes": {
+    "LSLOGTOP": {
+      "connectionId": "w200",
+      "objectName": "LSLOGTOP",
+      "sourceUri": "/sap/bc/adt/functions/groups/slog/includes/lslogtop/source/main",
+      "source": "FUNCTION-POOL slog        NO STANDARD PAGE HEADING\r\n                          LINE-SIZE 152.\r\n\r\nTYPE-POOLS: trlog, sabc.\r\n\r\n* global types\r\nTYPES: BEGIN OF gty_stack_killer,\r\n         ok(1) TYPE c,\r\n         trkorr TYPE trkorr,\r\n         method TYPE ob_method,\r\n         methodname TYPE rs38l_fnam,\r\n       END OF gty_stack_killer.\r\n\r\n*----miscancellous constants--------------------------------------------\r\nCONSTANTS: gc_translate_sep(2)   VALUE '\"''',\r\n           gc_any_filler(2)      VALUE '&$',\r\n           filler(1)             VALUE '&',\r\n           var_border(1)         VALUE '\"',\r\n           gc_default_language   LIKE t100-sprsl VALUE 'E',\r\n           true                  VALUE 'X',\r\n           false                 VALUE ' ',\r\n           true_false(2)         VALUE ' X',\r\n           lev1_chars(1)         VALUE '#',\r\n           level_bad_entry(1)    TYPE n VALUE 3,\r\n           gc_notfound_text(30)\r\n                             VALUE 'Unknown message with & & & &'.\"#EC *\r\n\r\n*& set file size to  read in compact mode (for large files).\r\n*& In the future the value maybe raised.\r\nCONSTANTS: gv_filesize_large  LIKE epsf-epsfilsiz VALUE 50000000.\r\n\r\n*------return codes-----------------------------------------------------\r\nCONSTANTS: abort_rc      LIKE sprot-severity  VALUE 'A',\r\n           err_rc        LIKE sprot-severity  VALUE 'E',\r\n           postupg_rc    LIKE sprot-severity  VALUE 'P',\r\n           warn_rc       LIKE sprot-severity  VALUE 'W',\r\n           ok_rc         LIKE sprot-severity  VALUE ' ',\r\n           all_rc(5)                          VALUE ' WPEA',\r\n           gc_ok_rc_alternatives(2)           VALUE 'IS'.\r\n\r\n\r\n\r\n*------log levels-------------------------------------------------------\r\nCONSTANTS: abort_level   LIKE sprot-level     VALUE  1,\r\n           err_level     LIKE sprot-level     VALUE  2,\r\n           postupg_level LIKE sprot-level     VALUE  2,\r\n           low_level     LIKE sprot-level     VALUE  4,\r\n           all_level(9)                       VALUE '123456789',\r\n           gc_min_level  LIKE trlog-level     VALUE '1',\r\n           gc_max_level  LIKE trlog-level     VALUE '9'.\r\n\r\n* memory IDs\r\nCONSTANTS: gc_mem_id_stack_killer(30)\r\n              VALUE 'sCTS_stacK_kIlleR_mETh'.               \"#EC NOTEXT\r\n\r\n*--------special messages-----------------------------------------------\r\n* Exit code message by tp\r\nCONSTANTS: tp_rc_ag       LIKE sprot-ag    VALUE 'TP',\r\n           tp_rc_msgnr    LIKE sprot-msgnr VALUE '111'.\r\n\r\n\r\n*---------various variables---------------------------------------------\r\nDATA: gv_check_levels            VALUE ' ',\r\n      gv_error_occured           LIKE sprot-severity  VALUE ' ',\r\n      gv_mem_file                LIKE sprot_i-prot    VALUE ' ',\r\n\r\n      gv_mem_id_error_occured(9) VALUE 'prot_errf',\r\n      gv_mem_id_check_levels(9)  VALUE 'prot_chkl',\r\n      gv_mem_id(9)               VALUE 'prot_file',\r\n\r\n      gc_master_lang1            LIKE  t100-sprsl   VALUE 'E',\r\n      gc_master_lang2            LIKE  t100-sprsl   VALUE 'D',\r\n      gv_language                LIKE  sy-langu,\r\n      gv_titlebar                LIKE  sy-title,\r\n      gv_heading1(100)           TYPE  c,\r\n      gv_heading2(100)           TYPE  c,\r\n      gv_refresh                 TYPE  c,\r\n      gs_line                    LIKE  trlog,    \"hide variable\r\n      gv_with_long_text_icon     TYPE  c,\r\n      dv_with_long_text_icon     TYPE  c,\r\n      gv_with_line_numbers       TYPE  c,\r\n      dv_with_line_numbers       TYPE  c,\r\n      gv_with_message_numbers    TYPE  c,\r\n      dv_with_message_numbers    TYPE  c,\r\n      gv_with_level              TYPE  c,\r\n      dv_with_level              TYPE  c,\r\n      gv_with_refresh_icon       TYPE  c,\r\n      gv_gui_status              TYPE  gui_status,\r\n      gv_user_canceled           TYPE  c,\r\n      gv_user_wants_display      TYPE  c,\r\n      dv_fcode                   LIKE  sy-ucomm.\r\n\r\nDATA: gt_lines                   LIKE  trlog  OCCURS 0.\r\n\r\nTYPES: BEGIN OF ts_log,\r\n         logname TYPE ddprs-protname,\r\n         ddprs   TYPE ddprs OCCURS 0,\r\n       END OF ts_log.\r\nDATA: gt_logs TYPE TABLE OF ts_log.\r\n\r\nDATA: gs_refresh_parameters     TYPE trlog_refresh_parameters,\r\n      gv_first_time             TYPE c      VALUE 'X'.\r\n\r\n*--- TRINT_PUT_VARS_INTO_LINE -----------------------------------------*\r\n* table for message variables; it is a global table since\r\n* creation of internal tables is expensive\r\nDATA:   BEGIN OF gt_var OCCURS 4,\r\n          v      LIKE sprot_u-var1,\r\n          used(1),\r\n        END OF gt_var.\r\nDATA:   gv_gt_var_filled(1) VALUE ' '. \"mark that GT_VAR has 4 entries\r\n\r\nDATA:  BEGIN OF gt_t100 OCCURS 0.\r\n        INCLUDE STRUCTURE t100.\r\nDATA:    real_langu      LIKE t100-sprsl,\r\n         not_found       LIKE sprot_i-xfeld,\r\n       END   OF gt_t100 .\r\n*----------------------------------------------------------------------*\r\n\r\n\r\n************************************************************************\r\n*  M A C R O S                                                         *\r\n************************************************************************\r\nDEFINE current_message_raising.\r\n  message id     sy-msgid\r\n          type   sy-msgty\r\n          number sy-msgno\r\n          with   sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4\r\n          raising  &1.\r\nEND-OF-DEFINITION.\r\n",
+      "observedAt": "2026-10-08T03:37:37.291Z"
+    },
+    "LSLOGF03": {
+      "connectionId": "w200",
+      "objectName": "LSLOGF03",
+      "sourceUri": "/sap/bc/adt/functions/groups/slog/includes/lslogf03/source/main",
+      "source": "*----------------------------------------------------------------------*\r\n*   INCLUDE LSLOGF03                                                   *\r\n*----------------------------------------------------------------------*\r\n\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  READ_LOG_FILE\r\n*&---------------------------------------------------------------------*\r\nFORM read_log_file TABLES   pt_lines      STRUCTURE trlog\r\n                   USING    pv_logname    LIKE tstrf01-file\r\n                            pv_language   LIKE syst-langu\r\n                            pv_timestamp  TYPE tstamp\r\n                            pv_client     TYPE t000-mandt .\r\n\r\n  DATA: ls_cont        LIKE trlogr,    \"transfer container\r\n        ls_line        LIKE trlog,\r\n        lv_line_num    TYPE i,        \" total line nummer of the log .\r\n        lv_start_index TYPE i,\r\n        lv_stop_index  TYPE i,\r\n        lv_start_index_time  TYPE i, \" startline if timestamp matchs,\r\n        lv_stop_index_time  TYPE i, \" lastline if timestamp matchs,\r\n        lv_count  TYPE i VALUE 0 , \" count for timestamp matchs.\r\n        lv_timestamp_flag     TYPE c VALUE ' ' ,  \" timestamp flag\r\n        lv_client_flag TYPE c VALUE ' ',  \" client flag\r\n        lv_repid       LIKE sy-repid,\r\n        lv_filename    LIKE authb-filename.\r\n  FIELD-SYMBOLS: <ls_line> LIKE trlog.\r\n  DATA lv_filesize LIKE epsf-epsfilsiz . \" filesize\r\n  DATA lv_large_file TYPE c VALUE ' '.\r\n\r\n  DATA:  lv_delblock1_beg  TYPE i ,\r\n         lv_delblock1_end  TYPE i ,\r\n         lv_delblock2_beg  TYPE   i ,\r\n         lv_delblock2_end  TYPE   i .\r\n*& --------------------input check-------------------\r\n  IF pv_logname = space.\r\n    MESSAGE e314(pu)      RAISING invalid_input.\r\n  ENDIF.\r\n\r\n*& -------------------Authority check ------------------------\r\n*&  SY-REPID IS EVALUATED IN FUNCTION GROUP WHEN USED AS PARAMETER!!!\r\n  lv_repid    = sy-repid.\r\n  lv_filename = pv_logname.\r\n  CALL FUNCTION 'AUTHORITY_CHECK_DATASET'\r\n    EXPORTING\r\n      program      = lv_repid\r\n      activity     = sabc_act_read\r\n      filename     = lv_filename\r\n    EXCEPTIONS\r\n      no_authority = 1.\r\n  IF sy-subrc <> 0.\r\n    MESSAGE e807(pu) WITH pv_logname   RAISING file_access_error.\r\n  ENDIF.\r\n\r\n*&---------------get the size of this log file---------------\r\n\r\n  CALL FUNCTION 'TRINT_GET_LOGFILE_ATTRIBUTES'\r\n    EXPORTING\r\n      iv_logname  = pv_logname\r\n    IMPORTING\r\n      ev_filesize = lv_filesize\r\n    EXCEPTIONS\r\n      OTHERS      = 1.\r\n\r\n  IF sy-subrc <> 0 .\r\n    lv_filesize = 0 .\r\n  ENDIF.\r\n\r\n  IF lv_filesize > gv_filesize_large.\r\n    MESSAGE s826(pu) WITH lv_filesize .\r\n    lv_large_file = 'X' .  \" file recongized as 'Large File '\r\n  ENDIF.\r\n\r\n*& ---------------- read raw log lines from OS file -------------------\r\n  CLEAR: pt_lines[].\r\n\r\n  TRY.\r\n      OPEN DATASET pv_logname FOR INPUT\r\n                              IN TEXT MODE\r\n                              ENCODING UTF-8 IGNORING CONVERSION ERRORS.\r\n    CATCH cx_sy_file_open.\r\n*       in case the file is already opened, close it and reopen it\r\n*       again with the right parameters\r\n      CLOSE DATASET pv_logname.\r\n      OPEN DATASET pv_logname FOR INPUT\r\n                              IN TEXT MODE\r\n                              ENCODING UTF-8 IGNORING CONVERSION ERRORS.\r\n  ENDTRY.\r\n\r\n  IF sy-subrc = 0.\r\n\r\n    DO.\r\n      READ DATASET pv_logname INTO ls_cont.\r\n      IF sy-subrc <> 0. EXIT. ENDIF.\r\n\r\n*& following lines will be read :\r\n*& 1. if file not extra large all lines.\r\n*& 2. large file :\r\n*&   a) only error level '1,2,3' will be read.\r\n*&   b) message class Format 3.0  and  message class\r\n*&      format 4.0(lang message)\r\n*&   c) lines with client info: (level 4 as exception) .\r\n\r\n      IF  lv_large_file = ' '  OR  \" normal file, all lines\r\n          ls_cont(1) CA '123'  OR                           \" level 1-3\r\n          ( ls_cont(1) = 'A' AND ls_cont(2) CA '123' )  \"lang message.\r\n          OR ( ls_cont CS 'client' OR ls_cont CS 'Mandant' ) .\r\n        \"clieninfo .\r\n\r\n        PERFORM convert_line USING  ls_cont\r\n                                    pv_language\r\n                                    CHANGING ls_line.\r\n        APPEND ls_line TO pt_lines .\r\n\r\n      ENDIF.\r\n    ENDDO.\r\n    CLOSE DATASET pv_logname.\r\n  ELSE.\r\n    MESSAGE e315(pu) WITH pv_logname   RAISING file_access_error.\r\n  ENDIF.\r\n\r\n*& ---------------- take only that part of the log where -------------\r\n*& --------------    both timestamp and CLIENT match -------------------\r\n\r\n*& check if timestamp initial .\r\n  IF pv_timestamp = space.\r\n    RETURN . \"  avoid run time error.\r\n  ENDIF.\r\n\r\n* check if client specific.\r\n  IF pv_client = '  ' . \" not client specific\r\n    lv_client_flag = 'X' .  \" client need not be checked    .\r\n  ENDIF.\r\n\r\n  LOOP AT pt_lines ASSIGNING <ls_line>\r\n                   WHERE class = 'TP'\r\n                   AND ( number = '199' \" beginn line\r\n                   OR number = '110' )  \" endline\r\n                   OR  LINE CS 'client'\r\n                   OR  LINE CS 'Mandant' . \"client line\r\n\r\n*& begin a new section.\r\n    IF     <ls_line>-newsection = 'X' AND <ls_line>-number = '199'.\r\n\r\n      lv_start_index = sy-tabix. \" index of the begin line\r\n      lv_timestamp_flag        = space. \" refresh in every section\r\n      IF pv_client <> space . \"   client specific refresh\r\n        lv_client_flag = space .      .\r\n      ENDIF.\r\n\r\n*& check client line .\r\n    ELSEIF   <ls_line>-line  CS 'client' AND\r\n                         <ls_line>-line CS pv_client\r\n             OR\r\n         <ls_line>-line  CS 'Mandant'  AND\r\n                         <ls_line>-line CS pv_client.\r\n      lv_client_flag = 'X' . \"client OK\r\n\r\n*& check timestamp line.\r\n    ELSEIF <ls_line>-newsection = ' ' AND <ls_line>-number = '110'\r\n       AND <ls_line>-line CS pv_timestamp.\r\n      lv_timestamp_flag        = 'X'.  \" Ok,timestep correct.\r\n\r\n*& check endline of a section\r\n*& section end for this timestamp\r\n    ELSEIF <ls_line>-newsection = ' ' AND <ls_line>-number = '199'  .\r\n\r\n      IF  lv_timestamp_flag = 'X' AND lv_client_flag = 'X'  .\r\n        lv_stop_index = sy-tabix.\r\n        EXIT . \" all OK .\r\n      ENDIF.\r\n\r\n*&  It's necessary to  record the  startline and stopline\r\n*&   even only  timestamp matchs, in case there is no\r\n*&   client line in logfile can match , noticed the line nummber .\r\n*&   will be oversteered if  clientinfo is available in log.\r\n      IF  lv_timestamp_flag = 'X' .\r\n*& collect all sections , if timestamp matches.\r\n        IF lv_count =  0 .  \" start from the first matching section .\r\n          lv_start_index_time =  lv_start_index .\r\n        ENDIF.\r\n        lv_count = lv_count + 1 . \"ensure not start from other sect.\r\n        lv_stop_index_time  = sy-tabix.\r\n      ENDIF.\r\n\r\n    ENDIF.\r\n*& if still not jump out ,goto next section!\r\n  ENDLOOP.\r\n\r\n*&---------------------------- Exceptions Behandlung\r\n*----------------------\r\n\r\n*&  Exception  1:   given client not found :\r\n*&     get parts which timestamp matches.\r\n*&  if also no timestamp found  , hier get at first '0' value .\r\n  IF lv_client_flag =  '   ' . \" given client not found .\r\n    lv_start_index = lv_start_index_time .\r\n    lv_stop_index = lv_stop_index_time  .\r\n  ENDIF.\r\n\r\n*& Exception 2 : given timestamp not found .\r\n*& including neither client nor timestamp not found : the whole log .\r\n  IF lv_timestamp_flag = ' ' AND lv_count = 0 .\r\n    \"no time stamp gefunden .\r\n    lv_start_index = 1.\r\n    DESCRIBE TABLE pt_lines LINES lv_stop_index.\r\n    MESSAGE s311(pu).\r\n  ENDIF.\r\n\r\n*& Exception 4:last safeguiding: lv_stop_index = 0 but lt_lines <> 0\r\n*& take all log .\r\n  DESCRIBE TABLE pt_lines LINES  lv_line_num .\r\n  IF lv_stop_index = 0 AND  lv_line_num  <> 0 .\r\n    lv_start_index = 1.\r\n    lv_stop_index  =  lv_line_num .\r\n    MESSAGE s311(pu).\r\n  ENDIF .\r\n\r\n*& --------------------  Output the result ------------------\r\n  IF lv_stop_index = 0.\r\n*& exception 5 : lt_lines = 0  empty log.\r\n    MESSAGE i293(pu).\r\n  ELSE.\r\n\r\n*& reduce pt_lines to the required parts.\r\n\r\n* delete block before required\r\n    IF  lv_start_index <> 1 .\r\n      lv_delblock1_beg  = 1 .\r\n      lv_delblock1_end  = lv_start_index - 1  .\r\n      DELETE pt_lines FROM lv_delblock1_beg   TO lv_delblock1_end  .\r\n    ENDIF.\r\n\r\n* delete block after required\r\n    IF lv_stop_index <> lv_line_num  .\r\n      lv_delblock2_beg = lv_stop_index - lv_start_index  + 2 .\r\n      lv_delblock2_end = lv_line_num  - lv_start_index  +  1 .\r\n\r\n      DELETE pt_lines FROM lv_delblock2_beg   TO lv_delblock2_end  .\r\n\r\n    ENDIF .\r\n\r\n  ENDIF.\r\n\r\n\r\nENDFORM.                               \" READ_LOG_FILE\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  READ_LOG_DB\r\n*&---------------------------------------------------------------------*\r\nFORM read_log_db   TABLES   pt_lines    STRUCTURE trlog\r\n                   USING    pv_logname  LIKE ddprh-protname\r\n                            pv_language LIKE syst-langu.\r\n\r\n  DATA: ls_cont       LIKE trlogr,     \"transfer container\r\n        ls_line       LIKE trlog,\r\n        lt_ddprs      LIKE ddprs        OCCURS 0.\r\n  FIELD-SYMBOLS: <ls_ddprs> LIKE ddprs.\r\n\r\n  CLEAR: pt_lines[].\r\n\r\n  IF pv_logname = space.\r\n    MESSAGE e314(pu)      RAISING invalid_input.\r\n  ENDIF.\r\n\r\n  SELECT * FROM ddprs INTO TABLE lt_ddprs WHERE protname = pv_logname\r\n                      ORDER BY PRIMARY KEY.\r\n\r\n  IF sy-subrc <> 0.\r\n    MESSAGE e315(pu) WITH pv_logname  RAISING db_access_error.\r\n  ENDIF.\r\n\r\n  LOOP AT lt_ddprs ASSIGNING <ls_ddprs>.\r\n    ls_cont = <ls_ddprs>-line.\r\n\r\n    PERFORM convert_line    USING    ls_cont\r\n                                     pv_language\r\n                            CHANGING ls_line.\r\n    APPEND ls_line TO pt_lines.\r\n  ENDLOOP.\r\n\r\nENDFORM.                    \"read_log_db\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  CONVERT_LINE\r\n*&---------------------------------------------------------------------*\r\nFORM convert_line  USING    ps_cont     LIKE trlogr\r\n                            pv_language LIKE sy-langu\r\n                   CHANGING ps_line     LIKE trlog.\r\n\r\n  DATA: ls_ll40            TYPE trlog_ll40,\r\n        lv_valid_format(1),\r\n        lv_var1            LIKE sy-msgv1.\r\n\r\n  CLEAR: ps_line.\r\n\r\n* analize line format of ps_cont\r\n  PERFORM fill_ll40        USING     ps_cont\r\n                           CHANGING  ls_ll40\r\n                                     lv_valid_format.\r\n  IF lv_valid_format = 'X'.\r\n    ps_line-line       = ls_ll40-line.\r\n    PERFORM translate_msg     USING    ls_ll40-ag ls_ll40-msgnr\r\n                                       pv_language\r\n                              CHANGING ps_line-line.\r\n    ps_line-level      = ls_ll40-level.\r\n    ps_line-severity   = ls_ll40-severity.\r\n    ps_line-langu      = ls_ll40-langu.\r\n    ps_line-class      = ls_ll40-ag.\r\n    ps_line-number     = ls_ll40-msgnr.\r\n    ps_line-newsection = ls_ll40-newobj.\r\n    ps_line-orig_line  = ls_ll40-line.\r\n\r\n    IF ( ps_line-class = 'PU' AND ps_line-number = '120' )\r\n     AND ps_line-level <> 5.\r\n      ps_line-level = 5.\r\n    ENDIF.\r\n\r\n  ELSE.\r\n    ps_line-line       = ps_cont-rawline.\r\n    ps_line-severity   = ps_cont-rawline(1).\r\n    ps_line-newsection = ' '.\r\n\r\n    IF ps_line-severity CO lev1_chars.\r\n      ps_line-level = 1.\r\n    ELSE.\r\n      ps_line-level = level_bad_entry.\r\n    ENDIF.\r\n\r\n    IF ps_line-severity CO all_rc\r\n         AND ps_cont-rawline+1(1) CO ' -'.\r\n      SHIFT ps_line-line BY 2 PLACES.\r\n      IF ps_cont-rawline+2(1) EQ space.\r\n        SHIFT ps_line-line.\r\n      ENDIF.\r\n    ELSE.\r\n      ps_line-severity = space.\r\n    ENDIF.\r\n* correct level for A- and E-messages ?\r\n    IF ps_line-severity = abort_rc   AND  ps_line-level > abort_level.\r\n      ps_line-level = abort_level.\r\n    ENDIF.\r\n    IF ps_line-severity = err_rc     AND  ps_line-level > err_level.\r\n      ps_line-level = err_level.\r\n    ENDIF.\r\n    IF ps_line-severity = postupg_rc AND  ps_line-level > postupg_level.\r\n      ps_line-level = postupg_level.\r\n    ENDIF.\r\n    ps_line-langu      = space.\r\n    ps_line-class      = space.\r\n    ps_line-number     = space.\r\n    ps_line-orig_line  = space.\r\n  ENDIF.\r\n\r\n  IF ( ps_line-class = tp_rc_ag AND ps_line-number = tp_rc_msgnr ).\r\n    CALL FUNCTION 'TRINT_GET_VARS_FROM_LINE'\r\n      EXPORTING\r\n        iv_line = ps_line-orig_line\r\n      IMPORTING\r\n        ev_var1 = lv_var1.\r\n    CASE lv_var1.\r\n      WHEN '0'.\r\n      WHEN '4'.    ps_line-severity = warn_rc.\r\n      WHEN '6'.    ps_line-severity = warn_rc.\r\n      WHEN '8'.    ps_line-severity = err_rc.\r\n      WHEN '12'.   ps_line-severity = abort_rc.\r\n      WHEN OTHERS. ps_line-severity = err_rc.\r\n    ENDCASE.\r\n  ENDIF.\r\n\r\nENDFORM.                    \"convert_line\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM FILL_LL40                                                *\r\n*---------------------------------------------------------------------*\r\nFORM fill_ll40   USING     ps_cont         LIKE trlogr\r\n                 CHANGING  ps_ll40         TYPE trlog_ll40\r\n                           pv_valid_format TYPE c.\r\n\r\n  DATA: ls_ll30          TYPE trlog_ll30,\r\n        ls_ll40          TYPE trlog_ll40,\r\n        ls_ll40_p2       TYPE trlog_ll40_p2,\r\n        lv_msgsep_offset TYPE i.\r\n\r\n  CLEAR: ps_ll40, pv_valid_format.\r\n  ls_ll30 = ps_cont-rawline.\r\n  ls_ll40 = ps_cont-rawline.\r\n\r\n* valid 3.0 format?\r\n* don't use ls_ll30-level, until you know, that it's a number!!!\r\n  IF  ls_ll30(1)       CO all_level\r\n  AND ls_ll30-severity CO all_rc\r\n  AND ls_ll30-newobj   CO true_false.\r\n\r\n    MOVE-CORRESPONDING ls_ll30 TO ps_ll40.\r\n    ps_ll40-logversion = trlog_logversion_40.\r\n    pv_valid_format = 'X'.\r\n\r\n  ELSEIF ls_ll40-logversion = trlog_logversion_40\r\n  AND    ls_ll40+trlog_level_offset(1) CO all_level\r\n  AND    ls_ll40-severity CO all_rc.\r\n*   valid 4.0 format?\r\n*   don't use ls_ll40-level, until you know, that it's a number!!!\r\n\r\n*   trailing blanks in AG are ommitted in the file\r\n    IF ls_ll40-ag CA ' '. ENDIF.\r\n    lv_msgsep_offset = sy-fdpos + trlog_ag_offset.\r\n    ls_ll40+lv_msgsep_offset = space.\r\n    ls_ll40_p2 = ps_cont-rawline+lv_msgsep_offset.\r\n    IF ls_ll40_p2-newobj CO true_false.\r\n      ps_ll40 = ls_ll40.\r\n      MOVE-CORRESPONDING ls_ll40_p2 TO ps_ll40.\r\n      pv_valid_format = 'X'.\r\n    ENDIF.\r\n  ENDIF.\r\nENDFORM.                                                    \"fill_ll40\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM TRANSLATE_MSG                                            *\r\n*---------------------------------------------------------------------*\r\nFORM translate_msg USING pv_ag\r\n                         pv_msgnr\r\n                         pv_language  LIKE sy-langu\r\n                   CHANGING pv_line   LIKE sprot-line.\r\n  DATA: lv_t100            LIKE t100,\r\n        lv_not_found       LIKE sprot_i-xfeld,\r\n        lv_var1            LIKE sy-msgv1,\r\n        lv_var2            LIKE sy-msgv2,\r\n        lv_var3            LIKE sy-msgv3,\r\n        lv_var4            LIKE sy-msgv4.\r\n\r\n* special logic for these two messages, no conversions\r\n  IF pv_ag = 'D0' AND\r\n    ( pv_msgnr = '313' OR pv_msgnr = '314' ).\r\n    EXIT.\r\n  ENDIF.\r\n\r\n  lv_t100-sprsl = pv_language.\r\n  lv_t100-arbgb = pv_ag.\r\n  lv_t100-msgnr = pv_msgnr.\r\n\r\n* get T100 message from buffer or database\r\n  CALL FUNCTION 'TRINT_GET_T100_FROM_BUFFER'\r\n    EXPORTING\r\n      iv_sprsl     = lv_t100-sprsl\r\n      iv_arbgb     = lv_t100-arbgb\r\n      iv_msgnr     = lv_t100-msgnr\r\n    IMPORTING\r\n      ev_text      = lv_t100-text\r\n      ev_not_found = lv_not_found.\r\n\r\n  IF lv_not_found <> 'X'.\r\n* get message variables\r\n    CALL FUNCTION 'TRINT_GET_VARS_FROM_LINE'\r\n      EXPORTING\r\n        iv_line = pv_line\r\n      IMPORTING\r\n        ev_var1 = lv_var1\r\n        ev_var2 = lv_var2\r\n        ev_var3 = lv_var3\r\n        ev_var4 = lv_var4.\r\n\r\n* Replace fillers in T100 message with variables\r\n    pv_line = lv_t100-text.\r\n    CALL FUNCTION 'TRINT_PUT_VARS_INTO_LINE'\r\n      EXPORTING\r\n        iv_line          = pv_line\r\n        iv_var1          = lv_var1\r\n        iv_var2          = lv_var2\r\n        iv_var3          = lv_var3\r\n        iv_var4          = lv_var4\r\n        iv_with_sep      = ' '\r\n        iv_condense_vars = ' '\r\n      IMPORTING\r\n        ev_line          = pv_line.\r\n  ELSE.\r\n* T100 message not found in desired language\r\n    CALL FUNCTION 'TRINT_GET_VARS_FROM_LINE'\r\n      EXPORTING\r\n        iv_line = pv_line\r\n      IMPORTING\r\n        ev_line = pv_line.\r\n  ENDIF.\r\nENDFORM.                    \"translate_msg\r\n",
+      "observedAt": "2026-10-08T03:41:42.954Z"
+    },
+    "LSLOGF05": {
+      "connectionId": "w200",
+      "objectName": "LSLOGF05",
+      "sourceUri": "/sap/bc/adt/functions/groups/slog/includes/lslogf05/source/main",
+      "source": "*----------------------------------------------------------------------*\r\n*   INCLUDE LSLOGF05\r\n**----------------------------------------------------------------------\r\n*\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  EVALUATE_CHECK_LEVELS\r\n*&---------------------------------------------------------------------*\r\nFORM evaluate_check_levels.\r\n  IF gv_check_levels <> 'Y' AND gv_check_levels <> 'N' .\r\n    IMPORT gv_check_levels FROM MEMORY ID gv_mem_id_check_levels.\r\n    IF gv_check_levels <> 'Y' AND gv_check_levels <> 'N' .\r\n      gv_check_levels = 'N'.           \" default\r\n    ENDIF.\r\n  ENDIF.\r\nENDFORM.                               \" EVALUATE_CHECK_LEVELS\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM CONVERT_MESSAGES                                         *\r\n*---------------------------------------------------------------------*\r\nFORM convert_messages    TABLES pt_msgs        STRUCTURE sprot_u\r\n                                pt_rawmsgs     structure trlogr \" raw text\r\n                                pt_ddprs       STRUCTURE ddprs\r\n                         USING  pv_log_type\r\n                                pv_logname_file\r\n                                pv_logname_db\r\n                                pv_trace_err   LIKE trpari-flag\r\n                                pv_master_langu\r\n                                pv_condense    LIKE trpari-flag.\r\n\r\n  DATA: lv_hlp_level(1),\r\n        lv_t100_text          LIKE t100-text,\r\n        lv_subst_langu        LIKE t100-sprsl,\r\n        ls_ll30               TYPE trlog_ll30,\r\n        ls_ll40_p1            TYPE trlog_ll40_p1,\r\n        ls_ll40_p2            TYPE trlog_ll40_p2,\r\n        ls_cont               LIKE trlogr,\r\n        lv_msgsep_offset      TYPE i,\r\n        ls_msg                LIKE sprot_u,\r\n        ls_sprot              LIKE sprot,\r\n        ls_ddprs              LIKE ddprs,\r\n        lv_with_sep           LIKE sprot_i-xfeld,\r\n        lv_msgindex           type i,            \" index - the same as in msgs\r\n        ls_rawmsg             type trlogr.       \" wa for raw text\r\n\r\n* first try to read ERROR_OCCURED from memory if errors shall be traced\r\n  IF pv_trace_err = 'X' AND gv_error_occured = space.\r\n    IMPORT gv_error_occured FROM MEMORY ID gv_mem_id_error_occured.\r\n    IF sy-subrc <> 0.                  \"for security\r\n      gv_error_occured = space.\r\n    ENDIF.\r\n  ENDIF.\r\n\r\n  LOOP AT pt_msgs INTO ls_msg.\r\n    lv_msgindex = sy-tabix.\r\n*--set language (files always in English)\r\n    IF pv_log_type = trlog_type_file.\r\n      ls_msg-langu = gc_default_language.\r\n    ELSE.\r\n      IF ls_msg-langu = space.\r\n        ls_msg-langu = gc_default_language.\r\n      ENDIF.\r\n    ENDIF.\r\n\r\n    IF ls_msg-severity CN all_rc.\r\n      IF ls_msg-severity CO gc_ok_rc_alternatives.\r\n* some callers use severities 'I' or 'S' instead of ' '\r\n        ls_msg-severity = ok_rc.\r\n      ELSE.\r\n* unknown severity: change it into error\r\n        ls_msg-severity = err_rc.\r\n      ENDIF.\r\n    ENDIF.\r\n\r\n    lv_hlp_level = ls_msg-level. \"convert to char for string comparison\r\n    IF lv_hlp_level CN all_level.\r\n* change invalid level to lowest level 4\r\n      ls_msg-level = low_level.\r\n    ENDIF.\r\n\r\n* decrease from level 1 to level 2, if severity <> 'A'\r\n    IF gv_check_levels = 'Y'.\r\n      IF ls_msg-level    =  abort_level   AND               \"1\r\n         ls_msg-severity <> abort_rc .                      \"A\r\n        ls_msg-level = err_level.                           \"2\r\n      ENDIF.\r\n    ENDIF.\r\n\r\n* Save information on errors in global variable gv_error_occured\r\n* if errors shall be traced ( ABORT_RC and  ERR_RC are handled in the\r\n* same way. May be distinguished in future.\r\n    IF pv_trace_err = 'X' AND\r\n      ( ls_msg-severity = abort_rc OR ls_msg-severity = err_rc ).\r\n      gv_error_occured = err_rc.\r\n    ENDIF.\r\n\r\n* Add additional messages in special cases:\r\n* Proceed the output routine twice in these cases\r\n    DO 2 TIMES.\r\n      ls_sprot-level       = ls_msg-level.\r\n      ls_sprot-severity    = ls_msg-severity.\r\n      ls_sprot-ag          = ls_msg-ag.\r\n      ls_sprot-msgnr       = ls_msg-msgnr.\r\n      ls_sprot-newobj      = ls_msg-newobj.\r\n* p.k.: allow raw messages using TW000 (131 Chars) 11.08.2008\r\n      sy-subrc = 1.\r\n      if ls_msg-ag = 'TW' and ls_msg-msgnr = '000'.\r\n        read table pt_rawmsgs into ls_rawmsg index lv_msgindex.\r\n        ls_sprot-line = ls_rawmsg-rawline.\r\n      endif.\r\n      if sy-subrc <> 0.\r\n* p.k.: end\r\n* If master_langu equals ls_msg-LANGU:\r\n* If master_langu is English, take German as alternative language,\r\n* else take English as alternative language.\r\n        IF ls_msg-langu = pv_master_langu.\r\n          IF pv_master_langu = gc_master_lang1.\r\n            lv_subst_langu = gc_master_lang2.\r\n          ELSE.\r\n            lv_subst_langu = gc_master_lang1.\r\n          ENDIF.\r\n        ELSE.\r\n          lv_subst_langu = pv_master_langu.\r\n        ENDIF.\r\n\r\n*     read the message text\r\n        CALL FUNCTION 'TRINT_GET_T100_FROM_BUFFER'\r\n          EXPORTING\r\n            iv_sprsl       = ls_msg-langu\r\n            iv_arbgb       = ls_msg-ag\r\n            iv_msgnr       = ls_msg-msgnr\r\n            iv_subst_langu = lv_subst_langu\r\n          IMPORTING\r\n            ev_text        = lv_t100_text\r\n            ev_sprsl       = ls_sprot-langu.\r\n        ls_sprot-line = lv_t100_text.\r\n\r\n*        special logic for message d0313 and d0314 (no separators)\r\n        IF ls_sprot-ag = 'D0' AND\r\n         ( ls_sprot-msgnr = '313' OR ls_sprot-msgnr = '314' ).\r\n          lv_with_sep = ' '.\r\n        ELSE.\r\n          lv_with_sep = 'X'.\r\n        ENDIF.\r\n\r\n        CALL FUNCTION 'TRINT_PUT_VARS_INTO_LINE'\r\n          EXPORTING\r\n            iv_line          = ls_sprot-line\r\n            iv_var1          = ls_msg-var1\r\n            iv_var2          = ls_msg-var2\r\n            iv_var3          = ls_msg-var3\r\n            iv_var4          = ls_msg-var4\r\n            iv_with_sep      = lv_with_sep\r\n            iv_condense_vars = pv_condense\r\n          IMPORTING\r\n            ev_line          = ls_sprot-line.\r\n      endif.\r\n* decide, if message has to be written in 3.0 or 4.0 format\r\n      IF ls_sprot-ag CA ' '. ENDIF.   \"AG is truncated after first blank\r\n      \"in case of 4.0 format\r\n      lv_msgsep_offset = sy-fdpos.\r\n      IF lv_msgsep_offset LE 2.        \"short AG: use 3.0 format\r\n        CLEAR ls_ll30.\r\n        MOVE-CORRESPONDING ls_sprot TO ls_ll30.\r\n        ls_cont-rawline = ls_ll30.\r\n      ELSE.                            \"long AG: use 4.0 format\r\n        ADD trlog_ag_offset TO lv_msgsep_offset.\r\n        CLEAR: ls_ll40_p1, ls_ll40_p2.\r\n        MOVE-CORRESPONDING ls_sprot TO ls_ll40_p1.\r\n        MOVE-CORRESPONDING ls_sprot TO ls_ll40_p2.\r\n        ls_ll40_p1-logversion = trlog_logversion_40.\r\n        ls_cont-rawline = ls_ll40_p1.\r\n        ls_cont-rawline+lv_msgsep_offset = ls_ll40_p2.\r\n      ENDIF.\r\n\r\n      CASE pv_log_type.\r\n        WHEN trlog_type_file.\r\n          TRANSFER ls_cont-rawline TO pv_logname_file.\r\n        WHEN trlog_type_db.\r\n          ls_ddprs-protname = pv_logname_db.\r\n          ls_ddprs-line     = ls_cont-rawline.\r\n          APPEND ls_ddprs TO pt_ddprs.\r\n        WHEN OTHERS.\r\n          MESSAGE e313(pu)  RAISING invalid_input.\r\n\r\n      ENDCASE.\r\n* now send additional messages in special cases; else exit.\r\n      IF ls_msg-severity = postupg_rc AND sy-index = 1.\r\n* send info that error can be repaired after upgrade finishes\r\n        ls_msg-severity   = ok_rc.\r\n* save old message id\r\n        ls_msg-var1       = ls_msg-ag.\r\n        ls_msg-var2       = ls_msg-msgnr.\r\n        ls_msg-ag         = 'PU'.\r\n        ls_msg-msgnr      = '139'.\r\n        CLEAR: ls_msg-newobj, ls_msg-var3, ls_msg-var4.\r\n      ELSE.\r\n        EXIT.\r\n      ENDIF.\r\n    ENDDO.\r\n\r\n  ENDLOOP.\r\n\r\n* export gv_error_occured to memory if errors shall be traced\r\n  IF pv_trace_err = 'X'.\r\n    EXPORT gv_error_occured TO MEMORY ID gv_mem_id_error_occured.\r\n  ENDIF.\r\n\r\nENDFORM.                    \"convert_messages\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM TRANSFORM_RETURN_CODE                                    *\r\n*---------------------------------------------------------------------*\r\nFORM transform_return_code       USING     pv_severity\r\n                                 CHANGING  pv_rc.\r\n  CASE pv_severity.\r\n    WHEN ok_rc.    pv_rc = 0.\r\n    WHEN warn_rc.  pv_rc = 4.\r\n    WHEN err_rc.   pv_rc = 8.\r\n    WHEN abort_rc. pv_rc = 12.\r\n  ENDCASE.\r\nENDFORM.                    \"transform_return_code\r\n*&---------------------------------------------------------------------*\r\n*&      Form  WRITE_TABLE_DDPRS\r\n*&---------------------------------------------------------------------*\r\nFORM write_table_ddprs TABLES   pt_ddprs STRUCTURE ddprs\r\n                       USING    pv_logname.\r\n\r\n  DATA: ls_ddprs            LIKE ddprs,\r\n        ls_ddprh            LIKE ddprh,\r\n        lv_ddprh_rc         TYPE  i,\r\n        lv_ddprs_rc         TYPE  i,\r\n        ls_cont             LIKE trlogr,\r\n        ls_ll40             TYPE trlog_ll40,\r\n        lv_valid_format     LIKE trpari-flag,\r\n        lv_start_new_lines  TYPE sy-tabix.\r\n\r\n* first try 'insert'; if it fails, then try a 'select for update'\r\n* this sequence is safe if no entries are deleted from table ddprh\r\n* {the sequence 'select for update' and 'insert' is not safe, if there\r\n* are 2 parallel processes: both try a 'select for update' und this\r\n* fails, then they try a insert, one succeeds, one fails...}\r\n  ls_ddprh-protname = pv_logname.\r\n  ls_ddprh-as4user  = sy-uname.\r\n  ls_ddprh-as4date  = sy-datum.\r\n  ls_ddprh-as4time  = sy-uzeit.\r\n  ls_ddprh-lpointer = 0.\r\n  ls_ddprh-maxsever = ok_rc.\r\n  INSERT ddprh FROM ls_ddprh.\r\n\r\n  IF sy-subrc <> 0.\r\n    SELECT SINGLE FOR UPDATE * FROM ddprh INTO ls_ddprh\r\n           WHERE protname = pv_logname.\r\n    IF sy-subrc <> 0.\r\n      MESSAGE a842(tk) WITH 'DDPRH' RAISING db_access_error.\r\n    ENDIF.\r\n\r\n*   special logic: reference log: first deletion, then insert\r\n    IF ls_ddprh-lpointer = '-1'.\r\n      DELETE FROM ddprh WHERE protname = pv_logname.\r\n      DELETE FROM ddprs WHERE protname = pv_logname.\r\n\r\n      ls_ddprh-protname = pv_logname.\r\n      ls_ddprh-as4user  = sy-uname.\r\n      ls_ddprh-as4date  = sy-datum.\r\n      ls_ddprh-as4time  = sy-uzeit.\r\n      ls_ddprh-lpointer = 0.\r\n      ls_ddprh-maxsever = ok_rc.\r\n      INSERT ddprh FROM ls_ddprh.\r\n\r\n      IF sy-subrc <> 0.\r\n        MESSAGE a842(tk) WITH 'DDPRH' RAISING db_access_error.\r\n      ENDIF.\r\n    ENDIF.\r\n  ELSE.\r\n*   insert was successful -> delete ddprs for safety reasons...\r\n    DELETE FROM ddprs WHERE protname = pv_logname.\r\n  ENDIF.\r\n\r\n  PERFORM transform_return_code    USING    ls_ddprh-maxsever\r\n                                   CHANGING lv_ddprh_rc.\r\n\r\n* Check, if new log lines will fit into ddprs.\r\n* Clean up ddprs if necessary.\r\n  PERFORM handle_overflow TABLES     pt_ddprs\r\n                          USING      pv_logname\r\n                          CHANGING   lv_start_new_lines\r\n                                     ls_ddprh-lpointer.\r\n\r\n  LOOP AT pt_ddprs INTO ls_ddprs.\r\n\r\n    ADD 1 TO ls_ddprh-lpointer.\r\n    ls_ddprs-ddposition = ls_ddprh-lpointer.\r\n\r\n    IF sy-tabix GE lv_start_new_lines.\r\n* this is a new log line, which was not yet in ddprs\r\n      ls_cont = ls_ddprs-line.\r\n      PERFORM fill_ll40     USING    ls_cont\r\n                            CHANGING ls_ll40\r\n                                     lv_valid_format.\r\n      IF lv_valid_format = 'X'.\r\n        PERFORM transform_return_code    USING    ls_ll40-severity\r\n                                         CHANGING lv_ddprs_rc.\r\n        IF lv_ddprs_rc > lv_ddprh_rc.\r\n          lv_ddprh_rc       = lv_ddprs_rc.\r\n          ls_ddprh-maxsever = ls_ll40-severity.\r\n        ENDIF.\r\n      ENDIF.\r\n    ENDIF.\r\n\r\n    MODIFY pt_ddprs FROM ls_ddprs.\r\n  ENDLOOP.\r\n\r\n  INSERT ddprs FROM TABLE pt_ddprs.\r\n  UPDATE ddprh FROM ls_ddprh.\r\n\r\n  IF sy-subrc <> 0.\r\n    MESSAGE a842(tk) WITH 'DDPRH' RAISING db_access_error.\r\n  ENDIF.\r\n\r\nENDFORM.                               \" WRITE_TABLE_DDPRS\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  OPEN_OUTPUT\r\n*&---------------------------------------------------------------------*\r\nFORM open_output TABLES   pt_ddprs      STRUCTURE ddprs\r\n                 USING    pv_log_type\r\n                          pv_logname_file.\r\n  DATA: lv_repid        LIKE sy-repid,\r\n        lv_file         LIKE authb-filename,\r\n        lv_message(100) TYPE c,\r\n        lv_msgv1        LIKE sy-msgv1,\r\n        lv_msgv2        LIKE sy-msgv1.\r\n\r\n  CASE pv_log_type.\r\n    WHEN trlog_type_file.\r\n\r\n*     SY-REPID is evaluated in function group when used as parameter!!!\r\n      lv_repid = sy-repid.\r\n      lv_file  = pv_logname_file.\r\n      CALL FUNCTION 'AUTHORITY_CHECK_DATASET'\r\n        EXPORTING\r\n          program      = lv_repid\r\n          activity     = sabc_act_write\r\n          filename     = lv_file\r\n        EXCEPTIONS\r\n          no_authority = 1.\r\n      IF sy-subrc <> 0.\r\n        MESSAGE e808(pu) WITH pv_logname_file\r\n                         RAISING file_access_error.\r\n      ENDIF.\r\n      TRY.\r\n        OPEN DATASET pv_logname_file MESSAGE lv_message\r\n                                     FOR APPENDING\r\n                                     IN TEXT MODE\r\n                                     ENCODING UTF-8\r\n                                     IGNORING CONVERSION ERRORS.\r\n      CATCH cx_sy_file_open.\r\n*       in case the file is already opened, close it and reopen it\r\n*       again with the right parameters\r\n        CLOSE DATASET pv_logname_file.\r\n        OPEN DATASET pv_logname_file MESSAGE lv_message\r\n                                     FOR APPENDING\r\n                                     IN TEXT MODE\r\n                                     ENCODING UTF-8\r\n                                     IGNORING CONVERSION ERRORS.\r\n      ENDTRY.\r\n      IF sy-subrc <> 0.\r\n        lv_msgv1   = lv_message(50).\r\n        lv_msgv2   = lv_message+50(50).\r\n        MESSAGE e814(pu) WITH pv_logname_file lv_msgv1 lv_msgv2\r\n                         RAISING file_access_error.\r\n      ENDIF.\r\n    WHEN trlog_type_db.\r\n      CLEAR pt_ddprs[].\r\n    WHEN OTHERS.\r\n      MESSAGE e313(pu)  RAISING invalid_input.\r\n  ENDCASE.\r\n\r\nENDFORM.                               \" OPEN_OUTPUT\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  CLOSE_OUTPUT\r\n*&---------------------------------------------------------------------*\r\nFORM close_output TABLES   pt_ddprs        STRUCTURE ddprs\r\n                  USING    pv_log_type     TYPE trlog_type\r\n                           pv_logname_file LIKE tstrf01-file\r\n                           pv_logname_db   LIKE ddprh-protname.\r\n\r\n  CASE pv_log_type.\r\n    WHEN trlog_type_file.\r\n      CLOSE DATASET pv_logname_file.\r\n\r\n    WHEN trlog_type_db.\r\n      PERFORM write_table_ddprs      TABLES pt_ddprs\r\n                                     USING  pv_logname_db.\r\n    WHEN OTHERS.\r\n      MESSAGE e313(pu)  RAISING invalid_input.\r\n  ENDCASE.\r\n\r\nENDFORM.                               \" CLOSE_OUTPUT\r\n*&---------------------------------------------------------------------*\r\n*&      Form  handle_overflow\r\n*&---------------------------------------------------------------------*\r\nFORM handle_overflow       TABLES pt_ddprs STRUCTURE ddprs\r\n                            USING pv_logname\r\n                         CHANGING pv_start_new_lines  TYPE sy-tabix\r\n                                  pv_counter  LIKE ddprh-lpointer.\r\n\r\n  CONSTANTS: lc_del_beg   LIKE ddprh-lpointer  VALUE '20000',\r\n             lc_del_end   LIKE ddprh-lpointer  VALUE '79999',\r\n             lc_max_lines  TYPE i               VALUE 99999.\r\n\r\n  DATA: lt_ddprs LIKE ddprs OCCURS 0,\r\n        lv_lines_cnt TYPE i,\r\n        lv_sum TYPE i.\r\n\r\n* check if log lines will fit into table ddprs\r\n  DESCRIBE TABLE pt_ddprs LINES lv_lines_cnt.\r\n  lv_sum = lv_lines_cnt + pv_counter.\r\n\r\n  IF lv_sum LE lc_max_lines.\r\n* lines fit into ddprs\r\n    pv_start_new_lines = 1.\r\n  ELSE.\r\n* lines do not fit into ddprs. Delete lines between lc_del_beg and\r\n* lc_del_end.\r\n    lt_ddprs = pt_ddprs[].\r\n    SELECT * FROM ddprs INTO TABLE pt_ddprs\r\n             WHERE protname = pv_logname\r\n             AND   ddposition GT lc_del_end.\r\n    pv_start_new_lines = sy-dbcnt + 1.\r\n    APPEND LINES OF lt_ddprs TO pt_ddprs.\r\n    DELETE FROM ddprs WHERE protname   = pv_logname\r\n                      AND ddposition GE lc_del_beg.\r\n    pv_counter = lc_del_beg - 1.\r\n  ENDIF.\r\n\r\nENDFORM.                    \" handle_overflow\r\n",
+      "observedAt": "2026-10-08T03:41:43.086Z"
+    },
+    "LSLOGF07": {
+      "connectionId": "w200",
+      "objectName": "LSLOGF07",
+      "sourceUri": "/sap/bc/adt/functions/groups/slog/includes/lslogf07/source/main",
+      "source": "*----------------------------------------------------------------------*\r\n*   INCLUDE LSLOGF07                                                   *\r\n*----------------------------------------------------------------------*\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  READ_LOG\r\n*&---------------------------------------------------------------------*\r\nFORM READ_LOG         TABLES PT_LINES           STRUCTURE TRLOG\r\n                      USING  PV_LOG_TYPE        TYPE TRLOG_TYPE\r\n                             PV_LOGNAME_FILE    LIKE TSTRF01-FILE\r\n                             PV_LOGNAME_DB      LIKE DDPRH-PROTNAME\r\n                             PV_LOGNAME_MEMORY  LIKE TSTRF01-FILENAME\r\n                             PV_LANGUAGE        LIKE SYST-LANGU\r\n                             PV_TIMESTAMP       TYPE TSTAMP\r\n                             PV_CLIENT TYPE T000-MANDT .\r\n\r\n  DATA: LT_LOG     LIKE TRLOGM   OCCURS 0.\r\n\r\n  CASE PV_LOG_TYPE.\r\n*----------------------------------------------- read log from file ----\r\n    WHEN TRLOG_TYPE_FILE.\r\n\r\n      IF PV_LOGNAME_FILE = SPACE.\r\n        MESSAGE E314(PU)   RAISING INVALID_INPUT.\r\n      ENDIF.\r\n      CALL FUNCTION 'TRINT_READ_LOG'\r\n           EXPORTING\r\n                IV_LOG_TYPE     = TRLOG_TYPE_FILE\r\n                IV_LOGNAME_FILE = PV_LOGNAME_FILE\r\n                IV_TIMESTAMP    = PV_TIMESTAMP\r\n                IV_CLIENT       = PV_CLIENT\r\n                IV_LANGUAGE     = PV_LANGUAGE\r\n           TABLES\r\n                ET_LINES        = PT_LINES\r\n           EXCEPTIONS\r\n                OTHERS          = 1.\r\n      IF SY-SUBRC <> 0.\r\n        CURRENT_MESSAGE_RAISING ACCESS_ERROR.\r\n      ENDIF.\r\n\r\n*------------------------------------------- read log from database ----\r\n    WHEN TRLOG_TYPE_DB.\r\n\r\n      IF PV_LOGNAME_DB = SPACE.\r\n        MESSAGE E314(PU)   RAISING INVALID_INPUT.\r\n      ENDIF.\r\n      CALL FUNCTION 'TRINT_READ_LOG'\r\n           EXPORTING\r\n                IV_LOG_TYPE   = TRLOG_TYPE_DB\r\n                IV_LOGNAME_DB = PV_LOGNAME_DB\r\n                IV_LANGUAGE   = PV_LANGUAGE\r\n           TABLES\r\n                ET_LINES      = PT_LINES\r\n           EXCEPTIONS\r\n                OTHERS        = 1.\r\n      IF SY-SUBRC <> 0.\r\n        CURRENT_MESSAGE_RAISING ACCESS_ERROR.\r\n      ENDIF.\r\n\r\n*------------------------------------------- read log from database ----\r\n    WHEN TRLOG_TYPE_MEMORY.\r\n\r\n      IF PV_LOGNAME_MEMORY = SPACE.\r\n        MESSAGE E314(PU)   RAISING INVALID_INPUT.\r\n      ENDIF.\r\n      CALL FUNCTION 'TRINT_READ_LOG_FROM_MEMORY'\r\n           EXPORTING\r\n                IV_LOGNAME_MEMORY = PV_LOGNAME_MEMORY\r\n                IV_FREE_MEMORY    = ' '\r\n           TABLES\r\n                ET_LOG            = LT_LOG\r\n           EXCEPTIONS\r\n                OTHERS            = 1.\r\n      IF SY-SUBRC <> 0.\r\n        CURRENT_MESSAGE_RAISING ACCESS_ERROR.\r\n      ENDIF.\r\n\r\n      CALL FUNCTION 'TRINT_CONVERT_LOG'\r\n           TABLES\r\n                IT_LOG   = LT_LOG\r\n                ET_LINES = PT_LINES.\r\n\r\n*------------------------------------other types are not valid----------\r\n    WHEN OTHERS.\r\n      MESSAGE E313(PU)  RAISING INVALID_INPUT.\r\n  ENDCASE.\r\n\r\nENDFORM.                               \" READ_LOG\r\n\r\n*&---------------------------------------------------------------------*\r\n*&      Form  DISPLAY_LOG\r\n*&---------------------------------------------------------------------*\r\nFORM DISPLAY_LOG         TABLES PT_LINES           STRUCTURE TRLOG\r\n                         USING  PV_TITLEBAR        LIKE SY-TITLE\r\n                                PV_HEADING         LIKE TRLOG-LINE\r\n                                PV_DISPLAY_LEVEL   LIKE SPROT-LEVEL\r\n                                PV_LANGUAGE        LIKE SYST-LANGU\r\n                         CHANGING\r\n                                PV_WITH_LONG_TEXT_ICON  LIKE TRPARI-FLAG\r\n                                PV_WITH_LINE_NUMBERS    LIKE TRPARI-FLAG\r\n                                PV_WITH_MESSAGE_NUMBERS LIKE TRPARI-FLAG\r\n                                PV_WITH_LEVEL           LIKE TRPARI-FLAG\r\n                                PV_WITH_REFRESH_ICON    LIKE TRPARI-FLAG\r\n                                PV_REFRESH              LIKE TRPARI-FLAG\r\n                                PS_REFRESH_PARAMETERS\r\n                                          TYPE TRLOG_REFRESH_PARAMETERS.\r\n\r\n  CALL FUNCTION 'TRINT_DISPLAY_LOG'\r\n       EXPORTING\r\n            IV_DISPLAY_LEVEL        = PV_DISPLAY_LEVEL\r\n            IV_WITH_REFRESH_ICON    = PV_WITH_REFRESH_ICON\r\n            IV_TITLEBAR             = PV_TITLEBAR\r\n            IV_HEADING1             = PV_HEADING\r\n            IV_HEADING2             = ' '\r\n            IV_LANGUAGE             = PV_LANGUAGE\r\n       IMPORTING\r\n            EV_REFRESH              = PV_REFRESH\r\n       TABLES\r\n            CT_LINES                = PT_LINES\r\n       CHANGING\r\n            CV_WITH_LONG_TEXT_ICON  = PV_WITH_LONG_TEXT_ICON\r\n            CV_WITH_LINE_NUMBERS    = PV_WITH_LINE_NUMBERS\r\n            CV_WITH_MESSAGE_NUMBERS = PV_WITH_MESSAGE_NUMBERS\r\n            CV_WITH_LEVEL           = PV_WITH_LEVEL\r\n            CS_REFRESH_PARAMETERS   = PS_REFRESH_PARAMETERS.\r\n\r\nENDFORM.                               \"DISPLAY_LOG\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM SET_HEADINGS                                             *\r\n*---------------------------------------------------------------------*\r\nFORM SET_HEADINGS              USING PV_LOG_TYPE     TYPE TRLOG_TYPE\r\n                                     PV_LOGNAME_FILE\r\n                                     PV_LOGNAME_DB\r\n                                     PV_TITLEBAR\r\n                               CHANGING PV_HEADING   LIKE TRLOG-LINE.\r\n\r\n  IF PV_HEADING = SPACE.\r\n    CASE PV_LOG_TYPE.\r\n      WHEN TRLOG_TYPE_FILE.\r\n        PV_HEADING    = TEXT-H01.\r\n        PV_HEADING+25 = PV_LOGNAME_FILE.\r\n      WHEN TRLOG_TYPE_DB.\r\n        PV_HEADING    = TEXT-H02.\r\n        PV_HEADING+25 = PV_LOGNAME_DB.\r\n      WHEN TRLOG_TYPE_MEMORY.\r\n        PV_HEADING    = PV_TITLEBAR.\r\n    ENDCASE.\r\n  ENDIF.\r\nENDFORM.\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM REFRESH_LOG                                              *\r\n*---------------------------------------------------------------------*\r\nFORM REFRESH_LOG       TABLES PT_LINES       STRUCTURE TRLOG\r\n                              PT_LINES_OLD   STRUCTURE TRLOG.\r\n\r\n  DATA: LS_LINE       LIKE TRLOG,\r\n        LV_LINES      TYPE I,\r\n        LV_LINES_OLD  TYPE I,\r\n        LV_START_LINE TYPE I,\r\n        LV_LEVEL      LIKE TRLOG-LEVEL.\r\n\r\n* if old table is empty, it is the first loop and there's nothing to do\r\n  DESCRIBE TABLE PT_LINES_OLD  LINES LV_LINES_OLD.\r\n  IF LV_LINES_OLD < 1.\r\n    EXIT.\r\n  ENDIF.\r\n\r\n  MESSAGE S318(PU).                    \"log was read anew\r\n\r\n  DESCRIBE TABLE PT_LINES      LINES LV_LINES.\r\n  IF LV_LINES_OLD >= LV_LINES.         \" log has not become longer\r\n    PT_LINES[] = PT_LINES_OLD[].\r\n    CLEAR: PT_LINES_OLD[].\r\n\r\n    EXIT.                              \"nothing more to do\r\n  ENDIF.\r\n\r\n* now the new log is longer than the old one\r\n* we assume that the old log is identical to the new log up to line\r\n* lv_lines_old; the layout is still stored in the table pt_lines_old\r\n\r\n  PERFORM GET_HIGHEST_VISIBLE_LEVEL_ALL    TABLES PT_LINES_OLD\r\n                                           USING  LV_LEVEL.\r\n\r\n\r\n  LV_START_LINE = LV_LINES_OLD + 1.\r\n\r\n  LOOP AT PT_LINES FROM LV_START_LINE\r\n                   INTO LS_LINE.\r\n    IF LS_LINE-LEVEL <= LV_LEVEL.\r\n      LS_LINE-INVISIBLE = ' '.\r\n    ELSE.\r\n      LS_LINE-INVISIBLE = 'X'.\r\n    ENDIF.\r\n    APPEND LS_LINE TO PT_LINES_OLD.\r\n  ENDLOOP.\r\n\r\n  CLEAR: PT_LINES[].\r\n  PT_LINES[] = PT_LINES_OLD[].\r\n  CLEAR: PT_LINES_OLD[].\r\n\r\nENDFORM.\r\n",
+      "observedAt": "2026-10-08T03:41:43.203Z"
+    },
+    "LSLOGF15": {
+      "connectionId": "w200",
+      "objectName": "LSLOGF15",
+      "sourceUri": "/sap/bc/adt/functions/groups/slog/includes/lslogf15/source/main",
+      "source": "*----------------------------------------------------------------------*\r\n*   INCLUDE LSLOGF15                                                   *\r\n*----------------------------------------------------------------------*\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM MAIN_WRITER                                              *\r\n*---------------------------------------------------------------------*\r\n* FORM MAIN_WRITER stellt den Kern des Protokollschreibers dar.\r\n* Sie wird auch von anderen Funktionsbausteinen der Funktionsgruppe\r\n* SPUT aufgerufen.                                                    *\r\n*---------------------------------------------------------------------*\r\nFORM main_writer TABLES xprs              STRUCTURE ddprs\r\n                        xmsg              STRUCTURE sprot_u\r\n                 USING  pv_log_type       TYPE trlog_type\r\n                        pv_logname_file   LIKE tstrf01-file\r\n                        pv_logname_db     LIKE ddprh-protname\r\n                        pv_logname_memory LIKE tstrf01-filename\r\n                        pv_open_output    LIKE trpari-flag\r\n                        pv_close_output   LIKE trpari-flag\r\n                        pv_master_langu   LIKE t100-sprsl\r\n                        pv_condense       LIKE sprot_i-xfeld\r\n                        pv_trace_err.\r\n\r\n  DATA: ls_cont         LIKE trlogr,\r\n        ls_ll40         TYPE trlog_ll40,\r\n        lv_valid_format LIKE trpari-flag,\r\n        lv_rc_header    TYPE i,\r\n        lv_rc_line      TYPE i,\r\n        lv_severity     LIKE sprot-severity,\r\n        xout            LIKE sprot,\r\n        ls_ddprh        LIKE ddprh,\r\n        lv_message(100) TYPE c,\r\n        lv_msgv1        LIKE sy-msgv1,\r\n        lv_msgv2        LIKE sy-msgv1.\r\n\r\n  CLEAR:  xout, xprs.\r\n\r\n*----------open output ( open file / clear ddprs / clear memory )-------\r\n  IF pv_open_output = 'X'.\r\n    CASE pv_log_type.\r\n      WHEN trlog_type_file.\r\n        TRY.\r\n          OPEN DATASET pv_logname_file MESSAGE lv_message\r\n                                       FOR APPENDING\r\n                                       IN TEXT MODE\r\n                                       ENCODING UTF-8\r\n                                       IGNORING CONVERSION ERRORS.\r\n        CATCH cx_sy_file_open.\r\n*         in case the file is already opened, close it and reopen it\r\n*         again with the right parameters\r\n          CLOSE DATASET pv_logname_file.\r\n          OPEN DATASET pv_logname_file MESSAGE lv_message\r\n                                       FOR APPENDING\r\n                                       IN TEXT MODE\r\n                                       ENCODING UTF-8\r\n                                       IGNORING CONVERSION ERRORS.\r\n        ENDTRY.\r\n\r\n        IF sy-subrc <> 0.\r\n          lv_msgv1   = lv_message(50).\r\n          lv_msgv2   = lv_message+50(50).\r\n          MESSAGE a814(pu) WITH pv_logname_file lv_msgv1 lv_msgv2\r\n                           RAISING file_not_found.\r\n        ENDIF.\r\n      WHEN trlog_type_db.\r\n        REFRESH xprs.\r\n    ENDCASE.\r\n  ENDIF.\r\n*----------------------------------------------------------------------*\r\n\r\n* Read global variable GV_CHECK_LEVELS from memory, if not yet filled\r\n  PERFORM evaluate_check_levels.\r\n\r\n* process the messages\r\n  PERFORM msg_output TABLES xmsg\r\n                            xprs\r\n                     USING  xout\r\n                            pv_master_langu\r\n                            pv_condense\r\n                            pv_log_type\r\n                            pv_logname_file\r\n                            pv_logname_db\r\n                            pv_logname_memory\r\n                            pv_trace_err.\r\n\r\n*---------close output (close file/write to ddprh)----------------------\r\n  IF pv_close_output = 'X'.\r\n    CASE pv_log_type.\r\n      WHEN trlog_type_file.\r\n        CLOSE DATASET pv_logname_file.\r\n      WHEN trlog_type_db.\r\n*       select single for update * from ddprh into ls_ddprh\"@@@@@@@@@@@q\r\n        SELECT SINGLE * FROM ddprh INTO ls_ddprh\r\n               WHERE protname = pv_logname_db.\r\n        IF sy-subrc <> 0.\r\n          ls_ddprh-protname = pv_logname_db.\r\n          ls_ddprh-as4user  = sy-uname.\r\n          ls_ddprh-as4date  = sy-datum.\r\n          ls_ddprh-as4time  = sy-uzeit.\r\n          ls_ddprh-lpointer = 0.\r\n          ls_ddprh-maxsever = ' '.\r\n          INSERT ddprh FROM ls_ddprh.\r\n          IF sy-subrc <> 0.\r\n            MESSAGE a842(tk) WITH 'DDPRH' RAISING sql_error.\r\n          ENDIF.\r\n        ENDIF.\r\n        PERFORM get_rc            USING ls_ddprh-maxsever lv_rc_header.\r\n        LOOP AT xprs.\r\n          ADD 1 TO ls_ddprh-lpointer.\r\n          xprs-ddposition = ls_ddprh-lpointer.\r\n\r\n          ls_cont = xprs-line.\r\n          PERFORM fill_ll40     USING    ls_cont\r\n                                CHANGING ls_ll40\r\n                                         lv_valid_format.\r\n          IF lv_valid_format = 'X'.\r\n            lv_severity = ls_ll40-severity.\r\n            PERFORM get_rc          USING lv_severity lv_rc_line.\r\n            IF lv_rc_line > lv_rc_header.\r\n              lv_rc_header = lv_rc_line.\r\n              ls_ddprh-maxsever = lv_severity.\r\n            ENDIF.\r\n          ENDIF.\r\n\r\n          MODIFY xprs.\r\n        ENDLOOP.\r\n\r\n        INSERT ddprs FROM TABLE xprs.\r\n        UPDATE ddprh FROM ls_ddprh.\r\n        IF sy-subrc <> 0.\r\n          MESSAGE a842(tk) WITH 'DDPRH' RAISING sql_error.\r\n        ENDIF.\r\n\r\n    ENDCASE.\r\n  ENDIF.\r\n*-----------------------------------------------------------------------\r\n\r\nENDFORM.\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM MSG_OUTPUT                                               *\r\n*---------------------------------------------------------------------*\r\nFORM msg_output TABLES xmsg STRUCTURE sprot_u\r\n                       xprs STRUCTURE ddprs\r\n                USING  xout  STRUCTURE sprot\r\n                       pv_master_langu   LIKE t100-sprsl\r\n                       pv_condense       LIKE sprot_i-xfeld\r\n                       pv_log_type       TYPE trlog_type\r\n                       pv_logname_file   LIKE tstrf01-file\r\n                       pv_logname_db     LIKE ddprh-protname\r\n                       pv_logname_memory LIKE tstrf01-filename\r\n                       pv_trace_err.\r\n\r\n  DATA: lv_hlp_level(1),\r\n        lv_t100_text     LIKE t100-text,\r\n        lv_subst_langu   LIKE t100-sprsl,\r\n        ls_ll30          TYPE trlog_ll30,\r\n        ls_ll40_p1       TYPE trlog_ll40_p1,\r\n        ls_ll40_p2       TYPE trlog_ll40_p2,\r\n        ls_cont          LIKE trlogr,\r\n        lv_msgsep_offset TYPE i.\r\n\r\n*--set language (files always in English)-------------------------------\r\n  IF pv_log_type = trlog_type_file.\r\n    xmsg-langu = gc_default_language.\r\n    MODIFY xmsg TRANSPORTING langu\r\n                WHERE langu <> gc_default_language.\r\n  ELSE.\r\n    xmsg-langu = gc_default_language.\r\n    MODIFY xmsg TRANSPORTING langu\r\n                WHERE langu = space.\r\n  ENDIF.\r\n\r\n* first try to read ERROR_OCCURED from memory if errors shall be traced\r\n  IF pv_trace_err EQ 'X' AND gv_error_occured EQ space.\r\n    IMPORT gv_error_occured FROM MEMORY ID gv_mem_id_error_occured.\r\n* for security\r\n    IF sy-subrc NE 0.\r\n      gv_error_occured = space.\r\n    ENDIF.\r\n  ENDIF.\r\n\r\n  LOOP AT xmsg.\r\n    IF xmsg-severity CN all_rc.\r\n      IF xmsg-severity CO gc_ok_rc_alternatives.\r\n* some callers use severities 'I' or 'S' instead of ' '\r\n        xmsg-severity = ok_rc.\r\n      ELSE.\r\n* unknown severity: chnage it into error\r\n        xmsg-severity = err_rc.\r\n      ENDIF.\r\n    ENDIF.\r\n\r\n* convert to char for string comparison\r\n    lv_hlp_level = xmsg-level.\r\n    IF lv_hlp_level CN all_level.\r\n* change invalid level to lowest level 4\r\n      xmsg-level = low_level.\r\n    ENDIF.\r\n\r\n* increase too low levels, if GV_CHECK_LEVELS = 'Y'\r\n    IF gv_check_levels EQ 'Y'.\r\n      IF xmsg-level    EQ abort_level   AND\r\n         xmsg-severity NE abort_rc .\r\n        xmsg-level = err_level.\r\n      ENDIF.\r\n    ENDIF.\r\n\r\n* Save information on errors in global variable ERROR_OCCURED \"ctup22\r\n* if errors shall be traced\r\n*  ABORT_RC and  ERR_RC are handled in the same way. May be\r\n* distinguished in future.\r\n    IF pv_trace_err EQ 'X' AND\r\n       xmsg-severity EQ abort_rc OR xmsg-severity EQ err_rc.\r\n      gv_error_occured = err_rc.\r\n    ENDIF.\r\n\r\n* Add additional messages in special cases:\r\n* Proceed the output routine twice in these cases\r\n    DO 2 TIMES.\r\n* fill structure xout.\r\n      xout-level       = xmsg-level.\r\n      xout-severity    = xmsg-severity.\r\n      xout-ag          = xmsg-ag.\r\n      xout-msgnr       = xmsg-msgnr.\r\n      xout-newobj      = xmsg-newobj.\r\n\r\n* If master_langu equals XMSG-LANGU:\r\n* If master_langu is English, take German as alternative language,\r\n* else take English as alternative language.\r\n      IF xmsg-langu EQ pv_master_langu.\r\n        IF pv_master_langu EQ gc_master_lang1.\r\n          lv_subst_langu = gc_master_lang2.\r\n        ELSE.\r\n          lv_subst_langu = gc_master_lang1.\r\n        ENDIF.\r\n      ELSE.\r\n        lv_subst_langu = pv_master_langu.\r\n      ENDIF.\r\n\r\n* read the message text\r\n      CALL FUNCTION 'TRINT_GET_T100_FROM_BUFFER'\r\n           EXPORTING\r\n                iv_sprsl       = xmsg-langu\r\n                iv_arbgb       = xmsg-ag\r\n                iv_msgnr       = xmsg-msgnr\r\n                iv_subst_langu = lv_subst_langu\r\n           IMPORTING\r\n                ev_text        = lv_t100_text\r\n                ev_sprsl       = xout-langu.\r\n      xout-line = lv_t100_text.\r\n\r\n      CALL FUNCTION 'TRINT_PUT_VARS_INTO_LINE'\r\n           EXPORTING\r\n                iv_line          = xout-line\r\n                iv_var1          = xmsg-var1\r\n                iv_var2          = xmsg-var2\r\n                iv_var3          = xmsg-var3\r\n                iv_var4          = xmsg-var4\r\n                iv_with_sep      = 'X'\r\n                iv_condense_vars = pv_condense\r\n           IMPORTING\r\n                ev_line          = xout-line.\r\n\r\n* decide, if message has to be written in 3.0 or 4.0 format\r\n      IF xout-ag CA ' '. ENDIF.   \"AG is truncated after first blank\r\n                                       \"in case of 4.0 format\r\n      lv_msgsep_offset = sy-fdpos.\r\n      IF lv_msgsep_offset LE 2.        \"short AG: use 3.0 format\r\n        CLEAR ls_ll30.\r\n        MOVE-CORRESPONDING xout TO ls_ll30.\r\n        ls_cont-rawline = ls_ll30.\r\n      ELSE.                            \"long AG: use 4.0 format\r\n        ADD trlog_ag_offset TO lv_msgsep_offset.\r\n        CLEAR: ls_ll40_p1, ls_ll40_p2.\r\n        MOVE-CORRESPONDING xout TO ls_ll40_p1.\r\n        MOVE-CORRESPONDING xout TO ls_ll40_p2.\r\n        ls_ll40_p1-logversion = trlog_logversion_40.\r\n        ls_cont-rawline = ls_ll40_p1.\r\n        ls_cont-rawline+lv_msgsep_offset = ls_ll40_p2.\r\n      ENDIF.\r\n\r\n      CASE pv_log_type.\r\n        WHEN trlog_type_file.\r\n          TRANSFER ls_cont-rawline TO pv_logname_file.\r\n        WHEN trlog_type_db.\r\n          xprs-protname = pv_logname_db.\r\n          xprs-line = ls_cont-rawline.\r\n          APPEND xprs.\r\n        WHEN trlog_type_memory.\r\n          WRITE: / ls_cont-rawline.\r\n      ENDCASE.\r\n\r\n* now send additional messages in special cases; else exit.\r\n      IF xmsg-severity EQ postupg_rc AND sy-index EQ 1.\r\n* send info that error can be repaired after upgrade finishes\r\n        xmsg-severity   = ok_rc          .\r\n* save old message id\r\n        xmsg-var1       = xmsg-ag        .\r\n        xmsg-var2       = xmsg-msgnr     .\r\n        xmsg-ag         = 'PU'           .\r\n        xmsg-msgnr      = '139'          .\r\n        MOVE space TO: xmsg-newobj, xmsg-var3, xmsg-var4.\r\n      ELSE.\r\n        EXIT.\r\n      ENDIF.\r\n    ENDDO.\r\n\r\n  ENDLOOP.\r\n\r\n* export ERROR_OCCURED to memory if errors shall be traced   \"ctup22\r\n  IF pv_trace_err EQ 'X'.\r\n    EXPORT gv_error_occured TO MEMORY ID gv_mem_id_error_occured.\r\n  ENDIF.\r\n\r\nENDFORM.\r\n\r\n*---------------------------------------------------------------------*\r\n*       FORM GET_RC                                                   *\r\n*---------------------------------------------------------------------*\r\nFORM get_rc             USING pv_severity pv_returncode.\r\n  CASE pv_severity.\r\n    WHEN ok_rc.    pv_returncode = 0.\r\n    WHEN warn_rc.  pv_returncode = 4.\r\n    WHEN err_rc.   pv_returncode = 8.\r\n    WHEN abort_rc. pv_returncode = 12.\r\n    WHEN OTHERS.   pv_returncode = 0.\r\n  ENDCASE.\r\nENDFORM.\r\n",
+      "observedAt": "2026-10-08T03:41:43.329Z"
+    }
+  }
+}

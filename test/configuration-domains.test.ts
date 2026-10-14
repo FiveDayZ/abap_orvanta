@@ -15,6 +15,8 @@ import {
 } from "../src/configuration-bc-set.js"
 import { toolContracts } from "../src/contracts.js"
 import { toolNamesForProfile } from "../src/tool-registry.js"
+import { ToolService } from "../src/tools.js"
+import { MockBackend } from "./mock-backend.js"
 import {
   inspectConfigurationTransport,
   configurationTransportLayouts,
@@ -826,9 +828,20 @@ test("CTS unit key input rejects arbitrary key claims and missing language befor
     )
 })
 
-const unitProjection = (connectionId: string, unitKey: string, language: string, value = "same") =>
+const unitProjection = (
+  connectionId: string,
+  unitKey: string,
+  language: string,
+  value = "same",
+  expectedReadFingerprint?: string
+) =>
   readConfigurationUnitProjection(
-    { connectionId, unitKey, language },
+    {
+      connectionId,
+      unitKey,
+      language,
+      ...(expectedReadFingerprint ? { expectedReadFingerprint } : {})
+    },
     connectionId === "w200" ? "200" : "300",
     language,
     {
@@ -903,6 +916,132 @@ test("failed comparison side cannot report equality or deletion", async () => {
     result.rows.map((row) => row.status),
     ["incomparable", "incomparable"]
   )
+  assert.equal(result.comparisonFingerprint, null)
+  assert.equal(result.readFlow, null)
+})
+
+test("unit comparison binds both projection versions and offers exact guarded rereads", async () => {
+  const from = await unitProjection("w200", "kg", "EN"),
+    to = await unitProjection("w300", "kg", "EN")
+  const input = {
+    ...compareInput,
+    expectedFromReadFingerprint: from.readFingerprint!,
+    expectedToReadFingerprint: to.readFingerprint!
+  }
+  let reads = 0
+  const read = (id: string, key: string, language: string) => {
+    reads++
+    return unitProjection(id, key, language)
+  }
+  const result = await compareConfigurationUnit(input, read)
+  assert.equal(reads, 2, "links must not perform extra reads")
+  assert.equal(result.observations.from.versionGuard.status, "match")
+  assert.equal(result.observations.to.versionGuard.status, "match")
+  assert.match(result.comparisonFingerprint!, /^[a-f0-9]{64}$/)
+  assert.deepEqual(result.readFlow?.from?.arguments, {
+    connectionId: "w200",
+    unitKey: "kg",
+    language: "EN",
+    expectedReadFingerprint: from.readFingerprint
+  })
+  assert.equal(result.readFlow?.to, null, "w300 has no public single-unit read")
+  assert.deepEqual(result.readFlow?.comparison.arguments, {
+    from: "w200",
+    to: "w300",
+    unitKey: "kg",
+    language: "EN",
+    ignoreFields: [],
+    expectedFromReadFingerprint: from.readFingerprint,
+    expectedToReadFingerprint: to.readFingerprint
+  })
+  assert.equal(result.readFlow?.from?.tool, "read_configuration_unit")
+  assert.equal(result.readFlow?.comparison.readOnly, true)
+  assert.equal(result.saveAvailable, false)
+  assert.equal(result.evidence.complete, false)
+  const repeated = await compareConfigurationUnit(input, read)
+  assert.equal(repeated.comparisonFingerprint, result.comparisonFingerprint)
+  const changed = await compareConfigurationUnit(compareInput, (id, key, language) =>
+    unitProjection(id, key, language, id)
+  )
+  assert.notEqual(changed.comparisonFingerprint, result.comparisonFingerprint)
+  const comparisonRecheck = await compareConfigurationUnit(
+    result.readFlow!.comparison.arguments,
+    read
+  )
+  assert.equal(comparisonRecheck.comparisonFingerprint, result.comparisonFingerprint)
+  const link = result.readFlow!.from!
+  const checked = await unitProjection(
+    link.arguments.connectionId,
+    link.arguments.unitKey,
+    link.arguments.language,
+    "same",
+    link.arguments.expectedReadFingerprint
+  )
+  assert.equal(checked.comparison, "match")
+  const staleReread = await unitProjection(
+    "w200",
+    "kg",
+    "EN",
+    "changed",
+    result.readFlow!.from!.arguments.expectedReadFingerprint
+  )
+  assert.equal(staleReread.comparison, "changed")
+  assert.equal(staleReread.unit.data, null)
+})
+
+test("unit comparison withdraws stale, swapped and unverified projection versions", async () => {
+  const from = await unitProjection("w200", "kg", "EN"),
+    to = await unitProjection("w300", "kg", "EN")
+  for (const guards of [
+    { expectedFromReadFingerprint: "0".repeat(64) },
+    { expectedToReadFingerprint: "0".repeat(64) },
+    {
+      expectedFromReadFingerprint: to.readFingerprint!,
+      expectedToReadFingerprint: from.readFingerprint!
+    }
+  ]) {
+    const result = await compareConfigurationUnit({ ...compareInput, ...guards }, unitProjection)
+    assert.equal(result.status, "incomparable")
+    assert(result.rows.every((row) => row.status === "incomparable"))
+    assert.equal(result.comparisonFingerprint, null)
+    assert.equal(result.readFlow, null)
+    if (guards.expectedFromReadFingerprint) assert.equal(result.observations.from.result, null)
+    if (guards.expectedToReadFingerprint) assert.equal(result.observations.to.result, null)
+  }
+  const unavailable = await compareConfigurationUnit(
+    { ...compareInput, expectedFromReadFingerprint: from.readFingerprint! },
+    async (id, key, language) => ({
+      ...(await unitProjection(id, key, language)),
+      readFingerprint: null
+    })
+  )
+  assert.equal(unavailable.observations.from.versionGuard.status, "unavailable")
+  assert.equal(unavailable.readFlow, null)
+  const ignoredStale = await compareConfigurationUnit(
+    {
+      ...compareInput,
+      ignoreFields: ["T006A.MSEHT"],
+      expectedToReadFingerprint: to.readFingerprint!
+    },
+    (id, key, language) => unitProjection(id, key, language, id === "w300" ? "changed" : "same")
+  )
+  assert.equal(ignoredStale.observations.to.versionGuard.status, "changed")
+  assert.equal(ignoredStale.comparisonFingerprint, null)
+  const normalized = await compareConfigurationUnit(
+    { ...compareInput, ignoreFields: ["T006A.MSEHT", "T006A.MSEHT"] },
+    unitProjection
+  )
+  const unique = await compareConfigurationUnit(
+    { ...compareInput, ignoreFields: ["T006A.MSEHT"] },
+    unitProjection
+  )
+  assert.equal(normalized.comparisonFingerprint, unique.comparisonFingerprint)
+  const reversed = await compareConfigurationUnit(
+    { ...compareInput, from: "w300", to: "w200" },
+    unitProjection
+  )
+  assert.equal(reversed.readFlow?.from, null)
+  assert.equal(reversed.readFlow?.to?.arguments.connectionId, "w200")
 })
 
 const fiInput = {
@@ -976,12 +1115,15 @@ test("FI configuration audit separates rule existence, organization assignment a
   assert.equal(missing.activation.levelMeaning, "active_except_batch_input")
 })
 test("FI configuration audit cannot equate failures or truncated steps with a complete rule", async () => {
-  const denied = await fi(async () => {
-    throw Error("HTTP 403")
+  const denied = await fi(async (table) => {
+    if (table === "T001D") throw Error("HTTP 403")
+    return [fiRow(table)]
   })
   assert.equal(denied.status, "unavailable")
   assert.equal(denied.rule.data, null)
   assert.equal(denied.readFingerprint, null)
+  assert(denied.executionPreflight.blockers.includes("FI_RULE_READ_UNAVAILABLE"))
+  assert(!denied.executionPreflight.blockers.includes("FI_RULE_DEFINITION_MISSING"))
   const truncated = await fi(async (table) =>
     table === "GB931"
       ? [fiRow(table), fiRow(table, { VALSEQNR: "002" }), fiRow(table, { VALSEQNR: "003" })]
@@ -989,4 +1131,174 @@ test("FI configuration audit cannot equate failures or truncated steps with a co
   )
   assert.equal(truncated.steps.truncated, true)
   assert.equal(truncated.readFingerprint, null)
+  assert.equal(truncated.rule.data, null)
+  assert.equal(truncated.activation.data, null)
+  assert.equal(truncated.application.data, null)
+  assert.equal(truncated.application.classMatches, null)
+  assert.equal(truncated.steps.data, null)
+  assert(truncated.executionPreflight.blockers.includes("FI_RULE_READ_TRUNCATED"))
+  assert(!truncated.executionPreflight.blockers.includes("FI_RULE_DEFINITION_MISSING"))
+})
+
+test("FI configuration audit discards the whole projection when the second step read truncates", async () => {
+  let stepReads = 0
+  const result = await fi(async (table) => {
+    if (table !== "GB931") return [fiRow(table)]
+    const rows = [fiRow(table), fiRow(table, { VALSEQNR: "002" })]
+    if (++stepReads === 2) rows.push(fiRow(table, { VALSEQNR: "003" }))
+    return rows
+  })
+  assert.equal(stepReads, 2)
+  assert.equal(result.steps.truncated, true)
+  assert.equal(result.readFingerprint, null)
+  assert.equal(result.rule.data, null)
+  assert.equal(result.activation.data, null)
+  assert.equal(result.application.data, null)
+  assert.equal(result.steps.data, null)
+  assert(result.executionPreflight.blockers.includes("FI_RULE_READ_TRUNCATED"))
+})
+
+test("FI execution preflight keeps a stable matching projection blocked without formula and native maintenance evidence", async () => {
+  const result = await fi(async (table) => [
+    fiRow(table, table === "GB931" ? { CONDID: "PREREQ", CHECKID: "CHECK" } : {})
+  ])
+  assert.equal(result.rule.status, "read")
+  assert.equal(result.activation.assignedToRequestedRule, true)
+  assert.equal(result.application.classMatches, true)
+  assert(result.readFingerprint)
+  assert.equal(result.executionPreflight.status, "blocked")
+  assert.equal(result.executionPreflight.writeAvailable, false)
+  assert.equal(result.executionPreflight.automaticRetry, false)
+  assert(result.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
+  assert(result.executionPreflight.blockers.includes("FI_RULE_MAINTENANCE_API_UNVERIFIED"))
+  assert(result.executionPreflight.blockers.includes("FI_RULE_GENERATED_CODE_UNVERIFIED"))
+  assert(!result.executionPreflight.blockers.includes("FI_RULE_ASSIGNED_TO_OTHER_RULE"))
+  assert.equal(result.saveAvailable, false)
+})
+
+test("FI execution preflight distinguishes absent records from unsupported assignment and activation values", async () => {
+  const missing = await fi(async () => [])
+  assert(missing.executionPreflight.blockers.includes("FI_RULE_DEFINITION_MISSING"))
+  assert(missing.executionPreflight.blockers.includes("FI_RULE_STEPS_NOT_OBSERVED"))
+  assert(missing.executionPreflight.blockers.includes("FI_RULE_ASSIGNMENT_MISSING"))
+  assert(missing.executionPreflight.blockers.includes("FI_RULE_APPLICATION_NOT_OBSERVED"))
+  assert(!missing.executionPreflight.blockers.includes("FI_RULE_READ_UNAVAILABLE"))
+
+  const mismatch = await fi(async (table) => [
+    fiRow(
+      table,
+      table === "T001D"
+        ? { VALID: "OTHER", ACTIV: "9" }
+        : table === "GB31"
+          ? { RCLASS: "OTHER" }
+          : {}
+    )
+  ])
+  assert.equal(mismatch.activation.assignedToRequestedRule, false)
+  assert.equal(mismatch.activation.levelMeaning, "unknown")
+  assert.equal(mismatch.application.classMatches, false)
+  assert(mismatch.executionPreflight.blockers.includes("FI_RULE_ASSIGNED_TO_OTHER_RULE"))
+  assert(mismatch.executionPreflight.blockers.includes("FI_RULE_ACTIVATION_LEVEL_UNKNOWN"))
+  assert(mismatch.executionPreflight.blockers.includes("FI_RULE_CLASS_PROJECTION_MISMATCH"))
+})
+
+test("FI execution preflight reports read drift without calling the changed rule missing", async () => {
+  let headers = 0
+  const result = await fi(async (table) => [
+    fiRow(table, table === "GB93" ? { MSGID: ++headers === 1 ? "BEFORE" : "AFTER" } : {})
+  ])
+  assert.equal(result.status, "changed")
+  assert.equal(result.rule.data, null)
+  assert.equal(result.activation.data, null)
+  assert.equal(result.application.data, null)
+  assert.equal(result.steps.data, null)
+  assert.equal(result.readFingerprint, null)
+  assert(result.executionPreflight.blockers.includes("FI_RULE_READ_CHANGED"))
+  assert(!result.executionPreflight.blockers.includes("FI_RULE_DEFINITION_MISSING"))
+})
+
+test("FI execution preflight also withholds unreviewed substitution actions", async () => {
+  const result = await readConfigurationFiRule(
+    { ...fiInput, kind: "fi_substitution" },
+    "200",
+    {
+      runQuery: async (_id, sql) => {
+        const match = /^SELECT (.+) FROM (\w+)/.exec(sql)!
+        const row: Record<string, string> = fiRow(
+          match[2] as keyof typeof configurationFiRuleFields,
+          {
+            SUBSTID: "ZRULE",
+            SUBST: "ZRULE",
+            SUBSEQNR: "001"
+          }
+        )
+        return [Object.fromEntries(match[1]!.split(", ").map((field) => [field, row[field]!]))]
+      },
+      callRemoteFunction: noRfc
+    },
+    async (objectName) => ({
+      connectionId: "w200",
+      objectName,
+      objectKind: "transparentTable",
+      fingerprint: configurationFiRuleLayouts[objectName as keyof typeof configurationFiRuleLayouts]
+    }),
+    async () => ({
+      connectionId: "w200",
+      objectName: "GVSACTIV",
+      objectKind: "domain",
+      fingerprint: configurationFiActivationDomain
+    }),
+    noRfc
+  )
+  assert.equal(result.rule.status, "read")
+  assert.equal(result.activation.assignedToRequestedRule, true)
+  assert(result.executionPreflight.blockers.includes("FI_RULE_SUBSTITUTION_ACTIONS_UNVERIFIED"))
+  assert.equal(result.executionPreflight.writeAvailable, false)
+})
+
+test("FI execution preflight survives public tool serialization and enhancement workflow reads", async () => {
+  const backend = new MockBackend()
+  backend.runQuery = async (_id, sql) => {
+    const match = /^SELECT (.+) FROM (\w+)/.exec(sql)!
+    const row: Record<string, string> = fiRow(match[2] as keyof typeof configurationFiRuleFields)
+    return [Object.fromEntries(match[1]!.split(", ").map((field) => [field, row[field]!]))]
+  }
+  backend.callRemoteFunction = noRfc
+  const service = new ToolService(backend)
+  service.readDdicTransparentTable = async ({ objectName }) =>
+    JSON.stringify({
+      connectionId: "w200",
+      objectName,
+      objectKind: "transparentTable",
+      fingerprint: configurationFiRuleLayouts[objectName as keyof typeof configurationFiRuleLayouts]
+    })
+  service.readDdicDomain = async () =>
+    JSON.stringify({
+      connectionId: "w200",
+      objectName: "GVSACTIV",
+      objectKind: "domain",
+      fingerprint: configurationFiActivationDomain
+    })
+  const direct = JSON.parse(await service.readConfigurationFiRule(fiInput))
+  assert.equal(direct.executionPreflight.writeAvailable, false)
+  assert(direct.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
+  const workflow = JSON.parse(
+    await service.prepareEnhancementConfigurationWorkflow({
+      connectionId: "w200",
+      kind: "fi_validation",
+      targetName: "ZRULE",
+      desiredState: "active",
+      organizationalUnit: "1000",
+      applicationArea: "FI",
+      callupPoint: "0001"
+    })
+  )
+  assert.equal(workflow.currentState.ruleConfiguration.status, "available")
+  assert.deepEqual(
+    workflow.currentState.ruleConfiguration.evidence.executionPreflight,
+    direct.executionPreflight
+  )
+  assert.equal(workflow.controls.sapWritePerformed, false)
+  assert.equal(workflow.controls.generationPerformed, false)
+  assert.equal(backend.lastHelperRequest, undefined)
 })

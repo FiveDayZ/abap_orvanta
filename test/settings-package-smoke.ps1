@@ -2,7 +2,8 @@
 
 param(
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$')]
-    [string]$CandidateSuffix
+    [string]$CandidateSuffix,
+    [switch]$PreserveTestArtifacts
 )
 
 $ErrorActionPreference = "Stop"
@@ -73,13 +74,22 @@ try {
     if (-not $process.WaitForExit(15000) -or $process.ExitCode -ne 0) { throw "Settings launcher did not exit cleanly." }
     Write-Output "Settings package PASS: Windows PowerShell launcher, browser assets, config save, memory-only password, MCP start/$expectedToolCount tools/stop, settings exit."
 } finally {
+    foreach ($owned in @(Get-CimInstance Win32_Process | Where-Object {
+        $_.ExecutablePath -and $_.ExecutablePath.StartsWith("$packageRoot\", [StringComparison]::OrdinalIgnoreCase)
+    })) {
+        Stop-Process -Id $owned.ProcessId -Force -ErrorAction SilentlyContinue
+    }
     if ($process -and -not $process.HasExited) {
-        foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($process.Id)")) {
-            Stop-Process -Id $child.ProcessId -Force -ErrorAction SilentlyContinue
+        try {
+            $process.Kill()
+        } catch {
+            if (-not $process.HasExited) { throw }
         }
-        $process.Kill()
         $process.WaitForExit()
     }
     if ($process) { $process.Dispose() }
-    if (Test-Path -LiteralPath $resolvedRoot) { Remove-Item -LiteralPath $resolvedRoot -Recurse -Force }
+    if (Test-Path -LiteralPath $resolvedRoot) {
+        if ($PreserveTestArtifacts) { Write-Output "Test artifacts retained: $resolvedRoot" }
+        else { Remove-Item -LiteralPath $resolvedRoot -Recurse -Force }
+    }
 }

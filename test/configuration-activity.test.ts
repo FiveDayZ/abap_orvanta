@@ -1,7 +1,15 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { mkdtemp } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { Client } from "@modelcontextprotocol/sdk/client/index.js"
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { readConfigurationActivity } from "../src/configuration-activity.js"
 import { configurationImgDetailLayouts } from "../src/configuration-img-details.js"
+import { configurationImgReaders } from "../src/configuration-img.js"
+import { configurationUnitLayouts } from "../src/configuration-unit.js"
+import { startHttpServer } from "../src/http.js"
 import {
   NATIVE_PREVIEW_EMPTY_HTML,
   reviewedTableReaderDefinition
@@ -125,6 +133,7 @@ test("direct IMG lookup returns actual language, physical node identity and mult
   assert.equal(result.maintenanceObjects.objects.length, 2)
   assert.equal(result.maintenanceObjects.objects[0]!.OBJECTNAME, "TEST_OTHER")
   assert.equal(result.maintenanceRoute.executionAvailable, false)
+  assert.equal(result.nextRead, null)
   assert.equal(result.saveAvailable, false)
   assert.equal(result.evidence.headerRechecked, true)
   assert.equal(
@@ -298,4 +307,296 @@ test("service and readonly/config/full profiles expose the dedicated activity co
     assert.ok(toolNamesForProfile(p).includes("read_configuration_activity"))
   for (const p of ["dev", "ops"] as const)
     assert.ok(!toolNamesForProfile(p).includes("read_configuration_activity"))
+})
+
+test("CUNI activity offers only a mapping read and retracts it for absent or unavailable associations", async () => {
+  const activityId = "SIMG_CFMENUOLMSOMSC"
+  for (const mode of [
+    "linked",
+    "other_transaction",
+    "missing_header",
+    "truncated",
+    "denied"
+  ] as const) {
+    const rows = dataset()
+    rows.CUS_IMGACH[0]!.ACTIVITY = activityId
+    rows.CUS_ACTOBJ[0]!.TCODE = mode === "other_transaction" ? "TEST_T" : "CUNI"
+    if (mode === "missing_header") rows.CUS_IMGACH = []
+    if (mode === "truncated")
+      rows.CUS_ACTOBJ = Array.from({ length: 17 }, (_, i) => ({
+        ...rows.CUS_ACTOBJ[0]!,
+        OBJECTNAME: `TEST_${i}`
+      }))
+    const result = await run(
+      rows,
+      definition,
+      async (sql, limit) => {
+        if (mode === "denied" && sql.includes("FROM CUS_ACTOBJ")) throw new Error("HTTP 403")
+        return select(rows, sql, limit)
+      },
+      { connectionId: "w200", activityId }
+    )
+    assert.equal(result.nextRead !== null, mode === "linked")
+    assert.equal(result.saveAvailable, false)
+    assert.equal(result.maintenanceRoute.executionAvailable, false)
+    if (result.nextRead) {
+      assert.equal(result.nextRead.tool, "find_configuration_activities")
+      assert.equal(result.nextRead.readOnly, true)
+      assert.ok(
+        toolContracts.find_configuration_activities.inputSchema.safeParse(result.nextRead.arguments)
+          .success
+      )
+      assert.equal(result.nextRead.arguments.resolveMaintenanceObjects, true)
+      assert.equal(result.nextRead.arguments.objectName, "T006A")
+    }
+  }
+})
+
+test("public SDK follows the CUNI activity, mapping and descriptor links without invoking value or write APIs", async (t) => {
+  const activityId = "SIMG_CFMENUOLMSOMSC"
+  const rows: Record<string, Record<string, string>[]> = dataset()
+  rows.CUS_IMGACH![0]!.ACTIVITY = activityId
+  rows.CUS_ACTOBJ![0]!.TCODE = "CUNI"
+  rows.OBJS = [
+    {
+      OBJECTNAME: "CUNI",
+      OBJECTTYPE: "T",
+      TABNAME: "T006A",
+      COVER: "",
+      CANDIDATE: "",
+      DDIC: "",
+      PRIM_TABLE: "",
+      VIEWGRANT: "",
+      TAB_FILLED: ""
+    }
+  ]
+  rows.TSTC = [{ TCODE: "CUNI", PGMNA: "SAPMUNIT" }]
+  const names = ["MANDT", "SPRAS", "MSEHI", "MSEH3", "MSEH6", "MSEHT", "MSEHL"]
+  const lengths = [3, 1, 3, 3, 6, 10, 30]
+  const old = {
+    table: ToolService.prototype.readDdicTransparentTable,
+    function: ToolService.prototype.readFunctionModuleInterface,
+    metadata: ToolService.prototype.readAbapTable
+  }
+  ToolService.prototype.readDdicTransparentTable = async ({ objectName }) =>
+    JSON.stringify(
+      objectName === "T006A"
+        ? {
+            connectionId: "w200",
+            objectName,
+            objectKind: "transparentTable",
+            version: "1",
+            fingerprint: configurationUnitLayouts.T006A,
+            packageName: "TEST",
+            definition: {
+              tableClass: "TRANSP",
+              description: "Synthetic text layout",
+              deliveryClass: "C",
+              dataBrowserMaintenance: "allowed",
+              fields: names.map((name, i) => ({
+                name,
+                position: i + 1,
+                key: i < 3,
+                dataElement: "",
+                description: name
+              }))
+            }
+          }
+        : {
+            ...(await definition(objectName)),
+            fingerprint:
+              objectName === "OBJS"
+                ? "dc1667a4e14e0d69b372ef3a7704052d5456d0542b1d45390bb1a662a5723451"
+                : objectName === "TSTC"
+                  ? "44e8612fb2a6250584d3c6800498b7c3dd4c33de3790fc13dc0c2793e1b2ce26"
+                  : pins[objectName]
+          }
+    )
+  ToolService.prototype.readFunctionModuleInterface = async ({ functionName }) => {
+    const pin = configurationImgReaders.find((pin) => pin.functionName === functionName)
+    assert.ok(pin)
+    return JSON.stringify({ ...pin, connectionId: "w200", updateTask: false })
+  }
+  ToolService.prototype.readAbapTable = async (raw) => {
+    const input = raw as { tableName: string }
+    assert.equal(input.tableName, "DD03L")
+    return JSON.stringify({
+      connectionId: "w200",
+      tableName: "DD03L",
+      status: "ok",
+      readOnly: true,
+      truncated: false,
+      returnedCount: names.length,
+      data: names.map((name, i) => ({
+        TABNAME: "T006A",
+        AS4LOCAL: "A",
+        FIELDNAME: name,
+        DATATYPE: ["CLNT", "LANG", "UNIT"][i] ?? "CHAR",
+        LENG: String(lengths[i]),
+        DECIMALS: "0"
+      }))
+    })
+  }
+  t.after(() => {
+    ToolService.prototype.readDdicTransparentTable = old.table
+    ToolService.prototype.readFunctionModuleInterface = old.function
+    ToolService.prototype.readAbapTable = old.metadata
+  })
+  const backend = new MockBackend()
+  const details = backend.connectionDetails.bind(backend)
+  backend.connectionDetails = (id) => ({ ...details(id), client: "200", language: "ZH" })
+  let queries = 0
+  backend.runQuery = async (_id: string, sql: string, limit?: number) => {
+    queries++
+    return select(rows, sql, limit ?? 17)
+  }
+  backend.callRemoteFunction = async () => assert.fail("no native value or write API")
+  const stateRoot = await mkdtemp(join(tmpdir(), "orvanta-cuni-img-links-"))
+  const server = await startHttpServer(backend, 0, stateRoot)
+  const client = new Client({ name: "cuni-img-links", version: "1" })
+  t.after(async () => {
+    await client.close()
+    await server.closeIfIdle()
+  })
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL(server.mcpUrl)) as Parameters<Client["connect"]>[0]
+  )
+  const call = async (tool: string, argumentsForTool: Record<string, unknown>) => {
+    const result = await client.callTool({ name: tool, arguments: argumentsForTool })
+    assert.equal(result.isError, undefined)
+    return JSON.parse((result.content as { text: string }[])[0]!.text)
+  }
+  const activity = await call("read_configuration_activity", { connectionId: "w200", activityId })
+  const mapping = await call(activity.nextRead.tool, activity.nextRead.arguments)
+  const next = mapping.activities.find(
+    (row: { activityId: string }) => row.activityId === activityId
+  ).nextRead
+  const descriptor = await call(next.tool, next.arguments)
+  assert.equal(descriptor.valueRead.tool, "read_configuration_unit")
+  assert.equal(descriptor.valueRead.textDraft.tool, "preview_configuration_unit_text")
+  assert.equal(descriptor.valueRead.textDraft.argumentSources.language, "text.requestedLanguage")
+  for (const result of [activity, mapping, descriptor]) assert.equal(result.saveAvailable, false)
+  const beforeInvalidInput = queries
+  assert.equal(
+    (
+      await client.callTool({
+        name: descriptor.valueRead.tool,
+        arguments: descriptor.valueRead.arguments
+      })
+    ).isError,
+    true
+  )
+  assert.equal(
+    (
+      await client.callTool({
+        name: descriptor.valueRead.textDraft.tool,
+        arguments: {
+          ...descriptor.valueRead.textDraft.arguments,
+          unitKey: "KG",
+          language: "ZH",
+          expectedReadFingerprint: "a".repeat(64),
+          patch: { MSEH3: "alias" }
+        }
+      })
+    ).isError,
+    true
+  )
+  assert.equal(queries, beforeInvalidInput)
+})
+
+test("public SDK exposes bounded physical references separately from source nodes and execution routes", async (t) => {
+  const rows: Record<string, Record<string, string>[]> = dataset()
+  for (const table of ["TNODE01", "TNODE01R", "TNODE01T"]) rows[table]![0]!.EXTENSION = ""
+  rows.TNODE01![0]!.REFNODE_ID = "LEAF"
+  rows.TNODE01![0]!.REFTREE_ID = "TARGET_TREE"
+  rows.TTREE!.push({ ID: "TARGET_TREE", EXT_KEY: "", TYPE: "TARGET_TYPE", NODE_ID: "LEAF" })
+  rows.TTREETYPE!.push({
+    TREE_TYPE: "TARGET_TYPE",
+    ACTIVE: "X",
+    DB_IDENT: "GENER",
+    DB_TABLE: "TNODE02"
+  })
+  rows.TNODE02 = [
+    {
+      TREE_ID: "TARGET_TREE",
+      EXT_KEY: "",
+      EXTENSION: "",
+      NODE_ID: "LEAF",
+      PARENT_ID: "",
+      REFNODE_ID: "",
+      REFTREE_ID: "",
+      W_SUBNODES: ""
+    }
+  ]
+  rows.TNODE02T = [{ ...rows.TNODE02[0]!, SPRAS: "1", TEXT: "Target title" }]
+  const oldTable = ToolService.prototype.readDdicTransparentTable
+  ToolService.prototype.readDdicTransparentTable = async ({ objectName }) =>
+    JSON.stringify(await definition(objectName))
+  t.after(() => {
+    ToolService.prototype.readDdicTransparentTable = oldTable
+  })
+  const backend = new MockBackend()
+  const details = backend.connectionDetails.bind(backend)
+  backend.connectionDetails = (id) => ({ ...details(id), client: "200", language: "ZH" })
+  let denied = false
+  let queries = 0
+  backend.runQuery = async (_id: string, sql: string, limit?: number) => {
+    queries++
+    if (denied && sql.includes("FROM TNODE02 WHERE")) throw new Error("HTTP 403")
+    return select(rows, sql, limit!)
+  }
+  backend.callRemoteFunction = async () => assert.fail("no RFC fallback, configuration or CTS call")
+  const stateRoot = await mkdtemp(join(tmpdir(), "orvanta-img-physical-reference-"))
+  const server = await startHttpServer(backend, 0, stateRoot)
+  const client = new Client({ name: "img-physical-reference", version: "1" })
+  t.after(async () => {
+    await client.close()
+    await server.closeIfIdle()
+  })
+  await client.connect(
+    new StreamableHTTPClientTransport(new URL(server.mcpUrl)) as Parameters<Client["connect"]>[0]
+  )
+  for (const fault of [false, true]) {
+    denied = fault
+    const response = await client.callTool({
+      name: "read_configuration_activity",
+      arguments: { connectionId: "w200", activityId: "TEST_IMG" }
+    })
+    assert.equal(response.isError, undefined)
+    const result = JSON.parse((response.content as { text: string }[])[0]!.text)
+    const variant = result.path.variants[0]
+    assert.deepEqual(
+      variant.nodes.map((node: { nodeId: string }) => node.nodeId),
+      ["LEAF"]
+    )
+    const reference = variant.nodes[0].physicalReference
+    assert.equal(reference.readOnly, true)
+    assert.equal(reference.executable, false)
+    assert.equal(reference.status, fault ? "partial" : "read")
+    assert.equal(reference.reason, fault ? "CONFIGURATION_IMG_DETAIL_QUERY_FAILED" : null)
+    if (!fault) {
+      assert.equal(reference.targets[0].structureId, "TARGET_TREE")
+      assert.equal(reference.targets[0].table, "TNODE02")
+      assert.equal(reference.targets[0].nodeId, "LEAF")
+      assert.equal(reference.targets[0].title.text, "Target title")
+    }
+    assert.equal(result.title.text, "活动标题")
+    assert.equal(result.path.complete, false)
+    assert.equal(result.path.scope, "physical_structures_only")
+    assert.equal(result.saveAvailable, false)
+    assert.equal(result.maintenanceRoute.executionAvailable, false)
+    assert.equal(result.maintenanceObjects.objects.length, 2)
+  }
+  const beforeInvalid = queries
+  assert.equal(
+    (
+      await client.callTool({
+        name: "read_configuration_activity",
+        arguments: { connectionId: "w200", activityId: "TEST_IMG", tableName: "USR02" }
+      })
+    ).isError,
+    true
+  )
+  assert.equal(queries, beforeInvalid)
+  t.diagnostic(JSON.stringify({ stateRoot, queries, remoteCalls: 0, realSapRequests: 0 }))
 })

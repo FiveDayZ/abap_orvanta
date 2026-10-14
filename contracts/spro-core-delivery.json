@@ -1,0 +1,101 @@
+{
+  "format": 1,
+  "name": "spro-core-m1",
+  "profile": "config",
+  "connectionId": "w200",
+  "system": "GR2",
+  "client": "200",
+  "formalServiceAcceptance": "pending",
+  "requiredTools": [
+    "get_runtime_info",
+    "get_connected_systems",
+    "get_capability_report",
+    "get_write_operation_status",
+    "list_write_recovery_operations",
+    "describe_configuration_object",
+    "find_configuration_activities",
+    "read_configuration_activity",
+    "read_configuration_documentation",
+    "inspect_configuration_transport",
+    "read_configuration_unit",
+    "preview_configuration_unit_text",
+    "apply_configuration_unit_text",
+    "reconcile_configuration_unit_text",
+    "read_configuration_number_range_scope",
+    "read_configuration_number_range",
+    "read_configuration_number_range_api",
+    "preview_configuration_number_range",
+    "apply_configuration_number_range",
+    "reconcile_configuration_number_range",
+    "read_configuration_bc_set",
+    "read_configuration_bc_native_snapshot",
+    "preview_configuration_bc_native",
+    "inspect_configuration_bc_route",
+    "read_configuration_bc_guard",
+    "read_configuration_bc_cts_snapshot",
+    "read_configuration_bc_before_state",
+    "read_configuration_bc_effects",
+    "preflight_configuration_bc_activation",
+    "apply_configuration_bc_set",
+    "reconcile_configuration_bc_execution",
+    "recover_configuration_bc_set"
+  ],
+  "scenarios": [
+    {
+      "id": "unit-text",
+      "scope": "Existing T006A language row; MSEHT/MSEHL patch only. No unit creation, conversion or full CUNI maintenance.",
+      "flow": [
+        "read_configuration_activity",
+        "read_configuration_unit",
+        "preview_configuration_unit_text",
+        "apply_configuration_unit_text",
+        "get_write_operation_status",
+        "reconcile_configuration_unit_text"
+      ],
+      "recovery": "Reconcile first. An authorized restoration is a new apply with fresh read/text versions and the original description. Unknown receipts remain protected; no automatic retry or rollback.",
+      "cts": "Explicit open Customizing request and child task; exact T006A row key. Restoration does not remove historical CTS entries."
+    },
+    {
+      "id": "number-range",
+      "scope": "Dedicated customer object, unused interval, no year/subobject/buffering. Create/update bounds, not current-number assignment.",
+      "flow": [
+        "read_configuration_number_range_scope",
+        "read_configuration_number_range",
+        "preview_configuration_number_range",
+        "read_configuration_number_range_api",
+        "apply_configuration_number_range",
+        "get_write_operation_status",
+        "reconcile_configuration_number_range"
+      ],
+      "recovery": "Read-only reconciliation; no interval delete or generic rollback. Any further update requires fresh native version and approval.",
+      "cts": "Intervals are explicitly local-client-only; no transport recording or release."
+    },
+    {
+      "id": "bc-knm",
+      "scope": "EHS_CUNI_KNM/N only, fixed nine-table/nineteen-key CUNI scope: ten candidate rows and nine protected keys.",
+      "flow": [
+        "read_configuration_bc_set",
+        "read_configuration_bc_native_snapshot",
+        "preview_configuration_bc_native",
+        "inspect_configuration_bc_route",
+        "read_configuration_bc_guard",
+        "read_configuration_bc_cts_snapshot",
+        "preflight_configuration_bc_activation",
+        "read_configuration_bc_before_state",
+        "read_configuration_bc_effects",
+        "apply_configuration_bc_set",
+        "reconcile_configuration_bc_execution",
+        "recover_configuration_bc_set"
+      ],
+      "recovery": "Same persistent state directory, immutable before/effects references and original receipt hash. Configuration restore and cleanup of only owned added CTS keys are separate durable phases. Historical activation protocol remains.",
+      "cts": "Fixed request GR2K923429/task GR2K923430; current ownership/status/source pins must still pass. No release."
+    }
+  ],
+  "boundaries": [
+    "API only. No GUI automation or generic standard-table writes.",
+    "Source/interface/DDIC attestations, authorization, locking, optimistic versions and durable unknown-write protection remain enforced.",
+    "Package creation and tool visibility do not authorize SAP writes, customer-object deployment, CTS cleanup, lock release, service switch or publication.",
+    "Historical private-instance acceptance does not prove acceptance of this candidate or the formal service.",
+    "FI save/recover, BTE activation and arbitrary IMG activities are not delivered by M1."
+  ]
+}

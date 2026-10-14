@@ -43,6 +43,7 @@ import type { AbapObjectInfo, SapDdicResult } from "../src/backend.js"
 import { toolContracts } from "../src/contracts.js"
 import { InvocationReceiptStore } from "../src/invocation-receipts.js"
 import { ToolService, extractMethod, validateReadOnlySql } from "../src/tools.js"
+import { TOOL_REGISTRY } from "../src/tool-registry.js"
 import { findAndReplaceSource } from "../src/source-edit.js"
 import { mergeTextElementChanges } from "../src/text-elements.js"
 import { MockBackend } from "./mock-backend.js"
@@ -1132,6 +1133,41 @@ test("a $TMP package is refused locally by every DDIC write", async () => {
   // The precondition is refused before the worklist or the stored definition is read, so no call
   // spends an operationId or a SAP-side rejection on a request the helper can only refuse.
   assert.deepEqual(operations, [])
+})
+
+/**
+ * The other half of the DEV-01 rule: the refusal lives in one shared validator, so every DDIC write
+ * must also TELL the caller the precondition that validator enforces. A tool whose request carries a
+ * package but whose description never mentions one leaves the caller to find out by failing.
+ *
+ * The family is taken from the registry by the helper it dispatches to, not from a hand-written name
+ * list, so a DDIC write added later is covered as soon as it is registered. The description text is
+ * the measured thing here; it is read from the shipped contract rather than restated.
+ */
+test("every DDIC write declares the package precondition its request enforces", () => {
+  const ddicWrites = TOOL_REGISTRY.filter(
+    (entry) => entry.sapHelper === "Z_ORVANTA_MCP_DDIC_API" && !entry.annotations.readOnlyHint
+  )
+  assert.ok(
+    ddicWrites.length >= 16,
+    `expected the whole DDIC write family, found ${ddicWrites.length}`
+  )
+  for (const entry of ddicWrites) {
+    const description = toolContracts[entry.name as keyof typeof toolContracts]?.description ?? ""
+    assert.match(description, /package/i, `${entry.name} must state the package rule it enforces`)
+    assert.match(
+      description,
+      /transport|request/i,
+      `${entry.name} must state the request rule it enforces`
+    )
+  }
+  // The single member of the family whose helper branch runs outside the shared package guard
+  // (`lv_write` is never set for UPSERT_APPEND_STRUCTURE_FIELDS, so the guard's package arm is not
+  // reached) must SAY that it takes no package. Leaving the omission undocumented is what turned a
+  // deliberate exemption into a gap in this audit.
+  const append = toolContracts.upsert_append_structure_fields.description
+  assert.match(append, /no package/i)
+  assert.match(append, /no request/i)
 })
 
 test("table field writes carry the DD03P reference pair, and an unpaired half is refused", async () => {

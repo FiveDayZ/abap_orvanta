@@ -597,7 +597,10 @@ export async function buildCapabilityReport(
         "read_abap_table",
         "preview_configuration",
         "describe_configuration_object",
+        "find_configuration_fi_rules",
         "read_configuration_fi_rule",
+        "preview_configuration_fi_activation",
+        "inspect_configuration_fi_activation_route",
         "inspect_configuration_transport",
         "compare_configuration_unit",
         "preview_configuration_number_range",
@@ -687,7 +690,7 @@ export async function buildCapabilityReport(
       "native-adt",
       ["format_abap_source"],
       unknownTargetObservation(
-        "Formatting requires one real, readable source object whose active text can be sent to the ADT pretty-printer resource; registration and discovery alone are not proof. The service never writes the result back, so there is no write or activation to verify. A target that does not serve the resource answers with a named endpoint status instead of returning the input as if it had been formatted."
+        "Formatting requires one real, readable source object whose active text can be sent to the ADT pretty-printer resource; registration and discovery alone are not proof. The service never writes the result back, so there is no write or activation to verify. A target that does not serve the resource answers with a named endpoint status instead of returning the input as if it had been formatted, and an answer that carries no text at all is reported as FORMAT_RESULT_EMPTY rather than as 'already formatted'."
       )
     ),
     // The quick-fix evaluator is its own resource under `quickfixes`, not part of the syntax check or

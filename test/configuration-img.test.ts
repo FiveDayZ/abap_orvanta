@@ -79,6 +79,7 @@ test("IMG navigation uses one exact S object, deduplicates and caps output witho
   assert.equal(result.observedCount, 2)
   assert.equal(result.truncated, true)
   assert.equal(result.activities[0]!.activityId, "TEST_A")
+  assert.equal(result.activities[0]!.nextRead, null)
   assert.equal(result.activities[0]!.title.status, "unknown")
   assert.equal(result.saveAvailable, false)
   assert.ok(!JSON.stringify(result).includes("must-not-be-returned"))
@@ -646,4 +647,54 @@ test("T registrations use transaction metadata callbacks and never the object-na
   )
   assert.deepEqual(result.activities[0]!.maintenanceObjects, ["T:TEST_CODE"])
   assert.equal(result.lookups[0]!.method, "transaction_metadata_join")
+})
+
+test("CUNI IMG link requires the selected text table, exact activity and observed transaction program", async () => {
+  const activityId = "SIMG_CFMENUOLMSOMSC"
+  for (const [objectName, activity, transaction, program, resolved, linked] of [
+    ["T006A", activityId, "CUNI", "SAPMUNIT", true, true],
+    ["T006", activityId, "CUNI", "SAPMUNIT", true, false],
+    ["T006A", "TEST_IMG", "CUNI", "SAPMUNIT", true, false],
+    ["T006A", activityId, "TEST_CODE", "SAPMUNIT", true, false],
+    ["T006A", activityId, "CUNI", "TEST_PROGRAM", true, false],
+    ["T006A", activityId, "CUNI", "SAPMUNIT", false, false]
+  ] as const) {
+    let mappings = 0
+    const result = await findConfigurationActivities(
+      { connectionId: "w200", objectName, resolveMaintenanceObjects: resolved },
+      { callRemoteFunction: async () => ({ outputs: { ACTIVITIES_FOUND: [row(activity)] } }) },
+      reader,
+      async (name) => table(name),
+      async () => {
+        mappings++
+        return {
+          ...mapping(),
+          rows: [{ ...registration(transaction), TABNAME: objectName, OBJECTTYPE: "T" as const }]
+        }
+      },
+      async () => ({
+        rows: [row(activity)],
+        sources: [],
+        warnings: [],
+        transaction: { TCODE: transaction, PGMNA: program },
+        method: "transaction_metadata_join"
+      })
+    )
+    assert.equal(mappings, resolved ? 2 : 0)
+    const next = result.activities[0]!.nextRead
+    assert.equal(next !== null, linked)
+    assert.equal(result.saveAvailable, false)
+    if (next) {
+      assert.equal(next.tool, "describe_configuration_object")
+      assert.equal(next.readOnly, true)
+      assert.deepEqual(next.arguments, {
+        connectionId: "w200",
+        objectName: "T006A",
+        expectedDefinitionFingerprint: hash
+      })
+      assert.ok(
+        toolContracts.describe_configuration_object.inputSchema.safeParse(next.arguments).success
+      )
+    }
+  }
 })

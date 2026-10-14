@@ -90,6 +90,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "execute_data_query",
       "find_configuration_activities",
       "find_configuration_bc_sets",
+      "find_configuration_fi_rules",
       "find_where_used",
       "format_abap_source",
       "get_abap_diagnostics",
@@ -113,6 +114,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "inspect_configuration_bc_route",
       "inspect_configuration_bte_maintenance_route",
       "inspect_configuration_bte_native_metadata",
+      "inspect_configuration_fi_activation_route",
       "inspect_configuration_transport",
       "inspect_customer_function_exits",
       "inspect_customer_screen_menu_exits",
@@ -138,6 +140,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       "preview_configuration",
       "preview_configuration_bc_native",
       "preview_configuration_bte_product",
+      "preview_configuration_fi_activation",
       "preview_configuration_number_range",
       "preview_configuration_unit_text",
       "preview_source_changes",
@@ -341,10 +344,11 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     assert.match(writeStatusContent[0]?.text ?? "", /"automaticRollback": false/)
 
     const seededStore = new WriteOperationReceiptStore(stateRoot, "seeded-old-instance")
+    const recoveryOperationId = "protocol-interrupted-write-".padEnd(80, "x")
     const seeded = await seededStore.reserve({
       connectionId: "w200",
       toolName: "patch_abap_screen",
-      operationId: "protocol-interrupted-write",
+      operationId: recoveryOperationId,
       targetKey: "PROG:ZRECOVERY_CENTER",
       inputHash: hashWriteInput({ target: "ZRECOVERY_CENTER" }),
       preChangeSummary: '{"target":"program ZRECOVERY_CENTER"}',
@@ -372,11 +376,54 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
     assert.equal(recovery.operations.length, 1)
     assert.equal(recovery.operations[0]?.recoveryState, "interrupted")
 
+    const interruptedStatus = await client.callTool({
+      name: "get_write_operation_status",
+      arguments: { connectionId: "w200", operationId: recoveryOperationId }
+    })
+    assert.equal(interruptedStatus.isError, undefined)
+    const interruptedReceipt = JSON.parse(
+      (interruptedStatus.content as Array<{ text: string }>)[0]!.text
+    )
+    assert.equal(interruptedReceipt.operationId, recoveryOperationId)
+    assert.equal(interruptedReceipt.status, "interrupted")
+    assert.equal(interruptedReceipt.receiptHash, recovery.operations[0]!.receiptHash)
+    for (const operationId of [recoveryOperationId + "x", "invalid/id"]) {
+      for (const name of ["get_write_operation_status", "release_write_operation_lock"]) {
+        const argumentsForTool = {
+          connectionId: "w200",
+          operationId,
+          ...(name === "release_write_operation_lock"
+            ? {
+                expectedReceiptHash: interruptedReceipt.receiptHash,
+                confirmation: "SAP_STATE_VERIFIED",
+                reason: "Invalid input must not change the local lock"
+              }
+            : {})
+        }
+        assert.equal((await client.callTool({ name, arguments: argumentsForTool })).isError, true)
+      }
+    }
+    const staleHashRelease = await client.callTool({
+      name: "release_write_operation_lock",
+      arguments: {
+        connectionId: "w200",
+        operationId: recoveryOperationId,
+        expectedReceiptHash: "f".repeat(64),
+        confirmation: "SAP_STATE_VERIFIED",
+        reason: "Stale receipt must not release the local lock"
+      }
+    })
+    assert.equal(staleHashRelease.isError, true)
+    assert.equal(
+      (await seededStore.status("w200", recoveryOperationId)).receiptHash,
+      interruptedReceipt.receiptHash
+    )
+
     const rejectedRelease = await client.callTool({
       name: "release_write_operation_lock",
       arguments: {
         connectionId: "w200",
-        operationId: "protocol-interrupted-write",
+        operationId: recoveryOperationId,
         expectedReceiptHash: recovery.operations[0]!.receiptHash,
         confirmation: "NOT_VERIFIED",
         reason: "Operator has not completed SAP verification"
@@ -388,7 +435,7 @@ test("streamable HTTP exposes the implemented standalone tool waves", async () =
       name: "release_write_operation_lock",
       arguments: {
         connectionId: "w200",
-        operationId: "protocol-interrupted-write",
+        operationId: recoveryOperationId,
         expectedReceiptHash: recovery.operations[0]!.receiptHash,
         confirmation: "SAP_STATE_VERIFIED",
         reason: "Operator verified the current SAP object and lock state"

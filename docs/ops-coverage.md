@@ -446,7 +446,7 @@ Two decisions were taken by the operator on 2026-09-25 and are recorded in
 - 两个新模块共享 `src/reviewed-table-reader.ts`（从 `system-info.ts` 抽出的受护读取器：原生预览失败指纹校验后才走
   `RFC_READ_TABLE`，无通用 SQL 回退），内部校验码按调用方加前缀（`SYSTEM_INFO_` / `SYSTEM_PARAMETERS_`），
   所以原有错误契约逐字未变；`table-query.ts` 仍从 `system-info.ts` 取 `reviewedTableReaderDefinition`（现为再导出）。
-- 登记：`read_system_parameters` 以 `unverified` 进 `contracts/verification-registry.json`（144 条 = 工具数，
+- 登记：`read_system_parameters` 以 `unverified` 进 `contracts/verification-registry.json`（登记表当时 144 条 = 工具数；2026-10-08 复算为 208 条 = 工具数，
   四个未验证字段一个都不声明）；`get_sap_system_info` 保留原 citation，并在 notes 中写明 RFC_SYSTEM_INFO 半边
   不在那次验收范围内。族状态仍为 `partial`，`criterionMet=false`（已闭环 2/14）。
 

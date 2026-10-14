@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { z } from "zod"
 import {
   configurationUnitSchema,
@@ -16,6 +17,8 @@ export const configurationUnitCompareInputSchema = z
     to: z.enum(["w200", "w300"]),
     unitKey: configurationUnitSchema.shape.unitKey,
     language: configurationUnitSchema.shape.language.unwrap(),
+    expectedFromReadFingerprint: configurationUnitSchema.shape.expectedReadFingerprint,
+    expectedToReadFingerprint: configurationUnitSchema.shape.expectedReadFingerprint,
     ignoreFields: z
       .array(
         z
@@ -45,22 +48,41 @@ export async function compareConfigurationUnit(
 ) {
   const input = configurationUnitCompareSchema.parse(raw)
   const startedAt = new Date().toISOString()
-  const observe = async (connectionId: string) => {
+  const observe = async (connectionId: string, expected: string | undefined) => {
     try {
+      const result = await read(connectionId, input.unitKey, input.language)
+      const guard =
+        expected === undefined
+          ? "not_requested"
+          : result.readFingerprint === null
+            ? "unavailable"
+            : result.readFingerprint === expected
+              ? "match"
+              : "changed"
       return {
-        status: "observed" as const,
-        result: await read(connectionId, input.unitKey, input.language)
+        status: guard === "changed" || guard === "unavailable" ? guard : ("observed" as const),
+        result: guard === "changed" || guard === "unavailable" ? null : result,
+        versionGuard: {
+          status: guard,
+          expectedReadFingerprint: expected ?? null,
+          currentReadFingerprint: result.readFingerprint
+        }
       }
     } catch {
       return {
         status: "unavailable" as const,
         result: null,
-        code: "CONFIGURATION_COMPARE_SIDE_UNAVAILABLE"
+        code: "CONFIGURATION_COMPARE_SIDE_UNAVAILABLE",
+        versionGuard: {
+          status: expected === undefined ? "not_requested" : "unavailable",
+          expectedReadFingerprint: expected ?? null,
+          currentReadFingerprint: null
+        }
       }
     }
   }
-  const from = await observe(input.from),
-    to = await observe(input.to)
+  const from = await observe(input.from, input.expectedFromReadFingerprint),
+    to = await observe(input.to, input.expectedToReadFingerprint)
   const parts = ["unit", "text"] as const
   const ignored = [...new Set(input.ignoreFields)].sort()
   const rows: {
@@ -105,6 +127,23 @@ export async function compareConfigurationUnit(
       differences
     })
   }
+  const comparable =
+    rows.every((row) => row.status !== "incomparable") &&
+    [from.result, to.result].every(
+      (result) => result && /^[a-f0-9]{64}$/.test(result.readFingerprint ?? "")
+    )
+  const reread = (connectionId: string, fingerprint: string) => ({
+    tool: "read_configuration_unit",
+    arguments: {
+      connectionId,
+      unitKey: input.unitKey,
+      language: input.language,
+      expectedReadFingerprint: fingerprint
+    },
+    requiredArguments: [],
+    readOnly: true,
+    saveAvailable: false
+  })
   return {
     from: input.from,
     to: input.to,
@@ -115,6 +154,43 @@ export async function compareConfigurationUnit(
     saveAvailable: false,
     rows,
     observations: { from, to },
+    comparisonFingerprint: comparable
+      ? createHash("sha256")
+          .update(
+            JSON.stringify({
+              from: input.from,
+              to: input.to,
+              unitKey: input.unitKey,
+              language: input.language,
+              ignoredFields: ignored,
+              fromReadFingerprint: from.result!.readFingerprint,
+              toReadFingerprint: to.result!.readFingerprint,
+              rows
+            })
+          )
+          .digest("hex")
+      : null,
+    readFlow: comparable
+      ? {
+          comparison: {
+            tool: "compare_configuration_unit",
+            arguments: {
+              from: input.from,
+              to: input.to,
+              unitKey: input.unitKey,
+              language: input.language,
+              ignoreFields: ignored,
+              expectedFromReadFingerprint: from.result!.readFingerprint!,
+              expectedToReadFingerprint: to.result!.readFingerprint!
+            },
+            requiredArguments: [],
+            readOnly: true,
+            saveAvailable: false
+          },
+          from: input.from === "w200" ? reread(input.from, from.result!.readFingerprint!) : null,
+          to: input.to === "w200" ? reread(input.to, to.result!.readFingerprint!) : null
+        }
+      : null,
     rules: {
       key: "internal_case_sensitive_MSEHI_plus_ISO_language_for_text",
       client: "each_connection_client_filter; MANDT_not_compared",

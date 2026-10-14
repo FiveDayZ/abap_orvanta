@@ -2918,6 +2918,11 @@ export class MockBackend implements SapBackend {
   formatSourceFailure: Error | null = null
   formatSourceCalls = 0
   /**
+   * The HTTP status the modelled pretty-printer answer arrived with. Carried through so a test can
+   * show the status reaches the caller instead of being dropped at the transport boundary.
+   */
+  formatSourceHttpStatus = 200
+  /**
    * The quick-fix evaluator's answer, and the failure that models a target which does not serve the
    * resource. The default is an empty list, which is the "evaluator ran and found nothing" case a
    * caller must be able to tell apart from a missing endpoint.
@@ -2956,7 +2961,8 @@ export class MockBackend implements SapBackend {
       fileUri,
       sourceUri: source.uriUsed,
       originalSource: source.source,
-      formattedSource: this.formatSourceOverride ?? source.source
+      formattedSource: this.formatSourceOverride ?? source.source,
+      formatterHttpStatus: this.formatSourceHttpStatus
     }
   }
 

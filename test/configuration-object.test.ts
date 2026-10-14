@@ -530,8 +530,51 @@ test("unit value route requires the reviewed layout, exact keys and client", asy
     assert.equal(result.saveAvailable, false)
     if (expected) {
       assert.equal(result.valueRead.tool, "read_configuration_unit")
+      assert.deepEqual(result.valueRead.arguments, { connectionId: "w200" })
+      assert.deepEqual(result.valueRead.requiredArguments, ["unitKey"])
+      assert.deepEqual(result.valueRead.keyLength, { minimum: 1, maximum: 3 })
       assert.equal(result.valueRead.textDraft?.tool, "preview_configuration_unit_text")
       assert.equal(result.valueRead.textDraft?.executable, false)
+      assert.deepEqual(result.valueRead.textDraft?.patchLimits, { MSEHT: 10, MSEHL: 30 })
+      assert.equal(
+        result.valueRead.textDraft?.argumentSources.expectedReadFingerprint,
+        "readFingerprint"
+      )
+      assert.equal(result.valueRead.textDraft?.argumentSources.language, "text.requestedLanguage")
+      assert.equal(result.valueRead.nativeTextVersionRead?.versionSource, "apiSnapshot.textVersion")
+      assert.equal(
+        result.valueRead.nativeTextVersionRead?.requiredStatus["apiSnapshot.status"],
+        "read"
+      )
+      assert.deepEqual(result.valueRead.nativeTextVersionRead?.requiredArguments, [
+        "unitKey",
+        "language"
+      ])
+      assert.ok(
+        toolContracts.read_configuration_unit.inputSchema.safeParse({
+          ...result.valueRead.nativeTextVersionRead?.arguments,
+          unitKey: "KG",
+          language: "ZH"
+        }).success
+      )
+      assert.ok(
+        toolContracts.preview_configuration_unit_text.inputSchema.safeParse({
+          ...result.valueRead.textDraft?.arguments,
+          unitKey: "KG",
+          language: "ZH",
+          expectedReadFingerprint: hash,
+          expectedTextVersion: hash,
+          patch: { MSEHT: "Test" }
+        }).success
+      )
+      assert.deepEqual(result.valueRead.unsupportedActions, [
+        "create_unit",
+        "delete_unit",
+        "change_conversion",
+        "change_aliases"
+      ])
+    } else {
+      assert.deepEqual(result.valueRead, { status: "unsupported" })
     }
   }
 })

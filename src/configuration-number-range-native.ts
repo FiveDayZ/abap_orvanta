@@ -10,7 +10,8 @@ import {
 export const configurationNumberRangeApiReadInputSchema = z
   .object({
     connectionId: z.literal("w200"),
-    objectName: z.string().regex(/^[ZY][A-Z0-9_]{0,9}$/)
+    objectName: z.string().regex(/^[ZY][A-Z0-9_]{0,9}$/),
+    captureState: z.boolean().optional()
   })
   .strict()
 
@@ -68,6 +69,8 @@ export async function readConfigurationNumberRangeApi(
   readTable: (name: string) => Promise<unknown>
 ) {
   const input = configurationNumberRangeApiReadInputSchema.parse(raw)
+  if (input.captureState && input.objectName !== "ZORVCFGNR")
+    throw Error("CONFIGURATION_NR_STATE_SCOPE_UNSUPPORTED")
   if (client !== "200") throw Error("CONFIGURATION_NR_SCOPE_UNSUPPORTED")
   const attest = async () => {
     for (const [name, expected] of Object.entries(configurationNumberRangeNativeTables)) {
@@ -155,11 +158,75 @@ export async function readConfigurationNumberRangeApi(
     throw Error("CONFIGURATION_NR_READ_SCOPE_INVALID")
   if (JSON.stringify(await attest()) !== JSON.stringify(before))
     throw Error("CONFIGURATION_NR_SOURCE_CHANGED")
+  const properties = snapshot.ES_DEFINITION
+  const rows = snapshot.ET_INTERVALS.map((row) =>
+    Object.fromEntries(Object.entries(row).map(([name, value]) => [name, value.trimEnd()]))
+  )
+  const targetIndex = rows.findIndex(
+    (row) => row.SUBOBJECT === "" && row.TOYEAR === "0000" && row.NRRANGENR === "02"
+  )
+  const previewAvailable =
+    input.objectName === "ZORVCFGNR" &&
+    properties.DOMLEN === "NUMC20" &&
+    /^0+$/.test(properties.NOIVBUFFER ?? "") &&
+    [
+      "YEARIND",
+      "DTELSOBJ",
+      "BUFFER",
+      "NRTAB",
+      "NRINTFLD",
+      "NREXTFLD",
+      "NRFLD",
+      "NRSOBJFLD",
+      "NRELEFLD",
+      "RFCDEST",
+      "NRCHECKASCII"
+    ].every((name) => properties[name]?.trimEnd() === "") &&
+    targetIndex >= 0 &&
+    new Set(rows.map((row) => row.NRRANGENR)).size === rows.length &&
+    rows.every(
+      (row) =>
+        row.SUBOBJECT === "" &&
+        row.TOYEAR === "0000" &&
+        /^[A-Z0-9]{2}$/.test(row.NRRANGENR!) &&
+        /^\d{20}$/.test(row.FROMNUMBER!) &&
+        /^\d{20}$/.test(row.TONUMBER!) &&
+        row.FROMNUMBER! < row.TONUMBER! &&
+        /^\d{20}$/.test(row.NRLEVEL!) &&
+        ["", "X"].includes(row.EXTERNIND!)
+    )
   return {
     connectionId: input.connectionId,
     objectName: input.objectName,
     readOnly: true,
+    versionSource: "snapshot.EV_VERSION",
     versionScope: "complete_TNRO_and_current_client_NRIV",
-    snapshot
+    snapshot,
+    intervalPreview: previewAvailable
+      ? {
+          tool: "preview_configuration_number_range",
+          arguments: {
+            connectionId: input.connectionId,
+            objectName: input.objectName,
+            subobject: "",
+            year: "0000",
+            maxIntervals: 100
+          },
+          requiredArguments: ["changes"],
+          changeTemplate: { action: "update", intervalNumber: "02" },
+          requiredChangeArguments: ["fromNumber", "toNumber", "external"],
+          argumentSources: {
+            "changes[].fromNumber": "caller",
+            "changes[].toNumber": "caller",
+            "changes[].external": "caller"
+          },
+          intervalSource: `snapshot.ET_INTERVALS[${targetIndex}]`,
+          requiresNativeVersion: false,
+          readOnly: true,
+          executable: false,
+          saveAvailable: false,
+          usableForWritePrecondition: false
+        }
+      : null
   }
 }

@@ -163,6 +163,23 @@ export async function readConfigurationActivity(
       executionAvailable: false,
       businessApi: "unknown"
     },
+    nextRead:
+      input.activityId === "SIMG_CFMENUOLMSOMSC" &&
+      header &&
+      maintenanceObjects.status === "read" &&
+      maintenanceObjects.objects.some(
+        (object) => object.ACT_ID === header.C_ACTIVITY && object.TCODE === "CUNI"
+      )
+        ? {
+            tool: "find_configuration_activities",
+            arguments: {
+              connectionId: input.connectionId,
+              objectName: "T006A",
+              resolveMaintenanceObjects: true
+            },
+            readOnly: true
+          }
+        : null,
     evidence: {
       sources,
       warnings,

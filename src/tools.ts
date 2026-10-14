@@ -3,6 +3,7 @@ import {
   prepareConfigurationBteProductChange,
   configurationBteChangeSchema
 } from "./configuration-bte-change.js"
+import { configurationBteSaveIncludePins } from "./configuration-bte-save-closure.js"
 import {
   inspectConfigurationBteMetadata,
   configurationBteMetadataSchema
@@ -15,10 +16,14 @@ import {
   previewConfigurationBteProduct,
   configurationBteProductSchema
 } from "./configuration-bte-product.js"
-import { readConfigurationNumberRangeApi } from "./configuration-number-range-native.js"
+import {
+  readConfigurationNumberRangeApi,
+  configurationNumberRangeApiReadInputSchema
+} from "./configuration-number-range-native.js"
 import { applyConfigurationNumberRange } from "./configuration-number-range-command.js"
 import { protectConfigurationNumberRangeCommand } from "./configuration-number-range-receipt.js"
 import { reconcileConfigurationNumberRange } from "./configuration-number-range-reconcile.js"
+import { ConfigurationNumberRangeStateStore } from "./configuration-number-range-state.js"
 import type { WriteOperationReceiptStore } from "./write-operation-receipts.js"
 import {
   previewConfigurationBcNative,
@@ -104,6 +109,18 @@ import {
   describeConfigurationObject
 } from "./configuration-object.js"
 import { configurationFiRuleSchema, readConfigurationFiRule } from "./configuration-fi-rule.js"
+import {
+  configurationFiActivationPreviewSchema,
+  previewConfigurationFiActivation
+} from "./configuration-fi-activation-preview.js"
+import {
+  configurationFiActivationRouteSchema,
+  inspectConfigurationFiActivationRoute
+} from "./configuration-fi-activation-route.js"
+import {
+  configurationFiRuleDiscoverySchema,
+  findConfigurationFiRules
+} from "./configuration-fi-rule-discovery.js"
 import {
   configurationTransportSchema,
   inspectConfigurationTransport
@@ -1801,6 +1818,7 @@ const NO_RUNTIME_HELPER_READER: RuntimeHelperRead = async () => ({
 
 export class ToolService {
   private readonly exportRoot: string
+  private readonly numberRangeStateRoot: string
 
   constructor(
     private readonly backend: SapBackend,
@@ -1820,6 +1838,9 @@ export class ToolService {
     private readonly bcSourceRead?: (input: unknown) => Promise<unknown>
   ) {
     this.exportRoot = resolve(exportRoot)
+    this.numberRangeStateRoot = resolve(
+      process.env.ABAP_MCP_NUMBER_RANGE_STATE_ROOT ?? this.exportRoot
+    )
   }
 
   getConnectedSystems(): string {
@@ -6867,6 +6888,29 @@ export class ToolService {
         this.backend.connectionDetails(input.connectionId).client,
         this.backend,
         {
+          username: this.backend.connectionDetails(input.connectionId).username,
+          transport: async (args) =>
+            JSON.parse(
+              await this.inspectConfigurationTransport({
+                connectionId: input.connectionId,
+                ...args
+              })
+            ),
+          include: async (objectName) => {
+            const pin =
+              configurationBteSaveIncludePins[
+                objectName as keyof typeof configurationBteSaveIncludePins
+              ]
+            if (!pin) throw Error("BTE_SAVE_CLOSURE_SOURCE_UNVERIFIED")
+            const result = await this.backend.readSourceByUri(input.connectionId, pin.sourceUri)
+            return {
+              connectionId: input.connectionId,
+              objectName,
+              sourceUri: result.uriUsed,
+              source: result.source,
+              kind: result.kind ?? "source"
+            }
+          },
           preview: async (args) => JSON.parse(await this.previewConfigurationBteProduct(args)),
           metadata: async () =>
             JSON.parse(
@@ -8540,6 +8584,11 @@ export class ToolService {
    * two travel in one request: a mismatch would otherwise read another system's source under the
    * connection the caller named. The result is judged here rather than in the backend, so the
    * "unchanged" answer is a statement about the two texts the caller can also see.
+   *
+   * Three outcomes are kept apart, and none of them may be inferred from another: different text is a
+   * reformat, identical text is "already in the formatter's output shape", and an answer that carried
+   * no usable text at all is `FORMAT_RESULT_EMPTY` - undeterminable, and never reported as either of
+   * the first two. The status of the call travels back in `formatterHttpStatus`.
    */
   async formatAbapSource(input: FormatSourceInput): Promise<string> {
     let uri: URL
@@ -8558,6 +8607,17 @@ export class ToolService {
       )
     }
     const result = await this.backend.formatSource(connectionId, input.fileUri)
+    // The backend refuses a textless printer answer, and this is the second half of the same rule: the
+    // reply below must never describe an answer that carried no text as "the source is already in the
+    // formatter's output shape". Without this the two statements are one `trim()` apart, and a backend
+    // that ever returned a blank answer would be reported as a successful no-op.
+    if (result.formattedSource.trim().length === 0) {
+      throw new Error(
+        `FORMAT_RESULT_EMPTY: the pretty printer returned no usable text for ${result.sourceUri} ` +
+          `(HTTP ${result.formatterHttpStatus}). The formatted text is undeterminable - this is NOT ` +
+          `"already formatted" and NOT a successful reformat.`
+      )
+    }
     const originalLineCount = sourceLineCount(result.originalSource)
     const formattedLineCount = sourceLineCount(result.formattedSource)
     // Line endings are a storage convention, not a formatting result: SAP stores CRLF while the
@@ -8573,6 +8633,9 @@ export class ToolService {
         originalLineCount,
         formattedLineCount,
         lineCountDelta: formattedLineCount - originalLineCount,
+        // The status of the call that produced formattedSource. An empty answer never reaches this
+        // point (see FORMAT_RESULT_EMPTY above), so this is the auditable half of that refusal.
+        formatterHttpStatus: result.formatterHttpStatus,
         summary: changed
           ? `The pretty printer returned different text: ${originalLineCount} line(s) in, ${formattedLineCount} line(s) out. Nothing was written back to SAP; apply the formatted source with an explicitly authorised write.`
           : `The pretty printer returned the source unchanged (${originalLineCount} line(s)); there is nothing to apply. This is not a failure - the source is already in the formatter's output shape.`,
@@ -9394,6 +9457,30 @@ export class ToolService {
     )
   }
 
+  async findConfigurationFiRules(raw: unknown): Promise<string> {
+    const input = configurationFiRuleDiscoverySchema.parse(raw)
+    return JSON.stringify(
+      await findConfigurationFiRules(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+          ),
+        async (functionName) =>
+          JSON.parse(
+            await this.readFunctionModuleInterface({
+              connectionId: input.connectionId,
+              functionName
+            })
+          )
+      ),
+      null,
+      2
+    )
+  }
+
   async readConfigurationFiRule(raw: unknown): Promise<string> {
     const input = configurationFiRuleSchema.parse(raw)
     return JSON.stringify(
@@ -9413,7 +9500,55 @@ export class ToolService {
               connectionId: input.connectionId,
               functionName
             })
+          ),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicStructure({ connectionId: input.connectionId, objectName })
+          ),
+        async (uri) => this.backend.readSourceByUri(input.connectionId, uri),
+        async (objectName) =>
+          JSON.parse(
+            await this.readDdicDataElement({ connectionId: input.connectionId, objectName })
           )
+      ),
+      null,
+      2
+    )
+  }
+
+  async previewConfigurationFiActivation(raw: unknown): Promise<string> {
+    const input = configurationFiActivationPreviewSchema.parse(raw)
+    return JSON.stringify(
+      await previewConfigurationFiActivation(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        async (request) => JSON.parse(await this.readConfigurationFiRule(request))
+      ),
+      null,
+      2
+    )
+  }
+
+  async inspectConfigurationFiActivationRoute(raw: unknown): Promise<string> {
+    const input = configurationFiActivationRouteSchema.parse(raw)
+    return JSON.stringify(
+      await inspectConfigurationFiActivationRoute(
+        input,
+        this.backend.connectionDetails(input.connectionId).client,
+        this.backend,
+        {
+          table: async (objectName) =>
+            JSON.parse(
+              await this.readDdicTransparentTable({ connectionId: input.connectionId, objectName })
+            ),
+          definition: async (functionName) =>
+            JSON.parse(
+              await this.readFunctionModuleInterface({
+                connectionId: input.connectionId,
+                functionName
+              })
+            )
+        }
       ),
       null,
       2
@@ -9536,18 +9671,25 @@ export class ToolService {
   }
 
   async readConfigurationNumberRangeApi(raw: unknown): Promise<string> {
+    const input = configurationNumberRangeApiReadInputSchema.parse(raw)
+    const result = await readConfigurationNumberRangeApi(
+      input,
+      this.backend.connectionDetails("w200").client,
+      this.backend,
+      async (functionName) =>
+        JSON.parse(await this.readFunctionModuleInterface({ connectionId: "w200", functionName })),
+      async (objectName) =>
+        JSON.parse(await this.readDdicTransparentTable({ connectionId: "w200", objectName }))
+    )
     return JSON.stringify(
-      await readConfigurationNumberRangeApi(
-        raw,
-        this.backend.connectionDetails("w200").client,
-        this.backend,
-        async (functionName) =>
-          JSON.parse(
-            await this.readFunctionModuleInterface({ connectionId: "w200", functionName })
-          ),
-        async (objectName) =>
-          JSON.parse(await this.readDdicTransparentTable({ connectionId: "w200", objectName }))
-      ),
+      input.captureState
+        ? {
+            ...result,
+            stateReference: await new ConfigurationNumberRangeStateStore(
+              this.numberRangeStateRoot
+            ).capture(input.objectName, result.snapshot)
+          }
+        : result,
       null,
       2
     )
@@ -9605,7 +9747,12 @@ export class ToolService {
         async (objectName) =>
           JSON.parse(
             await this.readConfigurationNumberRangeApi({ connectionId: "w200", objectName })
-          ).snapshot
+          ).snapshot,
+        (objectName, version) =>
+          new ConfigurationNumberRangeStateStore(this.numberRangeStateRoot).read(
+            objectName,
+            version
+          )
       ),
       null,
       2

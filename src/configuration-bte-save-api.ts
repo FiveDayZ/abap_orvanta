@@ -1,5 +1,59 @@
 // Active standard APIs read from w200 on 2026-10-07; these pins do not grant writes.
 export const configurationBteSaveApiPins = {
+  VIEW_GET_DATA: {
+    functionGroup: "SVIM",
+    source: "b918ba8d8a364ed018f9a12a2d98d15dbe8272c5a478c0fc882b62d9de929851",
+    interface: "7c982e819b9841b5fcf26d42e78ca4a20247c4a8dc29e6fe055761562670508b",
+    remoteEnabled: false,
+    updateTask: false,
+    updateTaskMode: "",
+    globalInterface: false
+  },
+  VIEW_MAINTENANCE_LOW_LEVEL: {
+    functionGroup: "SVIM",
+    source: "1aeb5c3d4610373e63188749eb9b77604a8fd8028945e5d405327e6f311be0a0",
+    interface: "d7d7728f3a9d34a5296c194b5dc07307164789146d61bb9d2f66f833af9c3d57",
+    remoteEnabled: false,
+    updateTask: false,
+    updateTaskMode: "",
+    globalInterface: false
+  },
+  TRINT_WBO_IMPL_INSERT_OBJECTS: {
+    functionGroup: "CTS_WBO_API_IMPL",
+    source: "e6f83930f2b9d5494a94f9ebff436356ac9c97c2a1265b1378485db7bf6ebc88",
+    interface: "a2b3d7446e0b298e19cb9cf9e7c01d52bf68c4fee8aab4d4a9091f3443499a39",
+    remoteEnabled: false,
+    updateTask: false,
+    updateTaskMode: "",
+    globalInterface: false
+  },
+  TRINT_OBJECTS_CHECK_AND_INSERT: {
+    functionGroup: "STRD",
+    source: "f161a219078af55400247d8f9ebea5ed69983f75b2d98880aa49a7c39b5bda29",
+    interface: "fcd4495ffe804e365b023af13d195c6e643aaf539e064757fdc6cd9b87853566",
+    remoteEnabled: false,
+    updateTask: false,
+    updateTaskMode: "",
+    globalInterface: false
+  },
+  ENQUEUE_E_TABLEE: {
+    functionGroup: "/1BCDWBEN/SENQ",
+    source: "d353084b583858035a6df110438e017c01320b45066406893ca2a7dcc96d55e8",
+    interface: "76bd7c20e487f96d8b3ddc97861863ec4cff89d90848867c9c76f3d82861aec7",
+    remoteEnabled: false,
+    updateTask: false,
+    updateTaskMode: "",
+    globalInterface: false
+  },
+  DEQUEUE_E_TABLEE: {
+    functionGroup: "/1BCDWBEN/SENQ",
+    source: "72bbc4502998714811b7ff3f9497b741eedb169a2afb950a2897b63acbffc59e",
+    interface: "281a0dc40c8b9a57adcbd52d777ec53475724280aa9d5f574419e58199c5ea5b",
+    remoteEnabled: false,
+    updateTask: false,
+    updateTaskMode: "",
+    globalInterface: false
+  },
   VIEW_MAINTENANCE_NO_DIALOG: {
     functionGroup: "SVIM",
     source: "aef8ff0659768c8c723583f7d084449063afc5980060f4c45b3c5641a499b861",

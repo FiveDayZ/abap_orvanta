@@ -21,7 +21,9 @@ try {
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
     $startInfo.EnvironmentVariables["ABAP_MCP_CONFIG"] = Join-Path $root "connections.json"
-    $startInfo.EnvironmentVariables["ABAP_MCP_EXPORT_ROOT"] = Join-Path $root "exports"
+    if ([string]::IsNullOrWhiteSpace($startInfo.EnvironmentVariables["ABAP_MCP_EXPORT_ROOT"])) {
+        $startInfo.EnvironmentVariables["ABAP_MCP_EXPORT_ROOT"] = Join-Path $root "exports"
+    }
     # The browser address is read in memory. No access token or password is logged.
     $startInfo.EnvironmentVariables["ABAP_MCP_SETTINGS_PORT"] = "0"
     $process = New-Object Diagnostics.Process

@@ -110,6 +110,7 @@ export async function readConfigurationNumberRange(
       definition: null,
       definitionFingerprint: null,
       readFingerprint: null,
+      nativeVersionRead: null,
       complete: false,
       truncated: false,
       representation: "sap_text_trimmed",
@@ -253,6 +254,24 @@ export async function readConfigurationNumberRange(
           )
           .digest("hex")
       : null,
+    nativeVersionRead:
+      complete &&
+      input.objectName === "ZORVCFGNR" &&
+      input.subobject === "" &&
+      properties.YEARIND === "" &&
+      intervals?.some(
+        (row) => row.NRRANGENR === "02" && row.TOYEAR === "0000" && row.SUBOBJECT === ""
+      )
+        ? {
+            tool: "read_configuration_number_range_api",
+            arguments: { connectionId: input.connectionId, objectName: input.objectName },
+            requiredArguments: [],
+            versionSource: "snapshot.EV_VERSION",
+            versionScope: "complete_TNRO_and_current_client_NRIV",
+            readOnly: true,
+            saveAvailable: false
+          }
+        : null,
     complete,
     truncated,
     representation: "sap_text_trimmed",

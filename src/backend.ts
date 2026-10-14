@@ -694,12 +694,17 @@ export interface DiagnosticInfo {
 }
 
 /**
- * Both halves of one pretty-printer call.
+ * Both halves of one pretty-printer call, plus the status of the call that produced the second half.
  *
  * The backend reports only what was exchanged - the active source it read and the text the printer
  * returned - and deliberately does not judge whether that is a change. The comparison belongs to the
  * caller-facing tool, so the "did it actually reformat anything" answer is produced from the two
  * texts at the point where it is reported, rather than being asserted by the transport layer.
+ *
+ * `formattedSource` is what the printer returned, with nothing substituted: an answer that carried no
+ * text is refused here as `FORMAT_RESULT_EMPTY` rather than being filled in with `originalSource`, so
+ * the caller never sees an empty answer dressed as "already formatted". `formatterHttpStatus` is the
+ * status that answer arrived with, which is what makes that refusal auditable.
  */
 export interface SourceFormatInfo {
   connectionId: string
@@ -707,6 +712,7 @@ export interface SourceFormatInfo {
   sourceUri: string
   originalSource: string
   formattedSource: string
+  formatterHttpStatus: number
 }
 
 /**

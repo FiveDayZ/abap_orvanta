@@ -33,10 +33,14 @@ import { objectStructure as loadObjectStructure } from "abap-adt-api/build/api/o
 import { adtDiscovery } from "abap-adt-api/build/api/discovery.js"
 import { objectEnhancements as requestObjectEnhancements } from "abap-adt-api/build/api/enhancements.js"
 import { getObjectSource as requestObjectSource } from "abap-adt-api/build/api/objectcontents.js"
+// `prettyPrinter` is deliberately NOT imported from here: the library answers with
+// `(response.body || body).toString()`, so an empty response body is silently replaced by the request
+// text and "the printer returned the source unchanged" becomes indistinguishable from "the printer
+// returned nothing at all". The request is issued below through the same `AdtHTTP` transport instead,
+// because the body has to be observed rather than substituted.
 import {
   syntaxCheck as requestSyntaxCheck,
-  usageReferences as requestUsageReferences,
-  prettyPrinter as requestPrettyPrinter
+  usageReferences as requestUsageReferences
 } from "abap-adt-api/build/api/syntax.js"
 // The quick-fix evaluator and the refactoring resource both live behind `/sap/bc/adt/quickfixes` and
 // `/sap/bc/adt/refactorings`. The library's own helpers for them are NOT used: its parsers read one
@@ -146,6 +150,41 @@ const ENHANCEMENT_READ_TIMEOUT_MS = 3_000
  * are bounded so a stalled formatter cannot hold the request open indefinitely.
  */
 const PRETTY_PRINTER_TIMEOUT_MS = 10_000
+
+/** The pretty-printer resource. The one place this service posts source text for reformatting. */
+const PRETTY_PRINTER_PATH = "/sap/bc/adt/abapsource/prettyprinter"
+
+/**
+ * What the pretty printer actually answered, with the body kept exactly as received.
+ *
+ * `body` is EMPTY when the service returned no text. Nothing is substituted for it: the caller has to
+ * tell "the printer returned the source unchanged" from "the printer returned nothing", and the two
+ * are only distinguishable if the empty answer survives this far. `status` is carried so that an
+ * empty answer can be reported with the HTTP status that produced it.
+ */
+interface PrettyPrinterAnswer {
+  status: number
+  body: string
+}
+
+/**
+ * Post source text to the ADT pretty printer and hand back the raw answer.
+ *
+ * The wire shape is the library's own (`abap-adt-api/build/api/syntax.js`, `prettyPrinter`): a POST of
+ * the source as `text/plain` to `/sap/bc/adt/abapsource/prettyprinter`, accepting `text/plain`. Only
+ * the response handling differs, and that difference is the whole point of this function.
+ */
+async function requestPrettyPrinterAnswer(
+  http: AdtHTTP,
+  source: string
+): Promise<PrettyPrinterAnswer> {
+  const response = await http.request(PRETTY_PRINTER_PATH, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain", Accept: "text/plain" },
+    body: source
+  })
+  return { status: response.status, body: response.body ?? "" }
+}
 
 /**
  * Budget for one quick-fix evaluation.
@@ -1520,26 +1559,59 @@ export class AdtBackend implements SapBackend {
     const client = await this.getClient(connectionId)
     try {
       const source = await this.readSourceByUri(connectionId, fileUri)
-      const formattedSource = await withAdtStageTimeout(
+      // An object with no ABAP text (a DDIC object, a type without a source resource) has nothing to
+      // format. Sending an empty body would ask the printer a question it cannot answer and invite the
+      // reply to be read as a successful no-op, so the target is refused by name instead.
+      if (source.source.trim().length === 0) {
+        throw new Error(
+          `FORMAT_TARGET_HAS_NO_SOURCE: ${source.uriUsed} has no active ABAP source text to format. ` +
+            `The pretty printer formats ABAP source objects; a target without source (for example a DDIC ` +
+            `object) is not a formatting candidate. No SAP call was made beyond the source read.`
+        )
+      }
+      const answer = await withAdtStageTimeout(
         "PRETTY_PRINTER_TIMEOUT",
         "pretty printer",
         source.uriUsed,
         PRETTY_PRINTER_TIMEOUT_MS,
         () =>
-          requestPrettyPrinter(
+          requestPrettyPrinterAnswer(
             boundedAdtHttp(client.httpClient, PRETTY_PRINTER_TIMEOUT_MS),
             source.source
           )
       )
+      // An answer that carries no usable text is NOT "already formatted". Reporting it as unchanged
+      // would claim a transformation that never produced a result, and the caller would have no way to
+      // tell that answer from a printer that really returned the input. Whitespace counts as no text:
+      // the non-source call recorded in this workspace's registry came back as "1 blank line out" for
+      // a source with no lines, and a blank answer for a non-empty source is the same non-answer. It is
+      // undeterminable, so it is named, with the status and the byte count that produced it.
+      if (answer.body.trim().length === 0) {
+        throw new Error(
+          `FORMAT_RESULT_EMPTY: the pretty printer answered HTTP ${answer.status} with no usable text ` +
+            `(${answer.body.length} character(s)) for ${source.uriUsed}. The formatted text is ` +
+            `undeterminable - this is NOT "already formatted" and NOT a successful reformat. Retry, or ` +
+            `read the active source and format it in SAP GUI.`
+        )
+      }
       return {
         connectionId,
         fileUri,
         sourceUri: source.uriUsed,
         originalSource: source.source,
-        formattedSource
+        formattedSource: answer.body,
+        formatterHttpStatus: answer.status
       }
     } catch (error) {
       if (error instanceof AdtRequestTimeoutError) throw error
+      // The named classifications above are the answer: they must not be re-dressed as an endpoint
+      // failure by the wrapper below.
+      if (
+        error instanceof Error &&
+        /^(FORMAT_TARGET_HAS_NO_SOURCE|FORMAT_RESULT_EMPTY):/.test(error.message)
+      ) {
+        throw error
+      }
       // A target without the pretty printer resource answers 404/405/501, which
       // `capabilityFailure` already names as `unsupported-endpoint`. Reporting the input as
       // "already formatted" in that case would claim a transformation that never ran, so the

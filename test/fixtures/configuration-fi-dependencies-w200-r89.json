@@ -1,0 +1,1168 @@
+{
+  "metadata": {
+    "transparentTable:DD02L": {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "DD02L",
+      "packageName": "SDIC",
+      "version": "20110901120431",
+      "fingerprint": "6f01e8576a5500d0343256d44c3aafdeaff1912eefff03f72db50ac9c770d8cf",
+      "definition": {
+        "description": "SAP - 表",
+        "tableClass": "TRANSP",
+        "deliveryClass": "W",
+        "dataBrowserMaintenance": "notAllowed",
+        "sizeCategory": 2,
+        "dataClass": "SSEXC",
+        "buffering": "notAllowed",
+        "genericKeyFields": 0,
+        "logDataChanges": false,
+        "fields": [
+          {
+            "name": "TABNAME",
+            "position": 1,
+            "dataElement": "TABNAME",
+            "description": "表名",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "AS4LOCAL",
+            "position": 2,
+            "dataElement": "AS4LOCAL",
+            "description": "资源库对象的激活状态",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "AS4VERS",
+            "position": 3,
+            "dataElement": "AS4VERS",
+            "description": "条目版本（未使用）",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "TABCLASS",
+            "position": 4,
+            "dataElement": "TABCLASS",
+            "description": "表类别",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "SQLTAB",
+            "position": 5,
+            "dataElement": "SQLAPPDTAB",
+            "description": "SQL 表或附加的表的名称",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DATMIN",
+            "position": 6,
+            "dataElement": "DATMIN",
+            "description": "最小条目数",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DATMAX",
+            "position": 7,
+            "dataElement": "DATMAX",
+            "description": "最大条目数",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DATAVG",
+            "position": 8,
+            "dataElement": "DATAVG",
+            "description": "条目平均数目",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "CLIDEP",
+            "position": 9,
+            "dataElement": "CLIDEP",
+            "description": "特定集团条目的指示符",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "BUFFERED",
+            "position": 10,
+            "dataElement": "BUFFERED",
+            "description": "缓冲标志",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "COMPRFLAG",
+            "position": 11,
+            "dataElement": "COMPREX",
+            "description": "字段压缩指示符",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "LANGDEP",
+            "position": 12,
+            "dataElement": "LANGDEP",
+            "description": "语言相关性",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ACTFLAG",
+            "position": 13,
+            "dataElement": "ACTFLAG",
+            "description": "激活标志",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "APPLCLASS",
+            "position": 14,
+            "dataElement": "APPLCLASS",
+            "description": "DD 对象的应用类别（未使用）",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "AUTHCLASS",
+            "position": 15,
+            "dataElement": "AUTHCLASS_",
+            "description": "激活类型",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "AS4USER",
+            "position": 16,
+            "dataElement": "AS4USER",
+            "description": "上次更改者",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "AS4DATE",
+            "position": 17,
+            "dataElement": "AS4DATE",
+            "description": "最后更改的日期",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "AS4TIME",
+            "position": 18,
+            "dataElement": "AS4TIME",
+            "description": "上次更改时间",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MASTERLANG",
+            "position": 19,
+            "dataElement": "MASTERLANG",
+            "description": "资源库对象中的原始语言",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MAINFLAG",
+            "position": 20,
+            "dataElement": "MAINTFLAG",
+            "description": "标记是否允许使用标准工具进行维护",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "CONTFLAG",
+            "position": 21,
+            "dataElement": "CONTFLAG",
+            "description": "提交类",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "RESERVETAB",
+            "position": 22,
+            "dataElement": "RESERVETAB",
+            "description": "SDIC:对表保留",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "GLOBALFLAG",
+            "position": 23,
+            "dataElement": "GLOBALFLAG",
+            "description": "私有DD对象标记（未使用）",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "PROZPUFF",
+            "position": 24,
+            "dataElement": "PROZPUFF",
+            "description": "缓冲区的百分比",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "VIEWCLASS",
+            "position": 25,
+            "dataElement": "VIEWCLASS",
+            "description": "视图类型",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "VIEWGRANT",
+            "position": 26,
+            "dataElement": "VIEWGRANT",
+            "description": "视图数据的维护状态（修改权限）",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MULTIPLEX",
+            "position": 27,
+            "dataElement": "MULTIPLEX",
+            "description": "指示多路复用是否可以用于表",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "SHLPEXI",
+            "position": 28,
+            "dataElement": "SHLPEXI",
+            "description": "表格的搜索帮助附件存在",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "PROXYTYPE",
+            "position": 29,
+            "dataElement": "DDPROXYTY",
+            "description": "ABAP 字典：是生成的代理对象",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "EXCLASS",
+            "position": 30,
+            "dataElement": "DDRANKING",
+            "description": "ABAP 字典：include 语句和子类型扩展等级",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "WRONGCL",
+            "position": 31,
+            "dataElement": "DDWRONGCL",
+            "description": "增强类别不正确",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    "transparentTable:DD03L": {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "DD03L",
+      "packageName": "SDKR",
+      "version": "20110901122455",
+      "fingerprint": "20be52cf738bc6079c898cf3505f72705030a1ed07bf694a6ce6adfe96cea965",
+      "definition": {
+        "description": "表字段",
+        "tableClass": "TRANSP",
+        "deliveryClass": "W",
+        "dataBrowserMaintenance": "notAllowed",
+        "sizeCategory": 4,
+        "dataClass": "SSEXC",
+        "buffering": "notAllowed",
+        "genericKeyFields": 0,
+        "logDataChanges": false,
+        "fields": [
+          {
+            "name": "TABNAME",
+            "position": 1,
+            "dataElement": "TABNAME",
+            "description": "表名",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "FIELDNAME",
+            "position": 2,
+            "dataElement": "FIELDNAME",
+            "description": "字段名",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "AS4LOCAL",
+            "position": 3,
+            "dataElement": "AS4LOCAL",
+            "description": "资源库对象的激活状态",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "AS4VERS",
+            "position": 4,
+            "dataElement": "AS4VERS",
+            "description": "条目版本（未使用）",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "POSITION",
+            "position": 5,
+            "dataElement": "TABFDPOS",
+            "description": "  表格中区域的位置",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "KEYFLAG",
+            "position": 6,
+            "dataElement": "KEYFLAG",
+            "description": "标识表格的关键字段",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "MANDATORY",
+            "position": 7,
+            "dataElement": "MANDATORY",
+            "description": "标志：字段为必填字段（不为空）",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ROLLNAME",
+            "position": 8,
+            "dataElement": "ROLLNAME",
+            "description": "数据元素 (语义域)",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "CHECKTABLE",
+            "position": 9,
+            "dataElement": "CHECKTABLE",
+            "description": "检查外键表名",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "ADMINFIELD",
+            "position": 10,
+            "dataElement": "ADMINFIELD",
+            "description": "包含程序的嵌套深度",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "INTTYPE",
+            "position": 11,
+            "dataElement": "INTTYPE",
+            "description": "ABAP 数据类型 (C,D,N,...)",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "INTLEN",
+            "position": 12,
+            "dataElement": "INTLEN",
+            "description": "内部长度（字节）",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "REFTABLE",
+            "position": 13,
+            "dataElement": "REFTABLE",
+            "description": "参考字段表",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "PRECFIELD",
+            "position": 14,
+            "dataElement": "PRECFIELD",
+            "description": "包含表格的名称",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "REFFIELD",
+            "position": 15,
+            "dataElement": "REFFIELD",
+            "description": "货币和数量字段的参考字段",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "CONROUT",
+            "position": 16,
+            "dataElement": "CONROUT",
+            "description": "检查或产生字段模块",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "NOTNULL",
+            "position": 17,
+            "dataElement": "NOTNULL",
+            "description": "指示 NOT NULL 强加给此字段",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DATATYPE",
+            "position": 18,
+            "dataElement": "DATATYPE_D",
+            "description": "ABAP 字典中的数据类型",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "LENG",
+            "position": 19,
+            "dataElement": "DDLENG",
+            "description": "长度（字符数）",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DECIMALS",
+            "position": 20,
+            "dataElement": "DECIMALS",
+            "description": "小数位数",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DOMNAME",
+            "position": 21,
+            "dataElement": "DOMNAME",
+            "description": "定义域名",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "SHLPORIGIN",
+            "position": 22,
+            "dataElement": "SHLPORIGIN",
+            "description": "输入帮助的原件",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "TABLETYPE",
+            "position": 23,
+            "dataElement": "DDTABTYPE",
+            "description": "ABAP 字典：标记是否为表",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DEPTH",
+            "position": 24,
+            "dataElement": "TYPEDEPTH",
+            "description": "ABAP 字典：结构化类型的深度",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "COMPTYPE",
+            "position": 25,
+            "dataElement": "COMPTYPE",
+            "description": "ABAP 字典：组件类型",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "REFTYPE",
+            "position": 26,
+            "dataElement": "DDREFTYPE",
+            "description": "参考对象类型",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "LANGUFLAG",
+            "position": 27,
+            "dataElement": "DDLANGUFLG",
+            "description": "ABAP 字典：语言字段指示器",
+            "key": false,
+            "notNull": false
+          },
+          {
+            "name": "DBPOSITION",
+            "position": 28,
+            "dataElement": "TABFDPOS",
+            "description": "  表格中区域的位置",
+            "key": false,
+            "notNull": true
+          },
+          {
+            "name": "ANONYMOUS",
+            "position": 29,
+            "dataElement": "DDANONYM",
+            "description": "",
+            "key": false,
+            "notNull": true
+          },
+          {
+            "name": "OUTPUTSTYLE",
+            "position": 30,
+            "dataElement": "OUTPUTSTYLE",
+            "description": "",
+            "key": false,
+            "notNull": true
+          }
+        ]
+      }
+    },
+    "transparentTable:GB01": {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "GB01",
+      "packageName": "GVAL",
+      "version": "20110901115249",
+      "fingerprint": "4de40b9dce1a11ca4c10914f15145dcf4d8f34f95b312606af60024f9cf9bc5e",
+      "definition": {
+        "description": "布尔公式的类别",
+        "tableClass": "TRANSP",
+        "deliveryClass": "E",
+        "dataBrowserMaintenance": "notAllowed",
+        "sizeCategory": 0,
+        "dataClass": "APPL0",
+        "buffering": "full",
+        "genericKeyFields": 0,
+        "logDataChanges": true,
+        "fields": [
+          {
+            "name": "BOOLCLASS",
+            "position": 1,
+            "dataElement": "BOOLCLASS",
+            "description": "布尔类.可使用哪一字段.",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "CLASSTYPE",
+            "position": 2,
+            "dataElement": "CLASSTYPE",
+            "description": "类别类型:读或写",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "BCLTAB",
+            "position": 3,
+            "dataElement": "BCLTAB",
+            "description": "可以用于此类中的表名",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "BCLFIELD",
+            "position": 4,
+            "dataElement": "BCLFIELD",
+            "description": "不属于此等级的字段",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "BEXCLUDE",
+            "position": 5,
+            "dataElement": "BEXCLUDE",
+            "description": "标识: 字段不能用于规则中",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    "dataElement:HKONT": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "HKONT",
+      "packageName": "BF",
+      "version": "20121201000913",
+      "fingerprint": "3095cb3adb6e0917466042cb1e44ff22a7bf9cba2cd266a1e1bfaf0bc016b74d",
+      "definition": {
+        "description": "总账科目",
+        "domainName": "SAKNR",
+        "heading": "总账",
+        "short": "总账目",
+        "medium": "总账",
+        "long": "总账科目"
+      }
+    },
+    "domain:SAKNR": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "SAKNR",
+      "packageName": "BF",
+      "version": "19980217123446",
+      "fingerprint": "dfe95d4112ece19bbcfec1b848358d3359ae4fdc9b7fa244660c7ea9eb6d1fab",
+      "definition": {
+        "description": "总帐科目编号",
+        "dataType": "CHAR",
+        "length": 10,
+        "outputLength": 10,
+        "decimals": 0,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "SKA1",
+        "conversionExit": "ALPHA",
+        "fixedValues": []
+      }
+    },
+    "dataElement:MATNR": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "MATNR",
+      "packageName": "BMG",
+      "version": "20011119153917",
+      "fingerprint": "f88ce6aeec0e65454cf5cad7241ddfba20af78b94a5056f6141252ff12b8c424",
+      "definition": {
+        "description": "物料号",
+        "domainName": "MATNR",
+        "heading": "物料",
+        "short": "物料",
+        "medium": "物料",
+        "long": "物料"
+      }
+    },
+    "domain:MATNR": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "MATNR",
+      "packageName": "BMG",
+      "version": "19990301094048",
+      "fingerprint": "6f4d35d4e1d2709bfb5d67eaf77ead342d190e37a037df6d1fdf05259d40eb36",
+      "definition": {
+        "description": "物料号(字段C18)",
+        "dataType": "CHAR",
+        "length": 18,
+        "outputLength": 18,
+        "decimals": 0,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "MARA",
+        "conversionExit": "MATN1",
+        "fixedValues": []
+      }
+    },
+    "dataElement:MENGE_D": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "MENGE_D",
+      "packageName": "BM",
+      "version": "19980706190349",
+      "fingerprint": "ceb2331887af0245b4208723a5c16d8e8b760503bd2e42ffcf1aa723226029f7",
+      "definition": {
+        "description": "数量",
+        "domainName": "MENG13",
+        "heading": "数量",
+        "short": "数量",
+        "medium": "数量",
+        "long": "数量"
+      }
+    },
+    "domain:MENG13": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "MENG13",
+      "packageName": "SZS",
+      "version": "19920616172130",
+      "fingerprint": "b57b1a7f0049b68f209ab860eacb2048a7fe4eb62640d80e0f9be89eb08e8c24",
+      "definition": {
+        "description": "数量字段, 长度13",
+        "dataType": "QUAN",
+        "length": 13,
+        "outputLength": 17,
+        "decimals": 3,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "",
+        "conversionExit": "",
+        "fixedValues": []
+      }
+    },
+    "dataElement:PRCTR": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "PRCTR",
+      "packageName": "BK",
+      "version": "20050301083933",
+      "fingerprint": "b26ff6054edffca6b78777ac4c0ac51836d5a059bd6428d65a9f96fa46dacf43",
+      "definition": {
+        "description": "利润中心",
+        "domainName": "PRCTR",
+        "heading": "利润中心",
+        "short": "利润中心",
+        "medium": "利润中心",
+        "long": "利润中心"
+      }
+    },
+    "domain:PRCTR": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "PRCTR",
+      "packageName": "BK",
+      "version": "19980217123341",
+      "fingerprint": "75d69016db9f5a7ac89dfa536c6431d258476b031ded7c1335e7862fa4209c74",
+      "definition": {
+        "description": "利润中心",
+        "dataType": "CHAR",
+        "length": 10,
+        "outputLength": 10,
+        "decimals": 0,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "CEPC",
+        "conversionExit": "ALPHA",
+        "fixedValues": []
+      }
+    },
+    "dataElement:SBEWART": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "SBEWART",
+      "packageName": "FVV",
+      "version": "19981130200404",
+      "fingerprint": "2c1d7ee2cc57bf48ed582693cbaefd4dae39ce59b9b322149ababa336854209c",
+      "definition": {
+        "description": "流动类型",
+        "domainName": "SBEWART",
+        "heading": "流类",
+        "short": "流动类型",
+        "medium": "流动类型",
+        "long": "流动类型"
+      }
+    },
+    "domain:SBEWART": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "SBEWART",
+      "packageName": "FVV",
+      "version": "19970708163914",
+      "fingerprint": "0f384cc54e712bcea77ef0734de71e6287e965fa8b54291e487e2de66f09b992",
+      "definition": {
+        "description": "流程项目的流程类型",
+        "dataType": "CHAR",
+        "length": 4,
+        "outputLength": 4,
+        "decimals": 0,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "TZB0A",
+        "conversionExit": "",
+        "fixedValues": []
+      }
+    },
+    "dataElement:SGTXT": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "SGTXT",
+      "packageName": "BF",
+      "version": "19980218074856",
+      "fingerprint": "956cdab19aab442c60f294fa0ab6c3a34e5c546d4dc8d52ca9b28a555f8da33b",
+      "definition": {
+        "description": "项目文本",
+        "domainName": "TEXT50",
+        "heading": "文本",
+        "short": "文本",
+        "medium": "文本",
+        "long": "文本"
+      }
+    },
+    "domain:TEXT50": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "TEXT50",
+      "packageName": "SZS",
+      "version": "20001108191532",
+      "fingerprint": "c7457f8a9bc0c5dc7b358c4b81063ee86240f8ae972f41d842c5a2159a9c420a",
+      "definition": {
+        "description": "文本 (50 个字符)",
+        "dataType": "CHAR",
+        "length": 50,
+        "outputLength": 50,
+        "decimals": 0,
+        "lowercase": true,
+        "signFlag": false,
+        "valueTable": "",
+        "conversionExit": "",
+        "fixedValues": []
+      }
+    },
+    "transparentTable:GB01C": {
+      "connectionId": "w200",
+      "objectKind": "transparentTable",
+      "objectName": "GB01C",
+      "packageName": "GVAL",
+      "version": "19990224003212",
+      "fingerprint": "c98df87c13e5ecd0e902547631aeef9ae9cf81cb55b89ce5bc7be15c37a1e832",
+      "definition": {
+        "description": "客户的布尔公式类别",
+        "tableClass": "TRANSP",
+        "deliveryClass": "C",
+        "dataBrowserMaintenance": "allowed",
+        "sizeCategory": 0,
+        "dataClass": "APPL2",
+        "buffering": "full",
+        "genericKeyFields": 0,
+        "logDataChanges": true,
+        "fields": [
+          {
+            "name": "MANDT",
+            "position": 1,
+            "dataElement": "MANDT",
+            "description": "客户端",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "BOOLCLASS",
+            "position": 2,
+            "dataElement": "BOOLCLASS",
+            "description": "布尔类.可使用哪一字段.",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "CLASSTYPE",
+            "position": 3,
+            "dataElement": "CLASSTYPE",
+            "description": "类别类型:读或写",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "BCLTAB",
+            "position": 4,
+            "dataElement": "BCLTAB",
+            "description": "可以用于此类中的表名",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "BCLFIELD",
+            "position": 5,
+            "dataElement": "BCLFIELD",
+            "description": "不属于此等级的字段",
+            "key": true,
+            "notNull": true
+          },
+          {
+            "name": "BEXCLUDE",
+            "position": 6,
+            "dataElement": "BEXCLUDE",
+            "description": "标识: 字段不能用于规则中",
+            "key": false,
+            "notNull": false
+          }
+        ]
+      }
+    },
+    "dataElement:BUKRS": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "BUKRS",
+      "packageName": "BF",
+      "version": "20011119150155",
+      "fingerprint": "da10f666180fdd070bab0008fc76669e314af5fd824731c3b2ed616c8b6a388f",
+      "definition": {
+        "description": "公司代码",
+        "domainName": "BUKRS",
+        "heading": "公司",
+        "short": "公司码",
+        "medium": "公司代码",
+        "long": "公司代码"
+      }
+    },
+    "dataElement:TCODE": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "TCODE",
+      "packageName": "SZZ",
+      "version": "19960103130325",
+      "fingerprint": "cc109e4ba91db5687e3daa80e66027f11f70f79dfb6ae11f4e463e7ca3b2a01d",
+      "definition": {
+        "description": "事务代码",
+        "domainName": "TCODE",
+        "heading": "TCode",
+        "short": "TCode",
+        "medium": "事务代码",
+        "long": "事务代码"
+      }
+    },
+    "domain:BUKRS": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "BUKRS",
+      "packageName": "BF",
+      "version": "19980217122501",
+      "fingerprint": "7a4d27adb1c3ebb733203be5845b48e2b6357d4a08e3348b1ffb600d696f3f9f",
+      "definition": {
+        "description": "公司代码",
+        "dataType": "CHAR",
+        "length": 4,
+        "outputLength": 4,
+        "decimals": 0,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "T001",
+        "conversionExit": "",
+        "fixedValues": []
+      }
+    },
+    "domain:XBLNR1": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "XBLNR1",
+      "packageName": "FMBSCORE",
+      "version": "20011120141416",
+      "fingerprint": "9f6f2d6fcab5218a9b5b603c064dc2d77e74de29be87b24681dc436fedb1d394",
+      "definition": {
+        "description": "参考凭证号",
+        "dataType": "CHAR",
+        "length": 16,
+        "outputLength": 16,
+        "decimals": 0,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "",
+        "conversionExit": "",
+        "fixedValues": []
+      }
+    },
+    "domain:TCODE": {
+      "connectionId": "w200",
+      "objectKind": "domain",
+      "objectName": "TCODE",
+      "packageName": "SBAT",
+      "version": "19980213210911",
+      "fingerprint": "a6727f8b9540aef5eb4a7c24859c42c9c6c946a3a5a87e22d4a0c0b4aeb4fa69",
+      "definition": {
+        "description": "事务代码",
+        "dataType": "CHAR",
+        "length": 20,
+        "outputLength": 20,
+        "decimals": 0,
+        "lowercase": false,
+        "signFlag": false,
+        "valueTable": "TSTC",
+        "conversionExit": "",
+        "fixedValues": []
+      }
+    },
+    "dataElement:XBLNR1": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "XBLNR1",
+      "packageName": "FMBSCORE",
+      "version": "20011120141602",
+      "fingerprint": "5499004c03dfbb85162629111b80916ed4054fa6a302dfb3035d9b523d6da5de",
+      "definition": {
+        "description": "参考凭证号",
+        "domainName": "XBLNR1",
+        "heading": "参照",
+        "short": "参照",
+        "medium": "参照",
+        "long": "参照"
+      }
+    },
+    "dataElement:SYTCODE": {
+      "connectionId": "w200",
+      "objectKind": "dataElement",
+      "objectName": "SYTCODE",
+      "packageName": "SABP",
+      "version": "20040930131106",
+      "fingerprint": "464091f69506946bb35ec420e129f577a1b175cf9d42dddacd360e75f0d32da5",
+      "definition": {
+        "description": "当前事务代码",
+        "domainName": "TCODE",
+        "heading": "事务代码",
+        "short": "事务代码",
+        "medium": "事务代码",
+        "long": "事务代码"
+      }
+    }
+  },
+  "fields": [
+    {
+      "TABNAME": "BSEG",
+      "FIELDNAME": "HKONT",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0088",
+      "ROLLNAME": "HKONT",
+      "INTTYPE": "C",
+      "INTLEN": "000020",
+      "DATATYPE": "CHAR",
+      "LENG": "000010",
+      "DECIMALS": "000000",
+      "DOMNAME": "SAKNR",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    },
+    {
+      "TABNAME": "BSEG",
+      "FIELDNAME": "MATNR",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0158",
+      "ROLLNAME": "MATNR",
+      "INTTYPE": "C",
+      "INTLEN": "000036",
+      "DATATYPE": "CHAR",
+      "LENG": "000018",
+      "DECIMALS": "000000",
+      "DOMNAME": "MATNR",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    },
+    {
+      "TABNAME": "BSEG",
+      "FIELDNAME": "MENGE",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0160",
+      "ROLLNAME": "MENGE_D",
+      "INTTYPE": "P",
+      "INTLEN": "000007",
+      "DATATYPE": "QUAN",
+      "LENG": "000013",
+      "DECIMALS": "000003",
+      "DOMNAME": "MENG13",
+      "CONROUT": "",
+      "REFTABLE": "BSEG",
+      "REFFIELD": "MEINS"
+    },
+    {
+      "TABNAME": "BSEG",
+      "FIELDNAME": "PRCTR",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0196",
+      "ROLLNAME": "PRCTR",
+      "INTTYPE": "C",
+      "INTLEN": "000020",
+      "DATATYPE": "CHAR",
+      "LENG": "000010",
+      "DECIMALS": "000000",
+      "DOMNAME": "PRCTR",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    },
+    {
+      "TABNAME": "BSEG",
+      "FIELDNAME": "SGTXT",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0045",
+      "ROLLNAME": "SGTXT",
+      "INTTYPE": "C",
+      "INTLEN": "000100",
+      "DATATYPE": "CHAR",
+      "LENG": "000050",
+      "DECIMALS": "000000",
+      "DOMNAME": "TEXT50",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    },
+    {
+      "TABNAME": "BSEG",
+      "FIELDNAME": "VBEWA",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0204",
+      "ROLLNAME": "SBEWART",
+      "INTTYPE": "C",
+      "INTLEN": "000008",
+      "DATATYPE": "CHAR",
+      "LENG": "000004",
+      "DECIMALS": "000000",
+      "DOMNAME": "SBEWART",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    },
+    {
+      "TABNAME": "BKPF",
+      "FIELDNAME": "BUKRS",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0002",
+      "ROLLNAME": "BUKRS",
+      "INTTYPE": "C",
+      "INTLEN": "000008",
+      "DATATYPE": "CHAR",
+      "LENG": "000004",
+      "DECIMALS": "000000",
+      "DOMNAME": "BUKRS",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    },
+    {
+      "TABNAME": "BKPF",
+      "FIELDNAME": "XBLNR",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0017",
+      "ROLLNAME": "XBLNR1",
+      "INTTYPE": "C",
+      "INTLEN": "000032",
+      "DATATYPE": "CHAR",
+      "LENG": "000016",
+      "DECIMALS": "000000",
+      "DOMNAME": "XBLNR1",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    },
+    {
+      "TABNAME": "SYST",
+      "FIELDNAME": "TCODE",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "POSITION": "0109",
+      "ROLLNAME": "SYTCODE",
+      "INTTYPE": "C",
+      "INTLEN": "000040",
+      "DATATYPE": "CHAR",
+      "LENG": "000020",
+      "DECIMALS": "000000",
+      "DOMNAME": "TCODE",
+      "CONROUT": "",
+      "REFTABLE": "",
+      "REFFIELD": ""
+    }
+  ],
+  "classification": [
+    {
+      "TABNAME": "BSEG",
+      "AS4LOCAL": "A",
+      "AS4VERS": "0000",
+      "TABCLASS": "CLUSTER",
+      "SQLTAB": "RFBLG"
+    }
+  ]
+}

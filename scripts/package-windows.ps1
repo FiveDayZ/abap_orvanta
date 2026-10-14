@@ -8,10 +8,14 @@ param(
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$')]
     [string]$CandidateSuffix,
     [switch]$SkipRuntimeCheck,
-    [switch]$AllowDirty
+    [switch]$AllowDirty,
+    [switch]$PreserveExisting
 )
 
 $ErrorActionPreference = "Stop"
+if ($PreserveExisting -and (-not $CandidateSuffix -or $ReplaceExisting)) {
+    throw "-PreserveExisting requires a unique -CandidateSuffix and cannot be combined with -ReplaceExisting."
+}
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $packageJson = Get-Content -Raw (Join-Path $projectRoot "package.json") | ConvertFrom-Json
 $artifactName = "orvanta-mcp-$($packageJson.version)-win-x64"
@@ -21,6 +25,8 @@ $packageRoot = Join-Path $releaseRoot $artifactName
 $zipPath = Join-Path $releaseRoot "$artifactName.zip"
 $hashPath = "$zipPath.sha256"
 $cacheRoot = Join-Path $projectRoot ".cache\node-$NodeVersion-win-x64"
+$buildRoot = Join-Path $projectRoot ".cache\package-$artifactName"
+$compiledRoot = if ($PreserveExisting) { Join-Path $buildRoot "dist" } else { Join-Path $projectRoot "dist" }
 $nodeArchive = Join-Path $cacheRoot "node-v$NodeVersion-win-x64.zip"
 $nodeUrl = "https://nodejs.org/dist/v$NodeVersion/node-v$NodeVersion-win-x64.zip"
 $sumsUrl = "https://nodejs.org/dist/v$NodeVersion/SHASUMS256.txt"
@@ -99,8 +105,6 @@ function Assert-FactoryConfig([string]$ConfigPath) {
     }
 }
 
-New-Item -ItemType Directory -Force -Path $releaseRoot, $cacheRoot | Out-Null
-
 # 打包目录同时就是「可运行包根」：用户常直接从 release/<artifact>/ 启动服务实测，而那个实例会把
 # 自己的真实连接配置写回 <packageRoot>\connections.json。若该写入落在「算完哈希」与「打 zip」之间，
 # 产物会带着真实主机/用户出厂，且与包内 BUILD-INFO.json 的 fileSha256 不一致
@@ -115,13 +119,22 @@ if ($liveFromPackage.Count -gt 0) {
     throw "A live instance is running from the package directory ($liveLabel). Stop it first: it rewrites $packageRoot\connections.json, so the artifact could ship a real connection while BUILD-INFO.json records a placeholder."
 }
 
-if (-not $ReplaceExisting -and (@($packageRoot, $zipPath, $hashPath) | Where-Object { Test-Path -LiteralPath $_ })) {
+$outputPaths = @($packageRoot, $zipPath, $hashPath)
+if ($PreserveExisting) { $outputPaths += $buildRoot }
+if (-not $ReplaceExisting -and ($outputPaths | Where-Object { Test-Path -LiteralPath $_ })) {
     throw "Release already exists. Preserve it or explicitly use -ReplaceExisting after review."
 }
-Remove-ScopedPath $packageRoot $releaseRoot
-Remove-Item -LiteralPath $zipPath, $hashPath -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
+if ($PreserveExisting) {
+    New-Item -ItemType Directory -Path $buildRoot | Out-Null
+    & node (Join-Path $projectRoot "node_modules\typescript\bin\tsc") --project (Join-Path $projectRoot "tsconfig.json") --outDir $compiledRoot
+} else {
+    New-Item -ItemType Directory -Force -Path $cacheRoot | Out-Null
+    Remove-ScopedPath $packageRoot $releaseRoot
+    Remove-Item -LiteralPath $zipPath, $hashPath -Force -ErrorAction SilentlyContinue
 
-& npm.cmd run build
+    & npm.cmd run build
+}
 if ($LASTEXITCODE -ne 0) {
     throw "Build failed with exit code $LASTEXITCODE"
 }
@@ -139,6 +152,9 @@ $actualNodeHash = if (Test-Path -LiteralPath $nodeArchive) {
     ""
 }
 if ($actualNodeHash -ne $expectedNodeHash) {
+    if ($PreserveExisting) {
+        throw "Preservation mode requires an existing Node.js archive matching the official checksum; the cache was left unchanged."
+    }
     $partialArchive = "$nodeArchive.partial"
     Remove-Item -LiteralPath $partialArchive -Force -ErrorAction SilentlyContinue
     Invoke-WebRequest -Uri $nodeUrl -OutFile $partialArchive
@@ -154,8 +170,8 @@ if ($actualNodeHash -ne $expectedNodeHash) {
     throw "Node.js archive checksum mismatch. Expected $expectedNodeHash, got $actualNodeHash"
 }
 
-$extractRoot = Join-Path $cacheRoot "extracted"
-Remove-ScopedPath $extractRoot $cacheRoot
+$extractRoot = if ($PreserveExisting) { Join-Path $buildRoot "node-runtime" } else { Join-Path $cacheRoot "extracted" }
+if (-not $PreserveExisting) { Remove-ScopedPath $extractRoot $cacheRoot }
 Expand-Archive -LiteralPath $nodeArchive -DestinationPath $extractRoot
 $nodeRoot = Join-Path $extractRoot "node-v$NodeVersion-win-x64"
 
@@ -168,7 +184,7 @@ Copy-Item -LiteralPath (Join-Path $nodeRoot "LICENSE") -Destination (Join-Path $
 Copy-Item -LiteralPath (Join-Path $projectRoot "package.json") -Destination $appRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "package-lock.json") -Destination $appRoot
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "dist") | Out-Null
-Copy-Item -LiteralPath (Join-Path $projectRoot "dist\src") -Destination (Join-Path $appRoot "dist\src") -Recurse
+Copy-Item -LiteralPath (Join-Path $compiledRoot "src") -Destination (Join-Path $appRoot "dist\src") -Recurse
 Copy-Item -LiteralPath (Join-Path $projectRoot "ui") -Destination (Join-Path $appRoot "ui") -Recurse
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "scripts") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\probe.mjs") -Destination (Join-Path $appRoot "scripts")
@@ -176,6 +192,11 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\bootstrap-sap-helper.ps1
 # 维护诊断批准文件工具：随包发布，操作者可自行取指纹并写批准文件（默认 dry-run），
 # 放在 app\scripts 下以便按包内 node_modules 解析 MCP SDK。
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\prepare-maintenance-approval.mjs") -Destination (Join-Path $appRoot "scripts")
+
+& (Join-Path $runtimeRoot "node.exe") (Join-Path $projectRoot "scripts\stage-release-evidence.mjs") $appRoot | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Release verification evidence staging failed with exit code $LASTEXITCODE"
+}
 
 Push-Location $appRoot
 try {
@@ -242,6 +263,7 @@ $buildInfo = [ordered]@{
     product = $packageJson.name
     version = $packageJson.version
     candidateSuffix = $CandidateSuffix
+    preserveExisting = [bool]$PreserveExisting
     runtimeVersionCheck = $(if ($SkipRuntimeCheck) { "Skipped" } else { "Passed" })
     platform = "win-x64"
     nodeVersion = $NodeVersion
@@ -281,6 +303,18 @@ Assert-FactoryConfig (Join-Path $packageRoot "connections.json")
 Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zipPath -CompressionLevel Optimal
 $artifactHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash
 "$artifactHash  $([IO.Path]::GetFileName($zipPath))" | Set-Content -LiteralPath $hashPath -Encoding ascii
+
+if ($PreserveExisting) {
+    # The candidate manifest carries provenance without changing historical indexes or retention.
+    [pscustomobject]@{
+        Package = $packageRoot
+        Archive = $zipPath
+        Sha256 = $artifactHash
+        Node = "v$NodeVersion"
+        BuildOutput = $compiledRoot
+    }
+    return
+}
 
 # 归档索引：release/ 目录不纳入版本控制，产物自身的权威溯源信息是包内 BUILD-INFO.json
 # （含 standaloneSourceCommit / standaloneSourceDirty / fileSha256）与对应的 git 标签。

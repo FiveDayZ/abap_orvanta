@@ -15,10 +15,23 @@ import {
   buildConfigurationBteSaveContainers,
   configurationBteSaveSessionRequirements
 } from "./configuration-bte-save-plan.js"
+import {
+  attestConfigurationBteSaveIncludes,
+  inspectConfigurationBteTaskSelection,
+  configurationBteSavePathConstraints
+} from "./configuration-bte-save-closure.js"
+import { transportNumberSchema } from "./transport-delivery.js"
 
 export const configurationBteChangeSchema = configurationBteProductSchema
   .omit({ expectedFingerprint: true })
   .extend({
+    transport: z
+      .object({
+        requestNumber: transportNumberSchema,
+        taskNumber: transportNumberSchema
+      })
+      .strict()
+      .optional(),
     expectedFingerprint: z
       .string()
       .regex(/^[a-f0-9]{64}$/)
@@ -67,11 +80,14 @@ export async function prepareConfigurationBteProductChange(
     metadata: () => Promise<Metadata>
     table: (name: string) => Promise<unknown>
     definition: (name: string) => Promise<unknown>
+    include: (name: string) => Promise<unknown>
+    username?: string
+    transport?: (input: { requestNumber: string; taskNumber: string }) => Promise<unknown>
   }
 ) {
   const input = configurationBteChangeSchema.parse(raw)
   if (client !== "200") fail("SCOPE_UNSUPPORTED")
-  const { expectedFingerprint, ...previewInput } = input
+  const { expectedFingerprint, transport, ...previewInput } = input
   const sources: ReviewedReaderSource[] = [],
     warnings: string[] = []
   const reader = createReviewedTableReader(
@@ -149,9 +165,21 @@ export async function prepareConfigurationBteProductChange(
     }
     return result
   }
+  const taskSelection = async () => {
+    if (!transport) return null
+    if (!readers.transport || !readers.username) fail("TRANSPORT_READER_UNAVAILABLE")
+    return inspectConfigurationBteTaskSelection(transport, readers.username, backend, {
+      transport: () => readers.transport!(transport),
+      table: readers.table,
+      definition: readers.definition
+    })
+  }
+  // A rejected/ambiguous task never consumes a native metadata invocation.
+  const transportBefore = await taskSelection()
   const before = await readers.preview(previewInput),
     protectedBefore = await protection()
   const standardApis = await attestConfigurationBteSaveApis(readers.definition)
+  const standardIncludes = await attestConfigurationBteSaveIncludes(readers.include)
   const metadata = await readers.metadata()
   if (
     metadata.connectionId !== "w200" ||
@@ -166,11 +194,23 @@ export async function prepareConfigurationBteProductChange(
     fail("METADATA_UNVERIFIED")
   const after = await readers.preview(previewInput),
     protectedAfter = await protection()
+  await attestConfigurationBteSaveApis(readers.definition)
+  await attestConfigurationBteSaveIncludes(readers.include)
+  const transportAfter = await taskSelection()
+  const transportImage = (value: typeof transportBefore) =>
+    value && {
+      requestNumber: value.requestNumber,
+      taskNumber: value.taskNumber,
+      configuredUser: value.configuredUser,
+      transportFingerprint: value.transportFingerprint,
+      eligibleTasks: value.eligibleTasks
+    }
   if (
     before.fingerprint !== after.fingerprint ||
     canonical(before.change) !== canonical(after.change) ||
     canonical(before.assignments) !== canonical(after.assignments) ||
-    canonical(protectedBefore) !== canonical(protectedAfter)
+    canonical(protectedBefore) !== canonical(protectedAfter) ||
+    canonical(transportImage(transportBefore)) !== canonical(transportImage(transportAfter))
   )
     fail("READ_CHANGED")
   if (
@@ -203,8 +243,21 @@ export async function prepareConfigurationBteProductChange(
     previewFingerprint: before.fingerprint,
     metadataFingerprint: metadata.fingerprint,
     protectionLayouts: configurationBteProtectionLayouts,
+    transportReview: transportBefore
+      ? {
+          ...transportImage(transportBefore),
+          status: transportBefore.status,
+          twoReadAgreement: true,
+          atomicSnapshot: false,
+          authenticatedUserVerified: false,
+          creationRaceExcluded: false,
+          writeAvailable: false
+        }
+      : { status: "not_requested", writeAvailable: false },
     nativeSavePreparation: {
       standardApis,
+      standardIncludes,
+      pathConstraints: configurationBteSavePathConstraints,
       containers: buildConfigurationBteSaveContainers(
         metadata.native,
         before.change.before,
@@ -258,16 +311,25 @@ export async function prepareConfigurationBteProductChange(
     executionBlockers: [
       "BTE_PRODUCT_WRITE_ADAPTER_PENDING",
       "BTE_STANDARD_CTS_DIALOG_PATH_UNPROVEN",
-      "BTE_STANDARD_LUW_AND_CALLBACK_CLOSURE_UNPROVEN"
+      "BTE_STANDARD_LUW_AND_CALLBACK_CLOSURE_UNPROVEN",
+      ...configurationBteSavePathConstraints.executionBlockers
     ],
     coverage: {
       completeWithinBound: true,
       twoReadAgreement: true,
       atomicSnapshot: false,
       authorizedForWrite: false,
-      ctsInspected: false,
+      ctsInspected: transportBefore !== null,
+      ctsRecordingInspected: false,
       businessRuntimeInspected: false
     },
+    transportEvidence:
+      transportBefore && transportAfter
+        ? {
+            before: { sources: transportBefore.sources, warnings: transportBefore.warnings },
+            after: { sources: transportAfter.sources, warnings: transportAfter.warnings }
+          }
+        : null,
     sources,
     warnings
   }

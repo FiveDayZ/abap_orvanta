@@ -13,7 +13,7 @@
       "lastAttemptAt": "2026-10-07T10:25:52.102Z",
       "evidence": ".doc/orvanta-configuration-bte-change-preparation-acceptance-20261007-183127-r75.json",
       "failureBasis": null,
-      "notes": "r75 frozen isolated public MCP prepare_configuration_bte_product_change observed ZFICHK AKTIV X-to-blank review only, full one-language text and Event00001025 assignment, empty Process set, CP_INFO timestamp unchanged. One repaired native metadata call returned METADATA_READ_OK, full 92/33/3 field layouts, one header/eight field rows/event02 callback; all protected state and complete CTS429/430 agree before/after. The earlier standalone metadata call AUTHORIZATION_DENIED remains preserved; this success is the preparation public endpoint plus its internal metadata call, not a new standalone metadata endpoint call. Source/ABI attested, configuration/source/transportWrites=0 in acceptance, password cleared, private window closed. Cached/non-atomic display observation only; no SAVE/RECOVER adapter, write authority, business handler, lock/LUW closure, CTS append/cleanup or release. Shared service unchanged. r76 adds seven standard source/ABI read attestations and 109-character save/recovery containers as separate language alternatives, tested locally with the recorded native layout and public SDK. The verified observation and timestamp above belong to the r75 frozen build; current r76 SAP execution/serialization and native SAVE/RECOVER remain unverified."
+      "notes": "r75 frozen isolated public MCP prepare_configuration_bte_product_change observed ZFICHK AKTIV X-to-blank review only, full one-language text and Event00001025 assignment, empty Process set, CP_INFO timestamp unchanged. One repaired native metadata call returned METADATA_READ_OK, full 92/33/3 field layouts, one header/eight field rows/event02 callback; all protected state and complete CTS429/430 agree before/after. The earlier standalone metadata call AUTHORIZATION_DENIED remains preserved; this success is the preparation public endpoint plus its internal metadata call, not a new standalone metadata endpoint call. Source/ABI attested, configuration/source/transportWrites=0 in acceptance, password cleared, private window closed. Cached/non-atomic display observation only; no SAVE/RECOVER adapter, write authority, business handler, lock/LUW closure, CTS append/cleanup or release. Shared service unchanged. r76 adds seven standard source/ABI read attestations and 109-character save/recovery containers as separate language alternatives, tested locally with the recorded native layout and public SDK. The verified observation and timestamp above belong to the r75 frozen build; r76 SAP execution/serialization and native SAVE/RECOVER remain unverified. r77 extends the local preparation guard to thirteen API identities and four complete include-source identities, rechecked before/after, plus an optional exact existing Customizing pair and unique eligible Q/D task inventory. Local public SDK and configuration regression checks cover drift and ambiguous/missing/foreign tasks; no r77 native META/SAVE/RECOVER or live preparation acceptance is claimed. The verified timestamp, status and evidence remain the historical r75 observation; CTS creation races, early standard lock release and native SAVE message/session cleanup still block execution."
     },
     {
       "tool": "inspect_configuration_bte_native_metadata",
@@ -136,6 +136,18 @@
       "notes": "Frozen r2 named read-only MCP acceptance: EN exact indexed version 0005, THEAD NUMC(5) version 00005; unit document 74 returned lines and OML4 23 lines. Unit repeat hash/lines identical. ZH index absent with no language fallback; OMT3B header absent; maxLines 1 rejected before DOCU_GET. Partial HY/E indexed-version coverage only: no active-version attestation, rendering, dependency resolution or configuration/CTS write."
     },
     {
+      "tool": "find_configuration_fi_rules",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200/client 200 bounded GB93 validation header candidate identities",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Local implementation only; current frozen public SAP acceptance pending. Header candidates do not attest formula, organization assignment, generated code, maintenance or business effects."
+    },
+    {
       "tool": "read_configuration_fi_rule",
       "helper": null,
       "availabilityBasis": "target-specific",
@@ -146,6 +158,30 @@
       "lastAttemptAt": null,
       "evidence": null,
       "notes": "Local implementation/guard tests only. Named frozen MCP runtime acceptance is pending; no configuration maintenance, business-trigger acceptance or CTS write attestation."
+    },
+    {
+      "tool": "preview_configuration_fi_activation",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200/200 existing FI validation T001D assignment ACTIV preview",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Read-only local candidate. Requires a fresh default FI rule projection fingerprint and matching existing assignment/class; no native maintenance, generation, activation, CTS or recovery admission. SAP public-tool acceptance has not run."
+    },
+    {
+      "tool": "inspect_configuration_fi_activation_route",
+      "helper": null,
+      "availabilityBasis": "target-specific",
+      "verificationTarget": "w200/200 fixed OB28 parameter transaction and exact derived maintenance metadata",
+      "method": "read-only",
+      "status": "unverified",
+      "failureBasis": null,
+      "lastAttemptAt": null,
+      "evidence": null,
+      "notes": "Read-only candidate; fixed TSTC/TSTCP and parameter-derived TVDIR/TVIMF projections only. Standard no-dialog API definition is not execution evidence; T001D relationship, generated owner and authority/locks/CTS/LUW remain unverified. No generic table allowlist change."
     },
     {
       "tool": "compare_configuration_unit",
@@ -793,7 +829,7 @@
       "failureBasis": null,
       "lastAttemptAt": "2026-10-02T19:20:57+08:00",
       "evidence": ".doc/orvanta-format-abap-source-2026-10-02T11-20-57-181Z.json",
-      "notes": "A real read-only call at 19:20:57 +08:00 on 2026-10-02 formatted the active source of w200 class CL_SATC_ADT_RES_APP through the native ADT pretty-printer resource. Observed values from that reply: sourceUri \"/sap/bc/adt/oo/classes/cl_satc_adt_res_app/source/main\", changed true, originalLineCount 53, formattedLineCount 63, lineCountDelta 10, readOnly true and wroteToSap false - the component declared no write path and the reply itself states that nothing was written back. The formatted text is real formatter output, not the input echoed back: it expands the chained METHODS declaration into separate lines and re-wraps the IF condition onto a continuation line, which the 53-line input does not contain. The request contract was taken from this workspace's own ADT client dependency (abap-adt-api 8.4.3, prettyPrinter in build/api/syntax.js: POST /sap/bc/adt/abapsource/prettyprinter, Content-Type and Accept text/plain, body = source) rather than inferred. An earlier call in the same session against a non-source URI (adt://w200/sap/bc/adt/structures/zcekko/source/main) returned 0 lines in and 1 blank line out; that is the formatter answering for a resource that carries no ABAP source, and it is recorded here so the reading is not mistaken for a formatting result. Not proven: the endpoint-missing path (404/405/501 -> unsupported-endpoint) was never reached on this target because w200 does advertise the resource, and no object other than this one was formatted."
+      "notes": "A real read-only call at 19:20:57 +08:00 on 2026-10-02 formatted the active source of w200 class CL_SATC_ADT_RES_APP through the native ADT pretty-printer resource. Observed values from that reply: sourceUri \"/sap/bc/adt/oo/classes/cl_satc_adt_res_app/source/main\", changed true, originalLineCount 53, formattedLineCount 63, lineCountDelta 10, readOnly true and wroteToSap false - the component declared no write path and the reply itself states that nothing was written back. The formatted text is real formatter output, not the input echoed back: it expands the chained METHODS declaration into separate lines and re-wraps the IF condition onto a continuation line, which the 53-line input does not contain. The request contract was taken from this workspace's own ADT client dependency (abap-adt-api 8.4.3, prettyPrinter in build/api/syntax.js: POST /sap/bc/adt/abapsource/prettyprinter, Content-Type and Accept text/plain, body = source) rather than inferred. An earlier call in the same session against a non-source URI (adt://w200/sap/bc/adt/structures/zcekko/source/main) returned 0 lines in and 1 blank line out; that is the formatter answering for a resource that carries no ABAP source, and it is recorded here so the reading is not mistaken for a formatting result. Not proven: the endpoint-missing path (404/405/501 -> unsupported-endpoint) was never reached on this target because w200 does advertise the resource, and no object other than this one was formatted. CONTRACT CHANGE 2026-10-08 (repository-side, not re-measured against SAP): the request is now issued by this service over the same AdtHTTP transport instead of the library helper, because that helper answers with (response.body || body).toString() and therefore cannot tell 'the printer returned the source unchanged' from 'the printer returned nothing'. An answer carrying no usable text is refused as FORMAT_RESULT_EMPTY together with its HTTP status - the blank-line reading recorded above is exactly that case - and a target whose active source is empty is refused as FORMAT_TARGET_HAS_NO_SOURCE before the printer is called; the reply additionally carries formatterHttpStatus. The success path and the 19:20:57 observation above are unchanged and this row stays verified on them; the two new refusals are covered by local guards (test/format-abap-source.test.ts) and have no SAP-side observation yet."
     },
     {
       "tool": "get_quick_fix_proposals",

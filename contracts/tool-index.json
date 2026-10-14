@@ -1,20 +1,20 @@
 {
   "matrixVersion": "2026-09-17",
-  "toolCount": 208,
-  "readOnlyToolCount": 137,
+  "toolCount": 211,
+  "readOnlyToolCount": 140,
   "profiles": {
-    "readonly": 137,
+    "readonly": 140,
     "platform": 12,
     "dev": 140,
-    "config": 80,
+    "config": 83,
     "ops": 61,
-    "full": 208
+    "full": 211
   },
   "groups": {
     "data": 38,
     "ddic": 26,
     "debug": 6,
-    "enhancement": 27,
+    "enhancement": 30,
     "form": 7,
     "function": 8,
     "message": 4,
@@ -280,7 +280,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "Unused NUMC20 client-local interval create/update through attested customer API and protected whole-object receipt. Native deployment/acceptance pending; no allocator, CTS migration or GUI."
+      "note": "Unused NUMC20 client-local interval create/update through attested customer API and protected whole-object receipt. Historical w200/200 ZORVCFGNR/01 update and /02 creation accepted in r41/r42; current pins required, other scopes unverified; no allocator, CTS migration or GUI."
     },
     {
       "name": "apply_configuration_unit_text",
@@ -359,7 +359,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；两侧元数据必须实读匹配，失败不可比较，当前 w300 登录验收待完成。"
+      "note": "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；stage5 已验收 KG/ZH 双向及 EN 的有限投影，当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。"
     },
     {
       "name": "compare_systems",
@@ -807,6 +807,22 @@
       "note": "CFG-04：按获准 T006/T006A 和明确版本定向发现经典 BC Set 候选；有行数上限、复读与元数据保护，不能据候选认定可激活。"
     },
     {
+      "name": "find_configuration_fi_rules",
+      "group": "enhancement",
+      "profiles": [
+        "config"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null,
+      "note": "CFG-07：仅 w200/200 的 GB93 验证规则头标识候选，固定字段、上限探测和复读；失败/漂移撤回，截断保留 partial 且无可信指纹。须再精确审计规则和组织/调用点，无公式/启用/维护或业务效果断言。"
+    },
+    {
       "name": "find_where_used",
       "group": "source",
       "profiles": [
@@ -1156,6 +1172,22 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null
+    },
+    {
+      "name": "inspect_configuration_fi_activation_route",
+      "group": "enhancement",
+      "profiles": [
+        "config"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null,
+      "note": "CFG-07/M2：固定OB28参数→实际维护视图/生成组/事件的只读路线候选；复用已有钉住布局，不扩通用表白名单。两轮一致不证明T001D关联、生成源或保存资格；尚无SAP实际验收。"
     },
     {
       "name": "inspect_configuration_transport",
@@ -1541,6 +1573,22 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null
+    },
+    {
+      "name": "preview_configuration_fi_activation",
+      "group": "enhancement",
+      "profiles": [
+        "config"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "route": "target-specific",
+      "sapHelper": null,
+      "minHelperProtocol": null,
+      "note": "CFG-07/M2：FI既有验证分配的ACTIV单字段只读差异预览；要求当前读指纹，复核范围、规则/步骤、分配及类，未知/漂移/截断拒绝。维护API、生成与CTS/LUW未闭环，不能保存或恢复；尚无SAP实际验收。"
     },
     {
       "name": "preview_configuration_number_range",
@@ -1996,7 +2044,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "CFG-07：w200/200 精确 FI 规则头/步骤引用及公司代码/调用点启用等级、应用类回读；生成代码和业务效果未验证，无启停维护。"
+      "note": "CFG-07：w200/200 精确 FI 规则头/步骤引用、组织启用等级和应用类复读；失败、漂移或截断撤回整份值投影。executionPreflight 明确缺记录/分配/等级/类差异及公式、生成物和官方维护路线缺口，始终阻断执行，无启停、生成或业务触发。"
     },
     {
       "name": "read_configuration_number_range",
@@ -2028,7 +2076,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "Complete native customer TNRO/current-client NRIV version; pinned layout, reader and hash source. Deployment and positive SAP acceptance pending; no mutation."
+      "note": "Complete native customer TNRO/current-client NRIV version; pinned layout, reader and hash source. Historical w200/200 ZORVCFGNR pilot deployment/reads accepted in r41/r42; current pins required, other scopes unverified; no mutation."
     },
     {
       "name": "read_configuration_number_range_scope",
@@ -2635,7 +2683,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "Protected receipt and current full number range snapshot read-only comparison; no historical outcome promotion, retry, rollback or unlock. Native positive acceptance pending."
+      "note": "Protected receipt and current full number range snapshot read-only comparison; r41/r42 observed historical unknown receipts remaining unknown despite persisted pilot values. Current pins required; no historical outcome promotion, retry, rollback or unlock."
     },
     {
       "name": "reconcile_configuration_unit_text",
