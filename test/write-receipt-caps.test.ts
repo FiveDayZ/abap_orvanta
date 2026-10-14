@@ -471,3 +471,101 @@ test("the receipt caps keep the producers and literals they have", () => {
     `loosest accumulation bound is ${loosest} against a cap of ${tightestArrayCap}`
   )
 })
+
+/**
+ * Every path that can put an arbitrary value into a capped error-identity field, and the guard that
+ * keeps the value non-empty. `max(40)` is not the whole requirement: the schema also demands `min(1)`,
+ * so a bound that only truncates still fails. An empty `error.name` or an empty errno passes the cap
+ * and violates the minimum, and the receipt becomes unparseable after the SAP-side change landed -
+ * the same late failure the cap gate exists to prevent. These guards are the reason the two fields are
+ * safe today, and nothing was checking them.
+ */
+const NON_EMPTY_GUARDS: { field: string; pattern: RegExp; guard: string; guardFree: string }[] = [
+  {
+    field: "errorName",
+    pattern: /error instanceof Error && error\.name \? error\.name : "([^"]+)"/,
+    guard: 'the `error.name ? … : "NonError"` fallback',
+    guardFree: 'const name = error instanceof Error ? error.name : "NonError";'
+  },
+  {
+    field: "errorCode",
+    pattern: /typeof code === "string" && code \? \{ errorCode: code\.slice\(0, \d+\) \}/,
+    guard: 'the `typeof code === "string" && code` truthiness guard',
+    guardFree: '...(typeof code === "string" ? { errorCode: code.slice(0, 40) } : {})'
+  }
+]
+
+/** The caller-facing pattern is the only declaration of the error-code charset, and it embeds the cap. */
+const CALLER_ERROR_CODE_PATTERN = /\.regex\(\/(\^\[A-Z\]\[A-Z0-9_\]\{0,(\d+)\}\$)\/\)/
+
+test("every path into a capped error-identity field keeps the value non-empty", () => {
+  const text = readFileSync(schemaFile, "utf8")
+  for (const { field, pattern, guard, guardFree } of NON_EMPTY_GUARDS) {
+    const cap = CAPS.get(field)
+    assert.ok(
+      cap,
+      `${field}: guarded here but no longer capped; remove the guard or restore the cap`
+    )
+    assert.ok(
+      cap.min >= 1,
+      `${field}: the guard exists to satisfy min(1); the schema no longer requires it`
+    )
+    const match = pattern.exec(text)
+    assert.ok(
+      match,
+      `${field}: ${guard} is gone - an empty value would pass the cap and fail the minimum`
+    )
+    // A fallback literal must itself be a legal value: non-empty and inside the cap.
+    const fallback = match[1]
+    if (fallback !== undefined)
+      assert.ok(
+        fallback.length >= cap.min && fallback.length <= cap.perStringMax,
+        `${field}: the fallback literal is ${fallback.length} characters against ${cap.min}..${cap.perStringMax}`
+      )
+    // Positive control: the pattern must reject the same construct with the guard removed, otherwise it
+    // would match anything and prove nothing.
+    assert.equal(
+      pattern.test(guardFree),
+      false,
+      `${field}: the guard pattern is not discriminating - it also matches the guard-free form`
+    )
+  }
+})
+
+test("the caller-facing error-code pattern agrees with the schema's cap", () => {
+  const cap = CAPS.get("errorCode")
+  assert.ok(cap, "errorCode is no longer capped; the caller-facing bound has nothing to agree with")
+  const match = CALLER_ERROR_CODE_PATTERN.exec(readFileSync(schemaFile, "utf8"))
+  assert.ok(
+    match,
+    "the caller-facing error-code pattern is gone; a caller-supplied code is no longer bounded"
+  )
+  const source = match[1]
+  const bound = match[2]
+  assert.ok(source, "the caller-facing pattern source was not captured")
+  assert.ok(bound, "the caller-facing pattern carries no bound")
+  // The cap comes from the schema, the bound from the pattern: two declarations, one requirement. This
+  // is what makes tightening the cap fail until the pattern follows, instead of drifting silently.
+  assert.equal(
+    Number(bound) + 1,
+    cap.perStringMax,
+    `the pattern allows ${Number(bound) + 1} characters while the schema caps the field at ${cap.perStringMax}`
+  )
+  // The control runs the pattern exactly as the source writes it, not a restated copy of it, so a
+  // charset change fails here too - a copy would keep passing while the real pattern widened.
+  const accepts = new RegExp(source)
+  const atCap = `A${"B".repeat(cap.perStringMax - 1)}`
+  assert.equal(atCap.length, cap.perStringMax, "the specimen must be exactly the cap length")
+  assert.equal(
+    accepts.test(atCap),
+    true,
+    "the pattern must accept a code of exactly the cap length"
+  )
+  assert.equal(
+    accepts.test(`${atCap}B`),
+    false,
+    "the pattern must reject a code one character over the cap"
+  )
+  assert.equal(accepts.test(""), false, "the pattern must reject an empty code")
+  assert.equal(accepts.test("a"), false, "the pattern must reject a lowercase code")
+})
