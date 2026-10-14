@@ -16,19 +16,25 @@ const profileTools =
   typeof manifest.profile === "string" && profileNames.includes(manifest.profile)
     ? toolNamesForProfile(manifest.profile)
     : []
+const registry = loadVerificationRegistry()
+const statusByTool = new Map(registry.entries.map((entry) => [entry.tool, entry.status]))
+const verifiedTools = registry.entries
+  .filter((entry) => entry.status === "verified")
+  .map((entry) => entry.tool)
 const problems = deliveryManifestProblems(manifest, {
   allTools: TOOL_NAMES,
   profileTools,
-  profileNames
+  profileNames,
+  verifiedTools
 })
 
-const registry = loadVerificationRegistry()
-const statusByTool = new Map(registry.entries.map((entry) => [entry.tool, entry.status]))
 const delivered = manifest.requiredTools ?? []
 const imgImplemented = imgConfigurationTools(TOOL_NAMES)
 const imgDelivered = delivered.filter((tool) => IMG_CONFIGURATION_TOOL_PATTERN.test(tool))
 const excluded = manifest.excludedTools ?? []
-const unverified = delivered.filter((tool) => statusByTool.get(tool) === "unverified")
+const unverified = delivered.filter((tool) => statusByTool.get(tool) !== "verified")
+const unverifiedImg = unverified.filter((tool) => IMG_CONFIGURATION_TOOL_PATTERN.test(tool))
+const declared = manifest.unverifiedTools ?? []
 
 console.log(
   `SPRO core delivery surface: ${delivered.length} tools for profile "${manifest.profile}"`
@@ -40,6 +46,10 @@ console.log(
 console.log(
   `  unverified on the surface (${unverified.length}): ` +
     (unverified.length > 0 ? unverified.join(", ") : "none")
+)
+console.log(
+  `  acceptance disclosure: ${declared.length} of ${unverifiedImg.length} unverified IMG ` +
+    `configuration tools declared in unverifiedTools`
 )
 for (const problem of problems) {
   console.log(`PROBLEM  ${problem}`)

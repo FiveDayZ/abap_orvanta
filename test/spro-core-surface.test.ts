@@ -12,7 +12,18 @@ import { loadVerificationRegistry } from "../src/verification-registry.js"
 
 const profileNames = [...PROFILE_NAMES]
 const configProfileTools = toolNamesForProfile("config")
-const facts = { allTools: TOOL_NAMES, profileTools: configProfileTools, profileNames }
+const registryStatus = new Map(
+  loadVerificationRegistry().entries.map((entry) => [entry.tool, entry.status])
+)
+const verifiedTools = [...registryStatus.entries()]
+  .filter(([, status]) => status === "verified")
+  .map(([tool]) => tool)
+const facts = {
+  allTools: TOOL_NAMES,
+  profileTools: configProfileTools,
+  profileNames,
+  verifiedTools
+}
 
 /** A manifest that passes, so each case below can break exactly one thing. */
 const soundManifest = (): SproCoreDeliveryManifest => ({
@@ -24,6 +35,9 @@ const soundManifest = (): SproCoreDeliveryManifest => ({
   client: "200",
   formalServiceAcceptance: "pending",
   requiredTools: [...configProfileTools],
+  unverifiedTools: configProfileTools.filter(
+    (tool) => isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified"
+  ),
   excludedTools: [],
   scenarios: [],
   boundaries: []
@@ -70,13 +84,97 @@ test("the delivered surface covers every IMG configuration tool the config profi
 
 test("the surface names tools that the registry can back", () => {
   const manifest = loadSproCoreDelivery()
-  const status = new Map(
-    loadVerificationRegistry().entries.map((entry) => [entry.tool, entry.status])
-  )
   // Exposure is a capability statement, never an acceptance claim: every tool on the surface has a
   // registry entry, and the audit prints the unverified part of it instead of implying verified.
-  const withoutEntry = manifest.requiredTools.filter((tool) => !status.has(tool))
+  const withoutEntry = manifest.requiredTools.filter((tool) => !registryStatus.has(tool))
   assert.deepEqual(withoutEntry, [])
+})
+
+test("the shipped contract discloses the unverified part of its own surface", () => {
+  const manifest = loadSproCoreDelivery()
+  const declared = new Set(manifest.unverifiedTools ?? [])
+  // Read straight off the registry, so the disclosure is checked against acceptance and not against
+  // the audit that produced it. The earlier hand-written boundary sentence claimed five tools and
+  // named four; the registry leaves ten, including both BC write tools.
+  const unverified = manifest.requiredTools.filter(
+    (tool) => isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified"
+  )
+  assert.deepEqual([...declared].sort(), [...unverified].sort())
+  assert.ok(unverified.length >= 10, `expected at least 10, read ${unverified.length}`)
+  for (const tool of [
+    "apply_configuration_bc_set",
+    "recover_configuration_bc_set",
+    "read_configuration_number_range",
+    "read_configuration_bc_effects"
+  ]) {
+    assert.ok(declared.has(tool), `${tool} must be disclosed as unverified`)
+  }
+})
+
+test("a delivered tool the registry does not verify has to be declared", () => {
+  const manifest = soundManifest()
+  const tool = "read_configuration_number_range"
+  assert.notEqual(registryStatus.get(tool), "verified")
+  manifest.unverifiedTools = manifest.unverifiedTools.filter((name) => name !== tool)
+  assert.match(
+    onlyProblem(deliveryManifestProblems(manifest, facts)),
+    new RegExp(`${tool} is delivered without a registry verification`)
+  )
+})
+
+test("a declaration the registry verifies is a stale disclosure", () => {
+  const manifest = soundManifest()
+  const tool = "read_configuration_bc_set"
+  assert.equal(registryStatus.get(tool), "verified")
+  manifest.unverifiedTools = [...manifest.unverifiedTools, tool]
+  assert.match(onlyProblem(deliveryManifestProblems(manifest, facts)), /verifies it/)
+})
+
+test("a declaration outside the delivered IMG surface is rejected", () => {
+  const notDelivered = soundManifest()
+  const undelivered = "read_configuration_number_range"
+  notDelivered.requiredTools = notDelivered.requiredTools.filter((name) => name !== undelivered)
+  assert.match(
+    problemMentioning(
+      deliveryManifestProblems(notDelivered, facts),
+      `${undelivered}, which this surface does not deliver`
+    ),
+    /does not deliver/
+  )
+
+  const notImg = soundManifest()
+  const platformTool = "read_abap_table"
+  assert.ok(configProfileTools.includes(platformTool))
+  assert.ok(!isImgConfigurationTool(platformTool))
+  notImg.unverifiedTools = [...notImg.unverifiedTools, platformTool]
+  assert.match(
+    problemMentioning(
+      deliveryManifestProblems(notImg, facts),
+      `${platformTool}, which is not an IMG configuration tool`
+    ),
+    /not an IMG configuration tool/
+  )
+
+  const imaginary = soundManifest()
+  imaginary.unverifiedTools = [...imaginary.unverifiedTools, "read_imaginary_configuration"]
+  assert.match(
+    problemMentioning(
+      deliveryManifestProblems(imaginary, facts),
+      "read_imaginary_configuration, which no tool registry entry implements"
+    ),
+    /no tool registry entry implements/
+  )
+
+  const duplicated = soundManifest()
+  const repeated = duplicated.unverifiedTools[0] ?? ""
+  duplicated.unverifiedTools = [...duplicated.unverifiedTools, repeated]
+  assert.match(
+    problemMentioning(
+      deliveryManifestProblems(duplicated, facts),
+      `unverifiedTools lists ${repeated} more than once`
+    ),
+    /more than once/
+  )
 })
 
 test("an IMG configuration tool that is neither delivered nor excluded fails the audit", () => {
@@ -151,6 +249,8 @@ test("an unknown profile and an empty surface are rejected", () => {
 
   const empty = soundManifest()
   empty.requiredTools = []
+  // A surface that delivers nothing also has nothing to disclose.
+  empty.unverifiedTools = []
   // An empty surface is not one mistake but two: nothing is delivered, and every IMG configuration
   // tool the profile enables then has no delivery decision either.
   const emptyProblems = deliveryManifestProblems(empty, facts)

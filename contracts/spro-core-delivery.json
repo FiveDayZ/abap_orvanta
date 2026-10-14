@@ -114,7 +114,19 @@
     "Source/interface/DDIC attestations, authorization, locking, optimistic versions and durable unknown-write protection remain enforced.",
     "Package creation and tool visibility do not authorize SAP writes, customer-object deployment, CTS cleanup, lock release, service switch or publication.",
     "Historical private-instance acceptance does not prove acceptance of this candidate or the formal service.",
-    "FI save/recovery, BTE activation and arbitrary IMG activities are not delivered by M1. Every configuration tool the server implements is exposed; five of them (FI rule, FI activation route/preview, BTE native metadata) remain unverified in contracts/verification-registry.json, and SAP acceptance of this surface is not established."
+    "FI save/recovery, BTE activation and arbitrary IMG activities are not delivered by M1. Every configuration tool the server implements is exposed; the configuration tools that contracts/verification-registry.json does not verify are declared in unverifiedTools, and the audit also reports unverified non-configuration tools on this surface. SAP acceptance of this surface is not established."
+  ],
+  "unverifiedTools": [
+    "apply_configuration_bc_set",
+    "find_configuration_fi_rules",
+    "inspect_configuration_bte_native_metadata",
+    "inspect_configuration_fi_activation_route",
+    "preview_configuration_fi_activation",
+    "read_configuration_bc_effects",
+    "read_configuration_fi_rule",
+    "read_configuration_number_range",
+    "reconcile_configuration_bc_execution",
+    "recover_configuration_bc_set"
   ],
   "excludedTools": []
 }

@@ -17,6 +17,14 @@
  * itself or names something that does not exist, and they never create capability. Being on the
  * surface is not a claim of SAP acceptance: that stays per tool in the verification registry, so
  * the audit reports the unverified part of the surface instead of hiding it.
+ *
+ * That last point used to be prose only, and on 2026-10-15 the prose was wrong: `boundaries` claimed
+ * five configuration tools were unverified and named four, while the registry left ten unverified -
+ * including both BC write tools - and the file is copied into a candidate as `SPRO-CORE.json`. A
+ * hand-written count had drifted from the registry with nothing able to notice. The surface now
+ * declares the unaccepted part of itself in `unverifiedTools`, and this audit compares that
+ * declaration with the registry in both directions: an undeclared gap is hidden acceptance, a
+ * declared tool the registry verifies is a stale disclosure.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -61,6 +69,12 @@ export interface SproCoreDeliveryManifest {
   client: string
   formalServiceAcceptance: string
   requiredTools: string[]
+  /**
+   * The delivered IMG configuration tools whose registry status is not `verified`, written down so
+   * a candidate that ships this file cannot imply more acceptance than the registry supports.
+   * Being declared here is not a second kind of acceptance: it is the disclosure of its absence.
+   */
+  unverifiedTools: string[]
   excludedTools: SproCoreDeliveryExclusion[]
   scenarios: readonly unknown[]
   boundaries: readonly string[]
@@ -84,6 +98,12 @@ export interface DeliverySurfaceFacts {
   allTools: readonly string[]
   profileTools: readonly string[]
   profileNames: readonly string[]
+  /**
+   * The tools `contracts/verification-registry.json` reports as `verified`. The registry decides
+   * acceptance; the manifest may only disclose it, never widen it, so nothing here comes back from
+   * the manifest itself.
+   */
+  verifiedTools: readonly string[]
 }
 
 /**
@@ -141,6 +161,39 @@ export function deliveryManifestProblems(
     }
     if (reason.trim() === "") {
       problems.push(`excludedTools names ${tool} without a reason, so nothing records why`)
+    }
+  }
+  // Acceptance disclosure. The registry is the only authority on `verified`; the manifest may not
+  // widen it, and may not stay silent about a delivered tool it does not cover either.
+  const verified = new Set(facts.verifiedTools)
+  const declared = manifest.unverifiedTools ?? []
+  const declaredTools = new Set<string>()
+  for (const tool of declared) {
+    if (declaredTools.has(tool)) {
+      problems.push(`unverifiedTools lists ${tool} more than once`)
+    }
+    declaredTools.add(tool)
+    if (!known.has(tool)) {
+      problems.push(`unverifiedTools names ${tool}, which no tool registry entry implements`)
+    } else if (!isImgConfigurationTool(tool)) {
+      problems.push(`unverifiedTools names ${tool}, which is not an IMG configuration tool`)
+    }
+    if (!seen.has(tool)) {
+      problems.push(`unverifiedTools names ${tool}, which this surface does not deliver`)
+    }
+    if (verified.has(tool)) {
+      problems.push(
+        `unverifiedTools names ${tool}, but contracts/verification-registry.json verifies it`
+      )
+    }
+  }
+  for (const tool of required) {
+    if (!isImgConfigurationTool(tool) || verified.has(tool)) continue
+    if (!declaredTools.has(tool)) {
+      problems.push(
+        `IMG configuration tool ${tool} is delivered without a registry verification and is not ` +
+          `declared in unverifiedTools, so the surface implies acceptance it does not have`
+      )
     }
   }
   for (const tool of imgConfigurationTools(facts.allTools)) {
