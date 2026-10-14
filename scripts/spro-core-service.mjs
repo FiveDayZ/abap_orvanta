@@ -40,8 +40,25 @@ export async function inspectDelivery(file) {
   assert.equal(build.version, delivery.version)
   assert.equal(build.expectedArtifactFingerprint, delivery.expectedArtifactFingerprint)
   assert.equal(build.profile, "config")
-  assert.equal(build.requiredTools.length, 32)
-  assert.equal(new Set(build.requiredTools).size, 32)
+  // The surface is whatever this candidate shipped as its contract. A second copy of the count here
+  // rejected every candidate packaged from a wider surface while adding no check the contract does
+  // not already make, so the contract stays the single source of truth.
+  const contractFile = resolve(delivery.candidate, "SPRO-CORE.json")
+  assert.ok(
+    await stat(contractFile).then(
+      () => true,
+      () => false
+    ),
+    `SPRO-CORE.json is missing from ${delivery.candidate}: repackage the candidate with the current contract`
+  )
+  const contract = await json(contractFile)
+  assert.equal(contract.format, 1)
+  assert.deepEqual(
+    build.requiredTools,
+    contract.requiredTools,
+    "BUILD-INFO tool surface differs from the shipped SPRO-CORE.json contract"
+  )
+  assert.equal(new Set(build.requiredTools).size, build.requiredTools.length)
   assert.equal(sha(await readFile(build.nodeExecutable)), build.nodeExecutableSha256)
   assert.equal(await realpath(process.execPath), await realpath(build.nodeExecutable))
   assert.equal(
@@ -300,7 +317,10 @@ async function main() {
     password = undefined
     throw error
   }
-  console.log(`ORVANTA core: ${service.mcpUrl}; 32 pinned tools. Enter stop to close when idle.`)
+  const pinnedTools = inspection.build.requiredTools.length
+  console.log(
+    `ORVANTA core: ${service.mcpUrl}; ${pinnedTools} pinned tools. Enter stop to close when idle.`
+  )
   console.log("KG historical failed/unknown protection retained; no SAP call has run at startup.")
   const consoleInput = createInterface({
     input: process.stdin,
