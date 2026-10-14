@@ -74,6 +74,7 @@ test("number range receipt persists invocation before dispatch and blocks same-o
   const first = await protect(input(), receipts, execute)
   assert.equal(first.status, "completed")
   assert.equal(first.operationReceipt.status, "completed")
+  assert.equal(first.operationReceipt.decision, "executed")
   assert.equal(
     first.operationReceipt.receiptHash,
     (await receipts.status("w200", input().operationId)).receiptHash
@@ -96,6 +97,21 @@ test("number range unknown result stays failed in the protected receipt", async 
     observed.operationReceipt.receiptHash,
     (await receipts.status("w200", input().operationId)).receiptHash
   )
+})
+
+test("a refused number range command still finishes completed but is named refused", async (t) => {
+  const receipts = await store(t)
+  const observed = await protect(input(), receipts, async (data, mark) => {
+    await mark(data.operationId, snapshot())
+    return result("declined")
+  })
+  assert.equal(observed.status, "declined")
+  const receipt = observed.operationReceipt
+  assert.equal(receipt.status, "completed")
+  assert.equal(receipt.decision, "refused")
+  assert.equal(receipt.sapInvocationStarted, true)
+  assert.equal(receipt.outcomeMayBeUnknown, false)
+  assert.equal(receipt.localLockReleased, true)
 })
 
 test("an unknown number range outcome blocks another operation and interval across store instances", async (t) => {

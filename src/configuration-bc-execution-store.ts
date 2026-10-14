@@ -26,9 +26,21 @@ const envelope = z
 
 /** Immutable intent and native result. Raw SAP buffers never enter the public request/response. */
 export class ConfigurationBcExecutionStore {
+  private readonly roots: string[]
   private readonly directory: string
-  constructor(root: string) {
-    this.directory = resolve(root, "configuration-bc-executions")
+  constructor(root: string | readonly string[]) {
+    this.roots = [
+      ...new Set(
+        (typeof root === "string" ? [root] : root).map((item) =>
+          resolve(item, "configuration-bc-executions")
+        )
+      )
+    ]
+    // The first root is the canonical home for new records; the remaining ones are searched only,
+    // so a record published before the service was restarted from another working directory still
+    // resolves instead of turning into a not-found refusal (2026-10-14, same rule as the ADT
+    // lock/save state in `adt-backend.ts`).
+    this.directory = this.roots[0]!
   }
   private path(operationHash: string, kind: "intent" | "result") {
     hex.parse(operationHash)
@@ -36,8 +48,35 @@ export class ConfigurationBcExecutionStore {
   }
   private missing(kind: "intent" | "result", operationHash: string) {
     return Error(
-      `CONFIGURATION_BC_EXECUTION_NOT_FOUND: ${operationHash}.${kind} is not under ${this.directory}`
+      `CONFIGURATION_BC_EXECUTION_NOT_FOUND: ${operationHash}.${kind} is not under ${this.roots.join(" or ")}`
     )
+  }
+  /**
+   * A record is addressed by its content hash, so an earlier reference must still be found after a
+   * restart from another working directory: search every root in order and only then refuse.
+   */
+  private async load(
+    operationHash: string,
+    kind: "intent" | "result"
+  ): Promise<z.infer<typeof envelope>> {
+    hex.parse(operationHash)
+    for (const directory of this.roots) {
+      let stored: z.infer<typeof envelope>
+      try {
+        const path = join(directory, `${operationHash}.${kind}.json`)
+        if ((await stat(path)).size > 3000000) throw Error("CONFIGURATION_BC_EXECUTION_LIMIT")
+        stored = envelope.parse(JSON.parse(await readFile(path, "utf8")))
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") continue
+        // A stored record that will not parse is corrupt, not a caller mistake: name it like the
+        // sibling evidence stores instead of leaking a JSON or schema error.
+        if (error instanceof SyntaxError || error instanceof z.ZodError)
+          throw Error("CONFIGURATION_BC_EXECUTION_CORRUPT")
+        throw error
+      }
+      return stored
+    }
+    throw this.missing(kind, operationHash)
   }
   async publish(
     binding: ConfigurationBcExecutionIdentity,
@@ -73,21 +112,8 @@ export class ConfigurationBcExecutionStore {
     binding: ConfigurationBcExecutionIdentity,
     kind: "intent" | "result"
   ): Promise<Record<string, unknown>> {
-    const checked = identity.parse(binding),
-      path = this.path(checked.operationHash, kind)
-    let stored: z.infer<typeof envelope>
-    try {
-      if ((await stat(path)).size > 3000000) throw Error("CONFIGURATION_BC_EXECUTION_LIMIT")
-      stored = envelope.parse(JSON.parse(await readFile(path, "utf8")))
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT")
-        throw this.missing(kind, checked.operationHash)
-      // A stored record that will not parse is corrupt, not a caller mistake: name it like the
-      // sibling evidence stores instead of leaking a JSON or schema error.
-      if (error instanceof SyntaxError || error instanceof z.ZodError)
-        throw Error("CONFIGURATION_BC_EXECUTION_CORRUPT")
-      throw error
-    }
+    const checked = identity.parse(binding)
+    const stored = await this.load(checked.operationHash, kind)
     const { hash, ...payload } = stored
     if (
       hashWriteInput(payload) !== hash ||
@@ -97,18 +123,7 @@ export class ConfigurationBcExecutionStore {
     return structuredClone(stored.value)
   }
   async readAuthenticated(operationHash: string, user: string, kind: "intent" | "result") {
-    const path = this.path(operationHash, kind)
-    let stored: z.infer<typeof envelope>
-    try {
-      if ((await stat(path)).size > 3000000) throw Error("CONFIGURATION_BC_EXECUTION_LIMIT")
-      stored = envelope.parse(JSON.parse(await readFile(path, "utf8")))
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT")
-        throw this.missing(kind, operationHash)
-      if (error instanceof SyntaxError || error instanceof z.ZodError)
-        throw Error("CONFIGURATION_BC_EXECUTION_CORRUPT")
-      throw error
-    }
+    const stored = await this.load(operationHash, kind)
     const { hash, ...payload } = stored
     if (
       hashWriteInput(payload) !== hash ||

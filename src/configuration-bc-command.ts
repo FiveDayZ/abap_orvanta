@@ -478,7 +478,15 @@ export async function executeConfigurationBcCommand(
         Date.now() - started,
         "CFG_BC_OUTCOME_UNKNOWN"
       )
-    } else await env.receipts.complete(reserved.reservation, resultDigest, Date.now() - started)
+    } else
+      await env.receipts.complete(
+        reserved.reservation,
+        resultDigest,
+        Date.now() - started,
+        // A native guard may refuse the command after the call: nothing was written, so the receipt
+        // must not read as an executed completion.
+        status === "declined" ? "refused" : "executed"
+      )
     return { ...result, operationReceipt: await env.receipts.status("w200", input.operationId) }
   } catch (error) {
     const errorHash = sha(error instanceof Error ? String(error) : String(error))

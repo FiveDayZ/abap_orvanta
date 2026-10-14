@@ -100,9 +100,33 @@ export function assertConfigurationBcBeforeState(state: State) {
 
 /** Immutable local evidence only. Command reservations remain owned by WriteOperationReceiptStore. */
 export class ConfigurationBcBeforeStateStore {
+  private readonly roots: string[]
   private readonly root: string
-  constructor(serverStateRoot: string) {
-    this.root = resolve(serverStateRoot, "configuration-bc-before-state")
+  constructor(serverStateRoot: string | readonly string[]) {
+    this.roots = [
+      ...new Set(
+        (typeof serverStateRoot === "string" ? [serverStateRoot] : serverStateRoot).map((item) =>
+          resolve(item, "configuration-bc-before-state")
+        )
+      )
+    ]
+    // The first root is the canonical home for new evidence; the remaining ones are searched only,
+    // so a reference captured before the service was restarted from another working directory still
+    // resolves instead of turning into a not-found refusal (2026-10-14, same rule as the ADT
+    // lock/save state in `adt-backend.ts`).
+    this.root = this.roots[0]!
+  }
+
+  private async readReference(reference: string): Promise<string | undefined> {
+    hex.parse(reference)
+    for (const root of this.roots) {
+      try {
+        return await readFile(join(root, `${reference}.json`), "utf8")
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+      }
+    }
+    return undefined
   }
 
   async capture(reader: () => Promise<State>) {
@@ -142,15 +166,13 @@ export class ConfigurationBcBeforeStateStore {
   async read(reference: string, authenticatedBinding: ConfigurationBcStateBinding): Promise<State> {
     hex.parse(reference)
     const expected = bindingSchema.parse(authenticatedBinding)
-    let text: string
-    try {
-      text = await readFile(join(this.root, `${reference}.json`), "utf8")
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
-      // The caller holds only the reference, so name the refusal and the root that was searched
-      // instead of surfacing a filesystem error this family never maps.
-      throw Error(`CONFIGURATION_BC_BEFORE_STATE_NOT_FOUND: ${reference} is not under ${this.root}`)
-    }
+    // The caller holds only the reference, so name the refusal and every root that was searched
+    // instead of surfacing a filesystem error this family never maps.
+    const text = await this.readReference(reference)
+    if (text === undefined)
+      throw Error(
+        `CONFIGURATION_BC_BEFORE_STATE_NOT_FOUND: ${reference} is not under ${this.roots.join(" or ")}`
+      )
     if (Buffer.byteLength(text) > 1500000) throw Error("CONFIGURATION_BC_BEFORE_STATE_LIMIT")
     const envelope = z
       .object({
@@ -209,13 +231,11 @@ export class ConfigurationBcBeforeStateStore {
 
   async readEffects(reference: string, authenticatedBinding: ConfigurationBcStateBinding) {
     hex.parse(reference)
-    let text: string
-    try {
-      text = await readFile(join(this.root, `${reference}.json`), "utf8")
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
-      throw Error(`CONFIGURATION_BC_EFFECTS_NOT_FOUND: ${reference} is not under ${this.root}`)
-    }
+    const text = await this.readReference(reference)
+    if (text === undefined)
+      throw Error(
+        `CONFIGURATION_BC_EFFECTS_NOT_FOUND: ${reference} is not under ${this.roots.join(" or ")}`
+      )
     if (Buffer.byteLength(text) > 900000) throw Error("CONFIGURATION_BC_EFFECTS_LIMIT")
     const envelope = z
       .object({

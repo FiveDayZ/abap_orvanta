@@ -58,6 +58,10 @@ const receiptSchema = z
   .object({
     version: z.union([z.literal(1), z.literal(2)]),
     state: z.enum(["in_progress", "completed", "failed"]),
+    // Whether the command reached the write, which `state` alone cannot say: a command refused by a
+    // guard finishes "completed" because the tool returned without writing anything. `complete()`
+    // always writes it; a "failed" receipt carries the named `errorCode` instead.
+    decision: z.enum(["executed", "refused"]).optional(),
     connectionId: z.string().min(1),
     toolName: z.string().regex(/^[a-z][a-z0-9_]+$/),
     operationIdHash: z.string().regex(HASH_PATTERN),
@@ -282,10 +286,12 @@ export class WriteOperationReceiptStore {
   async complete(
     reservation: WriteOperationReservation,
     result: string,
-    durationMs: number
+    durationMs: number,
+    decision: "executed" | "refused" = "executed"
   ): Promise<Record<string, unknown>> {
     return this.finishOwned(reservation, {
       state: "completed",
+      decision,
       resultHash: sha256(result),
       finishedAt: new Date().toISOString(),
       durationMs
@@ -484,7 +490,7 @@ export class WriteOperationReceiptStore {
   private async finishOwned(
     reservation: WriteOperationReservation,
     update: Pick<WriteOperationReceipt, "state" | "finishedAt" | "durationMs"> &
-      Partial<Pick<WriteOperationReceipt, "resultHash" | "errorHash" | "errorCode">>
+      Partial<Pick<WriteOperationReceipt, "resultHash" | "errorHash" | "errorCode" | "decision">>
   ): Promise<Record<string, unknown>> {
     const current = await this.readOwnedInProgress(reservation)
     try {
@@ -608,6 +614,7 @@ export class WriteOperationReceiptStore {
     return {
       version: receipt.version,
       status: interrupted ? "interrupted" : receipt.state,
+      ...(receipt.decision ? { decision: receipt.decision } : {}),
       connectionId: receipt.connectionId,
       toolName: receipt.toolName,
       operationIdHash: receipt.operationIdHash,

@@ -69,6 +69,7 @@ test("one durable intent/receipt dispatch, exact applied frame, duplicate never 
   assert.equal(applied.outcomeMayBeUnknown, false)
   const receipt = await f.env.receipts.status("w200", f.request.operationId)
   assert.equal(receipt.status, "completed")
+  assert.equal(receipt.decision, "executed")
   assert.equal(receipt.localLockReleased, true)
   assert.equal((await f.apply()).status, "protection_refused")
   assert.equal(f.calls.length, 1)
@@ -243,6 +244,86 @@ test("a missing or unparsable immutable execution record is refused by name, not
       /CONFIGURATION_BC_EXECUTION_CORRUPT/
     )
   }
+})
+test("records and references from an earlier working directory still resolve through a fallback root", async (t) => {
+  const f = await bcCommandFixture(t)
+  const canonical = await mkdtemp(join(tmpdir(), "orvanta-r65-bc-canonical-")),
+    earlier = await mkdtemp(join(tmpdir(), "orvanta-r65-bc-earlier-"))
+  t.after(() => rm(canonical, { recursive: true, force: true }))
+  t.after(() => rm(earlier, { recursive: true, force: true }))
+  const state = await (await stateFixture()).invoke()
+  const reference = await new ConfigurationBcBeforeStateStore(earlier).capture(async () =>
+    structuredClone(state)
+  )
+  const identity = {
+    connectionId: "w200" as const,
+    system: "GR2" as const,
+    client: "200" as const,
+    user: "WYS",
+    operationHash: sha("earlier-operation"),
+    beforeStateReference: reference.reference,
+    effectsReference: "c".repeat(64),
+    command: "apply" as const,
+    inputHash: sha("earlier-input")
+  }
+  await new ConfigurationBcExecutionStore(earlier).publish(identity, "intent", { probe: true })
+  // A single root cannot see them, which is the defect the fallback list repairs.
+  await assert.rejects(
+    new ConfigurationBcExecutionStore(canonical).readAuthenticated(
+      identity.operationHash,
+      "WYS",
+      "intent"
+    ),
+    /CONFIGURATION_BC_EXECUTION_NOT_FOUND/
+  )
+  const restarted = {
+    executions: new ConfigurationBcExecutionStore([canonical, earlier]),
+    before: new ConfigurationBcBeforeStateStore([canonical, earlier])
+  }
+  const intent = await restarted.executions.readAuthenticated(
+    identity.operationHash,
+    "WYS",
+    "intent"
+  )
+  assert.equal(intent.identity.operationHash, identity.operationHash)
+  assert.deepEqual(intent.value, { probe: true })
+  assert.equal(
+    (await restarted.before.read(reference.reference, f.env.binding)).versions.state,
+    state.versions.state
+  )
+  // A refusal still names every root that was searched.
+  await assert.rejects(
+    restarted.executions.readAuthenticated("d".repeat(64), "WYS", "result"),
+    (error: unknown) => {
+      const message = (error as Error).message
+      assert.match(message, /^CONFIGURATION_BC_EXECUTION_NOT_FOUND: d{64}\.result is not under /)
+      assert.ok(message.includes(canonical) && message.includes(earlier), message)
+      return true
+    }
+  )
+  await assert.rejects(restarted.before.read("e".repeat(64), f.env.binding), (error: unknown) => {
+    const message = (error as Error).message
+    assert.match(message, /^CONFIGURATION_BC_BEFORE_STATE_NOT_FOUND: e{64} is not under /)
+    assert.ok(message.includes(canonical) && message.includes(earlier), message)
+    return true
+  })
+})
+test("a native guard refusal after dispatch is named refused, not an executed completion", async (t) => {
+  const f = await bcCommandFixture(t)
+  f.setReplyPatch((_name, reply) => {
+    reply.EV_CODE = "BEFORE_CHANGED"
+    reply.EV_COMMIT = "rolled_back"
+    reply.EV_PHASE = "rolled_back"
+    reply.EV_LOCKS = "released"
+    reply.EV_PROTOCOL = "unknown"
+  })
+  assert.equal((await f.apply()).status, "declined")
+  const receipt = await f.env.receipts.status("w200", f.request.operationId)
+  assert.equal(receipt.status, "completed")
+  assert.equal(receipt.decision, "refused")
+  assert.equal(receipt.outcomeMayBeUnknown, false)
+  assert.equal(receipt.localLockReleased, true)
+  assert.equal(f.calls.length, 1)
 })
 test("tampered immutable intent is rejected by digest before read-only native dispatch", async (t) => {
   const f = await bcCommandFixture(t)

@@ -112,7 +112,9 @@ export async function protectConfigurationNumberRangeCommand(
     const operationReceipt = await receipts.complete(
       reserved.reservation,
       serialized,
-      Date.now() - started
+      Date.now() - started,
+      // A refused command reached the caller as `declined` without writing: say so in the receipt.
+      result.status === "declined" ? "refused" : "executed"
     )
     return { ...result, operationReceipt: await persistedReceipt(operationReceipt) }
   } catch (error) {

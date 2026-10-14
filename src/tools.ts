@@ -1819,6 +1819,15 @@ const NO_RUNTIME_HELPER_READER: RuntimeHelperRead = async () => ({
 export class ToolService {
   private readonly exportRoot: string
   private readonly numberRangeStateRoot: string
+  /**
+   * Roots searched for frozen BC evidence and BC execution records, canonical first.
+   *
+   * A reference or hash minted by an earlier run must keep resolving after the service is restarted
+   * from another working directory, so the configured root stays the only place new records are
+   * written while the process working directory is searched as a fallback (2026-10-14). Callers that
+   * need a hermetic single root (tests, embedded use) pass one root instead.
+   */
+  private readonly configurationBcRoots: readonly string[]
 
   constructor(
     private readonly backend: SapBackend,
@@ -1841,6 +1850,7 @@ export class ToolService {
     this.numberRangeStateRoot = resolve(
       process.env.ABAP_MCP_NUMBER_RANGE_STATE_ROOT ?? this.exportRoot
     )
+    this.configurationBcRoots = [...new Set([this.exportRoot, resolve(process.cwd())])]
   }
 
   getConnectedSystems(): string {
@@ -9998,7 +10008,7 @@ export class ToolService {
         cts: async (value) => JSON.parse(await this.readConfigurationBcCtsSnapshot(value))
       }
     )
-    const persisted = await new ConfigurationBcBeforeStateStore(this.exportRoot).capture(
+    const persisted = await new ConfigurationBcBeforeStateStore(this.configurationBcRoots).capture(
       async () => result
     )
     return JSON.stringify(
@@ -10028,8 +10038,8 @@ export class ToolService {
         requestNumber: "GR2K923429",
         taskNumber: "GR2K923430"
       },
-      before: new ConfigurationBcBeforeStateStore(this.exportRoot),
-      executions: new ConfigurationBcExecutionStore(this.exportRoot),
+      before: new ConfigurationBcBeforeStateStore(this.configurationBcRoots),
+      executions: new ConfigurationBcExecutionStore(this.configurationBcRoots),
       receipts,
       backend: this.backend,
       readers: {
@@ -10119,7 +10129,7 @@ export class ToolService {
       client: "200" as const,
       user: connection.username.toUpperCase()
     }
-    const store = new ConfigurationBcBeforeStateStore(this.exportRoot)
+    const store = new ConfigurationBcBeforeStateStore(this.configurationBcRoots)
     let effects: Awaited<ReturnType<typeof readConfigurationBcEffects>> | undefined
     const captured = await store.captureEffects(input.beforeStateReference, binding, async () => {
       effects = await readConfigurationBcEffects(input, binding, store, this.backend, {
