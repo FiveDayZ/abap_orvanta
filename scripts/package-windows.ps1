@@ -170,13 +170,22 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "package-lock.json") -Destination
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "dist") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "dist\src") -Destination (Join-Path $appRoot "dist\src") -Recurse
 Copy-Item -LiteralPath (Join-Path $projectRoot "ui") -Destination (Join-Path $appRoot "ui") -Recurse
-# 验收契约随包发布。`repositoryRoot` 由 dist/src 向上两级解析到 app\，因此
-# `get_capability_report` 读的是 app\contracts\verification-registry.json。此前不打进包，包内该
-# 文件不存在，报告只能整体降级（registryLoaded=false），能力维度与验收维度在发布物里都不可读。
-# 随包发布后两个维度在包内可用，而每条 `verified` 仍受证据存在性约束：证据不在包内时该条降级为
-# unverified，而不是凭登记表原文就宣称已验证——判据只有一份，见
-# src/verification-registry.ts 的 gateRegistryOnEvidence。
-Copy-Item -LiteralPath (Join-Path $projectRoot "contracts") -Destination (Join-Path $appRoot "contracts") -Recurse
+# 验收契约与随包证据统一由 scripts/stage-release-evidence.mjs 落盘。`repositoryRoot` 由
+# dist/src 向上两级解析到 app\，因此 `get_capability_report` 读的是
+# app\contracts\verification-registry.json。该脚本负责：登记表与工具索引覆盖面一致性、
+# 每条断言性状态都必须有可解析的证据引用、证据出厂前按已声明模式改写标识符、以及
+# 改写漏网时的打包期闸门（详见脚本头部说明）。
+# 随包发布后能力维度与验收维度在包内都可用，而每条 `verified` 仍受证据存在性约束：
+# 证据不在包内时该条降级为 unverified，而不是凭登记表原文就宣称已验证——判据只有一份，
+# 见 src/verification-registry.ts 的 gateRegistryOnEvidence。
+& (Join-Path $runtimeRoot "node.exe") (Join-Path $projectRoot "scripts\stage-release-evidence.mjs") $appRoot | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Release verification evidence staging failed with exit code $LASTEXITCODE"
+}
+# 两份基线不在登记表引用范围内，由暂存脚本之外的这一步补齐（必须在暂存之后，
+# 因为暂存脚本拒绝写入已存在的 contracts\）。
+Copy-Item -LiteralPath (Join-Path $projectRoot "contracts\full-tool-baseline.json") -Destination (Join-Path $appRoot "contracts")
+Copy-Item -LiteralPath (Join-Path $projectRoot "contracts\source-baseline.json") -Destination (Join-Path $appRoot "contracts")
 New-Item -ItemType Directory -Force -Path (Join-Path $appRoot "scripts") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\probe.mjs") -Destination (Join-Path $appRoot "scripts")
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\bootstrap-sap-helper.ps1") -Destination (Join-Path $appRoot "scripts")

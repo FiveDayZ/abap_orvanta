@@ -63,12 +63,13 @@ release/
 
 ### 4.1 包内契约与验收维度
 
-包内 `app/contracts/` 随包发布（`verification-registry.json`、`tool-index.json` 等）。`repositoryRoot` 由 `dist/src` 向上两级解析到 `app/`，因此 `get_capability_report` 在包内能读到验收登记表，能力维度与验收维度都可用。
+包内 `app/contracts/` 随包发布：`verification-registry.json`、`tool-index.json`、`verification-evidence-manifest.json`，以及不在引用范围内的两份基线（`full-tool-baseline.json`、`source-baseline.json`）。登记表、工具索引与随包证据由 `scripts/stage-release-evidence.mjs` 统一落盘，该步骤同时把登记表引用的验收记录复制到 `app/docs/workspace-evidence/`。`repositoryRoot` 由 `dist/src` 向上两级解析到 `app/`，因此 `get_capability_report` 在包内能读到验收登记表，能力维度与验收维度都可用。
 
-**包内不随附证据记录**（`.doc/...`、`.cache/...`、`.logs/...` 及其 `docs/workspace-evidence/` 镜像）。理由是那些记录按工作区规模产出，且其中引用了内网主机名与地址，发布前需要独立的脱敏筛查，属单独决定而不是打包默认行为。由此产生一个必须成立的性质：
+**出厂副本按已声明模式改写标识符**（见 `scripts/stage-release-evidence.mjs` 的 `REDACTIONS`：内网 IPv4、`C:\Users\<user>` 本地用户路径、手工维护的字面量清单）。运行期只用「记录是否存在」这一个事实（`resolveEvidencePath` → `existsSync`），从不解析记录正文，因此改写不改变任何能力状态，只去掉随包外流的标识符。三条必须成立的性质：
 
-- 包内每条 `verified` / `failed` / `platform-unsupported` 的引用记录都**不在包内**，因此 `gateRegistryOnEvidence` 会把这些条目降级为 `unverified`，并在报告里列入 `verification.evidenceGatedTools` 与 `evidenceGatedToolCount`；`opsCapability.summary.criterionBasis` 同时说明有多少条因此不能计入闭环。
-- 这是**刻意的降级方向**：缺记录时包内报告 `unverified`，绝不凭登记表原文宣称已验证。若要包内直接看到 `verified`，正确做法是把经脱敏筛查的证据镜像也纳入复制清单，而不是去掉存在性检查。
+- **出厂副本与原记录不逐字节相同**：清单 `files[].sha256` 是包内副本的哈希，`files[].sourceSha256` 是原记录的哈希；`redaction` 段声明是否改写、用了哪些模式、涉及多少文件与多少处。任何据此推断「包内副本逐字节等于工作区记录」的结论都是错的。
+- **改写是受控替换，不是脱敏保证**：模式清单之外的标识符仍可能留在出厂副本里（客户名、工单号、SAP 传输号中嵌入的开发者缩写等）。打包期守卫在**落盘后的字节**上复扫任一 IPv4（回环/绑定位除外）与任何未改写的 Windows 用户目录，命中即让构建失败；守卫的网比改写更宽，但不覆盖全部标识符类别，因此「守卫通过」不等于「已彻底脱敏」。
+- **包内缺记录时仍逐条降级**：引用记录不在包内的 `verified` / `failed` / `platform-unsupported` 条目被 `gateRegistryOnEvidence` 降级为 `unverified`，列入 `verification.evidenceGatedTools` 与 `evidenceGatedToolCount`，`opsCapability.summary.criterionBasis` 同时说明有多少条因此不能计入闭环。降级方向不变：**绝不凭登记表原文宣称已验证**。
 
 ## 5. 归档保留
 
