@@ -126,6 +126,113 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "Capability evidence: $($verificationLookupOutput -join '')"
 Write-Host "Package manifest: version $($buildInfo.version), $($hashEntries.Count) file hashes verified"
+
+# The release must carry the verification contract. `repositoryRoot` resolves from app\dist\src up two
+# levels to app\, so `get_capability_report` reads app\contracts\verification-registry.json. The
+# packager omitted it until 2026-10-08, so the packaged report could only degrade as a whole
+# (registryLoaded=false) and both the capability and the verification dimension were unreadable in
+# the shipped product. Dropping the copy from scripts/package-windows.ps1 must fail here.
+$packagedContracts = Join-Path $packageRoot "app\contracts"
+foreach ($required in @("verification-registry.json", "tool-index.json")) {
+    if (-not (Test-Path -LiteralPath (Join-Path $packagedContracts $required))) {
+        throw "Release archive must contain app\contracts\$required; get_capability_report reads it."
+    }
+}
+$packagedRegistry = Get-Content -Raw -LiteralPath (Join-Path $packagedContracts "verification-registry.json") | ConvertFrom-Json
+$asserting = @($packagedRegistry.entries | Where-Object { $_.status -in @("verified", "failed", "platform-unsupported") })
+if ($asserting.Count -eq 0) {
+    throw "Packaged verification registry asserts nothing; the evidence gate would be vacuous by construction."
+}
+# Evidence records ship with the release, but only as redacted copies. The runtime only ever asks
+# whether a cited record exists (`resolveEvidencePath` -> `existsSync`) and never parses it, so
+# rewriting identifiers changes no capability status while removing what used to leave the building.
+# What keeps that honest is the manifest: it carries the hash of the shipped bytes next to the hash of
+# the original record and declares which patterns were applied. A future edit that turned the
+# redaction into a silent no-op has to fail here rather than ship.
+$packagedEvidence = Join-Path $packageRoot "app\docs\workspace-evidence"
+if (-not (Test-Path -LiteralPath $packagedEvidence)) {
+    throw "Release archive must ship app\docs\workspace-evidence; scripts\stage-release-evidence.mjs stages it."
+}
+$manifestFile = Join-Path $packagedContracts "verification-evidence-manifest.json"
+if (-not (Test-Path -LiteralPath $manifestFile)) {
+    throw "Release archive must ship app\contracts\verification-evidence-manifest.json."
+}
+$manifest = Get-Content -Raw -LiteralPath $manifestFile | ConvertFrom-Json
+if ($manifest.redaction.applied -ne $true -or $manifest.redaction.replacementCount -le 0) {
+    throw "Packaged evidence declares no redaction; shipped records would carry workspace identifiers."
+}
+foreach ($entry in $manifest.files) {
+    $file = Join-Path (Join-Path $packageRoot "app") $entry.path
+    if (-not (Test-Path -LiteralPath $file)) { throw "Manifest lists a file the package does not ship: $($entry.path)" }
+    if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $entry.sha256) {
+        throw "Packaged file does not match the manifest hash: $($entry.path)"
+    }
+    if ($entry.redacted -and $entry.sourceSha256 -eq $entry.sha256) {
+        throw "Entry is marked redacted but its shipped hash equals the source hash: $($entry.path)"
+    }
+}
+# Second, wider net written here rather than reused from the stager, so neither side can satisfy the
+# other. It reflects the leak actually measured on 2026-10-14 (private SAP address and local user
+# profile paths inside the shipped subset) and deliberately scans for *any* private-range address.
+$leaked = @()
+foreach ($file in Get-ChildItem -LiteralPath $packagedEvidence -Recurse -File) {
+    $text = Get-Content -Raw -LiteralPath $file.FullName
+    foreach ($match in [regex]::Matches($text, '192\.168\.\d+\.\d+|10(\.\d+){3}|172\.(1[6-9]|2\d|3[01])(\.\d+){2}')) {
+        $leaked += "$($file.Name): $($match.Value)"
+    }
+    foreach ($match in [regex]::Matches($text, 'C:\\+Users\\+([^\\/\s"'']+)')) {
+        if ($match.Groups[1].Value -ne "[redacted-user]") { $leaked += "$($file.Name): user profile" }
+    }
+}
+if ($leaked.Count -gt 0) {
+    throw "Packaged evidence still carries workspace identifiers: $((@($leaked) | Select-Object -First 5) -join '; ')"
+}
+Write-Host "Package contracts: $($asserting.Count) asserting entries shipped with $($manifest.files.Count) declared records ($($manifest.redaction.replacementCount) redactions in $($manifest.redaction.fileCount) files)"
+
+# The assertions above only prove the *files* are right. This runs the packaged code: the paths in
+# the manifest are workspace-relative, so only the shipped `repositoryRoot` can prove they resolve
+# from inside the package (`app\docs\workspace-evidence\<path>`). The expectation (how many entries
+# assert a status) is read from the packaged JSON, the measured value (how many the shipped code
+# reports in an asserting status) comes from executing the packaged dist - two different sources, so
+# neither side can satisfy the other. The absence path itself is covered by the unit tests
+# (test/capabilities-attestation.test.ts, test/verification-registry.test.ts).
+$degradationProbe = Join-Path $testRoot "degradation-probe.mjs"
+@'
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
+import { pathToFileURL } from "node:url"
+
+const [appRoot, expectedClaiming] = process.argv.slice(2)
+const capabilities = await import(pathToFileURL(resolve(appRoot, "dist/src/capabilities.js")).href)
+const raw = JSON.parse(readFileSync(resolve(appRoot, "contracts/verification-registry.json"), "utf8"))
+const claiming = ["verified", "failed", "platform-unsupported"]
+
+const lookup = capabilities.loadVerificationLookup()
+const problems = []
+if (lookup.loaded !== true) problems.push(`the packaged registry did not load (loaded=${lookup.loaded})`)
+if (lookup.evidenceGatedTools.length !== 0) {
+  problems.push(`code gated ${lookup.evidenceGatedTools.length} entries although every cited record ships`)
+}
+let claimed = 0
+for (const entry of lookup.registry ? lookup.registry.entries : []) {
+  const { status } = capabilities.rollupVerification(lookup, [entry.tool])
+  if (claiming.includes(status)) claimed += 1
+}
+if (claimed !== Number(expectedClaiming)) {
+  problems.push(`code resolves ${claimed} asserting entries, the packaged registry asserts ${expectedClaiming}`)
+}
+if (problems.length > 0) {
+  console.error(problems.join("; "))
+  process.exit(1)
+}
+console.log(`packaged code resolves ${claimed} asserting entries from the shipped records`)
+'@ | Set-Content -LiteralPath $degradationProbe -Encoding utf8
+$packagedNode = Join-Path $packageRoot "runtime\node.exe"
+& $packagedNode $degradationProbe (Join-Path $packageRoot "app") $asserting.Count
+if ($LASTEXITCODE -ne 0) {
+    throw "The packaged build cannot resolve the records it ships; shipped claims would be gated instead of observed."
+}
+
 $packagedConfig = Join-Path $packageRoot "connections.json"
 if (-not (Test-Path -LiteralPath $packagedConfig)) {
     throw "Release archive must contain connections.json."

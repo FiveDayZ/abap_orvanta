@@ -23,6 +23,7 @@ import {
   VERIFICATION_STATUSES,
   availabilityWithoutEvidence,
   findVerificationEntry,
+  gateRegistryOnEvidence,
   loadVerificationRegistry,
   protocolOnlyEntries,
   registryAvailabilityWithoutEvidence,
@@ -523,6 +524,44 @@ test("platform-unsupported is a claim too, and must carry evidence", () => {
     missing.some((violation) => /does not exist/.test(violation.message)),
     "platform-unsupported with a missing evidence file must be rejected"
   )
+})
+
+test("a status whose record cannot be resolved here is gated to unverified, not published as claimed", () => {
+  // The release case: the registry ships, the record it cites does not. Before the gate existed the
+  // runtime trusted `entry.status` after parsing the JSON, so this input reached a caller as
+  // `verified` while the file it named was nowhere - which is the R-20 substitution again.
+  const kept = registry.entries.find((entry) => entry.status === "verified")
+  assert.ok(kept, "expected at least one verified entry to derive both sides of the case from")
+  const doomed: VerificationEntry = {
+    ...kept,
+    evidence: ".doc/no-such-record-for-the-evidence-gate-4f2a.json"
+  }
+  // The input has to be genuinely unresolvable, or the assertion below would hold for the wrong
+  // reason and the test would have no teeth.
+  assert.equal(resolveEvidencePath(doomed), undefined)
+  assert.notEqual(resolveEvidencePath(kept), undefined)
+
+  const gated = gateRegistryOnEvidence({ ...registry, entries: [kept, doomed] })
+
+  // Only the claim that cannot be checked is removed; the one that can is left exactly as it was.
+  assert.deepEqual(gated.degradedTools, [doomed.tool])
+  assert.equal(gated.registry.entries[0], kept, "a resolvable claim must pass through untouched")
+
+  const degraded = gated.registry.entries[1]
+  assert.ok(degraded)
+  assert.equal(degraded.status, "unverified")
+  // `unverified` may carry none of these, so leaving them behind would make the gated registry
+  // invalid input for its own validator.
+  assert.equal(degraded.evidence, null)
+  assert.equal(degraded.lastAttemptAt, null)
+  assert.equal(degraded.failureBasis, null)
+  assert.deepEqual(validateEntry(degraded), [])
+
+  // And the gate is not vacuous in the other direction: with every record resolvable, nothing is
+  // touched. This is the workspace/CI case, where the gate must be a no-op.
+  const untouched = gateRegistryOnEvidence(registry)
+  assert.deepEqual(untouched.degradedTools, [])
+  assert.deepEqual(untouched.registry, registry)
 })
 
 test("availability and verification status stay orthogonal", () => {

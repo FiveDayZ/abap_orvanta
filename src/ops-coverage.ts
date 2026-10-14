@@ -945,6 +945,19 @@ export function opsClassificationProblems(
 /** Minimal read-only view of the evidence dimension; {@link VerificationLookup} satisfies it. */
 export interface OpsVerificationLookup {
   entries: ReadonlyMap<string, { status: VerificationStatus }>
+  /**
+   * Whether the registry file was actually read. Absent means "assume it was", so a caller that
+   * only supplies `entries` keeps the previous reading; the capability report supplies the real
+   * value, because the difference between "no lookup" and "a lookup that read nothing" is the
+   * difference between an unstated criterion and a criterion decided on an empty registry.
+   */
+  loaded?: boolean
+  /**
+   * Entries whose asserted status could not be backed by a record that resolves, and which the
+   * caller therefore already reports `unverified`. Named so `criterionBasis` can say the criterion
+   * was decided without them instead of implying the evidence dimension was fully available.
+   */
+  evidenceGatedTools?: readonly string[]
 }
 
 /** The evidence fields the recorded-ruling rule reads; both are optional in the caller's view. */
@@ -1080,8 +1093,11 @@ export interface OpsCapabilityBlock {
     outstandingRequiredFamilies: string[]
     exemptFamilies: string[]
     /**
-     * Whether the evidence dimension was available while building the block. A packaged build ships
-     * without `contracts/`, so this is false there and nothing can be certified closed.
+     * Whether the evidence dimension was actually available while building the block. False when the
+     * registry could not be read at all - a release that ships no `contracts/`, or a corrupt file -
+     * and nothing can be certified closed then. A readable registry whose cited records do not
+     * resolve here is a separate case: it stays true, and `criterionBasis` names how many entries
+     * were reported unverified for that reason.
      */
     registryLoaded: boolean
     /** What the criterion was decided on; states out loud when evidence could not be consulted. */
@@ -1214,7 +1230,8 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
   const evidenceClosedFamilies = families
     .filter((family) => isStateClosed(family) && family.verification.closed)
     .map((family) => family.id)
-  const registryLoaded = lookup !== undefined
+  const registryLoaded = lookup !== undefined && (lookup.loaded ?? true)
+  const evidenceGatedCount = lookup?.evidenceGatedTools?.length ?? 0
   const missingPlannedTools = [
     ...new Set(families.flatMap((family) => family.missingToolNames))
   ].sort()
@@ -1243,9 +1260,11 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
         "The completion criterion needs both points on the same required family: the declared gap " +
         "is empty *and* every tool in it is `verified` in the verification registry. A closed gap " +
         "with unexercised tools does not count, because that is a statement about the plan rather " +
-        "than about the system. When the registry cannot be read - a packaged build ships without " +
-        "`contracts/` - nothing is certified closed and the block says so in `criterionBasis` " +
-        "instead of guessing.",
+        "than about the system. When the registry cannot be read, or when it can be read but the " +
+        "records it cites are not beside it - a packaged build ships `contracts/` and deliberately " +
+        "ships no evidence records - the affected entries are reported unverified, nothing is " +
+        "certified closed, and the block says which of the two happened in `criterionBasis` instead " +
+        "of guessing.",
       exemptionRule:
         "The completion criterion is measured over the families the plan can actually close: a " +
         "family is exempt only when every one of its tools is platform-blocked *and* it carries a " +
@@ -1270,7 +1289,11 @@ export function opsCapabilityBlock(lookup?: OpsVerificationLookup): OpsCapabilit
       exemptFamilies,
       registryLoaded,
       criterionBasis: registryLoaded
-        ? "gap empty + every tool verified (verification registry loaded)"
+        ? "gap empty + every tool verified (verification registry loaded" +
+          (evidenceGatedCount > 0
+            ? `; ${evidenceGatedCount} entr${evidenceGatedCount === 1 ? "y" : "ies"} reported unverified because the cited evidence does not resolve here, so those families cannot be certified closed`
+            : "") +
+          ")"
         : "gap only: verification registry unavailable, so no family can be certified closed",
       evidenceClosedFamilyCount: evidenceClosedFamilies.length,
       evidenceClosedFamilies,
