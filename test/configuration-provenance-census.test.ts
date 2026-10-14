@@ -122,8 +122,10 @@ const INTERNAL_ONLY_PINS: ReadonlyArray<{ name: string; module: string; consumed
  * The name `hash` has 11 declarations across the family, 7 of them real digests, so a body-text test
  * resolves the name to the wrong one. The instrument therefore resolves every called name IN SCOPE
  * (its own module first, else the module it is imported from) and requires the RESOLVED declaration to
- * call createHash(...).digest(...) in JavaScript. Two negative controls below pin that discrimination:
- * the two over-reported members must NOT be in the class.
+ * call createHash(...).digest(...) in JavaScript. Two negative controls below pin that discrimination,
+ * and each asserts its own premise first - the export still exists, its module still declares a local
+ * `hash`, and that `hash` still emits ABAP hash calls rather than hashing in JavaScript - so renaming
+ * either the member or its helper reddens the control instead of leaving it a tautology.
  *
  * The named censuses are a different kind: all 14 provenance members carry a digest under this net -
  * one literal (the member whose idiom is `literal-pin`), twelve computed, and one through the helper
@@ -135,6 +137,29 @@ const DIGEST_LITERAL = /["'][0-9a-f]{64}["']/i
 
 /** A digest produced at load time. Disjoint from the literal kind, so both are needed. */
 const COMPUTED_DIGEST = /\.digest\(/
+
+/** The marker that makes a helper an ABAP hash-call generator rather than a JavaScript digest. */
+const ABAP_HASH_GENERATOR = /CALCULATE_HASH_FOR_RAW/
+
+/**
+ * The two members the naive body-text helper test over-reports, each anchored to the MECHANISM that
+ * makes it a false positive rather than to its name alone.
+ *
+ * A name-only negative control is a tautology the moment the export is renamed: "a name nobody
+ * declares is absent from the class" is true and says nothing. So each control asserts its own
+ * premise first - the export still exists in that module, that module still declares a local `hash`,
+ * and that `hash` is still an ABAP generator rather than a JavaScript digest. Renaming the export,
+ * renaming or moving the helper, or turning the helper into a real digest therefore reddens HERE,
+ * naming the control that went stale, instead of leaving it silently vacuous.
+ */
+const FALSE_POSITIVE_CONTROLS = [
+  { name: "configurationBcOwnerInclude", module: "configuration-bc-owner-api.ts", helper: "hash" },
+  {
+    name: "configurationBcRecoveryCheckApi",
+    module: "configuration-bc-recovery-check-api.ts",
+    helper: "hash"
+  }
+] as const
 
 /**
  * The one member of the union class that nothing references. Declared rather than silently tolerated:
@@ -889,16 +914,42 @@ test("the digest-carrying class is extracted with the widest net, and the pin ce
   // Negative controls for the third route. Both members call a helper named `hash`, and a test on "the
   // called function's body mentions hashing" WAS measured to put them in the class - because that name
   // has 11 declarations across the family and the test resolved it to the wrong one. Their local `hash`
-  // emits ABAP `CALCULATE_HASH_FOR_RAW` lines instead of hashing in JavaScript. Asserting they are
-  // absent is what keeps the widened route from over-reporting, which no count alone would catch.
-  assert.ok(
-    !DIGEST_NAMES.includes("configurationBcOwnerInclude"),
-    "the helper route reported a member whose helper only emits ABAP hash calls"
-  )
-  assert.ok(
-    !DIGEST_NAMES.includes("configurationBcRecoveryCheckApi"),
-    "the helper route reported a member whose helper only emits ABAP hash calls"
-  )
+  // emits ABAP `CALCULATE_HASH_FOR_RAW` lines instead of hashing in JavaScript.
+  //
+  // Each control measures its own PREMISE before making its claim, so it cannot decay into "a name
+  // nobody declares is absent from the class". The premise is read from the sources - the export census
+  // and the module's own declaration table - and the claim is read from the digest class, so renaming
+  // the export, moving the helper or turning it into a real digest reddens the premise and names the
+  // control that went stale. A control whose premise is broken is a tautology, which is worse than no
+  // control: it would keep reading as discrimination long after the discrimination was gone.
+  for (const control of FALSE_POSITIVE_CONTROLS) {
+    assert.ok(
+      CONFIGURATION_EXPORTS.some(
+        (entry) => entry.name === control.name && entry.module === control.module
+      ),
+      `${control.name} is no longer an export of ${control.module}, so this control is vacuous`
+    )
+    const helperBody = MODULE_DECLARATIONS.get(control.module)?.get(control.helper)
+    assert.ok(
+      helperBody !== undefined,
+      `${control.module} no longer declares ${control.helper}, so this control is vacuous`
+    )
+    assert.ok(
+      ABAP_HASH_GENERATOR.test(helperBody),
+      `${control.name}: ${control.helper} no longer emits ABAP hash calls, so this is not the false ` +
+        `positive it was measured to be`
+    )
+    assert.ok(
+      !isJavaScriptDigest(helperBody),
+      `${control.name}: ${control.helper} hashes in JavaScript now, so this control no longer ` +
+        `discriminates and the widened route may be over-reporting`
+    )
+    // The claim. A helper that only emits ABAP hash calls must not put its caller in the digest class.
+    assert.ok(
+      !DIGEST_NAMES.includes(control.name),
+      "the helper route reported a member whose helper only emits ABAP hash calls"
+    )
+  }
   // The routes to a digest are mutually disjoint. This is what makes the union below a union and not a
   // double count, and it is the fact that made the first version of this gate blind: a net over one
   // route drops every member of the others.
