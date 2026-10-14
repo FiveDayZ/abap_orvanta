@@ -226,6 +226,17 @@ const SCOPE_COUNT_FAMILIES: readonly { readonly describes: string; readonly patt
 ]
 
 /**
+ * Numerals the contract uses as plain English rather than as a count of the pilot. They cannot be told
+ * from a count by shape - "one approved table" and "one record" are the same shape - so each is
+ * declared with why it is not one, and any numeral that is neither inside a family nor one of these
+ * fails the audit instead of being read as prose.
+ */
+const SCOPE_COUNT_IDIOMS: readonly { readonly phrase: string; readonly reason: string }[] = [
+  { phrase: "two instances", reason: "counting comparison operands rather than the pilot" },
+  { phrase: "two arms", reason: "counting the scenario arms rather than the pilot" }
+]
+
+/**
  * Every reason `manifest` would deliver the wrong surface. Empty means the manifest agrees with the
  * registry and profile it is describing. Problems are returned rather than thrown so both the
  * audit script and its tests can report all of them at once.
@@ -477,11 +488,14 @@ export function deliveryManifestProblems(
   // own record of the run (nine tables there) cannot settle it. A count a reader cannot resolve is
   // worse than no count, so each family may be spelled exactly one way.
   const spelled = JSON.stringify(manifest)
+  const familySpans: Array<{ readonly start: number; readonly end: number }> = []
   for (const { describes, pattern } of SCOPE_COUNT_FAMILIES) {
     const counts = new Map<number, string>()
     for (const match of spelled.matchAll(pattern)) {
       const value = SCOPE_COUNT_WORDS[match[1]!]
       if (value === undefined) continue
+      const start = match.index!
+      familySpans.push({ start, end: start + match[0].length })
       if (!counts.has(value)) counts.set(value, match[0])
     }
     if (counts.size > 1) {
@@ -489,6 +503,42 @@ export function deliveryManifestProblems(
         `the contract gives ${describes} ${String(counts.size)} different counts ` +
           `(${[...counts.values()].join(", ")}), so a reader cannot tell how large the pilot is`
       )
+    }
+  }
+  // The families above only compare the phrases someone remembered to list. A sentence that counts the
+  // pilot in words no family covers - "ten records", "eight entries" - would then ship unread and could
+  // contradict every count that is checked, so each numeral has to be either inside a family or inside
+  // a declared idiom. Matching is case-insensitive: a sentence-initial "Ten records" is still a count.
+  const usedIdioms = new Set<string>()
+  for (const match of spelled.matchAll(/\b([A-Za-z]+)\b/g)) {
+    const value = SCOPE_COUNT_WORDS[match[1]!.toLowerCase()]
+    // A singular "one" is the English article here ("one exact internal unit key"), and a real count of
+    // exactly one would be written the same way, so singular "one" is never read as a count.
+    if (value === undefined || value < 2) continue
+    const start = match.index!
+    if (familySpans.some((span) => start >= span.start && start < span.end)) continue
+    const tail = spelled.slice(start, start + 60)
+    const idiom = SCOPE_COUNT_IDIOMS.find((entry) => tail.toLowerCase().startsWith(entry.phrase))
+    if (idiom) {
+      usedIdioms.add(idiom.phrase)
+      continue
+    }
+    problems.push(
+      `the contract counts "${/^([A-Za-z]+(?: [A-Za-z]+)?)/.exec(tail)![1]}" in words no family ` +
+        `covers and no idiom declares, so it is never compared with the pilot's other counts`
+    )
+  }
+  // An idiom that no longer appears has outlived its phrase, and leaving it declared would silently
+  // excuse a future count written the same way. This only applies to a manifest that states the pilot's
+  // counts at all: a candidate with no count sentence has no exemption to keep, and reporting its
+  // missing idioms would drown the real problems of every minimal fixture.
+  if (familySpans.length > 0) {
+    for (const { phrase, reason } of SCOPE_COUNT_IDIOMS) {
+      if (!usedIdioms.has(phrase))
+        problems.push(
+          `the contract no longer says "${phrase}", which is declared as ${reason}, so that ` +
+            `declaration is stale`
+        )
     }
   }
   return problems

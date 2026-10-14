@@ -160,6 +160,41 @@ test("the contract states the CUNI pilot's size one way, so two sentences cannot
   assert.deepEqual(deliveryManifestProblems(prose, facts), [])
 })
 
+test("a count written in words no family lists fails instead of shipping unread", () => {
+  // The families are a finite list of remembered phrases, so they only compare the counts someone
+  // listed. This is the sentence that no family would have looked at.
+  const manifest = loadSproCoreDelivery()
+  assert.deepEqual(deliveryManifestProblems(manifest, facts), [])
+  const unlisted = structuredClone(manifest)
+  unlisted.supportingReads[0]!.reason = "Read: returns the pilot's ten records in one pass."
+  assert.match(
+    onlyProblem(deliveryManifestProblems(unlisted, facts)),
+    /counts "ten records" in words no family covers and no idiom declares/
+  )
+  // Capitalising it does not make it prose either, so a sentence-initial count is still caught.
+  const capitalised = structuredClone(manifest)
+  capitalised.supportingReads[0]!.reason = "Read: returns Ten entries for the pilot."
+  assert.match(
+    onlyProblem(deliveryManifestProblems(capitalised, facts)),
+    /counts "Ten entries" in words no family covers/
+  )
+  // A numeral that is not a count of the pilot is allowed because it is declared, and the declaration
+  // has to keep matching the text: dropping the phrase makes the exemption itself the problem.
+  const stale = structuredClone(manifest)
+  const arms = stale.boundaries.findIndex((line) => line.includes("two arms"))
+  assert.ok(arms >= 0, "the fixture needs the declared idiom to be present")
+  const staleManifest = {
+    ...stale,
+    boundaries: stale.boundaries.map((line, index) =>
+      index === arms ? line.replace("its two arms apart", "each arm") : line
+    )
+  }
+  assert.match(
+    onlyProblem(deliveryManifestProblems(staleManifest, facts)),
+    /no longer says "two arms", which is declared as counting the scenario arms/
+  )
+})
+
 test("the delivered surface covers every IMG configuration tool the config profile enables", () => {
   const manifest = loadSproCoreDelivery()
   const delivered = new Set(manifest.requiredTools)
