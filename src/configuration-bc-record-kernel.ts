@@ -2,6 +2,20 @@ import { createHash } from "node:crypto"
 import { z } from "zod"
 import { configurationBcPreflightKeys } from "./configuration-bc-preflight.js"
 import { configurationBcNativeLayouts } from "./configuration-bc-native-api.js"
+import {
+  configurationBcStateCandidateKeyCount,
+  configurationBcStateKeyCount
+} from "./configuration-bc-state-api.js"
+
+/**
+ * The pilot splits its nineteen complete fixed keys into the ten rows it inserts and the nine it must
+ * leave untouched: eleven candidate keys are in scope and the T006D PRESS row already exists, so ten are
+ * missing, while the eight guard keys plus that same PRESS row make the nine. The split is positional
+ * over configurationBcPreflightKeys, so it is stated once here and read by the planner, the generated
+ * batch and both delivered counts.
+ */
+const mutableRowCount = configurationBcStateCandidateKeyCount - 1
+const protectedRowCount = configurationBcStateKeyCount - mutableRowCount
 
 const hex = z.string().regex(/^[a-f0-9]{64}$/)
 const binding = z
@@ -80,7 +94,7 @@ export function prepareConfigurationBcRecordPlan(expectedBinding: unknown, raw: 
   for (let i = 0; i < before.length; i++) {
     const old = before[i]!
     const next = candidate[i]!
-    if (i < 10) {
+    if (i < mutableRowCount) {
       if (old.present || !next.present)
         throw Error("CONFIGURATION_BC_RECORD_PILOT_PRECONDITION_FAILED")
       save.push({
@@ -92,7 +106,7 @@ export function prepareConfigurationBcRecordPlan(expectedBinding: unknown, raw: 
       })
     } else {
       if (
-        (i === 10 && !old.present) ||
+        (i === mutableRowCount && !old.present) ||
         old.present !== next.present ||
         old.rawRowVersion !== next.rawRowVersion
       )
@@ -192,7 +206,7 @@ export function attestConfigurationBcRecordStandardApis(raw: unknown) {
   return { attested: true as const, functions: [...seen].sort(), executable: false as const }
 }
 
-const mutableKeys = configurationBcPreflightKeys.slice(0, 10)
+const mutableKeys = configurationBcPreflightKeys.slice(0, mutableRowCount)
 const tableCases = [...new Set(mutableKeys.map((key) => key.tableName))].flatMap((name) => {
   const fields =
     configurationBcNativeLayouts[name as keyof typeof configurationBcNativeLayouts].fields
@@ -214,8 +228,8 @@ export const configurationBcRecordKernel = {
   includeName: "ZORVANTA_CFG_BC_RECORD_KERNEL",
   remoteEnabled: false,
   deploymentReady: false,
-  mutableCount: 10,
-  protectedCount: 9,
+  mutableCount: mutableRowCount,
+  protectedCount: protectedRowCount,
   source: [
     "TYPE-POOLS: scpr, scp1.",
     "TYPES ty_orv_bc_values TYPE STANDARD TABLE OF scprvals",
@@ -592,7 +606,7 @@ export const configurationBcRecordKernel = {
     "  p_code = 'INPUT_INVALID'. RETURN.",
     "ENDIF.",
     "DESCRIBE TABLE p_records LINES lv_count.",
-    "IF lv_count <> 10. p_code = 'BATCH_SCOPE_INVALID'. RETURN. ENDIF.",
+    `IF lv_count <> ${mutableRowCount}. p_code = 'BATCH_SCOPE_INVALID'. RETURN. ENDIF.`,
     "IF p_opts-act_id IS INITIAL OR p_opts-act_user <> sy-uname",
     "OR p_opts-act_system <> sy-sysid OR p_opts-act_client <> sy-mandt",
     "OR p_opts-dialog <> 'N' OR p_opts-simulat_on <> 'N'",
@@ -639,9 +653,9 @@ export const configurationBcRecordKernel = {
     "  EXPORTING moddate = p_opts-act_date modtime = p_opts-act_time",
     "  EXCEPTIONS error_message = 1 OTHERS = 2.",
     "IF sy-subrc <> 0. p_code = 'LINK_INITIALIZATION_FAILED'. RETURN. ENDIF.",
-    "DO 10 TIMES.",
+    `DO ${mutableRowCount} TIMES.`,
     "  lv_ordinal = sy-index.",
-    "  IF p_delete = 'X'. lv_ordinal = 11 - lv_ordinal. ENDIF.",
+    `  IF p_delete = 'X'. lv_ordinal = ${mutableRowCount + 1} - lv_ordinal. ENDIF.`,
     "  READ TABLE lt_records INDEX lv_ordinal INTO ls_record.",
     "  p_failed = lv_ordinal.",
     "  IF sy-subrc <> 0. p_code = 'BATCH_SCOPE_INVALID'. RETURN. ENDIF.",

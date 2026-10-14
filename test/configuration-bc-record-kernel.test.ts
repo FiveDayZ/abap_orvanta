@@ -8,6 +8,7 @@ import {
 } from "../src/configuration-bc-record-kernel.js"
 import { configurationBcPreflightKeys } from "../src/configuration-bc-preflight.js"
 import { configurationBcCommandContract } from "../src/configuration-bc-command-contract.js"
+import { configurationBcGuardKeys } from "../src/configuration-bc-guard.js"
 
 const binding = {
   connectionId: "w200",
@@ -311,4 +312,57 @@ test("the batch validates ten unique ordered records before global initializatio
   )
   assert.match(batch, /p_code = 'BATCH_STAGED'/)
   assert.doesNotMatch(batch, /p_code = '(?:APPLIED|RECOVERED|COMMITTED)'/)
+})
+test("the insert/protect split is derived once and the delivered prose spells the same numbers", () => {
+  // The expectations are counted from the preflight key list and the guard key list, which are
+  // different sources from the state declarations the kernel derives its split from.
+  const guardKeys = configurationBcGuardKeys.length
+  const rows = configurationBcPreflightKeys.length
+  const expectedProtected = guardKeys + 1
+  const expectedMutable = rows - expectedProtected
+  assert.equal(rows, 19, "the positional contract covers the nineteen complete fixed keys")
+  assert.equal(expectedMutable, 10, "eleven candidate keys less the T006D PRESS row that exists")
+  assert.equal(expectedProtected, 9, "the eight guard keys plus that same PRESS row")
+  assert.equal(configurationBcRecordKernel.mutableCount, expectedMutable)
+  assert.equal(configurationBcRecordKernel.protectedCount, expectedProtected)
+  // The pivot is positional over that list, so the split must land exactly on the PRESS row: the row
+  // after the last inserted one is T006D, and everything from there is protected.
+  assert.equal(configurationBcPreflightKeys[expectedMutable]!.tableName, "T006D")
+  assert.equal(
+    [...new Set(configurationBcPreflightKeys.slice(expectedMutable).map((k) => k.tableName))]
+      .length,
+    5,
+    "the protected side spans T006D and the four guard tables"
+  )
+  // The delivered contract names the same two counts in words, so the words and the fields cannot drift.
+  const contract = configurationBcCommandContract({
+    connectionId: binding.connectionId,
+    bcSetId: binding.bcSetId,
+    version: binding.version,
+    requestNumber: binding.requestNumber,
+    taskNumber: binding.taskNumber,
+    operationId: "r66-split-01",
+    beforeStateReference: binding.beforeStateReference
+  })
+  assert.ok(contract.requiredNativeChecks.includes("ten_mutable_records_nine_protected_records"))
+  const delivered = contract.requiredNativeChecks.find((check) => /mutable_records/.test(check))!
+  const word = (value: number) =>
+    ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][value]!
+  assert.equal(
+    delivered,
+    `${word(expectedMutable)}_mutable_records_${word(expectedProtected)}_protected_records`
+  )
+  // The rendered ABAP keeps its exact text, so the delivered source version must not move.
+  const source = configurationBcRecordKernel.source.join("\n")
+  assert.match(source, /IF lv_count <> 10\./)
+  assert.match(source, /DO 10 TIMES\./)
+  assert.match(source, /lv_ordinal = 11 - lv_ordinal\./)
+  // And the module computes the split instead of carrying the literals again.
+  const module = readFileSync(
+    new URL("../src/configuration-bc-record-kernel.js", import.meta.url),
+    "utf8"
+  )
+  assert.match(module, /mutableCount: mutableRowCount/)
+  assert.match(module, /protectedCount: protectedRowCount/)
+  assert.doesNotMatch(module, /mutableCount: 10|protectedCount: 9|slice\(0, 10\)|i < 10/)
 })
