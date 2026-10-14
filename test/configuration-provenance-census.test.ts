@@ -57,6 +57,38 @@ const PROVENANCE_SHAPE =
   /^configuration\w*(SourceVersion|SourceHash|SourceFingerprint|BodyFingerprint)$/
 
 /**
+ * The boundary of the census above, and the reason it is a claim of its own. The provenance shape
+ * deliberately excludes pin tables - a table of pins is not a fingerprint - and that exclusion lived
+ * only in prose until it was measured. Measured: thirteen pin tables exist in the family, the
+ * provenance shape matches none of them, and no pin table is left unreferenced.
+ *
+ * "No reader outside its own module" is not the defect this looks for. Both tables that are read only
+ * inside their own module are consumed there - one is hashed into the protocol source version, the
+ * other is indexed by object name - so their `export` is superfluous rather than dead, exactly as two
+ * provenance members are. What would be a defect is a pin table referenced nowhere at all, and that is
+ * the assertion with teeth.
+ */
+const PIN_SHAPE = /^configuration\w*Pins$/
+
+/**
+ * The pin tables read only inside the module that defines them, with the call that consumes them. The
+ * anchor is derived from the member's own name, so a rename moves the anchor with it rather than
+ * leaving a stale claim behind.
+ */
+const INTERNAL_ONLY_PINS: ReadonlyArray<{ name: string; module: string; consumedBy: string }> = [
+  Object.freeze({
+    name: "configurationBteProtocolSourcePins",
+    module: "configuration-bte-protocol.ts",
+    consumedBy: "JSON.stringify"
+  }),
+  Object.freeze({
+    name: "configurationFiDependencyPins",
+    module: "configuration-fi-dependencies.ts",
+    consumedBy: "Object.keys"
+  })
+]
+
+/**
  * The hash idioms the family uses, as a closed vocabulary. Each member is classified from its own
  * initializer and the module's binding of the value it hashes, so a member that changes algorithm
  * fails here instead of drifting.
@@ -188,24 +220,58 @@ function idiomOf(initializer: string, moduleText: string): Idiom {
   throw new Error(`unclassified provenance idiom: ${flat.slice(0, 120)}`)
 }
 
-/** Every provenance-shaped export in the configuration modules, extracted rather than restated. */
-function extractMembers(): Member[] {
-  const members: Member[] = []
+type ConfigurationExport = {
+  name: string
+  module: string
+  initializer: string
+  moduleText: string
+}
+
+/** Every exported binding in the configuration modules, with its initializer and the module's text. */
+function configurationExports(): ConfigurationExport[] {
+  const found: ConfigurationExport[] = []
   for (const file of moduleFiles()) {
-    const text = readFileSync(new URL(`src/${file}`, repoRoot), "utf8")
-    const source = ts.createSourceFile(file, text, ts.ScriptTarget.ES2022, true)
+    const moduleText = readFileSync(new URL(`src/${file}`, repoRoot), "utf8")
+    const source = ts.createSourceFile(file, moduleText, ts.ScriptTarget.ES2022, true)
     for (const statement of source.statements) {
       if (!ts.isVariableStatement(statement)) continue
       if (!statement.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue
       for (const declaration of statement.declarationList.declarations) {
-        const name = declaration.name.getText()
-        if (!PROVENANCE_SHAPE.test(name)) continue
-        const initializer = declaration.initializer?.getText() ?? ""
-        members.push({ name, module: file, idiom: idiomOf(initializer, text), initializer })
+        found.push({
+          name: declaration.name.getText(),
+          module: file,
+          initializer: declaration.initializer?.getText() ?? "",
+          moduleText
+        })
       }
     }
   }
-  return members
+  return found
+}
+
+const CONFIGURATION_EXPORTS = configurationExports()
+
+/** Every provenance-shaped export in the configuration modules, extracted rather than restated. */
+function extractMembers(): Member[] {
+  return CONFIGURATION_EXPORTS.filter((entry) => PROVENANCE_SHAPE.test(entry.name)).map(
+    (entry) => ({
+      name: entry.name,
+      module: entry.module,
+      idiom: idiomOf(entry.initializer, entry.moduleText),
+      initializer: entry.initializer
+    })
+  )
+}
+
+type PinMember = { name: string; module: string; isTable: boolean }
+
+/** Every pin-shaped export in the configuration modules, extracted rather than restated. */
+function extractPinMembers(): PinMember[] {
+  return CONFIGURATION_EXPORTS.filter((entry) => PIN_SHAPE.test(entry.name)).map((entry) => ({
+    name: entry.name,
+    module: entry.module,
+    isTable: entry.initializer.trimStart().startsWith("{")
+  }))
 }
 
 function censusFiles(): string[] {
@@ -295,6 +361,9 @@ function readership(name: string, module: string): { internalReads: number; exte
 
 const MEMBERS = extractMembers()
 const UNREAD_NAMES = UNREAD.map((entry) => entry.name).sort()
+const PIN_MEMBERS = extractPinMembers()
+const PIN_NAMES = PIN_MEMBERS.map((member) => member.name).sort()
+const INTERNAL_ONLY_PIN_NAMES = INTERNAL_ONLY_PINS.map((entry) => entry.name).sort()
 
 test("the provenance family is extracted from the sources, not from a remembered list", () => {
   // An extraction that silently found nothing would make every assertion below vacuous.
@@ -476,4 +545,81 @@ test("readership counts code references, so a mention in prose is not a reader",
     before + 1,
     `${entry.name}: a real code reference was not counted`
   )
+})
+
+test("the pin tables the provenance shape excludes are extracted by shape", () => {
+  // The shape must not be narrower than the family it claims to cover. A pin-named export the pattern
+  // misses would be invisible to every assertion here - this is how the r7 gate went one-directionally
+  // blind - so the narrow extraction is compared against a net wide enough to catch any such name. This
+  // comparison comes first on purpose: with the count assertion first, narrowing the shape tripped the
+  // count and this guard - the one that names the actual defect - was never reached.
+  const pinLike = CONFIGURATION_EXPORTS.map((entry) => entry.name)
+    .filter((name) => /pin/i.test(name))
+    .sort()
+  assert.deepEqual(PIN_NAMES, pinLike, "the pin shape misses a pin-named export in the family")
+  // An extraction that silently found nothing would make every assertion below vacuous.
+  assert.equal(
+    PIN_MEMBERS.length,
+    13,
+    `expected thirteen pin tables, extracted ${PIN_MEMBERS.length}`
+  )
+  // Positive control: this name is not in the sources, so an extraction reading the sources cannot
+  // produce it.
+  assert.ok(
+    !PIN_NAMES.includes("configurationNothingPins"),
+    "the extraction produced a name that is not in the sources"
+  )
+  // Every pin table is an object literal: that is what makes it a table rather than a fingerprint.
+  assert.deepEqual(
+    PIN_MEMBERS.filter((member) => !member.isTable).map((member) => member.name),
+    [],
+    "a pin-shaped export is not an object literal"
+  )
+  // The two censuses not overlapping is a measured fact, and it is measured where the failure actually
+  // occurs: a pin table renamed into a provenance suffix makes extractMembers() throw "unclassified
+  // provenance idiom" from idiomOf's closed vocabulary at module load, which is a louder and earlier
+  // failure than an assertion here could be. Asserting it a second time in this test was measured to be
+  // unreachable - the module throws before any test in this file runs - so it is not asserted twice.
+})
+
+test("no pin table is unreferenced, and the ones read only inside their own module say so", () => {
+  // Two different claims, kept disjoint so each can fail on its own. A pin table referenced nowhere at
+  // all pins nothing; a pin table read only inside its own module is consumed but over-exported. A
+  // single set keyed on "no external reader" would merge them, and the dead case - the one that is
+  // actually a defect - would then always trip the over-exported assertion first and never be named.
+  const measured = (member: PinMember) => readership(member.name, member.module)
+  const dead = PIN_MEMBERS.filter((member) => {
+    const { internalReads, external } = measured(member)
+    return internalReads + external === 0
+  }).map((member) => member.name)
+  assert.deepEqual(dead, [], "a pin table is referenced nowhere, so it pins nothing")
+
+  const overExported = PIN_MEMBERS.filter((member) => {
+    const { internalReads, external } = measured(member)
+    return external === 0 && internalReads >= 1
+  })
+    .map((member) => member.name)
+    .sort()
+  assert.deepEqual(
+    overExported,
+    INTERNAL_ONLY_PIN_NAMES,
+    "the pin tables read only inside their own module changed; account for the difference"
+  )
+  for (const entry of INTERNAL_ONLY_PINS) {
+    const { internalReads, external } = readership(entry.name, entry.module)
+    assert.equal(external, 0, `${entry.name} is declared internal-only but has an external reader`)
+    assert.ok(
+      internalReads >= 1,
+      `${entry.name} is declared internal-only but is read nowhere, so it is dead rather than over-exported`
+    )
+    // The anchor is derived from the member's own name. Cross-module uniqueness follows from the
+    // external count asserted above, so what is checked here is that the anchor names exactly one
+    // consumption: an anchor matching twice would not say which call consumes the table.
+    const anchor = `${entry.consumedBy}(${entry.name})`
+    assert.equal(
+      countOf(sourceText(entry.module), anchor),
+      1,
+      `${entry.name}: ${anchor} is not exactly once in ${entry.module}, so it does not name one consumption`
+    )
+  }
 })
