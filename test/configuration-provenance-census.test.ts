@@ -24,6 +24,12 @@ import ts from "typescript"
  * the dominant unit-API-body normalisation are exactly the three that nobody reads. An unread value is
  * never forced to agree with the one that is read.
  *
+ * Being unread is not by itself a defect, and the census does not treat it as one. Each of the four
+ * members read nowhere is accounted for: three duplicate an attestation that runs by another route, and
+ * the fourth hashes a deployment candidate that was never deployed, so there is nothing for it to pin.
+ * None of the four is a coverage gap. What the census forbids is leaving that unstated - an unread pin
+ * whose substance nothing checks would otherwise read exactly like one whose substance is checked twice.
+ *
  * This test is the census. It extracts the family from the sources - a pattern narrow enough to miss a
  * member would be one-directionally blind - measures readership over the whole repository, and requires
  * every member with no reader to be declared with its hash idiom and the reason it has no reader.
@@ -69,6 +75,14 @@ const NON_DOMINANT: readonly Idiom[] = ["raw-crlf-source-join", "crlf-to-lf-trim
  * merely exported wider than it needs to be from one that nothing reads at all, and it is measured
  * rather than assumed. `reason` says what is true about the member today; it is not a claim that the
  * member is correct.
+ *
+ * A member read nowhere at all must also name, in `coveredBy`, the module and the token that attest the
+ * same substance by another route - because "nothing reads this pin" and "nothing checks this artefact"
+ * are different claims, and only the first one is measured by the census. Anchoring the second keeps the
+ * verdict honest: a fully-unread pin whose substance is attested elsewhere is redundant, and one whose
+ * substance is attested nowhere is a coverage gap, and the difference must be visible rather than
+ * asserted in prose. A member that is still read inside its own module needs no anchor - the value is
+ * used, only its `export` is wider than the use.
  */
 const UNREAD: ReadonlyArray<{
   name: string
@@ -76,6 +90,7 @@ const UNREAD: ReadonlyArray<{
   internalReads: number
   idiom: Idiom
   reason: string
+  coveredBy?: { module: string; anchor: string }
 }> = Object.freeze([
   {
     name: "configurationBcCtsBodyFingerprint",
@@ -99,7 +114,11 @@ const UNREAD: ReadonlyArray<{
     internalReads: 0,
     idiom: "raw-crlf-source-join",
     reason:
-      "Read nowhere. The artefact is still attested - configuration-bc-command.ts compares normalize(live) against normalize(inc.source) and throws CONFIGURATION_BC_OWNER_INCLUDE_NOT_ATTESTED - so this is a redundant pin, not a coverage gap. It hashes raw CRLF, which is not the value that attestation delivers."
+      "Read nowhere. The artefact is still attested - configuration-bc-command.ts compares normalize(live) against normalize(inc.source) and throws CONFIGURATION_BC_OWNER_INCLUDE_NOT_ATTESTED - so this is a redundant pin, not a coverage gap. It hashes raw CRLF, which is not the value that attestation delivers, so it is also not interchangeable with it.",
+    coveredBy: {
+      module: "configuration-bc-command.ts",
+      anchor: "CONFIGURATION_BC_OWNER_INCLUDE_NOT_ATTESTED"
+    }
   },
   {
     name: "configurationBcRecordKernelSourceVersion",
@@ -107,7 +126,11 @@ const UNREAD: ReadonlyArray<{
     internalReads: 0,
     idiom: "raw-crlf-source-join",
     reason:
-      "Read nowhere. Attested by the same content-equality check as the owner include, through the same CONFIGURATION_BC_OWNER_INCLUDE_NOT_ATTESTED throw. Redundant pin, and its raw-CRLF hash is not the delivered value."
+      "Read nowhere. Attested by the same content-equality check as the owner include - the loop covers both customer includes and raises one throw for either - so the two members legitimately share one anchor. Redundant pin, and its raw-CRLF hash is not the delivered value.",
+    coveredBy: {
+      module: "configuration-bc-command.ts",
+      anchor: "CONFIGURATION_BC_OWNER_INCLUDE_NOT_ATTESTED"
+    }
   },
   {
     name: "configurationBteContextProofBodyFingerprint",
@@ -115,7 +138,8 @@ const UNREAD: ReadonlyArray<{
     internalReads: 0,
     idiom: "unit-api-body",
     reason:
-      "Read nowhere, and written in the dominant idiom, so it looks like the fingerprints that are consumed by a preflight. Whether the context-proof function module is body-attested by some other path was not traced; that is an open question, not a verified gap."
+      "Read nowhere, and written in the dominant idiom, so it looks like the fingerprints that a preflight consumes. It is not a pin of a deployed artefact at all: the module is a deployment candidate that was never deployed, its function module is referenced nowhere but its own definition, and no tool reaches it. The fingerprint is a specimen hash of that candidate, so there is nothing deployed for it to attest. The gate checks the function module is still unreferenced, so wiring the candidate up forces this verdict to be revisited.",
+    coveredBy: { module: "configuration-bte-context-proof.ts", anchor: "Deployment candidate only" }
   },
   {
     name: "configurationNumberRangeApiBodyFingerprint",
@@ -123,7 +147,11 @@ const UNREAD: ReadonlyArray<{
     internalReads: 0,
     idiom: "crlf-to-lf-trim-source",
     reason:
-      "Read nowhere, and the only member that is a function rather than a value. It normalises a third way (replaceAll CRLF, then trim), so it is not interchangeable with either the delivered attestation or the raw-CRLF pins. Whether the number-range API body is attested elsewhere was not traced."
+      "Read nowhere, and the only member that is a function rather than a value - it takes the source as an argument, so it was never bound to an artefact. The number-range API bodies are attested by attestConfigurationNumberRangeApi instead, which compares the body through the dominant normalisation plus the function name, the FUNCTION/ENDFUNCTION markers and the ordered parameter lists. A redundant helper, not a coverage gap; it also normalises a third way, so it is not interchangeable with the attestation it duplicates.",
+    coveredBy: {
+      module: "configuration-number-range-command.ts",
+      anchor: "configurationUnitApiBody(actual.source)"
+    }
   }
 ])
 
@@ -186,6 +214,21 @@ function censusFiles(): string[] {
 }
 
 const countOf = (text: string, needle: string) => text.split(needle).length - 1
+
+const sourceCache = new Map<string, string>()
+/**
+ * A configuration module's source text. Read from the sources - the same universe the census extracts
+ * members from - so a member and its anchor are always compared against one text. Reading the compiled
+ * output instead was measured to change nothing for these anchors: this project does not set
+ * `removeComments`, so even the comment anchor survives compilation.
+ */
+function sourceText(module: string): string {
+  const cached = sourceCache.get(module)
+  if (cached !== undefined) return cached
+  const text = readFileSync(new URL(`src/${module}`, repoRoot), "utf8")
+  sourceCache.set(module, text)
+  return text
+}
 
 /**
  * Readership of a member: how many times its name is used, split into uses inside its own module and
@@ -284,4 +327,66 @@ test("the members that hash source text outside the dominant idiom are exactly t
   // restatement of "non-dominant".
   const dominantUnread = UNREAD.filter((entry) => entry.idiom === "unit-api-body")
   assert.equal(dominantUnread.length, 3, "the dominant-idiom unread members changed")
+})
+
+test("a member read nowhere names the attestation covering its substance, and that anchor is real", () => {
+  // "Nothing reads this pin" is measured by the census. "Nothing checks this artefact" is a different
+  // claim, and it is the one that decides whether an unread pin is redundant or a coverage gap. Each
+  // member read nowhere therefore names its covering anchor, and this test holds the anchor to the
+  // sources instead of taking the reason's word for it.
+  const fullyUnread = UNREAD.filter((entry) => entry.internalReads === 0)
+  assert.equal(fullyUnread.length, 4, "the fully-unread count changed")
+  // Both directions, so the anchor cannot be omitted where it is needed nor claimed where the value is
+  // still in use.
+  for (const entry of UNREAD)
+    assert.equal(
+      entry.coveredBy !== undefined,
+      entry.internalReads === 0,
+      `${entry.name}: an anchor is required exactly when nothing reads the member`
+    )
+  for (const entry of fullyUnread) {
+    const covered = entry.coveredBy
+    if (!covered) throw new Error(`${entry.name} is read nowhere but names no covering attestation`)
+    assert.ok(
+      sourceText(covered.module).includes(covered.anchor),
+      `${entry.name}: ${covered.anchor} is not in ${covered.module}`
+    )
+    // The anchor must identify the module, else the evidence could move away and the verdict stay green.
+    for (const other of moduleFiles())
+      if (other !== covered.module)
+        assert.equal(
+          sourceText(other).includes(covered.anchor),
+          false,
+          `${entry.name}: ${covered.anchor} also appears in ${other}`
+        )
+  }
+  // A table of anchors that nothing can falsify would pass every assertion above, so a fabricated anchor
+  // must be absent from every configuration module.
+  for (const other of moduleFiles())
+    assert.equal(sourceText(other).includes("attestation_that_covers_nothing"), false)
+})
+
+test("the member that rests on an undeployed candidate is revisited when the candidate is wired up", () => {
+  // One verdict is not "covered by an attestation" but "there is nothing to attest": the BTE context
+  // proof is a deployment candidate. That verdict is only true while the candidate stays unreferenced, so
+  // the candidate's function module name is derived from the module and required to appear exactly once -
+  // its own definition. Registering the candidate would give the fingerprint something to pin, and this
+  // gate turns red rather than leaving the verdict stale. The name is extracted, never restated.
+  const candidate = "configuration-bte-context-proof.ts"
+  const declared = /functionName:\s*"([A-Z0-9_]+)"/.exec(sourceText(candidate))
+  const functionName = declared?.[1]
+  if (functionName === undefined)
+    throw new Error("the context-proof candidate declares no function module name")
+  let occurrences = 0
+  for (const path of censusFiles()) {
+    if (path.endsWith(SELF)) continue
+    occurrences += countOf(readFileSync(new URL(path, repoRoot), "utf8"), functionName)
+  }
+  assert.equal(
+    occurrences,
+    1,
+    `${functionName} is now referenced outside its own definition; the fingerprint's verdict must be revisited`
+  )
+  // And the candidate marker the anchor points at is the module's own words, not this test's.
+  assert.ok(sourceText(candidate).includes("Deployment candidate only"))
 })
