@@ -94,10 +94,11 @@ const INTERNAL_ONLY_PINS: ReadonlyArray<{ name: string; module: string; consumed
  * digests under neither naming convention is in neither census - and that was prose, written as a
  * "known boundary", until it was measured.
  *
- * There are two ways to carry a digest, and they are DISJOINT (measured: 0 members do both), so a net
- * that catches only one of them is one-directionally blind:
+ * There are THREE ways to carry a digest, and no member uses two of them (measured: every pairwise
+ * overlap is 0), so a net that catches only some of them is one-directionally blind:
  *   - a 64-hex string LITERAL in the initializer - 73 members;
- *   - a COMPUTED digest, an initializer calling `.digest(...)` - 16 members.
+ *   - a COMPUTED digest, an initializer calling `.digest(...)` - 16 members;
+ *   - a HELPED digest, an initializer calling a helper that hashes - 2 members, and only these 2.
  * The first version of this gate measured only the literal kind and asserted, in this test's own name,
  * that "no export invisible to both censuses is unreferenced". That sentence was broader than its
  * instrument, and widening the instrument to the union found exactly one member it had been hiding:
@@ -112,13 +113,23 @@ const INTERNAL_ONLY_PINS: ReadonlyArray<{ name: string; module: string; consumed
  *     configurationBcGuardApi, configurationBcPreviewApi and configurationBcRouteApi embed the pin
  *     inside the generated ABAP source lines they export (`"  '73783f69...'."`).
  * A claim that nothing is hidden has to be made with the widest net available, or the net's own shape
- * becomes the hiding place. So the tests below are only "the initializer carries a digest, literally or
- * by calling `.digest(`".
+ * becomes the hiding place.
  *
- * The named censuses are mostly a different kind: 13 of the 14 provenance members are computed source
- * text, joined and hashed. One carries a digest literal - the member whose idiom is `literal-pin` - and
- * twelve carry a computed digest. Both numbers are asserted below, so how far the censuses overlap
- * stays a measured number rather than a claim.
+ * But "widest" is not "loosest", and the third route had to be widened in a way the first two did not.
+ * The obvious helper test - "the called function's body mentions hashing" - was measured to OVER-report
+ * by 2: it flags configurationBcOwnerInclude and configurationBcRecoveryCheckApi, whose local `hash` is
+ * a generator that EMITS ABAP `CALL FUNCTION 'CALCULATE_HASH_FOR_RAW'` lines, not a JavaScript digest.
+ * The name `hash` has 11 declarations across the family, 7 of them real digests, so a body-text test
+ * resolves the name to the wrong one. The instrument therefore resolves every called name IN SCOPE
+ * (its own module first, else the module it is imported from) and requires the RESOLVED declaration to
+ * call createHash(...).digest(...) in JavaScript. Two negative controls below pin that discrimination:
+ * the two over-reported members must NOT be in the class.
+ *
+ * The named censuses are a different kind: all 14 provenance members carry a digest under this net -
+ * one literal (the member whose idiom is `literal-pin`), twelve computed, and one through the helper
+ * configurationBteProtocolSourceVersion uses. The previous version of this comment said 13 of 14, which
+ * was an artifact of the two-route net rather than a fact about the family. All three numbers are
+ * asserted below, so how far the censuses overlap stays a measured number rather than a claim.
  */
 const DIGEST_LITERAL = /["'][0-9a-f]{64}["']/i
 
@@ -317,6 +328,106 @@ function configurationExports(): ConfigurationExport[] {
 
 const CONFIGURATION_EXPORTS = configurationExports()
 
+/** Strip the wrappers that do not change a value: `as const`, `satisfies`, redundant parentheses. */
+function unwrapNode(node: ts.Node): ts.Node {
+  let current = node
+  for (;;) {
+    if (
+      ts.isAsExpression(current) ||
+      ts.isSatisfiesExpression(current) ||
+      ts.isParenthesizedExpression(current)
+    ) {
+      current = current.expression
+      continue
+    }
+    return current
+  }
+}
+
+/** A declaration that produces a digest in JavaScript, as opposed to one that only mentions hashing. */
+const isJavaScriptDigest = (body: string) =>
+  body.includes("createHash(") && body.includes(".digest(")
+
+/**
+ * The names a module can call, resolved IN SCOPE: its own declarations first, then the module each
+ * imported name comes from. This resolution is what the third digest route needs, because helper names
+ * are not unique across the family - `hash` alone has 11 declarations, 7 of them real digests and the
+ * rest generators that emit ABAP `CALCULATE_HASH_FOR_RAW` lines. A test on "the called function's body
+ * mentions hashing" was measured to over-report by 2 for exactly that reason.
+ */
+const MODULE_DECLARATIONS = new Map<string, Map<string, string>>()
+const MODULE_IMPORTS = new Map<string, Map<string, string>>()
+for (const file of moduleFiles()) {
+  const source = ts.createSourceFile(
+    file,
+    readFileSync(new URL(`src/${file}`, repoRoot), "utf8"),
+    ts.ScriptTarget.ES2022,
+    true
+  )
+  const declarations = new Map<string, string>()
+  const imports = new Map<string, string>()
+  for (const statement of source.statements) {
+    if (ts.isImportDeclaration(statement) && statement.importClause) {
+      const specifier = statement.moduleSpecifier
+      if (!ts.isStringLiteral(specifier)) continue
+      const target = specifier.text.replace(/^\.\//, "").replace(/\.js$/, ".ts")
+      const bindings = statement.importClause.namedBindings
+      if (bindings && ts.isNamedImports(bindings)) {
+        for (const element of bindings.elements) imports.set(element.name.getText(), target)
+      }
+      continue
+    }
+    if (ts.isFunctionDeclaration(statement) && statement.name) {
+      declarations.set(statement.name.getText(), statement.getText())
+      continue
+    }
+    if (!ts.isVariableStatement(statement)) continue
+    for (const declaration of statement.declarationList.declarations) {
+      if (!declaration.initializer) continue
+      declarations.set(declaration.name.getText(), unwrapNode(declaration.initializer).getText())
+    }
+  }
+  MODULE_DECLARATIONS.set(file, declarations)
+  MODULE_IMPORTS.set(file, imports)
+}
+
+/**
+ * The resolved JavaScript digest producers an initializer calls, as `name@module`. The initializer text
+ * is re-parsed on its own, so a call nested in a callback counts too: this errs towards reporting a
+ * carrier that a caller would have to invoke first, which adds a member to the class rather than
+ * dropping one from it.
+ */
+function digestHelpersCalled(module: string, initializer: string): string[] {
+  const source = ts.createSourceFile(
+    `${module}.init.ts`,
+    `(${initializer})`,
+    ts.ScriptTarget.ES2022,
+    true
+  )
+  const calls = new Set<string>()
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression
+      if (ts.isIdentifier(callee)) calls.add(callee.text)
+      else if (ts.isPropertyAccessExpression(callee)) calls.add(callee.name.text)
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  const hits: string[] = []
+  for (const name of calls) {
+    const local = MODULE_DECLARATIONS.get(module)?.get(name)
+    if (local !== undefined) {
+      if (isJavaScriptDigest(local)) hits.push(`${name}@${module}`)
+      continue
+    }
+    const target = MODULE_IMPORTS.get(module)?.get(name)
+    const imported = target ? MODULE_DECLARATIONS.get(target)?.get(name) : undefined
+    if (imported !== undefined && isJavaScriptDigest(imported)) hits.push(`${name}@${target}`)
+  }
+  return hits.sort()
+}
+
 /** Every provenance-shaped export in the configuration modules, extracted rather than restated. */
 function extractMembers(): Member[] {
   return CONFIGURATION_EXPORTS.filter((entry) => PROVENANCE_SHAPE.test(entry.name)).map(
@@ -345,21 +456,27 @@ type DigestMember = {
   module: string
   isLiteral: boolean
   isComputed: boolean
+  viaHelper: string[]
   isObjectLiteral: boolean
 }
 
 /**
- * Every export carrying a digest, by either route. The union is the whole point: the two routes were
- * measured disjoint, so filtering on one of them silently drops everything the other one holds.
+ * Every export carrying a digest, by any of the three routes. The union is the whole point: the routes
+ * were measured mutually disjoint, so filtering on some of them silently drops everything the others
+ * hold - and the third route is the one that is invisible to a net built from source text alone, because
+ * neither a literal nor a `.digest(` call appears anywhere in the initializer.
  */
 function extractDigestMembers(): DigestMember[] {
-  return CONFIGURATION_EXPORTS.filter(
-    (entry) => DIGEST_LITERAL.test(entry.initializer) || COMPUTED_DIGEST.test(entry.initializer)
-  ).map((entry) => ({
+  return CONFIGURATION_EXPORTS.filter((entry) => {
+    if (DIGEST_LITERAL.test(entry.initializer)) return true
+    if (COMPUTED_DIGEST.test(entry.initializer)) return true
+    return digestHelpersCalled(entry.module, entry.initializer).length > 0
+  }).map((entry) => ({
     name: entry.name,
     module: entry.module,
     isLiteral: DIGEST_LITERAL.test(entry.initializer),
     isComputed: COMPUTED_DIGEST.test(entry.initializer),
+    viaHelper: digestHelpersCalled(entry.module, entry.initializer),
     isObjectLiteral: entry.initializer.trimStart().startsWith("{")
   }))
 }
@@ -458,6 +575,10 @@ const DIGEST_MEMBERS = extractDigestMembers()
 const DIGEST_NAMES = DIGEST_MEMBERS.map((member) => member.name).sort()
 const LITERAL_DIGEST_MEMBERS = DIGEST_MEMBERS.filter((member) => member.isLiteral)
 const COMPUTED_DIGEST_MEMBERS = DIGEST_MEMBERS.filter((member) => member.isComputed)
+/** The members only the third route reaches: no literal and no `.digest(` anywhere in the initializer. */
+const HELPER_DIGEST_MEMBERS = DIGEST_MEMBERS.filter(
+  (member) => member.viaHelper.length > 0 && !member.isLiteral && !member.isComputed
+)
 /** The digest-carrying members that neither the provenance nor the pin census accounts for. */
 const UNACCOUNTED_DIGEST_MEMBERS = DIGEST_MEMBERS.filter(
   (member) => !PROVENANCE_SHAPE.test(member.name) && !PIN_SHAPE.test(member.name)
@@ -742,13 +863,56 @@ test("the digest-carrying class is extracted with the widest net, and the pin ce
     12,
     "the number of provenance members carrying a computed digest changed"
   )
-  // The two routes to a digest are disjoint. This is what makes the union below a union and not a
+  // Every provenance member carries a digest under the three-route net. The previous version of the
+  // comment above said 13 of 14, which was an artifact of the two-route net: the member that arrives
+  // through a helper was invisible to it. Pinned so the claim cannot drift back.
+  assert.equal(
+    MEMBERS.filter(
+      (member) =>
+        DIGEST_LITERAL.test(member.initializer) ||
+        COMPUTED_DIGEST.test(member.initializer) ||
+        digestHelpersCalled(member.module, member.initializer).length > 0
+    ).length,
+    14,
+    "not every provenance member carries a digest under the three-route net"
+  )
+  // The controls come BEFORE the overlaps and the counts. An assertion that names a defect has to be
+  // reachable when that defect occurs: measured - with the controls after the counts, breaking the
+  // resolver's discrimination tripped "expected 2 helper-only digest exports, extracted 4" first and
+  // these two were never reached, so they were weaker guards than they read as.
+  //
+  // Positive control: this name is not in the sources.
+  assert.ok(
+    !DIGEST_NAMES.includes("configurationNothingDigests"),
+    "the extraction produced a name that is not in the sources"
+  )
+  // Negative controls for the third route. Both members call a helper named `hash`, and a test on "the
+  // called function's body mentions hashing" WAS measured to put them in the class - because that name
+  // has 11 declarations across the family and the test resolved it to the wrong one. Their local `hash`
+  // emits ABAP `CALCULATE_HASH_FOR_RAW` lines instead of hashing in JavaScript. Asserting they are
+  // absent is what keeps the widened route from over-reporting, which no count alone would catch.
+  assert.ok(
+    !DIGEST_NAMES.includes("configurationBcOwnerInclude"),
+    "the helper route reported a member whose helper only emits ABAP hash calls"
+  )
+  assert.ok(
+    !DIGEST_NAMES.includes("configurationBcRecoveryCheckApi"),
+    "the helper route reported a member whose helper only emits ABAP hash calls"
+  )
+  // The routes to a digest are mutually disjoint. This is what makes the union below a union and not a
   // double count, and it is the fact that made the first version of this gate blind: a net over one
-  // route drops every member of the other.
+  // route drops every member of the others.
   assert.equal(
     DIGEST_MEMBERS.filter((member) => member.isLiteral && member.isComputed).length,
     0,
     "a member carries both a digest literal and a computed digest, so the two routes overlap"
+  )
+  assert.equal(
+    DIGEST_MEMBERS.filter(
+      (member) => member.viaHelper.length > 0 && (member.isLiteral || member.isComputed)
+    ).length,
+    0,
+    "a member reaches the class through a helper as well as through its own text, so the routes overlap"
   )
   // An extraction that silently found nothing would make every assertion below vacuous.
   assert.equal(
@@ -762,14 +926,14 @@ test("the digest-carrying class is extracted with the widest net, and the pin ce
     `expected 16 computed-digest exports, extracted ${COMPUTED_DIGEST_MEMBERS.length}`
   )
   assert.equal(
-    DIGEST_MEMBERS.length,
-    89,
-    `expected 89 digest-carrying exports (73 literal + 16 computed), extracted ${DIGEST_MEMBERS.length}`
+    HELPER_DIGEST_MEMBERS.length,
+    2,
+    `expected 2 helper-only digest exports, extracted ${HELPER_DIGEST_MEMBERS.length}`
   )
-  // Positive control: this name is not in the sources.
-  assert.ok(
-    !DIGEST_NAMES.includes("configurationNothingDigests"),
-    "the extraction produced a name that is not in the sources"
+  assert.equal(
+    DIGEST_MEMBERS.length,
+    91,
+    `expected 91 digest-carrying exports (73 literal + 16 computed + 2 helped), extracted ${DIGEST_MEMBERS.length}`
   )
   // The pin census is a subset of this one - measured, not assumed. Every pin table carries a digest,
   // which is what makes "pin table" a structural notion and not just a naming convention.
@@ -779,10 +943,10 @@ test("the digest-carrying class is extracted with the widest net, and the pin ce
     "a pin table does not carry a digest, so the two censuses are not nested"
   )
   // The criterion must stay the widest net. Narrowing it to object literals - the tidier rule - was
-  // measured to miss members of both routes, and this count is what reddens if it is narrowed back.
+  // measured to miss members of all three routes, and this count is what reddens if it is narrowed back.
   assert.equal(
     DIGEST_MEMBERS.filter((member) => !member.isObjectLiteral).length,
-    22,
+    24,
     "the digest criterion no longer reaches every shape it was measured to cover"
   )
 })
@@ -835,7 +999,7 @@ test("every export invisible to both censuses is either read or declared with it
   // member cannot join or leave it unnoticed.
   assert.equal(
     UNACCOUNTED_DIGEST_MEMBERS.length,
-    63,
+    64,
     `the unaccounted digest-carrying class changed size: ${UNACCOUNTED_DIGEST_MEMBERS.map((m) => m.name).join(", ")}`
   )
 })
