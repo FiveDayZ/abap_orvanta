@@ -49,6 +49,32 @@ export const configurationBcStateLayoutFingerprint = createHash("sha256")
     )
   )
   .digest("hex")
+/** The member tables the one published CUNI pilot touches: five native plus four guard layouts. */
+export const configurationBcStateTableCount = configurationBcStateTables.length
+/**
+ * The key rows the pilot can create: one per native table, three for the tables whose key carries a
+ * language. Eleven are in scope and ten were missing on the recorded system, which is where the "ten
+ * candidate rows" of the delivery contract comes from.
+ */
+export const configurationBcStateCandidateKeyCount = primary.reduce(
+  (total, name) => total + (["T006A", "T006B", "T006C"].includes(name) ? 3 : 1),
+  0
+)
+/**
+ * The fixed related keys the guard completes and the pilot must leave untouched: as many per guard layout
+ * as that layout's own limit. These eight are a different set from the nine protected records the record
+ * kernel counts, which is one protected record per member table.
+ */
+export const configurationBcStateProtectionKeyCount = Object.values(
+  configurationBcGuardLayouts
+).reduce((total, layout) => total + layout.limit, 0)
+/**
+ * The complete fixed keys the pilot covers: nineteen, the candidate keys plus the protection keys. Every
+ * delivered copy of these counts is read from here instead of being written as a number, so adding a
+ * table, a language or a key cannot leave a delivered count behind.
+ */
+export const configurationBcStateKeyCount =
+  configurationBcStateCandidateKeyCount + configurationBcStateProtectionKeyCount
 const bindExport = (prefix: string, buffer: string) => [
   "  EXPORT",
   ...bindings.map((name) => `    ${name} = ${prefix}${name}`),

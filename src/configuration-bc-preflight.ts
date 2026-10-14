@@ -6,6 +6,12 @@ import {
   scopedSnapshot
 } from "./configuration-bc-native.js"
 import {
+  configurationBcStateCandidateKeyCount,
+  configurationBcStateKeyCount,
+  configurationBcStateProtectionKeyCount,
+  configurationBcStateTableCount
+} from "./configuration-bc-state-api.js"
+import {
   attestConfigurationBcPreviewApi,
   configurationBcPreviewBodyFingerprint,
   configurationBcPreviewResponseSchema,
@@ -314,10 +320,10 @@ export async function preflightConfigurationBcActivation(
     },
     scope: {
       object: "CUNI",
-      tableCount: 9,
-      keyCount: 19,
-      candidateKeys: 11,
-      protectionKeys: 8,
+      tableCount: configurationBcStateTableCount,
+      keyCount: configurationBcStateKeyCount,
+      candidateKeys: configurationBcStateCandidateKeyCount,
+      protectionKeys: configurationBcStateProtectionKeyCount,
       allCuniKeys: false
     },
     policy: preview.policy,

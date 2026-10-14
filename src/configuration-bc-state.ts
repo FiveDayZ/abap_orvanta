@@ -9,6 +9,8 @@ import {
 import { configurationBcCtsSchema, type readConfigurationBcCts } from "./configuration-bc-cts.js"
 import {
   configurationBcStateApi as api,
+  configurationBcStateKeyCount,
+  configurationBcStateTableCount,
   configurationBcStateTables,
   configurationBcStateLayouts,
   configurationBcStateLayoutFingerprint
@@ -153,8 +155,8 @@ export async function readConfigurationBcBeforeState(
         snapshot: z.literal(false),
         scope: z.object({
           object: z.literal("CUNI"),
-          tableCount: z.literal(9),
-          keyCount: z.literal(19),
+          tableCount: z.literal(configurationBcStateTableCount),
+          keyCount: z.literal(configurationBcStateKeyCount),
           allCuniKeys: z.literal(false)
         }),
         versions: z
@@ -285,7 +287,12 @@ export async function readConfigurationBcBeforeState(
     activationAvailable: false as const,
     recoveryAvailable: false as const,
     snapshot: false as const,
-    scope: { object: "CUNI", tableCount: 9, keyCount: 19, allCuniKeys: false },
+    scope: {
+      object: "CUNI",
+      tableCount: configurationBcStateTableCount,
+      keyCount: configurationBcStateKeyCount,
+      allCuniKeys: false
+    },
     versions: { ...before.versions, cts: nativeCtsVersion, state: first.EV_STATE_VERSION },
     counts: expectedCounts,
     layouts: { ...configurationBcStateLayouts },
