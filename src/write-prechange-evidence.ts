@@ -122,6 +122,11 @@ export const WRITE_PRE_CHANGE_SOURCES: ReadonlyArray<{
     note: "SAP table TBTCO: the background-job rows the create/modify/release observations read."
   },
   {
+    label: "program-execution",
+    kind: "phase",
+    note: "run_abap_program: the program's own side effects are what changes SAP, so no pre-change read bounds this target. The label records that nothing was snapshotted, and it is the one phase that keeps an `exists: false` observation partial."
+  },
+  {
     label: "active_source",
     kind: "phase",
     note: "Which source snapshot answered when the caller supplied a URI and only the active version exists."

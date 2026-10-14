@@ -25,11 +25,20 @@ import { MockBackend } from "./mock-backend.js"
  * `switch (name)` dispatch that happens to sit nearby, so each site is read positionally. A push
  * argument list is followed until its parentheses balance, because it may be wrapped across lines.
  */
+/**
+ * Every character a provenance label may use, in one place so the three readings below cannot drift
+ * apart. A label outside this class is invisible to the extraction, and an invisible label makes the
+ * bidirectional check below pass without ever comparing it: while the class was `[a-z0-9_]`,
+ * `program-execution` was emitted by the module and declared nowhere, and this gate stayed green.
+ * The class therefore admits the hyphen, and `a label that uses a hyphen is visible` proves it does.
+ */
+const LABEL_PATTERN = String.raw`"([a-z][a-z0-9_-]{2,60})"`
+
 function provenanceLabelsIn(source: string): Set<string> {
   const labels = new Set<string>()
   const lines = source.split("\n")
   const take = (text: string) => {
-    for (const candidate of text.matchAll(/"([a-z][a-z0-9_]{2,60})"/g)) labels.add(candidate[1]!)
+    for (const candidate of text.matchAll(new RegExp(LABEL_PATTERN, "g"))) labels.add(candidate[1]!)
   }
   /** The call text, followed until its parentheses balance, so a wrapped call is read whole. */
   const callText = (from: number) => {
@@ -53,7 +62,7 @@ function provenanceLabelsIn(source: string): Set<string> {
     if (/observeJson\(|recordObservationError\(evidence,/.test(line)) {
       // The label is the literal right after `evidence,`; matching it positionally keeps the tool
       // names of a nearby `switch (name)` out of the vocabulary.
-      const match = callText(index).match(/evidence,\s*"([a-z][a-z0-9_]{2,60})"/)
+      const match = callText(index).match(new RegExp(`evidence,\\s*${LABEL_PATTERN}`))
       if (match) labels.add(match[1]!)
       return
     }
@@ -61,7 +70,9 @@ function provenanceLabelsIn(source: string): Set<string> {
       // Only a label assigned directly (or as a ternary of labels) counts. `const source = await
       // backend.readSource(..., { version: "active" })` assigns a source, not the label "active".
       const assignment = line.match(
-        /=\s*(?:"([a-z][a-z0-9_]{2,60})"|\w+\s*\?\s*"([a-z][a-z0-9_]{2,60})"\s*:\s*"([a-z][a-z0-9_]{2,60})")/
+        new RegExp(
+          `=\\s*(?:${LABEL_PATTERN}|\\w+\\s*\\?\\s*${LABEL_PATTERN}\\s*:\\s*${LABEL_PATTERN})`
+        )
       )
       if (assignment) {
         for (const group of assignment.slice(1)) if (group) labels.add(group)
@@ -96,8 +107,22 @@ test("the pre-change provenance vocabulary is declared, and every tool it names 
   assert.deepEqual(unused, [], "these declared provenance labels are emitted nowhere")
   assert.equal(
     emitted.size,
-    24,
+    25,
     "the provenance vocabulary changed size; declare the new label and update this count"
+  )
+})
+
+test("a label that uses a hyphen is visible to the provenance extraction", () => {
+  // A positive control on the reader, not on the vocabulary. The bidirectional check can only be as
+  // good as the set it compares, and a label the extraction cannot see is never compared: with the
+  // class `[a-z0-9_]` the module emitted `program-execution` while the declaration named it nowhere.
+  const source = readFileSync(modulePath, "utf8")
+  const injected = provenanceLabelsIn(
+    `${source}\nevidence.sources.push("phase-program-execution-probe")\n`
+  )
+  assert.ok(
+    injected.has("phase-program-execution-probe"),
+    "a hyphenated label is invisible to the extraction, so the declaration cannot be checked against it"
   )
 })
 
