@@ -127,6 +127,9 @@ export async function readConfigurationFiDependencies(
       .safeParse(await reader(objectName))
     if (!result.success || hash(result.data.definition) !== result.data.fingerprint)
       fail("DEPENDENCY_METADATA_CHANGED")
+    // ponytail: only the four transparent tables are anchored to a published baseline fingerprint.
+    // A data element or domain definition is re-read and compared with itself, so an installed
+    // change to those two kinds is not caught here; publish their baseline pins before claiming more.
     if (
       kind === "transparentTable" &&
       result.data.fingerprint !==

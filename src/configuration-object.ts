@@ -689,9 +689,9 @@ export async function describeConfigurationObject(
   assertTableAllowed(input.objectName)
   if (!(TABLE_TIERS.customizing as readonly string[]).includes(input.objectName))
     throw new Error("CONFIGURATION_OBJECT_SCOPE_UNSUPPORTED: only the approved customizing tier")
-  z.string()
-    .regex(/^\d{3}$/)
-    .parse(client)
+  // The client comes from the connection configuration, not from the caller: name the refusal like
+  // every sibling check instead of letting a raw schema error surface as this tool's failure.
+  if (!/^\d{3}$/.test(client)) throw new Error("CONFIGURATION_OBJECT_CLIENT_INVALID")
   const startedAt = new Date().toISOString()
   const readTable = async () => {
     const rawTable = await readDefinition(input.objectName)

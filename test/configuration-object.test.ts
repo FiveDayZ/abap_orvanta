@@ -260,6 +260,16 @@ test("API boundary rejects missing text boundary and unsupported scope before an
     await assert.rejects(describeConfigurationObject(raw, "200", never, never, never, never))
 })
 
+test("a connection client that is not three digits is refused by code before any SAP read", async () => {
+  const never = async () => assert.fail("an invalid connection client must not read SAP")
+  for (const client of ["", "20", "2000", "2a0", undefined as unknown as string])
+    await assert.rejects(
+      describeConfigurationObject(input, client, never, never, never, never),
+      /CONFIGURATION_OBJECT_CLIENT_INVALID/,
+      `client ${String(client)} must be named, not left as a schema error`
+    )
+})
+
 test("text maintenance binds translation screens, full-row update modes and dialog CTS without authorizing calls", async () => {
   const f = await maintenanceFixture("T006A"),
     calls: string[] = []

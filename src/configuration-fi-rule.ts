@@ -277,7 +277,10 @@ export async function readConfigurationFiRule(
     if (header && application && header.BOOLCLASS !== application.RCLASS)
       blockers.push("FI_RULE_CLASS_PROJECTION_MISMATCH")
   }
-  if (formulaContent?.coverage.storedRowsComplete) {
+  // "Not requested" is not "requested and unread": the default performs no formula read at all, so it
+  // reports the dimension as unrequested and leaves content failure to the opt-in path.
+  if (!includeFormulaContent) blockers.push("FI_RULE_FORMULA_CONTENT_NOT_REQUESTED")
+  else if (formulaContent?.coverage.storedRowsComplete) {
     blockers.push("FI_RULE_FORMULA_SEMANTICS_UNVERIFIED", "FI_RULE_FORMULA_DEPENDENCIES_UNVERIFIED")
   } else blockers.push("FI_RULE_FORMULA_CONTENT_UNVERIFIED")
   if (formulaContent) blockers.push(...formulaContent.blockers)

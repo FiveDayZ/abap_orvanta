@@ -1169,7 +1169,8 @@ test("FI execution preflight keeps a stable matching projection blocked without 
   assert.equal(result.executionPreflight.status, "blocked")
   assert.equal(result.executionPreflight.writeAvailable, false)
   assert.equal(result.executionPreflight.automaticRetry, false)
-  assert(result.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
+  assert(result.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_NOT_REQUESTED"))
+  assert(!result.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
   assert(result.executionPreflight.blockers.includes("FI_RULE_MAINTENANCE_API_UNVERIFIED"))
   assert(result.executionPreflight.blockers.includes("FI_RULE_GENERATED_CODE_UNVERIFIED"))
   assert(!result.executionPreflight.blockers.includes("FI_RULE_ASSIGNED_TO_OTHER_RULE"))
@@ -1281,7 +1282,8 @@ test("FI execution preflight survives public tool serialization and enhancement 
     })
   const direct = JSON.parse(await service.readConfigurationFiRule(fiInput))
   assert.equal(direct.executionPreflight.writeAvailable, false)
-  assert(direct.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
+  assert(direct.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_NOT_REQUESTED"))
+  assert(!direct.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
   const workflow = JSON.parse(
     await service.prepareEnhancementConfigurationWorkflow({
       connectionId: "w200",

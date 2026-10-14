@@ -378,6 +378,10 @@ test("FI exact-rule default performs no formula reads; opt-in joins raw content 
   assert.equal(f.calls(), 0)
   assert.equal(f.parentReads(), 8)
   assert.equal("formulaContent" in referenceOnly, false)
+  assert(
+    referenceOnly.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_NOT_REQUESTED")
+  )
+  assert(!referenceOnly.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
   const expanded = await f.run(true)
   assert.equal(expanded.formulaContent?.status, "raw_content_read")
   assert.equal(expanded.coverage.formulas, "raw_stored_rows_semantics_unverified")
@@ -396,6 +400,19 @@ test("FI exact-rule default performs no formula reads; opt-in joins raw content 
     ),
     /FORMULA_SCOPE_UNSUPPORTED/
   )
+})
+
+test("FI exact-rule tells a requested but unread formula set apart from an unrequested one", async () => {
+  const f = parentFixture()
+  const query = f.backend.runQuery
+  // The rule has no readable step rows, so the opt-in formula read never runs.
+  f.backend.runQuery = async (id, sql) => (sql.includes("FROM GB931 ") ? [] : query(id, sql))
+  const result = await f.run(true)
+  // The opt-in is recorded, so the field is present, but no formula row was read.
+  assert.equal(result.formulaContent, null)
+  assert(result.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_UNVERIFIED"))
+  assert(!result.executionPreflight.blockers.includes("FI_RULE_FORMULA_CONTENT_NOT_REQUESTED"))
+  assert.equal(f.calls(), 0)
 })
 
 test("FI exact-rule rechecks the parent after formula reads and withdraws changed steps and formula content", async () => {
