@@ -449,7 +449,9 @@ export async function readConfigurationImgActivityDetails(
         },
         nextRead:
           /^[A-Z0-9_/]{1,20}$/.test(header.ACTIVITY) &&
-          /^SIMG[A-Z0-9_/]{1,56}$/.test(header.DOCU_ID)
+          // Same 57-character readability bound as read_configuration_documentation, so no
+          // nextRead link is offered for a reference that the reader could only refuse.
+          /^SIMG[A-Z0-9_/]{1,53}$/.test(header.DOCU_ID)
             ? {
                 tool: "read_configuration_documentation",
                 arguments: {

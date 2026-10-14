@@ -45,7 +45,7 @@ const run = (
   raw: unknown = input,
   result: RemoteFunctionResult = { outputs: { ACTIVITIES_FOUND: [] } },
   readFunction: (name: string) => Promise<unknown> = reader,
-  readTable = async (name: string) => table(name),
+  readTable: (name: string) => Promise<unknown> = async (name) => table(name),
   called = (_request: RemoteFunctionRequest) => {}
 ) =>
   findConfigurationActivities(
@@ -97,6 +97,21 @@ test("IMG scope and stale definition are refused before RFC", async () => {
     { ...input, expectedDefinitionFingerprint: "b".repeat(64) }
   ])
     await assert.rejects(run(raw, undefined, reader, undefined, never))
+})
+
+test("IMG table envelope states and helper faults are named instead of surfacing a schema failure", async () => {
+  await assert.rejects(
+    run(input, undefined, reader, async () => ({ status: "not-found" })),
+    /CONFIGURATION_IMG_TABLE_NOT_FOUND/
+  )
+  await assert.rejects(
+    run(input, undefined, reader, async () => ({ ...table("T005"), active: false })),
+    /CONFIGURATION_IMG_TABLE_INACTIVE/
+  )
+  await assert.rejects(
+    run(input, { outputs: {}, fault: { code: "1", name: "helper said no", message: "no detail" } }),
+    /CONFIGURATION_IMG_RFC_FAILED: SOAP_FAULT/
+  )
 })
 
 test("IMG reader, transitive dependency and header layout must match before RFC", async () => {
@@ -267,7 +282,8 @@ test("IMG details are opt-in, capped to returned headers, and failure retains ve
   assert.equal(calls, 1)
   assert.equal(result.observedCount, 2)
   assert.equal(result.activities[0]!.activityId, "TEST_A")
-  assert.equal(result.activities[0]!.title.status, "unknown")
+  assert.equal(result.activities[0]!.title.status, "unavailable")
+  assert.equal(result.activities[0]!.path.status, "unavailable")
   assert.equal(result.evidence.details!.status, "unavailable")
   assert.ok(!("activities" in result.evidence.details!))
   assert.equal(result.saveAvailable, false)

@@ -151,7 +151,10 @@ export async function readConfigurationDocumentation(
   try {
     if (!headers.length) status = "header_not_found"
     else if (!reference) status = "no_document_reference"
-    else if (!/^SIMG[A-Z0-9_/]{1,56}$/.test(reference)) {
+    // Readability bound, not a catalogue bound: the shared reviewed reader refuses any predicate
+    // longer than 68 characters and "OBJECT = '<reference>'" costs 11 + length, so only
+    // references of 57 characters or fewer can be indexed at all.
+    else if (!/^SIMG[A-Z0-9_/]{1,53}$/.test(reference)) {
       status = "unsupported_reference"
       code = "CONFIGURATION_DOCUMENTATION_REFERENCE_UNSUPPORTED"
     } else {

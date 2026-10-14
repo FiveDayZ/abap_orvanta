@@ -96,7 +96,11 @@ test(
     assert.ok(resolve(root).startsWith(resolve(tmpdir()) + sep))
     const f = await stateFixture(),
       old = ToolService.prototype.readConfigurationBcBeforeState
-    const payload = { readOnly: true, marker: "complete native before-state result" }
+    const payload = {
+      readOnly: true,
+      marker: "complete native before-state result",
+      readFlow: null
+    }
     ToolService.prototype.readConfigurationBcBeforeState = async () => {
       await new Promise((resolve) => setTimeout(resolve, 16_500))
       return JSON.stringify(payload)
@@ -149,7 +153,11 @@ test(
     assert.ok(resolve(root).startsWith(resolve(tmpdir()) + sep))
     const f = await stateFixture()
     const old = ToolService.prototype.readConfigurationBcGuard
-    const payload = { readOnly: true, marker: "complete native guard result" }
+    const payload = {
+      readOnly: true,
+      marker: "complete native guard result",
+      readFlow: null
+    }
     const {
       connectionId,
       bcSetId,

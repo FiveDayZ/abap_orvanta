@@ -98,7 +98,7 @@ cd C:\My\Workplace\Coding\vscode-abap\abap-mcp-standalone\release\abap-mcp-stand
 
 ORVANTA 的默认 MCP 注册名和协议握手名称均为 `orvanta`。升级文件不会自动修改客户端中已有的 `abap_fs_standalone` 注册；运行新版配置器或使用配置中心生成的配置后，确认新名称可调用，再按需移除旧的独立服务注册。不要删除原 VS Code 服务的 `abap_fs` 注册。
 
-为保持部署和历史调用凭证兼容，项目目录、npm 包名、便携包文件名前缀仍为 `abap-mcp-standalone`；`ABAP_MCP_*` 环境变量、状态目录和 `/health` 的 `server` 标识保持不变。当时（更名前）的 75 个工具方法及参数契约不变；当前工具数以 `contracts/tool-index.json` 为准（2026-10-08 实测 208 个工具 / 137 只读 / 12 组）。命名更新不代表商标或名称独占性查重。
+为保持部署和历史调用凭证兼容，项目目录、npm 包名、便携包文件名前缀仍为 `abap-mcp-standalone`；`ABAP_MCP_*` 环境变量、状态目录和 `/health` 的 `server` 标识保持不变。当时（更名前）的 75 个工具方法及参数契约不变；当前工具数以 `contracts/tool-index.json` 为准（2026-10-14 按该文件读数：211 个工具 / 140 只读 / 12 组）。命名更新不代表商标或名称独占性查重。
 
 也可以手工在用户级 `~/.codex/config.toml` 或受信任项目的 `.codex/config.toml` 中加入：
 

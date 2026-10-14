@@ -291,7 +291,20 @@ export async function findConfigurationActivities(
     fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
     definition: z.object({ tableClass: z.literal("TRANSP") })
   })
-  const table = definition.parse(await readTable(input.objectName))
+  // The DDIC reader answers a not-found/inactive table with an envelope that cannot satisfy the
+  // definition schema, so those two states are named before any schema failure is surfaced.
+  const readDefinition = async () => {
+    const raw = await readTable(input.objectName)
+    const envelope = z
+      .object({ status: z.string().optional(), active: z.boolean().optional() })
+      .safeParse(raw)
+    if (envelope.success) {
+      if (envelope.data.status === "not-found") throw new Error("CONFIGURATION_IMG_TABLE_NOT_FOUND")
+      if (envelope.data.active === false) throw new Error("CONFIGURATION_IMG_TABLE_INACTIVE")
+    }
+    return definition.parse(raw)
+  }
+  const table = await readDefinition()
   if (
     input.expectedDefinitionFingerprint &&
     input.expectedDefinitionFingerprint !== table.fingerprint
@@ -366,12 +379,17 @@ export async function findConfigurationActivities(
       })
       // The wrapper also maps unexpected dependency exceptions to NOT_USED_IN_IMG_ACTIVITIES.
       if (result.fault) {
-        if (!mapping) throw new Error(`CONFIGURATION_IMG_RFC_FAILED: ${result.fault.name}`)
+        // The fault name reaches both the response and the error contract, so only an
+        // identifier is admitted; anything else is reported as an unnamed SOAP fault.
+        const faultName = /^[A-Z0-9_]{1,64}$/.test(result.fault.name)
+          ? result.fault.name
+          : "SOAP_FAULT"
+        if (!mapping) throw new Error(`CONFIGURATION_IMG_RFC_FAILED: ${faultName}`)
         lookups.push({
           objectName: object.OBJECTNAME,
           objectType: object.OBJECTTYPE,
           status: "unavailable",
-          faultName: result.fault.name
+          faultName
         })
         continue
       }
@@ -397,7 +415,7 @@ export async function findConfigurationActivities(
   await verifyReaders()
   if (mapping && (await resolveObjects!(input.objectName)).fingerprint !== mapping.fingerprint)
     throw new Error("CONFIGURATION_IMG_MAPPING_CHANGED")
-  const confirmation = definition.parse(await readTable(input.objectName))
+  const confirmation = await readDefinition()
   if (confirmation.fingerprint !== table.fingerprint || confirmation.version !== table.version)
     throw new Error("CONFIGURATION_IMG_DEFINITION_CHANGED")
   // ponytail: SAP bounds the predicate to one object, not the row count; this caps output only.
@@ -421,6 +439,17 @@ export async function findConfigurationActivities(
   const detailEvidence = details
     ? Object.fromEntries(Object.entries(details).filter(([name]) => name !== "activities"))
     : null
+  // A requested-but-failed details read must stay distinguishable from details that were never
+  // requested, so the failure code is attached to both fields instead of "unknown" alone.
+  const detailFallback = details
+    ? {
+        title: {
+          status: "unavailable",
+          code: "code" in details ? details.code : "CONFIGURATION_IMG_DETAIL_UNAVAILABLE"
+        },
+        path: { status: "unavailable", complete: false }
+      }
+    : { title: { status: "unknown" }, path: { status: "unknown" } }
   return {
     connectionId: input.connectionId,
     objectName: input.objectName,
@@ -478,8 +507,8 @@ export async function findConfigurationActivities(
               readOnly: true
             }
           : null,
-      title: detailById.get(row.ACTIVITY)?.title ?? { status: "unknown" },
-      path: detailById.get(row.ACTIVITY)?.path ?? { status: "unknown" },
+      title: detailById.get(row.ACTIVITY)?.title ?? detailFallback.title,
+      path: detailById.get(row.ACTIVITY)?.path ?? detailFallback.path,
       ...(details
         ? { documentation: detailById.get(row.ACTIVITY)?.documentation ?? { status: "unknown" } }
         : {})
