@@ -1063,7 +1063,7 @@ const NOTES: Record<string, string> = {
   inspect_configuration_transport:
     "CFG-01：w200/200 明确请求/任务的 W/Q 类型、归属、状态、客户端及目标复读；未知保持阻断，不认定 E071K/API 可写。",
   compare_configuration_unit:
-    "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；stage5 的 KG/ZH 双向与 EN 有限投影仅有本地回执、未镜像进 contracts/verification-registry.json（该处仍记为 unverified），当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。",
+    "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；KG/ZH 双向与 EN 单向投影回执已镜像进 contracts/verification-registry.json 并作为该工具证据（verified 仅指这两份回执观测到的投影比较，观测属 2026-10-03/2026-10-04 冻结构建），当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。",
   preview_configuration_number_range:
     "CFG-03：精确数字区间候选的边界、重叠、缩容及模式风险只读预检；复读全部区间和已核实域/API 源码，不调用有会话副作用的维护函数，不认定可写。",
   read_configuration_number_range_api:

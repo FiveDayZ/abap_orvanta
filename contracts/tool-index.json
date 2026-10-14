@@ -359,7 +359,7 @@
       "route": "target-specific",
       "sapHelper": null,
       "minHelperProtocol": null,
-      "note": "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；stage5 的 KG/ZH 双向与 EN 有限投影仅有本地回执、未镜像进 contracts/verification-registry.json（该处仍记为 unverified），当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。"
+      "note": "CFG-06：w200/200 与 w300/300 的单计量单位/语言投影比较；KG/ZH 双向与 EN 单向投影回执已镜像进 contracts/verification-registry.json 并作为该工具证据（verified 仅指这两份回执观测到的投影比较，观测属 2026-10-03/2026-10-04 冻结构建），当前凭据与两侧元数据仍须实读匹配，失败不可比较，不代表完整快照或同步。"
     },
     {
       "name": "compare_systems",

@@ -1863,8 +1863,13 @@ test("the registry records the honest gap rather than inflating it", () => {
     // 本批较新的 16 条中有 15 条把 unverified/failed 抬为 verified（patch_ddic_transparent_table_fields 两侧
     // 同为 verified，不计数），共享线较新的 3 条（describe_configuration_object / get_object_by_uri /
     // read_function_module_interface）两侧同为 verified，也不计数。157 + 15 = 172。
+    // 2026-10-14（stage5/r38 升格）：172 -> 173。compare_configuration_unit 由 unverified 升为 verified，
+    // 证据为 .doc/orvanta-configuration-compare-schema-acceptance-20261004-r38.json（w200/200 与 w300/300 的
+    // KG/ZH 双向投影比较 + 3 条拒绝路径，记录内出现工具名，仓库内镜像已存在且与原件字节一致）；同一能力较早的
+    // stage5 回执（.doc/orvanta-configuration-cross-system-acceptance-20261003-stage5.json）补记 EN 单向与
+    // 重复读。升格范围只到这两份回执实际观测到的投影比较，不含完整快照、同步、维护或 CTS 写入。
     // 该上限仍是 tripwire：新增一条 verified 必须同批上调并写清来由。
-    totals.verified <= 172,
+    totals.verified <= 173,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it
