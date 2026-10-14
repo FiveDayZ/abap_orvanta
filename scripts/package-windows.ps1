@@ -209,11 +209,6 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\bootstrap-sap-helper.ps1
 # 放在 app\scripts 下以便按包内 node_modules 解析 MCP SDK。
 Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\prepare-maintenance-approval.mjs") -Destination (Join-Path $appRoot "scripts")
 
-& (Join-Path $runtimeRoot "node.exe") (Join-Path $projectRoot "scripts\stage-release-evidence.mjs") $appRoot | Out-Null
-if ($LASTEXITCODE -ne 0) {
-    throw "Release verification evidence staging failed with exit code $LASTEXITCODE"
-}
-
 Push-Location $appRoot
 try {
     & npm.cmd ci --omit=dev --ignore-scripts --no-audit --no-fund
