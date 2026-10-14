@@ -25,6 +25,13 @@
  * declares the unaccepted part of itself in `unverifiedTools`, and this audit compares that
  * declaration with the registry in both directions: an undeclared gap is hidden acceptance, a
  * declared tool the registry verifies is a stale disclosure.
+ *
+ * `scenarios` had the same shape of hole one layer further out: the three published flows are the
+ * only closed loops this surface promises, they ship inside the candidate, and every tool they name
+ * outside `requiredTools` is denied by that very candidate. Nothing read the field, so an unusable
+ * step, a duplicate flow or an unstated recovery would have reached the customer unremarked. The
+ * audit now requires each scenario to state its scope, recovery and CTS, to have a unique non-empty
+ * id and a non-empty flow, and to run only tools this surface delivers.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -60,6 +67,20 @@ export interface SproCoreDeliveryExclusion {
   reason: string
 }
 
+/**
+ * One delivered business closed loop: what it may touch (`scope`), the tool order that closes it
+ * (`flow`), how it is undone (`recovery`) and what it records in CTS (`cts`). A scenario is a
+ * promise the candidate has to be able to keep, so `flow` may only name tools this surface
+ * delivers; the packaged service denies every tool the contract leaves out.
+ */
+export interface SproCoreDeliveryScenario {
+  id: string
+  scope: string
+  flow: string[]
+  recovery: string
+  cts: string
+}
+
 export interface SproCoreDeliveryManifest {
   format: number
   name: string
@@ -76,7 +97,7 @@ export interface SproCoreDeliveryManifest {
    */
   unverifiedTools: string[]
   excludedTools: SproCoreDeliveryExclusion[]
-  scenarios: readonly unknown[]
+  scenarios: readonly SproCoreDeliveryScenario[]
   boundaries: readonly string[]
 }
 
@@ -205,6 +226,46 @@ export function deliveryManifestProblems(
       `IMG configuration tool ${tool} is implemented and enabled by profile "${String(profile)}" ` +
         `but is neither delivered in requiredTools nor excluded with a reason`
     )
+  }
+  // Scenario flows ship to the customer as the loops this surface promises to run, while the
+  // packaged service refuses every tool outside requiredTools. Nothing else reads these fields, so
+  // an unusable step or an unstated recovery would otherwise reach the customer unremarked.
+  const scenarioIds = new Set<string>()
+  for (const entry of manifest.scenarios ?? []) {
+    const scenario = (entry ?? {}) as Partial<SproCoreDeliveryScenario>
+    const id = typeof scenario.id === "string" ? scenario.id.trim() : ""
+    const label = id === "" ? "a scenario with no id" : `scenario "${id}"`
+    if (id === "") {
+      problems.push("scenarios contains an entry with no id, so no flow can be referred to")
+    } else if (scenarioIds.has(id)) {
+      problems.push(`scenarios lists the id "${id}" more than once`)
+    }
+    scenarioIds.add(id)
+    for (const field of ["scope", "recovery", "cts"] as const) {
+      const value = scenario[field]
+      if (typeof value !== "string" || value.trim() === "") {
+        problems.push(`${label} declares no ${field}, so that part of its contract is unstated`)
+      }
+    }
+    const flow = Array.isArray(scenario.flow) ? scenario.flow : []
+    if (flow.length === 0) {
+      problems.push(`${label} has an empty flow, so it closes no loop`)
+    }
+    const steps = new Set<string>()
+    for (const tool of flow) {
+      if (steps.has(tool)) {
+        problems.push(`${label} names ${tool} twice in its flow`)
+      }
+      steps.add(tool)
+      if (!known.has(tool)) {
+        problems.push(`${label} runs ${tool}, which no tool registry entry implements`)
+      } else if (!seen.has(tool)) {
+        problems.push(
+          `${label} runs ${tool}, which this surface does not deliver, so the packaged service ` +
+            `would refuse a step of a flow the contract publishes`
+        )
+      }
+    }
   }
   return problems
 }

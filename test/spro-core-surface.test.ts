@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import {
   type SproCoreDeliveryManifest,
+  type SproCoreDeliveryScenario,
   deliveryManifestProblems,
   imgConfigurationTools,
   isImgConfigurationTool,
@@ -41,6 +42,15 @@ const soundManifest = (): SproCoreDeliveryManifest => ({
   excludedTools: [],
   scenarios: [],
   boundaries: []
+})
+
+/** A scenario that closes a loop the surface can actually run. */
+const soundScenario = (): SproCoreDeliveryScenario => ({
+  id: "unit-text",
+  scope: "Existing T006A language row; MSEHT/MSEHL patch only.",
+  flow: ["read_configuration_unit", "preview_configuration_unit_text"],
+  recovery: "Reconcile first; an authorized restoration is a new apply with fresh versions.",
+  cts: "Explicit open Customizing request and child task."
 })
 
 /** The single problem expected from a deliberately broken manifest. */
@@ -175,6 +185,87 @@ test("a declaration outside the delivered IMG surface is rejected", () => {
     ),
     /more than once/
   )
+})
+
+test("a scenario must state its scope, recovery and CTS", () => {
+  const sound = soundManifest()
+  sound.scenarios = [soundScenario()]
+  // Positive control: the fixture scenario passes, so the cases below fail on one field each.
+  assert.deepEqual(deliveryManifestProblems(sound, facts), [])
+
+  for (const field of ["scope", "recovery", "cts"] as const) {
+    const manifest = soundManifest()
+    manifest.scenarios = [{ ...soundScenario(), [field]: "   " }]
+    assert.match(
+      onlyProblem(deliveryManifestProblems(manifest, facts)),
+      new RegExp(`declares no ${field}`)
+    )
+  }
+})
+
+test("a scenario with no id, a duplicate id or an empty flow is rejected", () => {
+  const anonymous = soundManifest()
+  anonymous.scenarios = [{ ...soundScenario(), id: "  " }]
+  assert.match(onlyProblem(deliveryManifestProblems(anonymous, facts)), /entry with no id/)
+
+  const duplicated = soundManifest()
+  duplicated.scenarios = [
+    soundScenario(),
+    { ...soundScenario(), flow: ["read_configuration_unit"] }
+  ]
+  assert.match(
+    onlyProblem(deliveryManifestProblems(duplicated, facts)),
+    /id "unit-text" more than once/
+  )
+
+  const empty = soundManifest()
+  empty.scenarios = [{ ...soundScenario(), flow: [] }]
+  assert.match(onlyProblem(deliveryManifestProblems(empty, facts)), /empty flow/)
+})
+
+test("a scenario flow may only run tools this surface delivers", () => {
+  // The package denies every tool outside requiredTools, so a step the surface excludes is a step
+  // the delivered service refuses: the flow would be published and unrunnable at the same time.
+  const excludedTool = "read_configuration_bc_logs"
+  const manifest = soundManifest()
+  manifest.requiredTools = manifest.requiredTools.filter((tool) => tool !== excludedTool)
+  manifest.excludedTools = [{ tool: excludedTool, reason: "M3 open" }]
+  manifest.scenarios = [{ ...soundScenario(), flow: [excludedTool] }]
+  assert.match(
+    onlyProblem(deliveryManifestProblems(manifest, facts)),
+    /would refuse a step of a flow the contract publishes/
+  )
+
+  const imaginary = soundManifest()
+  imaginary.scenarios = [{ ...soundScenario(), flow: ["read_imaginary_configuration"] }]
+  assert.match(
+    onlyProblem(deliveryManifestProblems(imaginary, facts)),
+    /no tool registry entry implements/
+  )
+
+  const repeated = soundManifest()
+  repeated.scenarios = [
+    { ...soundScenario(), flow: ["read_configuration_unit", "read_configuration_unit"] }
+  ]
+  assert.match(onlyProblem(deliveryManifestProblems(repeated, facts)), /twice in its flow/)
+})
+
+test("every published scenario runs only tools this surface delivers", () => {
+  const manifest = loadSproCoreDelivery()
+  const delivered = new Set(manifest.requiredTools)
+  assert.ok(manifest.scenarios.length > 0, "the contract must publish at least one closed loop")
+  for (const scenario of manifest.scenarios) {
+    assert.ok(scenario.flow.length > 0, `${scenario.id} publishes no flow`)
+    for (const tool of scenario.flow) {
+      assert.ok(
+        delivered.has(tool),
+        `${scenario.id} runs ${tool}, which the delivered surface does not carry`
+      )
+    }
+    for (const field of ["scope", "recovery", "cts"] as const) {
+      assert.ok(scenario[field].trim().length > 0, `${scenario.id} states no ${field}`)
+    }
+  }
 })
 
 test("an IMG configuration tool that is neither delivered nor excluded fails the audit", () => {

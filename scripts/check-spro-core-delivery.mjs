@@ -51,6 +51,22 @@ console.log(
   `  acceptance disclosure: ${declared.length} of ${unverifiedImg.length} unverified IMG ` +
     `configuration tools declared in unverifiedTools`
 )
+const flowTools = new Set(
+  (manifest.scenarios ?? []).flatMap((scenario) =>
+    Array.isArray(scenario?.flow) ? scenario.flow : []
+  )
+)
+const covered = delivered.filter((tool) => flowTools.has(tool))
+const uncoveredImg = imgDelivered.filter((tool) => !flowTools.has(tool))
+console.log(
+  `  scenario coverage: ${covered.length} of ${delivered.length} delivered tools appear in a ` +
+    `published flow; ${uncoveredImg.length} of ${imgDelivered.length} IMG configuration tools have none`
+)
+if (uncoveredImg.length > 0) {
+  // Informational: an exposed tool without a published closed loop is a gap in what the contract
+  // documents, not in what the service can do, so it is printed rather than failed.
+  console.log(`  no published scenario yet: ${uncoveredImg.join(", ")}`)
+}
 for (const problem of problems) {
   console.log(`PROBLEM  ${problem}`)
 }
