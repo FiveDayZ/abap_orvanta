@@ -91,26 +91,68 @@ const INTERNAL_ONLY_PINS: ReadonlyArray<{ name: string; module: string; consumed
 /**
  * The third class, and the one both censuses above are blind to. The provenance shape matches names
  * ending in a fingerprint suffix; the pin shape matches names ending in "Pins". An export that pins
- * 64-hex digests under neither naming convention is in neither census - and that was prose, written as
- * a "known boundary", until it was measured. Measured: 73 configuration-family exports carry a 64-hex
- * digest literal, 59 of them under neither naming convention, and none of the 59 is unreferenced.
+ * digests under neither naming convention is in neither census - and that was prose, written as a
+ * "known boundary", until it was measured.
  *
- * The criterion is deliberately the WIDEST net, not the tidiest one, and two narrower rules were
- * measured to be one-directionally blind:
- *   - "an object literal whose values are digests" misses 6 members, which carry the digest in a bare
- *     string, in an array, or in another shape;
+ * There are two ways to carry a digest, and they are DISJOINT (measured: 0 members do both), so a net
+ * that catches only one of them is one-directionally blind:
+ *   - a 64-hex string LITERAL in the initializer - 73 members;
+ *   - a COMPUTED digest, an initializer calling `.digest(...)` - 16 members.
+ * The first version of this gate measured only the literal kind and asserted, in this test's own name,
+ * that "no export invisible to both censuses is unreferenced". That sentence was broader than its
+ * instrument, and widening the instrument to the union found exactly one member it had been hiding:
+ * configurationBteStateApiFingerprint, a computed digest in neither census and referenced nowhere. The
+ * claim was false as worded; the class is now the union, and that member is declared below.
+ *
+ * The criterion is deliberately the WIDEST net, not the tidiest one, and narrower rules were measured
+ * to be one-directionally blind:
+ *   - "an object literal whose values are digests" misses 6 of the literal kind, which carry the digest
+ *     in a bare string, in an array, or in another shape;
  *   - matching only a string literal that is *entirely* a digest misses 3 more, because
  *     configurationBcGuardApi, configurationBcPreviewApi and configurationBcRouteApi embed the pin
  *     inside the generated ABAP source lines they export (`"  '73783f69...'."`).
  * A claim that nothing is hidden has to be made with the widest net available, or the net's own shape
- * becomes the hiding place. So the test is only "the initializer contains a 64-hex string literal".
+ * becomes the hiding place. So the tests below are only "the initializer carries a digest, literally or
+ * by calling `.digest(`".
  *
  * The named censuses are mostly a different kind: 13 of the 14 provenance members are computed source
- * text, joined and hashed, and carry no digest literal at all. The one exception is the member whose
- * idiom is `literal-pin` - asserted below, so how far the two censuses overlap stays a measured number
- * rather than a claim.
+ * text, joined and hashed. One carries a digest literal - the member whose idiom is `literal-pin` - and
+ * twelve carry a computed digest. Both numbers are asserted below, so how far the censuses overlap
+ * stays a measured number rather than a claim.
  */
 const DIGEST_LITERAL = /["'][0-9a-f]{64}["']/i
+
+/** A digest produced at load time. Disjoint from the literal kind, so both are needed. */
+const COMPUTED_DIGEST = /\.digest\(/
+
+/**
+ * The one member of the union class that nothing references. Declared rather than silently tolerated:
+ * the point of the class is that no other census would notice such a member going unread, so the gate
+ * has to be able to tell "declared, with a reason" from "nobody looked".
+ *
+ * It is not a coverage gap. Its substance - the body of the BTE state API - IS attested, by an exact
+ * text comparison in configuration-bte-command-state.ts. That attestation compares the API body as text
+ * and the include as a hash, so the exported API-body hash is superseded rather than missing. The
+ * anchor names that comparison, and is required to be unique to its module: the same expression occurs
+ * in configuration-bc-command.ts for a different API, so the anchor keeps the trailing `||` that ties
+ * it to this guard. If the guard is rewritten, this declaration reddens and has to be re-justified.
+ */
+const UNACCOUNTED_WITHOUT_READER: ReadonlyArray<{
+  name: string
+  module: string
+  reason: string
+  coveredBy: { module: string; anchor: string }
+}> = [
+  Object.freeze({
+    name: "configurationBteStateApiFingerprint",
+    module: "configuration-bte-command-api.ts",
+    reason: "superseded: the same body is compared as exact text by the BTE state attestation",
+    coveredBy: {
+      module: "configuration-bte-command-state.ts",
+      anchor: "configurationUnitApiBody(configurationBteStateApi.source) ||"
+    }
+  })
+]
 
 /**
  * The hash idioms the family uses, as a closed vocabulary. Each member is classified from its own
@@ -298,17 +340,28 @@ function extractPinMembers(): PinMember[] {
   }))
 }
 
-type DigestMember = { name: string; module: string; isObjectLiteral: boolean }
+type DigestMember = {
+  name: string
+  module: string
+  isLiteral: boolean
+  isComputed: boolean
+  isObjectLiteral: boolean
+}
 
-/** Every export carrying a 64-hex digest literal, whatever shape it is written in. */
+/**
+ * Every export carrying a digest, by either route. The union is the whole point: the two routes were
+ * measured disjoint, so filtering on one of them silently drops everything the other one holds.
+ */
 function extractDigestMembers(): DigestMember[] {
-  return CONFIGURATION_EXPORTS.filter((entry) => DIGEST_LITERAL.test(entry.initializer)).map(
-    (entry) => ({
-      name: entry.name,
-      module: entry.module,
-      isObjectLiteral: entry.initializer.trimStart().startsWith("{")
-    })
-  )
+  return CONFIGURATION_EXPORTS.filter(
+    (entry) => DIGEST_LITERAL.test(entry.initializer) || COMPUTED_DIGEST.test(entry.initializer)
+  ).map((entry) => ({
+    name: entry.name,
+    module: entry.module,
+    isLiteral: DIGEST_LITERAL.test(entry.initializer),
+    isComputed: COMPUTED_DIGEST.test(entry.initializer),
+    isObjectLiteral: entry.initializer.trimStart().startsWith("{")
+  }))
 }
 
 function censusFiles(): string[] {
@@ -403,10 +456,15 @@ const PIN_NAMES = PIN_MEMBERS.map((member) => member.name).sort()
 const INTERNAL_ONLY_PIN_NAMES = INTERNAL_ONLY_PINS.map((entry) => entry.name).sort()
 const DIGEST_MEMBERS = extractDigestMembers()
 const DIGEST_NAMES = DIGEST_MEMBERS.map((member) => member.name).sort()
+const LITERAL_DIGEST_MEMBERS = DIGEST_MEMBERS.filter((member) => member.isLiteral)
+const COMPUTED_DIGEST_MEMBERS = DIGEST_MEMBERS.filter((member) => member.isComputed)
 /** The digest-carrying members that neither the provenance nor the pin census accounts for. */
 const UNACCOUNTED_DIGEST_MEMBERS = DIGEST_MEMBERS.filter(
   (member) => !PROVENANCE_SHAPE.test(member.name) && !PIN_SHAPE.test(member.name)
 )
+const UNACCOUNTED_WITHOUT_READER_NAMES = UNACCOUNTED_WITHOUT_READER.map(
+  (entry) => entry.name
+).sort()
 
 test("the provenance family is extracted from the sources, not from a remembered list", () => {
   // An extraction that silently found nothing would make every assertion below vacuous.
@@ -668,23 +726,45 @@ test("no pin table is unreferenced, and the ones read only inside their own modu
 })
 
 test("the digest-carrying class is extracted with the widest net, and the pin census sits inside it", () => {
-  // The provenance census is nearly a different kind: those members are computed source text, joined
-  // and hashed. Exactly one carries a digest literal, the member whose idiom is `literal-pin`. Pinned
-  // as a number so the overlap cannot grow while the comment above still claims it is one.
-  //
-  // This comes before the extraction count on purpose. Any change that makes it two also adds a
-  // digest-carrying member, so with the count first this assertion was measured to be unreachable -
-  // the count tripped and this one, the one that names what actually changed, was never reached.
+  // The provenance census is mostly a different kind: those members are computed source text, joined
+  // and hashed. One carries a digest literal - the member whose idiom is `literal-pin` - and twelve
+  // carry a computed digest. Both are pinned as numbers, and this pair comes before the extraction
+  // counts on purpose: any change to the literal one also changes the class size, so with the count
+  // first this assertion was measured to be unreachable - the count tripped and this one, the one that
+  // names what actually changed, was never reached.
   assert.equal(
     MEMBERS.filter((member) => DIGEST_LITERAL.test(member.initializer)).length,
     1,
     "the number of provenance members that also carry a digest literal changed"
   )
+  assert.equal(
+    MEMBERS.filter((member) => COMPUTED_DIGEST.test(member.initializer)).length,
+    12,
+    "the number of provenance members carrying a computed digest changed"
+  )
+  // The two routes to a digest are disjoint. This is what makes the union below a union and not a
+  // double count, and it is the fact that made the first version of this gate blind: a net over one
+  // route drops every member of the other.
+  assert.equal(
+    DIGEST_MEMBERS.filter((member) => member.isLiteral && member.isComputed).length,
+    0,
+    "a member carries both a digest literal and a computed digest, so the two routes overlap"
+  )
   // An extraction that silently found nothing would make every assertion below vacuous.
   assert.equal(
-    DIGEST_MEMBERS.length,
+    LITERAL_DIGEST_MEMBERS.length,
     73,
-    `expected 73 digest-carrying exports, extracted ${DIGEST_MEMBERS.length}`
+    `expected 73 literal-digest exports, extracted ${LITERAL_DIGEST_MEMBERS.length}`
+  )
+  assert.equal(
+    COMPUTED_DIGEST_MEMBERS.length,
+    16,
+    `expected 16 computed-digest exports, extracted ${COMPUTED_DIGEST_MEMBERS.length}`
+  )
+  assert.equal(
+    DIGEST_MEMBERS.length,
+    89,
+    `expected 89 digest-carrying exports (73 literal + 16 computed), extracted ${DIGEST_MEMBERS.length}`
   )
   // Positive control: this name is not in the sources.
   assert.ok(
@@ -696,36 +776,66 @@ test("the digest-carrying class is extracted with the widest net, and the pin ce
   assert.deepEqual(
     PIN_NAMES.filter((name) => !DIGEST_NAMES.includes(name)),
     [],
-    "a pin table does not carry a digest literal, so the two censuses are not nested"
+    "a pin table does not carry a digest, so the two censuses are not nested"
   )
   // The criterion must stay the widest net. Narrowing it to object literals - the tidier rule - was
-  // measured to miss six members, and this count is what reddens if it is narrowed back.
+  // measured to miss members of both routes, and this count is what reddens if it is narrowed back.
   assert.equal(
     DIGEST_MEMBERS.filter((member) => !member.isObjectLiteral).length,
-    6,
+    22,
     "the digest criterion no longer reaches every shape it was measured to cover"
   )
 })
 
-test("no export invisible to both censuses is unreferenced", () => {
+test("every export invisible to both censuses is either read or declared with its reason", () => {
   // The assertion with teeth, and deliberately first. Everything in this class is invisible to the
   // provenance census and to the pin census, so nothing else in this file would notice it going unread -
-  // which is exactly the shape of a false capability claim. Reading the whole class here is what bounds
-  // the blind spot. It comes before the count on purpose: with the count first, adding an unreferenced
-  // member trips the count and this assertion - the one that names the defect - is never reached.
+  // which is exactly the shape of a false capability claim. It comes before the count on purpose: with
+  // the count first, adding an unreferenced member trips the count and this assertion - the one that
+  // names the defect - is never reached.
+  //
+  // The measured set and the declared set are compared BOTH ways, so this cannot be satisfied by
+  // declaring nothing, nor by leaving a declaration behind after the member starts being read.
+  const measured = UNACCOUNTED_DIGEST_MEMBERS.filter((member) => {
+    const { internalReads, external } = readership(member.name, member.module)
+    return internalReads + external === 0
+  })
+    .map((member) => member.name)
+    .sort()
   assert.deepEqual(
-    UNACCOUNTED_DIGEST_MEMBERS.filter((member) => {
-      const { internalReads, external } = readership(member.name, member.module)
-      return internalReads + external === 0
-    }).map((member) => member.name),
-    [],
-    "an export that carries a pinned digest and is invisible to both censuses is referenced nowhere"
+    measured,
+    UNACCOUNTED_WITHOUT_READER_NAMES,
+    "an export invisible to both censuses is unread and undeclared, or declared but now read"
   )
+  // Each declaration has to name the attestation that covers the member's substance, and the anchor has
+  // to identify its module: present exactly once there, and absent from every other module in the
+  // census. Without the second half a coincidental phrase elsewhere would satisfy the anchor.
+  const modulesWith = (anchor: string) =>
+    censusFiles()
+      .filter((path) => !path.endsWith(SELF))
+      .filter((path) => readFileSync(new URL(path, repoRoot), "utf8").includes(anchor))
+      .sort()
+  for (const entry of UNACCOUNTED_WITHOUT_READER) {
+    assert.ok(
+      entry.reason.length > 0,
+      `${entry.name} is declared without saying why it has no reader`
+    )
+    assert.equal(
+      countOf(sourceText(entry.coveredBy.module), entry.coveredBy.anchor),
+      1,
+      `${entry.name}: the anchor is not exactly once in ${entry.coveredBy.module}`
+    )
+    assert.deepEqual(
+      modulesWith(entry.coveredBy.anchor),
+      [`src/${entry.coveredBy.module}`],
+      `${entry.name}: the anchor does not identify its module`
+    )
+  }
   // The class's size is a counted fact: it reddens when the class changes for any other reason, so a
   // member cannot join or leave it unnoticed.
   assert.equal(
     UNACCOUNTED_DIGEST_MEMBERS.length,
-    59,
+    63,
     `the unaccounted digest-carrying class changed size: ${UNACCOUNTED_DIGEST_MEMBERS.map((m) => m.name).join(", ")}`
   )
 })
