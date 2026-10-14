@@ -67,15 +67,39 @@ foreach ($entry in $hashEntries) {
 foreach ($pair in @(
     @("scripts\bootstrap-sap-helper.ps1", "app\scripts\bootstrap-sap-helper.ps1"),
     @("dist\src\version.js", "app\dist\src\version.js"),
-    @("package-lock.json", "app\package-lock.json"),
-    @("contracts\tool-index.json", "app\contracts\tool-index.json"),
-    @("contracts\verification-registry.json", "app\contracts\verification-registry.json")
+    @("package-lock.json", "app\package-lock.json")
 )) {
     if ((Get-FileHash (Join-Path $projectRoot $pair[0])).Hash -ne (Get-FileHash (Join-Path $packageRoot $pair[1])).Hash) {
         throw "Package is stale relative to source: $($pair[0])"
     }
 }
 $verificationManifest = Get-Content -Raw -LiteralPath (Join-Path $packageRoot "app\contracts\verification-evidence-manifest.json") | ConvertFrom-Json
+# The two contracts files are written by scripts\stage-release-evidence.mjs, which ships a declared
+# redacted copy when a declared pattern matches, and declares sourceSha256 next to sha256 for them
+# exactly as it does for every staged record. Byte equality would therefore reject a package that is
+# right, so for these two the declaration is the check: the declared shipped hash must equal the file
+# actually in the package and the declared source hash must equal the file actually in the tree. A
+# registry that drifted after packaging still fails, because sourceSha256 then names another revision.
+foreach ($contract in @(
+    @("contracts\tool-index.json", "contracts/tool-index.json", "app\contracts\tool-index.json"),
+    @("contracts\verification-registry.json", "contracts/verification-registry.json", "app\contracts\verification-registry.json")
+)) {
+    $sourceHash = (Get-FileHash -LiteralPath (Join-Path $projectRoot $contract[0]) -Algorithm SHA256).Hash
+    $shippedHash = (Get-FileHash -LiteralPath (Join-Path $packageRoot $contract[2]) -Algorithm SHA256).Hash
+    $declared = $verificationManifest.files | Where-Object { $_.path -eq $contract[1] }
+    if (-not $declared) {
+        throw "Release contract is absent from the verification manifest: $($contract[1])"
+    }
+    if ($declared.sha256 -ne $shippedHash) {
+        throw "Packaged contract does not match its declared shipped hash: $($contract[1])"
+    }
+    if ($declared.sourceSha256 -ne $sourceHash) {
+        throw "Package is stale relative to source: $($contract[1]) came from another revision"
+    }
+    if ($declared.redacted -ne ($declared.sha256 -ne $declared.sourceSha256)) {
+        throw "Contract redaction flag contradicts its own hashes: $($contract[1])"
+    }
+}
 foreach ($verificationFile in $verificationManifest.files) {
     $verificationPath = "app/$($verificationFile.path)"
     if ($verificationPath -notin $hashEntries.Name) {
