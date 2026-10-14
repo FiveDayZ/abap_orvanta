@@ -27,7 +27,12 @@
  * A citation must name the record's workspace path (`.doc/...`, or `.logs/...` for an in-repo log).
  * Naming the mirror copy instead (`docs/workspace-evidence/...`) makes the snapshot authoritative and
  * used to make `--copy` nest a copy under its own path; the audit now fails on such a citation.
+ *
+ * The record or its mirror also has to be in the git index, or a checkout cannot resolve the citation
+ * at all: that is reported as `NOT IN CHECKOUT` and fails the audit. `.gitignore` keeps the mirror
+ * directory out of `git add .`, so a newly copied mirror needs `git add -f` before the gate passes.
  */
+import { execFileSync } from "node:child_process"
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
 import { dirname, join, posix, relative, sep } from "node:path"
 import {
@@ -47,6 +52,25 @@ const mirrorRoot = join(repositoryRoot, "docs", "workspace-evidence")
 const mirrorRelative = relative(repositoryRoot, mirrorRoot).split(sep).join(posix.sep)
 const mirrorPrefix = `${mirrorRelative}/`
 
+/**
+ * Paths in the git index, so the audit can tell a citation a checkout can resolve from one only this
+ * workspace can. `git ls-files` (the index) rather than `ls-tree HEAD` is deliberate: a mirror is
+ * added with `git add -f` and then `npm run verify` runs in the same batch, so the check has to see
+ * staged files. Outside a git checkout, or without git on PATH, the tracked dimension is skipped and
+ * reported rather than failed - the existence checks below still run.
+ */
+const trackedFiles = (() => {
+  try {
+    return new Set(
+      execFileSync("git", ["ls-files"], { cwd: repositoryRoot, encoding: "utf8" })
+        .split(/\r?\n/)
+        .filter(Boolean)
+    )
+  } catch {
+    return undefined
+  }
+})()
+
 const copy = process.argv.includes("--copy")
 const verify = process.argv.includes("--verify")
 
@@ -65,6 +89,12 @@ let copied = 0
 let inMirror = 0
 let repoInternalOnly = 0
 let selfReferential = 0
+let notInCheckout = 0
+
+if (!trackedFiles) {
+  console.log("git index unavailable: the checkout-resolvability check is skipped")
+  console.log("")
+}
 
 for (const rel of paths) {
   if (verify) {
@@ -99,6 +129,19 @@ for (const rel of paths) {
     console.log("    cite the record's workspace path (its .doc/... name), not the mirror copy")
     continue
   }
+  // A citation has to be resolvable from a clone of this repository, so either the record itself or
+  // its mirror has to be in the git index. Resolving only in this workspace - an untracked `.logs/`
+  // record, or a mirror that was copied here but never `git add -f`-ed - is exactly the gap a
+  // checkout falls into, so it fails here instead of in CI. Not skipped from the copy step: `--copy`
+  // is how the missing mirror gets created in the first place.
+  if (trackedFiles && !trackedFiles.has(rel) && !trackedFiles.has(`${mirrorPrefix}${rel}`)) {
+    notInCheckout += 1
+    console.log(`NOT IN CHECKOUT  ${rel}`)
+    console.log(
+      `    neither the record nor its mirror is in the git index: git add -f ${mirrorPrefix}${rel}`
+    )
+  }
+
   // In a checkout the workspace original is absent and the mirror is the only copy, so the resolved
   // source *is* the target: there is nothing to copy and nothing to compare. Records that live inside
   // the repository but were never committed (`.logs/...`, `.cache/...`) do not take this path - their
@@ -136,7 +179,7 @@ for (const rel of paths) {
 
 console.log("")
 console.log(
-  `paths ${paths.length} | mirrored ${inMirror} | already inside repository ${repoInternalOnly} | copied ${copied} | not resolvable ${notResolvable} | self-referential ${selfReferential}`
+  `paths ${paths.length} | mirrored ${inMirror} | already inside repository ${repoInternalOnly} | copied ${copied} | not resolvable ${notResolvable} | self-referential ${selfReferential} | not in checkout ${notInCheckout}`
 )
 if (notResolvable > 0) {
   console.log("")
@@ -150,4 +193,11 @@ if (selfReferential > 0) {
     "A citation that names its own mirror is a real defect: rewrite it as the record's workspace path."
   )
 }
-if (notResolvable > 0 || selfReferential > 0) process.exitCode = 1
+if (notInCheckout > 0) {
+  console.log("")
+  console.log(
+    "A citation that neither the record nor its mirror has in the git index cannot be resolved from a"
+  )
+  console.log("checkout: copy the mirror and force-add it, or commit the record itself.")
+}
+if (notResolvable > 0 || selfReferential > 0 || notInCheckout > 0) process.exitCode = 1
