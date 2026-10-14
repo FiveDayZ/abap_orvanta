@@ -109,12 +109,103 @@
       "cts": "Fixed request GR2K923429/task GR2K923430; current ownership/status/source pins must still pass. No release."
     }
   ],
+  "supportingReads": [
+    {
+      "tool": "compare_configuration_bc_set",
+      "reason": "Comparison read: diffs stored classic BC Set fields against target observations. It reports drift for a BC Set instead of changing one, so no delivered write loop runs it."
+    },
+    {
+      "tool": "compare_configuration_unit",
+      "reason": "Comparison read: diffs one exact internal unit key against another system. The unit-text loop patches stored text and never compares two instances."
+    },
+    {
+      "tool": "describe_configuration_object",
+      "reason": "Layout read: describes one approved customizing-tier transparent table within 64 fields. It supplies field metadata to other reads rather than advancing a loop."
+    },
+    {
+      "tool": "find_configuration_activities",
+      "reason": "Discovery read: locates IMG activities for one approved table so a caller can choose what to work on; the unit-text loop already names its own activity."
+    },
+    {
+      "tool": "find_configuration_bc_sets",
+      "reason": "Discovery read: searches classic BC Set candidates by record metadata. The bc-knm loop works one fixed BC Set and does not search."
+    },
+    {
+      "tool": "find_configuration_fi_rules",
+      "reason": "Discovery read: enumerates FI validation rule headers. M1 publishes no FI validation loop (see boundaries), so it stands outside every flow."
+    },
+    {
+      "tool": "inspect_configuration_bc_impact",
+      "reason": "Impact read: composes a partial BC Set impact report. The bc-knm loop reads the native, guard and CTS snapshots it needs directly."
+    },
+    {
+      "tool": "inspect_configuration_bte_maintenance_route",
+      "reason": "Route read: reports the fixed BF24/TBE24 product maintenance route. M1 publishes no BTE product-change loop (see boundaries)."
+    },
+    {
+      "tool": "inspect_configuration_bte_native_metadata",
+      "reason": "ABI read: attests the fixed TBE24 native control blocks through the separately deployed read-only helper. It is a precondition of BTE work, not a step any published loop runs."
+    },
+    {
+      "tool": "inspect_configuration_fi_activation_route",
+      "reason": "Route read: reports the fixed OB28 activation metadata behind an FI rule assignment. M1 publishes no FI activation loop (see boundaries)."
+    },
+    {
+      "tool": "inspect_configuration_transport",
+      "reason": "CTS read: inspects one explicit Customizing request/task pair on request. Each published loop names its own fixed request instead."
+    },
+    {
+      "tool": "prepare_configuration_bte_product_change",
+      "reason": "Planning read: assembles the change and recovery review bundle for one existing customer BTE product. The activation it prepares is not delivered as a loop (see boundaries)."
+    },
+    {
+      "tool": "prepare_enhancement_configuration_workflow",
+      "reason": "Planning read: prepares a controlled human workflow for CMOD, FIBF and validation/substitution work. It hands work to a person rather than closing a loop here."
+    },
+    {
+      "tool": "preview_configuration",
+      "reason": "Preview read: previews one exact plant configuration row after pinned type and TPMODE checks. No delivered write loop owns that table."
+    },
+    {
+      "tool": "preview_configuration_bte_product",
+      "reason": "Preview read: previews an activation flag change for one existing customer BTE product. The BTE product-change loop is not delivered (see boundaries)."
+    },
+    {
+      "tool": "preview_configuration_fi_activation",
+      "reason": "Preview read: previews the ACTIV value for one existing FI validation assignment. M1 publishes no FI activation loop (see boundaries)."
+    },
+    {
+      "tool": "read_bte_configuration",
+      "reason": "Read: returns one BTE Event or Process definition with its application and customer-product handlers. BTE configuration is inspected here, never changed by a published loop."
+    },
+    {
+      "tool": "read_configuration_bc_dependencies",
+      "reason": "Read: audits stored classic BC Set child references. The bc-knm loop reads its fixed ten-table CUNI scope instead."
+    },
+    {
+      "tool": "read_configuration_bc_logs",
+      "reason": "Read: returns bounded historical references for a stored classic BC Set header. History is inspected on request, not as part of activating a BC Set."
+    },
+    {
+      "tool": "read_configuration_documentation",
+      "reason": "Read: returns one IMG activity-linked standard end-user document in an explicit language. It supports a person reading about an activity; no flow depends on it."
+    },
+    {
+      "tool": "read_configuration_fi_rule",
+      "reason": "Read: returns one exact FI validation/substitution rule by SAP ID, company code, application area and callup point. M1 publishes no FI rule change loop (see boundaries)."
+    },
+    {
+      "tool": "search_bte_dispatchers",
+      "reason": "Discovery read: searches standard BTE dispatcher function modules by naming convention, locating handlers for inspection outside any published loop."
+    }
+  ],
   "boundaries": [
     "API only. No GUI automation or generic standard-table writes.",
     "Source/interface/DDIC attestations, authorization, locking, optimistic versions and durable unknown-write protection remain enforced.",
     "Package creation and tool visibility do not authorize SAP writes, customer-object deployment, CTS cleanup, lock release, service switch or publication.",
     "Historical private-instance acceptance does not prove acceptance of this candidate or the formal service.",
-    "FI save/recovery, BTE activation and arbitrary IMG activities are not delivered by M1. Every configuration tool the server implements is exposed; the configuration tools that contracts/verification-registry.json does not verify are declared in unverifiedTools, and the audit also reports unverified non-configuration tools on this surface. SAP acceptance of this surface is not established."
+    "FI save/recovery, BTE activation and arbitrary IMG activities are not delivered by M1. Every configuration tool the server implements is exposed; the configuration tools that contracts/verification-registry.json does not verify are declared in unverifiedTools, and the audit also reports unverified non-configuration tools on this surface. SAP acceptance of this surface is not established.",
+    "The published scenarios are the only closed loops this surface promises. Every configuration tool delivered outside them is documented in supportingReads with the role it plays, which is a statement about this contract and not a capability or acceptance claim: it does not mean the loop that tool belongs to is delivered."
   ],
   "unverifiedTools": [
     "apply_configuration_bc_set",

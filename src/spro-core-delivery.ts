@@ -32,6 +32,14 @@
  * step, a duplicate flow or an unstated recovery would have reached the customer unremarked. The
  * audit now requires each scenario to state its scope, recovery and CTS, to have a unique non-empty
  * id and a non-empty flow, and to run only tools this surface delivers.
+ *
+ * Validating those flows produced a number worth acting on: 23 of the 45 delivered configuration
+ * tools appear in a published flow, so 22 were delivered, several of them `verified`, and explained
+ * by nothing in the artifact - a documentation gap, not a capability gap, but one no reader could
+ * distinguish from an oversight. `supportingReads` now names each of them with the role it plays,
+ * and the audit holds the classification complete in both directions: every delivered configuration
+ * tool is either in a published flow or declared here, and a declared tool that later joins a flow
+ * has to leave the list.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -81,6 +89,17 @@ export interface SproCoreDeliveryScenario {
   cts: string
 }
 
+/**
+ * A delivered tool that no published scenario runs, with the reason it stands outside every flow.
+ * Declaring it is the difference between "this surface documents 23 closed loops and says what the
+ * other tools are for" and "22 tools are silently absent from everything the contract explains".
+ * Like an exclusion, it is a statement about this contract, never about SAP acceptance.
+ */
+export interface SproCoreDeliverySupportingRead {
+  tool: string
+  reason: string
+}
+
 export interface SproCoreDeliveryManifest {
   format: number
   name: string
@@ -98,6 +117,12 @@ export interface SproCoreDeliveryManifest {
   unverifiedTools: string[]
   excludedTools: SproCoreDeliveryExclusion[]
   scenarios: readonly SproCoreDeliveryScenario[]
+  /**
+   * Every delivered IMG configuration tool that appears in no scenario flow, with the role it plays
+   * instead. The scenarios publish the closed loops; this list accounts for the rest, so no
+   * delivered configuration tool is left unexplained by the artifact the customer receives.
+   */
+  supportingReads: SproCoreDeliverySupportingRead[]
   boundaries: readonly string[]
 }
 
@@ -231,6 +256,7 @@ export function deliveryManifestProblems(
   // packaged service refuses every tool outside requiredTools. Nothing else reads these fields, so
   // an unusable step or an unstated recovery would otherwise reach the customer unremarked.
   const scenarioIds = new Set<string>()
+  const flowTools = new Set<string>()
   for (const entry of manifest.scenarios ?? []) {
     const scenario = (entry ?? {}) as Partial<SproCoreDeliveryScenario>
     const id = typeof scenario.id === "string" ? scenario.id.trim() : ""
@@ -257,6 +283,7 @@ export function deliveryManifestProblems(
         problems.push(`${label} names ${tool} twice in its flow`)
       }
       steps.add(tool)
+      flowTools.add(tool)
       if (!known.has(tool)) {
         problems.push(`${label} runs ${tool}, which no tool registry entry implements`)
       } else if (!seen.has(tool)) {
@@ -266,6 +293,44 @@ export function deliveryManifestProblems(
         )
       }
     }
+  }
+  // Documentation coverage. The scenarios are the loops this contract publishes; a delivered IMG
+  // configuration tool that appears in none of them is either explained here or invisible, and an
+  // invisible tool reads as if the surface had nothing to say about it. Both directions are checked
+  // so the list cannot rot: a tool that later joins a flow has to leave the list again.
+  const supporting = manifest.supportingReads ?? []
+  const supportingTools = new Set<string>()
+  for (const entry of supporting) {
+    const tool = typeof entry?.tool === "string" ? entry.tool : ""
+    if (tool === "") {
+      problems.push("supportingReads contains an entry with no tool")
+      continue
+    }
+    if (supportingTools.has(tool)) {
+      problems.push(`supportingReads lists ${tool} more than once`)
+    }
+    supportingTools.add(tool)
+    if (!known.has(tool)) {
+      problems.push(`supportingReads names ${tool}, which no tool registry entry implements`)
+    } else if (!seen.has(tool)) {
+      problems.push(`supportingReads names ${tool}, which this surface does not deliver`)
+    }
+    if (typeof entry?.reason !== "string" || entry.reason.trim() === "") {
+      problems.push(`supportingReads names ${tool} without a reason, so nothing records its role`)
+    }
+    if (flowTools.has(tool)) {
+      problems.push(
+        `supportingReads names ${tool}, which a published scenario already runs, so the contract ` +
+          `describes it twice`
+      )
+    }
+  }
+  for (const tool of required) {
+    if (!isImgConfigurationTool(tool) || flowTools.has(tool) || supportingTools.has(tool)) continue
+    problems.push(
+      `IMG configuration tool ${tool} is delivered but appears in no published scenario and is not ` +
+        `declared in supportingReads, so the contract explains nothing about it`
+    )
   }
   return problems
 }

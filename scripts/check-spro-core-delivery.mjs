@@ -57,15 +57,18 @@ const flowTools = new Set(
   )
 )
 const covered = delivered.filter((tool) => flowTools.has(tool))
+const supporting = manifest.supportingReads ?? []
+const supportingTools = new Set(supporting.map((entry) => entry?.tool))
 const uncoveredImg = imgDelivered.filter((tool) => !flowTools.has(tool))
 console.log(
   `  scenario coverage: ${covered.length} of ${delivered.length} delivered tools appear in a ` +
-    `published flow; ${uncoveredImg.length} of ${imgDelivered.length} IMG configuration tools have none`
+    `published flow, and ${supportingTools.size} of the ${uncoveredImg.length} IMG configuration ` +
+    `tools outside every flow are declared in supportingReads`
 )
-if (uncoveredImg.length > 0) {
-  // Informational: an exposed tool without a published closed loop is a gap in what the contract
-  // documents, not in what the service can do, so it is printed rather than failed.
-  console.log(`  no published scenario yet: ${uncoveredImg.join(", ")}`)
+const unexplained = uncoveredImg.filter((tool) => !supportingTools.has(tool))
+if (unexplained.length > 0) {
+  // Informational: the completeness rule above already fails these; printing them names the work.
+  console.log(`  neither in a flow nor declared: ${unexplained.join(", ")}`)
 }
 for (const problem of problems) {
   console.log(`PROBLEM  ${problem}`)

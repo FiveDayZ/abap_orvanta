@@ -26,6 +26,20 @@ const facts = {
   verifiedTools
 }
 
+/**
+ * The declarations a sound manifest needs: every delivered IMG tool no flow runs. Derived from the
+ * delivered list and the flows rather than hand-written, so a fixture cannot drift out of date.
+ */
+const supportingReadsFor = (
+  delivered: readonly string[],
+  scenarios: readonly SproCoreDeliveryScenario[]
+) => {
+  const flow = new Set(scenarios.flatMap((scenario) => scenario.flow))
+  return delivered
+    .filter((tool) => isImgConfigurationTool(tool) && !flow.has(tool))
+    .map((tool) => ({ tool, reason: "supporting read of no published loop" }))
+}
+
 /** A manifest that passes, so each case below can break exactly one thing. */
 const soundManifest = (): SproCoreDeliveryManifest => ({
   format: 1,
@@ -41,8 +55,25 @@ const soundManifest = (): SproCoreDeliveryManifest => ({
   ),
   excludedTools: [],
   scenarios: [],
+  supportingReads: supportingReadsFor(configProfileTools, []),
   boundaries: []
 })
+
+/** A change to the fixture that keeps its documentation declaration consistent with the rest. */
+const withSurface = (
+  manifest: SproCoreDeliveryManifest,
+  changes: Partial<SproCoreDeliveryManifest>
+): SproCoreDeliveryManifest => {
+  const next = { ...manifest, ...changes }
+  return {
+    ...next,
+    supportingReads: supportingReadsFor(next.requiredTools ?? [], next.scenarios ?? [])
+  }
+}
+
+/** Drop a tool from the delivered surface, keeping the declaration consistent with it. */
+const withoutTool = (manifest: SproCoreDeliveryManifest, tool: string): SproCoreDeliveryManifest =>
+  withSurface(manifest, { requiredTools: manifest.requiredTools.filter((name) => name !== tool) })
 
 /** A scenario that closes a loop the surface can actually run. */
 const soundScenario = (): SproCoreDeliveryScenario => ({
@@ -141,9 +172,8 @@ test("a declaration the registry verifies is a stale disclosure", () => {
 })
 
 test("a declaration outside the delivered IMG surface is rejected", () => {
-  const notDelivered = soundManifest()
   const undelivered = "read_configuration_number_range"
-  notDelivered.requiredTools = notDelivered.requiredTools.filter((name) => name !== undelivered)
+  const notDelivered = withoutTool(soundManifest(), undelivered)
   assert.match(
     problemMentioning(
       deliveryManifestProblems(notDelivered, facts),
@@ -188,14 +218,14 @@ test("a declaration outside the delivered IMG surface is rejected", () => {
 })
 
 test("a scenario must state its scope, recovery and CTS", () => {
-  const sound = soundManifest()
-  sound.scenarios = [soundScenario()]
+  const sound = withSurface(soundManifest(), { scenarios: [soundScenario()] })
   // Positive control: the fixture scenario passes, so the cases below fail on one field each.
   assert.deepEqual(deliveryManifestProblems(sound, facts), [])
 
   for (const field of ["scope", "recovery", "cts"] as const) {
-    const manifest = soundManifest()
-    manifest.scenarios = [{ ...soundScenario(), [field]: "   " }]
+    const manifest = withSurface(soundManifest(), {
+      scenarios: [{ ...soundScenario(), [field]: "   " }]
+    })
     assert.match(
       onlyProblem(deliveryManifestProblems(manifest, facts)),
       new RegExp(`declares no ${field}`)
@@ -204,22 +234,20 @@ test("a scenario must state its scope, recovery and CTS", () => {
 })
 
 test("a scenario with no id, a duplicate id or an empty flow is rejected", () => {
-  const anonymous = soundManifest()
-  anonymous.scenarios = [{ ...soundScenario(), id: "  " }]
+  const anonymous = withSurface(soundManifest(), {
+    scenarios: [{ ...soundScenario(), id: "  " }]
+  })
   assert.match(onlyProblem(deliveryManifestProblems(anonymous, facts)), /entry with no id/)
 
-  const duplicated = soundManifest()
-  duplicated.scenarios = [
-    soundScenario(),
-    { ...soundScenario(), flow: ["read_configuration_unit"] }
-  ]
+  const duplicated = withSurface(soundManifest(), {
+    scenarios: [soundScenario(), { ...soundScenario(), flow: ["read_configuration_unit"] }]
+  })
   assert.match(
     onlyProblem(deliveryManifestProblems(duplicated, facts)),
     /id "unit-text" more than once/
   )
 
-  const empty = soundManifest()
-  empty.scenarios = [{ ...soundScenario(), flow: [] }]
+  const empty = withSurface(soundManifest(), { scenarios: [{ ...soundScenario(), flow: [] }] })
   assert.match(onlyProblem(deliveryManifestProblems(empty, facts)), /empty flow/)
 })
 
@@ -227,26 +255,28 @@ test("a scenario flow may only run tools this surface delivers", () => {
   // The package denies every tool outside requiredTools, so a step the surface excludes is a step
   // the delivered service refuses: the flow would be published and unrunnable at the same time.
   const excludedTool = "read_configuration_bc_logs"
-  const manifest = soundManifest()
-  manifest.requiredTools = manifest.requiredTools.filter((tool) => tool !== excludedTool)
-  manifest.excludedTools = [{ tool: excludedTool, reason: "M3 open" }]
-  manifest.scenarios = [{ ...soundScenario(), flow: [excludedTool] }]
+  const manifest = withSurface(withoutTool(soundManifest(), excludedTool), {
+    excludedTools: [{ tool: excludedTool, reason: "M3 open" }],
+    scenarios: [{ ...soundScenario(), flow: [excludedTool] }]
+  })
   assert.match(
     onlyProblem(deliveryManifestProblems(manifest, facts)),
     /would refuse a step of a flow the contract publishes/
   )
 
-  const imaginary = soundManifest()
-  imaginary.scenarios = [{ ...soundScenario(), flow: ["read_imaginary_configuration"] }]
+  const imaginary = withSurface(soundManifest(), {
+    scenarios: [{ ...soundScenario(), flow: ["read_imaginary_configuration"] }]
+  })
   assert.match(
     onlyProblem(deliveryManifestProblems(imaginary, facts)),
     /no tool registry entry implements/
   )
 
-  const repeated = soundManifest()
-  repeated.scenarios = [
-    { ...soundScenario(), flow: ["read_configuration_unit", "read_configuration_unit"] }
-  ]
+  const repeated = withSurface(soundManifest(), {
+    scenarios: [
+      { ...soundScenario(), flow: ["read_configuration_unit", "read_configuration_unit"] }
+    ]
+  })
   assert.match(onlyProblem(deliveryManifestProblems(repeated, facts)), /twice in its flow/)
 })
 
@@ -268,22 +298,137 @@ test("every published scenario runs only tools this surface delivers", () => {
   }
 })
 
-test("an IMG configuration tool that is neither delivered nor excluded fails the audit", () => {
+test("the shipped contract accounts for every delivered configuration tool", () => {
+  const manifest = loadSproCoreDelivery()
+  const flow = new Set(manifest.scenarios.flatMap((scenario) => scenario.flow))
+  const declared = new Map(
+    (manifest.supportingReads ?? []).map((entry) => [entry.tool, entry.reason])
+  )
+  // Read off the delivered list and the flows, so the coverage number is checked against the
+  // contract's own content rather than against the sentence that reports it. 23 of 45 configuration
+  // tools are in a published flow; the remaining 22 are documented as supporting reads, and before
+  // this field existed nobody reading the artifact could tell the difference between the two.
+  const inFlow = manifest.requiredTools.filter(
+    (tool) => isImgConfigurationTool(tool) && flow.has(tool)
+  )
+  const outside = manifest.requiredTools.filter(
+    (tool) => isImgConfigurationTool(tool) && !flow.has(tool)
+  )
+  assert.deepEqual([...declared.keys()].sort(), [...outside].sort())
+  assert.equal(inFlow.length, 23, `expected 23 configuration tools in a published flow`)
+  assert.equal(outside.length, 22, `expected 22 configuration tools outside every flow`)
+  assert.equal(inFlow.length + outside.length, 45)
+  for (const tool of [
+    "read_configuration_bc_logs",
+    "search_bte_dispatchers",
+    "preview_configuration"
+  ]) {
+    assert.ok(declared.has(tool), `${tool} must be documented as a supporting read`)
+    assert.ok((declared.get(tool) ?? "").trim().length > 20, `${tool} needs a real reason`)
+  }
+})
+
+test("a delivered configuration tool that no flow explains has to be declared", () => {
   const tool = "read_configuration_bc_logs"
   const manifest = soundManifest()
-  manifest.requiredTools = manifest.requiredTools.filter((name) => name !== tool)
+  manifest.supportingReads = manifest.supportingReads.filter((entry) => entry.tool !== tool)
+  assert.match(
+    onlyProblem(deliveryManifestProblems(manifest, facts)),
+    new RegExp(`${tool} is delivered but appears in no published scenario`)
+  )
+})
+
+test("declaring a tool a flow already runs, twice, or without a reason is rejected", () => {
+  // The flow runs it, so calling it a supporting read would describe it twice. Added after the
+  // manifest is otherwise sound, because the fixture derives the list from the flows.
+  const tool = "read_configuration_unit"
+  const inFlow = withSurface(soundManifest(), { scenarios: [soundScenario()] })
+  assert.deepEqual(deliveryManifestProblems(inFlow, facts), [])
+  inFlow.supportingReads = [
+    ...inFlow.supportingReads,
+    { tool, reason: "claims to stand outside every flow while one runs it" }
+  ]
+  assert.match(
+    onlyProblem(deliveryManifestProblems(inFlow, facts)),
+    /already runs, so the contract describes it twice/
+  )
+
+  const duplicated = soundManifest()
+  const repeated = duplicated.supportingReads[0] ?? { tool: "", reason: "" }
+  duplicated.supportingReads = [...duplicated.supportingReads, repeated]
+  assert.match(
+    problemMentioning(deliveryManifestProblems(duplicated, facts), repeated.tool),
+    /more than once/
+  )
+
+  const noReason = soundManifest()
+  const first = noReason.supportingReads[0]
+  assert.ok(first)
+  noReason.supportingReads = [
+    { tool: first.tool, reason: "  " },
+    ...noReason.supportingReads.slice(1)
+  ]
+  assert.match(
+    problemMentioning(deliveryManifestProblems(noReason, facts), first.tool),
+    /without a reason/
+  )
+})
+
+test("a supporting read outside the delivered surface or the tool registry is rejected", () => {
+  // Deliberately stale: the tool leaves the surface while its declaration stays, which is exactly
+  // the drift the field has to catch. Dropping both is the case tested just above.
+  const undelivered = "read_configuration_documentation"
+  const base = soundManifest()
+  const outside: SproCoreDeliveryManifest = {
+    ...base,
+    requiredTools: base.requiredTools.filter((name) => name !== undelivered)
+  }
+  assert.match(
+    problemMentioning(
+      deliveryManifestProblems(outside, facts),
+      `${undelivered}, which this surface does not deliver`
+    ),
+    /does not deliver/
+  )
+
+  const imaginary = soundManifest()
+  imaginary.supportingReads = [
+    ...imaginary.supportingReads,
+    { tool: "read_imaginary_configuration", reason: "invented" }
+  ]
+  assert.match(
+    problemMentioning(deliveryManifestProblems(imaginary, facts), "read_imaginary_configuration"),
+    /no tool registry entry implements/
+  )
+
+  const anonymous = soundManifest()
+  anonymous.supportingReads = [...anonymous.supportingReads, { tool: "", reason: "no name" }]
+  assert.match(
+    onlyProblem(deliveryManifestProblems(anonymous, facts)),
+    /supportingReads contains an entry with no tool/
+  )
+})
+
+test("an IMG configuration tool that is neither delivered nor excluded fails the audit", () => {
+  const tool = "read_configuration_bc_logs"
+  const manifest = withoutTool(soundManifest(), tool)
   const problem = onlyProblem(deliveryManifestProblems(manifest, facts))
   assert.match(problem, new RegExp(`${tool} is implemented and enabled`))
 })
 
 test("excluding an IMG configuration tool requires a written reason", () => {
   const tool = "read_configuration_bc_logs"
-  const manifest = soundManifest()
-  manifest.requiredTools = manifest.requiredTools.filter((name) => name !== tool)
-  manifest.excludedTools = [{ tool, reason: "   " }]
+  const manifest = withSurface(withoutTool(soundManifest(), tool), {
+    excludedTools: [{ tool, reason: "   " }]
+  })
   assert.match(onlyProblem(deliveryManifestProblems(manifest, facts)), /without a reason/)
-  manifest.excludedTools = [{ tool, reason: "M3-07 open" }]
-  assert.deepEqual(deliveryManifestProblems(manifest, facts), [])
+  assert.deepEqual(
+    deliveryManifestProblems(
+      withSurface(manifest, { excludedTools: [{ tool, reason: "M3-07 open" }] }),
+      facts
+    ),
+    []
+  )
 })
 
 test("a tool cannot be both required and excluded", () => {
@@ -321,9 +466,9 @@ test("an exclusion of something that is not an IMG configuration tool is rejecte
   const tool = "read_abap_table"
   assert.ok(configProfileTools.includes(tool))
   assert.ok(!isImgConfigurationTool(tool))
-  const manifest = soundManifest()
-  manifest.requiredTools = manifest.requiredTools.filter((name) => name !== tool)
-  manifest.excludedTools = [{ tool, reason: "not part of the IMG surface" }]
+  const manifest = withSurface(withoutTool(soundManifest(), tool), {
+    excludedTools: [{ tool, reason: "not part of the IMG surface" }]
+  })
   assert.match(
     onlyProblem(deliveryManifestProblems(manifest, facts)),
     /is not an IMG configuration tool/
@@ -338,10 +483,8 @@ test("an unknown profile and an empty surface are rejected", () => {
     /is not one of/
   )
 
-  const empty = soundManifest()
-  empty.requiredTools = []
-  // A surface that delivers nothing also has nothing to disclose.
-  empty.unverifiedTools = []
+  // A surface that delivers nothing also has nothing to disclose or to document.
+  const empty = withSurface(soundManifest(), { requiredTools: [], unverifiedTools: [] })
   // An empty surface is not one mistake but two: nothing is delivered, and every IMG configuration
   // tool the profile enables then has no delivery decision either.
   const emptyProblems = deliveryManifestProblems(empty, facts)

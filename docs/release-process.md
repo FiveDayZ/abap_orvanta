@@ -22,7 +22,7 @@ npm run format:check
 npm run typecheck
 npm run matrix:check        # 工具注册表与 docs/tool-index.md、contracts/tool-index.json 一致
 npm run mirror:check        # 登记表引用的证据在检出侧仍可解析，且没有引用写在镜像路径下
-npm run spro:delivery:check # SPRO 交付面契约与注册表/profile 一致：不漏任何 IMG 配置工具，交付但未验收的 IMG 工具逐条声明在 unverifiedTools
+npm run spro:delivery:check # SPRO 交付面契约与注册表/profile 一致：不漏任何 IMG 配置工具；交付但未验收的 IMG 工具逐条声明在 unverifiedTools；每个已交付的配置工具要么在某个公开场景流程里，要么在 supportingReads 里写明它在流程外的角色
 npm test                    # 由人工执行
 ```
 
