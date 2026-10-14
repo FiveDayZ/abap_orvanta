@@ -21,6 +21,7 @@
 npm run format:check
 npm run typecheck
 npm run matrix:check        # 工具注册表与 docs/tool-index.md、contracts/tool-index.json 一致
+npm run mirror:check        # 登记表引用的证据在检出侧仍可解析，且没有引用写在镜像路径下
 npm test                    # 由人工执行
 ```
 

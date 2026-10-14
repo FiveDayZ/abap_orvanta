@@ -23,9 +23,13 @@
  * is invisible to a checkout until it is force-added (`git add -f docs/workspace-evidence/<path>`).
  * Only citations that name a path outside the repository need this directory at all; a citation that
  * already names a tracked in-repo record resolves without it.
+ *
+ * A citation must name the record's workspace path (`.doc/...`, or `.logs/...` for an in-repo log).
+ * Naming the mirror copy instead (`docs/workspace-evidence/...`) makes the snapshot authoritative and
+ * used to make `--copy` nest a copy under its own path; the audit now fails on such a citation.
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
-import { dirname, join, relative } from "node:path"
+import { dirname, join, posix, relative, sep } from "node:path"
 import {
   evidenceRoots,
   loadVerificationRegistry,
@@ -37,6 +41,11 @@ import {
 // and cites nothing, so it is deliberately absent.
 const REQUIRED_STATUSES = ["verified", "failed", "platform-unsupported"]
 const mirrorRoot = join(repositoryRoot, "docs", "workspace-evidence")
+// The mirror's path relative to the repository, used to recognise a citation that names the mirror.
+// Registry citations always use forward slashes, but `relative` returns the platform separator, so a
+// Windows run would compare `docs\workspace-evidence` against `docs/workspace-evidence` and miss.
+const mirrorRelative = relative(repositoryRoot, mirrorRoot).split(sep).join(posix.sep)
+const mirrorPrefix = `${mirrorRelative}/`
 
 const copy = process.argv.includes("--copy")
 const verify = process.argv.includes("--verify")
@@ -55,6 +64,7 @@ let notResolvable = 0
 let copied = 0
 let inMirror = 0
 let repoInternalOnly = 0
+let selfReferential = 0
 
 for (const rel of paths) {
   if (verify) {
@@ -79,13 +89,22 @@ for (const rel of paths) {
   if (mirrored) inMirror += 1
   // A record already inside the repository needs no mirror to survive a checkout.
   if (existsSync(join(repositoryRoot, rel))) repoInternalOnly += 1
-  // ...but a citation that names its own mirror resolves *to* the mirror, so mirroring it again would
-  // nest the copy under its own path (`docs/workspace-evidence/docs/workspace-evidence/...`) and then
-  // validate a file no resolver reads. Those citations are skipped; they are already in the repository.
-  // Records that merely live inside the repository (`.logs/...`, `.cache/...`) are NOT skipped: they
-  // can be untracked outright, and their mirror is the only copy a fresh checkout would find.
-  if (source && !relative(mirrorRoot, source).startsWith("..")) {
-    if (!verify) console.log(`in-repo  ${rel}`)
+  // A citation that names the mirror itself is a defect: the snapshot becomes the authoritative
+  // record, and `--copy` would turn it into a nested copy under its own path
+  // (`docs/workspace-evidence/docs/workspace-evidence/...`) that no resolver ever reads. Fail the
+  // audit and copy nothing.
+  if (rel === mirrorRelative || rel.startsWith(mirrorPrefix)) {
+    selfReferential += 1
+    console.log(`SELF-REFERENTIAL  ${rel}`)
+    console.log("    cite the record's workspace path (its .doc/... name), not the mirror copy")
+    continue
+  }
+  // In a checkout the workspace original is absent and the mirror is the only copy, so the resolved
+  // source *is* the target: there is nothing to copy and nothing to compare. Records that live inside
+  // the repository but were never committed (`.logs/...`, `.cache/...`) do not take this path - their
+  // mirror is a different file, and it is the only copy a fresh checkout would find.
+  if (source === target) {
+    if (!verify) console.log(`mirror-only  ${rel}`)
     continue
   }
 
@@ -117,12 +136,18 @@ for (const rel of paths) {
 
 console.log("")
 console.log(
-  `paths ${paths.length} | mirrored ${inMirror} | already inside repository ${repoInternalOnly} | copied ${copied} | not resolvable ${notResolvable}`
+  `paths ${paths.length} | mirrored ${inMirror} | already inside repository ${repoInternalOnly} | copied ${copied} | not resolvable ${notResolvable} | self-referential ${selfReferential}`
 )
 if (notResolvable > 0) {
   console.log("")
   console.log(
     "A citation whose record cannot be found anywhere is a real defect, not a mirror gap."
   )
-  process.exitCode = 1
 }
+if (selfReferential > 0) {
+  console.log("")
+  console.log(
+    "A citation that names its own mirror is a real defect: rewrite it as the record's workspace path."
+  )
+}
+if (notResolvable > 0 || selfReferential > 0) process.exitCode = 1
