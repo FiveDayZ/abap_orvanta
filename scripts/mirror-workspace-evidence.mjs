@@ -19,6 +19,10 @@
  *   node scripts/mirror-workspace-evidence.mjs --verify   # which candidate roots contain each path
  *
  * Refresh the mirror whenever an entry gains a new evidence record, or CI will reject the citation.
+ * `docs/workspace-evidence/` is gitignored (`.gitignore`), so a record copied here for the first time
+ * is invisible to a checkout until it is force-added (`git add -f docs/workspace-evidence/<path>`).
+ * Only citations that name a path outside the repository need this directory at all; a citation that
+ * already names a tracked in-repo record resolves without it.
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
@@ -75,6 +79,15 @@ for (const rel of paths) {
   if (mirrored) inMirror += 1
   // A record already inside the repository needs no mirror to survive a checkout.
   if (existsSync(join(repositoryRoot, rel))) repoInternalOnly += 1
+  // ...but a citation that names its own mirror resolves *to* the mirror, so mirroring it again would
+  // nest the copy under its own path (`docs/workspace-evidence/docs/workspace-evidence/...`) and then
+  // validate a file no resolver reads. Those citations are skipped; they are already in the repository.
+  // Records that merely live inside the repository (`.logs/...`, `.cache/...`) are NOT skipped: they
+  // can be untracked outright, and their mirror is the only copy a fresh checkout would find.
+  if (source && !relative(mirrorRoot, source).startsWith("..")) {
+    if (!verify) console.log(`in-repo  ${rel}`)
+    continue
+  }
 
   if (!source) {
     notResolvable += 1
@@ -89,6 +102,9 @@ for (const rel of paths) {
       console.log(
         `${stale ? "refreshed" : "copied   "} ${rel}  <- ${relative(repositoryRoot, source)}`
       )
+      if (!stale) {
+        console.log(`          new mirror file: git add -f ${relative(repositoryRoot, target)}`)
+      }
     } else if (!verify) {
       console.log(
         `${stale ? "would refresh" : "would copy"} ${rel}  <- ${relative(repositoryRoot, source)}`
