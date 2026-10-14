@@ -1,6 +1,47 @@
 import { z } from "zod"
+import { configurationBcRecordKernel } from "./configuration-bc-record-kernel.js"
+import {
+  configurationBcStateKeyCount,
+  configurationBcStateProtectionKeyCount
+} from "./configuration-bc-state-api.js"
 
 const hex = z.string().regex(/^[a-f0-9]{64}$/)
+
+/**
+ * Three of these labels carry the pilot's size as an English word, and a caller matches them by exact
+ * string, so a hand-written word is a claim about the scope that nothing checks. The counts are derived
+ * elsewhere - the readback covers every complete fixed key, the unchanged keys are the guard layout's
+ * protection keys, and the record kernel owns its own insert/protect split - so the labels are spelled
+ * from those constants. The rendered strings are unchanged, so no caller sees a different vocabulary.
+ */
+const COUNT_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+  "twenty"
+] as const
+const countWord = (value: number) => {
+  const word = COUNT_WORDS[value]
+  if (word === undefined) throw Error("CONFIGURATION_BC_COMMAND_COUNT_UNSPELLABLE")
+  return word
+}
 export const configurationBcCommandRequestSchema = z
   .object({
     connectionId: z.literal("w200"),
@@ -43,15 +84,15 @@ export function configurationBcCommandContract(raw: unknown) {
       "sap_enqueue",
       "locked_before_state",
       "native_versions",
-      "ten_mutable_records_nine_protected_records",
+      `${countWord(configurationBcRecordKernel.mutableCount)}_mutable_records_${countWord(configurationBcRecordKernel.protectedCount)}_protected_records`,
       "lossless_standard_record_preparation",
       "cts_open_owned_task",
       "headless_route_and_commit_boundaries"
     ],
     successProof: [
-      "complete_nineteen_key_readback",
+      `complete_${countWord(configurationBcStateKeyCount)}_key_readback`,
       "exact_cts_recording",
-      "eight_protected_keys_unchanged",
+      `${countWord(configurationBcStateProtectionKeyCount)}_protected_keys_unchanged`,
       "shared_PRESS_dimension_unchanged",
       "locks_released",
       "logs_and_independent_side_effects_accounted"

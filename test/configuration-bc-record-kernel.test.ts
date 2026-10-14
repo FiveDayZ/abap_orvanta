@@ -366,3 +366,77 @@ test("the insert/protect split is derived once and the delivered prose spells th
   assert.match(module, /protectedCount: protectedRowCount/)
   assert.doesNotMatch(module, /mutableCount: 10|protectedCount: 9|slice\(0, 10\)|i < 10/)
 })
+test("the delivered check and proof labels spell the counts the code derives, and the splits reconcile", () => {
+  // Every expectation below is counted from the preflight key list and the guard key list, which are
+  // different sources from the constants the contract spells its labels from.
+  const guardKeys = configurationBcGuardKeys.length
+  const rows = configurationBcPreflightKeys.length
+  const expectedMutable = rows - guardKeys - 1
+  const expectedProtected = guardKeys + 1
+  const word = (value: number) =>
+    [
+      "zero",
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+      "ten",
+      "eleven",
+      "twelve",
+      "thirteen",
+      "fourteen",
+      "fifteen",
+      "sixteen",
+      "seventeen",
+      "eighteen",
+      "nineteen",
+      "twenty"
+    ][value]!
+  const contract = configurationBcCommandContract({
+    connectionId: binding.connectionId,
+    bcSetId: binding.bcSetId,
+    version: binding.version,
+    requestNumber: binding.requestNumber,
+    taskNumber: binding.taskNumber,
+    operationId: "r67-labels-01",
+    beforeStateReference: binding.beforeStateReference
+  })
+  const label = (list: readonly string[], pattern: RegExp) =>
+    list.find((item) => pattern.test(item))!
+  assert.equal(
+    label(contract.requiredNativeChecks, /mutable_records/),
+    `${word(expectedMutable)}_mutable_records_${word(expectedProtected)}_protected_records`
+  )
+  assert.equal(label(contract.successProof, /key_readback/), `complete_${word(rows)}_key_readback`)
+  assert.equal(
+    label(contract.successProof, /protected_keys_unchanged/),
+    `${word(guardKeys)}_protected_keys_unchanged`
+  )
+  // The two splits of the same keys have to reconcile: the inserted and protected rows are all of them,
+  // and the protection keys plus the one PRESS row that changes sides are the protected records.
+  assert.equal(expectedMutable + expectedProtected, rows)
+  assert.equal(guardKeys + 1, expectedProtected)
+  // "protected keys" and "protected records" are two different sets, so their numbers must stay apart;
+  // a change that makes them equal would be a misreading of one for the other.
+  assert.notEqual(guardKeys, expectedProtected)
+  // A caller matches these strings exactly, so the derivation must not rename the wire vocabulary.
+  assert.equal(contract.successProof[0], "complete_nineteen_key_readback")
+  assert.equal(contract.successProof[2], "eight_protected_keys_unchanged")
+  assert.equal(contract.requiredNativeChecks[6], "ten_mutable_records_nine_protected_records")
+  // And the module spells them instead of carrying the words again.
+  const module = readFileSync(
+    new URL("../src/configuration-bc-command-contract.js", import.meta.url),
+    "utf8"
+  )
+  assert.match(module, /countWord\(configurationBcStateKeyCount\)/)
+  assert.match(module, /countWord\(configurationBcStateProtectionKeyCount\)/)
+  assert.doesNotMatch(
+    module,
+    /"(?:complete_nineteen_key_readback|eight_protected_keys_unchanged|ten_mutable_records_nine_protected_records)"/
+  )
+})
