@@ -61,7 +61,7 @@ release/
 | -------------------------------------- | --------------------------------------------------------------------------------- |
 | `version` / `platform` / `nodeVersion` | 版本与运行时                                                                      |
 | `runtimeVersionCheck`                  | 包内 `PRODUCT_VERSION` 与 `package.json` 的一致性检查结果                         |
-| `preserveExisting`                     | 是否采用隔离构建并保留旧产物的候选模式；此模式不追加历史索引或执行归档保留窗口     |
+| `preserveExisting`                     | 是否采用隔离构建并保留旧产物的候选模式；此模式不追加历史索引或执行归档保留窗口    |
 | `standaloneSourceCommit`               | 打包所用提交                                                                      |
 | `standaloneSourceDirty`                | 该提交之外是否还有未提交改动                                                      |
 | `fileSha256`                           | 除 `node_modules` 外全部打包文件的 SHA-256（依赖由 `app/package-lock.json` 固定） |
