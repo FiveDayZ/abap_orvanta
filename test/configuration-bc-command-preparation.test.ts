@@ -91,7 +91,10 @@ test("foreign authenticated users, client scopes and external buffers fail befor
 
 test("missing immutable references do not trigger SAP reads or create a new before-state", async (t) => {
   const f = await setup(t)
-  await assert.rejects(f.invoke({ ...f.request, beforeStateReference: "c".repeat(64) }), /ENOENT/)
+  await assert.rejects(
+    f.invoke({ ...f.request, beforeStateReference: "c".repeat(64) }),
+    /CONFIGURATION_BC_BEFORE_STATE_NOT_FOUND/
+  )
   assert.equal(f.reads, 0)
   assert.deepEqual(await readdir(join(f.root, "configuration-bc-before-state")), [
     `${f.captured.reference}.json`

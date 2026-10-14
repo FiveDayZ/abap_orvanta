@@ -259,7 +259,7 @@ test("command preparation rejects missing and cross-linked effect evidence befor
       reference: "f".repeat(64),
       readCurrent: effectsReader
     }),
-    /ENOENT/
+    /CONFIGURATION_BC_EFFECTS_NOT_FOUND/
   )
   await assert.rejects(
     prepareConfigurationBcCommand(
@@ -394,7 +394,10 @@ test("effects store rejects identity changes, recomputed unsafe evidence, broken
   )
   await assert.rejects(f.store.readEffects(envelope.id, f.captured.binding), /EVIDENCE_INVALID/)
   await rm(join(f.root, "configuration-bc-before-state", f.captured.reference + ".json"))
-  await assert.rejects(f.store.readEffects(envelope.id, f.captured.binding), /ENOENT/)
+  await assert.rejects(
+    f.store.readEffects(envelope.id, f.captured.binding),
+    /CONFIGURATION_BC_BEFORE_STATE_NOT_FOUND/
+  )
 })
 
 test("public effects MCP exposes fixed readonly inputs, links immutable evidence and retracts failures", async (t) => {

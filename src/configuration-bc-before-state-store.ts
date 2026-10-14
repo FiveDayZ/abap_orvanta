@@ -142,7 +142,15 @@ export class ConfigurationBcBeforeStateStore {
   async read(reference: string, authenticatedBinding: ConfigurationBcStateBinding): Promise<State> {
     hex.parse(reference)
     const expected = bindingSchema.parse(authenticatedBinding)
-    const text = await readFile(join(this.root, `${reference}.json`), "utf8")
+    let text: string
+    try {
+      text = await readFile(join(this.root, `${reference}.json`), "utf8")
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+      // The caller holds only the reference, so name the refusal and the root that was searched
+      // instead of surfacing a filesystem error this family never maps.
+      throw Error(`CONFIGURATION_BC_BEFORE_STATE_NOT_FOUND: ${reference} is not under ${this.root}`)
+    }
     if (Buffer.byteLength(text) > 1500000) throw Error("CONFIGURATION_BC_BEFORE_STATE_LIMIT")
     const envelope = z
       .object({
@@ -201,7 +209,13 @@ export class ConfigurationBcBeforeStateStore {
 
   async readEffects(reference: string, authenticatedBinding: ConfigurationBcStateBinding) {
     hex.parse(reference)
-    const text = await readFile(join(this.root, `${reference}.json`), "utf8")
+    let text: string
+    try {
+      text = await readFile(join(this.root, `${reference}.json`), "utf8")
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+      throw Error(`CONFIGURATION_BC_EFFECTS_NOT_FOUND: ${reference} is not under ${this.root}`)
+    }
     if (Buffer.byteLength(text) > 900000) throw Error("CONFIGURATION_BC_EFFECTS_LIMIT")
     const envelope = z
       .object({

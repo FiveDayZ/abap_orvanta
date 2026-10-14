@@ -235,7 +235,10 @@ test("untrusted bytes, write flags, scope drift and foreign users cannot reach S
     f.invoke(f.request, { ...f.captured.binding, user: "OTHER" }),
     /BINDING_INVALID/
   )
-  await assert.rejects(f.invoke({ ...f.request, beforeStateReference: "c".repeat(64) }), /ENOENT/)
+  await assert.rejects(
+    f.invoke({ ...f.request, beforeStateReference: "c".repeat(64) }),
+    /CONFIGURATION_BC_BEFORE_STATE_NOT_FOUND/
+  )
   assert.equal(f.calls, 0)
   assert.equal(f.definitions, 0)
   assert.equal(f.standards, 0)
