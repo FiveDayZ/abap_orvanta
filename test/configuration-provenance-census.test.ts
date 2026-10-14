@@ -89,6 +89,30 @@ const INTERNAL_ONLY_PINS: ReadonlyArray<{ name: string; module: string; consumed
 ]
 
 /**
+ * The third class, and the one both censuses above are blind to. The provenance shape matches names
+ * ending in a fingerprint suffix; the pin shape matches names ending in "Pins". An export that pins
+ * 64-hex digests under neither naming convention is in neither census - and that was prose, written as
+ * a "known boundary", until it was measured. Measured: 73 configuration-family exports carry a 64-hex
+ * digest literal, 59 of them under neither naming convention, and none of the 59 is unreferenced.
+ *
+ * The criterion is deliberately the WIDEST net, not the tidiest one, and two narrower rules were
+ * measured to be one-directionally blind:
+ *   - "an object literal whose values are digests" misses 6 members, which carry the digest in a bare
+ *     string, in an array, or in another shape;
+ *   - matching only a string literal that is *entirely* a digest misses 3 more, because
+ *     configurationBcGuardApi, configurationBcPreviewApi and configurationBcRouteApi embed the pin
+ *     inside the generated ABAP source lines they export (`"  '73783f69...'."`).
+ * A claim that nothing is hidden has to be made with the widest net available, or the net's own shape
+ * becomes the hiding place. So the test is only "the initializer contains a 64-hex string literal".
+ *
+ * The named censuses are mostly a different kind: 13 of the 14 provenance members are computed source
+ * text, joined and hashed, and carry no digest literal at all. The one exception is the member whose
+ * idiom is `literal-pin` - asserted below, so how far the two censuses overlap stays a measured number
+ * rather than a claim.
+ */
+const DIGEST_LITERAL = /["'][0-9a-f]{64}["']/i
+
+/**
  * The hash idioms the family uses, as a closed vocabulary. Each member is classified from its own
  * initializer and the module's binding of the value it hashes, so a member that changes algorithm
  * fails here instead of drifting.
@@ -274,6 +298,19 @@ function extractPinMembers(): PinMember[] {
   }))
 }
 
+type DigestMember = { name: string; module: string; isObjectLiteral: boolean }
+
+/** Every export carrying a 64-hex digest literal, whatever shape it is written in. */
+function extractDigestMembers(): DigestMember[] {
+  return CONFIGURATION_EXPORTS.filter((entry) => DIGEST_LITERAL.test(entry.initializer)).map(
+    (entry) => ({
+      name: entry.name,
+      module: entry.module,
+      isObjectLiteral: entry.initializer.trimStart().startsWith("{")
+    })
+  )
+}
+
 function censusFiles(): string[] {
   const files: string[] = []
   const walk = (dir: string) => {
@@ -364,6 +401,12 @@ const UNREAD_NAMES = UNREAD.map((entry) => entry.name).sort()
 const PIN_MEMBERS = extractPinMembers()
 const PIN_NAMES = PIN_MEMBERS.map((member) => member.name).sort()
 const INTERNAL_ONLY_PIN_NAMES = INTERNAL_ONLY_PINS.map((entry) => entry.name).sort()
+const DIGEST_MEMBERS = extractDigestMembers()
+const DIGEST_NAMES = DIGEST_MEMBERS.map((member) => member.name).sort()
+/** The digest-carrying members that neither the provenance nor the pin census accounts for. */
+const UNACCOUNTED_DIGEST_MEMBERS = DIGEST_MEMBERS.filter(
+  (member) => !PROVENANCE_SHAPE.test(member.name) && !PIN_SHAPE.test(member.name)
+)
 
 test("the provenance family is extracted from the sources, not from a remembered list", () => {
   // An extraction that silently found nothing would make every assertion below vacuous.
@@ -622,4 +665,67 @@ test("no pin table is unreferenced, and the ones read only inside their own modu
       `${entry.name}: ${anchor} is not exactly once in ${entry.module}, so it does not name one consumption`
     )
   }
+})
+
+test("the digest-carrying class is extracted with the widest net, and the pin census sits inside it", () => {
+  // The provenance census is nearly a different kind: those members are computed source text, joined
+  // and hashed. Exactly one carries a digest literal, the member whose idiom is `literal-pin`. Pinned
+  // as a number so the overlap cannot grow while the comment above still claims it is one.
+  //
+  // This comes before the extraction count on purpose. Any change that makes it two also adds a
+  // digest-carrying member, so with the count first this assertion was measured to be unreachable -
+  // the count tripped and this one, the one that names what actually changed, was never reached.
+  assert.equal(
+    MEMBERS.filter((member) => DIGEST_LITERAL.test(member.initializer)).length,
+    1,
+    "the number of provenance members that also carry a digest literal changed"
+  )
+  // An extraction that silently found nothing would make every assertion below vacuous.
+  assert.equal(
+    DIGEST_MEMBERS.length,
+    73,
+    `expected 73 digest-carrying exports, extracted ${DIGEST_MEMBERS.length}`
+  )
+  // Positive control: this name is not in the sources.
+  assert.ok(
+    !DIGEST_NAMES.includes("configurationNothingDigests"),
+    "the extraction produced a name that is not in the sources"
+  )
+  // The pin census is a subset of this one - measured, not assumed. Every pin table carries a digest,
+  // which is what makes "pin table" a structural notion and not just a naming convention.
+  assert.deepEqual(
+    PIN_NAMES.filter((name) => !DIGEST_NAMES.includes(name)),
+    [],
+    "a pin table does not carry a digest literal, so the two censuses are not nested"
+  )
+  // The criterion must stay the widest net. Narrowing it to object literals - the tidier rule - was
+  // measured to miss six members, and this count is what reddens if it is narrowed back.
+  assert.equal(
+    DIGEST_MEMBERS.filter((member) => !member.isObjectLiteral).length,
+    6,
+    "the digest criterion no longer reaches every shape it was measured to cover"
+  )
+})
+
+test("no export invisible to both censuses is unreferenced", () => {
+  // The assertion with teeth, and deliberately first. Everything in this class is invisible to the
+  // provenance census and to the pin census, so nothing else in this file would notice it going unread -
+  // which is exactly the shape of a false capability claim. Reading the whole class here is what bounds
+  // the blind spot. It comes before the count on purpose: with the count first, adding an unreferenced
+  // member trips the count and this assertion - the one that names the defect - is never reached.
+  assert.deepEqual(
+    UNACCOUNTED_DIGEST_MEMBERS.filter((member) => {
+      const { internalReads, external } = readership(member.name, member.module)
+      return internalReads + external === 0
+    }).map((member) => member.name),
+    [],
+    "an export that carries a pinned digest and is invisible to both censuses is referenced nowhere"
+  )
+  // The class's size is a counted fact: it reddens when the class changes for any other reason, so a
+  // member cannot join or leave it unnoticed.
+  assert.equal(
+    UNACCOUNTED_DIGEST_MEMBERS.length,
+    59,
+    `the unaccounted digest-carrying class changed size: ${UNACCOUNTED_DIGEST_MEMBERS.map((m) => m.name).join(", ")}`
+  )
 })
