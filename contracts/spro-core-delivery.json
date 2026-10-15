@@ -212,13 +212,8 @@
   ],
   "unverifiedTools": [
     "apply_configuration_bc_set",
-    "find_configuration_fi_rules",
     "inspect_configuration_bte_native_metadata",
-    "inspect_configuration_fi_activation_route",
-    "preview_configuration_fi_activation",
     "read_configuration_bc_effects",
-    "read_configuration_fi_rule",
-    "read_configuration_number_range",
     "reconcile_configuration_bc_execution",
     "recover_configuration_bc_set"
   ],

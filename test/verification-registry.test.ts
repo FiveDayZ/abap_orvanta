@@ -1868,8 +1868,21 @@ test("the registry records the honest gap rather than inflating it", () => {
     // KG/ZH 双向投影比较 + 3 条拒绝路径，记录内出现工具名，仓库内镜像已存在且与原件字节一致）；同一能力较早的
     // stage5 回执（.doc/orvanta-configuration-cross-system-acceptance-20261003-stage5.json）补记 EN 单向与
     // 重复读。升格范围只到这两份回执实际观测到的投影比较，不含完整快照、同步、维护或 CTS 写入。
+    // 2026-10-15（r141e A 组升格）：173 -> 178。五条只读 IMG 配置工具由 unverified 升为 verified：
+    // find_configuration_fi_rules / read_configuration_fi_rule / preview_configuration_fi_activation /
+    // inspect_configuration_fi_activation_route / read_configuration_number_range，共同证据为
+    // .doc/orvanta-configuration-fi-a-group-acceptance-20261015-1156.json（由该次运行自己的
+    // session.json / process-exit.json / 六份 responses 组合而成，正文逐条出现工具名）。
+    // 该次运行在 w200/client 200 上 5 取 5 全部调用、0 拒绝、exit 0；stateChangingCalls / deployments /
+    // activations / configurationWrites / ctsWritesOrCleanup / transportReleases / guiOperations /
+    // nativeHelperCalls 全为 0，forbiddenReached 为空，口令环境已清除；28 次远端函数调用全部是
+    // RFC_READ_TABLE，即该读取器在本机 ECC 7.31 空 HTML 数据预览下的设计回退路径。
+    // 其中 read_configuration_number_range 正是 r141d 那次因驱动自身禁用该回退路径而读不出来的调用，
+    // 放开设计路径后读通 ⇒ 早先那次失败是插桩前提，不是产品缺陷。
+    // 升格范围只到该记录实际观测到的只读投影：不含配置维护、生成、激活、业务触发、锁/LUW 闭合或 CTS 写入，
+    // 也不含其它客户端、其它系统或后续构建。
     // 该上限仍是 tripwire：新增一条 verified 必须同批上调并写清来由。
-    totals.verified <= 173,
+    totals.verified <= 178,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

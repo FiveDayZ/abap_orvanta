@@ -307,16 +307,17 @@ test("the shipped contract discloses the unverified part of its own surface", ()
   const declared = new Set(manifest.unverifiedTools ?? [])
   // Read straight off the registry, so the disclosure is checked against acceptance and not against
   // the audit that produced it. The earlier hand-written boundary sentence claimed five tools and
-  // named four; the registry leaves ten, including both BC write tools.
+  // named four; the registry then left ten, including both BC write tools. After the 2026-10-15 r141e
+  // A-group promotion it leaves five: the two B-group reads and the three blocked BC tools.
   const unverified = manifest.requiredTools.filter(
     (tool) => isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified"
   )
   assert.deepEqual([...declared].sort(), [...unverified].sort())
-  assert.ok(unverified.length >= 10, `expected at least 10, read ${unverified.length}`)
+  assert.ok(unverified.length >= 5, `expected at least 5, read ${unverified.length}`)
   for (const tool of [
     "apply_configuration_bc_set",
     "recover_configuration_bc_set",
-    "read_configuration_number_range",
+    "inspect_configuration_bte_native_metadata",
     "read_configuration_bc_effects"
   ]) {
     assert.ok(declared.has(tool), `${tool} must be disclosed as unverified`)
@@ -325,7 +326,7 @@ test("the shipped contract discloses the unverified part of its own surface", ()
 
 test("a delivered tool the registry does not verify has to be declared", () => {
   const manifest = soundManifest()
-  const tool = "read_configuration_number_range"
+  const tool = "inspect_configuration_bte_native_metadata"
   assert.notEqual(registryStatus.get(tool), "verified")
   manifest.unverifiedTools = manifest.unverifiedTools.filter((name) => name !== tool)
   assert.match(
@@ -343,7 +344,7 @@ test("a declaration the registry verifies is a stale disclosure", () => {
 })
 
 test("a declaration outside the delivered IMG surface is rejected", () => {
-  const undelivered = "read_configuration_number_range"
+  const undelivered = "inspect_configuration_bte_native_metadata"
   const notDelivered = withoutTool(soundManifest(), undelivered)
   assert.match(
     problemMentioning(
@@ -449,7 +450,7 @@ test("a non-configuration disclosure that is stale, misplaced or unexplained is 
   // The two families are not interchangeable: an IMG configuration tool declared here would escape
   // the comparison against the classification, which is the only thing that checks that family.
   const misplaced = soundManifest()
-  const img = "read_configuration_number_range"
+  const img = "inspect_configuration_bte_native_metadata"
   assert.ok(isImgConfigurationTool(img))
   misplaced.unverifiedOutsideConfiguration = [
     ...misplaced.unverifiedOutsideConfiguration,
@@ -898,10 +899,18 @@ test("every IMG configuration tool classifies into exactly one kind of remaining
 
   // Counted facts. They are meant to move when an acceptance run lands, and a rule change that moved
   // a tool between classes has to be seen and written down rather than absorbed silently.
-  assert.equal(local.length, 17, "expected 17 locally repairable tools")
-  assert.equal(sap.length, 7, "expected 7 tools waiting on SAP acceptance")
+  //
+  // 2026-10-15 (r141e A-group promotion): 17/7/3/18 -> 21/2/3/19. Five read-only FI/number-range tools
+  // moved off `sap-acceptance` because the registry now verifies them: four have no published scenario
+  // and so became `local` (find_configuration_fi_rules, read_configuration_fi_rule,
+  // preview_configuration_fi_activation, inspect_configuration_fi_activation_route), and
+  // read_configuration_number_range became `closed` because the number-range scenario already runs it.
+  // `blocked` is unchanged at 3 and `sap-acceptance` is down to the two B-group tools that still wait
+  // on the BC helpers. Total stays 45.
+  assert.equal(local.length, 21, "expected 21 locally repairable tools")
+  assert.equal(sap.length, 2, "expected 2 tools waiting on SAP acceptance")
   assert.equal(blocked.length, 3, "expected 3 blocked tools")
-  assert.equal(closed.length, 18, "expected 18 tools a published scenario runs")
+  assert.equal(closed.length, 19, "expected 19 tools a published scenario runs")
 
   // Each class has to hold something: a rule that quietly dumped every tool into one disposition
   // would still partition the surface, so the partition alone is not evidence of anything.
