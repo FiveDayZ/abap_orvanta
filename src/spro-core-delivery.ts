@@ -242,6 +242,18 @@ export interface SproCoreDeliverySupportingRead {
   reason: string
 }
 
+/**
+ * A delivered tool outside the IMG configuration family that the registry does not verify, with the
+ * reason it is not. `unverifiedTools` is that family's disclosure and is compared against the
+ * classification, so a tool of any other family has nowhere else to be accounted for: the audit used
+ * to name it in a printed line, and a fact that is only printed is not a fact that is checked. Being
+ * declared here is not a second kind of acceptance either - it is the disclosure of its absence.
+ */
+export interface SproCoreDeliveryUnverifiedDisclosure {
+  tool: string
+  reason: string
+}
+
 export interface SproCoreDeliveryManifest {
   format: number
   name: string
@@ -257,6 +269,12 @@ export interface SproCoreDeliveryManifest {
    * Being declared here is not a second kind of acceptance: it is the disclosure of its absence.
    */
   unverifiedTools: string[]
+  /**
+   * The delivered tools outside the IMG configuration family whose registry status is not `verified`.
+   * The family above cannot describe them, so without this list a delivered tool that reaches no
+   * acceptance would be printed by the audit and asserted nowhere.
+   */
+  unverifiedOutsideConfiguration: SproCoreDeliveryUnverifiedDisclosure[]
   excludedTools: SproCoreDeliveryExclusion[]
   scenarios: readonly SproCoreDeliveryScenario[]
   /**
@@ -432,6 +450,59 @@ export function deliveryManifestProblems(
       problems.push(
         `IMG configuration tool ${tool} is delivered without a registry verification and is not ` +
           `declared in unverifiedTools, so the surface implies acceptance it does not have`
+      )
+    }
+  }
+  // The same disclosure for every other family. A delivered tool that reaches no SAP acceptance and
+  // is not an IMG configuration tool is invisible to the loop above, so it is declared here and
+  // compared both ways: a new one cannot be delivered undisclosed, and a declaration cannot be left
+  // behind once its tool is verified.
+  const outsideDeclared = manifest.unverifiedOutsideConfiguration ?? []
+  const outsideTools = new Set<string>()
+  for (const entry of outsideDeclared) {
+    const tool = typeof entry?.tool === "string" ? entry.tool : ""
+    if (tool === "") {
+      problems.push("unverifiedOutsideConfiguration contains an entry with no tool")
+      continue
+    }
+    if (outsideTools.has(tool)) {
+      problems.push(`unverifiedOutsideConfiguration lists ${tool} more than once`)
+    }
+    outsideTools.add(tool)
+    if (!known.has(tool)) {
+      problems.push(
+        `unverifiedOutsideConfiguration names ${tool}, which no tool registry entry implements`
+      )
+    } else if (isImgConfigurationTool(tool)) {
+      problems.push(
+        `unverifiedOutsideConfiguration names ${tool}, which is an IMG configuration tool and ` +
+          `belongs in unverifiedTools`
+      )
+    }
+    if (!seen.has(tool)) {
+      problems.push(
+        `unverifiedOutsideConfiguration names ${tool}, which this surface does not deliver`
+      )
+    }
+    if (verified.has(tool)) {
+      problems.push(
+        `unverifiedOutsideConfiguration names ${tool}, but contracts/verification-registry.json ` +
+          `verifies it`
+      )
+    }
+    if (typeof entry?.reason !== "string" || entry.reason.trim() === "") {
+      problems.push(
+        `unverifiedOutsideConfiguration names ${tool} without a reason, so nothing records why`
+      )
+    }
+  }
+  for (const tool of required) {
+    if (isImgConfigurationTool(tool) || verified.has(tool)) continue
+    if (!outsideTools.has(tool)) {
+      problems.push(
+        `delivered tool ${tool} is not an IMG configuration tool and has no registry verification, ` +
+          `so unverifiedTools cannot describe it and it must be declared in ` +
+          `unverifiedOutsideConfiguration`
       )
     }
   }

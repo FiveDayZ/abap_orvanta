@@ -47,6 +47,10 @@ const excluded = manifest.excludedTools ?? []
 const unverified = delivered.filter((tool) => statusByTool.get(tool) !== "verified")
 const unverifiedImg = unverified.filter((tool) => IMG_CONFIGURATION_TOOL_PATTERN.test(tool))
 const declared = manifest.unverifiedTools ?? []
+// The other family. This line used to be the only place such a tool appeared anywhere in the audit,
+// so a delivered tool reaching no acceptance was named and never checked.
+const unverifiedOutside = unverified.filter((tool) => !IMG_CONFIGURATION_TOOL_PATTERN.test(tool))
+const declaredOutside = (manifest.unverifiedOutsideConfiguration ?? []).map((entry) => entry?.tool)
 
 console.log(
   `SPRO core delivery surface: ${delivered.length} tools for profile "${manifest.profile}"`
@@ -61,7 +65,9 @@ console.log(
 )
 console.log(
   `  acceptance disclosure: ${declared.length} of ${unverifiedImg.length} unverified IMG ` +
-    `configuration tools declared in unverifiedTools`
+    `configuration tools declared in unverifiedTools, and ${declaredOutside.length} of ` +
+    `${unverifiedOutside.length} unverified tools outside that family declared in ` +
+    `unverifiedOutsideConfiguration`
 )
 // Both arms count as explaining a tool: a reversing step declared in failurePath is documented by
 // the scenario even though the happy path never runs it.

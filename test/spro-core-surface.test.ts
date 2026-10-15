@@ -58,6 +58,16 @@ const supportingReadsFor = (
     .map((tool) => ({ tool, reason: "supporting read of no published loop" }))
 }
 
+/**
+ * The declarations a sound manifest needs for tools outside the IMG configuration family: every
+ * delivered one the registry does not verify. Derived the same way as the family above, so this
+ * fixture cannot drift out of date either.
+ */
+const unverifiedOutsideFor = (delivered: readonly string[]) =>
+  delivered
+    .filter((tool) => !isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified")
+    .map((tool) => ({ tool, reason: "reads the service's own state and never contacts SAP" }))
+
 /** A manifest that passes, so each case below can break exactly one thing. */
 const soundManifest = (): SproCoreDeliveryManifest => ({
   format: 1,
@@ -71,6 +81,7 @@ const soundManifest = (): SproCoreDeliveryManifest => ({
   unverifiedTools: configProfileTools.filter(
     (tool) => isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified"
   ),
+  unverifiedOutsideConfiguration: unverifiedOutsideFor(configProfileTools),
   excludedTools: [],
   scenarios: [],
   supportingReads: supportingReadsFor(configProfileTools, []),
@@ -85,7 +96,8 @@ const withSurface = (
   const next = { ...manifest, ...changes }
   return {
     ...next,
-    supportingReads: supportingReadsFor(next.requiredTools ?? [], next.scenarios ?? [])
+    supportingReads: supportingReadsFor(next.requiredTools ?? [], next.scenarios ?? []),
+    unverifiedOutsideConfiguration: unverifiedOutsideFor(next.requiredTools ?? [])
   }
 }
 
@@ -309,6 +321,101 @@ test("a declaration outside the delivered IMG surface is rejected", () => {
     ),
     /more than once/
   )
+})
+
+test("the shipped contract also discloses the unverified tools outside the configuration family", () => {
+  const manifest = loadSproCoreDelivery()
+  const declared = (manifest.unverifiedOutsideConfiguration ?? []).map((entry) => entry.tool)
+  // Read straight off the registry, like the family above, so this is checked against acceptance and
+  // not against the audit that printed it. The audit used to name these tools in a line of output
+  // and assert nothing about them, which is how a delivered tool reaches no acceptance unnoticed.
+  const unverified = manifest.requiredTools.filter(
+    (tool) => !isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified"
+  )
+  assert.deepEqual([...declared].sort(), [...unverified].sort())
+  assert.ok(unverified.length >= 1, `expected at least 1, read ${unverified.length}`)
+  assert.ok(declared.includes("list_write_recovery_operations"))
+  for (const tool of declared) {
+    assert.ok(!isImgConfigurationTool(tool), `${tool} belongs in unverifiedTools, not here`)
+  }
+  for (const entry of manifest.unverifiedOutsideConfiguration ?? []) {
+    assert.ok(entry.reason.trim().length > 0, `${entry.tool} is disclosed without a reason`)
+  }
+})
+
+test("a delivered tool outside the configuration family cannot reach no acceptance undisclosed", () => {
+  // The premise is measured rather than restated, because this case asserts nothing unless the
+  // fixture really does deliver a tool of another family that the registry leaves unverified. The
+  // fixture delivers the whole profile, so the three the profile carries all appear here.
+  const outside = configProfileTools.filter(
+    (tool) => !isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified"
+  )
+  assert.deepEqual([...outside].sort(), [
+    "get_abap_object_url",
+    "list_write_recovery_operations",
+    "release_write_operation_lock"
+  ])
+  // Positive control: the same call has to pass here and fail below, or the assertion has no teeth.
+  assert.deepEqual(deliveryManifestProblems(soundManifest(), facts), [])
+
+  const undisclosed = soundManifest()
+  undisclosed.unverifiedOutsideConfiguration = []
+  const problems = deliveryManifestProblems(undisclosed, facts)
+  assert.equal(problems.length, outside.length)
+  for (const tool of outside) {
+    assert.match(
+      problemMentioning(problems, `delivered tool ${tool} is not an IMG configuration tool`),
+      /must be declared in unverifiedOutsideConfiguration/
+    )
+  }
+})
+
+test("a non-configuration disclosure that is stale, misplaced or unexplained is rejected", () => {
+  const verified = "read_abap_table"
+  assert.equal(registryStatus.get(verified), "verified")
+  assert.ok(!isImgConfigurationTool(verified))
+  const stale = soundManifest()
+  stale.unverifiedOutsideConfiguration = [
+    ...stale.unverifiedOutsideConfiguration,
+    { tool: verified, reason: "left behind after the tool was verified" }
+  ]
+  assert.match(onlyProblem(deliveryManifestProblems(stale, facts)), /verifies it/)
+
+  // The two families are not interchangeable: an IMG configuration tool declared here would escape
+  // the comparison against the classification, which is the only thing that checks that family.
+  const misplaced = soundManifest()
+  const img = "read_configuration_number_range"
+  assert.ok(isImgConfigurationTool(img))
+  misplaced.unverifiedOutsideConfiguration = [
+    ...misplaced.unverifiedOutsideConfiguration,
+    { tool: img, reason: "belongs to the family above" }
+  ]
+  assert.match(
+    onlyProblem(deliveryManifestProblems(misplaced, facts)),
+    /belongs in unverifiedTools/
+  )
+
+  const undelivered = soundManifest()
+  undelivered.requiredTools = undelivered.requiredTools.filter(
+    (name) => name !== "list_write_recovery_operations"
+  )
+  assert.match(onlyProblem(deliveryManifestProblems(undelivered, facts)), /does not deliver/)
+
+  // Blanking one reason, rather than replacing the list, keeps the other declarations intact so this
+  // case reports the missing reason and nothing else.
+  const unexplained = soundManifest()
+  unexplained.unverifiedOutsideConfiguration = unexplained.unverifiedOutsideConfiguration.map(
+    (entry) =>
+      entry.tool === "list_write_recovery_operations" ? { ...entry, reason: "  " } : entry
+  )
+  assert.match(onlyProblem(deliveryManifestProblems(unexplained, facts)), /without a reason/)
+
+  const anonymous = soundManifest()
+  anonymous.unverifiedOutsideConfiguration = [
+    ...anonymous.unverifiedOutsideConfiguration,
+    { tool: "", reason: "no tool" }
+  ]
+  assert.match(onlyProblem(deliveryManifestProblems(anonymous, facts)), /entry with no tool/)
 })
 
 test("a scenario must state its scope, recovery and CTS", () => {
