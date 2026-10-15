@@ -213,6 +213,11 @@ export interface SproCoreDeliveryScenario {
    * The tools that reverse this loop: run only when the change has to be undone or its outcome is
    * unknown. An empty list is a statement too — it says this loop has no rollback and a failed
    * change has to be handled by hand — so the field is declared rather than omitted.
+   *
+   * Every entry is a requirement rather than a slot: the audit rejects anything here that is not a
+   * reversing write, and anything that reverses a change this `flow` does not run. Until 2026-10-15
+   * nothing read the field that way, so a read-only tool or a forward write could be listed as the
+   * arm that reverses the loop and the contract would promise a reversal it does not have.
    */
   failurePath: string[]
   recovery: string
@@ -229,6 +234,17 @@ const COMPENSATING_WRITE_PATTERN = /^(recover|undo|rollback|revert)_/
 
 export function isCompensatingWrite(name: string): boolean {
   return COMPENSATING_WRITE_PATTERN.test(name)
+}
+
+/**
+ * The change a tool name acts on, with its leading verb dropped: `apply_configuration_bc_set` and
+ * `recover_configuration_bc_set` both name `configuration_bc_set`. A scenario's failure arm claims to
+ * reverse *that* loop, so its entries are matched against the writes the flow actually runs; a
+ * reversal of something the loop never changes is a promise the loop does not keep. Like the pattern
+ * above this is name-based and therefore deliberately narrow: a renaming has to reach the arm too.
+ */
+function reversalTarget(name: string): string {
+  return name.split("_").slice(1).join("_")
 }
 
 /**
@@ -522,6 +538,23 @@ export function deliveryManifestProblems(
         `but is neither delivered in requiredTools nor excluded with a reason`
     )
   }
+  // `boundaries` is the only place the candidate states what it will *not* do, and it ships to the
+  // customer inside SPRO-CORE.json. Until 2026-10-15 no rule read the field at all: the sentences were
+  // reached only because the count scan walks the whole manifest as text, so the entire section could
+  // be emptied and the audit stayed green as long as the count phrases it happened to contain appeared
+  // somewhere else. A sentence has no identity, so per-sentence deletion stays invisible; what can be
+  // checked is that the section exists and that no entry is blank.
+  const boundaries = manifest.boundaries ?? []
+  if (boundaries.length === 0) {
+    problems.push(
+      "the contract declares no boundaries, so the candidate ships without stating what it will not do"
+    )
+  }
+  for (const boundary of boundaries) {
+    if (typeof boundary !== "string" || boundary.trim() === "") {
+      problems.push("the contract declares a blank boundary, which states nothing")
+    }
+  }
   // Scenario flows ship to the customer as the loops this surface promises to run, while the
   // packaged service refuses every tool outside requiredTools. Nothing else reads these fields, so
   // an unusable step or an unstated recovery would otherwise reach the customer unremarked.
@@ -610,6 +643,13 @@ export function deliveryManifestProblems(
         }
         reversal.add(tool)
         scenarioTools.add(tool)
+        // One diagnosis per entry, most specific first: a name the registry does not know cannot be
+        // judged as a reversal, and a step that is already a happy-path step has to be resolved as an
+        // arm question before anything else. The last two branches are what the field's own
+        // documentation promises and what nothing read until 2026-10-15: a read-only tool or a
+        // forward write could be listed as the arm that reverses the loop, so the contract could
+        // promise a reversal it does not have. Both halves are checked - the step has to be a
+        // reversing write, and it has to reverse a change this flow actually runs.
         if (!known.has(tool)) {
           problems.push(
             `${label} declares ${tool} in its failurePath, which no tool registry entry implements`
@@ -618,11 +658,23 @@ export function deliveryManifestProblems(
           problems.push(
             `${label} declares ${tool} in its failurePath, which this surface does not deliver`
           )
-        }
-        if (steps.has(tool)) {
+        } else if (steps.has(tool)) {
           problems.push(
             `${label} runs ${tool} in its flow and also declares it in failurePath, so the ` +
               `contract does not say which arm it belongs to`
+          )
+        } else if (!isCompensatingWrite(tool) || !writes.has(tool)) {
+          problems.push(
+            `${label} declares ${tool} in its failurePath, which this contract publishes as the arm ` +
+              `that reverses the loop, but ${tool} is not a reversing write; a step that does not ` +
+              `reverse the change belongs in the flow or in supportingReads`
+          )
+        } else if (
+          !flow.some((step) => writes.has(step) && reversalTarget(step) === reversalTarget(tool))
+        ) {
+          problems.push(
+            `${label} declares ${tool} in its failurePath, but no write its flow runs is the change ` +
+              `that tool reverses, so the arm does not reverse this loop`
           )
         }
       }

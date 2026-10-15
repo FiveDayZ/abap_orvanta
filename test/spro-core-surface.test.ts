@@ -85,7 +85,7 @@ const soundManifest = (): SproCoreDeliveryManifest => ({
   excludedTools: [],
   scenarios: soundScenarios(),
   supportingReads: supportingReadsFor(configProfileTools, soundScenarios()),
-  boundaries: []
+  boundaries: ["API only, no GUI automation.", "No generic standard-table writes."]
 })
 
 /** A change to the fixture that keeps its documentation declaration consistent with the rest. */
@@ -175,6 +175,18 @@ const soundScenarios = (): SproCoreDeliveryScenario[] => [
     cts: "Explicit open Customizing request and child task."
   }
 ]
+
+/**
+ * The one loop whose failure arm reverses it: `apply_configuration_bc_set` and
+ * `recover_configuration_bc_set` both name `configuration_bc_set`. Cases about what may sit in a
+ * failure arm start from this loop, because a loop with no reversal of its own cannot accept one -
+ * an arm that reverses a different loop is exactly what the rule rejects.
+ */
+const reversibleScenario = (): SproCoreDeliveryScenario => {
+  const scenario = soundScenarios().find((entry) => entry.id === "bc-knm")
+  assert.ok(scenario, "the fixture must publish the loop that has a reversal")
+  return scenario
+}
 
 /**
  * A happy path that satisfies the write/observation rules, so a case that means to break something
@@ -581,14 +593,14 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
   // A scenario without the field leaves the customer unable to tell whether a failure can be
   // reversed, so the omission is a problem rather than a default.
   const undeclared = withExtraScenario(soundManifest(), {
-    ...soundScenario(),
+    ...reversibleScenario(),
     id: "no-failure-path",
     failurePath: undefined
   } as unknown as SproCoreDeliveryScenario)
   assert.match(onlyProblem(deliveryManifestProblems(undeclared, facts)), /declares no failurePath/)
 
   const repeated = withExtraScenario(soundManifest(), {
-    ...soundScenario(),
+    ...reversibleScenario(),
     id: "repeated-reversal",
     failurePath: ["recover_configuration_bc_set", "recover_configuration_bc_set"]
   })
@@ -598,7 +610,7 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
   )
 
   const imaginary = withExtraScenario(soundManifest(), {
-    ...soundScenario(),
+    ...reversibleScenario(),
     id: "imaginary-reversal",
     failurePath: ["recover_imaginary_configuration"]
   })
@@ -612,7 +624,7 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
   const notDelivered = withExtraScenario(
     withoutTool(soundManifest(), "recover_configuration_bc_set"),
     {
-      ...soundScenario(),
+      ...reversibleScenario(),
       id: "undelivered-reversal",
       failurePath: ["recover_configuration_bc_set"]
     }
@@ -626,9 +638,9 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
   )
 
   const both = withExtraScenario(soundManifest(), {
-    ...soundScenario(),
+    ...reversibleScenario(),
     id: "both-arms",
-    failurePath: ["apply_configuration_unit_text"]
+    failurePath: ["apply_configuration_bc_set"]
   })
   assert.match(
     onlyProblem(deliveryManifestProblems(both, facts)),
@@ -637,12 +649,10 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
 })
 
 test("a reversing write in the happy path is rejected", () => {
-  // Positive control: declaring the reversing tool in the failure arm is sound.
+  // Positive control: declaring the reversing tool in the arm of the loop it reverses is sound.
   const manifest = withExtraScenario(soundManifest(), {
-    ...soundScenario(),
-    id: "unit-text-reversed-arm",
-    flow: appliedFlow(),
-    failurePath: ["recover_configuration_bc_set"]
+    ...reversibleScenario(),
+    id: "bc-knm-reversed-arm"
   })
   assert.deepEqual(deliveryManifestProblems(manifest, facts), [])
   // Putting it back into the happy path is what has to fail, and it fails on that alone.
@@ -653,6 +663,79 @@ test("a reversing write in the happy path is rejected", () => {
     failurePath: []
   })
   assert.match(onlyProblem(deliveryManifestProblems(reversed, facts)), /would undo itself/)
+})
+
+test("a failure arm may only name a reversing write, and only for the change its flow runs", () => {
+  // Positive control: the fixture's own pairing is sound, so each case below breaks one thing.
+  assert.deepEqual(deliveryManifestProblems(soundManifest(), facts), [])
+
+  // The field is published as the arm that reverses the loop, so a step that reverses nothing is a
+  // promise the loop cannot keep: a read cannot undo anything, and a forward write would apply a
+  // second change instead of removing the first.
+  for (const tool of ["read_configuration_unit", "apply_configuration_number_range"]) {
+    const manifest = withExtraScenario(soundManifest(), {
+      ...reversibleScenario(),
+      id: `not-a-reversal-${tool}`,
+      failurePath: ["recover_configuration_bc_set", tool]
+    })
+    assert.match(
+      problemMentioning(deliveryManifestProblems(manifest, facts), tool),
+      /is not a reversing write/
+    )
+  }
+
+  // A reversal of a change this loop never makes does not reverse this loop either. The surface
+  // carries exactly one reversing write, so the mistake this catches is that reversal being copied
+  // into another loop's arm.
+  const wrongLoop = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "reversal-of-another-loop",
+    failurePath: ["recover_configuration_bc_set"]
+  })
+  assert.match(
+    onlyProblem(deliveryManifestProblems(wrongLoop, facts)),
+    /no write its flow runs is the change that tool reverses/
+  )
+
+  // The rule reads the flow, not the prose around it: the arm has to follow the loop's write. This
+  // case also leaves the BC-set write unpublished, which the coverage rule reports separately.
+  const renamed = withExtraScenario(soundManifest(), {
+    ...reversibleScenario(),
+    id: "renamed-write",
+    flow: reversibleScenario().flow.map((tool) =>
+      tool === "apply_configuration_bc_set" ? "apply_configuration_number_range" : tool
+    )
+  })
+  assert.match(
+    problemMentioning(
+      deliveryManifestProblems(renamed, facts),
+      "no write its flow runs is the change that tool reverses"
+    ),
+    /does not reverse this loop/
+  )
+})
+
+test("the contract has to state the boundaries it will not cross", () => {
+  // `boundaries` is the only place the candidate says what it will *not* do, and it ships to the
+  // customer inside SPRO-CORE.json.
+  assert.ok(loadSproCoreDelivery().boundaries.length > 0, "the shipped contract states boundaries")
+
+  const none = withSurface(soundManifest(), { boundaries: [] })
+  assert.match(
+    onlyProblem(deliveryManifestProblems(none, facts)),
+    /declares no boundaries, so the candidate ships without stating what it will not do/
+  )
+
+  const blank = withSurface(soundManifest(), { boundaries: ["API only.", "   "] })
+  assert.match(onlyProblem(deliveryManifestProblems(blank, facts)), /declares a blank boundary/)
+
+  // Known boundary, measured rather than assumed: a sentence has no identity, so dropping one while
+  // keeping the section is invisible to this rule. It is pinned here so a later change that makes it
+  // visible has to update this case deliberately.
+  const dropped = withSurface(soundManifest(), {
+    boundaries: soundManifest().boundaries.filter((line) => !line.startsWith("API only"))
+  })
+  assert.deepEqual(deliveryManifestProblems(dropped, facts), [])
 })
 
 test("a flow that never writes, or writes without observing, is not a closed loop", () => {
