@@ -127,6 +127,20 @@ const INTERNAL_ONLY_PINS: ReadonlyArray<{ name: string; module: string; consumed
  * `hash`, and that `hash` still emits ABAP hash calls rather than hashing in JavaScript - so renaming
  * either the member or its helper reddens the control instead of leaving it a tautology.
  *
+ * A FOURTH carrier was measured and DOES NOT EXIST: a digest arriving BY REFERENCE, where the
+ * initializer is a bare identifier bound to a value that is already a digest (`export const alias =
+ * digestHolder`). A bare identifier is not a CallExpression, so none of the three routes sees it - the
+ * net is blind to that shape by construction. The first definition of the route asked "does the
+ * initializer mention a name whose subtree holds a digest", was measured at 8, and every one of the 8
+ * was demonstrably not a digest VALUE: configurationBcStateKeyCount is a NUMBER (`A + B`),
+ * configurationBcEffectsApi is an API descriptor object that merely names a digest-carrying property,
+ * and configurationBcEffectsAllLayouts is a spread of layout tables. "Mentions a digest" is not "is a
+ * digest" - the same conflation the third route was caught by. Narrowed to the initializer that IS the
+ * reference (or a chain of such references), the class is EMPTY across the 111 exports outside the
+ * union, so the union stays 91 rather than 99. That emptiness is asserted rather than described, with a
+ * constructed specimen proving the detector can see a one-hop reference and a chain, and two negative
+ * controls pinning that a composite expression is not a carrier.
+ *
  * The named censuses are a different kind: all 14 provenance members carry a digest under this net -
  * one literal (the member whose idiom is `literal-pin`), twelve computed, and one through the helper
  * configurationBteProtocolSourceVersion uses. The previous version of this comment said 13 of 14, which
@@ -327,6 +341,8 @@ type ConfigurationExport = {
   module: string
   initializer: string
   moduleText: string
+  /** Set only when the initializer IS a bare identifier, i.e. the value arrives by reference. */
+  referenceName?: string
 }
 
 /** Every exported binding in the configuration modules, with its initializer and the module's text. */
@@ -339,11 +355,16 @@ function configurationExports(): ConfigurationExport[] {
       if (!ts.isVariableStatement(statement)) continue
       if (!statement.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue
       for (const declaration of statement.declarationList.declarations) {
+        const unwrapped =
+          declaration.initializer === undefined ? undefined : unwrapNode(declaration.initializer)
         found.push({
           name: declaration.name.getText(),
           module: file,
           initializer: declaration.initializer?.getText() ?? "",
-          moduleText
+          moduleText,
+          ...(unwrapped !== undefined && ts.isIdentifier(unwrapped)
+            ? { referenceName: unwrapped.getText() }
+            : {})
         })
       }
     }
@@ -380,7 +401,15 @@ const isJavaScriptDigest = (body: string) =>
  * rest generators that emit ABAP `CALCULATE_HASH_FOR_RAW` lines. A test on "the called function's body
  * mentions hashing" was measured to over-report by 2 for exactly that reason.
  */
-const MODULE_DECLARATIONS = new Map<string, Map<string, string>>()
+type DeclaredValue = {
+  isFunction: boolean
+  /** True when the initializer IS a bare identifier, so the value arrives by reference. */
+  isBareReference: boolean
+  referenceName?: string
+  text: string
+}
+
+const MODULE_DECLARATIONS = new Map<string, Map<string, DeclaredValue>>()
 const MODULE_IMPORTS = new Map<string, Map<string, string>>()
 for (const file of moduleFiles()) {
   const source = ts.createSourceFile(
@@ -389,7 +418,7 @@ for (const file of moduleFiles()) {
     ts.ScriptTarget.ES2022,
     true
   )
-  const declarations = new Map<string, string>()
+  const declarations = new Map<string, DeclaredValue>()
   const imports = new Map<string, string>()
   for (const statement of source.statements) {
     if (ts.isImportDeclaration(statement) && statement.importClause) {
@@ -403,13 +432,23 @@ for (const file of moduleFiles()) {
       continue
     }
     if (ts.isFunctionDeclaration(statement) && statement.name) {
-      declarations.set(statement.name.getText(), statement.getText())
+      declarations.set(statement.name.getText(), {
+        isFunction: true,
+        isBareReference: false,
+        text: statement.getText()
+      })
       continue
     }
     if (!ts.isVariableStatement(statement)) continue
     for (const declaration of statement.declarationList.declarations) {
       if (!declaration.initializer) continue
-      declarations.set(declaration.name.getText(), unwrapNode(declaration.initializer).getText())
+      const unwrapped = unwrapNode(declaration.initializer)
+      declarations.set(declaration.name.getText(), {
+        isFunction: false,
+        isBareReference: ts.isIdentifier(unwrapped),
+        text: unwrapped.getText(),
+        ...(ts.isIdentifier(unwrapped) ? { referenceName: unwrapped.getText() } : {})
+      })
     }
   }
   MODULE_DECLARATIONS.set(file, declarations)
@@ -443,15 +482,71 @@ function digestHelpersCalled(module: string, initializer: string): string[] {
   for (const name of calls) {
     const local = MODULE_DECLARATIONS.get(module)?.get(name)
     if (local !== undefined) {
-      if (isJavaScriptDigest(local)) hits.push(`${name}@${module}`)
+      if (isJavaScriptDigest(local.text)) hits.push(`${name}@${module}`)
       continue
     }
     const target = MODULE_IMPORTS.get(module)?.get(name)
     const imported = target ? MODULE_DECLARATIONS.get(target)?.get(name) : undefined
-    if (imported !== undefined && isJavaScriptDigest(imported)) hits.push(`${name}@${target}`)
+    if (imported !== undefined && isJavaScriptDigest(imported.text)) hits.push(`${name}@${target}`)
   }
   return hits.sort()
 }
+
+/**
+ * Whether the value bound to `name` is a digest, following a chain of bare references. A COMPOSITE
+ * expression is never a digest even when a digest appears somewhere inside it: `A + B` is a number and
+ * `{ fingerprint: digest }` is an object. That distinction is the whole reason this route is narrow -
+ * the first definition of it asked "does the initializer mention a name whose subtree holds a digest",
+ * was measured at 8, and every one of the 8 was demonstrably not a digest value (a key count, an API
+ * descriptor object, a layout aggregate). "Mentions a digest" is not "is a digest", which is the same
+ * conflation the third route was caught by.
+ *
+ * The declarations and imports are parameters so a constructed specimen can exercise the resolver; the
+ * real tables are the defaults.
+ */
+function bareReferenceDigest(
+  module: string,
+  name: string,
+  depth = 0,
+  declarations: Map<string, Map<string, DeclaredValue>> = MODULE_DECLARATIONS,
+  imports: Map<string, Map<string, string>> = MODULE_IMPORTS
+): string | undefined {
+  if (depth > 6) return undefined
+  const local = declarations.get(module)?.get(name)
+  const owner = local === undefined ? imports.get(module)?.get(name) : module
+  if (owner === undefined) return undefined
+  const declared = declarations.get(owner)?.get(name)
+  if (declared === undefined) return undefined
+  if (declared.isFunction) return isJavaScriptDigest(declared.text) ? `${name}@${owner}` : undefined
+  if (declared.isBareReference) {
+    if (declared.referenceName === undefined) return undefined
+    return bareReferenceDigest(owner, declared.referenceName, depth + 1, declarations, imports)
+  }
+  if (DIGEST_LITERAL.test(declared.text)) return `${name}@${owner}`
+  if (COMPUTED_DIGEST.test(declared.text)) return `${name}@${owner}`
+  if (digestHelpersCalled(owner, declared.text).length > 0) return `${name}@${owner}`
+  return undefined
+}
+
+/**
+ * The fourth carrier, measured EMPTY. A digest that arrives by reference has none of the three routes'
+ * marks, because a bare identifier is not a CallExpression and `digestHelpersCalled` therefore returns
+ * [] for it - so `export const alias = digestHolder` would be invisible to the whole net. Measured
+ * 2026-10-15 across the 111 exports outside the three-route union: **0** members have that shape, so the
+ * union stays 91 rather than 99.
+ *
+ * Asserted rather than described, so that introducing such a member reddens here. The net would then
+ * need a fourth route, not a new sentence in a comment.
+ */
+const BARE_REFERENCE_DIGEST_MEMBERS = CONFIGURATION_EXPORTS.filter((entry) => {
+  if (DIGEST_LITERAL.test(entry.initializer)) return false
+  if (COMPUTED_DIGEST.test(entry.initializer)) return false
+  if (digestHelpersCalled(entry.module, entry.initializer).length > 0) return false
+  return (
+    entry.referenceName !== undefined &&
+    bareReferenceDigest(entry.module, entry.referenceName) !== undefined
+  )
+})
 
 /** Every provenance-shaped export in the configuration modules, extracted rather than restated. */
 function extractMembers(): Member[] {
@@ -935,12 +1030,12 @@ test("the digest-carrying class is extracted with the widest net, and the pin ce
       `${control.module} no longer declares ${control.helper}, so this control is vacuous`
     )
     assert.ok(
-      ABAP_HASH_GENERATOR.test(helperBody),
+      ABAP_HASH_GENERATOR.test(helperBody.text),
       `${control.name}: ${control.helper} no longer emits ABAP hash calls, so this is not the false ` +
         `positive it was measured to be`
     )
     assert.ok(
-      !isJavaScriptDigest(helperBody),
+      !isJavaScriptDigest(helperBody.text),
       `${control.name}: ${control.helper} hashes in JavaScript now, so this control no longer ` +
         `discriminates and the widened route may be over-reporting`
     )
@@ -950,6 +1045,80 @@ test("the digest-carrying class is extracted with the widest net, and the pin ce
       "the helper route reported a member whose helper only emits ABAP hash calls"
     )
   }
+  // The FOURTH carrier: a digest that arrives BY REFERENCE. It has none of the three routes' marks,
+  // because a bare identifier is not a CallExpression, so the net is blind to it by construction.
+  // Measured 2026-10-15 across the 111 exports outside the union: 0 members have that shape, so the
+  // union stays 91 rather than 99. The detector is exercised on a CONSTRUCTED specimen first, because a
+  // "0" produced by a detector that cannot see anything is not evidence of absence - and the two
+  // negative controls pin the exact distinction the first definition of this route got wrong.
+  const specimen = new Map<string, Map<string, DeclaredValue>>([
+    [
+      "specimen.ts",
+      new Map<string, DeclaredValue>([
+        [
+          "digestHelper",
+          {
+            isFunction: true,
+            isBareReference: false,
+            text: 'function digestHelper(value: string) { return createHash("sha256").update(value).digest("hex") }'
+          }
+        ],
+        [
+          "holdsDigest",
+          {
+            isFunction: false,
+            isBareReference: true,
+            referenceName: "digestHelper",
+            text: "digestHelper"
+          }
+        ],
+        [
+          "aliasOfAlias",
+          {
+            isFunction: false,
+            isBareReference: true,
+            referenceName: "holdsDigest",
+            text: "holdsDigest"
+          }
+        ],
+        [
+          "mentionsDigest",
+          { isFunction: false, isBareReference: false, text: "{ fingerprint: digestHelper }" }
+        ],
+        ["sumOfDigests", { isFunction: false, isBareReference: false, text: "countA + countB" }]
+      ])
+    ]
+  ])
+  const noImports = new Map<string, Map<string, string>>()
+  assert.ok(
+    bareReferenceDigest("specimen.ts", "holdsDigest", 0, specimen, noImports) !== undefined,
+    "the by-reference detector cannot see a one-hop reference, so its count below means nothing"
+  )
+  assert.ok(
+    bareReferenceDigest("specimen.ts", "aliasOfAlias", 0, specimen, noImports) !== undefined,
+    "the by-reference detector cannot follow a chain of references"
+  )
+  assert.equal(
+    bareReferenceDigest("specimen.ts", "mentionsDigest", 0, specimen, noImports),
+    undefined,
+    "the by-reference detector treats an object that MENTIONS a digest as a digest - that is the " +
+      "over-reporting rule that measured 8 members, none of which was a digest"
+  )
+  assert.equal(
+    bareReferenceDigest("specimen.ts", "sumOfDigests", 0, specimen, noImports),
+    undefined,
+    "the by-reference detector treats an arithmetic expression as a digest"
+  )
+  assert.equal(
+    BARE_REFERENCE_DIGEST_MEMBERS.length,
+    0,
+    `a digest now arrives by reference in ${BARE_REFERENCE_DIGEST_MEMBERS.map(
+      (entry) => `${entry.name}@${entry.module}`
+    ).join(
+      ", "
+    )}, which none of the three routes can see, so the net needs a fourth route rather ` +
+      `than a wider sentence`
+  )
   // The routes to a digest are mutually disjoint. This is what makes the union below a union and not a
   // double count, and it is the fact that made the first version of this gate blind: a net over one
   // route drops every member of the others.
