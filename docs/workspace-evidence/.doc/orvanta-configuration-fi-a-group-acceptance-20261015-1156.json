@@ -1,0 +1,1148 @@
+{
+  "record": "orvanta-configuration-fi-a-group-acceptance",
+  "observedAt": "2026-10-15T03:56:40.451Z",
+  "finishedAt": "2026-10-15T03:56:45.740Z",
+  "purpose": "Frozen public MCP acceptance for the five A-group read-only IMG configuration tools against w200/client 200. Every value below is copied out of the run's own artefacts; nothing was transcribed by hand.",
+  "system": {
+    "connectionId": "w200",
+    "client": "200",
+    "wrappedConnectionDetails": {
+      "client": "200",
+      "url": "http://192.168.88.26:8000/"
+    }
+  },
+  "build": {
+    "productVersion": "0.50.23",
+    "frozenInputs": 334,
+    "approvedSurface": [
+      "find_configuration_fi_rules",
+      "get_runtime_info",
+      "inspect_configuration_fi_activation_route",
+      "preview_configuration_fi_activation",
+      "read_configuration_fi_rule",
+      "read_configuration_number_range"
+    ],
+    "liveToolNames": [
+      "find_configuration_fi_rules",
+      "get_runtime_info",
+      "inspect_configuration_fi_activation_route",
+      "preview_configuration_fi_activation",
+      "read_configuration_fi_rule",
+      "read_configuration_number_range"
+    ],
+    "runtimeInfo": "get_runtime_info returned status 'unavailable' because the driver builds the server in-process, so startupArtifact and currentDiskArtifact are both 'unavailable'. Build attribution therefore rests on the frozen input pin, which was verified byte-exact before the run, not on a runtime self-report."
+  },
+  "driver": {
+    "root": ".cache/spro-r141e",
+    "promptChannel": "windows-forms-dialog",
+    "exitCode": 0,
+    "writesAllowed": false,
+    "automaticRetry": false,
+    "temporaryCredentialRetained": false,
+    "passwordEnvironmentCleared": true,
+    "guardSync": {
+      "prototypeMethods": 61,
+      "nativeFlagged": 3,
+      "nativeExempted": 1,
+      "stateFlagged": 11,
+      "exemptions": 3
+    }
+  },
+  "invariants": {
+    "stateChangingCalls": 0,
+    "deployments": 0,
+    "activations": 0,
+    "configurationWrites": 0,
+    "ctsWritesOrCleanup": 0,
+    "transportReleases": 0,
+    "guiOperations": 0,
+    "nativeHelperCalls": 0,
+    "automaticRetry": false,
+    "forbiddenReached": [],
+    "sapContact": true,
+    "passwordEnvironmentCleared": true,
+    "clientSecretsCleared": 1,
+    "publicCallCount": 6,
+    "aGroupCallsAttempted": 5,
+    "aGroupCallsRefused": 0,
+    "remoteFunctionCalls": 28,
+    "remoteFunctionDistinct": [
+      "RFC_READ_TABLE"
+    ],
+    "observedBackendMethods": [
+      "callRemoteFunction",
+      "callSapDdic",
+      "callSapRepository",
+      "connectionDetails",
+      "getClient",
+      "runQuery"
+    ]
+  },
+  "calls": [
+    {
+      "number": 1,
+      "tool": "get_runtime_info",
+      "aGroup": false,
+      "args": {},
+      "isError": false,
+      "at": "2026-10-15T03:56:40.656Z",
+      "finishedAt": "2026-10-15T03:56:40.727Z",
+      "responsePath": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r141e/responses/public-0001.json",
+      "responseBytes": 9155,
+      "responseSha256": "0cbbecf4684ed6b765a89cd865ecc1442e3c83c48367141db7999072adc6e6d7",
+      "response": {
+        "status": "unavailable",
+        "readOnly": true,
+        "server": {
+          "name": "orvanta",
+          "version": "0.50.23"
+        },
+        "startedAt": "2026-10-15T03:56:40.550Z",
+        "nodeVersion": "24.8.0",
+        "startupArtifact": {
+          "status": "unavailable",
+          "observedAt": "2026-10-15T03:56:40.550Z"
+        },
+        "currentDiskArtifact": {
+          "status": "unavailable",
+          "observedAt": "2026-10-15T03:56:40.692Z"
+        },
+        "checks": {
+          "expectedVersion": "not_requested",
+          "expectedArtifact": "not_requested",
+          "diskSinceStartup": "unknown",
+          "moduleAndPackageVersion": "unknown"
+        },
+        "restartRequired": false,
+        "sapStatus": "not_probed",
+        "helperStatus": "not_probed; use get_capability_report for separately authorized observations",
+        "limitations": [
+          "Fingerprint covers service code, package.json and package-lock.json, not every dependency or UI asset.",
+          "Startup disk observation is not an attestation of every module already loaded in memory.",
+          "Matching artifacts do not prove SAP connectivity, helper compatibility or runtime acceptance.",
+          "No service switch, state cleanup, SAP retry or rollback is performed."
+        ],
+        "toolProfile": {
+          "profile": "full",
+          "source": "environment",
+          "requested": "full",
+          "enabledCount": 6,
+          "disabledCount": 205,
+          "denied": [
+            "abap_activate",
+            "abap_debug_breakpoint",
+            "abap_debug_session",
+            "abap_debug_stack",
+            "abap_debug_status",
+            "abap_debug_step",
+            "abap_debug_variable",
+            "abap_download",
+            "activate_smartform",
+            "add_objects_to_transport",
+            "adt_discovery_export",
+            "analyze_abap_dumps",
+            "analyze_abap_traces",
+            "analyze_change_impact",
+            "append_ddic_transparent_table_fields",
+            "apply_configuration_bc_set",
+            "apply_configuration_number_range",
+            "apply_configuration_unit_text",
+            "cancel_background_job",
+            "cleanup_transport_entries",
+            "compare_configuration_bc_set",
+            "compare_configuration_unit",
+            "compare_systems",
+            "correlate_sap_logs",
+            "create_abap_message_class",
+            "create_background_job",
+            "create_ddic_transparent_table",
+            "create_enhancement_hook_implementation",
+            "create_function_module_with_interface",
+            "create_module_pool",
+            "create_new_badi_implementation",
+            "create_object_programmatically",
+            "create_report_transaction",
+            "create_smartform",
+            "create_test_include",
+            "create_transaction_code",
+            "create_transport_request",
+            "delete_abap_message_class",
+            "delete_abap_source_object",
+            "delete_ddic_object",
+            "delete_enhancement_implementation",
+            "delete_module_pool",
+            "delete_sap_lock",
+            "delete_transaction_code",
+            "describe_configuration_object",
+            "diagnose_sap_failure",
+            "discover_application_logs",
+            "evaluate_refactoring",
+            "execute_data_query",
+            "find_configuration_activities",
+            "find_configuration_bc_sets",
+            "find_where_used",
+            "format_abap_source",
+            "get_abap_diagnostics",
+            "get_abap_object_info",
+            "get_abap_object_lines",
+            "get_abap_object_url",
+            "get_abap_object_workspace_uri",
+            "get_abap_sql_syntax",
+            "get_batch_lines",
+            "get_capability_report",
+            "get_connected_systems",
+            "get_customer_function_call_status",
+            "get_object_by_uri",
+            "get_quick_fix_proposals",
+            "get_sap_system_info",
+            "get_version_history",
+            "get_write_operation_status",
+            "import_transport_queue",
+            "inspect_configuration_bc_impact",
+            "inspect_configuration_bc_route",
+            "inspect_configuration_bte_maintenance_route",
+            "inspect_configuration_bte_native_metadata",
+            "inspect_configuration_transport",
+            "inspect_customer_function_exits",
+            "inspect_customer_screen_menu_exits",
+            "inspect_enhancement_framework",
+            "inspect_fico_rule_exit_program",
+            "inspect_repository_assignment",
+            "inspect_source_enhancements",
+            "invoke_customer_function_module",
+            "list_write_recovery_operations",
+            "manage_classic_badi_implementation",
+            "manage_enhancement_implementation_state",
+            "manage_text_elements",
+            "manage_transport_requests",
+            "modify_background_job",
+            "patch_abap_gui_definition",
+            "patch_abap_screen",
+            "patch_ddic_transparent_table_fields",
+            "patch_ddic_transparent_table_settings",
+            "patch_function_module_interface",
+            "preflight_configuration_bc_activation",
+            "prepare_configuration_bte_product_change",
+            "prepare_enhancement_configuration_workflow",
+            "preview_configuration",
+            "preview_configuration_bc_native",
+            "preview_configuration_bte_product",
+            "preview_configuration_number_range",
+            "preview_configuration_unit_text",
+            "preview_source_changes",
+            "promote_object",
+            "read_abap_gui_definition",
+            "read_abap_message_class",
+            "read_abap_screen",
+            "read_abap_table",
+            "read_adobe_form",
+            "read_application_log",
+            "read_archive_status",
+            "read_authorization_trace",
+            "read_background_job_details",
+            "read_background_job_log",
+            "read_background_job_spool",
+            "read_bte_configuration",
+            "read_ccms_alerts",
+            "read_classic_badi_definition",
+            "read_configuration_activity",
+            "read_configuration_bc_before_state",
+            "read_configuration_bc_cts_snapshot",
+            "read_configuration_bc_dependencies",
+            "read_configuration_bc_effects",
+            "read_configuration_bc_guard",
+            "read_configuration_bc_logs",
+            "read_configuration_bc_native_snapshot",
+            "read_configuration_bc_set",
+            "read_configuration_documentation",
+            "read_configuration_number_range_api",
+            "read_configuration_number_range_scope",
+            "read_configuration_unit",
+            "read_customer_exit_definition",
+            "read_customer_exit_project",
+            "read_db_activity",
+            "read_ddic_data_element",
+            "read_ddic_domain",
+            "read_ddic_structure",
+            "read_ddic_table_conversion_status",
+            "read_ddic_table_type",
+            "read_ddic_transparent_table",
+            "read_enhancement_implementation",
+            "read_failed_update",
+            "read_file_system_directory",
+            "read_function_module_interface",
+            "read_idoc_status",
+            "read_lock_object",
+            "read_maintenance_view",
+            "read_number_range_object",
+            "read_performance_snapshot",
+            "read_qrfc_queues",
+            "read_report_parameters",
+            "read_report_variants",
+            "read_role_authorizations",
+            "read_sapscript_form",
+            "read_search_help",
+            "read_smartform",
+            "read_smartstyle",
+            "read_system_logs",
+            "read_system_parameters",
+            "read_transaction_code",
+            "read_trfc_error_entries",
+            "read_user_authorizations",
+            "read_user_sessions",
+            "read_work_processes",
+            "read_workload_directory",
+            "reconcile_configuration_bc_execution",
+            "reconcile_configuration_number_range",
+            "reconcile_configuration_unit_text",
+            "recover_configuration_bc_set",
+            "recover_ddic_table_conversion",
+            "release_background_job",
+            "release_transport_task",
+            "release_write_operation_lock",
+            "replace_string_in_abap_object",
+            "resume_ddic_table_activation",
+            "run_abap_program",
+            "run_atc_analysis",
+            "run_sci_analysis",
+            "run_unit_tests",
+            "sap_helper_status",
+            "save_smartform",
+            "search_abap_object_lines",
+            "search_abap_objects",
+            "search_application_logs",
+            "search_background_jobs",
+            "search_badi_objects",
+            "search_bte_dispatchers",
+            "search_customer_exit_objects",
+            "search_enhancement_objects",
+            "search_failed_updates",
+            "search_sap_locks",
+            "test_remote_function_module",
+            "update_abap_message_class",
+            "update_enhancement_hook_implementation",
+            "update_new_badi_implementation",
+            "upsert_abap_screen",
+            "upsert_append_structure_fields",
+            "upsert_ddic_data_element",
+            "upsert_ddic_domain",
+            "upsert_ddic_structure",
+            "upsert_ddic_table_type",
+            "upsert_lock_object",
+            "upsert_maintenance_view",
+            "upsert_number_range_object",
+            "upsert_search_help",
+            "validate_dynpro_application",
+            "write_function_module_source"
+          ]
+        }
+      }
+    },
+    {
+      "number": 2,
+      "tool": "find_configuration_fi_rules",
+      "aGroup": true,
+      "args": {
+        "connectionId": "w200",
+        "maxRules": 20
+      },
+      "isError": false,
+      "at": "2026-10-15T03:56:40.822Z",
+      "finishedAt": "2026-10-15T03:56:41.259Z",
+      "responsePath": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r141e/responses/public-0002.json",
+      "responseBytes": 2613,
+      "responseSha256": "5d79da8db1cfb28d9fc68215d49005c19e1298b0cf3b1733cb2e77a5ad16084d",
+      "response": {
+        "connectionId": "w200",
+        "maxRules": 20,
+        "client": "200",
+        "kind": "fi_validation",
+        "status": "candidates",
+        "candidates": [
+          {
+            "ruleName": "01-CS01",
+            "booleanClass": "043",
+            "exactReadSupported": true,
+            "exactReadRequired": true
+          },
+          {
+            "ruleName": "0_CO_1",
+            "booleanClass": "001",
+            "exactReadSupported": true,
+            "exactReadRequired": true
+          },
+          {
+            "ruleName": "11-CS01",
+            "booleanClass": "043",
+            "exactReadSupported": true,
+            "exactReadRequired": true
+          },
+          {
+            "ruleName": "12-CS01",
+            "booleanClass": "043",
+            "exactReadSupported": true,
+            "exactReadRequired": true
+          },
+          {
+            "ruleName": "Z0001",
+            "booleanClass": "009",
+            "exactReadSupported": true,
+            "exactReadRequired": true
+          }
+        ],
+        "readOnly": true,
+        "saveAvailable": false,
+        "activationAvailable": false,
+        "readFingerprint": "d6b832b9f3750da1c77b403aa09e528cc21f6baa6bbd9d91b60a978343588ce1",
+        "coverage": {
+          "complete": false,
+          "selectedHeaderProjectionComplete": true,
+          "truncated": false,
+          "stablePagination": false,
+          "snapshot": false,
+          "formulas": "not_read",
+          "organizationAssignment": "not_read",
+          "sharedExits": "not_read",
+          "generatedCode": "not_checked",
+          "businessTrigger": "not_performed"
+        },
+        "evidence": {
+          "startedAt": "2026-10-15T03:56:40.823Z",
+          "finishedAt": "2026-10-15T03:56:41.259Z",
+          "sources": [
+            {
+              "table": "GB93",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 5,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB93",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 5,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            }
+          ],
+          "warnings": [],
+          "definitionsRechecked": true
+        },
+        "warnings": [
+          "Candidates are bounded GB93 header identities in client 200 only. Read the selected exact rule, organization and callup point separately. Truncated selections have no trusted fingerprint or stable pagination; matching visible prefixes do not attest unseen rows. No text, formula, assignment, generation, configuration/CTS write or business effect is established."
+        ]
+      }
+    },
+    {
+      "number": 3,
+      "tool": "read_configuration_fi_rule",
+      "aGroup": true,
+      "args": {
+        "connectionId": "w200",
+        "kind": "fi_validation",
+        "ruleName": "Z0001",
+        "companyCode": "6010",
+        "applicationArea": "FI",
+        "callupPoint": "0002"
+      },
+      "isError": false,
+      "at": "2026-10-15T03:56:41.355Z",
+      "finishedAt": "2026-10-15T03:56:42.584Z",
+      "responsePath": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r141e/responses/public-0003.json",
+      "responseBytes": 6782,
+      "responseSha256": "632e28e098ada91c24fe20a1d9e6a954f9c093ebb08993fc5286aebffc43c2c6",
+      "response": {
+        "connectionId": "w200",
+        "client": "200",
+        "kind": "fi_validation",
+        "ruleName": "Z0001",
+        "companyCode": "6010",
+        "applicationArea": "FI",
+        "callupPoint": "0002",
+        "status": "partial",
+        "readOnly": true,
+        "saveAvailable": false,
+        "executionPreflight": {
+          "status": "blocked",
+          "writeAvailable": false,
+          "automaticRetry": false,
+          "blockers": [
+            "FI_RULE_FORMULA_CONTENT_NOT_REQUESTED",
+            "FI_RULE_SHARED_EXITS_UNVERIFIED",
+            "FI_RULE_GENERATED_CODE_UNVERIFIED",
+            "FI_RULE_MAINTENANCE_API_UNVERIFIED",
+            "FI_RULE_AUTHORITY_LOCK_CTS_LUW_UNVERIFIED"
+          ]
+        },
+        "rule": {
+          "table": "GB93",
+          "status": "read",
+          "data": {
+            "MANDT": "200",
+            "VALID": "Z0001",
+            "BOOLCLASS": "009",
+            "MSGID": "ZFI_GGB0",
+            "AUTHGR": "",
+            "INITEXIT": "",
+            "MULTILINE": ""
+          }
+        },
+        "steps": {
+          "table": "GB931",
+          "data": [
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "001",
+              "CONDID": "1Z0001##001",
+              "CHECKID": "2Z0001##001",
+              "VALSEVERE": "W",
+              "VALMSG": "000",
+              "WORKFLOW": ""
+            },
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "002",
+              "CONDID": "1Z0001##002",
+              "CHECKID": "2Z0001##002",
+              "VALSEVERE": "E",
+              "VALMSG": "001",
+              "WORKFLOW": ""
+            },
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "003",
+              "CONDID": "1Z0001##003",
+              "CHECKID": "2Z0001##003",
+              "VALSEVERE": "E",
+              "VALMSG": "002",
+              "WORKFLOW": ""
+            },
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "004",
+              "CONDID": "1Z0001##004",
+              "CHECKID": "2Z0001##004",
+              "VALSEVERE": "E",
+              "VALMSG": "003",
+              "WORKFLOW": ""
+            },
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "005",
+              "CONDID": "1Z0001##005",
+              "CHECKID": "2Z0001##005",
+              "VALSEVERE": "E",
+              "VALMSG": "004",
+              "WORKFLOW": ""
+            },
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "006",
+              "CONDID": "1Z0001##006",
+              "CHECKID": "2Z0001##006",
+              "VALSEVERE": "E",
+              "VALMSG": "005",
+              "WORKFLOW": ""
+            },
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "007",
+              "CONDID": "1Z0001##007",
+              "CHECKID": "2Z0001##007",
+              "VALSEVERE": "E",
+              "VALMSG": "006",
+              "WORKFLOW": ""
+            },
+            {
+              "MANDT": "200",
+              "VALID": "Z0001",
+              "VALSEQNR": "008",
+              "CONDID": "1Z0001##008",
+              "CHECKID": "2Z0001##008",
+              "VALSEVERE": "E",
+              "VALMSG": "007",
+              "WORKFLOW": ""
+            }
+          ],
+          "truncated": false
+        },
+        "activation": {
+          "table": "T001D",
+          "status": "read",
+          "data": {
+            "MANDT": "200",
+            "BUKRS": "6010",
+            "EVENT": "0002",
+            "VALID": "Z0001",
+            "ACTIV": "1"
+          },
+          "assignedToRequestedRule": true,
+          "levelMeaning": "active"
+        },
+        "application": {
+          "data": {
+            "VALUSER": "FI",
+            "VALEVENT": "0002",
+            "RCLASS": "009",
+            "WCLASS": "009",
+            "GBVALUSE": "X",
+            "GBSUBSTUSE": "X"
+          },
+          "classMatches": true
+        },
+        "readFingerprint": "032c4ea621deaff43f3648e094359a8cf0b5d57434020d7992b9a98651fe4b64",
+        "coverage": {
+          "complete": false,
+          "formulas": "references_only",
+          "substitutionActions": "not_read",
+          "generatedCode": "not_checked",
+          "businessTrigger": "not_performed",
+          "otherOrganizations": "not_read"
+        },
+        "manualWorkflow": {
+          "transactions": [
+            "GGB0",
+            "OB28"
+          ],
+          "steps": [
+            "Review rule, prerequisite/check or substitution actions and shared exits.",
+            "Review the exact company code, callup point, activation level and class; level 2 excludes batch input.",
+            "After approved manual maintenance, repeat this read and compare CTS/E071K evidence.",
+            "Have the business owner perform an approved document trigger; configuration existence or activation is not business success."
+          ]
+        },
+        "evidence": {
+          "startedAt": "2026-10-15T03:56:41.358Z",
+          "finishedAt": "2026-10-15T03:56:42.583Z",
+          "sources": [
+            {
+              "table": "GB93",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB931",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 8,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T001D",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB31",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB93",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB931",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 8,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T001D",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB31",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            }
+          ],
+          "warnings": [],
+          "definitionsRechecked": true,
+          "snapshot": false
+        }
+      }
+    },
+    {
+      "number": 4,
+      "tool": "preview_configuration_fi_activation",
+      "aGroup": true,
+      "args": {
+        "connectionId": "w200",
+        "ruleName": "Z0001",
+        "companyCode": "6010",
+        "applicationArea": "FI",
+        "callupPoint": "0002",
+        "activationLevel": "1",
+        "expectedReadFingerprint": "032c4ea621deaff43f3648e094359a8cf0b5d57434020d7992b9a98651fe4b64"
+      },
+      "isError": false,
+      "at": "2026-10-15T03:56:42.677Z",
+      "finishedAt": "2026-10-15T03:56:43.862Z",
+      "responsePath": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r141e/responses/public-0004.json",
+      "responseBytes": 4208,
+      "responseSha256": "74319d07d97f14696cfcc5eb638c34f91157bcdbfb3c19932aa23f651bcf8fc5",
+      "response": {
+        "connectionId": "w200",
+        "client": "200",
+        "kind": "fi_validation",
+        "ruleName": "Z0001",
+        "companyCode": "6010",
+        "applicationArea": "FI",
+        "callupPoint": "0002",
+        "status": "previewed",
+        "readOnly": true,
+        "previewAvailable": true,
+        "saveAvailable": false,
+        "blockers": [],
+        "expectedReadFingerprint": "032c4ea621deaff43f3648e094359a8cf0b5d57434020d7992b9a98651fe4b64",
+        "currentReadFingerprint": "032c4ea621deaff43f3648e094359a8cf0b5d57434020d7992b9a98651fe4b64",
+        "before": {
+          "MANDT": "200",
+          "BUKRS": "6010",
+          "EVENT": "0002",
+          "VALID": "Z0001",
+          "ACTIV": "1"
+        },
+        "after": {
+          "MANDT": "200",
+          "BUKRS": "6010",
+          "EVENT": "0002",
+          "VALID": "Z0001",
+          "ACTIV": "1"
+        },
+        "changes": [],
+        "levelMeaning": {
+          "before": "active",
+          "after": "active"
+        },
+        "previewFingerprint": "17c141ec2469f4f1e610a5de39f677bc84697dcf9cda207652348ee7d66772a9",
+        "executionPreflight": {
+          "status": "blocked",
+          "writeAvailable": false,
+          "automaticRetry": false,
+          "blockers": [
+            "FI_RULE_FORMULA_CONTENT_NOT_REQUESTED",
+            "FI_RULE_SHARED_EXITS_UNVERIFIED",
+            "FI_RULE_GENERATED_CODE_UNVERIFIED",
+            "FI_RULE_MAINTENANCE_API_UNVERIFIED",
+            "FI_RULE_AUTHORITY_LOCK_CTS_LUW_UNVERIFIED",
+            "FI_ACTIVATION_MAINTENANCE_OBJECT_UNVERIFIED"
+          ]
+        },
+        "recovery": {
+          "available": false,
+          "automaticRetry": false,
+          "beforeAssignment": {
+            "MANDT": "200",
+            "BUKRS": "6010",
+            "EVENT": "0002",
+            "VALID": "Z0001",
+            "ACTIV": "1"
+          },
+          "ctsBeforeState": "not_read"
+        },
+        "coverage": {
+          "complete": false,
+          "assignmentProjection": "read_and_rechecked",
+          "formulaSemantics": "not_checked",
+          "generatedCode": "not_checked",
+          "maintenanceApi": "not_attested",
+          "authorityLockCtsLuw": "not_checked",
+          "ctsKeyEncoding": "not_verified",
+          "businessTrigger": "not_performed",
+          "otherOrganizations": "not_read"
+        },
+        "evidence": {
+          "startedAt": "2026-10-15T03:56:42.679Z",
+          "finishedAt": "2026-10-15T03:56:43.862Z",
+          "sources": [
+            {
+              "table": "GB93",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB931",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 8,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T001D",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB31",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB93",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB931",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 8,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "T001D",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "GB31",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            }
+          ],
+          "warnings": [],
+          "definitionsRechecked": true,
+          "snapshot": false
+        }
+      }
+    },
+    {
+      "number": 5,
+      "tool": "inspect_configuration_fi_activation_route",
+      "aGroup": true,
+      "args": {
+        "connectionId": "w200"
+      },
+      "isError": false,
+      "at": "2026-10-15T03:56:43.957Z",
+      "finishedAt": "2026-10-15T03:56:45.203Z",
+      "responsePath": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r141e/responses/public-0005.json",
+      "responseBytes": 4525,
+      "responseSha256": "5403186f84760ed8c8f7931fb0e4f2802d7f404c6eb15b3440edd8391e9cd7ed",
+      "response": {
+        "connectionId": "w200",
+        "client": "200",
+        "readOnly": true,
+        "status": "maintenance_route_candidate",
+        "saveAvailable": false,
+        "writeAvailable": false,
+        "automaticRetry": false,
+        "transaction": {
+          "code": "OB28",
+          "definition": {
+            "TCODE": "OB28",
+            "PGMNA": "",
+            "DYPNO": "0000",
+            "MENUE": "",
+            "CINFO": "0",
+            "ARBGB": ""
+          },
+          "parameters": "/*SM30 VIEWNAME=V_T001D;UPDATE=X;",
+          "recognised": {
+            "transaction": "SM30",
+            "viewName": "V_T001D",
+            "mode": "update"
+          }
+        },
+        "maintenance": {
+          "directory": {
+            "TABNAME": "V_T001D",
+            "AREA": "0F10",
+            "DEVCLASS": "FB0C",
+            "TYPE": "1",
+            "LISTE": "0060",
+            "DETAIL": "0000",
+            "OCCURS": "0050",
+            "CLTCODE": "OB28",
+            "BASTAB": "",
+            "NEWGENER": "",
+            "GENDATE": "19950217",
+            "GENTIME": "104816",
+            "FLAG": ""
+          },
+          "events": [
+            {
+              "TABNAME": "V_T001D",
+              "EVENT": "01",
+              "FORMNAME": "USER_CHECK_DATA_SAVE_T001D"
+            },
+            {
+              "TABNAME": "V_T001D",
+              "EVENT": "11",
+              "FORMNAME": "USER_TRANSPORT_11_T001D"
+            },
+            {
+              "TABNAME": "V_T001D",
+              "EVENT": "12",
+              "FORMNAME": "USER_TRANSPORT_12_T001D"
+            },
+            {
+              "TABNAME": "V_T001D",
+              "EVENT": "AA",
+              "FORMNAME": "USER_CHECK_DATA_READ_T001D"
+            },
+            {
+              "TABNAME": "V_T001D",
+              "EVENT": "ST",
+              "FORMNAME": "SAPL0F10"
+            }
+          ],
+          "functionGroup": "0F10",
+          "targetTable": "T001D",
+          "targetTableRelationship": "not_verified",
+          "generatedSourcesReviewed": false,
+          "nativeControlBlocksReviewed": false,
+          "authorityLockCtsLuwVerified": false
+        },
+        "standardApiCandidate": {
+          "functionName": "VIEW_MAINTENANCE_NO_DIALOG",
+          "functionGroup": "SVIM",
+          "source": "aef8ff0659768c8c723583f7d084449063afc5980060f4c45b3c5641a499b861",
+          "interface": "096a143263b04e39e651e1f42a8038df2193fca019eaf41b7e34d1829d72816b",
+          "definitionRechecked": true,
+          "invoked": false,
+          "requiresCustomerAdapter": true
+        },
+        "blockers": [
+          "FI_ACTIVATION_ROUTE_TARGET_RELATIONSHIP_UNVERIFIED",
+          "FI_ACTIVATION_ROUTE_GENERATED_OWNER_UNREVIEWED",
+          "FI_ACTIVATION_ROUTE_AUTHORITY_LOCK_CTS_LUW_UNVERIFIED"
+        ],
+        "readFingerprint": "48f7cb0db541efa35f40e69afd631abffe8f30bccd0c148ee915515c93bd9d16",
+        "coverage": {
+          "twoReadAgreement": true,
+          "atomicSnapshot": false,
+          "nativeExecution": false
+        },
+        "sources": [
+          {
+            "table": "TSTC",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 1,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          },
+          {
+            "table": "TSTCP",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 1,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          },
+          {
+            "table": "TVDIR",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 1,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          },
+          {
+            "table": "TVIMF",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 5,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          },
+          {
+            "table": "TSTC",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 1,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          },
+          {
+            "table": "TSTCP",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 1,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          },
+          {
+            "table": "TVDIR",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 1,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          },
+          {
+            "table": "TVIMF",
+            "status": "ok",
+            "method": "rfc_read_table",
+            "returnedCount": 5,
+            "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "number": 6,
+      "tool": "read_configuration_number_range",
+      "aGroup": true,
+      "args": {
+        "connectionId": "w200",
+        "objectName": "ZORVCFGNR",
+        "subobject": "",
+        "year": "0000",
+        "intervalNumber": "02"
+      },
+      "isError": false,
+      "at": "2026-10-15T03:56:45.296Z",
+      "finishedAt": "2026-10-15T03:56:45.668Z",
+      "responsePath": "C:/My/Workplace/Coding/vscode-abap/abap-mcp-standalone/.cache/spro-r141e/responses/public-0006.json",
+      "responseBytes": 3265,
+      "responseSha256": "50e3f3615b4f993a5e9d080eb3dca576b3a482ed1b0f956c9a0fa85f9ae0ee10",
+      "response": {
+        "connectionId": "w200",
+        "client": "200",
+        "objectName": "ZORVCFGNR",
+        "subobject": "",
+        "year": "0000",
+        "status": "read",
+        "readOnly": true,
+        "saveAvailable": false,
+        "intervals": [
+          {
+            "CLIENT": "200",
+            "OBJECT": "ZORVCFGNR",
+            "SUBOBJECT": "",
+            "NRRANGENR": "02",
+            "TOYEAR": "0000",
+            "FROMNUMBER": "00000000000000000201",
+            "TONUMBER": "00000000000000000300",
+            "NRLEVEL": "00000000000000000000",
+            "EXTERNIND": ""
+          }
+        ],
+        "definition": {
+          "properties": {
+            "OBJECT": "ZORVCFGNR",
+            "DTELSOBJ": "",
+            "NRTAB": "",
+            "NRINTFLD": "",
+            "NREXTFLD": "",
+            "NRFLD": "",
+            "NRSOBJFLD": "",
+            "NRELEFLD": "",
+            "YEARIND": "",
+            "DOMLEN": "NUMC20",
+            "PERCENTAGE": "10.0",
+            "CODE": "",
+            "TEXTIND": "",
+            "NRELTXTTAB": "",
+            "NRELTXTSOB": "",
+            "NRELTXTELE": "",
+            "NRELTXTTXT": "",
+            "NRELTXTLNG": "",
+            "BUFFER": "",
+            "NOIVBUFFER": "00000000",
+            "NONRSWAP": "",
+            "RFCDEST": "",
+            "NRCHECKASCII": ""
+          }
+        },
+        "definitionFingerprint": "469f6394a21990b39ccaf626e95a359349536be8ce6e45fcf4ba5db9f69b3bcc",
+        "readFingerprint": "c17ff7e0d17d183aa75b61025275f83cf50384c6e552e8ec2db49112ab72696d",
+        "nativeVersionRead": {
+          "tool": "read_configuration_number_range_api",
+          "arguments": {
+            "connectionId": "w200",
+            "objectName": "ZORVCFGNR"
+          },
+          "requiredArguments": [],
+          "versionSource": "snapshot.EV_VERSION",
+          "versionScope": "complete_TNRO_and_current_client_NRIV",
+          "readOnly": true,
+          "saveAvailable": false
+        },
+        "complete": true,
+        "truncated": false,
+        "representation": "sap_text_trimmed",
+        "currentLevelMeaning": "persisted_NRIV_NRLEVEL_only",
+        "evidence": {
+          "startedAt": "2026-10-15T03:56:45.298Z",
+          "finishedAt": "2026-10-15T03:56:45.667Z",
+          "sources": [
+            {
+              "table": "NRIV",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            },
+            {
+              "table": "NRIV",
+              "status": "ok",
+              "method": "rfc_read_table",
+              "returnedCount": 1,
+              "nativeCode": "SAP_DATA_QUERY_RESPONSE_INVALID"
+            }
+          ],
+          "warnings": [],
+          "layoutFingerprint": "a4a8ca2622e69afb3dbb80dabd0458bb86bb658761563aedc9507ff4f5d8c105",
+          "definitionsRechecked": true,
+          "valuesRechecked": true,
+          "snapshot": false
+        },
+        "warnings": [
+          "No number allocation API is called. Persisted NRLEVEL does not attest buffered next numbers or availability; no Number conversion is applied.",
+          "Exact customer object, subobject and year only. Reads are sequential; limits and changes do not establish a complete snapshot. No interval maintenance, current-level reset or transport operation."
+        ]
+      }
+    }
+  ],
+  "observed": {
+    "aGroupToolsThatReturnedData": [
+      "find_configuration_fi_rules",
+      "read_configuration_fi_rule",
+      "preview_configuration_fi_activation",
+      "inspect_configuration_fi_activation_route",
+      "read_configuration_number_range"
+    ],
+    "aGroupToolsRefused": [],
+    "reviewedReaderFallbackUsed": "The number-range interval read answered through the reviewed reader's RFC_READ_TABLE fallback (remoteFunctionCalls=28, distinct=[\"RFC_READ_TABLE\"]), which is the reader's designed path for this ECC 7.31 system's empty-HTML data preview."
+  },
+  "notClaimed": [
+    "No configuration maintenance, generation, activation, business-trigger effect, lock/LUW closure or CTS write is attested by this record.",
+    "No write authority is established: stateChangingCalls, configurationWrites, ctsWritesOrCleanup and transportReleases are all zero.",
+    "read_configuration_fi_rule returned status 'partial' by design of the approved inputs: the blocker FI_RULE_FORMULA_CONTENT_NOT_REQUESTED records that the formula content was not requested, not that it was unavailable.",
+    "The B-group tools (inspect_configuration_bte_native_metadata, read_configuration_bc_effects) and the three BC helpers were not called and remain unverified.",
+    "This is one observation at one build and one client; it does not establish behaviour on other clients, other systems or later builds."
+  ]
+}
