@@ -1438,10 +1438,23 @@ test("BTE preparation verification binds one public review and unchanged complet
     record.frozen.files["runtime/dist/src/configuration-bte-change.js"],
     /^[a-f0-9]{64}$/
   )
+  // This record could only leave the standalone metadata endpoint unverified: its own boundary says
+  // the standalone recheck never happened (publicMetadataStandaloneRecheck false). That gap was
+  // closed later by a separate run, so this assertion keeps the two apart rather than restating the
+  // old status - the entry's evidence is the r143 B-group acceptance, not this preparation record,
+  // and the standalone call postdates it.
+  assert.equal(record.boundaries.publicMetadataStandaloneRecheck, false)
   const standalone = findVerificationEntry(registry, "inspect_configuration_bte_native_metadata")!
-  assert.equal(standalone.status, "unverified")
-  assert.equal(standalone.lastAttemptAt, null)
-  assert.equal(standalone.evidence, null)
+  assert.equal(standalone.status, "verified")
+  assert.notEqual(standalone.evidence, entry.evidence)
+  assert.equal(
+    standalone.evidence,
+    ".doc/orvanta-configuration-bte-native-metadata-acceptance-20261015-1245.json"
+  )
+  assert.ok(
+    standalone.lastAttemptAt !== null && standalone.lastAttemptAt > actual.finishedAt,
+    "the standalone recheck must postdate the r75 preparation record that could not make it"
+  )
 })
 
 test("the registry records the honest gap rather than inflating it", () => {
@@ -1882,7 +1895,23 @@ test("the registry records the honest gap rather than inflating it", () => {
     // 升格范围只到该记录实际观测到的只读投影：不含配置维护、生成、激活、业务触发、锁/LUW 闭合或 CTS 写入，
     // 也不含其它客户端、其它系统或后续构建。
     // 该上限仍是 tripwire：新增一条 verified 必须同批上调并写清来由。
-    totals.verified <= 178,
+    // 2026-10-15（r143 B 组升格）：178 -> 179。inspect_configuration_bte_native_metadata 由 unverified
+    // 升为 verified，证据为 .doc/orvanta-configuration-bte-native-metadata-acceptance-20261015-1245.json
+    // （由该次运行自己的 session.json / process-exit.json / 两份 responses / 该次自己的 approved-plan.json
+    // 组合而成，正文逐条出现工具名）。该次运行在 w200/client 200 上 1 取 1 全部调用、0 拒绝、exit 0
+    // （运行本地时间 2026-10-15 12:45 +08:00）；stateChangingCalls / deployments / activations /
+    // configurationWrites / ctsWritesOrCleanup / transportReleases / guiOperations / nativeHelperCalls
+    // 全为 0，forbiddenReached 为空，口令环境已清除；21 次远端函数调用（预算 24）中恰一次
+    // Z_ORVANTA_CFG_BTE_META，其余为 RFC_READ_TABLE，即该读取器在本机 ECC 7.31 空 HTML 数据预览下的设计回退路径。
+    // 该次调用返回 status 'native_metadata_read' / EV_CODE METADATA_READ_OK / EV_READ_ONLY 'X' / EV_FRESH 空，
+    // 且两枚声明钉值（source 8fe403c4…、interface b498f6e9…）与线上部署逐一相等 ⇒ 自 r75 修复以来无漂移。
+    // 它补上了本条此前记录的缺口「一次修复后的独立公开元数据端点调用尚未执行」——r75 那次是经
+    // prepare_configuration_bte_product_change 的内部调用。
+    // 升格范围只到该记录实际观测到的缓存控制块元数据：coverage 报 cachedControlBlocks true 而
+    // atomicSnapshot false、writeAuthorityChecked false、handlerInvoked false，
+    // 故不含写许可、新鲜度、锁内快照、维护处理程序、产品数据或 CTS 写入，也不含其它客户端、其它系统或后续构建。
+    // 该上限仍是 tripwire：新增一条 verified 必须同批上调并写清来由。
+    totals.verified <= 179,
     `only individually cited tools may be verified; found ${totals.verified}`
   )
   // The bound above is a tripwire, not the real guard: what makes a verified entry honest is that it

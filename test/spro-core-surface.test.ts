@@ -307,18 +307,23 @@ test("the shipped contract discloses the unverified part of its own surface", ()
   const declared = new Set(manifest.unverifiedTools ?? [])
   // Read straight off the registry, so the disclosure is checked against acceptance and not against
   // the audit that produced it. The earlier hand-written boundary sentence claimed five tools and
-  // named four; the registry then left ten, including both BC write tools. After the 2026-10-15 r141e
-  // A-group promotion it leaves five: the two B-group reads and the three blocked BC tools.
+  // named four; the registry then left ten, including both BC write tools. The 2026-10-15 r141e
+  // A-group promotion left five (the two B-group reads and the three blocked BC tools), and the same
+  // day's r143 B-group promotion verified inspect_configuration_bte_native_metadata, so it leaves
+  // four: read_configuration_bc_effects plus the three blocked BC write-chain tools.
   const unverified = manifest.requiredTools.filter(
     (tool) => isImgConfigurationTool(tool) && registryStatus.get(tool) !== "verified"
   )
   assert.deepEqual([...declared].sort(), [...unverified].sort())
-  assert.ok(unverified.length >= 5, `expected at least 5, read ${unverified.length}`)
+  // A floor, not a count: the disclosure has to stay a real remainder rather than shrink to nothing.
+  // It moved 5 -> 4 with the r143 promotion, which is the measured size of what the registry still
+  // leaves unaccepted on this surface.
+  assert.ok(unverified.length >= 4, `expected at least 4, read ${unverified.length}`)
   for (const tool of [
     "apply_configuration_bc_set",
     "recover_configuration_bc_set",
-    "inspect_configuration_bte_native_metadata",
-    "read_configuration_bc_effects"
+    "read_configuration_bc_effects",
+    "reconcile_configuration_bc_execution"
   ]) {
     assert.ok(declared.has(tool), `${tool} must be disclosed as unverified`)
   }
@@ -326,7 +331,10 @@ test("the shipped contract discloses the unverified part of its own surface", ()
 
 test("a delivered tool the registry does not verify has to be declared", () => {
   const manifest = soundManifest()
-  const tool = "inspect_configuration_bte_native_metadata"
+  // read_configuration_bc_effects is the still-unverified read-only B-group tool: the r143 promotion
+  // verified inspect_configuration_bte_native_metadata, which is what this case used to name, and a
+  // specimen that asserts "not verified" about a verified tool proves nothing.
+  const tool = "read_configuration_bc_effects"
   assert.notEqual(registryStatus.get(tool), "verified")
   manifest.unverifiedTools = manifest.unverifiedTools.filter((name) => name !== tool)
   assert.match(
@@ -344,7 +352,9 @@ test("a declaration the registry verifies is a stale disclosure", () => {
 })
 
 test("a declaration outside the delivered IMG surface is rejected", () => {
-  const undelivered = "inspect_configuration_bte_native_metadata"
+  // Still unverified, so it is still in the fixture's derived unverifiedTools; dropping it from the
+  // delivered surface then leaves a declaration naming a tool this surface does not deliver.
+  const undelivered = "read_configuration_bc_effects"
   const notDelivered = withoutTool(soundManifest(), undelivered)
   assert.match(
     problemMentioning(
@@ -450,7 +460,10 @@ test("a non-configuration disclosure that is stale, misplaced or unexplained is 
   // The two families are not interchangeable: an IMG configuration tool declared here would escape
   // the comparison against the classification, which is the only thing that checks that family.
   const misplaced = soundManifest()
-  const img = "inspect_configuration_bte_native_metadata"
+  // A still-unverified IMG configuration tool: the r143 promotion verified
+  // inspect_configuration_bte_native_metadata, and a verified tool declared here would report the
+  // stale-disclosure problem instead of the misplaced-family one this case is about.
+  const img = "read_configuration_bc_effects"
   assert.ok(isImgConfigurationTool(img))
   misplaced.unverifiedOutsideConfiguration = [
     ...misplaced.unverifiedOutsideConfiguration,
@@ -907,8 +920,12 @@ test("every IMG configuration tool classifies into exactly one kind of remaining
   // read_configuration_number_range became `closed` because the number-range scenario already runs it.
   // `blocked` is unchanged at 3 and `sap-acceptance` is down to the two B-group tools that still wait
   // on the BC helpers. Total stays 45.
-  assert.equal(local.length, 21, "expected 21 locally repairable tools")
-  assert.equal(sap.length, 2, "expected 2 tools waiting on SAP acceptance")
+  // 2026-10-15 (r143 B-group promotion): 21/2/3/19 -> 22/1/3/19. inspect_configuration_bte_native_metadata
+  // is now verified, and no published scenario runs it, so it moved from `sap-acceptance` to `local`;
+  // `sap-acceptance` now holds only read_configuration_bc_effects. Measured, not assumed: the same
+  // classifier was run over the old and the new registry and reported exactly this one move.
+  assert.equal(local.length, 22, "expected 22 locally repairable tools")
+  assert.equal(sap.length, 1, "expected 1 tool waiting on SAP acceptance")
   assert.equal(blocked.length, 3, "expected 3 blocked tools")
   assert.equal(closed.length, 19, "expected 19 tools a published scenario runs")
 

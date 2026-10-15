@@ -212,7 +212,6 @@
   ],
   "unverifiedTools": [
     "apply_configuration_bc_set",
-    "inspect_configuration_bte_native_metadata",
     "read_configuration_bc_effects",
     "reconcile_configuration_bc_execution",
     "recover_configuration_bc_set"
