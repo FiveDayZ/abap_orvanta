@@ -91,6 +91,18 @@ if (unexplained.length > 0) {
   // Informational: the completeness rule above already fails these; printing them names the work.
   console.log(`  neither in a scenario nor declared: ${unexplained.join(", ")}`)
 }
+// Every delivered write capability has to be published as a closed loop, because a scenario is the
+// only place that states the scope a write may touch, how it is undone and what it records in CTS.
+// Printed as well as asserted: every write on this surface is already published, so the rule is
+// satisfied by all of them and a reader could not tell from the problems list that it ever ran.
+const deliveredWrites = delivered.filter((tool) => writeTools.includes(tool))
+const publishedWrites = deliveredWrites.filter((tool) => scenarioTools.has(tool))
+const writesInSupporting = supporting.filter((entry) => writeTools.includes(entry?.tool)).length
+console.log(
+  `  write coverage: ${publishedWrites.length} of ${deliveredWrites.length} delivered write tools ` +
+    `appear in a published scenario, and ${writesInSupporting} write tools are documented as ` +
+    `supporting reads`
+)
 // The two arms of every published loop, so a reader can see which steps run on success and which
 // only when the change has to come back.
 for (const scenario of manifest.scenarios ?? []) {

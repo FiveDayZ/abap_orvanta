@@ -83,8 +83,8 @@ const soundManifest = (): SproCoreDeliveryManifest => ({
   ),
   unverifiedOutsideConfiguration: unverifiedOutsideFor(configProfileTools),
   excludedTools: [],
-  scenarios: [],
-  supportingReads: supportingReadsFor(configProfileTools, []),
+  scenarios: soundScenarios(),
+  supportingReads: supportingReadsFor(configProfileTools, soundScenarios()),
   boundaries: []
 })
 
@@ -106,6 +106,19 @@ const withoutTool = (manifest: SproCoreDeliveryManifest, tool: string): SproCore
   withSurface(manifest, { requiredTools: manifest.requiredTools.filter((name) => name !== tool) })
 
 /**
+ * The fixture's published loops plus one more. The surface delivers four write tools and a scenario is
+ * the only place that states the scope a write may touch, how it is undone and what it records in CTS,
+ * so every one of them has to stay published. A case that breaks a loop therefore appends its variant
+ * instead of replacing the list: replacing would also drop the write that loop documents, and the case
+ * would report two problems where it means to report one. The variant carries an id of its own.
+ */
+const withExtraScenario = (
+  manifest: SproCoreDeliveryManifest,
+  scenario: SproCoreDeliveryScenario
+): SproCoreDeliveryManifest =>
+  withSurface(manifest, { scenarios: [...manifest.scenarios, scenario] })
+
+/**
  * A scenario that closes a loop the surface can actually run: it writes, a read-only step observes
  * the write, and no reversing write sits in the happy path.
  */
@@ -122,6 +135,46 @@ const soundScenario = (): SproCoreDeliveryScenario => ({
   recovery: "Reconcile first; an authorized restoration is a new apply with fresh versions.",
   cts: "Explicit open Customizing request and child task."
 })
+
+/**
+ * The loops a sound fixture has to publish, mirroring the three the shipped contract publishes. The
+ * surface delivers four write tools, and a scenario is the only place that states the scope a write
+ * may touch, how it is undone and what it records in CTS - so a fixture that publishes no loop at all
+ * cannot be sound, and one that publishes only the unit-text loop leaves the other three writes with
+ * no statement of their scope. `recover_configuration_bc_set` is a compensating write, so it belongs
+ * in a failurePath rather than a happy path.
+ *
+ * Each call returns fresh objects: a case that mutates a scenario must not reach the next one.
+ */
+const soundScenarios = (): SproCoreDeliveryScenario[] => [
+  soundScenario(),
+  {
+    id: "number-range",
+    scope: "Existing interval of one approved number range object; no interval is created.",
+    flow: [
+      "read_configuration_number_range_scope",
+      "preview_configuration_number_range",
+      "apply_configuration_number_range",
+      "get_write_operation_status"
+    ],
+    failurePath: [],
+    recovery: "Reconcile first; an authorized restoration is a new apply with fresh versions.",
+    cts: "Explicit open Customizing request and child task."
+  },
+  {
+    id: "bc-knm",
+    scope: "One approved BC Set in the Customizing tier; no table is patched directly.",
+    flow: [
+      "read_configuration_bc_before_state",
+      "preview_configuration_bc_native",
+      "apply_configuration_bc_set",
+      "get_write_operation_status"
+    ],
+    failurePath: ["recover_configuration_bc_set"],
+    recovery: "Reconcile first; an authorized restoration is a new apply with fresh versions.",
+    cts: "Explicit open Customizing request and child task."
+  }
+]
 
 /**
  * A happy path that satisfies the write/observation rules, so a case that means to break something
@@ -419,13 +472,14 @@ test("a non-configuration disclosure that is stale, misplaced or unexplained is 
 })
 
 test("a scenario must state its scope, recovery and CTS", () => {
-  const sound = withSurface(soundManifest(), { scenarios: [soundScenario()] })
-  // Positive control: the fixture scenario passes, so the cases below fail on one field each.
-  assert.deepEqual(deliveryManifestProblems(sound, facts), [])
+  // Positive control: the fixture loops pass, so the cases below fail on one field each.
+  assert.deepEqual(deliveryManifestProblems(soundManifest(), facts), [])
 
   for (const field of ["scope", "recovery", "cts"] as const) {
-    const manifest = withSurface(soundManifest(), {
-      scenarios: [{ ...soundScenario(), [field]: "   " }]
+    const manifest = withExtraScenario(soundManifest(), {
+      ...soundScenario(),
+      id: `unstated-${field}`,
+      [field]: "   "
     })
     assert.match(
       onlyProblem(deliveryManifestProblems(manifest, facts)),
@@ -435,20 +489,20 @@ test("a scenario must state its scope, recovery and CTS", () => {
 })
 
 test("a scenario with no id, a duplicate id or an empty flow is rejected", () => {
-  const anonymous = withSurface(soundManifest(), {
-    scenarios: [{ ...soundScenario(), id: "  " }]
-  })
+  const anonymous = withExtraScenario(soundManifest(), { ...soundScenario(), id: "  " })
   assert.match(onlyProblem(deliveryManifestProblems(anonymous, facts)), /entry with no id/)
 
-  const duplicated = withSurface(soundManifest(), {
-    scenarios: [soundScenario(), { ...soundScenario(), flow: appliedFlow() }]
-  })
+  const duplicated = withExtraScenario(soundManifest(), soundScenario())
   assert.match(
     onlyProblem(deliveryManifestProblems(duplicated, facts)),
     /id "unit-text" more than once/
   )
 
-  const empty = withSurface(soundManifest(), { scenarios: [{ ...soundScenario(), flow: [] }] })
+  const empty = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "empty-loop",
+    flow: []
+  })
   assert.match(onlyProblem(deliveryManifestProblems(empty, facts)), /empty flow/)
 })
 
@@ -456,33 +510,34 @@ test("a scenario flow may only run tools this surface delivers", () => {
   // The package denies every tool outside requiredTools, so a step the surface excludes is a step
   // the delivered service refuses: the flow would be published and unrunnable at the same time.
   const excludedTool = "read_configuration_bc_logs"
-  const manifest = withSurface(withoutTool(soundManifest(), excludedTool), {
-    excludedTools: [{ tool: excludedTool, reason: "M3 open" }],
-    scenarios: [{ ...soundScenario(), flow: appliedFlow([excludedTool]) }]
-  })
+  const manifest = withExtraScenario(
+    withSurface(withoutTool(soundManifest(), excludedTool), {
+      excludedTools: [{ tool: excludedTool, reason: "M3 open" }]
+    }),
+    { ...soundScenario(), id: "undelivered-step", flow: appliedFlow([excludedTool]) }
+  )
   assert.match(
     onlyProblem(deliveryManifestProblems(manifest, facts)),
     /would refuse a step of a flow the contract publishes/
   )
 
-  const imaginary = withSurface(soundManifest(), {
-    scenarios: [{ ...soundScenario(), flow: appliedFlow(["read_imaginary_configuration"]) }]
+  const imaginary = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "imaginary-step",
+    flow: appliedFlow(["read_imaginary_configuration"])
   })
   assert.match(
     onlyProblem(deliveryManifestProblems(imaginary, facts)),
     /no tool registry entry implements/
   )
 
-  const repeated = withSurface(soundManifest(), {
-    scenarios: [
-      {
-        ...soundScenario(),
-        flow: [
-          "apply_configuration_unit_text",
-          "get_write_operation_status",
-          "get_write_operation_status"
-        ]
-      }
+  const repeated = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "repeated-step",
+    flow: [
+      "apply_configuration_unit_text",
+      "get_write_operation_status",
+      "get_write_operation_status"
     ]
   })
   assert.match(onlyProblem(deliveryManifestProblems(repeated, facts)), /twice in its flow/)
@@ -525,28 +580,27 @@ test("no published scenario runs the arm that reverses it", () => {
 test("a scenario must declare the arm that reverses it, apart from its happy path", () => {
   // A scenario without the field leaves the customer unable to tell whether a failure can be
   // reversed, so the omission is a problem rather than a default.
-  const undeclared = withSurface(soundManifest(), {
-    scenarios: [
-      { ...soundScenario(), failurePath: undefined } as unknown as SproCoreDeliveryScenario
-    ]
-  })
+  const undeclared = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "no-failure-path",
+    failurePath: undefined
+  } as unknown as SproCoreDeliveryScenario)
   assert.match(onlyProblem(deliveryManifestProblems(undeclared, facts)), /declares no failurePath/)
 
-  const repeated = withSurface(soundManifest(), {
-    scenarios: [
-      {
-        ...soundScenario(),
-        failurePath: ["recover_configuration_bc_set", "recover_configuration_bc_set"]
-      }
-    ]
+  const repeated = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "repeated-reversal",
+    failurePath: ["recover_configuration_bc_set", "recover_configuration_bc_set"]
   })
   assert.match(
     onlyProblem(deliveryManifestProblems(repeated, facts)),
     /lists recover_configuration_bc_set twice in its failurePath/
   )
 
-  const imaginary = withSurface(soundManifest(), {
-    scenarios: [{ ...soundScenario(), failurePath: ["recover_imaginary_configuration"] }]
+  const imaginary = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "imaginary-reversal",
+    failurePath: ["recover_imaginary_configuration"]
   })
   assert.match(
     onlyProblem(deliveryManifestProblems(imaginary, facts)),
@@ -555,9 +609,14 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
 
   // Dropping the tool from the surface also leaves it undelivered, which the coverage rule reports
   // separately, so this case looks for its own problem rather than for a single one.
-  const notDelivered = withSurface(withoutTool(soundManifest(), "recover_configuration_bc_set"), {
-    scenarios: [{ ...soundScenario(), failurePath: ["recover_configuration_bc_set"] }]
-  })
+  const notDelivered = withExtraScenario(
+    withoutTool(soundManifest(), "recover_configuration_bc_set"),
+    {
+      ...soundScenario(),
+      id: "undelivered-reversal",
+      failurePath: ["recover_configuration_bc_set"]
+    }
+  )
   assert.match(
     problemMentioning(
       deliveryManifestProblems(notDelivered, facts),
@@ -566,8 +625,10 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
     /failurePath/
   )
 
-  const both = withSurface(soundManifest(), {
-    scenarios: [{ ...soundScenario(), failurePath: ["apply_configuration_unit_text"] }]
+  const both = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "both-arms",
+    failurePath: ["apply_configuration_unit_text"]
   })
   assert.match(
     onlyProblem(deliveryManifestProblems(both, facts)),
@@ -576,38 +637,38 @@ test("a scenario must declare the arm that reverses it, apart from its happy pat
 })
 
 test("a reversing write in the happy path is rejected", () => {
-  const manifest = withSurface(soundManifest(), {
-    scenarios: [
-      {
-        ...soundScenario(),
-        flow: appliedFlow(),
-        failurePath: ["recover_configuration_bc_set"]
-      }
-    ]
+  // Positive control: declaring the reversing tool in the failure arm is sound.
+  const manifest = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "unit-text-reversed-arm",
+    flow: appliedFlow(),
+    failurePath: ["recover_configuration_bc_set"]
   })
   assert.deepEqual(deliveryManifestProblems(manifest, facts), [])
-  // Positive control: declaring the reversing tool in the failure arm is sound. Putting it back into
-  // the happy path is what has to fail, and it fails on that alone.
-  const reversed = withSurface(soundManifest(), {
-    scenarios: [
-      {
-        ...soundScenario(),
-        flow: ["recover_configuration_bc_set", ...appliedFlow()],
-        failurePath: []
-      }
-    ]
+  // Putting it back into the happy path is what has to fail, and it fails on that alone.
+  const reversed = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "reversal-in-happy-path",
+    flow: ["recover_configuration_bc_set", ...appliedFlow()],
+    failurePath: []
   })
   assert.match(onlyProblem(deliveryManifestProblems(reversed, facts)), /would undo itself/)
 })
 
 test("a flow that never writes, or writes without observing, is not a closed loop", () => {
-  const readOnly = withSurface(soundManifest(), {
-    scenarios: [{ ...soundScenario(), flow: ["read_configuration_unit"], failurePath: [] }]
+  const readOnly = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "read-only-flow",
+    flow: ["read_configuration_unit"],
+    failurePath: []
   })
   assert.match(onlyProblem(deliveryManifestProblems(readOnly, facts)), /never executes a write/)
 
-  const unobserved = withSurface(soundManifest(), {
-    scenarios: [{ ...soundScenario(), flow: ["apply_configuration_unit_text"], failurePath: [] }]
+  const unobserved = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "unobserved-write",
+    flow: ["apply_configuration_unit_text"],
+    failurePath: []
   })
   assert.match(
     onlyProblem(deliveryManifestProblems(unobserved, facts)),
@@ -615,14 +676,11 @@ test("a flow that never writes, or writes without observing, is not a closed loo
   )
 
   // A write observed only before it happens is not observed at all.
-  const before = withSurface(soundManifest(), {
-    scenarios: [
-      {
-        ...soundScenario(),
-        flow: ["get_write_operation_status", "apply_configuration_unit_text"],
-        failurePath: []
-      }
-    ]
+  const before = withExtraScenario(soundManifest(), {
+    ...soundScenario(),
+    id: "observed-too-early",
+    flow: ["get_write_operation_status", "apply_configuration_unit_text"],
+    failurePath: []
   })
   assert.match(
     onlyProblem(deliveryManifestProblems(before, facts)),
@@ -864,7 +922,7 @@ test("declaring a tool a flow already runs, twice, or without a reason is reject
   // The flow runs it, so calling it a supporting read would describe it twice. Added after the
   // manifest is otherwise sound, because the fixture derives the list from the flows.
   const tool = "read_configuration_unit"
-  const inFlow = withSurface(soundManifest(), { scenarios: [soundScenario()] })
+  const inFlow = soundManifest()
   assert.deepEqual(deliveryManifestProblems(inFlow, facts), [])
   inFlow.supportingReads = [
     ...inFlow.supportingReads,
@@ -929,6 +987,83 @@ test("a supporting read outside the delivered surface or the tool registry is re
     onlyProblem(deliveryManifestProblems(anonymous, facts)),
     /supportingReads contains an entry with no tool/
   )
+})
+
+test("a write tool cannot be documented as a supporting read", () => {
+  // Measured premise: the delivered surface carries write tools, and the list that accounts for the
+  // tools standing outside every published loop is a *read* list, so the two must not overlap.
+  const deliveredWrites = imgConfigurationTools(configProfileTools).filter((tool) =>
+    writeTools.includes(tool)
+  )
+  assert.ok(deliveredWrites.length > 0, "the fixture surface must deliver at least one write tool")
+  const sound = soundManifest()
+  for (const tool of deliveredWrites) {
+    assert.ok(
+      !sound.supportingReads.some((entry) => entry.tool === tool),
+      `${tool} writes, so a sound manifest documents it in a scenario rather than as a read`
+    )
+  }
+
+  // Positive control: the fixture is sound, so the case below fails on the new rule alone.
+  assert.deepEqual(deliveryManifestProblems(soundManifest(), facts), [])
+
+  // The trap this rule exists for: publish no loop at all and the coverage rule has nowhere to put a
+  // write tool except the read list. The fixture's own derivation does exactly that, so the specimen
+  // is the mechanism rather than a hand-written lie.
+  const manifest = withSurface(soundManifest(), { scenarios: [] })
+  const parked = manifest.supportingReads.filter((entry) => deliveredWrites.includes(entry.tool))
+  assert.deepEqual(
+    parked.map((entry) => entry.tool).sort(),
+    [...deliveredWrites].sort(),
+    "the derivation must park every uncovered write tool in supportingReads"
+  )
+  const problems = deliveryManifestProblems(manifest, facts)
+  const mislabelled = problems.filter((problem) =>
+    /classifies as a write, so it is not a supporting read/.test(problem)
+  )
+  assert.equal(mislabelled.length, deliveredWrites.length)
+  for (const tool of deliveredWrites) {
+    assert.match(
+      problemMentioning(problems, `supportingReads names ${tool}`),
+      /classifies as a write, so it is not a supporting read/
+    )
+    // And the coverage rule must not send it back to the read list either: a write that no scenario
+    // publishes is a gap in the contract, not a missing declaration.
+    assert.match(
+      problemMentioning(problems, `IMG configuration tool ${tool} is delivered and writes`),
+      /has to be published as a closed loop/
+    )
+  }
+})
+
+test("the shipped contract publishes every write tool it delivers", () => {
+  // The same two facts, asserted against the artefact that ships rather than against a fixture.
+  const manifest = loadSproCoreDelivery()
+  const deliveredWrites = manifest.requiredTools.filter(
+    (tool) => isImgConfigurationTool(tool) && registryMethod.get(tool) === "controlled-write"
+  )
+  assert.ok(deliveredWrites.length > 0, "the contract must deliver at least one write tool")
+  const published = new Set(
+    manifest.scenarios.flatMap((scenario) => [...scenario.flow, ...(scenario.failurePath ?? [])])
+  )
+  const declared = new Set((manifest.supportingReads ?? []).map((entry) => entry.tool))
+  for (const tool of deliveredWrites) {
+    assert.ok(
+      published.has(tool),
+      `${tool} writes, so the contract has to publish the loop that states its scope and recovery`
+    )
+    assert.ok(!declared.has(tool), `${tool} writes, so it cannot be a supporting read`)
+  }
+  // A compensating write is published through a failure arm, so it is documented without ever being a
+  // happy-path step - the two facts are compatible, which is why the rule can require coverage of it.
+  const compensating = deliveredWrites.filter((tool) => isCompensatingWrite(tool))
+  assert.ok(compensating.length > 0, "the contract must deliver a compensating write")
+  for (const tool of compensating) {
+    assert.ok(
+      !manifest.scenarios.some((scenario) => scenario.flow.includes(tool)),
+      `${tool} reverses a change, so it must not be a happy-path step`
+    )
+  }
 })
 
 test("an IMG configuration tool that is neither delivered nor excluded fails the audit", () => {
@@ -1005,8 +1140,12 @@ test("an unknown profile and an empty surface are rejected", () => {
     /is not one of/
   )
 
-  // A surface that delivers nothing also has nothing to disclose or to document.
-  const empty = withSurface(soundManifest(), { requiredTools: [], unverifiedTools: [] })
+  // A surface that delivers nothing also has nothing to disclose, to document or to publish.
+  const empty = withSurface(soundManifest(), {
+    requiredTools: [],
+    unverifiedTools: [],
+    scenarios: []
+  })
   // An empty surface is not one mistake but two: nothing is delivered, and every IMG configuration
   // tool the profile enables then has no delivery decision either.
   const emptyProblems = deliveryManifestProblems(empty, facts)

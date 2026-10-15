@@ -235,7 +235,13 @@ export function isCompensatingWrite(name: string): boolean {
  * A delivered tool that no published scenario runs, with the reason it stands outside every flow.
  * Declaring it is the difference between "this surface documents 23 closed loops and says what the
  * other tools are for" and "22 tools are silently absent from everything the contract explains".
- * Like an exclusion, it is a statement about this contract, never about SAP acceptance.
+ *
+ * The name is a requirement, not a label: the audit rejects an entry whose tool the registry
+ * classifies as a write. Without that check this list is where a delivered write capability hides
+ * from the scenario rules, which are the only thing that states a write's scope, recovery and CTS -
+ * and the coverage loop below would *force* it to hide there, because a tool outside every scenario
+ * has nowhere else to be declared. Like an exclusion, it is a statement about this contract, never
+ * about SAP acceptance.
  */
 export interface SproCoreDeliverySupportingRead {
   tool: string
@@ -643,6 +649,16 @@ export function deliveryManifestProblems(
     } else if (!seen.has(tool)) {
       problems.push(`supportingReads names ${tool}, which this surface does not deliver`)
     }
+    // A write parked here would be described as a read by the field it is written in, and the
+    // coverage loop below would require it: only a scenario states a write's scope, recovery and CTS,
+    // so a delivered write capability that no scenario publishes is a gap, not a supporting read.
+    if (writes.has(tool)) {
+      problems.push(
+        `supportingReads names ${tool}, which contracts/verification-registry.json classifies as a ` +
+          `write, so it is not a supporting read; a delivered write capability has to be published ` +
+          `in a scenario, which is the only place its scope, recovery and CTS are stated`
+      )
+    }
     if (typeof entry?.reason !== "string" || entry.reason.trim() === "") {
       problems.push(`supportingReads names ${tool} without a reason, so nothing records its role`)
     }
@@ -654,9 +670,19 @@ export function deliveryManifestProblems(
     }
   }
   for (const tool of required) {
-    if (!isImgConfigurationTool(tool) || scenarioTools.has(tool) || supportingTools.has(tool)) {
+    if (!isImgConfigurationTool(tool) || scenarioTools.has(tool)) continue
+    // A write cannot be documented by a supporting read, so its absence from every scenario is a gap
+    // in the contract rather than a missing declaration: nothing else in this file states the scope a
+    // write may touch, how it is undone, or what it records in CTS.
+    if (writes.has(tool)) {
+      problems.push(
+        `IMG configuration tool ${tool} is delivered and writes, but appears in no published ` +
+          `scenario, so nothing states the scope it may touch, how it is undone or what it records ` +
+          `in CTS; a delivered write capability has to be published as a closed loop`
+      )
       continue
     }
+    if (supportingTools.has(tool)) continue
     problems.push(
       `IMG configuration tool ${tool} is delivered but appears in no published scenario and is not ` +
         `declared in supportingReads, so the contract explains nothing about it`
