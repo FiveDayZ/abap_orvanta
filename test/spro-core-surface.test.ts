@@ -3,11 +3,14 @@ import test from "node:test"
 import {
   type SproCoreDeliveryManifest,
   type SproCoreDeliveryScenario,
+  BC_WRITE_CHAIN_HELPERS,
+  classifyImgConfigurationTools,
   deliveryManifestProblems,
   imgConfigurationTools,
   isCompensatingWrite,
   isImgConfigurationTool,
-  loadSproCoreDelivery
+  loadSproCoreDelivery,
+  unusedWriteChainHelpers
 } from "../src/spro-core-delivery.js"
 import { PROFILE_NAMES, TOOL_NAMES, toolNamesForProfile } from "../src/tool-registry.js"
 import { loadVerificationRegistry } from "../src/verification-registry.js"
@@ -577,6 +580,167 @@ test("the shipped contract accounts for every delivered configuration tool", () 
     assert.ok(declared.has(tool), `${tool} must be documented as a supporting read`)
     assert.ok((declared.get(tool) ?? "").trim().length > 20, `${tool} needs a real reason`)
   }
+})
+
+test("every IMG configuration tool classifies into exactly one kind of remaining work", () => {
+  const manifest = loadSproCoreDelivery()
+  const registry = loadVerificationRegistry().entries
+  const classification = classifyImgConfigurationTools({
+    tools: manifest.requiredTools,
+    registry,
+    scenarios: manifest.scenarios
+  })
+  const byDisposition = (disposition: string) =>
+    classification.filter((entry) => entry.disposition === disposition).map((entry) => entry.tool)
+  const local = byDisposition("local")
+  const sap = byDisposition("sap-acceptance")
+  const blocked = byDisposition("blocked")
+  const closed = byDisposition("closed")
+
+  // The universe is read off the surface the delivery audit itself enforces, not off a hand-written
+  // list, and the four classes have to partition it: no tool twice, no tool missing.
+  const imgDelivered = manifest.requiredTools.filter(isImgConfigurationTool)
+  assert.deepEqual(
+    classification.map((entry) => entry.tool).sort(),
+    [...imgDelivered].sort(),
+    "the classification must cover exactly the delivered IMG configuration tools"
+  )
+  assert.equal(new Set(classification.map((entry) => entry.tool)).size, classification.length)
+  assert.equal(local.length + sap.length + blocked.length + closed.length, imgDelivered.length)
+
+  // Counted facts. They are meant to move when an acceptance run lands, and a rule change that moved
+  // a tool between classes has to be seen and written down rather than absorbed silently.
+  assert.equal(local.length, 17, "expected 17 locally repairable tools")
+  assert.equal(sap.length, 7, "expected 7 tools waiting on SAP acceptance")
+  assert.equal(blocked.length, 3, "expected 3 blocked tools")
+  assert.equal(closed.length, 18, "expected 18 tools a published scenario runs")
+
+  // Each class has to hold something: a rule that quietly dumped every tool into one disposition
+  // would still partition the surface, so the partition alone is not evidence of anything.
+  for (const [name, members] of [
+    ["local", local],
+    ["sap-acceptance", sap],
+    ["blocked", blocked],
+    ["closed", closed]
+  ] as const) {
+    assert.ok(
+      members.length > 0,
+      `no IMG configuration tool classifies as ${name}, so the classes stopped discriminating`
+    )
+  }
+
+  // The unaccepted half of the classification and the surface's own disclosure list describe the
+  // same set, so they are compared in both directions rather than one.
+  //
+  // While nothing is excluded this is implied by the delivery rules, which already reject an
+  // undeclared unverified tool and a declared verified one; it is written down because it becomes
+  // load-bearing the moment a tool is excluded. The classification is taken over the delivered
+  // surface, so an excluded tool drops out of it while `unverifiedTools` never mentioned it either -
+  // but a classification taken over every implemented tool would disagree here, and this is the
+  // assertion that would say so.
+  assert.deepEqual([...sap, ...blocked].sort(), [...(manifest.unverifiedTools ?? [])].sort())
+
+  // A declared write-chain helper has to belong to a real tool: a rename that emptied the set would
+  // otherwise reclassify three blocked tools as work that only needs a run, and nothing would say so.
+  assert.deepEqual(unusedWriteChainHelpers({ tools: TOOL_NAMES, registry }), [])
+  for (const helper of BC_WRITE_CHAIN_HELPERS) {
+    assert.ok(
+      registry.some((entry) => entry.helper === helper && isImgConfigurationTool(entry.tool)),
+      `${helper} is declared as a write-chain helper but no IMG configuration tool uses it`
+    )
+  }
+})
+
+test("the disposition rule separates a write chain from a helper that merely exists", () => {
+  // A constructed specimen, because the shipped surface cannot show the discrimination on its own:
+  // the one tool whose disposition the rule gets *differently* from `method` alone is a read-only
+  // tool whose only implementation path is an undeployed write-chain helper.
+  const scenarios: SproCoreDeliveryScenario[] = [
+    {
+      id: "specimen",
+      scope: "specimen scope",
+      flow: ["read_configuration_specimen_closed"],
+      failurePath: [],
+      recovery: "specimen recovery",
+      cts: "specimen cts"
+    }
+  ]
+  const tools = [
+    "read_configuration_specimen_closed",
+    "read_configuration_specimen_local",
+    "read_configuration_specimen_verified_helper",
+    "apply_configuration_specimen_write",
+    "reconcile_configuration_specimen_write_chain",
+    "read_configuration_specimen_waiting",
+    "read_configuration_specimen_unknown"
+  ]
+  const registry = [
+    { tool: tools[0]!, status: "verified", method: "read-only", helper: null },
+    { tool: tools[1]!, status: "verified", method: "read-only", helper: null },
+    // Verified wins over the helper: a write-chain helper on a tool the registry verifies is not
+    // evidence that it is blocked, and reading the helper alone would say it was.
+    {
+      tool: tools[2]!,
+      status: "verified",
+      method: "read-only",
+      helper: "Z_ORVANTA_CFG_BC_APPLY"
+    },
+    { tool: tools[3]!, status: "unverified", method: "controlled-write", helper: null },
+    {
+      tool: tools[4]!,
+      status: "unverified",
+      method: "read-only",
+      helper: "Z_ORVANTA_CFG_BC_RECONCILE"
+    },
+    { tool: tools[5]!, status: "unverified", method: "read-only", helper: null }
+    // tools[6] is deliberately absent from the registry: it cannot be verified.
+  ]
+  const disposition = new Map(
+    classifyImgConfigurationTools({ tools, registry, scenarios }).map((entry) => [
+      entry.tool,
+      entry.disposition
+    ])
+  )
+  assert.equal(disposition.get(tools[0]!), "closed", "a verified tool in a scenario is closed")
+  assert.equal(
+    disposition.get(tools[1]!),
+    "local",
+    "a verified tool outside every scenario is local"
+  )
+  assert.equal(
+    disposition.get(tools[2]!),
+    "local",
+    "verification has to win over the helper, or a verified tool reads as blocked"
+  )
+  assert.equal(
+    disposition.get(tools[3]!),
+    "blocked",
+    "an unverified controlled write is blocked whatever its helper"
+  )
+  // This is the case the rule exists for: `method` is read-only, so a rule that classified by
+  // `method` alone would report it as waiting for acceptance rather than blocked.
+  assert.equal(
+    disposition.get(tools[4]!),
+    "blocked",
+    "an unverified read-only tool on a write-chain helper is blocked, not waiting"
+  )
+  assert.equal(
+    disposition.get(tools[5]!),
+    "sap-acceptance",
+    "an unverified tool with no write-chain helper is waiting for acceptance"
+  )
+  assert.equal(
+    disposition.get(tools[6]!),
+    "sap-acceptance",
+    "a tool the registry does not have cannot be verified, so it cannot be closed"
+  )
+  // The specimen proves the rule discriminates, so it is not a set of assertions that would pass
+  // against any implementation that returned one disposition for everything.
+  assert.equal(
+    new Set(disposition.values()).size,
+    4,
+    "the specimen must reach all four dispositions"
+  )
 })
 
 test("a delivered configuration tool that no flow explains has to be declared", () => {

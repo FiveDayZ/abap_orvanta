@@ -50,6 +50,15 @@
  * `flow` is the happy path the customer runs, `failurePath` carries the reversing tools, and the
  * audit rejects a reversing write in `flow`, a tool declared in both arms, and a flow that writes
  * without a read-only step observing the result.
+ *
+ * The inventory document that reports which configuration tools are locally repairable, which wait
+ * on SAP acceptance and which are blocked derived those four classes from a probe kept in an ignored
+ * scratch directory. The numbers were right and the rules were written down, but "recomputable from
+ * the machine sources below" was true on one machine only: a fresh clone could not reproduce them.
+ * `classifyImgConfigurationTools` is that derivation as shipped code. The audit prints the four
+ * classes and fails when they stop partitioning the IMG surface, when they stop agreeing with
+ * `unverifiedTools`, or when a declared write-chain helper no longer belongs to any tool - and the
+ * helpers that make a tool *blocked* are declared here instead of described in prose.
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -74,6 +83,106 @@ export function isImgConfigurationTool(name: string): boolean {
 
 export function imgConfigurationTools(allTools: readonly string[]): string[] {
   return allTools.filter(isImgConfigurationTool)
+}
+
+/**
+ * The helpers that implement the BC write pilot: apply, recover, and the read-only reconcile that
+ * attests the same receipt. None of them was ever deployed to a SAP system, which is what makes the
+ * three tools they serve *blocked* rather than merely unaccepted.
+ *
+ * That difference is invisible in `status` and `method` alone: `reconcile_configuration_bc_execution`
+ * is `read-only` while its only implementation path is one of these helpers, so classifying by
+ * `method` would file it under "waiting for acceptance". The list is declared here rather than left
+ * as prose so it can be checked - every name below has to be the helper of a delivered IMG
+ * configuration tool, and a rename that emptied it would otherwise silently reclassify three blocked
+ * tools as work that only needs a run.
+ */
+export const BC_WRITE_CHAIN_HELPERS = [
+  "Z_ORVANTA_CFG_BC_APPLY",
+  "Z_ORVANTA_CFG_BC_RECOVER",
+  "Z_ORVANTA_CFG_BC_RECONCILE"
+] as const
+
+/**
+ * Where the work on one delivered IMG configuration tool actually stands. This is a statement about
+ * this repository's own progress and never about SAP acceptance:
+ *
+ * - `blocked` - the registry does not verify it and the helper it needs was never deployed;
+ * - `sap-acceptance` - the registry does not verify it, but nothing says it cannot be run;
+ * - `local` - verified, and no published scenario explains it;
+ * - `closed` - verified, and a published scenario runs it in one of its two arms.
+ */
+export type ImgConfigurationDisposition = "blocked" | "sap-acceptance" | "local" | "closed"
+
+export interface ImgConfigurationClassification {
+  tool: string
+  disposition: ImgConfigurationDisposition
+}
+
+/**
+ * The registry facts the classification reads, taken structurally rather than imported so a
+ * constructed specimen can drive the rule. Every field is optional except the tool name: an entry
+ * the registry does not have cannot be verified, which is exactly how the audit treats it.
+ */
+export interface ImgConfigurationRegistryEntry {
+  tool: string
+  status?: string
+  method?: string
+  helper?: string | null
+}
+
+export interface ImgConfigurationClassificationInput {
+  tools: readonly string[]
+  registry: readonly ImgConfigurationRegistryEntry[]
+  scenarios: readonly SproCoreDeliveryScenario[]
+}
+
+/**
+ * Both arms explain a tool: a reversing step declared in `failurePath` is documented by its scenario
+ * even though the happy path never runs it.
+ */
+export function documentedByScenario(scenarios: readonly SproCoreDeliveryScenario[]): Set<string> {
+  return new Set(
+    scenarios.flatMap((scenario) => [
+      ...(Array.isArray(scenario?.flow) ? scenario.flow : []),
+      ...(Array.isArray(scenario?.failurePath) ? scenario.failurePath : [])
+    ])
+  )
+}
+
+/**
+ * Classify every implemented IMG configuration tool into exactly one disposition. The four classes
+ * are mutually exclusive and exhaustive by construction, and the audit checks that they stay so
+ * against the surface it actually delivers.
+ */
+export function classifyImgConfigurationTools(
+  input: ImgConfigurationClassificationInput
+): ImgConfigurationClassification[] {
+  const entries = new Map(input.registry.map((entry) => [entry.tool, entry]))
+  const documented = documentedByScenario(input.scenarios)
+  const blockedHelpers = new Set<string>(BC_WRITE_CHAIN_HELPERS)
+  return imgConfigurationTools(input.tools).map((tool) => {
+    const entry = entries.get(tool)
+    if (entry?.status === "verified") {
+      return { tool, disposition: documented.has(tool) ? "closed" : "local" }
+    }
+    const blocked =
+      entry?.method === "controlled-write" ||
+      (typeof entry?.helper === "string" && blockedHelpers.has(entry.helper))
+    return { tool, disposition: blocked ? "blocked" : "sap-acceptance" }
+  })
+}
+
+/** The declared write-chain helpers that no implemented IMG configuration tool actually uses. */
+export function unusedWriteChainHelpers(
+  input: Pick<ImgConfigurationClassificationInput, "tools" | "registry">
+): string[] {
+  const used = new Set(
+    input.registry
+      .filter((entry) => isImgConfigurationTool(entry.tool))
+      .map((entry) => (typeof entry.helper === "string" ? entry.helper : ""))
+  )
+  return BC_WRITE_CHAIN_HELPERS.filter((helper) => !used.has(helper))
 }
 
 /**

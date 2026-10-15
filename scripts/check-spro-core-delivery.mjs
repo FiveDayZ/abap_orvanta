@@ -3,9 +3,11 @@
 // start or file write: it only compares the contract against the compiled registry and profile.
 import {
   IMG_CONFIGURATION_TOOL_PATTERN,
+  classifyImgConfigurationTools,
   deliveryManifestProblems,
   imgConfigurationTools,
-  loadSproCoreDelivery
+  loadSproCoreDelivery,
+  unusedWriteChainHelpers
 } from "../dist/src/spro-core-delivery.js"
 import { PROFILE_NAMES, TOOL_NAMES, toolNamesForProfile } from "../dist/src/tool-registry.js"
 import { loadVerificationRegistry } from "../dist/src/verification-registry.js"
@@ -93,6 +95,63 @@ for (const scenario of manifest.scenarios ?? []) {
     `  scenario ${String(scenario?.id)}: ${flow.length} happy-path steps ` +
       `(${writes.join(", ") || "no write"}), failure arm ` +
       `${failurePath.length > 0 ? failurePath.join(", ") : "none"}`
+  )
+}
+// The four dispositions the inventory document reports, derived here rather than in an ignored
+// scratch probe, so "recomputable from the machine sources" holds for a fresh clone. Which tools
+// are blocked, waiting or done is a statement about this repository's progress, never about SAP.
+//
+// The universe is the DELIVERED surface, not every implemented tool: the document describes what a
+// customer receives, and an excluded tool is accounted for by `excludedTools` with its own reason.
+// Taking the implemented set instead would make the two accounts disagree the moment anything is
+// excluded, which is exactly when the comparison below starts carrying weight.
+const classification = classifyImgConfigurationTools({
+  tools: delivered,
+  registry: registry.entries,
+  scenarios: manifest.scenarios ?? []
+})
+const countOf = (disposition) =>
+  classification.filter((entry) => entry.disposition === disposition).length
+const unaccepted = classification
+  .filter((entry) => entry.disposition === "blocked" || entry.disposition === "sap-acceptance")
+  .map((entry) => entry.tool)
+console.log(
+  `  IMG configuration disposition: local=${countOf("local")} sap=${countOf("sap-acceptance")} ` +
+    `blocked=${countOf("blocked")} closed=${countOf("closed")} (of ${classification.length})`
+)
+// Every class has to hold something. A derivation that quietly collapsed every tool into one
+// disposition would still partition the surface, so the sum alone is not evidence of anything.
+for (const disposition of ["local", "sap-acceptance", "blocked", "closed"]) {
+  if (countOf(disposition) === 0) {
+    problems.push(
+      `no IMG configuration tool classifies as ${disposition}, so the classification stopped ` +
+        `distinguishing the four kinds of work it exists to report`
+    )
+  }
+}
+// The unaccepted half of the classification and the surface's own disclosure list describe the same
+// set, so they are compared in both directions rather than one.
+for (const tool of unaccepted) {
+  if (!declared.includes(tool)) {
+    problems.push(
+      `IMG configuration tool ${tool} classifies as unaccepted but is not declared in ` +
+        `unverifiedTools, so the surface implies an acceptance the registry does not support`
+    )
+  }
+}
+for (const tool of declared) {
+  if (!unaccepted.includes(tool)) {
+    problems.push(
+      `unverifiedTools declares ${tool}, but the classification does not put it among the tools ` +
+        `waiting on acceptance, so the disclosure is stale`
+    )
+  }
+}
+const orphanHelpers = unusedWriteChainHelpers({ tools: TOOL_NAMES, registry: registry.entries })
+if (orphanHelpers.length > 0) {
+  problems.push(
+    `write-chain helper ${orphanHelpers.join(", ")} serves no implemented IMG configuration tool, ` +
+      `so the tools it used to make blocked would silently read as waiting for acceptance`
   )
 }
 for (const problem of problems) {
