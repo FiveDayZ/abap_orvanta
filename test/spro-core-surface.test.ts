@@ -738,6 +738,46 @@ test("the contract has to state the boundaries it will not cross", () => {
   assert.deepEqual(deliveryManifestProblems(dropped, facts), [])
 })
 
+test("the receipt has to say what it is and where it was accepted", () => {
+  // Positive control: the fixture declares all five, so each case below empties exactly one.
+  assert.deepEqual(deliveryManifestProblems(soundManifest(), facts), [])
+
+  const fields = [
+    ["name", /name is not declared/],
+    ["connectionId", /connectionId is not declared/],
+    ["system", /system is not declared/],
+    ["client", /client is not declared/],
+    ["formalServiceAcceptance", /formalServiceAcceptance is not declared/]
+  ] as const
+  for (const [field, expected] of fields) {
+    // Blank, whitespace-only and absent are the same omission, so all three have to be rejected.
+    for (const value of ["", "   ", undefined]) {
+      const manifest = soundManifest() as unknown as Record<string, unknown>
+      manifest[field] = value
+      assert.match(
+        onlyProblem(
+          deliveryManifestProblems(manifest as unknown as SproCoreDeliveryManifest, facts)
+        ),
+        expected,
+        `${field} = ${JSON.stringify(value)} must be rejected`
+      )
+    }
+  }
+})
+
+test("a reversing verb always names a write, so the arm's write test is decided by the name", () => {
+  // Measured 2026-10-15: the failure arm rejects an entry that is not a reversing write OR is not a
+  // write at all, and the second half is unreachable on this surface - exactly two tools carry a
+  // reversing verb and both are classified as writes. This case is the tripwire for that. A third
+  // reversing verb that is not a write makes that branch live, so both the count and the property
+  // below have to be updated deliberately instead of being discovered later.
+  const named = TOOL_NAMES.filter(isCompensatingWrite)
+  assert.deepEqual(named, ["recover_ddic_table_conversion", "recover_configuration_bc_set"])
+  for (const tool of named) {
+    assert.ok(writeTools.includes(tool), `${tool} is named as a reversal but is not a write`)
+  }
+})
+
 test("a flow that never writes, or writes without observing, is not a closed loop", () => {
   const readOnly = withExtraScenario(soundManifest(), {
     ...soundScenario(),

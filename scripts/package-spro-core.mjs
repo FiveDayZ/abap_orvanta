@@ -196,7 +196,7 @@ await writeFile(
       requiredTools: delivery.requiredTools,
       defaultPort: port,
       stateRoot,
-      formalServiceAcceptance: "pending",
+      formalServiceAcceptance: delivery.formalServiceAcceptance,
       sapAcceptance: "not_run",
       fileHashScope:
         "All candidate files including installed production dependencies, except BUILD-INFO.json and future local state/config changes.",

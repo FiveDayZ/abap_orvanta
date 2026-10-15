@@ -58,6 +58,18 @@ export async function inspectDelivery(file) {
     contract.requiredTools,
     "BUILD-INFO tool surface differs from the shipped SPRO-CORE.json contract"
   )
+  // Both files carry the formal acceptance status as well, and until 2026-10-15 only the tool surface
+  // was compared. The packager wrote "pending" into BUILD-INFO while copying the contract verbatim as
+  // SPRO-CORE.json, so a candidate whose contract said the service was accepted would still ship a
+  // BUILD-INFO saying it was pending - the exact disagreement this function exists to reject, and one
+  // that would appear the moment the status in the contract changed. The packager now reads the value
+  // from the contract, so this comparison is defence in depth against a hand-edited BUILD-INFO rather
+  // than the primary guard.
+  assert.equal(
+    build.formalServiceAcceptance,
+    contract.formalServiceAcceptance,
+    "BUILD-INFO acceptance status differs from the shipped SPRO-CORE.json contract"
+  )
   assert.equal(new Set(build.requiredTools).size, build.requiredTools.length)
   assert.equal(sha(await readFile(build.nodeExecutable)), build.nodeExecutableSha256)
   assert.equal(await realpath(process.execPath), await realpath(build.nodeExecutable))

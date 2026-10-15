@@ -404,6 +404,40 @@ export function deliveryManifestProblems(
   } else if (!facts.profileNames.includes(profile)) {
     problems.push(`profile "${profile}" is not one of ${facts.profileNames.join(", ")}`)
   }
+  // The receipt identifies itself and the acceptance it was granted under, and every one of these is
+  // a sentence the customer reads. A blank one states nothing while the field name claims it does:
+  // measured 2026-10-15, all five could be emptied and the audit reported nothing, so a candidate
+  // could ship a receipt that never says which system it was accepted on or whether the service was
+  // formally accepted at all. They are written out one by one rather than driven by a list of field
+  // names, because a list would carry a deletion invisibility - dropping a name from it would
+  // silently stop checking that field.
+  if (typeof manifest.name !== "string" || manifest.name.trim() === "") {
+    problems.push("name is not declared, so the receipt does not say what it is a receipt for")
+  }
+  if (typeof manifest.connectionId !== "string" || manifest.connectionId.trim() === "") {
+    problems.push(
+      "connectionId is not declared, so the receipt does not say which connection it describes"
+    )
+  }
+  if (typeof manifest.system !== "string" || manifest.system.trim() === "") {
+    problems.push(
+      "system is not declared, so the receipt does not say which system it was accepted on"
+    )
+  }
+  if (typeof manifest.client !== "string" || manifest.client.trim() === "") {
+    problems.push(
+      "client is not declared, so the receipt does not say which client it was accepted in"
+    )
+  }
+  if (
+    typeof manifest.formalServiceAcceptance !== "string" ||
+    manifest.formalServiceAcceptance.trim() === ""
+  ) {
+    problems.push(
+      "formalServiceAcceptance is not declared, so the receipt does not say whether the service was " +
+        "formally accepted"
+    )
+  }
   const required = manifest.requiredTools ?? []
   const excluded = manifest.excludedTools ?? []
   if (required.length === 0) {
@@ -650,6 +684,14 @@ export function deliveryManifestProblems(
         // forward write could be listed as the arm that reverses the loop, so the contract could
         // promise a reversal it does not have. Both halves are checked - the step has to be a
         // reversing write, and it has to reverse a change this flow actually runs.
+        //
+        // The `!writes.has(tool)` half is the wider of the two and is UNREACHABLE on this surface:
+        // measured 2026-10-15, exactly two tools carry a reversing verb and both are classified as
+        // writes, so it can never be the reason a problem is reported here. It stays because it is
+        // the correct statement - a step that changes nothing reverses nothing - and because the
+        // alternative is to decide the case by omission. The surface test pins both the count and
+        // the property, so a third reversing verb that is not a write makes this branch live and
+        // says so instead of being discovered later.
         if (!known.has(tool)) {
           problems.push(
             `${label} declares ${tool} in its failurePath, which no tool registry entry implements`
